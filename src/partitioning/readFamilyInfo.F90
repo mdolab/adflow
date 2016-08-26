@@ -1,12 +1,8 @@
        subroutine readFamilyInfo(cgnsInd, cgnsBase)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * readFamilyInfo determines the number of families in the        *
-!      * given base of the cgns grid and determines their possible      *
-!      * boundary condition, including some user defined ones.          *
-!      *                                                                *
-!      ******************************************************************
+!       readFamilyInfo determines the number of families in the        
+!       given base of the cgns grid and determines their possible      
+!       boundary condition, including some user defined ones.          
 !
        use constants
        use cgnsGrid

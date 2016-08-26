@@ -3,21 +3,17 @@
 !
 !  differentiation of allnodalgradients in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *aa *wx *wy *wz *w *qx *qy
-!                *qz *ux *uy *uz *si *sj *sk *vx *vy *vz
+!                qz *ux *uy *uz *si *sj *sk *vx *vy 
 !   with respect to varying inputs: *aa *w *vol *si *sj *sk
 !   plus diff mem management of: aa:in wx:in wy:in wz:in w:in qx:in
 !                qy:in qz:in ux:in vol:in uy:in uz:in si:in sj:in
 !                sk:in vx:in vy:in vz:in
 subroutine allnodalgradients_b()
 !
-!        ****************************************************************
-!        *                                                              *
-!        * nodalgradients computes the nodal velocity gradients and     *
-!        * minus the gradient of the speed of sound squared. the minus  *
-!        * sign is present, because this is the definition of the heat  *
-!        * flux. these gradients are computed for all nodes.            * 
-!        *                                                              *
-!        ****************************************************************
+!         nodalgradients computes the nodal velocity gradients and     
+!         minus the gradient of the speed of sound squared. the minus  
+!         sign is present, because this is the definition of the heat  
+!         flux. these gradients are computed for all nodes.            
 !
   use constants
   use blockpointers
@@ -49,11 +45,7 @@ subroutine allnodalgradients_b()
   real(kind=realtype) :: tempd0
   real(kind=realtype) :: temp
 !
-!        ****************************************************************
-!        *                                                              *
-!        * begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         begin execution                                              
 !
 ! zero all nodeal gradients:
   ux = zero

@@ -1,10 +1,6 @@
 module adtSearch
   !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Module which contains the subroutines for the global search.   *
-  !     *                                                                *
-  !     ******************************************************************
+  !      Module which contains the subroutines for the global search.   
   !
   use adtLocalSearch
   use adtUtils
@@ -22,43 +18,37 @@ contains
        uvw,         nInterpol,  &
        arrDonor,    arrInterpol)
     !
-    !       ****************************************************************
-    !       *                                                              *
-    !       * This routine attempts for every coordinate to find the       *
-    !       * element in the given ADT, which contains that coordinate.    *
-    !       * If no element is found the corresponding entry in procID is  *
-    !       * set to -1 to indicate failure.                               *
-    !       *                                                              *
-    !       * Subroutine intent(in) arguments.                             *
-    !       * --------------------------------                             *
-    !       * nCoor:     Number of coordinates for which the element must  *
-    !       *            be determined.                                    *
-    !       * coor:      The coordinates of these points.                  *
-    !       * adtID:     The ADT to be searched.                           *
-    !       * nInterpol: Number of variables to be interpolated.           *
-    !       * arrDonor:  Array with the donor data; needed to obtain the   *
-    !       *            interpolated data.                                *
-    !       *                                                              *
-    !       * Subroutine intent(out) arguments.                            *
-    !       * ---------------------------------                            *
-    !       * procID:      The ID of the processor in the group of the ADT *
-    !       *              where the element containing the point is       *
-    !       *              stored. If no element is found for a given      *
-    !       *              point the corresponding entry in procID is set  *
-    !       *              to -1 to indicate failure. Remember that the    *
-    !       *              processor ID's start at 0 and not at 1.         *
-    !       * elementType: The type of element which contains the point.   *
-    !       * elementID:   The entry in the connectivity of this element   *
-    !       *              which contains the point.                       *
-    !       * uvw:         The parametric coordinates of the point in the  *
-    !       *              transformed element; this transformation is     *
-    !       *              such that every element is transformed into a   *
-    !       *              standard element in parametric space. The u, v  *
-    !       *              and w coordinates can be used to determine the  *
-    !       *              actual interpolation weights.                   *
-    !       * arrInterpol: Array with the interpolated data.               *
-    !       *                                                              *
-    !       ****************************************************************
+    !        This routine attempts for every coordinate to find the       
+    !        element in the given ADT, which contains that coordinate.    
+    !        If no element is found the corresponding entry in procID is  
+    !        set to -1 to indicate failure.                               
+    !        Subroutine intent(in) arguments.                             
+    !        --------------------------------                             
+    !        nCoor:     Number of coordinates for which the element must  
+    !                   be determined.                                    
+    !        coor:      The coordinates of these points.                  
+    !        adtID:     The ADT to be searched.                           
+    !        nInterpol: Number of variables to be interpolated.           
+    !        arrDonor:  Array with the donor data; needed to obtain the   
+    !                   interpolated data.                                
+    !        Subroutine intent(out) arguments.                            
+    !        ---------------------------------                            
+    !        procID:      The ID of the processor in the group of the ADT 
+    !                     where the element containing the point is       
+    !                     stored. If no element is found for a given      
+    !                     point the corresponding entry in procID is set  
+    !                     to -1 to indicate failure. Remember that the    
+    !                     processor ID's start at 0 and not at 1.         
+    !        elementType: The type of element which contains the point.   
+    !        elementID:   The entry in the connectivity of this element   
+    !                     which contains the point.                       
+    !        uvw:         The parametric coordinates of the point in the  
+    !                     transformed element; this transformation is     
+    !                     such that every element is transformed into a   
+    !                     standard element in parametric space. The u, v  
+    !                     and w coordinates can be used to determine the  
+    !                     actual interpolation weights.                   
+    !        arrInterpol: Array with the interpolated data.               
     !
     implicit none
     !
@@ -129,8 +119,6 @@ contains
 
   end subroutine containmentSearch
 
-  !***************************************************************
-  !***************************************************************
 
   subroutine failSafeSearch(nCoor,       coor,      &
        adtID,       procID,    &
@@ -139,55 +127,48 @@ contains
        nInterpol,   arrDonor,  &
        arrInterpol)
     !
-    !       ****************************************************************
-    !       *                                                              *
-    !       * This routine attempts for every coordinate to find the       *
-    !       * element in the given ADT, which contains that coordinate.    *
-    !       * If no element is found a minimum distance search is          *
-    !       * performed, such that always an interpolation can be          *
-    !       * performed. To indicate that the element does not contain the *
-    !       * point the element ID is negated.                             *
-    !       *                                                              *
-    !       * Subroutine intent(in) arguments.                             *
-    !       * --------------------------------                             *
-    !       * nCoor: Number of coordinates for which the element must be   *
-    !       *        determined.                                           *
-    !       * coor:  The coordinates of these points.                      *
-    !       * adtID: The ADT to be searched.                               *
-    !       * nInterpol: Number of variables to be interpolated.           *
-    !       * arrDonor:  Array with the donor data; needed to obtain the   *
-    !       *            interpolated data.                                *
-    !       *                                                              *
-    !       * Subroutine intent(out) arguments.                            *
-    !       * ---------------------------------                            *
-    !       * procID:      The ID of the processor in the group of the ADT *
-    !       *              where the element containing the point is       *
-    !       *              stored. If no element is found for a given      *
-    !       *              point the corresponding entry in procID is set  *
-    !       *              to -1 to indicate failure. Remember that the    *
-    !       *              processor ID's start at 0 and not at 1.         *
-    !       * elementType: The type of element which contains the point.   *
-    !       * elementID:   The entry in the connectivity of this element   *
-    !       *              which contains the point. The ID is negative if *
-    !       *              the coordinate is outside the element, i.e. if  *
-    !       *              a minimum distance search had to be used.       *
-    !       * uvw:         The parametric coordinates of the point in the  *
-    !       *              transformed element; this transformation is     *
-    !       *              such that every element is transformed into a   *
-    !       *              standard element in parametric space. The u, v  *
-    !       *              and w coordinates can be used to determine the  *
-    !       *              actual interpolation weights.                   *
-    !       * arrInterpol: Array with the interpolated data.               *
-    !       *                                                              *
-    !       * Subroutine intent(inout) arguments.                          *
-    !       * -----------------------------------                          *
-    !       * dist2: Minimum distance squared of the coordinates to the    *
-    !       *        elements of the ADT. On input it should be            *
-    !       *        initialized by the calling program, possibly to a     *
-    !       *        large value. In this way it is possible to handle     *
-    !       *        periodic problems as efficiently as possible.         *
-    !       *                                                              *
-    !       ****************************************************************
+    !        This routine attempts for every coordinate to find the       
+    !        element in the given ADT, which contains that coordinate.    
+    !        If no element is found a minimum distance search is          
+    !        performed, such that always an interpolation can be          
+    !        performed. To indicate that the element does not contain the 
+    !        point the element ID is negated.                             
+    !        Subroutine intent(in) arguments.                             
+    !        --------------------------------                             
+    !        nCoor: Number of coordinates for which the element must be   
+    !               determined.                                           
+    !        coor:  The coordinates of these points.                      
+    !        adtID: The ADT to be searched.                               
+    !        nInterpol: Number of variables to be interpolated.           
+    !        arrDonor:  Array with the donor data; needed to obtain the   
+    !                   interpolated data.                                
+    !        Subroutine intent(out) arguments.                            
+    !        ---------------------------------                            
+    !        procID:      The ID of the processor in the group of the ADT 
+    !                     where the element containing the point is       
+    !                     stored. If no element is found for a given      
+    !                     point the corresponding entry in procID is set  
+    !                     to -1 to indicate failure. Remember that the    
+    !                     processor ID's start at 0 and not at 1.         
+    !        elementType: The type of element which contains the point.   
+    !        elementID:   The entry in the connectivity of this element   
+    !                     which contains the point. The ID is negative if 
+    !                     the coordinate is outside the element, i.e. if  
+    !                     a minimum distance search had to be used.       
+    !        uvw:         The parametric coordinates of the point in the  
+    !                     transformed element; this transformation is     
+    !                     such that every element is transformed into a   
+    !                     standard element in parametric space. The u, v  
+    !                     and w coordinates can be used to determine the  
+    !                     actual interpolation weights.                   
+    !        arrInterpol: Array with the interpolated data.               
+    !        Subroutine intent(inout) arguments.                          
+    !        -----------------------------------                          
+    !        dist2: Minimum distance squared of the coordinates to the    
+    !               elements of the ADT. On input it should be            
+    !               initialized by the calling program, possibly to a     
+    !               large value. In this way it is possible to handle     
+    !               periodic problems as efficiently as possible.         
     !
     implicit none
     !
@@ -362,40 +343,32 @@ contains
 
   end subroutine failSafeSearch
 
-  !***************************************************************
-  !***************************************************************
 
   subroutine initSearch(nCoor, coor, dist2, ADT, containmentSearch)
     !
-    !       ****************************************************************
-    !       *                                                              *
-    !       * This routine performs the initialization tasks before the    *
-    !       * actual search takes place. It determines the number and the  *
-    !       * ID's of the coordinates every local tree may have to         *
-    !       * interpolate. From this info this routine also determines the *
-    !       * number of rounds needed in the actual algorithm to avoid a   *
-    !       * memory bottleneck.                                           *
-    !       *                                                              *
-    !       * Subroutine intent(in) arguments.                             *
-    !       * --------------------------------                             *
-    !       * nCoor:             Number of local coordinates for which the *
-    !       *                    element must be determined.               *
-    !       * coor:              The coordinates of these points.          *
-    !       * ADT:               ADT type whose ADT must be searched       *
-    !       * containmentSearch: Whether or not a containment search must  *
-    !       *                    be performed. If not a minimum distance   *
-    !       *                    search algorithm is used, which is more   *
-    !       *                    expensive.                                *
-    !       *                                                              *
-    !       * Subroutine intent(inout) arguments.                          *
-    !       * -----------------------------------                          *
-    !       * dist2: Guaranteed minimum distance squared of the            *
-    !       *        coordinates to the elements of the ADT. This array    *
-    !       *        should be initialized by the calling routine,         *
-    !       *        possibly to a large value. It is only used for a      *
-    !       *        minimum distance search.                              *
-    !       *                                                              *
-    !       ****************************************************************
+    !        This routine performs the initialization tasks before the    
+    !        actual search takes place. It determines the number and the  
+    !        ID's of the coordinates every local tree may have to         
+    !        interpolate. From this info this routine also determines the 
+    !        number of rounds needed in the actual algorithm to avoid a   
+    !        memory bottleneck.                                           
+    !        Subroutine intent(in) arguments.                             
+    !        --------------------------------                             
+    !        nCoor:             Number of local coordinates for which the 
+    !                           element must be determined.               
+    !        coor:              The coordinates of these points.          
+    !        ADT:               ADT type whose ADT must be searched       
+    !        containmentSearch: Whether or not a containment search must  
+    !                           be performed. If not a minimum distance   
+    !                           search algorithm is used, which is more   
+    !                           expensive.                                
+    !        Subroutine intent(inout) arguments.                          
+    !        -----------------------------------                          
+    !        dist2: Guaranteed minimum distance squared of the            
+    !               coordinates to the elements of the ADT. This array    
+    !               should be initialized by the calling routine,         
+    !               possibly to a large value. It is only used for a      
+    !               minimum distance search.                              
     !
     implicit none
     !
@@ -444,15 +417,11 @@ contains
          comm, ierr)
     nCoorMax = max(nCoorMax,nCoorMaxLowerLimit)
     !
-    !       ****************************************************************
-    !       *                                                              *
-    !       * Determine for every root leaf the local coordinates, which   *
-    !       * should be searched in the corresponding ADT. The criterion   *
-    !       * for a containment search is of course different from a       *
-    !       * minimum distance search and therefore a distinction must be  *
-    !       * made between the two methods.                                *
-    !       *                                                              *
-    !       ****************************************************************
+    !        Determine for every root leaf the local coordinates, which   
+    !        should be searched in the corresponding ADT. The criterion   
+    !        for a containment search is of course different from a       
+    !        minimum distance search and therefore a distinction must be  
+    !        made between the two methods.                                
     !
     ! Allocate the memory for nCoorPerRootLeaf and mCoorPerRootLeaf.
     ! Initially the latter is a copy of the former, but its data
@@ -670,14 +639,10 @@ contains
 
     enddo loop2RootLeaves
     !
-    !       ****************************************************************
-    !       *                                                              *
-    !       * Determine for every tree the number of coordinates from      *
-    !       * other processors it should search and from that information  *
-    !       * the number of rounds in the outer loop of the search         *
-    !       * algorithm in search.                                         *
-    !       *                                                              *
-    !       ****************************************************************
+    !        Determine for every tree the number of coordinates from      
+    !        other processors it should search and from that information  
+    !        the number of rounds in the outer loop of the search         
+    !        algorithm in search.                                         
     !
     ! Allocate the memory for some help arrays.
 
@@ -763,8 +728,6 @@ contains
 
   end subroutine initSearch
 
-  !***************************************************************
-  !***************************************************************
 
   subroutine minDistanceSearch(nCoor,       coor,      &
        adtID,       procID,    &
@@ -773,53 +736,46 @@ contains
        nInterpol,   arrDonor,  &
        arrInterpol)
     !
-    !       ****************************************************************
-    !       *                                                              *
-    !       * This routine attempts for every coordinate to find the       *
-    !       * element in the given ADT which minimizes the distance to     *
-    !       * this point.                                                  *
-    !       *                                                              *
-    !       * Subroutine intent(in) arguments.                             *
-    !       * --------------------------------                             *
-    !       * nCoor: Number of coordinates for which the element must be   *
-    !       *        determined.                                           *
-    !       * coor:  The coordinates of these points.                      *
-    !       * adtID: The ADT to be searched.                               *
-    !       * nInterpol: Number of variables to be interpolated.           *
-    !       * arrDonor:  Array with the donor data; needed to obtain the   *
-    !       *            interpolated data.                                *
-    !       *                                                              *
-    !       * Subroutine intent(out) arguments.                            *
-    !       * ---------------------------------                            *
-    !       * procID:      The ID of the processor in the group of the ADT *
-    !       *              where the element containing the point is       *
-    !       *              stored. If no element is found for a given      *
-    !       *              point the corresponding entry in procID is set  *
-    !       *              to -1 to indicate failure. Remember that the    *
-    !       *              processor ID's start at 0 and not at 1.         *
-    !       * elementType: The type of element which contains the point.   *
-    !       * elementID:   The entry in the connectivity of this element   *
-    !       *              which contains the point. The ID is negative if *
-    !       *              the coordinate is outside the element.          *
-    !       * uvw:         The parametric coordinates of the point in the  *
-    !       *              transformed element; this transformation is     *
-    !       *              such that every element is transformed into a   *
-    !       *              standard element in parametric space. The u, v  *
-    !       *              and w coordinates can be used to determine the  *
-    !       *              actual interpolation weights. If the tree       *
-    !       *              corresponds to a surface mesh the third entry   *
-    !       *              of this array will not be filled.               *
-    !       * arrInterpol: Array with the interpolated data.               *
-    !       *                                                              *
-    !       * Subroutine intent(inout) arguments.                          *
-    !       * -----------------------------------                          *
-    !       * dist2: Minimum distance squared of the coordinates to the    *
-    !       *        elements of the ADT. On input it should be            *
-    !       *        initialized by the calling program, possibly to a     *
-    !       *        large value. In this way it is possible to handle     *
-    !       *        periodic problems as efficiently as possible.         *
-    !       *                                                              *
-    !       ****************************************************************
+    !        This routine attempts for every coordinate to find the       
+    !        element in the given ADT which minimizes the distance to     
+    !        this point.                                                  
+    !        Subroutine intent(in) arguments.                             
+    !        --------------------------------                             
+    !        nCoor: Number of coordinates for which the element must be   
+    !               determined.                                           
+    !        coor:  The coordinates of these points.                      
+    !        adtID: The ADT to be searched.                               
+    !        nInterpol: Number of variables to be interpolated.           
+    !        arrDonor:  Array with the donor data; needed to obtain the   
+    !                   interpolated data.                                
+    !        Subroutine intent(out) arguments.                            
+    !        ---------------------------------                            
+    !        procID:      The ID of the processor in the group of the ADT 
+    !                     where the element containing the point is       
+    !                     stored. If no element is found for a given      
+    !                     point the corresponding entry in procID is set  
+    !                     to -1 to indicate failure. Remember that the    
+    !                     processor ID's start at 0 and not at 1.         
+    !        elementType: The type of element which contains the point.   
+    !        elementID:   The entry in the connectivity of this element   
+    !                     which contains the point. The ID is negative if 
+    !                     the coordinate is outside the element.          
+    !        uvw:         The parametric coordinates of the point in the  
+    !                     transformed element; this transformation is     
+    !                     such that every element is transformed into a   
+    !                     standard element in parametric space. The u, v  
+    !                     and w coordinates can be used to determine the  
+    !                     actual interpolation weights. If the tree       
+    !                     corresponds to a surface mesh the third entry   
+    !                     of this array will not be filled.               
+    !        arrInterpol: Array with the interpolated data.               
+    !        Subroutine intent(inout) arguments.                          
+    !        -----------------------------------                          
+    !        dist2: Minimum distance squared of the coordinates to the    
+    !               elements of the ADT. On input it should be            
+    !               initialized by the calling program, possibly to a     
+    !               large value. In this way it is possible to handle     
+    !               periodic problems as efficiently as possible.         
     !
     implicit none
     !
@@ -887,60 +843,51 @@ contains
 
   end subroutine minDistanceSearch
 
-  !***************************************************************
-  !***************************************************************
 
   subroutine search(nCoor,       coor,      procID,            &
        elementType, elementID, uvw,               &
        dist2,       ADT,       containmentSearch, &
        nInterpol,   arrDonor,  arrInterpol)
     !
-    !       ****************************************************************
-    !       *                                                              *
-    !       * This routine implements the parallel part of the search      *
-    !       * algorithm and calls the appropriate local tree searches.     *
-    !       *                                                              *
-    !       * Subroutine intent(in) arguments.                             *
-    !       * --------------------------------                             *
-    !       * nCoor:             Number of local coordinates for which the *
-    !       *                    element must be determined.               *
-    !       * coor:              The coordinates of these points.          *
-    !       * ADT:                ADT type whose ADT must be searched      *
-    !       * containmentSearch: Whether or not a containment search must  *
-    !       *                    be performed. If not a minimum distance   *
-    !       *                    search algorithm is used, which is more   *
-    !       *                    expensive.                                *
-    !       * nInterpol:         Number of variables to be interpolated.   *
-    !       * arrDonor:          Array with the donor data; needed to      *
-    !       *                    obtain the interpolated data.             *
-    !       *                                                              *
-    !       * Subroutine intent(inout) arguments.                          *
-    !       * -----------------------------------                          *
-    !       * dist2: Minimum distance squared of the coordinates to the    *
-    !       *        elements of the ADT. On input it contains the         *
-    !       *        guarenteed distance squared to one of the root        *
-    !       *        leaves. On output it contains the distance squared to *
-    !       *        the nearest element of the global tree. It is only    *
-    !       *        used for a minimum distance search.                   *
-    !       *                                                              *
-    !       * Subroutine intent(out) arguments.                            *
-    !       * ---------------------------------                            *
-    !       * procID:      The ID of the processor in the group of the ADT *
-    !       *              where the element containing the point is       *
-    !       *              stored.                                         *
-    !       * elementType: The type of element which contains the point or *
-    !       *              minimizes the distance to the point.            *
-    !       * elementID:   The entry in the connectivity of this element.  *
-    !       * uvw:         The parametric coordinates of (the projection   *
-    !       *              of) the point in the transformed element; this  *
-    !       *              transformation is such that every element is    *
-    !       *              transformed into a standard element in          *
-    !       *              parametric space. The u, v and w coordinates    *
-    !       *              can be used to determine the actual             *
-    !       *              interpolation weights.                          *
-    !       * arrInterpol: Array with the interpolated data.               *
-    !       *                                                              *
-    !       ****************************************************************
+    !        This routine implements the parallel part of the search      
+    !        algorithm and calls the appropriate local tree searches.     
+    !        Subroutine intent(in) arguments.                             
+    !        --------------------------------                             
+    !        nCoor:             Number of local coordinates for which the 
+    !                           element must be determined.               
+    !        coor:              The coordinates of these points.          
+    !        ADT:                ADT type whose ADT must be searched      
+    !        containmentSearch: Whether or not a containment search must  
+    !                           be performed. If not a minimum distance   
+    !                           search algorithm is used, which is more   
+    !                           expensive.                                
+    !        nInterpol:         Number of variables to be interpolated.   
+    !        arrDonor:          Array with the donor data; needed to      
+    !                           obtain the interpolated data.             
+    !        Subroutine intent(inout) arguments.                          
+    !        -----------------------------------                          
+    !        dist2: Minimum distance squared of the coordinates to the    
+    !               elements of the ADT. On input it contains the         
+    !               guarenteed distance squared to one of the root        
+    !               leaves. On output it contains the distance squared to 
+    !               the nearest element of the global tree. It is only    
+    !               used for a minimum distance search.                   
+    !        Subroutine intent(out) arguments.                            
+    !        ---------------------------------                            
+    !        procID:      The ID of the processor in the group of the ADT 
+    !                     where the element containing the point is       
+    !                     stored.                                         
+    !        elementType: The type of element which contains the point or 
+    !                     minimizes the distance to the point.            
+    !        elementID:   The entry in the connectivity of this element.  
+    !        uvw:         The parametric coordinates of (the projection   
+    !                     of) the point in the transformed element; this  
+    !                     transformation is such that every element is    
+    !                     transformed into a standard element in          
+    !                     parametric space. The u, v and w coordinates    
+    !                     can be used to determine the actual             
+    !                     interpolation weights.                          
+    !        arrInterpol: Array with the interpolated data.               
     !
     implicit none
     !
@@ -1064,18 +1011,14 @@ contains
     iStartLocal = 0
     iEndLocal   = nLocalInterpolRound
     !
-    !       ****************************************************************
-    !       *                                                              *
-    !       * Iterative algorithm to determine the elements containing the *
-    !       * coordinates or the elements which minimize the distance. The *
-    !       * algorithm consists of a synchronous outer loop over the      *
-    !       * number of times the inner loop should be executed. This      *
-    !       * inner loop is asynchronous and performs the actual ADT       *
-    !       * search. The outer loop is present to avoid that too much     *
-    !       * data is communicated to a single processor at once such that *
-    !       * a memory bottleneck occurs.                                  *
-    !       *                                                              *
-    !       ****************************************************************
+    !        Iterative algorithm to determine the elements containing the 
+    !        coordinates or the elements which minimize the distance. The 
+    !        algorithm consists of a synchronous outer loop over the      
+    !        number of times the inner loop should be executed. This      
+    !        inner loop is asynchronous and performs the actual ADT       
+    !        search. The outer loop is present to avoid that too much     
+    !        data is communicated to a single processor at once such that 
+    !        a memory bottleneck occurs.                                  
     !
     outerLoop: do mm=1,nRounds
 
@@ -1279,12 +1222,8 @@ contains
 
        enddo sendCoorLoop
        !
-       !         **************************************************************
-       !         *                                                            *
-       !         * Perform the local interpolations. This is done here to     *
-       !         * have an overlap between communication and computation.     *
-       !         *                                                            *
-       !         **************************************************************
+       !          Perform the local interpolations. This is done here to     
+       !          have an overlap between communication and computation.     
        !
        ! Determine the local number to be interpolated in this round.
 
@@ -1485,14 +1424,10 @@ contains
 
        mCoorPerRootLeaf(myID) = i
        !
-       !         **************************************************************
-       !         *                                                            *
-       !         * Perform the interpolations from the other processors.      *
-       !         * Their coordinates are received in an arbitrary sequence    *
-       !         * using blocking receives and the interpolated data is sent  *
-       !         * back using nonblocking sends.                              *
-       !         *                                                            *
-       !         **************************************************************
+       !          Perform the interpolations from the other processors.      
+       !          Their coordinates are received in an arbitrary sequence    
+       !          using blocking receives and the interpolated data is sent  
+       !          back using nonblocking sends.                              
        !
        ! Loop over the number of messages I will receive. The counter
        ! ii contains the current starting position for the buffers

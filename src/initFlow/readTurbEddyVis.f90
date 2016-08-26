@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          readTurbEddyVis.f90                             *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 05-05-2004                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          readTurbEddyVis.f90                             
+!       Author:        Edwin van der Weide                             
+!       Starting date: 05-05-2004                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine readTurbEddyVis(nTypeMismatch, eddyVisPresent)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * readTurbEddyVis tries to read the eddy viscosity from the      *
-!      * restart file.                                                  *
-!      *                                                                *
-!      ******************************************************************
+!       readTurbEddyVis tries to read the eddy viscosity from the      
+!       restart file.                                                  
 !
        use constants
        use cgnsNames

@@ -1,28 +1,20 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          readYmomentum.f90                               *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 05-09-2004                                      *
-!      * Last modified: 09-10-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          readYmomentum.f90                               
+!       Author:        Edwin van der Weide                             
+!       Starting date: 05-09-2004                                      
+!       Last modified: 09-10-2007                                      
 !
        subroutine readYmomentum(nTypeMismatch)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * readYmomentum reads the y-momentum variable from the given     *
-!      * place in the cgns file. If the y-momentum itself is not stored *
-!      * then it is tried to construct it from the y-velocity and       *
-!      * density; it is assumed that the latter is already stored in    *
-!      * the pointer variable w.                                        *
-!      * If it is not possible to create the y-velocity an error        *
-!      * message is printed and the program will stop.                  *
-!      * It is assumed that the pointers in blockPointers already       *
-!      * point to the correct block.                                    *
-!      *                                                                *
-!      ******************************************************************
+!       readYmomentum reads the y-momentum variable from the given     
+!       place in the cgns file. If the y-momentum itself is not stored 
+!       then it is tried to construct it from the y-velocity and       
+!       density; it is assumed that the latter is already stored in    
+!       the pointer variable w.                                        
+!       If it is not possible to create the y-velocity an error        
+!       message is printed and the program will stop.                  
+!       It is assumed that the pointers in blockPointers already       
+!       point to the correct block.                                    
 !
        use constants
        use cgnsNames

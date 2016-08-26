@@ -13,12 +13,8 @@ contains
   function tsbeta(degreepolbeta, coefpolbeta, degreefourbeta, &
 &   omegafourbeta, coscoeffourbeta, sincoeffourbeta, t)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * tsbeta computes the angle of attack for a given time interval *
-!      * in a time spectral solution.                                   *
-!      *                                                                *
-!      ******************************************************************
+!       tsbeta computes the angle of attack for a given time interval 
+!       in a time spectral solution.                                   
 !
     use constants
     use inputphysics, only : equationmode
@@ -69,12 +65,8 @@ contains
   function tsbetadot(degreepolbeta, coefpolbeta, degreefourbeta, &
 &   omegafourbeta, coscoeffourbeta, sincoeffourbeta, t)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * tsbeta computes the angle of attack for a given time interval  *
-!      * in a time spectral solution.                                   *
-!      *                                                                *
-!      ******************************************************************
+!       tsbeta computes the angle of attack for a given time interval  
+!       in a time spectral solution.                                   
 !
     use constants
     use inputphysics, only : equationmode
@@ -124,12 +116,8 @@ contains
   function tsmach(degreepolmach, coefpolmach, degreefourmach, &
 &   omegafourmach, coscoeffourmach, sincoeffourmach, t)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * tsmach computes the mach number for a given time interval      *
-!      * in a time spectral solution.                                   *
-!      *                                                                *
-!      ******************************************************************
+!       tsmach computes the mach number for a given time interval      
+!       in a time spectral solution.                                   
 !
     use constants
     use inputphysics, only : equationmode
@@ -181,12 +169,8 @@ contains
   function tsmachdot(degreepolmach, coefpolmach, degreefourmach, &
 &   omegafourmach, coscoeffourmach, sincoeffourmach, t)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * tsmach computes the angle of attack for a given time interval *
-!      * in a time spectral solution.                                   *
-!      *                                                                *
-!      ******************************************************************
+!       tsmach computes the angle of attack for a given time interval 
+!       in a time spectral solution.                                   
 !
     use constants
     use inputphysics, only : equationmode
@@ -236,12 +220,8 @@ contains
   function tsalpha(degreepolalpha, coefpolalpha, degreefouralpha, &
 &   omegafouralpha, coscoeffouralpha, sincoeffouralpha, t)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * tsalpha computes the angle of attack for a given time interval *
-!      * in a time spectral solution.                                   *
-!      *                                                                *
-!      ******************************************************************
+!       tsalpha computes the angle of attack for a given time interval 
+!       in a time spectral solution.                                   
 !
     use constants
     use inputphysics, only : equationmode
@@ -293,12 +273,8 @@ contains
   function tsalphadot(degreepolalpha, coefpolalpha, degreefouralpha, &
 &   omegafouralpha, coscoeffouralpha, sincoeffouralpha, t)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * tsalpha computes the angle of attack for a given time interval *
-!      * in a time spectral solution.                                   *
-!      *                                                                *
-!      ******************************************************************
+!       tsalpha computes the angle of attack for a given time interval 
+!       in a time spectral solution.                                   
 !
     use constants
     use inputphysics, only : equationmode
@@ -348,14 +324,10 @@ contains
   function derivativerigidrotangle(degreepolrot, coefpolrot, &
 &   degreefourrot, omegafourrot, coscoeffourrot, sincoeffourrot, t)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * derivativerigidrotangle computes the time derivative of the    *
-!      * rigid body rotation angle at the given time for the given      *
-!      * arguments. the angle is described by a combination of a        *
-!      * polynomial and fourier series.                                 *
-!      *                                                                *
-!      ******************************************************************
+!       derivativerigidrotangle computes the time derivative of the    
+!       rigid body rotation angle at the given time for the given      
+!       arguments. the angle is described by a combination of a        
+!       polynomial and fourier series.                                 
 !
     use constants
     use inputphysics, only : equationmode
@@ -439,12 +411,8 @@ contains
   end function getcorrectfork
   subroutine terminate(routinename, errormessage)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * terminate writes an error message to standard output and       *
-!      * terminates the execution of the program.                       *
-!      *                                                                *
-!      ******************************************************************
+!       terminate writes an error message to standard output and       
+!       terminates the execution of the program.                       
 !
     use constants
     use communication, only : sumb_comm_world, myid
@@ -458,13 +426,9 @@ contains
   subroutine rotmatrixrigidbody(tnew, told, rotationmatrix, &
 &   rotationpoint)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * rotmatrixrigidbody determines the rotation matrix and the      *
-!      * rotation point to determine the coordinates of the new time    *
-!      * level starting from the coordinates of the old time level.     *
-!      *                                                                *
-!      ******************************************************************
+!       rotmatrixrigidbody determines the rotation matrix and the      
+!       rotation point to determine the coordinates of the new time    
+!       level starting from the coordinates of the old time level.     
 !
     use constants
     use inputmotion
@@ -564,14 +528,10 @@ contains
   function secondderivativerigidrotangle(degreepolrot, coefpolrot, &
 &   degreefourrot, omegafourrot, coscoeffourrot, sincoeffourrot, t)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * 2ndderivativerigidrotangle computes the 2nd time derivative of *
-!      * the rigid body rotation angle at the given time for the given  *
-!      * arguments. the angle is described by a combination of a        *
-!      * polynomial and fourier series.                                 *
-!      *                                                                *
-!      ******************************************************************
+!       2ndderivativerigidrotangle computes the 2nd time derivative of 
+!       the rigid body rotation angle at the given time for the given  
+!       arguments. the angle is described by a combination of a        
+!       polynomial and fourier series.                                 
 !
     use constants
     use flowvarrefstate, only : timeref
@@ -621,13 +581,9 @@ contains
   function rigidrotangle(degreepolrot, coefpolrot, degreefourrot, &
 &   omegafourrot, coscoeffourrot, sincoeffourrot, t)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * rigidrotangle computes the rigid body rotation angle at the    *
-!      * given time for the given arguments. the angle is described by  *
-!      * a combination of a polynomial and fourier series.              *
-!      *                                                                *
-!      ******************************************************************
+!       rigidrotangle computes the rigid body rotation angle at the    
+!       given time for the given arguments. the angle is described by  
+!       a combination of a polynomial and fourier series.              
 !
     use constants
     use inputphysics, only : equationmode
@@ -677,13 +633,9 @@ contains
   end function rigidrotangle
   subroutine setbcpointers(nn, spatialpointers)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * setbcpointers sets the pointers needed for the boundary        *
-!      * condition treatment on a general face, such that the boundary  *
-!      * routines are only implemented once instead of 6 times.         *
-!      *                                                                *
-!      ******************************************************************
+!       setbcpointers sets the pointers needed for the boundary        
+!       condition treatment on a general face, such that the boundary  
+!       routines are only implemented once instead of 6 times.         
 !
     use constants
     use blockpointers, only : w, p, rlv, rev, gamma, x, d2wall, si, sj&
@@ -908,12 +860,8 @@ contains
   end subroutine setbcpointers
   subroutine resetbcpointers(nn, spatialpointers)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * resetbcpointers nullifyies the boundary pointers. for reverse  *
-!      * mode ad it copies the values back in to the respective arrays  *
-!      *                                                                *
-!      ******************************************************************
+!       resetbcpointers nullifyies the boundary pointers. for reverse  
+!       mode ad it copies the values back in to the respective arrays  
 !
     use constants
     use blockpointers, only : w, p, rlv, rev, gamma, x, d2wall, si, sj&

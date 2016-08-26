@@ -131,7 +131,7 @@ contains
     ! slightly to ensure that there isn't a wall cell right at the
     ! boundary. This is actually vastly tricker than it sounds becuase
     ! we have to correctly account for symmetry planes. That is we
-    ! *CANNOT* extend the box in the symmetry direction, becuase the
+    ! CANNOT
     ! outside-in flood would just "go around the back" of the symmetry
     ! plane and flood out the inside. Not good. So what we do is now
     ! that we know the exact bounds of our surface, we loop over the

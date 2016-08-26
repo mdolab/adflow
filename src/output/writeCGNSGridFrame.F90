@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          writeCGNSGridFrame.F90                          *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 01-21-2004                                      *
-!      * Last modified: 10-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          writeCGNSGridFrame.F90                          
+!       Author:        Edwin van der Weide                             
+!       Starting date: 01-21-2004                                      
+!       Last modified: 10-12-2005                                      
 !
        subroutine writeCGNSGridFrame(cgnsZone, ind)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * writeCGNSGridFrame writes the framework for the grid file      *
-!      * gridNames(ind) using the information stored in the module      *
-!      * cgnsGrid. Basically all information but the coordinates is     *
-!      * written by this routine.                                       *
-!      *                                                                *
-!      ******************************************************************
+!       writeCGNSGridFrame writes the framework for the grid file      
+!       gridNames(ind) using the information stored in the module      
+!       cgnsGrid. Basically all information but the coordinates is     
+!       written by this routine.                                       
 !
        use cgnsGrid
        use su_cgns
@@ -55,11 +47,7 @@
 
        type(cgnsBcDatasetType), pointer, dimension(:) :: dataSet
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Open the CGNS file for writing and check if it went okay.
        ! Store the file index afterwards.
@@ -85,11 +73,7 @@
 
        cgnsBases(ind) = cgnsBase
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Write the family info.                                         *
-!      *                                                                *
-!      ******************************************************************
+!       Write the family info.                                         
 !
        ! Loop over the number of families.
 
@@ -145,11 +129,7 @@
          endif
        enddo familyLoop
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Write all the zone info, except the coordinates.               *
-!      *                                                                *
-!      ******************************************************************
+!       Write all the zone info, except the coordinates.               
 !
        ! Loop over the number of zones in the original grid.
 
@@ -549,13 +529,9 @@
 
          subroutine writeBcdataArrays(narr, arr, DirNeu)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * writeBcdataArrays writes the given bc data set arrays,       *
-!        * either of the dirichlet or neumann type, to the correct      *
-!        * position in the CGNS file.                                   *
-!        *                                                              *
-!        ****************************************************************
+!         writeBcdataArrays writes the given bc data set arrays,       
+!         either of the dirichlet or neumann type, to the correct      
+!         position in the CGNS file.                                   
 !
          implicit none
 !

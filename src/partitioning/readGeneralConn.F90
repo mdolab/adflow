@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          readGeneralConn.F90                             *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 07-14-2002                                      *
-!      * Last modified: 11-07-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          readGeneralConn.F90                             
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 07-14-2002                                      
+!       Last modified: 11-07-2005                                      
 !
        subroutine readGeneralConn(cgnsInd, cgnsBase, nZone)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * readGeneralConn reads and converts the cgns general            *
-!      * connectivities.  Supported connectivites are 1-to-1 and        *
-!      * non-matching abutting.                                         *
-!      *                                                                *
-!      ******************************************************************
+!       readGeneralConn reads and converts the cgns general            
+!       connectivities.  Supported connectivites are 1-to-1 and        
+!       non-matching abutting.                                         
 !
        use constants
        use cgnsGrid
@@ -70,11 +62,7 @@
 !
        integer :: setCGNSRealType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Set some pointers for the connectivities to make the code
        ! more readable.
@@ -136,13 +124,9 @@
 
            case (Abutting1to1)
 !
-!            ************************************************************
-!            *                                                          *
-!            * 1-to-1 connectivity stored as a general one. Note that   *
-!            * the check for a valid one has already been done in       *
-!            * countConnectivities.                                     *
-!            *                                                          *
-!            ************************************************************
+!             1-to-1 connectivity stored as a general one. Note that   
+!             the check for a valid one has already been done in       
+!             countConnectivities.                                     
 !
              ! Update the counter n1to1 and store some info in conn1to1.
 
@@ -262,13 +246,9 @@
 
            case (Abutting)
 !
-!            ************************************************************
-!            *                                                          *
-!            * Non-matching abutting connectivity. Note that the        *
-!            * check for a valid one has already been done in           *
-!            * countConnectivities.                                     *
-!            *                                                          *
-!            ************************************************************
+!             Non-matching abutting connectivity. Note that the        
+!             check for a valid one has already been done in           
+!             countConnectivities.                                     
 !
              ! Determine the indices in connNonMatch where the data of
              ! the current connectivity must be stored.

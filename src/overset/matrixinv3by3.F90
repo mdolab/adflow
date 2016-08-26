@@ -1,12 +1,8 @@
 !
-!     ******************************************************************  
-!     * Plain invert of A to solve Ax=B                                *
-!     *                                                                *
-!     * a(3,3) --- matrix to be inverted                               *
-!     * a(:,4) --- contains the right hand side vector, also stores    *
-!     *            the final solution                                  *
-!     *                                                                *
-!     ******************************************************************
+!      Plain invert of A to solve Ax=B                                
+!      a(3,3) --- matrix to be inverted                               
+!      a(:,4) --- contains the right hand side vector, also stores    
+!                 the final solution                                  
 
 subroutine matrixinv3by3(a, ok_flag)
 

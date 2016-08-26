@@ -1,12 +1,8 @@
        subroutine preprocessing
 !
-!      ******************************************************************
-!      *                                                                *
-!      * preprocessing determines the communication patterns between    *
-!      * the processors for all the mg levels, computes the wall        *
-!      * distances and the metrics.                                     *
-!      *                                                                *
-!      ******************************************************************
+!       preprocessing determines the communication patterns between    
+!       the processors for all the mg levels, computes the wall        
+!       distances and the metrics.                                     
 !
        use constants
        use block

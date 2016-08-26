@@ -1,28 +1,20 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          storeSurfsolInBuffer.f90                        *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 05-19-2003                                      *
-!      * Last modified: 07-14-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          storeSurfsolInBuffer.f90                        
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 05-19-2003                                      
+!       Last modified: 07-14-2005                                      
 !
        subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
                                        faceID, cellRange, solName, &
                                        viscousSubface, useRindLayer)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * storeSurfsolInBuffer stores the variable indicated by          *
-!      * solName of the given block ID in the buffer. As the solution   *
-!      * must be stored in the center of the boundary face the average  *
-!      * value of the first internal cell and its corresponding halo is *
-!      * computed. The counter nn is updated in this routine. However   *
-!      * it is not initialized, because multiple contributions may be   *
-!      * stored in buffer.                                              *
-!      *                                                                *
-!      ******************************************************************
+!       storeSurfsolInBuffer stores the variable indicated by          
+!       solName of the given block ID in the buffer. As the solution   
+!       must be stored in the center of the boundary face the average  
+!       value of the first internal cell and its corresponding halo is 
+!       computed. The counter nn is updated in this routine. However   
+!       it is not initialized, because multiple contributions may be   
+!       stored in buffer.                                              
 !
        use blockPointers
        use cgnsNames
@@ -72,11 +64,7 @@
        real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
        real(kind=realType), dimension(:,:),   pointer :: dd2Wall
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Set the pointers to this block.
 
@@ -103,12 +91,8 @@
        rangeCell(3,1) = cellRange(3,1) - kBegor + 1
        rangeCell(3,2) = cellRange(3,2) - kBegor + 1
 !
-!      ******************************************************************
-!      *                                                                *
-!      *          Viscous variables for a non-viscous wall.             *
-!      *          Simply set the variables to zero and return.          *
-!      *                                                                *
-!      ******************************************************************
+!                Viscous variables for a non-viscous wall.             
+!                Simply set the variables to zero and return.          
 !
        if(.not. viscousSubface) then
 
@@ -135,16 +119,12 @@
          end select
        endif
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Determine the face on which the subface is located and set     *
-!      * a couple of variables accordingly. In this way a generic       *
-!      * treatment is possible and there is no need to repeat the code  *
-!      * for each of the six block faces.                               *
-!      * Note that for dd2Wall a slightly different notation must be    *
-!      * used. Reason is that d2Wall starts at index 2, rather than 0.  *
-!      *                                                                *
-!      ******************************************************************
+!       Determine the face on which the subface is located and set     
+!       a couple of variables accordingly. In this way a generic       
+!       treatment is possible and there is no need to repeat the code  
+!       for each of the six block faces.                               
+!       Note that for dd2Wall a slightly different notation must be    
+!       used. Reason is that d2Wall starts at index 2, rather than 0.  
 !
 
        select case (faceID)
@@ -306,12 +286,8 @@
 
        end select
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The actual part for storing the data. Determine the variable   *
-!      * to be written and loop over the boundary faces of the subface. *
-!      *                                                                *
-!      ******************************************************************
+!       The actual part for storing the data. Determine the variable   
+!       to be written and loop over the boundary faces of the subface. 
 !
        ! Determine the variable to be written.
 

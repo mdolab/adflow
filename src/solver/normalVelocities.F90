@@ -34,14 +34,10 @@ end subroutine normalVelocitiesAllLevels
 
 subroutine normalVelocities_block(sps)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * normalVelocitiesAllLevels computes the normal grid             *
-  !      * velocities of some boundary faces of the moving blocks for     *
-  !      * spectral mode sps. All grid levels from ground level to the    *
-  !      * coarsest level are considered.                                 *
-  !      *                                                                *
-  !      ******************************************************************
+  !       normalVelocitiesAllLevels computes the normal grid             
+  !       velocities of some boundary faces of the moving blocks for     
+  !       spectral mode sps. All grid levels from ground level to the    
+  !       coarsest level are considered.                                 
   !
   use constants
   use blockPointers
@@ -69,17 +65,13 @@ subroutine normalVelocities_block(sps)
 
   testMoving: if( addGridVelocities ) then
      !
-     !            ************************************************************
-     !            *                                                          *
-     !            * Determine the normal grid velocities of the boundaries.  *
-     !            * As these values are based on the unit normal. A division *
-     !            * by the length of the normal is needed.                   *
-     !            * Furthermore the boundary unit normals are per definition *
-     !            * outward pointing, while on the iMin, jMin and kMin       *
-     !            * boundaries the face normals are inward pointing. This    *
-     !            * is taken into account by the factor mult.                *
-     !            *                                                          *
-     !            ************************************************************
+     !             Determine the normal grid velocities of the boundaries.  
+     !             As these values are based on the unit normal. A division 
+     !             by the length of the normal is needed.                   
+     !             Furthermore the boundary unit normals are per definition 
+     !             outward pointing, while on the iMin, jMin and kMin       
+     !             boundaries the face normals are inward pointing. This    
+     !             is taken into account by the factor mult.                
      !
      ! Loop over the boundary subfaces.
 

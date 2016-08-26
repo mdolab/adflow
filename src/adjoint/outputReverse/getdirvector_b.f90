@@ -5,40 +5,30 @@
 !   gradient     of useful results: alpha beta winddirection
 !   with respect to varying inputs: alpha beta
 !
-!     ******************************************************************
-!     *                                                                *
-!     * file:          getdirvector.f90                                *
-!     * author:        andre c. marta                                  *
-!     * starting date: 10-25-2005                                      *
-!     * last modified: 10-26-2006                                      *
-!     *                                                                *
-!     ******************************************************************
+!      file:          getdirvector.f90                                
+!      author:        andre c. marta                                  
+!      starting date: 10-25-2005                                      
+!      last modified: 10-26-2006                                      
 !
 subroutine getdirvector_b(refdirection, alpha, alphad, beta, betad, &
 & winddirection, winddirectiond, liftindex)
 !(xb,yb,zb,alpha,beta,xw,yw,zw)
 !
-!     ******************************************************************
-!     *                                                                *
-!     * convert the angle of attack and side slip angle to wind axes.  *
-!     * the components of the wind direction vector (xw,yw,zw) are     *
-!     * computed given the direction angles in radians and the body    *
-!     * direction by performing two rotations on the original          *
-!     * direction vector:                                              *
-!     *   1) rotation about the zb or yb-axis: alpha clockwise (cw)    *
-!     *      (xb,yb,zb) -> (x1,y1,z1)                                  *
-!     *                                                                *
-!     *   2) rotation about the yl or z1-axis: beta counter-clockwise  *
-!     *      (ccw)  (x1,y1,z1) -> (xw,yw,zw)                           *
-!     *                                                                *
-!     *    input arguments:                                            *
-!     *       alpha    = angle of attack in radians                    *
-!     *       beta     = side slip angle in radians                    *
-!     *       refdirection = reference direction vector                *
-!     *    output arguments:                                           *
-!     *       winddirection = unit wind vector in body axes            *
-!     *                                                                *
-!     ******************************************************************
+!      convert the angle of attack and side slip angle to wind axes.  
+!      the components of the wind direction vector (xw,yw,zw) are     
+!      computed given the direction angles in radians and the body    
+!      direction by performing two rotations on the original          
+!      direction vector:                                              
+!        1) rotation about the zb or yb-axis: alpha clockwise (cw)    
+!           (xb,yb,zb) -> (x1,y1,z1)                                  
+!        2) rotation about the yl or z1-axis: beta counter-clockwise  
+!           (ccw)  (x1,y1,z1) -> (xw,yw,zw)                           
+!         input arguments:                                            
+!            alpha    = angle of attack in radians                    
+!            beta     = side slip angle in radians                    
+!            refdirection = reference direction vector                
+!         output arguments:                                           
+!            winddirection = unit wind vector in body axes            
 !
   use constants
   use utils_b, only : terminate
@@ -61,11 +51,7 @@ subroutine getdirvector_b(refdirection, alpha, alphad, beta, betad, &
   real(kind=realtype) :: tmpd
   intrinsic sqrt
   integer :: branch
-!     ******************************************************************
-!     *                                                                *
-!     * begin execution.                                               *
-!     *                                                                *
-!     ******************************************************************
+!      begin execution.                                               
 !
 ! normalize the input vector.
   rnorm = sqrt(refdirection(1)**2 + refdirection(2)**2 + refdirection(3)&

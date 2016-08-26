@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          readTurbV2f.f90                                 *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 05-05-2004                                      *
-!      * Last modified: 09-10-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          readTurbV2f.f90                                 
+!       Author:        Edwin van der Weide                             
+!       Starting date: 05-05-2004                                      
+!       Last modified: 09-10-2007                                      
 !
        subroutine readTurbV2f(nTypeMismatch)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * readTurbV2f reads or constructs the four transport variables   *
-!      * for the v2f model. If no information could be retrieved some   *
-!      * engineering guess of the turbulent variables is made.          *
-!      *                                                                *
-!      ******************************************************************
+!       readTurbV2f reads or constructs the four transport variables   
+!       for the v2f model. If no information could be retrieved some   
+!       engineering guess of the turbulent variables is made.          
 !
        use constants
        use cgnsNames
@@ -48,11 +40,7 @@
 
        character(len=maxCGNSNameLen), dimension(4) :: namesVar
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Set the cell range to be copied from the buffer.
 

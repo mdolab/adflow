@@ -1,26 +1,18 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          readDensity.f90                                 *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-18-2003                                      *
-!      * Last modified: 09-10-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          readDensity.f90                                 
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-18-2003                                      
+!       Last modified: 09-10-2007                                      
 !
        subroutine readDensity(nTypeMismatch)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * readDensity reads the density from the given place in the      *
-!      * cgns file. If the density itself is not stored (unlikely),     *
-!      * then it is tried to construct the density from other           *
-!      * variables. If this is not possible an error message is printed *
-!      * and the program will stop.                                     *
-!      * It is assumed that the pointers in blockPointers already       *
-!      * point to the correct block.                                    *
-!      *                                                                *
-!      ******************************************************************
+!       readDensity reads the density from the given place in the      
+!       cgns file. If the density itself is not stored (unlikely),     
+!       then it is tried to construct the density from other           
+!       variables. If this is not possible an error message is printed 
+!       and the program will stop.                                     
+!       It is assumed that the pointers in blockPointers already       
+!       point to the correct block.                                    
 !
        use constants
        use cgnsNames

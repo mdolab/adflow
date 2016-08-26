@@ -1,13 +1,9 @@
 #ifndef USE_TAPENADE
 subroutine applyAllTurbBC(secondHalo)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * applyAllTurbBC applies all boundary conditions to the          *
-  !      * turbulent transport equations for the all blocks on the grid   *
-  !      * level currentLevel.                                            *
-  !      *                                                                *
-  !      ******************************************************************
+  !       applyAllTurbBC applies all boundary conditions to the          
+  !       turbulent transport equations for the all blocks on the grid   
+  !       level currentLevel.                                            
   !
   use constants
   use blockPointers
@@ -49,13 +45,9 @@ end subroutine applyAllTurbBC
 
 subroutine applyAllTurbBCThisBlock(secondHalo)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * applyAllTurbBCThisBlock sets the halo values of the            *
-  !      * turbulent variables and eddy viscosity for the block the       *
-  !      * variables in blockPointers currently point to.                 *
-  !      *                                                                *
-  !      ******************************************************************
+  !       applyAllTurbBCThisBlock sets the halo values of the            
+  !       turbulent variables and eddy viscosity for the block the       
+  !       variables in blockPointers currently point to.                 
   !
   use constants
   use blockPointers

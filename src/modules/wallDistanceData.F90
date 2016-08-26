@@ -1,12 +1,8 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          wallDistanceData.F90                            *
-!      * Author:        Gaetan K.W. Kenway                              *
-!      * Starting date: 12-28-2014                                      *
-!      * Last modified: 12-28-2014                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          wallDistanceData.F90                            
+!       Author:        Gaetan K.W. Kenway                              
+!       Starting date: 12-28-2014                                      
+!       Last modified: 12-28-2014                                      
 !
 module wallDistanceData
 

@@ -1,13 +1,9 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * determineClusters determines which blocks are connected with   *
-!      * 1to1 cgns connections. Essentially what we are doing is        *
-!      * identifying the consitutive multiblock meshes that make up     *
-!      * an overset mesh. There should be precisely 1 cluster for a     *
-!      * face mached mesh and 2 or more for a overset mesh              *
-!      *                                                                *
-!      ******************************************************************
+!       determineClusters determines which blocks are connected with   
+!       1to1 cgns connections. Essentially what we are doing is        
+!       identifying the consitutive multiblock meshes that make up     
+!       an overset mesh. There should be precisely 1 cluster for a     
+!       face mached mesh and 2 or more for a overset mesh              
 
 subroutine determineClusters()
 

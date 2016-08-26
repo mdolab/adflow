@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          overwriteFamilyData.f90                         *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-11-2004                                      *
-!      * Last modified: 10-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          overwriteFamilyData.f90                         
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-11-2004                                      
+!       Last modified: 10-29-2007                                      
 !
        subroutine overwriteWallBCData(nZone,cgnsNBocosP)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * OverwriteFamilyData overwrites family data specified in the    *
-!      * cgns file with the data specified in the parameter file. This  *
-!      * can be the rotation information or boundary condition          *
-!      * information of the families. The corresponding values          *
-!      * specified in the grid file, if any, are ignored later on.      *
-!      *                                                                *
-!      ******************************************************************
+!       OverwriteFamilyData overwrites family data specified in the    
+!       cgns file with the data specified in the parameter file. This  
+!       can be the rotation information or boundary condition          
+!       information of the families. The corresponding values          
+!       specified in the grid file, if any, are ignored later on.      
 !
        use cgnsGrid
        use communication
@@ -43,11 +35,7 @@
        character(len=512)            :: string
        character(len=15)             :: familyTest
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 
        if (fromPython) return
 

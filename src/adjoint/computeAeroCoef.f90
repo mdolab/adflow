@@ -1,21 +1,13 @@
 !
-!     ******************************************************************
-!     *                                                                *
-!     * File:          computeAeroCoef.f90                             *
-!     * Author:        Andre C. Marta,C.A.(Sandy) Mader,Gaetan Kenway  *
-!     * Starting date: 01-14-2008                                      *
-!     * Last modified: 01-13-2011                                      *
-!     *                                                                *
-!     ******************************************************************
+!      File:          computeAeroCoef.f90                             
+!      Author:        Andre C. Marta,C.A.(Sandy) Mader,Gaetan Kenway  
+!      Starting date: 01-14-2008                                      
+!      Last modified: 01-13-2011                                      
 !
 subroutine computeAeroCoef(globalCFVals,sps)
   !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Compute the aerodynamic coefficients from the force and moment *
-  !     * produced by the pressure and shear stresses on the body walls: *
-  !     *                                                                *
-  !     ******************************************************************
+  !      Compute the aerodynamic coefficients from the force and moment 
+  !      produced by the pressure and shear stresses on the body walls: 
   !
   use constants
   use blockPointers 
@@ -42,11 +34,7 @@ subroutine computeAeroCoef(globalCFVals,sps)
   real(Kind=realType) :: sepSensor, sepSensorAvg(3), Cavitation
   real(kind=realType), dimension(nCostFunction)::localCFVals
 
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Begin execution.                                               *
-  !     *                                                                *
-  !     ******************************************************************
+  !      Begin execution.                                               
   !
   cFpLocal = zero
   cFvLocal = zero

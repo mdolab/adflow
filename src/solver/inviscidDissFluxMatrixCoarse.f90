@@ -1,16 +1,12 @@
        subroutine inviscidDissFluxMatrixCoarse
 !
-!      ******************************************************************
-!      *                                                                *
-!      * inviscidDissFluxMatrixCoarse computes the matrix artificial    *
-!      * dissipation term. Instead of the spectral radius, as used in   *
-!      * the scalar dissipation scheme, the absolute value of the flux  *
-!      * jacobian is used. This routine is used on the coarser grids in *
-!      * the multigrid cycle and only computes the first order          *
-!      * dissipation term. It is assumed that the pointers in           *
-!      * blockPointers already point to the correct block.              *
-!      *                                                                *
-!      ******************************************************************
+!       inviscidDissFluxMatrixCoarse computes the matrix artificial    
+!       dissipation term. Instead of the spectral radius, as used in   
+!       the scalar dissipation scheme, the absolute value of the flux  
+!       jacobian is used. This routine is used on the coarser grids in 
+!       the multigrid cycle and only computes the first order          
+!       dissipation term. It is assumed that the pointers in           
+!       blockPointers already point to the correct block.              
 !
          use constants
          use blockPointers, only : il, jl, kl, ie, je, ke, ib, jb, kb, w, p, &
@@ -76,11 +72,7 @@
          enddo
        enddo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Dissipative fluxes in the i-direction.                         *
-!      *                                                                *
-!      ******************************************************************
+!       Dissipative fluxes in the i-direction.                         
 !
        do k=2,kl
          do j=2,jl
@@ -224,11 +216,7 @@
          enddo
        enddo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Dissipative fluxes in the j-direction.                         *
-!      *                                                                *
-!      ******************************************************************
+!       Dissipative fluxes in the j-direction.                         
 !
        do k=2,kl
          do j=1,jl
@@ -372,11 +360,7 @@
          enddo
        enddo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Dissipative fluxes in the k-direction.                         *
-!      *                                                                *
-!      ******************************************************************
+!       Dissipative fluxes in the k-direction.                         
 !
        do k=1,kl
          do j=2,jl

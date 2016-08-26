@@ -1063,13 +1063,9 @@ contains
     wallTreatment = eulerWallBcTreatment
     if(currentLevel > groundLevel) wallTreatment = constantPressure
 
-    ! **************************************************************
-    ! *                                                            *
-    ! * Determine the boundary condition treatment and compute the *
-    ! * undivided pressure gradient accordingly. This gradient is  *
-    ! * temporarily stored in the halo pressure.                   *
-    ! *                                                            *
-    ! **************************************************************
+    !  Determine the boundary condition treatment and compute the 
+    !  undivided pressure gradient accordingly. This gradient is  
+    !  temporarily stored in the halo pressure.                   
     !
     BCTreatment: select case (wallTreatment)
 
@@ -1826,17 +1822,13 @@ contains
 
   subroutine bcExtrap(nn, secondHalo, correctForK)
     !
-    ! ******************************************************************
-    ! *                                                                *
-    ! * ccExtrap applies the extrapolation boundary condition to a     *
-    ! * block. It is assumed that the pointers in blockPointers are    *
-    ! * already set to the correct block on the correct grid level.    *
-    ! * Extrapolation boundaries are applied to both singular lines or *
-    ! * points of a block face and to supersonic outlets. They are     *
-    ! * marked differently because of postprocessing reasons, but      *
-    ! * their numerical treatment is identical.                        *
-    ! *                                                                *
-    ! ******************************************************************
+    !  ccExtrap applies the extrapolation boundary condition to a     
+    !  block. It is assumed that the pointers in blockPointers are    
+    !  already set to the correct block on the correct grid level.    
+    !  Extrapolation boundaries are applied to both singular lines or 
+    !  points of a block face and to supersonic outlets. They are     
+    !  marked differently because of postprocessing reasons, but      
+    !  their numerical treatment is identical.                        
     !
     use constants
     use blockPointers, only : BCType

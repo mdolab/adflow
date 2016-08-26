@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          kwCDterm.f90                                    *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 07-09-2003                                      *
-!      * Last modified: 04-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          kwCDterm.f90                                    
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 07-09-2003                                      
+!       Last modified: 04-12-2005                                      
 !
        subroutine kwCDterm
 !
-!      ******************************************************************
-!      *                                                                *
-!      * kwCDterm computes the cross-diffusion term in the omega-eqn    *
-!      * for the SST version as well as the modified k-omega turbulence *
-!      * model. It is assumed that the pointers in blockPointers and    *
-!      * turbMod are already set.                                       *
-!      *                                                                *
-!      ******************************************************************
+!       kwCDterm computes the cross-diffusion term in the omega-eqn    
+!       for the SST version as well as the modified k-omega turbulence 
+!       model. It is assumed that the pointers in blockPointers and    
+!       turbMod are already set.                                       
 !
        use constants
        use blockPointers
@@ -31,11 +23,7 @@
        real(kind=realType)   :: lnwip1, lnwim1, lnwjp1, lnwjm1
        real(kind=realType)   :: lnwkp1, lnwkm1
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the cell centers of the given block. It may be more
        ! efficient to loop over the faces and to scatter the gradient,

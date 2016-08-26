@@ -1,11 +1,7 @@
 subroutine readGrid
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * readGrid reads the coordinates for the blocks or block parts   *
-  !      * to be stored on this processor.                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       readGrid reads the coordinates for the blocks or block parts   
+  !       to be stored on this processor.                                
   !
 #ifdef USE_NO_CGNS
   call terminate("readGrid", &

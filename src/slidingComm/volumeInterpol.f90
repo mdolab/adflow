@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          volumeInterpol.f90                              *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 11-13-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          volumeInterpol.f90                              
+!       Author:        Edwin van der Weide                             
+!       Starting date: 11-13-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine volumeInterpol(intInfo, realInfo, donorInfo, &
                                  nHalo, level, sps)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * volumeInterpol computes the actual interpolation weights for   *
-!      * the halo's and stores these weights and the connectivity in    *
-!      * donorInfo. The arguments sps is passed for consistency         *
-!      * reasons, but it is not really needed. The info used from       *
-!      * flowDoms is identical for all spectral solutions.              *
-!      *                                                                *
-!      ******************************************************************
+!       volumeInterpol computes the actual interpolation weights for   
+!       the halo's and stores these weights and the connectivity in    
+!       donorInfo. The arguments sps is passed for consistency         
+!       reasons, but it is not really needed. The info used from       
+!       flowDoms is identical for all spectral solutions.              
 !
        use updateComm
        use utils, only : terminate
@@ -40,11 +32,7 @@
 
        integer(kind=intType) :: nn
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Allocate the memory of donorInfo, for which the amount is
        ! guessed to be 4 times the number of values to be interpolated.
@@ -81,13 +69,9 @@
 
          subroutine interpolHalos(haloLevel)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * interpolHalos determines the donor cells and the             *
-!        * corresponding interpolation weights for the halo cells       *
-!        * stored in intInfo and realInfo.                              *
-!        *                                                              *
-!        ****************************************************************
+!         interpolHalos determines the donor cells and the             
+!         corresponding interpolation weights for the halo cells       
+!         stored in intInfo and realInfo.                              
 !
          use block
          use localSubfacesMod
@@ -112,11 +96,7 @@
          real(kind=realType) :: u, v, uv
          real(kind=realType), dimension(4) :: weight
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Loop over the number of halo cells stored in intInfo
          ! and realInfo.

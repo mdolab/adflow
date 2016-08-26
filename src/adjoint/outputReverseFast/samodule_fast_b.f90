@@ -16,13 +16,9 @@ module samodule_fast_b
 contains
   subroutine sa_block(resonly)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * sa solves the transport equation for the spalart-allmaras      *
-!      * turbulence model in a segregated manner using a diagonal       *
-!      * dominant adi-scheme.                                           *
-!      *                                                                *
-!      ******************************************************************
+!       sa solves the transport equation for the spalart-allmaras      
+!       turbulence model in a segregated manner using a diagonal       
+!       dominant adi-scheme.                                           
 !
     use blockpointers
     use inputtimespectral
@@ -39,11 +35,7 @@ contains
 !
     integer(kind=inttype) :: nn, sps
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 ! set the arrays for the boundary condition treatment.
     call bcturbtreatment()
 ! set model constants
@@ -86,14 +78,9 @@ contains
 !   plus diff mem management of: w:in rlv:in scratch:in
   subroutine sasource_fast_b()
 !
-! ******************************************************************
-! *                                                                *
-! * source terms.                                                  *
-! *                                                                *
-! * determine the source term and its derivative w.r.t. nutilde    *
-! * for all internal cells of the block.                           *
-! *                                                                *
-! ******************************************************************
+!  source terms.                                                  
+!  determine the source term and its derivative w.r.t. nutilde    
+!  for all internal cells of the block.                           
     use blockpointers
     use constants
     use paramturb
@@ -247,14 +234,9 @@ branch = myIntStack(myIntPtr)
   end subroutine sasource_fast_b
   subroutine sasource()
 !
-! ******************************************************************
-! *                                                                *
-! * source terms.                                                  *
-! *                                                                *
-! * determine the source term and its derivative w.r.t. nutilde    *
-! * for all internal cells of the block.                           *
-! *                                                                *
-! ******************************************************************
+!  source terms.                                                  
+!  determine the source term and its derivative w.r.t. nutilde    
+!  for all internal cells of the block.                           
     use blockpointers
     use constants
     use paramturb
@@ -348,14 +330,9 @@ branch = myIntStack(myIntPtr)
 !   plus diff mem management of: w:in rlv:in scratch:in
   subroutine saviscous_fast_b()
 !
-! ******************************************************************
-! *                                                                *
-! * viscous term.                                                  *
-! *                                                                *
-! * determine the viscous contribution to the residual             *
-! * for all internal cells of the block.                           *
-! *                                                                *
-! ******************************************************************
+!  viscous term.                                                  
+!  determine the viscous contribution to the residual             
+!  for all internal cells of the block.                           
     use blockpointers
     use paramturb
     implicit none
@@ -755,14 +732,9 @@ branch = myIntStack(myIntPtr)
   end subroutine saviscous_fast_b
   subroutine saviscous()
 !
-! ******************************************************************
-! *                                                                *
-! * viscous term.                                                  *
-! *                                                                *
-! * determine the viscous contribution to the residual             *
-! * for all internal cells of the block.                           *
-! *                                                                *
-! ******************************************************************
+!  viscous term.                                                  
+!  determine the viscous contribution to the residual             
+!  for all internal cells of the block.                           
     use blockpointers
     use paramturb
     implicit none
@@ -777,11 +749,7 @@ branch = myIntStack(myIntPtr)
     intrinsic mod
     intrinsic max
 !
-!      ******************************************************************
-!      *                                                                *
-!      * viscous terms in k-direction.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       viscous terms in k-direction.                                  
 !
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
@@ -842,11 +810,7 @@ branch = myIntStack(myIntPtr)
 &       , itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j, k+1, itu1)
     end do
 !
-!      ******************************************************************
-!      *                                                                *
-!      * viscous terms in j-direction.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       viscous terms in j-direction.                                  
 !
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
@@ -907,11 +871,7 @@ branch = myIntStack(myIntPtr)
 &       , itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j+1, k, itu1)
     end do
 !
-!      ******************************************************************
-!      *                                                                *
-!      * viscous terms in i-direction.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       viscous terms in i-direction.                                  
 !
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
@@ -979,16 +939,12 @@ branch = myIntStack(myIntPtr)
 !   plus diff mem management of: dw:in scratch:in
   subroutine saresscale_fast_b()
 !
-! ******************************************************************
-! *                                                                *
-! * multiply the residual by the volume and store this in dw; this *
+!  multiply the residual by the volume and store this in dw; this 
 ! * is done for monitoring reasons only. the multiplication with the
 ! * volume is present to be consistent with the flow residuals; also
-! * the negative value is taken, again to be consistent with the   *
+!  the negative value is taken, again to be consistent with the   
 ! * flow equations. also multiply by iblank so that no updates occur
-! * in holes or the overset boundary.                              *
-! *                                                                *
-! ******************************************************************
+!  in holes or the overset boundary.                              
     use blockpointers
     implicit none
 ! local variables
@@ -1016,16 +972,12 @@ branch = myIntStack(myIntPtr)
   end subroutine saresscale_fast_b
   subroutine saresscale()
 !
-! ******************************************************************
-! *                                                                *
-! * multiply the residual by the volume and store this in dw; this *
+!  multiply the residual by the volume and store this in dw; this 
 ! * is done for monitoring reasons only. the multiplication with the
 ! * volume is present to be consistent with the flow residuals; also
-! * the negative value is taken, again to be consistent with the   *
+!  the negative value is taken, again to be consistent with the   
 ! * flow equations. also multiply by iblank so that no updates occur
-! * in holes or the overset boundary.                              *
-! *                                                                *
-! ******************************************************************
+!  in holes or the overset boundary.                              
     use blockpointers
     implicit none
 ! local variables
@@ -1050,13 +1002,9 @@ branch = myIntStack(myIntPtr)
   end subroutine saresscale
   subroutine sasolve2()
 !
-! ******************************************************************
-! *                                                                *
-! * sasolve solves the turbulent transport equation for the        *
-! * original spalart-allmaras model in a segregated manner using   *
-! * a diagonal dominant adi-scheme.                                *
-! *                                                                *
-! ******************************************************************
+!  sasolve solves the turbulent transport equation for the        
+!  original spalart-allmaras model in a segregated manner using   
+!  a diagonal dominant adi-scheme.                                
     use blockpointers
     use inputiteration
     use inputphysics
@@ -1191,13 +1139,9 @@ bocos:do nn=1,nviscbocos
 ! if the block is not moving.
     qs = zero
 !
-!      ******************************************************************
-!      *                                                                *
-!      * dd-adi step in j-direction. there is no particular reason to   *
-!      * start in j-direction, it just happened to be so. as we solve   *
-!      * in j-direction, the j-loop is the innermost loop.              *
-!      *                                                                *
-!      ******************************************************************
+!       dd-adi step in j-direction. there is no particular reason to   
+!       start in j-direction, it just happened to be so. as we solve   
+!       in j-direction, the j-loop is the innermost loop.              
 !
     do k=2,kl
       do i=2,il
@@ -1301,12 +1245,8 @@ bocos:do nn=1,nviscbocos
       end do
     end do
 !
-!      ******************************************************************
-!      *                                                                *
-!      * dd-adi step in i-direction. as we solve in i-direction, the    *
-!      * i-loop is the innermost loop.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       dd-adi step in i-direction. as we solve in i-direction, the    
+!       i-loop is the innermost loop.                                  
 !
     do k=2,kl
       do j=2,jl
@@ -1410,12 +1350,8 @@ bocos:do nn=1,nviscbocos
       end do
     end do
 !
-!      ******************************************************************
-!      *                                                                *
-!      * dd-adi step in k-direction. as we solve in k-direction, the    *
-!      * k-loop is the innermost loop.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       dd-adi step in k-direction. as we solve in k-direction, the    
+!       k-loop is the innermost loop.                                  
 !
     do j=2,jl
       do i=2,il
@@ -1519,13 +1455,9 @@ bocos:do nn=1,nviscbocos
       end do
     end do
 !
-!      ******************************************************************
-!      *                                                                *
-!      * update the turbulent variables. for explicit relaxation the    *
-!      * update must be relaxed; for implicit relaxation this has been  *
-!      * done via the time step.                                        *
-!      *                                                                *
-!      ******************************************************************
+!       update the turbulent variables. for explicit relaxation the    
+!       update must be relaxed; for implicit relaxation this has been  
+!       done via the time step.                                        
 !
     factor = one
     if (turbrelax .eq. turbrelaxexplicit) factor = alfaturb

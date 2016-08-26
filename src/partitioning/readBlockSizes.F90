@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          readBlockSizes.F90                              *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 12-17-2002                                      *
-!      * Last modified: 11-07-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          readBlockSizes.F90                              
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 12-17-2002                                      
+!       Last modified: 11-07-2005                                      
 !
        subroutine readBlockSizes
 !
-!      ******************************************************************
-!      *                                                                *
-!      * readBlockSizes reads the number of blocks and their size       *
-!      * from the given grid file. The data is stored in the module     *
-!      * cgnsGrid.                                                      *
-!      * If multiple grids need to be read for a consistent restart, it *
-!      * is checked that the number of blocks and the block sizes are   *
-!      * identical.                                                     *
-!      *                                                                *
-!      ******************************************************************
+!       readBlockSizes reads the number of blocks and their size       
+!       from the given grid file. The data is stored in the module     
+!       cgnsGrid.                                                      
+!       If multiple grids need to be read for a consistent restart, it 
+!       is checked that the number of blocks and the block sizes are   
+!       identical.                                                     
 !
 #ifdef USE_NO_CGNS
        call terminate("readBlockSizes", &

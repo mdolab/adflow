@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          bcTurbWall.F90                                  *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 06-26-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          bcTurbWall.F90                                  
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 06-26-2003                                      
+!       Last modified: 06-12-2005                                      
 !
 subroutine bcTurbWall(nn)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * bcTurbWall applies the implicit treatment of the viscous       *
-  !      * wall boundary condition for the turbulence model used to the   *
-  !      * given subface nn.                                              *
-  !      * It is assumed that the pointers in blockPointers are           *
-  !      * already set to the correct block.                              *
-  !      *                                                                *
-  !      ******************************************************************
+  !       bcTurbWall applies the implicit treatment of the viscous       
+  !       wall boundary condition for the turbulence model used to the   
+  !       given subface nn.                                              
+  !       It is assumed that the pointers in blockPointers are           
+  !       already set to the correct block.                              
   !
   use blockPointers
   use flowVarRefState
@@ -41,11 +33,7 @@ subroutine bcTurbWall(nn)
   real(kind=realType), dimension(:,:,:),   pointer :: bvt, ww2
   real(kind=realType), dimension(:,:),     pointer :: rlv2, dd2Wall
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
 
 

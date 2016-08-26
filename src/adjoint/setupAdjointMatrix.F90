@@ -1,10 +1,6 @@
 subroutine setupAdjointMatrix
   !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Assembles the adjoint (dRdw)^T Matrix. Called from Python      *
-  !     *                                                                *
-  !     ******************************************************************
+  !      Assembles the adjoint (dRdw)^T Matrix. Called from Python      
   !
   use constants
   use utils, only : setPointers

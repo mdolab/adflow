@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          cellRangeSubface.f90                            *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-07-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          cellRangeSubface.f90                            
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-07-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine cellRangeSubface
 !
-!      ******************************************************************
-!      *                                                                *
-!      * cellRangeSubface determines the cell range for every subface   *
-!      * of every block all grid levels. This subrange can include one  *
-!      * cell of overlap if the boundary coincides with the block       *
-!      * boundary.                                                      *
-!      *                                                                *
-!      ******************************************************************
+!       cellRangeSubface determines the cell range for every subface   
+!       of every block all grid levels. This subrange can include one  
+!       cell of overlap if the boundary coincides with the block       
+!       boundary.                                                      
 !
        use constants
        use block
@@ -32,11 +24,7 @@
        integer(kind=intType) :: nn, mm, il, jl, kl, ie, je, ke
        integer(kind=intType) :: iBeg, jBeg, kBeg, iEnd, jEnd, kEnd
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the number of grid levels.
 

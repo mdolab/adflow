@@ -5,12 +5,8 @@ contains
   subroutine whalo1(level, start, end, commPressure, commGamma, &
        commViscous)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * whalo1 exchanges all the 1st level internal halo's for the     *
-    !      * cell centered variables.                                       *
-    !      *                                                                *
-    !      ******************************************************************
+    !       whalo1 exchanges all the 1st level internal halo's for the     
+    !       cell centered variables.                                       
     !
     use constants
     use blockPointers
@@ -113,12 +109,8 @@ contains
   subroutine whalo2(level, start, end, commPressure, commGamma, &
        commViscous)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * whalo2 exchanges all the 2nd level internal halo's for the     *
-    !      * cell centered variables.                                       *
-    !      *                                                                *
-    !      ******************************************************************
+    !       whalo2 exchanges all the 2nd level internal halo's for the     
+    !       cell centered variables.                                       
     !
     use constants
     use blockPointers
@@ -272,14 +264,10 @@ contains
   subroutine orphanAverage(wstart, wend, calcPressure, calcGamma, &
        calcLamVis, calcEddyVis)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * orphanAverage uses the neighboring cells of an overset orphan  *
-    !      * to set the flow state for the orphan cell by a simple average. *
-    !      * This routine operates on the block given by the block pointers *
-    !      * so it is assumed they are set.                                 *
-    !      *                                                                *
-    !      ******************************************************************
+    !       orphanAverage uses the neighboring cells of an overset orphan  
+    !       to set the flow state for the orphan cell by a simple average. 
+    !       This routine operates on the block given by the block pointers 
+    !       so it is assumed they are set.                                 
     !
     use constants
     use blockPointers
@@ -428,30 +416,22 @@ contains
 
   end subroutine orphanAverage
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * File:          whalo1to1.f90                                   *
-  !      * Author:        Edwin van der Weide                             *
-  !      * Starting date: 03-07-2003                                      *
-  !      * Last modified: 09-16-2005                                      *
-  !      *                                                                *
-  !      ******************************************************************
+  !       File:          whalo1to1.f90                                   
+  !       Author:        Edwin van der Weide                             
+  !       Starting date: 03-07-2003                                      
+  !       Last modified: 09-16-2005                                      
   !
   subroutine whalo1to1(level, start, end, commPressure,       &
        commVarGamma, commLamVis, commEddyVis, &
        commPattern, internal)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * whalo1to1 exchanges the 1 to 1 internal halo's for the cell    *
-    !      * centered variables for the given communication pattern. It     *
-    !      * is possible to send a range of variables and not the entire    *
-    !      * set, e.g. only the flow variables or only the turbulent        *
-    !      * variables. This is controlled by the arguments start, end,     *
-    !      * commPressure and commViscous. The exchange takes place for     *
-    !      * the given grid level.                                          *
-    !      *                                                                *
-    !      ******************************************************************
+    !       whalo1to1 exchanges the 1 to 1 internal halo's for the cell    
+    !       centered variables for the given communication pattern. It     
+    !       is possible to send a range of variables and not the entire    
+    !       set, e.g. only the flow variables or only the turbulent        
+    !       variables. This is controlled by the arguments start, end,     
+    !       commPressure and commViscous. The exchange takes place for     
+    !       the given grid level.                                          
     !
     use constants
     use block
@@ -541,12 +521,8 @@ contains
   subroutine correctPeriodicVelocity(level, sp, nPeriodic, &
        periodicData)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * correctPeriodicVelocity applies the periodic transformation    *
-    !      * to the velocity of the cell halo's in periodicData.            *
-    !      *                                                                *
-    !      ******************************************************************
+    !       correctPeriodicVelocity applies the periodic transformation    
+    !       to the velocity of the cell halo's in periodicData.            
     !
     use constants
     use block
@@ -610,14 +586,9 @@ contains
 
   subroutine whalo1to1RealGeneric(nVar, level, sps, commPattern, internal)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * whalo1to1 exchanges the 1 to 1 internal halo's for the cell    *
-    !      * centered variables for the given communication pattern.        *
-    !      * Pointers must be set for var1, var2...varN                     *
-    !      *                                                                *
-    !      *                                                                *
-    !      ******************************************************************
+    !       whalo1to1 exchanges the 1 to 1 internal halo's for the cell    
+    !       centered variables for the given communication pattern.        
+    !       Pointers must be set for var1, var2...varN                     
     !
     use constants
     use block
@@ -776,14 +747,9 @@ contains
 
   subroutine whalo1to1IntGeneric(nVar, level, sps, commPattern, internal)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * whalo1to1 exchanges the 1 to 1 internal halo's for the cell    *
-    !      * centered variables for the given communication pattern.        *
-    !      * Pointers must be set for var1, var2...varN                     *
-    !      *                                                                *
-    !      *                                                                *
-    !      ******************************************************************
+    !       whalo1to1 exchanges the 1 to 1 internal halo's for the cell    
+    !       centered variables for the given communication pattern.        
+    !       Pointers must be set for var1, var2...varN                     
     !
     use constants
     use block
@@ -951,26 +917,19 @@ contains
 
   end subroutine whalo1to1IntGeneric
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * File:          whalo1to1b.f90                                   *
-  !      * Author:        Gaetan K.W. Kenway                              *
-  !      * Starting date: 01-22-2015                                      *
-  !      * Last modified: 01-22-2015                                      *
-  !      *                                                                *
-  !      ******************************************************************
+  !       File:          whalo1to1b.f90                                   
+  !       Author:        Gaetan K.W. Kenway                              
+  !       Starting date: 01-22-2015                                      
+  !       Last modified: 01-22-2015                                      
   !
   subroutine whalo1to1_b(level, start, end, commPressure,       &
        commVarGamma, commLamVis, commEddyVis, &
        commPattern, internal)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * whalo1to1b performs the *TRANSPOSE* operation of whalo1to1.    *
-    !      * It is used for adjoint/reverse mode residual evaluations.      *
-    !      * See whalo1to1 for more information. Note that this code does   *
-    !      * include the correctPeroidicVelocity computation.               *
-    !      ******************************************************************
+    !       whalo1to1b performs the *TRANSPOSE* operation of whalo1to1.    
+    !       It is used for adjoint/reverse mode residual evaluations.      
+    !       See whalo1to1 for more information. Note that this code does   
+    !       include the correctPeroidicVelocity computation.               
     !
     use constants
     use block
@@ -1256,11 +1215,7 @@ contains
        commVarGamma, commLamVis, commEddyVis, &
        commPattern, internal)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * whalo1to1 exchanges the 1 to 1 internal halo's derivatives     *
-    !      *                                                                *
-    !      ******************************************************************
+    !       whalo1to1 exchanges the 1 to 1 internal halo's derivatives     
     !
     use constants
     use block
@@ -1326,33 +1281,25 @@ contains
   end subroutine whalo1to1_d
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * File:          whaloMixing.f90                                 *
-  !      * Author:        Edwin van der Weide                             *
-  !      * Starting date: 01-26-2005                                      *
-  !      * Last modified: 09-16-2005                                      *
-  !      *                                                                *
-  !      ******************************************************************
+  !       File:          whaloMixing.f90                                 
+  !       Author:        Edwin van der Weide                             
+  !       Starting date: 01-26-2005                                      
+  !       Last modified: 09-16-2005                                      
   !
   subroutine whaloMixing(level, startIn, endIn, commPressure,   &
        commVarGamma, commLamVis, commEddyVis, &
        nLayers)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * whaloMixing determines the halo values for the cells adjacent  *
-    !      * to sliding interfaces for the given communication pattern.     *
-    !      * The mixing plane approximation is just a azimuthal averaging   *
-    !      * of the variables just that a steady flow can be computed for   *
-    !      * the inherently unsteady problem of rotor/stator interaction.   *
-    !      * It is possible to exchange a range of variables and not the    *
-    !      * entire set, e.g. only the flow variables or only the turbulent *
-    !      * variables. This is controlled by the arguments start, end,     *
-    !      * commPressure and commViscous. The exchange takes place for     *
-    !      * the given grid level.                                          *
-    !      *                                                                *
-    !      ******************************************************************
+    !       whaloMixing determines the halo values for the cells adjacent  
+    !       to sliding interfaces for the given communication pattern.     
+    !       The mixing plane approximation is just a azimuthal averaging   
+    !       of the variables just that a steady flow can be computed for   
+    !       the inherently unsteady problem of rotor/stator interaction.   
+    !       It is possible to exchange a range of variables and not the    
+    !       entire set, e.g. only the flow variables or only the turbulent 
+    !       variables. This is controlled by the arguments start, end,     
+    !       commPressure and commViscous. The exchange takes place for     
+    !       the given grid level.                                          
     !
     use constants
     use communication
@@ -1496,12 +1443,8 @@ contains
 
     subroutine localPartMixingPlane(buffer)
       !
-      !        ****************************************************************
-      !        *                                                              *
-      !        * LocalPartMixingPlane stores the local contribution to the    *
-      !        * currently active mixing plane into buffer.                   *
-      !        *                                                              *
-      !        ****************************************************************
+      !         LocalPartMixingPlane stores the local contribution to the    
+      !         currently active mixing plane into buffer.                   
       !
       use constants
       use block
@@ -1668,13 +1611,9 @@ contains
 
     subroutine setMixingPlaneHalos(buffer)
       !
-      !        ****************************************************************
-      !        *                                                              *
-      !        * SetMixingPlaneHalos set the values in the halo cells         *
-      !        * adjacent to the active mixing plane. The variables are       *
-      !        * interpolated from buffer.                                    *
-      !        *                                                              *
-      !        ****************************************************************
+      !         SetMixingPlaneHalos set the values in the halo cells         
+      !         adjacent to the active mixing plane. The variables are       
+      !         interpolated from buffer.                                    
       !
       use constants
       use block
@@ -1801,17 +1740,13 @@ contains
        commVarGamma, commLamVis, commEddyVis, &
        commPattern, internal, nlev)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * whaloSliding exchanges the sliding mesh halo's for the cell    *
-    !      * centered variables for the given communication pattern. It     *
-    !      * is possible to send a range of variables and not the entire    *
-    !      * set, e.g. only the flow variables or only the turbulent        *
-    !      * variables. This is controlled by the arguments start, end,     *
-    !      * commPressure and commViscous. The exchange takes place for     *
-    !      * the given grid level.                                          *
-    !      *                                                                *
-    !      ******************************************************************
+    !       whaloSliding exchanges the sliding mesh halo's for the cell    
+    !       centered variables for the given communication pattern. It     
+    !       is possible to send a range of variables and not the entire    
+    !       set, e.g. only the flow variables or only the turbulent        
+    !       variables. This is controlled by the arguments start, end,     
+    !       commPressure and commViscous. The exchange takes place for     
+    !       the given grid level.                                          
     !
     use constants
     use block
@@ -2170,12 +2105,8 @@ contains
   subroutine whalo2_b(level, start, end, commPressure, commGamma, &
        commViscous)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * whalo2_b exchanges all the 2nd level internal halo's for the   *
-    !      * cell centered variables IN REVERSE MODE                        *
-    !      *                                                                *
-    !      ******************************************************************
+    !       whalo2_b exchanges all the 2nd level internal halo's for the   
+    !       cell centered variables IN REVERSE MODE                        
     !
     use constants
     use blockPointers
@@ -2234,12 +2165,8 @@ contains
   subroutine whalo2_d(level, start, end, commPressure, commGamma, &
        commViscous)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * whalo2_b exchanges all the 2nd level internal halo's for the   *
-    !      * cell centered variables IN FORWARD MODE                        *
-    !      *                                                                *
-    !      ******************************************************************
+    !       whalo2_b exchanges all the 2nd level internal halo's for the   
+    !       cell centered variables IN FORWARD MODE                        
     !
     use constants
     use blockPointers
@@ -2295,32 +2222,24 @@ contains
   end subroutine whalo2_d
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * File:          wOverset.f90                                    *
-  !      * Author:        Steve Repsher, Gaetan Kenway                    *
-  !      * Starting date: 02-04-2005                                      *
-  !      * Last modified: 10-01-2015                                      *
-  !      *                                                                *
-  !      ******************************************************************
+  !       File:          wOverset.f90                                    
+  !       Author:        Steve Repsher, Gaetan Kenway                    
+  !       Starting date: 02-04-2005                                      
+  !       Last modified: 10-01-2015                                      
   !
   subroutine wOverset(level, start, end, commPressure,       &
        commVarGamma, commLamVis, commEddyVis, &
        commPattern, internal, nlev)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * wOverset controls the communication between overset halos      *
-    !      * for the cell-centered variables by interpolating the solution  *
-    !      * from other blocks consistent with the chimera approach. A tri- *
-    !      * linear interpolation is used as per the input from cgns. It    *
-    !      * is possible to send a range of variables and not the entire    *
-    !      * set, e.g. only the flow variables or only the turbulent        *
-    !      * variables. This is controlled by the arguments start, end,     *
-    !      * commPressure and commViscous. The exchange takes place for     *
-    !      * the given grid level.                                          *
-    !      *                                                                *
-    !      ******************************************************************
+    !       wOverset controls the communication between overset halos      
+    !       for the cell-centered variables by interpolating the solution  
+    !       from other blocks consistent with the chimera approach. A tri- 
+    !       linear interpolation is used as per the input from cgns. It    
+    !       is possible to send a range of variables and not the entire    
+    !       set, e.g. only the flow variables or only the turbulent        
+    !       variables. This is controlled by the arguments start, end,     
+    !       commPressure and commViscous. The exchange takes place for     
+    !       the given grid level.                                          
     !
     use constants
     use block
@@ -2678,12 +2597,9 @@ contains
        commVarGamma, commLamVis, commEddyVis, &
        commPattern, internal, nlev)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * wOverset_b performs the *TRANSPOSE* operation of wOveset       *
-    !      * It is used for adjoint/reverse mode residual evaluations.      *
+    !       wOverset_b performs the *TRANSPOSE* operation of wOveset       
+    !       It is used for adjoint/reverse mode residual evaluations.      
     !      * See wOverset  for more information.
-    !      ******************************************************************
     !
     use constants
     use block
@@ -3211,11 +3127,8 @@ contains
        commVarGamma, commLamVis, commEddyVis, &
        commPattern, internal, nlev)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Modification to wOverset that communicates derivative values   *
-    !      * in forward mode.                                               *
-    !      ******************************************************************
+    !       Modification to wOverset that communicates derivative values   
+    !       in forward mode.                                               
     !
     use constants
     use block
@@ -3571,25 +3484,17 @@ contains
   end subroutine wOverset_d
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * File:          resHalo1.f90                                    *
-  !      * Author:        Edwin van der Weide                             *
-  !      * Starting date: 04-15-2003                                      *
-  !      * Last modified: 06-12-2005                                      *
-  !      *                                                                *
-  !      ******************************************************************
+  !       File:          resHalo1.f90                                    
+  !       Author:        Edwin van der Weide                             
+  !       Starting date: 04-15-2003                                      
+  !       Last modified: 06-12-2005                                      
   !
   subroutine resHalo1(level, start, end)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * resHalo1 determines the residuals in the 1st layer of halo     *
-    !      * cells by applying both the boundary conditions and the         *
-    !      * exchange. The halo values are needed for post processing       *
-    !      * reasons.                                                       *
-    !      *                                                                *
-    !      ******************************************************************
+    !       resHalo1 determines the residuals in the 1st layer of halo     
+    !       cells by applying both the boundary conditions and the         
+    !       exchange. The halo values are needed for post processing       
+    !       reasons.                                                       
     !
     use constants
     use blockPointers
@@ -3613,11 +3518,7 @@ contains
 
     real(kind=realType), pointer, dimension(:,:,:) :: ddw1, ddw2
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Begin execution                                                *
-    !      *                                                                *
-    !      ******************************************************************
+    !       Begin execution                                                
     !
     ! Determine the number of variables per cell to be sent.
 

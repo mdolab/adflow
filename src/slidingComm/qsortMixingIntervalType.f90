@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          qsortMixingIntervalType.f90                     *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-09-2005                                      *
-!      * Last modified: 03-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          qsortMixingIntervalType.f90                     
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-09-2005                                      
+!       Last modified: 03-25-2005                                      
 !
        subroutine qsortMixingIntervalType(arr, nn)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * qsortMixingIntervalType sorts the given number of elements     *
-!      * of the derived data type mixingIntervalType in increasing      *
-!      * order based on the <= operator for this derived data type.     *
-!      *                                                                *
-!      ******************************************************************
+!       qsortMixingIntervalType sorts the given number of elements     
+!       of the derived data type mixingIntervalType in increasing      
+!       order based on the <= operator for this derived data type.     
 !
        use mixingData
        use utils, only : terminate
@@ -42,11 +34,7 @@
        integer(kind=intType), allocatable, dimension(:) :: stack
        integer(kind=intType), allocatable, dimension(:) :: tmpStack
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Allocate the memory for stack.
 

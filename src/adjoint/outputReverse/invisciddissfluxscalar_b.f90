@@ -4,29 +4,21 @@
 !  differentiation of invisciddissfluxscalar in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: gammainf *p *w *fw
 !   with respect to varying inputs: gammainf rhoinf pinfcorr *p
-!                *w *radi *radj *radk
+!                w *radi *radj 
 !   plus diff mem management of: p:in w:in fw:in radi:in radj:in
 !                radk:in
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          invisciddissfluxscalar.f90                      *
-!      * author:        edwin van der weide                             *
-!      * starting date: 03-24-2003                                      *
-!      * last modified: 10-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          invisciddissfluxscalar.f90                      
+!       author:        edwin van der weide                             
+!       starting date: 03-24-2003                                      
+!       last modified: 10-29-2007                                      
 !
 subroutine invisciddissfluxscalar_b()
 !
-!      ******************************************************************
-!      *                                                                *
-!      * invisciddissfluxscalar computes the scalar artificial          *
-!      * dissipation, see aiaa paper 81-1259, for a given block.        *
-!      * therefore it is assumed that the pointers in  blockpointers    *
-!      * already point to the correct block.                            *
-!      *                                                                *
-!      ******************************************************************
+!       invisciddissfluxscalar computes the scalar artificial          
+!       dissipation, see aiaa paper 81-1259, for a given block.        
+!       therefore it is assumed that the pointers in  blockpointers    
+!       already point to the correct block.                            
 !
   use constants
   use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb&
@@ -156,11 +148,7 @@ subroutine invisciddissfluxscalar_b()
     abs0 = -rfil
   end if
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! check if rfil == 0. if so, the dissipative flux needs not to
 ! be computed.

@@ -1,12 +1,8 @@
        subroutine mixingIntervals(slideID, level, color, nSlices)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * MixingIntervals determines the point distribution used as      *
-!      * interpolation intervals on the given grid level for the given  *
-!      * sliding interface.                                             *
-!      *                                                                *
-!      ******************************************************************
+!       MixingIntervals determines the point distribution used as      
+!       interpolation intervals on the given grid level for the given  
+!       sliding interface.                                             
 !
        use constants
        use blockPointers
@@ -60,11 +56,7 @@
        type(mixingIntervalType), dimension(:), allocatable :: edges
        type(mixingIntervalType), dimension(:), pointer     :: intervals
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Store the communicator, the number of processors and my
        ! processor ID for this processor group a bit easier.
@@ -102,15 +94,11 @@
          radialInterface = .false.
        endif
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Determine the local candidate of the starting point of the     *
-!      * interpolation interval. If a polar singular quad is present    *
-!      * this is automatically the starting point. Otherwise a point on *
-!      * the minimum boundary will be chosen. Note that the algorithm   *
-!      * below is valid for both radial and axial interface.            *
-!      *                                                                *
-!      ******************************************************************
+!       Determine the local candidate of the starting point of the     
+!       interpolation interval. If a polar singular quad is present    
+!       this is automatically the starting point. Otherwise a point on 
+!       the minimum boundary will be chosen. Note that the algorithm   
+!       below is valid for both radial and axial interface.            
 !
        ! Some initializations.
 
@@ -362,15 +350,11 @@
          enddo bocoLoop1
        enddo domainLoop1
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Determine the interpolation angle. If a polar singular quad is *
-!      * present it means that the entire wheel is present and thus any *
-!      * angle can be taken. Here zero is chosen. If no polar singular  *
-!      * quad is present the angle corresponding to the minimum radius  *
-!      * it taken.                                                      *
-!      *                                                                *
-!      ******************************************************************
+!       Determine the interpolation angle. If a polar singular quad is 
+!       present it means that the entire wheel is present and thus any 
+!       angle can be taken. Here zero is chosen. If no polar singular  
+!       quad is present the angle corresponding to the minimum radius  
+!       it taken.                                                      
 !
        ! Determine the global number of polar singularities. If more
        ! than one is found print an error message and exit.
@@ -446,14 +430,10 @@
 
        endif testPolarQuadPresent
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Determine the local edges, i.e. determine for every            *
-!      * quadrilateral of the sliding mesh subfaces whether or not it   *
-!      * is cut but the line of the interpolation angle. Rotational     *
-!      * periodicity is taken into account, if appropriate.             *
-!      *                                                                *
-!      ******************************************************************
+!       Determine the local edges, i.e. determine for every            
+!       quadrilateral of the sliding mesh subfaces whether or not it   
+!       is cut but the line of the interpolation angle. Rotational     
+!       periodicity is taken into account, if appropriate.             
 !
        ! Determine the global minima and maxima of the polar angles.
        ! Use theta1 as a temporary buffer.
@@ -862,13 +842,9 @@
          call terminate("mixingIntervals", &
                         "Deallocation failure for angles.")
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Determine the points of the interpolation intervals by         *
-!      * gathering all the local edges and sorting them in increasing   *
-!      * order.                                                         *
-!      *                                                                *
-!      ******************************************************************
+!       Determine the points of the interpolation intervals by         
+!       gathering all the local edges and sorting them in increasing   
+!       order.                                                         
 !
        ! Determine the number of edges which will be received from
        ! every processor in allgatherv later on. Note the use of
@@ -1099,12 +1075,8 @@
 
          subroutine reallocIntervals
 !
-!        ****************************************************************
-!        *                                                              *
-!        * ReallocIntervals reallocates the memory for the pointer      *
-!        * intervals; the array is increased.                           *
-!        *                                                              *
-!        ****************************************************************
+!         ReallocIntervals reallocates the memory for the pointer      
+!         intervals; the array is increased.                           
 !
          implicit none
 !
@@ -1116,11 +1088,7 @@
 
          type(mixingIntervalType), dimension(:), pointer :: tmp
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          tmp => intervals
          nOld = nAlloc

@@ -1,12 +1,8 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * oversetLoadBalance determine the deistributation of donor and  *
-!      * receiver blocks that will result in approximate even load      *
-!      * balancing. The sparse matrix structrue of the overla is        *
-!      * provided. This computation runs on all processors.             *
-!      *                                                                *
-!      ******************************************************************
+!       oversetLoadBalance determine the deistributation of donor and  
+!       receiver blocks that will result in approximate even load      
+!       balancing. The sparse matrix structrue of the overla is        
+!       provided. This computation runs on all processors.             
 
 subroutine oversetLoadBalance(overlap)
 

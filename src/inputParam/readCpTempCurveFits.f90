@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          readCpTempCurveFits.f90                         *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 09-11-2003                                      *
-!      * Last modified: 11-09-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          readCpTempCurveFits.f90                         
+!       Author:        Edwin van der Weide                             
+!       Starting date: 09-11-2003                                      
+!       Last modified: 11-09-2005                                      
 !
        subroutine readCpTempCurveFits
 !
-!      ******************************************************************
-!      *                                                                *
-!      * readCpTempCurveFits reads the curve fits for the cp as a       *
-!      * function of the temperature from the file cpFile.              *
-!      *                                                                *
-!      ******************************************************************
+!       readCpTempCurveFits reads the curve fits for the cp as a       
+!       function of the temperature from the file cpFile.              
 !
        use constants
        use communication, only : myid, sumb_comm_world
@@ -37,11 +29,7 @@
        character(len=2*maxStringLen) :: errorMessage
        character(len=512)            :: string
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Open the file for reading and check if it went okay. If the file
        ! is not found, processor 0 prints an error message.
@@ -189,12 +177,8 @@
 
        close(unit=readUnit)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Compute the constants eint0, such that the internal energy is  *
-!      * a continous function of the temperature.                       *
-!      *                                                                *
-!      ******************************************************************
+!       Compute the constants eint0, such that the internal energy is  
+!       a continous function of the temperature.                       
 !
        ! First for the first interval, such that at T = 0 Kelvin the
        ! energy is also zero.
@@ -389,12 +373,8 @@
 
        subroutine findNextInfoLine(readUnit, string)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * findNextInfoLine skips the comment lines in the given unit     *
-!      * and finds the first line containing information.               *
-!      *                                                                *
-!      ******************************************************************
+!       findNextInfoLine skips the comment lines in the given unit     
+!       and finds the first line containing information.               
 !
        use communication
        use utils, only : terminate
@@ -409,11 +389,7 @@
 !
        integer :: ios, ierr
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop to skip the comment lines.
 

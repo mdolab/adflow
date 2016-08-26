@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          allocCoorFineGrid.f90                           *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 06-23-2005                                      *
-!      * Last modified: 10-10-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          allocCoorFineGrid.f90                           
+!       Author:        Edwin van der Weide                             
+!       Starting date: 06-23-2005                                      
+!       Last modified: 10-10-2005                                      
 !
        subroutine allocCoorFineGrid
 !
-!      ******************************************************************
-!      *                                                                *
-!      * allocCoorFineGrid allocates the memory for all the coordinates *
-!      * of all local blocks. Also the memory for the derived data type *
-!      * used for the reading is allocated. If an interpolation must be *
-!      * performed for the time spectral method the variables of this   *
-!      * IO type are allocated as well. For all other cases the pointer *
-!      * of the variables are set to the appropriate entry in flowDoms. *
-!      *                                                                *
-!      ******************************************************************
+!       allocCoorFineGrid allocates the memory for all the coordinates 
+!       of all local blocks. Also the memory for the derived data type 
+!       used for the reading is allocated. If an interpolation must be 
+!       performed for the time spectral method the variables of this   
+!       IO type are allocated as well. For all other cases the pointer 
+!       of the variables are set to the appropriate entry in flowDoms. 
 !
        use block
        use inputPhysics
@@ -37,11 +29,7 @@
        integer(kind=intType) :: nn, mm
        integer(kind=intType) :: il, jl, kl, ie, je, ke
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the local blocks and allocate the memory for the
        ! coordinates.
@@ -94,9 +82,7 @@
          endif
 
 
-         ! *******************************
          ! Added by HDN
-         ! *******************************
          if(deforming_Grid .and. equationMode == unsteady) then
             
             allocate(flowDoms(nn,1,1)%xALE(0:ie,0:je,0:ke,3), &

@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          setHelpVariablesWriting.f90                     *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 10-10-2005                                      *
-!      * Last modified: 10-10-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          setHelpVariablesWriting.f90                     
+!       Author:        Edwin van der Weide                             
+!       Starting date: 10-10-2005                                      
+!       Last modified: 10-10-2005                                      
 !
        subroutine setHelpVariablesWriting
 !
-!      ******************************************************************
-!      *                                                                *
-!      * setHelpVariablesWriting determines the variables, which are    *
-!      * needed to write the CGNS files.                                *
-!      *                                                                *
-!      ******************************************************************
+!       setHelpVariablesWriting determines the variables, which are    
+!       needed to write the CGNS files.                                
 !
        use block
        use cgnsGrid
@@ -35,11 +27,7 @@
        integer(kind=intType), dimension(cgnsNDom) :: tmp
        integer(kind=intType), dimension(4,nDom)   :: buffer
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine for each CGNS block how many (sub) blocks are stored
        ! on this processor. Note that this info is the same for all

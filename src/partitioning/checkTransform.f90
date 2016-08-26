@@ -1,12 +1,8 @@
        subroutine checkTransform(transform, nZone, n1to1, printWarning)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * checkTransform checks the transformation matrix between this   *
-!      * zone and the donor for the given subrange. In case an error is *
-!      * found it is tried to correct this.                             *
-!      *                                                                *
-!      ******************************************************************
+!       checkTransform checks the transformation matrix between this   
+!       zone and the donor for the given subrange. In case an error is 
+!       found it is tried to correct this.                             
 !
        use constants
        use cgnsGrid

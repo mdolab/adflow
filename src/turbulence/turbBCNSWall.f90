@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          turbBCNSWall.f90                                *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 05-30-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          turbBCNSWall.f90                                
+!       Author:        Edwin van der Weide                             
+!       Starting date: 05-30-2003                                      
+!       Last modified: 06-12-2005                                      
 !
 subroutine turbBCNSWall(secondHalo)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * turbBCNSWall applies the viscous wall boundary conditions      *
-  !      * of the turbulent transport equations to a block. It is assumed *
-  !      * that the pointers in blockPointers are already set to the      *
-  !      * correct block on the correct grid level.                       *
-  !      *                                                                *
-  !      ******************************************************************
+  !       turbBCNSWall applies the viscous wall boundary conditions      
+  !       of the turbulent transport equations to a block. It is assumed 
+  !       that the pointers in blockPointers are already set to the      
+  !       correct block on the correct grid level.                       
   !
   use constants
   use blockPointers
@@ -33,11 +25,7 @@ subroutine turbBCNSWall(secondHalo)
   integer(kind=intType) :: nn, i, j, l, m
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Loop over the viscous subfaces of this block.
 

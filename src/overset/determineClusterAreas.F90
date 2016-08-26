@@ -1,11 +1,7 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * determineClusterArea determine the average cell surface area   *
-!      * for all blocks in a particular cluster. This is used for       *
-!      * determine blanking preference for overlapping surface cells.   *
-!      *                                                                *
-!      ******************************************************************
+!       determineClusterArea determine the average cell surface area   
+!       for all blocks in a particular cluster. This is used for       
+!       determine blanking preference for overlapping surface cells.   
 
 subroutine determineClusterAreas
 

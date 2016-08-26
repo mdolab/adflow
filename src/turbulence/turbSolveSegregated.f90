@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          turbSolveSegregated.f90                         *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 05-01-2003                                      *
-!      * Last modified: 07-21-2006                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          turbSolveSegregated.f90                         
+!       Author:        Edwin van der Weide                             
+!       Starting date: 05-01-2003                                      
+!       Last modified: 07-21-2006                                      
 !
        subroutine turbSolveSegregated
 !
-!      ******************************************************************
-!      *                                                                *
-!      * turbSolveSegregated solves the turbulent transport equations   *
-!      * segregatedly, i.e. the mean flow variables are kept constant   *
-!      * and the turbulent variables are updated.                       *
-!      *                                                                *
-!      ******************************************************************
+!       turbSolveSegregated solves the turbulent transport equations   
+!       segregatedly, i.e. the mean flow variables are kept constant   
+!       and the turbulent variables are updated.                       
 !
        use flowVarRefState
        use inputDiscretization
@@ -32,11 +24,7 @@
 !
        integer(kind=intType) :: iter
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine whether or not a second order discretization for the
        ! advective terms must be used.

@@ -1,82 +1,61 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          residualAveraging.f90                           *
-!      * Author:        Juan J. Alonso, Steve Repsher (blanking)        *
-!      * Starting date: 09-17-2004                                      *
-!      * Last modified: 08-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          residualAveraging.f90                           
+!       Author:        Juan J. Alonso, Steve Repsher (blanking)        
+!       Starting date: 09-17-2004                                      
+!       Last modified: 08-25-2005                                      
 !
        subroutine residualAveraging
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Implicit residual smoothing is a simple procedure that         *
-!      * replaces the residual at each point by a weighted sum of all   *
-!      * of the residuals in the block (although the residuals that are *
-!      * closer to the cell under consideration are weighted more       *
-!      * heavily). This smoothing can be applied explicitly, but may    *
-!      * result in zero smoothed residuals for non-zero initial         *
-!      * residual modes.  For this reason, the smoothing is applied     *
-!      * implicitly in the following form:                              *
-!      *                                                                *
-!      * -epz R{i+1} + (1 + 2 epz) R{i} -epz R{i-1} = r{i}              *
-!      *                                                                *
-!      * Where r{i} is the original residual at point i, and R{i} is    *
-!      * the implicitly smoothed residual at point i.  The analysis for *
-!      * the 1-D scalar convection-diffusion equation shows that if     *
-!      *                                                                *
-!      * Epz >= (1/4)*((lambda/lambda*)^2 -1),                          *
-!      *                                                                *
-!      * where lambda is the cfl number desired to be used, and         *
-!      * lambda* is the CFL limit of the unsmoothed scheme, the scheme  *
-!      * can be made unconditionally stable (arbitrarily large lambda). *
-!      * In practice, lambda = 6-8 is common for Euler solutions.  For  *
-!      * RANS solutions lambda = 3-4 is what we have used in practice   *
-!      * resulting in a slight improvement in convergence rate, but,    *
-!      * more importantly, an increase in the robustness of the solver. *
-!      *                                                                *
-!      * Note that this theoretical result can be shown for infinite    *
-!      * 1-D problems, but also for finite-periodic 1-D problems and    *
-!      * finite-size 1-D problems (i.e. with block boundaries).  Such   *
-!      * theoretical results are not available for 3-D cases, where the *
-!      * scheme is applied in an ADI fashion:                           *
-!      *                                                                *
-!      * (1 -epzI d_ii)(1 -epzJ d_jj)(1 -epzK d_kk) r = r               *
-!      *                                                                *
-!      * Where d_ii, d_jj, d_kk are second difference operators in each *
-!      * of the mesh coordinate directions.                             *
-!      *                                                                *
-!      * For each of the coordinate direction solves, the initial       *
-!      * matrix problem is of the form:                                 *
-!      *                                                                *
-!      *   -                                             - - -   - -    *
-!      *   | (1+2 epz)   -epz                            | |r|   |r|    *
-!      *   |   -epz    (1 +2 epz)    -epz                | |r|   |r|    *
-!      *   |             -epz       (1 + 2 epz)   -epz   | |r| = |r|    *
-!      *   |                 .           .           .   | |.|   |.|    *
-!      *   |                   .            .          . | |.|   |.|    *
-!      *   -                                             - - -   - -    *
-!      *                                                                *
-!      * And after the forward elimination phase a normalization is     *
-!      * applied so the result looks like:                              *
-!      *                                                                *
-!      *   -                   - - -   - -                              *
-!      *   |  1  -d            | |r|   |r|                              *
-!      *   |  0   1  -d        | |r|   |r|                              *
-!      *   |      0   1  -d    | |r| = |r|                              *
-!      *   |       .   .   .   | |.|   |.|                              *
-!      *   |          .  .   . | |.|   |.|                              *
-!      *   -                   - - -   - -                              *
-!      *                                                                *
-!      * Which can then be used with a straightforward backsolve to     *
-!      * obtain the answer.                                             *
-!      *                                                                *
-!      * It is assumed that the pointers in blockPointers already       *
-!      * point to the correct block.                                    *
-!      *                                                                *
-!      ******************************************************************
+!       Implicit residual smoothing is a simple procedure that         
+!       replaces the residual at each point by a weighted sum of all   
+!       of the residuals in the block (although the residuals that are 
+!       closer to the cell under consideration are weighted more       
+!       heavily). This smoothing can be applied explicitly, but may    
+!       result in zero smoothed residuals for non-zero initial         
+!       residual modes.  For this reason, the smoothing is applied     
+!       implicitly in the following form:                              
+!       -epz R{i+1} + (1 + 2 epz) R{i} -epz R{i-1} = r{i}              
+!       Where r{i} is the original residual at point i, and R{i} is    
+!       the implicitly smoothed residual at point i.  The analysis for 
+!       the 1-D scalar convection-diffusion equation shows that if     
+!       Epz >= (1/4)*((lambda/lambda*)^2 -1),                          
+!       where lambda is the cfl number desired to be used, and         
+!       lambda* is the CFL limit of the unsmoothed scheme, the scheme  
+!       can be made unconditionally stable (arbitrarily large lambda). 
+!       In practice, lambda = 6-8 is common for Euler solutions.  For  
+!       RANS solutions lambda = 3-4 is what we have used in practice   
+!       resulting in a slight improvement in convergence rate, but,    
+!       more importantly, an increase in the robustness of the solver. 
+!       Note that this theoretical result can be shown for infinite    
+!       1-D problems, but also for finite-periodic 1-D problems and    
+!       finite-size 1-D problems (i.e. with block boundaries).  Such   
+!       theoretical results are not available for 3-D cases, where the 
+!       scheme is applied in an ADI fashion:                           
+!       (1 -epzI d_ii)(1 -epzJ d_jj)(1 -epzK d_kk) r = r               
+!       Where d_ii, d_jj, d_kk are second difference operators in each 
+!       of the mesh coordinate directions.                             
+!       For each of the coordinate direction solves, the initial       
+!       matrix problem is of the form:                                 
+!         -                                             - - -   - -    
+!         | (1+2 epz)   -epz                            | |r|   |r|    
+!         |   -epz    (1 +2 epz)    -epz                | |r|   |r|    
+!         |             -epz       (1 + 2 epz)   -epz   | |r| = |r|    
+!         |                 .           .           .   | |.|   |.|    
+!         |                   .            .          . | |.|   |.|    
+!         -                                             - - -   - -    
+!       And after the forward elimination phase a normalization is     
+!       applied so the result looks like:                              
+!         -                   - - -   - -                              
+!         |  1  -d            | |r|   |r|                              
+!         |  0   1  -d        | |r|   |r|                              
+!         |      0   1  -d    | |r| = |r|                              
+!         |       .   .   .   | |.|   |.|                              
+!         |          .  .   . | |.|   |.|                              
+!         -                   - - -   - -                              
+!       Which can then be used with a straightforward backsolve to     
+!       obtain the answer.                                             
+!       It is assumed that the pointers in blockPointers already       
+!       point to the correct block.                                    
 !
        use constants
        use blockPointers, only : nx, ny, nz, il, jl, kl, dw, p, iBlank
@@ -97,11 +76,7 @@
        real(kind=realType), dimension(il,max(jl,kl)) :: epz, d, t, rfl
 
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
 !      rfl0 is a measure of the ratio lambda/lambda*
 !
@@ -114,12 +89,8 @@
 
        plim  = 0.001_realType*pInfCorr
 
-!      ******************************************************************
-!      *                                                                *
-!      * Smoothing in the i-direction. Only done when enough cells are  *
-!      * present in the i-direction.                                    *
-!      *                                                                *
-!      ******************************************************************
+!       Smoothing in the i-direction. Only done when enough cells are  
+!       present in the i-direction.                                    
 !
        if(nx > 1) then
 
@@ -189,12 +160,8 @@
          enddo
        endif
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Smoothing in the j-direction. Only done when enough cells are  *
-!      * present in the j-direction.                                    *
-!      *                                                                *
-!      ******************************************************************
+!       Smoothing in the j-direction. Only done when enough cells are  
+!       present in the j-direction.                                    
 !
        if(ny > 1) then
 
@@ -264,12 +231,8 @@
          enddo
        endif
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Smoothing in the k-direction. Only done when enough cells are  *
-!      * present in the k-direction.                                    *
-!      *                                                                *
-!      ******************************************************************
+!       Smoothing in the k-direction. Only done when enough cells are  
+!       present in the k-direction.                                    
 !
        if(nz > 1) then
 

@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          readTimeHistory.F90                             *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 05-20-2004                                      *
-!      * Last modified: 10-10-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          readTimeHistory.F90                             
+!       Author:        Edwin van der Weide                             
+!       Starting date: 05-20-2004                                      
+!       Last modified: 10-10-2005                                      
 !
        subroutine readTimeHistory(fileIDs)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * readTimeHistory attempts to read the time history of an        *
-!      * unsteady computation from the given cgns restart file.         *
-!      * If present it will be stored in the arrays timeArray and       *
-!      * timeDataArray, for which memory is allocated.                  *
-!      *                                                                *
-!      ******************************************************************
+!       readTimeHistory attempts to read the time history of an        
+!       unsteady computation from the given cgns restart file.         
+!       If present it will be stored in the arrays timeArray and       
+!       timeDataArray, for which memory is allocated.                  
 !
        use constants
        use cgnsNames

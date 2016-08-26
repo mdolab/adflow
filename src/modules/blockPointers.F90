@@ -1,31 +1,21 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          blockPointers.f90                               *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 03-07-2003                                      *
-!      * Last modified: 11-21-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          blockPointers.f90                               
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 03-07-2003                                      
+!       Last modified: 11-21-2007                                      
 !
 module blockPointers
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * This module contains the pointers for all variables inside a   *
-  !      * block. The pointers are set via the subroutine setPointers,    *
-  !      * which can be found in the utils directory. In this way the     *
-  !      * code becomes much more readable. The relation to the original  *
-  !      * multiblock grid is not copied, because it does not affect the  *
-  !      * computation.                                                   *
-  !      *                                                                *
-  !      * See the module block for the meaning of the variables.         *
-  !      *                                                                *
-  !      * Note that the dimensions are not pointers, but integers.       *
-  !      * Consequently changing dimensions of a block must be done only  *
-  !      * with the variables of floDoms.                                 *
-  !      *                                                                *
-  !      ******************************************************************
+  !       This module contains the pointers for all variables inside a   
+  !       block. The pointers are set via the subroutine setPointers,    
+  !       which can be found in the utils directory. In this way the     
+  !       code becomes much more readable. The relation to the original  
+  !       multiblock grid is not copied, because it does not affect the  
+  !       computation.                                                   
+  !       See the module block for the meaning of the variables.         
+  !       Note that the dimensions are not pointers, but integers.       
+  !       Consequently changing dimensions of a block must be done only  
+  !       with the variables of floDoms.                                 
   !
   use constants, only : intType, realType, porType
   use block, only : fringeType, BCDataType, viscSubFaceType, flowDoms, nDom
@@ -34,12 +24,8 @@ module blockPointers
 #endif
   implicit none
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Additional info, such that it is known to which block the data *
-  !      * inside this module belongs.                                    *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Additional info, such that it is known to which block the data 
+  !       inside this module belongs.                                    
   !
   ! sectionID:   the section to which this block belongs.
   ! nbkLocal :   local block number.
@@ -51,13 +37,9 @@ module blockPointers
   integer(kind=intType) :: nbkLocal, nbkGlobal, mgLevel
   integer(kind=intType) :: spectralSol
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Variables, which are either copied or the pointer is set to    *
-  !      * the correct variable in the block. See the module block for    *
-  !      * meaning of the variables.                                      *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Variables, which are either copied or the pointer is set to    
+  !       the correct variable in the block. See the module block for    
+  !       meaning of the variables.                                      
   !
   integer(kind=intType) :: nx, ny, nz, il, jl, kl
   integer(kind=intType) :: ie, je, ke, ib, jb, kb
@@ -191,9 +173,7 @@ module blockPointers
   real(kind=realType), dimension(:,:,:,:), pointer :: w_offTimeInstance
   real(kind=realType), dimension(:,:,:), pointer :: vol_offTimeInstance
 
-  ! *******************************
   ! Added by HDN
-  ! *******************************
   real(kind=realType), dimension(:,:,:,:),   pointer :: xALE
   real(kind=realType), dimension(:,:,:,:),   pointer :: sVeloIALE, sVeloJALE, sVeloKALE
   real(kind=realType), dimension(:,:,:,:,:), pointer :: sIALE, sJALE, sKALE

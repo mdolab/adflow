@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          exchangeCoor.F90                                *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-24-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          exchangeCoor.F90                                
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-24-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine exchangeCoor(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * ExchangeCoor exchanges the coordinates of the given grid       *
-!      * level.                                                         *
-!      *                                                                *
-!      ******************************************************************
+!       ExchangeCoor exchanges the coordinates of the given grid       
+!       level.                                                         
 !
        use block
        use communication
@@ -48,11 +40,7 @@
          end subroutine correctPeriodicCoor
        end interface
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the number of spectral solutions.
 
@@ -216,12 +204,8 @@
 
        subroutine correctPeriodicCoor(level, sp, nPeriodic, periodicData)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * correctPeriodicCoor applies the periodic transformation to     *
-!      * the coordinates of the nodal halo's in periodicData.           *
-!      *                                                                *
-!      ******************************************************************
+!       correctPeriodicCoor applies the periodic transformation to     
+!       the coordinates of the nodal halo's in periodicData.           
 !
        use block
        use communication
@@ -240,11 +224,7 @@
        real(kind=realType), dimension(3,3) :: rotMatrix
        real(kind=realType), dimension(3)   :: rotCenter, translation
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the number of periodic transformations.
 

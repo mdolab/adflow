@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          DADISmoother.f90                                *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-20-2003                                      *
-!      * Last modified: 08-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          DADISmoother.f90                                
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-20-2003                                      
+!       Last modified: 08-25-2005                                      
 !
 subroutine DADISmoother
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * RungeKuttaSmoother performs one multi-stage runge kutta        *
-  !      * explicit time step for the current multigrid level. On         *
-  !      * entrance it is assumed that the residual and time step are     *
-  !      * already computed. On exit the solution in the halo's contain   *
-  !      * the latest values. However, the residual corresponding to      *
-  !      * these values is not computed.                                  *
-  !      *                                                                *
-  !      ******************************************************************
+  !       RungeKuttaSmoother performs one multi-stage runge kutta        
+  !       explicit time step for the current multigrid level. On         
+  !       entrance it is assumed that the residual and time step are     
+  !       already computed. On exit the solution in the halo's contain   
+  !       the latest values. However, the residual corresponding to      
+  !       these values is not computed.                                  
   !
   use blockPointers
   use flowVarRefState
@@ -29,11 +21,7 @@ subroutine DADISmoother
   implicit none
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   if (groundLevel == 1) then 
      do Subit=1,nSubiterations-1
@@ -61,11 +49,7 @@ end subroutine DADISmoother
 
 subroutine executeDADIStep
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * executeDADIStep executes one DADI step.        		*
-  !      *                                                                *
-  !      ******************************************************************
+  !       executeDADIStep executes one DADI step.        		
   !
   use blockPointers
   use constants
@@ -94,11 +78,7 @@ subroutine executeDADIStep
 
   logical :: secondHalo, smoothResidual, correctForK
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Set the value of secondHalo and the current cfl number,
   ! depending on the situation. On the finest grid in the mg cycle
@@ -132,11 +112,7 @@ subroutine executeDADIStep
   correctForK = getCorrectForK()
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Compute the updates of the conservative variables.             *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Compute the updates of the conservative variables.             
   !
   ! Loop over the local number of blocks.
 
@@ -236,11 +212,7 @@ subroutine executeDADIStep
 
   enddo domainsUpdate
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Compute the new state vector.                                  *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Compute the new state vector.                                  
   !
   ! Loop over the number of spectral solutions and local blocks.
 

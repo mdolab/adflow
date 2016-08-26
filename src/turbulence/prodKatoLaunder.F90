@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          prodKatoLaunder.f90                             *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 08-01-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          prodKatoLaunder.f90                             
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 08-01-2003                                      
+!       Last modified: 06-12-2005                                      
 !
 subroutine prodKatoLaunder
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * prodKatoLaunder computes the turbulent production term using   *
-  !      * the Kato-Launder formulation.                                  *
-  !      *                                                                *
-  !      ******************************************************************
+  !       prodKatoLaunder computes the turbulent production term using   
+  !       the Kato-Launder formulation.                                  
   !
   use constants
   use blockPointers
@@ -33,11 +25,7 @@ subroutine prodKatoLaunder
   real(kind=realType) :: oxy, oxz, oyz, oijoij
   real(kind=realType) :: fact, omegax, omegay, omegaz
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Determine the non-dimensional wheel speed of this block.
   ! The vorticity term, which appears in Kato-Launder is of course

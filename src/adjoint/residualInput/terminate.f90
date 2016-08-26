@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          returnFail.f90                                   *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 12-10-2002                                      *
-!      * Last modified: 10-14-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          returnFail.f90                                   
+!       Author:        Edwin van der Weide                             
+!       Starting date: 12-10-2002                                      
+!       Last modified: 10-14-2005                                      
 !
 subroutine returnFail(routineName, errorMessage)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * returnFail writes an error message to standard output and       *
-  !      * returnFails the execution of the program.                       *
-  !      *                                                                *
-  !      ******************************************************************
+  !       returnFail writes an error message to standard output and       
+  !       returnFails the execution of the program.                       
   !
   use precision
   use communication

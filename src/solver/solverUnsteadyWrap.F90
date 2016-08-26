@@ -1,35 +1,25 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          solverUnsteadyBDF.F90                           *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-13-2003                                      *
-!      * Last modified: 11-21-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          solverUnsteadyBDF.F90                           
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-13-2003                                      
+!       Last modified: 11-21-2007                                      
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * solverUnsteadyWrap is a wrapper of solverUnsteady_ALE for      *
-  !      * MD coupling at python level.                                   *
-  !      * The original solver is dismantled to seperate out              *
-  !      * time-loop-related procedures.                                  *
-  !      * Expected structure in Python coupler:                          *
-  !      * - solverUnsteadyWrapBegin                                      *
-  !      * - Update physical time step                                    *
-  !      * - Time loop begins                                             *
-  !      *   - Time increment                                             *
-  !      *   - Mesh deformation                                           *
-  !      *   - solverUnsteadyWrapInLoop                                   *
-  !      * - Time loop ends                                               *
-  !      * - solverUnsteadyWrapEnd: checkWriteUnsteadyEndLoop             *
-  !      *                                                                *
-  !      ******************************************************************
+  !       solverUnsteadyWrap is a wrapper of solverUnsteady_ALE for      
+  !       MD coupling at python level.                                   
+  !       The original solver is dismantled to seperate out              
+  !       time-loop-related procedures.                                  
+  !       Expected structure in Python coupler:                          
+  !       - solverUnsteadyWrapBegin                                      
+  !       - Update physical time step                                    
+  !       - Time loop begins                                             
+  !         - Time increment                                             
+  !         - Mesh deformation                                           
+  !         - solverUnsteadyWrapInLoop                                   
+  !       - Time loop ends                                               
+  !       - solverUnsteadyWrapEnd: checkWriteUnsteadyEndLoop             
   !
 
-! ******************************************************************
 ! Wrappers
-! ******************************************************************
 subroutine solverUnsteadyWrapBegin
   use inputIteration
   use inputUnsteady
@@ -82,7 +72,6 @@ subroutine solverUnsteadyWrapBegin
 
 end subroutine solverUnsteadyWrapBegin
 
-! ******************************************************************
 subroutine solverUnsteadyWrapInLoop
   use iteration
   implicit none
@@ -107,24 +96,17 @@ subroutine solverUnsteadyWrapInLoop
 
 end subroutine solverUnsteadyWrapInLoop
 
-! ******************************************************************
 subroutine solverUnsteadyWrapEnd
   ! Determine whether or not the final solution must be written.
   call checkWriteUnsteadyEndLoop
 end subroutine solverUnsteadyWrapEnd
 
 
-! ******************************************************************
 ! Inner utilities
-! ******************************************************************
 subroutine initTimeStepWrap
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Second part of initTimeStepPart1_ALE and                       *
-!      * initTimeStepPart2_ALE                                          *
-!      *                                                                *
-!      ******************************************************************
+!       Second part of initTimeStepPart1_ALE and                       
+!       initTimeStepPart2_ALE                                          
 !
   use blockPointers
   use communication

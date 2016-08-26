@@ -1,11 +1,7 @@
        subroutine solver
 !
-!      ******************************************************************
-!      *                                                                *
-!      * solver is the main subroutine of the solver library.           *
-!      * It controls the full multigrid and the kill signals.           *
-!      *                                                                *
-!      ******************************************************************
+!       solver is the main subroutine of the solver library.           
+!       It controls the full multigrid and the kill signals.           
 !
        use constants
        use communication, only : myid

@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          shiftSolution.f90                               *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-04-2004                                      *
-!      * Last modified: 08-30-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          shiftSolution.f90                               
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-04-2004                                      
+!       Last modified: 08-30-2005                                      
 !
        subroutine shiftSolution
 !
-!      ******************************************************************
-!      *                                                                *
-!      * shiftSolution shifts the solution of the older time levels,    *
-!      * such that a new time step can be started.                      *
-!      *                                                                *
-!      ******************************************************************
+!       shiftSolution shifts the solution of the older time levels,    
+!       such that a new time step can be started.                      
 !
        use constants
        use blockPointers, only: il, jl, kl, nbkglobal, wOld, w, nDom
@@ -42,11 +34,7 @@
        real(kind=realType), dimension(3)   :: rotationPoint
        real(kind=realType), dimension(3,3) :: rotationMatrix
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Compute the rotation matrix of the rigid body rotation as well
        ! as the rotation point; the latter is not needed to correct the

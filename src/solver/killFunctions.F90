@@ -1,25 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          killFunctions.F90                               *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-12-2003                                      *
-!      * Last modified: 10-14-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          killFunctions.F90                               
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-12-2003                                      
+!       Last modified: 10-14-2005                                      
 !
        subroutine set_signal_write
 !
-!      ******************************************************************
-!      *                                                                *
-!      * set_signal_write sets the localSignal to signalWrite. On the   *
-!      * finest mesh this means that after the current iteration a      *
-!      * solution is written. On the coarser grids this signal will be  *
-!      * ignored.                                                       *
-!      *                                                                *
-!      * This routine is only compiled when signalling is supported.    *
-!      *                                                                *
-!      ******************************************************************
+!       set_signal_write sets the localSignal to signalWrite. On the   
+!       finest mesh this means that after the current iteration a      
+!       solution is written. On the coarser grids this signal will be  
+!       ignored.                                                       
+!       This routine is only compiled when signalling is supported.    
 !
 #ifndef USE_NO_SIGNALS
        
@@ -34,11 +25,7 @@
 !
        character(len=7) :: integerString
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution.                                               *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution.                                               
 !
        ! The user signals must be reconnected again, because the
        ! connection is lost after a signal has been given.
@@ -121,18 +108,13 @@
 
        subroutine set_signal_write_quit
 !
-!      ******************************************************************
-!      *                                                                *
-!      * set_signal_write_quit sets the localSignal to                  *
-!      * signalWriteQuit. On the finest mesh this means that after      *
-!      * the current iteration the solution is written and the          *
-!      * computation is stopped. On the coarser grids the solution is   *
-!      * transferred to the next finer level and the computation is     *
-!      * continued there.                                               *
-!      *                                                                *
-!      * This routine is only compiled when signalling is supported.    *
-!      *                                                                *
-!      ******************************************************************
+!       set_signal_write_quit sets the localSignal to                  
+!       signalWriteQuit. On the finest mesh this means that after      
+!       the current iteration the solution is written and the          
+!       computation is stopped. On the coarser grids the solution is   
+!       transferred to the next finer level and the computation is     
+!       continued there.                                               
+!       This routine is only compiled when signalling is supported.    
 !
 #ifndef USE_NO_SIGNALS
 
@@ -147,11 +129,7 @@
 !
        character(len=7) :: integerString
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! The user signals must be reconnected again, because the
        ! connection is lost after a signal has been given.

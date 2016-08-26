@@ -4,29 +4,21 @@
 !  differentiation of inviscidcentralflux in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *p *dw *w *vol *si *sj *sk
 !   with respect to varying inputs: timeref *p *dw *w *vol *si
-!                *sj *sk
+!                sj 
 !   plus diff mem management of: p:in dw:in w:in vol:in si:in sj:in
 !                sk:in
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          inviscidcentralflux.f90                         *
-!      * author:        edwin van der weide                             *
-!      * starting date: 03-24-2003                                      *
-!      * last modified: 10-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          inviscidcentralflux.f90                         
+!       author:        edwin van der weide                             
+!       starting date: 03-24-2003                                      
+!       last modified: 10-29-2007                                      
 !
 subroutine inviscidcentralflux_b()
 !
-!      ******************************************************************
-!      *                                                                *
-!      * inviscidcentralflux computes the euler fluxes using a central  *
-!      * discretization for a given block. therefore it is assumed that *
-!      * the pointers in block pointer already point to the correct     *
-!      * block on the correct multigrid level.                          *
-!      *                                                                *
-!      ******************************************************************
+!       inviscidcentralflux computes the euler fluxes using a central  
+!       discretization for a given block. therefore it is assumed that 
+!       the pointers in block pointer already point to the correct     
+!       block on the correct multigrid level.                          
 !
   use blockpointers
   use cgnsgrid
@@ -350,11 +342,7 @@ subroutine inviscidcentralflux_b()
   call popinteger4(j)
   call popinteger4(i)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! initialize sface to zero. this value will be used if the
 ! block is not moving.

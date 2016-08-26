@@ -1,13 +1,9 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          SST.f90                                         *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
+!       File:          SST.f90                                         
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
 !      *                Eirikur Jonsson
-!      * Starting date: 07-31-2003                                      *
-!      * Last modified: 04-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       Starting date: 07-31-2003                                      
+!       Last modified: 04-12-2005                                      
 !
 ! This module contains the source code related to the SST turbulence
 ! model. It is slightly more modularized than the original which makes
@@ -15,13 +11,9 @@
 
        subroutine SST(resOnly)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * SST solves the transport equations for menter's SST-variant of *
-!      * the k-omega turbulence model in a segregated manner using a    *
-!      * diagonal dominant ADI-scheme.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       SST solves the transport equations for menter's SST-variant of 
+!       the k-omega turbulence model in a segregated manner using a    
+!       diagonal dominant ADI-scheme.                                  
 !
        use constants
        use blockPointers
@@ -38,11 +30,7 @@
 !
        integer(kind=intType) :: nn, sps
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Compute the time derivative for the time spectral mode.
 

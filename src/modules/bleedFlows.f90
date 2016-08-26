@@ -1,33 +1,21 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          bleedFlows.f90                                  *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 08-11-2005                                      *
-!      * Last modified: 09-12-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          bleedFlows.f90                                  
+!       Author:        Edwin van der Weide                             
+!       Starting date: 08-11-2005                                      
+!       Last modified: 09-12-2007                                      
 !
        module bleedFlows
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Module which contains the derived data types as well as the    *
-!      * corresponding arrays to store the information needed to model  *
-!      * the bleed flows. Both inflow bleeds and outflow bleeds are     *
-!      * possible.                                                      *
-!      *                                                                *
-!      ******************************************************************
+!       Module which contains the derived data types as well as the    
+!       corresponding arrays to store the information needed to model  
+!       the bleed flows. Both inflow bleeds and outflow bleeds are     
+!       possible.                                                      
 !
        use constants, only : intType, realType
        implicit none
        save
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the derived data type for the flow bleeds.   *
-!      *                                                                *
-!      ******************************************************************
+!       The definition of the derived data type for the flow bleeds.   
 !
        type bleedflowType
 
@@ -41,11 +29,7 @@
 
        end type bleedflowType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Variables stored in this module.                               *
-!      *                                                                *
-!      ******************************************************************
+!       Variables stored in this module.                               
 !
        ! nInflowBleeds:    Number of inflow bleeds present.
        ! nOutflowBleeds:   Number of outflow bleeds present.

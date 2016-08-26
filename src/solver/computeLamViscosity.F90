@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          computeLamViscosity.f90                         *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-10-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          computeLamViscosity.f90                         
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-10-2003                                      
+!       Last modified: 06-12-2005                                      
 !
 subroutine computeLamViscosity
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * computeLamViscosity computes the laminar viscosity ratio in    *
-  !      * the owned cell centers of the given block. Sutherland's law is *
-  !      * used. It is assumed that the pointes already point to the      *
-  !      * correct block before entering this subroutine.                 *
-  !      *                                                                *
-  !      ******************************************************************
+  !       computeLamViscosity computes the laminar viscosity ratio in    
+  !       the owned cell centers of the given block. Sutherland's law is 
+  !       used. It is assumed that the pointes already point to the      
+  !       correct block before entering this subroutine.                 
   !
   use blockPointers
   use constants
@@ -37,11 +29,7 @@ subroutine computeLamViscosity
   real(kind=realType)   :: muSuth, TSuth, SSuth, T, pp
   logical               :: correctForK
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Return immediately if no laminar viscosity needs to be computed.
 

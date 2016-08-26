@@ -1,37 +1,28 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          turbAdvection.f90                               *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 09-01-2003                                      *
-!      * Last modified: 04-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          turbAdvection.f90                               
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 09-01-2003                                      
+!       Last modified: 04-12-2005                                      
 !
 subroutine turbAdvection(mAdv, nAdv, offset, qq)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * turbAdvection discretizes the advection part of the turbulent  *
-  !      * transport equations. As the advection part is the same for all *
-  !      * models, this generic routine can be used. Both the             *
-  !      * discretization and the central jacobian are computed in this   *
-  !      * subroutine. The former can either be 1st or 2nd order          *
-  !      * accurate; the latter is always based on the 1st order upwind   *
-  !      * discretization. When the discretization must be second order   *
-  !      * accurate, the fully upwind (kappa = -1) scheme in combination  *
-  !      * with the minmod limiter is used.                               *
-  !      *                                                                *
-  !      * Only nAdv equations are treated, while the actual system has   *
-  !      * size mAdv. The reason is that some equations for some          *
-  !      * turbulence equations do not have an advection part, e.g. the   *
-  !      * f equation in the v2-f model. The argument offset indicates    *
-  !      * the offset in the w vector where this subsystem starts. As a   *
-  !      * consequence it is assumed that the indices of the current      *
-  !      * subsystem are contiguous, e.g. if a 2*2 system is solved the   *
-  !      * Last index in w is offset+1 and offset+2 respectively.         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       turbAdvection discretizes the advection part of the turbulent  
+  !       transport equations. As the advection part is the same for all 
+  !       models, this generic routine can be used. Both the             
+  !       discretization and the central jacobian are computed in this   
+  !       subroutine. The former can either be 1st or 2nd order          
+  !       accurate; the latter is always based on the 1st order upwind   
+  !       discretization. When the discretization must be second order   
+  !       accurate, the fully upwind (kappa = -1) scheme in combination  
+  !       with the minmod limiter is used.                               
+  !       Only nAdv equations are treated, while the actual system has   
+  !       size mAdv. The reason is that some equations for some          
+  !       turbulence equations do not have an advection part, e.g. the   
+  !       f equation in the v2-f model. The argument offset indicates    
+  !       the offset in the w vector where this subsystem starts. As a   
+  !       consequence it is assumed that the indices of the current      
+  !       subsystem are contiguous, e.g. if a 2*2 system is solved the   
+  !       Last index in w is offset+1 and offset+2 respectively.         
   !
   use constants
   use blockPointers
@@ -54,11 +45,7 @@ subroutine turbAdvection(mAdv, nAdv, offset, qq)
 
   real(kind=realType), dimension(mAdv) :: impl
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Initialize the grid velocity to zero. This value will be used
   ! if the block is not moving.
@@ -66,15 +53,11 @@ subroutine turbAdvection(mAdv, nAdv, offset, qq)
   !$AD CHECKPOINT-START
   qs = zero
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Upwind discretization of the convective term in k (zeta)       *
-  !      * direction. Either the 1st order upwind or the second order     *
-  !      * fully upwind interpolation scheme, kappa = -1, is used in      *
-  !      * combination with the minmod limiter.                           *
-  !      * The possible grid velocity must be taken into account.         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Upwind discretization of the convective term in k (zeta)       
+  !       direction. Either the 1st order upwind or the second order     
+  !       fully upwind interpolation scheme, kappa = -1, is used in      
+  !       combination with the minmod limiter.                           
+  !       The possible grid velocity must be taken into account.         
   !
 #ifdef TAPENADE_FAST
   !$AD II-LOOP
@@ -289,15 +272,11 @@ subroutine turbAdvection(mAdv, nAdv, offset, qq)
   continue
   !$AD CHECKPOINT-END
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Upwind discretization of the convective term in j (eta)        *
-  !      * direction. Either the 1st order upwind or the second order     *
-  !      * fully upwind interpolation scheme, kappa = -1, is used in      *
-  !      * combination with the minmod limiter.                           *
-  !      * The possible grid velocity must be taken into account.         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Upwind discretization of the convective term in j (eta)        
+  !       direction. Either the 1st order upwind or the second order     
+  !       fully upwind interpolation scheme, kappa = -1, is used in      
+  !       combination with the minmod limiter.                           
+  !       The possible grid velocity must be taken into account.         
   !
   continue
   !$AD CHECKPOINT-START
@@ -516,15 +495,11 @@ subroutine turbAdvection(mAdv, nAdv, offset, qq)
   continue
   !$AD CHECKPOINT-END
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Upwind discretization of the convective term in i (xi)         *
-  !      * direction. Either the 1st order upwind or the second order     *
-  !      * fully upwind interpolation scheme, kappa = -1, is used in      *
-  !      * combination with the minmod limiter.                           *
-  !      * The possible grid velocity must be taken into account.         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Upwind discretization of the convective term in i (xi)         
+  !       direction. Either the 1st order upwind or the second order     
+  !       fully upwind interpolation scheme, kappa = -1, is used in      
+  !       combination with the minmod limiter.                           
+  !       The possible grid velocity must be taken into account.         
   !
   continue
   !$AD CHECKPOINT-START

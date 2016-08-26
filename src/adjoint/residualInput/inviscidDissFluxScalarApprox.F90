@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          inviscidDissFluxScalar.f90                      *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-24-2003                                      *
-!      * Last modified: 10-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          inviscidDissFluxScalar.f90                      
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-24-2003                                      
+!       Last modified: 10-29-2007                                      
 !
 subroutine inviscidDissFluxScalarApprox
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * inviscidDissFluxScalar computes the scalar artificial          *
-  !      * dissipation, see AIAA paper 81-1259, for a given block.        *
-  !      * Therefore it is assumed that the pointers in  blockPointers    *
-  !      * already point to the correct block.                            *
-  !      *                                                                *
-  !      ******************************************************************
+  !       inviscidDissFluxScalar computes the scalar artificial          
+  !       dissipation, see AIAA paper 81-1259, for a given block.        
+  !       Therefore it is assumed that the pointers in  blockPointers    
+  !       already point to the correct block.                            
   !
   use blockPointers
   use cgnsGrid
@@ -42,11 +34,7 @@ subroutine inviscidDissFluxScalarApprox
   real(kind=realType) :: dss1, dss2, ddw, fs
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Check if rFil == 0. If so, the dissipative flux needs not to
   ! be computed.
@@ -168,11 +156,7 @@ subroutine inviscidDissFluxScalarApprox
      enddo
   enddo
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Dissipative fluxes in the i-direction.                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Dissipative fluxes in the i-direction.                         
   !
   do k=2,kl
      do j=2,jl
@@ -257,11 +241,7 @@ subroutine inviscidDissFluxScalarApprox
      enddo
   enddo
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Dissipative fluxes in the j-direction.                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Dissipative fluxes in the j-direction.                         
   !
   do k=2,kl
      do i=2,il
@@ -341,11 +321,7 @@ subroutine inviscidDissFluxScalarApprox
      enddo
   enddo
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Dissipative fluxes in the k-direction.                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Dissipative fluxes in the k-direction.                         
   !
   do j=2,jl
      do i=2,il

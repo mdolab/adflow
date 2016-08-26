@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          determineBleedFlowRegions.f90                   *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 08-11-2005                                      *
-!      * Last modified: 08-16-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          determineBleedFlowRegions.f90                   
+!       Author:        Edwin van der Weide                             
+!       Starting date: 08-11-2005                                      
+!       Last modified: 08-16-2005                                      
 !
        subroutine determineBleedFlowRegions
 !
-!      ******************************************************************
-!      *                                                                *
-!      * determineBleedFlowAreas determines the number of inflow and    *
-!      * outflow bleed regions as well as the mapping to and from the   *
-!      * corresponding family ID.                                       *
-!      *                                                                *
-!      ******************************************************************
+!       determineBleedFlowAreas determines the number of inflow and    
+!       outflow bleed regions as well as the mapping to and from the   
+!       corresponding family ID.                                       
 !
        use bleedFlows
        use cgnsGrid
@@ -31,11 +23,7 @@
 !
        real(kind=realType) :: getMassFlux
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the number of inflow and outflow bleed regions.
 
@@ -106,14 +94,10 @@
 
        function getMassFlux(famID)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * getMassFlux extracts the relative mass flux from the           *
-!      * prescribed data for the given family. If not present           *
-!      * processor 0 will print an error message and the computation    *
-!      * returnFails.                                                    *
-!      *                                                                *
-!      ******************************************************************
+!       getMassFlux extracts the relative mass flux from the           
+!       prescribed data for the given family. If not present           
+!       processor 0 will print an error message and the computation    
+!       returnFails.                                                    
 !
        use cgnsGrid
        use cgnsNames
@@ -139,11 +123,7 @@
 
        type(cgnsBcDatasetType), pointer, dimension(:) :: dataSet
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Store the number of boundary condition data sets and the 
        ! data sets a bit easier.

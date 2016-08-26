@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          closestDirectHalos.f90                          *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 01-31-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          closestDirectHalos.f90                          
+!       Author:        Edwin van der Weide                             
+!       Starting date: 01-31-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine closestDirectHalos(entityHalo, entityIndex, &
                                      start, nLevel, offset, gridLevel)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * closestDirectHalos determines the number of indirect halo's    *
-!      * to be treated and its corresponding direct halo.               *
-!      *                                                                *
-!      ******************************************************************
+!       closestDirectHalos determines the number of indirect halo's    
+!       to be treated and its corresponding direct halo.               
 !
        use block
        use bcHalo
@@ -51,11 +43,7 @@
 !
        integer(kind=intType) :: getNumberIndirectHalos
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the number of indirect halo's for which the donor must
        ! be determined. Initialize iindHalo, the actual counter, to 0.
@@ -274,12 +262,8 @@
 
        function getNumberIndirectHalos(start, nLevel, offset, gridLevel)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * getNumberIndirectHalos determines the number of indirect       *
-!      * halo's for which the donor must be determined.                 *
-!      *                                                                *
-!      ******************************************************************
+!       getNumberIndirectHalos determines the number of indirect       
+!       halo's for which the donor must be determined.                 
 !
        use block
        implicit none
@@ -298,11 +282,7 @@
        integer(kind=intType) :: nn, il, jl, kl
        integer(kind=intType) :: i, j, k, ii, jj, kk
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize getNumberIndirectHalos and loop over the blocks.
 

@@ -384,12 +384,10 @@ module overset
   ! ==============================
   logical function lessEqualEdgeType(e1, e2)
     !
-    !  **********************************************************************
-    !  * lessEqualEdgeType returns .True. if e1<=e2 and .False. otherwise.  *
-    !  * Compared on the directed edge node indices n1 and n2.              *
-    !  * First compare wrt averaged node indices data. If same averaged     *
-    !  * node data, then compare wrt increasing or decreasing node indices. *
-    !  **********************************************************************
+    !   lessEqualEdgeType returns .True. if e1<=e2 and .False. otherwise.  
+    !   Compared on the directed edge node indices n1 and n2.              
+    !   First compare wrt averaged node indices data. If same averaged     
+    !   node data, then compare wrt increasing or decreasing node indices. 
 
     implicit none
 
@@ -446,12 +444,10 @@ module overset
   ! ---------------------------------
   logical function lessEdgeType(e1, e2)
     !
-    !  **********************************************************************
-    !  * lessEdgeType returns .True. if e1<e2 and .False. otherwise.  *
-    !  * Compared on the directed edge node indices n1 and n2.              *
-    !  * First compare wrt averaged node indices data. If same averaged     *
-    !  * node data, then compare wrt increasing or decreasing node indices. *
-    !  **********************************************************************
+    !   lessEdgeType returns .True. if e1<e2 and .False. otherwise.  
+    !   Compared on the directed edge node indices n1 and n2.              
+    !   First compare wrt averaged node indices data. If same averaged     
+    !   node data, then compare wrt increasing or decreasing node indices. 
 
     implicit none
 
@@ -508,10 +504,8 @@ module overset
 
   logical function lessEqualPocketEdgeN2(e1, e2)
     !
-    !  **********************************************************************
-    !  * lessEqualPocketEdgeN2 returns .True. if e1%n2<=e2%n2 and .False.   *
-    !  * otherwise. Compared on the directed edge node indices n1 and n2.   *
-    !  **********************************************************************
+    !   lessEqualPocketEdgeN2 returns .True. if e1%n2<=e2%n2 and .False.   
+    !   otherwise. Compared on the directed edge node indices n1 and n2.   
 
     implicit none
 
@@ -533,10 +527,8 @@ module overset
 
   logical function lessPocketEdgeN2(e1, e2)
     !
-    !  **********************************************************************
-    !  * lessPocketEdgeN2 returns .True. if e1%N2<e2%N2 and .False.         *
-    !  * otherwise. Compared on the directed edge node indices n1 and n2.   *
-    !  **********************************************************************
+    !   lessPocketEdgeN2 returns .True. if e1%N2<e2%N2 and .False.         
+    !   otherwise. Compared on the directed edge node indices n1 and n2.   
 
     implicit none
 
@@ -558,10 +550,8 @@ module overset
 
   logical function EqualPocketEdgeN2(e1, e2)
     !
-    !  **********************************************************************
-    !  * EqualPocketEdgeN2 returns .True. if e1%N2==e2%N2 and .False.       *
-    !  * otherwise. Compared on the directed edge node indices n1 and n2.   *
-    !  **********************************************************************
+    !   EqualPocketEdgeN2 returns .True. if e1%N2==e2%N2 and .False.       
+    !   otherwise. Compared on the directed edge node indices n1 and n2.   
 
     implicit none
 

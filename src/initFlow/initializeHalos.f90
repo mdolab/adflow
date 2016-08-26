@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          initializeHalos.f90                             *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 09-13-2007                                      *
-!      * Last modified: 09-14-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          initializeHalos.f90                             
+!       Author:        Edwin van der Weide                             
+!       Starting date: 09-13-2007                                      
+!       Last modified: 09-14-2007                                      
 !
        subroutine initializeHalos(halosRead)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * initializeHalos sets the flow variables in the halo cells      *
-!      * using a constant extrapolation. If the halos are read only the *
-!      * second halos are initialized, otherwise both.                  *
-!      *                                                                *
-!      ******************************************************************
+!       initializeHalos sets the flow variables in the halo cells      
+!       using a constant extrapolation. If the halos are read only the 
+!       second halos are initialized, otherwise both.                  
 !
        use constants
        use blockPointers, only : nDom, w, p, rlv, ib, jb, kb, &
@@ -37,11 +29,7 @@
        integer(kind=intType) :: nn, mm, i, j, k, l
        integer(kind=intType) :: jj, kk
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the number of spectral solutions and blocks.
 

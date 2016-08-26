@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          initMemSliding.f90                              *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 09-26-2003                                      *
-!      * Last modified: 03-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          initMemSliding.f90                              
+!       Author:        Edwin van der Weide                             
+!       Starting date: 09-26-2003                                      
+!       Last modified: 03-25-2005                                      
 !
        subroutine initMemSliding(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * initMemSliding initializes the data structures for the         *
-!      * communication pattern of the sliding mesh interfaces for the   *
-!      * given grid level.                                              *
-!      *                                                                *
-!      ******************************************************************
+!       initMemSliding initializes the data structures for the         
+!       communication pattern of the sliding mesh interfaces for the   
+!       given grid level.                                              
 !
        use commSliding
        use inputTimeSpectral
@@ -30,11 +22,7 @@
 !
        integer(kind=intType) :: sps
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the number of spectral solutions.
 
@@ -60,13 +48,9 @@
 
        subroutine initCommSlidingCell(commSlidingCell)
 
-!      ******************************************************************
-!      *                                                                *
-!      * initCommSlidingCell initializes the memory of                  *
-!      * commSlidingCell, the external communication pattern for        *
-!      * sliding mesh halo's.                                           *
-!      *                                                                *
-!      ******************************************************************
+!       initCommSlidingCell initializes the memory of                  
+!       commSlidingCell, the external communication pattern for        
+!       sliding mesh halo's.                                           
 !
        use commSliding
        use utils, only : terminate
@@ -81,11 +65,7 @@
 !
        integer :: ierr
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialization of the integer data.
 
@@ -109,13 +89,9 @@
 !      ==================================================================
 
        subroutine initIntSlidingCell(intSlidingCell)
-!      ******************************************************************
-!      *                                                                *
-!      * initIntSlidingCell initializes the memory of                   *
-!      * intSlidingCell, the internal communication pattern for         *
-!      * sliding mesh halo's.                                           *
-!      *                                                                *
-!      ******************************************************************
+!       initIntSlidingCell initializes the memory of                   
+!       intSlidingCell, the internal communication pattern for         
+!       sliding mesh halo's.                                           
 !
        use commSliding
        use utils, only : terminate
@@ -130,11 +106,7 @@
 !
        integer :: ierr
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialization of the integer data.
 

@@ -28,29 +28,21 @@ subroutine spectralPrecscribedMotion(input, nin, dXv, nout)
   real(kind=realType) :: time(3)
  
   !       For the TimeSpectral case, we need to include    *
-  !     * the operation that rotates the base grid to each time instance *
-  !     * This is basically the reverse of the operation that is done in *
-  !     * setGrid.f90                                                    *
-  !     *                                                                *
-  !     * The operation in setGrid.f90 is the following                  *
-  !     *                                                                *
-  !     * X_sps = M(X - rotPoint) + rotPoint                             *
-  !     *                                                                *
-  !     * where                                                          *
-  !     * X_sps is the set of coordinates at each time instance          *
-  !     * M is the rotation matrix calculated by rotMatrixRigidBody      *
-  !     * rotPoint is the point about which the motion takes place       *
-  !     *                                                                *
-  !     * It is easy to see dX_sps/dX = M                                *
-  !     *                                                                *
-  !     * What we are actually computing is the following:               *
-  !     *                                                                *
-  !     *            T          T                                        *
-  !     *   /dX_sps \ /   dR   \                                         *
-  !     *   |-------| |------- |  psi                                    *
-  !     *   \  dX   / \ dX_sps /                                         *
-  !     *                                                                *
-  !     ******************************************************************
+  !      the operation that rotates the base grid to each time instance 
+  !      This is basically the reverse of the operation that is done in 
+  !      setGrid.f90                                                    
+  !      The operation in setGrid.f90 is the following                  
+  !      X_sps = M(X - rotPoint) + rotPoint                             
+  !      where                                                          
+  !      X_sps is the set of coordinates at each time instance          
+  !      M is the rotation matrix calculated by rotMatrixRigidBody      
+  !      rotPoint is the point about which the motion takes place       
+  !      It is easy to see dX_sps/dX = M                                
+  !      What we are actually computing is the following:               
+  !                 T          T                                        
+  !        /dX_sps \ /   dR   \                                         
+  !        |-------| |------- |  psi                                    
+  !        \  dX   / \ dX_sps /                                         
   
   ! Zero dXv for time spectral case since we add to array.
   dXv = zero

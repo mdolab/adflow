@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          couplerParam.f90                                *
-!      * Author:        Seonghyeon Hahn, Edwin van der Weide            *
-!      * Starting date: 01-31-2005                                      *
-!      * Last modified: 02-08-2006                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          couplerParam.f90                                
+!       Author:        Seonghyeon Hahn, Edwin van der Weide            
+!       Starting date: 01-31-2005                                      
+!       Last modified: 02-08-2006                                      
 !
        module couplerParam
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Definition of some parameters which are required for the       *
-!      * coupling process.                                              *
-!      *                                                                *
-!      ******************************************************************
+!       Definition of some parameters which are required for the       
+!       coupling process.                                              
 !
        use constants, only : intType, realType
        implicit none

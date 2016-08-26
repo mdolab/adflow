@@ -1,14 +1,10 @@
        subroutine allocTimeArrays(nTimeTot)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * allocTimeArrays allocates the memory for the arrays to store   *
-!      * the time history of the unsteady computation. The number of    *
-!      * time steps specified is enought to store the total number of   *
-!      * time steps of the current computation plus possible earlier    *
-!      * computations.                                                  *
-!      *                                                                *
-!      ******************************************************************
+!       allocTimeArrays allocates the memory for the arrays to store   
+!       the time history of the unsteady computation. The number of    
+!       time steps specified is enought to store the total number of   
+!       time steps of the current computation plus possible earlier    
+!       computations.                                                  
 !
        use constants
        use monitor, only : timeArray, timeDataArray, nMon

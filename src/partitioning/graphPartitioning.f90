@@ -1,23 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          graphPartitioning.f90                           *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 03-22-2004                                      *
-!      * Last modified: 11-22-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          graphPartitioning.f90                           
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 03-22-2004                                      
+!       Last modified: 11-22-2007                                      
 !
        subroutine graphPartitioning(emptyPartitions, commNeglected)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * graphPartitioning partitions the corresponding graph of the    *
-!      * computational blocks such that both the number of cells and    *
-!      * number of faces is about equal on all processors.              *
-!      *                                                                *
-!      *                                                                *
-!      ******************************************************************
+!       graphPartitioning partitions the corresponding graph of the    
+!       computational blocks such that both the number of cells and    
+!       number of faces is about equal on all processors.              
 !
        use communication
        use constants

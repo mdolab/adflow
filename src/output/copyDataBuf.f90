@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          copyDataBuf.90                                  *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 10-12-2005                                      *
-!      * Last modified: 10-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          copyDataBuf.90                                  
+!       Author:        Edwin van der Weide                             
+!       Starting date: 10-12-2005                                      
+!       Last modified: 10-12-2005                                      
 !
        subroutine copyDataBufSinglePrecision(val, buffer,      &
                                              iBeg, jBeg, kBeg, &
                                              iEnd, jEnd, kEnd, subRange)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * copyDataBufSinglePrecision stores the given 1D buffer into the *
-!      * subrange of the 3D single precision val array.                 *
-!      *                                                                *
-!      ******************************************************************
+!       copyDataBufSinglePrecision stores the given 1D buffer into the 
+!       subrange of the 3D single precision val array.                 
 !
        use precision
        implicit none
@@ -36,11 +28,7 @@
 !
        integer(kind=intType) :: i, j, k, ll
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Copy the subrange into val.
 
@@ -62,12 +50,8 @@
                                              iBeg, jBeg, kBeg, &
                                              iEnd, jEnd, kEnd, subRange)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * copyDataBufDoublePrecision stores the given 1D buffer into the *
-!      * subrange of the 3D double precision val array.                 *
-!      *                                                                *
-!      ******************************************************************
+!       copyDataBufDoublePrecision stores the given 1D buffer into the 
+!       subrange of the 3D double precision val array.                 
 !
        use precision
        implicit none
@@ -86,11 +70,7 @@
 !
        integer(kind=intType) :: i, j, k, ll
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Copy the subrange into val.
 

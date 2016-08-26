@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          initFlow.f90                                    *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-06-2003                                      *
-!      * Last modified: 09-13-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          initFlow.f90                                    
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-06-2003                                      
+!       Last modified: 09-13-2007                                      
 !
        subroutine initFlow
 !
-!      ******************************************************************
-!      *                                                                *
-!      * initFlow sets the prescribed boundary data, allocates the      *
-!      * memory for and initializes the flow variables. In case a       *
-!      * restart is performed the owned variables are read from the     *
-!      * previous solution file(s).                                     *
-!      *                                                                *
-!      ******************************************************************
+!       initFlow sets the prescribed boundary data, allocates the      
+!       memory for and initializes the flow variables. In case a       
+!       restart is performed the owned variables are read from the     
+!       previous solution file(s).                                     
 !
        use constants
        use block, only : flowDoms
@@ -37,11 +29,7 @@
        integer(kind=intType) :: sps, level, nLevels
 
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the number of multigrid levels.
 

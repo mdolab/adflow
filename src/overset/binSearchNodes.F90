@@ -1,11 +1,9 @@
 !
 subroutine binSearchNodes(arr, searchNode, nn, searchInd)
 
-! **************************************************************
-! * binSearchNodes does binary search for a node 'searchNode'  *
-! * in arr(1:nn) and returns index 'searchInd' where           *
-! * 'searchNode' lies in arr. searchInd = -1 if not found.     *
-! **************************************************************
+!  binSearchNodes does binary search for a node 'searchNode'  
+!  in arr(1:nn) and returns index 'searchInd' where           
+!  'searchNode' lies in arr. searchInd = -1 if not found.     
 
   use overset
   implicit none

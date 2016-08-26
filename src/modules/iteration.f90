@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          iteration.f90                                   *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-13-2003                                      *
-!      * Last modified: 09-20-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          iteration.f90                                   
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-13-2003                                      
+!       Last modified: 09-20-2007                                      
 !
        module iteration
 !
-!      ******************************************************************
-!      *                                                                *
-!      * This module contains the iteration parameters mainly used in   *
-!      * solver.                                                        *
-!      *                                                                *
-!      ******************************************************************
+!       This module contains the iteration parameters mainly used in   
+!       solver.                                                        
 !
        use constants, only: intType, realType
        implicit none
@@ -110,9 +102,7 @@
        ! of iteration
        real(kind=realTYpe) :: CFLMonitor
 
-       ! *******************************
        ! Added by HDN
-       ! *******************************
        ! nALEMeshes:                Number of ALE levels for intermediate mesh
        !                            between two steps
        ! nALEsteps:                 Number of ALE steps at one time step

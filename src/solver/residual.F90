@@ -36,12 +36,8 @@ end subroutine residual
 
 subroutine residual_block
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * residual computes the residual of the mean flow equations on   *
-  !      * the current MG level.                                          *
-  !      *                                                                *
-  !      ******************************************************************
+  !       residual computes the residual of the mean flow equations on   
+  !       the current MG level.                                          
   !
   use blockPointers
   use cgnsGrid
@@ -83,11 +79,7 @@ subroutine residual_block
   real(kind=realType) :: dwo(nwf)
   logical :: fineGrid
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
 
   ! Set the value of rFil, which controls the fraction of the old

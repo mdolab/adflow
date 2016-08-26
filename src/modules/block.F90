@@ -1,41 +1,28 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          block.f90                                       *
-!      * Author:        Edwin van der Weide, Steve Repsher,             *
-!      *                Seonghyeon Hahn                                 *
-!      * Starting date: 12-19-2002                                      *
-!      * Last modified: 11-21-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          block.f90                                       
+!       Author:        Edwin van der Weide, Steve Repsher,             
+!                      Seonghyeon Hahn                                 
+!       Starting date: 12-19-2002                                      
+!       Last modified: 11-21-2007                                      
 !
 module block
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * This module contains the definition of the derived data type   *
-  !      * for block, which is the basic building block for this code.    *
-  !      *                                                                *
-  !      * Apart from the derived data type for block, this module also   *
-  !      * contains the actual array for storing the blocks and the       *
-  !      * number of blocks stored on this processor.                     *
-  !      *                                                                *
-  !      ******************************************************************
+  !       This module contains the definition of the derived data type   
+  !       for block, which is the basic building block for this code.    
+  !       Apart from the derived data type for block, this module also   
+  !       contains the actual array for storing the blocks and the       
+  !       number of blocks stored on this processor.                     
   !
   use constants, only : realType, intType, porType, maxCGNSNameLen
   implicit none
   save
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * The definition of the derived data type visc_subface_type,     *
-  !      * which stores the viscous stress tensor and heat flux vector.   *
-  !      * In this way it is avoided that these quantities must be        *
-  !      * recomputed for the viscous forces and postprocessing. This     *
-  !      * saves both time and a considerable amount of code.             *
-  !      *                                                                *
-  !      ******************************************************************
+  !       The definition of the derived data type visc_subface_type,     
+  !       which stores the viscous stress tensor and heat flux vector.   
+  !       In this way it is avoided that these quantities must be        
+  !       recomputed for the viscous forces and postprocessing. This     
+  !       saves both time and a considerable amount of code.             
   !
   type viscSubfaceType
 
@@ -61,16 +48,12 @@ module block
      integer(kind=intType), dimension(:, :, :), pointer :: var
   end type iPtr
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * The definition of the derived data type BCDataType, which      *
-  !      * stores the prescribed data of boundary faces as well as unit   *
-  !      * normals. For all the arrays the first two dimensions equal the *
-  !      * dimensions of the subface, possibly extended with halo cells.  *
-  !      * Consequently the starting index is arbitrary, such that no     *
-  !      * offset computation is needed when the array is accessed.       *
-  !      *                                                                *
-  !      ******************************************************************
+  !       The definition of the derived data type BCDataType, which      
+  !       stores the prescribed data of boundary faces as well as unit   
+  !       normals. For all the arrays the first two dimensions equal the 
+  !       dimensions of the subface, possibly extended with halo cells.  
+  !       Consequently the starting index is arbitrary, such that no     
+  !       offset computation is needed when the array is accessed.       
   !
   type BCDataType
 
@@ -122,9 +105,7 @@ module block
      character(maxCGNSNameLen) :: family
      integer(kind=intType) :: famID
 
-     ! *******************************
      ! Added by HDN
-     ! *******************************
      ! normALE(0:nALEsteps,ie:ib,je:jb,3)
      !                 - Storage of norm for intermediate meshes.
      ! rFaceALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd)
@@ -224,20 +205,12 @@ module block
   end interface operator(<)
 
 
-  !      ******************************************************************
-  !      *                                                                *
-  !      * The definition of the derived data type block_type, which      *
-  !      * stores dimensions, coordinates, solution, etc.                 *
-  !      *                                                                *
-  !      ******************************************************************
+  !       The definition of the derived data type block_type, which      
+  !       stores dimensions, coordinates, solution, etc.                 
   !
   type blockType
      !
-     !        ****************************************************************
-     !        *                                                              *
-     !        * Block dimensions and orientation.                            *
-     !        *                                                              *
-     !        ****************************************************************
+     !         Block dimensions and orientation.                            
      !
      !  nx, ny, nz - Block integer dimensions for no halo cell based
      !               quantities.
@@ -257,11 +230,7 @@ module block
 
      logical :: rightHanded
      !
-     !        ****************************************************************
-     !        *                                                              *
-     !        * Block boundary conditions.                                   *
-     !        *                                                              *
-     !        ****************************************************************
+     !         Block boundary conditions.                                   
      !
      !  nSubface             - Number of subfaces on this block.
      !  n1to1                - Number of 1 to 1 block boundaries.
@@ -347,11 +316,7 @@ module block
      integer(kind=intType), dimension(:), pointer :: groupNum
 
      !
-     !        ****************************************************************
-     !        *                                                              *
-     !        * Overset interpolation information                            *
-     !        *                                                              *
-     !        ****************************************************************
+     !         Overset interpolation information                            
 
      integer(kind=intType), dimension(:,:,:), pointer :: iblank
      type(fringeType) , dimension(:, :, :), pointer :: fringes
@@ -359,23 +324,15 @@ module block
      integer(kind=intType) :: nOrphans
 
      !
-     !        ****************************************************************
-     !        *                                                              *
-     !        * Boundary data for the boundary subfaces.                     *
-     !        *                                                              *
-     !        ****************************************************************
+     !         Boundary data for the boundary subfaces.                     
      !
      ! BCData(nBocos): The boundary data for each of the boundary
      !                 subfaces.
 
      type(BCDataType), dimension(:), pointer :: BCData
      !
-     !        ****************************************************************
-     !        *                                                              *
-     !        * The stress tensor and heat flux vector at viscous wall faces *
-     !        * as well as the face pointers to these viscous wall faces.    *
-     !        *                                                              *
-     !        ****************************************************************
+     !         The stress tensor and heat flux vector at viscous wall faces 
+     !         as well as the face pointers to these viscous wall faces.    
      !
      ! viscSubface(nViscBocos):    Storage for the viscous stress
      !                             tensor and heat flux vector for
@@ -399,11 +356,7 @@ module block
      integer(kind=intType), dimension(:,:), pointer :: viscKMinPointer
      integer(kind=intType), dimension(:,:), pointer :: viscKMaxPointer
      !
-     !        ****************************************************************
-     !        *                                                              *
-     !        * Mesh related variables.                                      *
-     !        *                                                              *
-     !        ****************************************************************
+     !         Mesh related variables.                                      
      !
      !  x(0:ie,0:je,0:ke,3)  - xyz locations of grid points in block.
      !  xOld(nOld,:,:,:,:)   - Coordinates on older time levels;
@@ -491,9 +444,7 @@ module block
      real(kind=realType), dimension(:,:,:), pointer :: sFaceI, sFaceJ, sFaceK
 
 
-     ! *******************************
      ! Added by HDN
-     ! *******************************
      ! xALE(0:ie,0:je,0:ke,3)              - Temporary storage of x so that
      !                                       intermediate meshes can be stored in
      !                                       x directly
@@ -520,11 +471,7 @@ module block
      integer(kind=intType), dimension(:, :, :), pointer :: wallInd
 
      !
-     !        ****************************************************************
-     !        *                                                              *
-     !        * Flow variables.                                              *
-     !        *                                                              *
-     !        ****************************************************************
+     !         Flow variables.                                              
      !
      ! w(0:ib,0:jb,0:kb,1:nw)       - The set of independent variables
      !                                w(i,j,k,1:nwf) flow field
@@ -576,11 +523,7 @@ module block
 
 
      !
-     !        ****************************************************************
-     !        *                                                              *
-     !        * Residual and multigrid variables.                            *
-     !        *                                                              *
-     !        ****************************************************************
+     !         Residual and multigrid variables.                            
      !
      ! dw(0:ib,0:jb,0:kb,1:nw)   - Values of convective and combined
      !                             flow residuals. Only allocated on
@@ -631,11 +574,9 @@ module block
      real(kind=realType), dimension(:,:,:,:),   pointer :: scratch
 
 
-     ! *******************************
      ! Added by HDN
      ! Used for ALE. Only allocated on the finest mesh.
      ! Extra dim is used to store initial residuals
-     ! *******************************
      ! dwALE(0:nALEsteps,0:ib,0:jb,0:kb,1:nw)   - Values of ONLY the convective flux
      !                                            of intermediate meshes.
      ! fwALE(0:nALEsteps,0:ib,0:jb,0:kb,1:nwf)  - values of ONLY the artificial
@@ -688,12 +629,8 @@ module block
 
      logical, dimension(:), pointer :: iCo, jCo, kCo
      !
-     !        ****************************************************************
-     !        *                                                              *
-     !        * Time-stepping and spectral radii variables.                  *
-     !        * only allocated on the finest grid.                           *
-     !        *                                                              *
-     !        ****************************************************************
+     !         Time-stepping and spectral radii variables.                  
+     !         only allocated on the finest grid.                           
      !
      ! wn(2:il,2:jl,2:kl,1:nMGVar) - Values of the update variables
      !                               at the beginning of the RungeKutta
@@ -712,11 +649,7 @@ module block
      real(kind=realType), dimension(:,:,:),   pointer :: radI, radJ, radK
 
      !
-     !        ****************************************************************
-     !        *                                                              *
-     !        * Variables for Iso/Surface Slice generation                   *
-     !        *                                                              *
-     !        ****************************************************************
+     !         Variables for Iso/Surface Slice generation                   
      ! fc(1:ie,1:je,1:ke) - cell center values of the function to be iso-valued
      ! fn(1:il,1:jl,1:kl) - node values of the function to be iso-valued
      ! Note these are are only allocated temporaily during solution writing.
@@ -727,11 +660,7 @@ module block
 
 
      !
-     !        ****************************************************************
-     !        *                                                              *
-     !        * Turbulence model variables.                                  *
-     !        *                                                              *
-     !        ****************************************************************
+     !         Turbulence model variables.                                  
      !
      ! d2Wall(2:il,2:jl,2:kl) - Distance from the center of the cell
      !                          to the nearest viscous wall.
@@ -772,11 +701,7 @@ module block
      real(kind=realType), dimension(:,:,:), pointer :: bvtj1, bvtj2
      real(kind=realType), dimension(:,:,:), pointer :: bvtk1, bvtk2
      !
-     !        ****************************************************************
-     !        *                                                              *
-     !        * Relation to the original cgns grid.                          *
-     !        *                                                              *
-     !        ****************************************************************
+     !         Relation to the original cgns grid.                          
      !
      ! sectionID      - The section of the grid this block belongs to.
      ! cgnsBlockID    - Block/zone number of the cgns grid to which
@@ -793,11 +718,7 @@ module block
      integer(kind=intType) :: kBegOr, kEndOr
      type(surfaceNodeWeightArray) , dimension(6) :: nodalWeights 
      !
-     !        ****************************************************************
-     !        *                                                              *
-     !        * Adjoint solver variables.                                    *
-     !        *                                                              *
-     !        ****************************************************************
+     !         Adjoint solver variables.                                    
      !
      ! globalNode(ib:ie,jb:je,kb:ke):  Global node numbering.
      ! globalCell(0:ib,0:jb,0:kb):     Global cell numbering.
@@ -839,11 +760,7 @@ module block
   end type blockType
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Array of all blocks at all multigrid levels and spectral sols. *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Array of all blocks at all multigrid levels and spectral sols. 
   !
   ! nDom:            total number of computational blocks.
   ! flowDoms(:,:,:): array of blocks. Dimensions are
@@ -863,11 +780,7 @@ module block
 #endif
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Additional info needed in the flow solver.                     *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Additional info needed in the flow solver.                     
   !
   ! nCellGlobal(nLev) - Global number of cells on every mg level.
 
@@ -878,13 +791,9 @@ module block
 
   logical function lessEqualFringeType(g1, g2)
     
-    !        ****************************************************************
-    !        *                                                              *
-    !        * lessEqual returns .true. if g1 <= g2 and .false. otherwise.  *
-    !        * The comparison is firstly based on the processor ID of the   *
-    !        * donor, then the block, then then the I, J, K                 *
-    !        *                                                              *
-    !        ****************************************************************
+    !         lessEqual returns .true. if g1 <= g2 and .false. otherwise.  
+    !         The comparison is firstly based on the processor ID of the   
+    !         donor, then the block, then then the I, J, K                 
     !
     implicit none
     !
@@ -948,13 +857,9 @@ module block
 
   logical function lessFringeType(g1, g2)
     
-    !        ****************************************************************
-    !        *                                                              *
-    !        * less returns .true. if g1 <= g2 and .false. otherwise.  *
-    !        * The comparison is firstly based on the processor ID of the   *
-    !        * donor, then the block, then then the I, J, K                 *
-    !        *                                                              *
-    !        ****************************************************************
+    !         less returns .true. if g1 <= g2 and .false. otherwise.  
+    !         The comparison is firstly based on the processor ID of the   
+    !         donor, then the block, then then the I, J, K                 
     !
     implicit none
     !

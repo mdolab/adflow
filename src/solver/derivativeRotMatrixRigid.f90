@@ -1,26 +1,18 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          derivativeRotMatrixRigid.f90                    *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 06-01-2004                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          derivativeRotMatrixRigid.f90                    
+!       Author:        Edwin van der Weide                             
+!       Starting date: 06-01-2004                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine derivativeRotMatrixRigid(rotationMatrix, &
                                            rotationPoint, t)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * derivativeRotMatrixRigid determines the derivative of the      *
-!      * rotation matrix at the given time for the rigid body rotation, *
-!      * such that the grid velocities can be determined analytically.  *
-!      * Also the rotation point of the current time level is           *
-!      * determined. This value can change due to translation of the    *
-!      * entire grid.                                                   *
-!      *                                                                *
-!      ******************************************************************
+!       derivativeRotMatrixRigid determines the derivative of the      
+!       rotation matrix at the given time for the rigid body rotation, 
+!       such that the grid velocities can be determined analytically.  
+!       Also the rotation point of the current time level is           
+!       determined. This value can change due to translation of the    
+!       entire grid.                                                   
 !
        use constants
        use flowVarRefState

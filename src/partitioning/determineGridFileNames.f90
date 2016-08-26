@@ -1,31 +1,23 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          determineGridFileNames.f90                      *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 06-21-2005                                      *
-!      * Last modified: 10-10-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          determineGridFileNames.f90                      
+!       Author:        Edwin van der Weide                             
+!       Starting date: 06-21-2005                                      
+!       Last modified: 10-10-2005                                      
 !
        subroutine determineGridFileNames
 !
-!      ******************************************************************
-!      *                                                                *
-!      * determineGridFileNames determines the number and names of the  *
-!      * files that contain the grids. For steady computations only one *
-!      * file must be present no matter if a restart is performed or    *
-!      * not. For unsteady the situation is a little more complicated.  *
-!      * If no restart is performed only one file must be present. If a *
-!      * restart is performed in unsteady or time spectral mode and a   *
-!      * rigid body motion is prescribed again only one grid file is    *
-!      * required; however for a consistent restart with deforming      *
-!      * meshes the grids in the past must be read as well. If this is  *
-!      * not possible only a first order restart can be made in         *
-!      * unsteady mode and some kind of interpolation is used for the   *
-!      * time spectral method.                                          *
-!      *                                                                *
-!      ******************************************************************
+!       determineGridFileNames determines the number and names of the  
+!       files that contain the grids. For steady computations only one 
+!       file must be present no matter if a restart is performed or    
+!       not. For unsteady the situation is a little more complicated.  
+!       If no restart is performed only one file must be present. If a 
+!       restart is performed in unsteady or time spectral mode and a   
+!       rigid body motion is prescribed again only one grid file is    
+!       required; however for a consistent restart with deforming      
+!       meshes the grids in the past must be read as well. If this is  
+!       not possible only a first order restart can be made in         
+!       unsteady mode and some kind of interpolation is used for the   
+!       time spectral method.                                          
 !
        use communication
        use inputIO
@@ -46,11 +38,7 @@
        character(len=7)            :: integerString
        character(len=maxStringLen) :: tmpName
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialization of nOldGridRead and interpolSpectral.
 

@@ -1,34 +1,25 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          unsteadyTurbTerm.f90                            *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-09-2004                                      *
-!      * Last modified: 11-27-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          unsteadyTurbTerm.f90                            
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-09-2004                                      
+!       Last modified: 11-27-2007                                      
 !
        subroutine unsteadyTurbTerm(mAdv, nAdv, offset, qq)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * unsteadyTurbTerm discretizes the time derivative of the        *
-!      * turbulence transport equations and add it to the residual.     *
-!      * As the time derivative is the same for all turbulence models,  *
-!      * this generic routine can be used; both the discretization of   *
-!      * the time derivative and its contribution to the central        *
-!      * jacobian are computed by this routine.                         *
-!      *                                                                *
-!      * Only nAdv equations are treated, while the actual system has   *
-!      * size mAdv. The reason is that some equations for some          *
-!      * turbulence equations do not have a time derivative, e.g. the   *
-!      * f equation in the v2-f model. The argument offset indicates    *
-!      * the offset in the w vector where this subsystem starts. As a   *
-!      * consequence it is assumed that the indices of the current      *
-!      * subsystem are contiguous, e.g. if a 2*2 system is solved the   *
-!      * Last index in w is offset+1 and offset+2 respectively.         *
-!      *                                                                *
-!      ******************************************************************
+!       unsteadyTurbTerm discretizes the time derivative of the        
+!       turbulence transport equations and add it to the residual.     
+!       As the time derivative is the same for all turbulence models,  
+!       this generic routine can be used; both the discretization of   
+!       the time derivative and its contribution to the central        
+!       jacobian are computed by this routine.                         
+!       Only nAdv equations are treated, while the actual system has   
+!       size mAdv. The reason is that some equations for some          
+!       turbulence equations do not have a time derivative, e.g. the   
+!       f equation in the v2-f model. The argument offset indicates    
+!       the offset in the w vector where this subsystem starts. As a   
+!       consequence it is assumed that the indices of the current      
+!       subsystem are contiguous, e.g. if a 2*2 system is solved the   
+!       Last index in w is offset+1 and offset+2 respectively.         
 !
        use blockPointers
        use flowVarRefState
@@ -54,11 +45,7 @@
 
        real(kind=realType) :: oneOverDt, tmp
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the equation mode.
 

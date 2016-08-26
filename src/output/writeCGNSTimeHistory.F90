@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          writeCgnsTimeHistory.F90                        *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 05-20-2004                                      *
-!      * Last modified: 10-13-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          writeCgnsTimeHistory.F90                        
+!       Author:        Edwin van der Weide                             
+!       Starting date: 05-20-2004                                      
+!       Last modified: 10-13-2005                                      
 !
        subroutine writeCGNSTimeHistory
 !
-!      ******************************************************************
-!      *                                                                *
-!      * WriteCGNSTimeHistory writes for unsteady computations          *
-!      * the time history of the monitoring variables to the            *
-!      * cgns file.                                                     *
-!      *                                                                *
-!      ******************************************************************
+!       WriteCGNSTimeHistory writes for unsteady computations          
+!       the time history of the monitoring variables to the            
+!       cgns file.                                                     
 !
 #ifdef USE_NO_CGNS
        call returnFail("writeCGNSTimeHistory", &
@@ -40,11 +32,7 @@
 
        character(len=maxCGNSNameLen) :: cgnsName
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Store the file index and base a bit easier. Note that this info
        ! is only written to the 1st file, because this is an unsteady

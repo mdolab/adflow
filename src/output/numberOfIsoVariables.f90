@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          numberOfIsoVariables.f90                        *
-!      * Author:        Gaetan K. W. Kenway                             *
-!      * Starting date: 07-21-2013                                      *
-!      * Last modified: 07-21-2013                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          numberOfIsoVariables.f90                        
+!       Author:        Gaetan K. W. Kenway                             
+!       Starting date: 07-21-2013                                      
+!       Last modified: 07-21-2013                                      
 !
 subroutine numberOfIsoSurfVariables(nIsoSolVar)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * numberOfVolSolVariables determines the number of variables     *
-  !      * to be written on the isosurface. These are similar to the      *
-  !      * volume variables.                                              *
-  !      *                                                                *
-  !      ******************************************************************
+  !       numberOfVolSolVariables determines the number of variables     
+  !       to be written on the isosurface. These are similar to the      
+  !       volume variables.                                              
   !
   use flowVarRefState
   use inputPhysics
@@ -27,11 +19,7 @@ subroutine numberOfIsoSurfVariables(nIsoSolVar)
   !
   integer(kind=intType), intent(out) :: nIsoSolVar
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   nIsoSolvar   = 0
 

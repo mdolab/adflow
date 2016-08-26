@@ -7,43 +7,30 @@
 !   with respect to varying inputs: tinfdim rhoinfdim pinfdim mach
 !                veldirfreestream rgasdim machcoef
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          referencestate.f90                              *
-!      * author:        edwin van der weide, seonghyeon hahn            *
-!      * starting date: 05-29-2003                                      *
-!      * last modified: 04-22-2006                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          referencestate.f90                              
+!       author:        edwin van der weide, seonghyeon hahn            
+!       starting date: 05-29-2003                                      
+!       last modified: 04-22-2006                                      
 !
 subroutine referencestate_d()
 !
-!      ******************************************************************
-!      *                                                                *
-!      *                                                                *
-!      * the original version has been nuked since the computations are *
-!      * no longer necessary when calling from python                   *
-!      *                                                                *
-!      * this is the most compliclated routine in all of sumb. it is    *
-!      * stupidly complicated. this is most likely the reason your      *
-!      * derivatives are wrong. you don't understand this routine       *
-!      * and its effects.                                               *
-!      *                                                                *
-!      * this routine *requries* the following as input:                *
-!      * mach, pinfdim, tinfdim, rhoinfdim, rgasdim (machcoef non-sa    *
-!      *  turbulence only)                                              *
-!      *                                                                *
-!      *                                                                *
-!      * optionally, pref, rhoref and tref are used if they are         *
-!      * are non-negative. this only happens when you want the equations*
-!      * normalized by values other than the freestream                 *
-!      *                                                                *
+!       the original version has been nuked since the computations are 
+!       no longer necessary when calling from python                   
+!       this is the most compliclated routine in all of sumb. it is    
+!       stupidly complicated. this is most likely the reason your      
+!       derivatives are wrong. you don't understand this routine       
+!       and its effects.                                               
+!       this routine *requries* the following as input:                
+!       mach, pinfdim, tinfdim, rhoinfdim, rgasdim (machcoef non-sa    
+!        turbulence only)                                              
+!       optionally, pref, rhoref and tref are used if they are         
+!       are non-negative. this only happens when you want the equations
+!       normalized by values other than the freestream                 
 !      * this routine computes as output:  
 !      *   muinfdim, (unused anywhere in code)
-!      *   pref, rhoref, tref, muref, timeref ('dimensional' reference) *
-!      *   pinf, pinfcorr, rhoinf, uinf, rgas, muinf, gammainf and winf *
-!      *   (non-dimensionalized values used in actual computations)     *
-!      ******************************************************************
+!         pref, rhoref, tref, muref, timeref ('dimensional' reference) 
+!         pinf, pinfcorr, rhoinf, uinf, rgas, muinf, gammainf and winf 
+!         (non-dimensionalized values used in actual computations)     
 !
   use constants
   use paramturb

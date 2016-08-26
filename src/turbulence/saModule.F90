@@ -56,13 +56,9 @@ contains
 
   subroutine sa_block(resOnly)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * sa solves the transport equation for the Spalart-Allmaras      *
-    !      * turbulence model in a segregated manner using a diagonal       *
-    !      * dominant ADI-scheme.                                           *
-    !      *                                                                *
-    !      ******************************************************************
+    !       sa solves the transport equation for the Spalart-Allmaras      
+    !       turbulence model in a segregated manner using a diagonal       
+    !       dominant ADI-scheme.                                           
     !
     use blockPointers
     use inputTimeSpectral
@@ -80,11 +76,7 @@ contains
     !
     integer(kind=intType) :: nn, sps
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Begin execution                                                *
-    !      *                                                                *
-    !      ******************************************************************
+    !       Begin execution                                                
 
     ! Set the arrays for the boundary condition treatment.
     call bcTurbTreatment
@@ -151,14 +143,9 @@ contains
 
   subroutine saSource
     !
-    ! ******************************************************************
-    ! *                                                                *
-    ! * Source terms.                                                  *
-    ! *                                                                *
-    ! * Determine the source term and its derivative w.r.t. nuTilde    *
-    ! * for all internal cells of the block.                           *
-    ! *                                                                *
-    ! ******************************************************************
+    !  Source terms.                                                  
+    !  Determine the source term and its derivative w.r.t. nuTilde    
+    !  for all internal cells of the block.                           
 
     use blockPointers
     use constants
@@ -279,14 +266,9 @@ contains
 
   subroutine saViscous
     !
-    ! ******************************************************************
-    ! *                                                                *
-    ! * Viscous term.                                                  *
-    ! *                                                                *
-    ! * Determine the viscous contribution to the residual             *
-    ! * for all internal cells of the block.                           *
-    ! *                                                                *
-    ! ******************************************************************
+    !  Viscous term.                                                  
+    !  Determine the viscous contribution to the residual             
+    !  for all internal cells of the block.                           
 
     use blockPointers
     use paramTurb
@@ -300,11 +282,7 @@ contains
     real(kind=realType) :: nutm, nutp, num, nup, cdm, cdp
     real(kind=realType) :: c1m, c1p, c10, b1, c1, d1, qs
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Viscous terms in k-direction.                                  *
-    !      *                                                                *
-    !      ******************************************************************
+    !       Viscous terms in k-direction.                                  
     !
 #ifdef TAPENADE_FAST
     !$AD II-LOOP
@@ -403,11 +381,7 @@ contains
     enddo
 #endif        
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Viscous terms in j-direction.                                  *
-    !      *                                                                *
-    !      ******************************************************************
+    !       Viscous terms in j-direction.                                  
     !
 #ifdef TAPENADE_FAST
     !$AD II-LOOP
@@ -506,11 +480,7 @@ contains
     enddo
 #endif  
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Viscous terms in i-direction.                                  *
-    !      *                                                                *
-    !      ******************************************************************
+    !       Viscous terms in i-direction.                                  
     !
 #ifdef TAPENADE_FAST
     !$AD II-LOOP
@@ -613,16 +583,12 @@ contains
   subroutine saResScale
 
     !
-    ! ******************************************************************
-    ! *                                                                *
-    ! * Multiply the residual by the volume and store this in dw; this *
+    !  Multiply the residual by the volume and store this in dw; this 
     ! * is done for monitoring reasons only. The multiplication with the
     ! * volume is present to be consistent with the flow residuals; also
-    ! * the negative value is taken, again to be consistent with the   *
+    !  the negative value is taken, again to be consistent with the   
     ! * flow equations. Also multiply by iblank so that no updates occur
-    ! * in holes or the overset boundary.                              *
-    ! *                                                                *
-    ! ******************************************************************
+    !  in holes or the overset boundary.                              
     use blockPointers
     implicit none
 
@@ -654,13 +620,9 @@ contains
 
   subroutine saSolve2
     !
-    ! ******************************************************************
-    ! *                                                                *
-    ! * saSolve solves the turbulent transport equation for the        *
-    ! * original Spalart-Allmaras model in a segregated manner using   *
-    ! * a diagonal dominant ADI-scheme.                                *
-    ! *                                                                *
-    ! ******************************************************************
+    !  saSolve solves the turbulent transport equation for the        
+    !  original Spalart-Allmaras model in a segregated manner using   
+    !  a diagonal dominant ADI-scheme.                                
     use blockPointers
     use inputIteration
     use inputPhysics
@@ -814,13 +776,9 @@ contains
 
     qs = zero
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * dd-ADI step in j-direction. There is no particular reason to   *
-    !      * start in j-direction, it just happened to be so. As we solve   *
-    !      * in j-direction, the j-loop is the innermost loop.              *
-    !      *                                                                *
-    !      ******************************************************************
+    !       dd-ADI step in j-direction. There is no particular reason to   
+    !       start in j-direction, it just happened to be so. As we solve   
+    !       in j-direction, the j-loop is the innermost loop.              
     !
     do k=2,kl
        do i=2,il
@@ -943,12 +901,8 @@ contains
        enddo
     enddo
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * dd-ADI step in i-direction. As we solve in i-direction, the    *
-    !      * i-loop is the innermost loop.                                  *
-    !      *                                                                *
-    !      ******************************************************************
+    !       dd-ADI step in i-direction. As we solve in i-direction, the    
+    !       i-loop is the innermost loop.                                  
     !
     do k=2,kl
        do j=2,jl
@@ -1071,12 +1025,8 @@ contains
        enddo
     enddo
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * dd-ADI step in k-direction. As we solve in k-direction, the    *
-    !      * k-loop is the innermost loop.                                  *
-    !      *                                                                *
-    !      ******************************************************************
+    !       dd-ADI step in k-direction. As we solve in k-direction, the    
+    !       k-loop is the innermost loop.                                  
     !
     do j=2,jl
        do i=2,il
@@ -1199,13 +1149,9 @@ contains
        enddo
     enddo
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Update the turbulent variables. For explicit relaxation the    *
-    !      * update must be relaxed; for implicit relaxation this has been  *
-    !      * done via the time step.                                        *
-    !      *                                                                *
-    !      ******************************************************************
+    !       Update the turbulent variables. For explicit relaxation the    
+    !       update must be relaxed; for implicit relaxation this has been  
+    !       done via the time step.                                        
     !
     factor = one
     if(turbRelax == turbRelaxExplicit) factor = alfaTurb

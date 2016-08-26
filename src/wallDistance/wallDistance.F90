@@ -129,16 +129,12 @@ contains
 #ifndef USE_TAPENADE
   subroutine computeWallDistance(level, allocMem)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * wallDistance computes the distances of the cell centers to     *
-    !      * the nearest viscous wall. An adt type of method is used, which *
-    !      * guarantees to find the minimum distance to the wall. Possible  *
-    !      * periodic transformations are taken into account, such that     *
-    !      * also in case of a periodic problem the correct distance is     *
-    !      * computed; the nearest wall point may lie in a periodic domain. *
-    !      *                                                                *
-    !      ******************************************************************
+    !       wallDistance computes the distances of the cell centers to     
+    !       the nearest viscous wall. An adt type of method is used, which 
+    !       guarantees to find the minimum distance to the wall. Possible  
+    !       periodic transformations are taken into account, such that     
+    !       also in case of a periodic problem the correct distance is     
+    !       computed; the nearest wall point may lie in a periodic domain. 
     use constants
     use blockPointers, only : nDom
     use communication, only : sendBuffer, recvBuffer, myid, sumb_comm_world, &
@@ -336,17 +332,13 @@ contains
 
   subroutine computeNormalSpacing(level, sps)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * computeNormalSpacing computes the normal spacing of the first  *
-    !      * cell center from the viscous wall for the given multigrid      *
-    !      * level and spectral solution. This routine is called for        *
-    !      * turbulence models, which do not need the wall distance.        *
-    !      * However, they do need info of the first normal spacing for the *
-    !      * monitoring of y+ and possibly for the boundary conditions.     *
-    !      * This is computed in this routine.                              *
-    !      *                                                                *
-    !      ******************************************************************
+    !       computeNormalSpacing computes the normal spacing of the first  
+    !       cell center from the viscous wall for the given multigrid      
+    !       level and spectral solution. This routine is called for        
+    !       turbulence models, which do not need the wall distance.        
+    !       However, they do need info of the first normal spacing for the 
+    !       monitoring of y+ and possibly for the boundary conditions.     
+    !       This is computed in this routine.                              
     !
     use constants
     use blockPointers, only : x, d2wall, nViscBocos, BCFaceID, BCData, &
@@ -477,12 +469,8 @@ contains
 
   subroutine initWallDistance(level, sps, allocMem)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * initWallDistance allocates the memory for the wall distance,   *
-    !      * if needed, and initializes the wall distance to a large value. *
-    !      *                                                                *
-    !      ******************************************************************
+    !       initWallDistance allocates the memory for the wall distance,   
+    !       if needed, and initializes the wall distance to a large value. 
     !
     use constants
     use blockPointers, only : nDom, flowDoms
@@ -529,12 +517,8 @@ contains
 
   subroutine determineDistance(level, sps)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * determineDistance determines the distance from the center      *
-    !      * of the cell to the nearest viscous wall for owned cells.       *
-    !      *                                                                *
-    !      ******************************************************************
+    !       determineDistance determines the distance from the center      
+    !       of the cell to the nearest viscous wall for owned cells.       
     !
     use constants
     use adtAPI, only :adtBuildSurfaceADT, adtMinDistanceSearch, adtDeallocateADTs
@@ -618,13 +602,9 @@ contains
          "Memory allocation failure for the variables &
          &needed by the adt.")
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Step 1: The search of the original coordinates; possibly a     *
-    !      *         rotational periodic transformation is applied to align *
-    !      *         the sections.                                          *
-    !      *                                                                *
-    !      ******************************************************************
+    !       Step 1: The search of the original coordinates; possibly a     
+    !               rotational periodic transformation is applied to align 
+    !               the sections.                                          
     !
     ! Loop over the domains to store the coordinates of the cell
     ! centers of the owned cells. Apply the transformation such that
@@ -708,15 +688,11 @@ contains
     !        end if
 
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Step 2: For periodic sections the nearest wall may be in the   *
-    !      *         periodic part of the grid that is not stored.          *
-    !      *         Therefore apply the periodic transformation to the     *
-    !      *         node and compute the minimum distance for this         *
-    !      *         coordinate.                                            *
-    !      *                                                                *
-    !      ******************************************************************
+    !       Step 2: For periodic sections the nearest wall may be in the   
+    !               periodic part of the grid that is not stored.          
+    !               Therefore apply the periodic transformation to the     
+    !               node and compute the minimum distance for this         
+    !               coordinate.                                            
     !
     ! Initialize the counters mm and ii. Mm is the counter for coor;
     ! ii is the counter for coorPer.
@@ -786,11 +762,7 @@ contains
          uvw,      dist2Per,    0_intType, &
          dummy,    dummy)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Step 3: Also apply the inverse periodic transformation.        *
-    !      *                                                                *
-    !      ******************************************************************
+    !       Step 3: Also apply the inverse periodic transformation.        
     !
     ! Initialize the counters mm and ii. Mm is the counter for coor;
     ! ii is the counter for coorPer.
@@ -862,11 +834,7 @@ contains
          uvw,      dist2Per,    0_intType, &
          dummy,    dummy)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Step 4: Store the minimum distance in the block type.          *
-    !      *                                                                *
-    !      ******************************************************************
+    !       Step 4: Store the minimum distance in the block type.          
     !
     mm = 0
     ii = 0
@@ -939,12 +907,8 @@ contains
 
   subroutine localViscousSurfaceMesh(multSections, level, sps)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * localViscousSurfaceMesh stores the local viscous surface       *
-    !      * mesh (with possible periodic extensions in conn and coor.      *
-    !      *                                                                *
-    !      ******************************************************************
+    !       localViscousSurfaceMesh stores the local viscous surface       
+    !       mesh (with possible periodic extensions in conn and coor.      
     !
     use constants
     use blockPointers, only : BCData, x, il, jl, kl, BCFaceID, sectionID, &
@@ -982,13 +946,9 @@ contains
 
     real(kind=realType), dimension(:,:,:), pointer :: xface
 
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Determine the unit vectors of the local coordinate system      *
-    !      * aligned with the rotation axis of the possible rotational      *
-    !      * periodic section.                                              *
-    !      *                                                                *
-    !      ******************************************************************
+    !       Determine the unit vectors of the local coordinate system      
+    !       aligned with the rotation axis of the possible rotational      
+    !       periodic section.                                              
     !
     do nn=1,nSections
        if(sections(nn)%nSlices == 1) cycle
@@ -1147,12 +1107,8 @@ contains
     thetaPMin =  pi
     thetaPMax =  zero
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Determine the local values of thetaNMin, etc. for the          *
-    !      * different sections.                                            *
-    !      *                                                                *
-    !      ******************************************************************
+    !       Determine the local values of thetaNMin, etc. for the          
+    !       different sections.                                            
     !
     do nn=1,nDom
 
@@ -1283,12 +1239,8 @@ contains
          "Memory allocation failure for &
          &rotMatrixSections")
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Determine the rotation matrix for each section, which aligns   *
-    !      * the rotational periodic sections with other sections.          *
-    !      *                                                                *
-    !      ******************************************************************
+    !       Determine the rotation matrix for each section, which aligns   
+    !       the rotational periodic sections with other sections.          
     !
     do nn=1,nSections
 
@@ -1382,11 +1334,7 @@ contains
 
     enddo
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Determine the local viscous surface grid.                      *
-    !      *                                                                *
-    !      ******************************************************************
+    !       Determine the local viscous surface grid.                      
     !
     np = 0
     nq = 0
@@ -1575,14 +1523,10 @@ contains
 
   subroutine updateWallDistanceAllLevels
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * updateWallDistanceAllLevels updates the wall distances for     *
-    !      * the cell centers on all grid levels. This routine is typically *
-    !      * called when grid parts have been moved, either due to a        *
-    !      * physical motion of some parts or due to deformation.           *
-    !      *                                                                *
-    !      ******************************************************************
+    !       updateWallDistanceAllLevels updates the wall distances for     
+    !       the cell centers on all grid levels. This routine is typically 
+    !       called when grid parts have been moved, either due to a        
+    !       physical motion of some parts or due to deformation.           
     !
     use constants
     use block, only : flowDoms
@@ -1609,12 +1553,8 @@ contains
 
   subroutine viscousSurfaceMesh(level, sps)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * viscousSurfaceMesh determines and stores the entire viscous    *
-    !      * surface possibly extended by periodic parts.                   *
-    !      *                                                                *
-    !      ******************************************************************
+    !       viscousSurfaceMesh determines and stores the entire viscous    
+    !       surface possibly extended by periodic parts.                   
     !
     use constants
     use block, only : flowDoms, nDom

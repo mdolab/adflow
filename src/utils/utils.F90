@@ -6,12 +6,8 @@ contains
        degreeFourBeta,  omegaFourBeta,     &
        cosCoefFourBeta, sinCoefFourBeta, t)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * TSbeta computes the angle of attack for a given Time interval *
-    !      * in a time spectral solution.                                   *
-    !      *                                                                *
-    !      ******************************************************************
+    !       TSbeta computes the angle of attack for a given Time interval 
+    !       in a time spectral solution.                                   
     !
     use constants
     use inputPhysics, only : equationMode
@@ -73,12 +69,8 @@ contains
        degreeFourBeta,  omegaFourBeta,     &
        cosCoefFourBeta, sinCoefFourBeta, t)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * TSbeta computes the angle of attack for a given Time interval  *
-    !      * in a time spectral solution.                                   *
-    !      *                                                                *
-    !      ******************************************************************
+    !       TSbeta computes the angle of attack for a given Time interval  
+    !       in a time spectral solution.                                   
     !
     use constants
     use inputPhysics, only : equationMode
@@ -139,12 +131,8 @@ contains
        degreeFourMach,  omegaFourMach,     &
        cosCoefFourMach, sinCoefFourMach, t)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * TSMach computes the Mach Number for a given time interval      *
-    !      * in a time spectral solution.                                   *
-    !      *                                                                *
-    !      ******************************************************************
+    !       TSMach computes the Mach Number for a given time interval      
+    !       in a time spectral solution.                                   
     !
     use constants
     use inputPhysics, only : equationMode
@@ -206,12 +194,8 @@ contains
        degreeFourMach,  omegaFourMach,     &
        cosCoefFourMach, sinCoefFourMach, t)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * TSmach computes the angle of attack for a given Time interval *
-    !      * in a time spectral solution.                                   *
-    !      *                                                                *
-    !      ******************************************************************
+    !       TSmach computes the angle of attack for a given Time interval 
+    !       in a time spectral solution.                                   
     !
     use constants
     use inputPhysics, only : equationMode
@@ -272,12 +256,8 @@ contains
        degreeFourAlpha,  omegaFourAlpha,     &
        cosCoefFourAlpha, sinCoefFourAlpha, t)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * TSalpha computes the angle of attack for a given Time interval *
-    !      * in a time spectral solution.                                   *
-    !      *                                                                *
-    !      ******************************************************************
+    !       TSalpha computes the angle of attack for a given Time interval 
+    !       in a time spectral solution.                                   
     !
     use constants
     use inputPhysics, only : equationMode
@@ -338,12 +318,8 @@ contains
        degreeFourAlpha,  omegaFourAlpha,     &
        cosCoefFourAlpha, sinCoefFourAlpha, t)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * TSalpha computes the angle of attack for a given Time interval *
-    !      * in a time spectral solution.                                   *
-    !      *                                                                *
-    !      ******************************************************************
+    !       TSalpha computes the angle of attack for a given Time interval 
+    !       in a time spectral solution.                                   
     !
     use constants
     use inputPhysics, only : equationMode
@@ -408,14 +384,10 @@ contains
        cosCoefFourRot, &
        sinCoefFourRot, t)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * derivativeRigidRotAngle computes the time derivative of the    *
-    !      * rigid body rotation angle at the given time for the given      *
-    !      * arguments. The angle is described by a combination of a        *
-    !      * polynomial and fourier series.                                 *
-    !      *                                                                *
-    !      ******************************************************************
+    !       derivativeRigidRotAngle computes the time derivative of the    
+    !       rigid body rotation angle at the given time for the given      
+    !       arguments. The angle is described by a combination of a        
+    !       polynomial and fourier series.                                 
     !
     use constants
     use inputPhysics, only : equationMode
@@ -503,12 +475,8 @@ contains
   end function getCorrectForK
   subroutine terminate(routineName, errorMessage)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * terminate writes an error message to standard output and       *
-    !      * terminates the execution of the program.                       *
-    !      *                                                                *
-    !      ******************************************************************
+    !       terminate writes an error message to standard output and       
+    !       terminates the execution of the program.                       
     !
     use constants
     use communication, only : sumb_comm_world, myid
@@ -619,13 +587,9 @@ contains
   subroutine rotMatrixRigidBody(tNew, tOld, rotationMatrix, &
        rotationPoint)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * rotMatrixRigidBody determines the rotation matrix and the      *
-    !      * rotation point to determine the coordinates of the new time    *
-    !      * level starting from the coordinates of the old time level.     *
-    !      *                                                                *
-    !      ******************************************************************
+    !       rotMatrixRigidBody determines the rotation matrix and the      
+    !       rotation point to determine the coordinates of the new time    
+    !       level starting from the coordinates of the old time level.     
     !
     use constants
     use inputMotion
@@ -765,14 +729,10 @@ contains
        cosCoefFourRot, &
        sinCoefFourRot, t)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * 2ndderivativeRigidRotAngle computes the 2nd time derivative of *
-    !      * the rigid body rotation angle at the given time for the given  *
-    !      * arguments. The angle is described by a combination of a        *
-    !      * polynomial and fourier series.                                 *
-    !      *                                                                *
-    !      ******************************************************************
+    !       2ndderivativeRigidRotAngle computes the 2nd time derivative of 
+    !       the rigid body rotation angle at the given time for the given  
+    !       arguments. The angle is described by a combination of a        
+    !       polynomial and fourier series.                                 
     !
     use constants
     use flowVarRefState, only : timeRef
@@ -833,13 +793,9 @@ contains
        degreeFourRot,  omegaFourRot,     &
        cosCoefFourRot, sinCoefFourRot, t)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * rigidRotAngle computes the rigid body rotation angle at the    *
-    !      * given time for the given arguments. The angle is described by  *
-    !      * a combination of a polynomial and fourier series.              *
-    !      *                                                                *
-    !      ******************************************************************
+    !       rigidRotAngle computes the rigid body rotation angle at the    
+    !       given time for the given arguments. The angle is described by  
+    !       a combination of a polynomial and fourier series.              
     !
     use constants
     use inputPhysics, only : equationMode
@@ -899,13 +855,9 @@ contains
 
   subroutine setBCPointers(nn, spatialPointers)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * setBCPointers sets the pointers needed for the boundary        *
-    !      * condition treatment on a general face, such that the boundary  *
-    !      * routines are only implemented once instead of 6 times.         *
-    !      *                                                                *
-    !      ******************************************************************
+    !       setBCPointers sets the pointers needed for the boundary        
+    !       condition treatment on a general face, such that the boundary  
+    !       routines are only implemented once instead of 6 times.         
     !
     use constants 
     use blockPointers, only : w, p, rlv, rev, gamma, x, d2wall, &
@@ -1394,12 +1346,8 @@ contains
 
   subroutine resetBCPointers(nn, spatialPointers)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * resetBCPointers nullifyies the boundary pointers. For reverse  *
-    !      * mode AD it copies the values back in to the respective arrays  *
-    !      *                                                                *
-    !      ******************************************************************
+    !       resetBCPointers nullifyies the boundary pointers. For reverse  
+    !       mode AD it copies the values back in to the respective arrays  
     !
     use constants 
     use blockPointers, only : w, p, rlv, rev, gamma, x, d2wall, &
@@ -1623,14 +1571,12 @@ contains
 
 subroutine computeRootBendingMoment(cf, cm, liftIndex, bendingMoment)
 
-  !*******************************************************
   !                                                      *
   ! Compute a normalized bending moment coefficient from *
   ! the force and moment coefficient. At the moment this *
   ! Routine only works for a half body. Additional logic *
   ! would be needed for a full body.                     *
   !                                                      *
-  !*******************************************************
 
   use constants
   use inputPhysics, only : lengthRef, pointRef, pointRefEC
@@ -1660,12 +1606,8 @@ end subroutine computeRootBendingMoment
 
 subroutine computeLeastSquaresRegression(y,x,npts,m,b)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Computes the slope of best fit for a set of x,y data of length *
-  !      * npts                                                           *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Computes the slope of best fit for a set of x,y data of length 
+  !       npts                                                           
   !
   use constants
   implicit none
@@ -1699,13 +1641,9 @@ end subroutine computeLeastSquaresRegression
 subroutine computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
      dcdalphadot, dcdq, dcdqdot)
   !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Computes the stability derivatives based on the time spectral  *
-  !     * solution of a given mesh. Takes in the force coefficients at   *
-  !     * all time instantces and computes the agregate parameters       *
-  !     *                                                                *
-  !     ******************************************************************
+  !      Computes the stability derivatives based on the time spectral  
+  !      solution of a given mesh. Takes in the force coefficients at   
+  !      all time instantces and computes the agregate parameters       
   !
   use constants
   use communication     
@@ -1880,12 +1818,8 @@ subroutine computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
 end subroutine computeTSDerivatives
    subroutine stabilityDerivativeDriver
 !
-!     ******************************************************************
-!     *                                                                *
-!     * Runs the Time spectral stability derivative routines from the  *
-!     * main program file                                              *
-!     *                                                                *
-!     ******************************************************************
+!      Runs the Time spectral stability derivative routines from the  
+!      main program file                                              
 !
       use precision
       implicit none
@@ -1911,14 +1845,10 @@ end subroutine computeTSDerivatives
 
   function delta(val1,val2)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * delta is a function used to determine the contents of the full *
-    !      * transformation matrix from the shorthand form. It returns 1    *
-    !      * if the absolute value of the two arguments are identical.      *
-    !      * Otherwise it returns 0.                                        *
-    !      *                                                                *
-    !      ******************************************************************
+    !       delta is a function used to determine the contents of the full 
+    !       transformation matrix from the shorthand form. It returns 1    
+    !       if the absolute value of the two arguments are identical.      
+    !       Otherwise it returns 0.                                        
     !
     use constants
     implicit none
@@ -1942,12 +1872,8 @@ end subroutine computeTSDerivatives
 
   logical function myIsNAN(val)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * myIsNAN determines whether or not the given value is a NAN and *
-    !      * returns the according logical.                                 *
-    !      *                                                                *
-    !      ******************************************************************
+    !       myIsNAN determines whether or not the given value is a NAN and 
+    !       returns the according logical.                                 
     !
     use constants
     implicit none
@@ -1971,12 +1897,8 @@ end subroutine computeTSDerivatives
   !
   subroutine nullifyCGNSDomPointers(nn)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * nullifyCGNSDomPointers nullifies all the pointers of the       *
-    !      * given CGNS block.                                              *
-    !      *                                                                *
-    !      ******************************************************************
+    !       nullifyCGNSDomPointers nullifies all the pointers of the       
+    !       given CGNS block.                                              
     !
     use constants
     use cgnsGrid, only : cgnsDoms
@@ -1995,12 +1917,8 @@ end subroutine computeTSDerivatives
 
   subroutine nullifyFlowDomPointers(nn,level,sps)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * nullifyFlowDomPointers nullifies all the pointers of the       *
-    !      * given block.                                                   *
-    !      *                                                                *
-    !      ******************************************************************
+    !       nullifyFlowDomPointers nullifies all the pointers of the       
+    !       given block.                                                   
     !
     use constants
     use block, only : flowDoms
@@ -2166,9 +2084,7 @@ end subroutine computeTSDerivatives
     nullify(flowDoms(nn,level,sps)%wallInd)
     nullify(flowDoms(nn,level,sps)%xSeed)
 
-    ! *******************************
     ! Added by HDN
-    ! *******************************
     nullify(flowDoms(nn,level,sps)%xALE)
     nullify(flowDoms(nn,level,sps)%sIALE)
     nullify(flowDoms(nn,level,sps)%sJALE)
@@ -2201,13 +2117,9 @@ end subroutine computeTSDerivatives
   subroutine reallocateInteger(intArray, newSize, oldSize, &
        alwaysFreeMem)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * reallocateInteger reallocates the given integer array to the   *
-    !      * given new size. The old values of the array are copied. Note   *
-    !      * that newSize can be both smaller and larger than oldSize.      *
-    !      *                                                                *
-    !      ******************************************************************
+    !       reallocateInteger reallocates the given integer array to the   
+    !       given new size. The old values of the array are copied. Note   
+    !       that newSize can be both smaller and larger than oldSize.      
     !
     use constants
     implicit none
@@ -2269,14 +2181,10 @@ end subroutine computeTSDerivatives
   subroutine reallocateMpiOffsetKindInteger(intArray, newSize, &
        oldSize, alwaysFreeMem)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * reallocateMpiOffsetKindInteger reallocates the given           *
-    !      * mpi_offset_kind integer array to the given new size. The old   *
-    !      * values of the array are copied. Note that newSize can be both  *
-    !      * smaller and larger than oldSize.                               *
-    !      *                                                                *
-    !      ******************************************************************
+    !       reallocateMpiOffsetKindInteger reallocates the given           
+    !       mpi_offset_kind integer array to the given new size. The old   
+    !       values of the array are copied. Note that newSize can be both  
+    !       smaller and larger than oldSize.                               
     !
     use constants
     implicit none
@@ -2339,14 +2247,10 @@ end subroutine computeTSDerivatives
        oldSize1, oldSize2,           &
        alwaysFreeMem)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * reallocateInteger2 reallocates the given 2D integer array to   *
-    !      * the given new sizes. The old values of the array are copied.   *
-    !      * Note that the newSizes can be both smaller and larger than     *
-    !      * the oldSizes.                                                  *
-    !      *                                                                *
-    !      ******************************************************************
+    !       reallocateInteger2 reallocates the given 2D integer array to   
+    !       the given new sizes. The old values of the array are copied.   
+    !       Note that the newSizes can be both smaller and larger than     
+    !       the oldSizes.                                                  
     !
     use constants
     implicit none
@@ -2418,13 +2322,9 @@ end subroutine computeTSDerivatives
   subroutine reallocateReal(realArray, newSize, oldSize, &
        alwaysFreeMem)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * ReallocateReal reallocates the given real array to the given   *
-    !      * new size. The old values of the array are copied. Note that    *
-    !      * newSize can be both smaller and larger than oldSize.           *
-    !      *                                                                *
-    !      ******************************************************************
+    !       ReallocateReal reallocates the given real array to the given   
+    !       new size. The old values of the array are copied. Note that    
+    !       newSize can be both smaller and larger than oldSize.           
     !
     use constants
     implicit none
@@ -2483,14 +2383,10 @@ end subroutine computeTSDerivatives
        oldSize1, oldSize2,            &
        alwaysFreeMem)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * ReallocateReal2 reallocates the given 2d integer array to      *
-    !      * the given new sizes. The old values of the array are copied.   *
-    !      * Note that the newSizes can be both smaller and larger than     *
-    !      * the oldSizes.                                                  *
-    !      *                                                                *
-    !      ******************************************************************
+    !       ReallocateReal2 reallocates the given 2d integer array to      
+    !       the given new sizes. The old values of the array are copied.   
+    !       Note that the newSizes can be both smaller and larger than     
+    !       the oldSizes.                                                  
     !
     use constants
     implicit none
@@ -2563,24 +2459,20 @@ end subroutine computeTSDerivatives
        determineSlidingBuf, & 
        determineOversetBuf)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * setBufferSizes determines the size of the send and receive     *
-    !      * buffers for this grid level. After that the maximum value of   *
-    !      * these sizes and the currently stored value is taken, such that *
-    !      * for all mg levels the same buffer can be used. Normally the    *
-    !      * size on the finest grid should be enough, but it is just as    *
-    !      * safe to check on all mg levels. A distinction is made between  *
-    !      * 1 to 1 and sliding mesh communication, because these happen    *
-    !      * consecutively and not simultaneously. Consequently the actual  *
-    !      * buffer size is the maximum of the two and not the sum.         *
-    !      * For steady state computations a mixing plane boundary          *
-    !      * condition is used instead of a sliding mesh. However, both     *
-    !      * communication patterns are allocated and initialized.          *
-    !      * Therefore the maximum of the two can be taken without checking *
-    !      * the situation we are dealing with.                             *
-    !      *                                                                *
-    !      ******************************************************************
+    !       setBufferSizes determines the size of the send and receive     
+    !       buffers for this grid level. After that the maximum value of   
+    !       these sizes and the currently stored value is taken, such that 
+    !       for all mg levels the same buffer can be used. Normally the    
+    !       size on the finest grid should be enough, but it is just as    
+    !       safe to check on all mg levels. A distinction is made between  
+    !       1 to 1 and sliding mesh communication, because these happen    
+    !       consecutively and not simultaneously. Consequently the actual  
+    !       buffer size is the maximum of the two and not the sum.         
+    !       For steady state computations a mixing plane boundary          
+    !       condition is used instead of a sliding mesh. However, both     
+    !       communication patterns are allocated and initialized.          
+    !       Therefore the maximum of the two can be taken without checking 
+    !       the situation we are dealing with.                             
     !
     use constants
     use commMixing, only : commPatternMixing
@@ -2740,12 +2632,8 @@ end subroutine computeTSDerivatives
 
   subroutine setPointers(nn,mm,ll)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * setPointers makes the variables in blockPointers point to      *
-    !      * block nn for grid level mm and spectral solution ll.           *
-    !      *                                                                *
-    !      ******************************************************************
+    !       setPointers makes the variables in blockPointers point to      
+    !       block nn for grid level mm and spectral solution ll.           
     !
     ! Make an exception to use..only. We literally need everything
     ! from blockPointers so use a bare use. 
@@ -3009,10 +2897,8 @@ end subroutine computeTSDerivatives
     xSeed => flowDoms(nn,mm,ll)%xSeed
     wallInd => flowDoms(nn,mm,ll)%wallInd
 
-    ! *******************************
     ! Added by HDN
     ! Kept the same dim as their counterparts
-    ! *******************************
     xALE      => flowDoms(nn,mm,ll)%xALE
     sVeloIALE => flowDoms(nn,mm,ll)%sVeloIALE
     sVeloJALE => flowDoms(nn,mm,ll)%sVeloJALE
@@ -3093,15 +2979,11 @@ end subroutine computeTSDerivatives
 
   subroutine siDensity(mass, len, mult, trans)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * siDensity computes the conversion from the given density       *
-    !      * unit, which can be constructed from mass and length, to the    *
-    !      * SI-unit kg/m^3. The conversion will look like:                 *
-    !      * density in kg/m^3 = mult*(density in NCU) + trans.             *
-    !      * NCU means non-christian units, i.e. everything that is not SI. *
-    !      *                                                                *
-    !      ******************************************************************
+    !       siDensity computes the conversion from the given density       
+    !       unit, which can be constructed from mass and length, to the    
+    !       SI-unit kg/m^3. The conversion will look like:                 
+    !       density in kg/m^3 = mult*(density in NCU) + trans.             
+    !       NCU means non-christian units, i.e. everything that is not SI. 
     !
     use constants
     use su_cgns, only : Kilogram, meter
@@ -3132,14 +3014,10 @@ end subroutine computeTSDerivatives
 
   subroutine siLen(len, mult, trans)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * siLen computes the conversion from the given length unit to    *
-    !      * the SI-unit meter. The conversion will look like:              *
-    !      * length in meter = mult*(length in NCU) + trans.                *
-    !      * NCU means non-christian units, i.e. everything that is not SI. *
-    !      *                                                                *
-    !      ******************************************************************
+    !       siLen computes the conversion from the given length unit to    
+    !       the SI-unit meter. The conversion will look like:              
+    !       length in meter = mult*(length in NCU) + trans.                
+    !       NCU means non-christian units, i.e. everything that is not SI. 
     !
     use constants
     use su_cgns, only: Meter, Centimeter, millimeter, Foot, Inch
@@ -3179,15 +3057,11 @@ end subroutine computeTSDerivatives
 
   subroutine siPressure(mass, len, time, mult, trans)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * siPressure computes the conversion from the given pressure     *
-    !      * unit, which can be constructed from mass, length and time, to  *
-    !      * the SI-unit Pa. The conversion will look like:                 *
-    !      * pressure in Pa = mult*(pressure in NCU) + trans.               *
-    !      * NCU means non-christian units, i.e. everything that is not SI. *
-    !      *                                                                *
-    !      ******************************************************************
+    !       siPressure computes the conversion from the given pressure     
+    !       unit, which can be constructed from mass, length and time, to  
+    !       the SI-unit Pa. The conversion will look like:                 
+    !       pressure in Pa = mult*(pressure in NCU) + trans.               
+    !       NCU means non-christian units, i.e. everything that is not SI. 
     !
     use constants
     use su_cgns, only : Kilogram, Meter, Second
@@ -3218,15 +3092,11 @@ end subroutine computeTSDerivatives
 
   subroutine siTemperature(temp, mult, trans)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * siTemperature computes the conversion from the given           *
-    !      * temperature unit to the SI-unit kelvin. The conversion will    *
-    !      * look like:                                                     *
-    !      * temperature in K = mult*(temperature in NCU) + trans.          *
-    !      * NCU means non-christian units, i.e. everything that is not SI. *
-    !      *                                                                *
-    !      ******************************************************************
+    !       siTemperature computes the conversion from the given           
+    !       temperature unit to the SI-unit kelvin. The conversion will    
+    !       look like:                                                     
+    !       temperature in K = mult*(temperature in NCU) + trans.          
+    !       NCU means non-christian units, i.e. everything that is not SI. 
     !
     use constants
     use su_cgns, only : Kelvin, Celsius, Rankine, Fahrenheit
@@ -3282,26 +3152,18 @@ end subroutine computeTSDerivatives
 
   end subroutine siTemperature
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * File:          siTurb.f90                                      *
-  !      * Author:        Edwin van der Weide                             *
-  !      * Starting date: 09-14-2004                                      *
-  !      * Last modified: 06-12-2005                                      *
-  !      *                                                                *
-  !      ******************************************************************
+  !       File:          siTurb.f90                                      
+  !       Author:        Edwin van der Weide                             
+  !       Starting date: 09-14-2004                                      
+  !       Last modified: 06-12-2005                                      
   !
   subroutine siTurb(mass, len, time, temp, turbName, mult, trans)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * siTurb computes the conversion from the given turbulence       *
-    !      * unit, which can be constructed from mass, len, time and temp,  *
-    !      * to the SI-unit for the given variable. The conversion will     *
-    !      * look like: var in SI = mult*(var in NCU) + trans.              *
-    !      * NCU means non-christian units, i.e. everything that is not SI. *
-    !      *                                                                *
-    !      ******************************************************************
+    !       siTurb computes the conversion from the given turbulence       
+    !       unit, which can be constructed from mass, len, time and temp,  
+    !       to the SI-unit for the given variable. The conversion will     
+    !       look like: var in SI = mult*(var in NCU) + trans.              
+    !       NCU means non-christian units, i.e. everything that is not SI. 
     !
     use constants
     use su_cgns, only : Kilogram, Meter, Second, Kelvin
@@ -3334,15 +3196,11 @@ end subroutine computeTSDerivatives
 
   subroutine siVelocity(length, time, mult, trans)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * siVelocity computes the conversion from the given velocity     *
-    !      * unit, which can be constructed from length and time, to the    *
-    !      * SI-unit m/s. The conversion will look like:                    *
-    !      * velocity in m/s = mult*(velocity in ncu) + trans.              *
-    !      * Ncu means non-christian units, i.e. everything that is not SI. *
-    !      *                                                                *
-    !      ******************************************************************
+    !       siVelocity computes the conversion from the given velocity     
+    !       unit, which can be constructed from length and time, to the    
+    !       SI-unit m/s. The conversion will look like:                    
+    !       velocity in m/s = mult*(velocity in ncu) + trans.              
+    !       Ncu means non-christian units, i.e. everything that is not SI. 
     !
     use constants
     use su_cgns, only : Meter, CentiMeter, Millimeter, Foot, Inch, Second
@@ -3398,16 +3256,12 @@ end subroutine computeTSDerivatives
 
   subroutine spectralInterpolCoef(nsps, t, alpScal, alpMat)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * spectralInterpolCoef determines the scalar and matrix          *
-    !      * spectral interpolation coefficients for the given number of    *
-    !      * spectral solutions for the given t, where t is the ratio of    *
-    !      * the time and the periodic interval time. Note that the index   *
-    !      * of the spectral solutions of both alpScal and alpMat start     *
-    !      * at 0. In this way these coefficients are easier to determine.  *
-    !      *                                                                *
-    !      ******************************************************************
+    !       spectralInterpolCoef determines the scalar and matrix          
+    !       spectral interpolation coefficients for the given number of    
+    !       spectral solutions for the given t, where t is the ratio of    
+    !       the time and the periodic interval time. Note that the index   
+    !       of the spectral solutions of both alpScal and alpMat start     
+    !       at 0. In this way these coefficients are easier to determine.  
     !
     use constants
     use inputTimeSpectral, only : nTimeIntervalsSpectral, rotMatrixSpectral
@@ -3431,11 +3285,7 @@ end subroutine computeTSDerivatives
 
     real(kind=realType), dimension(3,3) :: rp, tmp
 
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Scalar coefficients.                                           *
-    !      *                                                                *
-    !      ******************************************************************
+    !       Scalar coefficients.                                           
     !
     ! Loop over the number of spectral solutions to compute the
     ! coefficients. Note that the loop starts at 0.
@@ -3465,13 +3315,9 @@ end subroutine computeTSDerivatives
 
     enddo
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Matrix coefficients. These are (can be) different for every    *
-    !      * section and they must therefore be determined for every        *
-    !      * section.                                                       *
-    !      *                                                                *
-    !      ******************************************************************
+    !       Matrix coefficients. These are (can be) different for every    
+    !       section and they must therefore be determined for every        
+    !       section.                                                       
     !
     ! Loop over the number of sections in the grid.
 
@@ -3576,14 +3422,10 @@ end subroutine computeTSDerivatives
 
   subroutine deallocateTempMemory(resNeeded)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * deallocateTempMemory deallocates memory used in the solver,    *
-    !      * but which is not needed to store the actual solution. In this  *
-    !      * way the memory can be used differently, e.g. when writing the  *
-    !      * solution or computing the wall distances.                      *
-    !      *                                                                *
-    !      ******************************************************************
+    !       deallocateTempMemory deallocates memory used in the solver,    
+    !       but which is not needed to store the actual solution. In this  
+    !       way the memory can be used differently, e.g. when writing the  
+    !       solution or computing the wall distances.                      
     !
     use constants
     use block, only : flowDoms, nDom
@@ -3654,12 +3496,8 @@ end subroutine computeTSDerivatives
 
   subroutine allocateTempMemory(resNeeded)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * AllocateTempMemory allocates the memory again that was         *
-    !      * temporarily deallocted by deallocateTempMemory.                *
-    !      *                                                                *
-    !      ******************************************************************
+    !       AllocateTempMemory allocates the memory again that was         
+    !       temporarily deallocted by deallocateTempMemory.                
     !
     use constants
     use block, only : flowDoms, nDom
@@ -3846,14 +3684,10 @@ end subroutine computeTSDerivatives
 
   subroutine writeIntroMessage
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * writeIntroMessage writes a message to stdout with              *
-    !      * information how the executable was built, e.g. whether single  *
-    !      * or double precision is used for the integers and reals, etc.   *
-    !      * To avoid a messy output only processor 0 prints this info.     *
-    !      *                                                                *
-    !      ******************************************************************
+    !       writeIntroMessage writes a message to stdout with              
+    !       information how the executable was built, e.g. whether single  
+    !       or double precision is used for the integers and reals, etc.   
+    !       To avoid a messy output only processor 0 prints this info.     
     !
     use constants
     use communication, only : myid, nProc
@@ -4009,24 +3843,16 @@ end subroutine computeTSDerivatives
 
   end subroutine pointReduce
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * File:          releaseMemory.f90                               *
-  !      * Author:        Edwin van der Weide, Steve Repsher              *
-  !      * Starting date: 08-16-2004                                      *
-  !      * Last modified: 11-27-2007                                      *
-  !      *                                                                *
-  !      ******************************************************************
+  !       File:          releaseMemory.f90                               
+  !       Author:        Edwin van der Weide, Steve Repsher              
+  !       Starting date: 08-16-2004                                      
+  !       Last modified: 11-27-2007                                      
   !
   subroutine releaseMemoryPart1
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * releaseMemoryPart1 releases all the memory on the coarser      *
-    !      * grids of flowDoms and the fine grid memory which is not needed *
-    !      * for the possible interpolation of the spectral solution.       *
-    !      *                                                                *
-    !      ******************************************************************
+    !       releaseMemoryPart1 releases all the memory on the coarser      
+    !       grids of flowDoms and the fine grid memory which is not needed 
+    !       for the possible interpolation of the spectral solution.       
     !
 
     ! This is a free-for-all on the imports. Oh well.
@@ -4077,10 +3903,8 @@ end subroutine computeTSDerivatives
        ! anymore.
 
        do nn=1,nDom
-          ! *******************************
           ! Modified by HDN
           ! Added dwALE, fwALE
-          ! *******************************
           deallocate( &
                flowDoms(nn,1,sps)%dw,    flowDoms(nn,1,sps)%fw,    &
                flowDoms(nn,1,sps)%dwALE, flowDoms(nn,1,sps)%fwALE, &
@@ -4360,13 +4184,9 @@ end subroutine computeTSDerivatives
 
   subroutine releaseMemoryPart2
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * releaseMemoryPart2 releases all the memory of flowDoms on the  *
-    !      * finest grid as well as the memory allocated in the other       *
-    !      * modules.                                                       *
-    !      *                                                                *
-    !      ******************************************************************
+    !       releaseMemoryPart2 releases all the memory of flowDoms on the  
+    !       finest grid as well as the memory allocated in the other       
+    !       modules.                                                       
     !
     use block
     use inputTimeSpectral
@@ -4442,12 +4262,8 @@ end subroutine computeTSDerivatives
 
   subroutine deallocateBlock(nn, level, sps)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * deallocateBlock deallocates all the allocated memory of the    *
-    !      * given block.                                                   *
-    !      *                                                                *
-    !      ******************************************************************
+    !       deallocateBlock deallocates all the allocated memory of the    
+    !       given block.                                                   
     !
     use constants
     use block, only : viscSubfaceType, BCDataType, flowDoms
@@ -5118,9 +4934,7 @@ end subroutine computeTSDerivatives
     if(ierr /= 0) deallocationFailure = .true.
 
 
-    ! *******************************
     ! Added by HDN
-    ! *******************************
     if( associated(flowDoms(nn,level,sps)%xALE) ) &
          deallocate(flowDoms(nn,level,sps)%xALE, stat=ierr)
     if(ierr /= 0) deallocationFailure = .true.
@@ -5182,14 +4996,10 @@ end subroutine computeTSDerivatives
 
   integer function setCGNSRealType()
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * setCGNSRealType sets the cgns real type, depending on the      *
-    !      * compiler options. Note that quadrupole precision is not        *
-    !      * supported by CGNS; double precision is used instead for the    *
-    !      * CGNS IO.                                                       *
-    !      *                                                                *
-    !      ******************************************************************
+    !       setCGNSRealType sets the cgns real type, depending on the      
+    !       compiler options. Note that quadrupole precision is not        
+    !       supported by CGNS; double precision is used instead for the    
+    !       CGNS IO.                                                       
     !
     use su_cgns, only : RealSingle, RealDouble
     implicit none
@@ -5214,12 +5024,8 @@ end subroutine computeTSDerivatives
 
   subroutine returnFail(routineName, errorMessage)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * returnFail writes an error message to standard output and      *
-    !      * sets fail flags to be returned to python.                      *
-    !      *                                                                *
-    !      ******************************************************************
+    !       returnFail writes an error message to standard output and      
+    !       sets fail flags to be returned to python.                      
     !
     use constants
     use communication, only : sumb_comm_world, myid
@@ -5373,11 +5179,7 @@ end subroutine computeTSDerivatives
 
   subroutine convertToLowerCase(string)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * convertToLowerCase converts the given string to lower case.    *
-    !      *                                                                *
-    !      ******************************************************************
+    !       convertToLowerCase converts the given string to lower case.    
     !
     use constants
     implicit none

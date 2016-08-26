@@ -1,12 +1,8 @@
 subroutine timePeriodSpectral
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * timePeriodSpectral determines the time of one period for the   *
-  !      * time spectral method. It is possible that sections have        *
-  !      * different periodic times.                                      *
-  !      *                                                                *
-  !      ******************************************************************
+  !       timePeriodSpectral determines the time of one period for the   
+  !       time spectral method. It is possible that sections have        
+  !       different periodic times.                                      
   !
   use communication
   use constants
@@ -236,13 +232,9 @@ end subroutine timePeriodSpectral
 
 function commonTimeSpectral(t1, t2)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * The function commonTimeSpectral determines the smallest        *
-  !      * possible common time between t1 and t2, such that              *
-  !      * tcommon = n1*t1 = n2*t2 and n1, n2 integers.                   *
-  !      *                                                                *
-  !      ******************************************************************
+  !       The function commonTimeSpectral determines the smallest        
+  !       possible common time between t1 and t2, such that              
+  !       tcommon = n1*t1 = n2*t2 and n1, n2 integers.                   
   !
   use communication
   use utils, only : terminate

@@ -1,12 +1,8 @@
        subroutine transferToCoarseGrid
 !
-!      ******************************************************************
-!      *                                                                *
-!      * transferToCoarseGrid restricts both the solution and the       *
-!      * residual to the next coarser grid level and computes the       *
-!      * residual forcing term on this level.                           *
-!      *                                                                *
-!      ******************************************************************
+!       transferToCoarseGrid restricts both the solution and the       
+!       residual to the next coarser grid level and computes the       
+!       residual forcing term on this level.                           
 !
        use blockPointers
        use flowVarRefState

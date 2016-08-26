@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          updateExternalCommSlide.f90                     *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 11-17-2003                                      *
-!      * Last modified: 03-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          updateExternalCommSlide.f90                     
+!       Author:        Edwin van der Weide                             
+!       Starting date: 11-17-2003                                      
+!       Last modified: 03-25-2005                                      
 !
        subroutine updateExternalCommSlide(haloInd, intRecv, realRecv, &
                                           level,   sps,     sendProc)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * updateExternalCommSlide updates the receiving part of the      *
-!      * external sliding mesh communication pattern for both the 1st   *
-!      * and 2nd level halo's for the given multigrid level and         *
-!      * spectral solution using the information provided in haloInd,   *
-!      * intRecv and realRecv.                                          *
-!      *                                                                *
-!      ******************************************************************
+!       updateExternalCommSlide updates the receiving part of the      
+!       external sliding mesh communication pattern for both the 1st   
+!       and 2nd level halo's for the given multigrid level and         
+!       spectral solution using the information provided in haloInd,   
+!       intRecv and realRecv.                                          
 !
        use commSliding
        use utils, only : reallocateinteger, reallocateinteger2, terminate, &
@@ -39,11 +31,7 @@
        integer(kind=intType) :: nCopy1st, nCopy2nd
        integer(kind=intType) :: nHalo1st, nHalo2nd
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Store the number of entities to copy and the number of halo's in
        ! the receive buffer for both the 1st and 2nd halo cells a bit
@@ -71,13 +59,9 @@
          subroutine updateCommSlidingCellRecv(nCopy, nHalo, &
                                               commSlidingCell)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * UpdateCommSlidingCellRecv updates the receiving part of      *
-!        * the external communication pattern for sliding mesh          *
-!        * interfaces.                                                  *
-!        *                                                              *
-!        ****************************************************************
+!         UpdateCommSlidingCellRecv updates the receiving part of      
+!         the external communication pattern for sliding mesh          
+!         interfaces.                                                  
 !
          implicit none
 !

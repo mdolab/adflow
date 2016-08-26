@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          readTurbSA.F90                                  *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 05-05-2004                                      *
-!      * Last modified: 09-10-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          readTurbSA.F90                                  
+!       Author:        Edwin van der Weide                             
+!       Starting date: 05-05-2004                                      
+!       Last modified: 09-10-2007                                      
 !
        subroutine readTurbSA(nTypeMismatch)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * readTurbSA reads or constructs the nu tilde transport          *
-!      * variable for the Spalart-Allmaras type turbulence models.      *
-!      * If no information could be retrieved some engineering guess of *
-!      * the turbulent variables is made.                               *
-!      *                                                                *
-!      ******************************************************************
+!       readTurbSA reads or constructs the nu tilde transport          
+!       variable for the Spalart-Allmaras type turbulence models.      
+!       If no information could be retrieved some engineering guess of 
+!       the turbulent variables is made.                               
 !
        use constants
        use cgnsNames
@@ -48,11 +40,7 @@
 
        real(kind=realType) :: saNuKnownEddyRatio
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Set the cell range to be copied from the buffer.
 

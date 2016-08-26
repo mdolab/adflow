@@ -1,20 +1,16 @@
        subroutine setFamilyInfoFaces(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * setFamilyInfoFaces sets the values of the family parameters    *
-!      * for faces on the given multigrid level. The default values for *
-!      * indFamily is 0, which means that the mass flow through that    *
-!      * face does not contribute to the mass flow that must be         *
-!      * monitored. For sliding mesh interfaces both sides of the       *
-!      * interface are monitored and the value of indFamily corresponds *
-!      * to one of the two entries in the local monitoring arrays. The  *
-!      * values of factFamily are such that the mass flow entering the  *
-!      * block is defined positive.                                     *
-!      * Note that only the 1st spectral solution is treated, because   *
-!      * this informations is the same for all of them.                 *
-!      *                                                                *
-!      ******************************************************************
+!       setFamilyInfoFaces sets the values of the family parameters    
+!       for faces on the given multigrid level. The default values for 
+!       indFamily is 0, which means that the mass flow through that    
+!       face does not contribute to the mass flow that must be         
+!       monitored. For sliding mesh interfaces both sides of the       
+!       interface are monitored and the value of indFamily corresponds 
+!       to one of the two entries in the local monitoring arrays. The  
+!       values of factFamily are such that the mass flow entering the  
+!       block is defined positive.                                     
+!       Note that only the 1st spectral solution is treated, because   
+!       this informations is the same for all of them.                 
 !
        use constants
        use blockPointers

@@ -1,28 +1,19 @@
 !
-!     ******************************************************************
-!     *                                                                *
-!     * File:          vectorRotation.f90                              *
-!     * Author:        Andre C. Marta                                  *
-!     * Starting date: 06-23-2006                                      *
-!     * Last modified: 07-28-2006                                      *
-!     *                                                                *
-!     ******************************************************************
+!      File:          vectorRotation.f90                              
+!      Author:        Andre C. Marta                                  
+!      Starting date: 06-23-2006                                      
+!      Last modified: 07-28-2006                                      
 !
       subroutine vectorRotation(xp, yp, zp, iaxis, angle, x, y, z)
 !
-!     ****************************************************************
-!     *                                                              *
-!     * vectorRotation rotates a given vector with respect to a      *
-!     * specified axis by a given angle.                             *
-!     *                                                              *
-!     *    input arguments:                                          *
-!     *       iaxis      = rotation axis (1-x, 2-y, 3-z)             *
-!     *       angle      = rotation angle (measured ccw in radians)  *
-!     *       x, y, z    = coordinates in original system            *
-!     *    output arguments:                                         *
-!     *       xp, yp, zp = coordinates in rotated system             *
-!     *                                                              *
-!     ****************************************************************
+!      vectorRotation rotates a given vector with respect to a      
+!      specified axis by a given angle.                             
+!         input arguments:                                          
+!            iaxis      = rotation axis (1-x, 2-y, 3-z)             
+!            angle      = rotation angle (measured ccw in radians)  
+!            x, y, z    = coordinates in original system            
+!         output arguments:                                         
+!            xp, yp, zp = coordinates in rotated system             
 !
       use precision
       implicit none
@@ -33,11 +24,7 @@
       real(kind=realType), intent(in)   :: angle, x, y, z
       real(kind=realType), intent(out)  :: xp, yp, zp
 !
-!     ******************************************************************
-!     *                                                                *
-!     * Begin execution                                                *
-!     *                                                                *
-!     ******************************************************************
+!      Begin execution                                                
 !
       ! rotation about specified axis by specified angle
 

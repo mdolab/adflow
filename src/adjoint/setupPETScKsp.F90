@@ -1,12 +1,8 @@
 !
-!     ******************************************************************
-!     *                                                                *
-!     * File:          setupPETScKsp.F90                               *
-!     * Author:        Gaetan Kenway                                   *
-!     * Starting date: 26-12-2012                                      *
-!     * Last modified: 26-12-2012                                      *
-!     *                                                                *
-!     ******************************************************************
+!      File:          setupPETScKsp.F90                               
+!      Author:        Gaetan Kenway                                   
+!      Starting date: 26-12-2012                                      
+!      Last modified: 26-12-2012                                      
 !
 subroutine setupPETScKsp
 
@@ -90,18 +86,13 @@ subroutine setupPETScKsp
 
 end subroutine setupPETScKsp
 !
-!     ******************************************************************
 !
 subroutine MyKSPMonitor(myKsp, n, rnorm, dummy, ierr)
   !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * This is a user-defined routine for monitoring the KSP          *
-  !     * iterative solvers. Instead of outputing the L2-norm at every   *
-  !     * iteration (default PETSc monitor), it only does it every       *
-  !     * 'adjMonStep' iterations.                                       *
-  !     *                                                                *
-  !     ******************************************************************
+  !      This is a user-defined routine for monitoring the KSP          
+  !      iterative solvers. Instead of outputing the L2-norm at every   
+  !      iteration (default PETSc monitor), it only does it every       
+  !      'adjMonStep' iterations.                                       
   !
   use ADjointPETSc
   use inputADjoint
@@ -120,11 +111,7 @@ subroutine MyKSPMonitor(myKsp, n, rnorm, dummy, ierr)
   integer(kind=intType) :: n, dummy, ierr
   real(kind=realType)   :: rnorm
   !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Begin execution.                                               *
-  !     *                                                                *
-  !     ******************************************************************
+  !      Begin execution.                                               
   !
 #ifndef USE_NO_PETSC
 

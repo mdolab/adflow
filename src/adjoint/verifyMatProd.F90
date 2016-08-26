@@ -1,11 +1,7 @@
 subroutine verifyMatProd
 
-  !     ******************************************************************
-  !     *                                                                *
-  !     * This is a verify routine that test the reverse mat prod        *
-  !     * with the forward mode.                                         *
-  !     *                                                                *
-  !     ******************************************************************
+  !      This is a verify routine that test the reverse mat prod        
+  !      with the forward mode.                                         
   !
   use blockPointers_b
   use inputDiscretization 

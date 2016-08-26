@@ -1,34 +1,22 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          defaultIsoOut.f90                               *
-!      * Author:        Gaetan Kenway                                   *
-!      * Starting date: 07-21-2013                                      *
-!      * Last modified: 07-21-2013                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          defaultIsoOut.f90                               
+!       Author:        Gaetan Kenway                                   
+!       Starting date: 07-21-2013                                      
+!       Last modified: 07-21-2013                                      
 !
        subroutine defaultIsoOut
 !
-!      ******************************************************************
-!      *                                                                *
-!      * defaultIsoOut sets the default set of additional            *
-!      * variables to be written to the solution file; the primitive    *
-!      * variables are always written. This additional set depends on   *
-!      * the governing equations to be solved.                          *
-!      *                                                                *
-!      ******************************************************************
+!       defaultIsoOut sets the default set of additional            
+!       variables to be written to the solution file; the primitive    
+!       variables are always written. This additional set depends on   
+!       the governing equations to be solved.                          
 !
        use constants
        use extraOutput
        use inputPhysics, only : equations
        implicit none
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! First set the variables, which are independent from the
        ! governing equations to be solved.

@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          solverUnsteadyExplicitRK.F90                    *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 08-13-2006                                      *
-!      * Last modified: 11-28-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          solverUnsteadyExplicitRK.F90                    
+!       Author:        Edwin van der Weide                             
+!       Starting date: 08-13-2006                                      
+!       Last modified: 11-28-2007                                      
 !
        subroutine solverUnsteadyExplicitRK
 !
-!      ******************************************************************
-!      *                                                                *
-!      * solverUnsteadyExplicitRK solves the unsteady equations using   *
-!      * the explicit Runge-Kutta schemes for the multigrid level       *
-!      * groundLevel.                                                   *
-!      *                                                                *
-!      ******************************************************************
+!       solverUnsteadyExplicitRK solves the unsteady equations using   
+!       the explicit Runge-Kutta schemes for the multigrid level       
+!       groundLevel.                                                   
 !
        use blockPointers
        use communication
@@ -44,11 +36,7 @@
 
        character(len=7) :: numberString
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Set rkStage to 0. This variable is only relevant if Runge-Kutta
        ! smoothers are used as an iterative algorithm, but rkStage needs
@@ -97,11 +85,7 @@
 
        call convergenceInfo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Loop over the number of time steps to be computed.             *
-!      *                                                                *
-!      ******************************************************************
+!       Loop over the number of time steps to be computed.             
 !
        ! Initialize the unsteady time.
 
@@ -322,12 +306,8 @@
 
        subroutine initStageRK(stage)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * initStageRK performs the initialization tasks for the          *
-!      * Runge-Kutta schemes in unsteady mode.                          *
-!      *                                                                *
-!      ******************************************************************
+!       initStageRK performs the initialization tasks for the          
+!       Runge-Kutta schemes in unsteady mode.                          
 !
        use inputMotion
        use inputUnsteady
@@ -350,11 +330,7 @@
 
        real(kind=realType), dimension(nSections) :: tNewSec, deltaTSec
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! If the grid is changing a whole lot of geometric
        ! info must be adapted.

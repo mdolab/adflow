@@ -1,39 +1,23 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          cgnsNames.f90                                   *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 04-27-2003                                      *
-!      * Last modified: 08-11-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          cgnsNames.f90                                   
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 04-27-2003                                      
+!       Last modified: 08-11-2005                                      
 !
        module cgnsNames
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Parametrized cgns names of the variables used in this code.    *
-!      *                                                                *
-!      ******************************************************************
+!       Parametrized cgns names of the variables used in this code.    
 !
        use constants, only : maxCGNSNameLen
        implicit none
        save
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Time history values.                                           *
-!      *                                                                *
-!      ******************************************************************
+!       Time history values.                                           
 !
        character(len=maxCGNSNameLen), parameter :: &
                                          cgnsTimeValue = "TimeValues"
 !
-!      ******************************************************************
-!      *                                                                *
-!      * coordinate names.                                              *
-!      *                                                                *
-!      ******************************************************************
+!       coordinate names.                                              
 !
        character(len=maxCGNSNameLen), parameter :: &
                                          cgnsCoorX = "CoordinateX"
@@ -44,11 +28,7 @@
        character(len=maxCGNSNameLen), parameter :: &
                                          cgnsCoorR = "CoordinateR"
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Variable names.                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Variable names.                                                
 !
        character(len=maxCGNSNameLen), parameter :: &
                          cgnsDensity     = "Density"
@@ -196,11 +176,7 @@
 
 
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Residual names.                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Residual names.                                                
 !
        character(len=maxCGNSNameLen), parameter :: &
                          cgnsResRho     = "ResDensity"
@@ -227,11 +203,7 @@
        character(len=maxCGNSNameLen), parameter :: &
                          cgnsResF       = "ResTurbulentScalarF"
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Residual L2 norm names.                                        *
-!      *                                                                *
-!      ******************************************************************
+!       Residual L2 norm names.                                        
 !
        character(len=maxCGNSNameLen), parameter :: &
                          cgnsL2ResRho     = "RSDMassRMS"
@@ -258,11 +230,7 @@
        character(len=maxCGNSNameLen), parameter :: &
                          cgnsL2ResF       = "RSDTurbulentScalarFRMS"
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Force and moment coefficients names.                           *
-!      *                                                                *
-!      ******************************************************************
+!       Force and moment coefficients names.                           
 !
        character(len=maxCGNSNameLen), parameter :: &
                                          cgnsCL  = "CoefLift"
@@ -290,11 +258,7 @@
        character(len=maxCGNSNameLen), parameter :: &
                                          cgnsCMz = "CoefMomentZ"
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Names of the "maximum" variables.                              *
-!      *                                                                *
-!      ******************************************************************
+!       Names of the "maximum" variables.                              
 !
        character(len=maxCGNSNameLen), parameter :: &
                        cgnsHDiffMax = "MaxDiffHAndHinf"
@@ -305,28 +269,16 @@
        character(len=maxCGNSNameLen), parameter :: &
                        cgnsEddyMax  = "MaxRatioEddyAndLaminarViscosity"
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Names of the blanking paramter.                                *
-!      *                                                                *
-!      ******************************************************************
+!       Names of the blanking paramter.                                
 !
        character(len=maxCGNSNameLen), parameter :: cgnsBlank = "Iblank"
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Names of the "lift" force, separation sensor and cavitation    *
-!      *                                                                *
-!      ******************************************************************
+!       Names of the "lift" force, separation sensor and cavitation    
 !
        character(len=maxCGNSNameLen), parameter :: cgnsSepSensor = "SepSensor"
        character(len=maxCGNSNameLen), parameter :: cgnsCavitation = "Cavitation"
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Names for the convergence history and time history.            *
-!      *                                                                *
-!      ******************************************************************
+!       Names for the convergence history and time history.            
 !
        character(len=maxCGNSNameLen), parameter :: &
                                       ConvHistory = "ConvergenceHistory"

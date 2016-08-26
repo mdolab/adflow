@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          slidingIntersections.f90                        *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 10-22-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          slidingIntersections.f90                        
+!       Author:        Edwin van der Weide                             
+!       Starting date: 10-22-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        module intersect
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Local module to store the for every sliding mesh interface its *
-!      * intersections.                                                 *
-!      *                                                                *
-!      ******************************************************************
+!       Local module to store the for every sliding mesh interface its 
+!       intersections.                                                 
 !
        use precision
        implicit none
@@ -41,13 +33,9 @@
 
        subroutine slidingIntersections
 !
-!      ******************************************************************
-!      *                                                                *
-!      * slidingIntersections determines for every sliding mesh         *
-!      * interface the number of intersections as well as the sliding   *
-!      * mesh ID's with lower numbered sliding mesh interfaces.         *
-!      *                                                                *
-!      ******************************************************************
+!       slidingIntersections determines for every sliding mesh         
+!       interface the number of intersections as well as the sliding   
+!       mesh ID's with lower numbered sliding mesh interfaces.         
 !
        use constants
        use cgnsGrid
@@ -64,11 +52,7 @@
 
        type(intersectType), dimension(cgnsNSliding) :: slideInt
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize the number of intersections for the sliding mesh
        ! interfaces to 0 and do an initial allocation of the
@@ -144,13 +128,9 @@
 
          subroutine intersectionThisBlock
 !
-!        ****************************************************************
-!        *                                                              *
-!        * IntersectionThisBlock determines the intersections for       *
-!        * block nn in the original cgns grid and stores this info in   *
-!        * the array slideInt.                                          *
-!        *                                                              *
-!        ****************************************************************
+!         IntersectionThisBlock determines the intersections for       
+!         block nn in the original cgns grid and stores this info in   
+!         the array slideInt.                                          
 !
          use su_cgns
          implicit none
@@ -165,11 +145,7 @@
          integer(kind=intType), dimension(jl) :: i1k1, ilk1, i1kl, ilkl
          integer(kind=intType), dimension(kl) :: i1j1, ilj1, i1jl, iljl
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Initialize the edge indicators of the block to 0.
 
@@ -457,13 +433,9 @@
 
        subroutine updateInt(slideInt, high, low)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * updateInt checks whether or not the intersection between the   *
-!      * sliding mesh interfaces high and low is already stored. If not *
-!      * it is stored in slideInt.                                      *
-!      *                                                                *
-!      ******************************************************************
+!       updateInt checks whether or not the intersection between the   
+!       sliding mesh interfaces high and low is already stored. If not 
+!       it is stored in slideInt.                                      
 !
        use intersect
        use utils, only : reallocateinteger

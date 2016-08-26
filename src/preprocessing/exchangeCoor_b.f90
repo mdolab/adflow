@@ -1,11 +1,7 @@
 subroutine exchangeCoor_b(level)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * ExchangeCoor_b exchanges the *derivatives* of the given grid   *
-  !      * level IN REVERSE MODE.                                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       ExchangeCoor_b exchanges the *derivatives* of the given grid   
+  !       level IN REVERSE MODE.                                         
   !
   use constants
   use block
@@ -26,11 +22,7 @@ subroutine exchangeCoor_b(level)
   integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Loop over the number of spectral solutions.
 

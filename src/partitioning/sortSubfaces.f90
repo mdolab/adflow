@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          sortSubfaces.f90                                *
-!      * Author:        Edwin van der Weide, Seonghyeon Hahn            *
-!      * Starting date: 07-23-2003                                      *
-!      * Last modified: 10-10-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          sortSubfaces.f90                                
+!       Author:        Edwin van der Weide, Seonghyeon Hahn            
+!       Starting date: 07-23-2003                                      
+!       Last modified: 10-10-2005                                      
 !
        subroutine sortSubfaces(oldSubfaceID, blockID)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * sortSubfaces sorts the boundary subfaces of the given block    *
-!      * such that viscous subfaces are numbered first, followed by     *
-!      * inviscid, etc.                                                 *
-!      *                                                                *
-!      ******************************************************************
+!       sortSubfaces sorts the boundary subfaces of the given block    
+!       such that viscous subfaces are numbered first, followed by     
+!       inviscid, etc.                                                 
 !
        use partitionMod
        use sorting, only : qsortIntegers, bsearchIntegers

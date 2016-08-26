@@ -1,13 +1,9 @@
 
 !
-!     ******************************************************************
-!     *                                                                *
-!     * File:          ADjointVars.F90                                 *
-!     * Author:        Andre C. Marta,C.A.(Sandy) Mader                *
-!     * Starting date: 07-21-2006                                      *
-!     * Last modified: 01-17-2008                                      *
-!     *                                                                *
-!     ******************************************************************
+!      File:          ADjointVars.F90                                 
+!      Author:        Andre C. Marta,C.A.(Sandy) Mader                
+!      Starting date: 07-21-2006                                      
+!      Last modified: 01-17-2008                                      
 !
       module ADjointVars
 

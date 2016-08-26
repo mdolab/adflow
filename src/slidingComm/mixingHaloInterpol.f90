@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          mixingHaloInterpol.f90                          *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-01-2005                                      *
-!      * Last modified: 03-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          mixingHaloInterpol.f90                          
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-01-2005                                      
+!       Last modified: 03-25-2005                                      
 !
        subroutine mixingHaloInterpol(level, slideID, color, commPattern)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * mixingHaloInterpol determines the interpolation data for the   *
-!      * halo cells for the given slideID on the given multigrid level. *
-!      *                                                                *
-!      ******************************************************************
+!       mixingHaloInterpol determines the interpolation data for the   
+!       halo cells for the given slideID on the given multigrid level. 
 !
        use constants
        use blockPointers
@@ -51,11 +43,7 @@
 
        real(kind=realType), dimension(:,:,:), allocatable :: xFace
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Easier storage of the vectors which define the local cartesian
        ! coordinate system.

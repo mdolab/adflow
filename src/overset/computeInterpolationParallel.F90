@@ -1,11 +1,7 @@
-!      ******************************************************************
-!      *                                                                *
-!      * computeOversetInterpolation is the top level routine that      *
-!      * implements the implicit hole cutting method for determing      *
-!      * overset grid connectivitiies. It operates on a given multigrid *
-!      * level and spectral instance                                    *
-!      *                                                                *
-!      ******************************************************************
+!       computeOversetInterpolation is the top level routine that      
+!       implements the implicit hole cutting method for determing      
+!       overset grid connectivitiies. It operates on a given multigrid 
+!       level and spectral instance                                    
 
 subroutine oversetComm(level, firstTime, coarseLevel)
 

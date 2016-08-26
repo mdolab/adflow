@@ -1,13 +1,10 @@
 !
        subroutine qsortPocketEdgeType(arr, nn)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * qsortPocketEdgeType sorts the given number of oversetString    *
-!      * master Edges in increasing order based on the <= operator for  *
-!      * this derived data type.                                        *
-!      * (Generously copied from qsortFringeType.F90)                   *
-!      ******************************************************************
+!       qsortPocketEdgeType sorts the given number of oversetString    
+!       master Edges in increasing order based on the <= operator for  
+!       this derived data type.                                        
+!       (Generously copied from qsortFringeType.F90)                   
 !
        use constants
        use overset
@@ -33,11 +30,7 @@
        integer(kind=intType), allocatable, dimension(:) :: stack
        integer(kind=intType), allocatable, dimension(:) :: tmpStack
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Allocate the memory for stack.
 

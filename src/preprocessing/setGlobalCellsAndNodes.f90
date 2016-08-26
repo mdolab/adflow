@@ -1,41 +1,28 @@
 !
-!     ******************************************************************
-!     *                                                                *
-!     * File:          setGlobalCellsAndNodes.f90                      *
-!     * Author:        C.A.(Sandy) Mader, Gaetan Kenway                *
-!     * Starting date: 01-14-2008                                      *
-!     * Last modified: 12-28-2012                                      *
-!     *                                                                *
-!     ******************************************************************
+!      File:          setGlobalCellsAndNodes.f90                      
+!      Author:        C.A.(Sandy) Mader, Gaetan Kenway                
+!      Starting date: 01-14-2008                                      
+!      Last modified: 12-28-2012                                      
 !
 subroutine setGlobalCellsAndNodes(level)
   !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Determine the global node numbering that is used to assemble   *
-  !     * the adjoint system of equations. It take cares of all the halo *
-  !     * nodes between the blocks.                                      *
-  !     *                                                                *
-  !     * The nodes are numbered according to the following sequence:    *
-  !     *                                                                *
-  !     * loop processor = 1, nProc                                      *
-  !     *   loop domain = 1, nDom                                        *
-  !     *     loop k = 2, kl                                             *
-  !     *       loop j = 2, jl                                           *
-  !     *         loop i = 2, il                                         *
-  !     *                                                                *
-  !     * Only the onwned nodes are numbered, meaning i/j/k span from 2  *
-  !     * to il/jl/kl. The halo nodes receive the numbering from the     *
-  !     * neighboring block that owns them.                              *
-  !     *                                                                *
-  !     * These variables are the same for all spectral modes, therefore *
-  !     * only the 1st mode needs to be communicated.                    * 
-  !     *                                                                *
-  !     * This function will also set FMPointer which is only defined    *
-  !     * on wall boundary conditions and points to the correct index    *
-  !     * for the vectors that are of shape nsurface nodes               *
-  !     *                                                                *
-  !     ******************************************************************
+  !      Determine the global node numbering that is used to assemble   
+  !      the adjoint system of equations. It take cares of all the halo 
+  !      nodes between the blocks.                                      
+  !      The nodes are numbered according to the following sequence:    
+  !      loop processor = 1, nProc                                      
+  !        loop domain = 1, nDom                                        
+  !          loop k = 2, kl                                             
+  !            loop j = 2, jl                                           
+  !              loop i = 2, il                                         
+  !      Only the onwned nodes are numbered, meaning i/j/k span from 2  
+  !      to il/jl/kl. The halo nodes receive the numbering from the     
+  !      neighboring block that owns them.                              
+  !      These variables are the same for all spectral modes, therefore 
+  !      only the 1st mode needs to be communicated.                    
+  !      This function will also set FMPointer which is only defined    
+  !      on wall boundary conditions and points to the correct index    
+  !      for the vectors that are of shape nsurface nodes               
   !
   use ADjointVars 
   use blockpointers

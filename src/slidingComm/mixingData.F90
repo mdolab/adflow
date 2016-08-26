@@ -1,32 +1,20 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          mixingData.f90                                  *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 01-28-2005                                      *
-!      * Last modified: 03-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          mixingData.f90                                  
+!       Author:        Edwin van der Weide                             
+!       Starting date: 01-28-2005                                      
+!       Last modified: 03-25-2005                                      
 !
        module mixingData
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Local module which defines/stores variables used to determine  *
-!      * communication/interpolation pattern of a mixing plane.         *
-!      *                                                                *
-!      ******************************************************************
+!       Local module which defines/stores variables used to determine  
+!       communication/interpolation pattern of a mixing plane.         
 !
        use precision
        implicit none
        save
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Definition of the data type used to construct the              *
-!      * interpolation interval.                                        *
-!      *                                                                *
-!      ******************************************************************
+!       Definition of the data type used to construct the              
+!       interpolation interval.                                        
 !
        type mixingIntervalType
 
@@ -60,11 +48,7 @@
          module procedure lessMixingInterval
        end interface
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Variables stored in this module.                               *
-!      *                                                                *
-!      ******************************************************************
+!       Variables stored in this module.                               
 !
        ! radialInterface: Whether this is a radial or an axial
        !                  interface.
@@ -94,13 +78,9 @@
 
          logical function lessEqualMixingInterval(g1,g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * LessEqualMixingInterval returns .true. if g1 <= g2 and       *
-!        * .false. otherwise. The comparison is firstly based on rMin,  *
-!        * followed by rMax and finally on regularEdge.                 *
-!        *                                                              *
-!        ****************************************************************
+!         LessEqualMixingInterval returns .true. if g1 <= g2 and       
+!         .false. otherwise. The comparison is firstly based on rMin,  
+!         followed by rMax and finally on regularEdge.                 
 !
          implicit none
 !
@@ -108,11 +88,7 @@
 !
          type(mixingIntervalType), intent(in) :: g1, g2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Compare rMin.
 
@@ -152,13 +128,9 @@
 
          logical function lessMixingInterval(g1,g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * LessMixingInterval returns .true. If g1 < g2 and .false.     *
-!        * otherwise. The comparison is firstly based on rMin, followed *
-!        * by rMax and finally on regularEdge.                          *
-!        *                                                              *
-!        ****************************************************************
+!         LessMixingInterval returns .true. If g1 < g2 and .false.     
+!         otherwise. The comparison is firstly based on rMin, followed 
+!         by rMax and finally on regularEdge.                          
 !
          implicit none
 !
@@ -166,11 +138,7 @@
 !
          type(mixingIntervalType), intent(in) :: g1, g2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Compare rMin.
 

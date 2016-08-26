@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          setIOVar.f90                                    *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 07-05-2005                                      *
-!      * Last modified: 10-10-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          setIOVar.f90                                    
+!       Author:        Edwin van der Weide                             
+!       Starting date: 07-05-2005                                      
+!       Last modified: 10-10-2005                                      
 !
        subroutine setIOVar
 !
-!      ******************************************************************
-!      *                                                                *
-!      * setIOVar allocates the memory for the derived data type IOVar, *
-!      * which is simplifies the reading. If an interpolation must be   *
-!      * performed for the time spectral method also the solution of    *
-!      * this IO type is allocated. For all other cases the pointers of *
-!      * IOVar are set the the appropriate entries of flowDoms, with    *
-!      * possible offset due to the usage of pointers.                  *
-!      *                                                                *
-!      ******************************************************************
+!       setIOVar allocates the memory for the derived data type IOVar, 
+!       which is simplifies the reading. If an interpolation must be   
+!       performed for the time spectral method also the solution of    
+!       this IO type is allocated. For all other cases the pointers of 
+!       IOVar are set the the appropriate entries of flowDoms, with    
+!       possible offset due to the usage of pointers.                  
 !
        use constants
        use block, only : flowDoms, nDom
@@ -36,11 +28,7 @@
 
        integer(kind=intType) :: nn, mm, il, jl, kl
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Allocate the memory for IOVar.
 

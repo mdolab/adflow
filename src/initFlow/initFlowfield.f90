@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          initFlowfield.f90                               *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-07-2003                                      *
-!      * Last modified: 03-22-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          initFlowfield.f90                               
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-07-2003                                      
+!       Last modified: 03-22-2005                                      
 !
        subroutine initFlowfield
 !
-!      ******************************************************************
-!      *                                                                *
-!      * initFlowfield initializes the flow field to a uniform flow on  *
-!      * the start level grid. Exception may be some turbulence         *
-!      * variables, which are initialized a bit smarter.                *
-!      *                                                                *
-!      ******************************************************************
+!       initFlowfield initializes the flow field to a uniform flow on  
+!       the start level grid. Exception may be some turbulence         
+!       variables, which are initialized a bit smarter.                
 !
        use constants
        use communication, only : myID
@@ -31,11 +23,7 @@
 !
        integer(kind=intType) :: nn
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize nTimeStepsRestart to 0 (no restart
        ! is performed) and allocate the memory for the arrays to store

@@ -7,26 +7,18 @@
 !   rw status of diff variables: *x:in-out
 !   plus diff mem management of: x:in
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          xhalo.f90                                       *
-!      * author:        edwin van der weide,c.a.(sandy) mader            *
-!      * starting date: 02-23-2003                                      *
-!      * last modified: 08-12-2009                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          xhalo.f90                                       
+!       author:        edwin van der weide,c.a.(sandy) mader            
+!       starting date: 02-23-2003                                      
+!       last modified: 08-12-2009                                      
 !
 subroutine xhalo_block_b()
 !
-!      ******************************************************************
-!      *                                                                *
-!      * xhalo determines the coordinates of the nodal halo's.          *
-!      * first it sets all halo coordinates by simple extrapolation,    *
-!      * then the symmetry planes are treated (also the unit normal of  *
-!      * symmetry planes are determined) and finally an exchange is     *
-!      * made for the internal halo's.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       xhalo determines the coordinates of the nodal halo's.          
+!       first it sets all halo coordinates by simple extrapolation,    
+!       then the symmetry planes are treated (also the unit normal of  
+!       symmetry planes are determined) and finally an exchange is     
+!       made for the internal halo's.                                  
 !
   use constants
   use blockpointers
@@ -112,12 +104,8 @@ subroutine xhalo_block_b()
   real(kind=realtype) :: tmpd1
   real(kind=realtype) :: tmpd0
 !
-!          **************************************************************
-!          *                                                            *
-!          * mirror the halo coordinates adjacent to the symmetry       *
-!          * planes                                                     *
-!          *                                                            *
-!          **************************************************************
+!           mirror the halo coordinates adjacent to the symmetry       
+!           planes                                                     
 !
 ! loop over boundary subfaces.
 loopbocos:do mm=1,nbocos

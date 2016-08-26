@@ -7,39 +7,30 @@
 !   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          turbadvection.f90                               *
-!      * author:        georgi kalitzin, edwin van der weide            *
-!      * starting date: 09-01-2003                                      *
-!      * last modified: 04-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          turbadvection.f90                               
+!       author:        georgi kalitzin, edwin van der weide            
+!       starting date: 09-01-2003                                      
+!       last modified: 04-12-2005                                      
 !
 subroutine turbadvection_b(madv, nadv, offset, qq)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * turbadvection discretizes the advection part of the turbulent  *
-!      * transport equations. as the advection part is the same for all *
-!      * models, this generic routine can be used. both the             *
-!      * discretization and the central jacobian are computed in this   *
-!      * subroutine. the former can either be 1st or 2nd order          *
-!      * accurate; the latter is always based on the 1st order upwind   *
-!      * discretization. when the discretization must be second order   *
-!      * accurate, the fully upwind (kappa = -1) scheme in combination  *
-!      * with the minmod limiter is used.                               *
-!      *                                                                *
-!      * only nadv equations are treated, while the actual system has   *
-!      * size madv. the reason is that some equations for some          *
-!      * turbulence equations do not have an advection part, e.g. the   *
-!      * f equation in the v2-f model. the argument offset indicates    *
-!      * the offset in the w vector where this subsystem starts. as a   *
-!      * consequence it is assumed that the indices of the current      *
-!      * subsystem are contiguous, e.g. if a 2*2 system is solved the   *
-!      * last index in w is offset+1 and offset+2 respectively.         *
-!      *                                                                *
-!      ******************************************************************
+!       turbadvection discretizes the advection part of the turbulent  
+!       transport equations. as the advection part is the same for all 
+!       models, this generic routine can be used. both the             
+!       discretization and the central jacobian are computed in this   
+!       subroutine. the former can either be 1st or 2nd order          
+!       accurate; the latter is always based on the 1st order upwind   
+!       discretization. when the discretization must be second order   
+!       accurate, the fully upwind (kappa = -1) scheme in combination  
+!       with the minmod limiter is used.                               
+!       only nadv equations are treated, while the actual system has   
+!       size madv. the reason is that some equations for some          
+!       turbulence equations do not have an advection part, e.g. the   
+!       f equation in the v2-f model. the argument offset indicates    
+!       the offset in the w vector where this subsystem starts. as a   
+!       consequence it is assumed that the indices of the current      
+!       subsystem are contiguous, e.g. if a 2*2 system is solved the   
+!       last index in w is offset+1 and offset+2 respectively.         
 !
   use constants
   use blockpointers
@@ -606,11 +597,7 @@ subroutine turbadvection_b(madv, nadv, offset, qq)
   call popinteger4(i)
   qsd = 0.0_8
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! initialize the grid velocity to zero. this value will be used
 ! if the block is not moving.

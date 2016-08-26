@@ -1,13 +1,9 @@
 
        subroutine writeCGNSSaeInfo(cgnsInd, cgnsBase)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * WriteCGNSSaeInfo writes information about the Spalart          *
-!      * Allmaras turbulence model using the Edwards modification to    *
-!      * the cgns file.                                                 *
-!      *                                                                *
-!      ******************************************************************
+!       WriteCGNSSaeInfo writes information about the Spalart          
+!       Allmaras turbulence model using the Edwards modification to    
+!       the cgns file.                                                 
 !
        use inputPhysics
        use cgnsNames

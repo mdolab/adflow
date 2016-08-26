@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          residual.f90                                    *
-!      * Author:        Edwin van der Weide, Steve Repsher (blanking)   *
-!      * Starting date: 03-15-2003                                      *
-!      * Last modified: 10-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          residual.f90                                    
+!       Author:        Edwin van der Weide, Steve Repsher (blanking)   
+!       Starting date: 03-15-2003                                      
+!       Last modified: 10-29-2007                                      
 !
        subroutine residual2
 !
-!      ******************************************************************
-!      *                                                                *
-!      * residual computes the residual of the mean flow equations on   *
-!      * the current MG level.                                          *
-!      *                                                                *
-!      ******************************************************************
+!       residual computes the residual of the mean flow equations on   
+!       the current MG level.                                          
 !
        use blockPointers
        use cgnsGrid
@@ -33,11 +25,7 @@
        integer(kind=intType) :: i, j, k, l
        logical :: fineGrid
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Add the source terms from the level 0 cooling model.
 

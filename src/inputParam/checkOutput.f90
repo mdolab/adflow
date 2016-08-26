@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          checkOutput.f90                                 *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-26-2003                                      *
-!      * Last modified: 11-27-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          checkOutput.f90                                 
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-26-2003                                      
+!       Last modified: 11-27-2007                                      
 !
        subroutine checkOutput
 !
-!      ******************************************************************
-!      *                                                                *
-!      * checkOutput checks and possibly corrects the and output        *
-!      * variables. This depends on the set of governing equations to   *
-!      * be solved.                                                     *
-!      *                                                                *
-!      ******************************************************************
+!       checkOutput checks and possibly corrects the and output        
+!       variables. This depends on the set of governing equations to   
+!       be solved.                                                     
 !
        use constants
        use extraOutput
@@ -25,11 +17,7 @@
        use flowVarRefState, only : kPresent, eddyModel
        implicit none
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the governing equations to be solved and set the
        ! variables accordingly.

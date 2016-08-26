@@ -7,27 +7,19 @@
 !   rw status of diff variables: *p:incr *w:incr *fw:in-out
 !   plus diff mem management of: p:in w:in fw:in
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          invisciddissfluxmatrix.f90                      *
-!      * author:        edwin van der weide                             *
-!      * starting date: 03-25-2003                                      *
-!      * last modified: 10-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          invisciddissfluxmatrix.f90                      
+!       author:        edwin van der weide                             
+!       starting date: 03-25-2003                                      
+!       last modified: 10-29-2007                                      
 !
 subroutine invisciddissfluxmatrix_fast_b()
 !
-!      ******************************************************************
-!      *                                                                *
-!      * invisciddissfluxmatrix computes the matrix artificial          *
-!      * dissipation term. instead of the spectral radius, as used in   *
-!      * the scalar dissipation scheme, the absolute value of the flux  *
-!      * jacobian is used. this leads to a less diffusive and           *
-!      * consequently more accurate scheme. it is assumed that the      *
-!      * pointers in blockpointers already point to the correct block.  *
-!      *                                                                *
-!      ******************************************************************
+!       invisciddissfluxmatrix computes the matrix artificial          
+!       dissipation term. instead of the spectral radius, as used in   
+!       the scalar dissipation scheme, the absolute value of the flux  
+!       jacobian is used. this leads to a less diffusive and           
+!       consequently more accurate scheme. it is assumed that the      
+!       pointers in blockpointers already point to the correct block.  
 !
   use constants
   use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb&
@@ -313,11 +305,7 @@ subroutine invisciddissfluxmatrix_fast_b()
       end if
     end do
 !
-!      ******************************************************************
-!      *                                                                *
-!      * dissipative fluxes in the i-direction.                         *
-!      *                                                                *
-!      ******************************************************************
+!       dissipative fluxes in the i-direction.                         
 !
     do ii=0,il*ny*nz-1
       i = mod(ii, il) + 1
@@ -473,11 +461,7 @@ subroutine invisciddissfluxmatrix_fast_b()
       fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
     end do
 !
-!      ******************************************************************
-!      *                                                                *
-!      * dissipative fluxes in the j-direction.                         *
-!      *                                                                *
-!      ******************************************************************
+!       dissipative fluxes in the j-direction.                         
 !
     do ii=0,nx*jl*nz-1
       i = mod(ii, nx) + 2

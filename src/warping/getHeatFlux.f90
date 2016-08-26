@@ -15,11 +15,7 @@ subroutine getHeatFlux(hflux, npts, sps_in)
   integer(kind=intType) :: mm, nn, i, j, ii, sps
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
 
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
 
   sps = sps_in
 
@@ -64,11 +60,7 @@ subroutine heatFluxes
   logical :: heatedSubface
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! ! Set the actual scaling factor such that ACTUAL heat flux is computed
   ! ! The factor is determined from stanton number

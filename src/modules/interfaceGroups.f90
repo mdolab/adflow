@@ -1,32 +1,20 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          interfaceGroups.f90                             *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 09-26-2003                                      *
-!      * Last modified: 03-22-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          interfaceGroups.f90                             
+!       Author:        Edwin van der Weide                             
+!       Starting date: 09-26-2003                                      
+!       Last modified: 03-22-2005                                      
 !
        module interfaceGroups
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Local module which stores the information of sliding mesh      *
-!      * interfaces to which this processor contributes.                *
-!      *                                                                *
-!      ******************************************************************
+!       Local module which stores the information of sliding mesh      
+!       interfaces to which this processor contributes.                
 !
        use constants, only : intType, realType
        implicit none
        save
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the data type to store the processors having *
-!      * faces on the sliding mesh interface.                           *
-!      *                                                                *
-!      ******************************************************************
+!       The definition of the data type to store the processors having 
+!       faces on the sliding mesh interface.                           
 !
        type interfaceInfoType
 

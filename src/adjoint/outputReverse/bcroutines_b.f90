@@ -12,13 +12,13 @@ module bcroutines_b
 contains
 !  differentiation of applyallbc_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *xx *rev0 *rev1 *rev2 *rev3
-!                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi
-!                *ww0 *ww1 *ww2 *ww3 *rev *p *w *rlv *x *si *sj
+!                pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 
+!                ww0 *ww1 *ww2 *ww3 *rev *p *w *rlv *x *si 
 !                *sk (global)gammainf (global)winf[1:10] (global)pinfcorr
 !   with respect to varying inputs: *xx *rev0 *rev1 *rev2 *rev3
-!                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi
-!                *ww0 *ww1 *ww2 *ww3 *rev *p *w *rlv *x *si *sj
-!                *sk *(*bcdata.norm) (global)gammainf (global)winf[1:10]
+!                pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 
+!                ww0 *ww1 *ww2 *ww3 *rev *p *w *rlv *x *si 
+!                sk *(
 !                (global)pinfcorr (global)rgas
 !   plus diff mem management of: xx:in rev0:in rev1:in rev2:in
 !                rev3:in pp0:in pp1:in pp2:in pp3:in rlv0:in rlv1:in
@@ -1032,9 +1032,9 @@ contains
   end subroutine applyallbc_block
 !  differentiation of bcsymm1sthalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev1 *rev2 *pp1 *pp2 *rlv1
-!                *rlv2 *ww1 *ww2 *(*bcdata.norm)
+!                rlv2 *ww1 *ww2 *(
 !   with respect to varying inputs: *rev1 *rev2 *pp1 *pp2 *rlv1
-!                *rlv2 *ww1 *ww2 *(*bcdata.norm)
+!                rlv2 *ww1 *ww2 *(
 !   plus diff mem management of: rev1:in rev2:in pp1:in pp2:in
 !                rlv1:in rlv2:in ww1:in ww2:in bcdata:in *bcdata.norm:in
 ! ===================================================================
@@ -1175,9 +1175,9 @@ contains
   end subroutine bcsymm1sthalo
 !  differentiation of bcsymm2ndhalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev0 *rev3 *pp0 *pp3 *rlv0
-!                *rlv3 *ww0 *ww3 *(*bcdata.norm)
+!                rlv3 *ww0 *ww3 *(
 !   with respect to varying inputs: *rev0 *rev3 *pp0 *pp3 *rlv0
-!                *rlv3 *ww0 *ww3 *(*bcdata.norm)
+!                rlv3 *ww0 *ww3 *(
 !   plus diff mem management of: rev0:in rev3:in pp0:in pp3:in
 !                rlv0:in rlv3:in ww0:in ww3:in bcdata:in *bcdata.norm:in
   subroutine bcsymm2ndhalo_b(nn)
@@ -1296,9 +1296,9 @@ contains
   end subroutine bcsymm2ndhalo
 !  differentiation of bcsymmpolar1sthalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *xx *rev1 *rev2 *pp1 *pp2 *rlv1
-!                *rlv2 *ww1 *ww2
+!                rlv2 *ww1 
 !   with respect to varying inputs: *xx *rev1 *rev2 *pp1 *pp2 *rlv1
-!                *rlv2 *ww1 *ww2
+!                rlv2 *ww1 
 !   plus diff mem management of: xx:in rev1:in rev2:in pp1:in pp2:in
 !                rlv1:in rlv2:in ww1:in ww2:in
   subroutine bcsymmpolar1sthalo_b(nn)
@@ -1487,9 +1487,9 @@ contains
   end subroutine bcsymmpolar1sthalo
 !  differentiation of bcsymmpolar2ndhalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *xx *rev0 *rev3 *pp0 *pp3 *rlv0
-!                *rlv3 *ww0 *ww3
+!                rlv3 *ww0 
 !   with respect to varying inputs: *xx *rev0 *rev3 *pp0 *pp3 *rlv0
-!                *rlv3 *ww0 *ww3
+!                rlv3 *ww0 
 !   plus diff mem management of: xx:in rev0:in rev3:in pp0:in pp3:in
 !                rlv0:in rlv3:in ww0:in ww3:in
   subroutine bcsymmpolar2ndhalo_b(nn)
@@ -1676,9 +1676,9 @@ contains
   end subroutine bcsymmpolar2ndhalo
 !  differentiation of bcnswalladiabatic in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
+!                pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 
 !   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
+!                pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in ww0:in
 !                ww1:in ww2:in bcdata:in
@@ -1888,9 +1888,9 @@ contains
   end subroutine bcnswalladiabatic
 !  differentiation of bcnswallisothermal in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: rgas *rev0 *rev1 *rev2 *pp0
-!                *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
+!                pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 
 !   with respect to varying inputs: rgas *rev0 *rev1 *rev2 *pp0
-!                *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
+!                pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in ww0:in
 !                ww1:in ww2:in bcdata:in
@@ -2199,9 +2199,9 @@ contains
   end subroutine bcnswallisothermal
 !  differentiation of bcsubsonicoutflow in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.norm)
+!                pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(
 !   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.norm)
+!                pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
 !                ww2:in bcdata:in *bcdata.norm:in
@@ -2524,9 +2524,9 @@ contains
   end subroutine bcsubsonicoutflow
 !  differentiation of bcsubsonicinflow in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: rgas *rev0 *rev1 *rev2 *pp0
-!                *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.norm)
+!                pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(
 !   with respect to varying inputs: rgas *rev0 *rev1 *rev2 *pp0
-!                *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.norm)
+!                pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
 !                ww2:in bcdata:in *bcdata.norm:in
@@ -3234,9 +3234,9 @@ contains
   end subroutine bcsubsonicinflow
 !  differentiation of bceulerwall in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.norm)
+!                pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(
 !   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.norm)
+!                pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in ww0:in
 !                ww1:in ww2:in bcdata:in *bcdata.norm:in
@@ -3276,13 +3276,9 @@ contains
 ! boundary condition is used.
     walltreatment = eulerwallbctreatment
     if (currentlevel .gt. groundlevel) walltreatment = constantpressure
-! **************************************************************
-! *                                                            *
-! * determine the boundary condition treatment and compute the *
-! * undivided pressure gradient accordingly. this gradient is  *
-! * temporarily stored in the halo pressure.                   *
-! *                                                            *
-! **************************************************************
+!  determine the boundary condition treatment and compute the 
+!  undivided pressure gradient accordingly. this gradient is  
+!  temporarily stored in the halo pressure.                   
 !
     select case  (walltreatment) 
     case (constantpressure) 
@@ -3430,13 +3426,9 @@ contains
 ! boundary condition is used.
     walltreatment = eulerwallbctreatment
     if (currentlevel .gt. groundlevel) walltreatment = constantpressure
-! **************************************************************
-! *                                                            *
-! * determine the boundary condition treatment and compute the *
-! * undivided pressure gradient accordingly. this gradient is  *
-! * temporarily stored in the halo pressure.                   *
-! *                                                            *
-! **************************************************************
+!  determine the boundary condition treatment and compute the 
+!  undivided pressure gradient accordingly. this gradient is  
+!  temporarily stored in the halo pressure.                   
 !
     select case  (walltreatment) 
     case (constantpressure) 
@@ -3479,11 +3471,11 @@ contains
   end subroutine bceulerwall
 !  differentiation of bcfarfield in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: gammainf winf pinfcorr *rev0
-!                *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0
-!                *ww1 *ww2 *(*bcdata.norm)
+!                rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 
+!                ww1 *ww2 *(
 !   with respect to varying inputs: gammainf winf pinfcorr *rev0
-!                *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0
-!                *ww1 *ww2 *(*bcdata.norm)
+!                rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 
+!                ww1 *ww2 *(
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
 !                ww2:in bcdata:in *bcdata.norm:in
@@ -3958,9 +3950,9 @@ contains
   end subroutine bcfarfield
 !  differentiation of bcsupersonicinflow in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *rlv0 *rlv1 *rlv2 *ww0 *ww1
+!                rlv0 *rlv1 *rlv2 *ww0 
 !   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *rlv0 *rlv1 *rlv2 *ww0 *ww1
+!                rlv0 *rlv1 *rlv2 *ww0 
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in bcdata:in
   subroutine bcsupersonicinflow_b(nn, secondhalo, correctfork)
@@ -4123,25 +4115,21 @@ contains
   end subroutine bcsupersonicinflow
 !  differentiation of bcextrap in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *ww3
+!                pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 
 !   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *ww3
+!                pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in ww0:in
 !                ww1:in ww2:in ww3:in
   subroutine bcextrap_b(nn, secondhalo, correctfork)
 !
-! ******************************************************************
-! *                                                                *
-! * ccextrap applies the extrapolation boundary condition to a     *
-! * block. it is assumed that the pointers in blockpointers are    *
-! * already set to the correct block on the correct grid level.    *
-! * extrapolation boundaries are applied to both singular lines or *
-! * points of a block face and to supersonic outlets. they are     *
-! * marked differently because of postprocessing reasons, but      *
-! * their numerical treatment is identical.                        *
-! *                                                                *
-! ******************************************************************
+!  ccextrap applies the extrapolation boundary condition to a     
+!  block. it is assumed that the pointers in blockpointers are    
+!  already set to the correct block on the correct grid level.    
+!  extrapolation boundaries are applied to both singular lines or 
+!  points of a block face and to supersonic outlets. they are     
+!  marked differently because of postprocessing reasons, but      
+!  their numerical treatment is identical.                        
 !
     use constants
     use blockpointers, only : bctype
@@ -4285,17 +4273,13 @@ contains
   end subroutine bcextrap_b
   subroutine bcextrap(nn, secondhalo, correctfork)
 !
-! ******************************************************************
-! *                                                                *
-! * ccextrap applies the extrapolation boundary condition to a     *
-! * block. it is assumed that the pointers in blockpointers are    *
-! * already set to the correct block on the correct grid level.    *
-! * extrapolation boundaries are applied to both singular lines or *
-! * points of a block face and to supersonic outlets. they are     *
-! * marked differently because of postprocessing reasons, but      *
-! * their numerical treatment is identical.                        *
-! *                                                                *
-! ******************************************************************
+!  ccextrap applies the extrapolation boundary condition to a     
+!  block. it is assumed that the pointers in blockpointers are    
+!  already set to the correct block on the correct grid level.    
+!  extrapolation boundaries are applied to both singular lines or 
+!  points of a block face and to supersonic outlets. they are     
+!  marked differently because of postprocessing reasons, but      
+!  their numerical treatment is identical.                        
 !
     use constants
     use blockpointers, only : bctype
@@ -4656,9 +4640,9 @@ interval:do
   end subroutine prhosubsonicinlet_b
 !  differentiation of extrapolate2ndhalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev0 *rev1 *pp0 *pp1 *pp2
-!                *rlv0 *rlv1 *ww0 *ww1 *ww2
+!                rlv0 *rlv1 *ww0 *ww1 
 !   with respect to varying inputs: *rev0 *rev1 *pp0 *pp1 *pp2
-!                *rlv0 *rlv1 *ww0 *ww1 *ww2
+!                rlv0 *rlv1 *ww0 *ww1 
 !   plus diff mem management of: rev0:in rev1:in pp0:in pp1:in
 !                pp2:in rlv0:in rlv1:in ww0:in ww1:in ww2:in
   subroutine extrapolate2ndhalo_b(correctfork)

@@ -1,11 +1,9 @@
 subroutine allocRestartFiles(nFiles)
   !
-  !      ******************************************************************
-  !      *    Allocate memory for the restartfles                         *                                   *
-  !      *    The array is populated from Python using setRestartFiles    *
-  !      *    If memeory has been allocated for the array there exist at  *
-  !      *    least one element in the array.                             *
-  !      ******************************************************************
+  !          Allocate memory for the restartfles                         *                                   
+  !          The array is populated from Python using setRestartFiles    
+  !          If memeory has been allocated for the array there exist at  
+  !          least one element in the array.                             
   !
   use constants
   use inputIO, only : restartFiles

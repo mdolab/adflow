@@ -1,25 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          readLevel0CoolingParameters.f90                 *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-28-2005                                      *
-!      * Last modified: 03-29-2006                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          readLevel0CoolingParameters.f90                 
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-28-2005                                      
+!       Last modified: 03-29-2006                                      
 !
        subroutine readLevel0CoolingParameters
 !
-!      ******************************************************************
-!      *                                                                *
-!      * readLevel0CoolingParameters reads the parameters for the level *
-!      * 0 turbine cooling model from the parameter file and stores the *
-!      * info in the derived data type for this model.                  *
-!      *                                                                *
-!      * This model has been developed by Pratt and Whitney and should  *
-!      * not be given to third parties.                                 *
-!      *                                                                *
-!      ******************************************************************
+!       readLevel0CoolingParameters reads the parameters for the level 
+!       0 turbine cooling model from the parameter file and stores the 
+!       info in the derived data type for this model.                  
+!       This model has been developed by Pratt and Whitney and should  
+!       not be given to third parties.                                 
 !
        use block
        use cgnsGrid
@@ -61,20 +52,12 @@
        integer(kind=intType) :: bsearchStrings
        integer(kind=intType) :: bsearchIntegers
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Determine for global blockID's/names for the locally stored    *
-!      * blocks and the corresponding ID's. As it is possible that      *
-!      * blocks are split also the multiplicity must be taken into      *
-!      * account.                                                       *
-!      *                                                                *
-!      ******************************************************************
+!       Determine for global blockID's/names for the locally stored    
+!       blocks and the corresponding ID's. As it is possible that      
+!       blocks are split also the multiplicity must be taken into      
+!       account.                                                       
 
        if (fromPython) return 
 !
@@ -107,11 +90,7 @@
            enddo
 
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Determine the number of cooling planes.                        *
-!      *                                                                *
-!      ******************************************************************
+!       Determine the number of cooling planes.                        
 !
        ! Initialize the number of cooling planes to 0.
 
@@ -193,11 +172,7 @@
          call returnFail("readLevel0CoolingParameters", &
                         "Memory allocation failure for level0Cooling")
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Determine the local subfaces for each of the cooling planes.   *
-!      *                                                                *
-!      ******************************************************************
+!       Determine the local subfaces for each of the cooling planes.   
 !
        ! Loop over the number of cooling planes specified.
 
@@ -375,12 +350,8 @@
 
          subroutine getNextInfoLineCooling(stringBuf)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * getNextInfoLineCooling determines the next line with         *
-!        * with information.                                            *
-!        *                                                              *
-!        ****************************************************************
+!         getNextInfoLineCooling determines the next line with         
+!         with information.                                            
 !
          implicit none
 !
@@ -388,11 +359,7 @@
 !
          character(len=512), intent(out) :: stringBuf
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
   99     continue
 
@@ -429,16 +396,12 @@
 
          function nLocalSubfacesCoolingSubface(indZone)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * nLocalSubfacesCoolingSubface determines the number of local  *
-!        * subfaces for the currently global subface. This subface      *
-!        * belongs to a global block ID, which corresponds to indZone.  *
-!        * If this index is 0 it means that none of the local blocks is *
-!        * a subblock of the global block ID and consequently the       *
-!        * cooling subface will have 0 local subfaces.                  *
-!        *                                                              *
-!        ****************************************************************
+!         nLocalSubfacesCoolingSubface determines the number of local  
+!         subfaces for the currently global subface. This subface      
+!         belongs to a global block ID, which corresponds to indZone.  
+!         If this index is 0 it means that none of the local blocks is 
+!         a subblock of the global block ID and consequently the       
+!         cooling subface will have 0 local subfaces.                  
 !
          implicit none
 !
@@ -454,11 +417,7 @@
 !
          integer(kind=intType) :: i, j
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Initialize the number of local subfaces to 0.
 
@@ -547,13 +506,9 @@
          subroutine localSubfacesCoolingSubface(indZone, nSub, &
                                                 coolingPlane)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * localSubfacesCoolingSubface stores the local of subfaces,    *
-!        * which are part of the global subface of the currently active *
-!        * cooling plane.                                               *
-!        *                                                              *
-!        ****************************************************************
+!         localSubfacesCoolingSubface stores the local of subfaces,    
+!         which are part of the global subface of the currently active 
+!         cooling plane.                                               
 !
          implicit none
 !
@@ -568,11 +523,7 @@
 !
          integer(kind=intType) :: i, j, jj, cellOffset
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Check if local blocks are present, which are a subblock of
          ! the global block currently investiged. This is the case if

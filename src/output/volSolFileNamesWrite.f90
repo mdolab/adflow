@@ -1,13 +1,9 @@
        subroutine volSolFileNamesWrite
 !
-!      ******************************************************************
-!      *                                                                *
-!      * volSolFileNamesWrite determines the names and number of volume *
-!      * solution files to be written. Furthermore it sets the pointers *
-!      * and/or allocates the memory for IOVar to make a general        *
-!      * treatment of the writing possible.                             *
-!      *                                                                *
-!      ******************************************************************
+!       volSolFileNamesWrite determines the names and number of volume 
+!       solution files to be written. Furthermore it sets the pointers 
+!       and/or allocates the memory for IOVar to make a general        
+!       treatment of the writing possible.                             
 !
        use block
        use inputIO
@@ -29,12 +25,8 @@
 
        character(len=7) :: intString
 
-!      ******************************************************************
-!      *                                                                *
-!      * Determine the names and number of volume solution files to be  *
-!      * written.                                                       *
-!      *                                                                *
-!      ******************************************************************
+!       Determine the names and number of volume solution files to be  
+!       written.                                                       
 !
        ! Determine the situation we are having here.
 
@@ -156,12 +148,8 @@
 
        end select
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Set the pointers for IOVar if volume solution files need to be *
-!      * written.                                                       *
-!      *                                                                *
-!      ******************************************************************
+!       Set the pointers for IOVar if volume solution files need to be 
+!       written.                                                       
 !
        testSolsToWrite: if(nVolSolToWrite > 0) then
 

@@ -1,35 +1,23 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          commMixing.f90                                  *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 01-27-2005                                      *
-!      * Last modified: 03-21-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          commMixing.f90                                  
+!       Author:        Edwin van der Weide                             
+!       Starting date: 01-27-2005                                      
+!       Last modified: 03-21-2005                                      
 !
        module commMixing
 !
-!      ******************************************************************
-!      *                                                                *
-!      * This module contains the derived data type to store the        *
-!      * interpolation information for mixing plane halo cells.         *
-!      * A three-dimensional array of this derived type to store the    *
-!      * info for all grid levels and sliding mesh interfaces is also   *
-!      * defined in this module.                                        *
-!      *                                                                *
-!      ******************************************************************
+!       This module contains the derived data type to store the        
+!       interpolation information for mixing plane halo cells.         
+!       A three-dimensional array of this derived type to store the    
+!       info for all grid levels and sliding mesh interfaces is also   
+!       defined in this module.                                        
 !
        use constants, only : intType, realType
        implicit none
        save
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the data type comm_mixing_type, which stores *
-!      * the interpolation data of both sides of a sliding interface.   *
-!      *                                                                *
-!      ******************************************************************
+!       The definition of the data type comm_mixing_type, which stores 
+!       the interpolation data of both sides of a sliding interface.   
 !
        type commMixingType
 
@@ -37,11 +25,7 @@
 
          integer(kind=intType) :: nInter
 !
-!        ****************************************************************
-!        *                                                              *
-!        * The donor data.                                              *
-!        *                                                              *
-!        ****************************************************************
+!         The donor data.                                              
 !
          ! nDonor: number of local donor cells.
 
@@ -85,11 +69,7 @@
 
          real(kind=realType), dimension(:), pointer :: weightDonor
 !
-!        ****************************************************************
-!        *                                                              *
-!        * The halo data.                                               *
-!        *                                                              *
-!        ****************************************************************
+!         The halo data.                                               
 !
          ! nHalo: Number of local halo cells.
 
@@ -126,11 +106,7 @@
 
        end type commMixingType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Variables stored in this module.                               *
-!      *                                                                *
-!      ******************************************************************
+!       Variables stored in this module.                               
 !
        ! commPatternMixing(nLevel,nInterface_groups,2): The 3D array to
        !                                                store all the

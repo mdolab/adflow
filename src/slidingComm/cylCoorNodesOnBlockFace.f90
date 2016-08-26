@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          cylCoorNodesOnBlockFace.f90                     *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-02-2005                                      *
-!      * Last modified: 03-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          cylCoorNodesOnBlockFace.f90                     
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-02-2005                                      
+!       Last modified: 03-25-2005                                      
 !
        subroutine cylCoorNodesOnBlockFace(xface, iBeg, iEnd,  &
                                           jBeg,  jEnd, color, faceID)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * cylCoorNodesOnBlockFace determines the local cylindrical       *
-!      * coordinates of the nodes given by the subface (jBeg,jEnd;      *
-!      * iBeg,iEnd) on the block face faceid. It is assumed that the    *
-!      * pointers in blockPointers, especially the coordinates,         *
-!      * already point to the correct block.                            *
-!      *                                                                *
-!      ******************************************************************
+!       cylCoorNodesOnBlockFace determines the local cylindrical       
+!       coordinates of the nodes given by the subface (jBeg,jEnd;      
+!       iBeg,iEnd) on the block face faceid. It is assumed that the    
+!       pointers in blockPointers, especially the coordinates,         
+!       already point to the correct block.                            
 !
        use constants
        use blockPointers
@@ -45,11 +37,7 @@
 
        real(kind=realType), dimension(:,:,:), pointer :: xf
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Easier storage of the vectors which define the local cartesian
        ! coordinate system.

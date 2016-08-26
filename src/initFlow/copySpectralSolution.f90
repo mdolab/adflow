@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          copySpectralSolution.f90                        *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 08-07-2004                                      *
-!      * Last modified: 10-07-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          copySpectralSolution.f90                        
+!       Author:        Edwin van der Weide                             
+!       Starting date: 08-07-2004                                      
+!       Last modified: 10-07-2005                                      
 !
        subroutine copySpectralSolution
 !
-!      ******************************************************************
-!      *                                                                *
-!      * copySpectralSolution copies the solution of the 1st spectral   *
-!      * solution to all spectral solutions. This typically occurs when *
-!      * a for the spectral mode a restart is made from a steady or an  *
-!      * unsteady solution. Possible rotation effects are taken into    *
-!      * account for the velocity components.                           *
-!      *                                                                *
-!      ******************************************************************
+!       copySpectralSolution copies the solution of the 1st spectral   
+!       solution to all spectral solutions. This typically occurs when 
+!       a for the spectral mode a restart is made from a steady or an  
+!       unsteady solution. Possible rotation effects are taken into    
+!       account for the velocity components.                           
 !
        use constants
        use block, only : flowDoms, nDom
@@ -43,11 +35,7 @@
 
        real(kind=realType), dimension(nSections,3,3) :: rotMatSec
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the rotation matrix from one spectral solution to the
        ! other for every section.

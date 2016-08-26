@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          setCycleStrategy.f90                            *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-12-2003                                      *
-!      * Last modified: 03-26-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          setCycleStrategy.f90                            
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-12-2003                                      
+!       Last modified: 03-26-2005                                      
 !
        subroutine setCycleStrategy
 !
-!      ******************************************************************
-!      *                                                                *
-!      * setCycleStrategy sets the multigrid cycling strategy for the   *
-!      * multigrid level groundLevel. It is cycle strategy for the      *
-!      * fine grid cut off at the current grid level. If the grid level *
-!      * is not in the range of the fine grid cycle strategy, cycling   *
-!      * will be set to a single grid strategy.                         *
-!      *                                                                *
-!      ******************************************************************
+!       setCycleStrategy sets the multigrid cycling strategy for the   
+!       multigrid level groundLevel. It is cycle strategy for the      
+!       fine grid cut off at the current grid level. If the grid level 
+!       is not in the range of the fine grid cycle strategy, cycling   
+!       will be set to a single grid strategy.                         
 !
        use constants
        use inputIteration, only : nMGSteps, cycleStrategy
@@ -30,11 +22,7 @@
        integer(kind=intType) :: i
        integer(kind=intType) :: thisLevel, maxLevel
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize thisLevel and maxLevel to 1, i.e. the finest grid.
 

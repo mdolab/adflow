@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          saNuFromEddyRatio.f90                           *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 06-22-2003                                      *
-!      * Last modified: 04-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          saNuFromEddyRatio.f90                           
+!       Author:        Edwin van der Weide                             
+!       Starting date: 06-22-2003                                      
+!       Last modified: 04-12-2005                                      
 !
        function saNuKnownEddyRatio(eddyRatio, nuLam)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * saNuKnownEddyRatio computes the Spalart-Allmaras transport     *
-!      * variable nu for the given eddy viscosity ratio.                *
-!      *                                                                *
-!      ******************************************************************
+!       saNuKnownEddyRatio computes the Spalart-Allmaras transport     
+!       variable nu for the given eddy viscosity ratio.                
 !
        use constants
        use paramTurb
@@ -33,11 +25,7 @@
 !
        real(kind=realType) :: cv13, chi, chi2, chi3, chi4, f, df, dchi
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Take care of the exceptional cases.
 

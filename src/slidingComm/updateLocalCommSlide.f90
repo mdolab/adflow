@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          updateLocalCommSlide.f90                        *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 11-14-2003                                      *
-!      * Last modified: 03-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          updateLocalCommSlide.f90                        
+!       Author:        Edwin van der Weide                             
+!       Starting date: 11-14-2003                                      
+!       Last modified: 03-25-2005                                      
 !
        subroutine updateLocalCommSlide(haloInd, donorInfo, level, sps)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * updateLocalCommSlide updates intSlidingCell_1st and            *
-!      * intSlidingCell_2nd of the given level and spectral solution    *
-!      * using the information stored in haloInd and donorInfo.         *
-!      * Afterwards the memory of the member variables of donorInfo     *
-!      * is deallocated.                                                *
-!      *                                                                *
-!      ******************************************************************
+!       updateLocalCommSlide updates intSlidingCell_1st and            
+!       intSlidingCell_2nd of the given level and spectral solution    
+!       using the information stored in haloInd and donorInfo.         
+!       Afterwards the memory of the member variables of donorInfo     
+!       is deallocated.                                                
 !
        use commSliding
        use updateComm
@@ -36,11 +28,7 @@
 !
        integer :: ierr
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Update the internal communication pattern for the 1st and 2nd
        ! level halo cells.
@@ -67,13 +55,9 @@
 
          subroutine updateIntSlidingCell(nn, intSlidingCell)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * updateIntSlidingCell updates the internal communication      *
-!        * pattern stored in intSlidingCell using the first nn          *
-!        * elements of donorInfo.                                       *
-!        *                                                              *
-!        ****************************************************************
+!         updateIntSlidingCell updates the internal communication      
+!         pattern stored in intSlidingCell using the first nn          
+!         elements of donorInfo.                                       
 !
          implicit none
 !

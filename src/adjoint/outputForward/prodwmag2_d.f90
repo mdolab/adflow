@@ -7,26 +7,18 @@
 !   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          prodwmag2.f90                                   *
-!      * author:        georgi kalitzin, edwin van der weide            *
-!      * starting date: 06-23-2003                                      *
-!      * last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          prodwmag2.f90                                   
+!       author:        georgi kalitzin, edwin van der weide            
+!       starting date: 06-23-2003                                      
+!       last modified: 06-12-2005                                      
 !
 subroutine prodwmag2_d()
 !
-!      ******************************************************************
-!      *                                                                *
-!      * prodwmag2 computes the term:                                   *
-!      *    2*oij*oij  with oij=0.5*(duidxj - dujdxi).                  *
-!      * this is equal to the magnitude squared of the vorticity.       *
-!      * it is assumed that the pointer vort, stored in turbmod, is     *
-!      * already set to the correct entry.                              *
-!      *                                                                *
-!      ******************************************************************
+!       prodwmag2 computes the term:                                   
+!          2*oij*oij  with oij=0.5*(duidxj - dujdxi).                  
+!       this is equal to the magnitude squared of the vorticity.       
+!       it is assumed that the pointer vort, stored in turbmod, is     
+!       already set to the correct entry.                              
 !
   use constants
   use blockpointers
@@ -45,11 +37,7 @@ subroutine prodwmag2_d()
   real(kind=realtype) :: omegax, omegay, omegaz
   real(kind=realtype) :: omegaxd, omegayd, omegazd
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! determine the non-dimensional wheel speed of this block.
   omegaxd = sections(sectionid)%rotrate(1)*timerefd

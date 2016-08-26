@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          readTurbKwType.f90                              *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 05-05-2004                                      *
-!      * Last modified: 09-10-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          readTurbKwType.f90                              
+!       Author:        Edwin van der Weide                             
+!       Starting date: 05-05-2004                                      
+!       Last modified: 09-10-2007                                      
 !
        subroutine readTurbKwType(nTypeMismatch)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * readTurbKwType reads or constructs the k and omega values      *
-!      * for two-equations turbulence models of the k-omega type.       *
-!      * If no information could be retrieved some engineering guess of *
-!      * the turbulent variables is made.                               *
-!      *                                                                *
-!      ******************************************************************
+!       readTurbKwType reads or constructs the k and omega values      
+!       for two-equations turbulence models of the k-omega type.       
+!       If no information could be retrieved some engineering guess of 
+!       the turbulent variables is made.                               
 !
        use constants
        use cgnsNames
@@ -47,11 +39,7 @@
 
        logical :: turbKPresent, omegaPresent, eddyVisPresent
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Set the cell range to be copied from the buffer.
 

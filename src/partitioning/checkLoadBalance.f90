@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          checkLoadBalance.f90                            *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-11-2003                                      *
-!      * Last modified: 11-22-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          checkLoadBalance.f90                            
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-11-2003                                      
+!       Last modified: 11-22-2007                                      
 !
        subroutine checkLoadBalance(cellsBalanced, facesBalanced)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * checkLoadBalance determines whether or not the load balance    *
-!      * for the cells and faces is met.                                *
-!      *                                                                *
-!      ******************************************************************
+!       checkLoadBalance determines whether or not the load balance    
+!       for the cells and faces is met.                                
 !
        use communication
        use constants
@@ -37,11 +29,7 @@
        integer(kind=8) :: nCellsEven, nFacesEven   ! 8 byte integers to
                                                    ! avoid overflow.
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize nCell and nFace to 0. These variables will contain
        ! the number of cells and faces per partition (== processor)

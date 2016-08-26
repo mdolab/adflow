@@ -1,12 +1,8 @@
 !
-!     ******************************************************************
-!     *                                                                *
-!     * File:          initializePETSc.F90                             *
-!     * Author:        C.A.(Sandy) Mader, Andre C. Marta               *
-!     * Starting date: 01-14-2008                                      *
-!     * Last modified: 01-14-2008                                      *
-!     *                                                                *
-!     ******************************************************************
+!      File:          initializePETSc.F90                             
+!      Author:        C.A.(Sandy) Mader, Andre C. Marta               
+!      Starting date: 01-14-2008                                      
+!      Last modified: 01-14-2008                                      
 !
 subroutine initializePETSc
 

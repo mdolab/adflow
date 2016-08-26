@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          convergenceHeader.f90                           *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-27-2003                                      *
-!      * Last modified: 11-27-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          convergenceHeader.f90                           
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-27-2003                                      
+!       Last modified: 11-27-2007                                      
 !
 
 subroutine convergenceHeader
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * convergenceHeader writes the convergence header to stdout.     *
-  !      *                                                                *
-  !      ******************************************************************
+  !       convergenceHeader writes the convergence header to stdout.     
   !
   use cgnsNames
   use inputPhysics
@@ -32,11 +24,7 @@ subroutine convergenceHeader
   integer(kind=intType) :: i, nCharWrite
   logical :: writeIterations
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Determine whether or not the iterations must be written.
 

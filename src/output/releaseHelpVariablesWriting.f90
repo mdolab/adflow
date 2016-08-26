@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          releaseHelpVariablesWriting.f90                 *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 10-10-2005                                      *
-!      * Last modified: 10-13-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          releaseHelpVariablesWriting.f90                 
+!       Author:        Edwin van der Weide                             
+!       Starting date: 10-10-2005                                      
+!       Last modified: 10-13-2005                                      
 !
        subroutine releaseHelpVariablesWriting
 !
-!      ******************************************************************
-!      *                                                                *
-!      * releaseHelpVariablesWriting releases the memory of the         *
-!      * variables, which were needed to write the CGNS files.          *
-!      *                                                                *
-!      ******************************************************************
+!       releaseHelpVariablesWriting releases the memory of the         
+!       variables, which were needed to write the CGNS files.          
 !
        use cgnsGrid
        use monitor
@@ -27,11 +19,7 @@
 !
        integer :: ierr
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Release the memory of the allocatable arrays in outputMod.
 

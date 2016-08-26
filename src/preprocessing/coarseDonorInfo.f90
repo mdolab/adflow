@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          coarseDonorInfo.f90                             *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 09-05-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          coarseDonorInfo.f90                             
+!       Author:        Edwin van der Weide                             
+!       Starting date: 09-05-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine coarseDonorInfo(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * coarseDonorInfo creates the donor info for the internal        *
-!      * block boundaries on the given coarse grid level.               *
-!      *                                                                *
-!      ******************************************************************
+!       coarseDonorInfo creates the donor info for the internal        
+!       block boundaries on the given coarse grid level.               
 !
        use communication
        use coarse1to1Subface
@@ -44,11 +36,7 @@
 
        type(coarse1to1SubfaceType) :: tmpSubface
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the number of integers sent to every processor.
 

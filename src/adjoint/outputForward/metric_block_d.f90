@@ -34,19 +34,14 @@ subroutine metric_block_d()
     v2d = 0.0_8
   end if
 !
-! **************************************************************
-! *                                                            *
-! * computation of the face normals in i-, j- and k-direction. *
-! * formula's are valid for a right handed block; for a left   *
-! * handed block the correct orientation is obtained via fact. *
-! * the normals point in the direction of increasing index.    *
-! * the absolute value of fact is 0.5, because the cross       *
-! * product of the two diagonals is twice the normal vector.   *
-! *                                                            *
-! * note that also the normals of the first level halo cells   *
-! * are computed. these are needed for the viscous fluxes.     *
-! *                                                            *
-! **************************************************************
+!  computation of the face normals in i-, j- and k-direction. 
+!  formula's are valid for a right handed block; for a left   
+!  handed block the correct orientation is obtained via fact. 
+!  the normals point in the direction of increasing index.    
+!  the absolute value of fact is 0.5, because the cross       
+!  product of the two diagonals is twice the normal vector.   
+!  note that also the normals of the first level halo cells   
+!  are computed. these are needed for the viscous fluxes.     
 !
 ! projected areas of cell faces in the i direction.
   do ii=0,ke*je*(ie+1)-1

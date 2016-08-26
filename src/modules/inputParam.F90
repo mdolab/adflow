@@ -1,36 +1,24 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          inputParam.f90                                  *
-!      * Author:        Edwin van der Weide, Steve Repsher,             *
-!      *                C.A.(Sandy) Mader                               *
-!      * Starting date: 12-11-2002                                      *
-!      * Last modified: 09-17-2009                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          inputParam.f90                                  
+!       Author:        Edwin van der Weide, Steve Repsher,             
+!                      C.A.(Sandy) Mader                               
+!       Starting date: 12-11-2002                                      
+!       Last modified: 09-17-2009                                      
 !
 
 !      ==================================================================
 
 module inputDiscretization
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Input parameters which are related to the discretization of    *
-  !      * the governing equations, i.e. scheme parameters, time accuracy *
-  !      * (in case of an unsteady computation) and preconditioning info. *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Input parameters which are related to the discretization of    
+  !       the governing equations, i.e. scheme parameters, time accuracy 
+  !       (in case of an unsteady computation) and preconditioning info. 
   !
   use constants, only : intType, realType
   implicit none
   save
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Definition of the discretization input parameters.             *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Definition of the discretization input parameters.             
   !
   ! spaceDiscr:             Fine grid discretization.
   ! spaceDiscrCoarse:       Coarse grid discretization.
@@ -117,22 +105,14 @@ end module inputDiscretization
 
 module inputIO
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Input parameters which are related to io issues, like file     *
-  !      * names and corresponding info.                                  *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Input parameters which are related to io issues, like file     
+  !       names and corresponding info.                                  
   !
   use constants
   implicit none
   save
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Definition of the IO input parameters.                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Definition of the IO input parameters.                         
   !
   ! paramFile:           Parameter file, command line argument.
   ! firstWrite:          Whether or not this is the first time a
@@ -207,23 +187,15 @@ end module inputIO
 
 module inputIteration
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Input parameters which are related to the iteration process,   *
-  !      * i.e. multigrid parameters, cfl numbers, smoothers and          *
-  !      * convergence.                                                   *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Input parameters which are related to the iteration process,   
+  !       i.e. multigrid parameters, cfl numbers, smoothers and          
+  !       convergence.                                                   
   !
   use constants
   implicit none
   save
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Definition of the iteration input parameters.                  *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Definition of the iteration input parameters.                  
   !
   ! nCycles:          Maximum number of multigrid cycles.
   ! nCyclesCoarse:    Idem, but on the coarse grids in full multigrid.
@@ -320,14 +292,10 @@ end module inputIteration
 
 module inputMotion
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Input parameters which are related to the rigid body motion of *
-  !      * the entire mesh, i.e. translation and rotation.                *
-  !      * These parameters can only be specified for an external flow    *
-  !      * computation.                                                   *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Input parameters which are related to the rigid body motion of 
+  !       the entire mesh, i.e. translation and rotation.                
+  !       These parameters can only be specified for an external flow    
+  !       computation.                                                   
   !
   use precision
   implicit none
@@ -493,11 +461,7 @@ end module inputMotion
 
 module inputParallel
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Input parameters which are related to the parallelization.     *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Input parameters which are related to the parallelization.     
   !
   use precision
   implicit none
@@ -517,23 +481,15 @@ end module inputParallel
 
 module inputPhysics
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Input parameters which are related to the physics of the flow, *
-  !      * like governing equations, mode of the equations, turbulence    *
-  !      * model and free stream conditions.                              *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Input parameters which are related to the physics of the flow, 
+  !       like governing equations, mode of the equations, turbulence    
+  !       model and free stream conditions.                              
   !
   use precision
   implicit none
   save
 
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Definition of the physics input parameters.                    *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Definition of the physics input parameters.                    
   !
   ! equations:           Governing equations to be solved.
   ! equationMode:        Mode of the equations, steady, unsteady
@@ -630,11 +586,7 @@ end module inputPhysics
 
 module inputTimeSpectral
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Input parameters for time spectral problems.                   *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Input parameters for time spectral problems.                   
   !
   use precision
   implicit none
@@ -702,11 +654,7 @@ end module inputTimeSpectral
 
 module inputUnsteady
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Input parameters for unsteady problems.                        *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Input parameters for unsteady problems.                        
   !
   use constants
   implicit none
@@ -772,23 +720,15 @@ end module inputUnsteady
 
 module inputADjoint
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Definition of some parameters ADjoint.                         *
-  !      * The actual values of this parameters are arbitrary;            *
-  !      * in the code always the symbolic names are (should be) used.    *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Definition of some parameters ADjoint.                         
+  !       The actual values of this parameters are arbitrary;            
+  !       in the code always the symbolic names are (should be) used.    
   !
   use constants
   implicit none
   save
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Definition of the adjoint input parameters.                    *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Definition of the adjoint input parameters.                    
   !
 
   ! Monitor      : Whether or not to enable the monitor for the KSP 
@@ -862,14 +802,10 @@ end module inputADjoint
 
 module inputTSStabDeriv
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Definition of some parameters for Time Spectral stability      *
-  !      * derivatives.                                                   *
-  !      * The actual values of this parameters are arbitrary;            *
-  !      * in the code always the symbolic names are (should be) used.    *
-  !      *                                                                *
-  !      *******************************************m***********************
+  !       Definition of some parameters for Time Spectral stability      
+  !       derivatives.                                                   
+  !       The actual values of this parameters are arbitrary;            
+  !       in the code always the symbolic names are (should be) used.    
   !
 
   ! TSStability : Whether or not the TS stability derivatives should
@@ -891,11 +827,7 @@ module inputOverset
   implicit none
   save
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Definition of parameters for the overset implementation        *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Definition of parameters for the overset implementation        
   !
   logical :: lowOversetMemory=.False.
   real(kind=realType) :: overlapFactor=0.9

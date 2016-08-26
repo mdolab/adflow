@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          haloList.f90                                    *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 01-22-2003                                      *
-!      * Last modified: 05-24-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          haloList.f90                                    
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 01-22-2003                                      
+!       Last modified: 05-24-2005                                      
 !
        module haloList
 !
-!      ******************************************************************
-!      *                                                                *
-!      * This local module contains temporary variables to create the   *
-!      * list of halo cells and nodes.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       This local module contains temporary variables to create the   
+!       list of halo cells and nodes.                                  
 !
        use precision
        implicit none
@@ -25,11 +17,7 @@
        private :: lessEqualHaloListType
        private :: lessHaloListType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the variables for the 3 lists.               *
-!      *                                                                *
-!      ******************************************************************
+!       The definition of the variables for the 3 lists.               
 !
        type haloListType
 
@@ -113,17 +101,13 @@
        integer(kind=intType), dimension(:,:), allocatable :: transformCell
        integer(kind=intType), dimension(:,:), allocatable :: transformNode
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the index variables, which store for each    *
-!      * i,j,k in the block the index in the corresponding list.        *
-!      * I know I'm wasting memory here (because only the halo's are    *
-!      * relevant), but that's not too much of a problem. The reason is *
-!      * that neither the metrics nor the variables have been allocated *
-!      * yet. So later on, much more memory is needed than the single   *
-!      * integer for each cell/node used here.                          *
-!      *                                                                *
-!      ******************************************************************
+!       The definition of the index variables, which store for each    
+!       i,j,k in the block the index in the corresponding list.        
+!       I know I'm wasting memory here (because only the halo's are    
+!       relevant), but that's not too much of a problem. The reason is 
+!       that neither the metrics nor the variables have been allocated 
+!       yet. So later on, much more memory is needed than the single   
+!       integer for each cell/node used here.                          
 !
        type indexListType
 
@@ -145,23 +129,15 @@
 
        contains
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Functions to simulate the operators <= and <.                *
-!        *                                                              *
-!        ****************************************************************
+!         Functions to simulate the operators <= and <.                
 !
          logical function lessEqualHaloListType(g1, g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * lessEqual returns .true. if g1 <= g2 and .false. otherwise.  *
-!        * The comparison is firstly based on the processor ID of the   *
-!        * donor. After that it depends whether the halo is a boundary  *
-!        * halo or not. Note that boundary halo's have a donor processor*
-!        * if of -1, such that they are always first in the list.       *
-!        *                                                              *
-!        ****************************************************************
+!         lessEqual returns .true. if g1 <= g2 and .false. otherwise.  
+!         The comparison is firstly based on the processor ID of the   
+!         donor. After that it depends whether the halo is a boundary  
+!         halo or not. Note that boundary halo's have a donor processor
+!         if of -1, such that they are always first in the list.       
 !
          implicit none
 !
@@ -169,11 +145,7 @@
 !
          type(haloListType), intent(in) :: g1, g2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Compare the donor processors first. If not equal,
          ! set lessEqual appropriately and return.
@@ -354,14 +326,10 @@
 
          logical function lessHaloListType(g1, g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * This function returns .true. if g1 < g2 and .false.          *
-!        * otherwise. It is basically the same as the lessEqual         *
-!        * function, except that the equality is now considered as      *
-!        * .false.                                                      *
-!        *                                                              *
-!        ****************************************************************
+!         This function returns .true. if g1 < g2 and .false.          
+!         otherwise. It is basically the same as the lessEqual         
+!         function, except that the equality is now considered as      
+!         .false.                                                      
 !
          implicit none
 !
@@ -369,11 +337,7 @@
 !
          type(haloListType), intent(in) :: g1, g2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Compare the donor processors first. If not equal,
          ! set the function appropriately and return.

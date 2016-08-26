@@ -1,41 +1,29 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          communication.F90                               *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 12-10-2002                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          communication.F90                               
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 12-10-2002                                      
+!       Last modified: 06-12-2005                                      
 !
        module communication
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Contains the variable definition of the processor number,      *
-!      * myID and the number of processors, nProc, which belong to the  *
-!      * group defined by the communicator SUmb_comm_world. The range   *
-!      * of processor numbers is <0..Nproc-1>, i.e. the numbering       *
-!      * starts at 0. This is done for compatibility with MPI.          *
-!      * Furthermore this module contains the communication pattern for *
-!      * all the multigrid levels.                                      *
-!      *                                                                *
-!      ******************************************************************
+!       Contains the variable definition of the processor number,      
+!       myID and the number of processors, nProc, which belong to the  
+!       group defined by the communicator SUmb_comm_world. The range   
+!       of processor numbers is <0..Nproc-1>, i.e. the numbering       
+!       starts at 0. This is done for compatibility with MPI.          
+!       Furthermore this module contains the communication pattern for 
+!       all the multigrid levels.                                      
 !
        use constants, only : intType, realType
        implicit none
        save
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the derived data type commListType, which    *
-!      * stores the i,j and k indices as well as the block id of the    *
-!      * data to be communicated. Send lists may contain interpolants   *
-!      * since the indices may refer to a stencil, while the receive    *
-!      * list does not. All interpolations should be done on the send   *
-!      * side to keep message sizes to a minimum.                       *
-!      *                                                                *
-!      ******************************************************************
+!       The definition of the derived data type commListType, which    
+!       stores the i,j and k indices as well as the block id of the    
+!       data to be communicated. Send lists may contain interpolants   
+!       since the indices may refer to a stencil, while the receive    
+!       list does not. All interpolations should be done on the send   
+!       side to keep message sizes to a minimum.                       
 !
 #ifndef USE_TAPENADE
        type sendCommListType
@@ -69,14 +57,10 @@
 
        end type recvCommListType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the derived data type periodicDataType,      *
-!      * which stores the rotation matrix, the rotation center and the  *
-!      * translation vector of the periodic transformation, as well as  *
-!      * the halos to which this transformation must be applied.        *
-!      *                                                                *
-!      ******************************************************************
+!       The definition of the derived data type periodicDataType,      
+!       which stores the rotation matrix, the rotation center and the  
+!       translation vector of the periodic transformation, as well as  
+!       the halos to which this transformation must be applied.        
 !
        type periodicDataType
 
@@ -100,13 +84,9 @@
 
        end type periodicDataType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the derived data type commType, which        *
-!      * stores the communication pattern for a certain halo type for a *
-!      * certain grid level.                                            *
-!      *                                                                *
-!      ******************************************************************
+!       The definition of the derived data type commType, which        
+!       stores the communication pattern for a certain halo type for a 
+!       certain grid level.                                            
 !
        type commType
 
@@ -157,13 +137,9 @@
 
        end type commType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the derived data type internalCommType,      *
-!      * which stores the memory to memory copy on this processor for a *
-!      * certain halo type.                                             *
-!      *                                                                *
-!      ******************************************************************
+!       The definition of the derived data type internalCommType,      
+!       which stores the memory to memory copy on this processor for a 
+!       certain halo type.                                             
 !
        type internalCommType
 
@@ -196,11 +172,7 @@
 
        end type internalCommType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Variables stored in this module.                               *
-!      *                                                                *
-!      ******************************************************************
+!       Variables stored in this module.                               
 !
        ! SUmb_comm_world: The communicator of this processor group.
        ! myID:            My processor number in SUmb_comm_world.

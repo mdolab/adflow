@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          bcTurbSymm.F90                                  *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 06-11-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          bcTurbSymm.F90                                  
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 06-11-2003                                      
+!       Last modified: 06-12-2005                                      
 !
 subroutine bcTurbSymm(nn)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * bcTurbSymm applies the implicit treatment of the symmetry      *
-  !      * boundary condition (or inviscid wall) to subface nn. As the    *
-  !      * symmetry boundary condition is independent of the turbulence   *
-  !      * model, this routine is valid for all models. It is assumed     *
-  !      * that the pointers in blockPointers are already set to the      *
-  !      * correct block on the correct grid level.                       *
-  !      *                                                                *
-  !      ******************************************************************
+  !       bcTurbSymm applies the implicit treatment of the symmetry      
+  !       boundary condition (or inviscid wall) to subface nn. As the    
+  !       symmetry boundary condition is independent of the turbulence   
+  !       model, this routine is valid for all models. It is assumed     
+  !       that the pointers in blockPointers are already set to the      
+  !       correct block on the correct grid level.                       
   !
   use constants
   use blockPointers
@@ -34,11 +26,7 @@ subroutine bcTurbSymm(nn)
   !
   integer(kind=intType) :: i, j, l
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Loop over the faces of the subfaces and set the values of bmt
   ! for an implicit treatment. For a symmetry face this means

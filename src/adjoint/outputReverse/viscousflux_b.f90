@@ -3,24 +3,20 @@
 !
 !  differentiation of viscousflux in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev *w *rlv *x *si *sj *sk
-!                *fw *(*viscsubface.tau)
+!                fw *(
 !   with respect to varying inputs: *rev *aa *wx *wy *wz *w *rlv
-!                *x *qx *qy *qz *ux *uy *uz *si *sj *sk *vx *vy
-!                *vz *fw
+!                x *qx *qy *qz *ux *uy *uz *si *sj *sk *vx 
+!                vz 
 !   plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
 !                w:in rlv:in x:in qx:in qy:in qz:in ux:in uy:in
 !                uz:in si:in sj:in sk:in vx:in vy:in vz:in fw:in
 !                viscsubface:in *viscsubface.tau:in
 subroutine viscousflux_b()
 !
-!      ******************************************************************
-!      *                                                                *
-!      * viscousflux computes the viscous fluxes using a central        *
-!      * difference scheme for a block.                                 *
-!      * it is assumed that the pointers in block pointer already point *
-!      * to the correct block.                                          *
-!      *                                                                *
-!      ******************************************************************
+!       viscousflux computes the viscous fluxes using a central        
+!       difference scheme for a block.                                 
+!       it is assumed that the pointers in block pointer already point 
+!       to the correct block.                                          
 !
   use constants
   use blockpointers
@@ -1116,11 +1112,7 @@ subroutine viscousflux_b()
     call popreal8(ssx)
     mued = 0.0_8
 !
-!        ****************************************************************
-!        *                                                              *
-!        * viscous fluxes in the k-direction.                           *
-!        *                                                              *
-!        ****************************************************************
+!         viscous fluxes in the k-direction.                           
 !
     mue = zero
     mued = 0.0_8

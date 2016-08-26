@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          volSolNames.f90                                 *
-!      * Author:        Gaetan Kenway                                   *
-!      * Starting date: 07-21-2013                                      *
-!      * Last modified: 07-21-2013                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          volSolNames.f90                                 
+!       Author:        Gaetan Kenway                                   
+!       Starting date: 07-21-2013                                      
+!       Last modified: 07-21-2013                                      
 !
        subroutine isoSurfNames(solNames)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * isoNames sets the names for the volume variables to be         *
-!      * written to the isosurfaces. Sids convention names are          *
-!      * used as much as possible.                                      *
-!      *                                                                *
-!      ******************************************************************
+!       isoNames sets the names for the volume variables to be         
+!       written to the isosurfaces. Sids convention names are          
+!       used as much as possible.                                      
 !
        use constants
        use cgnsNames
@@ -33,11 +25,7 @@
 !
        integer(kind=intType) :: nn
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
 
        ! Check the additional variables to be written -- there are no

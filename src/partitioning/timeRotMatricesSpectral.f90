@@ -1,15 +1,11 @@
 subroutine timeRotMatricesSpectral
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * timeRotMatricesSpectral determines the rotation matrices       *
-  !      * used in the time derivatives for the velocity components in    *
-  !      * the time spectral method. These matrices are the identity      *
-  !      * matrices for non-rotating sections and something different for *
-  !      * rotating sections. Therefore the rotation matrices are stored  *
-  !      * for every section.                                             *
-  !      *                                                                *
-  !      ******************************************************************
+  !       timeRotMatricesSpectral determines the rotation matrices       
+  !       used in the time derivatives for the velocity components in    
+  !       the time spectral method. These matrices are the identity      
+  !       matrices for non-rotating sections and something different for 
+  !       rotating sections. Therefore the rotation matrices are stored  
+  !       for every section.                                             
   !
   use constants
   use inputPhysics
@@ -27,11 +23,7 @@ subroutine timeRotMatricesSpectral
 
   real(kind=realType), dimension(3) :: xt, yt, zt
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                               *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! This routine is only used for the spectral solutions. Return
   ! immediately if a different mode is solved.

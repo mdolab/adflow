@@ -3,31 +3,23 @@
 !
 !  differentiation of bcturbinterface in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *bvtj1 *bvtj2 *w *bvtk1 *bvtk2
-!                *bvti1 *bvti2
+!                bvti1 
 !   with respect to varying inputs: *bvtj1 *bvtj2 *w *bvtk1 *bvtk2
-!                *bvti1 *bvti2
+!                bvti1 
 !   plus diff mem management of: bvtj1:in bvtj2:in w:in bvtk1:in
 !                bvtk2:in bvti1:in bvti2:in bcdata:in
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          bcturbinterface.f90                             *
-!      * author:        georgi kalitzin, edwin van der weide            *
-!      * starting date: 01-09-2004                                      *
-!      * last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          bcturbinterface.f90                             
+!       author:        georgi kalitzin, edwin van der weide            
+!       starting date: 01-09-2004                                      
+!       last modified: 06-12-2005                                      
 !
 subroutine bcturbinterface_b(nn)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * bcturbinterface applies the halo treatment for interface halo  *
-!      * cells, sliding mesh interface and domain interface. as these   *
-!      * are not really boundary conditions, the variable bvt is simply *
-!      * set to keep the current value.                                 *
-!      *                                                                *
-!      ******************************************************************
+!       bcturbinterface applies the halo treatment for interface halo  
+!       cells, sliding mesh interface and domain interface. as these   
+!       are not really boundary conditions, the variable bvt is simply 
+!       set to keep the current value.                                 
 !
   use constants
   use blockpointers
@@ -45,11 +37,7 @@ subroutine bcturbinterface_b(nn)
   integer(kind=inttype) :: i, j, l
   integer :: branch
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! loop over the faces of the subfaces and set the values of
 ! bvt to keep the current value.

@@ -35,18 +35,14 @@ end subroutine gridVelocitiesFineLevel
 
 subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * gridVelocitiesFineLevel computes the grid velocities for       *
-  !      * the cell centers and the normal grid velocities for the faces  *
-  !      * of moving blocks for the currently finest grid, i.e.           *
-  !      * groundLevel. The velocities are computed at time t for         *
-  !      * spectral mode sps. If useOldCoor is .true. the velocities      *
-  !      * are determined using the unsteady time integrator in           *
-  !      * combination with the old coordinates; otherwise the analytic   *
-  !      * form is used.                                                  *
-  !      *                                                                *
-  !      ******************************************************************
+  !       gridVelocitiesFineLevel computes the grid velocities for       
+  !       the cell centers and the normal grid velocities for the faces  
+  !       of moving blocks for the currently finest grid, i.e.           
+  !       groundLevel. The velocities are computed at time t for         
+  !       spectral mode sps. If useOldCoor is .true. the velocities      
+  !       are determined using the unsteady time integrator in           
+  !       combination with the old coordinates; otherwise the analytic   
+  !       form is used.                                                  
   !
   use blockPointers
   use cgnsGrid
@@ -97,11 +93,7 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
   real(kind=realType), dimension(3) :: refDirection
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Compute the mesh velocity from the given mesh Mach number.
 
@@ -213,13 +205,9 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
      
      testUseOldCoor: if( useOldCoor ) then
         !
-        !            ************************************************************
-        !            *                                                          *
-        !            * The velocities must be determined via a finite           *
-        !            * difference formula using the coordinates of the old      *
-        !            * levels.                                                  *
-        !            *                                                          *
-        !            ************************************************************
+        !             The velocities must be determined via a finite           
+        !             difference formula using the coordinates of the old      
+        !             levels.                                                  
         !
         ! Set the coefficients for the time integrator and store
         ! the inverse of the physical nonDimensional time step,
@@ -229,12 +217,8 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
         oneOver4dt = fourth*timeRef/deltaT
         oneOver8dt = half*oneOver4dt
         !
-        !            ************************************************************
-        !            *                                                          *
-        !            * Grid velocities of the cell centers, including the       *
-        !            * 1st level halo cells.                                    *
-        !            *                                                          *
-        !            ************************************************************
+        !             Grid velocities of the cell centers, including the       
+        !             1st level halo cells.                                    
         !
         ! Loop over the cells, including the 1st level halo's.
 
@@ -306,11 +290,7 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
            enddo
         enddo
         !
-        !            ************************************************************
-        !            *                                                          *
-        !            * Normal grid velocities of the faces.                     *
-        !            *                                                          *
-        !            ************************************************************
+        !             Normal grid velocities of the faces.                     
         !
         ! Loop over the three directions.
 
@@ -329,14 +309,10 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
               iie = ke; jje = ie; kke = je
            end select
            !
-           !              **********************************************************
-           !              *                                                        *
-           !              * Normal grid velocities in generalized i-direction.     *
-           !              * Mm == 1: i-direction                                   *
-           !              * mm == 2: j-direction                                   *
-           !              * mm == 3: k-direction                                   *
-           !              *                                                        *
-           !              **********************************************************
+           !               Normal grid velocities in generalized i-direction.     
+           !               Mm == 1: i-direction                                   
+           !               mm == 2: j-direction                                   
+           !               mm == 3: k-direction                                   
            !
            do i=0,iie
 
@@ -417,11 +393,7 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
 
      else testUseOldCoor
         !
-        !            ************************************************************
-        !            *                                                          *
-        !            * The velocities must be determined analytically.          *
-        !            *                                                          *
-        !            ************************************************************
+        !             The velocities must be determined analytically.          
         !
         ! Store the rotation center and determine the
         ! nonDimensional rotation rate of this block. As the
@@ -437,12 +409,8 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
         velYgrid = velYGrid0
         velZgrid = velZGrid0
 !
-!            ************************************************************
-!            *                                                          *
-!            * Grid velocities of the cell centers, including the       *
-!            * 1st level halo cells.                                    *
-!            *                                                          *
-!            ************************************************************
+!             Grid velocities of the cell centers, including the       
+!             1st level halo cells.                                    
 !
         ! Loop over the cells, including the 1st level halo's.
 
@@ -507,11 +475,7 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
            enddo
         enddo
 !
-!            ************************************************************
-!            *                                                          *
-!            * Normal grid velocities of the faces.                     *
-!            *                                                          *
-!            ************************************************************
+!             Normal grid velocities of the faces.                     
 !
         ! Loop over the three directions.
 
@@ -530,14 +494,10 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
               iie = ke; jje = ie; kke = je
            end select
 !
-!              **********************************************************
-!              *                                                        *
-!              * Normal grid velocities in generalized i-direction.     *
-!              * mm == 1: i-direction                                   *
-!              * mm == 2: j-direction                                   *
-!              * mm == 3: k-direction                                   *
-!              *                                                        *
-!              **********************************************************
+!               Normal grid velocities in generalized i-direction.     
+!               mm == 1: i-direction                                   
+!               mm == 2: j-direction                                   
+!               mm == 3: k-direction                                   
 !
            do i=0,iie
 

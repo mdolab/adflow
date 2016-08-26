@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          initMemMixingPlane.f90                          *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 01-27-2005                                      *
-!      * Last modified: 03-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          initMemMixingPlane.f90                          
+!       Author:        Edwin van der Weide                             
+!       Starting date: 01-27-2005                                      
+!       Last modified: 03-25-2005                                      
 !
        subroutine initMemMixingPlane(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * initMemMixingPlane initializes the memory for the mixing       *
-!      * plane communication/interpolation pattern for the given grid   *
-!      * level.                                                         *
-!      *                                                                *
-!      ******************************************************************
+!       initMemMixingPlane initializes the memory for the mixing       
+!       plane communication/interpolation pattern for the given grid   
+!       level.                                                         
 !
        use commMixing
        use interfaceGroups
@@ -30,11 +22,7 @@
 !
        integer(kind=intType) :: nn, mm
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the number of interface groups and number of sides
        ! of an interface.

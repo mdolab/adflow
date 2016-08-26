@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          transferToFineGrid.f90                          *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-13-2003                                      *
-!      * Last modified: 08-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          transferToFineGrid.f90                          
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-13-2003                                      
+!       Last modified: 08-25-2005                                      
 !
        subroutine transferToFineGrid(corrections)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * transferToFineGrid interpolates either the corrections or the  *
-!      * solution to the next finer grid level. A standard trilinear    *
-!      * interpolation is used.                                         *
-!      *                                                                *
-!      ******************************************************************
+!       transferToFineGrid interpolates either the corrections or the  
+!       solution to the next finer grid level. A standard trilinear    
+!       interpolation is used.                                         
 !
        use constants
        use blockPointers, only : flowDoms, dw, il, jl, kl, ie, je, ke, w, &
@@ -49,11 +41,7 @@
 
        logical :: secondHalo, correctForK
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Store the coarse grid level in coarseLevel.
 
@@ -349,16 +337,12 @@
 
        subroutine extrapolateSolution
 !
-!      ******************************************************************
-!      *                                                                *
-!      * extrapolateSolution sets the solution of the cell halos by a   *
-!      * constant extrapolation. This routine is called after the       *
-!      * solution has been interpolated to the next finer grid and this *
-!      * routine makes sure that the halo's are initialized.            *
-!      * Only the block to which the pointers in blockPointers          *
-!      * currently point is treated.                                    *
-!      *                                                                *
-!      ******************************************************************
+!       extrapolateSolution sets the solution of the cell halos by a   
+!       constant extrapolation. This routine is called after the       
+!       solution has been interpolated to the next finer grid and this 
+!       routine makes sure that the halo's are initialized.            
+!       Only the block to which the pointers in blockPointers          
+!       currently point is treated.                                    
 !
        use blockPointers
        use flowVarRefState
@@ -368,11 +352,7 @@
 !
        integer(kind=intType) :: i, j, k, l
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Constant extrapolation in i-direction.
 
@@ -442,17 +422,13 @@
 
        subroutine extrapolateViscosities
 !
-!      ******************************************************************
-!      *                                                                *
-!      * extrapolateViscosities sets the laminar and eddy viscosities   *
-!      * of the cell halos by a constant extrapolation. This routine is *
-!      * called after the solution has been interpolated to the next    *
-!      * finer grid and this routine makes sure that the halo's are     *
-!      * initialized.                                                   *
-!      * Only the block to which the pointers in blockPointers          *
-!      * currently point is treated and only for a viscous problem.     *
-!      *                                                                *
-!      ******************************************************************
+!       extrapolateViscosities sets the laminar and eddy viscosities   
+!       of the cell halos by a constant extrapolation. This routine is 
+!       called after the solution has been interpolated to the next    
+!       finer grid and this routine makes sure that the halo's are     
+!       initialized.                                                   
+!       Only the block to which the pointers in blockPointers          
+!       currently point is treated and only for a viscous problem.     
 !
        use blockPointers
        use flowVarRefState
@@ -462,11 +438,7 @@
 !
        integer(kind=intType) :: i, j, k
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Return immediately if this is not a viscous problem.
 

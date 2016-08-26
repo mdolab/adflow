@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          vfScale.f90                                     *
-!      * Author:        Georgi Kalitzin                                 *
-!      * Starting date: 04-19-2004                                      *
-!      * Last modified: 04-11-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          vfScale.f90                                     
+!       Author:        Georgi Kalitzin                                 
+!       Starting date: 04-19-2004                                      
+!       Last modified: 04-11-2005                                      
 !
        subroutine vfScale
 !
-!      ******************************************************************
-!      *                                                                *
-!      * time and length scale definition for v2f turbulence model. The *
-!      * upper bound can be switched on by setting rvfB to .true.       *
-!      * The strain squared is defined as: strain2 = 2 sij sij          *
-!      *                                                                *
-!      ******************************************************************
+!       time and length scale definition for v2f turbulence model. The 
+!       upper bound can be switched on by setting rvfB to .true.       
+!       The strain squared is defined as: strain2 = 2 sij sij          
 !
        use constants
        use blockPointers
@@ -33,11 +25,7 @@
        real(kind=realType) :: tkea, tepa, tv2a, supi, rn2
        real(kind=realType) :: rsct, rscl2, rnu, rstrain
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Some constants in the model.
 
@@ -54,11 +42,7 @@
        vort    => prod
        strain2 => prod
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Production term.                                               *
-!      *                                                                *
-!      ******************************************************************
+!       Production term.                                               
 !
        select case (turbProd)
          case (strain)
@@ -72,11 +56,7 @@
 
        end select
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Compute the length and time scale for all internal cells.      *
-!      *                                                                *
-!      ******************************************************************
+!       Compute the length and time scale for all internal cells.      
 !
        if( rvfB ) then
 

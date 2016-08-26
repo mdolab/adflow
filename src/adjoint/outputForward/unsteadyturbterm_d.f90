@@ -6,36 +6,27 @@
 !   with respect to varying inputs: timeref *w *scratch
 !   plus diff mem management of: dw:in w:in scratch:in
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          unsteadyturbterm.f90                            *
-!      * author:        edwin van der weide                             *
-!      * starting date: 02-09-2004                                      *
-!      * last modified: 11-27-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          unsteadyturbterm.f90                            
+!       author:        edwin van der weide                             
+!       starting date: 02-09-2004                                      
+!       last modified: 11-27-2007                                      
 !
 subroutine unsteadyturbterm_d(madv, nadv, offset, qq)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * unsteadyturbterm discretizes the time derivative of the        *
-!      * turbulence transport equations and add it to the residual.     *
-!      * as the time derivative is the same for all turbulence models,  *
-!      * this generic routine can be used; both the discretization of   *
-!      * the time derivative and its contribution to the central        *
-!      * jacobian are computed by this routine.                         *
-!      *                                                                *
-!      * only nadv equations are treated, while the actual system has   *
-!      * size madv. the reason is that some equations for some          *
-!      * turbulence equations do not have a time derivative, e.g. the   *
-!      * f equation in the v2-f model. the argument offset indicates    *
-!      * the offset in the w vector where this subsystem starts. as a   *
-!      * consequence it is assumed that the indices of the current      *
-!      * subsystem are contiguous, e.g. if a 2*2 system is solved the   *
-!      * last index in w is offset+1 and offset+2 respectively.         *
-!      *                                                                *
-!      ******************************************************************
+!       unsteadyturbterm discretizes the time derivative of the        
+!       turbulence transport equations and add it to the residual.     
+!       as the time derivative is the same for all turbulence models,  
+!       this generic routine can be used; both the discretization of   
+!       the time derivative and its contribution to the central        
+!       jacobian are computed by this routine.                         
+!       only nadv equations are treated, while the actual system has   
+!       size madv. the reason is that some equations for some          
+!       turbulence equations do not have a time derivative, e.g. the   
+!       f equation in the v2-f model. the argument offset indicates    
+!       the offset in the w vector where this subsystem starts. as a   
+!       consequence it is assumed that the indices of the current      
+!       subsystem are contiguous, e.g. if a 2*2 system is solved the   
+!       last index in w is offset+1 and offset+2 respectively.         
 !
   use blockpointers
   use flowvarrefstate
@@ -59,11 +50,7 @@ subroutine unsteadyturbterm_d(madv, nadv, offset, qq)
   real(kind=realtype) :: oneoverdt, tmp
   real(kind=realtype) :: oneoverdtd, tmpd
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! determine the equation mode.
   select case  (equationmode) 

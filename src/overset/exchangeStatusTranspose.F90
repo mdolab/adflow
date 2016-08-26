@@ -33,11 +33,7 @@ subroutine exchangeStatusTranspose(level, sps, commPattern, internal)
 integer(kind=intType) :: cellStatus, donorStatus
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
 
   ii = commPattern(level)%nProcSend

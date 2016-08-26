@@ -3,33 +3,25 @@
 !
 !  differentiation of timestep_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: gammainf rhoinf pinfcorr *p
-!                *w *si *sj *sk *radi *radj *radk
+!                w *si *sj *sk *radi *radj 
 !   with respect to varying inputs: gammainf rhoinf pinfcorr *p
-!                *w *si *sj *sk
+!                w *si *sj 
 !   plus diff mem management of: p:in w:in si:in sj:in sk:in radi:in
 !                radj:in radk:in
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          timestep.f90                                    *
-!      * author:        edwin van der weide                             *
-!      * starting date: 03-17-2003                                      *
-!      * last modified: 06-28-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          timestep.f90                                    
+!       author:        edwin van der weide                             
+!       starting date: 03-17-2003                                      
+!       last modified: 06-28-2005                                      
 !
 subroutine timestep_block_b(onlyradii)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * timestep computes the time step, or more precisely the time    *
-!      * step divided by the volume per unit cfl, in the owned cells.   *
-!      * however, for the artificial dissipation schemes, the spectral  *
-!      * radii in the halo's are needed. therefore the loop is taken    *
-!      * over the the first level of halo cells. the spectral radii are *
-!      * stored and possibly modified for high aspect ratio cells.      *
-!      *                                                                *
-!      ******************************************************************
+!       timestep computes the time step, or more precisely the time    
+!       step divided by the volume per unit cfl, in the owned cells.   
+!       however, for the artificial dissipation schemes, the spectral  
+!       radii in the halo's are needed. therefore the loop is taken    
+!       over the the first level of halo cells. the spectral radii are 
+!       stored and possibly modified for high aspect ratio cells.      
 !
   use constants
   use blockpointers, only : ie, je, ke, il, jl, kl, w, wd, p, pd, rlv,&
@@ -98,11 +90,7 @@ subroutine timestep_block_b(onlyradii)
   real(kind=realtype) :: abs0
   real(kind=realtype) :: temp
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! determine whether or not the spectral radii are needed for the
 ! flux computation.
@@ -120,12 +108,8 @@ subroutine timestep_block_b(onlyradii)
 ! block is not moving.
     sface = zero
 !
-!          **************************************************************
-!          *                                                            *
-!          * inviscid contribution, depending on the preconditioner.    *
-!          * compute the cell centered values of the spectral radii.    *
-!          *                                                            *
-!          **************************************************************
+!           inviscid contribution, depending on the preconditioner.    
+!           compute the cell centered values of the spectral radii.    
 !
     select case  (precond) 
     case (noprecond) 
@@ -199,12 +183,8 @@ subroutine timestep_block_b(onlyradii)
         rk = half*(abs2+sqrt(cc2*(sx**2+sy**2+sz**2)))
 ! compute the inviscid contribution to the time step.
 !
-!          **************************************************************
-!          *                                                            *
-!          * adapt the spectral radii if directional scaling must be    *
-!          * applied.                                                   *
-!          *                                                            *
-!          **************************************************************
+!           adapt the spectral radii if directional scaling must be    
+!           applied.                                                   
 !
         if (doscaling) then
           if (ri .lt. eps) then

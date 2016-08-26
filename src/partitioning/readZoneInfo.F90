@@ -1,12 +1,8 @@
        subroutine readZoneInfo(cgnsBase, nZone, sortedFamName, &
                                famID, noUnits)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * readZoneInfo reads the general information, like zone type     *
-!      * and physical dimensions, for the given zone/block.             *
-!      *                                                                *
-!      ******************************************************************
+!       readZoneInfo reads the general information, like zone type     
+!       and physical dimensions, for the given zone/block.             
 !
        use cgnsGrid
        use communication
@@ -52,11 +48,7 @@
 
        logical :: overwrite
 
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Set the cgns ID for the "master" file and read the size
        ! of the block as well as the zone name.
@@ -127,11 +119,7 @@
          call terminate("readZoneInfo", &
                         "Something wrong when calling cg_goto_f")
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Try to read the family name.                                   *
-!      *                                                                *
-!      ******************************************************************
+!       Try to read the family name.                                   
 !
        call cg_famname_read_f(familyName, ierr)
        if(ierr == error)                &
@@ -165,11 +153,7 @@
 
        endif
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Try to determine the units of the coordinates.                 *
-!      *                                                                *
-!      ******************************************************************
+!       Try to determine the units of the coordinates.                 
 !
        ! Determine the number of coordinates in this zone.
 
@@ -273,11 +257,7 @@
 
        endif
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Try to determine the rotation rate and center.                 *
-!      *                                                                *
-!      ******************************************************************
+!       Try to determine the rotation rate and center.                 
 !
        ! Some initializations.
 

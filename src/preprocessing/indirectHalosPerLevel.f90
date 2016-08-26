@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          indirectHalosPerLevel.f90                       *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-03-2003                                      *
-!      * Last modified: 11-30-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          indirectHalosPerLevel.f90                       
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-03-2003                                      
+!       Last modified: 11-30-2007                                      
 !
        subroutine indirectHalosPerLevel(level, iihalo, entityHalo, &
                                         transform, entityIndex)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * indirectHalosPerLevel determines the donor cells for the       *
-!      * halo's of the given level of indirectness. From the known      *
-!      * appropriate direct halo and its donor, the corresponding cell  *
-!      * in the donor block is determined.                              *
-!      *                                                                *
-!      ******************************************************************
+!       indirectHalosPerLevel determines the donor cells for the       
+!       halo's of the given level of indirectness. From the known      
+!       appropriate direct halo and its donor, the corresponding cell  
+!       in the donor block is determined.                              
 !
        use haloList
        use indirectHalo
@@ -110,11 +102,7 @@
        end subroutine storeHalosInList
        end interface
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the number of items per entity that is returned from
        ! the requested processor. This is 5 + level, because of the
@@ -467,12 +455,8 @@
        subroutine fillSendBuf(sendBuf, proc, entityHalo, transform, &
                               level, mm)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * fillSendBuf fills the buffer, which must be sent to the        *
-!      * given processor.                                               *
-!      *                                                                *
-!      ******************************************************************
+!       fillSendBuf fills the buffer, which must be sent to the        
+!       given processor.                                               
 !
        use haloList
        use indirectHalo
@@ -497,11 +481,7 @@
        integer(kind=intType), dimension(3,3) :: tMat
 
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize m to 0.
 
@@ -572,16 +552,12 @@
        subroutine findDonorsRecvBuffer(recvBuf, nHalos, entityHalo, &
                                        entityIndex, level, nItemReturn)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * findDonorsRecvBuffer finds the donor cells for the halo        *
-!      * information stored in recvBuf. On return recvBuf contains      *
-!      * for every halo the following information: processor ID,        *
-!      * block ID, the i,j,k indices of the donor cell and periodic     *
-!      * information. The number of periodic subfaces stored is level,  *
-!      * where a 0 indicates that the subface is not periodic.          *
-!      *                                                                *
-!      ******************************************************************
+!       findDonorsRecvBuffer finds the donor cells for the halo        
+!       information stored in recvBuf. On return recvBuf contains      
+!       for every halo the following information: processor ID,        
+!       block ID, the i,j,k indices of the donor cell and periodic     
+!       information. The number of periodic subfaces stored is level,  
+!       where a 0 indicates that the subface is not periodic.          
 !
        use haloList
        use communication
@@ -607,11 +583,7 @@
 
        integer(kind=intType), dimension(:), allocatable :: tmpBuf
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Allocate the memory for tmpBuf to the size needed to store the
        ! return information.
@@ -748,13 +720,9 @@
                                    nItemReturn, entityHalo,      &
                                    entityIndex, iihalo)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * storeHalosInList stores the halo info present in buf, which    *
-!      * has been retreived from the given processor, in the correct    *
-!      * place in entityHalo and entityIndex.                           *
-!      *                                                                *
-!      ******************************************************************
+!       storeHalosInList stores the halo info present in buf, which    
+!       has been retreived from the given processor, in the correct    
+!       place in entityHalo and entityIndex.                           
 !
        use haloList
        use indirectHalo
@@ -780,11 +748,7 @@
        integer(kind=intType) :: ii, nn, blockID, iii
        integer(kind=intType) :: nPeriodic
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Store the start index (-1) for this processor in indHalo in nn.
 

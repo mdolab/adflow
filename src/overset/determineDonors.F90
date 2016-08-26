@@ -1,14 +1,10 @@
-!      ******************************************************************
-!      *                                                                *
-!      * This subroutine takes a list of all local fringes, sorts it,   *
-!      * then communicates the required fringes back to their donor     *
-!      * procs, and flags all required cells as donors. This routine    *
-!      * does double duty: If the flag useWall is set, it flags the     *
-!      * donor cells as wallDonors, otherwise it flags the cells as     *
-!      * regular donors. We do this since the communication structure   *
-!      * for these two operations are identical                         *
-!      *                                                                *
-!      ******************************************************************
+!       This subroutine takes a list of all local fringes, sorts it,   
+!       then communicates the required fringes back to their donor     
+!       procs, and flags all required cells as donors. This routine    
+!       does double duty: If the flag useWall is set, it flags the     
+!       donor cells as wallDonors, otherwise it flags the cells as     
+!       regular donors. We do this since the communication structure   
+!       for these two operations are identical                         
 
 subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
 

@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          monitorVariables.f90                            *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-26-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          monitorVariables.f90                            
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-26-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine monitorVariables(variables)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * monitorVariables extracts from the given string the variables  *
-!      * to be monitored during the convergence.                        *
-!      *                                                                *
-!      ******************************************************************
+!       monitorVariables extracts from the given string the variables  
+!       to be monitored during the convergence.                        
 !
        use constants
        use cgnsNames
@@ -44,11 +36,7 @@
 
        logical :: monDrho, monTotalR
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Check if the monitoring names have already been allocated.
        ! This happens when multiple lines for the monitoring variables

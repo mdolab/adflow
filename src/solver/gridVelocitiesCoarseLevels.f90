@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          gridVelocitiesCoarseLevels.f90                  *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-23-2004                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          gridVelocitiesCoarseLevels.f90                  
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-23-2004                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine gridVelocitiesCoarseLevels(sps)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * gridVelocitiesCoarseLevels computes the grid velocities for    *
-!      * the cell centers and the normal grid velocities for the faces  *
-!      * of moving blocks on the coarser grid levels. GroundLevel is    *
-!      * considered the fine grid level.                                *
-!      *                                                                *
-!      ******************************************************************
+!       gridVelocitiesCoarseLevels computes the grid velocities for    
+!       the cell centers and the normal grid velocities for the faces  
+!       of moving blocks on the coarser grid levels. GroundLevel is    
+!       considered the fine grid level.                                
 !
        use constants
        use blockPointers
@@ -45,11 +37,7 @@
        real(kind=realType), dimension(:,:),     pointer :: sFine, sFace
        real(kind=realType), dimension(:,:,:,:), pointer :: sf
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the number of coarse grid levels, starting at
        ! groundLevel+1,
@@ -72,14 +60,10 @@
 
            testMoving: if( addGridVelocities ) then
 !
-!            ************************************************************
-!            *                                                          *
-!            * Grid velocities of the cell centers, including the 1st   *
-!            * level halo cells. These are determined by accumulating   *
-!            * the fine grid values. At the end the internal halo's are *
-!            * communicated to obtain the correct values.               *
-!            *                                                          *
-!            ************************************************************
+!             Grid velocities of the cell centers, including the 1st   
+!             level halo cells. These are determined by accumulating   
+!             the fine grid values. At the end the internal halo's are 
+!             communicated to obtain the correct values.               
 !
              levm1 = level - 1
 
@@ -141,11 +125,7 @@
                enddo
              enddo
 !
-!            ************************************************************
-!            *                                                          *
-!            * Normal grid velocities of the faces.                     *
-!            *                                                          *
-!            ************************************************************
+!             Normal grid velocities of the faces.                     
 !
              ! Loop over the three directions.
 
@@ -172,14 +152,10 @@
 
                end select
 !
-!              **********************************************************
-!              *                                                        *
-!              * Normal grid velocities in generalized i-direction.     *
-!              * mm == 1: i-direction                                   *
-!              * mm == 2: j-direction                                   *
-!              * mm == 3: k-direction                                   *
-!              *                                                        *
-!              **********************************************************
+!               Normal grid velocities in generalized i-direction.     
+!               mm == 1: i-direction                                   
+!               mm == 2: j-direction                                   
+!               mm == 3: k-direction                                   
 !
                do i=0,iie
 
@@ -269,13 +245,9 @@
 
        subroutine exchangeCellGridVelocities(level,sps)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * exchangeCellGridVelocities exchanges the grid velocities in    *
-!      * the cell centers for the given grid level and spectral         *
-!      * solution.                                                      *
-!      *                                                                *
-!      ******************************************************************
+!       exchangeCellGridVelocities exchanges the grid velocities in    
+!       the cell centers for the given grid level and spectral         
+!       solution.                                                      
 !
        use constants
        use block
@@ -313,17 +285,9 @@
          end subroutine correctPeriodicGridVel
        end interface
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The 1 to 1 communication.                                      *
-!      *                                                                *
-!      ******************************************************************
+!       The 1 to 1 communication.                                      
 !
        ! Send the variables. The data is first copied into
        ! the send buffer after which the buffer is sent asap.
@@ -496,11 +460,7 @@
          call mpi_waitany(size, sendRequests, index, status, ierr)
        enddo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The sliding mesh communication.                                *
-!      *                                                                *
-!      ******************************************************************
+!       The sliding mesh communication.                                
 !
        ! Send the variables. The data is first copied into
        ! the send buffer after which the buffer is sent asap.
@@ -729,12 +689,8 @@
        subroutine correctPeriodicGridVel(level, sps, nPeriodic, &
                                          periodicData)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * correctPeriodicGridVel applies the periodic transformation     *
-!      * to the grid velocities of the cell halo's in periodicData.     *
-!      *                                                                *
-!      ******************************************************************
+!       correctPeriodicGridVel applies the periodic transformation     
+!       to the grid velocities of the cell halo's in periodicData.     
 !
        use block
        use communication
@@ -752,11 +708,7 @@
 
        real(kind=realType), dimension(3,3) :: rotMatrix
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the number of periodic transformations.
 

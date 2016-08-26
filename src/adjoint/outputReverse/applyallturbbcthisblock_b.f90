@@ -4,19 +4,15 @@
 !  differentiation of applyallturbbcthisblock in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev *w
 !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *w *bvtk1
-!                *bvtk2 *bvti1 *bvti2
+!                bvtk2 *bvti1 
 !   plus diff mem management of: rev:in bvtj1:in bvtj2:in w:in
 !                bvtk1:in bvtk2:in bvti1:in bvti2:in bcdata:in
 !      ==================================================================
 subroutine applyallturbbcthisblock_b(secondhalo)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * applyallturbbcthisblock sets the halo values of the            *
-!      * turbulent variables and eddy viscosity for the block the       *
-!      * variables in blockpointers currently point to.                 *
-!      *                                                                *
-!      ******************************************************************
+!       applyallturbbcthisblock sets the halo values of the            
+!       turbulent variables and eddy viscosity for the block the       
+!       variables in blockpointers currently point to.                 
 !
   use constants
   use blockpointers

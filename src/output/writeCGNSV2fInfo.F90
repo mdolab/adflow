@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          writeCGNSV2fInfo.F90                            *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-12-2003                                      *
-!      * Last modified: 06-29-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          writeCGNSV2fInfo.F90                            
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-12-2003                                      
+!       Last modified: 06-29-2005                                      
 !
        subroutine writeCGNSV2fInfo(cgnsInd, cgnsBase)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * WriteCGNSV2fInfo writes information about Durbin's v2f         *
-!      * turbulence model to the cgns file.                             *
-!      *                                                                *
-!      ******************************************************************
+!       WriteCGNSV2fInfo writes information about Durbin's v2f         
+!       turbulence model to the cgns file.                             
 !
        use inputPhysics
        use cgnsNames
