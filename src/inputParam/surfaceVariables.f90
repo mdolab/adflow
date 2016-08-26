@@ -17,10 +17,9 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use communication
        use constants
        use extraOutput
-       use allInputParam     
+       use allInputParam, only : surfaceOutSpecified    
        use utils, only : convertToLowerCase, terminate
        implicit none
 !
@@ -201,9 +200,7 @@
              write(errorMessage,"(3a)") "Unknown surface output &
                                         &variable, ", trim(keyword), &
                                         ", specified"
-             if(myID == 0) &
-               call terminate("surfaceVariables", errorMessage)
-             call mpi_barrier(SUmb_comm_world, pos)
+             call terminate("surfaceVariables", errorMessage)
 
          end select
 

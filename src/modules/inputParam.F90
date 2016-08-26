@@ -306,12 +306,8 @@ module inputIteration
   real(kind=realType) :: relaxBleeds
   real(kind=realtype) :: epscoefconv
   integer(kind=inttype) :: convcheckwindowsize
-
   real(kind=realType), allocatable, dimension(:) :: etaRK, cdisRK
 
-#ifndef USE_TAPENADE
-  real(kind=realType), allocatable, dimension(:) :: etaRKb, cdisRKb
-#endif
 
   logical :: freezeTurbSource
   logical :: printIterations

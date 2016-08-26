@@ -17,10 +17,11 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use communication
        use constants
-       use cpCurveFits
-       use inputIO
+       use communication, only : myid, sumb_comm_world
+       use cpCurveFits, only : cpTrange, cpTempFit, cpEint, cpHint, cvn, cv0, &
+            cpNParts
+       use inputIO, only : cpFile
        use utils, only : terminate
        implicit none
 

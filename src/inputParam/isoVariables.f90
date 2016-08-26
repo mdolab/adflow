@@ -17,10 +17,9 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use communication
        use constants
        use extraOutput
-       use allInputParam
+       use allInputParam, only : isoOutSpecified
        use utils, only : convertToLowerCase, terminate
        implicit none
 !
@@ -250,9 +249,7 @@
              write(errorMessage,"(3a)" ) "Unknown extra iso output &
                                          &variable, ", trim(keyword), &
                                          ", specified"
-             if(myID == 0) &
-               call terminate("isoVariables", errorMessage)
-             call mpi_barrier(SUmb_comm_world, pos)
+             call terminate("isoVariables", errorMessage)
 
          end select
 
