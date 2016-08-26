@@ -19,11 +19,13 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use cgnsNames
        use su_cgns
-       use inputUnsteady
-       use monitor
-       use restartMod
+       use inputUnsteady, only : nTimeStepsFine
+       use monitor, only : timeDataArray, nMon, nTimeStepsRestart, &
+            timeUnsteadyRestart, monNames, timeArray
+       use restartMod, only : cgnsBase, cgnsInd, nSolsRead
        use sorting, only : qsortStrings, bsearchStrings
        use utils, only : setCGNSRealType
        implicit none

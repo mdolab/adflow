@@ -18,14 +18,13 @@ subroutine allocMemFlovarPart1(sps,level)
   !      *                                                                *
   !      ******************************************************************
   !
-  use block
   use constants
-  use flowVarRefState
-  use inputIteration
-  use inputPhysics
-  use inputUnsteady
-  use inputphysics
-  use iteration
+  use block, only : flowDoms, nDOm
+  use flowVarRefState, only : nw, nwf, nt1, nt2
+  use inputPhysics, only : equationMode, gammaConstant
+  use inputUnsteady, only :timeIntegrationScheme
+  use inputIteration, only : mgStartLevel, turbTreatment
+  use iteration, only : nOldLevels
   use utils, only : terminate
   implicit none
   !

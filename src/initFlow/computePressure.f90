@@ -21,13 +21,11 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use inputPhysics
-       use blockPointers
-       use flowVarRefState
        use constants
-       use iteration
+       use inputPhysics, only : cpModel, gammaConstant
+       use blockPointers, only : w, p
+       use flowVarRefState, only : kPresent, Pinf, RGas, TRef
        use cpCurveFits
-       use restartMod
        implicit none
 !
 !      Subroutine arguments.

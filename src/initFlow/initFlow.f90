@@ -19,13 +19,11 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use block
-       use communication
-       use inputIO
-       use inputTimeSpectral
-       use IOModule
-       use iteration
-       use restartMod
+       use constants
+       use block, only : flowDoms
+       use inputTimeSpectral, only : nTimeIntervalsSpectral
+       use iteration, only : groundLevel
+       use restartMod, only : halosRead
        use bcdata, only : setSupersonicInletFreeStream, setbcdataFineGrid, &
             setBCDataCoarseGrid, nonDimBoundData, setInletFreeStreamTurb, &
             initBCDataDomainInterfaces

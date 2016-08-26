@@ -19,8 +19,8 @@
 !      ******************************************************************
 !
        use constants
-       use communication
-       use inputPhysics
+       use communication, only : myid, sumb_comm_world
+       use inputPhysics, only : equations, turbModel
        use utils, only : terminate
        implicit none
 !

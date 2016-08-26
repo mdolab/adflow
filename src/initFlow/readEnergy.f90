@@ -21,14 +21,16 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
+       use constants
        use cgnsNames
-       use flowVarRefState
-       use IOModule
-       use restartMod
+       use blockPointers, only : w, nbklocal
+       use IOModule, only : IOVar
+       use restartMod, only : nVar, solID, varTypes, PScale, buffer, &
+            varNames
        use utils, only : setCGNSRealType, terminate
        use sorting, only : bsearchStrings
        use flowUtils, only : eTot
+       use flowVarRefState, only : kPresent
        implicit none
 !
 !      Subroutine argument.

@@ -19,14 +19,17 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
-       use cgnsNames
        use constants
-       use communication
-       use flowVarRefState
-       use inputPhysics
-       use IOModule
-       use restartMod
+       use cgnsNames
+       use communication, only : myid
+       use blockPointers, only : w, nbklocal, il, jl, kl, rlv, rev
+       use restartMod, only : nVar, solID, varTypes, buffer, &
+            varNames, muScale, rhoScale, velScale
+       use IOModule, only : IOVar
+       use utils, only : setCGNSRealType, terminate
+       use sorting, only : bsearchStrings
+       use flowVarRefState, only : muInf
+       use inputPhysics, only : turbModel
        implicit none
 !
 !      Subroutine argument.
@@ -43,11 +46,6 @@
        real(kind=realType) :: nuScale, kScale, omegaScale, val
 
        logical :: turbKPresent, omegaPresent, eddyVisPresent
-!
-!      Function definitions.
-!
-       integer               :: setCGNSRealType
-       integer(kind=intType) :: bsearchStrings
 !
 !      ******************************************************************
 !      *                                                                *

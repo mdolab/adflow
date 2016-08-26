@@ -20,12 +20,13 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
-       use flowVarRefState
-       use inputTimeSpectral
-       use IOModule
-       use section
-       use restartMod
+       use constants
+       use blockPointers, only : w, il, jl, kl, nDom, sectionID
+       use flowVarRefState, only : nw
+       use inputTimeSpectral, only : nTimeIntervalsSpectral
+       use IOModule, only : IOVar
+       use section, only: sections, nSections
+       use restartMod, only : nSolsRead
        use utils, only : setPointers, terminate, spectralInterpolCoef
        implicit none
 !

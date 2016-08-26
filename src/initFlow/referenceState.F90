@@ -38,6 +38,7 @@ subroutine referenceState
   !      ******************************************************************
   !
   use constants
+  use paramTurb
   use inputPhysics, only : equations, Mach, machCoef, &
        muSuthDim, TSuthDim, velDirFreeStream, &
        rGasDim, SSuthDim, eddyVisInfRatio, turbModel, turbIntensityInf
@@ -47,7 +48,6 @@ subroutine referenceState
        pInf, pInfCorr, rhoInf, uInf, rGas, muInf, gammaInf, wInf, &
        nw, nwf, kPresent, wInf
   use flowUtils, only : computeGamma, eTot
-  use paramTurb
 
   implicit none
  

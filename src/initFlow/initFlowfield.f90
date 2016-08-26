@@ -18,12 +18,13 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use communication
-       use inputIteration
-       use inputPhysics
-       use inputUnsteady
-       use iteration
-       use monitor
+       use constants
+       use communication, only : myID
+       use inputIteration, only : nCycles, nSGStartup
+       use inputPhysics, only : equationMode
+       use inputUnsteady, only: nTimeStepsFine
+       use iteration, only : nOldSolAvail
+       use monitor, only : nTimeStepsRestart, timeUnsteadyRestart
        implicit none
 !
 !      Local variables.
