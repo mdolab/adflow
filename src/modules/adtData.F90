@@ -21,7 +21,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      use constants
+      use constants, only : intType, realType, adtElementType
 #ifdef USE_COMPLEX
       use complexify
 #endif

@@ -28,6 +28,7 @@ subroutine slipvelocitiesfinelevel_block_d(useoldcoor, t, sps)
 !      *                                                                *
 !      ******************************************************************
 !
+  use constants
   use inputtimespectral
   use blockpointers
   use cgnsgrid
@@ -39,8 +40,8 @@ subroutine slipvelocitiesfinelevel_block_d(useoldcoor, t, sps)
   use inputtsstabderiv
   use monitor
   use communication
-  use utils_d, only : tsalpha, tsbeta, tsmach, terminate
-  use utils_d, only : rotmatrixrigidbody
+  use utils_d, only : tsalpha, tsbeta, tsmach, terminate, &
+& rotmatrixrigidbody
   use diffsizes
 !  hint: isize1ofdrfbcdata should be the size of dimension 1 of array *bcdata
   implicit none

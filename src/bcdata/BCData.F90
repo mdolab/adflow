@@ -108,9 +108,10 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
-    use couplerParam
-    use inputPhysics
+    use constants
+    use blockPointers, only : BCData
+    use inputPhysics, only : gammaConstant
+    use couplerParam, only : MachIni, Pini, rhoIni, velDirIni
     implicit none
     !
     !      Subroutine arguments.
@@ -161,8 +162,9 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
+    use constants
     use cgnsNames
+    use blockPointers, only : BCFaceID, BCData, nBKGlobal
     use utils, only : terminate, siTemperature
     implicit none
     !
@@ -229,512 +231,6 @@ contains
 
   end subroutine BCDataIsothermalWall
 
-  subroutine BCDataMassBleedInflow(boco, allTurbPresent)
-    !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * BCDataMassBleedInflow tries to extract the prescribed data for *
-    !      * the currently active boundary face, which is an inflow bleed   *
-    !      * region. The relative mass flux is already stored in the        *
-    !      * corresponding inflowBleeds array. Therefore in this routine    *
-    !      * the velocities and the turbulent quantities need to be         *
-    !      * determined.                                                    *
-    !      *                                                                *
-    !      ******************************************************************
-    !
-    use blockPointers
-    use cgnsNames
-    use flowVarRefState
-    use inputPhysics
-    use section
-    use utils, only : terminate, siVelocity
-    implicit none
-    !
-    !      Subroutine arguments.
-    !
-    integer(kind=intType), intent(in)    :: boco
-    logical,               intent(inout) :: allTurbPresent
-    !
-    !      Local variables.
-    !
-    integer :: ierr
-
-    integer(kind=intType) :: i, j, nn
-
-    real(kind=realType) :: ax, r1, r2, var, vax, vrad, vtheta
-
-    real(kind=realType), dimension(3) :: xc, vloc
-    real(kind=realType), dimension(3) :: multVel, transVel
-
-    logical :: velxPresent, velyPresent, velzPresent
-    logical :: velrPresent, veltPresent, velPresent
-    logical :: allTurbSubface
-
-    character(len=maxStringLen) :: errorMessage
-
-    ! Allocate the memory for the buffer bcVarArray, which is used
-    ! for the interpolation and set the cgns names.
-
-    nbcVar = 5
-    if(equations == RANSEquations) nbcVar = nbcVar + nwt
-
-    allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVar), stat=ierr)
-    if(ierr /= 0)                             &
-         call terminate("BCDataMassBleedInflow", &
-         "Memory allocation failure for bcVarArray")
-
-    bcVarNames(1) = cgnsVelx
-    bcVarNames(2) = cgnsVely
-    bcVarNames(3) = cgnsVelz
-    bcVarNames(4) = cgnsVelr
-    bcVarNames(5) = cgnsVeltheta
-
-    call setBcVarNamesTurb(5_intType)
-
-    ! Try to determine these variables.
-
-    call extractFromDataSet(BCFaceID(boco))
-
-    ! Store the logicals, which indicate succes or failure
-    ! a bit more readable.
-
-    velxPresent = bcVarPresent(1)
-    velyPresent = bcVarPresent(2)
-    velzPresent = bcVarPresent(3)
-    velrPresent = bcVarPresent(4)
-    veltPresent = bcVarPresent(5)
-
-    ! Check if a velocity vector is present. If not terminate.
-
-    velPresent = .false.
-    if(velxPresent .and. velrPresent) velPresent = .true.
-    if(velxPresent .and. velyPresent .and. velzPresent) &
-         velPresent = .true.
-
-    if(.not. velPresent ) then
-       write(errorMessage,100)                   &
-            trim(cgnsDoms(nbkGlobal)%zonename), &
-            trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName)
-100    format("Zone ",a,", boundary subface ",a, &
-            ": Velocity not completely specified for an inflow &
-            &bleed region.")
-
-       call terminate("BCDataMassBleedInflow", errorMessage)
-    endif
-
-    ! Check the situation we are having here for the velocity.
-
-    testRadial: if( velrPresent ) then
-
-       ! Radial velocity component prescribed. This must be converted
-       ! to cartesian components.
-
-       ! Determine the unit vectors, which define the cylindrical
-       ! coordinate system aligned with the rotation axis.
-
-       call unitVectorsCylSystem(boco)
-
-       ! Determine the conversion factor to SI-units for the three
-       ! components. Note that a test must be made whether the theta
-       ! component is present.
-
-       call siVelocity(length(1), time(1), multVel(1), transVel(1))
-       call siVelocity(length(4), time(4), multVel(2), transVel(2))
-
-       if( veltPresent ) &
-            call siVelocity(length(5), time(5), multVel(3), transVel(3))
-
-       ! Initialize vtheta to zero. This value will be used
-       ! if no theta velocity component was specified.
-
-       vtheta = zero
-
-       ! Loop over the faces of the subface.
-
-       do j=jBeg,jEnd
-          do i=iBeg,iEnd
-
-             ! Determine the coordinates of the face center relative to
-             ! the rotation point of this section. Normally this is an
-             ! average of i-1, i, j-1, j, but due to the usage of the
-             ! pointer xf and the fact that x originally starts at 0,
-             ! an offset of 1 is introduced and thus the average should
-             ! be taken of i, i+1, j and j+1.
-
-             xc(1) = fourth*(xf(i,j,  1) + xf(i+1,j,  1)  &
-                  +         xf(i,j+1,1) + xf(i+1,j+1,1)) &
-                  - sections(sectionId)%rotCenter(1)
-             xc(2) = fourth*(xf(i,j,  2) + xf(i+1,j,  2)  &
-                  +         xf(i,j+1,2) + xf(i+1,j+1,2)) &
-                  - sections(sectionId)%rotCenter(2)
-             xc(3) = fourth*(xf(i,j,  3) + xf(i+1,j,  3)  &
-                  +         xf(i,j+1,3) + xf(i+1,j+1,3)) &
-                  - sections(sectionId)%rotCenter(3)
-
-             ! Determine the coordinates in the local cartesian frame,
-             ! i.e. the frame determined by axis, radVec1 and radVec2.
-
-             ax = xc(1)*axis(1)    + xc(2)*axis(2)    + xc(3)*axis(3)
-             r1 = xc(1)*radVec1(1) + xc(2)*radVec1(2) + xc(3)*radVec1(3)
-             r2 = xc(1)*radVec2(1) + xc(2)*radVec2(2) + xc(3)*radVec2(3)
-
-             ! Determine the velocity components in the local
-             ! cylindrical system. Take the conversion to SI units
-             ! into account.
-
-             vax  = multVel(1)*bcVarArray(i,j,1) + transVel(1)
-             vrad = multVel(2)*bcVarArray(i,j,4) + transVel(2)
-             if( veltPresent ) &
-                  vtheta = multVel(3)*bcVarArray(i,j,5) + transVel(3)
-
-             ! Determine the velocities in the local cartesian
-             ! frame determined by axis, radVec1 and radVec2.
-
-             var     = one/sqrt(max(eps,(r1*r1 + r2*r2)))
-             vloc(1) = vax
-             vloc(2) = var*(vrad*r1 - vtheta*r2)
-             vloc(3) = var*(vrad*r2 + vtheta*r1)
-
-             ! Transform vloc to the global cartesian frame and
-             ! store the values.
-
-             BCData(boco)%velx(i,j) = vloc(1)*axis(1)    &
-                  + vloc(2)*radVec1(1) &
-                  + vloc(3)*radVec2(1)
-
-             BCData(boco)%vely(i,j) = vloc(1)*axis(2)    &
-                  + vloc(2)*radVec1(2) &
-                  + vloc(3)*radVec2(2)
-
-             BCData(boco)%velz(i,j) = vloc(1)*axis(3)    &
-                  + vloc(2)*radVec1(3) &
-                  + vloc(3)*radVec2(3)
-          enddo
-       enddo
-
-    else testRadial
-
-       ! Cartesian components prescribed.
-
-       ! Determine the conversion factor to SI-units for the three
-       ! components.
-
-       call siVelocity(length(1), time(1), multVel(1), transVel(1))
-       call siVelocity(length(2), time(2), multVel(2), transVel(2))
-       call siVelocity(length(3), time(3), multVel(3), transVel(3))
-
-       ! Set the velocities.
-
-       do j=jBeg,jEnd
-          do i=iBeg,iEnd
-             BCData(boco)%velx(i,j) = multVel(1)*bcVarArray(i,j,1) &
-                  + transVel(1)
-             BCData(boco)%vely(i,j) = multVel(2)*bcVarArray(i,j,2) &
-                  + transVel(2)
-             BCData(boco)%velz(i,j) = multVel(3)*bcVarArray(i,j,3) &
-                  + transVel(3)
-          enddo
-       enddo
-
-    endif testRadial
-
-    ! Check if the prescribed velocity is an inflow. No halo's
-    ! should be included here and therefore the nodal range
-    ! (with an offset) must be used.
-
-    nn = 0
-    do j=(BCData(boco)%jnbeg+1), BCData(boco)%jnend
-       do i=(BCData(boco)%inbeg+1), BCData(boco)%inend
-
-          var = BCData(boco)%velx(i,j)*BCData(boco)%norm(i,j,1) &
-               + BCData(boco)%vely(i,j)*BCData(boco)%norm(i,j,2) &
-               + BCData(boco)%velz(i,j)*BCData(boco)%norm(i,j,3)
-
-          if(var > zero) nn = nn + 1
-
-       enddo
-    enddo
-
-    if(nn > 0) then
-       write(errorMessage,200)                   &
-            trim(cgnsDoms(nbkGlobal)%zonename), &
-            trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName)
-200    format("Zone ",a,", inflow bleed region boundary subface ",a, &
-            ": Velocity points out of the domain for some faces.")
-
-       call terminate("BCDataMassBleedInflow", errorMessage)
-    endif
-
-    ! Set the turbulence variables and check if all of them are
-    ! prescribed. If not set allTurbPresent to .false.
-
-    allTurbSubface = setBcVarTurb(5_intType, boco, &
-         BCData(boco)%turbInlet)
-
-    if(.not. allTurbSubface) allTurbPresent = .false.
-
-    ! Release the memory of the bcVarArray.
-
-    deallocate(bcVarArray, stat=ierr)
-    if(ierr /= 0)                             &
-         call terminate("BCDataMassBleedInflow", &
-         "Deallocation failure for bcVarArray")
-
-  end subroutine BCDataMassBleedInflow
-
-  subroutine BCDataMassBleedOutflow(initPressure, useInternalOnly)
-    !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * BCDataMassBleedOutflow adapts the prescribed static pressure   *
-    !      * for bleed outflow boundaries, such that the mass flow leaving  *
-    !      * the domain is closer to the prescribed value. If needed, the   *
-    !      * prescribed pressure is initialized to the internal pressure.   *
-    !      *                                                                *
-    !      ******************************************************************
-    !
-    use bleedFlows
-    use blockPointers
-    use inputIteration
-    use inputTimeSpectral
-    use iteration
-    use utils, only : siDensity, siVelocity, setPointers
-    implicit none
-    !
-    !      Subroutine arguments.
-    !
-    logical, intent(in) :: initPressure, useInternalOnly
-    !
-    !      Local variables.
-    !
-    integer(kind=intType) :: level, nn, mm, sps, i, j
-    integer(kind=intType) :: nLevels, ii, if1, if2, jf1, jf2
-    integer(kind=intType) :: iiMax, jjMax
-
-    integer(kind=intType), dimension(:,:), pointer :: iFine, jFine
-
-    real(kind=realType) :: fact
-
-    real(kind=realType), dimension(:,:),  pointer :: pp2, ps, psFine
-
-    ! Return immediately if no outflow bleeds are present.
-
-    if(nOutflowBleeds == 0) return
-    !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Initialize the prescribed pressure, if desired.                *
-    !      * This must be done on the multigrid level currentLevel.         *
-    !      *                                                                *
-    !      ******************************************************************
-    !
-    if( initPressure ) then
-
-       ! Loop over the time instances and domains.
-
-       do sps=1,nTimeIntervalsSpectral
-          do nn=1,nDom
-
-             ! Set the pointers to this block on currentLevel.
-
-             call setPointers(nn,currentLevel,sps)
-
-             ! Loop over the boundary subfaces and check for outflow
-             ! mass bleeds.
-
-             do mm=1,nBocos
-                if(BCType(mm) == MassBleedOutflow) then
-
-                   ! Determine the block face on which the subface is
-                   ! located and set the pointer for pp2 accordingly.
-
-                   select case (BCFaceID(mm))
-                   case (iMin)
-                      pp2 => p(2,1:,1:)
-                   case (iMax)
-                      pp2 => p(il,1:,1:)
-                   case (jMin)
-                      pp2 => p(1:,2,1:)
-                   case (jMax)
-                      pp2 => p(1:,jl,1:)
-                   case (kMin)
-                      pp2 => p(1:,1:,2)
-                   case (kMax)
-                      pp2 => p(1:,1:,kl)
-                   end select
-
-                   ! Loop over the range of the subface and copy the data
-                   ! for the static pressure.
-
-                   ps => BCData(mm)%ps
-
-                   do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
-                      do i=BCData(mm)%icBeg, BCData(mm)%icEnd
-                         ps(i,j) = pp2(i,j)
-                      enddo
-                   enddo
-
-                endif
-             enddo
-          enddo
-       enddo
-    endif
-    !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Computation of the prescribed pressures.                       *
-    !      *                                                                *
-    !      ******************************************************************
-    !
-    ! Loop over the number of time instances.
-
-    do sps=1,nTimeIntervalsSpectral
-
-       ! Compute the global parameters for the bleeds.
-
-       call bleedFlowParameters(sps, useInternalOnly)
-
-       ! Loop over the blocks.
-
-       do nn=1,nDom
-
-          ! Set the pointers to this block for currentLevel.
-
-          call setPointers(nn,currentLevel,sps)
-
-          ! Loop over the number of boundary subfaces and check for an
-          ! outflow bleed region.
-
-          do mm=1,nBocos
-             if(BCType(mm) == MassBleedOutflow) then
-
-                ! Determine the relaxation factor for the pressure.
-
-                ii   = groupNum(mm)
-                fact = 1.0_realType                               &
-                     + relaxBleeds*(outflowBleeds(ii)%curMassFlux &
-                     -              outflowBleeds(ii)%massFlux)   &
-                     /              outflowBleeds(ii)%massFlux
-
-                ! Make sure that the factor is within reasonable limits.
-
-                fact = max(0.9_realType,min(fact,1.1_realType))
-                print 101, fact, outflowBleeds(ii)%massFlux, &
-                     outflowBleeds(ii)%curMassFlux
-101             format("# Outflowbleeds: ", f9.6,2(1x,e12.5))
-
-                ! Multiply the prescribed pressure by fact.
-
-                do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
-                   do i=BCData(mm)%icBeg, BCData(mm)%icEnd
-                      BCData(mm)%ps(i,j) = fact*BCData(mm)%ps(i,j)
-                   enddo
-                enddo
-
-             endif
-          enddo
-
-       enddo
-    enddo
-    !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Modify the prescribed pressure on the coarser grid levels.     *
-    !      *                                                                *
-    !      ******************************************************************
-    !
-    ! Determine the number of grid levels.
-
-    nLevels = ubound(flowDoms,2)
-
-    do level=(currentLevel+1),nLevels
-
-       ! Loop over the number of time instances and local blocks.
-
-       do sps=1,nTimeIntervalsSpectral
-          do nn=1,nDom
-
-             ! Set the pointers to this block.
-
-             call setPointers(nn,level,sps)
-
-             ! Loop over the number of boundary subfaces and check for
-             ! an outflow bleed region.
-
-             do mm=1,nBocos
-                if(BCType(mm) == MassBleedOutflow) then
-
-                   ! Set the pointer for the prescribed pressure for this
-                   ! level as well as for the finer grid level.
-
-                   ps => BCData(mm)%ps
-                   psFine => flowDoms(nn,level-1,sps)%BCData(mm)%ps
-
-                   ! Determine the block face on which the subface is
-                   ! located and set some multigrid variables accordingly.
-
-                   select case (BCFaceID(mm))
-
-                   case (iMin,iMax)
-                      iiMax = jl; jjMax = kl
-                      iFine => mgJFine; jFine => mgKFine
-
-                   case (jMin,jMax)
-                      iiMax = il; jjMax = kl
-                      iFine => mgIFine; jFine => mgKFine
-
-                   case (kMin,kMax)
-                      iiMax = il; jjMax = jl
-                      iFine => mgIFine; jFine => mgJFine
-
-                   end select
-
-                   ! Loop over the j-direction of this subface.
-
-                   do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
-
-                      ! Determine the two children in this direction.
-                      ! Take care of the halo's, as this info is only
-                      ! available for owned cells.
-
-                      if(j < 2) then
-                         jf1 = 1; jf2 = 1
-                      else if(j > jjMax) then
-                         jf1 = jFine(jjMax,2) +1; jf2 = jf1
-                      else
-                         jf1 = jFine(j,1); jf2 = jFine(j,2)
-                      endif
-
-                      ! Loop in the i-direction.
-
-                      do i=BCData(mm)%icBeg, BCData(mm)%icEnd
-
-                         ! Determine the two children in this direction.
-                         ! Same story as in j-direction.
-
-                         if(i < 2) then
-                            if1 = 1; if2 = 1
-                         else if(i > iiMax) then
-                            if1 = iFine(iiMax,2) +1; if2 = if1
-                         else
-                            if1 = iFine(i,1); if2 = iFine(i,2)
-                         endif
-
-                         ! Compute the pressure.
-
-                         ps(i,j) = fourth*(psFine(if1,jf1) + psFine(if2,jf1) &
-                              +         psFine(if1,jf2) + psFine(if2,jf2))
-                      enddo
-                   enddo
-
-                endif
-             enddo
-          enddo
-       enddo
-    enddo
-
-  end subroutine BCDataMassBleedOutflow
-
   subroutine BCDataSubsonicInflow(boco, allTurbPresent)
     !
     !      ******************************************************************
@@ -748,10 +244,11 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
+    use constants 
     use cgnsNames
-    use flowVarRefState
-    use inputPhysics
+    use blockPointers, only : nbkGlobal, sectionID, BCFaceID, BCData
+    use flowVarRefState, only : nwt
+    use inputPhysics, only : equations
     use utils, only : siDensity, siVelocity, siPressure, siAngle, &
          siTemperature, terminate
     implicit none
@@ -918,7 +415,8 @@ contains
       !        *                                                              *
       !        ****************************************************************
       !
-      use section
+      use inputPhysics, only : RGasDim
+      use section, only : sections
       implicit none
       !
       !        Local variables.
@@ -1249,7 +747,7 @@ contains
       !        *                                                              *
       !        ****************************************************************
       !
-      use section
+      use section, only: sections
       implicit none
       !
       !        Local variables.
@@ -1440,8 +938,9 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
+    use constants
     use cgnsNames
+    use blockPointers, only : BCData, nbkGlobal, BCFaceID
     use utils, only : terminate, siPressure
     implicit none
     !
@@ -1519,10 +1018,11 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
+    use constants
     use cgnsNames
-    use flowVarRefState
-    use inputPhysics
+    use blockPointers, only : BCData, nbkGlobal, BCFaceID, sectionID
+    use flowVarRefState, only : nwt
+    use inputPhysics, onlY : equations, flowType, velDirFreeStream
     use utils, only : siDensity, siPressure, siVelocity, siTemperature, terminate
     implicit none
     !
@@ -1710,7 +1210,7 @@ contains
       !        *                                                              *
       !        ****************************************************************
       !
-      use section
+      use section, only : sections
       implicit none
       !
       !        Local variables.
@@ -1888,10 +1388,11 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
-    use flowVarRefState
-    use inputTimeSpectral
-    use iteration
+    use constants
+    use blockPointers, only : BCData, flowDoms, nBocos, nDom, BCType
+    use flowVarRefState, only : nt1, nt2
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use iteration, only : nALESteps
     use utils, only : setPointers, terminate
     implicit none
     !
@@ -2260,8 +1761,8 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
-    use cgnsGrid
+    use constants
+    use blockPointers, only : x, il, jl, kl, nBKGlobal
     use utils, only : terminate
     implicit none
     !
@@ -2471,10 +1972,11 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use communication
     use constants
     use cpCurveFits
-    use inputPhysics
+    use communication, only : myid
+    use inputPhysics, only : cpModel, gammaConstant,rGasDim
+    use flowVarRefState, only : PinfDim
     implicit none
     !
     !      Subroutine arguments.
@@ -2619,8 +2121,9 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
+    use constants
     use cgnsNames
+    use blockPointers, onlY : nbkGlobal
     use utils, only : terminate
     implicit none
     !
@@ -3059,8 +2562,11 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
-    use inputTimeSpectral
+    use constants
+    use blockPointers, only : flowDoms, BCData, nDom, nBocos, inBeg, inEnd, &
+         jnBeg, jnEnd, knBeg, knEnd, icBeg, icEnd, jcBeg, jcBeg, jcEnd, kcBeg, &
+         kcEnd, BCFaceID
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
     use utils, only : setPointers, terminate
     implicit none
     !
@@ -3205,10 +2711,11 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use block
-    use flowVarRefState
-    use inputPhysics
-    use inputTimeSpectral
+    use constants
+    use block, only : flowDoms, BCDataType, nDom
+    use flowVarRefState, only : pRef, rhoRef, tRef, muRef, rhoRef, nt1, nt2
+    use inputPhysics, only : turbModel
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
     implicit none
     !
     !      Local variables.
@@ -3364,9 +2871,9 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
-    use cgnsGrid
-    use section
+    use constants
+    use blockPointers, only: BCData, x, il, jl, kl, nbkglobal, sectionID
+    use section, only : sections
     use utils, only : terminate
     implicit none
     !
@@ -3619,10 +3126,12 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
-    use flowVarRefState
-    use inputTimeSpectral
-    use iteration
+    use constants
+    use blockPointers, only : BCFaceID, BCData, nDom, flowDoms, il, jl, kl, &
+         mgIFine, mgJFine, mgKFine, nBocos, BCType
+    use flowVarRefState, only : nt1, nt2
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use iteration, only : groundLevel
     use utils, only : setPointers
     implicit none
     !
@@ -3927,11 +3436,11 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
-    use cgnsGrid
-    use communication
-    use inputTimeSpectral
-    use iteration
+    use constants
+    use blockPointers, only : BCData, BCType, nBKGlobal, nBocos, nDom, cgnsSubFace
+    use communication, only : sumb_comm_world, myid
+    use inputTimeSpectral, only :nTimeIntervalsSpectral
+    use iteration, only : groundLevel
     use utils, only : setPointers
     implicit none
     !
@@ -3998,31 +3507,19 @@ contains
 
              select case (BCType(j))
 
-             case (MassBleedInflow)
-                call BCDataMassBleedInflow(j, allTurbMassBleedInflow)
-
-                !=========================================================
 
              case (NSWallIsothermal)
                 call BCDataIsothermalWall(j)
-
-                !=========================================================
 
              case (SupersonicInflow)
                 call BCDataSupersonicInflow(j, allFlowSupersonicInflow, &
                      allTurbSupersonicInflow)
 
-                !=========================================================
-
              case (SubsonicInflow)
                 call BCDataSubsonicInflow(j, allTurbSubsonicInflow)
 
-                !=========================================================
-
              case (SubsonicOutflow)
                 call BCDataSubsonicOutflow(j)
-
-                !=========================================================
 
              case (DomainInterfaceAll, DomainInterfaceRhoUVW, &
                   DomainInterfaceP,   DomainInterfaceRho,    &
@@ -4186,16 +3683,6 @@ contains
 
   end subroutine setBCDataFineGrid
 
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * File:          setBCTurb.f90                                   *
-  !      * Author:        Edwin van der Weide                             *
-  !      * Starting date: 09-24-2004                                      *
-  !      * Last modified: 06-12-2005                                      *
-  !      *                                                                *
-  !      ******************************************************************
-  !
   subroutine setBCVarNamesTurb(offset)
     !
     !      ******************************************************************
@@ -4207,20 +3694,15 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
+    use constants
     use cgnsNames
-    use inputPhysics
+    use inputPhysics, only : equations, turbModel
     implicit none
     !
     !      Subroutine arguments.
     !
     integer(kind=intType), intent(in) :: offset
-    !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Begin execution                                                *
-    !      *                                                                *
-    !      ******************************************************************
-    !
+
     ! Return immediately if not the RANS equations are solved.
 
     if(equations /= RANSEquations) return
@@ -4262,8 +3744,9 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use flowVarRefState
-    use inputPhysics
+    use constants
+    use flowVarRefState, only : nt1, nt2
+    use inputPhysics, only : equations
     use utils, only : terminate, siTurb
 
     implicit none
@@ -4350,7 +3833,7 @@ contains
       !        *                                                              *
       !        ****************************************************************
       !
-      use blockPointers
+      use blockPointers, only: nbkLocal, spectralSol
       implicit none
       !
       !        Local variables.
@@ -4449,9 +3932,10 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use block
-    use flowVarRefState
-    use iteration
+    use constants
+    use block, only : BCDataType, flowDoms
+    use flowVarRefState, only : nt1, nt2, wInf
+    use iteration, only : groundLevel
     use utils, only : terminate
     implicit none
     !
@@ -4520,6 +4004,7 @@ contains
          &turbFreestreamSubfaces")
 
   end subroutine setInletFreestreamTurb
+
   subroutine setSupersonicInletFreeStream
     !
     !      ******************************************************************
@@ -4531,9 +4016,10 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use block
-    use flowVarRefState
-    use iteration
+    use constants
+    use block, only : BCDataType, flowDoms
+    use flowVarRefState, only : nt1, nt2, wInf, pInfCorr
+    use iteration, only :  groundLevel
     use utils, only : terminate
     implicit none
     !
@@ -4617,7 +4103,8 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
+    use constants
+    use blockPointers, only : nbkLocal, spectralSol
     use utils, only : terminate
     implicit none
     !
@@ -4718,8 +4205,10 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
-    use section
+    use constants
+    use blockPointers, only : BCFaceID, BCData, x, si, sj, sk, il, jl, kl, &
+         sectionID
+    use section, only : sections
     implicit none
     !
     !      Subroutine arguments.
@@ -4847,11 +4336,12 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
-    use flowVarRefState
-    use inputIteration
-    use inputTimeSpectral
-    use BCPointers
+    use constants
+    use blockPointers, only : BCData, nBocos, BCType, nDom
+    use flowVarRefState, only : nt1, nt2
+    use inputIteration, only : mgStartLevel
+    use inputTimeSpectral, only :nTimeIntervalsSpectral
+    use BCPointers, only : ww2, pp2
     use utils, only : setPointers, setBCPointers
     use flowUtils, only : computePtot, computeTtot
     implicit none

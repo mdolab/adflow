@@ -10,6 +10,7 @@ subroutine readPeriodicSubface(cgnsInd, cgnsBase, zone, conn,  &
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use cgnsGrid
   use communication
   use su_cgns

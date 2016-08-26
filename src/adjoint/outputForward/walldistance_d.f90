@@ -2,7 +2,7 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 module walldistance_d
-  use constants
+  use constants, only : inttype, realtype
   use walldistancedata
   implicit none
 ! ----------------------------------------------------------------------
@@ -20,7 +20,9 @@ contains
 ! reverse mode ad routines, but not the forward mode. since it is
 ! done on a per-block basis, it is assumed that the required block
 ! pointers are already set. 
-    use blockpointers
+    use constants
+    use blockpointers, only : nx, ny, nz, il, jl, kl, x, flowdoms, &
+&   d2wall
     implicit none
 ! subroutine arguments
     integer(kind=inttype) :: nn, level, sps

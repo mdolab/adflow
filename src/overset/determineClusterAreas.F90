@@ -9,10 +9,11 @@
 
 subroutine determineClusterAreas
 
-  use blockPointers
-  use communication
-  use overset
-  use surfaceFamilies
+  use constants
+  use blockPointers, only : nDom, BCData, nBocos, BCType
+  use communication, only : sumb_comm_world, myid
+  use overset, onlY : clusterAreas, nClusters, clusters, cumDomProc
+  use surfaceFamilies, onlY : totalWallFamilies, wallFamilies
   use utils, only : setPointers, EChk
   implicit none
 

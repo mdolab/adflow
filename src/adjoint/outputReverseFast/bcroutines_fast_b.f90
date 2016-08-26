@@ -17,8 +17,7 @@ contains
 &   vol, il, jl, kl, sectionid, wold, volold, bcdata, si, sj, sk, sfacei&
 &   , sfacej, sfacek, rlv, gamma, p, rev, bmtj1, bmtj2, scratch, bmtk2, &
 &   bmtk1, fw, aa, d2wall, bmti1, bmti2, s
-    use utils_fast_b, only : setbcpointers, resetbcpointers, terminate, &
-&   getcorrectfork
+    use utils_fast_b, only : setbcpointers, resetbcpointers, getcorrectfork
     use bcpointers_fast_b
     implicit none
 ! subroutine arguments.

@@ -24,8 +24,6 @@ subroutine convergenceHeader
   use monitor
   use iteration
   use inputIteration
-  use BleedFlows
-  use bleedFlows ! eran-massf 
   use couplerParam     ! eran_idendifyname 
   implicit none
   !

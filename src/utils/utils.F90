@@ -81,7 +81,7 @@ contains
     !      ******************************************************************
     !
     use constants
-    use inputPhysics
+    use inputPhysics, only : equationMode
     implicit none
     !
     !      Function type
@@ -147,7 +147,7 @@ contains
     !      ******************************************************************
     !
     use constants
-    use inputPhysics
+    use inputPhysics, only : equationMode
     implicit none
     !
     !      Function type
@@ -214,7 +214,7 @@ contains
     !      ******************************************************************
     !
     use constants
-    use inputPhysics
+    use inputPhysics, only : equationMode
     implicit none
     !
     !      Function type
@@ -346,7 +346,7 @@ contains
     !      ******************************************************************
     !
     use constants
-    use inputPhysics
+    use inputPhysics, only : equationMode
     implicit none
     !
     !      Function type
@@ -417,8 +417,9 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use flowVarRefState
-    use inputPhysics
+    use constants
+    use inputPhysics, only : equationMode
+    use flowVarRefState, only : timeRef
     implicit none
     !
     !      Function type
@@ -473,7 +474,7 @@ contains
 
   function myDim (x,y)
 
-    use precision
+    use constants
 
     real(kind=realType) x,y
     real(kind=realType) :: myDim
@@ -487,9 +488,9 @@ contains
 
   function getCorrectForK()
 
-    use flowVarRefState
-    use inputPhysics
-    use iteration
+    use constants
+    use flowVarRefState, only : kPresent
+    use iteration, only : currentLevel, groundLevel
     implicit none
 
     logical :: getCorrectForK
@@ -509,12 +510,8 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use precision
-    use communication
     use constants
-#ifndef USE_TAPENADE
-    use killSignals
-#endif
+    use communication, only : sumb_comm_world, myid
     implicit none
     !
     !      Subroutine arguments
@@ -630,9 +627,9 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use flowVarRefState
+    use constants
     use inputMotion
-    use monitor
+    use flowVarRefState, only : Lref
     implicit none
     !
     !      Subroutine arguments.
@@ -777,8 +774,9 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use flowVarRefState
-    use inputPhysics
+    use constants
+    use flowVarRefState, only : timeRef
+    use inputPhysics, only : equationMode
     implicit none
     !
     !      Function type
@@ -844,7 +842,7 @@ contains
     !      ******************************************************************
     !
     use constants
-    use inputPhysics
+    use inputPhysics, only : equationMode
     implicit none
     !
     !      Function type
@@ -909,10 +907,15 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
-    use flowVarRefState
-    use inputPhysics
-    use BCPointers
+    use constants 
+    use blockPointers, only : w, p, rlv, rev, gamma, x, d2wall, &
+         si, sj, sk, s,  globalCell, BCData, nx, il, ie, ib, &
+         ny, jl, je, jb, nz, kl, ke, kb, BCFaceID
+    use BCPointers, only : ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, &
+         rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3, &
+         gamma0, gamma1, gamma2, gamma3, gcp, xx, ss, ssi, ssj, ssk, dd2wall, &
+         iStart, iEnd, jStart, jEnd, iSize, jSize
+    use inputPhysics, only: cpModel, equations
     implicit none
 
     ! Subroutine arguments.
@@ -1398,9 +1401,15 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
-    use flowVarRefState
-    use BCPointers
+    use constants 
+    use blockPointers, only : w, p, rlv, rev, gamma, x, d2wall, &
+         si, sj, sk, s,  globalCell, BCData, nx, il, ie, ib, &
+         ny, jl, je, jb, nz, kl, ke, kb, BCFaceID
+    use BCPointers, only : ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, &
+         rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3, &
+         gamma0, gamma1, gamma2, gamma3, gcp, xx, ss, ssi, ssj, ssk, dd2wall, &
+         iStart, iEnd, jStart, jEnd, iSize, jSize
+    use inputPhysics, only: cpModel, equations
     implicit none
 
     ! Subroutine arguments.
@@ -1631,7 +1640,7 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use precision
+    use constants
     implicit none
     !
     !      Function type.
@@ -1660,7 +1669,7 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use precision
+    use constants
     implicit none
     !
     !      Function arguments.
@@ -1689,7 +1698,8 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use cgnsGrid
+    use constants
+    use cgnsGrid, only : cgnsDoms
     implicit none
     !
     !      Subroutine arguments.
@@ -1712,7 +1722,8 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use block
+    use constants
+    use block, only : flowDoms
     implicit none
     !
     !      Subroutine arguments.
@@ -1918,7 +1929,7 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use precision
+    use constants
     implicit none
     !
     !      Subroutine arguments.
@@ -1954,7 +1965,7 @@ contains
 
        allocate(intArray(ll:newSize+ll-1), stat=ierr)
        if(ierr /= 0)                         &
-            call returnFail("reallocateInteger", &
+            call terminate("reallocateInteger", &
             "Memory allocation failure for intArray")
        do i=ll,ll+nn-1
           intArray(i) = tmp(i)
@@ -1967,7 +1978,7 @@ contains
     if(oldSize > 0 .or. alwaysFreeMem) then
        deallocate(tmp, stat=ierr)
        if(ierr /= 0)                         &
-            call returnFail("reallocateInteger", &
+            call terminate("reallocateInteger", &
             "Deallocation error for tmp")
     endif
 
@@ -1987,7 +1998,7 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use precision
+    use constants
     implicit none
     !
     !      Subroutine arguments.
@@ -2023,7 +2034,7 @@ contains
 
        allocate(intArray(ll:newSize+ll-1), stat=ierr)
        if(ierr /= 0)                                      &
-            call returnFail("reallocateMpiOffsetKindInteger", &
+            call terminate("reallocateMpiOffsetKindInteger", &
             "Memory allocation failure for intArray")
        do i=ll,ll+nn-1
           intArray(i) = tmp(i)
@@ -2036,7 +2047,7 @@ contains
     if(oldSize > 0 .or. alwaysFreeMem) then
        deallocate(tmp, stat=ierr)
        if(ierr /= 0)                                      &
-            call returnFail("reallocateMpiOffsetKindInteger", &
+            call terminate("reallocateMpiOffsetKindInteger", &
             "Deallocation error for tmp")
     endif
 
@@ -2057,7 +2068,7 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use precision
+    use constants
     implicit none
     !
     !      Subroutine arguments.
@@ -2103,7 +2114,7 @@ contains
     if(newSize > 0 .or. alwaysFreeMem) then
        allocate(intArray(newSize1,newSize2), stat=ierr)
        if(ierr /= 0)                          &
-            call returnFail("reallocateInteger2", &
+            call terminate("reallocateInteger2", &
             "Memory allocation failure for intArray")
        do j=1,nn2
           do i=1,nn1
@@ -2118,7 +2129,7 @@ contains
     if(oldSize > 0 .or. alwaysFreeMem) then
        deallocate(tmp, stat=ierr)
        if(ierr /= 0)                          &
-            call returnFail("reallocateInteger2", &
+            call terminate("reallocateInteger2", &
             "Deallocation error for tmp")
     endif
 
@@ -2135,7 +2146,7 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use precision
+    use constants
     implicit none
     !
     !      Subroutine arguments.
@@ -2167,7 +2178,7 @@ contains
     if(newSize > 0 .or. alwaysFreeMem) then
        allocate(realArray(newSize), stat=ierr)
        if(ierr /= 0)                       &
-            call returnFail("reallocateReal", &
+            call terminate("reallocateReal", &
             "Memory allocation failure for realArray")
        do i=1,nn
           realArray(i) = tmp(i)
@@ -2180,7 +2191,7 @@ contains
     if(oldSize > 0 .or. alwaysFreeMem) then
        deallocate(tmp, stat=ierr)
        if(ierr /= 0)                       &
-            call returnFail("reallocateReal", &
+            call terminate("reallocateReal", &
             "Deallocation error for tmp")
     endif
 
@@ -2201,7 +2212,7 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use precision
+    use constants
     implicit none
     !
     !      Subroutine arguments.
@@ -2247,7 +2258,7 @@ contains
     if(newSize > 0 .or. alwaysFreeMem) then
        allocate(realArray(newSize1,newSize2), stat=ierr)
        if(ierr /= 0)                           &
-            call returnFail("reallocateReal2", &
+            call terminate("reallocateReal2", &
             "Memory allocation failure for realArray")
        do j=1,nn2
           do i=1,nn1
@@ -2262,7 +2273,7 @@ contains
     if(oldSize > 0 .or. alwaysFreeMem) then
        deallocate(tmp, stat=ierr)
        if(ierr /= 0)                           &
-            call returnFail("reallocateReal2", &
+            call terminate("reallocateReal2", &
             "Deallocation error for tmp")
     endif
 
@@ -2291,12 +2302,16 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use commMixing
-    use commSliding
-    use communication
-    use flowVarRefState
-    use inputPhysics
-    use interfaceGroups
+    use constants
+    use commMixing, only : commPatternMixing
+    use commSliding, only : commSlidingCell_2nd, sendBufferSizeSlide, recvBufferSizeSlide
+    use communication, only : commPatternNode_1st, commPatternCell_2nd, &
+         commPatternOverset,  recvBufferSize, recvBufferSize_1to1, &
+         recvBufferSizeOver, recvBufferSizeOver, sendBufferSize, recvBufferSize, &
+         sendBufferSizeOver, sendBufferSize_1to1
+    use flowVarRefState, only : nw, eddyModel, viscous
+    use inputPhysics, only : cpModel
+    use interfaceGroups, only : nInterfaceGroups
     implicit none
     !
     !      Subroutine arguments.
@@ -2452,6 +2467,9 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
+    ! Make an exception to use..only. We literally need everything
+    ! from blockPointers so use a bare use. 
+    use constants
     use blockPointers
     implicit none
     !
@@ -2759,7 +2777,7 @@ contains
   subroutine siAngle(angle, mult, trans)
 
     use constants
-    use su_cgns
+    use su_cgns, only : Radian, Degree
     implicit none
     !
     !      Subroutine arguments.
@@ -2785,7 +2803,7 @@ contains
 
     else
 
-       call returnFail("siAngle", &
+       call terminate("siAngle", &
             "No idea how to convert this to SI units")
 
     endif
@@ -2806,7 +2824,7 @@ contains
     !      ******************************************************************
     !
     use constants
-    use su_cgns
+    use su_cgns, only : Kilogram, meter
     implicit none
     !
     !      Subroutine arguments.
@@ -2825,7 +2843,7 @@ contains
 
     else
 
-       call returnFail("siDensity", &
+       call terminate("siDensity", &
             "No idea how to convert this to SI units")
 
     endif
@@ -2844,7 +2862,7 @@ contains
     !      ******************************************************************
     !
     use constants
-    use su_cgns
+    use su_cgns, only: Meter, Centimeter, millimeter, Foot, Inch
     implicit none
     !
     !      Subroutine arguments.
@@ -2872,7 +2890,7 @@ contains
        mult = 0.0254_realType; trans = zero
 
     case default
-       call returnFail("siLen", &
+       call terminate("siLen", &
             "No idea how to convert this to SI units")
 
     end select
@@ -2892,7 +2910,7 @@ contains
     !      ******************************************************************
     !
     use constants
-    use su_cgns
+    use su_cgns, only : Kilogram, Meter, Second
     implicit none
     !
     !      Subroutine arguments.
@@ -2911,7 +2929,7 @@ contains
 
     else
 
-       call returnFail("siPressure", &
+       call terminate("siPressure", &
             "No idea how to convert this to SI units")
 
     endif
@@ -2931,7 +2949,7 @@ contains
     !      ******************************************************************
     !
     use constants
-    use su_cgns
+    use su_cgns, only : Kelvin, Celsius, Rankine, Fahrenheit
     implicit none
     !
     !      Subroutine arguments.
@@ -2977,7 +2995,7 @@ contains
 
        ! Unknown temperature unit.
 
-       call returnFail("siTemperature", &
+       call terminate("siTemperature", &
             "No idea how to convert this to SI units")
 
     end select
@@ -3006,7 +3024,7 @@ contains
     !      ******************************************************************
     !
     use constants
-    use su_cgns
+    use su_cgns, only : Kilogram, Meter, Second, Kelvin
     implicit none
     !
     !      Subroutine arguments.
@@ -3027,7 +3045,7 @@ contains
 
     else
 
-       call returnFail("siTurb", &
+       call terminate("siTurb", &
             "No idea how to convert this to SI units")
 
     endif
@@ -3047,7 +3065,7 @@ contains
     !      ******************************************************************
     !
     use constants
-    use su_cgns
+    use su_cgns, only : Meter, CentiMeter, Millimeter, Foot, Inch, Second
     implicit none
     !
     !      Subroutine arguments.
@@ -3076,7 +3094,7 @@ contains
        mult = 0.0254_realType; trans = zero
 
     case default
-       call returnFail("siVelocity", &
+       call terminate("siVelocity", &
             "No idea how to convert this length to &
             &SI units")
 
@@ -3090,7 +3108,7 @@ contains
        mult = mult
 
     case default
-       call returnFail("siVelocity", &
+       call terminate("siVelocity", &
             "No idea how to convert this time to &
             &SI units")
 
@@ -3112,8 +3130,8 @@ contains
     !      ******************************************************************
     !
     use constants
-    use inputTimeSpectral
-    use section
+    use inputTimeSpectral, only : nTimeIntervalsSpectral, rotMatrixSpectral
+    use section, only : nSections, sections
     implicit none
     !
     !      Subroutine arguments.
@@ -3287,10 +3305,11 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use block
-    use communication
-    use inputIteration
-    use inputTimeSpectral
+    use constants
+    use block, only : flowDoms, nDom
+    use communication, only : sendBuffer, recvBuffer
+    use inputIteration, only : smoother
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
     implicit none
     !
     !      Subroutine arguments.
@@ -3307,7 +3326,7 @@ contains
 
     deallocate(sendBuffer, recvBuffer, stat=ierr)
     if(ierr /= 0)                              &
-         call returnFail("deallocateTempMemory", &
+         call terminate("deallocateTempMemory", &
          "Deallocation error for communication buffers")
 
     ! Loop over the spectral modes and domains. Note that only memory
@@ -3331,7 +3350,7 @@ contains
                   flowDoms(nn,1,mm)%radJ, flowDoms(nn,1,mm)%radK, &
                   stat=ierr)
              if(ierr /= 0)                            &
-                  call returnFail("deallocateTempMemory", &
+                  call terminate("deallocateTempMemory", &
                   "Deallocation error for dw, fw, dtl and &
                   &spectral radii.")
           endif
@@ -3344,7 +3363,7 @@ contains
              deallocate(flowDoms(nn,1,mm)%wn, flowDoms(nn,1,mm)%pn, &
                   stat=ierr)
              if(ierr /= 0)                            &
-                  call returnFail("deallocateTempMemory", &
+                  call terminate("deallocateTempMemory", &
                   "Deallocation error for wn and pn")
           endif
 
@@ -3362,13 +3381,13 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use block
-    use communication
     use constants
-    use flowVarRefState
-    use inputIteration
-    use inputTimeSpectral
-    use iteration
+    use block, only : flowDoms, nDom
+    use communication, only : sendBuffer, recvBuffer, sendBufferSize, recvBufferSize
+    use inputIteration, only : smoother
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use flowVarRefState, only : nw, nwf
+
     implicit none
     !
     !      Subroutine arguments.
@@ -3387,7 +3406,7 @@ contains
     allocate(sendBuffer(sendBufferSize), &
          recvBuffer(recvBufferSize), stat=ierr)
     if(ierr /= 0)                          &
-         call returnFail("allocateTempMemory", &
+         call terminate("allocateTempMemory", &
          "Memory allocation failure for comm buffers")
 
     ! Loop over the spectral modes and domains. Note that only memory
@@ -3426,7 +3445,7 @@ contains
                   flowDoms(nn,1,mm)%radJ(1:ie,1:je,1:ke),     &
                   flowDoms(nn,1,mm)%radK(1:ie,1:je,1:ke), stat=ierr)
              if(ierr /= 0)                            &
-                  call returnFail("allocateTempMemory", &
+                  call terminate("allocateTempMemory", &
                   "Memory allocation failure for dw, fw, &
                   &dtl and the spectral radii.")
 
@@ -3446,7 +3465,7 @@ contains
              allocate(flowDoms(nn,1,mm)%wn(2:il,2:jl,2:kl,1:nwf), &
                   flowDoms(nn,1,mm)%pn(2:il,2:jl,2:kl), stat=ierr)
              if(ierr /= 0)                            &
-                  call returnFail("allocateTempMemory", &
+                  call terminate("allocateTempMemory", &
                   "Memory allocation failure for wn and pn")
           endif
 
@@ -3462,8 +3481,8 @@ contains
     ! planes. It is used just to determine what the lift direction is. 
 
     use constants
-    use blockPointers
-    use communication
+    use blockPointers, only : x, il, jl, kl, BCType, nDom, BCData, BCFaceID, nBocos
+    use communication, only : sumb_comm_world
     implicit none
 
     ! Output
@@ -3556,8 +3575,8 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use communication
     use constants
+    use communication, only : myid, nProc
     implicit none
     !
     !      Local variables
@@ -3631,7 +3650,8 @@ contains
     ! duplicates, (to within tol) return a list of the nUnique
     ! uniquePoints of points and a link array of length N, that points
     ! into the unique list
-    use precision
+
+    use constants
     use kdtree2_module
     implicit none
 
@@ -3728,6 +3748,8 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
+
+    ! This is a free-for-all on the imports. Oh well.
     use block
     use inputIteration
     use inputTimeSpectral
@@ -3738,7 +3760,6 @@ contains
     use communication
     use iteration
     use cgnsGrid
-    use bleedFlows
     use section
     use interfaceGroups
     use commSliding
@@ -3787,7 +3808,7 @@ contains
                flowDoms(nn,1,sps)%radJ,  flowDoms(nn,1,sps)%radK,  &
                stat=ierr)
           if(ierr /= 0)                          &
-               call returnFail("releaseMemoryPart1", &
+               call terminate("releaseMemoryPart1", &
                "Deallocation error for dw, fw, dwALE, fwALE, dtl and &
                &spectral radii.")
 
@@ -3812,7 +3833,7 @@ contains
              deallocate(flowDoms(nn,1,sps)%wn, flowDoms(nn,1,sps)%pn, &
                   stat=ierr)
              if(ierr /= 0)                          &
-                  call returnFail("releaseMemoryPart1", &
+                  call terminate("releaseMemoryPart1", &
                   "Deallocation error for wn and pn")
 
              nullify(flowDoms(nn,1,sps)%wn)
@@ -3828,7 +3849,7 @@ contains
 
              deallocate(flowDoms(nn,1,sps)%dwOldRK, stat=ierr)
              if(ierr /= 0)                          &
-                  call returnFail("releaseMemoryPart1", &
+                  call terminate("releaseMemoryPart1", &
                   "Deallocation error for dwOldRK,")
 
              nullify(flowDoms(nn,1,sps)%dwOldRK)
@@ -3872,7 +3893,6 @@ contains
     deallocate(famIDsDomainInterfaces, &
          bcIDsDomainInterfaces,  &
          famIDsSliding)
-    deallocate(inflowBleeds, outflowBleeds)
     deallocate(sections)
     deallocate(myinterfaces)
 
@@ -4090,7 +4110,7 @@ contains
     enddo
     deallocate(flowDoms, stat=ierr)
     if(ierr /= 0)                          &
-         call returnFail("releaseMemoryPart2", &
+         call terminate("releaseMemoryPart2", &
          "Deallocation failure for flowDoms")
 
     ! Some more memory should be deallocated if this code is to
@@ -4149,7 +4169,8 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use block
+    use constants
+    use block, only : viscSubfaceType, BCDataType, flowDoms
     implicit none
     !
     !      Subroutine arguments.
@@ -4172,7 +4193,7 @@ contains
     deallocationFailure = .false.
 
     ! Set the pointer for viscSubface and deallocate the memory
-    ! stored in there. Initialize ierr to 0, such that the returnFail
+    ! stored in there. Initialize ierr to 0, such that the terminate
     ! routine is only called at the end if a memory deallocation
     ! failure occurs.
     ierr = 0
@@ -4868,13 +4889,10 @@ contains
          deallocate(flowDoms(nn,level,sps)%fwALE, stat=ierr)
     if(ierr /= 0) deallocationFailure = .true.
 
-
-
-
     ! Check for errors in the deallocation.
 
     if( deallocationFailure ) &
-         call returnFail("deallocateBlock", &
+         call terminate("deallocateBlock", &
          "Something went wrong when deallocating memory")
 
     ! Nullify the pointers of this block.
@@ -4893,12 +4911,12 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use su_cgns
+    use su_cgns, only : RealSingle, RealDouble
     implicit none
 
 #ifdef USE_NO_CGNS
 
-    call returnFail("setCGNSRealType", &
+    call terminate("setCGNSRealType", &
          "Function should not be called if no cgns support &
          &is selected.")
 
@@ -4923,11 +4941,10 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use precision
-    use communication
     use constants
+    use communication, only : sumb_comm_world, myid
 #ifndef USE_TAPENADE
-    use killSignals
+    use killSignals, only : fatalFail, fromPython, routinefailed
 #endif
     implicit none
     !
@@ -5040,8 +5057,8 @@ contains
 
     ! Check if ierr that resulted from a petsc or MPI call is in fact an
     ! error. 
-    use precision
-    use communication
+    use constants
+    use communication, only : sumb_comm_world, myid
     implicit none
 
     integer(kind=intType),intent(in) :: ierr
@@ -5082,6 +5099,7 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
+    use constants
     implicit none
     !
     !      Subroutine arguments
@@ -5090,9 +5108,9 @@ contains
     !
     !      Local variables
     !
-    integer, parameter :: upperToLower = iachar("a") - iachar("A")
+    integer(kind=intType), parameter :: upperToLower = iachar("a") - iachar("A")
 
-    integer :: i, lenString
+    integer(kind=intType) :: i, lenString
 
     ! Determine the length of the given string and convert the upper
     ! case characters to lower case.
@@ -5104,6 +5122,7 @@ contains
     enddo
 
   end subroutine convertToLowerCase
+
   logical function EulerWallsPresent()
 
     ! eulerWallsPresent determines whether or not inviscid walls are
@@ -5150,7 +5169,5 @@ contains
     endif
 
   end function EulerWallsPresent
-
-
 #endif
 end module utils

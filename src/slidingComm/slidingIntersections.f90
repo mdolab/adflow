@@ -49,6 +49,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use cgnsGrid
        use intersect
        use tmpSliding

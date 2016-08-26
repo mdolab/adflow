@@ -242,7 +242,7 @@
        use iteration
        use monitor
        use bcdata, only : setbcdataFineGrid, setBCDataCoarseGrid, &
-            nonDimBoundData, setInletFreeStreamTurb, bcDataMassBleedOutflow
+            nonDimBoundData, setInletFreeStreamTurb
 
        implicit none
 !
@@ -296,10 +296,6 @@
        ! Set the coefficients for the time integrator.
 
        call setCoefTimeIntegrator
-
-       ! Determine the data for the outflow bleeds.
-
-       call BCDataMassBleedOutflow(.false., .false.)
 
        end subroutine initTimeStepPart2
 

@@ -34,7 +34,7 @@ contains
 &   rlvd, gamma, p, pd, rev, revd, bmtj1, bmtj2, scratch, scratchd, &
 &   bmtk2, bmtk1, fw, fwd, aa, aad, d2wall, d2walld, bmti1, bmti2, s
     use utils_b, only : setbcpointers, setbcpointers_b, resetbcpointers,&
-&   resetbcpointers_b, terminate, getcorrectfork
+&   resetbcpointers_b, getcorrectfork
     use bcpointers_b
     implicit none
 ! subroutine arguments.
@@ -889,8 +889,7 @@ contains
 &   vol, il, jl, kl, sectionid, wold, volold, bcdata, si, sj, sk, sfacei&
 &   , sfacej, sfacek, rlv, gamma, p, rev, bmtj1, bmtj2, scratch, bmtk2, &
 &   bmtk1, fw, aa, d2wall, bmti1, bmti2, s
-    use utils_b, only : setbcpointers, resetbcpointers, terminate, &
-&   getcorrectfork
+    use utils_b, only : setbcpointers, resetbcpointers, getcorrectfork
     use bcpointers_b
     implicit none
 ! subroutine arguments.

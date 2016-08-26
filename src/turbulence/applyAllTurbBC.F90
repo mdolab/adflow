@@ -9,6 +9,7 @@ subroutine applyAllTurbBC(secondHalo)
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use blockPointers
   use inputTimeSpectral
   use iteration
@@ -56,6 +57,7 @@ subroutine applyAllTurbBCThisBlock(secondHalo)
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use blockPointers
   use flowVarRefState
   use inputPhysics

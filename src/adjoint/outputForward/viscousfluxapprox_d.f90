@@ -8,6 +8,7 @@
 !   plus diff mem management of: rev:in aa:in w:in rlv:in x:in
 !                si:in sj:in sk:in fw:in
 subroutine viscousfluxapprox_d()
+  use constants
   use blockpointers
   use flowvarrefstate
   use inputphysics

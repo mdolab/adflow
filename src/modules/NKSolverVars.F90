@@ -1,18 +1,9 @@
 module NKsolverVars
  
-  use constants
+  use constants, only : intType, realType
   implicit none
 
-#ifndef USE_NO_PETSC
-
-#define PETSC_AVOID_MPIF_H
-#include "include/petscversion.h"
-
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
-#else
-#include "include/finclude/petsc.h"
-#endif
   ! PETSc Variables
 
   ! PETSc Matrices:
@@ -35,7 +26,6 @@ module NKsolverVars
   KSP  NK_KSP
 
   PetscFortranAddr   ctx(1)
-#endif
 
   ! Options for NK Slver
   logical :: useNKSolver

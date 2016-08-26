@@ -3,8 +3,7 @@ subroutine NKStep(firstCall)
   use constants
   use NKSolverVars, only: dRdw, dRdwPre, NK_jacobianLag, totalR0, wVec, rVec, &
        deltaW, NK_KSP, NK_subspace, NK_divTol, NK_LS, NK_useEw, NK_iter, &
-       nolinesearch, cubiclinesearch, nonmonotonelinesearch, mMax, &
-       work, g, NK_rtolInit, NK_CFL, NK_CFL0, oldNorm, rtolLast, iter_k, iter_m
+        mMax, work, g, NK_rtolInit, NK_CFL, NK_CFL0, oldNorm, rtolLast, iter_k, iter_m
   use inputIteration, only : L2Conv
   use killSignals, only : routineFailed
   use iteration, only : approxTotalIts

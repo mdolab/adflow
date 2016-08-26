@@ -77,7 +77,7 @@ contains
 !      ******************************************************************
 !
     use constants
-    use inputphysics
+    use inputphysics, only : equationmode
     implicit none
 !
 !      function type
@@ -132,7 +132,7 @@ contains
 !      ******************************************************************
 !
     use constants
-    use inputphysics
+    use inputphysics, only : equationmode
     implicit none
 !
 !      function type
@@ -189,7 +189,7 @@ contains
 !      ******************************************************************
 !
     use constants
-    use inputphysics
+    use inputphysics, only : equationmode
     implicit none
 !
 !      function type
@@ -301,7 +301,7 @@ contains
 !      ******************************************************************
 !
     use constants
-    use inputphysics
+    use inputphysics, only : equationmode
     implicit none
 !
 !      function type
@@ -357,8 +357,9 @@ contains
 !      *                                                                *
 !      ******************************************************************
 !
-    use flowvarrefstate
-    use inputphysics
+    use constants
+    use inputphysics, only : equationmode
+    use flowvarrefstate, only : timeref
     implicit none
 !
 !      function type
@@ -405,7 +406,7 @@ contains
 !   gradient     of useful results: x y mydim
 !   with respect to varying inputs: x y
   subroutine mydim_fast_b(x, xd, y, yd, mydimd)
-    use precision
+    use constants
     implicit none
     real(kind=realtype) :: x, y
     real(kind=realtype) :: xd, yd
@@ -417,7 +418,7 @@ contains
     yd = yd - mydimd
   end subroutine mydim_fast_b
   function mydim(x, y)
-    use precision
+    use constants
     implicit none
     real(kind=realtype) :: x, y
     real(kind=realtype) :: mydim
@@ -425,9 +426,9 @@ contains
     if (mydim .lt. 0.0) mydim = 0.0
   end function mydim
   function getcorrectfork()
-    use flowvarrefstate
-    use inputphysics
-    use iteration
+    use constants
+    use flowvarrefstate, only : kpresent
+    use iteration, only : currentlevel, groundlevel
     implicit none
     logical :: getcorrectfork
     if (kpresent .and. currentlevel .le. groundlevel) then
@@ -445,9 +446,8 @@ contains
 !      *                                                                *
 !      ******************************************************************
 !
-    use precision
-    use communication
     use constants
+    use communication, only : sumb_comm_world, myid
     implicit none
 !
 !      subroutine arguments
@@ -466,9 +466,9 @@ contains
 !      *                                                                *
 !      ******************************************************************
 !
-    use flowvarrefstate
+    use constants
     use inputmotion
-    use monitor
+    use flowvarrefstate, only : lref
     implicit none
 !
 !      subroutine arguments.
@@ -573,8 +573,9 @@ contains
 !      *                                                                *
 !      ******************************************************************
 !
-    use flowvarrefstate
-    use inputphysics
+    use constants
+    use flowvarrefstate, only : timeref
+    use inputphysics, only : equationmode
     implicit none
 !
 !      function type
@@ -629,7 +630,7 @@ contains
 !      ******************************************************************
 !
     use constants
-    use inputphysics
+    use inputphysics, only : equationmode
     implicit none
 !
 !      function type
@@ -684,10 +685,15 @@ contains
 !      *                                                                *
 !      ******************************************************************
 !
-    use blockpointers
-    use flowvarrefstate
-    use inputphysics
-    use bcpointers_fast_b
+    use constants
+    use blockpointers, only : w, p, rlv, rev, gamma, x, d2wall, si, sj&
+&   , sk, s, globalcell, bcdata, nx, il, ie, ib, ny, jl, je, jb, nz, kl,&
+&   ke, kb, bcfaceid
+    use bcpointers_fast_b, only : ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, &
+&   rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3, gamma0, gamma1, &
+&   gamma2, gamma3, gcp, xx, ss, ssi, ssj, ssk, dd2wall, istart, iend, &
+&   jstart, jend, isize, jsize
+    use inputphysics, only : cpmodel, equations
     implicit none
 ! subroutine arguments.
     integer(kind=inttype), intent(in) :: nn
@@ -909,9 +915,15 @@ contains
 !      *                                                                *
 !      ******************************************************************
 !
-    use blockpointers
-    use flowvarrefstate
-    use bcpointers_fast_b
+    use constants
+    use blockpointers, only : w, p, rlv, rev, gamma, x, d2wall, si, sj&
+&   , sk, s, globalcell, bcdata, nx, il, ie, ib, ny, jl, je, jb, nz, kl,&
+&   ke, kb, bcfaceid
+    use bcpointers_fast_b, only : ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, &
+&   rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3, gamma0, gamma1, &
+&   gamma2, gamma3, gcp, xx, ss, ssi, ssj, ssk, dd2wall, istart, iend, &
+&   jstart, jend, isize, jsize
+    use inputphysics, only : cpmodel, equations
     implicit none
 ! subroutine arguments.
     integer(kind=inttype), intent(in) :: nn

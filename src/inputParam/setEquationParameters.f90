@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          setEquationParameters.f90                       *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 07-21-2002                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine setEquationParameters
 !
 !      ******************************************************************
@@ -17,6 +7,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use flowVarRefState
        use inputPhysics
        use paramTurb

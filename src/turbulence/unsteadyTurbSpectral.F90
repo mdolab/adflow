@@ -1,6 +1,6 @@
 #ifndef USE_TAPENADE
 subroutine unsteadyTurbSpectral(ntu1, ntu2)
-
+  use constants
   use blockPointers
   use inputPhysics
   use inputTimeSpectral
@@ -48,6 +48,7 @@ subroutine unsteadyTurbSpectral_block(ntu1, ntu2, nn, sps)
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use blockPointers
   use inputPhysics
   use inputTimeSpectral

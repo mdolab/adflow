@@ -21,6 +21,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use inputTimeSpectral
        use iteration
@@ -177,7 +178,8 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use block
+         use constants
+         use block
        use communication
        use inputTimeSpectral
        use iteration
@@ -352,6 +354,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use block
        use commSliding
        use communication
@@ -558,7 +561,7 @@
 !      * is stored in scratch(:,:,:,if1SST).                                 *
 !      *                                                                *
 !      ******************************************************************
-!
+       use constants
        use block
        use communication
        use inputTimeSpectral

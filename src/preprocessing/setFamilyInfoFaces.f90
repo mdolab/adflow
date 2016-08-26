@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          setFamilyInfoFaces.f90                          *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 09-18-2007                                      *
-!      * Last modified: 10-30-2007                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine setFamilyInfoFaces(level)
 !
 !      ******************************************************************
@@ -26,6 +16,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use cgnsGrid
        use inputTimeSpectral
@@ -46,13 +37,7 @@
        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
 
        integer(kind=intType), dimension(cgnsNFamilies) :: orToMassFam
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Set the offset ii for the values of orToMassFam. If the mass
        ! flow through sliding mesh interfaces must be monitored this
        ! offset if 2*cgnsNSliding. This means that in the arrays to store

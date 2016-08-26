@@ -45,6 +45,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use block
        use inputPhysics
        use inputTimeSpectral
@@ -186,6 +187,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use cgnsGrid
        use communication
@@ -863,6 +865,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use cgnsGrid
        use communication
@@ -935,7 +938,7 @@
                   ! the case, because there is only one.
 
                   select case (equationMode)
-                    case (steady, unsteady)
+                  case (steady, unsteady)
 
                       print "(a)", "#"
                       print 100, trim(cgnsDoms(nbkGlobal)%zoneName)

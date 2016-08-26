@@ -27,7 +27,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use precision
+        use constants, only : intType
        implicit none
        save
 

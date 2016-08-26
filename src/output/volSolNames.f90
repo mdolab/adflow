@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          volSolNames.f90                                 *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 04-14-2003                                      *
-!      * Last modified: 07-14-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine volSolNames(solNames)
 !
 !      ******************************************************************
@@ -18,6 +8,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use cgnsNames
        use inputPhysics
        use flowVarRefState
@@ -31,12 +22,6 @@
 !      Local variables.
 !
        integer(kind=intType) :: nn
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
 !
        ! First store the names of the independent flow variables.
 

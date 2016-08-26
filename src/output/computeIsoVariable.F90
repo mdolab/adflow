@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          computeIsoVariable.F90                          *
-!      * Author:        Gaetan Kenway                                   *
-!      * Starting date: 07-21-2013                                      *
-!      * Last modified: 07-21-2013                                      *
-!      *                                                                *
-!      ******************************************************************
-!
 subroutine computeIsoVariable(solName, sps, isoVal)
   !
   !      ******************************************************************
@@ -19,6 +9,7 @@ subroutine computeIsoVariable(solName, sps, isoVal)
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use blockPointers
   use cgnsGrid
   use cgnsNames
@@ -46,13 +37,6 @@ subroutine computeIsoVariable(solName, sps, isoVal)
   real(kind=realType) :: uuy, uuz, vvx, vvz, wwx, wwy, tmp
   real(kind=realType) :: vortx, vorty, vortz, a2, ptotInf, ptot, uova(3), gradP(3), a
   real(kind=realType), dimension(:, :, :), pointer :: fc, fn
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
-  !
 
   do nn=1,nDom
      call setPointers(nn, 1, sps)

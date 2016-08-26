@@ -11,8 +11,7 @@
 !
       module ADjointVars
 
-      use constants
-      use costFunctions
+      use constants, only : intType
       implicit none
 !
       ! nDesignExtra Extra number of "extra" design variables (listed

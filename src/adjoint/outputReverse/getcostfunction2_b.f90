@@ -14,6 +14,7 @@ subroutine getcostfunction2_b(force, forced, moment, momentd, sepsensor&
 ! (summed) forces and moments and any other "extra" design
 ! variables. the index of the objective is determined by 'idv'. this
 ! function is intended to be ad'ed in reverse mode. 
+  use constants
   use inputtimespectral
   use costfunctions
   use inputphysics

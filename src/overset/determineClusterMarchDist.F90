@@ -1,8 +1,8 @@
 subroutine determineClusterMarchDist
-
-  use blockPointers
-  use communication
-  use overset
+  use constants
+  use blockPointers, only : nDom, x, xSeed, il, jl, kl
+  use communication, only : sumb_comm_world, myid
+  use overset, only : clusterMarchDist, cumDomProc, nClusters, clusters
   implicit none
 
   ! Working

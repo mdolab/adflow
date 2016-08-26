@@ -1,16 +1,13 @@
 subroutine setSurfaceFamilyInfo
 
-
-  use block
-  use blockPointers
-  use cgnsGrid
+  use constants
   use su_cgns
-  use commMixing
-  use commSliding
-  use communication
-  use inputPhysics
-  use inputTimeSpectral
-  use surfaceFamilies
+  use blockPointers, onlY : nDom, flowDoms, nBocos, cgnsSubFace, BCType
+  use cgnsGrid, onlY : cgnsDoms
+  use communication, only : myid, sumb_comm_world
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use surfaceFamilies, only : wallExchange, familyExchanges, famNames, &
+       famGroups, wallFamilies, famIsWall, totalFamilies, totalWallFamilies
   use utils, only : setPointers, EChk, pointReduce, terminate, convertToLowerCase
   use sorting, only : qsortStrings, bsearchStrings
   implicit none
@@ -233,10 +230,10 @@ subroutine createNodeScatterForFamilies(famList, nFam, famExchange, sps)
   ! at nodes.
   ! 2. Lift distributions/slices also requires node-based tractions
   ! 3. Node-based output for tecplot files.
-
-  use blockPointers
-  use communication
-  use surfaceFamilies
+  use constants
+  use communication, only : sumb_comm_world, myid, nProc
+  use surfaceFamilies, only : famGroups, familyExchange, &
+       IS1, IS2, PETSC_COPY_VALUES, PETSC_DETERMINE
   use utils, only : pointReduce, eChk
   implicit none
 
@@ -483,6 +480,7 @@ subroutine mapVector(vec1, n1, famList1, nf1, vec2, n2, famList2, nf2)
 
   ! This operation is actually pretty fast since it just requires a
   ! single copy of surface-based data. 
+  use constants
   use blockPointers
   use sorting, only : bsearchIntegers
   implicit none

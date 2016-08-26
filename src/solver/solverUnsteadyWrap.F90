@@ -135,7 +135,7 @@ subroutine initTimeStepWrap
   use section
   use flowVarRefState
   use bcdata, only : setbcdataFineGrid, setBCDataCoarseGrid, &
-       nonDimBoundData, setInletFreeStreamTurb, bcDataMassBleedOutflow
+       nonDimBoundData, setInletFreeStreamTurb
   use wallDistance, only : updateWallDistanceAllLevels
 
   implicit none
@@ -295,9 +295,5 @@ subroutine initTimeStepWrap
   ! Set the coefficients for the time integrator.
 
   call setCoefTimeIntegrator
-
-  ! Determine the data for the outflow bleeds.
-
-  call BCDataMassBleedOutflow(.false., .false.)
 
 end subroutine initTimeStepWrap

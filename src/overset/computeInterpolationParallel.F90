@@ -8,15 +8,24 @@
 !      ******************************************************************
 
 subroutine oversetComm(level, firstTime, coarseLevel)
+
   use constants
-  use communication
-  use blockPointers
-  use overset
-  use stencils
-  use inputTimeSpectral
-  use ADTapi
+  use communication, only : sumb_comm_world, sendRequests, &
+       recvRequests, sendBuffer, recvBuffer, commPatternCell_2nd, &
+       internalCell_2nd, sendBufferSize, recvBufferSize, myid, &
+       nProc
+  use blockPointers, only : flowDoms, nDom, fringeType, fringes, &
+       il, jl, kl, x, nx, ny, nz, iBlank, globalCell
+  use overset, only : CSRMatrix, oversetBlock, oversetFringe, &
+       oversetWall, nClusters, cumDomProc, localWallFringes, nDomTotal, &
+       nLocalWallFringe, clusterWalls, oversetPresent, nDomProc, &
+       overlapMatrix
+  use stencils, only : N_visc_drdw, visc_drdw_stencil
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use ADTapi, only : destroySerialQuad
   use inputOverset
   use utils, only : EChk, setPointers, setBufferSizes, terminate
+  use kdtree2_module
   implicit none
 
   ! Input Parameters
@@ -1234,8 +1243,8 @@ end subroutine oversetComm
 
 
 subroutine test
-  use overset
-  use blockPointers
+  use constants
+  use blockPointers, only : ie, je, ke, x, w
   use utils, only : EChk, setPointers, setBufferSizes, terminate
   use haloExchange, only : whalo2
   implicit none
@@ -1282,9 +1291,9 @@ subroutine writePartitionedMesh(fileName)
   ! processed to get connectivity information if the grid is to be
   ! used as input again.
 
-  use communication
-  use blockPointers
-  use cgnsgrid
+  use constants
+  use communication, only : sumb_comm_world, myID, nProc
+  use blockPointers, only : il, jl, kl, nx, ny, nz, x, nDom
   use utils, only : EChk, setPointers
   implicit none
 

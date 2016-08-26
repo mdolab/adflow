@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          determinePeriodicData.f90                       *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 11-29-2007                                      *
-!      * Last modified: 11-30-2007                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine determinePeriodicData(entityHalo,   nHalo, &
                                         externalComm, internalComm)
 !
@@ -18,6 +8,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use communication
        use haloList
        use periodicInfo
@@ -45,13 +36,7 @@
 
        type(periodicSubfacesHaloType), dimension(:), allocatable :: &
                                                                  periodic
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Loop over the halo's and determine the number of halo's
        ! for which periodic transformations are present.
 

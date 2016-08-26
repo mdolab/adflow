@@ -1,7 +1,7 @@
 subroutine applyAllBC_block_fast_b(secondHalo)
 
   ! Apply BC's for a single block
-  
+  use constants
   use blockPointers
   use flowVarRefState
   use inputDiscretization
@@ -185,6 +185,7 @@ subroutine applyAllBC_block_fast_b(secondHalo)
     !      *                                                                *
     !      ******************************************************************
     !
+    use constants
     use blockPointers
     use flowVarRefState
     use BCPointers_fast_b

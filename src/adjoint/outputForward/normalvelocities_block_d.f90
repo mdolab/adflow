@@ -18,6 +18,7 @@ subroutine normalvelocities_block_d(sps)
 !      *                                                                *
 !      ******************************************************************
 !
+  use constants
   use blockpointers
   use iteration
   use diffsizes
@@ -43,13 +44,6 @@ subroutine normalvelocities_block_d(sps)
   real(kind=realtype) :: arg1
   real(kind=realtype) :: arg1d
   integer :: ii1
-!
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
 ! check for a moving block. as it is possible that in a
 ! multidisicplinary environment additional grid velocities
 ! are set, the test should be done on addgridvelocities

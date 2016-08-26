@@ -10,6 +10,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use flowVarRefState
        use inputTimeSpectral

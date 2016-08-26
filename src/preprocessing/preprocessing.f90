@@ -8,12 +8,18 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use block
        use blockPointers
        use cgnsGrid
        use commMixing
        use commSliding
-       use communication
+       use communication, only : sumb_comm_world, commPatternCell_1st, &
+            commPatternCell_2nd, commPatternNode_1st, internalCell_1st, &
+            internalCell_2nd, internalNode_1st, myid, nProc, &
+            recvBufferSize_1to1, sendBufferSize_1to1, sendBufferSIzeOver,&
+            recvBufferSizeOver, commPatternOverset, internalOverset, sendBuffer, &
+            recvBuffer, sendBufferSize, recvBufferSize
        use inputPhysics
        use inputTimeSpectral
        use interfaceGroups
@@ -21,7 +27,8 @@
        use wallDistance, only : xVolumeVec, xSurfVec, wallScatter, &
             wallDistanceDataAllocated, updateWallAssociation, &
             computeWallDistance
-       use overset
+       use overset, only : cumDomProc, nDomProc, wallFringes, nDomTotal, &
+            overlapMatrix, oversetPresent, localWallFringes
        use utils, only : setPointers, EChk, setBufferSizes, terminate
        use bcdata, only : initBCData, allocMemBCData
        implicit none
