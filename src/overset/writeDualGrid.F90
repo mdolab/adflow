@@ -6,10 +6,10 @@ subroutine writeDualMesh(fileName)
 
   ! This is a debugging routine for writing out meshes *as they are
   ! partioned*. This can be useful for debugging overset issues.
-
-  use communication
-  use blockPointers
-  use cgnsgrid
+  use constants
+  use communication, only : sumb_comm_world, myid, nProc
+  use blockPointers, only : ie, je, ke, il, jl, kl, x, globalCell, vol, &
+       nDom, iblank
   implicit none
 
   include 'cgnslib_f.h'

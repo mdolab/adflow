@@ -19,6 +19,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use flowVarRefState
        use inputPhysics
        use iteration
@@ -85,6 +86,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use constants
        use paramTurb
@@ -213,6 +215,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use constants
        use paramTurb
@@ -271,8 +274,8 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
        use constants
+       use blockPointers
        implicit none
 !
 !      Local variables.
@@ -310,9 +313,9 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
-       use constants
-       use paramTurb
+         use constants  
+         use blockPointers
+         use paramTurb
        use turbMod
        implicit none
 !

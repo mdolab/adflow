@@ -19,6 +19,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use inputPhysics
        use extraOutput
        implicit none

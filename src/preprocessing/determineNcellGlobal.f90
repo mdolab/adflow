@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          determineNcellGlobal.f90                        *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-28-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine determineNcellGlobal(level)
 !      ******************************************************************
 !      *                                                                *
@@ -19,6 +9,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use block
        use communication
        implicit none
@@ -33,12 +24,6 @@
        integer(kind=intType) :: nn, nCellLocal
 
        character(len=12) :: int1String, int2String
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
 !
        ! Determine the local number of cells by looping over the blocks.
 

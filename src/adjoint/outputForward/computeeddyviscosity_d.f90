@@ -26,6 +26,7 @@ subroutine computeeddyviscosity_d()
 !      *                                                                *
 !      ******************************************************************
 !
+  use constants
   use flowvarrefstate
   use inputphysics
   use iteration

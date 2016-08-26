@@ -18,6 +18,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use flowVarRefState
        implicit none

@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          mdUpdateRoutines.f90                            *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 01-14-2004                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
 subroutine updateCoordinatesAllLevels
   !
   !      ******************************************************************
@@ -18,10 +8,9 @@ subroutine updateCoordinatesAllLevels
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use block
   use iteration
-
-  !temp
   use inputTimeSpectral
   use blockPointers
   implicit none
@@ -68,6 +57,7 @@ subroutine updateMetricsAllLevels
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use block
   use iteration
   use inputphysics
@@ -77,13 +67,7 @@ subroutine updateMetricsAllLevels
   !      Local variables.
   !
   integer(kind=intType) :: nLevels, nn
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
-  !
+  
   ! Loop over the grid levels and call metric and checkSymmetry.
 
   nLevels = ubound(flowDoms,2)
@@ -114,6 +98,7 @@ subroutine updateGridVelocitiesAllLevels
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use block
   use iteration
   use section

@@ -46,6 +46,7 @@ subroutine forcesandmoments_b(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
 !      * here.                                                          *
 !      ******************************************************************
 !
+  use constants
   use communication
   use blockpointers
   use flowvarrefstate

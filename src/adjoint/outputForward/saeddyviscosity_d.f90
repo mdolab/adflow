@@ -18,6 +18,7 @@ subroutine saeddyviscosity_d()
 !      *                                                                *
 !      ******************************************************************
 !
+  use constants
   use blockpointers
   use constants
   use paramturb

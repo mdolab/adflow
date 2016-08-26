@@ -1,5 +1,5 @@
 subroutine setTNSWall(tnsw, npts, sps_in)
-
+  use constants
   use blockPointers
   use flowVarRefState
   use inputTimeSpectral

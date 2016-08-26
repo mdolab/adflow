@@ -26,7 +26,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use constants
+       use constants, only : intType, realType, maxCGNSNameLen
        implicit none
        save
 !

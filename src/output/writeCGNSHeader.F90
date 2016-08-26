@@ -7,6 +7,7 @@ subroutine writeCGNSHeader(cgnsInd, base)
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use cgnsGrid
   use cgnsNames
   use flowVarRefState

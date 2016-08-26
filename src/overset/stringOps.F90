@@ -1,5 +1,5 @@
 module stringOps
-
+  use constants
   use overset
 
 contains
@@ -199,7 +199,7 @@ contains
   end subroutine createOrderedStrings
 
   subroutine performSelfZip(master, strings, nStrings)
-
+    use kdtree2_module
     use inputOverset
     implicit none
     ! Input/Output
@@ -1675,6 +1675,7 @@ contains
   end subroutine makeCrossZip
 
   subroutine makePocketZip(p, strings, nStrings, pocketMaster)
+    use kdtree2_module
     use overset
     use inputOverset
     implicit none
@@ -2160,7 +2161,8 @@ contains
 
     ! Common routine (for pocketZip and selfZip) to potentially add a
     ! triangle resulting from a single string. 
-
+    use kdtree2_priority_queue_module
+    use kdtree2_module
     implicit none
 
     ! Input/Output
@@ -2290,7 +2292,8 @@ contains
   end subroutine closestSymmetricNode
 
   subroutine stringMatch(strings, nStrings)
-
+    use kdtree2_priority_queue_module
+    use kdtree2_module
     implicit none
 
     type(oversetString), dimension(nstrings), target :: strings

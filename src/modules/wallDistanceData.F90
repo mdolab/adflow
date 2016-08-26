@@ -13,11 +13,11 @@ module wallDistanceData
   ! This module stores some additional data required for the fast wall
   ! distance computations. 
 
-  use constants
+
+  use constants, only : realType
   implicit none
 
 #ifndef USE_TAPENADE
-#define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
 #endif

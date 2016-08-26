@@ -5,6 +5,7 @@
 ! stencil.
 
 subroutine determineStencil(lumped)
+  use constants
   use inputDiscretization 
   use blockPointers
   use flowvarrefstate

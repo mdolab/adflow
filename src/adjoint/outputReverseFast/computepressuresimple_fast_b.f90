@@ -9,6 +9,7 @@
 ! compute the pressure on a block with the pointers already set. this
 ! routine is used by the forward mode ad code only. 
 subroutine computepressuresimple_fast_b()
+  use constants
   use blockpointers
   use flowvarrefstate
   use inputphysics

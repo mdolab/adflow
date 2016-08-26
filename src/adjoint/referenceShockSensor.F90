@@ -1,6 +1,7 @@
 subroutine referenceShockSensor
 
   ! Compute the reference shock sensor for PC computations
+  use constants
   use blockPointers
   use inputTimeSpectral
   use flowvarrefstate

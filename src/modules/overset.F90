@@ -1,21 +1,13 @@
 module overset
 
-  use precision
-  use adtData
-  use block
-  use kdtree2_module
+  use constants, only : realType, intType, maxCGNSNameLen
+  use adtData, only : adtType
+  use block, only : fringeType
+  use kdtree2_module, only : kdtree2
   implicit none
 
-#define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petsc.h"
-#include "include/finclude/petscvec.h90"
-#endif
 
   ! Helper dataType for communicated overset grid points. This data
   ! structure mirrros the blockType structure in block.F90, but only

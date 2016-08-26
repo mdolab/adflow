@@ -56,8 +56,8 @@ end subroutine getOBlockBufferSizes
 
 subroutine packOBlock(oBlock)
 
-  use overset
   use constants
+  use overset, only : oversetBlock
   implicit none
 
   ! Pack up everything we need for this block into its own buffer
@@ -180,8 +180,8 @@ end subroutine packOBlock
 
 subroutine unpackOBlock(oBlock)
 
-  use adtData
-  use overset
+  use constants
+  use overset, only : oversetBlock
   implicit none
 
   ! unPack everything we need for this block from its own buffer
@@ -368,8 +368,9 @@ end subroutine getOFringeBufferSizes
 
 subroutine packOFringe(oFringe)
 
-  use overset
   use constants
+  use overset, only : oversetFringe
+
   implicit none
 
   ! Pack up the search coordines in this oFringe into its own buffer
@@ -435,9 +436,9 @@ subroutine packOFringe(oFringe)
 end subroutine packOFringe
 
 subroutine unpackOFringe(oFringe)
-  use communication
-  use overset
+
   use constants
+  use overset, only : oversetFringe
   implicit none
 
   ! Pack up the search coordines in this oFringe into its own buffer
@@ -524,8 +525,9 @@ end subroutine unpackOFringe
 subroutine getWallSize(nNodes, nCells, dualMesh)
   ! Simple helper routine to return the number of wall nodes and cells
   ! for the block pointed to by blockPointers. 
+
   use constants
-  use blockPointers
+  use blockPointers, only :BCType, nBocos, BCData
   implicit none
   
   ! Input
@@ -616,8 +618,9 @@ end subroutine getOWallBufferSizes
 
 subroutine packOWall(oWall, dualMesh)
 
-  use overset
   use constants
+  use overset, only : oversetWall
+
   implicit none
 
   ! Pack up the search coordines in this oWall into its own buffer
@@ -700,8 +703,8 @@ end subroutine packOWall
 
 subroutine unpackOWall(oWall)
 
-  use overset
   use constants
+  use overset, only : oversetWall
   use kdtree2_module
   implicit none
 

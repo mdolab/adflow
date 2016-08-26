@@ -27,8 +27,8 @@ end subroutine emptyFringe
 subroutine printOverlapMatrix(overlap)
 
   ! This is a debugging routine to print out the overlap matrix.
-
-  use communication
+  use constants
+  use communication, only : myid
   use overset
   implicit none
 
@@ -61,7 +61,7 @@ subroutine printOverlapMatrix(overlap)
 end subroutine printOverlapMatrix
 
 subroutine getCumulativeForm(sizeArray, n, cumArray)
-  use precision
+  use constants
   implicit none
 
 
@@ -84,7 +84,8 @@ subroutine transposeOverlap(A, B)
 
   ! Create the matrix Create the matrix transpose. 
   ! Inspired by: https://people.sc.fsu.edu/~jburkardt/f_src/sparsekit/sparsekit.f90
-  use overset
+  use constants
+  use overset, only : CSRMatrix
   implicit none
 
   ! Input/Output
@@ -168,8 +169,11 @@ subroutine computeFringeProcArray(fringes, n, fringeProc, cumFringeProc, nFringe
   ! Compute the breakpoints "cumFringeProc" for a list of sorted n
   ! fringes "fringes". nFringeProc is the total number of unique
   ! processors. fringeProc is the processor number for each section.
-  use block
-  use communication
+  use constants
+  use block, only : fringeType
+  use overset, only : CSRMatrix
+  use communication, only :nProc
+
   implicit none
 
   ! Input/Output
@@ -234,10 +238,13 @@ subroutine fracToWeights2(frac, weights)
   weights(8) = (one-frac(1))*(    frac(2))*(    frac(3))
 
 end subroutine fracToWeights2
+
 subroutine getCommPattern(oMat,  sendList, size1, nSend, recvList, size2, nRecv)
 
-  use overset
-  use communication 
+  use constants
+  use overset, only : cumDomProc, nDomProc, nDomTotal, CSRMatrix
+  use blockPointers, only : nDom
+  use communication , only : nProc, myid
   use sorting, only : unique
   implicit none
 
@@ -335,9 +342,10 @@ subroutine getOWallCommPattern(oMat, oMatT, sendList, size1, nSend, &
      recvList, size2, nRecv, rBufSize)
   
   ! This subroutine get the the comm pattern to send the oWall types. 
-  
-  use overset
-  use communication 
+  use constants
+  use blockPointers, only : nDom
+  use overset, only : nDomTotal, CSRMatrix, cumDomProc, nDomProc
+  use communication, only : myid, nProc
   use sorting, only : unique
   implicit none
 
@@ -432,8 +440,9 @@ end subroutine getOWallCommPattern
 
 subroutine sendOBlock(oBlock, iDom, iProc, tagOffset, sendCount)
 
-  use communication
-  use overset
+  use constants
+  use communication, only : sumb_comm_world, sendRequests
+  use overset, only : oversetBlock
   use utils, only : EChk
   implicit none
 
@@ -460,8 +469,9 @@ end subroutine sendOBlock
 
 subroutine sendOFringe(oFringe, iDom, iProc, tagOffset, sendCount)
 
-  use communication
-  use overset
+  use constants
+  use communication, only : sumb_comm_world, sendRequests
+  use overset, only : oversetFringe
   use utils, only : EChk
   implicit none
   
@@ -488,8 +498,9 @@ end subroutine sendOFringe
 
 subroutine sendOWall(oWall, iDom, iProc, tagOffset, sendCount)
 
-  use communication
-  use overset
+  use constants
+  use communication, only : sendRequests, sumb_comm_world
+  use overset, only : oversetWall
   use utils, only : EChk
   implicit none
 
@@ -517,8 +528,9 @@ end subroutine sendOWall
 subroutine recvOBlock(oBlock, iDom, iProc, tagOffset, iSize, rSize, &
      recvCount, recvInfo)
 
-  use communication
-  use overset
+  use constants
+  use communication, only : sumb_comm_world, recvRequests
+  use overset, only : oversetBlock
   use utils, only : EChk
   implicit none
 
@@ -551,8 +563,9 @@ end subroutine recvOBlock
 subroutine recvOFringe(oFringe, iDom, iProc, tagOffset, iSize, rSize, &
      recvCount, recvInfo)
 
-  use communication
-  use overset
+  use constants
+  use communication, only : sumb_comm_world, recvRequests
+  use overset, only : oversetFringe
   use utils, only : EChk
   implicit none
 
@@ -585,8 +598,9 @@ end subroutine recvOFringe
 subroutine recvOWall(oWall, iDom, iProc, tagOffset, iSize, rSize, &
      recvCount, recvInfo)
 
-  use communication
-  use overset
+  use constants
+  use communication, only : sumb_comm_world, recvRequests
+  use overset, only : oversetWall
   use utils, only : EChk
   implicit none
 
@@ -620,8 +634,9 @@ end subroutine recvOWall
 subroutine deallocateOBlocks(oBlocks, n)
 
   ! This subroutine deallocates all data stores in a list of oBlocks
-  use adtAPI
-  use overset
+  use constants
+  use adtAPI, only : destroySerialHex
+  use overset, only : oversetBlock
   implicit none
 
   ! Input Params
@@ -654,9 +669,8 @@ end subroutine deallocateOBlocks
 subroutine deallocateOFringes(oFringes, n)
 
   ! This subroutine deallocates all data stores in a list of oFringes
-
-  use adtAPI
-  use overset
+  use constants
+  use overset, only : oversetFringe
   implicit none
 
   ! Input Params
@@ -697,8 +711,10 @@ subroutine deallocateOWalls(oWalls, n)
 
   ! This subroutine deallocates all data stores in a list of oWalls
 
-  use adtAPI
-  use overset
+  use constants
+  use adtAPI, only : destroySerialQuad
+  use overset, only : oversetWall
+  use kdtree2_module, only : kdtree2destroy
   implicit none
 
   ! Input Params
@@ -726,8 +742,9 @@ end subroutine deallocateOWalls
 
 subroutine wallsOnBlock(wallsPresent) 
 
-  use blockPointers
-  use cgnsGrid
+  use constants
+  use blockPointers, only : nBkGlobal
+  use cgnsGrid, only : cgnsDoms
   implicit none
 
   logical, intent(out) :: wallsPresent
@@ -745,8 +762,9 @@ subroutine wallsOnBlock(wallsPresent)
 end subroutine wallsOnBlock
 
 subroutine flagForcedReceivers(tmp)
+
   use constants
-  use blockPointers
+  use blockPointers, only : nx, ny, nz, ie, je, ke, BCData, BCFaceID, nBocos, BCType
   implicit none
 
   ! This is generic routine for filling up a 3D array of 1st level halos
@@ -823,7 +841,7 @@ end function isWallType
 ! Utility function for unpacking/accessing the status variable
 
 function isDonor(i)
-  use precision
+  use constants
   implicit none
   logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
   integer(kind=intType), intent(in) :: i
@@ -831,7 +849,7 @@ function isDonor(i)
 end function isDonor
 
 function isHole(i)
-  use precision
+  use constants
   implicit none
   logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
   integer(kind=intType), intent(in) :: i
@@ -839,7 +857,7 @@ function isHole(i)
 end function isHole
 
 function isCompute(i)
-  use precision
+  use constants
   implicit none
   logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
   integer(kind=intType), intent(in) :: i
@@ -847,7 +865,7 @@ function isCompute(i)
 end function isCompute
 
 function isFloodSeed(i)
-  use precision
+  use constants
   implicit none
   logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
   integer(kind=intType), intent(in) :: i
@@ -855,7 +873,7 @@ function isFloodSeed(i)
 end function isFloodSeed
 
 function isFlooded(i)
-  use precision
+  use constants
   implicit none
   logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
   integer(kind=intType), intent(in) :: i
@@ -863,7 +881,7 @@ function isFlooded(i)
 end function isFlooded
 
 function isWall(i)
-  use precision
+  use constants
   implicit none
   logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
   integer(kind=intType), intent(in) :: i
@@ -871,7 +889,7 @@ function isWall(i)
 end function isWall
 
 function isWallDonor(i)
-  use precision
+  use constants
   implicit none
   logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
   integer(kind=intType), intent(in) :: i
@@ -879,7 +897,7 @@ function isWallDonor(i)
 end function isWallDonor
 
 subroutine setIsDonor(i, flag)
-  use precision
+  use constants
   implicit none
   integer(kind=intType), intent(inout) :: i
   logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
@@ -888,7 +906,7 @@ subroutine setIsDonor(i, flag)
 end subroutine setIsDonor
 
 subroutine setIsHole(i, flag)
-  use precision
+  use constants
   implicit none
   integer(kind=intType), intent(inout) :: i
   logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
@@ -897,7 +915,7 @@ subroutine setIsHole(i, flag)
 end subroutine setIsHole
 
 subroutine setIsCompute(i, flag)
-  use precision
+  use constants
   implicit none
   integer(kind=intType), intent(inout) :: i
   logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
@@ -906,7 +924,7 @@ subroutine setIsCompute(i, flag)
 end subroutine setIsCompute
 
 subroutine setIsFloodSeed(i, flag)
-  use precision
+  use constants
   implicit none
   integer(kind=intType), intent(inout) :: i
   logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
@@ -915,7 +933,7 @@ subroutine setIsFloodSeed(i, flag)
 end subroutine setIsFloodSeed
 
 subroutine setIsFlooded(i, flag)
-  use precision
+  use constants
   implicit none
   integer(kind=intType), intent(inout) :: i
   logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
@@ -924,7 +942,7 @@ subroutine setIsFlooded(i, flag)
 end subroutine setIsFlooded
 
 subroutine setIsWall(i, flag)
-  use precision
+  use constants
   implicit none
   integer(kind=intType), intent(inout) :: i
   logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
@@ -933,7 +951,7 @@ subroutine setIsWall(i, flag)
 end subroutine setIsWall
 
 subroutine setIsWallDonor(i, flag)
-  use precision
+  use constants
   implicit none
   integer(kind=intType), intent(inout) :: i
   logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
@@ -943,7 +961,7 @@ end subroutine setIsWallDonor
 
 subroutine setStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
 
-  use precision
+  use constants
   implicit none
   integer(kind=intType), intent(out) :: i
   logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
@@ -961,7 +979,7 @@ end subroutine setStatus
 
 subroutine getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
   
-  use precision
+  use constants
   implicit none
   logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
   integer(kind=intType) :: i, j

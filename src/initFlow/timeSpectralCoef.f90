@@ -23,6 +23,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use flowVarRefState
        use inputTimeSpectral
        use section

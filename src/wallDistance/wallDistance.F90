@@ -1,6 +1,6 @@
 module wallDistance
 
-  use constants
+  use constants, only : intType, realType
   use wallDistanceData
   implicit none
   save
@@ -42,7 +42,8 @@ contains
     ! done on a per-block basis, it is assumed that the required block
     ! pointers are already set. 
 
-    use blockPointers
+    use constants
+    use blockPointers, only : nx, ny, nz, il, jl, kl, x, flowDoms, d2wall
     implicit none
 
     ! Subroutine arguments
@@ -138,13 +139,13 @@ contains
     !      * computed; the nearest wall point may lie in a periodic domain. *
     !      *                                                                *
     !      ******************************************************************
-    use blockPointers
-    use communication
     use constants
-    use inputPhysics
-    use inputTimeSpectral
-    use iteration
-    use inputDiscretization
+    use blockPointers, only : nDom
+    use communication, only : sendBuffer, recvBuffer, myid, sumb_comm_world, &
+         sendBufferSize, recvBufferSize
+    use inputPhysics, only : equations, wallDistanceNeeded
+    use inputTimeSpectral, only :nTimeIntervalsSpectral
+    use inputDiscretization, only: useApproxWallDistance
     use utils, only : setPointers, EChk, terminate, &
          deallocateTempMemory, allocateTempMemory
     implicit none
@@ -347,8 +348,9 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
     use constants
+    use blockPointers, only : x, d2wall, nViscBocos, BCFaceID, BCData, &
+         nx, ny, nz, il, jl, kl, nDom
     use utils, only : setPointers
     implicit none
     !
@@ -482,8 +484,8 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use block
     use constants
+    use blockPointers, only : nDom, flowDoms
     use utils, only : terminate
     implicit none
     !
@@ -534,11 +536,13 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use adtAPI
-    use blockPointers
-    use communication
-    use inputPhysics
-    use section
+    use constants
+    use adtAPI, only :adtBuildSurfaceADT, adtMinDistanceSearch, adtDeallocateADTs
+    use blockPointers, only : x, flowDoms, kl, jl, il, nDom, nx, ny, nz, &
+         sectionID, d2Wall
+    use communication, only : sumb_comm_world
+    use section, only : sections
+    use inputPhysics, only : wallOffset
     use utils, only : setPointers, terminate
     implicit none
     !
@@ -942,9 +946,11 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
-    use communication
-    use section
+    use constants
+    use blockPointers, only : BCData, x, il, jl, kl, BCFaceID, sectionID, &
+         flowDoms, nBocos, nDom, BCType
+    use communication, only : myid, sumb_comm_world
+    use section, only : sections, nSections
     use utils, only : setPointers, terminate
     implicit none
     !
@@ -1578,9 +1584,10 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use block
-    use inputPhysics
-    use iteration
+    use constants
+    use block, only : flowDoms
+    use inputPhysics, only : equations
+    use iteration, only : groundLevel
     implicit none
     !
     !      Local variables.
@@ -1609,9 +1616,10 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use block
-    use communication
-    use section
+    use constants
+    use block, only : flowDoms, nDom
+    use communication, only : sumb_comm_world, myid
+    use section, only : nsections, sections
     use utils, only : terminate
     implicit none
     !

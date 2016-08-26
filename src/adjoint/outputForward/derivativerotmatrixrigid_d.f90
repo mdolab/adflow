@@ -28,6 +28,7 @@ subroutine derivativerotmatrixrigid_d(rotationmatrix, rotationmatrixd, &
 !      *                                                                *
 !      ******************************************************************
 !
+  use constants
   use flowvarrefstate
   use inputmotion
   use monitor

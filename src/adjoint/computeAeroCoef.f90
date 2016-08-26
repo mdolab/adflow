@@ -17,9 +17,9 @@ subroutine computeAeroCoef(globalCFVals,sps)
   !     *                                                                *
   !     ******************************************************************
   !
-
+  use constants
   use blockPointers 
-  use communication 
+  use communication, only : sumb_comm_world, myid
   use inputPhysics   
   use iteration      
   use costFunctions

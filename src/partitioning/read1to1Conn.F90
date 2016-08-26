@@ -18,6 +18,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use cgnsGrid
        use communication
        use su_cgns

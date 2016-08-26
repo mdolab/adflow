@@ -12,10 +12,10 @@
 subroutine determineClusters()
 
   use constants
+  use blockPointers, only : nDom, flowDoms
   use cgnsGrid
-  use blockPointers
-  use communication
-  use overset
+  use communication, only : sumb_comm_world, myID
+  use overset, only :clusters, nDomTotal, nClusters, cumDomProc
   implicit none
 
   ! Input/output variables

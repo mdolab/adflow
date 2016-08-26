@@ -10,7 +10,8 @@ module liftDistributionData
   !      ******************************************************************
   !
 
-  use constants
+
+  use constants, only : realType, intType, maxStringLen, maxCGNSNameLen
   use surfacefamilies, only : familyExchange
   implicit none
   save

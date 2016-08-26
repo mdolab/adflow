@@ -10,6 +10,7 @@ module cartMesh
 contains
   subroutine createCartMesh(level, sps)
 
+    use constants
     use blockPointers
 
     implicit none
@@ -855,7 +856,7 @@ contains
   contains
     ! Simple routine to make code easier to read above
     subroutine addSeed(i, j, k)
-      use precision
+      use constants
       implicit none
       integer(kind=intType), intent(in) :: i, j, k
       nSeed = nSeed + 1
@@ -864,7 +865,7 @@ contains
 
     function onBlock(i, j, k)
 
-      use precision
+      use constants
       implicit none
 
       integer(kind=intType), intent(in) :: i, j, k
@@ -988,7 +989,7 @@ contains
   end subroutine writeCartMesh
 
   subroutine tripleFactor(N, s)
-
+    use constants
     use sorting, only : qsortIntegers
     implicit none
     ! Input/Output

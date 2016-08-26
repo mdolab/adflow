@@ -9,7 +9,7 @@ subroutine computeCellWallPoint(level, sps)
   !  breaks the propagation. If this propatation isn't continued, the
   !  overset hole cut will be dependent on the block distribution and
   !  hense the numbe rof processors. 
-
+  use constants
   use blockPointers
   use communication
   use kdtree2_module

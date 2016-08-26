@@ -3,10 +3,10 @@ subroutine computeUtau
   !
   ! Shell function to call computUTau  on all blocks
   !
-  use blockPointers
   use constants
-  use inputTimeSpectral
-  use Iteration
+  use blockPointers, only : nDom
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use Iteration, only : groundLevel
   use utils, only : setPointers
   implicit none
   !
@@ -54,6 +54,7 @@ subroutine computeUtau_block
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use blockPointers
   use inputPhysics
   use inputTimeSpectral

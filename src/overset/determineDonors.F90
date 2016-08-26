@@ -12,9 +12,11 @@
 
 subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
 
-  use block
-  use communication
+  use constants
+  use block, only : fringeType, flowDoms
+  use communication, only : sumb_comm_world, myid, nProc, recvRequests, sendRequests
   use utils, only : Echk, setPointers
+  use overset, only : clusters, nDomTotal, nClusters
   implicit none
 
   ! Input Params

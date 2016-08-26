@@ -592,25 +592,6 @@ python module libsumb
 
        module inputdiscretization ! in :sumb:../../modules/inputParam.f90
          use accuracy
-         integer(kind=inttype) parameter,optional :: dissscalar=1_inttype
-         integer(kind=inttype) parameter,optional :: dissmatrix=2_inttype
-         integer(kind=inttype) parameter,optional :: disscusp=3_inttype
-         integer(kind=inttype) parameter,optional :: upwind=9_inttype
-         integer(kind=inttype) parameter,optional :: roe=1_inttype
-         integer(kind=inttype) parameter,optional :: vanleer=2_inttype
-         integer(kind=inttype) parameter,optional :: ausmdv=3_inttype
-         integer(kind=inttype) parameter,optional :: nolimiter=2_inttype
-         integer(kind=inttype) parameter,optional :: vanalbeda=3_inttype
-         integer(kind=inttype) parameter,optional :: minmod=4_inttype
-         integer(kind=inttype) parameter,optional :: noprecond=1_inttype
-         integer(kind=inttype) parameter,optional :: turkel=2_inttype
-         integer(kind=inttype) parameter,optional :: choimerkle=3_inttype
-         integer(kind=inttype) parameter,optional :: constantpressure=1_inttype
-         integer(kind=inttype) parameter,optional :: linextrapolpressure=2_inttype
-         integer(kind=inttype) parameter,optional :: quadextrapolpressure=3_inttype
-         integer(kind=inttype) parameter,optional :: normalmomentum=4_inttype
-         integer(kind=inttype) parameter,optional :: constantextrapol=1_inttype
-         integer(kind=inttype) parameter,optional :: linextrapol=2_inttype
          integer(kind=inttype) :: spacediscr
          integer(kind=inttype) :: spacediscrcoarse
          integer(kind=inttype) :: orderturb
@@ -1075,9 +1056,6 @@ python module libsumb
          logical :: nk_viscpc
          logical :: rkreset
          integer(kind=inttype) :: nk_ls
-         integer(kind=inttype) :: nolinesearch=0
-         integer(kind=inttype) :: cubiclinesearch=1
-         integer(kind=inttype) :: nonmonotonelinesearch=2
          integer(kind=inttype) :: nk_subspace
          integer(kind=inttype) :: nk_asmoverlap
          real(kind=realtype) :: nk_rtolinit

@@ -29,6 +29,9 @@ module blockPointers
   !
   use constants, only : intType, realType, porType
   use block, only : fringeType, BCDataType, viscSubFaceType, flowDoms, nDom
+#ifndef USE_TAPENADE
+  use block, only : flowDomsd
+#endif
   implicit none
   !
   !      ******************************************************************

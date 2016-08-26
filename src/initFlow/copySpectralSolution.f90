@@ -20,6 +20,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use block
        use flowVarRefState
        use inputTimeSpectral

@@ -33,7 +33,7 @@ subroutine solveState
   use monitor, only : writeGrid, writeSurface, writeVolume
   use nksolvervars, only : NK_switchTol, useNKSolver, NK_CFL, rkREset
   use anksolvervars, only : ANK_switchTol, useANKSolver, ANK_CFL
-  use BCData, only : bcDataMassBleedOutFlow
+
   implicit none
   !
   !      Local parameter
@@ -245,9 +245,7 @@ subroutine solveState
      ! Check if the bleed boundary conditions must be updated and
      ! do so if needed.
      
-     if(mod(approxTotalIts, nUpdateBleeds) == 0) &
-          call BCDataMassBleedOutflow(.false., .false.)
-     
+    
      ! Check if we've received a signal:
 #ifndef USE_NO_SIGNALS
      call mpi_allreduce(localSignal, globalSignal, 1,         &

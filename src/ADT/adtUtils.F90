@@ -7,6 +7,7 @@ module adtUtils
   !     *                                                                *
   !     ******************************************************************
   !
+  use constants
   use adtData
   implicit none
   !

@@ -89,10 +89,7 @@ subroutine residual_block
   !      *                                                                *
   !      ******************************************************************
   !
-  ! Add the source terms from the level 0 cooling model.
-#ifndef USE_TAPENADE
-  call level0CoolingModel
-#endif
+
   ! Set the value of rFil, which controls the fraction of the old
   ! dissipation residual to be used. This is only for the runge-kutta
   ! schemes; for other smoothers rFil is simply set to 1.0.
