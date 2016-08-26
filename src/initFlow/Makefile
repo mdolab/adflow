@@ -51,7 +51,6 @@ FILES_TO_COMPLEXIFY= restartMod.f90\
 		 determineSolFileNames.f90\
 		 getSortedVarNumbers.F90\
 		 getSortedZoneNumbers.F90\
-		 initBleedsFromHalos.f90\
 		 initDepvarAndHalos.f90\
 		 initFlow.f90\
 		 initFlowfield.f90\

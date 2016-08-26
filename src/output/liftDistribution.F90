@@ -8,6 +8,7 @@ subroutine addParaSlice(sliceName, pt, direction, famList, n)
   !      * supplied slices.                                               *
   !      *                                                                *
   !      ******************************************************************
+  use constants
   use communication
   use liftDistributionData
   use surfaceFamilies
@@ -62,6 +63,7 @@ subroutine addAbsSlice(sliceName, pt, direction, famList, n)
   !      * supplied slices.                                               *
   !      *                                                                *
   !      ******************************************************************
+  use constants
   use communication
   use liftDistributionData
   use surfaceFamilies
@@ -116,6 +118,7 @@ subroutine addLiftDistribution(nSegments, dir_vec, dir_ind, distName, famList, n
   !      *                                                                *
   !      ******************************************************************
 
+  use constants
   use communication
   use liftDistributionData
   use surfaceFamilies
@@ -157,7 +160,7 @@ subroutine writeTecplot(sliceFile, writeSlices, liftFile, writeLift, surfFile, w
   !      * perform the nodal averaging once which is required for all     *
   !      * three output files.                                            *
   !      ******************************************************************
-
+  use constants
   use inputTimeSpectral
   use surfaceFamilies
   use communication
@@ -200,6 +203,7 @@ subroutine writeSlicesFile(fileName, updateSurfaceData)
   !      * written.                                                       *
   !      *                                                                *
   !      ******************************************************************
+  use constants
   use communication
   use liftDistributionData
   use outputMod
@@ -343,6 +347,7 @@ subroutine writeLiftDistributionFile(fileName, updateSurfaceData)
   !      * written.                                                       *
   !      *                                                                *
   !      ******************************************************************
+  use constants
   use communication
   use liftDistributionData
   use outputMod
@@ -421,7 +426,7 @@ subroutine writeLiftDistributions(sps, fileID)
   use outputMod
   use su_cgns
   use cgnsNames
-  use surfaceFamilies
+  use surfaceFamilies, only : wallExchange
   use utils, only : EChk
   use sorting, only : bsearchIntegers
   implicit none
@@ -632,6 +637,7 @@ subroutine writeLiftDistributions(sps, fileID)
 end subroutine writeLiftDistributions
 
 subroutine writeTecplotSurfaceFile(fileName, updateSurfaceData)
+  use constants
   use communication
   use liftDistributionData
   use outputMod
@@ -926,7 +932,7 @@ subroutine writeTecplotSurfaceFile(fileName, updateSurfaceData)
 end subroutine writeTecplotSurfaceFile
 
 subroutine initializeLiftDistributionData
-
+  use constants
   use communication
   use blockPointers
   use inputPhysics
@@ -981,6 +987,7 @@ subroutine computeSurfaceOutputNodalData(exch, includeTractions)
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use liftDistributionData
   use communication
   use inputPhysics
@@ -1282,6 +1289,7 @@ subroutine createSlice(exch, slc, pt, dir, sliceName, famList, nFam)
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use liftDistributionData
   use utils, only : reallocatereal2, reallocateinteger2, pointReduce
   use sorting, only : bsearchIntegers
@@ -1454,6 +1462,7 @@ subroutine destroySlice(slc)
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use liftDistributionData
   implicit none
 
@@ -1493,6 +1502,7 @@ subroutine integrateSlice(lSlc, gSlc, nFields, doConnectivity)
   !      * It optionally interpolates solution variables as well.         *
   !      ******************************************************************
   !
+  use constants
   use liftDistributionData
   use inputPhysics   
   use flowVarRefState
@@ -1769,7 +1779,7 @@ end subroutine integrateSlice
 
 subroutine writeSlice(slc, fileID, nFields)
   ! Write the data in slice 'slc' to openfile ID fileID
-
+  use constants
   use liftDistributionData
   use inputIO
   implicit none

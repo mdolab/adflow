@@ -3,7 +3,7 @@ subroutine computeResidualANK()
   ! This is the residual evaluation driver for the ANK solver. It
   ! computes the residual for the mean flow but does not compute the
   ! turbulent residuals. 
-
+  use constants
   use blockPointers
   use inputTimeSpectral
   use flowvarrefstate

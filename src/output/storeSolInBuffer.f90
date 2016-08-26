@@ -21,6 +21,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use cgnsGrid
        use cgnsNames

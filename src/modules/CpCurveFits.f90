@@ -18,7 +18,7 @@
 !      *                                                                *
 !      ******************************************************************
 !      
-       use precision
+       use constants, only: intTYpe, realType
        implicit none
        save
 !

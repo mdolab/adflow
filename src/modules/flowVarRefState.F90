@@ -17,7 +17,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use constants
+       use constants, only : intType, realType
        implicit none
        save
 

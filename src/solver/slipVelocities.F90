@@ -3,10 +3,10 @@ subroutine slipVelocitiesFineLevel(useOldCoor, t, sps)
   !
   ! Shell function to call slipVelocitiesFineLevel on all blocks
   !
-  use blockPointers
   use constants
-  use inputTimeSpectral
-  use iteration
+  use blockPointers, only : nDom
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use iteration, only : groundLevel
   use utils, only : setPointers
   implicit none
   !
@@ -56,6 +56,7 @@ subroutine slipVelocitiesFineLevel_block(useOldCoor, t, sps)
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use inputTimeSpectral
   use blockPointers
   use cgnsGrid
@@ -67,8 +68,7 @@ subroutine slipVelocitiesFineLevel_block(useOldCoor, t, sps)
   use inputTSStabDeriv
   use monitor
   use communication
-  use utils, only : tsAlpha, tsBeta, tsMach, terminate
-  use utils, only : rotMatrixRigidBody
+  use utils, only : tsAlpha, tsBeta, tsMach, terminate, rotMatrixRigidBody
   implicit none
   !
   !      Subroutine arguments.
@@ -488,6 +488,7 @@ subroutine slipVelocitiesCoarseLevels(sps)
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use blockPointers
   use iteration
   use utils, only : setPointers
@@ -507,13 +508,7 @@ subroutine slipVelocitiesCoarseLevels(sps)
 
   real(kind=realType), dimension(:,:,:), pointer :: uSlip
   real(kind=realType), dimension(:,:,:), pointer :: uSlipFine
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
-  !
+ 
   ! Determine the number of multigrid levels.
 
   nLevels = ubound(flowDoms,2)

@@ -1,5 +1,5 @@
 subroutine viscousFluxApprox
-
+  use constants
   use blockPointers
   use flowVarRefState
   use inputPhysics

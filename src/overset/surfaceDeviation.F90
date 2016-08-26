@@ -12,10 +12,8 @@
 
 subroutine surfaceDeviation(level, sps)
 
-  use communication 
-  use blockPointers
-  use overset
-  use inputTimeSpectral
+  use constants
+  use blockPointers, only :BCdata, x, nBocos, nDom, BCType, il, jl, kl, BCFaceID
   use utils, only : setPointers
   implicit none
 

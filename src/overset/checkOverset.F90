@@ -9,11 +9,12 @@ subroutine checkOverset (level, sps, totalOrphans)
   !      * found with an incomplete stencil it is a fatal error. 
   !      *                                                                *
   !      ******************************************************************
-
-  use overset
-  use blockPointers
-  use stencils
-  use communication
+  use constants
+  use blockPointers, only : il, jl, kl, iblank, flowDoms, nDom, orphans, &
+       iBegOR, jBegOr, kBegOr, nbkGlobal, nOrphans
+  !use overset, only : 
+  use stencils, only : visc_drdw_stencil, N_visc_drdw
+  use communication, only : myid, sumb_comm_world
   use utils, only : setPointers, EChk
   implicit none
 

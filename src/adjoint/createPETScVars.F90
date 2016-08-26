@@ -16,7 +16,8 @@ subroutine createPETScVars
   use inputTimeSpectral, only : nTimeIntervalsSpectral
   use flowVarRefState, only : nwf, nw, viscous
   use inputADjoint, only : approxPC, frozenTurbulence, useMatrixFreedRdw, viscPC
-  use stencils
+  use stencils, only : N_visc_drdw, n_euler_drdw, visc_drdw_stencil,  euler_drdw_stencil, &
+       visc_drdw_stencil, visc_pc_stencil, N_visc_PC, N_euler_PC, euler_PC_stencil
   use utils, only : EChk, setPointers
   
   implicit none
@@ -132,7 +133,8 @@ subroutine myMatCreate(matrix, blockSize, m, n, nnzDiagonal, nnzOffDiag, &
   ! RANDOMLY change syntax between versions so this way there is only
   ! one place to make a change based on petsc version. 
 
-  use communication
+  use constants
+  use communication, only : sumb_comm_world
   use utils, only : EChk, setPointers
   implicit none
 

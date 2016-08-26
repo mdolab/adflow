@@ -18,7 +18,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use precision
+       use constants, only : realType, intType
        implicit none
        save
 !

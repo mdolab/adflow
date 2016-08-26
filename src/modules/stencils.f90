@@ -8,7 +8,7 @@ module stencils
   !      *                                                                *
   !      ******************************************************************
 
-  use precision
+  use constants, only : intType, realType
   implicit none
 
   ! Euler stencils
@@ -30,6 +30,7 @@ end module stencils
 subroutine initialize_stencils
   
   use stencils
+  
   implicit none
   integer(kind=intType) :: i,j,k,ii
 

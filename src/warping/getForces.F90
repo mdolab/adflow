@@ -1,6 +1,7 @@
 subroutine getSurfaceSize(size, sizeCell, famList, n)
   ! Compute the number of points that will be returned from getForces
   ! or getForcePoints
+  use constants
   use blockPointers
   use inputTimeSpectral
   use surfaceFamilies
@@ -33,7 +34,7 @@ end subroutine getSurfaceSize
 
 subroutine getSurfaceConnectivity(conn, ncell)
   ! Return the connectivity list for the each of the patches
-
+  use constants
   use blockPointers
   use inputPhysics
   use surfaceFamilies
@@ -137,7 +138,7 @@ end subroutine getSurfaceConnectivity
 
 subroutine getSurfaceFamily(elemFam, ncell)
   ! Return the connectivity list for the each of the patches
-
+  use constants
   use blockPointers
   use inputPhysics
   use surfaceFamilies
@@ -181,7 +182,7 @@ end subroutine getSurfaceFamily
 
 
 subroutine getSurfacePoints(points, npts, sps_in)
-
+  use constants
   use blockPointers
   use inputTimeSpectral
   use surfaceFamilies
@@ -246,7 +247,7 @@ subroutine getSurfacePoints(points, npts, sps_in)
 end subroutine getSurfacePoints
 
 subroutine getForces(forces, npts, sps)
-
+  use constants
   use blockPointers
   use flowVarRefState
   use inputTimeSpectral
@@ -308,7 +309,7 @@ subroutine getForces(forces, npts, sps)
 end subroutine getForces
 
 subroutine computeNodalTractions(sps)
-
+  use constants
   use blockPointers
   use flowVarRefState
   use inputTimeSpectral
@@ -522,7 +523,7 @@ subroutine computeNodalForces(sps)
   ! This subroutine averages the cell based forces and tractions to
   ! node based values. There is no need for communication since we are
   ! simplying summing a quarter of each value to each corner. 
-
+  use constants
   use blockPointers
   use flowVarRefState
   use inputTimeSpectral
@@ -576,16 +577,9 @@ subroutine getForces_b(forces_b, npts, sps)
 
   implicit none
 #define PETSC_AVOID_MPIF_H
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petscsys.h"
-#include "include/finclude/petscvec.h"
-#include "include/finclude/petscvec.h90"
-#endif
 
   integer(kind=intType), intent(in) :: npts, sps
   real(kind=realType), intent(in) :: forces_b(3,npts)

@@ -22,6 +22,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use flowVarRefState
        use inputMotion
        use monitor

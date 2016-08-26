@@ -18,6 +18,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use inputPhysics
        use monitor
        use cgnsNames

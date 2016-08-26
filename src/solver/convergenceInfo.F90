@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          convergenceInfo.f90                             *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-15-2003                                      *
-!      * Last modified: 11-21-2007                                      *
-!      *                                                                *
-!      ******************************************************************
-!
 subroutine convergenceInfo
   !
   !      ******************************************************************
@@ -18,23 +8,25 @@ subroutine convergenceInfo
   !      *                                                                *
   !      ******************************************************************
   !
-  use block, only : nCellGlobal
-  use blockPointers
-  use communication
+  use constants
   use cgnsNames
-  use inputIO
-  use inputIteration
-  use inputPhysics
-  use inputTimeSpectral
-  use inputUnsteady
-  use monitor
-  use iteration
-  use killSignals
-  use NKsolverVars
-  use flowVarRefState  ! eran-massf 
-  use bleedFlows       ! eran-massf 
-  use couplerParam     ! eran_idendifyname
-  use nksolvervars
+  use block, only : nCellGlobal
+  use blockPointers, only : nDom
+  use communication, only : sumb_comm_world, myid
+  use inputIteration, only : printIterations, l2convcoarse, l2conv, l2convrel, &
+       minIterNum, maxL2DeviationFactor, ncycles
+  use inputPhysics, only : liftDirection, dragDirection, equationMode
+  use inputIO, only : storeConvInnerIter
+
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use inputUnsteady, only : timeIntegrationScheme
+  use monitor, only : monLoc, monGlob, nMon, nMonMax, nMonSum, monNames, timeDataArray, &
+       showCPU, monRef, convArray, timeUnsteadyRestart, timeArray, timeStepUnsteady, &
+       timeUnsteady, nTimeStepsRestart
+  use iteration, only : groundLevel, currentLevel, iterTot, iterType, approxTotalIts, &
+       CFLMonitor, t0solver, converged
+  use killSignals, only : routineFailed, fromPython
+  use NKsolverVars, only : rhoRes, rhoResStart, totalR, totalRStart, totalR0, RKReset
   use overset, only: oversetPresent
   use utils, only : setPointers, myisnan, returnFail
   implicit none

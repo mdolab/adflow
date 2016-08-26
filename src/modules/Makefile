@@ -39,53 +39,48 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS_0 = complexify.o\
+FF90_OBJECTS_0 =	complexify.o\
+			precision.o\
+			su_cgns.o\
+			constants.o\
+			killSignals.o\
+			communication.o\
+			block.o\
+			blockPointers.o\
 
-FF90_OBJECTS_1 = precision.o\
-		 su_cgns.o
-
-FF90_OBJECTS_2 = bleedFlows.o\
-		 constants.o\
-		 coolingModelLevel0.o\
-		 killSignals.o\
-		 communication.o\
-
-FF90_OBJECTS_3 = NKSolverVars.o\
-		 ANKSolverVars.o\
-		 block.o\
-		 IOModule.o\
-		 costFunctions.o\
-		 kd_tree.o\
-		 surfaceFamilies.o\
-		 adtData.o\
-		 kd_tree.o\
-		 BCPointers.o\
-		 BCPointers_b.o\
-		 BCPointers_d.o\
-		 BCPointers_fast_b.o\
-		 wallDistanceData.o\
-
-FF90_OBJECTS_4 = ADjointVars.o\
-		 ADjointPETSc.o\
-		 blockPointers.o\
-		 cgnsGrid.o\
-		 cgnsNames.o\
-		 commMixing.o\
-		 commSliding.o\
-		 couplerParam.o\
-		 CpCurveFits.o\
-		 extraOutput.o\
-		 flowVarRefState.o\
-		 inputParam.o\
-		 interfaceGroups.o\
-		 iteration.o\
-		 monitor.o\
-		 paramTurb.o\
-		 section.o\
-		 stencils.o\
-	         diffSizes.o\
-		 overset.o\
-		 liftDistributionData.o\
+FF90_OBJECTS_3 =	NKSolverVars.o\
+			ANKSolverVars.o\
+			IOModule.o\
+			costFunctions.o\
+			kd_tree.o\
+			surfaceFamilies.o\
+			adtData.o\
+			kd_tree.o\
+			BCPointers.o\
+			BCPointers_b.o\
+			BCPointers_d.o\
+			BCPointers_fast_b.o\
+			wallDistanceData.o\
+			ADjointVars.o\
+			ADjointPETSc.o\
+			cgnsGrid.o\
+			cgnsNames.o\
+			commMixing.o\
+			commSliding.o\
+			couplerParam.o\
+			CpCurveFits.o\
+			extraOutput.o\
+			flowVarRefState.o\
+			inputParam.o\
+			interfaceGroups.o\
+			iteration.o\
+			monitor.o\
+			paramTurb.o\
+			section.o\
+			stencils.o\
+			diffSizes.o\
+			overset.o\
+			liftDistributionData.o\
 
 FF90_OBJECTS_5 = ../utils/utils.o\
 		../utils/myIsNaNC.o\
@@ -161,11 +156,8 @@ FILES_TO_COPY = su_cgns.F90 \
 default: all
 
 all:
-	$(PMAKE) src_0
-	$(PMAKE) src_1
-	$(PMAKE) src_2
+	$(MAKE) src_0
 	$(PMAKE) src_3
-	$(PMAKE) src_4
 	$(PMAKE) src_5
 	$(PMAKE) src_6
 	$(PMAKE) src_7
@@ -203,10 +195,7 @@ complexify:
 #      ******************************************************************
 
 src_0:	$(FF90_OBJECTS_0)
-src_1:	$(FF90_OBJECTS_1)
-src_2:	$(FF90_OBJECTS_2)
 src_3:	$(FF90_OBJECTS_3)
-src_4:	$(FF90_OBJECTS_4)
 src_5:	$(FF90_OBJECTS_5)
 src_6:	$(FF90_OBJECTS_6)
 src_7:	$(FF90_OBJECTS_7)

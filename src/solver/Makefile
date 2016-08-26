@@ -42,10 +42,8 @@ FILES_TO_COMPLEXIFY1 = \
 FILES_TO_COMPLEXIFY2 = \
 	       applyAllBC.F90\
 	       adjustInflowAngle.f90\
-	       bleedFlowParameters.f90\
 	       convergenceInfo.F90\
 	       computedwD3ADI.f90\
-	       computeInletMassFlowFullWheel.f90\
 	       computeLamViscosity.F90\
 	       computeUtau.F90\
                coorUtilsALE.F90\
@@ -71,7 +69,6 @@ FILES_TO_COMPLEXIFY2 = \
 	       inviscidDissFluxScalarCoarse.f90\
 	       inviscidUpwindFlux.F90\
 	       killFunctions.F90\
-	       level0CoolingModel.f90\
 	       maxEddyv.f90\
 	       maxHdiffMach.f90\
 	       normalVelocities.F90\
@@ -100,7 +97,6 @@ FILES_TO_COMPLEXIFY2 = \
 	       utauWF.F90\
 	       vectorRotation.f90\
 	       viscousFlux.F90\
-	       writeFamilyMassflow.f90
 
 FILES_TO_COPY = connect_signals.c\
 		convergenceHeader.f90\

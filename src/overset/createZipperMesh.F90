@@ -20,16 +20,17 @@
 subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
      nOwallSend, nOwallRecv, size1, size2, work, nWork)
 
-  use communication
+  use constants
+  use communication, only : myID, sumb_comm_world, nProc, recvRequests, &
+       sendRequests, commPatternCell_2nd, internalCell_2nd
   use blockPointers
-  use overset
-  use inputTimeSpectral
+  use overset, only : oversetString, oversetWall
   use wallDistanceData, only : xVolumeVec, IS1
   use stringops
   use inputOverset
   use adtapi
-  use adjointvars
   use utils, only : setPointers, EChk
+  use adjointvars, only :nNodesLocal
   implicit none
 
   ! Input Parameters

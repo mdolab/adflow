@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          initDepvarAndHalos.f90                          *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 08-03-2004                                      *
-!      * Last modified: 10-31-2007                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine initDepvarAndHalos(halosRead)
 !
 !      ******************************************************************
@@ -30,7 +20,7 @@
        use section
        use utils, only : setPointers
        use haloExchange, only : whalo2
-       use BCData, only : bcDataMassBleedOutFlow
+
        implicit none
 !
 !      Subroutine arguments.
@@ -112,18 +102,10 @@
        ! Apply all flow boundary conditions to be sure that the halo's
        ! contain the correct values. These might be needed to compute
        ! the eddy-viscosity. Also the data for the outflow bleeds
-       ! is determined. As BCDataMassBleedOutflow is called one more
-       ! time in this routine, relaxBleeds is set to zero when this
-       ! routine is called here, such that the pressure is not adapted
-       ! twice.
+       ! is determined. 
 
        currentLevel = mgStartlevel
        groundLevel  = mgStartlevel
-
-       relaxBleedsOr = relaxBleeds
-       relaxBleeds   = zero
-       call BCDataMassBleedOutflow(initBleeds, .false.)
-       relaxBleeds = relaxBleedsOr
 
        call applyAllBC(.true.)
 
@@ -166,19 +148,10 @@
        call whalo2(mgStartlevel, 1_intType, 0_intType, .false., &
                    .false., .true.)
 
-       ! Apply the turbulent boundary conditions twice and redo the
-       ! mean flow boundary conditions.  Just to be sure that
-       ! everything is initialized properly for all situations
-       ! possible.
        if (equations == RANSEquations) then 
           call applyAllTurbBC(.true.)
        end if
        call applyAllBC(.true.)
-       call BCDataMassBleedOutflow(initBleeds, .false.)
-       call applyAllBC(.true.)
-       if (equations == RANSEquations) then 
-          call applyAllTurbBC(.true.)
-       end if
 
        ! Exchange the solution for the second time to be sure that all
        ! halo's are initialized correctly. As this is the initialization

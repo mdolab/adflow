@@ -4,9 +4,11 @@ subroutine finalOversetCommStructures(level, sps)
   ! We need to fill in the following information in the comm patterns:
   ! sendProc, nProcSend, nSend, and sendList for each proc
   ! recvProc, nProcRecv, nRecv, and recvList for each proc
-
-  use blockPointers
-  use communication
+  use constants
+  use blockPointers, only : nDom, fringes, ib, jb, kb
+  use overset, only: fringeType
+  use communication, only : sumb_comm_world, myid, nProc, sendRequests, recvRequests, &
+       commPatternOverset, internalOverset
   use utils, only : setPointers, terminate, EChk
 
   implicit none

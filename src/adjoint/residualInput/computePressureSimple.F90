@@ -2,7 +2,7 @@
 ! routine is used by the forward mode AD code only. 
 
 subroutine computePressureSimple
-
+  use constants
   use blockPointers
   use flowVarRefState
   use inputPhysics

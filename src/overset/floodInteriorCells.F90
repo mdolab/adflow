@@ -1,6 +1,8 @@
 subroutine floodInteriorCells(level, sps)
-  use communication
-  use blockPointers
+  use constants
+  use communication, only : commPatternCell_1st, internalCell_1st, sumb_comm_world, myid
+  use blockPointers, only : il, jl, kl, nx, ny, nz, ie, je, ke, ib, jb, kb,  &
+       nDom, flowDoms, iBlank, fringes
   use utils, only : setPointers, EChk
   use haloExchange, only : whalo1to1intGeneric
   implicit none

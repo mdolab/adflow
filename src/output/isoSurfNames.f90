@@ -18,6 +18,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use cgnsNames
        use inputPhysics
        use flowVarRefState

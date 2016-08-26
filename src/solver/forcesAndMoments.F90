@@ -23,6 +23,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   !      * here.                                                          *
   !      ******************************************************************
   !
+  use constants
   use communication
   use blockPointers
   use flowVarRefState

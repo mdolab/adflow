@@ -5,7 +5,7 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
   ! This is the main matrix-free forward mode computation
   use constants
   use block, only : flowDomsd
-  use communication
+  use communication, only : sumb_comm_world
   use costfunctions
   use blockPointers
   use inputDiscretization 
@@ -242,7 +242,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
      extrabar, wbar, spatialSize, extraSize, stateSize, costSize, fSize)
   use constants
   use block, only : flowDomsd
-  use communication
+  use communication, only : sumb_comm_world
   use blockPointers
   use inputDiscretization 
   use inputTimeSpectral 
@@ -575,7 +575,7 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
   use saModule_fast_b, only : saresscale_fast_b, saviscous_fast_b, &
        sasource_fast_b, cb3Inv, cv13, cw36, kar2inv, qq
   use adjointvars
-  use communication
+  use communication, only : sumb_comm_world
   use paramTurb
   use utils, only : terminate
   use haloExchange, only : whalo2_b
@@ -813,6 +813,7 @@ subroutine dRdwMatMult(A, vecX,  vecY, ierr)
   use inputTimeSpectral  
   use surfaceFamilies, only: wallFamilies, totalWallFamilies
   use utils, only : EChk
+  use costFunctions
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"

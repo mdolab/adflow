@@ -17,6 +17,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use flowVarRefState
        use paramTurb
        use utils, only : terminate

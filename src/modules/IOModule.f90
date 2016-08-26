@@ -16,7 +16,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use constants
+       use constants, only : intType, realType, mpi_offset_kind
        implicit none
        save
 !

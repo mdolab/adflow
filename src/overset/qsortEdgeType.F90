@@ -9,6 +9,7 @@
 !      * (Generously copied from qsortFringeType.F90)                   *
 !      ******************************************************************
 !
+       use constants
        use overset
        use utils, only :terminate
        implicit none

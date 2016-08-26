@@ -16,7 +16,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use constants
+       use constants, only : maxCGNSNameLen
        implicit none
        save
 !

@@ -19,7 +19,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use bleedFlows
        use block
        use communication
        use inputIO

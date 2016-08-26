@@ -18,6 +18,7 @@ subroutine applyallturbbcthisblock_b(secondhalo)
 !      *                                                                *
 !      ******************************************************************
 !
+  use constants
   use blockpointers
   use flowvarrefstate
   use inputphysics

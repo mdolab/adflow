@@ -19,6 +19,7 @@ subroutine saeddyviscosity_fast_b()
 !      *                                                                *
 !      ******************************************************************
 !
+  use constants
   use blockpointers
   use constants
   use paramturb

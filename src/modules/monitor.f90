@@ -20,7 +20,8 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use constants
+       use constants, only : intType, realType, cgnsRealType, &
+            maxCGNSNameLen
        implicit none
        save
 !

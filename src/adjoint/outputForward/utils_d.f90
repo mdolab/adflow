@@ -79,7 +79,7 @@ contains
 !      ******************************************************************
 !
     use constants
-    use inputphysics
+    use inputphysics, only : equationmode
     implicit none
 !
 !      function type
@@ -138,7 +138,7 @@ contains
 !      ******************************************************************
 !
     use constants
-    use inputphysics
+    use inputphysics, only : equationmode
     implicit none
 !
 !      function type
@@ -197,7 +197,7 @@ contains
 !      ******************************************************************
 !
     use constants
-    use inputphysics
+    use inputphysics, only : equationmode
     implicit none
 !
 !      function type
@@ -315,7 +315,7 @@ contains
 !      ******************************************************************
 !
     use constants
-    use inputphysics
+    use inputphysics, only : equationmode
     implicit none
 !
 !      function type
@@ -379,8 +379,9 @@ contains
 !      *                                                                *
 !      ******************************************************************
 !
-    use flowvarrefstate
-    use inputphysics
+    use constants
+    use inputphysics, only : equationmode
+    use flowvarrefstate, only : timeref, timerefd
     implicit none
 !
 !      function type
@@ -442,8 +443,9 @@ contains
 !      *                                                                *
 !      ******************************************************************
 !
-    use flowvarrefstate
-    use inputphysics
+    use constants
+    use inputphysics, only : equationmode
+    use flowvarrefstate, only : timeref
     implicit none
 !
 !      function type
@@ -494,7 +496,7 @@ contains
 !   variations   of useful results: mydim
 !   with respect to varying inputs: x y
   function mydim_d(x, xd, y, yd, mydim)
-    use precision
+    use constants
     implicit none
     real(kind=realtype) :: x, y
     real(kind=realtype) :: xd, yd
@@ -508,7 +510,7 @@ contains
     end if
   end function mydim_d
   function mydim(x, y)
-    use precision
+    use constants
     implicit none
     real(kind=realtype) :: x, y
     real(kind=realtype) :: mydim
@@ -516,9 +518,9 @@ contains
     if (mydim .lt. 0.0) mydim = 0.0
   end function mydim
   function getcorrectfork()
-    use flowvarrefstate
-    use inputphysics
-    use iteration
+    use constants
+    use flowvarrefstate, only : kpresent
+    use iteration, only : currentlevel, groundlevel
     implicit none
     logical :: getcorrectfork
     if (kpresent .and. currentlevel .le. groundlevel) then
@@ -536,9 +538,8 @@ contains
 !      *                                                                *
 !      ******************************************************************
 !
-    use precision
-    use communication
     use constants
+    use communication, only : sumb_comm_world, myid
     implicit none
 !
 !      subroutine arguments
@@ -557,9 +558,9 @@ contains
 !      *                                                                *
 !      ******************************************************************
 !
-    use flowvarrefstate
+    use constants
     use inputmotion
-    use monitor
+    use flowvarrefstate, only : lref
     implicit none
 !
 !      subroutine arguments.
@@ -664,8 +665,9 @@ contains
 !      *                                                                *
 !      ******************************************************************
 !
-    use flowvarrefstate
-    use inputphysics
+    use constants
+    use flowvarrefstate, only : timeref
+    use inputphysics, only : equationmode
     implicit none
 !
 !      function type
@@ -724,7 +726,7 @@ contains
 !      ******************************************************************
 !
     use constants
-    use inputphysics
+    use inputphysics, only : equationmode
     implicit none
 !
 !      function type
@@ -789,10 +791,18 @@ contains
 !      *                                                                *
 !      ******************************************************************
 !
-    use blockpointers
-    use flowvarrefstate
-    use inputphysics
-    use bcpointers_d
+    use constants
+    use blockpointers, only : w, wd, p, pd, rlv, rlvd, rev, revd, &
+&   gamma, x, xd, d2wall, si, sid, sj, sjd, sk, skd, s, sd, globalcell, &
+&   bcdata, bcdatad, nx, il, ie, ib, ny, jl, je, jb, nz, kl, ke, kb, &
+&   bcfaceid
+    use bcpointers_d, only : ww0, ww0d, ww1, ww1d, ww2, ww2d, ww3, ww3d,&
+&   pp0, pp0d, pp1, pp1d, pp2, pp2d, pp3, pp3d, rlv0, rlv0d, rlv1, rlv1d&
+&   , rlv2, rlv2d, rlv3, rlv3d, rev0, rev0d, rev1, rev1d, rev2, rev2d, &
+&   rev3, rev3d, gamma0, gamma1, gamma2, gamma3, gcp, xx, xxd, ss, ssd, &
+&   ssi, ssid, ssj, ssjd, ssk, sskd, dd2wall, istart, iend, jstart, jend&
+&   , isize, jsize
+    use inputphysics, only : cpmodel, equations
     implicit none
 ! subroutine arguments.
     integer(kind=inttype), intent(in) :: nn
@@ -1141,10 +1151,15 @@ contains
 !      *                                                                *
 !      ******************************************************************
 !
-    use blockpointers
-    use flowvarrefstate
-    use inputphysics
-    use bcpointers_d
+    use constants
+    use blockpointers, only : w, p, rlv, rev, gamma, x, d2wall, si, sj&
+&   , sk, s, globalcell, bcdata, nx, il, ie, ib, ny, jl, je, jb, nz, kl,&
+&   ke, kb, bcfaceid
+    use bcpointers_d, only : ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, &
+&   rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3, gamma0, gamma1, &
+&   gamma2, gamma3, gcp, xx, ss, ssi, ssj, ssk, dd2wall, istart, iend, &
+&   jstart, jend, isize, jsize
+    use inputphysics, only : cpmodel, equations
     implicit none
 ! subroutine arguments.
     integer(kind=inttype), intent(in) :: nn
@@ -1366,9 +1381,15 @@ contains
 !      *                                                                *
 !      ******************************************************************
 !
-    use blockpointers
-    use flowvarrefstate
-    use bcpointers_d
+    use constants
+    use blockpointers, only : w, p, rlv, rev, gamma, x, d2wall, si, sj&
+&   , sk, s, globalcell, bcdata, nx, il, ie, ib, ny, jl, je, jb, nz, kl,&
+&   ke, kb, bcfaceid
+    use bcpointers_d, only : ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, &
+&   rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3, gamma0, gamma1, &
+&   gamma2, gamma3, gcp, xx, ss, ssi, ssj, ssk, dd2wall, istart, iend, &
+&   jstart, jend, isize, jsize
+    use inputphysics, only : cpmodel, equations
     implicit none
 ! for forward mode we are using pointers so we just don't do
 ! anything.

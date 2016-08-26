@@ -10,9 +10,9 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use cpCurveFits
-    use flowVarRefState
-    use inputPhysics
+    use constants
+    use inputPhysics, only : cpModel
+    use flowVarRefState, only : RGas, gammaInf
     use utils, only : terminate
     implicit none
     !
@@ -67,7 +67,7 @@ contains
     !
     use constants
     use cpCurveFits
-    use inputPhysics
+    use inputPhysics, only : cpModel, gammaConstant
     implicit none
     !
     !      Subroutine arguments.
@@ -184,9 +184,10 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
+    use constants
     use cpCurveFits
-    use flowVarRefState
-    use inputPhysics
+    use flowVarRefState, only : tref, RGas, gammaInf
+    use inputPhysics, only : cpModel
     implicit none
 
     real(kind=realType), intent(in)  :: rho, p, u, v, w
@@ -493,7 +494,6 @@ contains
 
        ptot = p*exp(intCport)
 
-
     end select
 
   end subroutine computePtot
@@ -590,9 +590,10 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
-    use flowVarRefState
-    use inputPhysics
+    use constants
+    use blockPointers, only : w, p
+    use flowVarRefState, only : RGas, Tref
+    use inputPhysics, only : cpModel, gammaConstant
     implicit none
     !
     !      Subroutine arguments.
@@ -731,8 +732,8 @@ contains
     !
     use constants
     use cpCurveFits
-    use flowVarRefState
-    use inputPhysics
+    use flowVarRefState, only : RGas, Tref
+    use inputPhysics, only : cpModel, gammaConstant
     implicit none
     !
     !      Subroutine arguments.
@@ -900,9 +901,10 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
+    use constants
     use cpCurveFits
-    use flowVarRefState
+    use blockPointers, only : gamma, w, P
+    use flowVarRefState, only : Rgas, TRef
     implicit none
     !
     !      Local parameter.
@@ -1040,9 +1042,10 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use blockPointers
-    use inputtimespectral
-    use inputPhysics
+    use constants
+    use blockPointers, only : nDom, gamma
+    use inputtimespectral, only : nTimeIntervalsSpectral
+    use inputPhysics, only : gammaConstant
     use utils, only : setPointers
     implicit none
 

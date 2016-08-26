@@ -17,6 +17,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use block
        use cgnsGrid
        use cgnsNames
@@ -440,6 +441,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use block
        use cgnsGrid
        use IOModule

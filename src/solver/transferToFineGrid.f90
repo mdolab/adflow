@@ -30,7 +30,7 @@
        use utils, only : setPointers, getCorrectForK
        use haloExchange, only : whalo1, whalo2
        use flowUtils, only : computeEtotBlock
-       use BCData, only : bcDataMassBleedOutFlow
+
        implicit none
 !
 !      Subroutine arguments.
@@ -332,7 +332,6 @@
        ! solution must be exchanged again.
 
        if(.not. corrections) then
-         call BCDataMassBleedOutflow(.true., .true.)
          call applyAllBC(secondHalo)
 
          if( secondHalo ) then

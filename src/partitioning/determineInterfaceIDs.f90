@@ -16,6 +16,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use cgnsGrid
        use communication
        use iteration

@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          describeScheme.f90                              *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-23-2003                                      *
-!      * Last modified: 08-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine describeScheme(string)
 !
 !      ******************************************************************
@@ -18,6 +8,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use inputDiscretization
        use inputPhysics
        use flowVarRefState
@@ -26,13 +17,7 @@
 !      Subroutine arguments.
 !
        character(len=*), intent(out) :: string
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Write the basic scheme info.
 
        select case(spaceDiscr)

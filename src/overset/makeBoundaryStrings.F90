@@ -1,12 +1,12 @@
 subroutine makeGapBoundaryStrings(level, sps, master)
 
+  use constants
   use adtAPI
   use blockPointers
-  use communication
-  use overset
+  use communication, only : sumb_comm_world, myid, nProc
+  use overset, only : oversetString, oversetWall
   use stringOps
   use kdtree2_module
-  use adjointvars
   use inputOverset
   use utils, only : setPointers, EChk
   implicit none

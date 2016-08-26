@@ -9,6 +9,7 @@ subroutine writeCGNSReferenceState(cgnsInd, cgnsBase)
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use cgnsNames
   use su_cgns
   use inputPhysics

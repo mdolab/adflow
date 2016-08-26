@@ -10,6 +10,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use cgnsGrid
        use communication
@@ -637,7 +638,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use precision
+       use constants
        implicit none
 !
 !      Subroutine arguments.
@@ -660,13 +661,7 @@
 
        real(kind=realType), dimension(3)   :: trans
        real(kind=realType), dimension(3,3) :: rotMatrix
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Construct from the given rotation angles the rotation matrix
        ! from the current coordinates to the donor coordinates.
        ! Note that the sequence of rotation is first rotation around the
@@ -732,6 +727,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use cgnsGrid
        use communication

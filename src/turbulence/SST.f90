@@ -23,6 +23,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use inputTimeSpectral
        use iteration

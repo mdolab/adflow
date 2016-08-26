@@ -3,10 +3,10 @@ subroutine normalVelocitiesAllLevels(sps)
   !
   ! Shell function to call normalVelocities_block on all blocks/levels
   !
-  use blockPointers
-  use constants
-  use inputTimeSpectral
-  use iteration
+   use constants
+  use blockPointers, only : nDom, flowDoms
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use iteration, only : groundLevel
   use utils, only : setPointers
   implicit none
   !
@@ -43,6 +43,7 @@ subroutine normalVelocities_block(sps)
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use blockPointers
   use iteration
   implicit none
@@ -60,13 +61,7 @@ subroutine normalVelocities_block(sps)
 
   real(kind=realType), dimension(:,:),   pointer :: sFace
   real(kind=realType), dimension(:,:,:), pointer :: ss
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
-  !
+
   ! Check for a moving block. As it is possible that in a
   ! multidisicplinary environment additional grid velocities
   ! are set, the test should be done on addGridVelocities

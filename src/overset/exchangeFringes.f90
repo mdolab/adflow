@@ -10,9 +10,11 @@ subroutine exchangeFringes(level, sps, commPattern, internal)
   !      *                                                                *
   !      ******************************************************************
   !
-  use block
-  use communication
-  use overset
+  use constants
+  use blockPointers, only : flowDoms
+  use communication, only : commType, internalCommType, recvBuffer, sendBuffer, myid, &
+       sumb_comm_world, sendRequests, recvRequests
+  !use overset
   implicit none
   !
   !      Subroutine arguments.

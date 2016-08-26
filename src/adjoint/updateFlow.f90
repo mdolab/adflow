@@ -17,8 +17,8 @@ subroutine updateFlow
   !     *                                                                *
   !     ******************************************************************
   !
-
-  use inputTimeSpectral ! spaceDiscr,nTimeIntervalsSpectral
+  use constants
+  use inputTimeSpectral
   use section
   use inputPhysics  !
   use monitor

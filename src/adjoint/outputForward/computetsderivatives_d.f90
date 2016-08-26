@@ -28,6 +28,7 @@ subroutine computetsderivatives_d(force, forced, moment, momentd, &
 !     *                                                                *
 !     ******************************************************************
 !
+  use constants
   use communication
   use inputphysics
   use inputtimespectral

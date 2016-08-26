@@ -19,9 +19,9 @@ contains
 !      *                                                                *
 !      ******************************************************************
 !
-    use cpcurvefits
-    use flowvarrefstate
-    use inputphysics
+    use constants
+    use inputphysics, only : cpmodel
+    use flowvarrefstate, only : rgas, gammainf
     use utils_d, only : terminate
     implicit none
 !
@@ -66,7 +66,7 @@ contains
 !
     use constants
     use cpcurvefits
-    use inputphysics
+    use inputphysics, only : cpmodel, gammaconstant
     implicit none
     integer(kind=inttype), intent(in) :: mm
 !
@@ -167,7 +167,7 @@ contains
 !
     use constants
     use cpcurvefits
-    use inputphysics
+    use inputphysics, only : cpmodel, gammaconstant
     implicit none
     integer(kind=inttype), intent(in) :: mm
 !
@@ -243,9 +243,10 @@ contains
 !      *                                                                *
 !      ******************************************************************
 !
+    use constants
     use cpcurvefits
-    use flowvarrefstate
-    use inputphysics
+    use flowvarrefstate, only : tref, rgas, gammainf
+    use inputphysics, only : cpmodel
     implicit none
     real(kind=realtype), intent(in) :: rho, p, u, v, w
     real(kind=realtype), intent(out) :: ptot
@@ -583,9 +584,10 @@ intervaltt:do
 !      *                                                                *
 !      ******************************************************************
 !
-    use blockpointers
-    use flowvarrefstate
-    use inputphysics
+    use constants
+    use blockpointers, only : w, p
+    use flowvarrefstate, only : rgas, tref
+    use inputphysics, only : cpmodel, gammaconstant
     implicit none
 !
 !      subroutine arguments.
@@ -725,8 +727,8 @@ intervaltt:do
 !
     use constants
     use cpcurvefits
-    use flowvarrefstate
-    use inputphysics
+    use flowvarrefstate, only : rgas, rgasd, tref, trefd
+    use inputphysics, only : cpmodel, gammaconstant
     implicit none
 !
 !      subroutine arguments.
@@ -779,8 +781,8 @@ intervaltt:do
 !
     use constants
     use cpcurvefits
-    use flowvarrefstate
-    use inputphysics
+    use flowvarrefstate, only : rgas, tref
+    use inputphysics, only : cpmodel, gammaconstant
     implicit none
 !
 !      subroutine arguments.
