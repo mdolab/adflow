@@ -6,8 +6,8 @@
 !                *(*bcdata.area) sepsensoravg cfp cfv cmp cmv cavitation
 !                sepsensor
 !   with respect to varying inputs: gammainf pinf pref *xx *pp1
-!                *pp2 *ssi *ww2 *p *w *x *si *sj *sk *(*viscsubface.tau)
-!                veldirfreestream lengthref machcoef pointref
+!                *pp2 *ssi *ww2 veldirfreestream lengthref machcoef
+!                pointref *p *w *x *si *sj *sk *(*viscsubface.tau)
 !   plus diff mem management of: xx:in-out rev0:out rev1:out rev2:out
 !                rev3:out pp0:out pp1:in-out pp2:in-out pp3:out
 !                rlv0:out rlv1:out rlv2:out rlv3:out ss:out ssi:in-out

@@ -8,8 +8,8 @@
 !   with respect to varying inputs: tinfdim rhoinfdim pinfdim *xx
 !                *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0
 !                *rlv1 *rlv2 *rlv3 *ss *ssi *ssj *ssk *ww0 *ww1
-!                *ww2 *ww3 *(flowdoms.x) *(flowdoms.w) mach machgrid
-!                rgasdim lengthref machcoef pointref alpha beta
+!                *ww2 *ww3 mach machgrid rgasdim lengthref machcoef
+!                pointref *(flowdoms.x) *(flowdoms.w) alpha beta
 !   rw status of diff variables: gammainf:(loc) tinfdim:in pinf:(loc)
 !                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:in
 !                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
@@ -18,21 +18,22 @@
 !                *rev2:in *rev3:in *pp0:in-out *pp1:in-out *pp2:in
 !                *pp3:in *rlv0:in-out *rlv1:in-out *rlv2:in *rlv3:in
 !                *ss:in *ssi:in *ssj:in *ssk:in *ww0:in-out *ww1:in-out
-!                *ww2:in *ww3:in *(flowdoms.x):in *(flowdoms.vol):(loc)
-!                *(flowdoms.w):in-out *(flowdoms.dw):out *rev:(loc)
-!                *aa:(loc) *bvtj1:(loc) *bvtj2:(loc) *wx:(loc)
-!                *wy:(loc) *wz:(loc) *p:(loc) *sfacei:(loc) *sfacej:(loc)
-!                *s:(loc) *sfacek:(loc) *rlv:(loc) *qx:(loc) *qy:(loc)
-!                *qz:(loc) *scratch:(loc) *bvtk1:(loc) *bvtk2:(loc)
-!                *ux:(loc) *uy:(loc) *uz:(loc) *si:(loc) *sj:(loc)
-!                *sk:(loc) *bvti1:(loc) *bvti2:(loc) *vx:(loc)
-!                *vy:(loc) *vz:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
-!                *(*bcdata.norm):(loc) *(*bcdata.rface):(loc) *(*bcdata.fv):out
-!                *(*bcdata.fp):out *(*bcdata.area):out *(*bcdata.uslip):(loc)
-!                *radi:(loc) *radj:(loc) *radk:(loc) mach:in veldirfreestream:(loc)
+!                *ww2:in *ww3:in mach:in veldirfreestream:(loc)
 !                machgrid:in rgasdim:in lengthref:in machcoef:in
 !                dragdirection:(loc) liftdirection:(loc) pointref:in
-!                funcvalues:out alpha:in beta:in
+!                *(flowdoms.x):in *(flowdoms.vol):(loc) *(flowdoms.w):in-out
+!                *(flowdoms.dw):out *rev:(loc) *aa:(loc) *bvtj1:(loc)
+!                *bvtj2:(loc) *wx:(loc) *wy:(loc) *wz:(loc) *p:(loc)
+!                *sfacei:(loc) *sfacej:(loc) *s:(loc) *sfacek:(loc)
+!                *rlv:(loc) *qx:(loc) *qy:(loc) *qz:(loc) *scratch:(loc)
+!                *bvtk1:(loc) *bvtk2:(loc) *ux:(loc) *uy:(loc)
+!                *uz:(loc) *si:(loc) *sj:(loc) *sk:(loc) *bvti1:(loc)
+!                *bvti2:(loc) *vx:(loc) *vy:(loc) *vz:(loc) *fw:(loc)
+!                *(*viscsubface.tau):(loc) *(*bcdata.norm):(loc)
+!                *(*bcdata.rface):(loc) *(*bcdata.fv):out *(*bcdata.fp):out
+!                *(*bcdata.area):out *(*bcdata.uslip):(loc) *radi:(loc)
+!                *radj:(loc) *radk:(loc) funcvalues:out alpha:in
+!                beta:in
 !   plus diff mem management of: xx:in-out rev0:in-out rev1:in-out
 !                rev2:in-out rev3:in-out pp0:in-out pp1:in-out
 !                pp2:in-out pp3:in-out rlv0:in-out rlv1:in-out

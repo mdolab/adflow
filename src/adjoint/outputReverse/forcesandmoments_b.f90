@@ -4,16 +4,16 @@
 !  differentiation of forcesandmoments in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: gammainf pinf pref *xx *rev0
 !                *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1
-!                *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 *ww3 *w *x *(*bcdata.fv)
-!                *(*bcdata.fp) *(*bcdata.area) lengthref machcoef
-!                pointref sepsensoravg cfp cfv cmp cmv cavitation
+!                *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 *ww3 lengthref
+!                machcoef pointref *w *x *(*bcdata.fv) *(*bcdata.fp)
+!                *(*bcdata.area) sepsensoravg cfp cfv cmp cmv cavitation
 !                sepsensor
 !   with respect to varying inputs: gammainf pinf pref *xx *rev0
 !                *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1
-!                *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 *ww3 *rev *p *w
-!                *rlv *x *si *sj *sk *(*viscsubface.tau) *(*bcdata.fv)
-!                *(*bcdata.fp) *(*bcdata.area) veldirfreestream
-!                lengthref machcoef pointref
+!                *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 *ww3 veldirfreestream
+!                lengthref machcoef pointref *rev *p *w *rlv *x
+!                *si *sj *sk *(*viscsubface.tau) *(*bcdata.fv)
+!                *(*bcdata.fp) *(*bcdata.area)
 !   plus diff mem management of: xx:in rev0:in rev1:in rev2:in
 !                rev3:in pp0:in pp1:in pp2:in pp3:in rlv0:in rlv1:in
 !                rlv2:in rlv3:in ssi:in ww0:in ww1:in ww2:in ww3:in
@@ -511,6 +511,7 @@ bocos:do nn=1,nbocos
   pinfd = pinfd + gammainf*tempd7
   machcoefd = machcoefd + scaledim*temp*2*machcoef*tempd6
   scaledimd = temp*machcoef**2*tempd6
+  veldirfreestreamd = 0.0_8
   revd = 0.0_8
   pd = 0.0_8
   rlvd = 0.0_8
@@ -520,7 +521,6 @@ bocos:do nn=1,nbocos
   do ii1=1,size(viscsubfaced)
     viscsubfaced(ii1)%tau = 0.0_8
   end do
-  veldirfreestreamd = 0.0_8
   vd = 0.0_8
   refpointd = 0.0_8
   do nn=nbocos,1,-1

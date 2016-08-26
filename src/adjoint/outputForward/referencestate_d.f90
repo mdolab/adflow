@@ -46,6 +46,7 @@ subroutine referencestate_d()
 !      ******************************************************************
 !
   use constants
+  use paramturb
   use inputphysics, only : equations, mach, machd, machcoef, machcoefd&
 & , musuthdim, tsuthdim, veldirfreestream, veldirfreestreamd, rgasdim, &
 & rgasdimd, ssuthdim, eddyvisinfratio, turbmodel, turbintensityinf
@@ -56,7 +57,6 @@ subroutine referencestate_d()
 & muinfd, gammainf, gammainfd, winf, winfd, nw, nwf, kpresent, winf, &
 & winfd
   use flowutils_d, only : computegamma, computegamma_d, etot, etot_d
-  use paramturb
   implicit none
   integer(kind=inttype) :: sps, nn, mm, ierr
   real(kind=realtype) :: gm1, ratio
