@@ -27,9 +27,10 @@
                       "Routine should not be called if no cgns support &
                       &is selected.")
 #else
-       use cgnsGrid
+       use constants
+       use cgnsGrid, only : cgnsNDom
        use su_cgns
-       use restartMod
+       use restartMod, only : zoneNames, zoneNumbers, cgnsInd, cgnsBase
        use sorting, only : qsortStrings, bsearchStrings
        use utils, only : terminate
        implicit none

@@ -11,9 +11,9 @@
 !      ******************************************************************
 !
        use constants
-       use blockPointers
-       use flowVarRefState
-       use inputTimeSpectral
+       use blockPointers, only : nDom, p, w, il, jl, kl
+       use flowVarRefState, only : kPresent
+       use inputTimeSpectral, only : nTimeIntervalsSpectral
        use utils, only : setPointers
        use flowUtils, only : computeEtotBlock
        implicit none

@@ -24,10 +24,12 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
+       use constants
        use cgnsNames
-       use IOModule
-       use restartMod
+       use blockPointers, only : w, nbklocal
+       use IOModule, only : IOVar
+       use restartMod, only : nVar, solID, buffer, varNames, rhoScale, &
+            velScale, varTypes
        use utils, only : setCGNSRealType, terminate
        use sorting, only : bsearchStrings
 

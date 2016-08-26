@@ -21,11 +21,12 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use block
-       use flowVarRefState
-       use inputPhysics
-       use IOModule
-       use restartMod
+       use constants
+       use block, only : flowDoms, nDom
+       use flowVarRefState, only : nw
+       use inputPhysics, only : equationMode
+       use IOModule, only : IOVar
+       use restartMod, only : nSolsRead, interpolSpectral
        use utils, only : terminate
        implicit none
 !

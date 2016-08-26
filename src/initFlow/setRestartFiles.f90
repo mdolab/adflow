@@ -1,12 +1,4 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          setRestartFiles.f90                           *
-!      * Author:        Eirikur Jonsson                                 *
-!      *                                                                *
-!      ******************************************************************
-!
-subroutine setRestartFiles(fileName,i)
+subroutine setRestartFiles(fileName, i)
   !
   !      ******************************************************************
   !      *    Populates the restartfiles                                  *
@@ -14,8 +6,7 @@ subroutine setRestartFiles(fileName,i)
   !      ******************************************************************
   !
   use constants
-  use inputIO
-  use inputTimeSpectral
+  use inputIO, only : restartFiles
   implicit none
   !
   !      Subroutine argument.

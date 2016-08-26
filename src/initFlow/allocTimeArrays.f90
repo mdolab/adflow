@@ -10,7 +10,8 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use monitor
+       use constants
+       use monitor, only : timeArray, timeDataArray, nMon
        use utils, only : terminate
        implicit none
 !

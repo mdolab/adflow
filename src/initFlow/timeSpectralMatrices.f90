@@ -13,10 +13,10 @@
 !      ******************************************************************
 !
        use constants
-       use flowVarRefState
-       use inputPhysics
-       use inputTimeSpectral
-       use section
+       use inputPhysics, only : equationMode
+       use inputTimeSpectral, only : nTimeIntervalsSpectral, dscalar, dvector, &
+            rotMatrixSpectral
+       use section, only: nSections
        use utils, only : terminate
        implicit none
 !

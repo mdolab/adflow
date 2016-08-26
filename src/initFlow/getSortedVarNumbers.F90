@@ -28,7 +28,8 @@
 #else
        use constants
        use su_cgns
-       use restartMod
+       use restartMod, only : varTypes, varNames, cgnsBase, cgnsInd, &
+            cgnsZone, cgnsSol, nVar
        use sorting, only : qsortStrings, bsearchStrings
        use utils, only : terminate
        implicit none

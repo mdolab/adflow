@@ -17,14 +17,15 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
-       use cgnsNames
        use constants
-       use flowVarRefState
-       use inputPhysics
-       use restartMod
-       use utils, only : setCGNSRealType
+       use cgnsNames
+       use blockPointers, only : w, nbklocal, il, jl, kl, rev
+       use restartMod, only : nVar, solID, varTypes, buffer, &
+            varNames, muScale
+       use utils, only : setCGNSRealType, terminate
        use sorting, only : bsearchStrings
+       use flowVarRefState, only : muInf
+       use inputPhysics, only : eddyVisInfRatio
        implicit none
 !
 !      Subroutine arguments.

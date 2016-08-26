@@ -18,10 +18,8 @@ subroutine initFlowRestart
   !      ******************************************************************
   !
   use constants
-  use communication
-  use inputIO
-  use IOModule
-  use restartMod
+  use IOModule, only : IOVar
+  use restartMod, only : solFiles, copySpectral, halosRead, interpolSpectral
   use utils, only : terminate
   implicit none
   !

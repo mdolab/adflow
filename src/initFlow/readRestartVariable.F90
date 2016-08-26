@@ -17,9 +17,11 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
+       use constants
        use su_cgns
-       use restartMod
+       use blockPointers, only : il, jl, kl
+       use restartMod, only : buffer, bufferVertex, cgnsBase, cgnsInd, &
+            cgnsSol, cgnsZone, rangeMax, rangeMin, location
        use utils, only : terminate, setCGNSRealType
        implicit none
 !

@@ -18,13 +18,16 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
-       use cgnsNames
        use constants
-       use communication
-       use flowVarRefState
-       use IOModule
-       use restartMod
+       use cgnsNames
+       use communication, only : myid
+       use blockPointers, only : w, nbklocal
+       use restartMod, only : nVar, solID, varTypes, buffer, &
+            varNames, muScale, rhoScale, velScale
+       use IOModule, only : IOVar
+       use utils, only : setCGNSRealType, terminate
+       use sorting, only : bsearchStrings
+       use flowVarRefState, only : wInf, nt1, nt2
        implicit none
 !
 !      Subroutine argument.
@@ -44,11 +47,6 @@
        real(kind=realType), dimension(4) :: turbScale
 
        character(len=maxCGNSNameLen), dimension(4) :: namesVar
-!
-!      Function definitions.
-!
-       integer               :: setCGNSRealType
-       integer(kind=intType) :: bsearchStrings
 !
 !      ******************************************************************
 !      *                                                                *

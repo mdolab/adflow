@@ -21,12 +21,12 @@
 !      ******************************************************************
 !
        use constants
-       use block
-       use flowVarRefState
-       use inputTimeSpectral
-       use IOModule
-       use monitor
-       use section
+       use block, only : flowDoms, nDom
+       use flowVarRefState, only : nw
+       use inputTimeSpectral, only : nTimeIntervalsSpectral
+       use IOModule, only : IOVar
+       use monitor, only: timeUnsteadyRestart
+       use section, only : sections, nSections
        use utils, only : rotMatrixRigidBody
        implicit none
 !
