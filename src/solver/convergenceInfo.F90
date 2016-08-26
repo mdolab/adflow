@@ -22,7 +22,7 @@ subroutine convergenceInfo
   use iteration, only : groundLevel, currentLevel, iterTot, iterType, approxTotalIts, &
        CFLMonitor, t0solver, converged
   use killSignals, only : routineFailed, fromPython
-  use NKsolverVars, only : rhoRes, rhoResStart, totalR, totalRStart, totalR0, RKReset
+  use NKsolver, only : rhoRes, rhoResStart, totalR, totalRStart, totalR0, RKReset
   use overset, only: oversetPresent
   use utils, only : setPointers, myisnan, returnFail
   implicit none

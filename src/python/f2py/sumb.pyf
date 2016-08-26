@@ -112,6 +112,96 @@ python module libsumb
 
        end module inputparamroutines
 
+       module nksolver
+         use constants
+         integer(kind=inttype) :: nk_innerpreconits
+         integer(kind=inttype) :: nk_outerpreconits
+         integer(kind=inttype) :: nk_jacobianlag
+         logical :: usenksolver
+         logical :: nk_adpc
+         logical :: nk_useew
+         logical :: nk_viscpc
+         logical :: rkreset
+         integer(kind=inttype) :: nk_ls
+         integer(kind=inttype) :: nk_subspace
+         integer(kind=inttype) :: nk_asmoverlap
+         real(kind=realtype) :: nk_rtolinit
+         integer(kind=inttype) :: nk_ilufill
+         real(kind=realtype) :: nk_switchtol
+         real(kind=realtype) :: nk_cfl0
+         real(kind=realtype) :: totalr0
+         real(kind=realtype) :: totalrstart
+         real(kind=realtype) :: totalrfinal
+         integer(kind=inttype) :: applypcsubspacesize
+         logical :: freestreamresset
+
+         subroutine getstates(states,ndimw)
+           real(kind=realtype) dimension(ndimw),intent(out),depend(ndimw) :: states
+           integer(kind=inttype) intent(in) :: ndimw
+         end subroutine getstates
+
+         subroutine setstates(states,ndimw)
+           real(kind=realtype) dimension(ndimw),intent(in) :: states
+           integer(kind=inttype) optional,intent(in),check(len(states)>=ndimw),depend(states) :: ndimw=len(states)
+         end subroutine setstates
+
+         subroutine getinfosize(isize)
+           integer(kind=inttype) intent(out) :: isize
+         end subroutine getinfosize
+         
+         subroutine setinfo(info,isize) 
+           real(kind=realtype) dimension(isize),intent(in) :: info
+           integer(kind=inttype) optional,intent(in),check(len(info)>=isize),depend(info) :: isize=len(info)
+         end subroutine setinfo
+         
+         subroutine getinfo(info,isize) 
+           real(kind=realtype) dimension(isize),intent(out),depend(isize) :: info
+           integer(kind=inttype) intent(in) :: isize
+         end subroutine getinfo
+         
+         subroutine getres(res,ndimw)
+           real(kind=realtype) dimension(ndimw),intent(in,out) :: res
+           integer(kind=inttype) optional,intent(in),check(len(res)>=ndimw),depend(res) :: ndimw=len(res)
+         end subroutine getres
+ 
+         subroutine applypc(in_vec,out_vec,ndof)
+           real(kind=realtype) dimension(ndof),intent(in) :: in_vec
+           real(kind=realtype) dimension(ndof),intent(in, out),depend(ndof) :: out_vec
+           integer(kind=inttype) optional,check(len(in_vec)>=ndof),depend(in_vec) :: ndof=len(in_vec)
+         end subroutine applypc
+         
+         subroutine applyadjointpc(in_vec,out_vec,ndof) 
+           real(kind=realtype) dimension(ndof),intent(in) :: in_vec
+           real(kind=realtype) dimension(ndof),intent(in, out),depend(ndof) :: out_vec
+           integer(kind=inttype) optional,check(len(in_vec)>=ndof),depend(in_vec) :: ndof=len(in_vec)
+         end subroutine applyadjointpc
+
+         subroutine destroynksolver
+         end subroutine destroynksolver
+         
+       end module nksolver
+
+       module anksolver
+         use constants
+         integer(kind=inttype) :: ank_innerpreconits
+         integer(kind=inttype) :: ank_jacobianlag
+         logical :: useanksolver
+         logical :: ank_useturbdadi
+         integer(kind=inttype) :: ank_subspace
+         integer(kind=inttype) :: ank_asmoverlap
+         real(kind=realtype) :: ank_rtol
+         integer(kind=inttype) :: ank_ilufill
+         real(kind=realtype) :: ank_switchtol
+         real(kind=realtype) :: ank_cfl0
+       
+         subroutine destroyanksolver
+         end subroutine destroyanksolver
+         
+       end module anksolver
+     
+
+! ================ bare subroutines =============
+
        subroutine addparaslice(slicename,pt,direction,famlist,n) ! in :test:liftDistribution.F90
          character*(*) intent(in) :: slicename
          real(kind=realtype) dimension(3),intent(in) :: pt
@@ -185,7 +275,6 @@ python module libsumb
          real(kind=realtype) intent(in):: beta
          integer(kind=inttype) intent(in) :: liftindex
        end subroutine adjustinflowangle
-
 
 
        subroutine solver ! in :sumb:../../solver/solver.F90
@@ -402,37 +491,7 @@ python module libsumb
           end subroutine savecellcenters
 
 
-       ! -------- Partial Derivative Functions -----------
        
-       ! -------- Get/Set Functions --------------------
-       subroutine getstates(states,ndimw) ! in :test:getADjoint.F90
-         real(kind=realtype) dimension(ndimw),intent(out),depend(ndimw) :: states
-         integer(kind=inttype) intent(in) :: ndimw
-       end subroutine getstates
-
-       subroutine setstates(states,ndimw) ! in :test:getADjoint.F90
-         real(kind=realtype) dimension(ndimw),intent(in) :: states
-         integer(kind=inttype) optional,intent(in),check(len(states)>=ndimw),depend(states) :: ndimw=len(states)
-       end subroutine setstates
-
-       subroutine getinfosize(isize)
-         integer(kind=inttype) intent(out) :: isize
-       end subroutine getinfosize
-
-       subroutine setinfo(info,isize) ! in :test:getADjoint.F90
-         real(kind=realtype) dimension(isize),intent(in) :: info
-         integer(kind=inttype) optional,intent(in),check(len(info)>=isize),depend(info) :: isize=len(info)
-       end subroutine setinfo
-
-       subroutine getinfo(info,isize) ! in :test:getADjoint.F90
-         real(kind=realtype) dimension(isize),intent(out),depend(isize) :: info
-         integer(kind=inttype) intent(in) :: isize
-       end subroutine setinfo
-
-       subroutine getres(res,ndimw) ! in :test:NKUtilities.F90
-         real(kind=realtype) dimension(ndimw),intent(in,out) :: res
-         integer(kind=inttype) optional,intent(in),check(len(res)>=ndimw),depend(res) :: ndimw=len(res)
-       end subroutine getres
 
        subroutine spectralprecscribedmotion(input,nin,dxv,nout)
          real(kind=realtype) dimension(nin),intent(in) :: input
@@ -482,27 +541,7 @@ python module libsumb
        ! ------------- Misc --------------------
  
 
-       ! ############################################################################
-       ! Newton-Krylov Solver Routines
-       ! ############################################################################
-
-       subroutine applypc(in_vec,out_vec,ndof) ! in :test:NKsolver.F90
-         real(kind=realtype) dimension(ndof),intent(in) :: in_vec
-         real(kind=realtype) dimension(ndof),intent(in, out),depend(ndof) :: out_vec
-         integer(kind=inttype) optional,check(len(in_vec)>=ndof),depend(in_vec) :: ndof=len(in_vec)
-       end subroutine applypc
-
-       subroutine applyadjointpc(in_vec,out_vec,ndof) ! in :test:NKsolver.F90
-         real(kind=realtype) dimension(ndof),intent(in) :: in_vec
-         real(kind=realtype) dimension(ndof),intent(in, out),depend(ndof) :: out_vec
-         integer(kind=inttype) optional,check(len(in_vec)>=ndof),depend(in_vec) :: ndof=len(in_vec)
-       end subroutine applyadjointpc
-
-       subroutine destroynksolver
-       end subroutine destroynksolver
-
-       subroutine destroyanksolver
-       end subroutine destroyanksolver
+   
        
        ! ############################################################################
        ! SUmb Modules
@@ -1045,43 +1084,7 @@ python module libsumb
           integer(kind=inttype), allocatable,dimension(:) :: famiswall
         end module surfacefamilies
 
-       module nksolvervars ! in :test:NKsolverVars.F90
-         use constants
-         integer(kind=inttype) :: nk_innerpreconits
-         integer(kind=inttype) :: nk_outerpreconits
-         integer(kind=inttype) :: nk_jacobianlag
-         logical :: usenksolver
-         logical :: nk_adpc
-         logical :: nk_useew
-         logical :: nk_viscpc
-         logical :: rkreset
-         integer(kind=inttype) :: nk_ls
-         integer(kind=inttype) :: nk_subspace
-         integer(kind=inttype) :: nk_asmoverlap
-         real(kind=realtype) :: nk_rtolinit
-         integer(kind=inttype) :: nk_ilufill
-         real(kind=realtype) :: nk_switchtol
-         real(kind=realtype) :: nk_cfl0
-         real(kind=realtype) :: totalr0
-         real(kind=realtype) :: totalrstart
-         real(kind=realtype) :: totalrfinal
-         integer(kind=inttype) :: applypcsubspacesize
-         logical :: freestreamresset
-       end module nksolvervars
 
-       module anksolvervars ! in :test:NKsolverVars.F90
-         use constants
-         integer(kind=inttype) :: ank_innerpreconits
-         integer(kind=inttype) :: ank_jacobianlag
-         logical :: useanksolver
-         logical :: ank_useturbdadi
-         integer(kind=inttype) :: ank_subspace
-         integer(kind=inttype) :: ank_asmoverlap
-         real(kind=realtype) :: ank_rtol
-         integer(kind=inttype) :: ank_ilufill
-         real(kind=realtype) :: ank_switchtol
-         real(kind=realtype) :: ank_cfl0
-       end module anksolvervars
     end interface 
 
 #ifdef USE_COMPLEX

@@ -1656,7 +1656,7 @@ class SUMB(AeroSolver):
         self.sumb.initializeflow.setuniformflow()
         self.sumb.killsignals.routinefailed =  False
         self.sumb.killsignals.fatalfail = False
-        self.sumb.nksolvervars.freestreamresset = False
+        self.sumb.nksolver.freestreamresset = False
 
     def getSolution(self, sps=1, groupName=None):
         """ Retrieve the solution variables from the solver. Note this
@@ -1920,8 +1920,8 @@ class SUMB(AeroSolver):
         self.sumb.killsignals.fatalFail = False
 
         # Destroy the ANK/NK solver and the adjoint memory
-        self.sumb.destroynksolver()
-        self.sumb.destroyanksolver()
+        self.sumb.nksolver.destroynksolver()
+        self.sumb.anksolver.destroyanksolver()
         if releaseAdjointMemory:
             self.releaseAdjointMemory()
 
@@ -2262,7 +2262,7 @@ class SUMB(AeroSolver):
         outVec : array
             Preconditioned vector
         """
-        return self.sumb.applypc(inVec, outVec)
+        return self.sumb.nksolver.applypc(inVec, outVec)
 
     def globalAdjointPreCon(self, inVec, outVec):
         """This function is ONLY used as a preconditioner to the
@@ -2280,7 +2280,7 @@ class SUMB(AeroSolver):
         outVec : array
             Preconditioned vector
         """
-        return self.sumb.applyadjointpc(inVec, outVec)
+        return self.sumb.nksolver.applyadjointpc(inVec, outVec)
 
     def verifyAD(self):
         """
@@ -2313,8 +2313,8 @@ class SUMB(AeroSolver):
 
         # Destroy the NKsolver to free memory -- Call this even if the
         # solver is not used...a safeguard check is done in Fortran
-        self.sumb.destroynksolver()
-        self.sumb.destroyanksolver()
+        self.sumb.nksolver.destroynksolver()
+        self.sumb.anksolver.destroyanksolver()
         self._setAeroDVs()
 
         if not self.adjointSetup or reform:
@@ -2581,19 +2581,19 @@ class SUMB(AeroSolver):
     def getResNorms(self):
         """Return the initial, starting and final Res Norms. Typically
         used by an external solver."""
-        return (numpy.real(self.sumb.nksolvervars.totalr0), 
-                numpy.real(self.sumb.nksolvervars.totalrstart),
-                numpy.real(self.sumb.nksolvervars.totalrfinal))
+        return (numpy.real(self.sumb.nksolver.totalr0), 
+                numpy.real(self.sumb.nksolver.totalrstart),
+                numpy.real(self.sumb.nksolver.totalrfinal))
 
     def setResNorms(self, initNorm=None, startNorm=None, finalNorm=None):
         """ Set one of these norms if not None. Typlically used by an
         external solver"""
         if initNorm is not None:
-            self.sumb.nksolvervars.totalr0 = initNorm
+            self.sumb.nksolver.totalr0 = initNorm
         if startNorm is not None:
-            self.sumb.nksolvervars.totalrstart = startNorm
+            self.sumb.nksolver.totalrstart = startNorm
         if finalNorm is not None:
-            self.sumb.nksolvervars.finalNorm = finalNorm
+            self.sumb.nksolver.finalNorm = finalNorm
 
     def _prescribedTSMotion(self):
         """Determine if we have prescribed motion timespectral analysis"""
@@ -3047,26 +3047,26 @@ class SUMB(AeroSolver):
         """Return the states on this processor. Used in aerostructural
         analysis"""
 
-        return self.sumb.getstates(self.getStateSize())
+        return self.sumb.nksolver.getstates(self.getStateSize())
 
     def setStates(self, states):
         """Set the states on this processor. Used in aerostructural analysis
         and for switching aeroproblems
         """
-        self.sumb.setstates(states)
+        self.sumb.nksolver.setstates(states)
 
     def _getInfo(self):
         """Get the haloed state vector, pressure (and viscocities). Used to
         save "state" between aeroProblems
 
         """
-        return self.sumb.getinfo(self.sumb.getinfosize())
+        return self.sumb.nksolver.getinfo(self.sumb.nksolver.getinfosize())
 
     def _setInfo(self, info):
         """Set the haloed state vector, pressure (and viscocities). Used to
         restore "state" between aeroProblems
         """
-        self.sumb.setinfo(info)
+        self.sumb.nksolver.setinfo(info)
 
     def setAdjoint(self, adjoint, objective=None):
         """Sets the adjoint vector externally. Used in coupled solver"""
@@ -3088,7 +3088,7 @@ class SUMB(AeroSolver):
         self.setAeroProblem(aeroProblem, releaseAdjointMemory)
         if res is None:
             res = numpy.zeros(self.getStateSize())
-        res = self.sumb.getres(res)
+        res = self.sumb.nksolver.getres(res)
 
         return res
 
@@ -3636,8 +3636,8 @@ class SUMB(AeroSolver):
                      'iter':self.sumb.inputiteration,
                      'physics':self.sumb.inputphysics,
                      'stab': self.sumb.inputtsstabderiv,
-                     'nk': self.sumb.nksolvervars,
-                     'ank': self.sumb.anksolvervars,
+                     'nk': self.sumb.nksolver,
+                     'ank': self.sumb.anksolver,
                      'adjoint': self.sumb.inputadjoint,
                      'cost': self.sumb.costfunctions,
                      'unsteady':self.sumb.inputunsteady,
