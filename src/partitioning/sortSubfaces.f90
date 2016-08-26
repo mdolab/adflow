@@ -1,9 +1,3 @@
-!
-!       File:          sortSubfaces.f90                                
-!       Author:        Edwin van der Weide, Seonghyeon Hahn            
-!       Starting date: 07-23-2003                                      
-!       Last modified: 10-10-2005                                      
-!
        subroutine sortSubfaces(oldSubfaceID, blockID)
 !
 !       sortSubfaces sorts the boundary subfaces of the given block    

@@ -1,9 +1,3 @@
-!
-!       File:          bcTurbInterface.f90                             
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!       Starting date: 01-09-2004                                      
-!       Last modified: 06-12-2005                                      
-!
 subroutine bcTurbInterface(nn)
   !
   !       bcTurbInterface applies the halo treatment for interface halo  

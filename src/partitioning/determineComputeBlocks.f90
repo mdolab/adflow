@@ -1,9 +1,3 @@
-!
-!       File:          determineComputeBlocks.f90                      
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 03-19-2004                                      
-!       Last modified: 10-10-2005                                      
-!
        subroutine determineComputeBlocks(splitInfo)
 !
 !       determineComputeBlocks determines the computational blocks     

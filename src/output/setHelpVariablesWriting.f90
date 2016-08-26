@@ -1,9 +1,3 @@
-!
-!       File:          setHelpVariablesWriting.f90                     
-!       Author:        Edwin van der Weide                             
-!       Starting date: 10-10-2005                                      
-!       Last modified: 10-10-2005                                      
-!
        subroutine setHelpVariablesWriting
 !
 !       setHelpVariablesWriting determines the variables, which are    

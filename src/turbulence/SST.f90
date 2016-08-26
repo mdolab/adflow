@@ -1,10 +1,3 @@
-!
-!       File:          SST.f90                                         
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!      *                Eirikur Jonsson
-!       Starting date: 07-31-2003                                      
-!       Last modified: 04-12-2005                                      
-!
 ! This module contains the source code related to the SST turbulence
 ! model. It is slightly more modularized than the original which makes
 ! performing reverse mode AD simplier.  

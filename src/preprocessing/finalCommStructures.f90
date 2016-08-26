@@ -1,9 +1,3 @@
-!
-!       File:          finalCommStructures.f90                         
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 02-20-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine finalCommStructures(entityHalo, nHalo, commPattern, &
                                       internalComm, nInterp)
 !

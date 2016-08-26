@@ -1,9 +1,3 @@
-!
-!       File:          releaseExtraMemBCs.f90                          
-!       Author:        Edwin van der Weide                             
-!       Starting date: 09-23-2004                                      
-!       Last modified: 09-27-2004                                      
-!
        subroutine releaseExtraMemBCs
 !
 !       releaseExtraMemBCs releases the extra memory allocated in      

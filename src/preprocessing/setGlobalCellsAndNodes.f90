@@ -1,9 +1,3 @@
-!
-!      File:          setGlobalCellsAndNodes.f90                      
-!      Author:        C.A.(Sandy) Mader, Gaetan Kenway                
-!      Starting date: 01-14-2008                                      
-!      Last modified: 12-28-2012                                      
-!
 subroutine setGlobalCellsAndNodes(level)
   !
   !      Determine the global node numbering that is used to assemble   

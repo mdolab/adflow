@@ -1,9 +1,3 @@
-!
-!       File:          turbResidual.f90                                
-!       Author:        Edwin van der Weide                             
-!       Starting date: 05-01-2003                                      
-!       Last modified: 04-11-2005                                      
-!
 subroutine turbResidual
   !
   !       turbResidual computes the residual of the residual of the      

@@ -1,9 +1,3 @@
-!
-!       File:          slidingIntersections.f90                        
-!       Author:        Edwin van der Weide                             
-!       Starting date: 10-22-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        module intersect
 !
 !       Local module to store the for every sliding mesh interface its 

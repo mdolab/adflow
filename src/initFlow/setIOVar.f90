@@ -1,9 +1,3 @@
-!
-!       File:          setIOVar.f90                                    
-!       Author:        Edwin van der Weide                             
-!       Starting date: 07-05-2005                                      
-!       Last modified: 10-10-2005                                      
-!
        subroutine setIOVar
 !
 !       setIOVar allocates the memory for the derived data type IOVar, 

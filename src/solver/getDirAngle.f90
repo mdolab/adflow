@@ -1,9 +1,3 @@
-!
-!      File:          getDirAngle.f90                                 
-!      Author:        Andre C. Marta,C.A.(Sandy) Mader                
-!      Starting date: 10-25-2005                                      
-!      Last modified: 06-13-2008                                      
-!
 subroutine getDirAngle(freeStreamAxis,liftAxis,liftIndex,alpha,beta)
   !
   !      Convert the wind axes to angle of attack and side slip angle.  

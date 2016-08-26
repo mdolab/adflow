@@ -1,9 +1,3 @@
-!
-!       File:          surfSolNames.f90                                
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 05-15-2003                                      
-!       Last modified: 07-13-2005                                      
-!
        subroutine surfSolNames(solNames)
 !
 !       surfSolNames sets the names for the surface variables to be    

@@ -1,9 +1,3 @@
-!
-!       File:          writeSolCGNSZone.F90                            
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 04-12-2003                                      
-!       Last modified: 10-13-2005                                      
-!
        subroutine writeSolCGNSZone(zone, nSolVar, nDiscrVar, solNames)
 !
 !       writeSolCGNSZone writes a volume solution of the given zone    

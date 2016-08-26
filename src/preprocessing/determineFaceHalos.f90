@@ -1,9 +1,3 @@
-!
-!       File:          determineFaceHalos.F90                          
-!       Author:        Edwin van der Weide                             
-!       Starting date: 01-28-2003                                      
-!       Last modified: 11-29-2007                                      
-!
        subroutine determineFaceHalos(level)
 !
 !       determineFaceHalos determines the 1st level direct cell and    

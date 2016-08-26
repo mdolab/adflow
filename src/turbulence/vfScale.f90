@@ -1,9 +1,3 @@
-!
-!       File:          vfScale.f90                                     
-!       Author:        Georgi Kalitzin                                 
-!       Starting date: 04-19-2004                                      
-!       Last modified: 04-11-2005                                      
-!
        subroutine vfScale
 !
 !       time and length scale definition for v2f turbulence model. The 

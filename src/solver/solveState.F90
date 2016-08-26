@@ -1,9 +1,3 @@
-!
-!       File:          solveState.F90                                  
-!       Author:        Edwin van der Weide                             
-!       Starting date: 01-29-2004                                      
-!       Last modified: 10-31-2007                                      
-!
 subroutine solveState
   !
   !       solveState computes either the steady or unsteady state        

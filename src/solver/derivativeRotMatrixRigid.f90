@@ -1,9 +1,3 @@
-!
-!       File:          derivativeRotMatrixRigid.f90                    
-!       Author:        Edwin van der Weide                             
-!       Starting date: 06-01-2004                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine derivativeRotMatrixRigid(rotationMatrix, &
                                            rotationPoint, t)
 !

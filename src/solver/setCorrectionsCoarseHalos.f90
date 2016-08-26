@@ -1,10 +1,3 @@
-!
-!       File:          setCorrectionsCoarseHalos.f90                   
-!       Author:        Edwin van der Weide, Steve Repsher,             
-!                      Seonghyeon Hahn                                 
-!       Starting date: 05-14-2003                                      
-!       Last modified: 08-09-2005                                      
-!
        subroutine setCorrectionsCoarseHalos(sps, nn, coarseLevel, &
                                             fact, nVarInt)
 !

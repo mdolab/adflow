@@ -1,9 +1,3 @@
-!
-!       File:          unitVectorsInAxialPlane.f90                     
-!       Author:        Edwin van der Weide                             
-!       Starting date: 12-10-2005                                      
-!       Last modified: 12-20-2005                                      
-!
        subroutine unitVectorsInAxialPlane(axis, vecR1, vecR2)
 !
 !       unitVectorsInAxialPlane computes from the given unit vector    

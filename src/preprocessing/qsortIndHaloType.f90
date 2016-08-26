@@ -1,9 +1,3 @@
-!
-!       File:          qsortIndHaloType.f90                            
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-03-2003                                      
-!       Last modified: 03-24-2005                                      
-!
        subroutine qsortIndHaloType(arr, nn)
 !
 !       qsortIndHaloType sorts the given number of indirect halo's     

@@ -1,9 +1,3 @@
-!
-!       File:          writeCgnsTimeHistory.F90                        
-!       Author:        Edwin van der Weide                             
-!       Starting date: 05-20-2004                                      
-!       Last modified: 10-13-2005                                      
-!
        subroutine writeCGNSTimeHistory
 !
 !       WriteCGNSTimeHistory writes for unsteady computations          

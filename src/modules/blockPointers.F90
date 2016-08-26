@@ -1,9 +1,3 @@
-!
-!       File:          blockPointers.f90                               
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 03-07-2003                                      
-!       Last modified: 11-21-2007                                      
-!
 module blockPointers
   !
   !       This module contains the pointers for all variables inside a   

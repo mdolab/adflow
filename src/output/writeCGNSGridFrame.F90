@@ -1,9 +1,3 @@
-!
-!       File:          writeCGNSGridFrame.F90                          
-!       Author:        Edwin van der Weide                             
-!       Starting date: 01-21-2004                                      
-!       Last modified: 10-12-2005                                      
-!
        subroutine writeCGNSGridFrame(cgnsZone, ind)
 !
 !       writeCGNSGridFrame writes the framework for the grid file      

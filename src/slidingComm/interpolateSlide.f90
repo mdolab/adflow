@@ -1,9 +1,3 @@
-!
-!       File:          interpolateSlide.f90                            
-!       Author:        Edwin van der Weide                             
-!       Starting date: 11-04-2003                                      
-!       Last modified: 02-10-2006                                      
-!
        module storeEntity
 !
 !       Local module to store an entity to be interpolated such that   

@@ -34,12 +34,6 @@ subroutine slipVelocitiesFineLevel(useOldCoor, t, sps)
 end subroutine slipVelocitiesFineLevel
 #endif
 
-!
-!       File:          slipVelocities.f90                              
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-12-2004                                      
-!       Last modified: 06-28-2005                                      
-!
 subroutine slipVelocitiesFineLevel_block(useOldCoor, t, sps)
   !
   !       slipVelocitiesFineLevel computes the slip velocities for       

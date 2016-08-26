@@ -1,9 +1,3 @@
-!
-!       File:          releaseHelpVariablesWriting.f90                 
-!       Author:        Edwin van der Weide                             
-!       Starting date: 10-10-2005                                      
-!       Last modified: 10-13-2005                                      
-!
        subroutine releaseHelpVariablesWriting
 !
 !       releaseHelpVariablesWriting releases the memory of the         

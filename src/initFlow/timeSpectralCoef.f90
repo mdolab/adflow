@@ -1,9 +1,3 @@
-!
-!       File:          timeSpectralCoef.f90                            
-!       Author:        Edwin van der Weide, Arathi K. Gopinath         
-!       Starting date: 07-29-2004                                      
-!       Last modified: 06-28-2005                                      
-!
        subroutine timeSpectralCoef(coefSpectral, matrixCoefSpectral, &
                                    diagMatCoefSpectral)
 !

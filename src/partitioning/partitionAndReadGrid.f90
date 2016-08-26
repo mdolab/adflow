@@ -1,9 +1,3 @@
-!
-!       File:          partitionAndReadGrid.f90                        
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 12-17-2002                                      
-!       Last modified: 11-30-2007                                      
-!
        subroutine partitionAndReadGrid(partitionOnly)
 !
 !       partitionAndReadGrid determines the partitioning of the        

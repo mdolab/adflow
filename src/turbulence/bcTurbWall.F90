@@ -1,9 +1,3 @@
-!
-!       File:          bcTurbWall.F90                                  
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!       Starting date: 06-26-2003                                      
-!       Last modified: 06-12-2005                                      
-!
 subroutine bcTurbWall(nn)
   !
   !       bcTurbWall applies the implicit treatment of the viscous       

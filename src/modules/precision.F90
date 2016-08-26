@@ -1,9 +1,3 @@
-!
-!       File:          precision.F90                                   
-!       Author:        Edwin van der Weide                             
-!       Starting date: 12-09-2002                                      
-!       Last modified: 06-25-2005                                      
-!
        module precision
 !
 !       Definition of the kinds used for the integer and real types.   

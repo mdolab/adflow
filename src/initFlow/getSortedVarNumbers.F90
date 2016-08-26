@@ -1,9 +1,3 @@
-!
-!       File:          getSortedVarNumbers.F90                         
-!       Author:        Edwin van der Weide                             
-!       Starting date: 04-18-2003                                      
-!       Last modified: 10-07-2005                                      
-!
        subroutine getSortedVarNumbers
 !
 !       getSortedVarNumbers reads the names of variables stored in     

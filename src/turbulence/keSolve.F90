@@ -1,10 +1,4 @@
-!
-!       File:          keSolve.f90                                     
-!       Author:        Georgi Kalitzin, Edwin van der Weide,           
 !                      Steve Repsher (blanking)                        
-!       Starting date: 04-14-2004                                      
-!       Last modified: 07-05-2005                                      
-!
        subroutine keSolve(resOnly)
 !
 !       keSolve solves the k-eps transport equations of the v2-f model 

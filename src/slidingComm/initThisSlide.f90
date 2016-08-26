@@ -1,9 +1,3 @@
-!
-!       File:          initThisSlide.f90                               
-!       Author:        Edwin van der Weide                             
-!       Starting date: 10-13-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine initThisSlide(color)
 !
 !       initThisSlide determines the communicator, the rotation axis   

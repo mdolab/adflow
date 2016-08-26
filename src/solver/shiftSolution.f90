@@ -1,9 +1,3 @@
-!
-!       File:          shiftSolution.f90                               
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-04-2004                                      
-!       Last modified: 08-30-2005                                      
-!
        subroutine shiftSolution
 !
 !       shiftSolution shifts the solution of the older time levels,    

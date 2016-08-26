@@ -1,9 +1,3 @@
-!
-!       File:          forcesAndMoments.f90                            
-!       Author:        Edwin van der Weide                             
-!       Starting date: 04-01-2003                                      
-!       Last modified: 06-12-2005                                      
-!
 subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
      sepSensorAvg, Cavitation)
   !

@@ -1,9 +1,3 @@
-!
-!       File:          setStageCoeffExplicitRK.f90                     
-!       Author:        Edwin van der Weide                             
-!       Starting date: 08-12-2006                                      
-!       Last modified: 08-13-2006                                      
-!
        subroutine setStageCoeffExplicitRK
 !
 !       setStageCoeffExplicitRK determines the coefficients of the     

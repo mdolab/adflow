@@ -1,10 +1,3 @@
-!
-!       File:          vfSolve.F90                                     
-!       Author:        Georgi Kalitzin, Edwin van der Weide,           
-!                      Steve Repsher (blanking)                        
-!       Starting date: 04-14-2004                                      
-!       Last modified: 07-05-2005                                      
-!
        subroutine vfSolve(resOnly)
 !
 !       vfSolve solves the v2 transport equation and the               

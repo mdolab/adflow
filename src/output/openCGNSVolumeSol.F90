@@ -1,9 +1,3 @@
-!
-!       File:          openCGNSVolumeSol.F90                           
-!       Author:        Edwin van der Weide                             
-!       Starting date: 04-11-2003                                      
-!       Last modified: 07-03-2005                                      
-!
        subroutine openCGNSVolumeSol
 !
 !       openCGNSVolumeSol opens the cgns solution file(s) if needed.   

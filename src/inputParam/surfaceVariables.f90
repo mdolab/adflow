@@ -1,9 +1,3 @@
-!
-!       File:          surfaceVariables.f90                            
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 03-26-2003                                      
-!       Last modified: 07-13-2005                                      
-!
        subroutine surfaceVariables(variables)
 !
 !       surfaceVariables extracts from the given string the surface    

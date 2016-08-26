@@ -1,9 +1,3 @@
-!
-!       File:          initFlowDoms.f90                                
-!       Author:        Edwin van der Weide                             
-!       Starting date: 09-24-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine initFlowDoms
 !
 !       initFlowDoms allocates the memory for flowDoms and initializes 

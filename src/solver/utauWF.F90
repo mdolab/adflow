@@ -1,9 +1,3 @@
-!
-!       File:          utauWF.f90                                      
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!       Starting date: 10-01-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine utauWF(rFilv)
 !
 !       utauWF substitutes the wall shear stress with values from a    

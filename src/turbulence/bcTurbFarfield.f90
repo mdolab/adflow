@@ -1,9 +1,3 @@
-!
-!       File:          bcTurbFarfield.f90                              
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!       Starting date: 06-15-2003                                      
-!       Last modified: 06-12-2005                                      
-!
 subroutine bcTurbFarfield(nn)
   !
   !       bcTurbFarfield applies the implicit treatment of the           

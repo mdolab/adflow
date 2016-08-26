@@ -1,9 +1,3 @@
-!
-!       File:          initializeHalos.f90                             
-!       Author:        Edwin van der Weide                             
-!       Starting date: 09-13-2007                                      
-!       Last modified: 09-14-2007                                      
-!
        subroutine initializeHalos(halosRead)
 !
 !       initializeHalos sets the flow variables in the halo cells      

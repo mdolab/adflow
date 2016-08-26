@@ -1,9 +1,3 @@
-!
-!       File:          flowVarRefState.f90                             
-!       Author:        Edwin van der Weide , Seonghyeon Hahn           
-!       Starting date: 01-03-2003                                      
-!       Last modified: 08-16-2005                                      
-!
        module flowVarRefState
 !
 !       Module that contains information about the reference state as  

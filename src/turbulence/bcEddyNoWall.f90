@@ -1,9 +1,3 @@
-!
-!       File:          bcEddyNoWall.f90                                
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!       Starting date: 06-11-2003                                      
-!       Last modified: 04-11-2005                                      
-!
 subroutine bcEddyNoWall(nn)
   !
   !       bcEddyNoWall sets the eddy viscosity in the halo cells of      

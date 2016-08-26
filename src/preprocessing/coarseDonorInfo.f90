@@ -1,9 +1,3 @@
-!
-!       File:          coarseDonorInfo.f90                             
-!       Author:        Edwin van der Weide                             
-!       Starting date: 09-05-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine coarseDonorInfo(level)
 !
 !       coarseDonorInfo creates the donor info for the internal        

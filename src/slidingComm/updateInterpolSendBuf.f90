@@ -1,9 +1,3 @@
-!
-!       File:          updateInterpolSendBuf.f90                       
-!       Author:        Edwin van der Weide                             
-!       Starting date: 11-17-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine updateInterpolSendBuf(intSend, realSend, donorInfo, &
                                         level,   sps,      recvProc)
 !

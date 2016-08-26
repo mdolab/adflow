@@ -1,9 +1,3 @@
-!
-!       File:          readTurbKwType.f90                              
-!       Author:        Edwin van der Weide                             
-!       Starting date: 05-05-2004                                      
-!       Last modified: 09-10-2007                                      
-!
        subroutine readTurbKwType(nTypeMismatch)
 !
 !       readTurbKwType reads or constructs the k and omega values      

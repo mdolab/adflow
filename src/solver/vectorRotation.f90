@@ -1,9 +1,3 @@
-!
-!      File:          vectorRotation.f90                              
-!      Author:        Andre C. Marta                                  
-!      Starting date: 06-23-2006                                      
-!      Last modified: 07-28-2006                                      
-!
       subroutine vectorRotation(xp, yp, zp, iaxis, angle, x, y, z)
 !
 !      vectorRotation rotates a given vector with respect to a      

@@ -1,13 +1,3 @@
-!
-!       File:          inputParam.f90                                  
-!       Author:        Edwin van der Weide, Steve Repsher,             
-!                      C.A.(Sandy) Mader                               
-!       Starting date: 12-11-2002                                      
-!       Last modified: 09-17-2009                                      
-!
-
-!      ==================================================================
-
 module inputDiscretization
   !
   !       Input parameters which are related to the discretization of    

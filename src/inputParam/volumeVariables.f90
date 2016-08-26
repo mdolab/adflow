@@ -1,9 +1,3 @@
-!
-!       File:          volumeVariables.f90                             
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 03-26-2003                                      
-!       Last modified: 07-14-2005                                      
-!
        subroutine volumeVariables(variables)
 !
 !       volumeVariables extracts from the given string the extra       

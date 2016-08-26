@@ -1,9 +1,3 @@
-!
-!       File:          checkSymmetry.f90                               
-!       Author:        Edwin van der Weide                             
-!       Starting date: 04-21-2003                                      
-!       Last modified: 03-24-2005                                      
-!
        subroutine checkSymmetry(level)
 !
 !       checkSymmetry checks whether or not the symmetry planes are    

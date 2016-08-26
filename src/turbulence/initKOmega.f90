@@ -1,9 +1,3 @@
-!
-!       File:          initKOmega.f90                                  
-!       Author:        Edwin van der Weide                             
-!       Starting date: 07-01-2003                                      
-!       Last modified: 07-23-2005                                      
-!
        subroutine initKOmega(pOffset)
 !
 !       initKOmega initializes the values of k and omega a bit more    

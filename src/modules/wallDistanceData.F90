@@ -1,9 +1,3 @@
-!
-!       File:          wallDistanceData.F90                            
-!       Author:        Gaetan K.W. Kenway                              
-!       Starting date: 12-28-2014                                      
-!       Last modified: 12-28-2014                                      
-!
 module wallDistanceData
 
   ! This module stores some additional data required for the fast wall

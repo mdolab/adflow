@@ -1,9 +1,3 @@
-!
-!       File:          copySpectralSolution.f90                        
-!       Author:        Edwin van der Weide                             
-!       Starting date: 08-07-2004                                      
-!       Last modified: 10-07-2005                                      
-!
        subroutine copySpectralSolution
 !
 !       copySpectralSolution copies the solution of the 1st spectral   

@@ -1,9 +1,3 @@
-!
-!       File:          readRestartFile.F90                             
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 03-07-2003                                      
-!       Last modified: 09-13-2007                                      
-!
        subroutine readRestartFile()
 !
 !       readRestartFile reads the fine grid solution(s) from the       

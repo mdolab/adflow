@@ -1,9 +1,3 @@
-!
-!       File:          determineIndirectHalos.f90                      
-!       Author:        Edwin van der Weide                             
-!       Starting date: 01-31-2003                                      
-!       Last modified: 11-30-2007                                      
-!
        subroutine determineIndirectHalos(nHalo, iihalo, entityHalo,  &
                                          transform, entityIndex,     &
                                          start, nLevel, offset,      &

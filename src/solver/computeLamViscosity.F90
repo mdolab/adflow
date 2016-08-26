@@ -1,9 +1,3 @@
-!
-!       File:          computeLamViscosity.f90                         
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-10-2003                                      
-!       Last modified: 06-12-2005                                      
-!
 subroutine computeLamViscosity
   !
   !       computeLamViscosity computes the laminar viscosity ratio in    

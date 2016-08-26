@@ -1,9 +1,3 @@
-!
-!       File:          convergenceHeader.f90                           
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-27-2003                                      
-!       Last modified: 11-27-2007                                      
-!
 
 subroutine convergenceHeader
   !

@@ -1,9 +1,3 @@
-!
-!       File:          paramTurb.f90                                  
-!       Author:        Edwin van der Weide, Georgi Kalitzin            
-!       Starting date: 06-11-2003                                      
-!       Last modified: 03-22-2005                                      
-!
        module paramTurb
 !
 !       Module that contains the constants for the turbulence models   

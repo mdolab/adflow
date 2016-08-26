@@ -1,9 +1,3 @@
-!
-!       File:          readTurbV2f.f90                                 
-!       Author:        Edwin van der Weide                             
-!       Starting date: 05-05-2004                                      
-!       Last modified: 09-10-2007                                      
-!
        subroutine readTurbV2f(nTypeMismatch)
 !
 !       readTurbV2f reads or constructs the four transport variables   

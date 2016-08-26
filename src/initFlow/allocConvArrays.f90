@@ -1,9 +1,3 @@
-!
-!       File:          allocConvArrays.f90                             
-!       Author:        Edwin van der Weide                             
-!       Starting date: 04-23-2003                                      
-!       Last modified: 07-18-2005                                      
-!
 subroutine allocConvArrays(nIterTot)
   !
   !       allocConvArrays allocates the memory for the convergence       

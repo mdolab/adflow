@@ -1,9 +1,3 @@
-!
-!       File:          copyDataBuf.90                                  
-!       Author:        Edwin van der Weide                             
-!       Starting date: 10-12-2005                                      
-!       Last modified: 10-12-2005                                      
-!
        subroutine copyDataBufSinglePrecision(val, buffer,      &
                                              iBeg, jBeg, kBeg, &
                                              iEnd, jEnd, kEnd, subRange)

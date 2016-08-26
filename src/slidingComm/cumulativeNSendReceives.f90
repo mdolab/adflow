@@ -1,9 +1,3 @@
-!
-!       File:          cumulativeNSendReceives.f90                     
-!       Author:        Edwin van der Weide                             
-!       Starting date: 11-17-2003                                      
-!       Last modified: 03-25-2005                                      
-!
        subroutine cumulativeNSendReceives(commSlidingCell)
 !
 !       cumulativeNSendReceives allocates the memory for and           

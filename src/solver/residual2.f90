@@ -1,9 +1,3 @@
-!
-!       File:          residual.f90                                    
-!       Author:        Edwin van der Weide, Steve Repsher (blanking)   
-!       Starting date: 03-15-2003                                      
-!       Last modified: 10-29-2007                                      
-!
        subroutine residual2
 !
 !       residual computes the residual of the mean flow equations on   

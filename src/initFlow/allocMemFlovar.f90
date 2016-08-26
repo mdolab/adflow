@@ -1,9 +1,3 @@
-!
-!       File:          allocMemFlovar.f90                              
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-06-2003                                      
-!       Last modified: 11-27-2007                                      
-!
 subroutine allocMemFlovarPart1(sps,level)
   !
   !       allocMemFlovarPart1 allocates the memory for the flow          

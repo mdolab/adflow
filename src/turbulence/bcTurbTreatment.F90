@@ -1,10 +1,3 @@
-!
-!       File:          bcTurbTreatment.f90                             
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!                      Seonghyeon Hahn                                 
-!       Starting date: 06-13-2003                                      
-!       Last modified: 08-12-2005                                      
-!
        subroutine bcTurbTreatment
 !
 !       bcTurbTreatment sets the arrays bmti1, bvti1, etc, such that   

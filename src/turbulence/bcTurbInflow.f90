@@ -1,9 +1,3 @@
-!
-!       File:          bcTurbInflow.f90                                
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!       Starting date: 06-11-2003                                      
-!       Last modified: 06-12-2005                                      
-!
 subroutine bcTurbInflow(nn)
   !
   !       bcTurbInflow applies the implicit treatment of the inflow      

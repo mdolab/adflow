@@ -1,9 +1,3 @@
-!
-!       File:          kw.f90                                          
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!       Starting date: 06-26-2003                                      
-!       Last modified: 04-12-2005                                      
-!
        subroutine kw(resOnly)
 !
 !       kw solves the transport equations for the standard and         

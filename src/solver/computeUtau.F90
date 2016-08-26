@@ -34,12 +34,6 @@ subroutine computeUtau
 
 end subroutine computeUtau
 #endif
-!
-!       File:          computeUtau.f90                                 
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!       Starting date: 03-03-2004                                      
-!       Last modified: 03-25-2005                                      
-!
 subroutine computeUtau_block
   !
   !       computeUtau computes the skin friction velocity for the        

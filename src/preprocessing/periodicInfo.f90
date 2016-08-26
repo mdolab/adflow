@@ -1,9 +1,3 @@
-!
-!       File:          periodicInfo.f90                                
-!       Author:        Edwin van der Weide                             
-!       Starting date: 07-10-2003                                      
-!       Last modified: 11-30-2007                                      
-!
        module periodicInfo
 !
 !       Local module that contains derived datatypes as well as arrays 

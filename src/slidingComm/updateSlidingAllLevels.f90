@@ -1,9 +1,3 @@
-!
-!       File:          updateSlidingAllLevels.f90                      
-!       Author:        Edwin van der Weide                             
-!       Starting date: 01-14-2004                                      
-!       Last modified: 06-12-2004                                      
-!
        subroutine updateSlidingAllLevels
 !
 !       updateSlidingAllLevels updates the sliding mesh                

@@ -1,10 +1,3 @@
-!
-!       File:          f1SST.f90                                       
-!       Author:        Georgi Kalitzin, Edwin van der Weide,           
-!                      Steve Repsher                                   
-!       Starting date: 08-19-2003                                      
-!       Last modified: 07-03-2005                                      
-!
        subroutine f1SST
 !
 !       f1SST computes the blending function f1 in both the owned      

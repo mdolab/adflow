@@ -1,9 +1,3 @@
-!
-!       File:          setCoefTimeIntegrator.f90                       
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-05-2004                                      
-!       Last modified: 03-26-2005                                      
-!
        subroutine setCoefTimeIntegrator
 !
 !       setCoefTimeIntegrator determines the coefficients of the       

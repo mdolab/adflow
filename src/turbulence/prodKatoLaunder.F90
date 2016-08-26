@@ -1,9 +1,3 @@
-!
-!       File:          prodKatoLaunder.f90                             
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!       Starting date: 08-01-2003                                      
-!       Last modified: 06-12-2005                                      
-!
 subroutine prodKatoLaunder
   !
   !       prodKatoLaunder computes the turbulent production term using   

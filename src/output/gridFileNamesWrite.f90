@@ -1,9 +1,3 @@
-!
-!       File:          gridFileNamesWrite.f90                          
-!       Author:        Edwin van der Weide                             
-!       Starting date: 10-11-2005                                      
-!       Last modified: 11-02-2005                                      
-!
        subroutine gridFileNamesWrite
 !
 !       gridFileNamesWrite determines the names and number of grid     

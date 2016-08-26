@@ -1,9 +1,3 @@
-!
-!       File:          initMemSliding.f90                              
-!       Author:        Edwin van der Weide                             
-!       Starting date: 09-26-2003                                      
-!       Last modified: 03-25-2005                                      
-!
        subroutine initMemSliding(level)
 !
 !       initMemSliding initializes the data structures for the         

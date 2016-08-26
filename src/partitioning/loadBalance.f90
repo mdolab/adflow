@@ -1,9 +1,3 @@
-!
-!       File:          loadBalance.f90                                 
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 02-05-2003                                      
-!       Last modified: 10-27-2005                                      
-!
 subroutine loadBalance
   !
   !       loadBalance determines the mapping of the blocks onto the      

@@ -3,12 +3,6 @@
 ! itself toward efficient reverse mode AD and therefore it has been
 ! replaced. There is almost no difference in speed between the two
 ! routines.
-!
-!       File:          viscousFlux.f90                                 
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-21-2003                                      
-!       Last modified: 04-18-2005                                      
-!
        subroutine viscousFlux
 !
 !       viscousFlux computes the viscous fluxes using a central        

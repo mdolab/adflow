@@ -1,9 +1,3 @@
-!
-!       File:          localNodesAndQuads.f90                          
-!       Author:        Edwin van der Weide                             
-!       Starting date: 11-03-2003                                      
-!       Last modified: 02-10-2006                                      
-!
        subroutine localNodesAndQuads(nMySubfaces, mySubfaces, &
                                      nQuad,        nNode,     &
                                      gridType,     conn,      &

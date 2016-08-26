@@ -1,9 +1,3 @@
-!
-!       File:          updateRotationInfo.f90                          
-!       Author:        Edwin van der Weide                             
-!       Starting date: 11-10-2003                                      
-!       Last modified: 04-08-2005                                      
-!
        subroutine updateRotationInfo(level, sps, color)
 !
 !       updateRotationInfo determines for every cell which is part     

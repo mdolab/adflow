@@ -1,9 +1,3 @@
-!
-!       File:          readYmomentum.f90                               
-!       Author:        Edwin van der Weide                             
-!       Starting date: 05-09-2004                                      
-!       Last modified: 09-10-2007                                      
-!
        subroutine readYmomentum(nTypeMismatch)
 !
 !       readYmomentum reads the y-momentum variable from the given     

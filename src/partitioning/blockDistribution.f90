@@ -1,9 +1,3 @@
-!
-!       File:          blockDistribution.f90                           
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-13-2004                                      
-!       Last modified: 10-10-2005                                      
-!
        subroutine blockDistribution
 !
 !       blockDistribution determines the distribution of the blocks    

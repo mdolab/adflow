@@ -1,9 +1,3 @@
-!
-!       File:          numberOfIsoVariables.f90                        
-!       Author:        Gaetan K. W. Kenway                             
-!       Starting date: 07-21-2013                                      
-!       Last modified: 07-21-2013                                      
-!
 subroutine numberOfIsoSurfVariables(nIsoSolVar)
   !
   !       numberOfVolSolVariables determines the number of variables     

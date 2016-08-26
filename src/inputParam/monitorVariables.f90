@@ -1,9 +1,3 @@
-!
-!       File:          monitorVariables.f90                            
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-26-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine monitorVariables(variables)
 !
 !       monitorVariables extracts from the given string the variables  

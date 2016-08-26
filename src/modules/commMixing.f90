@@ -1,9 +1,3 @@
-!
-!       File:          commMixing.f90                                  
-!       Author:        Edwin van der Weide                             
-!       Starting date: 01-27-2005                                      
-!       Last modified: 03-21-2005                                      
-!
        module commMixing
 !
 !       This module contains the derived data type to store the        

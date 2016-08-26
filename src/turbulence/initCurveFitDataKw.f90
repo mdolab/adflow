@@ -1,9 +1,3 @@
-!
-!       File:          initCurveFitDataKw.f90                          
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!       Starting date: 07-27-2004                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine initCurveFitDataKw
 !
 !       initCurveFitDataKw contains the curve fit constants for        

@@ -1,9 +1,3 @@
-!
-!       File:          determineNSlices.F90                            
-!       Author:        Edwin van der Weide                             
-!       Starting date: 10-16-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine determineNSlices(nSlices, slideID, commSlide)
 !
 !       determineNSlices determines the number of periodic slices      
