@@ -76,36 +76,42 @@ python module libsumb
 
        end module flowutils
 
+       module inputparamroutines
 
-       subroutine setdefaultvalues()
-       end subroutine setdefaultvalues
+         subroutine setdefaultvalues()
+         end subroutine setdefaultvalues
 
-       subroutine monitorvariables(variables) ! in :test:monitorVariables.f90
-         character*(*) intent(inout) :: variables
-       end subroutine monitorvariables
-       
-       subroutine surfacevariables(variables) ! in :test:surfaceVariables.f90
-         character*(*) intent(inout) :: variables
-       end subroutine surfacevariables
+         subroutine monitorvariables(variables) ! in :test:monitorVariables.f90
+           character*(*) intent(inout) :: variables
+         end subroutine monitorvariables
+         
+         subroutine surfacevariables(variables) ! in :test:surfaceVariables.f90
+           character*(*) intent(inout) :: variables
+         end subroutine surfacevariables
+         
+         subroutine volumevariables(variables) ! in :test:volumeVariables.f90
+           character*(*) intent(inout) :: variables
+         end subroutine volumevariables
+         
+         subroutine isovariables(variables) ! in :test:volumeVariables.f90
+           character*(*) intent(inout) :: variables
+         end subroutine isovariables
+         
+         subroutine initializeisosurfacevariables(values,nvalues) ! in :test:setIsoSurfaceValues.F90
+           real(kind=realtype), dimension(nvalues),intent(in) :: values
+           integer(kind=inttype), optional,intent(in),check(len(values)>=nvalues),depend(values) :: nvalues=len(values)
+         end subroutine initializeisosurfacevariables
+         
+         subroutine setisosurfacevariable(variable,ivar) ! in :test:setIsoSurfaceValues.F90
+           character*(*), intent(in) :: variable
+           integer(kind=inttype), intent(in) :: ivar
+         end subroutine setisosurfacevariable
 
-       subroutine volumevariables(variables) ! in :test:volumeVariables.f90
-         character*(*) intent(inout) :: variables
-       end subroutine volumevariables
+         subroutine dummyreadparamfile ! in :sumb:../../inputParam/readParamFile.f90
+         end subroutine dummyreadparamfile
 
-       subroutine isovariables(variables) ! in :test:volumeVariables.f90
-         character*(*) intent(inout) :: variables
-       end subroutine isovariables
+       end module inputparamroutines
 
-       subroutine initializeisosurfacevariables(values,nvalues) ! in :test:setIsoSurfaceValues.F90
-         real(kind=realtype), dimension(nvalues),intent(in) :: values
-         integer(kind=inttype), optional,intent(in),check(len(values)>=nvalues),depend(values) :: nvalues=len(values)
-       end subroutine initializeisosurfacevariables
- 
-       subroutine setisosurfacevariable(variable,ivar) ! in :test:setIsoSurfaceValues.F90
-         character*(*), intent(in) :: variable
-         integer(kind=inttype), intent(in) :: ivar
-       end subroutine setisosurfacevariable
-       
        subroutine addparaslice(slicename,pt,direction,famlist,n) ! in :test:liftDistribution.F90
          character*(*) intent(in) :: slicename
          real(kind=realtype) dimension(3),intent(in) :: pt
@@ -141,9 +147,7 @@ python module libsumb
          logical, intent(in) :: writesurf
        end subroutine writeliftdistributionfile
 
-       subroutine dummyreadparamfile ! in :sumb:../../inputParam/readParamFile.f90
-       end subroutine dummyreadparamfile
-       
+      
        subroutine partitionandreadgrid(partitiononly) ! in :sumb:../../partitioning/partitionAndReadGrid.f90
          logical :: partitiononly
        end subroutine partitionandreadgrid
@@ -651,13 +655,9 @@ python module libsumb
          character(len=maxstringlen) :: forcedslicefile
        end module inputio
 
-       module localmg ! in :test:localModules.f90
+       module inputiteration ! in :sumb:../../modules/inputParam.f90
          use constants
          character(len=maxstringlen) :: mgdescription
-       end module localmg
-
-       module inputiteration ! in :sumb:../../modules/inputParam.f90
-         use precision
          integer(kind=inttype) :: ncycles
          integer(kind=inttype) :: ncyclescoarse
          integer(kind=inttype) :: nsavevolume
