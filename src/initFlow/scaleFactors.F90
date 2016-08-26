@@ -21,12 +21,14 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use cgnsNames
-       use communication
-       use flowVarRefState
-       use inputIO
        use su_cgns
-       use restartMod
+       use communication, only : myID, sumb_comm_world
+       use flowVarRefState, only : pRef, muRef, rhoRef
+       use inputIO, only : checkRestartSol
+       use restartMod, only : nSolsRead, muScale, pScale, rhoScale, &
+            velScale, cgnsBase, cgnsInd
        use sorting, only : bsearchStrings, qsortStrings
        use utils, only : setCGNSRealType, terminate
        implicit none

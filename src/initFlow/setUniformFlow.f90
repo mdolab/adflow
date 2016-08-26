@@ -18,12 +18,14 @@
 !      ******************************************************************
 !
        use constants
-       use blockPointers
+       use blockPointers, only : w, dw, fw, flowDoms, ib, jb, kb, &
+            rev, rlv, nDom, BCData, p
        use communication
-       use flowVarRefState
-       use inputIteration
-       use inputPhysics
-       use inputTimeSpectral
+       use flowVarRefState, only : eddyModel, viscous, muInf, nw, nwf, &
+            pInfCorr, wInf
+       use inputIteration, only : mgStartLevel
+       use inputPhysics, only : equationMode, flowType, eddyVisInfRatio
+       use inputTimeSpectral, only : nTimeIntervalsSpectral
        use utils, only : setPointers
        implicit none
 !

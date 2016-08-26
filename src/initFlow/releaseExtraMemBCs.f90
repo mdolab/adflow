@@ -20,8 +20,8 @@
 !      ******************************************************************
 !
        use constants
-       use blockPointers
-       use inputTimeSpectral
+       use blockPointers, only : flowDoms, nDom, BCType, BCData, nBocos
+       use inputTimeSpectral, only: nTimeIntervalsSpectral
        use utils, only : setPointers, terminate
        implicit none
 !

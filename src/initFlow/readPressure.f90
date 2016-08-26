@@ -24,15 +24,14 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
+       use constants
        use cgnsNames
-       use inputPhysics
-       use IOModule
-       use flowVarRefState
-       use restartMod
+       use blockPointers, only : w, nbklocal
+       use IOModule, only : IOVar
+       use restartMod, only : nVar, solID, varTypes, PScale, buffer, &
+            varNames
        use utils, only : setCGNSRealType, terminate
        use sorting, only : bsearchStrings
-
        implicit none
 !
 !      Subroutine argument.

@@ -24,9 +24,9 @@
 !      ******************************************************************
 !
        use constants
-       use flowVarRefState
-       use inputTimeSpectral
-       use section
+       use flowVarRefState, only : timeRef
+       use inputTimeSpectral, only : nTimeIntervalsSpectral, rotMatrixSpectral
+       use section, only : nSections, sections
        implicit none
 !
 !      Subroutine arguments.

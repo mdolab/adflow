@@ -1,11 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          allocRestartFiles.f90                           *
-!      * Author:        Eirikur Jonsson                                 *
-!      *                                                                *
-!      ******************************************************************
-!
 subroutine allocRestartFiles(nFiles)
   !
   !      ******************************************************************
@@ -16,8 +8,7 @@ subroutine allocRestartFiles(nFiles)
   !      ******************************************************************
   !
   use constants
-  use inputIO
-  use inputTimeSpectral
+  use inputIO, only : restartFiles
   use utils, only : terminate
   implicit none
   !
@@ -28,12 +19,6 @@ subroutine allocRestartFiles(nFiles)
   !      Local variables.
   !
   integer :: ierr
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
-  !
 
   if (allocated(restartFiles)) then
      deallocate(restartFiles)

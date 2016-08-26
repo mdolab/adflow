@@ -22,9 +22,9 @@ subroutine allocConvArrays(nIterTot)
   !      ******************************************************************
   !
   use constants
-  use inputIO
-  use inputTimeSpectral
-  use monitor
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use inputIO, only : storeConvInnerIter
+  use monitor, only : convArray, nMon
   implicit none
   !
   !      Subroutine argument.

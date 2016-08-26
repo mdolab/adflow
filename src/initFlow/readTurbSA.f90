@@ -19,15 +19,16 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
-       use cgnsNames
        use constants
-       use communication
-       use flowVarRefState
-       use IOModule
-       use restartMod
-       use utils, only : setCGNSRealType
-       use sorting, only: bsearchStrings
+       use cgnsNames
+       use communication, only : myid
+       use blockPointers, only : w, nbklocal, rlv, rev
+       use restartMod, only : nVar, solID, varTypes, buffer, &
+            varNames, muScale, rhoScale
+       use IOModule, only : IOVar
+       use utils, only : setCGNSRealType, terminate
+       use sorting, only : bsearchStrings
+       use flowVarRefState, only : muInf, wInf
        implicit none
 !
 !      Subroutine argument.

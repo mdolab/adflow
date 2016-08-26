@@ -22,18 +22,18 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
+       use constants
        use cgnsGrid
-       use communication
-       use flowVarRefState
-       use inputIO
-       use inputPhysics
-       use inputTimeSpectral
-       use iteration
-       use monitor
        use su_cgns
-       use restartMod
-       use killSignals
+       use blockPointers, only: iBegOr, jBegOr, kBegOr, il, jl, kl, nDom, &
+            nBKGlobal, nx, ny, nz
+       use communication, only : sumb_comm_world, myid
+       use inputPhysics, only : equationMode
+       use inputTimeSpectral, only : nTimeIntervalsSpectral
+       use monitor, only : nTimeStepsRestart, timeUnsteadyRestart
+       use restartMod, only : rangeMin, rangeMax, buffer, bufferVertex,&
+            zoneNames, zoneNumbers, cgnsBase, cgnsSol, cgnsZone, solID, &
+            cgnsInd, halosRead, nSolsRead, location, solFiles
        use utils, only : terminate, setPointers
        use sorting, only : bsearchStrings
        implicit none

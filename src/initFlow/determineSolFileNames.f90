@@ -23,13 +23,14 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use communication
-       use inputIO
-       use inputPhysics
-       use inputTimeSpectral
-       use inputUnsteady
-       use iteration
-       use restartMod
+       use constants
+       use communication, only : myID
+       use inputIO, only : restartFiles
+       use inputPhysics, only : equationMode
+       use inputTimeSpectral, only : nTimeIntervalsSpectral
+       use iteration, only : nOldSolAvail, oldSolWritten, nOldLevels
+       use restartMod, only : solFiles, copySpectral, interpolSpectral,&
+             nSolsRead
        use utils, only : terminate
        implicit none
 !
