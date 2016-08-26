@@ -4,7 +4,7 @@
 !  differentiation of slipvelocitiesfinelevel_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *(*bcdata.uslip)
 !   with respect to varying inputs: gammainf pinf timeref rhoinf
-!                *x veldirfreestream machgrid
+!                veldirfreestream machgrid *x
 !   plus diff mem management of: x:in bcdata:in *bcdata.uslip:in
 !
 !      ******************************************************************

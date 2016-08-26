@@ -78,9 +78,6 @@ FF90_OBJECTS2 = allnodalgradients_d.o\
 		unsteadyturbterm_d.o\
 		slipvelocitiesfinelevel_block_d.o\
 		getcostfunction2_d.o\
-		computetsderivatives_d.o\
-		computeleastsquaresregression_d.o\
-		computerootbendingmoment_d.o\
 		bcturbwall_d.o\
                 bcturbtreatment_d.o\
                 applyallturbbcthisblock_d.o\

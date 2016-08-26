@@ -27,6 +27,9 @@ python module libsumb
            integer(kind=inttype), intent(out) :: liftdir
          end subroutine getliftdirfromsymmetry
 
+         ! subroutine stabilityderivativedriver
+         ! end subroutine stabilityderivativedriver
+
        end module utils
 
        module walldistance
@@ -493,13 +496,6 @@ python module libsumb
        subroutine destroyanksolver
        end subroutine destroyanksolver
        
-       ! ############################################################################
-       ! Time Spectral Stability Routines
-       ! ############################################################################
-
-       subroutine stabilityderivativedriver
-       end subroutine stabilityderivativedriver
-
        ! ############################################################################
        ! SUmb Modules
        ! ############################################################################

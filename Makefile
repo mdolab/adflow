@@ -17,10 +17,8 @@ SUBDIR_SRC    = src/modules       \
 	        src/partitioning  \
 	        src/preprocessing \
 	        src/slidingComm   \
-	        src/stabilityDerivatives \
 	        src/turbulence    \
 		src/warping       \
-		src/bendingMomentAnalysis \
                 src/adjoint/ADFirstAidKit \
                 src/adjoint/residualInput \
 		src/NKSolver      \
@@ -28,7 +26,7 @@ SUBDIR_SRC    = src/modules       \
 		src/adjoint/outputForward \
 		src/adjoint/outputReverse \
                 src/adjoint/outputReverseFast \
-		src/adjoint \
+		src/adjoint 
 
 SUMB_SUBDIRS       = $(SUBDIR_SRC)
 SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC)
@@ -74,5 +72,6 @@ sumb:
 			echo; \
 			(cd $$subdir && make) || exit 1; \
 		done
-	(cd lib && make)	
+	(cd lib && make)
+	(cd src/exec && make)
 	(cd src/python/f2py && make)

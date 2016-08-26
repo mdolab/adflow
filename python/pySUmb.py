@@ -2539,7 +2539,7 @@ class SUMB(AeroSolver):
         run the stability derivative driver to compute the stability parameters
         from the time spectral solution
         """
-        self.sumb.stabilityderivativedriver()
+        self.sumb.utils.stabilityderivativedriver()
 
     def updateGeometryInfo(self):
         """Update the SUmb internal geometry info, if necessary."""
