@@ -3,11 +3,11 @@
 !       countConnectivities determines the number of connectivities    
 !       for each of the supported types stored in 1to1 and general.    
 !
-       use cgnsGrid
-       use communication
        use constants
        use su_cgns
-       use partitionMod
+       use cgnsGrid, only : cgnsDoms, cgnsNDom, cgnsNonMatchAbuttingConnType
+       use communication, only : myid, sumb_comm_world
+       use partitionMod, only : subfaceNonMatchType
        use utils, only : terminate
        implicit none
 !
@@ -41,13 +41,6 @@
        character(len=maxStringLen)   :: errorMessage
        character(len=maxCGNSNameLen) :: connectName, donorName
 
-#ifdef USE_NO_CGNS
-
-       call terminate("countConnectivities", &
-                      "Routine should not be called if no cgns support &
-                      &is selected.")
-
-#else
        ! Determine the number of 1 to 1 connectivities in this zone.
        ! Note that the reading takes place via an integer type.
 
@@ -330,6 +323,5 @@
  102   format("Zone",1x,a,", connectivity", 1x,a, ": No support for &
               &this format of a non-matching abutting connectivity")
 
-#endif
 
        end subroutine countConnectivities

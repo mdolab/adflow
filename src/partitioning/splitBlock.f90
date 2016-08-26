@@ -13,8 +13,8 @@
 !       A recursive bisection algorithm is used.                       
 !
        use constants
-       use inputIteration
-       use partitionMod
+       use inputIteration, only : smoother
+       use partitionMod, onlY : distributionBlockType
        implicit none
 !
 !      Subroutine arguments.

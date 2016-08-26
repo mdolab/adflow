@@ -7,12 +7,13 @@
 !       IO type are allocated as well. For all other cases the pointer 
 !       of the variables are set to the appropriate entry in flowDoms. 
 !
-       use block
-       use inputPhysics
-       use inputTimeSpectral
-       use IOModule
-       use iteration
-       use partitionMod
+       use constants
+       use block, only : nDom, flowDoms
+       use inputPhysics, only : equationMode
+       use inputTimeSpectral, only : nTimeIntervalsSpectral
+       use IOModule, only : IOVar
+       use iteration, only : nOldLevels, deforming_grid
+       use partitionMod, only : interpolSpectral, nGridsRead
        use utils, only : terminate
        implicit none
 !

@@ -12,9 +12,11 @@
 !       domain interfaces should be family-specified.                  
 !
        use constants
-       use cgnsGrid
-       use communication
-       use iteration
+       use cgnsGrid, only : cgnsDoms, cgnsNDom, cgnsFamilies, &
+            famIDsDomainInterfaces, bcIDsDomainInterfaces, famIDsSliding, &
+            cgnsNFamilies, cgnsNSliding, cgnsNDomainInterfaces
+       use communication, only : sumb_comm_world, myid
+       use iteration, only : standAloneMode
        use utils, only : terminate
        use sorting, only: qsortstrings, bsearchstrings
 

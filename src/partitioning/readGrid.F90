@@ -3,20 +3,16 @@ subroutine readGrid
   !       readGrid reads the coordinates for the blocks or block parts   
   !       to be stored on this processor.                                
   !
-#ifdef USE_NO_CGNS
-  call terminate("readGrid", &
-       "Routine should not be called if no CGNS support &
-       &is selected.")
-#else
-  use block
-  use cgnsGrid
+  use constants
   use cgnsNames
-  use communication
-  use flowVarRefState
-  use inputIO
-  use IOModule
   use su_cgns
-  use partitionMod
+  use block, only : flowDoms, nDom
+  use cgnsGrid, only : cgnsDoms, cgnsNDom
+  use communication, only : sumb_comm_world, myID
+  use flowVarRefState, only : LRef
+  use inputIO, only : writeCoorMeter
+  use IOModule, only : IOVar
+  use partitionMod, only : nGridsRead, fileIDs, gridFiles
   use utils, only: setCGNSRealType, terminate
   implicit none
   !
@@ -233,7 +229,5 @@ subroutine readGrid
 
      LRef = one
   endif
-
-#endif
 
 end subroutine readGrid

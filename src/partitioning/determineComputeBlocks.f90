@@ -4,8 +4,9 @@
 !       from the original grid and the given information how to split  
 !       these blocks.                                                  
 !
-       use cgnsGrid
-       use partitionMod
+       use constants
+       use cgnsGrid, only :cgnsnDom, cgnsDoms
+       use partitionMod, only : blocks, nBlocks, splitCGNSType
        use utils, only : terminate
        implicit none
 !

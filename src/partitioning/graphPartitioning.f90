@@ -4,10 +4,10 @@
 !       computational blocks such that both the number of cells and    
 !       number of faces is about equal on all processors.              
 !
-       use communication
-       use constants
-       use partitionMod
-       use inputParallel
+       use constants       
+       use communication, only : myID, sumb_comm_world, nProc
+       use partitionMod, only : part, blocks, ubvec, nBlocks
+       use inputParallel, only : loadImbalance
        use utils, only : terminate
        use sorting, only : qsortIntegers, bsearchIntegers
        implicit none

@@ -6,11 +6,10 @@
 !       code terminates.                                               
 !
        use constants
-       use blockPointers
-       use cgnsGrid
-       use communication
-       use inputPhysics
-       use inputTimeSpectral
+       use blockPointers, only : nDom, nbkGlobal
+       use cgnsGrid, only : cgnsNDom, cgnsDoms
+       use communication, only : sumb_comm_world, myid, nProc
+       use inputTimeSpectral, only : nTimeIntervalsSpectral
        use utils, only : setPointers, terminate
        implicit none
 !

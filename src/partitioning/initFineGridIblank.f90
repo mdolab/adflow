@@ -7,8 +7,8 @@
 !       list of indices for the holes of the flow domains as done in   
 !       the CGNS. The number of holes in each domain are also counted. 
 !
-       use cgnsGrid
-       use block
+       use constants
+       use block, only : nDom, flowDoms
        use utils, only : terminate
        implicit none
 !

@@ -5,10 +5,12 @@
 !       load balance an iterative algorithm is used to determine the   
 !       best way to split them.                                        
 !
-       use cgnsGrid
-       use communication
-       use inputParallel
-       use partitionMod
+       use constants
+       use cgnsGrid, only : cgnsDoms, cgnsNDom
+       use communication, only : myID, sumb_comm_world, nProc
+       use inputParallel, only : loadBalanceIter, loadImbalance, splitBlocks
+       use partitionMod, onlY : splitCGNSType, distributionBlockType, ubVec, &
+            blocks, part, nBlocks
        use utils, only : terminate
        implicit none
 !

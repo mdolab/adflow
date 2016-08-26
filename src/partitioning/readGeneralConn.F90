@@ -5,9 +5,10 @@
 !       non-matching abutting.                                         
 !
        use constants
-       use cgnsGrid
-       use communication
        use su_cgns
+       use cgnsGrid, only : cgnsDoms, cgnsNDom, cgns1to1ConnType, &
+            cgnsNOnMatchAbuttingConnType
+       use communication, only : myid, sumb_comm_world
        use utils, only : terminate
        implicit none
 !
@@ -15,12 +16,6 @@
 !
        integer, intent(in) :: cgnsInd, cgnsBase, nZone
 
-#ifdef USE_NO_CGNS
-
-       call terminate("readGeneralConn", &
-                      "Routine should not be called if no cgns support &
-                      &is selected.")
-#else
 !
 !      Local variables.
 !
@@ -412,6 +407,5 @@
  103   format("Zone",1x,a,", connectivity", 1x,a, &
               ": Wrong number or size of interpolants array.")
 
-#endif
 
        end subroutine readGeneralConn
