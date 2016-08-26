@@ -9,7 +9,6 @@
 
 SUBDIR_SRC    = src/modules       \
 	        src/solver        \
-	        src/inputParam    \
 	        src/metis-4.0     \
 	        src/output        \
 	        src/overset       \

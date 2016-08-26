@@ -247,6 +247,11 @@ module inputIteration
   ! turbresscale: Scaling factor for turbulent residual. Necessary for
   !            NKsolver with RANS. Only tested on SA. 
   ! iterType : String used for specifying which type of iteration was taken
+  !
+  ! Definition of the string, which stores the multigrid cycling   
+  ! strategy.                                                      
+  !
+
   integer(kind=intType) :: nCycles, nCyclesCoarse
   integer(kind=intType) :: nSaveVolume, nSaveSurface
   integer(kind=intType) :: nsgStartup, smoother, nRKStages
@@ -269,7 +274,7 @@ module inputIteration
   real(kind=realtype) :: epscoefconv
   integer(kind=inttype) :: convcheckwindowsize
   real(kind=realType), allocatable, dimension(:) :: etaRK, cdisRK
-
+  character (len=maxStringLen) :: mgDescription
 
   logical :: freezeTurbSource
   logical :: printIterations
