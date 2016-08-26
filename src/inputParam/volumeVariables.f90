@@ -17,11 +17,10 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use communication
        use constants
        use extraOutput
-       use allInputParam
-       use utils, only : convertToLowerCase, terminate
+       use allInputParam, only : volumeOutSpecified    
+       use utils, only : convertToLowerCase, terminate      
        implicit none
 !
 !      Subroutine arguments.
@@ -230,9 +229,7 @@
              write(errorMessage,"(3a)" ) "Unknown extra volume output &
                                          &variable, ", trim(keyword), &
                                          ", specified"
-             if(myID == 0) &
-               call terminate("volumeVariables", errorMessage)
-             call mpi_barrier(SUmb_comm_world, pos)
+             call terminate("volumeVariables", errorMessage)
 
          end select
 

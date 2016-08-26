@@ -19,9 +19,9 @@
 !      ******************************************************************
 !
        use constants
-       use inputPhysics
-       use monitor
        use cgnsNames
+       use inputPhysics, only : equations, flowType
+       use monitor, only : nMOnSum, nMonMax, nMon, monNames, showCPU
        use utils, only : terminate
        implicit none
 !

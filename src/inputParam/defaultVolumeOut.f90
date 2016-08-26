@@ -10,8 +10,8 @@
 !      ******************************************************************
 !
        use constants 
-       use inputPhysics
        use extraOutput
+       use inputPhysics, only : equations
        implicit none
 !
 !      ******************************************************************

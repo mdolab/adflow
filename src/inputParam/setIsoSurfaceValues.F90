@@ -7,10 +7,8 @@ subroutine initializeIsoSurfaceVariables(values, nValues)
   !      *                                                                *
   !      ******************************************************************
   !
-  use communication
   use constants
-  use extraOutput
-  use allInputParam
+  use extraOutput, only : isoValues, isoSurfaceNames, nIsoSurface
   implicit none
   !
   !      Subroutine arguments.
@@ -40,11 +38,10 @@ subroutine setIsoSurfaceVariable(variable, iVar)
   ! Set variable to iVar. initializeIsoSurfaceVariables MUST be called
   ! first with the desired number of values to set. 
 
-  use communication
   use constants
-  use extraOutput
-  use allInputParam
   use cgnsNames
+  use extraOutput
+  use communication, only : myID
   use utils, only : EChk
   implicit none
   !

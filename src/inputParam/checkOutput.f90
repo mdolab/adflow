@@ -18,10 +18,11 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use inputPhysics
-       use inputUnsteady
-       use flowVarRefState
+       use constants
        use extraOutput
+       use inputPhysics, only : equations, equationMode, wallDistanceNeeded
+       use inputUnsteady, only : timeIntegrationScheme
+       use flowVarRefState, only : kPresent, eddyModel
        implicit none
 !
 !      ******************************************************************

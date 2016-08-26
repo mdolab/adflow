@@ -25,13 +25,12 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use inputIO
-       use inputIteration
-       use inputPhysics
-       use inputUnsteady
-       use communication
        use constants
-       use localMG
+       use inputIteration, only :cycleStrategy, nMGLevels, nMGSteps, mgStartLevel
+       use inputPhysics, only : equationMode
+       use inputUnsteady, only : timeIntegrationScheme
+       use communication, only : myID
+       use localMG, only : mgDescription
        use utils, only : convertToLowerCase, terminate
        implicit none
 !
@@ -366,9 +365,9 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use inputIteration
-       use communication
        use constants
+       use inputIteration, only : cycleStrategy
+       use communication, only : myID
        use utils, only : terminate
        implicit none
 !

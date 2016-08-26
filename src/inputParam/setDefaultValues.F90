@@ -20,18 +20,20 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use flowVarRefState
-       use iteration
-       use monitor
+       use constants
        use allInputParam
-       use localMG
-       use couplerParam
-       use killSignals
+       use flowVarRefState, only : Lref, lRefSpecified, pRef, rhoRef, &
+            TinfDim, Tref
+       use iteration, only : nOldSolAvail, timeSpectralGridsNotWritten
+       use monitor, only : monMassSliding, nTimeStepsRestart, timeUnsteadyRestart
+       use localMG, only : mgDescription
+       use couplerParam, only : velDirIni, codeName, machIni, pIni, rhoIni, &
+            cplGetCoarseSol
+       use killSignals, only : fatalFail, routineFailed
        use NKSolverVars, only : NK_solverSetup, freeStreamResSet
        use ANKSolverVars, only : ANK_solverSetup, ANK_turbSetup
-       use inputDiscretization
-       use ADjointPETSc
-       use costFunctions
+       use ADjointPETSc, only : adjointPETScVarsAllocated
+       use costFunctions, only : sepSensorOffset, sepSensorSharpNess
        implicit none
 !
 !      ******************************************************************
