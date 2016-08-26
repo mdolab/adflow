@@ -1,10 +1,3 @@
-!
-!       File:          storeSolInBuffer.f90                            
-!       Author:        Edwin van der Weide, Georgi Kalitzin,           
-!                      Steve Repsher                                   
-!       Starting date: 04-14-2003                                      
-!       Last modified: 10-12-2005                                      
-!
        subroutine storeSolInBuffer(buffer, copyInBuffer, solName, &
                                    iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
 !

@@ -1,9 +1,3 @@
-!
-!      File:          solveAdjoint.F90                                
-!      Author:        Gaetan K.W. Kenway                              
-!      Starting date: 03-12-2014                                      
-!      Last modified: 03-12-2014                                      
-!
 subroutine solveAdjoint(RHS, psi, checkSolution, nState)
   !
   !      Solve the linear discrete ADjoint system of equations          

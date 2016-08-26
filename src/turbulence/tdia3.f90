@@ -1,9 +1,3 @@
-!
-!       File:          tdia3.f90                                       
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!       Starting date: 06-30-2003                                      
-!       Last modified: 04-12-2005                                      
-!
        subroutine tdia3(nb, ne, l, c, u, r)
 !
 !       tdia3 solves the tridiagonal linear system (l+c+u) v = r,      

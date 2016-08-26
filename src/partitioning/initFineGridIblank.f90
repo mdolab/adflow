@@ -1,9 +1,3 @@
-!
-!       File:          initFineGridIblank.f90                          
-!       Author:        Steve Repsher                                   
-!       Starting date: 03-27-2005                                      
-!       Last modified: 07-22-2005                                      
-!
        subroutine initFineGridIblank
 !
 !       InitFineGridIblank allocates the fine grid iblank array and    

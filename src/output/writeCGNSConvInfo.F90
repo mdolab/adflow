@@ -1,9 +1,3 @@
-!
-!       File:          writeCGNSConvInfo.F90                           
-!       Author:        Edwin van der Weide                             
-!       Starting date: 04-24-2003                                      
-!       Last modified: 10-12-2005                                      
-!
        subroutine writeCGNSConvInfo
 !
 !       writeCGNSConvInfo writes the convergence info to the           

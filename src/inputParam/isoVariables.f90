@@ -1,9 +1,3 @@
-!
-!       File:          isoVariables.f90                                
-!       Author:        Gaetan Kenway                                   
-!       Starting date: 07-21-2013                                      
-!       Last modified: 07-21-2013                                      
-!
        subroutine isoVariables(variables)
 !
 !       isoVariables extracts from the given string the extra          

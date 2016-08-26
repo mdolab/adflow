@@ -1,9 +1,3 @@
-!
-!       File:          readTurbSA.F90                                  
-!       Author:        Edwin van der Weide                             
-!       Starting date: 05-05-2004                                      
-!       Last modified: 09-10-2007                                      
-!
        subroutine readTurbSA(nTypeMismatch)
 !
 !       readTurbSA reads or constructs the nu tilde transport          

@@ -1,9 +1,3 @@
-!
-!      File:          setupPETScKsp.F90                               
-!      Author:        Gaetan Kenway                                   
-!      Starting date: 26-12-2012                                      
-!      Last modified: 26-12-2012                                      
-!
 subroutine setupPETScKsp
 
   use ADjointPETSc, only: drdwpret, drdwt, adjointKSP

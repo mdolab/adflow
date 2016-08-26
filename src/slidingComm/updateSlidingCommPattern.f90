@@ -1,9 +1,3 @@
-!
-!       File:          updateSlidingCommPattern.f90                    
-!       Author:        Edwin van der Weide                             
-!       Starting date: 11-10-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine updateSlidingCommPattern(level, sps, color)
 !
 !       updateSlidingCommPattern updates the sliding mesh              

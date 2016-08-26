@@ -1,9 +1,3 @@
-!
-!       File:          haloType.f90                                    
-!       Author:        Edwin van der Weide                             
-!       Starting date: 10-17-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine haloType(level)
 !
 !       haloType determines for the internal and 1st level halo cells  

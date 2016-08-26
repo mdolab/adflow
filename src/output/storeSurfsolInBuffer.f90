@@ -1,9 +1,3 @@
-!
-!       File:          storeSurfsolInBuffer.f90                        
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 05-19-2003                                      
-!       Last modified: 07-14-2005                                      
-!
        subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
                                        faceID, cellRange, solName, &
                                        viscousSubface, useRindLayer)

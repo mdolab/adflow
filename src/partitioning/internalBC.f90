@@ -1,10 +1,3 @@
-!
-!       File:          internalBC.f90                                  
-!       Author:        Edwin van der Weide, Steve Repsher,             
-!                      Seonghyeon Hahn                                 
-!       Starting date: 01-30-2003                                      
-!       Last modified: 08-10-2005                                      
-!
        function internalBC(cgnsBocoType, userDefinedName)
 !
 !       internalBC determines the corresponding internally used        

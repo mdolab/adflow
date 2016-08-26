@@ -1,9 +1,3 @@
-!
-!       File:          unsteadyHeader.f90                              
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-03-2004                                      
-!       Last modified: 03-26-2005                                      
-!
        subroutine unsteadyHeader
 !
 !       unsteadyHeader writes a header to stdout when a new time step  

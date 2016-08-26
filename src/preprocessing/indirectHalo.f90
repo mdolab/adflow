@@ -1,9 +1,3 @@
-!
-!       File:          indirectHalo.f90                                
-!       Author:        Edwin van der Weide                             
-!       Starting date: 01-31-2003                                      
-!       Last modified: 03-24-2005                                      
-!
        module indirectHalo
 !
 !       This local module contains the derived data type used to       

@@ -1,9 +1,3 @@
-!
-!       File:          localModules.F90                                
-!       Author:        Edwin van der Weide                             
-!       Starting date: 12-11-2002                                      
-!       Last modified: 03-23-2005                                      
-!
        module localMG
 !
 !       Locally used module for the storage of the string describing   

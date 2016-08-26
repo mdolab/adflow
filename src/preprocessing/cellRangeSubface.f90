@@ -1,9 +1,3 @@
-!
-!       File:          cellRangeSubface.f90                            
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-07-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine cellRangeSubface
 !
 !       cellRangeSubface determines the cell range for every subface   

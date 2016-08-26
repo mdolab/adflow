@@ -1,9 +1,3 @@
-!
-!       File:          readTimeHistory.F90                             
-!       Author:        Edwin van der Weide                             
-!       Starting date: 05-20-2004                                      
-!       Last modified: 10-10-2005                                      
-!
        subroutine readTimeHistory(fileIDs)
 !
 !       readTimeHistory attempts to read the time history of an        

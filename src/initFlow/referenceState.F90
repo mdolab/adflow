@@ -1,9 +1,3 @@
-!
-!       File:          referenceState.f90                              
-!       Author:        Edwin van der Weide, Seonghyeon Hahn            
-!       Starting date: 05-29-2003                                      
-!       Last modified: 04-22-2006                                      
-!
 subroutine referenceState
   !
   !       The original version has been nuked since the computations are 

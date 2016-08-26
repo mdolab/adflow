@@ -3151,12 +3151,6 @@ end subroutine computeTSDerivatives
     end select
 
   end subroutine siTemperature
-  !
-  !       File:          siTurb.f90                                      
-  !       Author:        Edwin van der Weide                             
-  !       Starting date: 09-14-2004                                      
-  !       Last modified: 06-12-2005                                      
-  !
   subroutine siTurb(mass, len, time, temp, turbName, mult, trans)
     !
     !       siTurb computes the conversion from the given turbulence       
@@ -3842,12 +3836,6 @@ end subroutine computeTSDerivatives
     deallocate(results)
 
   end subroutine pointReduce
-  !
-  !       File:          releaseMemory.f90                               
-  !       Author:        Edwin van der Weide, Steve Repsher              
-  !       Starting date: 08-16-2004                                      
-  !       Last modified: 11-27-2007                                      
-  !
   subroutine releaseMemoryPart1
     !
     !       releaseMemoryPart1 releases all the memory on the coarser      

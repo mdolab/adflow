@@ -1,9 +1,3 @@
-!
-!       File:          writeSurfsolCGNSZone.F90                        
-!       Author:        Edwin van der Weide, Seonghyeon Hahn            
-!       Starting date: 05-15-2003                                      
-!       Last modified: 11-04-2005                                      
-!
        subroutine writeSurfsolCGNSZone(zone, nBlocks, subface, nSolVar, &
                                        solNames, nZonesWritten, periodic)
 !

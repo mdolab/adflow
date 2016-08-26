@@ -1,9 +1,3 @@
-!
-!       File:          updateExternalCommSlide.f90                     
-!       Author:        Edwin van der Weide                             
-!       Starting date: 11-17-2003                                      
-!       Last modified: 03-25-2005                                      
-!
        subroutine updateExternalCommSlide(haloInd, intRecv, realRecv, &
                                           level,   sps,     sendProc)
 !

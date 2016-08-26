@@ -1,9 +1,3 @@
-!
-!       File:          overwriteFamilyData.f90                         
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-11-2004                                      
-!       Last modified: 10-29-2007                                      
-!
        subroutine overwriteWallBCData(nZone,cgnsNBocosP)
 !
 !       OverwriteFamilyData overwrites family data specified in the    

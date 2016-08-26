@@ -1,9 +1,3 @@
-!
-!       File:          initCurveFitDataSST.f90                         
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!       Starting date: 08-21-2004                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine initCurveFitDataSST
 !
 !       initCurveFitDataSST contains the curve fit constants for       

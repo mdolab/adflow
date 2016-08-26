@@ -1,9 +1,3 @@
-!
-!       File:          sortRangesSplitInfo.f90                         
-!       Author:        Edwin van der Weide                             
-!       Starting date: 05-04-2005                                      
-!       Last modified: 10-10-2005                                      
-!
        module sortSubRange
 !
 !       This local module contains the derived datatype as well as the 

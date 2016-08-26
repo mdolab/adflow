@@ -1,9 +1,3 @@
-!
-!       File:          DADISmoother.f90                                
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-20-2003                                      
-!       Last modified: 08-25-2005                                      
-!
 subroutine DADISmoother
   !
   !       RungeKuttaSmoother performs one multi-stage runge kutta        

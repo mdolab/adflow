@@ -1,9 +1,3 @@
-!
-!       File:          createCoarseBlocks.f90                          
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-21-2003                                      
-!       Last modified: 10-16-2005                                      
-!
        subroutine createCoarseBlocks(level)
 !
 !       createCoarseBlocks creates the block data structure for the    

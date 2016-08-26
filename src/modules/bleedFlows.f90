@@ -1,9 +1,3 @@
-!
-!       File:          bleedFlows.f90                                  
-!       Author:        Edwin van der Weide                             
-!       Starting date: 08-11-2005                                      
-!       Last modified: 09-12-2007                                      
-!
        module bleedFlows
 !
 !       Module which contains the derived data types as well as the    

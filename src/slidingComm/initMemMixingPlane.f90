@@ -1,9 +1,3 @@
-!
-!       File:          initMemMixingPlane.f90                          
-!       Author:        Edwin van der Weide                             
-!       Starting date: 01-27-2005                                      
-!       Last modified: 03-25-2005                                      
-!
        subroutine initMemMixingPlane(level)
 !
 !       initMemMixingPlane initializes the memory for the mixing       

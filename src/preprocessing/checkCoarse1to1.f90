@@ -1,9 +1,3 @@
-!
-!       File:          checkCoarse1to1.f90                             
-!       Author:        Edwin van der Weide                             
-!       Starting date: 09-09-2003                                      
-!       Last modified: 10-26-2005                                      
-!
        subroutine checkCoarse1to1(level)
 !
 !       checkCoarse1to1 removes the nonmatching block boundaries       

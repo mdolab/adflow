@@ -1,9 +1,3 @@
-!
-!       File:          determineNeighborIDs.f90                        
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 12-18-2002                                      
-!       Last modified: 11-07-2005                                      
-!
        subroutine determineNeighborIDs
 !
 !       determineNeighborIDs determines for every internal block       

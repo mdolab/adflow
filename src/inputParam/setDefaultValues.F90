@@ -1,10 +1,3 @@
-!
-!       File:          setDefaultValues.F90                            
-!       Author:        Edwin van der Weide, Steve Repsher,             
-!                      Seonghyeon Hahn                                 
-!       Starting date: 12-11-2002                                      
-!       Last modified: 09-19-2007                                      
-!
        subroutine setDefaultValues
 !
 !       setDefaultValues sets the default values for the input         

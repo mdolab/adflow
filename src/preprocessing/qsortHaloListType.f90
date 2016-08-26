@@ -1,9 +1,3 @@
-!
-!       File:          qsortHaloListType.f90                           
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-19-2003                                      
-!       Last modified: 03-24-2005                                      
-!
        subroutine qsortHaloListType(arr, nn)
 !
 !       qsortHaloListType sorts the given number of halo's in          

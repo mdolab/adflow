@@ -1,9 +1,3 @@
-!
-!       File:          checkOutput.f90                                 
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-26-2003                                      
-!       Last modified: 11-27-2007                                      
-!
        subroutine checkOutput
 !
 !       checkOutput checks and possibly corrects the and output        

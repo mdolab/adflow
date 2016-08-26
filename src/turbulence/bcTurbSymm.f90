@@ -1,9 +1,3 @@
-!
-!       File:          bcTurbSymm.F90                                  
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!       Starting date: 06-11-2003                                      
-!       Last modified: 06-12-2005                                      
-!
 subroutine bcTurbSymm(nn)
   !
   !       bcTurbSymm applies the implicit treatment of the symmetry      

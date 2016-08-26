@@ -1,9 +1,3 @@
-!
-!       File:          coarse1to1Subface.f90                           
-!       Author:        Edwin van der Weide                             
-!       Starting date: 09-05-2003                                      
-!       Last modified: 03-24-2005                                      
-!
        module coarse1to1Subface
 !
 !       This local module contains the derived datatype                

@@ -1,9 +1,3 @@
-!
-!       File:          solverUnsteadyBDF.F90                           
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-13-2003                                      
-!       Last modified: 11-21-2007                                      
-!
        subroutine solverUnsteadyBDF
 !
 !       solverUnsteadyBDF solves the unsteady equations using the BDF  

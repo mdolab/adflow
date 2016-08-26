@@ -1,9 +1,3 @@
-!
-!       File:          turbSolveSegregated.f90                         
-!       Author:        Edwin van der Weide                             
-!       Starting date: 05-01-2003                                      
-!       Last modified: 07-21-2006                                      
-!
        subroutine turbSolveSegregated
 !
 !       turbSolveSegregated solves the turbulent transport equations   

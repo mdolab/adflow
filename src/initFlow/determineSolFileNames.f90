@@ -1,9 +1,3 @@
-!
-!       File:          determineSolFileNames.f90                       
-!       Author:        Edwin van der Weide                             
-!       Starting date: 07-05-2005                                      
-!       Last modified: 10-10-2005                                      
-!
        subroutine determineSolFileNames
 !
 !       determineSolFileNames determines the number and names of the   

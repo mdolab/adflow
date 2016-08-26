@@ -1,9 +1,3 @@
-!
-!       File:          fineGridSpectralCoor.f90                        
-!       Author:        Edwin van der Weide                             
-!       Starting date: 07-23-2004                                      
-!       Last modified: 10-06-2005                                      
-!
        subroutine fineGridSpectralCoor
 !
 !       fineGridSpectralCoor computes the coordinates of all but       

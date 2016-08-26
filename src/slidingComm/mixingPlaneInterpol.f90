@@ -1,9 +1,3 @@
-!
-!       File:          mixingPlaneInterpol.f90                         
-!       Author:        Edwin van der Weide                             
-!       Starting date: 01-28-2005                                      
-!       Last modified: 03-25-2005                                      
-!
        subroutine mixingPlaneInterpol(level, color, donorSlideID, &
                                       haloSlideID, nSlices, commPattern)
 !

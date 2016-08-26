@@ -1,9 +1,3 @@
-!
-!       File:          writeInterpolFromSpectral.f90                   
-!       Author:        Edwin van der Weide                             
-!       Starting date: 08-16-2004                                      
-!       Last modified: 03-23-2005                                      
-!
        subroutine writeInterpolFromSpectral
 !
 !       writeInterpolFromSpectral creates a number of interpolated     

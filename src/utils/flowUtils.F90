@@ -549,12 +549,6 @@ contains
 #endif   
     end if
   end subroutine computeSpeedOfSoundSquared
-  !
-  !       File:          computeEtot.F90                                 
-  !       Author:        Edwin van der Weide, Steve Repsher              
-  !       Starting date: 08-13-2003                                      
-  !       Last modified: 10-14-2005                                      
-  !
   subroutine computeEtotBlock(iStart,iEnd, jStart,jEnd, kStart, kEnd, &
        correctForK)
     !

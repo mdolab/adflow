@@ -1,9 +1,3 @@
-!
-!       File:          volSolNames.f90                                 
-!       Author:        Gaetan Kenway                                   
-!       Starting date: 07-21-2013                                      
-!       Last modified: 07-21-2013                                      
-!
        subroutine isoSurfNames(solNames)
 !
 !       isoNames sets the names for the volume variables to be         

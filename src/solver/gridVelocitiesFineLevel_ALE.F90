@@ -30,12 +30,6 @@ subroutine gridVelocitiesFineLevelPart1(useOldCoor, t, sps)
   end do domains
 
 end subroutine gridVelocitiesFineLevelPart1
-!
-!       File:          gridVelocities.f90                              
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-23-2004                                     
-!       Last modified: 06-28-2005                                      
-!
 subroutine gridVelocitiesFineLevelPart1_block(useOldCoor, t, sps)
   !
   !       gridVelocitiesFineLevel computes the grid velocities for       

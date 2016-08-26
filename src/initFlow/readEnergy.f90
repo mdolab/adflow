@@ -1,9 +1,3 @@
-!
-!       File:          readEnergy.f90                                  
-!       Author:        Edwin van der Weide                             
-!       Starting date: 05-09-2004                                      
-!       Last modified: 09-10-2007                                      
-!
        subroutine readEnergy(nTypeMismatch)
 !
 !       readEnergy reads the energy variable from the given place in   

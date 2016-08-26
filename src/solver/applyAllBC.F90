@@ -1,9 +1,3 @@
-!
-!       File:          applyAllBC.f90                                  
-!       Author:        Edwin van der Weide, Seonghyeon Hahn            
-!       Starting date: 03-07-2003                                      
-!       Last modified: 09-13-2007                                      
-!
 subroutine applyAllBC(secondHalo)
   !
   !       applyAllBC applies all boundary conditions for the all         

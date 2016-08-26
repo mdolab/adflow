@@ -1,9 +1,3 @@
-!
-!       File:          partitionMod.f90                                
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 02-05-2003                                      
-!       Last modified: 11-07-2005                                      
-!
        module partitionMod
 !
 !       This local module contains definitions of derived datatypes    

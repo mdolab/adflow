@@ -1,9 +1,3 @@
-!
-!       File:          qsortMixingIntervalType.f90                     
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-09-2005                                      
-!       Last modified: 03-25-2005                                      
-!
        subroutine qsortMixingIntervalType(arr, nn)
 !
 !       qsortMixingIntervalType sorts the given number of elements     

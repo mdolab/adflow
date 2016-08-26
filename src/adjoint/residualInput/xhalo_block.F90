@@ -1,9 +1,3 @@
-!
-!       File:          xhalo.f90                                       
-!       Author:        Edwin van der Weide,C.A.(Sandy) Mader            
-!       Starting date: 02-23-2003                                      
-!       Last modified: 08-12-2009                                      
-!
 subroutine xhalo_block
   !
   !       xhalo determines the coordinates of the nodal halo's.          

@@ -1,9 +1,3 @@
-!
-!       File:          cgnsNames.f90                                   
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 04-27-2003                                      
-!       Last modified: 08-11-2005                                      
-!
        module cgnsNames
 !
 !       Parametrized cgns names of the variables used in this code.    

@@ -1,9 +1,3 @@
-!
-!       File:          CpCurveFits.f90                                 
-!       Author:        Edwin van der Weide                             
-!       Starting date: 09-11-2003                                      
-!       Last modified: 03-22-2005                                      
-!
        module CpCurveFits
 !
 !       This module contains the curve fit data for Cp, or better      

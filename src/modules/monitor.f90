@@ -1,9 +1,3 @@
-!
-!       File:          monitor.f90                                     
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-25-2003                                      
-!       Last modified: 10-29-2007                                      
-!
        module monitor
 !
 !       This module contains the variables to be monitored during the  

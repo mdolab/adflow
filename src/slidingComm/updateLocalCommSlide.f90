@@ -1,9 +1,3 @@
-!
-!       File:          updateLocalCommSlide.f90                        
-!       Author:        Edwin van der Weide                             
-!       Starting date: 11-14-2003                                      
-!       Last modified: 03-25-2005                                      
-!
        subroutine updateLocalCommSlide(haloInd, donorInfo, level, sps)
 !
 !       updateLocalCommSlide updates intSlidingCell_1st and            

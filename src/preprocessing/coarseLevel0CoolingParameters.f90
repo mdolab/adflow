@@ -1,9 +1,3 @@
-!
-!       File:          coarseLevel0CoolingParameters.f90               
-!       Author:        Edwin van der Weide                             
-!       Starting date: 04-30-2005                                      
-!       Last modified: 08-03-2005                                      
-!
        subroutine coarseLevel0CoolingParameters(level)
 !
 !       coarseLevel0CoolingParameters creates parameters for the       

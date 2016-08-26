@@ -1,9 +1,3 @@
-!
-!      File:          finalizePETSc.F90                               
-!      Author:        Andre C. Marta                                  
-!      Starting date: 08-24-2005                                      
-!      Last modified: 03-01-2007                                      
-!
 subroutine finalizePETSc
   !
   !      Finalize PETSc by calling the appropriate routine              

@@ -1,9 +1,3 @@
-!
-!       File:          bsearchCGNSPeriodicType.f90                     
-!       Author:        Edwin van der Weide                             
-!       Starting date: 07-10-2003                                      
-!       Last modified: 11-29-2007                                      
-!
        function bsearchCGNSPeriodicType(key, base, nn)
 !
 !       bsearchCGNSPeriodicType returns the index in base where key    

@@ -1,9 +1,3 @@
-!
-!       File:          writeCGNSGridFile.F90                           
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 01-20-2004                                      
-!       Last modified: 03-30-2006                                      
-!
        subroutine writeCGNSGridFile
 !
 !       writeCGNSGridFile and its subroutines write the CGNS grid      

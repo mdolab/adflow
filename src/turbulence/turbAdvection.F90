@@ -1,9 +1,3 @@
-!
-!       File:          turbAdvection.f90                               
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!       Starting date: 09-01-2003                                      
-!       Last modified: 04-12-2005                                      
-!
 subroutine turbAdvection(mAdv, nAdv, offset, qq)
   !
   !       turbAdvection discretizes the advection part of the turbulent  

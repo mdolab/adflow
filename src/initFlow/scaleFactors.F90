@@ -1,9 +1,3 @@
-!
-!       File:          scaleFactors.F90                                
-!       Author:        Edwin van der Weide                             
-!       Starting date: 04-28-2003                                      
-!       Last modified: 10-10-2005                                      
-!
        subroutine scaleFactors(fileIDs)
 !
 !       scaleFactors determines the scale factors for the density,     

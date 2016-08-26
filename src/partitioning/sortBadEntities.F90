@@ -1,9 +1,3 @@
-!
-!       File:          sortBadEntities.f90                             
-!       Author:        Edwin van der Weide                             
-!       Starting date: 08-30-2004                                      
-!       Last modified: 04-20-2005                                      
-!
        module fourIntPlusRealDataType
 !
 !       This local module contains the derived data type, which        

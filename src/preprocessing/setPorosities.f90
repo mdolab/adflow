@@ -1,9 +1,3 @@
-!
-!       File:          setPorosities.f90                               
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-06-2003                                      
-!       Last modified: 11-06-2005                                      
-!
        subroutine setPorosities(level)
 !
 !       setPorosities sets the porosities for the faces to a certain   

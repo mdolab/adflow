@@ -1,9 +1,3 @@
-!
-!       File:          checkInputParam.F90                             
-!       Author:        Edwin van der Weide                             
-!       Starting date: 12-13-2002                                      
-!       Last modified: 11-27-2007                                      
-!
        subroutine checkInputParam
 !
 !       checkInputParam checks if all necessary data has been          

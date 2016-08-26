@@ -1,9 +1,3 @@
-!
-!       File:          faceRotationMatrices.f90                        
-!       Author:        Edwin van der Weide                             
-!       Starting date: 09-20-2007                                      
-!       Last modified: 12-01-2007                                      
-!
        subroutine faceRotationMatrices(level, allocMem)
 !
 !       faceRotationMatrices computes the rotation matrices on the     

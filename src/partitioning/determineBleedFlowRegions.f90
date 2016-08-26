@@ -1,9 +1,3 @@
-!
-!       File:          determineBleedFlowRegions.f90                   
-!       Author:        Edwin van der Weide                             
-!       Starting date: 08-11-2005                                      
-!       Last modified: 08-16-2005                                      
-!
        subroutine determineBleedFlowRegions
 !
 !       determineBleedFlowAreas determines the number of inflow and    

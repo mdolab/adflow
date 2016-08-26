@@ -1,9 +1,3 @@
-!
-!       File:          qsortSubfaceNonMatchType.f90                    
-!       Author:        Edwin van der Weide                             
-!       Starting date: 10-25-2005                                      
-!       Last modified: 10-28-2005                                      
-!
        subroutine qsortSubfaceNonMatchType(arr, nn)
 !
 !       qsortSubfaceNonMatchType sorts the array of the derived        

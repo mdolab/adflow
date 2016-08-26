@@ -1,9 +1,3 @@
-!
-!       File:          haloList.f90                                    
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 01-22-2003                                      
-!       Last modified: 05-24-2005                                      
-!
        module haloList
 !
 !       This local module contains temporary variables to create the   

@@ -1,9 +1,3 @@
-!
-!       File:          bcHalo.f90                                      
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-18-2003                                      
-!       Last modified: 03-24-2005                                      
-!
        module bcHalo
 !
 !       This local module contains the derived datatype bcHaloType,    

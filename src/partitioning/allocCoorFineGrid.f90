@@ -1,9 +1,3 @@
-!
-!       File:          allocCoorFineGrid.f90                           
-!       Author:        Edwin van der Weide                             
-!       Starting date: 06-23-2005                                      
-!       Last modified: 10-10-2005                                      
-!
        subroutine allocCoorFineGrid
 !
 !       allocCoorFineGrid allocates the memory for all the coordinates 

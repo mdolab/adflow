@@ -1,9 +1,3 @@
-!
-!       File:          initFlowfield.f90                               
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-07-2003                                      
-!       Last modified: 03-22-2005                                      
-!
        subroutine initFlowfield
 !
 !       initFlowfield initializes the flow field to a uniform flow on  

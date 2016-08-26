@@ -1,9 +1,3 @@
-!
-!      File:          computeAeroCoef.f90                             
-!      Author:        Andre C. Marta,C.A.(Sandy) Mader,Gaetan Kenway  
-!      Starting date: 01-14-2008                                      
-!      Last modified: 01-13-2011                                      
-!
 subroutine computeAeroCoef(globalCFVals,sps)
   !
   !      Compute the aerodynamic coefficients from the force and moment 

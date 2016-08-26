@@ -1,9 +1,3 @@
-!
-!       File:          writeSol.f90                                    
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 03-14-2003                                      
-!       Last modified: 03-29-2006                                      
-!
        subroutine writeSol
 !
 !       writeSol controls the writing of a new grid file, a volume     

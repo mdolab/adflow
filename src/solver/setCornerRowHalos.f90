@@ -1,9 +1,3 @@
-!
-!       File:          setCornerRowHalos.f90                           
-!       Author:        Edwin van der Weide                             
-!       Starting date: 08-20-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine setCornerRowHalos(nVar)
 !
 !       setCornerRowHalos initializes the halo's next to corner row    

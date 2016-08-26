@@ -1,9 +1,3 @@
-!
-!       File:          qsortSortedDonorCommType.f90                    
-!       Author:        Edwin van der Weide                             
-!       Starting date: 11-17-2003                                      
-!       Last modified: 03-25-2005                                      
-!
        subroutine qsortSortedDonorCommType(arr, nn)
 !
 !       qsortSortedDonorCommType sorts the given number of             

@@ -1,9 +1,3 @@
-!
-!       File:          slidingComm.f90                                 
-!       Author:        Edwin van der Weide                             
-!       Starting date: 09-26-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine slidingComm(level, firstTime)
 !
 !       slidingComm determines the communication pattern for the       

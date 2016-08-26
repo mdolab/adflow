@@ -1,9 +1,3 @@
-!
-!       File:          readLevel0CoolingParameters.f90                 
-!       Author:        Edwin van der Weide                             
-!       Starting date: 04-28-2005                                      
-!       Last modified: 03-29-2006                                      
-!
        subroutine readLevel0CoolingParameters
 !
 !       readLevel0CoolingParameters reads the parameters for the level 

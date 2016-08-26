@@ -1,9 +1,3 @@
-!
-!       File:          unsteadyTurbTerm.f90                            
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-09-2004                                      
-!       Last modified: 11-27-2007                                      
-!
        subroutine unsteadyTurbTerm(mAdv, nAdv, offset, qq)
 !
 !       unsteadyTurbTerm discretizes the time derivative of the        

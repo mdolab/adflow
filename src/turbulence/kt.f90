@@ -1,9 +1,3 @@
-!
-!       File:          kt.f90                                          
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!       Starting date: 07-08-2003                                      
-!       Last modified: 04-12-2005                                      
-!
        subroutine kt(resOnly)
 !
 !       kt solves the transport equations for the k-tau turbulence     

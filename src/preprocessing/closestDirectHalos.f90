@@ -1,9 +1,3 @@
-!
-!       File:          closestDirectHalos.f90                          
-!       Author:        Edwin van der Weide                             
-!       Starting date: 01-31-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine closestDirectHalos(entityHalo, entityIndex, &
                                      start, nLevel, offset, gridLevel)
 !

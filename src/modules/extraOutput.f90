@@ -1,9 +1,3 @@
-!
-!       File:          extraOutput.f90                                 
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 03-25-2003                                      
-!       Last modified: 07-14-2005                                      
-!
        module extraOutput
 !
 !       This module contains the logicals which define the variables   

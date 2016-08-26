@@ -1,9 +1,3 @@
-!
-!       File:          cylCoorNodesOnBlockFace.f90                     
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-02-2005                                      
-!       Last modified: 03-25-2005                                      
-!
        subroutine cylCoorNodesOnBlockFace(xface, iBeg, iEnd,  &
                                           jBeg,  jEnd, color, faceID)
 !

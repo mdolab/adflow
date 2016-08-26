@@ -1,9 +1,3 @@
-!
-!       File:          qsortPeriodicSubfacesHaloType.f90               
-!       Author:        Edwin van der Weide                             
-!       Starting date: 11-29-2007                                      
-!       Last modified: 11-29-2007                                      
-!
        subroutine qsortPeriodicSubfacesHaloType(arr, nn)
 !
 !       qsortPeriodicSubfacesHaloType sorts the given number of halo's 

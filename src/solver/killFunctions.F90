@@ -1,9 +1,3 @@
-!
-!       File:          killFunctions.F90                               
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-12-2003                                      
-!       Last modified: 10-14-2005                                      
-!
        subroutine set_signal_write
 !
 !       set_signal_write sets the localSignal to signalWrite. On the   

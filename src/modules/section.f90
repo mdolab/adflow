@@ -1,9 +1,3 @@
-!
-!       File:          section.f90                                     
-!       Author:        Edwin van der Weide                             
-!       Starting date: 12-09-2003                                      
-!       Last modified: 06-26-2005                                      
-!
        module section
 !
 !       This module contains the definition of the derived data type   

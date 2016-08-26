@@ -1,9 +1,3 @@
-!
-!       File:          numberOfVolVariables.f90                        
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 04-14-2003                                      
-!       Last modified: 07-14-2005                                      
-!
        subroutine numberOfVolSolVariables(nVolSolvar, nVolDiscrVar)
 !
 !       numberOfVolSolVariables determines the number of volume        

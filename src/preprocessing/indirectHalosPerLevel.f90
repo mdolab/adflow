@@ -1,9 +1,3 @@
-!
-!       File:          indirectHalosPerLevel.f90                       
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-03-2003                                      
-!       Last modified: 11-30-2007                                      
-!
        subroutine indirectHalosPerLevel(level, iihalo, entityHalo, &
                                         transform, entityIndex)
 !

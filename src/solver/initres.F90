@@ -36,12 +36,6 @@ subroutine initres(varStart, varEnd)
   end do spectralLoop
 
 end subroutine initRes
-!
-!       File:          initres.f90                                     
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-18-2003                                      
-!       Last modified: 06-28-2005                                      
-!
 subroutine initres_block(varStart, varEnd, nn, sps)
   !
   !       initres initializes the given range of the residual. Either to 

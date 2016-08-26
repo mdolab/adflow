@@ -1,9 +1,3 @@
-!
-!       File:          localSurfaceGrids.f90                           
-!       Author:        Edwin van der Weide                             
-!       Starting date: 01-21-2005                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine localSurfaceGrids(color, gridType)
 !
 !       localSurfaceGrids stores the local surface mesh of the         

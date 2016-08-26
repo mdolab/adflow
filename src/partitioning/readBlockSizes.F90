@@ -1,9 +1,3 @@
-!
-!       File:          readBlockSizes.F90                              
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 12-17-2002                                      
-!       Last modified: 11-07-2005                                      
-!
        subroutine readBlockSizes
 !
 !       readBlockSizes reads the number of blocks and their size       

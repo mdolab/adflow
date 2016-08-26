@@ -1,9 +1,3 @@
-!
-!       File:          transferToFineGrid.f90                          
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-13-2003                                      
-!       Last modified: 08-25-2005                                      
-!
        subroutine transferToFineGrid(corrections)
 !
 !       transferToFineGrid interpolates either the corrections or the  
