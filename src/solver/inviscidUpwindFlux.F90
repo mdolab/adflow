@@ -692,9 +692,7 @@
          real(kind=realType) :: rl1, rl2, rr1, rr2, tmp, dvx, dvy, dvz
 
          real(kind=realType), dimension(3,3) :: rot
-!
-!         Begin execution.                                             
-!
+
          ! Check if the velocity components should be transformed to
          ! the cylindrical frame.
 
@@ -882,9 +880,7 @@
          real(kind=realType) :: lam1, lam2, lam3
          real(kind=realType) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
          real(kind=realType), dimension(2) :: ktmp
-!
-!         Begin execution.                                             
-!
+
          ! Set the porosity for the flux. The default value, 0.5*rFil, is
          ! a scaling factor where an rFil != 1 is taken into account.
 

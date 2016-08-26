@@ -28,9 +28,7 @@
        integer(kind=intType) :: blockID, indexDir
        integer(kind=intType) :: indSol, indNorm, indX1, indX2
        integer(kind=intType) :: jcBeg, jcEnd, icBeg, icEnd
-!
-!       Begin execution                                                
-!
+
        ! Store the finer grid level in levm1
 
        levm1 = level -1

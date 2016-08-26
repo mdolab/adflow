@@ -75,9 +75,7 @@
        real(kind=realType) :: dpi, dpj, dpk, r
        real(kind=realType), dimension(il,max(jl,kl)) :: epz, d, t, rfl
 
-!
-!       Begin execution                                                
-!
+
 !      rfl0 is a measure of the ratio lambda/lambda*
 !
       currentCfl = cflCoarse

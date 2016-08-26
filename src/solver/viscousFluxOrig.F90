@@ -46,9 +46,7 @@
        real(kind=realType), dimension(il,jl,2) :: qqx, qqy, qqz
 
        logical :: correctForK, storeWallTensor
-!
-!       Begin execution                                                
-! 
+
        ! Initialize the nodal graident variables to zero
        qqx = zero
        qqy = zero
@@ -946,9 +944,7 @@
 !
          real(kind=realType) :: oneOverV, ubar, vbar, wbar, a2
          real(kind=realType) :: sx, sx1, sy, sy1, sz, sz1
-!
-!         Begin execution                                              
-!
+
          ! First part. Contribution in the k-direction. As the viscous
          ! fluxes are computed per k-plane, the values of the surface
          ! integrals in gauss's theorem are only scattered to one node.

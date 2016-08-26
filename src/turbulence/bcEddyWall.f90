@@ -23,9 +23,7 @@ subroutine bcEddyWall(nn)
   !
   integer(kind=intType) :: i, j
 
-  !
-  !       Begin execution                                                
-  !
+
   ! Determine the face id on which the subface is located and
   ! loop over the faces of the subface and set the eddy viscosity
   ! in the halo cells.

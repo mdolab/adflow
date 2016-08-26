@@ -34,8 +34,7 @@ subroutine computeAeroCoef(globalCFVals,sps)
   real(Kind=realType) :: sepSensor, sepSensorAvg(3), Cavitation
   real(kind=realType), dimension(nCostFunction)::localCFVals
 
-  !      Begin execution.                                               
-  !
+
   cFpLocal = zero
   cFvLocal = zero
   cMpLocal = zero

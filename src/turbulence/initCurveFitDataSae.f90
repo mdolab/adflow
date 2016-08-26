@@ -18,9 +18,7 @@
 !      Local variables.
 !
    !   integer :: ierr
-!
-!       Begin execution                                                
-!
+
        call terminate("initCurveFitDataSae", &
                       "Not implemented yet")
 

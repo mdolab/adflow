@@ -24,9 +24,7 @@ subroutine bcEddyNoWall(nn)
   !
   integer(kind=intType) :: i, j
 
-  !
-  !       Begin execution                                                
-  !
+
   ! Determine the face id on which the subface and copy
 
   select case (BCFaceid(nn))

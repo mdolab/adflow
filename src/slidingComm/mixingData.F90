@@ -87,9 +87,7 @@
 !        Function arguments.
 !
          type(mixingIntervalType), intent(in) :: g1, g2
-!
-!         Begin execution                                              
-!
+
          ! Compare rMin.
 
          if(g1%rMin < g2%rMin) then
@@ -137,9 +135,7 @@
 !        Function arguments.
 !
          type(mixingIntervalType), intent(in) :: g1, g2
-!
-!         Begin execution                                              
-!
+
          ! Compare rMin.
 
          if(g1%rMin < g2%rMin) then

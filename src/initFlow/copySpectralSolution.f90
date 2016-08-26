@@ -34,9 +34,7 @@
        real(kind=realType), dimension(3,3) :: rotMat
 
        real(kind=realType), dimension(nSections,3,3) :: rotMatSec
-!
-!       Begin execution                                                
-!
+
        ! Determine the rotation matrix from one spectral solution to the
        ! other for every section.
 

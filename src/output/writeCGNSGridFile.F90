@@ -33,9 +33,7 @@
        integer, dimension(cgnsNDom) :: cgnsZone
 
        integer(kind=intType) :: nn
-!
-!       Begin execution                                                
-!
+
        ! Determine the number and names of the grid files.
        ! Also set the pointers for IOVar needed for the general
        ! treatment of the IO.

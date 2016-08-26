@@ -39,9 +39,7 @@ subroutine solveState
   character (len=7) :: numberString
   logical :: absConv, relConv, firstNK, firstANK
 
-  !
-  !       Begin execution                                                
-  !
+
   ! Allocate the memory for cycling.
   if (allocated(cycling)) then 
      deallocate(cycling)

@@ -46,9 +46,7 @@
 !      Function definitions.
 !
        integer(kind=intType) :: bsearchCGNSPeriodicType
-!
-!       Begin execution                                                
-!
+
        ! Initialize the counter variables for the 1st level halo's to 0.
 
        iicell1st = 0
@@ -495,9 +493,7 @@
 !
        integer(kind=intType) :: i
        integer(kind=intType) :: cellHaloInd, cellHaloID
-!
-!       Begin execution                                                
-!
+
        ! Determine the offset in i, j and k direction, depending on the
        ! faceID. This can be interpreted as the outward pointing normal
        ! in the index domain. Furthermore store cellHaloInd and

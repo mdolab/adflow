@@ -22,9 +22,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: nn
-!
-!       Begin execution                                                
-!
+
        ! Initialize nTimeStepsRestart to 0 (no restart
        ! is performed) and allocate the memory for the arrays to store
        ! convergence history. This allocation is only to be done by

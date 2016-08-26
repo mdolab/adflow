@@ -27,9 +27,7 @@ subroutine bcTurbFarfield(nn)
   integer(kind=intType) :: i, j, l
 
   real(kind=realType) :: nnx, nny, nnz, dot
-  !
-  !       Begin execution                                                
-  !
+
   ! Loop over the faces of the subfaces and set the values of
   ! bmt and bvt for an implicit treatment.
 

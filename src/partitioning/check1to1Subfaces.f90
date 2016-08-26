@@ -728,9 +728,7 @@
        character(len=7)            :: intString
 
        logical :: badFace
-!
-!       Begin execution                                                
-!
+
        ! Initialize the counter ii for the coordinates and loop over the
        ! number of subfaces to be checked.
 

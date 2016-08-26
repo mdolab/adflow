@@ -11,9 +11,7 @@
 !       cool movies can be made.                                       
 !
        implicit none
-!
-!       Begin execution                                                
-!
+
        call returnFail("writeInterpolFromSpectral", &
                       "Not implemented yet")
 

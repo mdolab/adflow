@@ -30,9 +30,7 @@
        real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2, ss
        real(kind=realType), dimension(:,:),   pointer :: sFace
 
-!
-!       Begin execution                                                
-!
+
        ! Return immediately if no 
 
        if(nOutflowBleeds + nOutflowSubsonic + nInflowSubsonic  == 0) return

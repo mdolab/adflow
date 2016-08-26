@@ -28,9 +28,7 @@
        integer :: ierr
 
        integer(kind=intType) :: i, nn
-!
-!       Begin execution                                                
-!
+
        ! If residuals must be written to the volume solution and if halo
        ! values must be stored, exchange the data here, because in the
        ! next call the communication buffers are deleted.

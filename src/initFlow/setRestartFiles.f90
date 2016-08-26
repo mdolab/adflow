@@ -12,8 +12,7 @@ subroutine setRestartFiles(fileName, i)
   character(len=*), intent(inout) :: fileName
   integer(kind=intType) :: i
 
-  !       Begin execution                                                
-  !
+
 
   restartFiles(i) = fileName
 

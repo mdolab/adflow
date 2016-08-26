@@ -22,9 +22,7 @@
        integer :: ierr
 
        integer(kind=intType) :: mm, nn, sps, level, nLevels, ii
-!
-!       Begin execution                                                
-!
+
        ! Determine the number of multigrid levels.
 
        nLevels = ubound(flowDoms,2)

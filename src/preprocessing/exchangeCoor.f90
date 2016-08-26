@@ -39,9 +39,7 @@
 
          end subroutine correctPeriodicCoor
        end interface
-!
-!       Begin execution                                                
-!
+
        ! Loop over the number of spectral solutions.
 
        spectralLoop: do mm=1,nTimeIntervalsSpectral
@@ -223,9 +221,7 @@
 
        real(kind=realType), dimension(3,3) :: rotMatrix
        real(kind=realType), dimension(3)   :: rotCenter, translation
-!
-!       Begin execution                                                
-!
+
        ! Loop over the number of periodic transformations.
 
        do nn=1,nPeriodic

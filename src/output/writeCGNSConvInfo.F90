@@ -28,9 +28,7 @@
        integer :: i, nn, mm, ierr, realTypeCGNS
 
        real(kind=8), dimension(:), allocatable :: buf8
-!
-!       Begin execution                                                
-!
+
        ! Return immediately if the convergence history (of the inner
        ! iterations) does not need to be stored. This logical can
        ! only be .false. for an unsteady computation.

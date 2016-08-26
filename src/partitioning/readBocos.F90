@@ -749,9 +749,7 @@
 !
        integer :: i
        integer, dimension(3,2) :: rangeBound, rangeFace
-!
-!       Begin execution                                                
-!
+
        ! Set the range for the boundary face.
 
        rangeBound(1,1) = min(cgnsDoms(nZone)%bocoInfo(nBound)%iBeg, &

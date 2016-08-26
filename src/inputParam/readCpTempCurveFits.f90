@@ -28,9 +28,7 @@
 
        character(len=2*maxStringLen) :: errorMessage
        character(len=512)            :: string
-!
-!       Begin execution                                                
-!
+
        ! Open the file for reading and check if it went okay. If the file
        ! is not found, processor 0 prints an error message.
 
@@ -388,9 +386,7 @@
 !      Local variables.
 !
        integer :: ios, ierr
-!
-!       Begin execution                                                
-!
+
        ! Loop to skip the comment lines.
 
        do

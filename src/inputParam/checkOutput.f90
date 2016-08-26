@@ -16,9 +16,7 @@
        use inputUnsteady, only : timeIntegrationScheme
        use flowVarRefState, only : kPresent, eddyModel
        implicit none
-!
-!       Begin execution                                                
-!
+
        ! Determine the governing equations to be solved and set the
        ! variables accordingly.
 

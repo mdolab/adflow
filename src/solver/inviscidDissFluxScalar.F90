@@ -35,9 +35,7 @@ subroutine inviscidDissFluxScalar
   real(kind=realType) :: ddw1,ddw2,ddw3,ddw4,ddw5,fs
   real(kind=realType),dimension(1:ie,1:je,1:ke,3) :: dss
   real(kind=realType), dimension(0:ib,0:jb,0:kb) :: ss
-  !
-  !       Begin execution                                                
-  !
+
   ! Check if rFil == 0. If so, the dissipative flux needs not to
   ! be computed.
 

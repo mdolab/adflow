@@ -42,9 +42,7 @@
        character(len=maxCGNSNameLen), dimension(:), allocatable :: &
                                                                 solNames, isoSurfSolNames
        character(len=maxCGNSNameLen) :: contourName
-!
-!       Begin execution                                                
-!
+
        ! Determine the number and names of the solution files.
 
        call surfSolFileNamesWrite

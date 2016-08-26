@@ -204,9 +204,7 @@
        integer(kind=intType) :: nn, mm
 
        type(fourIntPlusRealType), dimension(nEntities) :: tmp
-!
-!       Begin execution                                                
-!
+
        ! Return immediately if there are no entities to be sorted.
 
        if(nEntities == 0) return
@@ -291,9 +289,7 @@
 
        integer(kind=intType), allocatable, dimension(:) :: stack
        integer(kind=intType), allocatable, dimension(:) :: tmpStack
-!
-!       Begin execution                                                
-!
+
        ! Allocate the memory for stack.
 
        nStack = 100

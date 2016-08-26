@@ -28,9 +28,7 @@
 
        integer(kind=8) :: nCellsEven, nFacesEven   ! 8 byte integers to
                                                    ! avoid overflow.
-!
-!       Begin execution                                                
-!
+
        ! Initialize nCell and nFace to 0. These variables will contain
        ! the number of cells and faces per partition (== processor)
        ! respectively.

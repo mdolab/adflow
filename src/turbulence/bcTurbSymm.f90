@@ -25,9 +25,7 @@ subroutine bcTurbSymm(nn)
   !      Local variables.
   !
   integer(kind=intType) :: i, j, l
-  !
-  !       Begin execution                                                
-  !
+
   ! Loop over the faces of the subfaces and set the values of bmt
   ! for an implicit treatment. For a symmetry face this means
   ! that the halo value is set to the internal value.

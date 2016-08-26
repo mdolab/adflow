@@ -36,9 +36,7 @@
 
        real(kind=realType) :: gm1, factK, v2, scale, e0, e
        real(kind=realType) :: TRefInv, T, dT, T2, alp, cv
-!
-!       Begin execution                                                
-!
+
        ! Determine the cp model used in the computation.
 
        select case (cpModel)

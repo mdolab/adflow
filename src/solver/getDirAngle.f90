@@ -44,9 +44,7 @@ subroutine getDirAngle(freeStreamAxis,liftAxis,liftIndex,alpha,beta)
   integer(kind=intType):: flowIndex,i
   real(kind=realType), dimension(3) :: freeStreamAxisNorm
   integer(kind=intType) ::  temp
-  !
-  !      Begin execution.                                               
-  !
+
 
   ! Assume domoniate flow is x
 

@@ -33,9 +33,7 @@
        integer :: ierr
 
        integer(kind=intType) :: ii, sps
-!
-!       Begin execution                                                
-!
+
        ! Release the memory of the entire communication pattern if this
        ! is not the first time this routine is called and initialize
        ! it again afterwards.

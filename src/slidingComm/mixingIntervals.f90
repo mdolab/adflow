@@ -55,9 +55,7 @@
 
        type(mixingIntervalType), dimension(:), allocatable :: edges
        type(mixingIntervalType), dimension(:), pointer     :: intervals
-!
-!       Begin execution                                                
-!
+
        ! Store the communicator, the number of processors and my
        ! processor ID for this processor group a bit easier.
 
@@ -1087,9 +1085,7 @@
          integer(kind=intType) :: nn, nOld
 
          type(mixingIntervalType), dimension(:), pointer :: tmp
-!
-!         Begin execution                                              
-!
+
          tmp => intervals
          nOld = nAlloc
 

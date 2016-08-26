@@ -53,9 +53,7 @@
        logical, dimension(2:il,2:jl), target :: flagK2, flagKl
 
        logical, dimension(:,:), pointer :: flag
-!
-!       Begin execution                                                
-!
+
        ! Set model constants
 
        rktGam1 = rktBeta1/rktBetas &

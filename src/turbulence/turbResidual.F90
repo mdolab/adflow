@@ -15,9 +15,7 @@ subroutine turbResidual
   use turbMod
   use saModule
   implicit none
-  !
-  !       Begin execution                                                
-  !
+
   ! Determine whether or not a second order discretization for the
   ! advective terms must be used.
 

@@ -24,9 +24,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: nn
-!
-!       Begin execution                                                
-!
+
 
        ! Check the additional variables to be written -- there are no
        ! default variables already written

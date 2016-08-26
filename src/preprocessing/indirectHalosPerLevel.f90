@@ -101,9 +101,7 @@
        type(indexListType), dimension(:), intent(inout) :: entityIndex
        end subroutine storeHalosInList
        end interface
-!
-!       Begin execution                                                
-!
+
        ! Determine the number of items per entity that is returned from
        ! the requested processor. This is 5 + level, because of the
        ! storage of possible periodic transformations.
@@ -480,9 +478,7 @@
 
        integer(kind=intType), dimension(3,3) :: tMat
 
-!
-!       Begin execution                                                
-!
+
        ! Initialize m to 0.
 
        m = 0
@@ -582,9 +578,7 @@
        integer(kind=intType) :: nPeriodic
 
        integer(kind=intType), dimension(:), allocatable :: tmpBuf
-!
-!       Begin execution                                                
-!
+
        ! Allocate the memory for tmpBuf to the size needed to store the
        ! return information.
 
@@ -747,9 +741,7 @@
        integer(kind=intType) :: i, j, k
        integer(kind=intType) :: ii, nn, blockID, iii
        integer(kind=intType) :: nPeriodic
-!
-!       Begin execution                                                
-!
+
        ! Store the start index (-1) for this processor in indHalo in nn.
 
        nn = nHaloPerLev(level-1) + nHaloPerProc(proc)

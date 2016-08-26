@@ -39,8 +39,7 @@
 !
       real(kind=realType) :: rnorm,x1,y1,z1,xbn,ybn,zbn,xw,yw,zw
       real(kind=realType) :: tmp
-!      Begin execution.                                               
-!
+
       ! Normalize the input vector.
 
       rnorm = sqrt( refDirection(1)**2 + refDirection(2)**2 + refDirection(3)**2 )

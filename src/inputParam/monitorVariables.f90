@@ -35,9 +35,7 @@
        character(len=maxCGNSNameLen), dimension(nVarMax) :: tmpNames
 
        logical :: monDrho, monTotalR
-!
-!       Begin execution                                                
-!
+
        ! Check if the monitoring names have already been allocated.
        ! This happens when multiple lines for the monitoring variables
        ! are specified in the parameter file. If this happens the last

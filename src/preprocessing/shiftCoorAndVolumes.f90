@@ -22,9 +22,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: i, j, k, nn, mm, ll, kk
-!
-!       Begin execution                                                
-!
+
        ! Loop over the number of spectral solutions and local blocks.
 
        spectralLoop: do kk=1,nTimeIntervalsSpectral

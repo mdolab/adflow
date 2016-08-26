@@ -44,9 +44,7 @@
 
        real(kind=realType), dimension(:,:), allocatable :: bufInt
        real(kind=realType), dimension(:,:), allocatable :: recvBufInt
-!
-!       Begin execution                                                
-!
+
        ! Allocate the memory for nHaloPerProc and initialize its
        ! values to 0. Boundary halo's are stored with a processor id -1
        ! and the array will be put in cumulative storage format later,

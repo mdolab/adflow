@@ -45,8 +45,7 @@ subroutine computedwDADI
   real(kind=realType), dimension(je) :: mettermj
   real(kind=realType), dimension(ke) :: mettermk
   real(kind=realType), dimension(5) :: diagPlus,diagMinus
-  !
-  !       Begin execution                                                
+
 
   ! Set the value of the current cfl number,
   ! depending on the situation. On the finest grid in the mg cycle

@@ -110,9 +110,7 @@ subroutine MyKSPMonitor(myKsp, n, rnorm, dummy, ierr)
   real(kind=realType), pointer, dimension(:, :) :: myKsp
   integer(kind=intType) :: n, dummy, ierr
   real(kind=realType)   :: rnorm
-  !
-  !      Begin execution.                                               
-  !
+
 #ifndef USE_NO_PETSC
 
   ! Write the residual norm to stdout every adjMonStep iterations.

@@ -15,9 +15,7 @@ subroutine updateCoordinatesAllLevels
   !
   integer(kind=intType) :: nLevels, nn
   real(kind=realType)   :: origGroundLevel
-  !
-  !       Begin execution                                                
-  !
+
   ! Determine the halo coordinates of the fine level.
   origGroundLevel = groundLevel
   groundLevel     = 1

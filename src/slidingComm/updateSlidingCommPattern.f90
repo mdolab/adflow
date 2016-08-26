@@ -52,9 +52,7 @@
 
        type(updateCommType), &
         dimension(0:myInterfaces(color)%nProcSlide-1) :: localInterpol
-!
-!       Begin execution                                                
-!
+
        ! Abbreviate the number of processors, my processor id and the
        ! communicator for the subgroup of this sliding interface.
 
@@ -537,9 +535,7 @@
          integer(kind=intType), intent(in) :: nMySubfaces
          type(localSubfaceType), dimension(nMySubfaces), &
                                                 intent(in) :: mySubfaces
-!
-!         Begin execution                                              
-!
+
          ! Loop over the subfaces and the quadrilateral faces of these
          ! subfaces.
 
@@ -590,9 +586,7 @@
 
          type(localSubfaceType), dimension(nMySubfaces), &
                                                intent(in) :: mySubfaces
-!
-!         Begin execution                                              
-!
+
          ! Loop over the subfaces and the quadrilateral faces of these
          ! subfaces. First store the info of the halo's that must be
          ! interpolated.

@@ -48,8 +48,7 @@
 
        logical :: overwrite
 
-!       Begin execution                                                
-!
+
        ! Set the cgns ID for the "master" file and read the size
        ! of the block as well as the zone name.
 

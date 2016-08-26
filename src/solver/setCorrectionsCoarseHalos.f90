@@ -36,9 +36,7 @@
        real(kind=realType), dimension(:,:,:),   pointer :: ww1, ww2
 
        type(BCDataType), dimension(:), pointer :: BCData
-!
-!       Begin execution                                                
-!
+
        ! Set the pointer ww to the coarse grid variables. At the moment
        ! when this routine is called, these contain the corrections in a
        ! normal grid cycle and the true variables when used to

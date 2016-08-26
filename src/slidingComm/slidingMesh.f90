@@ -27,9 +27,7 @@
        integer :: ierr
 
        integer(kind=intType) :: nn
-!
-!       Begin execution                                                
-!
+
        ! Check if this processor actually participates in a search.
        ! If not, return immediately.
 

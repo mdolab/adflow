@@ -31,9 +31,7 @@
        logical :: emptyPartitions, commNeglected
 
        type(splitCGNSType), dimension(cgnsNDom) :: splitInfo
-!
-!       Begin execution                                                
-!
+
        ! If it is not allowed to split the blocks, check that the
        ! number of blocks is equal or larger than the number of
        ! processors. If not, print an error message and exit.
@@ -239,9 +237,7 @@
 !        Local variables.
 !
          integer(kind=intType) :: i, nx, ny, nz, nCells
-!
-!         Begin execution                                              
-!
+
          ! Initialize splittingIsOkay to .true.
 
          splittingIsOkay = .true.
@@ -299,9 +295,7 @@
          integer(kind=intType), dimension(:,:,:), allocatable :: tmpRange
 
          type(distributionBlockType) :: tmpBlock
-!
-!         Begin execution                                              
-!
+
          ! Check whether it is allowed to split blocks.
 
          if(.not. splitBlocks)                        &

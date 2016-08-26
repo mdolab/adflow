@@ -23,9 +23,7 @@ subroutine convergenceHeader
   !
   integer(kind=intType) :: i, nCharWrite
   logical :: writeIterations
-  !
-  !       Begin execution                                                
-  !
+
   ! Determine whether or not the iterations must be written.
 
   if (printIterations) then

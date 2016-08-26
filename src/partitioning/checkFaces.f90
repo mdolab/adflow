@@ -262,9 +262,7 @@
 
        logical :: iMinBad, iMaxBad, jMinBad, jMaxBad
        logical :: kMinBad, kMaxBad
-!
-!       Begin execution                                                
-!
+
        ! Initialize iMinFace, etc to 0. These arrays will contain the
        ! number of specified connectivities and BC's for each face on
        ! the block boundary.

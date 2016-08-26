@@ -20,9 +20,7 @@
 !      Subroutine arguments.
 !
        integer(kind=intType), intent(out) :: nVolSolvar, nVolDiscrVar
-!
-!       Begin execution                                                
-!
+
        ! Initialize the number of solution variables to the number of
        ! independent variables and the number of discrete variables to 0.
 

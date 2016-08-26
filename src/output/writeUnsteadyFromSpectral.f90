@@ -11,9 +11,7 @@
 !       restart in unsteady mode.                                      
 !
        implicit none
-!
-!       Begin execution                                                
-!
+
        call returnFail("writeUnsteadyFromSpectral", &
                       "Not implemented yet")
 

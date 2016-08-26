@@ -25,8 +25,7 @@
 
        integer(kind=intType) :: i,j,k,nn,kk
 
-!       Begin execution                                                
-!
+
        ! Initializations of the write parameters.
 
        writeVolume  = .false.
@@ -129,9 +128,7 @@
        integer(kind=intType) :: nn
 
        real(kind=realType), dimension(nSections) :: tNewSec, deltaTSec
-!
-!       Begin execution                                                
-!
+
        ! Increment timeStepUnsteady and update
        ! timeUnsteady with the current time step.
 
@@ -221,9 +218,7 @@
             nonDimBoundData, setInletFreeStreamTurb
 
        implicit none
-!
-!       Begin execution                                                
-!
+
        ! If the grid is changing a whole lot of geometric
        ! info must be adapted.
 
@@ -293,9 +288,7 @@
 
        integer(kind=intType) :: nn
        character(len=7) :: intString
-!
-!       Begin execution                                                
-!
+
        ! Determine the global kill parameter if signals are supported.
 
 #ifndef USE_NO_SIGNALS
@@ -369,9 +362,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: nn
-!
-!       Begin execution                                                
-!
+
        ! Write a solution. Only on the finest grid in stand alone mode
        ! and if some time steps have been performed since the last write.
 
@@ -430,9 +421,7 @@
        integer(kind=intType) :: nn
        external callback
        real(kind=realType), dimension(nSections) :: tNewSec, deltaTSec
-!
-!       Begin execution                                                
-!
+
        ! Increment timeStepUnsteady and update
        ! timeUnsteady with the current time step.
 

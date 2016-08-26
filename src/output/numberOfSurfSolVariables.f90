@@ -16,9 +16,7 @@
 !      Subroutine arguments.
 !
        integer(kind=intType), intent(out) :: nSolVar
-!
-!       Begin execution                                                
-!
+
        ! Initialize the number of solution variables to zero.
 
        nSolVar = 0

@@ -730,9 +730,7 @@ subroutine allNodalGradients
 
   real(kind=realType) :: oneOverV, ubar, vbar, wbar, a2
   real(kind=realType) :: sx, sx1, sy, sy1, sz, sz1
-  !
-  !         Begin execution                                              
-  !
+
 
   ! Zero all nodeal gradients:
   ux = zero; uy = zero; uz = zero;

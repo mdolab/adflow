@@ -23,9 +23,7 @@
 !      Local variables.
 !
        real(kind=realType) :: dot
-!
-!       Begin execution                                                
-!
+
        ! The vectors which span the axial plane must be normal to axis.
        ! For the first vector try first the y-axis. If not good enough
        ! use the z-axis.

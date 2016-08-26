@@ -22,9 +22,7 @@
 !      Function definitions
 !
        real(kind=realType) :: getMassFlux
-!
-!       Begin execution                                                
-!
+
        ! Determine the number of inflow and outflow bleed regions.
 
        nInflowBleeds  = 0
@@ -122,9 +120,7 @@
        character(len=maxStringLen) :: errorMessage
 
        type(cgnsBcDatasetType), pointer, dimension(:) :: dataSet
-!
-!       Begin execution                                                
-!
+
        ! Store the number of boundary condition data sets and the 
        ! data sets a bit easier.
 

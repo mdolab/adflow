@@ -23,9 +23,7 @@
       integer(kind=intType), intent(in) :: iaxis
       real(kind=realType), intent(in)   :: angle, x, y, z
       real(kind=realType), intent(out)  :: xp, yp, zp
-!
-!      Begin execution                                                
-!
+
       ! rotation about specified axis by specified angle
 
       select case(iaxis)

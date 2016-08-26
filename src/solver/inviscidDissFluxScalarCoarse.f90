@@ -25,9 +25,7 @@
        integer(kind=intType) :: i, j, k
 
        real(kind=realType) :: sfil, fis0, dis0, ppor, fs, rhoi
-!
-!       Begin execution                                                
-!
+
        ! Check if rFil == 0. If so, the dissipative flux needs not to
        ! be computed.
 

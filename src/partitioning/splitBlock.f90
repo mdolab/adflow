@@ -39,9 +39,7 @@
        integer(kind=intType), dimension(nSub) :: nSubblocks
 
        logical, dimension(3) :: viscousDir
-!
-!       Begin execution                                                
-!
+
        ! Determine the viscous directions of the block.
 
        viscousDir = .false.
@@ -226,9 +224,7 @@
        integer(kind=intType) :: nCellOpt
 
        integer(kind=intType), dimension(3) :: nc, mc, c, nf, prefDir
-!
-!       Begin execution                                                
-!
+
        ! Determine the maximum of the number of mg levels needed in the
        ! cycle and the mg start level. Store this value in nMG.
 

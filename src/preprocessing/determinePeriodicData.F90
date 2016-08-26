@@ -181,8 +181,7 @@
          real(kind=realType), dimension(3)   :: rotCenter
 #endif
 
-!         Begin execution                                              
-!
+
          ! Determine the number of different periodic transformations
          ! as well as the number of halo's per transformation.
          ! Note that the operator == of periodicSubfacesHaloType only

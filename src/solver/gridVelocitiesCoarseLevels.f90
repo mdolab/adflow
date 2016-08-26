@@ -36,9 +36,7 @@
 
        real(kind=realType), dimension(:,:),     pointer :: sFine, sFace
        real(kind=realType), dimension(:,:,:,:), pointer :: sf
-!
-!       Begin execution                                                
-!
+
        ! Loop over the number of coarse grid levels, starting at
        ! groundLevel+1,
 
@@ -284,9 +282,7 @@
 
          end subroutine correctPeriodicGridVel
        end interface
-!
-!       Begin execution                                                
-!
+
 !       The 1 to 1 communication.                                      
 !
        ! Send the variables. The data is first copied into
@@ -707,9 +703,7 @@
        real(kind=realType)   :: vx, vy, vz
 
        real(kind=realType), dimension(3,3) :: rotMatrix
-!
-!       Begin execution                                                
-!
+
        ! Loop over the number of periodic transformations.
 
        do nn=1,nPeriodic

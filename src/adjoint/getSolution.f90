@@ -28,8 +28,7 @@ subroutine getSolution(sps)
   real(kind=realType)::bendingMoment,bendingSum, cf(3), cm(3)
   integer(kind=intType) :: i, liftIndex
 
-  !Begin execution
-  !determine the liftIndex from the flow and liftdirection
+
   call getDirAngle(velDirFreestream, LiftDirection,&
        liftIndex, alpha, beta)
 

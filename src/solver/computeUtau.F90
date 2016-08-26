@@ -66,9 +66,7 @@ subroutine computeUtau_block
   !      Function definition.
   !
   real(kind=realType) :: curveUpRe
-  !
-  !       Begin execution                                                
-  !
+
   ! Return immediately if no wall functions must be used.
 
   if(.not. wallFunctions) return

@@ -87,9 +87,7 @@ subroutine timeStep_block(onlyRadii)
   real(kind=realType) :: sFace, tmp
 
   logical :: radiiNeeded, doScaling
-  !
-  !       Begin execution                                                
-  !
+
   ! Determine whether or not the spectral radii are needed for the
   ! flux computation.
 

@@ -25,8 +25,7 @@ subroutine bcTurbInflow(nn)
   !      Local variables.
   !
   integer(kind=intType) :: i, j, l
-  !
-  !       Begin execution                                                
+
 
   ! Loop over the faces of the subfaces and set the values of
   ! bvt and bmt such that the inflow state is linearly extrapolated

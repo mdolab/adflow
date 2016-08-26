@@ -37,9 +37,7 @@
                                                                   buffer
 
        integer(kind=intType), dimension(:), allocatable :: bufferRecv
-!
-!       Begin execution                                                
-!
+
        ! Determine the number of faces of each sliding mesh interface
        ! on this processor. Both parts of the interface are considered.
 

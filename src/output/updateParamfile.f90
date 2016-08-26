@@ -31,9 +31,7 @@
 
        character(len=2*maxStringLen) :: errorMessage
        character(len=8)              :: integerString
-!
-!       Begin execution                                                
-!
+
        ! Return immediately if no grid and solution file has
        ! been written.
 

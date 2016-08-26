@@ -25,9 +25,7 @@
        integer :: ierr
 
        integer(kind=intType) :: i, j, jj
-!
-!       Begin execution                                                
-!
+
        ! Allocate the memory for the 2nd level halo list.
 
        allocate(cellHalo2nd(nCellHalo2nd), stat=ierr)

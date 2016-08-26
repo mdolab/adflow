@@ -24,9 +24,7 @@ subroutine exchangeGlobalCells(level, sps, commPattern, internal)
 
   integer(kind=intType), dimension(:), allocatable :: sendBufInt
   integer(kind=intType), dimension(:), allocatable :: recvBufInt
-  !
-  !       Begin execution                                                
-  !
+
   ! Allocate the memory for the sending and receiving buffers.
 
   ii = commPattern(level)%nProcSend

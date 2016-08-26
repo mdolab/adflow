@@ -33,9 +33,7 @@
 
        real(kind=realType), dimension(3)   :: rotationPoint
        real(kind=realType), dimension(3,3) :: rotationMatrix
-!
-!       Begin execution                                                
-!
+
        ! Compute the rotation matrix of the rigid body rotation as well
        ! as the rotation point; the latter is not needed to correct the
        ! velocities, but the routine rotMatrixRigidBody is also used

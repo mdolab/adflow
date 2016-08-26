@@ -44,9 +44,7 @@ subroutine turbAdvection(mAdv, nAdv, offset, qq)
   real(kind=realType) :: uu, dwt, dwtm1, dwtp1, dwti, dwtj, dwtk
 
   real(kind=realType), dimension(mAdv) :: impl
-  !
-  !       Begin execution                                                
-  !
+
   ! Initialize the grid velocity to zero. This value will be used
   ! if the block is not moving.
   continue

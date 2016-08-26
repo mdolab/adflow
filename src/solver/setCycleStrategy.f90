@@ -21,9 +21,7 @@
 !
        integer(kind=intType) :: i
        integer(kind=intType) :: thisLevel, maxLevel
-!
-!       Begin execution                                                
-!
+
        ! Initialize thisLevel and maxLevel to 1, i.e. the finest grid.
 
        thisLevel = 1

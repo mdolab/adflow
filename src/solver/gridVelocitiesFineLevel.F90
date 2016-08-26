@@ -92,9 +92,7 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
   real(kind=realType), dimension(3) ::velDir
   real(kind=realType), dimension(3) :: refDirection
 
-  !
-  !       Begin execution                                                
-  !
+
   ! Compute the mesh velocity from the given mesh Mach number.
 
   ! vel{x,y,z}Grid0 is the ACTUAL velocity you want at the

@@ -24,9 +24,7 @@
        integer :: ierr
 
        integer(kind=intType) :: nn, mm
-!
-!       Begin execution                                                
-!
+
        ! Abbreviate the number of sending and receiving processors a
        ! bit easier and allocate the memory for the cumulative storage
        ! arrays.
