@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          determineFaceHalos.F90                          *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 01-28-2003                                      *
-!      * Last modified: 11-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          determineFaceHalos.F90                          
+!       Author:        Edwin van der Weide                             
+!       Starting date: 01-28-2003                                      
+!       Last modified: 11-29-2007                                      
 !
        subroutine determineFaceHalos(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * determineFaceHalos determines the 1st level direct cell and    *
-!      * node halo's. Direct halo means that at least one of the        *
-!      * neighboring cell/nodes belongs is owned by the block.          *
-!      * Consequently the halo can be found using the 1 to 1 block      *
-!      * connectivity.                                                  *
-!      *                                                                *
-!      ******************************************************************
+!       determineFaceHalos determines the 1st level direct cell and    
+!       node halo's. Direct halo means that at least one of the        
+!       neighboring cell/nodes belongs is owned by the block.          
+!       Consequently the halo can be found using the 1 to 1 block      
+!       connectivity.                                                  
 !
        use constants
        use blockPointers
@@ -55,11 +47,7 @@
 !
        integer(kind=intType) :: bsearchCGNSPeriodicType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize the counter variables for the 1st level halo's to 0.
 
@@ -75,15 +63,11 @@
 
          call setPointers(nn,level,1_intType)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Loop over the boundary halo's first. The reason is that a    *
-!        * node could belong to both a boundary and an internal subface.*
-!        * By looping first over the boundaries, the internal subfaces  *
-!        * overwrite earlier set values by the boundary subface, which  *
-!        * is desirable.                                                *
-!        *                                                              *
-!        ****************************************************************
+!         Loop over the boundary halo's first. The reason is that a    
+!         node could belong to both a boundary and an internal subface.
+!         By looping first over the boundaries, the internal subfaces  
+!         overwrite earlier set values by the boundary subface, which  
+!         is desirable.                                                
 !
          bocos: do mm=1,nBocos
 
@@ -92,11 +76,7 @@
 
            call haloRanges(mm, myOffset, myCellRange, myNodeRange, step)
 !
-!          **************************************************************
-!          *                                                            *
-!          * First treat the nodes on the subface.                      *
-!          *                                                            *
-!          **************************************************************
+!           First treat the nodes on the subface.                      
 !
            ! Loop over the nodes of the boundary subface and store
            ! the halo info. For the edges of the subface it is possible
@@ -152,13 +132,9 @@
              enddo
            enddo
 !
-!          **************************************************************
-!          *                                                            *
-!          * The cell halo's belonging to this subface. Direct cell     *
-!          * halo's are unique and therefore info cannot already be     *
-!          * written earlier.                                           *
-!          *                                                            *
-!          **************************************************************
+!           The cell halo's belonging to this subface. Direct cell     
+!           halo's are unique and therefore info cannot already be     
+!           written earlier.                                           
 !
            ! Loop over the halo cells located adjacent to the subface.
 
@@ -206,11 +182,7 @@
 
          enddo bocos
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Loop over the 1 to 1 block to block boundaries.              *
-!        *                                                              *
-!        ****************************************************************
+!         Loop over the 1 to 1 block to block boundaries.              
 !
          n1to1Loop: do ll=1,n1to1
 
@@ -279,11 +251,7 @@
                           + tMat(3,2)*myOffset(2) &
                           + tMat(3,3)*myOffset(3)
 !
-!          **************************************************************
-!          *                                                            *
-!          * First treat the nodes on the subface.                      *
-!          *                                                            *
-!          **************************************************************
+!           First treat the nodes on the subface.                      
 !
            ! Loop over the nodal range for this subface.
 
@@ -380,13 +348,9 @@
              enddo
            enddo
 !
-!          **************************************************************
-!          *                                                            *
-!          * The cell halo's belonging to this subface. Direct cell     *
-!          * halo's are unique and therefore info cannot already be     *
-!          * written earlier.                                           *
-!          *                                                            *
-!          **************************************************************
+!           The cell halo's belonging to this subface. Direct cell     
+!           halo's are unique and therefore info cannot already be     
+!           written earlier.                                           
 !
            ! First determine the cell range of the donor block on
            ! the subface. This equals the nodal range, except that 1 is
@@ -511,14 +475,10 @@
 
        subroutine haloRanges(mm, offset, cellRange, nodeRange, step)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * haloRanges determines the cell and nodal ranges for the given  *
-!      * subface as well as the direction normal to the subface,        *
-!      * pointing outwards. In case of negative running indices of the  *
-!      * subface, step is set to -1; otherwise it is 1.                 *
-!      *                                                                *
-!      ******************************************************************
+!       haloRanges determines the cell and nodal ranges for the given  
+!       subface as well as the direction normal to the subface,        
+!       pointing outwards. In case of negative running indices of the  
+!       subface, step is set to -1; otherwise it is 1.                 
 
        use constants
        use blockPointers
@@ -536,11 +496,7 @@
        integer(kind=intType) :: i
        integer(kind=intType) :: cellHaloInd, cellHaloID
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the offset in i, j and k direction, depending on the
        ! faceID. This can be interpreted as the outward pointing normal

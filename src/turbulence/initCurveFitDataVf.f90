@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          initCurveFitDataVf.f90                          *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 07-27-2004                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          initCurveFitDataVf.f90                          
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 07-27-2004                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine initCurveFitDataVf
 !
-!      ******************************************************************
-!      *                                                                *
-!      * initCurveFitDataVf contains the curve fit constants for        *
-!      * the wall function data for the v2-f turbulence model.          *
-!      *                                                                *
-!      ******************************************************************
+!       initCurveFitDataVf contains the curve fit constants for        
+!       the wall function data for the v2-f turbulence model.          
 !
        use constants
        use flowVarRefState
@@ -28,11 +20,7 @@
 !
        integer :: ierr
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the version of the v2-f model.
 

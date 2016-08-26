@@ -5,31 +5,22 @@
 !   variations   of useful results: xp yp zp
 !   with respect to varying inputs: x y z angle
 !
-!     ******************************************************************
-!     *                                                                *
-!     * file:          vectorrotation.f90                              *
-!     * author:        andre c. marta                                  *
-!     * starting date: 06-23-2006                                      *
-!     * last modified: 07-28-2006                                      *
-!     *                                                                *
-!     ******************************************************************
+!      file:          vectorrotation.f90                              
+!      author:        andre c. marta                                  
+!      starting date: 06-23-2006                                      
+!      last modified: 07-28-2006                                      
 !
 subroutine vectorrotation_d(xp, xpd, yp, ypd, zp, zpd, iaxis, angle, &
 & angled, x, xd, y, yd, z, zd)
 !
-!     ****************************************************************
-!     *                                                              *
-!     * vectorrotation rotates a given vector with respect to a      *
-!     * specified axis by a given angle.                             *
-!     *                                                              *
-!     *    input arguments:                                          *
-!     *       iaxis      = rotation axis (1-x, 2-y, 3-z)             *
-!     *       angle      = rotation angle (measured ccw in radians)  *
-!     *       x, y, z    = coordinates in original system            *
-!     *    output arguments:                                         *
-!     *       xp, yp, zp = coordinates in rotated system             *
-!     *                                                              *
-!     ****************************************************************
+!      vectorrotation rotates a given vector with respect to a      
+!      specified axis by a given angle.                             
+!         input arguments:                                          
+!            iaxis      = rotation axis (1-x, 2-y, 3-z)             
+!            angle      = rotation angle (measured ccw in radians)  
+!            x, y, z    = coordinates in original system            
+!         output arguments:                                         
+!            xp, yp, zp = coordinates in rotated system             
 !
   use precision
   implicit none
@@ -44,11 +35,7 @@ subroutine vectorrotation_d(xp, xpd, yp, ypd, zp, zpd, iaxis, angle, &
   intrinsic cos
   intrinsic sin
 !
-!     ******************************************************************
-!     *                                                                *
-!     * begin execution                                                *
-!     *                                                                *
-!     ******************************************************************
+!      begin execution                                                
 !
 ! rotation about specified axis by specified angle
   select case  (iaxis) 

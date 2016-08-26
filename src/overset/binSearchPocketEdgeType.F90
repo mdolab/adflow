@@ -1,11 +1,9 @@
 !
 subroutine binSearchPocketEdgeType(arr, search, nn, searchInd)
 
-! **************************************************************
-! * binSearchPocketEdgeType does binary searche for            *
-! * pocketEdgeType 'search' edge and returns index 'searchInd' * 
-! * where 'search' lies in arr.                                *
-! **************************************************************
+!  binSearchPocketEdgeType does binary searche for            
+!  pocketEdgeType 'search' edge and returns index 'searchInd' 
+!  where 'search' lies in arr.                                
 
   use overset
   implicit none

@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          bcTurbInflow.f90                                *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 06-11-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          bcTurbInflow.f90                                
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 06-11-2003                                      
+!       Last modified: 06-12-2005                                      
 !
 subroutine bcTurbInflow(nn)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * bcTurbInflow applies the implicit treatment of the inflow      *
-  !      * boundary conditions to subface nn. As the inflow boundary      *
-  !      * condition is independent of the turbulence model, this routine *
-  !      * is valid for all models. It is assumed that the pointers in    *
-  !      * blockPointers are already set to the correct block on the      *
-  !      * correct grid level.                                            *
-  !      *                                                                *
-  !      ******************************************************************
+  !       bcTurbInflow applies the implicit treatment of the inflow      
+  !       boundary conditions to subface nn. As the inflow boundary      
+  !       condition is independent of the turbulence model, this routine 
+  !       is valid for all models. It is assumed that the pointers in    
+  !       blockPointers are already set to the correct block on the      
+  !       correct grid level.                                            
   !
   use constants
   use blockPointers
@@ -34,11 +26,7 @@ subroutine bcTurbInflow(nn)
   !
   integer(kind=intType) :: i, j, l
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
 
   ! Loop over the faces of the subfaces and set the values of
   ! bvt and bmt such that the inflow state is linearly extrapolated

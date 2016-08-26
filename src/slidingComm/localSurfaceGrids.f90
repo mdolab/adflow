@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          localSurfaceGrids.f90                           *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 01-21-2005                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          localSurfaceGrids.f90                           
+!       Author:        Edwin van der Weide                             
+!       Starting date: 01-21-2005                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine localSurfaceGrids(color, gridType)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * localSurfaceGrids stores the local surface mesh of the         *
-!      * active interface in a useable format for the ADT.              *
-!      *                                                                *
-!      ******************************************************************
+!       localSurfaceGrids stores the local surface mesh of the         
+!       active interface in a useable format for the ADT.              
 !
        use interfaceGroups
        use localSubfacesMod
@@ -34,21 +26,13 @@
        real(kind=realType) :: thetapMin, thetanMin
        real(kind=realType) :: thetapMax, thetanMax
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Store the communicator of this sliding mesh a bit easier.
 
        comm = myInterfaces(color)%commSlide
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Construct part 1 of the sliding mesh interface.                *
-!      *                                                                *
-!      ******************************************************************
+!       Construct part 1 of the sliding mesh interface.                
 !
        ! Determine the local number of nodes and quadrilaterals for
        ! part 1 of the sliding interface. Although this information is
@@ -93,11 +77,7 @@
        call mpi_allreduce(thetanMax, thetanMax1, 1, sumb_real, &
                           mpi_max,   comm, ierr)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Construct part 2 of the sliding mesh interface.                *
-!      *                                                                *
-!      ******************************************************************
+!       Construct part 2 of the sliding mesh interface.                
 !
        ! Determine the local number of nodes and quadrilaterals for
        ! part 2 of the sliding interface.

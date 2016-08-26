@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          openCGNSVolumeSol.F90                           *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-11-2003                                      *
-!      * Last modified: 07-03-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          openCGNSVolumeSol.F90                           
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-11-2003                                      
+!       Last modified: 07-03-2005                                      
 !
        subroutine openCGNSVolumeSol
 !
-!      ******************************************************************
-!      *                                                                *
-!      * openCGNSVolumeSol opens the cgns solution file(s) if needed.   *
-!      * If opened the files are opened either for writing or for       *
-!      * modification. When the grid file(s) have been written, these   *
-!      * files are still open and nothing needs to be done.             *
-!      * Only processor 0 performs this task.                           *
-!      *                                                                *
-!      ******************************************************************
+!       openCGNSVolumeSol opens the cgns solution file(s) if needed.   
+!       If opened the files are opened either for writing or for       
+!       modification. When the grid file(s) have been written, these   
+!       files are still open and nothing needs to be done.             
+!       Only processor 0 performs this task.                           
 !
        use cgnsGrid
        use monitor
@@ -35,11 +27,7 @@
 
        character(len=maxStringLen) :: errorMessage
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
 #ifdef USE_NO_CGNS
 

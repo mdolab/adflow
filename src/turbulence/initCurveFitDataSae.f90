@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          initCurveFitDataSae.f90                         *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 08-20-2004                                      *
-!      * Last modified: 04-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          initCurveFitDataSae.f90                         
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 08-20-2004                                      
+!       Last modified: 04-12-2005                                      
 !
        subroutine initCurveFitDataSae
 !
-!      ******************************************************************
-!      *                                                                *
-!      * initCurveFitDataSae contains the curve fit constants for       *
-!      * the wall function data for the Spalart-Allmaras (Edwards       *
-!      * modification) turbulence model.                                *
-!      *                                                                *
-!      ******************************************************************
+!       initCurveFitDataSae contains the curve fit constants for       
+!       the wall function data for the Spalart-Allmaras (Edwards       
+!       modification) turbulence model.                                
 !
        use flowVarRefState
        use paramTurb
@@ -27,11 +19,7 @@
 !
    !   integer :: ierr
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        call terminate("initCurveFitDataSae", &
                       "Not implemented yet")

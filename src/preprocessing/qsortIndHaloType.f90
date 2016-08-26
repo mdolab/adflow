@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          qsortIndHaloType.f90                            *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-03-2003                                      *
-!      * Last modified: 03-24-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          qsortIndHaloType.f90                            
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-03-2003                                      
+!       Last modified: 03-24-2005                                      
 !
        subroutine qsortIndHaloType(arr, nn)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * qsortIndHaloType sorts the given number of indirect halo's     *
-!      * in increasing order based on the <= operator for this derived  *
-!      * data type.                                                     *
-!      *                                                                *
-!      ******************************************************************
+!       qsortIndHaloType sorts the given number of indirect halo's     
+!       in increasing order based on the <= operator for this derived  
+!       data type.                                                     
 !
        use indirectHalo
        use utils, only : terminate
@@ -42,11 +34,7 @@
        integer(kind=intType), allocatable, dimension(:) :: stack
        integer(kind=intType), allocatable, dimension(:) :: tmpStack
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Allocate the memory for stack.
 

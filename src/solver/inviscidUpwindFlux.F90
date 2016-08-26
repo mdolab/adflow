@@ -1,18 +1,14 @@
        subroutine inviscidUpwindFlux(fineGrid)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * inviscidUpwindFlux computes the artificial dissipation part of *
-!      * the Euler fluxes by means of an approximate solution of the 1D *
-!      * Riemann problem on the face. For first order schemes,          *
-!      * fineGrid == .false., the states in the cells are assumed to    *
-!      * be constant; for the second order schemes on the fine grid a   *
-!      * nonlinear reconstruction of the left and right state is done   *
-!      * for which several options exist.                               *
-!      * It is assumed that the pointers in blockPointers already       *
-!      * point to the correct block.                                    *
-!      *                                                                *
-!      ******************************************************************
+!       inviscidUpwindFlux computes the artificial dissipation part of 
+!       the Euler fluxes by means of an approximate solution of the 1D 
+!       Riemann problem on the face. For first order schemes,          
+!       fineGrid == .false., the states in the cells are assumed to    
+!       be constant; for the second order schemes on the fine grid a   
+!       nonlinear reconstruction of the left and right state is done   
+!       for which several options exist.                               
+!       It is assumed that the pointers in blockPointers already       
+!       point to the correct block.                                    
 !
   use constants
   use blockPointers, only : il, jl, kl, ie, je, ke, ib, jb, kb, w, p, &
@@ -138,22 +134,14 @@
          firstOrderK = .false.
        endif
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Flux computation. A distinction is made between first and      *
-!      * second order schemes to avoid the overhead for the first order *
-!      * scheme.                                                        *
-!      *                                                                *
-!      ******************************************************************
+!       Flux computation. A distinction is made between first and      
+!       second order schemes to avoid the overhead for the first order 
+!       scheme.                                                        
 !
        orderTest: if(limUsed == firstOrder) then
 !
-!        ****************************************************************
-!        *                                                              *
-!        * First order reconstruction. The states in the cells are      *
-!        * constant. The left and right states are constructed easily.  *
-!        *                                                              *
-!        ****************************************************************
+!         First order reconstruction. The states in the cells are      
+!         constant. The left and right states are constructed easily.  
 !
          ! Fluxes in the i-direction.
 
@@ -353,16 +341,12 @@
 
 !      ==================================================================
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Second order reconstruction of the left and right state.     *
-!        * The three differences used in the, possibly nonlinear,       *
-!        * interpolation are constructed here; the actual left and      *
-!        * right states, or at least the differences from the first     *
-!        * order interpolation, are computed in the subroutine          *
-!        * leftRightState.                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Second order reconstruction of the left and right state.     
+!         The three differences used in the, possibly nonlinear,       
+!         interpolation are constructed here; the actual left and      
+!         right states, or at least the differences from the first     
+!         order interpolation, are computed in the subroutine          
+!         leftRightState.                                              
 !
          ! Fluxes in the i-direction.
 
@@ -681,16 +665,12 @@
 
          subroutine leftRightState(du1, du2, du3, rotMatrix, left, right)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * leftRightState computes the differences in the left and      *
-!        * right state compared to the first order interpolation. For a *
-!        * monotonic second order discretization the interpolations     *
-!        * need to be nonlinear. The linear second order scheme can be  *
-!        * stable (depending on the value of kappa), but it will have   *
-!        * oscillations near discontinuities.                           *
-!        *                                                              *
-!        ****************************************************************
+!         leftRightState computes the differences in the left and      
+!         right state compared to the first order interpolation. For a 
+!         monotonic second order discretization the interpolations     
+!         need to be nonlinear. The linear second order scheme can be  
+!         stable (depending on the value of kappa), but it will have   
+!         oscillations near discontinuities.                           
 !
          implicit none
 !
@@ -713,11 +693,7 @@
 
          real(kind=realType), dimension(3,3) :: rot
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution.                                             *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution.                                             
 !
          ! Check if the velocity components should be transformed to
          ! the cylindrical frame.
@@ -884,12 +860,8 @@
 
          subroutine riemannFlux(left, right, flux)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * riemannFlux computes the flux for the given face and left    *
-!        * and right states.                                            *
-!        *                                                              *
-!        ****************************************************************
+!         riemannFlux computes the flux for the given face and left    
+!         and right states.                                            
 !
          implicit none
 !
@@ -911,11 +883,7 @@
          real(kind=realType) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
          real(kind=realType), dimension(2) :: ktmp
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution.                                             *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution.                                             
 !
          ! Set the porosity for the flux. The default value, 0.5*rFil, is
          ! a scaling factor where an rFil != 1 is taken into account.

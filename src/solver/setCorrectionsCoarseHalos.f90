@@ -1,26 +1,18 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          setCorrectionsCoarseHalos.f90                   *
-!      * Author:        Edwin van der Weide, Steve Repsher,             *
-!      *                Seonghyeon Hahn                                 *
-!      * Starting date: 05-14-2003                                      *
-!      * Last modified: 08-09-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          setCorrectionsCoarseHalos.f90                   
+!       Author:        Edwin van der Weide, Steve Repsher,             
+!                      Seonghyeon Hahn                                 
+!       Starting date: 05-14-2003                                      
+!       Last modified: 08-09-2005                                      
 !
        subroutine setCorrectionsCoarseHalos(sps, nn, coarseLevel, &
                                             fact, nVarInt)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * setCorrectionsCoarseHalos sets the values of the coarse        *
-!      * grid boundary halo corrections. For all boundaries, either a   *
-!      * homogeneous Dirichlet condition (fact = 0.0) or a Neumann      *
-!      * condition (fact = 1.0) is used. Exception are symmetry planes, *
-!      * where a mirroring takes place.                                 *
-!      *                                                                *
-!      ******************************************************************
+!       setCorrectionsCoarseHalos sets the values of the coarse        
+!       grid boundary halo corrections. For all boundaries, either a   
+!       homogeneous Dirichlet condition (fact = 0.0) or a Neumann      
+!       condition (fact = 1.0) is used. Exception are symmetry planes, 
+!       where a mirroring takes place.                                 
 !
        use constants
        use block, only : BCDataType, flowDoms
@@ -45,11 +37,7 @@
 
        type(BCDataType), dimension(:), pointer :: BCData
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Set the pointer ww to the coarse grid variables. At the moment
        ! when this routine is called, these contain the corrections in a

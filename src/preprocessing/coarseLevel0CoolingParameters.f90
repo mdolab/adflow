@@ -1,25 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          coarseLevel0CoolingParameters.f90               *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-30-2005                                      *
-!      * Last modified: 08-03-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          coarseLevel0CoolingParameters.f90               
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-30-2005                                      
+!       Last modified: 08-03-2005                                      
 !
        subroutine coarseLevel0CoolingParameters(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * coarseLevel0CoolingParameters creates parameters for the       *
-!      * level 0 cooling model on the coarse grid from the known values *
-!      * of the fine grid.                                              *
-!      *                                                                *
-!      * This model has been developed by Pratt and Whitney and should  *
-!      * not be given to third parties.                                 *
-!      *                                                                *
-!      ******************************************************************
+!       coarseLevel0CoolingParameters creates parameters for the       
+!       level 0 cooling model on the coarse grid from the known values 
+!       of the fine grid.                                              
+!       This model has been developed by Pratt and Whitney and should  
+!       not be given to third parties.                                 
 !
        use block
        use coolingModelLevel0
@@ -38,11 +29,7 @@
        integer(kind=intType) :: indSol, indNorm, indX1, indX2
        integer(kind=intType) :: jcBeg, jcEnd, icBeg, icEnd
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Store the finer grid level in levm1
 

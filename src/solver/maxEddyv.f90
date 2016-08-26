@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          maxEddyv.f90                                    *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-25-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          maxEddyv.f90                                    
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-25-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine maxEddyv(eddyvisMax)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * maxEddyv determines the maximum value of the eddy viscosity    *
-!      * ratio of the block given by the pointers in blockPointes.      *
-!      *                                                                *
-!      ******************************************************************
+!       maxEddyv determines the maximum value of the eddy viscosity    
+!       ratio of the block given by the pointers in blockPointes.      
 !
        use constants
        use blockPointers, only : il, jl, kl, rlv, rev
@@ -32,11 +24,7 @@
 
        real(kind=realType) :: eddyvis
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize the maximum value to zero and return immediately if
        ! not an eddy viscosity model is used.

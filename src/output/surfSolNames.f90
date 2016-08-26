@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          surfSolNames.f90                                *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 05-15-2003                                      *
-!      * Last modified: 07-13-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          surfSolNames.f90                                
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 05-15-2003                                      
+!       Last modified: 07-13-2005                                      
 !
        subroutine surfSolNames(solNames)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * surfSolNames sets the names for the surface variables to be    *
-!      * written to the surface solution file. Sids convention names    *
-!      * are used as much as possible.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       surfSolNames sets the names for the surface variables to be    
+!       written to the surface solution file. Sids convention names    
+!       are used as much as possible.                                  
 !
        use cgnsNames
        use extraOutput
@@ -30,11 +22,7 @@
 !
        integer(kind=intType) :: nn
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize nn to 0.
 

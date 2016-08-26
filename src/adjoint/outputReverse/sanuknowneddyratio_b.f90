@@ -5,24 +5,16 @@
 !   gradient     of useful results: sanuknowneddyratio
 !   with respect to varying inputs: nulam
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          sanufromeddyratio.f90                           *
-!      * author:        edwin van der weide                             *
-!      * starting date: 06-22-2003                                      *
-!      * last modified: 04-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          sanufromeddyratio.f90                           
+!       author:        edwin van der weide                             
+!       starting date: 06-22-2003                                      
+!       last modified: 04-12-2005                                      
 !
 subroutine sanuknowneddyratio_b(eddyratio, nulam, nulamd, &
 & sanuknowneddyratiod)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * sanuknowneddyratio computes the spalart-allmaras transport     *
-!      * variable nu for the given eddy viscosity ratio.                *
-!      *                                                                *
-!      ******************************************************************
+!       sanuknowneddyratio computes the spalart-allmaras transport     
+!       variable nu for the given eddy viscosity ratio.                
 !
   use constants
   use paramturb
@@ -44,11 +36,7 @@ subroutine sanuknowneddyratio_b(eddyratio, nulam, nulamd, &
   intrinsic abs
   real(kind=realtype) :: abs0
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! take care of the exceptional cases.
   if (eddyratio .le. zero) then

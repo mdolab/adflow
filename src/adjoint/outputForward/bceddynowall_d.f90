@@ -6,26 +6,18 @@
 !   with respect to varying inputs: *rev
 !   plus diff mem management of: rev:in bcdata:in
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          bceddynowall.f90                                *
-!      * author:        georgi kalitzin, edwin van der weide            *
-!      * starting date: 06-11-2003                                      *
-!      * last modified: 04-11-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          bceddynowall.f90                                
+!       author:        georgi kalitzin, edwin van der weide            
+!       starting date: 06-11-2003                                      
+!       last modified: 04-11-2005                                      
 !
 subroutine bceddynowall_d(nn)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * bceddynowall sets the eddy viscosity in the halo cells of      *
-!      * subface nn of the block given in blockpointers. the boundary   *
-!      * condition on the subface can be anything but a viscous wall.   *
-!      * a homogeneous neumann condition is applied, which means that   *
-!      * the eddy viscosity is simply copied from the interior cell.    *
-!      *                                                                *
-!      ******************************************************************
+!       bceddynowall sets the eddy viscosity in the halo cells of      
+!       subface nn of the block given in blockpointers. the boundary   
+!       condition on the subface can be anything but a viscous wall.   
+!       a homogeneous neumann condition is applied, which means that   
+!       the eddy viscosity is simply copied from the interior cell.    
 !
   use constants
   use blockpointers
@@ -39,11 +31,7 @@ subroutine bceddynowall_d(nn)
 !
   integer(kind=inttype) :: i, j
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! determine the face id on which the subface and copy
   select case  (bcfaceid(nn)) 

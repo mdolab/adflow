@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          turb2ndHalo.f90                                 *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 06-16-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          turb2ndHalo.f90                                 
+!       Author:        Edwin van der Weide                             
+!       Starting date: 06-16-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine turb2ndHalo(nn)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * turb2ndHalo sets the turbulent variables in the second halo    *
-!      * cell for the given subface. Simple constant extrapolation is   *
-!      * used to avoid problems.                                        *
-!      *                                                                *
-!      ******************************************************************
+!       turb2ndHalo sets the turbulent variables in the second halo    
+!       cell for the given subface. Simple constant extrapolation is   
+!       used to avoid problems.                                        
 !
        use constants
        use blockPointers
@@ -31,11 +23,7 @@
 !
        integer(kind=intType) :: i, j, l
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the face on which this subface is located and set
        ! some pointers accordingly.

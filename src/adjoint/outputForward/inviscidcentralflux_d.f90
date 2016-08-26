@@ -4,29 +4,21 @@
 !  differentiation of inviscidcentralflux in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *dw
 !   with respect to varying inputs: timeref *p *sfacei *sfacej
-!                *sfacek *dw *w *vol *si *sj *sk
+!                sfacek *dw *w *vol *si *sj 
 !   plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
 !                dw:in w:in vol:in si:in sj:in sk:in
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          inviscidcentralflux.f90                         *
-!      * author:        edwin van der weide                             *
-!      * starting date: 03-24-2003                                      *
-!      * last modified: 10-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          inviscidcentralflux.f90                         
+!       author:        edwin van der weide                             
+!       starting date: 03-24-2003                                      
+!       last modified: 10-29-2007                                      
 !
 subroutine inviscidcentralflux_d()
 !
-!      ******************************************************************
-!      *                                                                *
-!      * inviscidcentralflux computes the euler fluxes using a central  *
-!      * discretization for a given block. therefore it is assumed that *
-!      * the pointers in block pointer already point to the correct     *
-!      * block on the correct multigrid level.                          *
-!      *                                                                *
-!      ******************************************************************
+!       inviscidcentralflux computes the euler fluxes using a central  
+!       discretization for a given block. therefore it is assumed that 
+!       the pointers in block pointer already point to the correct     
+!       block on the correct multigrid level.                          
 !
   use blockpointers
   use cgnsgrid
@@ -46,22 +38,14 @@ subroutine inviscidcentralflux_d()
   real(kind=realtype) :: wwxd, wwyd, wwzd, rvold
   intrinsic mod
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! initialize sface to zero. this value will be used if the
 ! block is not moving.
   sface = zero
   sfaced = 0.0_8
 !
-!      ******************************************************************
-!      *                                                                *
-!      * advective fluxes in the i-direction.                           *
-!      *                                                                *
-!      ******************************************************************
+!       advective fluxes in the i-direction.                           
 !
   do k=2,kl
     do j=2,jl
@@ -170,11 +154,7 @@ subroutine inviscidcentralflux_d()
     end do
   end do
 !
-!      ******************************************************************
-!      *                                                                *
-!      * advective fluxes in the j-direction.                           *
-!      *                                                                *
-!      ******************************************************************
+!       advective fluxes in the j-direction.                           
 !
   sface = zero
   sfaced = 0.0_8
@@ -285,11 +265,7 @@ subroutine inviscidcentralflux_d()
     end do
   end do
 !
-!      ******************************************************************
-!      *                                                                *
-!      * advective fluxes in the k-direction.                           *
-!      *                                                                *
-!      ******************************************************************
+!       advective fluxes in the k-direction.                           
   sface = zero
   sfaced = 0.0_8
   do k=1,kl

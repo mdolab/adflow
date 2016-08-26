@@ -1,15 +1,11 @@
 subroutine inviscidDissFluxMatrixApprox
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * inviscidDissFluxMatrix computes the matrix artificial          *
-  !      * dissipation term. Instead of the spectral radius, as used in   *
-  !      * the scalar dissipation scheme, the absolute value of the flux  *
-  !      * jacobian is used. This leads to a less diffusive and           *
-  !      * consequently more accurate scheme. It is assumed that the      *
-  !      * pointers in blockPointers already point to the correct block.  *
-  !      *                                                                *
-  !      ******************************************************************
+  !       inviscidDissFluxMatrix computes the matrix artificial          
+  !       dissipation term. Instead of the spectral radius, as used in   
+  !       the scalar dissipation scheme, the absolute value of the flux  
+  !       jacobian is used. This leads to a less diffusive and           
+  !       consequently more accurate scheme. It is assumed that the      
+  !       pointers in blockPointers already point to the correct block.  
   !
   use blockPointers
   use cgnsGrid
@@ -89,11 +85,7 @@ subroutine inviscidDissFluxMatrixApprox
   enddo
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Dissipative fluxes in the i-direction.                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Dissipative fluxes in the i-direction.                         
   !
   do k=2,kl
      do j=2,jl
@@ -271,11 +263,7 @@ subroutine inviscidDissFluxMatrixApprox
      enddo
   enddo
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Dissipative fluxes in the j-direction.                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Dissipative fluxes in the j-direction.                         
   !
   do k=2,kl
      do i=2,il
@@ -453,11 +441,7 @@ subroutine inviscidDissFluxMatrixApprox
      enddo
   enddo
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Dissipative fluxes in the k-direction.                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Dissipative fluxes in the k-direction.                         
   !
   do j=2,jl
      do i=2,il

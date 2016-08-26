@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          computeEddyViscosity.f90                        *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 03-10-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          computeEddyViscosity.f90                        
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 03-10-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine computeEddyViscosity
 !
-!      ******************************************************************
-!      *                                                                *
-!      * computeEddyViscosity computes the eddy viscosity in the        *
-!      * owned cell centers of the given block. It is assumed that the  *
-!      * pointes already point to the correct block before entering     *
-!      * this subroutine.                                               *
-!      *                                                                *
-!      ******************************************************************
+!       computeEddyViscosity computes the eddy viscosity in the        
+!       owned cell centers of the given block. It is assumed that the  
+!       pointes already point to the correct block before entering     
+!       this subroutine.                                               
 !
        use constants
        use flowVarRefState
@@ -30,11 +22,7 @@
 !
        logical :: returnImmediately
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Check if an immediate return can be made.
 
@@ -78,13 +66,9 @@
 #ifndef USE_TAPENADE
        subroutine vfEddyViscosity
 !
-!      ******************************************************************
-!      *                                                                *
-!      * vfEddyViscosity computes the eddy-viscosity according to the   *
-!      * v2f turbulence model for the block given in blockPointers.     *
-!      * This routine is for both the n=1 and n=6 version.              *
-!      *                                                                *
-!      ******************************************************************
+!       vfEddyViscosity computes the eddy-viscosity according to the   
+!       v2f turbulence model for the block given in blockPointers.     
+!       This routine is for both the n=1 and n=6 version.              
 !
        use constants
        use blockPointers
@@ -106,11 +90,7 @@
        real(kind=realType), dimension(:,:),   pointer :: dd2Wall
 
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Compute time and length scale
  
@@ -206,14 +186,10 @@
 
        subroutine saEddyViscosity
 !
-!      ******************************************************************
-!      *                                                                *
-!      * saEddyViscosity computes the eddy-viscosity according to the   *
-!      * Spalart-Allmaras model for the block given in blockPointers.   *
-!      * This routine for both the original version as well as the      *
-!      * modified version according to Edwards.                         *
-!      *                                                                *
-!      ******************************************************************
+!       saEddyViscosity computes the eddy-viscosity according to the   
+!       Spalart-Allmaras model for the block given in blockPointers.   
+!       This routine for both the original version as well as the      
+!       modified version according to Edwards.                         
 !
        use constants
        use blockPointers
@@ -226,11 +202,7 @@
        integer(kind=intType) :: i, j, k, ii
        real(kind=realType)   :: chi, chi3, fv1, rnuSA, cv13
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Store the cv1^3; cv1 is a constant of the Spalart-Allmaras model.
 
@@ -266,13 +238,9 @@
 !      ==================================================================
        subroutine kwEddyViscosity
 !
-!      ******************************************************************
-!      *                                                                *
-!      * kwEddyViscosity computes the eddy viscosity according to the   *
-!      * k-omega models (both the original Wilcox as well as the        *
-!      * modified version) for the block given in blockPointers.        *
-!      *                                                                *
-!      ******************************************************************
+!       kwEddyViscosity computes the eddy viscosity according to the   
+!       k-omega models (both the original Wilcox as well as the        
+!       modified version) for the block given in blockPointers.        
 !
        use constants
        use blockPointers
@@ -282,11 +250,7 @@
 !
        integer(kind=intType) :: i, j, k
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the cells of this block and compute the eddy viscosity.
        ! Do not include halo's.
@@ -305,13 +269,9 @@
 
        subroutine SSTEddyViscosity
 !
-!      ******************************************************************
-!      *                                                                *
-!      * SSTEddyViscosity computes the eddy viscosity according to      *
-!      * menter's SST variant of the k-omega turbulence model for the   *
-!      * block given in blockPointers.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       SSTEddyViscosity computes the eddy viscosity according to      
+!       menter's SST variant of the k-omega turbulence model for the   
+!       block given in blockPointers.                                  
 !
          use constants  
          use blockPointers
@@ -325,11 +285,7 @@
 
        real(kind=realType) :: t1, t2, arg2, f2, vortMag
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Compute the vorticity squared in the cell centers. The reason
        ! for computing the vorticity squared is that a routine exists
@@ -372,12 +328,8 @@
 
        subroutine ktEddyViscosity
 !
-!      ******************************************************************
-!      *                                                                *
-!      * ktEddyViscosity computes the eddy viscosity according to the   *
-!      * k-tau turbulence model for the block given in blockPointers.   *
-!      *                                                                *
-!      ******************************************************************
+!       ktEddyViscosity computes the eddy viscosity according to the   
+!       k-tau turbulence model for the block given in blockPointers.   
 !
        use blockPointers
        use constants
@@ -387,11 +339,7 @@
 !
        integer(kind=intType) :: i, j, k
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the cells of this block and compute the eddy viscosity.
        ! Do not include halo's.

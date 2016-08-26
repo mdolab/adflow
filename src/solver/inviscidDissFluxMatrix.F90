@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          inviscidDissFluxMatrix.f90                      *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-25-2003                                      *
-!      * Last modified: 10-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          inviscidDissFluxMatrix.f90                      
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-25-2003                                      
+!       Last modified: 10-29-2007                                      
 !
 subroutine inviscidDissFluxMatrix
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * inviscidDissFluxMatrix computes the matrix artificial          *
-  !      * dissipation term. Instead of the spectral radius, as used in   *
-  !      * the scalar dissipation scheme, the absolute value of the flux  *
-  !      * jacobian is used. This leads to a less diffusive and           *
-  !      * consequently more accurate scheme. It is assumed that the      *
-  !      * pointers in blockPointers already point to the correct block.  *
-  !      *                                                                *
-  !      ******************************************************************
+  !       inviscidDissFluxMatrix computes the matrix artificial          
+  !       dissipation term. Instead of the spectral radius, as used in   
+  !       the scalar dissipation scheme, the absolute value of the flux  
+  !       jacobian is used. This leads to a less diffusive and           
+  !       consequently more accurate scheme. It is assumed that the      
+  !       pointers in blockPointers already point to the correct block.  
   !
   use constants
   use blockPointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb, kb, &
@@ -127,11 +119,7 @@ subroutine inviscidDissFluxMatrix
   end do
 #endif
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Dissipative fluxes in the i-direction.                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Dissipative fluxes in the i-direction.                         
   !
 #ifdef TAPENADE_REVERSE
   !$AD II-LOOP
@@ -307,11 +295,7 @@ subroutine inviscidDissFluxMatrix
   end do
 #endif
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Dissipative fluxes in the j-direction.                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Dissipative fluxes in the j-direction.                         
   !
 #ifdef TAPENADE_REVERSE
   !$AD II-LOOP
@@ -489,11 +473,7 @@ subroutine inviscidDissFluxMatrix
   end do
 #endif
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Dissipative fluxes in the k-direction.                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Dissipative fluxes in the k-direction.                         
   !
 #ifdef TAPENADE_REVERSE
   !$AD II-LOOP

@@ -1,23 +1,19 @@
 subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
      useObjective, frozenTurb, level, matrixTurb)
 #ifndef USE_NO_PETSC
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Compute the state derivative matrix using a forward mode calc  *
-  !     * There are three different flags that determine how this        *
-  !     * routine is run:                                                *
-  !     * useAD: if True, AD is used for derivative calculation, if      *
-  !     *        False, FD is used.                                      *
-  !     * usePC: if True, the reduced 1st order stencil with dissipation *
-  !     *        lumping is assembled instead of the actual exact        *
-  !     *        full stencil jacobian                                   *
-  !     * useTranspose: If true, the transpose of dRdw is assembled.     *
-  !     *               For use with the adjoint this must be true.      *
-  !     * useObjective: If true, the force matrix is assembled           *
-  !     *                                                                *
-  !     * level : What level to use to form the matrix. Level 1 is       *
-  !     *         always the finest level                                *         
-  !     ******************************************************************
+  !      Compute the state derivative matrix using a forward mode calc  
+  !      There are three different flags that determine how this        
+  !      routine is run:                                                
+  !      useAD: if True, AD is used for derivative calculation, if      
+  !             False, FD is used.                                      
+  !      usePC: if True, the reduced 1st order stencil with dissipation 
+  !             lumping is assembled instead of the actual exact        
+  !             full stencil jacobian                                   
+  !      useTranspose: If true, the transpose of dRdw is assembled.     
+  !                    For use with the adjoint this must be true.      
+  !      useObjective: If true, the force matrix is assembled           
+  !      level : What level to use to form the matrix. Level 1 is       
+  !              always the finest level                                
   !
   use block, only : flowDomsd
   use blockPointers

@@ -1,27 +1,19 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          updateInterpolSendBuf.f90                       *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 11-17-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          updateInterpolSendBuf.f90                       
+!       Author:        Edwin van der Weide                             
+!       Starting date: 11-17-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine updateInterpolSendBuf(intSend, realSend, donorInfo, &
                                         level,   sps,      recvProc)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * updateInterpolSendBuf creates the integer and real send        *
-!      * buffers, which contain the interpolation information needed by *
-!      * recvProc, from the info present in donorInfo; recvProc is      *
-!      * the processor ID of the communicator SUmb_comm_world. This     *
-!      * routine furthermore updates the sending part of the 1st and    *
-!      * 2nd level sliding mesh communication pattern for the given     *
-!      * grid level. The memory of donorInfo is released afterwards.    *
-!      *                                                                *
-!      ******************************************************************
+!       updateInterpolSendBuf creates the integer and real send        
+!       buffers, which contain the interpolation information needed by 
+!       recvProc, from the info present in donorInfo; recvProc is      
+!       the processor ID of the communicator SUmb_comm_world. This     
+!       routine furthermore updates the sending part of the 1st and    
+!       2nd level sliding mesh communication pattern for the given     
+!       grid level. The memory of donorInfo is released afterwards.    
 !
        use commSliding
        use updateComm
@@ -52,11 +44,7 @@
 !
        integer(kind=intType) :: bsearchSortedDonorCommType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Copy the halo info in sortedDonors and sort this array in
        ! increasing order.
@@ -169,14 +157,10 @@
 
          subroutine updateCommSlidingCellSend(nDom, commSlidingCell)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * updateCommSlidingCellSend updates the sending part of        *
-!        * the external communication pattern for sliding mesh          *
-!        * interfaces. It stores the information of sortedDonors in     *
-!        * the correct place of commSlidingCell.                        *
-!        *                                                              *
-!        ****************************************************************
+!         updateCommSlidingCellSend updates the sending part of        
+!         the external communication pattern for sliding mesh          
+!         interfaces. It stores the information of sortedDonors in     
+!         the correct place of commSlidingCell.                        
 !
          implicit none
 !

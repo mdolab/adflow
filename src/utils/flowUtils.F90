@@ -3,12 +3,8 @@ contains
 
   subroutine computeTtot(rho, u, v, w, p, Ttot)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * computeTtot computes the total temperature for the given       *
-    !      * pressures, densities and velocities.                           *
-    !      *                                                                *
-    !      ******************************************************************
+    !       computeTtot computes the total temperature for the given       
+    !       pressures, densities and velocities.                           
     !
     use constants
     use inputPhysics, only : cpModel
@@ -58,12 +54,8 @@ contains
 
   subroutine computeGamma(T, gamma, mm)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * computeGamma computes the corresponding values of gamma for    *
-    !      * the given dimensional temperatures.                            *
-    !      *                                                                *
-    !      ******************************************************************
+    !       computeGamma computes the corresponding values of gamma for    
+    !       the given dimensional temperatures.                            
     !
     use constants
     use cpCurveFits
@@ -177,12 +169,8 @@ contains
 
   subroutine computePtot(rho, u, v, w, p, ptot)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * ComputePtot computes the total pressure for the given          *
-    !      * pressures, densities and velocities.                           *
-    !      *                                                                *
-    !      ******************************************************************
+    !       ComputePtot computes the total pressure for the given          
+    !       pressures, densities and velocities.                           
     !
     use constants
     use cpCurveFits
@@ -501,11 +489,7 @@ contains
   subroutine computeSpeedOfSoundSquared
 
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * computeSpeedOfSoundSquared does what it says.                  *
-    !      *                                                                *
-    !      ******************************************************************
+    !       computeSpeedOfSoundSquared does what it says.                  
     !
     use constants
     use blockPointers, only : ie, je, ke, w, p, aa, gamma
@@ -566,29 +550,21 @@ contains
     end if
   end subroutine computeSpeedOfSoundSquared
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * File:          computeEtot.F90                                 *
-  !      * Author:        Edwin van der Weide, Steve Repsher              *
-  !      * Starting date: 08-13-2003                                      *
-  !      * Last modified: 10-14-2005                                      *
-  !      *                                                                *
-  !      ******************************************************************
+  !       File:          computeEtot.F90                                 
+  !       Author:        Edwin van der Weide, Steve Repsher              
+  !       Starting date: 08-13-2003                                      
+  !       Last modified: 10-14-2005                                      
   !
   subroutine computeEtotBlock(iStart,iEnd, jStart,jEnd, kStart, kEnd, &
        correctForK)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * ComputeEtot computes the total energy from the given density,  *
-    !      * velocity and presssure. For a calorically and thermally        *
-    !      * perfect gas the well-known expression is used; for only a      *
-    !      * thermally perfect gas, cp is a function of temperature, curve  *
-    !      * fits are used and a more complex expression is obtained.       *
-    !      * It is assumed that the pointers in blockPointers already       *
-    !      * point to the correct block.                                    *
-    !      *                                                                *
-    !      ******************************************************************
+    !       ComputeEtot computes the total energy from the given density,  
+    !       velocity and presssure. For a calorically and thermally        
+    !       perfect gas the well-known expression is used; for only a      
+    !       thermally perfect gas, cp is a function of temperature, curve  
+    !       fits are used and a more complex expression is obtained.       
+    !       It is assumed that the pointers in blockPointers already       
+    !       point to the correct block.                                    
     !
     use constants
     use blockPointers, only : w, p
@@ -608,11 +584,7 @@ contains
     real(kind=realType)   :: ovgm1, factK, scale
     !
 40  format (1x,I4,I4,I4,E20.6)
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Begin execution                                                *
-    !      *                                                                *
-    !      ******************************************************************
+    !       Begin execution                                                
     !
     ! Determine the cp model used in the computation.
 
@@ -682,15 +654,11 @@ contains
 
   subroutine etot(rho, u, v, w, p, k, etotal, correctForK)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * EtotArray computes the total energy from the given density,    *
-    !      * velocity and presssure.                                        *
-    !      * First the internal energy per unit mass is computed and after  *
-    !      * that the kinetic energy is added as well the conversion to     *
-    !      * energy per unit volume.                                        *
-    !      *                                                                *
-    !      ******************************************************************
+    !       EtotArray computes the total energy from the given density,    
+    !       velocity and presssure.                                        
+    !       First the internal energy per unit mass is computed and after  
+    !       that the kinetic energy is added as well the conversion to     
+    !       energy per unit volume.                                        
     !
     use constants
     implicit none
@@ -719,16 +687,12 @@ contains
 
   subroutine eint(rho, p, k, einternal, correctForK)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * EintArray computes the internal energy per unit mass from the  *
-    !      * given density and pressure (and possibly turbulent energy)     *
-    !      * For a calorically and thermally perfect gas the well-known     *
-    !      * expression is used; for only a thermally perfect gas, cp is a  *
-    !      * function of temperature, curve fits are used and a more        *
-    !      * complex expression is obtained.                                *
-    !      *                                                                *
-    !      ******************************************************************
+    !       EintArray computes the internal energy per unit mass from the  
+    !       given density and pressure (and possibly turbulent energy)     
+    !       For a calorically and thermally perfect gas the well-known     
+    !       expression is used; for only a thermally perfect gas, cp is a  
+    !       function of temperature, curve fits are used and a more        
+    !       complex expression is obtained.                                
     !
     use constants
     use cpCurveFits
@@ -893,13 +857,9 @@ contains
 
   subroutine computeEtotCellCpfit(i, j, k, scale, correctForK)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * ComputeEtotCellCpfit will compute the total energy for the     *
-    !      * given cell of the block given by the current pointers with the *
-    !      * cp temperature curve fit model.                                *
-    !      *                                                                *
-    !      ******************************************************************
+    !       ComputeEtotCellCpfit will compute the total energy for the     
+    !       given cell of the block given by the current pointers with the 
+    !       cp temperature curve fit model.                                
     !
     use constants
     use cpCurveFits
@@ -923,11 +883,7 @@ contains
 
     real(kind=realType) :: pp, t, t2, cv, eint
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * Begin execution                                                *
-    !      *                                                                *
-    !      ******************************************************************
+    !       Begin execution                                                
     !
     ! Compute the dimensional temperature.
 
@@ -1035,12 +991,8 @@ contains
 
   subroutine updateGamma
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * This is a utility routine to update the gamma variable from    *
-    !      * from gammaConstant if gammaConstant has changed.               *
-    !      *                                                                *
-    !      ******************************************************************
+    !       This is a utility routine to update the gamma variable from    
+    !       from gammaConstant if gammaConstant has changed.               
     !
     use constants
     use blockPointers, only : nDom, gamma

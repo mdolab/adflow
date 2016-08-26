@@ -1,13 +1,8 @@
 subroutine addParaSlice(sliceName, pt, direction, famList, n)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * This subroutine is intended to be called from python.          *
-  !      *                                                                *
-  !      * This routine will add a parametric slice to the list of user   *
-  !      * supplied slices.                                               *
-  !      *                                                                *
-  !      ******************************************************************
+  !       This subroutine is intended to be called from python.          
+  !       This routine will add a parametric slice to the list of user   
+  !       supplied slices.                                               
   use constants
   use communication
   use liftDistributionData
@@ -55,14 +50,9 @@ end subroutine addParaSlice
 
 subroutine addAbsSlice(sliceName, pt, direction, famList, n)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * This subroutine is intended to be called from python.          *
-  !      *                                                                *
-  !      * This routine will add an absolute slice to the list of user    *
-  !      * supplied slices.                                               *
-  !      *                                                                *
-  !      ******************************************************************
+  !       This subroutine is intended to be called from python.          
+  !       This routine will add an absolute slice to the list of user    
+  !       supplied slices.                                               
   use constants
   use communication
   use liftDistributionData
@@ -110,13 +100,8 @@ end subroutine addAbsSlice
 
 subroutine addLiftDistribution(nSegments, dir_vec, dir_ind, distName, famList, n)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * This subroutine is intended to be called from python.          *
-  !      *                                                                *
-  !      * This routine will add the description of a lift distribution   *
-  !      *                                                                *
-  !      ******************************************************************
+  !       This subroutine is intended to be called from python.          
+  !       This routine will add the description of a lift distribution   
 
   use constants
   use communication
@@ -150,16 +135,12 @@ end subroutine addLiftDistribution
 
 subroutine writeTecplot(sliceFile, writeSlices, liftFile, writeLift, surfFile, writeSurf)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * This is the master routine for writing tecplot data from sumb. *
-  !      *                                                                *
-  !      * This routine will write the slice, lift and surface files      *
-  !      * depending on the flags writeSlics, writeLift and writeSurface. *
-  !      * The reason for the combined routine is that we can safely only *
-  !      * perform the nodal averaging once which is required for all     *
-  !      * three output files.                                            *
-  !      ******************************************************************
+  !       This is the master routine for writing tecplot data from sumb. 
+  !       This routine will write the slice, lift and surface files      
+  !       depending on the flags writeSlics, writeLift and writeSurface. 
+  !       The reason for the combined routine is that we can safely only 
+  !       perform the nodal averaging once which is required for all     
+  !       three output files.                                            
   use constants
   use inputTimeSpectral
   use surfaceFamilies
@@ -193,16 +174,11 @@ end subroutine writeTecplot
 
 subroutine writeSlicesFile(fileName, updateSurfaceData)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * This subroutine is intended to be called from python.          *
-  !      *                                                                *
-  !      * This routine will write the user defined slics to an           *
-  !      * to the (ascii) tecplot file fileName. ASCII files are          *
-  !      * used for simplicity since very little information is actually  *
-  !      * written.                                                       *
-  !      *                                                                *
-  !      ******************************************************************
+  !       This subroutine is intended to be called from python.          
+  !       This routine will write the user defined slics to an           
+  !       to the (ascii) tecplot file fileName. ASCII files are          
+  !       used for simplicity since very little information is actually  
+  !       written.                                                       
   use constants
   use communication
   use liftDistributionData
@@ -337,16 +313,11 @@ end subroutine writeSlicesFile
 subroutine writeLiftDistributionFile(fileName, updateSurfaceData)
   !
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * This subroutine is intended to be called from python.          *
-  !      *                                                                *
-  !      * This routine will write the added lift distributions           *
-  !      * to the (ascii) tecplot file fileName. ASCII files are          *
-  !      * used for siplicity since very little informatin is actually    *
-  !      * written.                                                       *
-  !      *                                                                *
-  !      ******************************************************************
+  !       This subroutine is intended to be called from python.          
+  !       This routine will write the added lift distributions           
+  !       to the (ascii) tecplot file fileName. ASCII files are          
+  !       used for siplicity since very little informatin is actually    
+  !       written.                                                       
   use constants
   use communication
   use liftDistributionData
@@ -413,13 +384,9 @@ end subroutine writeLiftDistributionFile
 
 subroutine writeLiftDistributions(sps, fileID)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * This subroutine writes the liftdistribution for the specified  *
-  !      * spectral instance. It is assumed that the required file handles*
-  !      * are already open and can be written to                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       This subroutine writes the liftdistribution for the specified  
+  !       spectral instance. It is assumed that the required file handles
+  !       are already open and can be written to                         
   use constants
   use communication
   use liftDistributionData
@@ -981,11 +948,7 @@ end subroutine initializeLiftDistributionData
 
 subroutine computeSurfaceOutputNodalData(exch, includeTractions)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * This purpose of this subroutine is to compute all nodal values *
-  !      *                                                                *
-  !      ******************************************************************
+  !       This purpose of this subroutine is to compute all nodal values 
   !
   use constants
   use liftDistributionData
@@ -1281,13 +1244,9 @@ end subroutine computeSurfaceOutputNodalData
 
 subroutine createSlice(exch, slc, pt, dir, sliceName, famList, nFam)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * This subroutine creates a slice on a plane defined by pt and   *
-  !      * and dir. It only uses the families specified in the famList.   *
+  !       This subroutine creates a slice on a plane defined by pt and   
+  !       and dir. It only uses the families specified in the famList.   
   !      * sps define which specral instance to use. 
-  !      *                                                                *
-  !      ******************************************************************
   !
   use constants
   use liftDistributionData
@@ -1455,12 +1414,8 @@ end subroutine createSlice
 
 subroutine destroySlice(slc)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * This subroutine destroys a slice created by the createSlice    *
-  !      * routine                                                        *
-  !      *                                                                *
-  !      ******************************************************************
+  !       This subroutine destroys a slice created by the createSlice    
+  !       routine                                                        
   !
   use constants
   use liftDistributionData
@@ -1494,13 +1449,10 @@ end subroutine destroySlice
 
 subroutine integrateSlice(lSlc, gSlc, nFields, doConnectivity)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * This subroutine integrates the forces on slice slc and computes*
-  !      * the integrated quantities for lift, drag, cl and cd with       *
-  !      * contributions from both the pressure and visoucs forces.       *
-  !      * It optionally interpolates solution variables as well.         *
-  !      ******************************************************************
+  !       This subroutine integrates the forces on slice slc and computes
+  !       the integrated quantities for lift, drag, cl and cd with       
+  !       contributions from both the pressure and visoucs forces.       
+  !       It optionally interpolates solution variables as well.         
   !
   use constants
   use liftDistributionData

@@ -1,10 +1,7 @@
 subroutine setupRestrictionMatrix(matrix, level)
 #ifndef USE_NO_PETSC
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Compute the restriction matrix from level-1 to level           *
+  !      Compute the restriction matrix from level-1 to level           
   !                                                                      *
-  !     ******************************************************************
   !
   use blockPointers      
   use inputTimeSpectral

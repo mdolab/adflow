@@ -1,29 +1,21 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          extractMGInfo.f90                               *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 12-13-2002                                      *
-!      * Last modified: 11-27-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          extractMGInfo.f90                               
+!       Author:        Edwin van der Weide                             
+!       Starting date: 12-13-2002                                      
+!       Last modified: 11-27-2007                                      
 !
        subroutine extractMGInfo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * extractMgInfo creates the integer array cycleStrategy from     *
-!      * the string describing the multigrid strategy. This string      *
-!      * either contains a predefined strategy, like sg, 2v, 4w, etc.,  *
-!      * or a combination of -1's, 0's and 1's, which defines a user    *
-!      * defined strategy. The integers -1, 0 and 1 have the following  *
-!      * meaning:  0 -> perform an iteration step on the current grid.  *
-!      *           1 -> go to next coarser grid.                        *
-!      *          -1 -> go to next finer grid.                          *
-!      * For a valid cycling strategy the sum of the elements of the    *
-!      * array should be 0.                                             *
-!      *                                                                *
-!      ******************************************************************
+!       extractMgInfo creates the integer array cycleStrategy from     
+!       the string describing the multigrid strategy. This string      
+!       either contains a predefined strategy, like sg, 2v, 4w, etc.,  
+!       or a combination of -1's, 0's and 1's, which defines a user    
+!       defined strategy. The integers -1, 0 and 1 have the following  
+!       meaning:  0 -> perform an iteration step on the current grid.  
+!                 1 -> go to next coarser grid.                        
+!                -1 -> go to next finer grid.                          
+!       For a valid cycling strategy the sum of the elements of the    
+!       array should be 0.                                             
 !
        use constants
        use inputIteration, only :cycleStrategy, nMGLevels, nMGSteps, mgStartLevel
@@ -45,11 +37,7 @@
        logical          :: digitsOnlyInString
        integer(intType) :: computeNstepsWcycle
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! For an unsteady computation using explicit Runge-Kutta schemes
        ! overrule mgDescription to sg.
@@ -264,13 +252,9 @@
 
        logical function digitsOnlyInString(string)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * digitsOnlyInString checks whether the given string contains    *
-!      * digits only or if other character types are present. In the    *
-!      * former case the function returns .True., otherwise .False.     *
-!      *                                                                *
-!      ******************************************************************
+!       digitsOnlyInString checks whether the given string contains    
+!       digits only or if other character types are present. In the    
+!       former case the function returns .True., otherwise .False.     
 !
        implicit none
 !
@@ -282,11 +266,7 @@
 !
        integer :: i, stringLen
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize digitsOnlyInString to .True.
 
@@ -309,12 +289,8 @@
 
        recursive function computeNstepsWcycle(nLevels) result(nSteps)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * computeNstepsWcycle is recursive function, which determines    *
-!      * the number of entries of a w-cycle of a given level.           *
-!      *                                                                *
-!      ******************************************************************
+!       computeNstepsWcycle is recursive function, which determines    
+!       the number of entries of a w-cycle of a given level.           
 !
        use constants
        use communication
@@ -333,11 +309,7 @@
 !
        character (len=maxStringLen) :: errorMessage
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the case we are having here. For nLevels is less
        ! than 2 an error message is printed, in case nLevels is 2
@@ -358,12 +330,8 @@
 
        recursive subroutine setEntriesWcycle(counter, nLevels)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * setEntriesWcycle is a recursive subroutine, which actually     *
-!      * fills the entries of cycleStrategy for a w-cycle.              *
-!      *                                                                *
-!      ******************************************************************
+!       setEntriesWcycle is a recursive subroutine, which actually     
+!       fills the entries of cycleStrategy for a w-cycle.              
 !
        use constants
        use inputIteration, only : cycleStrategy
@@ -380,11 +348,7 @@
 !
        character (len=maxStringLen) :: errorMessage
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the case we are having here. For nLevels is less
        ! than 2 an error message is printed, in case nLevels is 2

@@ -1,33 +1,21 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          interpolateSlide.f90                            *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 11-04-2003                                      *
-!      * Last modified: 02-10-2006                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          interpolateSlide.f90                            
+!       Author:        Edwin van der Weide                             
+!       Starting date: 11-04-2003                                      
+!       Last modified: 02-10-2006                                      
 !
        module storeEntity
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Local module to store an entity to be interpolated such that   *
-!      * the same source code can be used for both the nodes and the    *
-!      * faces to be interpolated.                                      *
-!      *                                                                *
-!      ******************************************************************
+!       Local module to store an entity to be interpolated such that   
+!       the same source code can be used for both the nodes and the    
+!       faces to be interpolated.                                      
 !
        use precision
        implicit none
        save
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Definition of the derived data type to store the data which    *
-!      * determines the arrays sent to the adt routines.                *
-!      *                                                                *
-!      ******************************************************************
+!       Definition of the derived data type to store the data which    
+!       determines the arrays sent to the adt routines.                
 !
        type storeEntityType
 
@@ -52,15 +40,11 @@
                                    sps,         color,      interType, &
                                    nSlices)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * interpolateSlide interpolates either the coordinates,          *
-!      * interType == 1, or the face centers, interType /= 1, of        *
-!      * mySubfaces in the surface mesh given by conn and coor.         *
-!      * Possible periodicity is taken into account via the four angles *
-!      * thetapMin, thetapMax, thetanMin and thetanMax.                 *
-!      *                                                                *
-!      ******************************************************************
+!       interpolateSlide interpolates either the coordinates,          
+!       interType == 1, or the face centers, interType /= 1, of        
+!       mySubfaces in the surface mesh given by conn and coor.         
+!       Possible periodicity is taken into account via the four angles 
+!       thetapMin, thetapMax, thetanMin and thetanMax.                 
 !
        use adtAPI
        use block
@@ -127,11 +111,7 @@
 
        type(storeEntityType), dimension(nMySubfaces) :: tmpSubfaces
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Store the communicator, myID and the number of processors
        ! of this sliding mesh a bit easier.
@@ -162,16 +142,12 @@
 
          case (1_intType)
 !
-!          **************************************************************
-!          *                                                            *
-!          * Interpolation of the halo coordinates, i.e. the            *
-!          * coordinates one layer outside the original block. This is  *
-!          * accomplished by interpolating the coordinates at the       *
-!          * interface and assuming that the grids are normal to the    *
-!          * interface, i.e. the interpolation weights of the surface   *
-!          * nodes can be used for the halo nodes.                      *
-!          *                                                            *
-!          **************************************************************
+!           Interpolation of the halo coordinates, i.e. the            
+!           coordinates one layer outside the original block. This is  
+!           accomplished by interpolating the coordinates at the       
+!           interface and assuming that the grids are normal to the    
+!           interface, i.e. the interpolation weights of the surface   
+!           nodes can be used for the halo nodes.                      
 !
            ! Set the pointers in tmpSubfaces, such that they correspond
            ! to nodal data.
@@ -254,11 +230,7 @@
 
          case default
 !
-!          **************************************************************
-!          *                                                            *
-!          * Interpolation of the face centers.                         *
-!          *                                                            *
-!          **************************************************************
+!           Interpolation of the face centers.                         
 !
            ! Set the pointers in tmpSubfaces, such that they correspond
            ! to face data.
@@ -340,20 +312,12 @@
 
          subroutine initInterpol
 !
-!        ****************************************************************
-!        *                                                              *
-!        * InitInterpol performs a couple of initializations needed     *
-!        * for the interpolation.                                       *
-!        *                                                              *
-!        ****************************************************************
+!         InitInterpol performs a couple of initializations needed     
+!         for the interpolation.                                       
 !
          implicit none
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin executation.                                           *
-!        *                                                              *
-!        ****************************************************************
+!         Begin executation.                                           
 !
          ! Determine the periodic angle and its inverse and the scale
          ! factor to transform to the original cylindrical coordinates.
@@ -411,15 +375,11 @@
 
          subroutine getInterpolationData(nInterpol, donorData)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * getInterpolationData determines the interpolation data for   *
-!        * the coordinates stored in tmpSubfaces. The data in this      *
-!        * derived data type either points to nodal data or face data.  *
-!        * Furthermore it interpolates nInterpol, possibly 0, values    *
-!        * from the given donorData.                                    *
-!        *                                                              *
-!        ****************************************************************
+!         getInterpolationData determines the interpolation data for   
+!         the coordinates stored in tmpSubfaces. The data in this      
+!         derived data type either points to nodal data or face data.  
+!         Furthermore it interpolates nInterpol, possibly 0, values    
+!         from the given donorData.                                    
 !
          implicit none
 !
@@ -447,11 +407,7 @@
 
          logical :: thetaCorrected
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin executation.                                           *
-!        *                                                              *
-!        ****************************************************************
+!         Begin executation.                                           
 !
          ! Determine the number of local nodes to be interpolated.
 

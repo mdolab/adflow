@@ -1,13 +1,9 @@
        subroutine determineNcellGlobal(level)
-!      ******************************************************************
-!      *                                                                *
-!      * determineNcellGlobal determines the global number of cells     *
-!      * the given grid level. This info is needed to compute the L2    *
-!      * norm of the residuals in the flow solver.                      *
-!      * Only the 1st spectral solution needs to be considered, because *
-!      * this info is identical for all of them.                        *
-!      *                                                                *
-!      ******************************************************************
+!       determineNcellGlobal determines the global number of cells     
+!       the given grid level. This info is needed to compute the L2    
+!       norm of the residuals in the flow solver.                      
+!       Only the 1st spectral solution needs to be considered, because 
+!       this info is identical for all of them.                        
 !
        use constants
        use block

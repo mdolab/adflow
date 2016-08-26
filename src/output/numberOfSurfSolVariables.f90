@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          numberOfSurfSolVariables.f90                    *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 05-15-2003                                      *
-!      * Last modified: 10-13-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          numberOfSurfSolVariables.f90                    
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 05-15-2003                                      
+!       Last modified: 10-13-2005                                      
 !
        subroutine numberOfSurfSolVariables(nSolVar)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * numberOfSurfSolVariables determines the number of surface      *
-!      * variables to be written to the surface solution file.          *
-!      *                                                                *
-!      ******************************************************************
+!       numberOfSurfSolVariables determines the number of surface      
+!       variables to be written to the surface solution file.          
 !
        use precision
        use extraOutput
@@ -25,11 +17,7 @@
 !
        integer(kind=intType), intent(out) :: nSolVar
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize the number of solution variables to zero.
 

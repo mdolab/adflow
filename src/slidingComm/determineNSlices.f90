@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          determineNSlices.F90                            *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 10-16-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          determineNSlices.F90                            
+!       Author:        Edwin van der Weide                             
+!       Starting date: 10-16-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine determineNSlices(nSlices, slideID, commSlide)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * determineNSlices determines the number of periodic slices      *
-!      * present in a complete rotation for the given part of the       *
-!      * sliding mesh interface slideID.                                *
-!      *                                                                *
-!      ******************************************************************
+!       determineNSlices determines the number of periodic slices      
+!       present in a complete rotation for the given part of the       
+!       sliding mesh interface slideID.                                
 !
        use constants
        use block
@@ -34,11 +26,7 @@
        integer :: ierr
        integer(kind=intType) :: nn, mm
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin executation.                                             *
-!      *                                                                *
-!      ******************************************************************
+!       Begin executation.                                             
 !
        ! Find the first local block that participates to the given
        ! slide id.

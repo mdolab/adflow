@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          resHalo1.f90                                    *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-15-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          resHalo1.f90                                    
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-15-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine resHalo1(level, start, end)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * resHalo1 determines the residuals in the 1st layer of halo     *
-!      * cells by applying both the boundary conditions and the         *
-!      * exchange. The halo values are needed for post processing       *
-!      * reasons.                                                       *
-!      *                                                                *
-!      ******************************************************************
+!       resHalo1 determines the residuals in the 1st layer of halo     
+!       cells by applying both the boundary conditions and the         
+!       exchange. The halo values are needed for post processing       
+!       reasons.                                                       
 !
        use blockPointers
        use communication
@@ -39,11 +31,7 @@
 
        real(kind=realType), pointer, dimension(:,:,:) :: ddw1, ddw2
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the number of variables per cell to be sent.
 

@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          shiftCoorAndVolumes.f90                         *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-03-2004                                      *
-!      * Last modified: 03-23-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          shiftCoorAndVolumes.f90                         
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-03-2004                                      
+!       Last modified: 03-23-2005                                      
 !
        subroutine shiftCoorAndVolumes
 !
-!      ******************************************************************
-!      *                                                                *
-!      * shiftCoorAndVolumes shifts the owned coordinates and           *
-!      * volumes in case of a deforming mesh for an unsteady            *
-!      * computation. In this case the old coordinates are needed to    *
-!      * determine the mesh velocities. The loop over the number of     *
-!      * spectral solutions is present for consistency, but this number *
-!      * will be 1 when this routine is called.                         *
-!      *                                                                *
-!      ******************************************************************
+!       shiftCoorAndVolumes shifts the owned coordinates and           
+!       volumes in case of a deforming mesh for an unsteady            
+!       computation. In this case the old coordinates are needed to    
+!       determine the mesh velocities. The loop over the number of     
+!       spectral solutions is present for consistency, but this number 
+!       will be 1 when this routine is called.                         
 !
        use blockPointers
        use inputTimeSpectral
@@ -31,11 +23,7 @@
 !
        integer(kind=intType) :: i, j, k, nn, mm, ll, kk
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the number of spectral solutions and local blocks.
 

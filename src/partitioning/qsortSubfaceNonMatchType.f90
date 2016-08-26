@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          qsortSubfaceNonMatchType.f90                    *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 10-25-2005                                      *
-!      * Last modified: 10-28-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          qsortSubfaceNonMatchType.f90                    
+!       Author:        Edwin van der Weide                             
+!       Starting date: 10-25-2005                                      
+!       Last modified: 10-28-2005                                      
 !
        subroutine qsortSubfaceNonMatchType(arr, nn)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * qsortSubfaceNonMatchType sorts the array of the derived        *
-!      * datatype subfaceNonMatchType in increasing order based on the  *
-!      * <= operator for this derived data type.                        *
-!      *                                                                *
-!      ******************************************************************
+!       qsortSubfaceNonMatchType sorts the array of the derived        
+!       datatype subfaceNonMatchType in increasing order based on the  
+!       <= operator for this derived data type.                        
 !
        use partitionMod
        use utils, only : terminate
@@ -42,11 +34,7 @@
        integer(kind=intType), allocatable, dimension(:) :: stack
        integer(kind=intType), allocatable, dimension(:) :: tmpStack
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Allocate the memory for stack.
 

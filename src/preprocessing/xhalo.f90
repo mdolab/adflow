@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          xhalo.f90                                       *
-!      * Author:        Edwin van der Weide,C.A.(Sandy) Mader            *
-!      * Starting date: 02-23-2003                                      *
-!      * Last modified: 08-12-2009                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          xhalo.f90                                       
+!       Author:        Edwin van der Weide,C.A.(Sandy) Mader            
+!       Starting date: 02-23-2003                                      
+!       Last modified: 08-12-2009                                      
 !
        subroutine xhalo(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * xhalo determines the coordinates of the nodal halo's.          *
-!      * First it sets all halo coordinates by simple extrapolation,    *
-!      * then the symmetry planes are treated (also the unit normal of  *
-!      * symmetry planes are determined) and finally an exchange is     *
-!      * made for the internal halo's.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       xhalo determines the coordinates of the nodal halo's.          
+!       First it sets all halo coordinates by simple extrapolation,    
+!       then the symmetry planes are treated (also the unit normal of  
+!       symmetry planes are determined) and finally an exchange is     
+!       made for the internal halo's.                                  
 !
        use constants
        use blockPointers
@@ -43,11 +35,7 @@
        real(kind=realType), dimension(3) :: v1, v2, norm, tmp, tmp2
        real(kind=realType), parameter :: tolDotmin = 0.99_realType
 
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the number of spectral solutions and the local
        ! number of blocks.
@@ -60,15 +48,11 @@
            call setPointers(nn, level, sps)
            
 !
-!          **************************************************************
-!          *                                                            *
-!          * Extrapolation of the coordinates. First extrapolation in   *
-!          * i-direction, without halo's, followed by extrapolation in  *
-!          * j-direction, with i-halo's and finally extrapolation in    *
-!          * k-direction, with both i- and j-halo's. In this way also   *
-!          * the indirect halo's get a value, albeit a bit arbitrary.   *
-!          *                                                            *
-!          **************************************************************
+!           Extrapolation of the coordinates. First extrapolation in   
+!           i-direction, without halo's, followed by extrapolation in  
+!           j-direction, with i-halo's and finally extrapolation in    
+!           k-direction, with both i- and j-halo's. In this way also   
+!           the indirect halo's get a value, albeit a bit arbitrary.   
 !
            ! Extrapolation in i-direction.
 
@@ -112,12 +96,8 @@
              enddo
            enddo
 !
-!          **************************************************************
-!          *                                                            *
-!          * Mirror the halo coordinates adjacent to the symmetry       *
-!          * planes                                                     *
-!          *                                                            *
-!          **************************************************************
+!           Mirror the halo coordinates adjacent to the symmetry       
+!           planes                                                     
 !
            ! Loop over boundary subfaces.
 
@@ -279,11 +259,7 @@
    enddo spectralLoop 
   
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Exchange the coordinates for the internal halo's.              *
-!      *                                                                *
-!      ******************************************************************
+!       Exchange the coordinates for the internal halo's.              
 !
    call exchangeCoor(level)
    

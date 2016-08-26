@@ -1,27 +1,19 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          determineSolFileNames.f90                       *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 07-05-2005                                      *
-!      * Last modified: 10-10-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          determineSolFileNames.f90                       
+!       Author:        Edwin van der Weide                             
+!       Starting date: 07-05-2005                                      
+!       Last modified: 10-10-2005                                      
 !
        subroutine determineSolFileNames
 !
-!      ******************************************************************
-!      *                                                                *
-!      * determineSolFileNames determines the number and names of the   *
-!      * files that contain the solutions. For steady computations only *
-!      * one file must be present. For unsteady the situation is a      *
-!      * little more complicated. It is attempted to read as many       *
-!      * solutions as needed for a consistent restart. If not possible  *
-!      * as many as possible solutions are read. For an unsteady        *
-!      * computation the order will be reduced; for time spectral mode  *
-!      * the solution will be interpolated.                             *
-!      *                                                                *
-!      ******************************************************************
+!       determineSolFileNames determines the number and names of the   
+!       files that contain the solutions. For steady computations only 
+!       one file must be present. For unsteady the situation is a      
+!       little more complicated. It is attempted to read as many       
+!       solutions as needed for a consistent restart. If not possible  
+!       as many as possible solutions are read. For an unsteady        
+!       computation the order will be reduced; for time spectral mode  
+!       the solution will be interpolated.                             
 !
        use constants
        use communication, only : myID
@@ -43,11 +35,7 @@
        character(len=7)            :: integerString
        character(len=maxStringLen) :: tmpName
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize copySpectral and interpolSpectral to .false.
 
@@ -143,12 +131,8 @@
 
        subroutine setSolFileNames
 !
-!      ******************************************************************
-!      *                                                                *
-!      * setSolFileNames allocates and set the solution files that      *
-!      * will be read and loaded in the restart                         *
-!      *                                                                *
-!      ******************************************************************
+!       setSolFileNames allocates and set the solution files that      
+!       will be read and loaded in the restart                         
 !
        use communication
        use restartMod
@@ -161,11 +145,7 @@
        integer :: ierr
        integer(kind=intType) :: nn
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 
        ! The length of the array provided gives the number of nSolsRead.
        nSolsRead = SIZE(restartFiles,1)
@@ -186,14 +166,10 @@
 
        subroutine checkSolFileNames
 !
-!      ******************************************************************
-!      *                                                                *
-!      * checkSolFileNames will check if the provided restart files     *
-!      * are readable on disk. If not readable return fail, if readable *
-!      * message will be printed to let the user know that restart file *
-!      * will be tried to read.                                         *
-!      *                                                                *
-!      ******************************************************************
+!       checkSolFileNames will check if the provided restart files     
+!       are readable on disk. If not readable return fail, if readable 
+!       message will be printed to let the user know that restart file 
+!       will be tried to read.                                         
 !
        use communication
        use restartMod
@@ -206,11 +182,7 @@
        character(len=maxStringLen) :: errorMessage
        integer(kind=intType) :: nn
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
        do nn=1,nSolsRead
          open(unit=21,file=solFiles(nn),status="old",iostat=ierr)
          if(ierr /= 0) then

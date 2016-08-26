@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          vf.f90                                          *
-!      * Author:        Georgi Kalitzin                                 *
-!      * Starting date: 04-14-2004                                      *
-!      * Last modified: 04-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          vf.f90                                          
+!       Author:        Georgi Kalitzin                                 
+!       Starting date: 04-14-2004                                      
+!       Last modified: 04-12-2005                                      
 !
        subroutine vf(resOnly)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * vf solves the transport equations for the v2-f model           *
-!      * in a coupled manner using a diagonal dominant ADI-scheme.      *
-!      *                                                                *
-!      ******************************************************************
+!       vf solves the transport equations for the v2-f model           
+!       in a coupled manner using a diagonal dominant ADI-scheme.      
 !
        use constants
        use blockPointers
@@ -32,11 +24,7 @@
 !
        integer(kind=intType) :: nn, sps
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Compute the time derivative for the time spectral mode.
        ! Note that the f-equation, itu4, does not have a time derivative

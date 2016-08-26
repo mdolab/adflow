@@ -26,11 +26,7 @@ subroutine volume_block
   real(kind=realType), dimension(3) :: v1, v2
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
  
   ! Compute the volumes. The hexahedron is split into 6 pyramids
@@ -152,17 +148,13 @@ contains
 
   subroutine volpym(xa,ya,za,xb,yb,zb,xc,yc,zc,xd,yd,zd,volume)
     !
-    !        ****************************************************************
-    !        *                                                              *
-    !        * volpym computes 6 times the volume of a pyramid. Node p,     *
-    !        * whose coordinates are set in the subroutine metric itself,   *
-    !        * is the top node and a-b-c-d is the quadrilateral surface.    *
-    !        * It is assumed that the cross product vCa * vDb points in     *
-    !        * the direction of the top node. Here vCa is the diagonal      *
-    !        * running from node c to node a and vDb the diagonal from      *
-    !        * node d to node b.                                            *
-    !        *                                                              *
-    !        ****************************************************************
+    !         volpym computes 6 times the volume of a pyramid. Node p,     
+    !         whose coordinates are set in the subroutine metric itself,   
+    !         is the top node and a-b-c-d is the quadrilateral surface.    
+    !         It is assumed that the cross product vCa * vDb points in     
+    !         the direction of the top node. Here vCa is the diagonal      
+    !         running from node c to node a and vDb the diagonal from      
+    !         node d to node b.                                            
     !
     use precision
     implicit none
@@ -176,11 +168,7 @@ contains
     real(kind=realType), intent(in) :: xa, ya, za, xb, yb, zb
     real(kind=realType), intent(in) :: xc, yc, zc, xd, yd, zd
     !
-    !        ****************************************************************
-    !        *                                                              *
-    !        * Begin execution                                              *
-    !        *                                                              *
-    !        ****************************************************************
+    !         Begin execution                                              
     !
     volume = (xp - fourth*(xa + xb  + xc + xd))              &
          * ((ya - yc)*(zb - zd) - (za - zc)*(yb - yd))   + &
@@ -217,19 +205,14 @@ subroutine metric_block
   endif
 
   !
-  ! **************************************************************
-  ! *                                                            *
-  ! * Computation of the face normals in i-, j- and k-direction. *
-  ! * Formula's are valid for a right handed block; for a left   *
-  ! * handed block the correct orientation is obtained via fact. *
-  ! * The normals point in the direction of increasing index.    *
-  ! * The absolute value of fact is 0.5, because the cross       *
-  ! * product of the two diagonals is twice the normal vector.   *
-  ! *                                                            *
-  ! * Note that also the normals of the first level halo cells   *
-  ! * are computed. These are needed for the viscous fluxes.     *
-  ! *                                                            *
-  ! **************************************************************
+  !  Computation of the face normals in i-, j- and k-direction. 
+  !  Formula's are valid for a right handed block; for a left   
+  !  handed block the correct orientation is obtained via fact. 
+  !  The normals point in the direction of increasing index.    
+  !  The absolute value of fact is 0.5, because the cross       
+  !  product of the two diagonals is twice the normal vector.   
+  !  Note that also the normals of the first level halo cells   
+  !  are computed. These are needed for the viscous fluxes.     
   !
   ! Projected areas of cell faces in the i direction.
   !$AD II-LOOP
@@ -321,13 +304,9 @@ end subroutine metric_block
 
 subroutine boundaryNormals
 
-  ! **************************************************************
-  ! *                                                            *
-  ! * The unit normals on the boundary faces. These always point *
-  ! * out of the domain, so a multiplication by -1 is needed for *
-  ! * the iMin, jMin and kMin boundaries.                        *
-  ! *                                                            *
-  ! **************************************************************
+  !  The unit normals on the boundary faces. These always point 
+  !  out of the domain, so a multiplication by -1 is needed for 
+  !  the iMin, jMin and kMin boundaries.                        
   !
   use constants
   use blockPointers

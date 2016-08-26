@@ -1,12 +1,8 @@
 subroutine updateCoordinatesAllLevels
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * updateCoordinatesAllLevels updates the coordinates of all      *
-  !      * grid levels, assuming that the owned coordinates of the fine   *
-  !      * grid are known.                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       updateCoordinatesAllLevels updates the coordinates of all      
+  !       grid levels, assuming that the owned coordinates of the fine   
+  !       grid are known.                                                
   !
   use constants
   use block
@@ -20,11 +16,7 @@ subroutine updateCoordinatesAllLevels
   integer(kind=intType) :: nLevels, nn
   real(kind=realType)   :: origGroundLevel
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Determine the halo coordinates of the fine level.
   origGroundLevel = groundLevel
@@ -48,14 +40,10 @@ end subroutine updateCoordinatesAllLevels
 
 subroutine updateMetricsAllLevels
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * updateMetricsAllLevels recomputes the metrics on all grid      *
-  !      * levels. This routine is typically called when the coordinates  *
-  !      * have changed, but the connectivity remains the same, i.e. for  *
-  !      * moving or deforming mesh problems.                             *
-  !      *                                                                *
-  !      ******************************************************************
+  !       updateMetricsAllLevels recomputes the metrics on all grid      
+  !       levels. This routine is typically called when the coordinates  
+  !       have changed, but the connectivity remains the same, i.e. for  
+  !       moving or deforming mesh problems.                             
   !
   use constants
   use block
@@ -88,15 +76,11 @@ end subroutine updateMetricsAllLevels
 subroutine updateGridVelocitiesAllLevels
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * updateGridVelocitesAllLevels recomputes the rotational         *
-  !      * parameters on all grid                                         *
-  !      * levels. This routine is typically called when the coordinates  *
-  !      * have changed, but the connectivity remains the same, i.e. for  *
-  !      * moving or deforming mesh problems.                             *
-  !      *                                                                *
-  !      ******************************************************************
+  !       updateGridVelocitesAllLevels recomputes the rotational         
+  !       parameters on all grid                                         
+  !       levels. This routine is typically called when the coordinates  
+  !       have changed, but the connectivity remains the same, i.e. for  
+  !       moving or deforming mesh problems.                             
   !
   use constants
   use block
@@ -146,14 +130,10 @@ subroutine updatePeriodicInfoAllLevels
 
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * updatePeriodicInfoAllLevels recomputes the spectral parameters *
-  !      * on all grid levels. This routine is typically called when the  *
-  !      * frequnecy or amplitude of the oscillation in the time spectral *
-  !      * computation has changed                                        *
-  !      *                                                                *
-  !      ******************************************************************
+  !       updatePeriodicInfoAllLevels recomputes the spectral parameters 
+  !       on all grid levels. This routine is typically called when the  
+  !       frequnecy or amplitude of the oscillation in the time spectral 
+  !       computation has changed                                        
   !
   use block
   use iteration

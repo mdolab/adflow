@@ -1,12 +1,8 @@
        subroutine qsortFringeType(arr, nn)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * qsortFringeListTy sorts the given number of fringes            *
-!      * increasing order based on the <= operator for this derived     *
-!      * data type.                                                     *
-!      *                                                                *
-!      ******************************************************************
+!       qsortFringeListTy sorts the given number of fringes            
+!       increasing order based on the <= operator for this derived     
+!       data type.                                                     
 !
        use constants
        use block
@@ -33,11 +29,7 @@
        integer(kind=intType), allocatable, dimension(:) :: stack
        integer(kind=intType), allocatable, dimension(:) :: tmpStack
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Allocate the memory for stack.
 

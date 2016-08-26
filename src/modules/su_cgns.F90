@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          su_cgns.F90                                     *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-16-2005                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          su_cgns.F90                                     
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-16-2005                                      
+!       Last modified: 06-12-2005                                      
 !
        module su_cgns
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Module that contains the definition of the cgns parameters.    *
-!      * Depending on the compiler flags either the file cgnslib_f.h is *
-!      * included or the functionality is faked by just defining the    *
-!      * parameters.                                                    *
-!      *                                                                *
-!      ******************************************************************
+!       Module that contains the definition of the cgns parameters.    
+!       Depending on the compiler flags either the file cgnslib_f.h is 
+!       included or the functionality is faked by just defining the    
+!       parameters.                                                    
 !
 #ifdef USE_NO_CGNS
 
@@ -26,22 +18,14 @@
        implicit none
        save
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Modes for cgns file                                            *
-!      *                                                                *
-!      ******************************************************************
+!       Modes for cgns file                                            
 !
        integer, parameter :: MODE_READ   = 0
        integer, parameter :: MODE_WRITE  = 1
        integer, parameter :: MODE_CLOSED = 2
        integer, parameter :: MODE_MODIFY = 3
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Some error codes                                               *
-!      *                                                                *
-!      ******************************************************************
+!       Some error codes                                               
 !
        integer, parameter :: ALL_OK         = 0
        integer, parameter :: ERROR          = 1
@@ -53,11 +37,7 @@
        integer, parameter :: CG_NODE_NOT_FOUND = 2
        integer, parameter :: CG_INCORRECT_PATH = 3
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Dimensional units                                              *
-!      *                                                                *
-!      ******************************************************************
+!       Dimensional units                                              
 !
        integer, parameter :: Null = 0
        integer, parameter :: UserDefined = 1
@@ -162,11 +142,7 @@
                                            "Hefner     ", &
                                            "Violle     "/)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Data class                                                     *
-!      *                                                                *
-!      ******************************************************************
+!       Data class                                                     
 !
        integer, parameter :: Dimensional                    = 2
        integer, parameter :: NormalizedByDimensional        = 3
@@ -183,11 +159,7 @@
                               "NondimensionalParameter       ", &
                               "DimensionlessConstant         "/)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Grid location                                                  *
-!      *                                                                *
-!      ******************************************************************
+!       Grid location                                                  
 !
        integer, parameter :: Vertex      = 2
        integer, parameter :: CellCenter  = 3
@@ -208,11 +180,7 @@
                                  "KFaceCenter",        &
                                  "EdgeCenter "/)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Grid connectivity types                                        *
-!      *                                                                *
-!      ******************************************************************
+!       Grid connectivity types                                        
 !
        integer, parameter :: Overset      = 2
        integer, parameter :: Abutting     = 3
@@ -225,11 +193,7 @@
                                          "Abutting    ", &
                                          "Abutting1to1"/)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Point set types                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Point set types                                                
 !
        integer, parameter :: PointList       = 2
        integer, parameter :: PointListDonor  = 3
@@ -250,11 +214,7 @@
                                  "ElementList    ",    &
                                  "CellListDonor  "/)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Governing equations and physical models types                  *
-!      *                                                                *
-!      ******************************************************************
+!       Governing equations and physical models types                  
 !
        integer, parameter :: FullPotential             = 2
        integer, parameter :: Euler                     = 3
@@ -346,11 +306,7 @@
                               "Equilibrium_LinRessler     ", &
                               "Chemistry_LinRessler       "/)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Boundary condition types                                       *
-!      *                                                                *
-!      ******************************************************************
+!       Boundary condition types                                       
 !
        integer, parameter :: BCAxisymmetricWedge     =  2
        integer, parameter :: BCDegenerateLine        =  3
@@ -405,11 +361,7 @@
                            "BCWallViscousIsothermal",   &
                            "FamilySpecified        "/)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Data types                                                     *
-!      *                                                                *
-!      ******************************************************************
+!       Data types                                                     
 !
        integer, parameter :: Integer    = 2
        integer, parameter :: RealSingle = 3
@@ -424,11 +376,7 @@
                              "RealDouble ",            &
                              "Character  "/)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * BCData_t types                                                 *
-!      *                                                                *
-!      ******************************************************************
+!       BCData_t types                                                 
 !
        integer, parameter :: Dirichlet = 2
        integer, parameter :: Neumann   = 3
@@ -439,11 +387,7 @@
                                "Dirichlet  ",          &
                                "Neumann    "/)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Element types                                                  *
-!      *                                                                *
-!      ******************************************************************
+!       Element types                                                  
 !
        integer, parameter :: NODE     =  2
        integer, parameter :: BAR_2    =  3
@@ -490,11 +434,7 @@
                                 "MIXED      ",          &
                                 "NGON_n     "/)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Zone types                                                     *
-!      *                                                                *
-!      ******************************************************************
+!       Zone types                                                     
 !
        integer, parameter :: Structured   =  2
        integer, parameter :: Unstructured =  3
@@ -505,11 +445,7 @@
                              "Structured  ",           &
                              "Unstructured"/)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Rigid grid motion types                                        *
-!      *                                                                *
-!      ******************************************************************
+!       Rigid grid motion types                                        
 !
        integer, parameter :: ConstantRate = 2
        integer, parameter :: VariableRate = 3
@@ -520,11 +456,7 @@
                                         "ConstantRate", &
                                         "VariableRate"/)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Arbitrary grid motion types                                    *
-!      *                                                                *
-!      ******************************************************************
+!       Arbitrary grid motion types                                    
 !
        integer, parameter :: NonDeformingGrid = 2
        integer, parameter :: DeformingGrid    = 3
@@ -535,11 +467,7 @@
                                             "NonDeformingGrid", &
                                             "DeformingGrid   "/)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Simulation type                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Simulation type                                                
 !
        integer, parameter :: TimeAccurate    = 2
        integer, parameter :: NonTimeAccurate = 3
@@ -550,11 +478,7 @@
                                    "TimeAccurate   ",  &
                                    "NonTimeAccurate"/)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * BC Property types                                              *
-!      *                                                                *
-!      ******************************************************************
+!       BC Property types                                              
 !
        integer, parameter :: Generic = 2
 
@@ -572,11 +496,7 @@
                              "BleedArea  ",            &
                              "CaptureArea"/)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Grid connectivity property types                               *
-!      *                                                                *
-!      ******************************************************************
+!       Grid connectivity property types                               
 !
        integer, parameter :: AverageAll             = 2
        integer, parameter :: AverageCircumferential = 3

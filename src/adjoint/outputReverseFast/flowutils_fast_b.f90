@@ -12,12 +12,8 @@ module flowutils_fast_b
 contains
   subroutine computettot(rho, u, v, w, p, ttot)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * computettot computes the total temperature for the given       *
-!      * pressures, densities and velocities.                           *
-!      *                                                                *
-!      ******************************************************************
+!       computettot computes the total temperature for the given       
+!       pressures, densities and velocities.                           
 !
     use constants
     use inputphysics, only : cpmodel
@@ -54,12 +50,8 @@ contains
   end subroutine computettot
   subroutine computegamma(t, gamma, mm)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * computegamma computes the corresponding values of gamma for    *
-!      * the given dimensional temperatures.                            *
-!      *                                                                *
-!      ******************************************************************
+!       computegamma computes the corresponding values of gamma for    
+!       the given dimensional temperatures.                            
 !
     use constants
     use cpcurvefits
@@ -132,12 +124,8 @@ contains
   end subroutine computegamma
   subroutine computeptot(rho, u, v, w, p, ptot)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * computeptot computes the total pressure for the given          *
-!      * pressures, densities and velocities.                           *
-!      *                                                                *
-!      ******************************************************************
+!       computeptot computes the total pressure for the given          
+!       pressures, densities and velocities.                           
 !
     use constants
     use cpcurvefits
@@ -364,11 +352,7 @@ intervaltt:do
 !   plus diff mem management of: aa:in p:in w:in
   subroutine computespeedofsoundsquared_fast_b()
 !
-!      ******************************************************************
-!      *                                                                *
-!      * computespeedofsoundsquared does what it says.                  *
-!      *                                                                *
-!      ******************************************************************
+!       computespeedofsoundsquared does what it says.                  
 !
     use constants
     use blockpointers, only : ie, je, ke, w, wd, p, pd, aa, aad, gamma
@@ -421,11 +405,7 @@ intervaltt:do
   end subroutine computespeedofsoundsquared_fast_b
   subroutine computespeedofsoundsquared()
 !
-!      ******************************************************************
-!      *                                                                *
-!      * computespeedofsoundsquared does what it says.                  *
-!      *                                                                *
-!      ******************************************************************
+!       computespeedofsoundsquared does what it says.                  
 !
     use constants
     use blockpointers, only : ie, je, ke, w, p, aa, gamma
@@ -459,29 +439,21 @@ intervaltt:do
     end if
   end subroutine computespeedofsoundsquared
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          computeetot.f90                                 *
-!      * author:        edwin van der weide, steve repsher              *
-!      * starting date: 08-13-2003                                      *
-!      * last modified: 10-14-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          computeetot.f90                                 
+!       author:        edwin van der weide, steve repsher              
+!       starting date: 08-13-2003                                      
+!       last modified: 10-14-2005                                      
 !
   subroutine computeetotblock(istart, iend, jstart, jend, kstart, kend, &
 &   correctfork)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * computeetot computes the total energy from the given density,  *
-!      * velocity and presssure. for a calorically and thermally        *
-!      * perfect gas the well-known expression is used; for only a      *
-!      * thermally perfect gas, cp is a function of temperature, curve  *
-!      * fits are used and a more complex expression is obtained.       *
-!      * it is assumed that the pointers in blockpointers already       *
-!      * point to the correct block.                                    *
-!      *                                                                *
-!      ******************************************************************
+!       computeetot computes the total energy from the given density,  
+!       velocity and presssure. for a calorically and thermally        
+!       perfect gas the well-known expression is used; for only a      
+!       thermally perfect gas, cp is a function of temperature, curve  
+!       fits are used and a more complex expression is obtained.       
+!       it is assumed that the pointers in blockpointers already       
+!       point to the correct block.                                    
 !
     use constants
     use blockpointers, only : w, p
@@ -499,11 +471,7 @@ intervaltt:do
 !
     integer(kind=inttype) :: i, j, k
     real(kind=realtype) :: ovgm1, factk, scale
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! determine the cp model used in the computation.
     select case  (cpmodel) 
@@ -541,15 +509,11 @@ intervaltt:do
   end subroutine computeetotblock
   subroutine etot(rho, u, v, w, p, k, etotal, correctfork)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * etotarray computes the total energy from the given density,    *
-!      * velocity and presssure.                                        *
-!      * first the internal energy per unit mass is computed and after  *
-!      * that the kinetic energy is added as well the conversion to     *
-!      * energy per unit volume.                                        *
-!      *                                                                *
-!      ******************************************************************
+!       etotarray computes the total energy from the given density,    
+!       velocity and presssure.                                        
+!       first the internal energy per unit mass is computed and after  
+!       that the kinetic energy is added as well the conversion to     
+!       energy per unit volume.                                        
 !
     use constants
     implicit none
@@ -571,16 +535,12 @@ intervaltt:do
 !      ==================================================================
   subroutine eint(rho, p, k, einternal, correctfork)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * eintarray computes the internal energy per unit mass from the  *
-!      * given density and pressure (and possibly turbulent energy)     *
-!      * for a calorically and thermally perfect gas the well-known     *
-!      * expression is used; for only a thermally perfect gas, cp is a  *
-!      * function of temperature, curve fits are used and a more        *
-!      * complex expression is obtained.                                *
-!      *                                                                *
-!      ******************************************************************
+!       eintarray computes the internal energy per unit mass from the  
+!       given density and pressure (and possibly turbulent energy)     
+!       for a calorically and thermally perfect gas the well-known     
+!       expression is used; for only a thermally perfect gas, cp is a  
+!       function of temperature, curve fits are used and a more        
+!       complex expression is obtained.                                
 !
     use constants
     use cpcurvefits

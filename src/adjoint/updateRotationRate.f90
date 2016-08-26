@@ -1,12 +1,8 @@
 !
-!     ******************************************************************
-!     *                                                                *
-!     * File:          updateRotationRate.f90                          *
-!     * Authors:       C.A(Sandy) Mader                                *
-!     * Starting date: 02-09-2010                                      *
-!     * Last modified: 02-09-2010                                      *
-!     *                                                                *
-!     ******************************************************************
+!      File:          updateRotationRate.f90                          
+!      Authors:       C.A(Sandy) Mader                                
+!      Starting date: 02-09-2010                                      
+!      Last modified: 02-09-2010                                      
 !
 subroutine updateRotationRate(rotCenter, rotRate, blocks, nblocks)
 

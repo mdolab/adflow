@@ -1,12 +1,8 @@
 !
-!     ******************************************************************
-!     *                                                                *
-!     * This file contains three routines for saving the adjoint       *
-!     * matrix, the preconditioning matrix and the RHS to a file.      *
-!     * The intended usage for this is to do experimentation with      *
-!     * stand-alone PETSc programs that just solve a linear system.    *
-!     *                                                                *
-!     ******************************************************************
+!      This file contains three routines for saving the adjoint       
+!      matrix, the preconditioning matrix and the RHS to a file.      
+!      The intended usage for this is to do experimentation with      
+!      stand-alone PETSc programs that just solve a linear system.    
 
 subroutine saveADjointMatrix(fileName)
 

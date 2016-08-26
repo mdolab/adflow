@@ -1,28 +1,20 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          checkMonitor.f90                                *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-26-2003                                      *
-!      * Last modified: 11-27-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          checkMonitor.f90                                
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-26-2003                                      
+!       Last modified: 11-27-2007                                      
 !
        subroutine checkMonitor
 !
-!      ******************************************************************
-!      *                                                                *
-!      * checkMonitor checks and possibly corrects the variables        *
-!      * to be monitored during the convergence.  This depends on the   *
-!      * governing equations to be solved. After the correction the     *
-!      * sequence of the monitoring variable names is changed, such     *
-!      * that the output is independent of the specified sequence.      *
-!      * Furthermore memory is allocated for the arrays used to compute *
-!      * the monitoring variables and it is checked whether or not the  *
-!      * maximum Mach number of total enthalpy difference is to be      *
-!      * monitored.                                                     *
-!      *                                                                *
-!      ******************************************************************
+!       checkMonitor checks and possibly corrects the variables        
+!       to be monitored during the convergence.  This depends on the   
+!       governing equations to be solved. After the correction the     
+!       sequence of the monitoring variable names is changed, such     
+!       that the output is independent of the specified sequence.      
+!       Furthermore memory is allocated for the arrays used to compute 
+!       the monitoring variables and it is checked whether or not the  
+!       maximum Mach number of total enthalpy difference is to be      
+!       monitored.                                                     
 !
        use constants
        use cgnsNames

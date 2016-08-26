@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          checkSymmetry.f90                               *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-21-2003                                      *
-!      * Last modified: 03-24-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          checkSymmetry.f90                               
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-21-2003                                      
+!       Last modified: 03-24-2005                                      
 !
        subroutine checkSymmetry(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * checkSymmetry checks whether or not the symmetry planes are    *
-!      * really planar (within a certain tolerance). If this is not the *
-!      * case for the finest level, a warning is printed. In all cases  *
-!      * the unit normals are replaced by the face averaged unit        *
-!      * normal.                                                        *
-!      *                                                                *
-!      ******************************************************************
+!       checkSymmetry checks whether or not the symmetry planes are    
+!       really planar (within a certain tolerance). If this is not the 
+!       case for the finest level, a warning is printed. In all cases  
+!       the unit normals are replaced by the face averaged unit        
+!       normal.                                                        
 !
        use constants
        use blockPointers
@@ -44,11 +36,7 @@
        real(kind=realType), dimension(3) :: faceNorm
        real(kind=realType), dimension(:,:,:), pointer :: ss
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the number of spectral solutions and local domains.
 

@@ -37,25 +37,17 @@ subroutine initres(varStart, varEnd)
 
 end subroutine initRes
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          initres.f90                                     *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-18-2003                                      *
-!      * Last modified: 06-28-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          initres.f90                                     
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-18-2003                                      
+!       Last modified: 06-28-2005                                      
 !
 subroutine initres_block(varStart, varEnd, nn, sps)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * initres initializes the given range of the residual. Either to *
-  !      * zero, steady computation, or to an unsteady term for the time  *
-  !      * spectral and unsteady modes. For the coarser grid levels the   *
-  !      * residual forcing term is taken into account.                   *
-  !      *                                                                *
-  !      ******************************************************************
+  !       initres initializes the given range of the residual. Either to 
+  !       zero, steady computation, or to an unsteady term for the time  
+  !       spectral and unsteady modes. For the coarser grid levels the   
+  !       residual forcing term is taken into account.                   
   !
   use blockPointers
   use flowVarRefState
@@ -79,11 +71,7 @@ subroutine initres_block(varStart, varEnd, nn, sps)
   real(kind=realType), dimension(:,:,:,:), pointer :: ww, wsp, wsp1
   real(kind=realType), dimension(:,:,:),   pointer :: volsp
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Return immediately of no variables are in the range.
 

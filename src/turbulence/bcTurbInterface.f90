@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          bcTurbInterface.f90                             *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 01-09-2004                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          bcTurbInterface.f90                             
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 01-09-2004                                      
+!       Last modified: 06-12-2005                                      
 !
 subroutine bcTurbInterface(nn)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * bcTurbInterface applies the halo treatment for interface halo  *
-  !      * cells, sliding mesh interface and domain interface. As these   *
-  !      * are not really boundary conditions, the variable bvt is simply *
-  !      * set to keep the current value.                                 *
-  !      *                                                                *
-  !      ******************************************************************
+  !       bcTurbInterface applies the halo treatment for interface halo  
+  !       cells, sliding mesh interface and domain interface. As these   
+  !       are not really boundary conditions, the variable bvt is simply 
+  !       set to keep the current value.                                 
   !
   use constants
   use blockPointers
@@ -33,11 +25,7 @@ subroutine bcTurbInterface(nn)
   integer(kind=intType) :: i, j, l
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Loop over the faces of the subfaces and set the values of
   ! bvt to keep the current value.

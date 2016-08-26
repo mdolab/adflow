@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          bcEddyWall.f90                                  *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 06-11-2003                                      *
-!      * Last modified: 04-11-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          bcEddyWall.f90                                  
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 06-11-2003                                      
+!       Last modified: 04-11-2005                                      
 !
 subroutine bcEddyWall(nn)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * bcEddyWall sets the eddy viscosity in the halo cells of        *
-  !      * viscous subface nn of the block given in blockPointers.        *
-  !      * As the eddy viscosity is zero at the wall, the value in the    *
-  !      * halo is simply the negative value of the first interior cell.  *
-  !      *                                                                *
-  !      ******************************************************************
+  !       bcEddyWall sets the eddy viscosity in the halo cells of        
+  !       viscous subface nn of the block given in blockPointers.        
+  !       As the eddy viscosity is zero at the wall, the value in the    
+  !       halo is simply the negative value of the first interior cell.  
   !
   use constants
   use blockPointers
@@ -32,11 +24,7 @@ subroutine bcEddyWall(nn)
   integer(kind=intType) :: i, j
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Determine the face id on which the subface is located and
   ! loop over the faces of the subface and set the eddy viscosity

@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          metric.f90                                      *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-25-2003                                      *
-!      * Last modified: 08-23-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          metric.f90                                      
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-25-2003                                      
+!       Last modified: 08-23-2005                                      
 !
        module checkVolBlock
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Local module, which contains the definition of the derived     *
-!      * datatype used to test for negative volumes in the grid.        *
-!      *                                                                *
-!      ******************************************************************
+!       Local module, which contains the definition of the derived     
+!       datatype used to test for negative volumes in the grid.        
 !
        implicit none
        save
@@ -38,12 +30,8 @@
 
        subroutine allocateMetric(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * allocateMetric allocates the memory for the metric variables   *
-!      * on the given grid level for all spectral solutions.            *
-!      *                                                                *
-!      ******************************************************************
+!       allocateMetric allocates the memory for the metric variables   
+!       on the given grid level for all spectral solutions.            
 !
        use constants
        use block
@@ -67,11 +55,7 @@
 
        type(BCDataType), dimension(:), pointer :: BCData
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the number of spectral solutions and local blocks.
 
@@ -104,10 +88,8 @@
                             "Memory allocation failure for &
                             &normals and volumes")
 
-           ! *******************************
            ! Added by HDN
            ! Added s[I,J,K]ALE
-           ! *******************************
            if (equationMode == unSteady .and. useALE) then 
               allocate(flowDoms(nn,level,sps)%sIALE(0:nALEsteps,0:ie,1:je,1:ke,3), &
                        flowDoms(nn,level,sps)%sJALE(0:nALEsteps,1:ie,0:je,1:ke,3), &
@@ -136,10 +118,8 @@
 
              ! Allocate the memory for the unit normals.
 
-           ! *******************************
            ! Added by HDN
            ! Added normALE
-           ! *******************************
              allocate(                                           &
                   BCData(mm)%norm(ie:ib,je:jb,3),                &
                   BCData(mm)%normALE(0:nALEsteps,ie:ib,je:jb,3), &
@@ -172,20 +152,16 @@
 
        subroutine metric(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * metric computes the face normals and the volume for the given  *
-!      * grid level for all spectral solutions. First the volumes are   *
-!      * computed assuming that the block is right handed. Then the     *
-!      * number of positive and negative volumes are determined. If all *
-!      * volumes are positive the block is indeed right handed; if all  *
-!      * volumes are negative the block is left handed and both the     *
-!      * volumes and the normals must be negated (for the normals this  *
-!      * is done by the introduction of fact, which is either -0.5 or   *
-!      * 0.5); if there are both positive and negative volumes the mesh *
-!      * is not valid.                                                  *
-!      *                                                                *
-!      ******************************************************************
+!       metric computes the face normals and the volume for the given  
+!       grid level for all spectral solutions. First the volumes are   
+!       computed assuming that the block is right handed. Then the     
+!       number of positive and negative volumes are determined. If all 
+!       volumes are positive the block is indeed right handed; if all  
+!       volumes are negative the block is left handed and both the     
+!       volumes and the normals must be negated (for the normals this  
+!       is done by the introduction of fact, which is either -0.5 or   
+!       0.5); if there are both positive and negative volumes the mesh 
+!       is not valid.                                                  
 !
        use constants
        use blockPointers
@@ -233,11 +209,7 @@
        type(checkVolBlockType), &
                   dimension(nDom,nTimeIntervalsSpectral) :: checkVolDoms
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize the number of bad volumes and bad blocks to 0.
 
@@ -262,11 +234,7 @@
                             "Memory allocation failure for volumeIsNeg")
            volumeIsNeg => checkVolDoms(nn,sps)%volumeIsNeg
 !
-!          **************************************************************
-!          *                                                            *
-!          * Volume and block orientation computation.                  *
-!          *                                                            *
-!          **************************************************************
+!           Volume and block orientation computation.                  
 !
            ! Initialize the number of positive and negative volumes for
            ! this block to 0.
@@ -490,19 +458,14 @@
              checkVolDoms(nn,sps)%blockHasNegVol = .false.
            endif
 !
-!          **************************************************************
-!          *                                                            *
-!          * Computation of the face normals in i-, j- and k-direction. *
-!          * Formula's are valid for a right handed block; for a left   *
-!          * handed block the correct orientation is obtained via fact. *
-!          * The normals point in the direction of increasing index.    *
-!          * The absolute value of fact is 0.5, because the cross       *
-!          * product of the two diagonals is twice the normal vector.   *
-!          *                                                            *
-!          * Note that also the normals of the first level halo cells   *
-!          * are computed. These are needed for the viscous fluxes.     *
-!          *                                                            *
-!          **************************************************************
+!           Computation of the face normals in i-, j- and k-direction. 
+!           Formula's are valid for a right handed block; for a left   
+!           handed block the correct orientation is obtained via fact. 
+!           The normals point in the direction of increasing index.    
+!           The absolute value of fact is 0.5, because the cross       
+!           product of the two diagonals is twice the normal vector.   
+!           Note that also the normals of the first level halo cells   
+!           are computed. These are needed for the viscous fluxes.     
 !
            ! Projected areas of cell faces in the i direction.
 
@@ -594,13 +557,9 @@
              enddo
            enddo
 !
-!          **************************************************************
-!          *                                                            *
-!          * The unit normals on the boundary faces. These always point *
-!          * out of the domain, so a multiplication by -1 is needed for *
-!          * the iMin, jMin and kMin boundaries.                        *
-!          *                                                            *
-!          **************************************************************
+!           The unit normals on the boundary faces. These always point 
+!           out of the domain, so a multiplication by -1 is needed for 
+!           the iMin, jMin and kMin boundaries.                        
 !
            ! Loop over the boundary subfaces of this block.
 
@@ -654,12 +613,8 @@
 
            enddo bocoLoop
 !
-!          **************************************************************
-!          *                                                            *
-!          * Check in debug mode the sum of the normals of the cells.   *
-!          * If everything is correct this should sum up to zero.       *
-!          *                                                            *
-!          **************************************************************
+!           Check in debug mode the sum of the normals of the cells.   
+!           If everything is correct this should sum up to zero.       
 !
            debugging: if( debug ) then
 
@@ -812,17 +767,13 @@
 
          function volpym(xa,ya,za,xb,yb,zb,xc,yc,zc,xd,yd,zd)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * volpym computes 6 times the volume of a pyramid. Node p,     *
-!        * whose coordinates are set in the subroutine metric itself,   *
-!        * is the top node and a-b-c-d is the quadrilateral surface.    *
-!        * It is assumed that the cross product vCa * vDb points in     *
-!        * the direction of the top node. Here vCa is the diagonal      *
-!        * running from node c to node a and vDb the diagonal from      *
-!        * node d to node b.                                            *
-!        *                                                              *
-!        ****************************************************************
+!         volpym computes 6 times the volume of a pyramid. Node p,     
+!         whose coordinates are set in the subroutine metric itself,   
+!         is the top node and a-b-c-d is the quadrilateral surface.    
+!         It is assumed that the cross product vCa * vDb points in     
+!         the direction of the top node. Here vCa is the diagonal      
+!         running from node c to node a and vDb the diagonal from      
+!         node d to node b.                                            
 !
          use precision
          implicit none
@@ -836,11 +787,7 @@
          real(kind=realType), intent(in) :: xa, ya, za, xb, yb, zb
          real(kind=realType), intent(in) :: xc, yc, zc, xd, yd, zd
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          volpym = (xp - fourth*(xa + xb  + xc + xd))              &
                 * ((ya - yc)*(zb - zd) - (za - zc)*(yb - yd))   + &
@@ -857,13 +804,9 @@
 
        subroutine writeNegVolumes(checkVolDoms)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * writeNegVolumes writes the negative volumes of a block to      *
-!      * stdout. If a block is flagged to have negative volumes it is   *
-!      * assumed that the block is intended to be a right handed block. *
-!      *                                                                *
-!      ******************************************************************
+!       writeNegVolumes writes the negative volumes of a block to      
+!       stdout. If a block is flagged to have negative volumes it is   
+!       assumed that the block is intended to be a right handed block. 
 !
        use constants
        use blockPointers
@@ -890,11 +833,7 @@
 
        character(len=10) :: intString1, intString2, intString3
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Processor 0 prints a message that negative volumes are present
        ! in the grid.

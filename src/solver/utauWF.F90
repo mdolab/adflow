@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          utauWF.f90                                      *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 10-01-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          utauWF.f90                                      
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 10-01-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine utauWF(rFilv)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * utauWF substitutes the wall shear stress with values from a    *
-!      * look-up table, if desired.                                     *
-!      *                                                                *
-!      ******************************************************************
+!       utauWF substitutes the wall shear stress with values from a    
+!       look-up table, if desired.                                     
 !
        use constants
        use blockPointers, only : si, sj, sk, fw, rlv, d2wall, w, BCData, viscSubFace, &
@@ -51,11 +43,7 @@
 !
        real(kind=realType) :: curveUpRe
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Return immediately if no wall functions must be used.
 

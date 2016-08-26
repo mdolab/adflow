@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          updateParamfile.f90                             *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-11-2003                                      *
-!      * Last modified: 03-29-2006                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          updateParamfile.f90                             
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-11-2003                                      
+!       Last modified: 03-29-2006                                      
 !
        subroutine updateParamfile
 !
-!      ******************************************************************
-!      *                                                                *
-!      * updateParamfile updates the parameter file, such that a        *
-!      * restart can be done automatically. This is only done if        *
-!      * autoParameterUpdate is .true.. Only processor 0 performs       *
-!      * this task.                                                     *
-!      *                                                                *
-!      ******************************************************************
+!       updateParamfile updates the parameter file, such that a        
+!       restart can be done automatically. This is only done if        
+!       autoParameterUpdate is .true.. Only processor 0 performs       
+!       this task.                                                     
 !
        use communication
        use inputIO
@@ -40,11 +32,7 @@
        character(len=2*maxStringLen) :: errorMessage
        character(len=8)              :: integerString
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Return immediately if no grid and solution file has
        ! been written.

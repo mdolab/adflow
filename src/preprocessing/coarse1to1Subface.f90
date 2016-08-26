@@ -1,32 +1,20 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          coarse1to1Subface.f90                           *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 09-05-2003                                      *
-!      * Last modified: 03-24-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          coarse1to1Subface.f90                           
+!       Author:        Edwin van der Weide                             
+!       Starting date: 09-05-2003                                      
+!       Last modified: 03-24-2005                                      
 !
        module coarse1to1Subface
 !
-!      ******************************************************************
-!      *                                                                *
-!      * This local module contains the derived datatype                *
-!      * coarse1to1SubfaceType, which is used to determine the 1 to 1   *
-!      * block boundaries for the coarser grids.                        *
-!      *                                                                *
-!      ******************************************************************
+!       This local module contains the derived datatype                
+!       coarse1to1SubfaceType, which is used to determine the 1 to 1   
+!       block boundaries for the coarser grids.                        
 !
        use precision
        implicit none
        save
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the derived datatype.                        *
-!      *                                                                *
-!      ******************************************************************
+!       The definition of the derived datatype.                        
 !
        type coarse1to1SubfaceType
 
@@ -67,13 +55,9 @@
 
        module coarseningInfo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * This local module contains the derived datatype                *
-!      * coarseningInfoType, which stores for a given block the grid    *
-!      * lines to keep for the coarse grid.                             *
-!      *                                                                *
-!      ******************************************************************
+!       This local module contains the derived datatype                
+!       coarseningInfoType, which stores for a given block the grid    
+!       lines to keep for the coarse grid.                             
 !
        type coarseningInfoType
 

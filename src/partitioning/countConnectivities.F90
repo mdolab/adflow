@@ -1,11 +1,7 @@
        subroutine countConnectivities(cgnsInd, cgnsBase, nZone)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * countConnectivities determines the number of connectivities    *
-!      * for each of the supported types stored in 1to1 and general.    *
-!      *                                                                *
-!      ******************************************************************
+!       countConnectivities determines the number of connectivities    
+!       for each of the supported types stored in 1to1 and general.    
 !
        use cgnsGrid
        use communication
@@ -45,11 +41,7 @@
        character(len=maxStringLen)   :: errorMessage
        character(len=maxCGNSNameLen) :: connectName, donorName
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
 #ifdef USE_NO_CGNS
 
@@ -201,16 +193,12 @@
                         "Memory allocation failure for conn1to1 and &
                         &connOver")
 !
-!      ******************************************************************
-!      *                                                                *
-!      * For the non-matching abutting subfaces some more information   *
-!      * needs to be extracted. The reason is that a subface abuts      *
-!      * multiple blocks and in CGNS this info is stored in multiple    *
-!      * connectivities. However it is a lot easier to store that info  *
-!      * together. That's why the non-abbuting subfaces must be sorted  *
-!      * in increasing order to extract this information.               *
-!      *                                                                *
-!      ******************************************************************
+!       For the non-matching abutting subfaces some more information   
+!       needs to be extracted. The reason is that a subface abuts      
+!       multiple blocks and in CGNS this info is stored in multiple    
+!       connectivities. However it is a lot easier to store that info  
+!       together. That's why the non-abbuting subfaces must be sorted  
+!       in increasing order to extract this information.               
 !
        ! Allocate the memory for subfaceNonMatch and copy the data
        ! from myRangeNonMatch and connIDNonMatch. Release the memory
@@ -331,21 +319,13 @@
          call terminate("countConnectivities", &
                         "Deallocation failure for subfaceNonMatch")
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Store the number of connectivities in cgnsDoms(nZone).         *
-!      *                                                                *
-!      ******************************************************************
+!       Store the number of connectivities in cgnsDoms(nZone).         
 !
        cgnsDoms(nZone)%n1to1             = n1to1
        cgnsDoms(nZone)%n1to1General      = n1to1General
        cgnsDoms(nZone)%nNonMatchAbutting = nNonMatch
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Format statements.                                             *
-!      *                                                                *
-!      ******************************************************************
+!       Format statements.                                             
 !
  101   format("Zone",1x,a,", connectivity", 1x,a, ": No support for &
               &this format of an abutting 1 to 1 connectivity")

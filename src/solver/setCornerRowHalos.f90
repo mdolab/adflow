@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          setCornerRowHalos.f90                           *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 08-20-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          setCornerRowHalos.f90                           
+!       Author:        Edwin van der Weide                             
+!       Starting date: 08-20-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine setCornerRowHalos(nVar)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * setCornerRowHalos initializes the halo's next to corner row    *
-!      * halo's, such that it contains some values. Otherwise it may    *
-!      * be uninitialized or cause a floating point exception, as this  *
-!      * memory is also used to compute the mg corrections.             *
-!      * It is assumed that the pointers in blockPointers already       *
-!      * point to the correct block.                                    *
-!      *                                                                *
-!      ******************************************************************
+!       setCornerRowHalos initializes the halo's next to corner row    
+!       halo's, such that it contains some values. Otherwise it may    
+!       be uninitialized or cause a floating point exception, as this  
+!       memory is also used to compute the mg corrections.             
+!       It is assumed that the pointers in blockPointers already       
+!       point to the correct block.                                    
 !
        use constants
        use blockPointers, only : w, p, rlv, rev, nx, ny, nz,  &
@@ -35,17 +27,9 @@
 !
        integer(kind=intType) :: i, j, k, l, mm, ll
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Halo's on the i=iMin and i=iMax plane.                         *
-!      *                                                                *
-!      ******************************************************************
+!       Halo's on the i=iMin and i=iMax plane.                         
 !
        ! K-rows.
 
@@ -146,11 +130,7 @@
          endif
        enddo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Halo's on the j=jMin and j=jMax plane.                         *
-!      *                                                                *
-!      ******************************************************************
+!       Halo's on the j=jMin and j=jMax plane.                         
 !
        ! K-rows; no need to include the corners; this is done in the
        ! next i-loop.
@@ -251,11 +231,7 @@
          endif
        enddo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Halo's on the k=kMin and k=kMax plane.                         *
-!      *                                                                *
-!      ******************************************************************
+!       Halo's on the k=kMin and k=kMax plane.                         
 !
        ! J-rows, including halo's set on the jMin and jMax plane.
 

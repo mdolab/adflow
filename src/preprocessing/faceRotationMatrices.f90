@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          faceRotationMatrices.f90                        *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 09-20-2007                                      *
-!      * Last modified: 12-01-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          faceRotationMatrices.f90                        
+!       Author:        Edwin van der Weide                             
+!       Starting date: 09-20-2007                                      
+!       Last modified: 12-01-2007                                      
 !
        subroutine faceRotationMatrices(level, allocMem)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * faceRotationMatrices computes the rotation matrices on the     *
-!      * faces, such that for a rotationally periodic the nonlinear     *
-!      * reconstruction in the upwind schemes is consistent with its    *
-!      * periodic neighbor.                                             *
-!      *                                                                *
-!      ******************************************************************
+!       faceRotationMatrices computes the rotation matrices on the     
+!       faces, such that for a rotationally periodic the nonlinear     
+!       reconstruction in the upwind schemes is consistent with its    
+!       periodic neighbor.                                             
 !
        use constants
        use blockPointers
@@ -43,11 +35,7 @@
 
        real(kind=realType), dimension(3) :: axis, vecR1, vecR2, rotCenter
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! If this is not the finest level, return. The matrices are
        ! only needed on the finest grid.
@@ -149,13 +137,9 @@
 
          subroutine computeRotMatrixFace(xx, rotMat, iil, jjl)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * computeRotMatrixFace is an internal subroutine, which        *
-!        * computes the rotation matrix from Cartesian to local         *
-!        * cylindrical velocity components for the face centers.        *
-!        *                                                              *
-!        ****************************************************************
+!         computeRotMatrixFace is an internal subroutine, which        
+!         computes the rotation matrix from Cartesian to local         
+!         cylindrical velocity components for the face centers.        
 !
          implicit none
 !
@@ -174,11 +158,7 @@
 
          real(kind=realType), dimension(3) :: xF
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Loop over the face centers.
 

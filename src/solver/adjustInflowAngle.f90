@@ -1,12 +1,8 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          adjustInflowAngle.f90                           *
-!      * Author:        C.A.(Sandy) Mader                               *
-!      * Starting date: 07-13-2011                                      *
-!      * Last modified: 07-13-2011                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          adjustInflowAngle.f90                           
+!       Author:        C.A.(Sandy) Mader                               
+!       Starting date: 07-13-2011                                      
+!       Last modified: 07-13-2011                                      
 !
 subroutine adjustInflowAngle(alpha, beta, liftIndex)
 

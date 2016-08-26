@@ -1,12 +1,8 @@
 subroutine convergenceInfo
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * convergenceInfo computes and writes the convergence info to    *
-  !      * standard output. In spectral mode a convergence history for    *
-  !      * every mode is written.                                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       convergenceInfo computes and writes the convergence info to    
+  !       standard output. In spectral mode a convergence history for    
+  !       every mode is written.                                         
   !
   use constants
   use cgnsNames
@@ -587,14 +583,10 @@ end subroutine convergenceInfo
 
 subroutine sumResiduals(nn, mm)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * sumResiduals adds the sum of the residuals squared at          *
-  !      * position nn to the array monLoc at position mm. It is assumed  *
-  !      * that the arrays of blockPointers already point to the correct  *
-  !      * block.                                                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       sumResiduals adds the sum of the residuals squared at          
+  !       position nn to the array monLoc at position mm. It is assumed  
+  !       that the arrays of blockPointers already point to the correct  
+  !       block.                                                         
   !
   use blockPointers
   use monitor
@@ -608,11 +600,7 @@ subroutine sumResiduals(nn, mm)
   !
   integer(kind=intType) :: i, j, k
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Loop over the number of owned cells of this block and
   ! accumulate the residual.
@@ -629,12 +617,8 @@ end subroutine sumResiduals
 
 subroutine sumAllResiduals(mm)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * sumAllResiduals adds the sum of the ALL residuals squared at   *
-  !      * to monLoc at position mm.                                      *
-  !      *                                                                *
-  !      ******************************************************************
+  !       sumAllResiduals adds the sum of the ALL residuals squared at   
+  !       to monLoc at position mm.                                      
   !
   use blockPointers
   use monitor
@@ -651,11 +635,7 @@ subroutine sumAllResiduals(mm)
   integer(kind=intType) :: i, j, k, l
   real(kind=realType) :: state_sum,ovv
 
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Loop over the number of owned cells of this block and
   ! accumulate the residual.

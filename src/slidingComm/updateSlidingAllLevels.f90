@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          updateSlidingAllLevels.f90                      *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 01-14-2004                                      *
-!      * Last modified: 06-12-2004                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          updateSlidingAllLevels.f90                      
+!       Author:        Edwin van der Weide                             
+!       Starting date: 01-14-2004                                      
+!       Last modified: 06-12-2004                                      
 !
        subroutine updateSlidingAllLevels
 !
-!      ******************************************************************
-!      *                                                                *
-!      * updateSlidingAllLevels updates the sliding mesh                *
-!      * communication pattern on all grid levels. This routine is      *
-!      * typically called when grid parts have been moved, either due   *
-!      * to a physical motion of some parts or due to deformation.      *
-!      *                                                                *
-!      ******************************************************************
+!       updateSlidingAllLevels updates the sliding mesh                
+!       communication pattern on all grid levels. This routine is      
+!       typically called when grid parts have been moved, either due   
+!       to a physical motion of some parts or due to deformation.      
 !
        use block
        use iteration
@@ -28,11 +20,7 @@
 !
        integer(kind=intType) :: nLevels, nn
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Find out if there are sliding mesh interfaces in the grid.
        ! If not, return immediately.

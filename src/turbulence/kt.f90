@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          kt.f90                                          *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 07-08-2003                                      *
-!      * Last modified: 04-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          kt.f90                                          
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 07-08-2003                                      
+!       Last modified: 04-12-2005                                      
 !
        subroutine kt(resOnly)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * kt solves the transport equations for the k-tau turbulence     *
-!      * model, including a cross-diffusion term, in a segregated       *
-!      * manner using a diagonal dominant ADI-scheme.                   *
-!      *                                                                *
-!      ******************************************************************
+!       kt solves the transport equations for the k-tau turbulence     
+!       model, including a cross-diffusion term, in a segregated       
+!       manner using a diagonal dominant ADI-scheme.                   
 !
        use constants
        use blockPointers
@@ -33,11 +25,7 @@
 !
        integer(kind=intType) :: nn, sps
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Compute the time derivative for the time spectral mode.
 

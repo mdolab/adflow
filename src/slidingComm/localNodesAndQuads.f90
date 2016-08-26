@@ -1,12 +1,8 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          localNodesAndQuads.f90                          *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 11-03-2003                                      *
-!      * Last modified: 02-10-2006                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          localNodesAndQuads.f90                          
+!       Author:        Edwin van der Weide                             
+!       Starting date: 11-03-2003                                      
+!       Last modified: 02-10-2006                                      
 !
        subroutine localNodesAndQuads(nMySubfaces, mySubfaces, &
                                      nQuad,        nNode,     &
@@ -16,17 +12,13 @@
                                      thetapMin,    thetanMin, &
                                      thetapMax,    thetanMax)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * localNodesAndQuads stores the owned part of mySubfaces in      *
-!      * the given arrays. Crossing of the line theta == pi is taken    *
-!      * into account by storing the corresponding face twice. Also     *
-!      * polar singularities for faces are taken into account.          *
-!      * For gridType == 1 the connectivity of the primary grid is      *
-!      * constructed, while otherwise the dual grid connectivity is     *
-!      * be created.                                                    *
-!      *                                                                *
-!      ******************************************************************
+!       localNodesAndQuads stores the owned part of mySubfaces in      
+!       the given arrays. Crossing of the line theta == pi is taken    
+!       into account by storing the corresponding face twice. Also     
+!       polar singularities for faces are taken into account.          
+!       For gridType == 1 the connectivity of the primary grid is      
+!       constructed, while otherwise the dual grid connectivity is     
+!       be created.                                                    
 !
        use adtAPI
        use constants
@@ -77,11 +69,7 @@
 
        logical, dimension(:), pointer :: storeFace
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Some initializations.
 

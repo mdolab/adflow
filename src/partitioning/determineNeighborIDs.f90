@@ -1,28 +1,19 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          determineNeighborIDs.f90                        *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 12-18-2002                                      *
-!      * Last modified: 11-07-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          determineNeighborIDs.f90                        
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 12-18-2002                                      
+!       Last modified: 11-07-2005                                      
 !
        subroutine determineNeighborIDs
 !
-!      ******************************************************************
-!      *                                                                *
-!      * determineNeighborIDs determines for every internal block       *
-!      * boundary the block ID of the neighbor. In the cgns file only   *
-!      * the zone name is stored, but the ID's are more useful          *
-!      * internally.                                                    *
-!      *                                                                *
-!      * Although for this case a quadratic search algorithm is not too *
-!      * bad (number of blocks are O(1000) maximum), I don't like the   *
-!      * idea of having a quadratic loop in the code. That's why a      *
-!      * O(n log(n)) algorithm is used here.                            *
-!      *                                                                *
-!      ******************************************************************
+!       determineNeighborIDs determines for every internal block       
+!       boundary the block ID of the neighbor. In the cgns file only   
+!       the zone name is stored, but the ID's are more useful          
+!       internally.                                                    
+!       Although for this case a quadratic search algorithm is not too 
+!       bad (number of blocks are O(1000) maximum), I don't like the   
+!       idea of having a quadratic loop in the code. That's why a      
+!       O(n log(n)) algorithm is used here.                            
 !
        use cgnsGrid
        use utils, only : terminate

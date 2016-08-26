@@ -34,29 +34,20 @@ end subroutine slipVelocitiesFineLevel_ALE
 
 
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          slipVelocities.f90                              *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-12-2004                                      *
-!      * Last modified: 06-28-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          slipVelocities.f90                              
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-12-2004                                      
+!       Last modified: 06-28-2005                                      
 !
 subroutine slipVelocitiesFineLevelALE_block(useOldCoor, t, sps)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * slipVelocitiesFineLevel computes the slip velocities for       *
-  !      * viscous subfaces on all viscous boundaries on groundLevel for  *
-  !      * the given spectral solution. If useOldCoor is .true. the       *
-  !      * velocities are determined using the unsteady time integrator;  *
-  !      * otherwise the analytic form is used.                           *
-  !      *                                                                *
-  !      * Calculates the surface normal and normal velocity on BC using  *
-  !      * FIRST order BDF.                                               *
-  !      *                                                                *
-  !      ******************************************************************
+  !       slipVelocitiesFineLevel computes the slip velocities for       
+  !       viscous subfaces on all viscous boundaries on groundLevel for  
+  !       the given spectral solution. If useOldCoor is .true. the       
+  !       velocities are determined using the unsteady time integrator;  
+  !       otherwise the analytic form is used.                           
+  !       Calculates the surface normal and normal velocity on BC using  
+  !       FIRST order BDF.                                               
   !
   use inputTimeSpectral
   use blockPointers
@@ -108,17 +99,11 @@ subroutine slipVelocitiesFineLevelALE_block(useOldCoor, t, sps)
 
   real(kind=realType) :: TSAlpha,TSBeta,TSMach
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Determine the situation we are having here.
 
-     ! *******************************
      ! REMOVED the rigid body rotation part for simplicity
-     ! *******************************
      
      ! The velocities must be determined via a finite difference
      ! formula using the coordinates of the old levels.
@@ -237,7 +222,5 @@ end subroutine slipVelocitiesFineLevelALE_block
 
 
 !
-!      ******************************************************************
 !      Assuming coarse level grid has nothing to do with ALE
 !      So the original one will be used
-!      ******************************************************************

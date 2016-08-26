@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          writeCGNSKomegaModifiedInfo.F90                 *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-12-2003                                      *
-!      * Last modified: 06-29-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          writeCGNSKomegaModifiedInfo.F90                 
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-12-2003                                      
+!       Last modified: 06-29-2005                                      
 !
        subroutine writeCGNSKomegaModifiedInfo(cgnsInd, cgnsBase)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * writeCGNSKomegaModifiedInfo writes information about the       *
-!      * modified k-omega turbulence model to the cgns file.            *
-!      *                                                                *
-!      ******************************************************************
+!       writeCGNSKomegaModifiedInfo writes information about the       
+!       modified k-omega turbulence model to the cgns file.            
 !
        use inputPhysics
        use cgnsNames

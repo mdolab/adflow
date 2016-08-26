@@ -1,11 +1,7 @@
 subroutine exchangeSurfaceDelta(level, sps, commPattern, internal)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * ExchangeSurfaceDelta exchanges surface delta to fill up halo   *
-  !      * surface cells from adjacent blocks.                            *
-  !      *                                                                *
-  !      ******************************************************************
+  !       ExchangeSurfaceDelta exchanges surface delta to fill up halo   
+  !       surface cells from adjacent blocks.                            
   !
   use constants
   use blockPointers

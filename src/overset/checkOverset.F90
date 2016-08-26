@@ -1,14 +1,10 @@
 subroutine checkOverset (level, sps, totalOrphans)
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * CheckOverset checks the integrity of the overset connectivity  *
-  !      * and holes. For every comptue cell (iblank = 1) it checks that  *
-  !      * every cell in its stencil are not blanked. If even 1 cell is   *
+  !       CheckOverset checks the integrity of the overset connectivity  
+  !       and holes. For every comptue cell (iblank = 1) it checks that  
+  !       every cell in its stencil are not blanked. If even 1 cell is   
   !      * found with an incomplete stencil it is a fatal error. 
-  !      *                                                                *
-  !      ******************************************************************
   use constants
   use blockPointers, only : il, jl, kl, iblank, flowDoms, nDom, orphans, &
        iBegOR, jBegOr, kBegOr, nbkGlobal, nOrphans

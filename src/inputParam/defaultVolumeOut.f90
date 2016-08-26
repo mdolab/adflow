@@ -1,24 +1,16 @@
        subroutine defaultVolumeOut
 !
-!      ******************************************************************
-!      *                                                                *
-!      * defaultVolumeOut sets the default set of additional            *
-!      * variables to be written to the solution file; the primitive    *
-!      * variables are always written. This additional set depends on   *
-!      * the governing equations to be solved.                          *
-!      *                                                                *
-!      ******************************************************************
+!       defaultVolumeOut sets the default set of additional            
+!       variables to be written to the solution file; the primitive    
+!       variables are always written. This additional set depends on   
+!       the governing equations to be solved.                          
 !
        use constants 
        use extraOutput
        use inputPhysics, only : equations
        implicit none
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! First set the variables, which are independent from the
        ! governing equations to be solved.

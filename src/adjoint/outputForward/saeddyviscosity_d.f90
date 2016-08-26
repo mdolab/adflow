@@ -9,14 +9,10 @@
 !      ==================================================================
 subroutine saeddyviscosity_d()
 !
-!      ******************************************************************
-!      *                                                                *
-!      * saeddyviscosity computes the eddy-viscosity according to the   *
-!      * spalart-allmaras model for the block given in blockpointers.   *
-!      * this routine for both the original version as well as the      *
-!      * modified version according to edwards.                         *
-!      *                                                                *
-!      ******************************************************************
+!       saeddyviscosity computes the eddy-viscosity according to the   
+!       spalart-allmaras model for the block given in blockpointers.   
+!       this routine for both the original version as well as the      
+!       modified version according to edwards.                         
 !
   use constants
   use blockpointers
@@ -30,11 +26,7 @@ subroutine saeddyviscosity_d()
   real(kind=realtype) :: chi, chi3, fv1, rnusa, cv13
   real(kind=realtype) :: chid, chi3d, fv1d, rnusad
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! store the cv1^3; cv1 is a constant of the spalart-allmaras model.
   cv13 = rsacv1**3

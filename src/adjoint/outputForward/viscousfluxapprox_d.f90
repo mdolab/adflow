@@ -4,7 +4,7 @@
 !  differentiation of viscousfluxapprox in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *fw
 !   with respect to varying inputs: *rev *aa *w *rlv *x *si *sj
-!                *sk *fw
+!                sk 
 !   plus diff mem management of: rev:in aa:in w:in rlv:in x:in
 !                si:in sj:in sk:in fw:in
 subroutine viscousfluxapprox_d()

@@ -1,27 +1,19 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          setPorosities.f90                               *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-06-2003                                      *
-!      * Last modified: 11-06-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          setPorosities.f90                               
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-06-2003                                      
+!       Last modified: 11-06-2005                                      
 !
        subroutine setPorosities(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * setPorosities sets the porosities for the faces to a certain   *
-!      * flag. Default is normalFlux. The two other possibilities are   *
-!      * boundFlux, used for solid wall boundaries, and noFlux for a    *
-!      * conservative treatment of non matching block boundaries. In    *
-!      * the latter case the flux is constructed differently and the    *
-!      * flux computation in the block must be neglected.               *
-!      * Note that only the 1st spectral solution is treated, because   *
-!      * this informations is the same for all of them.                 *
-!      *                                                                *
-!      ******************************************************************
+!       setPorosities sets the porosities for the faces to a certain   
+!       flag. Default is normalFlux. The two other possibilities are   
+!       boundFlux, used for solid wall boundaries, and noFlux for a    
+!       conservative treatment of non matching block boundaries. In    
+!       the latter case the flux is constructed differently and the    
+!       flux computation in the block must be neglected.               
+!       Note that only the 1st spectral solution is treated, because   
+!       this informations is the same for all of them.                 
 !
        use blockPointers
        use constants
@@ -43,11 +35,7 @@
 
        integer(kind=porType) :: por
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the number of domains.
 

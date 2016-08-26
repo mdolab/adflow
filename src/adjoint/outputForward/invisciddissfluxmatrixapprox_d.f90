@@ -4,21 +4,17 @@
 !  differentiation of invisciddissfluxmatrixapprox in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *fw
 !   with respect to varying inputs: pinfcorr *p *sfacei *sfacej
-!                *sfacek *w *si *sj *sk
+!                sfacek *w *si *sj 
 !   plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
 !                w:in si:in sj:in sk:in fw:in
 subroutine invisciddissfluxmatrixapprox_d()
 !
-!      ******************************************************************
-!      *                                                                *
-!      * invisciddissfluxmatrix computes the matrix artificial          *
-!      * dissipation term. instead of the spectral radius, as used in   *
-!      * the scalar dissipation scheme, the absolute value of the flux  *
-!      * jacobian is used. this leads to a less diffusive and           *
-!      * consequently more accurate scheme. it is assumed that the      *
-!      * pointers in blockpointers already point to the correct block.  *
-!      *                                                                *
-!      ******************************************************************
+!       invisciddissfluxmatrix computes the matrix artificial          
+!       dissipation term. instead of the spectral radius, as used in   
+!       the scalar dissipation scheme, the absolute value of the flux  
+!       jacobian is used. this leads to a less diffusive and           
+!       consequently more accurate scheme. it is assumed that the      
+!       pointers in blockpointers already point to the correct block.  
 !
   use blockpointers
   use cgnsgrid
@@ -158,11 +154,7 @@ subroutine invisciddissfluxmatrixapprox_d()
     fwd = 0.0_8
     sfaced = 0.0_8
 !
-!      ******************************************************************
-!      *                                                                *
-!      * dissipative fluxes in the i-direction.                         *
-!      *                                                                *
-!      ******************************************************************
+!       dissipative fluxes in the i-direction.                         
 !
     do k=2,kl
       do j=2,jl
@@ -478,11 +470,7 @@ subroutine invisciddissfluxmatrixapprox_d()
       end do
     end do
 !
-!      ******************************************************************
-!      *                                                                *
-!      * dissipative fluxes in the j-direction.                         *
-!      *                                                                *
-!      ******************************************************************
+!       dissipative fluxes in the j-direction.                         
 !
     do k=2,kl
       do i=2,il
@@ -798,11 +786,7 @@ subroutine invisciddissfluxmatrixapprox_d()
       end do
     end do
 !
-!      ******************************************************************
-!      *                                                                *
-!      * dissipative fluxes in the k-direction.                         *
-!      *                                                                *
-!      ******************************************************************
+!       dissipative fluxes in the k-direction.                         
 !
     do j=2,jl
       do i=2,il

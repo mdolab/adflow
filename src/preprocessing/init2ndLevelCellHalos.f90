@@ -1,28 +1,20 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          init2ndLevelCellHalos.f90                       *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-04-2003                                      *
-!      * Last modified: 11-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          init2ndLevelCellHalos.f90                       
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-04-2003                                      
+!       Last modified: 11-29-2007                                      
 !
        subroutine init2ndLevelCellHalos
 !
-!      ******************************************************************
-!      *                                                                *
-!      * init2ndLevelCellHalos initializes the 2nd level cell halo      *
-!      * list. Basically the 1st level cell halo list is copied and the *
-!      * counter iicell2nd is set to nCellHalo1st. This means that      *
-!      * the 2nd level cell halo's are appended to the first level      *
-!      * halo's. They are stored in a separate list, because the        *
-!      * communication pattern of the 2nd level halo's is separate from *
-!      * the 1st level halo's. Efficiency is the reason to do this; it  *
-!      * is more efficient to send one big message than two smaller     *
-!      * ones.                                                          *
-!      *                                                                *
-!      ******************************************************************
+!       init2ndLevelCellHalos initializes the 2nd level cell halo      
+!       list. Basically the 1st level cell halo list is copied and the 
+!       counter iicell2nd is set to nCellHalo1st. This means that      
+!       the 2nd level cell halo's are appended to the first level      
+!       halo's. They are stored in a separate list, because the        
+!       communication pattern of the 2nd level halo's is separate from 
+!       the 1st level halo's. Efficiency is the reason to do this; it  
+!       is more efficient to send one big message than two smaller     
+!       ones.                                                          
 !
        use haloList
        use utils, only : terminate
@@ -34,11 +26,7 @@
 
        integer(kind=intType) :: i, j, jj
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Allocate the memory for the 2nd level halo list.
 

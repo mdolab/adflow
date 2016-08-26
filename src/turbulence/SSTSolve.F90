@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          SSTSolve.f90                                    *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide,           *
-!      *                Steve Repsher (blanking)                        *
-!      * Starting date: 07-31-2003                                      *
-!      * Last modified: 07-05-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          SSTSolve.f90                                    
+!       Author:        Georgi Kalitzin, Edwin van der Weide,           
+!                      Steve Repsher (blanking)                        
+!       Starting date: 07-31-2003                                      
+!       Last modified: 07-05-2005                                      
 !
        subroutine SSTSolve(resOnly)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * SSTSolve solves the turbulent transport equations for          *
-!      * menter's SST variant of the k-omega model in a segregated      *
-!      * manner using a diagonal dominant ADI-scheme.                   *
-!      *                                                                *
-!      ******************************************************************
+!       SSTSolve solves the turbulent transport equations for          
+!       menter's SST variant of the k-omega model in a segregated      
+!       manner using a diagonal dominant ADI-scheme.                   
 !
        use blockPointers
        use constants
@@ -64,11 +56,7 @@
 
        logical, dimension(:,:), pointer :: flag
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Set model constants
 
@@ -86,11 +74,7 @@
        kwCD => scratch(1:,1:,1:,icd)
        f1   => scratch(1:,1:,1:,if1SST)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Production term.                                               *
-!      *                                                                *
-!      ******************************************************************
+!       Production term.                                               
 !
        select case (turbProd)
          case (strain)
@@ -104,16 +88,11 @@
 
        end select
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Source terms.                                                  *
-!      *                                                                *
-!      * Determine the source term and its derivative w.r.t. k and      *
-!      * omega for all internal cells of the block.                     *
-!      * Note that the blending function f1 and the cross diffusion     *
-!      * were computed earlier in f1SST.                                *
-!      *                                                                *
-!      ******************************************************************
+!       Source terms.                                                  
+!       Determine the source term and its derivative w.r.t. k and      
+!       omega for all internal cells of the block.                     
+!       Note that the blending function f1 and the cross diffusion     
+!       were computed earlier in f1SST.                                
 !
        do k=2,kl
          do j=2,jl
@@ -155,22 +134,14 @@
          enddo
        enddo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Advection and unsteady terms.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       Advection and unsteady terms.                                  
 !
        nn = itu1 - 1
        call turbAdvection(2_intType, 2_intType, nn, qq)
 
        call unsteadyTurbTerm(2_intType, 2_intType, nn, qq)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Viscous terms in k-direction.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       Viscous terms in k-direction.                                  
 !
        do k=2,kl
          do j=2,jl
@@ -290,11 +261,7 @@
          enddo
        enddo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Viscous terms in j-direction.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       Viscous terms in j-direction.                                  
 !
        do k=2,kl
          do j=2,jl
@@ -414,11 +381,7 @@
          enddo
        enddo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Viscous terms in i-direction.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       Viscous terms in i-direction.                                  
 !
        do k=2,kl
          do j=2,jl
@@ -703,13 +666,9 @@
 
        qs = zero
 !
-!      ******************************************************************
-!      *                                                                *
-!      * dd-ADI step in j-direction. There is no particular reason to   *
-!      * start in j-direction, it just happened to be so. As we solve   *
-!      * in j-direction, the j-loop is the innermost loop.              *
-!      *                                                                *
-!      ******************************************************************
+!       dd-ADI step in j-direction. There is no particular reason to   
+!       start in j-direction, it just happened to be so. As we solve   
+!       in j-direction, the j-loop is the innermost loop.              
 !
        do k=2,kl
          do i=2,il
@@ -845,12 +804,8 @@
          enddo
        enddo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * dd-ADI step in i-direction. As we solve in i-direction, the    *
-!      * i-loop is the innermost loop.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       dd-ADI step in i-direction. As we solve in i-direction, the    
+!       i-loop is the innermost loop.                                  
 !
        do k=2,kl
          do j=2,jl
@@ -987,12 +942,8 @@
          enddo
        enddo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * dd-ADI step in k-direction. As we solve in k-direction, the    *
-!      * k-loop is the innermost loop.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       dd-ADI step in k-direction. As we solve in k-direction, the    
+!       k-loop is the innermost loop.                                  
 !
        do j=2,jl
          do i=2,il
@@ -1128,13 +1079,9 @@
          enddo
        enddo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Update the turbulent variables. For explicit relaxation the    *
-!      * update must be relaxed; for implicit relaxation this has been  *
-!      * done via the time step.                                        *
-!      *                                                                *
-!      ******************************************************************
+!       Update the turbulent variables. For explicit relaxation the    
+!       update must be relaxed; for implicit relaxation this has been  
+!       done via the time step.                                        
 !
        factor = one
        if(turbRelax == turbRelaxExplicit) factor = alfaTurb

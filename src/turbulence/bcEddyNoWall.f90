@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          bcEddyNoWall.f90                                *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 06-11-2003                                      *
-!      * Last modified: 04-11-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          bcEddyNoWall.f90                                
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 06-11-2003                                      
+!       Last modified: 04-11-2005                                      
 !
 subroutine bcEddyNoWall(nn)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * bcEddyNoWall sets the eddy viscosity in the halo cells of      *
-  !      * subface nn of the block given in blockPointers. The boundary   *
-  !      * condition on the subface can be anything but a viscous wall.   *
-  !      * A homogeneous neumann condition is applied, which means that   *
-  !      * the eddy viscosity is simply copied from the interior cell.    *
-  !      *                                                                *
-  !      ******************************************************************
+  !       bcEddyNoWall sets the eddy viscosity in the halo cells of      
+  !       subface nn of the block given in blockPointers. The boundary   
+  !       condition on the subface can be anything but a viscous wall.   
+  !       A homogeneous neumann condition is applied, which means that   
+  !       the eddy viscosity is simply copied from the interior cell.    
   !
   use constants
   use blockPointers
@@ -33,11 +25,7 @@ subroutine bcEddyNoWall(nn)
   integer(kind=intType) :: i, j
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Determine the face id on which the subface and copy
 

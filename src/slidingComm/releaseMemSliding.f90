@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          releaseMemSliding.f90                           *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 09-26-2003                                      *
-!      * Last modified: 03-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          releaseMemSliding.f90                           
+!       Author:        Edwin van der Weide                             
+!       Starting date: 09-26-2003                                      
+!       Last modified: 03-25-2005                                      
 !
        subroutine releaseMemSliding(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * releaseMemSliding releases the memory of the sliding mesh      *
-!      * communication pattern for the given grid level. This must be   *
-!      * done, because every new time step the communication pattern    *
-!      * changes and must be recomputed.                                *
-!      *                                                                *
-!      ******************************************************************
+!       releaseMemSliding releases the memory of the sliding mesh      
+!       communication pattern for the given grid level. This must be   
+!       done, because every new time step the communication pattern    
+!       changes and must be recomputed.                                
 !
        use commSliding
        use inputTimeSpectral
@@ -31,11 +23,7 @@
 !
        integer(kind=intType) :: mm
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the number of spectral solutions.
 
@@ -61,13 +49,9 @@
 
        subroutine releaseCommSlidingCell(commSlidingCell)
 
-!      ******************************************************************
-!      *                                                                *
-!      * releaseCommSlidingCell releases the memory of                  *
-!      * commSlidingCell, the external communication pattern sliding    *
-!      * mesh halo's.                                                   *
-!      *                                                                *
-!      ******************************************************************
+!       releaseCommSlidingCell releases the memory of                  
+!       commSlidingCell, the external communication pattern sliding    
+!       mesh halo's.                                                   
 !
        use commSliding
        use utils, only : terminate
@@ -82,11 +66,7 @@
        integer :: ierr
        integer(kind=intType) :: nn
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        do nn=1,commSlidingCell%nProcSend
 
@@ -128,13 +108,9 @@
 
        subroutine releaseIntSlidingCell(intSlidingCell)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * releaseIntSlidingCell releases the memory of                   *
-!      * intSlidingCell, the internal communication pattern for         *
-!      * sliding mesh halo's.                                           *
-!      *                                                                *
-!      ******************************************************************
+!       releaseIntSlidingCell releases the memory of                   
+!       intSlidingCell, the internal communication pattern for         
+!       sliding mesh halo's.                                           
 !
        use commSliding
        use utils, only : terminate
@@ -148,11 +124,7 @@
 !
        integer :: ierr
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        deallocate(intSlidingCell%slidingHaloList%block,   &
                   intSlidingCell%slidingHaloList%indices, &

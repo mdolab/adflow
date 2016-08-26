@@ -1,11 +1,7 @@
 subroutine exchangeSurfaceIblanks(level, sps, commPattern, internal)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * ExchangeIblank exchanges the 1 to 1 internal halo's for the    *
-  !      * given level and sps instance.                                  *
-  !      *                                                                *
-  !      ******************************************************************
+  !       ExchangeIblank exchanges the 1 to 1 internal halo's for the    
+  !       given level and sps instance.                                  
   !
   use constants
   use blockPointers

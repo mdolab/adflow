@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          xhalo.f90                                       *
-!      * Author:        Edwin van der Weide,C.A.(Sandy) Mader            *
-!      * Starting date: 02-23-2003                                      *
-!      * Last modified: 08-12-2009                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          xhalo.f90                                       
+!       Author:        Edwin van der Weide,C.A.(Sandy) Mader            
+!       Starting date: 02-23-2003                                      
+!       Last modified: 08-12-2009                                      
 !
 subroutine xhalo_block
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * xhalo determines the coordinates of the nodal halo's.          *
-  !      * First it sets all halo coordinates by simple extrapolation,    *
-  !      * then the symmetry planes are treated (also the unit normal of  *
-  !      * symmetry planes are determined) and finally an exchange is     *
-  !      * made for the internal halo's.                                  *
-  !      *                                                                *
-  !      ******************************************************************
+  !       xhalo determines the coordinates of the nodal halo's.          
+  !       First it sets all halo coordinates by simple extrapolation,    
+  !       then the symmetry planes are treated (also the unit normal of  
+  !       symmetry planes are determined) and finally an exchange is     
+  !       made for the internal halo's.                                  
   !
   use constants
   use blockPointers
@@ -76,12 +68,8 @@ subroutine xhalo_block
      enddo
   enddo
   !
-  !          **************************************************************
-  !          *                                                            *
-  !          * Mirror the halo coordinates adjacent to the symmetry       *
-  !          * planes                                                     *
-  !          *                                                            *
-  !          **************************************************************
+  !           Mirror the halo coordinates adjacent to the symmetry       
+  !           planes                                                     
   !
   ! Loop over boundary subfaces.
 

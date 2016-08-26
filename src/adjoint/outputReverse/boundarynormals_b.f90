@@ -6,13 +6,9 @@
 !   with respect to varying inputs: *si *sj *sk
 !   plus diff mem management of: si:in sj:in sk:in bcdata:in *bcdata.norm:in
 subroutine boundarynormals_b()
-! **************************************************************
-! *                                                            *
-! * the unit normals on the boundary faces. these always point *
-! * out of the domain, so a multiplication by -1 is needed for *
-! * the imin, jmin and kmin boundaries.                        *
-! *                                                            *
-! **************************************************************
+!  the unit normals on the boundary faces. these always point 
+!  out of the domain, so a multiplication by -1 is needed for 
+!  the imin, jmin and kmin boundaries.                        
 !
   use constants
   use blockpointers

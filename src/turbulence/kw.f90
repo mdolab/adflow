@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          kw.f90                                          *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 06-26-2003                                      *
-!      * Last modified: 04-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          kw.f90                                          
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 06-26-2003                                      
+!       Last modified: 04-12-2005                                      
 !
        subroutine kw(resOnly)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * kw solves the transport equations for the standard and         *
-!      * modified k-omega turbulence models in a segregated manner      *
-!      * using a diagonal dominant adi-scheme.                          *
-!      *                                                                *
-!      ******************************************************************
+!       kw solves the transport equations for the standard and         
+!       modified k-omega turbulence models in a segregated manner      
+!       using a diagonal dominant adi-scheme.                          
 !
        use constants
        use blockPointers
@@ -33,11 +25,7 @@
 !
        integer(kind=intType) :: nn, sps
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Compute the time derivative for the time spectral mode.
 

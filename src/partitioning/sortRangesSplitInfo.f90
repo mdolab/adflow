@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          sortRangesSplitInfo.f90                         *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 05-04-2005                                      *
-!      * Last modified: 10-10-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          sortRangesSplitInfo.f90                         
+!       Author:        Edwin van der Weide                             
+!       Starting date: 05-04-2005                                      
+!       Last modified: 10-10-2005                                      
 !
        module sortSubRange
 !
-!      ******************************************************************
-!      *                                                                *
-!      * This local module contains the derived datatype as well as the *
-!      * functions needed to sort the subranges.                        *
-!      *                                                                *
-!      ******************************************************************
+!       This local module contains the derived datatype as well as the 
+!       functions needed to sort the subranges.                        
 !
        use precision
        implicit none
@@ -25,11 +17,7 @@
        private :: lessEqualSortSubRangeType
        private :: lessSortSubRangeType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the derived datatype sortSubRangeType.       *
-!      *                                                                *
-!      ******************************************************************
+!       The definition of the derived datatype sortSubRangeType.       
 !
        type sortSubRangeType
 
@@ -66,14 +54,10 @@
 
          logical function lessEqualSortSubRangeType(g1, g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * lessEqualSortSubRangeType defines the operator <= for the    *
-!        * derived datatype sortSubRangeType. The comparison is first   *
-!        * based on kMin, followed by jMin and finally iMin.            *
-!        * The comparison is therefore not based on the max values.     *
-!        *                                                              *
-!        ****************************************************************
+!         lessEqualSortSubRangeType defines the operator <= for the    
+!         derived datatype sortSubRangeType. The comparison is first   
+!         based on kMin, followed by jMin and finally iMin.            
+!         The comparison is therefore not based on the max values.     
 !
          implicit none
 !
@@ -81,11 +65,7 @@
 !
          type(sortSubRangeType), intent(in) :: g1, g2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin executation.                                           *
-!        *                                                              *
-!        ****************************************************************
+!         Begin executation.                                           
 !
          ! Compare the kMin index and return .true. or .false. if they
          ! differ.
@@ -128,14 +108,10 @@
 
          logical function lessSortSubRangeType(g1, g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * lessSortSubRangeType defines the operator < for the derived  *
-!        * datatype sortSubRangeType. The comparison is first based on  *
-!        * kMin, followed by jMin and finally iMin.                     *
-!        * The comparison is therefore not based on the max values.     *
-!        *                                                              *
-!        ****************************************************************
+!         lessSortSubRangeType defines the operator < for the derived  
+!         datatype sortSubRangeType. The comparison is first based on  
+!         kMin, followed by jMin and finally iMin.                     
+!         The comparison is therefore not based on the max values.     
 !
          implicit none
 !
@@ -143,11 +119,7 @@
 !
          type(sortSubRangeType), intent(in) :: g1, g2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin executation.                                           *
-!        *                                                              *
-!        ****************************************************************
+!         Begin executation.                                           
 !
          ! Compare the kMin index and return .true. or .false. if they
          ! differ.
@@ -192,13 +164,9 @@
 
        subroutine sortRangesSplitInfo(splitInfo)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * sortRangesSplitInfo sort the ranges of the given subblocks in  *
-!      * increasing order such that a unique ordering is obtained,      *
-!      * independent of the history of the splitting.                   *
-!      *                                                                *
-!      ******************************************************************
+!       sortRangesSplitInfo sort the ranges of the given subblocks in  
+!       increasing order such that a unique ordering is obtained,      
+!       independent of the history of the splitting.                   
 !
        use partitionMod
        use sortSubRange
@@ -214,11 +182,7 @@
 
        type(sortSubRangeType), dimension(splitInfo%nSubBlocks) :: subRanges
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Copy the subface range from splitInfo into subRanges.
 
@@ -256,13 +220,9 @@
 
        subroutine qsortSortSubRangeType(arr, nn)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * qsortSortSubRangeType sorts the given number of halo's in      *
-!      * increasing order based on the <= operator for this derived     *
-!      * data type.                                                     *
-!      *                                                                *
-!      ******************************************************************
+!       qsortSortSubRangeType sorts the given number of halo's in      
+!       increasing order based on the <= operator for this derived     
+!       data type.                                                     
 !
        use sortSubRange
        use utils, only : terminate
@@ -288,11 +248,7 @@
        integer(kind=intType), allocatable, dimension(:) :: stack
        integer(kind=intType), allocatable, dimension(:) :: tmpStack
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Allocate the memory for stack.
 

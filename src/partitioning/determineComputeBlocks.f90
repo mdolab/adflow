@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          determineComputeBlocks.f90                      *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 03-19-2004                                      *
-!      * Last modified: 10-10-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          determineComputeBlocks.f90                      
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 03-19-2004                                      
+!       Last modified: 10-10-2005                                      
 !
        subroutine determineComputeBlocks(splitInfo)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * determineComputeBlocks determines the computational blocks     *
-!      * from the original grid and the given information how to split  *
-!      * these blocks.                                                  *
-!      *                                                                *
-!      ******************************************************************
+!       determineComputeBlocks determines the computational blocks     
+!       from the original grid and the given information how to split  
+!       these blocks.                                                  
 !
        use cgnsGrid
        use partitionMod
@@ -36,11 +28,7 @@
 
        integer(kind=intType), dimension(0:cgnsNDom) :: nSubPerCGNS
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the number of subblocks per cgns block in
        ! cumulative storage format.
@@ -193,13 +181,9 @@
 
        subroutine BCFacesSubblock(cgnsID, ii, jj)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * BCFacesSubblock determines the boundary subfaces of compute    *
-!      * block ii, which is a subblock of the given cgns block.         *
-!      * Jj is the counter for the number of subfaces.                  *
-!      *                                                                *
-!      ******************************************************************
+!       BCFacesSubblock determines the boundary subfaces of compute    
+!       block ii, which is a subblock of the given cgns block.         
+!       Jj is the counter for the number of subfaces.                  
 !
        use cgnsGrid
        use communication
@@ -223,11 +207,7 @@
        character(len=maxCGNSNameLen) :: zoneName, subName
        character(len=2*maxStringLen) :: errorMessage
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the physical boundaries of the original block.
 
@@ -430,17 +410,13 @@
        subroutine externalFacesSubblock(cgnsID, ii, jj, nSubPerCGNS, &
                                         nAlloc, splitInfo)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * externalFacesSubblock determines the block boundaries of       *
-!      * the compute block ii which are located on the boundaries of    *
-!      * the given original cgns block. As it is possible that due to   *
-!      * a splitting of a neighboring block the number of block         *
-!      * boundaries is larger than the original number, it must be      *
-!      * checked whether enough memory has been allocated.              *
-!      * jj is the counter for the number of subfaces.                  *
-!      *                                                                *
-!      ******************************************************************
+!       externalFacesSubblock determines the block boundaries of       
+!       the compute block ii which are located on the boundaries of    
+!       the given original cgns block. As it is possible that due to   
+!       a splitting of a neighboring block the number of block         
+!       boundaries is larger than the original number, it must be      
+!       checked whether enough memory has been allocated.              
+!       jj is the counter for the number of subfaces.                  
 !
        use cgnsGrid
        use communication
@@ -796,16 +772,12 @@
        subroutine internalFacesSubblock(cgnsID, ii, jj, nSubPerCGNS, &
                                         nAlloc, splitInfo)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * internalFacesSubblock determines the block boundaries of       *
-!      * the compute block ii which are created due to the splitting of *
-!      * the original block into subblock. As the number of these       *
-!      * internal boundaries is not known, it must be checked whether   *
-!      * enough memory has been allocated. jj is the counter for the    *
-!      * number of subfaces.                                            *
-!      *                                                                *
-!      ******************************************************************
+!       internalFacesSubblock determines the block boundaries of       
+!       the compute block ii which are created due to the splitting of 
+!       the original block into subblock. As the number of these       
+!       internal boundaries is not known, it must be checked whether   
+!       enough memory has been allocated. jj is the counter for the    
+!       number of subfaces.                                            
 !
        use cgnsGrid
        use communication
@@ -826,11 +798,7 @@
        integer(kind=intType) :: indFace, jBeg, jEnd, kBeg, kEnd
        integer(kind=intType) :: i, i2, j, k, faceID
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! iMin face.
 
@@ -978,14 +946,10 @@
 
          subroutine searchInternalNeighbors
 !
-!        ****************************************************************
-!        *                                                              *
-!        * searchInternalNeighbors determines block faces created by    *
-!        * by the splitting of the original block. The variables set in *
-!        * internalFacesSubblock are used such that a general           *
-!        * treatment is possible.                                       *
-!        *                                                              *
-!        ****************************************************************
+!         searchInternalNeighbors determines block faces created by    
+!         by the splitting of the original block. The variables set in 
+!         internalFacesSubblock are used such that a general           
+!         treatment is possible.                                       
 !
          implicit none
 !
@@ -997,11 +961,7 @@
 
          integer(kind=intType), dimension(:,:,:), pointer :: ranges
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Set the pointer for ranges to make the code more readable.
 

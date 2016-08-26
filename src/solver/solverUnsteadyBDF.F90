@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          solverUnsteadyBDF.F90                           *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-13-2003                                      *
-!      * Last modified: 11-21-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          solverUnsteadyBDF.F90                           
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-13-2003                                      
+!       Last modified: 11-21-2007                                      
 !
        subroutine solverUnsteadyBDF
 !
-!      ******************************************************************
-!      *                                                                *
-!      * solverUnsteadyBDF solves the unsteady equations using the BDF  *
-!      * schemes for the multigrid level groundLevel.                   *
-!      *                                                                *
-!      ******************************************************************
+!       solverUnsteadyBDF solves the unsteady equations using the BDF  
+!       schemes for the multigrid level groundLevel.                   
 !
        use inputIteration
        use inputUnsteady
@@ -33,11 +25,7 @@
 
        integer(kind=intType) :: i,j,k,nn,kk
 
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initializations of the write parameters.
 
@@ -120,16 +108,12 @@
 
        subroutine initTimeStepPart1
 !
-!      ******************************************************************
-!      *                                                                *
-!      * initTimeStepPart1 performs the first part of the               *
-!      * initialization tasks before the actual computation of an       *
-!      * unsteady time step is performed. It is split into two parts,   *
-!      * such that some additional data can be set in multidisciplinary *
-!      * mode, i.e. this routine may be used in python mode, although   *
-!      * it is certainly possible to do this task via a python script.  *
-!      *                                                                *
-!      ******************************************************************
+!       initTimeStepPart1 performs the first part of the               
+!       initialization tasks before the actual computation of an       
+!       unsteady time step is performed. It is split into two parts,   
+!       such that some additional data can be set in multidisciplinary 
+!       mode, i.e. this routine may be used in python mode, although   
+!       it is certainly possible to do this task via a python script.  
 !
        use communication
        use inputMotion
@@ -146,11 +130,7 @@
 
        real(kind=realType), dimension(nSections) :: tNewSec, deltaTSec
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Increment timeStepUnsteady and update
        ! timeUnsteady with the current time step.
@@ -227,16 +207,12 @@
 
        subroutine initTimeStepPart2
 !
-!      ******************************************************************
-!      *                                                                *
-!      * initTimeStepPart2 performs the second part of the              *
-!      * initialization tasks before the actual computation of an       *
-!      * unsteady time step is performed. It is split into two parts,   *
-!      * such that some additional data can be set in multidisciplinary *
-!      * mode, i.e. this routine may be used in python mode, although   *
-!      * it is certainly possible to do this task via a python script.  *
-!      *                                                                *
-!      ******************************************************************
+!       initTimeStepPart2 performs the second part of the              
+!       initialization tasks before the actual computation of an       
+!       unsteady time step is performed. It is split into two parts,   
+!       such that some additional data can be set in multidisciplinary 
+!       mode, i.e. this routine may be used in python mode, although   
+!       it is certainly possible to do this task via a python script.  
 !
        use inputMotion
        use iteration
@@ -246,11 +222,7 @@
 
        implicit none
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! If the grid is changing a whole lot of geometric
        ! info must be adapted.
@@ -303,12 +275,8 @@
 
        subroutine checkWriteUnsteadyInLoop
 !
-!      ******************************************************************
-!      *                                                                *
-!      * checkWriteUnsteadyInLoop checks if a solution must be          *
-!      * written inside the time loop and if so write it.               *
-!      *                                                                *
-!      ******************************************************************
+!       checkWriteUnsteadyInLoop checks if a solution must be          
+!       written inside the time loop and if so write it.               
 !
        use communication
        use inputIteration
@@ -326,11 +294,7 @@
        integer(kind=intType) :: nn
        character(len=7) :: intString
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the global kill parameter if signals are supported.
 
@@ -394,12 +358,8 @@
 
        subroutine checkWriteUnsteadyEndLoop
 !
-!      ******************************************************************
-!      *                                                                *
-!      * checkWriteUnsteadyEndLoop checks if a solution must be         *
-!      * written at the end of the time loop and if so write it.        *
-!      *                                                                *
-!      ******************************************************************
+!       checkWriteUnsteadyEndLoop checks if a solution must be         
+!       written at the end of the time loop and if so write it.        
 !
        use inputMotion
        use iteration
@@ -410,11 +370,7 @@
 !
        integer(kind=intType) :: nn
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Write a solution. Only on the finest grid in stand alone mode
        ! and if some time steps have been performed since the last write.
@@ -453,16 +409,12 @@
 
        subroutine initTimeStepPart1_md(callback)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * initTimeStepPart1 performs the first part of the               *
-!      * initialization tasks before the actual computation of an       *
-!      * unsteady time step is performed. It is split into two parts,   *
-!      * such that some additional data can be set in multidisciplinary *
-!      * mode, i.e. this routine may be used in python mode, although   *
-!      * it is certainly possible to do this task via a python script.  *
-!      *                                                                *
-!      ******************************************************************
+!       initTimeStepPart1 performs the first part of the               
+!       initialization tasks before the actual computation of an       
+!       unsteady time step is performed. It is split into two parts,   
+!       such that some additional data can be set in multidisciplinary 
+!       mode, i.e. this routine may be used in python mode, although   
+!       it is certainly possible to do this task via a python script.  
 !
        use communication
        use inputMotion
@@ -479,11 +431,7 @@
        external callback
        real(kind=realType), dimension(nSections) :: tNewSec, deltaTSec
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Increment timeStepUnsteady and update
        ! timeUnsteady with the current time step.

@@ -1,16 +1,13 @@
 ! ############### THIS ROUTINE IS OUT OF DATE! ###############
 
 subroutine verifyAD
-  !     ******************************************************************
-  !     *                                                                *
-  !     * This is a verify routine that runs compiled TGT debug mode.    *
-  !     * It loop through all the inputs and check the output of AD      *
-  !     * against finite difference:                                     *
-  !     * firstRun: True, this is the first run that get piped into the  *
-  !     *        second run.                                             *
-  !     * usage: python runscript1.py | python runscript2.py             *
+  !      This is a verify routine that runs compiled TGT debug mode.    
+  !      It loop through all the inputs and check the output of AD      
+  !      against finite difference:                                     
+  !      firstRun: True, this is the first run that get piped into the  
+  !             second run.                                             
+  !      usage: python runscript1.py | python runscript2.py             
  
-  !     ******************************************************************
   !
   use blockPointers
   use inputDiscretization 

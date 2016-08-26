@@ -1,32 +1,22 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          checkInputParam.F90                             *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 12-13-2002                                      *
-!      * Last modified: 11-27-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          checkInputParam.F90                             
+!       Author:        Edwin van der Weide                             
+!       Starting date: 12-13-2002                                      
+!       Last modified: 11-27-2007                                      
 !
        subroutine checkInputParam
 !
-!      ******************************************************************
-!      *                                                                *
-!      * checkInputParam checks if all necessary data has been          *
-!      * specified. If some key data is missing an error message will   *
-!      * be printed and the program will exit. Key data depends on the  *
-!      * case to be solved. E.g. for the Navier Stokes equations it is  *
-!      * necessary to specify the Reynolds number, but for Euler this   *
-!      * can be omitted.                                                *
-!      *                                                                *
-!      * Furthermore warnings are printed in case parameters have been  *
-!      * specified that are ignored, e.g. Mach number for internal flow *
-!      * computations.                                                  *
-!      *                                                                *
-!      * Note that only processor 0 prints warning and error messages,  *
-!      * such that the output does not become messy.                    *
-!      *                                                                *
-!      ******************************************************************
+!       checkInputParam checks if all necessary data has been          
+!       specified. If some key data is missing an error message will   
+!       be printed and the program will exit. Key data depends on the  
+!       case to be solved. E.g. for the Navier Stokes equations it is  
+!       necessary to specify the Reynolds number, but for Euler this   
+!       can be omitted.                                                
+!       Furthermore warnings are printed in case parameters have been  
+!       specified that are ignored, e.g. Mach number for internal flow 
+!       computations.                                                  
+!       Note that only processor 0 prints warning and error messages,  
+!       such that the output does not become messy.                    
 !
        use constants
        use allInputParam
@@ -50,19 +40,11 @@
 
        logical :: gridPrecisionWarning, solPrecisionWarning
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Discretization parameters. Check if the key parameters have    *
-!      * been specified and set some coarse grid parameters in case     *
-!      * these have not been specified.                                 *
-!      *                                                                *
-!      ******************************************************************
+!       Discretization parameters. Check if the key parameters have    
+!       been specified and set some coarse grid parameters in case     
+!       these have not been specified.                                 
 !
        if(spaceDiscr == none) then
          if(myID == 0)                       &
@@ -89,23 +71,17 @@
        radiiNeededCoarse = .false.
        if(spaceDiscrCoarse == dissScalar) radiiNeededCoarse = .true.
 !
-!      ******************************************************************
-!      *                                                                *
-!      * IO parameters. Check if the grid file has been specified       *
-!      * Possibly correct the                                           *
-!      * value of restart. Note that restart got the default value of   *
-!      * .true. in case no restart file has been specified it is now    *
-!      * set to false. Set the names of the solution files if not       *
-!      * specified and check if a cp curve fit file has been specified  *
-!      * if curve fits must be used.                                    *
-!      *                                                                *
-!      * If the code has been compiled without cgns check that the file *
-!      * format is not cgns.                                            *
-!      *                                                                *
-!      * Overwrite storeConvInnerIter to .true. if this is not an       *
-!      * unsteady computation.                                          *
-!      *                                                                *
-!      ******************************************************************
+!       IO parameters. Check if the grid file has been specified       
+!       Possibly correct the                                           
+!       value of restart. Note that restart got the default value of   
+!       .true. in case no restart file has been specified it is now    
+!       set to false. Set the names of the solution files if not       
+!       specified and check if a cp curve fit file has been specified  
+!       if curve fits must be used.                                    
+!       If the code has been compiled without cgns check that the file 
+!       format is not cgns.                                            
+!       Overwrite storeConvInnerIter to .true. if this is not an       
+!       unsteady computation.                                          
 !
        if(gridFile == "") then
          if(myID == 0) &
@@ -150,13 +126,9 @@
          storeConvInnerIter = .true.
        endif
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Iteration parameters. Check if the key parameters have specified    *
-!      * been and set some coarse grid parameters in case these    *
-!      * have not been specified.                                       *
-!      *                                                                *
-!      ******************************************************************
+!       Iteration parameters. Check if the key parameters have specified    
+!       been and set some coarse grid parameters in case these    
+!       have not been specified.                                       
 !
        if(equationMode          == unsteady .and. &
           timeIntegrationScheme == explicitRK) then
@@ -200,12 +172,8 @@
          endif
        endif
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Grid motion parameters. These can only be specified for an     *
-!      * external flow problem.                                         *
-!      *                                                                *
-!      ******************************************************************
+!       Grid motion parameters. These can only be specified for an     
+!       external flow problem.                                         
 !
        if(flowType == internalFlow .and. gridMotionSpecified) then
          if(myID == 0) &
@@ -215,12 +183,8 @@
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Physics parameters. Check if the key parameters have been      *
-!      * specified and set the unit vector for the free-stream velocity.*
-!      *                                                                *
-!      ******************************************************************
+!       Physics parameters. Check if the key parameters have been      
+!       specified and set the unit vector for the free-stream velocity.
 !
        if(equations == none) then
          if(myID == 0) &
@@ -365,12 +329,8 @@
 
        if(MachCoef < zero) MachCoef = Mach
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Time spectral parameters. They only need to be specified for a *
-!      * time spectral computation.                                     *
-!      *                                                                *
-!      ******************************************************************
+!       Time spectral parameters. They only need to be specified for a 
+!       time spectral computation.                                     
 !
        testSpectral: if(equationMode == timeSpectral) then
 
@@ -419,12 +379,8 @@
 
        endif testSpectral
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Unsteady parameters. They only need to be specified for an     *
-!      * unsteady computation.                                          *
-!      *                                                                *
-!      ******************************************************************
+!       Unsteady parameters. They only need to be specified for an     
+!       unsteady computation.                                          
 !
        testUnsteady: if(equationMode == unsteady) then
 
@@ -536,11 +492,7 @@
 
        endif testUnsteady
 !
-!      ******************************************************************
-!      *                                                                *
-!      *                       Warning messages.                        *
-!      *                                                                *
-!      ******************************************************************
+!                             Warning messages.                        
 !
        ! Check for an invisid problem if the Reynolds number is specified.
        ! If so, print a Warning that this info is ignored.
@@ -650,23 +602,15 @@
          print "(a)", "#"
        endif
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Wall functions can only be used if the RANS equations are to   *
-!      * be solved. If no wall functions are used the wall offset is    *
-!      * set to zero.                                                   *
-!      *                                                                *
-!      ******************************************************************
+!       Wall functions can only be used if the RANS equations are to   
+!       be solved. If no wall functions are used the wall offset is    
+!       set to zero.                                                   
 !
        if(equations /= RANSEquations) wallFunctions = .false.
        if(.not. wallFunctions) wallOffset = zero
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Check whether or not the wall distance is needed for the       *
-!      * turbulence model.                                              *
-!      *                                                                *
-!      ******************************************************************
+!       Check whether or not the wall distance is needed for the       
+!       turbulence model.                                              
 !
        if(equations == RANSEquations) then
 
@@ -702,21 +646,13 @@
 
        endif
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Parallelization parameters. Set the minimum load imbalance to  *
-!      * 3 percent to avoid any problems.                               *
-!      *                                                                *
-!      ******************************************************************
+!       Parallelization parameters. Set the minimum load imbalance to  
+!       3 percent to avoid any problems.                               
 !
        loadImbalance = max(loadImbalance, 0.03_realType)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Some default parameters, which depend on other parameters.     *
-!      * Only if these have not been specified of course.               *
-!      *                                                                *
-!      ******************************************************************
+!       Some default parameters, which depend on other parameters.     
+!       Only if these have not been specified of course.               
 !
        if(nsgStartup < 0)    nsgStartup    = 0
        if(ncyclesCoarse < 0) nCyclesCoarse = nCycles
@@ -775,20 +711,16 @@
          end select
        endif
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Determine the number of old grid levels needed for the BDF     *
-!      * time integration of unsteady problems and allocate the memory  *
-!      * for the coefficients. The actual values are not yet set,       *
-!      * because in the first (and possibly second) time step a reduced *
-!      * order must be used, because the older states are not available *
-!      * yet. Also allocate the memory for the logicals to indicate     *
-!      * whether or not old solutions have been written.                *
-!      * If a Runge Kutta scheme must be used for the time integration, *
-!      * either explicit or implicit, a separate routine is called to   *
-!      * set all the necessary variables.                               *
-!      *                                                                *
-!      ******************************************************************
+!       Determine the number of old grid levels needed for the BDF     
+!       time integration of unsteady problems and allocate the memory  
+!       for the coefficients. The actual values are not yet set,       
+!       because in the first (and possibly second) time step a reduced 
+!       order must be used, because the older states are not available 
+!       yet. Also allocate the memory for the logicals to indicate     
+!       whether or not old solutions have been written.                
+!       If a Runge Kutta scheme must be used for the time integration, 
+!       either explicit or implicit, a separate routine is called to   
+!       set all the necessary variables.                               
 !
        select case (timeIntegrationScheme)
          case (BDF, MD)
@@ -883,12 +815,8 @@
          oldSolWritten(nn) = .false.
        enddo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Determine the values of the runge kutta parameters, depending  *
-!      * on the number of stages specified.                             *
-!      *                                                                *
-!      ******************************************************************
+!       Determine the values of the runge kutta parameters, depending  
+!       on the number of stages specified.                             
 !
        ! Limit the number of stages between 1 and 6 and allocate the
        ! memory.
@@ -968,13 +896,9 @@
            cdisRK(6) = one
        end select
 !
-!      ******************************************************************
-!      *                                                                *
-!      * To avoid any problems later on, allocate the memory for the    *
-!      * rigid body motion parameters if these values were not present  *
-!      * in the parameter file.                                         *
-!      *                                                                *
-!      ******************************************************************
+!       To avoid any problems later on, allocate the memory for the    
+!       rigid body motion parameters if these values were not present  
+!       in the parameter file.                                         
 !
        if(.not. allocated(coefPolXRot) ) then
          allocate(coefPolXRot(0:0), stat=ierr)

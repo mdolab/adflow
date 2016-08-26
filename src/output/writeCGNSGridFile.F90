@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          writeCGNSGridFile.F90                           *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 01-20-2004                                      *
-!      * Last modified: 03-30-2006                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          writeCGNSGridFile.F90                           
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 01-20-2004                                      
+!       Last modified: 03-30-2006                                      
 !
        subroutine writeCGNSGridFile
 !
-!      ******************************************************************
-!      *                                                                *
-!      * writeCGNSGridFile and its subroutines write the CGNS grid      *
-!      * file(s). Typically this is needed when the coordinates have    *
-!      * changed due to moving parts, deformation or both.              *
-!      *                                                                *
-!      ******************************************************************
+!       writeCGNSGridFile and its subroutines write the CGNS grid      
+!       file(s). Typically this is needed when the coordinates have    
+!       changed due to moving parts, deformation or both.              
 !
 #ifdef USE_NO_CGNS
        call terminate("writeCGNSGridFile", &
@@ -42,11 +34,7 @@
 
        integer(kind=intType) :: nn
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the number and names of the grid files.
        ! Also set the pointers for IOVar needed for the general

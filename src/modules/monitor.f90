@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          monitor.f90                                     *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-25-2003                                      *
-!      * Last modified: 10-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          monitor.f90                                     
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-25-2003                                      
+!       Last modified: 10-29-2007                                      
 !
        module monitor
 !
-!      ******************************************************************
-!      *                                                                *
-!      * This module contains the variables to be monitored during the  *
-!      * convergence as well as the arrays to store the convergence.    *
-!      * The latter are only allocated by processor 0.                  *
-!      * The default variables to be monitored depend on the governing  *
-!      * equations to be solved.                                        *
-!      *                                                                *
-!      ******************************************************************
+!       This module contains the variables to be monitored during the  
+!       convergence as well as the arrays to store the convergence.    
+!       The latter are only allocated by processor 0.                  
+!       The default variables to be monitored depend on the governing  
+!       equations to be solved.                                        
 !
        use constants, only : intType, realType, cgnsRealType, &
             maxCGNSNameLen
@@ -31,11 +23,7 @@
        integer, parameter :: fieldWidthLarge   = 24
        integer, parameter :: decimalWidth =  5
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Variables to compute the convergence info.                     *
-!      *                                                                *
-!      ******************************************************************
+!       Variables to compute the convergence info.                     
 !
        ! nMonSum: Number of monitoring variables for which the sum over
        !          all processors must be taken. Note that this is an
@@ -81,11 +69,7 @@
        logical :: monMassSliding
        logical :: monMassFamilies
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Variables to store the convergence info.                       *
-!      *                                                                *
-!      ******************************************************************
+!       Variables to store the convergence info.                       
 !
        ! nIterCur: Current number of iterations. Also niterCur is an
        !           integer, because of cgns.
@@ -98,12 +82,8 @@
        real(kind=cgnsRealType), dimension(:,:,:), allocatable :: &
                                                                convArray
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Variables to store the time accurate history.                  *
-!      * Only allocated for a time accurate computation.                *
-!      *                                                                *
-!      ******************************************************************
+!       Variables to store the time accurate history.                  
+!       Only allocated for a time accurate computation.                
 !
        ! nTimeStepsRestart:   Number of time steps taken in an earlier
        !                      unsteady computation from which a restart

@@ -1,33 +1,21 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          CpCurveFits.f90                                 *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 09-11-2003                                      *
-!      * Last modified: 03-22-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          CpCurveFits.f90                                 
+!       Author:        Edwin van der Weide                             
+!       Starting date: 09-11-2003                                      
+!       Last modified: 03-22-2005                                      
 !
        module CpCurveFits
 !
-!      ******************************************************************
-!      *                                                                *
-!      * This module contains the curve fit data for Cp, or better      *
-!      * Cp/R, as a function of the temperature. The temperature is     *
-!      * assumed to be in Kelvin.                                       *
-!      *                                                                *
-!      ******************************************************************
+!       This module contains the curve fit data for Cp, or better      
+!       Cp/R, as a function of the temperature. The temperature is     
+!       assumed to be in Kelvin.                                       
 !      
        use constants, only: intTYpe, realType
        implicit none
        save
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the derived data type CpTempFitType, which   *
-!      * stores the curve fit data for a certain temperature range.     *
-!      *                                                                *
-!      ******************************************************************
+!       The definition of the derived data type CpTempFitType, which   
+!       stores the curve fit data for a certain temperature range.     
 !
        type CpTempFitType
 

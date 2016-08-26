@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          loadBalance.f90                                 *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 02-05-2003                                      *
-!      * Last modified: 10-27-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          loadBalance.f90                                 
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 02-05-2003                                      
+!       Last modified: 10-27-2005                                      
 !
 subroutine loadBalance
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * loadBalance determines the mapping of the blocks onto the      *
-  !      * processors. If the user allows so blocks my be split to obtain *
-  !      * a better load balance.                                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       loadBalance determines the mapping of the blocks onto the      
+  !       processors. If the user allows so blocks my be split to obtain 
+  !       a better load balance.                                         
   !
   use block
   use cgnsGrid
@@ -45,11 +37,7 @@ subroutine loadBalance
        subblocksOfCGNS
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Determine the block distribution over the processors.
 
@@ -72,11 +60,7 @@ subroutine loadBalance
   end if
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Determine the local block info.                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Determine the local block info.                                
   !
   ! Initialize nBlockPerProc to 0.
 
@@ -321,15 +305,11 @@ subroutine loadBalance
           "Deallocation error for boundary info")
   enddo domains
 
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Determine the number of processors, the processor ID's on      *
-  !      * which the original cgns blocks are stored, the local           *
-  !      * block ID's and the nodal ranges of the subblocks. As blocks    *
-  !      * can be split during run-time, multiple processors can store a  *
-  !      * part of original block.                                        *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Determine the number of processors, the processor ID's on      
+  !       which the original cgns blocks are stored, the local           
+  !       block ID's and the nodal ranges of the subblocks. As blocks    
+  !       can be split during run-time, multiple processors can store a  
+  !       part of original block.                                        
   !
   ! Allocate the memory for subblocksOfCGNS.
 

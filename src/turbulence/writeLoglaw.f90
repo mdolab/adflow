@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          writeLoglaw.f90                                 *
-!      * Author:        Georgi Kalitzin                                 *
-!      * Starting date: 08-24-2004                                      *
-!      * Last modified: 04-12-2004                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          writeLoglaw.f90                                 
+!       Author:        Georgi Kalitzin                                 
+!       Starting date: 08-24-2004                                      
+!       Last modified: 04-12-2004                                      
 !
        subroutine writeLoglaw
 !
-!      ******************************************************************
-!      *                                                                *
-!      * writeLoglaw writes a profile of the velocity and turbulence    *
-!      * variables in plus units for a flat plate with i in x, j in y   *
-!      * and k in z direction at a hardcoded location in x direction    *
-!      * and j=2, k=2. It is assumed that the pointers in               *
-!      * blockPointers already point to the correct block.              *
-!      *                                                                *
-!      ******************************************************************
+!       writeLoglaw writes a profile of the velocity and turbulence    
+!       variables in plus units for a flat plate with i in x, j in y   
+!       and k in z direction at a hardcoded location in x direction    
+!       and j=2, k=2. It is assumed that the pointers in               
+!       blockPointers already point to the correct block.              
 !
        use blockPointers
        use constants

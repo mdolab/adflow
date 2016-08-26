@@ -1,20 +1,12 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          calMassFlux.f90                                 *
-!      * Author:        Eran Arad                                       *
-!      * Starting date: 30-01-2006                                      *
-!      * Last modified: 25-01-2007                                               *
-!      *                                                                *
-!      ******************************************************************
+!       File:          calMassFlux.f90                                 
+!       Author:        Eran Arad                                       
+!       Starting date: 30-01-2006                                      
+!       Last modified: 25-01-2007                                               
 !
        subroutine calMassFlux(massFluxG)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Calculate mass flux on        subsonic outflow boundary        *
-!      *                                                                *
-!      ******************************************************************
+!       Calculate mass flux on        subsonic outflow boundary        
 !
        use bleedFlows
        use blockPointers
@@ -39,11 +31,7 @@
        real(kind=realType), dimension(:,:),   pointer :: sFace
 
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Return immediately if no 
 

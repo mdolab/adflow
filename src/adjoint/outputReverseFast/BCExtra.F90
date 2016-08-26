@@ -177,13 +177,9 @@ subroutine applyAllBC_block_fast_b(secondHalo)
 
  subroutine setBCPointers_fast_b(nn, spatialPointers)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * setBCPointers sets the pointers needed for the boundary        *
-    !      * condition treatment on a general face, such that the boundary  *
-    !      * routines are only implemented once instead of 6 times.         *
-    !      *                                                                *
-    !      ******************************************************************
+    !       setBCPointers sets the pointers needed for the boundary        
+    !       condition treatment on a general face, such that the boundary  
+    !       routines are only implemented once instead of 6 times.         
     !
     use constants
     use blockPointers

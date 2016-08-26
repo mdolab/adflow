@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          f1SST.f90                                       *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide,           *
-!      *                Steve Repsher                                   *
-!      * Starting date: 08-19-2003                                      *
-!      * Last modified: 07-03-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          f1SST.f90                                       
+!       Author:        Georgi Kalitzin, Edwin van der Weide,           
+!                      Steve Repsher                                   
+!       Starting date: 08-19-2003                                      
+!       Last modified: 07-03-2005                                      
 !
        subroutine f1SST
 !
-!      ******************************************************************
-!      *                                                                *
-!      * f1SST computes the blending function f1 in both the owned      *
-!      * cells and the first layer of halo's. The result is stored in   *
-!      * scratch(:,:,:,if1SST). For the computation of f1 also the cross     *
-!      * diffusion term is needed. This is stored in scratch(:,:,:,icd) such *
-!      * that it can be used in SSTSolve later on.                      *
-!      *                                                                *
-!      ******************************************************************
+!       f1SST computes the blending function f1 in both the owned      
+!       cells and the first layer of halo's. The result is stored in   
+!       scratch(:,:,:,if1SST). For the computation of f1 also the cross     
+!       diffusion term is needed. This is stored in scratch(:,:,:,icd) such 
+!       that it can be used in SSTSolve later on.                      
 !
        use constants
        use blockPointers
@@ -35,11 +27,7 @@
 
        real(kind=realType) :: t1, t2, arg1
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! First part. Compute the values of the blending function f1
        ! for each block and spectral solution.
@@ -170,13 +158,9 @@
 
        subroutine exchangeF1SST1to1
 !
-!      ******************************************************************
-!      *                                                                *
-!      * exchangeF1SST1to1 communicates the 1st layer of halo values    *
-!      * for the blending function f1 of the SST model for 1 to 1       *
-!      * matching halo's. This variable is stored in scratch(:,:,:,if1SST).  *
-!      *                                                                *
-!      ******************************************************************
+!       exchangeF1SST1to1 communicates the 1st layer of halo values    
+!       for the blending function f1 of the SST model for 1 to 1       
+!       matching halo's. This variable is stored in scratch(:,:,:,if1SST).  
 !
          use constants
          use block
@@ -193,11 +177,7 @@
        integer(kind=intType) :: i, j, ii, jj, sps, ll
        integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Easier storage of the current mg level.
 
@@ -346,13 +326,9 @@
 
        subroutine exchangeF1SSTSliding
 !
-!      ******************************************************************
-!      *                                                                *
-!      * exchangeF1SSTSliding communicates the 1st layer of halo        *
-!      * values for the blending function f1 of the SST model for       *
-!      * sliding mesh halo's.                                           *
-!      *                                                                *
-!      ******************************************************************
+!       exchangeF1SSTSliding communicates the 1st layer of halo        
+!       values for the blending function f1 of the SST model for       
+!       sliding mesh halo's.                                           
 !
        use constants
        use block
@@ -373,11 +349,7 @@
 
        real(kind=realType) :: alp
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Easier storage of the current mg level.
 
@@ -554,13 +526,9 @@
 
        subroutine exchangeF1SSTOverset
 !
-!      ******************************************************************
-!      *                                                                *
-!      * exchangeF1SSTOverset communicates the overset boundary values  *
-!      * for the blending function f1 of the SST model. This variable   *
-!      * is stored in scratch(:,:,:,if1SST).                                 *
-!      *                                                                *
-!      ******************************************************************
+!       exchangeF1SSTOverset communicates the overset boundary values  
+!       for the blending function f1 of the SST model. This variable   
+!       is stored in scratch(:,:,:,if1SST).                                 
        use constants
        use block
        use communication
@@ -578,11 +546,7 @@
 
        real(kind=realType), dimension(:), pointer :: weight
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Easier storage of the current mg level.
 

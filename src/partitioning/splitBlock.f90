@@ -1,30 +1,22 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          splitBlock.f90                                  *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-23-2004                                      *
-!      * Last modified: 10-10-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          splitBlock.f90                                  
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-23-2004                                      
+!       Last modified: 10-10-2005                                      
 !
        subroutine splitBlock(compBlock, nSub, nCells, ranges)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * splitBlock tries to split the given computational block into   *
-!      * the desired number of subblocks nSub. However it can happen    *
-!      * that nSub is a strange number and a different splitting is     *
-!      * performed. On return, nSub contains the actual number into the *
-!      * block is split. This number is smaller or equal to nSub on     *
-!      * entry. As it is possible that the computational block itself   *
-!      * is a subblock of an original cgns block, on return ranges will *
-!      * contain the nodal ranges of the subblocks in the original cgns *
-!      * block. The splitting attempts to keep the needed multigrid     *
-!      * capabilities as much as possible.                              *
-!      * A recursive bisection algorithm is used.                       *
-!      *                                                                *
-!      ******************************************************************
+!       splitBlock tries to split the given computational block into   
+!       the desired number of subblocks nSub. However it can happen    
+!       that nSub is a strange number and a different splitting is     
+!       performed. On return, nSub contains the actual number into the 
+!       block is split. This number is smaller or equal to nSub on     
+!       entry. As it is possible that the computational block itself   
+!       is a subblock of an original cgns block, on return ranges will 
+!       contain the nodal ranges of the subblocks in the original cgns 
+!       block. The splitting attempts to keep the needed multigrid     
+!       capabilities as much as possible.                              
+!       A recursive bisection algorithm is used.                       
 !
        use constants
        use inputIteration
@@ -48,11 +40,7 @@
 
        logical, dimension(3) :: viscousDir
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the viscous directions of the block.
 
@@ -216,14 +204,10 @@
        subroutine split2block(nSub, n1, n2, nTarget, ranges, &
                               viscousDir)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * split2block splits the block stored in ranges(n1,:,:) into     *
-!      * two. The new blocks are stored in ranges(n1,:,:) and           *
-!      * ranges(n2,:,:), where the n2 will store the block with the     *
+!       split2block splits the block stored in ranges(n1,:,:) into     
+!       two. The new blocks are stored in ranges(n1,:,:) and           
+!       ranges(n2,:,:), where the n2 will store the block with the     
 !      * number of cells closest to nTarget.
-!      *                                                                *
-!      ******************************************************************
 !
        use inputIteration
        implicit none
@@ -243,11 +227,7 @@
 
        integer(kind=intType), dimension(3) :: nc, mc, c, nf, prefDir
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the maximum of the number of mg levels needed in the
        ! cycle and the mg start level. Store this value in nMG.

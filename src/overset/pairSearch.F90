@@ -1,12 +1,8 @@
 subroutine pairSearch(B)
 
 !
-!      ******************************************************************
-!      *                                                                *
-!      * pairSearch searches for potential donors in block B for the    *
-!      * block pointed to in blockPointers                              *
-!      *                                                                *
-!      ******************************************************************
+!       pairSearch searches for potential donors in block B for the    
+!       block pointed to in blockPointers                              
 
 
 

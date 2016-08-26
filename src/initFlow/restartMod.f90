@@ -1,31 +1,19 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          restartMod.f90                                  *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-20-2003                                      *
-!      * Last modified: 10-11-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          restartMod.f90                                  
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-20-2003                                      
+!       Last modified: 10-11-2005                                      
 !
        module restartMod
 !
-!      ******************************************************************
-!      *                                                                *
-!      * This local module contains variables used when reading the     *
-!      * restart file(s).                                               *
-!      *                                                                *
-!      ******************************************************************
+!       This local module contains variables used when reading the     
+!       restart file(s).                                               
 !
        use constants
        implicit none
        save
 !
-!      ******************************************************************
-!      *                                                                *
-!      *                 Variables in this module.                      *
-!      *                                                                *
-!      ******************************************************************
+!                       Variables in this module.                      
 !
        ! halosRead:Determines if the halos where read or not.
        ! nVar:     Number of variables stored in the solution file.
@@ -61,11 +49,7 @@
 
        character(len=maxStringLen), dimension(:), allocatable :: solFiles
 !
-!      ******************************************************************
-!      *                                                                *
-!      *                 Variables only used by CGNS.                   *
-!      *                                                                *
-!      ******************************************************************
+!                       Variables only used by CGNS.                   
 !
        ! rangeMin(3):    Lower index in i, j and k direction of the
        !                 range to be read.

@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          updateComm.f90                                  *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 11-14-2003                                      *
-!      * Last modified: 03-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          updateComm.f90                                  
+!       Author:        Edwin van der Weide                             
+!       Starting date: 11-14-2003                                      
+!       Last modified: 03-25-2005                                      
 !
        module updateComm
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Local module to store the derived data types for the temporary *
-!      * storage of the interpolation weights and for sorting them.     *
-!      *                                                                *
-!      ******************************************************************
+!       Local module to store the derived data types for the temporary 
+!       storage of the interpolation weights and for sorting them.     
 !
        use precision
        implicit none
@@ -93,13 +85,9 @@
 
          logical function lessEqualSortedDonorComm(g1,g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * lessEqualSortedDonorComm returns .true. If g1 <= g2 and      *
-!        * .false. otherwise. The comparison is firstly based on the    *
-!        * halo level, followed by the block ID and finally the indices.*
-!        *                                                              *
-!        ****************************************************************
+!         lessEqualSortedDonorComm returns .true. If g1 <= g2 and      
+!         .false. otherwise. The comparison is firstly based on the    
+!         halo level, followed by the block ID and finally the indices.
 !
          implicit none
 !
@@ -107,11 +95,7 @@
 !
          type(sortedDonorCommType), intent(in) :: g1, g2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Compare the halo level.
 
@@ -169,13 +153,9 @@
 
          logical function lessSortedDonorComm(g1,g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * lessSortedDonorComm returns .true. If g1 < g2 and .false.    *
-!        * otherwise. The comparison is firstly based on the halo       *
-!        * level, followed by the block ID and finally the indices.     *
-!        *                                                              *
-!        ****************************************************************
+!         lessSortedDonorComm returns .true. If g1 < g2 and .false.    
+!         otherwise. The comparison is firstly based on the halo       
+!         level, followed by the block ID and finally the indices.     
 !
          implicit none
 !
@@ -183,11 +163,7 @@
 !
          type(sortedDonorCommType), intent(in) :: g1, g2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Compare the halo level.
 
@@ -245,13 +221,9 @@
 
          logical function equalSortedDonorComm(g1,g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * EqualSortedDonorComm returns .true. if g1 == g2 and          *
-!        * .false. otherwise. All member variables must be identical    *
-!        * for the equality to hold.                                    *
-!        *                                                              *
-!        ****************************************************************
+!         EqualSortedDonorComm returns .true. if g1 == g2 and          
+!         .false. otherwise. All member variables must be identical    
+!         for the equality to hold.                                    
 !
          implicit none
 !
@@ -259,11 +231,7 @@
 !
          type(sortedDonorCommType), intent(in) :: g1, g2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Initialize equalSortedDonorComm to .False.
 

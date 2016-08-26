@@ -4,22 +4,18 @@
 !  differentiation of viscousflux in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *fw *(*viscsubface.tau)
 !   with respect to varying inputs: *rev *aa *wx *wy *wz *w *rlv
-!                *x *qx *qy *qz *ux *uy *uz *si *sj *sk *vx *vy
-!                *vz *fw
+!                x *qx *qy *qz *ux *uy *uz *si *sj *sk *vx 
+!                vz 
 !   plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
 !                w:in rlv:in x:in qx:in qy:in qz:in ux:in uy:in
 !                uz:in si:in sj:in sk:in vx:in vy:in vz:in fw:in
 !                viscsubface:in *viscsubface.tau:in
 subroutine viscousflux_d()
 !
-!      ******************************************************************
-!      *                                                                *
-!      * viscousflux computes the viscous fluxes using a central        *
-!      * difference scheme for a block.                                 *
-!      * it is assumed that the pointers in block pointer already point *
-!      * to the correct block.                                          *
-!      *                                                                *
-!      ******************************************************************
+!       viscousflux computes the viscous fluxes using a central        
+!       difference scheme for a block.                                 
+!       it is assumed that the pointers in block pointer already point 
+!       to the correct block.                                          
 !
   use constants
   use blockpointers
@@ -88,11 +84,7 @@ subroutine viscousflux_d()
       storewalltensor = .true.
     end if
 !
-!        ****************************************************************
-!        *                                                              *
-!        * viscous fluxes in the k-direction.                           *
-!        *                                                              *
-!        ****************************************************************
+!         viscous fluxes in the k-direction.                           
 !
     mue = zero
     do ii1=1,isize1ofdrfviscsubface
@@ -387,11 +379,7 @@ subroutine viscousflux_d()
       end do
     end do
 !
-!        ****************************************************************
-!        *                                                              *
-!        * viscous fluxes in the j-direction.                           *
-!        *                                                              *
-!        ****************************************************************
+!         viscous fluxes in the j-direction.                           
 !
     mue = zero
     mued = 0.0_8
@@ -678,11 +666,7 @@ subroutine viscousflux_d()
       end do
     end do
 !
-!        ****************************************************************
-!        *                                                              *
-!        * viscous fluxes in the i-direction.                           *
-!        *                                                              *
-!        ****************************************************************
+!         viscous fluxes in the i-direction.                           
 !
     mue = zero
     mued = 0.0_8

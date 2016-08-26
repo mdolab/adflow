@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          determineSections.f90                           *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 12-09-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          determineSections.f90                           
+!       Author:        Edwin van der Weide                             
+!       Starting date: 12-09-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine determineSections
 !
-!      ******************************************************************
-!      *                                                                *
-!      * determineSections determines the number of sections, i.e.      *
-!      * grid parts between sliding mesh interfaces, present in the     *
-!      * entire grid.                                                   *
-!      *                                                                *
-!      ******************************************************************
+!       determineSections determines the number of sections, i.e.      
+!       grid parts between sliding mesh interfaces, present in the     
+!       entire grid.                                                   
 !
        use constants
        use block
@@ -51,11 +43,7 @@
 
        logical :: situationChanged
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize sectionID to the cgns block number.
 

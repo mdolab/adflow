@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          numberOfVolVariables.f90                        *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 04-14-2003                                      *
-!      * Last modified: 07-14-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          numberOfVolVariables.f90                        
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 04-14-2003                                      
+!       Last modified: 07-14-2005                                      
 !
        subroutine numberOfVolSolVariables(nVolSolvar, nVolDiscrVar)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * numberOfVolSolVariables determines the number of volume        *
-!      * variables to be written to the solution file. A distinction is *
-!      * made between solution variables and discrete variables. The    *
-!      * former discribes the actual solution, the latter is additional *
-!      * info such as equation residuals.                               *
-!      *                                                                *
-!      ******************************************************************
+!       numberOfVolSolVariables determines the number of volume        
+!       variables to be written to the solution file. A distinction is 
+!       made between solution variables and discrete variables. The    
+!       former discribes the actual solution, the latter is additional 
+!       info such as equation residuals.                               
 !
        use flowVarRefState
        use inputPhysics
@@ -29,11 +21,7 @@
 !
        integer(kind=intType), intent(out) :: nVolSolvar, nVolDiscrVar
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize the number of solution variables to the number of
        ! independent variables and the number of discrete variables to 0.

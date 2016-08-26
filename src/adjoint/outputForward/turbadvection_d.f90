@@ -4,43 +4,34 @@
 !  differentiation of turbadvection in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *scratch
 !   with respect to varying inputs: *sfacei *sfacej *sfacek *w
-!                *scratch *vol *si *sj *sk
+!                scratch *vol *si *sj 
 !   plus diff mem management of: sfacei:in sfacej:in sfacek:in
 !                w:in scratch:in vol:in si:in sj:in sk:in
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          turbadvection.f90                               *
-!      * author:        georgi kalitzin, edwin van der weide            *
-!      * starting date: 09-01-2003                                      *
-!      * last modified: 04-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          turbadvection.f90                               
+!       author:        georgi kalitzin, edwin van der weide            
+!       starting date: 09-01-2003                                      
+!       last modified: 04-12-2005                                      
 !
 subroutine turbadvection_d(madv, nadv, offset, qq)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * turbadvection discretizes the advection part of the turbulent  *
-!      * transport equations. as the advection part is the same for all *
-!      * models, this generic routine can be used. both the             *
-!      * discretization and the central jacobian are computed in this   *
-!      * subroutine. the former can either be 1st or 2nd order          *
-!      * accurate; the latter is always based on the 1st order upwind   *
-!      * discretization. when the discretization must be second order   *
-!      * accurate, the fully upwind (kappa = -1) scheme in combination  *
-!      * with the minmod limiter is used.                               *
-!      *                                                                *
-!      * only nadv equations are treated, while the actual system has   *
-!      * size madv. the reason is that some equations for some          *
-!      * turbulence equations do not have an advection part, e.g. the   *
-!      * f equation in the v2-f model. the argument offset indicates    *
-!      * the offset in the w vector where this subsystem starts. as a   *
-!      * consequence it is assumed that the indices of the current      *
-!      * subsystem are contiguous, e.g. if a 2*2 system is solved the   *
-!      * last index in w is offset+1 and offset+2 respectively.         *
-!      *                                                                *
-!      ******************************************************************
+!       turbadvection discretizes the advection part of the turbulent  
+!       transport equations. as the advection part is the same for all 
+!       models, this generic routine can be used. both the             
+!       discretization and the central jacobian are computed in this   
+!       subroutine. the former can either be 1st or 2nd order          
+!       accurate; the latter is always based on the 1st order upwind   
+!       discretization. when the discretization must be second order   
+!       accurate, the fully upwind (kappa = -1) scheme in combination  
+!       with the minmod limiter is used.                               
+!       only nadv equations are treated, while the actual system has   
+!       size madv. the reason is that some equations for some          
+!       turbulence equations do not have an advection part, e.g. the   
+!       f equation in the v2-f model. the argument offset indicates    
+!       the offset in the w vector where this subsystem starts. as a   
+!       consequence it is assumed that the indices of the current      
+!       subsystem are contiguous, e.g. if a 2*2 system is solved the   
+!       last index in w is offset+1 and offset+2 respectively.         
 !
   use constants
   use blockpointers
@@ -88,26 +79,18 @@ subroutine turbadvection_d(madv, nadv, offset, qq)
   real(kind=realtype) :: abs1
   real(kind=realtype) :: abs0
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! initialize the grid velocity to zero. this value will be used
 ! if the block is not moving.
   qs = zero
   qsd = 0.0_8
 !
-!      ******************************************************************
-!      *                                                                *
-!      * upwind discretization of the convective term in k (zeta)       *
-!      * direction. either the 1st order upwind or the second order     *
-!      * fully upwind interpolation scheme, kappa = -1, is used in      *
-!      * combination with the minmod limiter.                           *
-!      * the possible grid velocity must be taken into account.         *
-!      *                                                                *
-!      ******************************************************************
+!       upwind discretization of the convective term in k (zeta)       
+!       direction. either the 1st order upwind or the second order     
+!       fully upwind interpolation scheme, kappa = -1, is used in      
+!       combination with the minmod limiter.                           
+!       the possible grid velocity must be taken into account.         
 !
   do k=2,kl
     do j=2,jl
@@ -336,15 +319,11 @@ subroutine turbadvection_d(madv, nadv, offset, qq)
     end do
   end do
 !
-!      ******************************************************************
-!      *                                                                *
-!      * upwind discretization of the convective term in j (eta)        *
-!      * direction. either the 1st order upwind or the second order     *
-!      * fully upwind interpolation scheme, kappa = -1, is used in      *
-!      * combination with the minmod limiter.                           *
-!      * the possible grid velocity must be taken into account.         *
-!      *                                                                *
-!      ******************************************************************
+!       upwind discretization of the convective term in j (eta)        
+!       direction. either the 1st order upwind or the second order     
+!       fully upwind interpolation scheme, kappa = -1, is used in      
+!       combination with the minmod limiter.                           
+!       the possible grid velocity must be taken into account.         
 !
   qs = zero
   qsd = 0.0_8
@@ -575,15 +554,11 @@ subroutine turbadvection_d(madv, nadv, offset, qq)
     end do
   end do
 !
-!      ******************************************************************
-!      *                                                                *
-!      * upwind discretization of the convective term in i (xi)         *
-!      * direction. either the 1st order upwind or the second order     *
-!      * fully upwind interpolation scheme, kappa = -1, is used in      *
-!      * combination with the minmod limiter.                           *
-!      * the possible grid velocity must be taken into account.         *
-!      *                                                                *
-!      ******************************************************************
+!       upwind discretization of the convective term in i (xi)         
+!       direction. either the 1st order upwind or the second order     
+!       fully upwind interpolation scheme, kappa = -1, is used in      
+!       combination with the minmod limiter.                           
+!       the possible grid velocity must be taken into account.         
 !
   qs = zero
   qsd = 0.0_8

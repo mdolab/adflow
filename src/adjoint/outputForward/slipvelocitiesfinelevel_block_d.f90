@@ -7,26 +7,18 @@
 !                veldirfreestream machgrid *x
 !   plus diff mem management of: x:in bcdata:in *bcdata.uslip:in
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          slipvelocities.f90                              *
-!      * author:        edwin van der weide                             *
-!      * starting date: 02-12-2004                                      *
-!      * last modified: 06-28-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          slipvelocities.f90                              
+!       author:        edwin van der weide                             
+!       starting date: 02-12-2004                                      
+!       last modified: 06-28-2005                                      
 !
 subroutine slipvelocitiesfinelevel_block_d(useoldcoor, t, sps)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * slipvelocitiesfinelevel computes the slip velocities for       *
-!      * viscous subfaces on all viscous boundaries on groundlevel for  *
-!      * the given spectral solution. if useoldcoor is .true. the       *
-!      * velocities are determined using the unsteady time integrator;  *
-!      * otherwise the analytic form is used.                           *
-!      *                                                                *
-!      ******************************************************************
+!       slipvelocitiesfinelevel computes the slip velocities for       
+!       viscous subfaces on all viscous boundaries on groundlevel for  
+!       the given spectral solution. if useoldcoor is .true. the       
+!       velocities are determined using the unsteady time integrator;  
+!       otherwise the analytic form is used.                           
 !
   use constants
   use inputtimespectral

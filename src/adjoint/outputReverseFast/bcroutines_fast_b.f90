@@ -160,11 +160,11 @@ contains
   end subroutine applyallbc_block
 !  differentiation of bcsymm1sthalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev1 *rev2 *pp1 *pp2 *rlv1
-!                *rlv2 *ww1 *ww2
+!                rlv2 *ww1 
 !   with respect to varying inputs: *rev1 *rev2 *pp1 *pp2 *rlv1
-!                *rlv2 *ww1 *ww2
+!                rlv2 *ww1 
 !   rw status of diff variables: *rev1:in-out *rev2:incr *pp1:in-out
-!                *pp2:incr *rlv1:in-out *rlv2:incr *ww1:in-out
+!                pp2:incr *rlv1:in-out *rlv2:incr 
 !                *ww2:incr
 !   plus diff mem management of: rev1:in rev2:in pp1:in pp2:in
 !                rlv1:in rlv2:in ww1:in ww2:in
@@ -294,11 +294,11 @@ branch = myIntStack(myIntPtr)
   end subroutine bcsymm1sthalo
 !  differentiation of bcsymm2ndhalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev0 *rev3 *pp0 *pp3 *rlv0
-!                *rlv3 *ww0 *ww3
+!                rlv3 *ww0 
 !   with respect to varying inputs: *rev0 *rev3 *pp0 *pp3 *rlv0
-!                *rlv3 *ww0 *ww3
+!                rlv3 *ww0 
 !   rw status of diff variables: *rev0:in-out *rev3:incr *pp0:in-out
-!                *pp3:incr *rlv0:in-out *rlv3:incr *ww0:in-out
+!                pp3:incr *rlv0:in-out *rlv3:incr 
 !                *ww3:incr
 !   plus diff mem management of: rev0:in rev3:in pp0:in pp3:in
 !                rlv0:in rlv3:in ww0:in ww3:in
@@ -532,12 +532,12 @@ branch = myIntStack(myIntPtr)
   end subroutine bcsymmpolar2ndhalo
 !  differentiation of bcnswalladiabatic in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev1 *rev2 *pp0 *pp1 *pp2
-!                *rlv1 *rlv2 *ww1 *ww2
+!                rlv1 *rlv2 *ww1 
 !   with respect to varying inputs: *rev1 *rev2 *pp0 *pp1 *pp2
-!                *rlv1 *rlv2 *ww1 *ww2
+!                rlv1 *rlv2 *ww1 
 !   rw status of diff variables: *rev0:(loc) *rev1:in-out *rev2:incr
-!                *pp0:in-out *pp1:in-out *pp2:incr *rlv0:(loc)
-!                *rlv1:in-out *rlv2:incr *ww0:(loc) *ww1:in-out
+!                pp0:in-out *pp1:in-out *pp2:incr 
+!                rlv1:in-out *rlv2:incr *ww0:(loc) 
 !                *ww2:incr
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
@@ -749,11 +749,11 @@ branch = myIntStack(myIntPtr)
   end subroutine bcnswalladiabatic
 !  differentiation of bcnswallisothermal in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev1 *rev2 *pp1 *pp2 *rlv1
-!                *rlv2 *ww1 *ww2
+!                rlv2 *ww1 
 !   with respect to varying inputs: *rev1 *rev2 *pp1 *pp2 *rlv1
-!                *rlv2 *ww1 *ww2
+!                rlv2 *ww1 
 !   rw status of diff variables: *rev1:in-out *rev2:incr *pp1:in-out
-!                *pp2:incr *rlv1:in-out *rlv2:incr *ww1:in-out
+!                pp2:incr *rlv1:in-out *rlv2:incr 
 !                *ww2:incr
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
@@ -1320,12 +1320,12 @@ branch = myIntStack(myIntPtr)
   end subroutine bcsubsonicinflow
 !  differentiation of bceulerwall in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
+!                pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 
 !   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
+!                pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 
 !   rw status of diff variables: *rev0:in-out *rev1:in-out *rev2:incr
-!                *pp0:in-out *pp1:in-out *pp2:incr *pp3:incr *rlv0:in-out
-!                *rlv1:in-out *rlv2:incr *ww0:in-out *ww1:in-out
+!                pp0:in-out *pp1:in-out *pp2:incr *pp3:incr 
+!                rlv1:in-out *rlv2:incr *ww0:in-out 
 !                *ww2:incr
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in ww0:in
@@ -1366,13 +1366,9 @@ branch = myIntStack(myIntPtr)
 ! boundary condition is used.
     walltreatment = eulerwallbctreatment
     if (currentlevel .gt. groundlevel) walltreatment = constantpressure
-! **************************************************************
-! *                                                            *
-! * determine the boundary condition treatment and compute the *
-! * undivided pressure gradient accordingly. this gradient is  *
-! * temporarily stored in the halo pressure.                   *
-! *                                                            *
-! **************************************************************
+!  determine the boundary condition treatment and compute the 
+!  undivided pressure gradient accordingly. this gradient is  
+!  temporarily stored in the halo pressure.                   
 !
     select case  (walltreatment) 
     case (constantpressure) 
@@ -1508,13 +1504,9 @@ branch = myIntStack(myIntPtr)
 ! boundary condition is used.
     walltreatment = eulerwallbctreatment
     if (currentlevel .gt. groundlevel) walltreatment = constantpressure
-! **************************************************************
-! *                                                            *
-! * determine the boundary condition treatment and compute the *
-! * undivided pressure gradient accordingly. this gradient is  *
-! * temporarily stored in the halo pressure.                   *
-! *                                                            *
-! **************************************************************
+!  determine the boundary condition treatment and compute the 
+!  undivided pressure gradient accordingly. this gradient is  
+!  temporarily stored in the halo pressure.                   
 !
     select case  (walltreatment) 
     case (constantpressure) 
@@ -1557,12 +1549,12 @@ branch = myIntStack(myIntPtr)
   end subroutine bceulerwall
 !  differentiation of bcfarfield in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
+!                pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 
 !   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
+!                pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 
 !   rw status of diff variables: *rev0:in-out *rev1:in-out *rev2:incr
-!                *pp0:in-out *pp1:in-out *pp2:incr *rlv0:in-out
-!                *rlv1:in-out *rlv2:incr *ww0:in-out *ww1:in-out
+!                pp0:in-out *pp1:in-out *pp2:incr 
+!                rlv1:in-out *rlv2:incr *ww0:in-out 
 !                *ww2:incr
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
@@ -2016,17 +2008,13 @@ branch = myIntStack(myIntPtr)
   end subroutine bcsupersonicinflow
   subroutine bcextrap(nn, secondhalo, correctfork)
 !
-! ******************************************************************
-! *                                                                *
-! * ccextrap applies the extrapolation boundary condition to a     *
-! * block. it is assumed that the pointers in blockpointers are    *
-! * already set to the correct block on the correct grid level.    *
-! * extrapolation boundaries are applied to both singular lines or *
-! * points of a block face and to supersonic outlets. they are     *
-! * marked differently because of postprocessing reasons, but      *
-! * their numerical treatment is identical.                        *
-! *                                                                *
-! ******************************************************************
+!  ccextrap applies the extrapolation boundary condition to a     
+!  block. it is assumed that the pointers in blockpointers are    
+!  already set to the correct block on the correct grid level.    
+!  extrapolation boundaries are applied to both singular lines or 
+!  points of a block face and to supersonic outlets. they are     
+!  marked differently because of postprocessing reasons, but      
+!  their numerical treatment is identical.                        
 !
     use constants
     use blockpointers, only : bctype
@@ -2215,9 +2203,9 @@ interval:do
   end subroutine prhosubsonicinlet
 !  differentiation of extrapolate2ndhalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev0 *rev1 *pp0 *pp1 *pp2
-!                *rlv0 *rlv1 *ww0 *ww1 *ww2
+!                rlv0 *rlv1 *ww0 *ww1 
 !   with respect to varying inputs: *rev0 *rev1 *pp0 *pp1 *pp2
-!                *rlv0 *rlv1 *ww0 *ww1 *ww2
+!                rlv0 *rlv1 *ww0 *ww1 
 !   plus diff mem management of: rev0:in rev1:in pp0:in pp1:in
 !                pp2:in rlv0:in rlv1:in ww0:in ww1:in ww2:in
   subroutine extrapolate2ndhalo_fast_b(correctfork)

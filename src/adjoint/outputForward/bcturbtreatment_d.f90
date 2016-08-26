@@ -3,38 +3,29 @@
 !
 !  differentiation of bcturbtreatment in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *bvtj1 *bvtj2 *bvtk1 *bvtk2
-!                *bvti1 *bvti2
+!                bvti1 
 !   with respect to varying inputs: winf *w *rlv
 !   plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
 !                bvtk1:in bvtk2:in bvti1:in bvti2:in bcdata:in
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          bcturbtreatment.f90                             *
-!      * author:        georgi kalitzin, edwin van der weide            *
-!      *                seonghyeon hahn                                 *
-!      * starting date: 06-13-2003                                      *
-!      * last modified: 08-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          bcturbtreatment.f90                             
+!       author:        georgi kalitzin, edwin van der weide            
+!                      seonghyeon hahn                                 
+!       starting date: 06-13-2003                                      
+!       last modified: 08-12-2005                                      
 !
 subroutine bcturbtreatment_d()
 !
-!      ******************************************************************
-!      *                                                                *
-!      * bcturbtreatment sets the arrays bmti1, bvti1, etc, such that   *
-!      * the physical boundary conditions are treated correctly.        *
-!      * it is assumed that the variables in blockpointers already      *
-!      * point to the correct block.                                    *
-!      *                                                                *
-!      * the turbulent variable in the halo is computed as follows:     *
-!      * whalo = -bmt*winternal + bvt for every block facer. as it is   *
-!      * possible to have a coupling in the boundary conditions bmt     *
-!      * actually are matrices. if there is no coupling between the     *
-!      * boundary conditions of the turbulence equations bmt is a       *
-!      * diagonal matrix.                                               *
-!      *                                                                *
-!      ******************************************************************
+!       bcturbtreatment sets the arrays bmti1, bvti1, etc, such that   
+!       the physical boundary conditions are treated correctly.        
+!       it is assumed that the variables in blockpointers already      
+!       point to the correct block.                                    
+!       the turbulent variable in the halo is computed as follows:     
+!       whalo = -bmt*winternal + bvt for every block facer. as it is   
+!       possible to have a coupling in the boundary conditions bmt     
+!       actually are matrices. if there is no coupling between the     
+!       boundary conditions of the turbulence equations bmt is a       
+!       diagonal matrix.                                               
 !
   use constants
   use blockpointers
@@ -45,11 +36,7 @@ subroutine bcturbtreatment_d()
 !
   integer(kind=inttype) :: nn, i, j, k, l, m
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! initialize the arrays for the boundary condition treatment
 ! to zero, such that internal block boundaries are solved

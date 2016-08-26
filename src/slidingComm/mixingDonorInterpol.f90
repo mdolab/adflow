@@ -1,11 +1,7 @@
        subroutine mixingDonorInterpol(level, slideID, color, commPattern)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * mixingDonorInterpol determines the donor interpolation data    *
-!      * for the given slideID on the given multigrid level.            *
-!      *                                                                *
-!      ******************************************************************
+!       mixingDonorInterpol determines the donor interpolation data    
+!       for the given slideID on the given multigrid level.            
 !
        use constants
        use blockPointers
@@ -82,13 +78,9 @@
 
        nInter = commPattern%nInter
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Determine the local number of donors. Halo's are not included, *
-!      * except if they correspond to a physical boundary or an         *
-!      * intersecting sliding mesh interface.                           *
-!      *                                                                *
-!      ******************************************************************
+!       Determine the local number of donors. Halo's are not included, 
+!       except if they correspond to a physical boundary or an         
+!       intersecting sliding mesh interface.                           
 !
        ! Determine the number of contributing subfaces.
 
@@ -260,11 +252,7 @@
          enddo bocoLoop1
        enddo domainLoop1
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Determine the local interpolation information for the donors.  *
-!      *                                                                *
-!      ******************************************************************
+!       Determine the local interpolation information for the donors.  
 !
        ! Store the number of donors and allocate some memory. Guess the
        ! total number of contributions and allocate the corresponding
@@ -373,12 +361,8 @@
              jloop: do j=jBeg,jEnd
                iloop: do i=iBeg,iEnd
 !
-!                ********************************************************
-!                *                                                      *
-!                * Determine the information of the donor itself, i.e.  *
-!                * Indices and the rotation matrix.                     *
-!                *                                                      *
-!                ********************************************************
+!                 Determine the information of the donor itself, i.e.  
+!                 Indices and the rotation matrix.                     
 !
                  ! Store the donor information.
 
@@ -538,11 +522,7 @@
                  rotMatDonor(ii,3,3) = cosTheta*vec2(3) &
                                      - sinTheta*vec1(3)
 !
-!                ********************************************************
-!                *                                                      *
-!                * Determine the actual interpolation information.      *
-!                *                                                      *
-!                ********************************************************
+!                 Determine the actual interpolation information.      
 !
                  ! Initialize the number of intervals to which this donor
                  ! contributes. As the array nIntervalsDonor is in
@@ -886,13 +866,9 @@
 
        call reallocDonorInterpolInfo(nIntervalsDonor(nDonor))
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The currently stored interpolation weights of the donors are   *
-!      * the  values of the local integrals. To obtain to true weights  *
-!      * this must be divided by the global sum of these integrals.     *
-!      *                                                                *
-!      ******************************************************************
+!       The currently stored interpolation weights of the donors are   
+!       the  values of the local integrals. To obtain to true weights  
+!       this must be divided by the global sum of these integrals.     
 !
        ! First determine the local sum.
 
@@ -934,13 +910,9 @@
 
          subroutine reallocDonorInterpolInfo(sizeNew)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * ReallocDonorInterpolInfo reallocates the memory for the      *
-!        * pointers indListDonor and weightDonor of the current         *
-!        * mixing plane communication pattern.                          *
-!        *                                                              *
-!        ****************************************************************
+!         ReallocDonorInterpolInfo reallocates the memory for the      
+!         pointers indListDonor and weightDonor of the current         
+!         mixing plane communication pattern.                          
 !
          implicit none
 !
@@ -954,11 +926,7 @@
 
          integer(kind=intType) :: i, sizeCopy
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Determine the number of entities to be copied. This is the
          ! minimum of the currently allocated size and the new size.

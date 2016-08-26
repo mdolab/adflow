@@ -1,11 +1,7 @@
 subroutine writeCGNSHeader(cgnsInd, base)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * writeCGNSHeader writes a descriptive header to the given base  *
-  !      * of the given CGNS file. Only processor 0 performs this task.   *
-  !      *                                                                *
-  !      ******************************************************************
+  !       writeCGNSHeader writes a descriptive header to the given base  
+  !       of the given CGNS file. Only processor 0 performs this task.   
   !
   use constants
   use cgnsGrid

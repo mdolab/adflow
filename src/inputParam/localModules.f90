@@ -1,35 +1,23 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          localModules.F90                                *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 12-11-2002                                      *
-!      * Last modified: 03-23-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          localModules.F90                                
+!       Author:        Edwin van der Weide                             
+!       Starting date: 12-11-2002                                      
+!       Last modified: 03-23-2005                                      
 !
        module localMG
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Locally used module for the storage of the string describing   *
-!      * the cycle strategy. Inside the code this info is converted to  *
-!      * an equivalent integer array. The string is only used to be     *
-!      * able to define predefined cycling strategies, like sg, 2v, 4w, *
-!      * etc.                                                           *
-!      *                                                                *
-!      ******************************************************************
+!       Locally used module for the storage of the string describing   
+!       the cycle strategy. Inside the code this info is converted to  
+!       an equivalent integer array. The string is only used to be     
+!       able to define predefined cycling strategies, like sg, 2v, 4w, 
+!       etc.                                                           
 !
        use constants
        implicit none
        save
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Definition of the string, which stores the multigrid cycling   *
-!      * strategy.                                                      *
-!      *                                                                *
-!      ******************************************************************
+!       Definition of the string, which stores the multigrid cycling   
+!       strategy.                                                      
 !
        character (len=maxStringLen) :: mgDescription
 
@@ -39,14 +27,10 @@
 
        module allInputParam
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Locally used module which includes all input parameter modules *
-!      * and some logicals to see whether or not monitoring variables,  *
-!      * surface output variables and extra volume output variables     *
-!      * were specified.                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Locally used module which includes all input parameter modules 
+!       and some logicals to see whether or not monitoring variables,  
+!       surface output variables and extra volume output variables     
+!       were specified.                                                
 !
        use inputDiscretization
        use inputIO

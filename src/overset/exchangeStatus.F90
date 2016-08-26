@@ -1,11 +1,7 @@
 subroutine exchangeStatus(level, sps, commPattern, internal)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * ExchangeIsCompute exchanges the isCompute flag for the 1 to 1  *
-  !      * connectivity for the given level and sps instance.             *
-  !      *                                                                *
-  !      ******************************************************************
+  !       ExchangeIsCompute exchanges the isCompute flag for the 1 to 1  
+  !       connectivity for the given level and sps instance.             
   !
   use blockPointers
   use communication

@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          computePressure.f90                             *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-14-2003                                      *
-!      * Last modified: 11-19-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          computePressure.f90                             
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-14-2003                                      
+!       Last modified: 11-19-2007                                      
 !
        subroutine computePressure(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd, &
                                   pointerOffset)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * computePressure computes the pressure from the total energy,   *
-!      * density and velocities in the given cell range of the block to *
-!      * which the pointers in blockPointers currently point.           *
-!      * It is possible to specify a possible pointer offset, because   *
-!      * this routine is also used when reading a restart file.         *
-!      *                                                                *
-!      ******************************************************************
+!       computePressure computes the pressure from the total energy,   
+!       density and velocities in the given cell range of the block to 
+!       which the pointers in blockPointers currently point.           
+!       It is possible to specify a possible pointer offset, because   
+!       this routine is also used when reading a restart file.         
 !
        use constants
        use inputPhysics, only : cpModel, gammaConstant
@@ -45,11 +37,7 @@
        real(kind=realType) :: gm1, factK, v2, scale, e0, e
        real(kind=realType) :: TRefInv, T, dT, T2, alp, cv
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the cp model used in the computation.
 

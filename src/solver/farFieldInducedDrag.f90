@@ -4,12 +4,8 @@
 !
 subroutine farFieldInducedDrag(value)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * farFieldInducedDrag computes the induced drag at the farfield  *
-  !      * a far-field method                                             *
-  !      *                                                                *
-  !      ******************************************************************
+  !       farFieldInducedDrag computes the induced drag at the farfield  
+  !       a far-field method                                             
   !
   use blockPointers
   use flowVarRefState
@@ -330,7 +326,7 @@ subroutine farFieldInducedDrag(value)
 !   call mpi_reduce(drag_local,drag,1,sumb_real,mpi_sum,0,SUmb_comm_world,ierr)
   
 !   fact = two/(gammaInf*pInf*MachCoef*MachCoef &
-!             *surfaceRef*LRef*LRef)
+!             surfaceRef*LRef
 !   a = sqrt(gammaInf*pRef/rhoRef)
 !   ovfact = rhoRef*vRef!0.5*rhoref*(machCoef*a)**2*surfaceRef
 !   if (myid == 0) then

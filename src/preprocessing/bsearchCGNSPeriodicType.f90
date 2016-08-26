@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          bsearchCGNSPeriodicType.f90                     *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 07-10-2003                                      *
-!      * Last modified: 11-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          bsearchCGNSPeriodicType.f90                     
+!       Author:        Edwin van der Weide                             
+!       Starting date: 07-10-2003                                      
+!       Last modified: 11-29-2007                                      
 !
        function bsearchCGNSPeriodicType(key, base, nn)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * bsearchCGNSPeriodicType returns the index in base where key    *
-!      * is stored. A binary search algorithm is used here, so it is    *
-!      * assumed that base is sorted in increasing order. In case key   *
-!      * appears more than once in base, the result is arbitrary.       *
-!      * If key is not found, a zero is returned.                       *
-!      *                                                                *
-!      ******************************************************************
+!       bsearchCGNSPeriodicType returns the index in base where key    
+!       is stored. A binary search algorithm is used here, so it is    
+!       assumed that base is sorted in increasing order. In case key   
+!       appears more than once in base, the result is arbitrary.       
+!       If key is not found, a zero is returned.                       
 !
        use periodicInfo
        implicit none
@@ -38,11 +30,7 @@
        integer(kind=intType) :: ii, pos, start
        logical               :: entryFound
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize some values.
 

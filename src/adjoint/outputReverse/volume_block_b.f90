@@ -44,11 +44,7 @@ subroutine volume_block_b()
   real(kind=realtype) :: tmpd1
   real(kind=realtype) :: tmpd0
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! compute the volumes. the hexahedron is split into 6 pyramids
 ! whose volumes are computed. the volume is positive for a
@@ -330,17 +326,13 @@ contains
 &   zbd, xc, xcd, yc, ycd, zc, zcd, xd, xdd, yd, ydd, zd, zdd, volume, &
 &   volumed)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * volpym computes 6 times the volume of a pyramid. node p,     *
-!        * whose coordinates are set in the subroutine metric itself,   *
-!        * is the top node and a-b-c-d is the quadrilateral surface.    *
-!        * it is assumed that the cross product vca * vdb points in     *
-!        * the direction of the top node. here vca is the diagonal      *
-!        * running from node c to node a and vdb the diagonal from      *
-!        * node d to node b.                                            *
-!        *                                                              *
-!        ****************************************************************
+!         volpym computes 6 times the volume of a pyramid. node p,     
+!         whose coordinates are set in the subroutine metric itself,   
+!         is the top node and a-b-c-d is the quadrilateral surface.    
+!         it is assumed that the cross product vca * vdb points in     
+!         the direction of the top node. here vca is the diagonal      
+!         running from node c to node a and vdb the diagonal from      
+!         node d to node b.                                            
 !
     use precision
     implicit none
@@ -357,11 +349,7 @@ contains
     real(kind=realtype), intent(in) :: xc, yc, zc, xd, yd, zd
     real(kind=realtype) :: xcd, ycd, zcd, xdd, ydd, zdd
 !
-!        ****************************************************************
-!        *                                                              *
-!        * begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         begin execution                                              
 !
     real(kind=realtype) :: tempd
     real(kind=realtype) :: tempd7
@@ -400,17 +388,13 @@ contains
   subroutine volpym(xa, ya, za, xb, yb, zb, xc, yc, zc, xd, yd, zd, &
 &   volume)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * volpym computes 6 times the volume of a pyramid. node p,     *
-!        * whose coordinates are set in the subroutine metric itself,   *
-!        * is the top node and a-b-c-d is the quadrilateral surface.    *
-!        * it is assumed that the cross product vca * vdb points in     *
-!        * the direction of the top node. here vca is the diagonal      *
-!        * running from node c to node a and vdb the diagonal from      *
-!        * node d to node b.                                            *
-!        *                                                              *
-!        ****************************************************************
+!         volpym computes 6 times the volume of a pyramid. node p,     
+!         whose coordinates are set in the subroutine metric itself,   
+!         is the top node and a-b-c-d is the quadrilateral surface.    
+!         it is assumed that the cross product vca * vdb points in     
+!         the direction of the top node. here vca is the diagonal      
+!         running from node c to node a and vdb the diagonal from      
+!         node d to node b.                                            
 !
     use precision
     implicit none
@@ -424,11 +408,7 @@ contains
     real(kind=realtype), intent(in) :: xa, ya, za, xb, yb, zb
     real(kind=realtype), intent(in) :: xc, yc, zc, xd, yd, zd
 !
-!        ****************************************************************
-!        *                                                              *
-!        * begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         begin execution                                              
 !
     volume = (xp-fourth*(xa+xb+xc+xd))*((ya-yc)*(zb-zd)-(za-zc)*(yb-yd))&
 &     + (yp-fourth*(ya+yb+yc+yd))*((za-zc)*(xb-xd)-(xa-xc)*(zb-zd)) + (&

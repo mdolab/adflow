@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          vfSolve.F90                                     *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide,           *
-!      *                Steve Repsher (blanking)                        *
-!      * Starting date: 04-14-2004                                      *
-!      * Last modified: 07-05-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          vfSolve.F90                                     
+!       Author:        Georgi Kalitzin, Edwin van der Weide,           
+!                      Steve Repsher (blanking)                        
+!       Starting date: 04-14-2004                                      
+!       Last modified: 07-05-2005                                      
 !
        subroutine vfSolve(resOnly)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * vfSolve solves the v2 transport equation and the               *
-!      * f elliptic relaxation equation of the v2-f model               *
-!      * in a coupled manner using a diagonal dominant ADI-scheme.      *
-!      *                                                                *
-!      ******************************************************************
+!       vfSolve solves the v2 transport equation and the               
+!       f elliptic relaxation equation of the v2-f model               
+!       in a coupled manner using a diagonal dominant ADI-scheme.      
 !
        use blockPointers
        use constants
@@ -66,25 +58,16 @@
 
        logical, dimension(:,:), pointer :: flag
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Set model constants
 
        sig1 = rvfSigv1
        sig2 = one
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Source terms.                                                  *
-!      *                                                                *
-!      * Determine the source term and its derivative w.r.t. v2 and f   *
-!      * for all internal cells of the block.                           *
-!      *                                                                *
-!      ******************************************************************
+!       Source terms.                                                  
+!       Determine the source term and its derivative w.r.t. v2 and f   
+!       for all internal cells of the block.                           
 !
        do k=2,kl
          do j=2,jl
@@ -150,22 +133,14 @@
          enddo
        enddo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Advection and unsteady terms.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       Advection and unsteady terms.                                  
 !
        nn = itu3 - 1
        call turbAdvection(2_intType, 1_intType, nn, qq)
 
        call unsteadyTurbTerm(2_intType, 1_intType, nn, qq)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Viscous terms in k-direction.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       Viscous terms in k-direction.                                  
 !
        do k=2,kl
          do j=2,jl
@@ -263,11 +238,7 @@
          enddo
        enddo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Viscous terms in j-direction.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       Viscous terms in j-direction.                                  
 !
        do k=2,kl
          do j=2,jl
@@ -365,11 +336,7 @@
          enddo
        enddo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Viscous terms in i-direction.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       Viscous terms in i-direction.                                  
 !
        do k=2,kl
          do j=2,jl
@@ -649,13 +616,9 @@
 
        qs = zero
 !
-!      ******************************************************************
-!      *                                                                *
-!      * dd-ADI step in j-direction. There is no particular reason to   *
-!      * start in j-direction, it just happened to be so. As we solve   *
-!      * in j-direction, the j-loop is the innermost loop.              *
-!      *                                                                *
-!      ******************************************************************
+!       dd-ADI step in j-direction. There is no particular reason to   
+!       start in j-direction, it just happened to be so. As we solve   
+!       in j-direction, the j-loop is the innermost loop.              
 !
        do k=2,kl
          do i=2,il
@@ -773,12 +736,8 @@
          enddo
        enddo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * dd-ADI step in i-direction. As we solve in i-direction, the    *
-!      * i-loop is the innermost loop.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       dd-ADI step in i-direction. As we solve in i-direction, the    
+!       i-loop is the innermost loop.                                  
 !
        do k=2,kl
          do j=2,jl
@@ -896,12 +855,8 @@
          enddo
        enddo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * dd-ADI step in k-direction. As we solve in k-direction, the    *
-!      * k-loop is the innermost loop.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       dd-ADI step in k-direction. As we solve in k-direction, the    
+!       k-loop is the innermost loop.                                  
 !
        do j=2,jl
          do i=2,il
@@ -1019,11 +974,7 @@
          enddo
        enddo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Update the turbulent variables.                                *
-!      *                                                                *
-!      ******************************************************************
+!       Update the turbulent variables.                                
 !
        do k=2,kl
          do j=2,jl

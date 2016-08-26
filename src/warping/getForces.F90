@@ -198,11 +198,7 @@ subroutine getSurfacePoints(points, npts, sps_in)
   integer(kind=intType) :: mm, nn, i, j, ii,sps
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
 
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
 
   sps = sps_in
 

@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          unitVectorsInAxialPlane.f90                     *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 12-10-2005                                      *
-!      * Last modified: 12-20-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          unitVectorsInAxialPlane.f90                     
+!       Author:        Edwin van der Weide                             
+!       Starting date: 12-10-2005                                      
+!       Last modified: 12-20-2005                                      
 !
        subroutine unitVectorsInAxialPlane(axis, vecR1, vecR2)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * unitVectorsInAxialPlane computes from the given unit vector    *
-!      * axis the two unit vectors which describe the plane normal to   *
-!      * axis. There is of course an ambiguity in this choice, but this *
-!      * is not a problem as long as the choice is consistent           *
-!      * throughout the code.                                           *
-!      *                                                                *
-!      ******************************************************************
+!       unitVectorsInAxialPlane computes from the given unit vector    
+!       axis the two unit vectors which describe the plane normal to   
+!       axis. There is of course an ambiguity in this choice, but this 
+!       is not a problem as long as the choice is consistent           
+!       throughout the code.                                           
 !
        use constants
        implicit none
@@ -32,11 +24,7 @@
 !
        real(kind=realType) :: dot
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! The vectors which span the axial plane must be normal to axis.
        ! For the first vector try first the y-axis. If not good enough

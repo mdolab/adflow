@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          thisSlide.f90                                   *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 10-14-2003                                      *
-!      * Last modified: 02-10-2006                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          thisSlide.f90                                   
+!       Author:        Edwin van der Weide                             
+!       Starting date: 10-14-2003                                      
+!       Last modified: 02-10-2006                                      
 !
        module thisSlide
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Local module which stores the information of the currently     *
-!      * active sliding mesh interface.                                 *
-!      *                                                                *
-!      ******************************************************************
+!       Local module which stores the information of the currently     
+!       active sliding mesh interface.                                 
 !
        use adtAPI
        implicit none

@@ -1,18 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * This set of utilities operates on coordinate-related data      *
-!      * members for ALE scheme. They are seperated out so that         *
-!      * cumbersome loops over spectral and domains can be removed from *
-!      * other subroutines. The subroutines include:                    *
-!      * fillCoor:    Initialize xOld and volOld with current x and vol *
-!      * storeCoor:   Store x to temporary variable xtmp                *
-!      * interpCoor:  Interpolate x over xALE and xOld                  *
-!      * recoverCoor: Recover x from xALE                               *
-!      *                                                                *
-!      * Added by HDN                                                   *
-!      *                                                                *
-!      ******************************************************************
+!       This set of utilities operates on coordinate-related data      
+!       members for ALE scheme. They are seperated out so that         
+!       cumbersome loops over spectral and domains can be removed from 
+!       other subroutines. The subroutines include:                    
+!       fillCoor:    Initialize xOld and volOld with current x and vol 
+!       storeCoor:   Store x to temporary variable xtmp                
+!       interpCoor:  Interpolate x over xALE and xOld                  
+!       recoverCoor: Recover x from xALE                               
+!       Added by HDN                                                   
 !
 ! ===========================================================
 subroutine fillCoor

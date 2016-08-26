@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          fineGridSpectralCoor.f90                        *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 07-23-2004                                      *
-!      * Last modified: 10-06-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          fineGridSpectralCoor.f90                        
+!       Author:        Edwin van der Weide                             
+!       Starting date: 07-23-2004                                      
+!       Last modified: 10-06-2005                                      
 !
        subroutine fineGridSpectralCoor
 !
-!      ******************************************************************
-!      *                                                                *
-!      * fineGridSpectralCoor computes the coordinates of all but       *
-!      * the first spectral solution from the known coordinates of the  *
-!      * first time instance.                                           *
-!      *                                                                *
-!      ******************************************************************
+!       fineGridSpectralCoor computes the coordinates of all but       
+!       the first spectral solution from the known coordinates of the  
+!       first time instance.                                           
 !
        use block
        use inputPhysics
@@ -38,11 +30,7 @@
 
        real(kind=realType), dimension(nSections) :: dt, t
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! This routine is only used for the spectral solutions. Return
        ! immediately if a different mode is solved.
@@ -54,12 +42,8 @@
 
        if(.not. interpolSpectral) return
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Step 1. Perform a rigid body motion of the coordinates of the  *
-!      *         1st time instance to the other instances.              *
-!      *                                                                *
-!      ******************************************************************
+!       Step 1. Perform a rigid body motion of the coordinates of the  
+!               1st time instance to the other instances.              
 !
        ! Set currentLevel to 1, such that updateCoorFineMesh
        ! updates the coordinates of the correct level.
@@ -112,16 +96,12 @@
 
        if(nGridsRead == 1) return
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Step 2. Multiple grids have been read, but the number is not   *
-!      *         equal to the number of time instances used in the      *
-!      *         computation. As multiple grids have been read this     *
-!      *         means that a time spectral computation on a deforming  *
-!      *         mesh is performed. Therefore the deformations,         *
-!      *         relative to the first grid, must be interpolated.      *
-!      *                                                                *
-!      ******************************************************************
+!       Step 2. Multiple grids have been read, but the number is not   
+!               equal to the number of time instances used in the      
+!               computation. As multiple grids have been read this     
+!               means that a time spectral computation on a deforming  
+!               mesh is performed. Therefore the deformations,         
+!               relative to the first grid, must be interpolated.      
 !
        ! First allocate the memory of IOVar(..,1)%w.
        ! This will serve as temporary storage for the coordinates of

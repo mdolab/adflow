@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          updateRotationInfo.f90                          *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 11-10-2003                                      *
-!      * Last modified: 04-08-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          updateRotationInfo.f90                          
+!       Author:        Edwin van der Weide                             
+!       Starting date: 11-10-2003                                      
+!       Last modified: 04-08-2005                                      
 !
        subroutine updateRotationInfo(level, sps, color)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * updateRotationInfo determines for every cell which is part     *
-!      * of the sliding mesh interface (halo's included) the rotation   *
-!      * matrix needed to obtain the correct cartesian velocities.      *
-!      * The connectivity needed for this is also used for              *
-!      * initialization in the communication routines whaloSliding.     *
-!      *                                                                *
-!      ******************************************************************
+!       updateRotationInfo determines for every cell which is part     
+!       of the sliding mesh interface (halo's included) the rotation   
+!       matrix needed to obtain the correct cartesian velocities.      
+!       The connectivity needed for this is also used for              
+!       initialization in the communication routines whaloSliding.     
 !
        use commSliding
        use interfaceGroups
@@ -40,11 +32,7 @@
        integer(kind=intType), dimension(:), pointer :: rotInd1, rotInd2
        integer(kind=intType), dimension(:,:), pointer :: ind1, ind2
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the local number of first and second level halo cells
        ! for this sliding interface.
@@ -156,15 +144,11 @@
 
          subroutine updateRotViaSubfaces(nMySubfaces, mySubfaces)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * updateRotViaSubfaces updates the rotation info of            *
-!        * intSlidingCell_1st and intSlidingCell_2nd using the data     *
-!        * stored in mySubfaces. Some pointers have already been set    *
-!        * to the members of intSlidingCell_1st and                     *
-!        * intSlidingCell_2nd to make it more readable.                 *
-!        *                                                              *
-!        ****************************************************************
+!         updateRotViaSubfaces updates the rotation info of            
+!         intSlidingCell_1st and intSlidingCell_2nd using the data     
+!         stored in mySubfaces. Some pointers have already been set    
+!         to the members of intSlidingCell_1st and                     
+!         intSlidingCell_2nd to make it more readable.                 
 !
          implicit none
 !
@@ -177,11 +161,7 @@
 !
          integer :: ierr
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          subfaceLoop: do nn=1,nMySubfaces
            quadLoop: do mm=1,mySubfaces(nn)%nQuad

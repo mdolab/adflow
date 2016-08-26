@@ -1,13 +1,9 @@
 !
-!     **********************************************************************
-!     *                                                                    *
-!     * surfaceDeviation computes an approximation of the maximum          *       
-!     * deviation a surface could be as compared to an underlying "exact"  *
-!     * surface. The purpose is to compute an adaptive "near wall distance"*
-!     * value that can be used to determine if a point is "close" to a     *
+!      surfaceDeviation computes an approximation of the maximum          
+!      deviation a surface could be as compared to an underlying "exact"  
+!      surface. The purpose is to compute an adaptive "near wall distance"
+!      value that can be used to determine if a point is "close" to a     
 !     * wall. 
-!     *                                                                    *
-!     **********************************************************************
 !
 
 subroutine surfaceDeviation(level, sps)
@@ -125,7 +121,7 @@ subroutine surfaceDeviation(level, sps)
 
   ! Now make one pass back and compute a delta for the nodes. Of
   ! course, this technically makes no sense: The nodes should
-  ! *exactly* match the surface by definition. However, since we are
+  ! exactly
   ! using this as a surrogate for what is near a surface, it make a
   ! little sense. Essentially we go through the nodes, and take the
   ! max deviation from the cells surrpounding it. 

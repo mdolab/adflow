@@ -1,27 +1,19 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          timeSpectralCoef.f90                            *
-!      * Author:        Edwin van der Weide, Arathi K. Gopinath         *
-!      * Starting date: 07-29-2004                                      *
-!      * Last modified: 06-28-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          timeSpectralCoef.f90                            
+!       Author:        Edwin van der Weide, Arathi K. Gopinath         
+!       Starting date: 07-29-2004                                      
+!       Last modified: 06-28-2005                                      
 !
        subroutine timeSpectralCoef(coefSpectral, matrixCoefSpectral, &
                                    diagMatCoefSpectral)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * timeSpectralCoef computes the time integration coefficients    *
-!      * for the time spectral method. As it is possible that sections  *
-!      * have different periodic times these coefficients are           *
-!      * determined for all the sections. For vector quantities, such   *
-!      * as momentum, these coefficients can also be different due to   *
-!      * rotation and the fact that only a part of the wheel is         *
-!      * simulated.                                                     *
-!      *                                                                *
-!      ******************************************************************
+!       timeSpectralCoef computes the time integration coefficients    
+!       for the time spectral method. As it is possible that sections  
+!       have different periodic times these coefficients are           
+!       determined for all the sections. For vector quantities, such   
+!       as momentum, these coefficients can also be different due to   
+!       rotation and the fact that only a part of the wheel is         
+!       simulated.                                                     
 !
        use constants
        use flowVarRefState, only : timeRef
@@ -47,11 +39,7 @@
 
        real(kind=realType), dimension(3,3) :: rotMat, tmp
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the number of sections.
 

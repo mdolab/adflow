@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          slidingComm.f90                                 *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 09-26-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          slidingComm.f90                                 
+!       Author:        Edwin van der Weide                             
+!       Starting date: 09-26-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine slidingComm(level, firstTime)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * slidingComm determines the communication pattern for the       *
-!      * sliding mesh interfaces on the given grid level.               *
-!      * In case of a steady computation the mixing plane approach is   *
-!      * used.                                                          *
-!      *                                                                *
-!      ******************************************************************
+!       slidingComm determines the communication pattern for the       
+!       sliding mesh interfaces on the given grid level.               
+!       In case of a steady computation the mixing plane approach is   
+!       used.                                                          
 !
        use constants
        use block
@@ -42,11 +34,7 @@
 
        integer(kind=intType) :: ii, sps
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Release the memory of the entire communication pattern if this
        ! is not the first time this routine is called and initialize

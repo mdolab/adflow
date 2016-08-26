@@ -1,41 +1,28 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          referenceState.f90                              *
-!      * Author:        Edwin van der Weide, Seonghyeon Hahn            *
-!      * Starting date: 05-29-2003                                      *
-!      * Last modified: 04-22-2006                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          referenceState.f90                              
+!       Author:        Edwin van der Weide, Seonghyeon Hahn            
+!       Starting date: 05-29-2003                                      
+!       Last modified: 04-22-2006                                      
 !
 subroutine referenceState
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      *                                                                *
-  !      * The original version has been nuked since the computations are *
-  !      * no longer necessary when calling from python                   *
-  !      *                                                                *
-  !      * This is the most compliclated routine in all of SUMb. It is    *
-  !      * stupidly complicated. This is most likely the reason your      *
-  !      * derivatives are wrong. You don't understand this routine       *
-  !      * and its effects.                                               *
-  !      *                                                                *
-  !      * This routine *requries* the following as input:                *
-  !      * Mach, pInfDim, TInfDim, rhoInfDim, rGasDim (machCoef non-SA    *
-  !      *  turbulence only)                                              *
-  !      *                                                                *
-  !      *                                                                *
-  !      * Optionally, pRef, rhoRef and Tref are used if they are         *
-  !      * are non-negative. This only happens when you want the equations*
-  !      * normalized by values other than the freestream                 *
-  !      *                                                                *
+  !       The original version has been nuked since the computations are 
+  !       no longer necessary when calling from python                   
+  !       This is the most compliclated routine in all of SUMb. It is    
+  !       stupidly complicated. This is most likely the reason your      
+  !       derivatives are wrong. You don't understand this routine       
+  !       and its effects.                                               
+  !       This routine *requries* the following as input:                
+  !       Mach, pInfDim, TInfDim, rhoInfDim, rGasDim (machCoef non-SA    
+  !        turbulence only)                                              
+  !       Optionally, pRef, rhoRef and Tref are used if they are         
+  !       are non-negative. This only happens when you want the equations
+  !       normalized by values other than the freestream                 
   !      * This routine computes as output:  
   !      *   muInfDim, (unused anywhere in code)
-  !      *   pRef, rhoRef, Tref, muRef, timeRef ('dimensional' reference) *
-  !      *   pInf, pInfCorr, rhoInf, uInf, rGas, muInf, gammaInf and wInf *
-  !      *   (Non-dimensionalized values used in actual computations)     *
-  !      ******************************************************************
+  !         pRef, rhoRef, Tref, muRef, timeRef ('dimensional' reference) 
+  !         pInf, pInfCorr, rhoInf, uInf, rGas, muInf, gammaInf and wInf 
+  !         (Non-dimensionalized values used in actual computations)     
   !
   use constants
   use paramTurb

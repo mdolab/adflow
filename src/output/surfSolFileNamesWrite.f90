@@ -1,11 +1,7 @@
        subroutine surfSolFileNamesWrite
 !
-!      ******************************************************************
-!      *                                                                *
-!      * surfSolFileNamesWrite determines the names and number of       *
-!      * surface solution files to be written.                          *
-!      *                                                                *
-!      ******************************************************************
+!       surfSolFileNamesWrite determines the names and number of       
+!       surface solution files to be written.                          
 !
        use inputIO
        use inputPhysics

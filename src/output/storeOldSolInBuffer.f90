@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          storeOldSolInBuffer.f90                         *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 05-08-2004                                      *
-!      * Last modified: 06-29-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          storeOldSolInBuffer.f90                         
+!       Author:        Edwin van der Weide                             
+!       Starting date: 05-08-2004                                      
+!       Last modified: 06-29-2005                                      
 !
        subroutine storeOldSolInBuffer(buffer, ind, wID, &
                                       iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * storeOldSolInBuffer stores the given range of the wID'th       *
-!      * conservative variable of an old solution in buffer. Needed for *
-!      * a time accurate restart. It is assumed that the variables in   *
-!      * blockPointers already point to the correct block.              *
-!      *                                                                *
-!      ******************************************************************
+!       storeOldSolInBuffer stores the given range of the wID'th       
+!       conservative variable of an old solution in buffer. Needed for 
+!       a time accurate restart. It is assumed that the variables in   
+!       blockPointers already point to the correct block.              
 !
        use blockPointers
        use constants
@@ -36,11 +28,7 @@
 !
        integer(kind=intType) :: i, j, k, nOld, nn
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Store the index in wOld a bit easier.
 

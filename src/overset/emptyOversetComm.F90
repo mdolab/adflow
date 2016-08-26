@@ -1,9 +1,5 @@
-!      ******************************************************************
-!      *                                                                *
-!      * Short cut function to make empty overset comm structure for    *
+!       Short cut function to make empty overset comm structure for    
 !      * problems that do not use overset meshes.
-!      *                                                                *
-!      ******************************************************************
 
 subroutine emptyOversetComm(level, sps)
 

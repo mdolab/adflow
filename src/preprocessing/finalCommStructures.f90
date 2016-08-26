@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          finalCommStructures.f90                         *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 02-20-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          finalCommStructures.f90                         
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 02-20-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine finalCommStructures(entityHalo, nHalo, commPattern, &
                                       internalComm, nInterp)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * FinalCommStructures determines the communication data          *
-!      * structures used in the flow solver, commPattern and            *
-!      * internalComm, from the given haloList, entityHalo.             *
-!      *                                                                *
-!      ******************************************************************
+!       FinalCommStructures determines the communication data          
+!       structures used in the flow solver, commPattern and            
+!       internalComm, from the given haloList, entityHalo.             
 !
        use communication
        use haloList
@@ -53,11 +45,7 @@
        real(kind=realType), dimension(:,:), allocatable :: bufInt
        real(kind=realType), dimension(:,:), allocatable :: recvBufInt
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Allocate the memory for nHaloPerProc and initialize its
        ! values to 0. Boundary halo's are stored with a processor id -1

@@ -3,10 +3,10 @@
 !
 !  differentiation of residual_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: gammainf *rev *p *dw *w *rlv
-!                *x *si *sj *sk *(*viscsubface.tau)
+!                x *si *sj *sk *(
 !   with respect to varying inputs: gammainf timeref rhoinf winf
 !                pinfcorr *rev *p *dw *w *rlv *x *vol *si *sj *sk
-!                *radi *radj *radk
+!                radi *radj 
 !   plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
 !                p:in dw:in w:in rlv:in x:in qx:in qy:in qz:in
 !                ux:in vol:in uy:in uz:in si:in sj:in sk:in vx:in
@@ -14,12 +14,8 @@
 !                radi:in radj:in radk:in
 subroutine residual_block_b()
 !
-!      ******************************************************************
-!      *                                                                *
-!      * residual computes the residual of the mean flow equations on   *
-!      * the current mg level.                                          *
-!      *                                                                *
-!      ******************************************************************
+!       residual computes the residual of the mean flow equations on   
+!       the current mg level.                                          
 !
   use blockpointers
   use cgnsgrid
@@ -194,11 +190,7 @@ subroutine residual_block_b()
   real(kind=realtype) :: temp4
   real(kind=realtype) :: tempd15
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! set the value of rfil, which controls the fraction of the old
 ! dissipation residual to be used. this is only for the runge-kutta

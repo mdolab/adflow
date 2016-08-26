@@ -1,9 +1,5 @@
-!      ******************************************************************
-!      *                                                                *
-!      * This routine determines if there are any oveset boundaries     *
+!       This routine determines if there are any oveset boundaries     
 !      * present in the mesh. 
-!      *                                                                *
-!      ******************************************************************
 
 function oversetPresent()
 

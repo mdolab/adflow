@@ -1,11 +1,7 @@
 subroutine initializeIsoSurfaceVariables(values, nValues)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * isoVariables extracts from the given string the extra          *
-  !      * iso surface variables to be written to the solution file.      *
-  !      *                                                                *
-  !      ******************************************************************
+  !       isoVariables extracts from the given string the extra          
+  !       iso surface variables to be written to the solution file.      
   !
   use constants
   use extraOutput, only : isoValues, isoSurfaceNames, nIsoSurface

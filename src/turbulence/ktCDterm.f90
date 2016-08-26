@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          ktCDterm.f90                                    *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 07-09-2003                                      *
-!      * Last modified: 04-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          ktCDterm.f90                                    
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 07-09-2003                                      
+!       Last modified: 04-12-2005                                      
 !
        subroutine ktCDterm
 !
-!      ******************************************************************
-!      *                                                                *
-!      * ktCdterm computes the cross-diffusion term in the tau-eqn      *
-!      * for the k-tau turbulence model for the given block.            *
-!      *                                                                *
-!      ******************************************************************
+!       ktCdterm computes the cross-diffusion term in the tau-eqn      
+!       for the k-tau turbulence model for the given block.            
 !
        use constants
        use blockPointers
@@ -27,11 +19,7 @@
        integer(kind=intType) :: i, j, k
        real(kind=realType)   :: kx, ky, kz, tx, ty, tz, cd
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the cell centers of the given block. It may be more
        ! efficient to loop over the faces and to scatter the gradient,

@@ -4,29 +4,21 @@
 !  differentiation of invisciddissfluxscalar in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *fw
 !   with respect to varying inputs: gammainf rhoinf pinfcorr *p
-!                *w *radi *radj *radk
+!                w *radi *radj 
 !   plus diff mem management of: p:in w:in fw:in radi:in radj:in
 !                radk:in
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          invisciddissfluxscalar.f90                      *
-!      * author:        edwin van der weide                             *
-!      * starting date: 03-24-2003                                      *
-!      * last modified: 10-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          invisciddissfluxscalar.f90                      
+!       author:        edwin van der weide                             
+!       starting date: 03-24-2003                                      
+!       last modified: 10-29-2007                                      
 !
 subroutine invisciddissfluxscalar_d()
 !
-!      ******************************************************************
-!      *                                                                *
-!      * invisciddissfluxscalar computes the scalar artificial          *
-!      * dissipation, see aiaa paper 81-1259, for a given block.        *
-!      * therefore it is assumed that the pointers in  blockpointers    *
-!      * already point to the correct block.                            *
-!      *                                                                *
-!      ******************************************************************
+!       invisciddissfluxscalar computes the scalar artificial          
+!       dissipation, see aiaa paper 81-1259, for a given block.        
+!       therefore it is assumed that the pointers in  blockpointers    
+!       already point to the correct block.                            
 !
   use constants
   use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb&
@@ -88,11 +80,7 @@ subroutine invisciddissfluxscalar_d()
     abs0 = -rfil
   end if
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! check if rfil == 0. if so, the dissipative flux needs not to
 ! be computed.
@@ -229,11 +217,7 @@ subroutine invisciddissfluxscalar_d()
     fw = sfil*fw
     fwd = 0.0_8
 !
-!      ******************************************************************
-!      *                                                                *
-!      * dissipative fluxes in the i-direction.                         *
-!      *                                                                *
-!      ******************************************************************
+!       dissipative fluxes in the i-direction.                         
 !
     do k=2,kl
       do j=2,jl
@@ -344,11 +328,7 @@ subroutine invisciddissfluxscalar_d()
       end do
     end do
 !
-!      ******************************************************************
-!      *                                                                *
-!      * dissipative fluxes in the j-direction.                         *
-!      *                                                                *
-!      ******************************************************************
+!       dissipative fluxes in the j-direction.                         
 !
     do k=2,kl
       do j=1,jl
@@ -459,11 +439,7 @@ subroutine invisciddissfluxscalar_d()
       end do
     end do
 !
-!      ******************************************************************
-!      *                                                                *
-!      * dissipative fluxes in the k-direction.                         *
-!      *                                                                *
-!      ******************************************************************
+!       dissipative fluxes in the k-direction.                         
 !
     do k=1,kl
       do j=2,jl

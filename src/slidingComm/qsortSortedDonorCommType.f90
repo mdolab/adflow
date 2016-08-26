@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          qsortSortedDonorCommType.f90                    *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 11-17-2003                                      *
-!      * Last modified: 03-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          qsortSortedDonorCommType.f90                    
+!       Author:        Edwin van der Weide                             
+!       Starting date: 11-17-2003                                      
+!       Last modified: 03-25-2005                                      
 !
        subroutine qsortSortedDonorCommType(arr, nn)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * qsortSortedDonorCommType sorts the given number of             *
-!      * elements of the derived data type sortedDonorCommType in       *
-!      * increasing order based on the <= operator for this derived     *
-!      * data type.                                                     *
-!      *                                                                *
-!      ******************************************************************
+!       qsortSortedDonorCommType sorts the given number of             
+!       elements of the derived data type sortedDonorCommType in       
+!       increasing order based on the <= operator for this derived     
+!       data type.                                                     
 !
        use updateComm
        use utils, only : terminate
@@ -43,11 +35,7 @@
        integer(kind=intType), allocatable, dimension(:) :: stack
        integer(kind=intType), allocatable, dimension(:) :: tmpStack
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Allocate the memory for stack.
 

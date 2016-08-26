@@ -1,21 +1,13 @@
 !
-!     ******************************************************************
-!     *                                                                *
-!     * File:          updateReferencePoint.f90                        *
-!     * Authors:       C.A(Sandy) Mader                                *
-!     * Starting date: 11-08-2010                                      *
-!     * Last modified: 11-08-2010                                      *
-!     *                                                                *
-!     ******************************************************************
+!      File:          updateReferencePoint.f90                        
+!      Authors:       C.A(Sandy) Mader                                
+!      Starting date: 11-08-2010                                      
+!      Last modified: 11-08-2010                                      
 !
 subroutine updateReferencePoint
   !
-  !     ******************************************************************
-  !     *                                                                *
-  !     *  reruns the initialization routines to update AOA and other    *
-  !     *  flow variables after a design change                          *
-  !     *                                                                *
-  !     ******************************************************************
+  !       reruns the initialization routines to update AOA and other    
+  !       flow variables after a design change                          
   !
   use constants
   use inputTimeSpectral, only : nTimeINTervalsSpectral

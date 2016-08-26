@@ -35,26 +35,18 @@ end subroutine slipVelocitiesFineLevel
 #endif
 
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          slipVelocities.f90                              *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-12-2004                                      *
-!      * Last modified: 06-28-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          slipVelocities.f90                              
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-12-2004                                      
+!       Last modified: 06-28-2005                                      
 !
 subroutine slipVelocitiesFineLevel_block(useOldCoor, t, sps)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * slipVelocitiesFineLevel computes the slip velocities for       *
-  !      * viscous subfaces on all viscous boundaries on groundLevel for  *
-  !      * the given spectral solution. If useOldCoor is .true. the       *
-  !      * velocities are determined using the unsteady time integrator;  *
-  !      * otherwise the analytic form is used.                           *
-  !      *                                                                *
-  !      ******************************************************************
+  !       slipVelocitiesFineLevel computes the slip velocities for       
+  !       viscous subfaces on all viscous boundaries on groundLevel for  
+  !       the given spectral solution. If useOldCoor is .true. the       
+  !       velocities are determined using the unsteady time integrator;  
+  !       otherwise the analytic form is used.                           
   !
   use constants
   use inputTimeSpectral
@@ -480,13 +472,9 @@ end subroutine slipVelocitiesFineLevel_block
 #ifndef USE_TAPENADE
 subroutine slipVelocitiesCoarseLevels(sps)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * slipVelocitiesCoarseLevels determines the slip velocities      *
-  !      * for the given spectral solution starting from the known        *
-  !      * velocities on the finer level.                                 *
-  !      *                                                                *
-  !      ******************************************************************
+  !       slipVelocitiesCoarseLevels determines the slip velocities      
+  !       for the given spectral solution starting from the known        
+  !       velocities on the finer level.                                 
   !
   use constants
   use blockPointers

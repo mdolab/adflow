@@ -1,13 +1,9 @@
 subroutine writeCGNSReferenceState(cgnsInd, cgnsBase)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * writeCGNSReferenceState writes the reference state to the      *
-  !      * cgns file. Enough info is specified such that a restart can be *
-  !      * performed by a different solver, which uses a different        *
-  !      * nonDimensionalization.                                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       writeCGNSReferenceState writes the reference state to the      
+  !       cgns file. Enough info is specified such that a restart can be 
+  !       performed by a different solver, which uses a different        
+  !       nonDimensionalization.                                         
   !
   use constants
   use cgnsNames

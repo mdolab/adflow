@@ -1,33 +1,21 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          defaultSurfaceOut.f90                           *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-26-2003                                      *
-!      * Last modified: 03-23-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          defaultSurfaceOut.f90                           
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-26-2003                                      
+!       Last modified: 03-23-2005                                      
 !
        subroutine defaultSurfaceOut
 !
-!      ******************************************************************
-!      *                                                                *
-!      * defaultSurfaceOut sets the default set of surface variables    *
-!      * to be written to the solution file. This set depends on the    *
-!      * governing equations to be solved.                              *
-!      *                                                                *
-!      ******************************************************************
+!       defaultSurfaceOut sets the default set of surface variables    
+!       to be written to the solution file. This set depends on the    
+!       governing equations to be solved.                              
 !
        use constants
        use extraOutput
        use inputPhysics, only : equations
        implicit none
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! First set the variables, which are independent from the
        ! governing equations to be solved.

@@ -1,12 +1,8 @@
 module stencils
   
-  !      ******************************************************************
-  !      *                                                                *
-  !      * stencils defines indices for several types of stencils. These  *
-  !      * are useful for setting blocks in dRdw and dRdwPre depending    *
-  !      * on the type of equations  being solved                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       stencils defines indices for several types of stencils. These  
+  !       are useful for setting blocks in dRdw and dRdwPre depending    
+  !       on the type of equations  being solved                         
 
   use constants, only : intType, realType
   implicit none
