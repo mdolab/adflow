@@ -144,7 +144,7 @@ class SUMB(AeroSolver):
                         "the gridFile entry for the grid.")
 
         # Set all internal sumb default options before we set anything from python
-        self.sumb.setdefaultvalues()
+        self.sumb.inputparamroutines.setdefaultvalues()
 
         AeroSolver.__init__(self, name, category, defOpts, informs,
                             options=options)
@@ -210,7 +210,7 @@ class SUMB(AeroSolver):
         self.curAP = None
 
         # Finally complete loading
-        self.sumb.dummyreadparamfile()
+        self.sumb.inputparamroutines.dummyreadparamfile()
         if self.getOption('partitionOnly'):
             self.sumb.partitionandreadgrid(True)
             return
@@ -3282,13 +3282,13 @@ class SUMB(AeroSolver):
                 # end if
                 varStr = varStr[0:-1] # Get rid of last '_'
                 if name == 'monitorvariables':
-                    self.sumb.monitorvariables(varStr)
+                    self.sumb.inputparamroutines.monitorvariables(varStr)
                 if name == 'surfacevariables':
-                    self.sumb.surfacevariables(varStr)
+                    self.sumb.inputparamroutines.surfacevariables(varStr)
                 if name == 'volumevariables':
-                    self.sumb.volumevariables(varStr)
+                    self.sumb.inputparamroutines.volumevariables(varStr)
                 if name == 'isovariables':
-                    self.sumb.isovariables(varStr)
+                    self.sumb.inputparamroutines.isovariables(varStr)
 
             elif name == "restartfile":
                 # If value is None no value has been specified by the
@@ -3349,9 +3349,9 @@ class SUMB(AeroSolver):
              
                 val = numpy.array(val)
 
-                self.sumb.initializeisosurfacevariables(val)
+                self.sumb.inputparamroutines.initializeisosurfacevariables(val)
                 for i in xrange(len(val)):
-                    self.sumb.setisosurfacevariable(var[i], i+1)
+                    self.sumb.inputparamroutines.setisosurfacevariable(var[i], i+1)
 
             elif name == "turbresscale":
                 # If value is None no value has been specified by the
@@ -3642,7 +3642,6 @@ class SUMB(AeroSolver):
                      'cost': self.sumb.costfunctions,
                      'unsteady':self.sumb.inputunsteady,
                      'motion':self.sumb.inputmotion,
-                     'localmg':self.sumb.localmg,
                      'parallel':self.sumb.inputparallel,
                      'ts':self.sumb.inputtimespectral,
                      'overset':self.sumb.inputoverset,
@@ -3739,7 +3738,7 @@ class SUMB(AeroSolver):
             'nsubiter':['iter', 'nsubiterations'],
             'cfl':['iter', 'cfl'],
             'cflcoarse':['iter', 'cflcoarse'],
-            'mgcycle':['localmg', 'mgdescription'],
+            'mgcycle':['iter', 'mgdescription'],
             'mgstartlevel':['iter', 'mgstartlevel'],
             'resaveraging':{'noresaveraging':self.sumb.constants.noresaveraging,
                             'alwaysresaveraging':self.sumb.constants.alwaysresaveraging,

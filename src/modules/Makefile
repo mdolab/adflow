@@ -94,8 +94,10 @@ FF90_OBJECTS_2 =../utils/sorting.o\
 
 FF90_OBJECTS_3 =../utils/haloExchange.o\
 		../ADT/adtSearch.o\
+		../initFlow/variableReading.o\
 
-FF90_OBJECTS_4 =../initFlow/variableReading.o\
+
+FF90_OBJECTS_4 =../inputParam/inputParamRoutines.o\
 		../ADT/adtAPI.o\
 
 FF90_OBJECTS_5 =../wallDistance/wallDistance.o\
