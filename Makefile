@@ -8,19 +8,17 @@
 #      ******************************************************************
 
 SUBDIR_SRC    = src/modules       \
+	        src/partitioning  \
 	        src/solver        \
 	        src/metis-4.0     \
 	        src/output        \
 	        src/overset       \
-	        src/partitioning  \
 	        src/preprocessing \
 	        src/slidingComm   \
 	        src/turbulence    \
 		src/warping       \
                 src/adjoint/ADFirstAidKit \
                 src/adjoint/residualInput \
-		src/NKSolver      \
-		src/ANKSolver     \
 		src/adjoint/outputForward \
 		src/adjoint/outputReverse \
                 src/adjoint/outputReverseFast \

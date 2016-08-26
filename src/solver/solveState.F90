@@ -6,8 +6,11 @@ subroutine solveState
   !
   use constants
   use communication, only : myID, sumb_comm_world
-  use NKSolverVars, only : NKLSFuncEvals, freestreamResset, NK_LS, &
-       rhoRes0, totalR, rhoResStart, totalR0, totalRFinal, totalRStart
+  use NKSolver, only : NKLSFuncEvals, freestreamResset, NK_LS, &
+       rhoRes0, totalR, rhoResStart, totalR0, totalRFinal, totalRStart, &
+       NK_switchTol, useNKSolver, NK_CFL, rkREset, getFreeStreamResidual, &
+       getCurrentResidual, NKStep, computeResidualNK
+  use anksolver, only : ANK_switchTol, useANKSolver, ANK_CFL, ANKStep
   use inputio, only : forcedLiftFile, forcedSliceFile, forcedVolumeFile, &
        forcedSurfaceFile, solFile, newGridFile, surfaceSolFile
   use inputIteration, only: CFL, CFLCoarse, minIterNum, nCycles, &
@@ -17,8 +20,6 @@ subroutine solveState
   use killSignals, only : globalSignal, localSignal, noSignal, routineFailed, signalWrite, &
        signalWriteQuit
   use monitor, only : writeGrid, writeSurface, writeVolume
-  use nksolvervars, only : NK_switchTol, useNKSolver, NK_CFL, rkREset
-  use anksolvervars, only : ANK_switchTol, useANKSolver, ANK_CFL
   use utils, only: allocConvArrays
   implicit none
   !
