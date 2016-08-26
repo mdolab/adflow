@@ -1,13 +1,9 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Finds quadratic uvw weights [-1:1] for interpolant point       *
-!      * xSearch by solving for its co-ord in donor element defined by  *
-!      * xElem using newton-raphson iteration.                          *
-!      *                                                                *
-!      * Fractions uvwQuadratic come with initial guess from ADT search * 
-!      * used for linear interpolation.                                 *
-!      ******************************************************************
+!       Finds quadratic uvw weights [-1:1] for interpolant point       
+!       xSearch by solving for its co-ord in donor element defined by  
+!       xElem using newton-raphson iteration.                          
+!       Fractions uvwQuadratic come with initial guess from ADT search 
+!       used for linear interpolation.                                 
 
 subroutine computeQuadraticWeights(xSearch,xElem,uvwQuadratic)
 

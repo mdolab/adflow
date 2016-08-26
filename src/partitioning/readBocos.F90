@@ -1,12 +1,8 @@
        subroutine readBocos(cgnsInd, cgnsBase, nZone,                &
                             nDoubleBoundFaces, sortedFamName, famID)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * ReadBocos reads the boundary condition info for the given      *
-!      * zone/block.                                                    *
-!      *                                                                *
-!      ******************************************************************
+!       ReadBocos reads the boundary condition info for the given      
+!       zone/block.                                                    
 !
        use constants
        use cgnsGrid
@@ -76,12 +72,8 @@
 
        bocoLoop: do i=1,cgnsNBocos
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Read the general info for this boundary condition and set    *
-!        * the dimensions of the subface.                               *
-!        *                                                              *
-!        ****************************************************************
+!         Read the general info for this boundary condition and set    
+!         the dimensions of the subface.                               
 !
          call cg_boco_info_f(cgnsInd, cgnsBase, nZone, i,                &
                              cgnsDoms(nZone)%bocoInfo(i)%bocoName,       &
@@ -203,12 +195,8 @@
            endif
          endif
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Determine the internally used boundary condition and whether *
-!        * or not the boundary condition is given on a per family basis.*
-!        *                                                              *
-!        ****************************************************************
+!         Determine the internally used boundary condition and whether 
+!         or not the boundary condition is given on a per family basis.
 !
          cgnsDoms(nZone)%bocoInfo(i)%familyID = 0
 
@@ -397,21 +385,13 @@
 
          endif checkActualFace
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Initialize slidingID to 0 to indicate that this boco does    *
-!        * not belong to a sliding mesh interface. If it is, this will  *
-!        * be overwritten after all bocos are read for every zone.      *
-!        *                                                              *
-!        ****************************************************************
+!         Initialize slidingID to 0 to indicate that this boco does    
+!         not belong to a sliding mesh interface. If it is, this will  
+!         be overwritten after all bocos are read for every zone.      
 !
          cgnsDoms(nzone)%bocoInfo(i)%slidingID = 0
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Determine the possible rotating rate of the boundary face.   *
-!        *                                                              *
-!        ****************************************************************
+!         Determine the possible rotating rate of the boundary face.   
 !
          ! Initialize the rotating center and the rotating rates to
          ! the values of the corresponding block.
@@ -444,11 +424,7 @@
            endif
          endif
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Read and store the prescribed boundary condition data sets.  *
-!        *                                                              *
-!        ****************************************************************
+!         Read and store the prescribed boundary condition data sets.  
 !
          ! Initialize dataSetAllocated to .false. and nDataSet to 0.
 
@@ -561,12 +537,8 @@
 
          subroutine readBCDataArrays(nArr, arr, DirNeu)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * readBCDataArrays reads the arrays of the given data set      *
-!        * from the cgns file.                                          *
-!        *                                                              *
-!        ****************************************************************
+!         readBCDataArrays reads the arrays of the given data set      
+!         from the cgns file.                                          
 !
          implicit none
 !
@@ -761,14 +733,10 @@
 
        logical function checkForDoubleBoundFace(nZone, nBound)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * CheckForDoubleBoundFace checks whether the given boundary      *
-!      * range for the given zone has already been defined in the 1 to  *
-!      * 1 block connectivities. If so .true. is returned, otherwise    *
-!      * .false.                                                        *
-!      *                                                                *
-!      ******************************************************************
+!       CheckForDoubleBoundFace checks whether the given boundary      
+!       range for the given zone has already been defined in the 1 to  
+!       1 block connectivities. If so .true. is returned, otherwise    
+!       .false.                                                        
 !
        use cgnsGrid
        implicit none
@@ -782,11 +750,7 @@
        integer :: i
        integer, dimension(3,2) :: rangeBound, rangeFace
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Set the range for the boundary face.
 

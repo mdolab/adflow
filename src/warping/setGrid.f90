@@ -1,10 +1,8 @@
 !
-! ***********************************
 ! *  File: setGrid.f90
 ! *  Author: Gaetan Kenway
 ! *  Started: 05-29-2010
 ! *  Modified: 05-29-2010
-! ***********************************
 
 subroutine setGrid(grid,ndof)
 

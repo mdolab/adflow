@@ -1,11 +1,7 @@
        subroutine writeCGNSKomegaWilcoxInfo(cgnsInd, cgnsBase)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * writeCGNSKomegaWilcoxInfo writes information about the         *
-!      * standard Wilcox k-omega turbulence model to the cgns file.     *
-!      *                                                                *
-!      ******************************************************************
+!       writeCGNSKomegaWilcoxInfo writes information about the         
+!       standard Wilcox k-omega turbulence model to the cgns file.     
 !
        use inputPhysics
        use cgnsNames

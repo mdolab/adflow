@@ -1,10 +1,7 @@
 subroutine setupProlongationMatrix(matrix, level)
 #ifndef USE_NO_PETSC
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Compute the prolongation matrix from level-1 to level           *
+  !      Compute the prolongation matrix from level-1 to level           
   !                                                                      *
-  !     ******************************************************************
   !
   use blockPointers      
   use inputTimeSpectral

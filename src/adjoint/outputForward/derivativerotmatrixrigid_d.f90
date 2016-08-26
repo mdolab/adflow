@@ -5,28 +5,20 @@
 !   variations   of useful results: rotationmatrix
 !   with respect to varying inputs: timeref
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          derivativerotmatrixrigid.f90                    *
-!      * author:        edwin van der weide                             *
-!      * starting date: 06-01-2004                                      *
-!      * last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          derivativerotmatrixrigid.f90                    
+!       author:        edwin van der weide                             
+!       starting date: 06-01-2004                                      
+!       last modified: 06-12-2005                                      
 !
 subroutine derivativerotmatrixrigid_d(rotationmatrix, rotationmatrixd, &
 & rotationpoint, t)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * derivativerotmatrixrigid determines the derivative of the      *
-!      * rotation matrix at the given time for the rigid body rotation, *
-!      * such that the grid velocities can be determined analytically.  *
-!      * also the rotation point of the current time level is           *
-!      * determined. this value can change due to translation of the    *
-!      * entire grid.                                                   *
-!      *                                                                *
-!      ******************************************************************
+!       derivativerotmatrixrigid determines the derivative of the      
+!       rotation matrix at the given time for the rigid body rotation, 
+!       such that the grid velocities can be determined analytically.  
+!       also the rotation point of the current time level is           
+!       determined. this value can change due to translation of the    
+!       entire grid.                                                   
 !
   use constants
   use flowvarrefstate

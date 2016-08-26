@@ -1,12 +1,8 @@
        subroutine volSolNames(solNames)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * volSolNames sets the names for the volume variables to be      *
-!      * written to the volume solution file. Sids convention names are *
-!      * used as much as possible.                                      *
-!      *                                                                *
-!      ******************************************************************
+!       volSolNames sets the names for the volume variables to be      
+!       written to the volume solution file. Sids convention names are 
+!       used as much as possible.                                      
 !
        use constants
        use cgnsNames

@@ -1,13 +1,9 @@
        subroutine reallocSubfaceMemory(ii,nAlloc)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * reallocSubfaceMemory reallocates the memory to store the       *
-!      * subface information for the given block ii. On entry nAlloc    *
-!      * contains the current number of allocated subfaces, on exit     *
-!      * this is updated to the new number.                             *
-!      *                                                                *
-!      ******************************************************************
+!       reallocSubfaceMemory reallocates the memory to store the       
+!       subface information for the given block ii. On entry nAlloc    
+!       contains the current number of allocated subfaces, on exit     
+!       this is updated to the new number.                             
 !
        use partitionMod
        use utils, only : reallocateInteger

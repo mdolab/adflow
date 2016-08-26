@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          setDiffSizes.f90                                *
-!      * Author:        Peter Zhoujie Lyu	                        *
-!      * Starting date: 03-27-2013                                      *
-!      * Last modified: 03-27-2013                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          setDiffSizes.f90                                
+!       Author:        Peter Zhoujie Lyu	                        
+!       Starting date: 03-27-2013                                      
+!       Last modified: 03-27-2013                                      
 !
 subroutine setDiffSizes
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * This routine set the sizes for the pointers that will be       *
-  !      * used in the forward debug mode and reverse mode AD.            *
-  !      *                                                                *
-  !      ******************************************************************
+  !       This routine set the sizes for the pointers that will be       
+  !       used in the forward debug mode and reverse mode AD.            
   !
   use constants
   use blockPointers, only : flowDoms, ib, jb, kb, ie, je, ke, ib, jb, ke, &

@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          procSliding.f90                                 *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 09-26-2003                                      *
-!      * Last modified: 03-01-2006                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          procSliding.f90                                 
+!       Author:        Edwin van der Weide                             
+!       Starting date: 09-26-2003                                      
+!       Last modified: 03-01-2006                                      
 !
        subroutine procSliding(distrSliding)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * procSliding determines for each sliding mesh interface the     *
-!      * processors which contribute.                                   *
-!      *                                                                *
-!      ******************************************************************
+!       procSliding determines for each sliding mesh interface the     
+!       processors which contribute.                                   
 !
        use constants
        use blockPointers
@@ -46,11 +38,7 @@
 
        integer(kind=intType), dimension(:), allocatable :: bufferRecv
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the number of faces of each sliding mesh interface
        ! on this processor. Both parts of the interface are considered.

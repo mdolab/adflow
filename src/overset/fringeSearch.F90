@@ -100,7 +100,7 @@ subroutine fringeSearch(oBlock, oFringe)
               ! This one has now passed.
             
               ! Important! uvw(4) is the distance squared for this search
-              ! *not* the interpolated solution
+              ! not
               uvw(4) = uvw(5)
            end if
 

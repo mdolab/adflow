@@ -1,12 +1,8 @@
 
 subroutine getCostFuncMat(alpha, beta, liftIndex)
   !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Compute the cost function vector needed to calculate           *
-  !     * dIdw, dIdx and dIda.                                            *
-  !     *                                                                *
-  !     ******************************************************************
+  !      Compute the cost function vector needed to calculate           
+  !      dIdw, dIdx and dIda.                                            
   !
   use constants
   use costFunctions

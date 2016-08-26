@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          mySubfacesSlide.f90                             *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 10-17-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          mySubfacesSlide.f90                             
+!       Author:        Edwin van der Weide                             
+!       Starting date: 10-17-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine mySubfacesSlide(level, sps, color)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * mySubfacesSlide determines the local subfaces on the sliding   *
-!      * mesh interface as well as its quadrilateral faces.             *
-!      *                                                                *
-!      ******************************************************************
+!       mySubfacesSlide determines the local subfaces on the sliding   
+!       mesh interface as well as its quadrilateral faces.             
 !
        use constants
        use block
@@ -35,11 +27,7 @@
        integer(kind=intType) :: nn, mm
        integer(kind=intType) :: slideID
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Store the slide id a bit easier.
 
@@ -91,14 +79,10 @@
        subroutine storeMySubfaceInfoSlide(level, sps, slideID, &
                                           color, mySubfaces)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * storeMySubfaceInfoSlide stores the sliding mesh surface        *
-!      * grid info for all local subfaces involved for the given        *
-!      * sliding mesh interface. Note that slideID can be both a        *
-!      * negative and a positive number.                                *
-!      *                                                                *
-!      ******************************************************************
+!       storeMySubfaceInfoSlide stores the sliding mesh surface        
+!       grid info for all local subfaces involved for the given        
+!       sliding mesh interface. Note that slideID can be both a        
+!       negative and a positive number.                                
 !
        use constants
        use blockPointers
@@ -154,11 +138,7 @@
        logical, dimension(:), pointer :: searchQuad, searchNode
        logical, dimension(:), pointer :: storeQuad,  storeDual
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Store the absolute value of the slide ID.
 
@@ -322,11 +302,7 @@
              coorN      => mySubfaces(nSub)%coorN
              coorNInt   => mySubfaces(nSub)%coorNInt
 !
-!            ************************************************************
-!            *                                                          *
-!            * Determine the nodal coordinates.                         *
-!            *                                                          *
-!            ************************************************************
+!             Determine the nodal coordinates.                         
 !
              indHaloN => mySubfaces(nSub)%indHaloN
              coorN    => mySubfaces(nSub)%coorN
@@ -338,14 +314,10 @@
 
              nodeInfo = izero
 !
-!            ************************************************************
-!            *                                                          *
-!            * Determine all the face info, i.e. whether or not the     *
-!            * face must be searched, the cylindrical coordinates of    *
-!            * the face center and the connectivity. The quadrilateral  *
-!            * surface grid is used to search the coordinates.          *
-!            *                                                          *
-!            ************************************************************
+!             Determine all the face info, i.e. whether or not the     
+!             face must be searched, the cylindrical coordinates of    
+!             the face center and the connectivity. The quadrilateral  
+!             surface grid is used to search the coordinates.          
 !
              nQuad = 0
              do j=jBeg,jEnd
@@ -442,12 +414,8 @@
                enddo
              enddo
 !
-!            ************************************************************
-!            *                                                          *
-!            * Loop again over the nodes to determine whether or not    *
-!            * the node is to be searched.                              *
-!            *                                                          *
-!            ************************************************************
+!             Loop again over the nodes to determine whether or not    
+!             the node is to be searched.                              
 !
              nNode = 0
              do j=(jBeg-1),jEnd
@@ -484,12 +452,8 @@
                enddo
              enddo
 !
-!            ************************************************************
-!            *                                                          *
-!            * Determine the connectivity of the dual mesh, which will  *
-!            * be used for the interpolation of the flow variables.     *
-!            *                                                          *
-!            ************************************************************
+!             Determine the connectivity of the dual mesh, which will  
+!             be used for the interpolation of the flow variables.     
 !
              nDual = 0
              do j=(jBeg+1),jEnd
@@ -632,13 +596,9 @@
 
          subroutine getNodalCylinderCoor
 !
-!        ****************************************************************
-!        *                                                              *
-!        * getNodalCylinderCoor determines for the nodes of the         *
-!        * currently active block face the cylinder coordinates         *
-!        * relative to the rotation center of the sliding interface.    *
-!        *                                                              *
-!        ****************************************************************
+!         getNodalCylinderCoor determines for the nodes of the         
+!         currently active block face the cylinder coordinates         
+!         relative to the rotation center of the sliding interface.    
 !
          use interfaceGroups
          implicit none
@@ -653,11 +613,7 @@
          real(kind=realType), dimension(3) :: rotCenter, rotAxis
          real(kind=realType), dimension(3) :: radVec1, radVec2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution.                                             *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution.                                             
 !
          ! Some abbreviations to make the code more readable.
 
@@ -824,13 +780,9 @@
 
          subroutine getFaceCenterCylinderCoor
 !
-!        ****************************************************************
-!        *                                                              *
-!        * getFaceCenterCylinderCoor determines the cylindrical         *
-!        * coordinates of the currently active face center and          *
-!        * determines the status of the quad.                           *
-!        *                                                              *
-!        ****************************************************************
+!         getFaceCenterCylinderCoor determines the cylindrical         
+!         coordinates of the currently active face center and          
+!         determines the status of the quad.                           
 !
          use interfaceGroups
          implicit none
@@ -846,11 +798,7 @@
          real(kind=realType), dimension(3) :: rotCenter, rotAxis
          real(kind=realType), dimension(3) :: radVec1, radVec2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution.                                             *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution.                                             
 !
          ! Some abbreviations to make the code more readable.
 

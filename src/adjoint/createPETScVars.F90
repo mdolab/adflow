@@ -2,11 +2,7 @@ subroutine createPETScVars
 
 #ifndef USE_NO_PETSC
   !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Create the matrices/vectors that are required for the adjoint  *
-  !     *                                                                *
-  !     ******************************************************************
+  !      Create the matrices/vectors that are required for the adjoint  
   !
   use constants
   use ADjointPETSc, only: dRdwT, dRdwPreT, &

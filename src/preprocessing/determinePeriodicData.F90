@@ -1,12 +1,8 @@
        subroutine determinePeriodicData(entityHalo,   nHalo, &
                                         externalComm, internalComm)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * determinePeriodicData determines the periodic transformation   *
-!      * for both the external and the internal communication patterns. *
-!      *                                                                *
-!      ******************************************************************
+!       determinePeriodicData determines the periodic transformation   
+!       for both the external and the internal communication patterns. 
 !
        use constants
        use communication
@@ -141,14 +137,10 @@
          subroutine setPeriodicData(perHalo, nPerHalo, nPeriodic, &
                                     periodicData)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * setPeriodicData stores the periodic transformations and the  *
-!        * corresponding halo's to which it must be applied in          *
-!        * nPeriodic and periodicData. These variables are part of      *
-!        * either the internal or external communication pattern.       *
-!        *                                                              *
-!        ****************************************************************
+!         setPeriodicData stores the periodic transformations and the  
+!         corresponding halo's to which it must be applied in          
+!         nPeriodic and periodicData. These variables are part of      
+!         either the internal or external communication pattern.       
 !
          use cgnsGrid
          implicit none
@@ -189,11 +181,7 @@
          real(kind=realType), dimension(3)   :: rotCenter
 #endif
 
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Determine the number of different periodic transformations
          ! as well as the number of halo's per transformation.

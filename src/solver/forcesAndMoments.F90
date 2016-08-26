@@ -1,27 +1,20 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          forcesAndMoments.f90                            *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-01-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          forcesAndMoments.f90                            
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-01-2003                                      
+!       Last modified: 06-12-2005                                      
 !
 subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
      sepSensorAvg, Cavitation)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * forcesAndMoments computes the contribution of the block        *
-  !      * given by the pointers in blockPointers to the force and        *
-  !      * moment coefficients of the geometry. A distinction is made     *
-  !      * between the inviscid and viscous parts. In case the maximum    *
-  !      * yplus value must be monitored (only possible for rans), this   *
-  !      * value is also computed. The separation sensor and the cavita-  *
-  !      * tion sensor is also computed                                   *
-  !      * here.                                                          *
-  !      ******************************************************************
+  !       forcesAndMoments computes the contribution of the block        
+  !       given by the pointers in blockPointers to the force and        
+  !       moment coefficients of the geometry. A distinction is made     
+  !       between the inviscid and viscous parts. In case the maximum    
+  !       yplus value must be monitored (only possible for rans), this   
+  !       value is also computed. The separation sensor and the cavita-  
+  !       tion sensor is also computed                                   
+  !       here.                                                          
   !
   use constants
   use communication
@@ -59,11 +52,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   real(kind=realType) :: mx, my, mz, cellArea
   logical :: viscousSubface
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Set the actual scaling factor such that ACTUAL forces are computed
   scaleDim = pRef/pInf
@@ -92,16 +81,12 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
 
   bocos: do nn=1,nBocos
      !
-     !        ****************************************************************
-     !        *                                                              *
-     !        * Integrate the inviscid contribution over the solid walls,    *
-     !        * either inviscid or viscous. The integration is done with     *
-     !        * cp. For closed contours this is equal to the integration     *
-     !        * of p; for open contours this is not the case anymore.        *
-     !        * Question is whether a force for an open contour is           *
-     !        * meaningful anyway.                                           *
-     !        *                                                              *
-     !        ****************************************************************
+     !         Integrate the inviscid contribution over the solid walls,    
+     !         either inviscid or viscous. The integration is done with     
+     !         cp. For closed contours this is equal to the integration     
+     !         of p; for open contours this is not the case anymore.        
+     !         Question is whether a force for an open contour is           
+     !         meaningful anyway.                                           
      !
 
      famInclude: if (bsearchIntegers(BCdata(nn)%famID, &
@@ -238,12 +223,8 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
               Cavitation = Cavitation + Sensor1
            enddo
            !
-           !          **************************************************************
-           !          *                                                            *
-           !          * Integration of the viscous forces.                         *
-           !          * Only for viscous boundaries.                               *
-           !          *                                                            *
-           !          **************************************************************
+           !           Integration of the viscous forces.                         
+           !           Only for viscous boundaries.                               
            !
            visForce: if( viscousSubface ) then
 

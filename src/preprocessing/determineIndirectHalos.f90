@@ -1,61 +1,50 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          determineIndirectHalos.f90                      *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 01-31-2003                                      *
-!      * Last modified: 11-30-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          determineIndirectHalos.f90                      
+!       Author:        Edwin van der Weide                             
+!       Starting date: 01-31-2003                                      
+!       Last modified: 11-30-2007                                      
 !
        subroutine determineIndirectHalos(nHalo, iihalo, entityHalo,  &
                                          transform, entityIndex,     &
                                          start, nLevel, offset,      &
                                          gridLevel)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * determineIndirectHalos determines the indirect halo's via a    *
-!      * recursive algorithm.                                           *
-!      *                                                                *
-!      * Step 1.                                                        *
-!      * =======                                                        *
-!      * Determine for every indirect halo the closest face halo.       *
-!      * If several options exist choose the one that does not          *
-!      * correspond to a boundary halo, if possible. If several         *
-!      * non-boundary halo's exist, just pick one. If all the closest   *
-!      * face halo's are boundary halo's then there is no corresponding *
-!      * halo and the state is determined by the boundary conditions    *
-!      * and/or extrapolation.                                          *
-!      * Store the direction from the face halo to the indirect halo.   *
-!      *                                                                *
-!      * Step 2.                                                        *
-!      * =======                                                        *
-!      * Determine the level of indirectness of every indirect halo.    *
-!      * This is the sum of the absolute values of the elements of the  *
-!      * direction vector. For 1st level halo's the maximum level of    *
-!      * of indirectness is 2; for 2nd level halo's it is 5. These      *
-!      * numbers are for 3 space dimensions.                            *
-!      *                                                                *
-!      * Step 3.                                                        *
-!      * =======                                                        *
-!      * Loop over the number of indirect levels.                       *
-!      *   For every halo of the current level of indirectness do:      *
-!      *     - apply the transformation matrix of its corresponding     *
-!      *       face halo to the direction vector.                       *
-!      *     - start in the donor cell of the face halo and travel in   *
-!      *       the direction of the transformed direction vector.       *
-!      *     - you either end up in an internal cell/node or in a halo. *
-!      *       Case internal: you're done. Internal cell/node is the    *
-!      *                      donor.                                    *
-!      *       Case halo: this is guarenteed to be a halo of at least   *
-!      *                  one level of indirectness less than the       *
-!      *                  current level. Thus the donor is known and    *
-!      *                  you're done too. It is possible that it is a  *
-!      *                  boundary halo, but this is allowed.           *
-!      * End loop over the number of indirect levels.                   *
-!      *                                                                *
-!      ******************************************************************
+!       determineIndirectHalos determines the indirect halo's via a    
+!       recursive algorithm.                                           
+!       Step 1.                                                        
+!       =======                                                        
+!       Determine for every indirect halo the closest face halo.       
+!       If several options exist choose the one that does not          
+!       correspond to a boundary halo, if possible. If several         
+!       non-boundary halo's exist, just pick one. If all the closest   
+!       face halo's are boundary halo's then there is no corresponding 
+!       halo and the state is determined by the boundary conditions    
+!       and/or extrapolation.                                          
+!       Store the direction from the face halo to the indirect halo.   
+!       Step 2.                                                        
+!       =======                                                        
+!       Determine the level of indirectness of every indirect halo.    
+!       This is the sum of the absolute values of the elements of the  
+!       direction vector. For 1st level halo's the maximum level of    
+!       of indirectness is 2; for 2nd level halo's it is 5. These      
+!       numbers are for 3 space dimensions.                            
+!       Step 3.                                                        
+!       =======                                                        
+!       Loop over the number of indirect levels.                       
+!         For every halo of the current level of indirectness do:      
+!           - apply the transformation matrix of its corresponding     
+!             face halo to the direction vector.                       
+!           - start in the donor cell of the face halo and travel in   
+!             the direction of the transformed direction vector.       
+!           - you either end up in an internal cell/node or in a halo. 
+!             Case internal: you're done. Internal cell/node is the    
+!                            donor.                                    
+!             Case halo: this is guarenteed to be a halo of at least   
+!                        one level of indirectness less than the       
+!                        current level. Thus the donor is known and    
+!                        you're done too. It is possible that it is a  
+!                        boundary halo, but this is allowed.           
+!       End loop over the number of indirect levels.                   
 !
        use haloList
        use indirectHalo
@@ -115,11 +104,7 @@
        end subroutine indirectHalosPerLevel
        end interface
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine for every indirect halo the closest direct halo.
 

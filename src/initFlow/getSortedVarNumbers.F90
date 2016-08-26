@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          getSortedVarNumbers.F90                         *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-18-2003                                      *
-!      * Last modified: 10-07-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          getSortedVarNumbers.F90                         
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-18-2003                                      
+!       Last modified: 10-07-2005                                      
 !
        subroutine getSortedVarNumbers
 !
-!      ******************************************************************
-!      *                                                                *
-!      * getSortedVarNumbers reads the names of variables stored in     *
-!      * the given solution node of the cgns file, indicated by         *
-!      * cgnsInd, cgnsBase and cgnsZone. Afterwards the variable        *
-!      * names are sorted in increasing order, such that they can be    *
-!      * used in a binary search. Their original variable number and    *
-!      * type is stored.                                                *
-!      *                                                                *
-!      ******************************************************************
+!       getSortedVarNumbers reads the names of variables stored in     
+!       the given solution node of the cgns file, indicated by         
+!       cgnsInd, cgnsBase and cgnsZone. Afterwards the variable        
+!       names are sorted in increasing order, such that they can be    
+!       used in a binary search. Their original variable number and    
+!       type is stored.                                                
 !
 #ifdef USE_NO_CGNS
        call terminate("getSortedVarNumbers", &

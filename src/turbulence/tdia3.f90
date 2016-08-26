@@ -1,34 +1,22 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          tdia3.f90                                       *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 06-30-2003                                      *
-!      * Last modified: 04-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          tdia3.f90                                       
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 06-30-2003                                      
+!       Last modified: 04-12-2005                                      
 !
        subroutine tdia3(nb, ne, l, c, u, r)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * tdia3 solves the tridiagonal linear system (l+c+u) v = r,      *
-!      * where l is the lower, c the central and u the upper diagonal.  *
-!      * Every entry in the matrix is a 2x2 block matrix, i.e.          *
-!      *                                                                *
-!      *              x x  x 0  0 0  ........        = c(nb) u(nb)      *
-!      *              x x  0 x  0 0  ........                           *
-!      *                                                                *
-!      *              x 0  x x  x 0  ........        = l(i) c(i) u(i)   *
-!      *              0 x  x x  0 x  ........                           *
-!      *                                                                *
-!      *                   ........  x 0  x x        = l(ne) c(ne)      *
-!      *                   ........  0 x  x x                           *
-!      *                                                                *
-!      *         With c = x x     u,l = x 0                             *
-!      *                  x x           0 x                             *
-!      *                                                                *
-!      ******************************************************************
+!       tdia3 solves the tridiagonal linear system (l+c+u) v = r,      
+!       where l is the lower, c the central and u the upper diagonal.  
+!       Every entry in the matrix is a 2x2 block matrix, i.e.          
+!                    x x  x 0  0 0  ........        = c(nb) u(nb)      
+!                    x x  0 x  0 0  ........                           
+!                    x 0  x x  x 0  ........        = l(i) c(i) u(i)   
+!                    0 x  x x  0 x  ........                           
+!                         ........  x 0  x x        = l(ne) c(ne)      
+!                         ........  0 x  x x                           
+!               With c = x x     u,l = x 0                             
+!                        x x           0 x                             
 !
        use constants
        implicit none
@@ -45,11 +33,7 @@
        integer(kind=intType) :: n
        real(kind=realType)   :: deti, f11, f12, f21, f22, r1
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Perform the backward sweep to eliMinate the upper diagonal uu.
        ! f     = u(n)*c^-1(n+1),

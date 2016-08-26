@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          maxHdiffMach.f90                                *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-01-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          maxHdiffMach.f90                                
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-01-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine maxHdiffMach(hdiffMax, MachMax)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * maxHdiffMach determines the maximum value of the Mach number   *
-!      * and total enthalpy (or better the relative total enthalpy      *
-!      * difference with the freestream).                               *
-!      *                                                                *
-!      ******************************************************************
+!       maxHdiffMach determines the maximum value of the Mach number   
+!       and total enthalpy (or better the relative total enthalpy      
+!       difference with the freestream).                               
 !
        use constants
        use blockPointers, only : il, jl, kl, w, p, gamma
@@ -34,11 +26,7 @@
 
        real(kind=realType) :: hdiff, hInf, Mach2
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize the maximum values to zero.
 

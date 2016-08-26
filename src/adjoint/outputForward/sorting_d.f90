@@ -13,15 +13,11 @@ module sorting_d
 contains
   function bsearchintegers(key, base, nn)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * bsearchintegers returns the index in base where key is stored. *
-!      * a binary search algorithm is used here, so it is assumed that  *
-!      * base is sorted in increasing order. in case key appears more   *
-!      * than once in base, the result is arbitrary. if key is not      *
-!      * found, a zero is returned.                                     *
-!      *                                                                *
-!      ******************************************************************
+!       bsearchintegers returns the index in base where key is stored. 
+!       a binary search algorithm is used here, so it is assumed that  
+!       base is sorted in increasing order. in case key appears more   
+!       than once in base, the result is arbitrary. if key is not      
+!       found, a zero is returned.                                     
 !
     use precision
     implicit none

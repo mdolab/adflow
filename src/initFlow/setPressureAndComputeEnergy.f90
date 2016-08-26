@@ -1,14 +1,10 @@
        subroutine setPressureAndComputeEnergy(halosRead)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Due to the usage of the variable IOVar, which generalizes the  *
-!      * IO and leads to reuse of code, currently the pressure is       *
-!      * stored at the position of rhoE. In this routine that data is   *
-!      * copied to the pressure array and the total energy is computed. *
-!      * Note that this routine is only called when a restart is done.  *
-!      *                                                                *
-!      ******************************************************************
+!       Due to the usage of the variable IOVar, which generalizes the  
+!       IO and leads to reuse of code, currently the pressure is       
+!       stored at the position of rhoE. In this routine that data is   
+!       copied to the pressure array and the total energy is computed. 
+!       Note that this routine is only called when a restart is done.  
 !
        use constants
        use blockPointers, only : nDom, p, w, il, jl, kl

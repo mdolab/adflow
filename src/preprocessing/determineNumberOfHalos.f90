@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          determineCommPattern.f90                        *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 01-20-2003                                      *
-!      * Last modified: 11-28-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          determineCommPattern.f90                        
+!       Author:        Edwin van der Weide                             
+!       Starting date: 01-20-2003                                      
+!       Last modified: 11-28-2007                                      
 !
        subroutine determineNumberOfHalos(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * determineNumberOfHalos determines the amount of 1st and 2nd    *
-!      * level cell halo's as well as the number of 1st level node      *
-!      * halo's stored on this processor.                               *
-!      *                                                                *
-!      ******************************************************************
+!       determineNumberOfHalos determines the amount of 1st and 2nd    
+!       level cell halo's as well as the number of 1st level node      
+!       halo's stored on this processor.                               
 !
        use blockPointers
        use haloList
@@ -31,11 +23,7 @@
 !
        integer(kind=intType) :: i, nn
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize the amount of halo cells and nodes to 0.
 

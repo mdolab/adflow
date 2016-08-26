@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          interpolateSpectralSolution.f90                 *
-!      * Author:        Edwin van der Weide, Arathi K. Gopinath.        *
-!      * Starting date: 08-08-2004                                      *
-!      * Last modified: 10-10-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          interpolateSpectralSolution.f90                 
+!       Author:        Edwin van der Weide, Arathi K. Gopinath.        
+!       Starting date: 08-08-2004                                      
+!       Last modified: 10-10-2005                                      
 !
        subroutine interpolateSpectralSolution
 !
-!      ******************************************************************
-!      *                                                                *
-!      * interpolateSpectralSolution uses a spectral interpolation to   *
-!      * determine the initialization of the flow solution.             *
-!      * The solution is interpolated from the solution read, which     *
-!      * contains a different number of time instances and is stored in *
-!      * IOVar()%w. This variable can be found in IOModule.             *
-!      *                                                                *
-!      ******************************************************************
+!       interpolateSpectralSolution uses a spectral interpolation to   
+!       determine the initialization of the flow solution.             
+!       The solution is interpolated from the solution read, which     
+!       contains a different number of time instances and is stored in 
+!       IOVar()%w. This variable can be found in IOModule.             
 !
        use constants
        use blockPointers, only : w, il, jl, kl, nDom, sectionID
@@ -41,11 +33,7 @@
        real(kind=realType), dimension(nSolsRead) :: alpScal
        real(kind=realType), dimension(nSections,nSolsRead,3,3) :: alpMat
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the number of spectral solutions to be interpolated.
 

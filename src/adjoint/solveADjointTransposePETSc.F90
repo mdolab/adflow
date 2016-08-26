@@ -1,28 +1,15 @@
 !
-!     ******************************************************************
-!     *                                                                *
-!     * File:          solveAdjoint.F90                                *
-!     * Author:        Gaetan K.W. Kenway                              *
-!     * Starting date: 03-12-2014                                      *
-!     * Last modified: 03-12-2014                                      *
-!     *                                                                *
-!     ******************************************************************
+!      File:          solveAdjoint.F90                                
+!      Author:        Gaetan K.W. Kenway                              
+!      Starting date: 03-12-2014                                      
+!      Last modified: 03-12-2014                                      
 !
 subroutine solveAdjoint(RHS, psi, checkSolution, nState)
   !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Solve the linear discrete ADjoint system of equations          *
-  !     *                                                                *
-  !     *     [dR/dW]T . psi = {RHS}                                     *
-  !     *                                                                *
-  !     * using preconditioned GMRES provided by PETSc. The values in psi*
-  !     * are significant as they are used as the inital guess.          *
-  !     *                                                                *
-  !     *                                                                *
-  !     *                                                                *
-  !     *                                                                *
-  !     ******************************************************************
+  !      Solve the linear discrete ADjoint system of equations          
+  !          [dR/dW]T . psi = {RHS}                                     
+  !      using preconditioned GMRES provided by PETSc. The values in psi
+  !      are significant as they are used as the inital guess.          
   !
   use constants
   use ADjointPETSc, only : dRdwT, psi_like1, psi_like2, adjointKSP, &

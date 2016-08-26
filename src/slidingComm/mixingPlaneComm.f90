@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          mixingPlaneComm.f90                             *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 01-27-2005                                      *
-!      * Last modified: 03-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          mixingPlaneComm.f90                             
+!       Author:        Edwin van der Weide                             
+!       Starting date: 01-27-2005                                      
+!       Last modified: 03-25-2005                                      
 !
        subroutine mixingPlaneComm(level, color)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * mixingPlaneComm determines the communication/interpolation     *
-!      * pattern for the mixing plane interface corresponding to the    *
-!      * given color on the given grid level.                           *
-!      *                                                                *
-!      ******************************************************************
+!       mixingPlaneComm determines the communication/interpolation     
+!       pattern for the mixing plane interface corresponding to the    
+!       given color on the given grid level.                           
 !
        use commMixing
        use interfaceGroups
@@ -30,11 +22,7 @@
 !
        integer(kind=intType) :: slideID
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Check if this processor actually participates in a search.
        ! If not, return immediately.

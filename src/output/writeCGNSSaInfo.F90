@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          writeCGNSSaInfo.F90                             *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-11-2003                                      *
-!      * Last modified: 06-29-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          writeCGNSSaInfo.F90                             
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-11-2003                                      
+!       Last modified: 06-29-2005                                      
 !
        subroutine writeCGNSSaInfo(cgnsInd, cgnsBase)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * WriteCGNSSaInfo writes information about the Spalart           *
-!      * Allmaras turbulence model to the cgns file.                    *
-!      *                                                                *
-!      ******************************************************************
+!       WriteCGNSSaInfo writes information about the Spalart           
+!       Allmaras turbulence model to the cgns file.                    
 !
        use inputPhysics
        use cgnsNames

@@ -1,11 +1,7 @@
        subroutine setEquationParameters
 !
-!      ******************************************************************
-!      *                                                                *
-!      * setEquationParameters sets the number of variables in the      *
-!      * governing equations, the number of turbulent variables, etc.   *
-!      *                                                                *
-!      ******************************************************************
+!       setEquationParameters sets the number of variables in the      
+!       governing equations, the number of turbulent variables, etc.   
 !
        use constants
        use paramTurb
@@ -14,11 +10,7 @@
        use inputPhysics, only : equations, turbModel, wallFunctions, rvfN
        implicit none
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Set the number of flow variables to 5, nt1 to 6. This is valid
        ! for all governing equations. Furthermore initialize viscous,

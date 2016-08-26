@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          indirectHalo.f90                                *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 01-31-2003                                      *
-!      * Last modified: 03-24-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          indirectHalo.f90                                
+!       Author:        Edwin van der Weide                             
+!       Starting date: 01-31-2003                                      
+!       Last modified: 03-24-2005                                      
 !
        module indirectHalo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * This local module contains the derived data type used to       *
-!      * determine the indirect halo's as well as an array of this type.*
-!      *                                                                *
-!      ******************************************************************
+!       This local module contains the derived data type used to       
+!       determine the indirect halo's as well as an array of this type.
 !
        use precision
        implicit none
@@ -25,11 +17,7 @@
        private :: lessEqualIndirectHaloType
        private :: lessIndirectHaloType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the derived data type indirectHaloType.      *
-!      *                                                                *
-!      ******************************************************************
+!       The definition of the derived data type indirectHaloType.      
 !
        type indirectHaloType
 
@@ -84,23 +72,15 @@
 
        contains
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Functions to simulate the operators <= and <.                *
-!        *                                                              *
-!        ****************************************************************
+!         Functions to simulate the operators <= and <.                
 !
          logical function lessEqualIndirectHaloType(g1, g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * This function returns .true. if g1 <= g2 and .false.         *
-!        * otherwise. The comparison is firstly based on the level of   *
-!        * indirectness followed by the donor processor, the            *
-!        * corresponding direct halo, my block ID and finally the i, j  *
-!        * and k indices.                                               *
-!        *                                                              *
-!        ****************************************************************
+!         This function returns .true. if g1 <= g2 and .false.         
+!         otherwise. The comparison is firstly based on the level of   
+!         indirectness followed by the donor processor, the            
+!         corresponding direct halo, my block ID and finally the i, j  
+!         and k indices.                                               
 !
          implicit none
 !
@@ -108,11 +88,7 @@
 !
          type(indirectHaloType), intent(in) :: g1, g2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Compare the level of indirectness. If not equal, set
          ! lessEqual appropriately and return.
@@ -195,14 +171,10 @@
 
          logical function lessIndirectHaloType(g1, g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * This function returns .true. If g1 < g2 and .false.          *
-!        * otherwise. It is basically the same as the lessEqual         *
-!        * function, except that the equality is now considered as      *
-!        * .false.                                                      *
-!        *                                                              *
-!        ****************************************************************
+!         This function returns .true. If g1 < g2 and .false.          
+!         otherwise. It is basically the same as the lessEqual         
+!         function, except that the equality is now considered as      
+!         .false.                                                      
 !
          implicit none
 !
@@ -210,11 +182,7 @@
 !
          type(indirectHaloType), intent(in) :: g1, g2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Compare the level of indirectness. If not equal, set
          ! lessIndirectHaloType appropriately and return.

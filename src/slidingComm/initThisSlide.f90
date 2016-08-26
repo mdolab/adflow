@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          initThisSlide.f90                               *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 10-13-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          initThisSlide.f90                               
+!       Author:        Edwin van der Weide                             
+!       Starting date: 10-13-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine initThisSlide(color)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * initThisSlide determines the communicator, the rotation axis   *
-!      * and the radial scale for this sliding mesh interface.          *
-!      *                                                                *
-!      ******************************************************************
+!       initThisSlide determines the communicator, the rotation axis   
+!       and the radial scale for this sliding mesh interface.          
 !
        use constants
        use blockPointers
@@ -54,11 +46,7 @@
        character(len=7)            :: integerString
        character(len=maxStringLen) :: errorMessage
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Set the value of groupColor to the current interface ID if
        ! this processor contributes and to mpi_undefined otherwise.

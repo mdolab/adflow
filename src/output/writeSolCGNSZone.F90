@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          writeSolCGNSZone.F90                            *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 04-12-2003                                      *
-!      * Last modified: 10-13-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          writeSolCGNSZone.F90                            
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 04-12-2003                                      
+!       Last modified: 10-13-2005                                      
 !
        subroutine writeSolCGNSZone(zone, nSolVar, nDiscrVar, solNames)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * writeSolCGNSZone writes a volume solution of the given zone    *
-!      * to the cgns file(s). In case the solution must be written to a *
-!      * separate file, useLinksInCGNS == .true., a link to the zone of *
-!      * the grid file is created.                                      *
-!      *                                                                *
-!      ******************************************************************
+!       writeSolCGNSZone writes a volume solution of the given zone    
+!       to the cgns file(s). In case the solution must be written to a 
+!       separate file, useLinksInCGNS == .true., a link to the zone of 
+!       the grid file is created.                                      
 !
        use blockPointers
        use cgnsGrid
@@ -77,11 +69,7 @@
 
        character(len=maxStringLen) :: linkName, solName
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Set the cgns real type depending on the input option.
 
@@ -113,11 +101,7 @@
 
        rootproc: if(myID == 0) then
 !
-!        ****************************************************************
-!        *                                                              *
-!        * I am processor 0 and poor me has to do all the work.         *
-!        *                                                              *
-!        ****************************************************************
+!         I am processor 0 and poor me has to do all the work.         
 !
          ! Allocate the memory for the array used to write the solution
          ! to file. The size depends whether or not rind layers are to
@@ -486,12 +470,8 @@
 
        else rootproc
 !
-!        ****************************************************************
-!        *                                                              *
-!        * I am not the root processor and may have to send some data   *
-!        * to the root processor.                                       *
-!        *                                                              *
-!        ****************************************************************
+!         I am not the root processor and may have to send some data   
+!         to the root processor.                                       
 ! 
          ! Determine the subranges for the 1st solution.
 
@@ -619,14 +599,10 @@
 
          subroutine getSubRangesSol
 !
-!        ****************************************************************
-!        *                                                              *
-!        * getSubRangesSol determines the subranges of the              *
-!        * computational blocks that contribute to the CGNS block which *
-!        * is currently written. Also the size of the largest subblock  *
-!        * is determined.                                               *
-!        *                                                              *
-!        ****************************************************************
+!         getSubRangesSol determines the subranges of the              
+!         computational blocks that contribute to the CGNS block which 
+!         is currently written. Also the size of the largest subblock  
+!         is determined.                                               
 !
          implicit none
 !
@@ -637,11 +613,7 @@
          integer(kind=intType) :: i, j, ll
          integer(kind=intType), dimension(6) :: ii
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution.                                             *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution.                                             
 !
          ! Initialize bufSize.
 

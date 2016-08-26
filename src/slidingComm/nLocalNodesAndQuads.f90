@@ -1,30 +1,22 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          nLocalNodesAndQuads.F90                         *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 01-21-2005                                      *
-!      * Last modified: 02-10-2006                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          nLocalNodesAndQuads.F90                         
+!       Author:        Edwin van der Weide                             
+!       Starting date: 01-21-2005                                      
+!       Last modified: 02-10-2006                                      
 !
        subroutine nLocalNodesAndQuads(nMySubfaces, mySubfaces, &
                                       gridType, nQuad, nNode)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * nLocalNodesAndQuads determines the number of local nodes       *
-!      * and quadrilaters present in the surface grid to be given to    *
-!      * the ADT. The information stored in mySubfaces needs to be      *
-!      * modified, because in mySubfaces the halo faces are taken into  *
-!      * account and it is possible that some faces and thus nodes must *
-!      * be duplicated, because of crossing the line theta = pi and     *
-!      * radial singularities.                                          *
-!      * For gridType == 1 the connectivity of the primary grid must be *
-!      * constructed, while otherwise the dual grid connectivity has to *
-!      * be created.                                                    *
-!      *                                                                *
-!      ******************************************************************
+!       nLocalNodesAndQuads determines the number of local nodes       
+!       and quadrilaters present in the surface grid to be given to    
+!       the ADT. The information stored in mySubfaces needs to be      
+!       modified, because in mySubfaces the halo faces are taken into  
+!       account and it is possible that some faces and thus nodes must 
+!       be duplicated, because of crossing the line theta = pi and     
+!       radial singularities.                                          
+!       For gridType == 1 the connectivity of the primary grid must be 
+!       constructed, while otherwise the dual grid connectivity has to 
+!       be created.                                                    
 !
        use adtAPI
        use localSubfacesMod
@@ -53,11 +45,7 @@
 
        logical, dimension(:), pointer :: storeFace
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the number of subfaces of the interface stored on
        ! this processor to determine the local number of nodes and

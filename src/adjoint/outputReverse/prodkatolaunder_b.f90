@@ -3,28 +3,20 @@
 !
 !  differentiation of prodkatolaunder in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: timeref *w *scratch *vol *si
-!                *sj *sk
+!                sj 
 !   with respect to varying inputs: timeref *w *vol *si *sj *sk
 !   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          prodkatolaunder.f90                             *
-!      * author:        georgi kalitzin, edwin van der weide            *
-!      * starting date: 08-01-2003                                      *
-!      * last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          prodkatolaunder.f90                             
+!       author:        georgi kalitzin, edwin van der weide            
+!       starting date: 08-01-2003                                      
+!       last modified: 06-12-2005                                      
 !
 subroutine prodkatolaunder_b()
 !
-!      ******************************************************************
-!      *                                                                *
-!      * prodkatolaunder computes the turbulent production term using   *
-!      * the kato-launder formulation.                                  *
-!      *                                                                *
-!      ******************************************************************
+!       prodkatolaunder computes the turbulent production term using   
+!       the kato-launder formulation.                                  
 !
   use constants
   use blockpointers
@@ -57,11 +49,7 @@ subroutine prodkatolaunder_b()
   real(kind=realtype) :: tempd1
   real(kind=realtype) :: tempd0
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! determine the non-dimensional wheel speed of this block.
 ! the vorticity term, which appears in kato-launder is of course

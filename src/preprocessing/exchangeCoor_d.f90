@@ -1,11 +1,7 @@
 subroutine exchangeCoor_d(level)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * ExchangeCoor_d exchanges the *derivatives* of the given grid   *
-  !      * level.                                                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       ExchangeCoor_d exchanges the *derivatives* of the given grid   
+  !       level.                                                         
   !
   use block
   use communication
@@ -25,11 +21,7 @@ subroutine exchangeCoor_d(level)
   integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Loop over the number of spectral solutions.
 

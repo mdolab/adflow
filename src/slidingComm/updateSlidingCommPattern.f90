@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          updateSlidingCommPattern.f90                    *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 11-10-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          updateSlidingCommPattern.f90                    
+!       Author:        Edwin van der Weide                             
+!       Starting date: 11-10-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine updateSlidingCommPattern(level, sps, color)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * updateSlidingCommPattern updates the sliding mesh              *
-!      * communication patterns for the 1st and 2nd level cell halo's   *
-!      * for the active sliding interface.                              *
-!      *                                                                *
-!      ******************************************************************
+!       updateSlidingCommPattern updates the sliding mesh              
+!       communication patterns for the 1st and 2nd level cell halo's   
+!       for the active sliding interface.                              
 !
        use communication
        use interfaceGroups
@@ -61,11 +53,7 @@
        type(updateCommType), &
         dimension(0:myInterfaces(color)%nProcSlide-1) :: localInterpol
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Abbreviate the number of processors, my processor id and the
        ! communicator for the subgroup of this sliding interface.
@@ -539,12 +527,8 @@
 
          subroutine getNCell2Proc(nMySubfaces, mySubfaces)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * getNCell2Proc increments the number of cells sent to the     *
-!        * processors for interpolation.                                *
-!        *                                                              *
-!        ****************************************************************
+!         getNCell2Proc increments the number of cells sent to the     
+!         processors for interpolation.                                
 !
          implicit none
 !
@@ -554,11 +538,7 @@
          type(localSubfaceType), dimension(nMySubfaces), &
                                                 intent(in) :: mySubfaces
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Loop over the subfaces and the quadrilateral faces of these
          ! subfaces.
@@ -596,14 +576,10 @@
          subroutine dirIntAndRealBuffer(nMySubfaces, mySubfaces, &
                                         signSubface)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * dirIntAndRealBuffer stores the information in                *
-!        * mySubfaces in the correct place in the buffers intSend,      *
-!        * realSend and indicesSend. In this routine only info of the   *
-!        * direct halo cells is stored.                                 *
-!        *                                                              *
-!        ****************************************************************
+!         dirIntAndRealBuffer stores the information in                
+!         mySubfaces in the correct place in the buffers intSend,      
+!         realSend and indicesSend. In this routine only info of the   
+!         direct halo cells is stored.                                 
 !
          implicit none
 !
@@ -615,11 +591,7 @@
          type(localSubfaceType), dimension(nMySubfaces), &
                                                intent(in) :: mySubfaces
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Loop over the subfaces and the quadrilateral faces of these
          ! subfaces. First store the info of the halo's that must be

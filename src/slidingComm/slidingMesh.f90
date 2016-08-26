@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          slidingMesh.f90                                 *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 10-02-2003                                      *
-!      * Last modified: 04-08-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          slidingMesh.f90                                 
+!       Author:        Edwin van der Weide                             
+!       Starting date: 10-02-2003                                      
+!       Last modified: 04-08-2005                                      
 !
        subroutine slidingMesh(level, sps, color)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * slidingMesh updates the sliding mesh communication pattern     *
-!      * for the given grid level and spectral solution when this       *
-!      * processor has to search a sliding mesh interface for the       *
-!      * given color.                                                   *
-!      *                                                                *
-!      ******************************************************************
+!       slidingMesh updates the sliding mesh communication pattern     
+!       for the given grid level and spectral solution when this       
+!       processor has to search a sliding mesh interface for the       
+!       given color.                                                   
 !
        use communication
        use interfaceGroups
@@ -36,11 +28,7 @@
 
        integer(kind=intType) :: nn
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Check if this processor actually participates in a search.
        ! If not, return immediately.
@@ -65,11 +53,7 @@
 
        call mySubfacesSlide(level, sps, color)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Construct the coordinates of the halo nodes.                   *
-!      *                                                                *
-!      ******************************************************************
+!       Construct the coordinates of the halo nodes.                   
 !
        ! Store both primary surface grids in a form useable by the ADT
        ! routines. The last argument, 1, indicates that the primary
@@ -140,12 +124,8 @@
          call terminate("slidingMesh", &
                         "Deallocation error for the local surface grids")
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Find the donor cells and interpolation weights for the cell    *
-!      * centered values.                                               *
-!      *                                                                *
-!      ******************************************************************
+!       Find the donor cells and interpolation weights for the cell    
+!       centered values.                                               
 !
        ! Store both dual surface grids in a form useable by the ADT
        ! routines. The last argument, 2, indicates that the dual

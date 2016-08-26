@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          bcTurbFarfield.f90                              *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 06-15-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          bcTurbFarfield.f90                              
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 06-15-2003                                      
+!       Last modified: 06-12-2005                                      
 !
 subroutine bcTurbFarfield(nn)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * bcTurbFarfield applies the implicit treatment of the           *
-  !      * farfield boundary condition to subface nn. As the farfield     *
-  !      * boundary condition is independent of the turbulence model,     *
-  !      * this routine is valid for all models. It is assumed that the   *
-  !      * pointers in blockPointers are already set to the correct       *
-  !      * block on the correct grid level.                               *
-  !      *                                                                *
-  !      ******************************************************************
+  !       bcTurbFarfield applies the implicit treatment of the           
+  !       farfield boundary condition to subface nn. As the farfield     
+  !       boundary condition is independent of the turbulence model,     
+  !       this routine is valid for all models. It is assumed that the   
+  !       pointers in blockPointers are already set to the correct       
+  !       block on the correct grid level.                               
   !
   use constants
   use blockPointers
@@ -36,11 +28,7 @@ subroutine bcTurbFarfield(nn)
 
   real(kind=realType) :: nnx, nny, nnz, dot
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Loop over the faces of the subfaces and set the values of
   ! bmt and bvt for an implicit treatment.

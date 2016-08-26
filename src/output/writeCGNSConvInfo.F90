@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          writeCGNSConvInfo.F90                           *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-24-2003                                      *
-!      * Last modified: 10-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          writeCGNSConvInfo.F90                           
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-24-2003                                      
+!       Last modified: 10-12-2005                                      
 !
        subroutine writeCGNSConvInfo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * writeCGNSConvInfo writes the convergence info to the           *
-!      * cgns file(s).                                                  *
-!      *                                                                *
-!      ******************************************************************
+!       writeCGNSConvInfo writes the convergence info to the           
+!       cgns file(s).                                                  
 !
 #ifdef USE_NO_CGNS
        call terminate("writeCGNSConvInfo", &
@@ -37,11 +29,7 @@
 
        real(kind=8), dimension(:), allocatable :: buf8
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Return immediately if the convergence history (of the inner
        ! iterations) does not need to be stored. This logical can

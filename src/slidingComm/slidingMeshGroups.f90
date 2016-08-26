@@ -1,26 +1,18 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          slidingMeshGroups.f90                           *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 09-26-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          slidingMeshGroups.f90                           
+!       Author:        Edwin van der Weide                             
+!       Starting date: 09-26-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine slidingMeshGroups
 !
-!      ******************************************************************
-!      *                                                                *
-!      * slidingMeshGroups determines the coloring for the sliding      *
-!      * mesh interfaces, such that as many interfaces are treated      *
-!      * simultaneously, but every processor works at only one at a     *
-!      * time. Furthermore when intersecting sliding mesh interfaces    *
-!      * are present, the sequence of treating them is important. The   *
-!      * one with the lower id is treated first. This is just a choice  *
-!      * used in this code; nothing special.                            *
-!      *                                                                *
-!      ******************************************************************
+!       slidingMeshGroups determines the coloring for the sliding      
+!       mesh interfaces, such that as many interfaces are treated      
+!       simultaneously, but every processor works at only one at a     
+!       time. Furthermore when intersecting sliding mesh interfaces    
+!       are present, the sequence of treating them is important. The   
+!       one with the lower id is treated first. This is just a choice  
+!       used in this code; nothing special.                            
 !
        use cgnsGrid
        use communication
@@ -50,11 +42,7 @@
        type(tmpSlidingType), dimension(cgnsNSliding) :: distrSliding
 
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the number of sections, i.e. grid parts between
        ! sliding mesh interfaces, in the grid.

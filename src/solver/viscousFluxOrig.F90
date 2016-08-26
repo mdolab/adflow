@@ -4,25 +4,17 @@
 ! replaced. There is almost no difference in speed between the two
 ! routines.
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          viscousFlux.f90                                 *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-21-2003                                      *
-!      * Last modified: 04-18-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          viscousFlux.f90                                 
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-21-2003                                      
+!       Last modified: 04-18-2005                                      
 !
        subroutine viscousFlux
 !
-!      ******************************************************************
-!      *                                                                *
-!      * viscousFlux computes the viscous fluxes using a central        *
-!      * difference scheme for a block.                                 *
-!      * It is assumed that the pointers in block pointer already point *
-!      * to the correct block.                                          *
-!      *                                                                *
-!      ******************************************************************
+!       viscousFlux computes the viscous fluxes using a central        
+!       difference scheme for a block.                                 
+!       It is assumed that the pointers in block pointer already point 
+!       to the correct block.                                          
 !
        use blockPointers
        use flowVarRefState
@@ -55,11 +47,7 @@
 
        logical :: correctForK, storeWallTensor
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 ! 
        ! Initialize the nodal graident variables to zero
        qqx = zero
@@ -321,11 +309,7 @@
          call nodalGradients(uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz, &
                              qqx, qqy, qqz)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Viscous fluxes in the k-direction.                           *
-!        *                                                              *
-!        ****************************************************************
+!         Viscous fluxes in the k-direction.                           
 !
          do j=2,jl
            do i=2,il
@@ -508,11 +492,7 @@
            enddo
          enddo
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Viscous fluxes in the j-direction.                           *
-!        *                                                              *
-!        ****************************************************************
+!         Viscous fluxes in the j-direction.                           
 !
          do j=1,jl
            do i=2,il
@@ -712,11 +692,7 @@
            enddo
          enddo
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Viscous fluxes in the i-direction.                           *
-!        *                                                              *
-!        ****************************************************************
+!         Viscous fluxes in the i-direction.                           
 !
          do j=2,jl
            do i=1,il
@@ -951,17 +927,13 @@
          subroutine nodalGradients(uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz, &
                                    qqx, qqy, qqz)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * nodalGradients computes the nodal velocity gradients and     *
-!        * minus the gradient of the speed of sound squared. The minus  *
-!        * sign is present, because this is the definition of the heat  *
-!        * flux. These gradients are computed for the k-plane k. The    *
-!        * results are stored in uux(:,:,k1), etc. Here k1 is either 1   *
-!        * or 2. The gradients have the intent(inout) label, because    *
-!        * only the k1 elements are changed; the others remain the same.*
-!        *                                                              *
-!        ****************************************************************
+!         nodalGradients computes the nodal velocity gradients and     
+!         minus the gradient of the speed of sound squared. The minus  
+!         sign is present, because this is the definition of the heat  
+!         flux. These gradients are computed for the k-plane k. The    
+!         results are stored in uux(:,:,k1), etc. Here k1 is either 1   
+!         or 2. The gradients have the intent(inout) label, because    
+!         only the k1 elements are changed; the others remain the same.
 !
          implicit none
 !
@@ -975,11 +947,7 @@
          real(kind=realType) :: oneOverV, ubar, vbar, wbar, a2
          real(kind=realType) :: sx, sx1, sy, sy1, sz, sz1
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! First part. Contribution in the k-direction. As the viscous
          ! fluxes are computed per k-plane, the values of the surface

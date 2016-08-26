@@ -6,24 +6,16 @@
 !   with respect to varying inputs: *rev *w
 !   plus diff mem management of: rev:in w:in bcdata:in
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          turb2ndhalo.f90                                 *
-!      * author:        edwin van der weide                             *
-!      * starting date: 06-16-2003                                      *
-!      * last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          turb2ndhalo.f90                                 
+!       author:        edwin van der weide                             
+!       starting date: 06-16-2003                                      
+!       last modified: 06-12-2005                                      
 !
 subroutine turb2ndhalo_b(nn)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * turb2ndhalo sets the turbulent variables in the second halo    *
-!      * cell for the given subface. simple constant extrapolation is   *
-!      * used to avoid problems.                                        *
-!      *                                                                *
-!      ******************************************************************
+!       turb2ndhalo sets the turbulent variables in the second halo    
+!       cell for the given subface. simple constant extrapolation is   
+!       used to avoid problems.                                        
 !
   use constants
   use blockpointers
@@ -51,11 +43,7 @@ subroutine turb2ndhalo_b(nn)
   real(kind=realtype) :: tmpd1
   real(kind=realtype) :: tmpd0
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! determine the face on which this subface is located and set
 ! some pointers accordingly.

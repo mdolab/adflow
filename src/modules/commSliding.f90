@@ -1,34 +1,22 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          commSliding.f90                                 *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 09-25-2003                                      *
-!      * Last modified: 03-21-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          commSliding.f90                                 
+!       Author:        Edwin van der Weide                             
+!       Starting date: 09-25-2003                                      
+!       Last modified: 03-21-2005                                      
 !
        module commSliding
 !
-!      ******************************************************************
-!      *                                                                *
-!      * This module contains the communication pattern, the            *
-!      * interpolation coefficients and the transformation matrices for *
-!      * the sliding mesh interfaces for all the grid levels.           *
-!      *                                                                *
-!      ******************************************************************
+!       This module contains the communication pattern, the            
+!       interpolation coefficients and the transformation matrices for 
+!       the sliding mesh interfaces for all the grid levels.           
 !
        use constants, only : intType, realType
        implicit none
        save
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the data type slidingCommListType, which is  *
-!      * is identical to comm_list_type. However it is duplicated,      *
-!      * because in the future it may be different.                     *
-!      *                                                                *
-!      ******************************************************************
+!       The definition of the data type slidingCommListType, which is  
+!       is identical to comm_list_type. However it is duplicated,      
+!       because in the future it may be different.                     
 !
        type slidingCommListType
 
@@ -43,16 +31,12 @@
 
        end type slidingCommListType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the data type interpolHaloListType, which    *
-!      * stores the indices and block IDs as well as the interpolation  *
-!      * weights of the halo's to be constructed by interpolation and   *
-!      * the indices in the receive buffer. This datatype is intended   *
-!      * for external communication via buffers and should not be used  *
-!      * for internal communication.                                    *
-!      *                                                                *
-!      ******************************************************************
+!       The definition of the data type interpolHaloListType, which    
+!       stores the indices and block IDs as well as the interpolation  
+!       weights of the halo's to be constructed by interpolation and   
+!       the indices in the receive buffer. This datatype is intended   
+!       for external communication via buffers and should not be used  
+!       for internal communication.                                    
 !
        type interpolHaloListType
 
@@ -77,13 +61,9 @@
 
        end type interpolHaloListType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the derived data type slidingCommType,       *
-!      * which stores the communication pattern for sliding mesh        *
-!      * interfaces for a certain halo type.                            *
-!      *                                                                *
-!      ******************************************************************
+!       The definition of the derived data type slidingCommType,       
+!       which stores the communication pattern for sliding mesh        
+!       interfaces for a certain halo type.                            
 !
        type slidingCommType
 
@@ -122,13 +102,9 @@
 
        end type slidingCommType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the data type internalSlidingCommType,       *
-!      * which stores the memory to memory copy on this processors for  *
-!      * sliding mesh interfaces for a certain halo type.               *
-!      *                                                                *
-!      ******************************************************************
+!       The definition of the data type internalSlidingCommType,       
+!       which stores the memory to memory copy on this processors for  
+!       sliding mesh interfaces for a certain halo type.               
 !
        type internalSlidingCommType
 
@@ -157,11 +133,7 @@
 
        end type internalSlidingCommType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Variables stored in this module.                               *
-!      *                                                                *
-!      ******************************************************************
+!       Variables stored in this module.                               
 !
        ! nRotSliding:        The number of rotation matrices needed to
        !                     compute the velocities in the sliding mesh

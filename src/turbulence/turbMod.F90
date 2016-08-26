@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          turbMod.f90                                     *
-!      * Author:        Edwin van der Weide, Georgi Kalitzin            *
-!      * Starting date: 08-18-2004                                      *
-!      * Last modified: 04-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          turbMod.f90                                     
+!       Author:        Edwin van der Weide, Georgi Kalitzin            
+!       Starting date: 08-18-2004                                      
+!       Last modified: 04-12-2005                                      
 !
 module turbMod
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * This local module contains variables used when the turbulence  *
-  !      * equations are solved.                                          *
-  !      *                                                                *
-  !      ******************************************************************
+  !       This local module contains variables used when the turbulence  
+  !       equations are solved.                                          
   !
   use precision
   implicit none

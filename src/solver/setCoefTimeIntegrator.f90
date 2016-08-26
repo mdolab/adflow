@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          setCoefTimeIntegrator.f90                       *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-05-2004                                      *
-!      * Last modified: 03-26-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          setCoefTimeIntegrator.f90                       
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-05-2004                                      
+!       Last modified: 03-26-2005                                      
 !
        subroutine setCoefTimeIntegrator
 !
-!      ******************************************************************
-!      *                                                                *
-!      * setCoefTimeIntegrator determines the coefficients of the       *
-!      * time integration scheme in unsteady mode. Normally these are   *
-!      * equal to the coefficients corresponding to the specified       *
-!      * accuracy. However during the initial phase there are not       *
-!      * enough states in the past and the accuracy is reduced.         *
-!      *                                                                *
-!      ******************************************************************
+!       setCoefTimeIntegrator determines the coefficients of the       
+!       time integration scheme in unsteady mode. Normally these are   
+!       equal to the coefficients corresponding to the specified       
+!       accuracy. However during the initial phase there are not       
+!       enough states in the past and the accuracy is reduced.         
 !
        use constants
        use inputUnsteady
@@ -31,17 +23,11 @@
 !
        integer(kind=intType) :: nn, nLevelsSet
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine which time integrator must be used.
 
-       ! *******************************
        ! Modified by HDN
-       ! *******************************
        select case (timeAccuracy)
          case (firstOrder)
 

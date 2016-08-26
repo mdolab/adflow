@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          initFlowDoms.f90                                *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 09-24-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          initFlowDoms.f90                                
+!       Author:        Edwin van der Weide                             
+!       Starting date: 09-24-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine initFlowDoms
 !
-!      ******************************************************************
-!      *                                                                *
-!      * initFlowDoms allocates the memory for flowDoms and initializes *
-!      * its pointers to null pointers, such that they do not have      *
-!      * random targets.                                                *
-!      *                                                                *
-!      ******************************************************************
+!       initFlowDoms allocates the memory for flowDoms and initializes 
+!       its pointers to null pointers, such that they do not have      
+!       random targets.                                                
 !
        use block
        use inputIteration
@@ -30,11 +22,7 @@
 
        integer(kind=intType) :: i, j, k, nn
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Allocate the memory for flowDoms. Set nn to the maximum of the
        ! number of mg levels needed in the cycle and mg start level.

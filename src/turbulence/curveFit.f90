@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          curveFit.f90                                    *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 03-02-2004                                      *
-!      * Last modified: 04-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          curveFit.f90                                    
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 03-02-2004                                      
+!       Last modified: 04-12-2005                                      
 !
        function curveUpRe(Re)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * curveUpRe determines the value of the nonDimensional           *
-!      * tangential velocity (made nonDimensional with the skin         *
-!      * friction velocity) for the given Reynolds number.              *
-!      * This data has been curve fitted with cubic splines.            *
-!      *                                                                *
-!      ******************************************************************
+!       curveUpRe determines the value of the nonDimensional           
+!       tangential velocity (made nonDimensional with the skin         
+!       friction velocity) for the given Reynolds number.              
+!       This data has been curve fitted with cubic splines.            
 !
        use paramTurb
        implicit none
@@ -35,11 +27,7 @@
        integer(kind=intType) :: ii, nn, start
        real(kind=realType)   :: x, x2, x3, upRe
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the situation we are dealing with.
 
@@ -120,13 +108,9 @@
 !
        subroutine curveTupYp(tup, yp, ntu1, ntu2)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * CurveTupYp determines the value of the turbulent variables     *
-!      * ntu1 to ntu2 for the given yplus.                              *
-!      * This data has been curve fitted with cubic splines.            *
-!      *                                                                *
-!      ******************************************************************
+!       CurveTupYp determines the value of the turbulent variables     
+!       ntu1 to ntu2 for the given yplus.                              
+!       This data has been curve fitted with cubic splines.            
 !
        use constants
        use inputPhysics
@@ -146,11 +130,7 @@
        integer(kind=intType) :: ii, nn, start, mm
        real(kind=realType)   :: x, x2, x3, epsWall, fWall
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the situation we are dealing with.
 

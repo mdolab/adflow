@@ -1,12 +1,8 @@
        subroutine describeScheme(string)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * describeScheme gives a short description about the scheme      *
-!      * used to obtain the solution. The description is stored in the  *
-!      * character array string.                                        *
-!      *                                                                *
-!      ******************************************************************
+!       describeScheme gives a short description about the scheme      
+!       used to obtain the solution. The description is stored in the  
+!       character array string.                                        
 !
        use constants
        use inputDiscretization

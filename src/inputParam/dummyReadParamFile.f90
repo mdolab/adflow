@@ -1,13 +1,9 @@
 
        subroutine dummyreadParamFile
 !
-!      ******************************************************************
-!      *                                                                *
-!      * This subroutine is the same as readParamFile EXCEPT it does not*
-!      * read the actual file. Values are set diectly from python for   *
-!      * all the options and then this file is run.                     *
-!      *                                                                *
-!      ******************************************************************
+!       This subroutine is the same as readParamFile EXCEPT it does not
+!       read the actual file. Values are set diectly from python for   
+!       all the options and then this file is run.                     
 !
        use constants
        use inputPhysics, only : cpModel
@@ -20,11 +16,7 @@
 !
        integer, parameter :: readUnit = 32
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
 
        ! Check if all the desired input parameters were specified and

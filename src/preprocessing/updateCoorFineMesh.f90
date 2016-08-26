@@ -1,22 +1,18 @@
        subroutine updateCoorFineMesh(dtAdvance, sps)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * updateCoorFineMesh updates the coordinates of the              *
-!      * moving parts of the current finest mesh by the given amount of *
-!      * time, possibly different per section. In unsteady mode all the *
-!      * times will be equal, but in time spectral mode they can be     *
-!      * different.                                                     *
-!      * This routine is called in the full mg cycle to put the fine    *
-!      * mesh to the position previously calculated on the coarser      *
-!      * grid levels, in the unsteady time loop to advance the          *
-!      * coordinates only one time step and in the partitioning part    *
-!      * of the spectral mode to compute the coordinates of the given   *
-!      * spectral solution sps. As it is used in the full MG cycle,     *
-!      * currentLevel points to the correct grid level and not          *
-!      * ground level.                                                  *
-!      *                                                                *
-!      ******************************************************************
+!       updateCoorFineMesh updates the coordinates of the              
+!       moving parts of the current finest mesh by the given amount of 
+!       time, possibly different per section. In unsteady mode all the 
+!       times will be equal, but in time spectral mode they can be     
+!       different.                                                     
+!       This routine is called in the full mg cycle to put the fine    
+!       mesh to the position previously calculated on the coarser      
+!       grid levels, in the unsteady time loop to advance the          
+!       coordinates only one time step and in the partitioning part    
+!       of the spectral mode to compute the coordinates of the given   
+!       spectral solution sps. As it is used in the full MG cycle,     
+!       currentLevel points to the correct grid level and not          
+!       ground level.                                                  
 !
        use constants
        use block
@@ -79,11 +75,7 @@
 
          call setPointers(nn, currentLevel, sps)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * The rigid body motion of the entire mesh.                    *
-!        *                                                              *
-!        ****************************************************************
+!         The rigid body motion of the entire mesh.                    
 !
          ! First the rotation.
 
@@ -126,14 +118,10 @@
          enddo
 
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Determine whether the corresponding cgns block is a rotating *
-!        * block. If it is, apply the rotation.                         *
-!        * Note that now the section ID of the block is taken into      *
-!        * account to allow for different periodic times per section.   *
-!        *                                                              *
-!        ****************************************************************
+!         Determine whether the corresponding cgns block is a rotating 
+!         block. If it is, apply the rotation.                         
+!         Note that now the section ID of the block is taken into      
+!         account to allow for different periodic times per section.   
 !
          if( cgnsDoms(nbkGlobal)%rotatingFrameSpecified ) then
 

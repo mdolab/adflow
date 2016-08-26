@@ -1,38 +1,28 @@
 !
-!     ******************************************************************
-!     *                                                                *
-!     * File:          getDirVector.f90                                *
-!     * Author:        Andre C. Marta                                  *
-!     * Starting date: 10-25-2005                                      *
-!     * Last modified: 10-26-2006                                      *
-!     *                                                                *
-!     ******************************************************************
+!      File:          getDirVector.f90                                
+!      Author:        Andre C. Marta                                  
+!      Starting date: 10-25-2005                                      
+!      Last modified: 10-26-2006                                      
 !
       subroutine getDirVector(refDirection, alpha, beta,&
            windDirection,liftIndex)
         !(xb,yb,zb,alpha,beta,xw,yw,zw)
 !
-!     ******************************************************************
-!     *                                                                *
-!     * Convert the angle of attack and side slip angle to wind axes.  *
-!     * The components of the wind direction vector (xw,yw,zw) are     *
-!     * computed given the direction angles in radians and the body    *
-!     * direction by performing two rotations on the original          *
-!     * direction vector:                                              *
-!     *   1) Rotation about the zb or yb-axis: alpha clockwise (CW)    *
-!     *      (xb,yb,zb) -> (x1,y1,z1)                                  *
-!     *                                                                *
-!     *   2) Rotation about the yl or z1-axis: beta counter-clockwise  *
-!     *      (CCW)  (x1,y1,z1) -> (xw,yw,zw)                           *
-!     *                                                                *
-!     *    input arguments:                                            *
-!     *       alpha    = angle of attack in radians                    *
-!     *       beta     = side slip angle in radians                    *
-!     *       refDirection = reference direction vector                *
-!     *    output arguments:                                           *
-!     *       windDirection = unit wind vector in body axes            *
-!     *                                                                *
-!     ******************************************************************
+!      Convert the angle of attack and side slip angle to wind axes.  
+!      The components of the wind direction vector (xw,yw,zw) are     
+!      computed given the direction angles in radians and the body    
+!      direction by performing two rotations on the original          
+!      direction vector:                                              
+!        1) Rotation about the zb or yb-axis: alpha clockwise (CW)    
+!           (xb,yb,zb) -> (x1,y1,z1)                                  
+!        2) Rotation about the yl or z1-axis: beta counter-clockwise  
+!           (CCW)  (x1,y1,z1) -> (xw,yw,zw)                           
+!         input arguments:                                            
+!            alpha    = angle of attack in radians                    
+!            beta     = side slip angle in radians                    
+!            refDirection = reference direction vector                
+!         output arguments:                                           
+!            windDirection = unit wind vector in body axes            
 !
       use constants
       use utils, only : terminate
@@ -49,11 +39,7 @@
 !
       real(kind=realType) :: rnorm,x1,y1,z1,xbn,ybn,zbn,xw,yw,zw
       real(kind=realType) :: tmp
-!     ******************************************************************
-!     *                                                                *
-!     * Begin execution.                                               *
-!     *                                                                *
-!     ******************************************************************
+!      Begin execution.                                               
 !
       ! Normalize the input vector.
 

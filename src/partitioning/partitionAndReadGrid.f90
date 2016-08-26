@@ -1,26 +1,18 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          partitionAndReadGrid.f90                        *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 12-17-2002                                      *
-!      * Last modified: 11-30-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          partitionAndReadGrid.f90                        
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 12-17-2002                                      
+!       Last modified: 11-30-2007                                      
 !
        subroutine partitionAndReadGrid(partitionOnly)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * partitionAndReadGrid determines the partitioning of the        *
-!      * multiblock grid over the processors and reads the grid of the  *
-!      * blocks (or block parts) assigned to this processor. Other      *
-!      * preprocessing activities, such as the proper setup of the halo *
-!      * communication structure, creation of coarse grids and wall     *
-!      * distance computation, are performed in the preprocessing       *
-!      * library.                                                       *
-!      *                                                                *
-!      ******************************************************************
+!       partitionAndReadGrid determines the partitioning of the        
+!       multiblock grid over the processors and reads the grid of the  
+!       blocks (or block parts) assigned to this processor. Other      
+!       preprocessing activities, such as the proper setup of the halo 
+!       communication structure, creation of coarse grids and wall     
+!       distance computation, are performed in the preprocessing       
+!       library.                                                       
 !
        use communication
        use blockPointers
@@ -37,11 +29,7 @@
 !
        integer :: ierr
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the number of grid files that must be read,
        ! as well as the corresponding file names.

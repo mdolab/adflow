@@ -1,28 +1,19 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          determineAreaLevel0Cooling.f90                  *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-30-2005                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          determineAreaLevel0Cooling.f90                  
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-30-2005                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine determineAreaLevel0Cooling(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * determineAreaLevel0Cooling computes the axial area of the      *
-!      * injection planes of the level 0 cooling model for the given    *
-!      * multigrid. If only a slice is simulated the area is scaled up  *
-!      * to the full wheel, such that no discrepencies occur when       *
-!      * sections are present with different periodic angles.           *
-!      *                                                                *
-!      * This model has been developed by Pratt and Whitney and should  *
-!      * not be given to third parties. This implementation assumes     *
-!      * the x-direction is the axial direction.                        *
-!      *                                                                *
-!      ******************************************************************
+!       determineAreaLevel0Cooling computes the axial area of the      
+!       injection planes of the level 0 cooling model for the given    
+!       multigrid. If only a slice is simulated the area is scaled up  
+!       to the full wheel, such that no discrepencies occur when       
+!       sections are present with different periodic angles.           
+!       This model has been developed by Pratt and Whitney and should  
+!       not be given to third parties. This implementation assumes     
+!       the x-direction is the axial direction.                        
 !
        use block
        use communication
@@ -48,11 +39,7 @@
 
        real(kind=realType), dimension(:,:,:), pointer :: ss
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Return immediately if no cooling planes are present.
 

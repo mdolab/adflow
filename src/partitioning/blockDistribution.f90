@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          blockDistribution.f90                           *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-13-2004                                      *
-!      * Last modified: 10-10-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          blockDistribution.f90                           
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-13-2004                                      
+!       Last modified: 10-10-2005                                      
 !
        subroutine blockDistribution
 !
-!      ******************************************************************
-!      *                                                                *
-!      * blockDistribution determines the distribution of the blocks    *
-!      * over the processors. If blocks must be split to obtain a good  *
-!      * load balance an iterative algorithm is used to determine the   *
-!      * best way to split them.                                        *
-!      *                                                                *
-!      ******************************************************************
+!       blockDistribution determines the distribution of the blocks    
+!       over the processors. If blocks must be split to obtain a good  
+!       load balance an iterative algorithm is used to determine the   
+!       best way to split them.                                        
 !
        use cgnsGrid
        use communication
@@ -40,11 +32,7 @@
 
        type(splitCGNSType), dimension(cgnsNDom) :: splitInfo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! If it is not allowed to split the blocks, check that the
        ! number of blocks is equal or larger than the number of
@@ -63,12 +51,8 @@
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Determine how the blocks must be split (if allowed) for        *
-!      * load balancing reasons.                                        *
-!      *                                                                *
-!      ******************************************************************
+!       Determine how the blocks must be split (if allowed) for        
+!       load balancing reasons.                                        
 !
        ! Initialize splitInfo to the original cgns blocks and determine
        ! the total number of cells.
@@ -242,13 +226,9 @@
 
          logical function splittingIsOkay(cgnsID)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * splittingIsOkay determines whether or not the splitting of   *
-!        * the given cgns block is okay in the sense that all subblocks *
-!        * are smaller than the allowed number of cells and faces.      *
-!        *                                                              *
-!        ****************************************************************
+!         splittingIsOkay determines whether or not the splitting of   
+!         the given cgns block is okay in the sense that all subblocks 
+!         are smaller than the allowed number of cells and faces.      
 !
          implicit none
 !
@@ -260,11 +240,7 @@
 !
          integer(kind=intType) :: i, nx, ny, nz, nCells
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Initialize splittingIsOkay to .true.
 
@@ -304,12 +280,8 @@
 
          subroutine splitBlockInitialization(cgnsID)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * splitBlockInitialization splits the given cgns block ID      *
-!        * into a number of subbocks during the initialization phase.   *
-!        *                                                              *
-!        ****************************************************************
+!         splitBlockInitialization splits the given cgns block ID      
+!         into a number of subbocks during the initialization phase.   
 !
          implicit none
 !
@@ -328,11 +300,7 @@
 
          type(distributionBlockType) :: tmpBlock
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Check whether it is allowed to split blocks.
 
@@ -517,12 +485,8 @@
 
          subroutine splitBlocksLoadBalance
 !
-!        ****************************************************************
-!        *                                                              *
-!        * splitBlocksLoadBalance splits some (sub)blocks even          *
-!        * further to obtain a better load balance.                     *
-!        *                                                              *
-!        ****************************************************************
+!         splitBlocksLoadBalance splits some (sub)blocks even          
+!         further to obtain a better load balance.                     
 !
          use sorting, only : bsearchIntegers, qsortIntegers
          implicit none

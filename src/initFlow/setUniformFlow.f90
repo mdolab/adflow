@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          setUniformFlow.f90                              *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 05-13-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          setUniformFlow.f90                              
+!       Author:        Edwin van der Weide                             
+!       Starting date: 05-13-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine setUniformFlow
 !
-!      ******************************************************************
-!      *                                                                *
-!      * setUniformFlow set the flow variables of all local blocks on   *
-!      * the start level to the uniform flow field.                     *
-!      *                                                                *
-!      ******************************************************************
+!       setUniformFlow set the flow variables of all local blocks on   
+!       the start level to the uniform flow field.                     
 !
        use constants
        use blockPointers, only : w, dw, fw, flowDoms, ib, jb, kb, &
@@ -54,11 +46,7 @@
          end subroutine velMagnAndDirectionSubface
        end interface
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the number of spectral solutions and blocks.
        spectralLoop: do mm=1,nTimeIntervalsSpectral
@@ -184,13 +172,9 @@
 
 subroutine velMagnAndDirectionSubface(vmag, dir, BCData, mm)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * VelMagnAndDirectionSubface determines the maximum value    *
-  !      * of the magnitude of the velocity as well as the sum of the     *
-  !      * flow directions for the currently active subface.              *
-  !      *                                                                *
-  !      ******************************************************************
+  !       VelMagnAndDirectionSubface determines the maximum value    
+  !       of the magnitude of the velocity as well as the sum of the     
+  !       flow directions for the currently active subface.              
   !
   use constants
   use block
@@ -210,11 +194,7 @@ subroutine velMagnAndDirectionSubface(vmag, dir, BCData, mm)
   integer(kind=intType) :: i, j
   real(kind=realType)   :: vel
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Initialize vmag to -1.0.
 

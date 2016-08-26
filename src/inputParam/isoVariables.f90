@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          isoVariables.f90                                *
-!      * Author:        Gaetan Kenway                                   *
-!      * Starting date: 07-21-2013                                      *
-!      * Last modified: 07-21-2013                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          isoVariables.f90                                
+!       Author:        Gaetan Kenway                                   
+!       Starting date: 07-21-2013                                      
+!       Last modified: 07-21-2013                                      
 !
        subroutine isoVariables(variables)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * isoVariables extracts from the given string the extra          *
-!      * iso surface variables to be written to the solution file.      *
-!      *                                                                *
-!      ******************************************************************
+!       isoVariables extracts from the given string the extra          
+!       iso surface variables to be written to the solution file.      
 !
        use constants
        use extraOutput
@@ -34,11 +26,7 @@
        character(len=15) :: keyword
        character(len=maxStringLen) :: errorMessage
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Convert the string variables to lower case.
 

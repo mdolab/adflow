@@ -1,13 +1,9 @@
 subroutine computeIsoVariable(solName, sps, isoVal)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * computeIsoVar computes NODE centered values for the given      *
-  !      * solName variable. It is essentially equilivent to              *
-  !      * sotreSolInBuffer. It is assumed blockPointers are already      *
-  !      * set to the correct block.                                      *
-  !      *                                                                *
-  !      ******************************************************************
+  !       computeIsoVar computes NODE centered values for the given      
+  !       solName variable. It is essentially equilivent to              
+  !       sotreSolInBuffer. It is assumed blockPointers are already      
+  !       set to the correct block.                                      
   !
   use constants
   use blockPointers

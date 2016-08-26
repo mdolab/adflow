@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          inviscidCentralFlux.f90                         *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-24-2003                                      *
-!      * Last modified: 10-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          inviscidCentralFlux.f90                         
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-24-2003                                      
+!       Last modified: 10-29-2007                                      
 !
 subroutine inviscidCentralFlux
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * inviscidCentralFlux computes the Euler fluxes using a central  *
-  !      * discretization for a given block. Therefore it is assumed that *
-  !      * the pointers in block pointer already point to the correct     *
-  !      * block on the correct multigrid level.                          *
-  !      *                                                                *
-  !      ******************************************************************
+  !       inviscidCentralFlux computes the Euler fluxes using a central  
+  !       discretization for a given block. Therefore it is assumed that 
+  !       the pointers in block pointer already point to the correct     
+  !       block on the correct multigrid level.                          
   !
   use blockPointers
   use cgnsGrid
@@ -33,11 +25,7 @@ subroutine inviscidCentralFlux
   real(kind=realType) :: pa, fs, sFace, vnp, vnm
   real(kind=realType) :: wwx, wwy, wwz, rvol
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   continue
   !$AD CHECKPOINT-START
@@ -45,11 +33,7 @@ subroutine inviscidCentralFlux
   ! block is not moving.
   sFace = zero
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Advective fluxes in the i-direction.                           *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Advective fluxes in the i-direction.                           
   !
 #ifdef TAPENADE_FAST
   !$AD II-LOOP
@@ -156,11 +140,7 @@ subroutine inviscidCentralFlux
   !$AD CHECKPOINT-END
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Advective fluxes in the j-direction.                           *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Advective fluxes in the j-direction.                           
   !
   continue
   !$AD CHECKPOINT-START
@@ -272,11 +252,7 @@ subroutine inviscidCentralFlux
   !$AD CHECKPOINT-END
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Advective fluxes in the k-direction.                           *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Advective fluxes in the k-direction.                           
   continue
   !$AD CHECKPOINT-START
   sface = zero

@@ -1,23 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          initCurveFitDataSST.f90                         *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 08-21-2004                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          initCurveFitDataSST.f90                         
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 08-21-2004                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine initCurveFitDataSST
 !
-!      ******************************************************************
-!      *                                                                *
-!      * initCurveFitDataSST contains the curve fit constants for       *
-!      * the wall function data for Menter's SST turbulence model.      *
-!      *                                                                *
-!      * Warning: Wall function data developed for k-omega model        *
-!      *                                                                *
-!      ******************************************************************
+!       initCurveFitDataSST contains the curve fit constants for       
+!       the wall function data for Menter's SST turbulence model.      
+!       Warning: Wall function data developed for k-omega model        
 !
        use constants
        use flowVarRefState
@@ -29,11 +20,7 @@
 !
        integer :: ierr
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Set the number of data points and allocate the memory for the
        ! arrays of the curve fits.

@@ -1,12 +1,8 @@
 subroutine preprocessingADjoint
   !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Perform the preprocessing tasks for the adjoint solver. This   *
-  !     * routine is called only once. The memory allcoated here is      *
-  !     * deallocated in src/utils/releaseMemory.f90                     *
-  !     *                                                                *
-  !     ******************************************************************
+  !      Perform the preprocessing tasks for the adjoint solver. This   
+  !      routine is called only once. The memory allcoated here is      
+  !      deallocated in src/utils/releaseMemory.f90                     
   !
   use constants
   use communication, only : sumb_comm_world

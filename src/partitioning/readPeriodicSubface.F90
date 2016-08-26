@@ -3,12 +3,8 @@ subroutine readPeriodicSubface(cgnsInd, cgnsBase, zone, conn,  &
      rotationCenter, rotationAngles, &
      translation)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * readPeriodicSubface reads the possible periodic info for the   *
-  !      * given general subface connectivity.                            *
-  !      *                                                                *
-  !      ******************************************************************
+  !       readPeriodicSubface reads the possible periodic info for the   
+  !       given general subface connectivity.                            
   !
   use constants
   use cgnsGrid

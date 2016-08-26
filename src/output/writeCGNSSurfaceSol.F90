@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          writeCgnsSurfaceSol.F90                         *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 05-15-2003                                      *
-!      * Last modified: 10-11-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          writeCgnsSurfaceSol.F90                         
+!       Author:        Edwin van der Weide                             
+!       Starting date: 05-15-2003                                      
+!       Last modified: 10-11-2005                                      
 !
        subroutine writeCGNSSurfaceSol
 !
-!      ******************************************************************
-!      *                                                                *
-!      * writeCGNSSurfaceSol and its subroutines write the surface      *
-!      * solution file(s). The unknowns are stored in the center of the *
-!      * surface quadrilaterals.                                        *
-!      *                                                                *
-!      ******************************************************************
+!       writeCGNSSurfaceSol and its subroutines write the surface      
+!       solution file(s). The unknowns are stored in the center of the 
+!       surface quadrilaterals.                                        
 !
 #ifdef USE_NO_CGNS
        call returnFail("writeCGNSSurfaceSol", &
@@ -51,11 +43,7 @@
                                                                 solNames, isoSurfSolNames
        character(len=maxCGNSNameLen) :: contourName
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the number and names of the solution files.
 

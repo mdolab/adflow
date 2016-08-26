@@ -1,15 +1,11 @@
 subroutine RungeKuttaSmoother
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * RungeKuttaSmoother performs one multi-stage runge kutta        *
-  !      * explicit time step for the current multigrid level. On         *
-  !      * entrance it is assumed that the residual and time step are     *
-  !      * already computed. On exit the solution in the halo's contain   *
-  !      * the latest values. However, the residual corresponding to      *
-  !      * these values is not computed.                                  *
-  !      *                                                                *
-  !      ******************************************************************
+  !       RungeKuttaSmoother performs one multi-stage runge kutta        
+  !       explicit time step for the current multigrid level. On         
+  !       entrance it is assumed that the residual and time step are     
+  !       already computed. On exit the solution in the halo's contain   
+  !       the latest values. However, the residual corresponding to      
+  !       these values is not computed.                                  
   !
   use constants
   use blockPointers, only : w, p, wn, pn, il, jl, kl, nDom
@@ -87,12 +83,8 @@ end subroutine RungeKuttaSmoother
 
 subroutine executeRkStage
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * executeRkStage executes one runge kutta stage. The stage       *
-  !      * number, rkStage, is defined in the local module iteration.     *
-  !      *                                                                *
-  !      ******************************************************************
+  !       executeRkStage executes one runge kutta stage. The stage       
+  !       number, rkStage, is defined in the local module iteration.     
   !
   use blockPointers
   use constants
@@ -163,11 +155,7 @@ subroutine executeRkStage
      correctForK = .false.
   endif
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Compute the updates of the conservative variables.             *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Compute the updates of the conservative variables.             
   !
   ! Loop over the local number of blocks.
 
@@ -279,11 +267,7 @@ subroutine executeRkStage
 
   enddo domainsUpdate
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Compute the new state vector.                                  *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Compute the new state vector.                                  
   !
   ! Loop over the number of spectral solutions and local blocks.
 

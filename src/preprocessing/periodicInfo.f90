@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          periodicInfo.f90                                *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 07-10-2003                                      *
-!      * Last modified: 11-30-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          periodicInfo.f90                                
+!       Author:        Edwin van der Weide                             
+!       Starting date: 07-10-2003                                      
+!       Last modified: 11-30-2007                                      
 !
        module periodicInfo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Local module that contains derived datatypes as well as arrays *
-!      * of these derived datatypes to store information related to     *
-!      * periodicity.                                                   *
-!      *                                                                *
-!      ******************************************************************
+!       Local module that contains derived datatypes as well as arrays 
+!       of these derived datatypes to store information related to     
+!       periodicity.                                                   
 !
        use precision
        implicit none
@@ -105,21 +97,13 @@
 
        !=================================================================
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Functions to simulate the operators < and ==.                *
-!        *                                                              *
-!        ****************************************************************
+!         Functions to simulate the operators < and ==.                
 !
          logical function lessCGNSPeriodicType(g1, g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * lessCGNSPeriodicType returns .true. if g1 is considered      *
-!        * smaller than g2. This comparison is first based on the block *
-!        * ID followed by the subface id.                               *
-!        *                                                              *
-!        ****************************************************************
+!         lessCGNSPeriodicType returns .true. if g1 is considered      
+!         smaller than g2. This comparison is first based on the block 
+!         ID followed by the subface id.                               
 !
          implicit none
 !
@@ -127,11 +111,7 @@
 !
          type(cgnsPeriodicType), intent(in) :: g1, g2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Compare the block ID. If not equal set lessCGNSPeriodicType
          ! accordingly.
@@ -165,12 +145,8 @@
 
          logical function equalCGNSPeriodicType(g1, g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * equalCGNSPeriodicType returns .true. if g1 is considered     *
-!        * equal to g2, i.e. both the block and subface ID must match,  *
-!        *                                                              *
-!        ****************************************************************
+!         equalCGNSPeriodicType returns .true. if g1 is considered     
+!         equal to g2, i.e. both the block and subface ID must match,  
 !
          implicit none
 !
@@ -178,11 +154,7 @@
 !
          type(cgnsPeriodicType), intent(in) :: g1, g2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          equalCGNSPeriodicType = .false.
          if(g1%cgnsBlock   == g2%cgnsBlock .and. &
@@ -195,12 +167,8 @@
 
          logical function lessPeriodicSubfacesHaloT(g1, g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * lessPeriodicSubfacesHaloT returns .true. if g1 is            *
-!        * considered smaller than g2.                                  *
-!        *                                                              *
-!        ****************************************************************
+!         lessPeriodicSubfacesHaloT returns .true. if g1 is            
+!         considered smaller than g2.                                  
 !
          implicit none
 !
@@ -212,11 +180,7 @@
 !
          integer(kind=intType) :: nn, i1, i2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! First compare whether or not both g1 and g2 are internal
          ! halo's. Fortran does not allow a direct comparison of
@@ -279,12 +243,8 @@
 
          logical function lessEqualPeriodicSubfacesHaloT(g1, g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * lessEqualPeriodicSubfacesHaloT returns .true. if g1 is       *
-!        * considered smaller than or equal to g2.                      *
-!        *                                                              *
-!        ****************************************************************
+!         lessEqualPeriodicSubfacesHaloT returns .true. if g1 is       
+!         considered smaller than or equal to g2.                      
 !
          implicit none
 !
@@ -296,11 +256,7 @@
 !
          integer(kind=intType) :: nn, i1, i2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! First compare whether or not both g1 and g2 are internal
          ! halo's. Fortran does not allow a direct comparison of
@@ -363,17 +319,13 @@
 
          logical function equalPeriodicSubfacesHaloT(g1, g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * equalPeriodicSubfacesHaloT returns .true. if g1 is           *
-!        * considered equal to g2. The equal operator is only used to   *
-!        * find the different number of periodic transformations in     *
-!        * determinePeriodicData. Hence only the periodic subfaces of   *
-!        * the halo's are compared and g1 and g2 are considered equal   *
-!        * if the subfaces are equal, even if other member variables    *
-!        * differ.                                                      *
-!        *                                                              *
-!        ****************************************************************
+!         equalPeriodicSubfacesHaloT returns .true. if g1 is           
+!         considered equal to g2. The equal operator is only used to   
+!         find the different number of periodic transformations in     
+!         determinePeriodicData. Hence only the periodic subfaces of   
+!         the halo's are compared and g1 and g2 are considered equal   
+!         if the subfaces are equal, even if other member variables    
+!         differ.                                                      
 !
          implicit none
 !
@@ -385,11 +337,7 @@
 !
          integer(kind=intType) :: nn
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          if(g1%nPeriodicSubfaces /= g2%nPeriodicSubfaces) then
            equalPeriodicSubfacesHaloT = .false.

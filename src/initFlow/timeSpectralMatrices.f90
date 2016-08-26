@@ -1,16 +1,12 @@
        subroutine timeSpectralMatrices
 !
-!      ******************************************************************
-!      *                                                                *
-!      * timeSpectralMatrices computes the matrices for the time        *
-!      * derivative of the time spectral method for all sections. For   *
-!      * scalar quantities these matrices only differ if sections have  *
-!      * different periodic times. For vector quantities, such as       *
-!      * momentum, these matrices can be different depending on whether *
-!      * the section is rotating or not and the number of slices        *
-!      * present.                                                       *
-!      *                                                                *
-!      ******************************************************************
+!       timeSpectralMatrices computes the matrices for the time        
+!       derivative of the time spectral method for all sections. For   
+!       scalar quantities these matrices only differ if sections have  
+!       different periodic times. For vector quantities, such as       
+!       momentum, these matrices can be different depending on whether 
+!       the section is rotating or not and the number of slices        
+!       present.                                                       
 !
        use constants
        use inputPhysics, only : equationMode
@@ -69,21 +65,13 @@
        call timeSpectralCoef(coefSpectral, matrixCoefSpectral, &
                              diagMatCoefSpectral)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Determine the time derivative matrices for the sections.       *
-!      *                                                                *
-!      ******************************************************************
+!       Determine the time derivative matrices for the sections.       
 !
        ! Loop over the number of sections.
 
        sectionLoop: do ii=1,nSections
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Matrix for scalar quantities.                                *
-!        *                                                              *
-!        ****************************************************************
+!         Matrix for scalar quantities.                                
 !
          ! Loop over the number of rows.
 
@@ -111,11 +99,7 @@
            enddo
          enddo
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Matrices for vector quantities.                              *
-!        *                                                              *
-!        ****************************************************************
+!         Matrices for vector quantities.                              
 !
          ! Loop over the number of time intervals; the number of rows
          ! is 3 times this number.

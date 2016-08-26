@@ -1,31 +1,22 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          bcTurbTreatment.f90                             *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      *                Seonghyeon Hahn                                 *
-!      * Starting date: 06-13-2003                                      *
-!      * Last modified: 08-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          bcTurbTreatment.f90                             
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!                      Seonghyeon Hahn                                 
+!       Starting date: 06-13-2003                                      
+!       Last modified: 08-12-2005                                      
 !
        subroutine bcTurbTreatment
 !
-!      ******************************************************************
-!      *                                                                *
-!      * bcTurbTreatment sets the arrays bmti1, bvti1, etc, such that   *
-!      * the physical boundary conditions are treated correctly.        *
-!      * It is assumed that the variables in blockPointers already      *
-!      * point to the correct block.                                    *
-!      *                                                                *
-!      * The turbulent variable in the halo is computed as follows:     *
-!      * wHalo = -bmt*wInternal + bvt for every block facer. As it is   *
-!      * possible to have a coupling in the boundary conditions bmt     *
-!      * actually are matrices. If there is no coupling between the     *
-!      * boundary conditions of the turbulence equations bmt is a       *
-!      * diagonal matrix.                                               *
-!      *                                                                *
-!      ******************************************************************
+!       bcTurbTreatment sets the arrays bmti1, bvti1, etc, such that   
+!       the physical boundary conditions are treated correctly.        
+!       It is assumed that the variables in blockPointers already      
+!       point to the correct block.                                    
+!       The turbulent variable in the halo is computed as follows:     
+!       wHalo = -bmt*wInternal + bvt for every block facer. As it is   
+!       possible to have a coupling in the boundary conditions bmt     
+!       actually are matrices. If there is no coupling between the     
+!       boundary conditions of the turbulence equations bmt is a       
+!       diagonal matrix.                                               
 !
          use constants
          use blockPointers
@@ -36,11 +27,7 @@
 !
        integer(kind=intType) :: nn, i, j, k, l, m
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize the arrays for the boundary condition treatment
        ! to zero, such that internal block boundaries are solved

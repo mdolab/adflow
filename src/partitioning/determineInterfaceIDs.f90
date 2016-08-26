@@ -1,20 +1,15 @@
        subroutine determineInterfaceIDs
 !
-!      ******************************************************************
-!      *                                                                *
-!      * DetermineInterfaceIDs determines more information for both the *
-!      * sliding mesh and domain interfaces with other codes, which are *
-!      * both specified as user defined boundary conditions in CGNS. In *
-!      * particular the number of sliding mesh interfaces and their     *
-!      * pairings, and number of interfaces with other codes are        *
-!      * determined.                                                    *
-!      *                                                                *
-!      * There are some parts in the coupler API routines where         *
-!      * the family-specified domain interfaces are implicitly assumed. *
-!      * Therefore, it is recommended for the time being that all the   *
-!      * domain interfaces should be family-specified.                  *
-!      *                                                                *
-!      ******************************************************************
+!       DetermineInterfaceIDs determines more information for both the 
+!       sliding mesh and domain interfaces with other codes, which are 
+!       both specified as user defined boundary conditions in CGNS. In 
+!       particular the number of sliding mesh interfaces and their     
+!       pairings, and number of interfaces with other codes are        
+!       determined.                                                    
+!       There are some parts in the coupler API routines where         
+!       the family-specified domain interfaces are implicitly assumed. 
+!       Therefore, it is recommended for the time being that all the   
+!       domain interfaces should be family-specified.                  
 !
        use constants
        use cgnsGrid

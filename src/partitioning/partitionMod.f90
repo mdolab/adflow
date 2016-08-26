@@ -1,39 +1,23 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          partitionMod.f90                                *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 02-05-2003                                      *
-!      * Last modified: 11-07-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          partitionMod.f90                                
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 02-05-2003                                      
+!       Last modified: 11-07-2005                                      
 !
        module partitionMod
 !
-!      ******************************************************************
-!      *                                                                *
-!      * This local module contains definitions of derived datatypes    *
-!      * as well as variables used in the partitioning directory.       *
-!      *                                                                *
-!      ******************************************************************
+!       This local module contains definitions of derived datatypes    
+!       as well as variables used in the partitioning directory.       
 !
        use constants
        implicit none
        save
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the derived datatype distributionBlockType   *
-!      *                                                                *
-!      ******************************************************************
+!       The definition of the derived datatype distributionBlockType   
 !
        type distributionBlockType
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Block dimensions and local block ID.                         *
-!        *                                                              *
-!        ****************************************************************
+!         Block dimensions and local block ID.                         
 !
          !  nx, ny, nz - block integer dimensions for no halo cell based
          !               quantities.
@@ -46,24 +30,16 @@
                                   il, jl, kl
          integer(kind=intType) :: blockID
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Total number cells and faces inside the block. In the number *
-!        * faces the work for nonmatching block boundaries is included, *
-!        * such that the load balance is still guaranteed.              *
-!        *                                                              *
-!        ****************************************************************
+!         Total number cells and faces inside the block. In the number 
+!         faces the work for nonmatching block boundaries is included, 
+!         such that the load balance is still guaranteed.              
 !
          ! Ncell     : total number of cells in this block.
          ! Nface     : total number of faces in this block.
 
          integer(kind=intType) :: ncell, nface
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Block boundary conditions.                                   *
-!        *                                                              *
-!        ****************************************************************
+!         Block boundary conditions.                                   
 !
          !  nSubface             - Number of subfaces on this block.
          !  n1to1                - Number of 1 to 1 block boundaries.
@@ -126,11 +102,7 @@
          integer(kind=intType), dimension(:), pointer :: groupNum
 
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Relation to the original cgns grid.                          *
-!        *                                                              *
-!        ****************************************************************
+!         Relation to the original cgns grid.                          
 !
          ! cgnsBlockID    - block/zone number of the cgns grid to which
          !                  this block is related.
@@ -153,12 +125,8 @@
        integer(kind=intType) :: nBlocks
        type(distributionBlockType), dimension(:), allocatable :: blocks
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Type definition to store the way the original cgns blocks are  *
-!      * split for load balancing reasons.                              *
-!      *                                                                *
-!      ******************************************************************
+!       Type definition to store the way the original cgns blocks are  
+!       split for load balancing reasons.                              
 !
        type splitCGNSType
 
@@ -172,12 +140,8 @@
 
        end type splitCGNSType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Type definition needed to determine the processor ID's and     *
-!      * nodal ranges of the subblocks for every CGNS block.            *
-!      *                                                                *
-!      ******************************************************************
+!       Type definition needed to determine the processor ID's and     
+!       nodal ranges of the subblocks for every CGNS block.            
 !
        type subblocksOfCGNSType
 
@@ -214,12 +178,8 @@
          module procedure lessSubblocksOfCGNSType
        end interface
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Type definition needed to determine the number of distinct     *
-!      * non-matching abutting subfaces in the CGNS file.               *
-!      *                                                                *
-!      ******************************************************************
+!       Type definition needed to determine the number of distinct     
+!       non-matching abutting subfaces in the CGNS file.               
 !
        type subfaceNonMatchType
 
@@ -246,12 +206,8 @@
          module procedure lessSubfaceNonMatchType
        end interface
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Variable to store the partition number (processor ID) of the   *
-!      * computational blocks.                                          *
-!      *                                                                *
-!      ******************************************************************
+!       Variable to store the partition number (processor ID) of the   
+!       computational blocks.                                          
 !
        ! ubvec(2):      Tolerance for the constraints.
        ! part(nBlocks): The processor ID for each block, starting at 0.
@@ -260,11 +216,7 @@
 
        integer(kind=intType), dimension(:), allocatable :: part
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Variables needed for the reading of the grid files.            *
-!      *                                                                *
-!      ******************************************************************
+!       Variables needed for the reading of the grid files.            
 !
        ! nGridsRead:            Number of grids to read.
        ! fileIDs(nGridsRead):   The file ID's.
@@ -281,22 +233,14 @@
 
        contains
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Functions to simulate the operators <= and < for the derived *
-!        * datatypes subblocksOfCGNSType and subfaceNonMatchType.       *
-!        *                                                              *
-!        ****************************************************************
+!         Functions to simulate the operators <= and < for the derived 
+!         datatypes subblocksOfCGNSType and subfaceNonMatchType.       
 !
          logical function lessEqualSubblocksOfCGNSType(g1, g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * This function returns .true. if g1 <= g2 and .false.         *
-!        * otherwise. The comparison is firstly based on the CGNS block *
-!        * ID, then the processor ID and finally the local block ID.    *
-!        *                                                              *
-!        ****************************************************************
+!         This function returns .true. if g1 <= g2 and .false.         
+!         otherwise. The comparison is firstly based on the CGNS block 
+!         ID, then the processor ID and finally the local block ID.    
 !
          implicit none
 !
@@ -304,11 +248,7 @@
 !
          type(subblocksOfCGNSType), intent(in) :: g1, g2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Comparison of the CGNS block ID. If not equal, set
          ! lessEqualSubblocksOfCGNSType appropriately and return.
@@ -353,13 +293,9 @@
 
          logical function lessSubblocksOfCGNSType(g1, g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * This function returns .true. if g1 < g2 and .false.          *
-!        * otherwise. The comparison is firstly based on the CGNS block *
-!        * ID, then the processor ID and finally the local blockID.     *
-!        *                                                              *
-!        ****************************************************************
+!         This function returns .true. if g1 < g2 and .false.          
+!         otherwise. The comparison is firstly based on the CGNS block 
+!         ID, then the processor ID and finally the local blockID.     
 !
          implicit none
 !
@@ -367,11 +303,7 @@
 !
          type(subblocksOfCGNSType), intent(in) :: g1, g2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Comparison of the CGNS block ID. If not equal, set
          ! lessSubblocksOfCGNSType appropriately and return.
@@ -416,14 +348,10 @@
 
          logical function lessEqualSubfaceNonMatchType(g1, g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * This function returns .true. if g1 <= g2 and .false.         *
-!        * otherwise. The comparison is firstly based on the i-range,   *
-!        * followed by the j-range and k-range. If these are all the    *
-!        * same the connectivity ID is compared.                        *
-!        *                                                              *
-!        ****************************************************************
+!         This function returns .true. if g1 <= g2 and .false.         
+!         otherwise. The comparison is firstly based on the i-range,   
+!         followed by the j-range and k-range. If these are all the    
+!         same the connectivity ID is compared.                        
 !
          implicit none
 !
@@ -431,11 +359,7 @@
 !
          type(subfaceNonMatchType), intent(in) :: g1, g2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Comparison of the iBeg value. If different set 
          ! lessEqualSubfaceNonMatchType appropriately and return.
@@ -518,14 +442,10 @@
 
          logical function lessSubfaceNonMatchType(g1, g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * This function returns .true. if g1 < g2 and .false.          *
-!        * otherwise. The comparison is firstly based on the i-range,   *
-!        * followed by the j-range and k-range. If these are all the    *
-!        * same the connectivity ID is compared.                        *
-!        *                                                              *
-!        ****************************************************************
+!         This function returns .true. if g1 < g2 and .false.          
+!         otherwise. The comparison is firstly based on the i-range,   
+!         followed by the j-range and k-range. If these are all the    
+!         same the connectivity ID is compared.                        
 !
          implicit none
 !
@@ -533,11 +453,7 @@
 !
          type(subfaceNonMatchType), intent(in) :: g1, g2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Comparison of the iBeg value. If different set 
          ! lessEqualSubfaceNonMatchType appropriately and return.

@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          gridFileNamesWrite.f90                          *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 10-11-2005                                      *
-!      * Last modified: 11-02-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          gridFileNamesWrite.f90                          
+!       Author:        Edwin van der Weide                             
+!       Starting date: 10-11-2005                                      
+!       Last modified: 11-02-2005                                      
 !
        subroutine gridFileNamesWrite
 !
-!      ******************************************************************
-!      *                                                                *
-!      * gridFileNamesWrite determines the names and number of grid     *
-!      * files to be written. Furthermore, it sets the pointers for     *
-!      * IOVar to make a general treatment of the writing possible.     *
-!      *                                                                *
-!      ******************************************************************
+!       gridFileNamesWrite determines the names and number of grid     
+!       files to be written. Furthermore, it sets the pointers for     
+!       IOVar to make a general treatment of the writing possible.     
 !
        use block
        use inputIO
@@ -37,17 +29,9 @@
 
        character(len=7) :: intString
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Determine the names and number of grid files to be written.    *
-!      *                                                                *
-!      ******************************************************************
+!       Determine the names and number of grid files to be written.    
 !
        ! Determine the situation we are having here.
 
@@ -219,11 +203,7 @@
 
        end select
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Determine whether or not to use links in CGNS.                 *
-!      *                                                                *
-!      ******************************************************************
+!       Determine whether or not to use links in CGNS.                 
 !
 
        if( writeGrid ) then
@@ -250,11 +230,7 @@
 
        endif
 
-!      ******************************************************************
-!      *                                                                *
-!      * Set the pointers for IOVar if grid files need to be written.   *
-!      *                                                                *
-!      ******************************************************************
+!       Set the pointers for IOVar if grid files need to be written.   
 !
        testGridsToWrite: if(nGridsToWrite > 0) then
 

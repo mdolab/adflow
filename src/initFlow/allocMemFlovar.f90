@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          allocMemFlovar.f90                              *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-06-2003                                      *
-!      * Last modified: 11-27-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          allocMemFlovar.f90                              
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-06-2003                                      
+!       Last modified: 11-27-2007                                      
 !
 subroutine allocMemFlovarPart1(sps,level)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * allocMemFlovarPart1 allocates the memory for the flow          *
-  !      * variables w and p for all the blocks on the given multigrid    *
-  !      * level and spectral solution sps.                               *
-  !      *                                                                *
-  !      ******************************************************************
+  !       allocMemFlovarPart1 allocates the memory for the flow          
+  !       variables w and p for all the blocks on the given multigrid    
+  !       level and spectral solution sps.                               
   !
   use constants
   use block, only : flowDoms, nDOm
@@ -39,11 +31,7 @@ subroutine allocMemFlovarPart1(sps,level)
   integer(kind=intType) :: nn
   integer(kind=intType) :: il, jl, kl, ie, je, ke, ib, jb, kb
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Loop over the domains.
 
@@ -164,9 +152,7 @@ subroutine allocMemFlovarPart1(sps,level)
 
            flowDoms(nn,level,sps)%wOld = zero
 
-        ! *******************************
         ! Added by HDN
-        ! *******************************
         else if ( equationMode == unsteady .and. &
              timeIntegrationScheme == MD) then
            allocate( &
@@ -215,20 +201,16 @@ end subroutine allocMemFlovarPart1
 
 subroutine allocMemFlovarPart2(sps, level)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * AllocMemFlovarPart2 allocates the memory for the dependent  *
-  !      * flow variables and iteration variables for all the blocks on   *
-  !      * the given multigrid level and spectral solution sps. Some      *
-  !      * variables are only allocated on the coarser grids, e.g. the    *
-  !      * multigrid forcing terms and the state vector upon entrance on  *
-  !      * the mg level. Other variables are only allocated on the finest *
-  !      * mesh. These are typically dependent variables like laminar     *
-  !      * viscosity, or residuals, time step, etc. Exceptions are        *
-  !      * pressure and eddy viscosity. Although these are dependent      *
-  !      * variables, they are allocated on all grid levels.              *
-  !      *                                                                *
-  !      ******************************************************************
+  !       AllocMemFlovarPart2 allocates the memory for the dependent  
+  !       flow variables and iteration variables for all the blocks on   
+  !       the given multigrid level and spectral solution sps. Some      
+  !       variables are only allocated on the coarser grids, e.g. the    
+  !       multigrid forcing terms and the state vector upon entrance on  
+  !       the mg level. Other variables are only allocated on the finest 
+  !       mesh. These are typically dependent variables like laminar     
+  !       viscosity, or residuals, time step, etc. Exceptions are        
+  !       pressure and eddy viscosity. Although these are dependent      
+  !       variables, they are allocated on all grid levels.              
   !
   use block
   use constants
@@ -252,11 +234,7 @@ subroutine allocMemFlovarPart2(sps, level)
   integer(kind=intType) :: nn, mm
   integer(kind=intType) :: il, jl, kl, ie, je, ke, ib, jb, kb
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Loop over the domains.
 

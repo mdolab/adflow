@@ -6,25 +6,17 @@
 !   with respect to varying inputs: muref tref rgas *p *w
 !   plus diff mem management of: p:in w:in rlv:in
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          computelamviscosity.f90                         *
-!      * author:        edwin van der weide                             *
-!      * starting date: 03-10-2003                                      *
-!      * last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          computelamviscosity.f90                         
+!       author:        edwin van der weide                             
+!       starting date: 03-10-2003                                      
+!       last modified: 06-12-2005                                      
 !
 subroutine computelamviscosity_d()
 !
-!      ******************************************************************
-!      *                                                                *
-!      * computelamviscosity computes the laminar viscosity ratio in    *
-!      * the owned cell centers of the given block. sutherland's law is *
-!      * used. it is assumed that the pointes already point to the      *
-!      * correct block before entering this subroutine.                 *
-!      *                                                                *
-!      ******************************************************************
+!       computelamviscosity computes the laminar viscosity ratio in    
+!       the owned cell centers of the given block. sutherland's law is 
+!       used. it is assumed that the pointes already point to the      
+!       correct block before entering this subroutine.                 
 !
   use blockpointers
   use constants
@@ -45,11 +37,7 @@ subroutine computelamviscosity_d()
   real(kind=realtype) :: musuthd, tsuthd, ssuthd, td, ppd
   logical :: correctfork
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! return immediately if no laminar viscosity needs to be computed.
   if (.not.viscous) then

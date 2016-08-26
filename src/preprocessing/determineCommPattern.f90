@@ -1,31 +1,22 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          determineCommPattern.f90                        *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 01-20-2003                                      *
-!      * Last modified: 11-30-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          determineCommPattern.f90                        
+!       Author:        Edwin van der Weide                             
+!       Starting date: 01-20-2003                                      
+!       Last modified: 11-30-2007                                      
 !
        subroutine determineCommPattern(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * determineCommPattern determines the communication pattern      *
-!      * for the indicated grid level from the given block distribution *
-!      * and corresponding halo info. Both the first and second level   *
-!      * cell halo communication pattern as well as the first level     *
-!      * nodal halo communication pattern is determined.                *
-!      * A recursive algorithm is used. First the face halo's are       *
-!      * determined and from those the indirect halo's can be obtained  *
-!      * by looping over the level of indirectness.                     *
-!      *                                                                *
-!      * This routine controls the creation of the communication        *
-!      * pattern and basically contains the function calls to the       *
-!      * subtasks.                                                      *
-!      *                                                                *
-!      ******************************************************************
+!       determineCommPattern determines the communication pattern      
+!       for the indicated grid level from the given block distribution 
+!       and corresponding halo info. Both the first and second level   
+!       cell halo communication pattern as well as the first level     
+!       nodal halo communication pattern is determined.                
+!       A recursive algorithm is used. First the face halo's are       
+!       determined and from those the indirect halo's can be obtained  
+!       by looping over the level of indirectness.                     
+!       This routine controls the creation of the communication        
+!       pattern and basically contains the function calls to the       
+!       subtasks.                                                      
 !
        use block
        use communication
@@ -81,11 +72,7 @@
        end subroutine determinePeriodicData
        end interface
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the number of periodic faces.
 
@@ -225,12 +212,8 @@
 
        subroutine deallocatePointersHaloList(entityHalo, nHalo)
 !
-!      ******************************************************************
-!      *                                                                * 
-!      * deallocatePointersHaloList deallocates the memory of the       *
-!      * pointer variables of entityHalo.                               *
-!      *                                                                *
-!      ******************************************************************
+!       deallocatePointersHaloList deallocates the memory of the       
+!       pointer variables of entityHalo.                               
 !
        use haloList
        use utils, only : terminate
@@ -247,11 +230,7 @@
 
        integer(kind=intType) :: i
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the number of halo's and deallocate the memory
        ! of the pointer variables, if allocated.

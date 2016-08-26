@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          internalBC.f90                                  *
-!      * Author:        Edwin van der Weide, Steve Repsher,             *
-!      *                Seonghyeon Hahn                                 *
-!      * Starting date: 01-30-2003                                      *
-!      * Last modified: 08-10-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          internalBC.f90                                  
+!       Author:        Edwin van der Weide, Steve Repsher,             
+!                      Seonghyeon Hahn                                 
+!       Starting date: 01-30-2003                                      
+!       Last modified: 08-10-2005                                      
 !
        function internalBC(cgnsBocoType, userDefinedName)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * internalBC determines the corresponding internally used        *
-!      * boundary condition type for the given CGNS boundary condition. *
-!      * The flow equations to be solved are taken into account, e.g.   *
-!      * a viscous wall BC for the Euler equations is set to an         *
-!      * inviscid wall.                                                 *
-!      *                                                                *
-!      ******************************************************************
+!       internalBC determines the corresponding internally used        
+!       boundary condition type for the given CGNS boundary condition. 
+!       The flow equations to be solved are taken into account, e.g.   
+!       a viscous wall BC for the Euler equations is set to an         
+!       inviscid wall.                                                 
 !
        use constants
        use inputPhysics
@@ -38,11 +30,7 @@
 
        character(len=maxCGNSNameLen), intent(in) :: userDefinedName
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine the CGNS boundary condition type and set
        ! internalBC accordingly.

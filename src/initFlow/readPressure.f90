@@ -1,28 +1,20 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          readPressure.f90                                *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-21-2003                                      *
-!      * Last modified: 11-20-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          readPressure.f90                                
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-21-2003                                      
+!       Last modified: 11-20-2007                                      
 !
        subroutine readPressure(nTypeMismatch)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * readPressure reads the pressure variable from the given place  *
-!      * in the cgns file. If the pressure itself is not present it is  *
-!      * tried to construct if from other variables. In that case it is *
-!      * assumed that the density, velocity and turbulent variables are *
-!      * already stored in the pointer variable w.                      *
-!      * If it is not possible to create the pressure an error message  *
-!      * is printed and the program will stop.                          *
-!      * It is assumed that the pointers in blockPointers already       *
-!      * point to the correct block.                                    *
-!      *                                                                *
-!      ******************************************************************
+!       readPressure reads the pressure variable from the given place  
+!       in the cgns file. If the pressure itself is not present it is  
+!       tried to construct if from other variables. In that case it is 
+!       assumed that the density, velocity and turbulent variables are 
+!       already stored in the pointer variable w.                      
+!       If it is not possible to create the pressure an error message  
+!       is printed and the program will stop.                          
+!       It is assumed that the pointers in blockPointers already       
+!       point to the correct block.                                    
 !
        use constants
        use cgnsNames

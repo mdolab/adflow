@@ -2,12 +2,8 @@
 
 subroutine computedwDADI
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * executeRkStage executes one runge kutta stage. The stage       *
-  !      * number, rkStage, is defined in the local module iteration.     *
-  !      *                                                                *
-  !      ******************************************************************
+  !       executeRkStage executes one runge kutta stage. The stage       
+  !       number, rkStage, is defined in the local module iteration.     
   !
   use blockPointers
   use constants
@@ -50,11 +46,7 @@ subroutine computedwDADI
   real(kind=realType), dimension(ke) :: mettermk
   real(kind=realType), dimension(5) :: diagPlus,diagMinus
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
 
   ! Set the value of the current cfl number,
   ! depending on the situation. On the finest grid in the mg cycle

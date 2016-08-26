@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          prodSmag2.f90                                   *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 08-01-2003                                      *
-!      * Last modified: 04-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          prodSmag2.f90                                   
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 08-01-2003                                      
+!       Last modified: 04-12-2005                                      
 !
 subroutine prodSmag2
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * prodSmag2 computes the term:                                   *
-  !      *        2*sij*sij - 2/3 div(u)**2 with  sij=0.5*(duidxj+dujdxi) *
-  !      * which is used for the turbulence equations.                    *
-  !      * It is assumed that the pointer prod, stored in turbMod, is     *
-  !      * already set to the correct entry.                              *
-  !      *                                                                *
-  !      ******************************************************************
+  !       prodSmag2 computes the term:                                   
+  !              2*sij*sij - 2/3 div(u)**2 with  sij=0.5*(duidxj+dujdxi) 
+  !       which is used for the turbulence equations.                    
+  !       It is assumed that the pointer prod, stored in turbMod, is     
+  !       already set to the correct entry.                              
   !
   use constants
   use blockPointers
@@ -35,11 +27,7 @@ subroutine prodSmag2
   real(kind=realType)   :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
   real(kind=realType)   :: div2, fact, sxx, syy, szz, sxy, sxz, syz
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Loop over the cell centers of the given block. It may be more
   ! efficient to loop over the faces and to scatter the gradient,

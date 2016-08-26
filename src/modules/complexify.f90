@@ -1,4 +1,3 @@
-!******************************************************************************
 !	Written for 'complexify.py 1.3'
 !	J.R.R.A.Martins 1999
 !       21-Apr-00  Fixed tan, sinh, cosh
@@ -14,7 +13,6 @@
 !                  _ci and _ic cominations to the relational operators.
 !                  P. Sturdza
 !                  
-!******************************************************************************
 !
 ! Assume all code is compiled with double precision (-r8 compiler flag)
 !
@@ -255,11 +253,9 @@ module complexify
 
 contains
 
-!******************************************************************************
 !
 !   Function definitions
 !
-!******************************************************************************
 
 ! ABS, intrinsic
   complex*16 function abs_c(val)

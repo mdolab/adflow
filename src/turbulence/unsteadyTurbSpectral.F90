@@ -38,15 +38,11 @@ end subroutine unsteadyTurbSpectral
 
 subroutine unsteadyTurbSpectral_block(ntu1, ntu2, nn, sps)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * unsteadyTurbSpectral determines the spectral time derivative   *
-  !      * for all owned cells. This routine is called before the actual  *
-  !      * solve routines, such that the treatment is identical for all   *
-  !      * spectral solutions. The results is stored in the corresponding *
-  !      * entry in dw.                                                   *
-  !      *                                                                *
-  !      ******************************************************************
+  !       unsteadyTurbSpectral determines the spectral time derivative   
+  !       for all owned cells. This routine is called before the actual  
+  !       solve routines, such that the treatment is identical for all   
+  !       spectral solutions. The results is stored in the corresponding 
+  !       entry in dw.                                                   
   !
   use constants
   use blockPointers

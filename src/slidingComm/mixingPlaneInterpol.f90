@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          mixingPlaneInterpol.f90                         *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 01-28-2005                                      *
-!      * Last modified: 03-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          mixingPlaneInterpol.f90                         
+!       Author:        Edwin van der Weide                             
+!       Starting date: 01-28-2005                                      
+!       Last modified: 03-25-2005                                      
 !
        subroutine mixingPlaneInterpol(level, color, donorSlideID, &
                                       haloSlideID, nSlices, commPattern)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * mixingPlaneInterpol determines the data for the                *
-!      * communication/interpolation pattern of the given side of a     *
-!      * mixing plane.                                                  *
-!      *                                                                *
-!      ******************************************************************
+!       mixingPlaneInterpol determines the data for the                
+!       communication/interpolation pattern of the given side of a     
+!       mixing plane.                                                  
 !
        use commMixing
        use mixingData
@@ -37,11 +29,7 @@
 !
        integer :: ierr
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Determine distribution used as interpolation intervals.
        ! This is done using the grid information of the donor.

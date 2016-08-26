@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          prodWmag2.f90                                   *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 06-23-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          prodWmag2.f90                                   
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 06-23-2003                                      
+!       Last modified: 06-12-2005                                      
 !
 subroutine prodWmag2
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * prodWmag2 computes the term:                                   *
-  !      *    2*oij*oij  with oij=0.5*(duidxj - dujdxi).                  *
-  !      * This is equal to the magnitude squared of the vorticity.       *
-  !      * It is assumed that the pointer vort, stored in turbMod, is     *
-  !      * already set to the correct entry.                              *
-  !      *                                                                *
-  !      ******************************************************************
+  !       prodWmag2 computes the term:                                   
+  !          2*oij*oij  with oij=0.5*(duidxj - dujdxi).                  
+  !       This is equal to the magnitude squared of the vorticity.       
+  !       It is assumed that the pointer vort, stored in turbMod, is     
+  !       already set to the correct entry.                              
   !
   use constants
   use blockPointers
@@ -35,11 +27,7 @@ subroutine prodWmag2
   real(kind=realType) :: fact, vortx, vorty, vortz
   real(kind=realType) :: omegax, omegay, omegaz
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Determine the non-dimensional wheel speed of this block.
 

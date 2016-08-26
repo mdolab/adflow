@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          bcHalo.f90                                      *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-18-2003                                      *
-!      * Last modified: 03-24-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          bcHalo.f90                                      
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-18-2003                                      
+!       Last modified: 03-24-2005                                      
 !
        module bcHalo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * This local module contains the derived datatype bcHaloType,    *
-!      * which is used to determine the boundary condition for an       *
-!      * indirect halo when the nearest direct halo's are all boundary  *
-!      * halo's.                                                        *
-!      *                                                                *
-!      ******************************************************************
+!       This local module contains the derived datatype bcHaloType,    
+!       which is used to determine the boundary condition for an       
+!       indirect halo when the nearest direct halo's are all boundary  
+!       halo's.                                                        
 !
        use precision
        implicit none
@@ -26,11 +18,7 @@
        public
        private :: lessEqualBCHaloType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the derived datatype.                        *
-!      *                                                                *
-!      ******************************************************************
+!       The definition of the derived datatype.                        
 !
        type bcHaloType
 
@@ -55,15 +43,11 @@
 !
          logical function lessEqualBCHaloType(g1, g2)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Function to simulate the operator <= for bcHaloType.         *
-!        * It first compares the boundary condition. If equal the index *
-!        * of the direct halo is compared, although this is not really  *
-!        * important.                                                   *
-!        * LessEqual returns .true. if g1 <= g2 and .false. otherwise.  *
-!        *                                                              *
-!        ****************************************************************
+!         Function to simulate the operator <= for bcHaloType.         
+!         It first compares the boundary condition. If equal the index 
+!         of the direct halo is compared, although this is not really  
+!         important.                                                   
+!         LessEqual returns .true. if g1 <= g2 and .false. otherwise.  
 !
          implicit none
 !
@@ -71,11 +55,7 @@
 !
          type(bcHaloType), intent(in) :: g1, g2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! First compare the boundary conditions. Note that the sequence
          ! in BCTypes is such that the most important BC has the
@@ -109,14 +89,10 @@
 
          subroutine sortBCHaloType(bcHaloArray, nn)
 !
-!        ****************************************************************
-!        *                                                              *
-!        * SortBCHaloType sorts the given number of BCHalo's in         *
-!        * increasing order. Note that this routine is called sort and  *
-!        * not qsort, because only an insertion sort is done here. The  *
-!        * reason is that nn <= 3 and thus an insertion sort is okay.   *
-!        *                                                              *
-!        ****************************************************************
+!         SortBCHaloType sorts the given number of BCHalo's in         
+!         increasing order. Note that this routine is called sort and  
+!         not qsort, because only an insertion sort is done here. The  
+!         reason is that nn <= 3 and thus an insertion sort is okay.   
 !
          implicit none
 !
@@ -131,11 +107,7 @@
 
          type(bcHaloType) :: a
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          do j=1,nn
            a = bcHaloArray(j)

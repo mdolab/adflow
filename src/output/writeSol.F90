@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          writeSol.f90                                    *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 03-14-2003                                      *
-!      * Last modified: 03-29-2006                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          writeSol.f90                                    
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 03-14-2003                                      
+!       Last modified: 03-29-2006                                      
 !
        subroutine writeSol
 !
-!      ******************************************************************
-!      *                                                                *
-!      * writeSol controls the writing of a new grid file, a volume     *
-!      * solution file and a surface solution file. And if needed the   *
-!      * parameter file is updated to the new situation.                *
-!      *                                                                *
-!      ******************************************************************
+!       writeSol controls the writing of a new grid file, a volume     
+!       solution file and a surface solution file. And if needed the   
+!       parameter file is updated to the new situation.                
 !
        use block
        use communication
@@ -37,11 +29,7 @@
 
        integer(kind=intType) :: i, nn
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! If residuals must be written to the volume solution and if halo
        ! values must be stored, exchange the data here, because in the

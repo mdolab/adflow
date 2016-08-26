@@ -1,28 +1,20 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          viscSubfaceInfo.f90                             *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 07-23-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          viscSubfaceInfo.f90                             
+!       Author:        Edwin van der Weide                             
+!       Starting date: 07-23-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine viscSubfaceInfo(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * viscSubfaceInfo allocates the memory for the storage of the    *
-!      * stress tensor and heat flux vector of viscous subfaces for the *
-!      * given multigrid level and all spectral solutions. Furthermore  *
-!      * the pointers viscIminPointer, etc. Are allocated and set.      *
-!      * These pointers contain info to which viscous subface the faces *
-!      * of the block faces possibly belong. If not part of a viscous   *
-!      * subface these values are set to 0. Note that these pointers    *
-!      * are only allocated and determined for the 1st spectral         *
-!      * solution, because the info is the same for all of them.        *
-!      *                                                                *
-!      ******************************************************************
+!       viscSubfaceInfo allocates the memory for the storage of the    
+!       stress tensor and heat flux vector of viscous subfaces for the 
+!       given multigrid level and all spectral solutions. Furthermore  
+!       the pointers viscIminPointer, etc. Are allocated and set.      
+!       These pointers contain info to which viscous subface the faces 
+!       of the block faces possibly belong. If not part of a viscous   
+!       subface these values are set to 0. Note that these pointers    
+!       are only allocated and determined for the 1st spectral         
+!       solution, because the info is the same for all of them.        
 !
        use constants
        use blockPointers
@@ -43,11 +35,7 @@
 
        integer(kind=intType), dimension(:,:), pointer :: viscPointer
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the number blocks stored on this processor.
 

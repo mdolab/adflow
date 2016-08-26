@@ -3,48 +3,41 @@
 !
 !  differentiation of forcesandmoments in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: gammainf pinf pref *xx *rev0
-!                *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1
-!                *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 *ww3 lengthref
+!                rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 
+!                rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 
 !                machcoef pointref *w *x *(*bcdata.fv) *(*bcdata.fp)
-!                *(*bcdata.area) sepsensoravg cfp cfv cmp cmv cavitation
+!                (
 !                sepsensor
 !   with respect to varying inputs: gammainf pinf pref *xx *rev0
-!                *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1
-!                *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 *ww3 veldirfreestream
+!                rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 
+!                rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 
 !                lengthref machcoef pointref *rev *p *w *rlv *x
-!                *si *sj *sk *(*viscsubface.tau) *(*bcdata.fv)
-!                *(*bcdata.fp) *(*bcdata.area)
+!                si *sj *sk *(*viscsubface.tau) *(
+!                (*bcdata.fp) *(
 !   plus diff mem management of: xx:in rev0:in rev1:in rev2:in
 !                rev3:in pp0:in pp1:in pp2:in pp3:in rlv0:in rlv1:in
 !                rlv2:in rlv3:in ssi:in ww0:in ww1:in ww2:in ww3:in
 !                rev:in p:in w:in rlv:in x:in si:in sj:in sk:in
 !                viscsubface:in *viscsubface.tau:in bcdata:in *bcdata.fv:in
-!                *bcdata.fp:in *bcdata.area:in
+!                bcdata.fp:in 
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          forcesandmoments.f90                            *
-!      * author:        edwin van der weide                             *
-!      * starting date: 04-01-2003                                      *
-!      * last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          forcesandmoments.f90                            
+!       author:        edwin van der weide                             
+!       starting date: 04-01-2003                                      
+!       last modified: 06-12-2005                                      
 !
 subroutine forcesandmoments_b(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
 & , yplusmax, sepsensor, sepsensord, sepsensoravg, sepsensoravgd, &
 & cavitation, cavitationd)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * forcesandmoments computes the contribution of the block        *
-!      * given by the pointers in blockpointers to the force and        *
-!      * moment coefficients of the geometry. a distinction is made     *
-!      * between the inviscid and viscous parts. in case the maximum    *
-!      * yplus value must be monitored (only possible for rans), this   *
-!      * value is also computed. the separation sensor and the cavita-  *
-!      * tion sensor is also computed                                   *
-!      * here.                                                          *
-!      ******************************************************************
+!       forcesandmoments computes the contribution of the block        
+!       given by the pointers in blockpointers to the force and        
+!       moment coefficients of the geometry. a distinction is made     
+!       between the inviscid and viscous parts. in case the maximum    
+!       yplus value must be monitored (only possible for rans), this   
+!       value is also computed. the separation sensor and the cavita-  
+!       tion sensor is also computed                                   
+!       here.                                                          
 !
   use constants
   use communication
@@ -136,11 +129,7 @@ subroutine forcesandmoments_b(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
   real(kind=realtype) :: temp4
   real(kind=realtype) :: tempd15
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! set the actual scaling factor such that actual forces are computed
   scaledim = pref/pinf
@@ -166,16 +155,12 @@ subroutine forcesandmoments_b(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
 ! loop over the boundary subfaces of this block.
 bocos:do nn=1,nbocos
 !
-!        ****************************************************************
-!        *                                                              *
-!        * integrate the inviscid contribution over the solid walls,    *
-!        * either inviscid or viscous. the integration is done with     *
-!        * cp. for closed contours this is equal to the integration     *
-!        * of p; for open contours this is not the case anymore.        *
-!        * question is whether a force for an open contour is           *
-!        * meaningful anyway.                                           *
-!        *                                                              *
-!        ****************************************************************
+!         integrate the inviscid contribution over the solid walls,    
+!         either inviscid or viscous. the integration is done with     
+!         cp. for closed contours this is equal to the integration     
+!         of p; for open contours this is not the case anymore.        
+!         question is whether a force for an open contour is           
+!         meaningful anyway.                                           
 !
     res = bsearchintegers(bcdata(nn)%famid, famgroups, size(famgroups))
     if (res .gt. 0) then
@@ -331,12 +316,8 @@ bocos:do nn=1,nbocos
           cavitation = cavitation + sensor1
         end do
 !
-!          **************************************************************
-!          *                                                            *
-!          * integration of the viscous forces.                         *
-!          * only for viscous boundaries.                               *
-!          *                                                            *
-!          **************************************************************
+!           integration of the viscous forces.                         
+!           only for viscous boundaries.                               
 !
         if (viscoussubface) then
 ! replace norm with bcdata norm - peter lyu

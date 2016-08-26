@@ -1,33 +1,21 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          section.f90                                     *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 12-09-2003                                      *
-!      * Last modified: 06-26-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          section.f90                                     
+!       Author:        Edwin van der Weide                             
+!       Starting date: 12-09-2003                                      
+!       Last modified: 06-26-2005                                      
 !
        module section
 !
-!      ******************************************************************
-!      *                                                                *
-!      * This module contains the definition of the derived data type   *
-!      * sectionType, which stores the information of a section of the  *
-!      * grid. It also contains the array to store the info of all the  *
-!      * sections.                                                      *
-!      *                                                                *
-!      ******************************************************************
+!       This module contains the definition of the derived data type   
+!       sectionType, which stores the information of a section of the  
+!       grid. It also contains the array to store the info of all the  
+!       sections.                                                      
 !
        use constants, only : intType, realType
        implicit none
        save
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the derived data type sectionType.          *
-!      *                                                                *
-!      ******************************************************************
+!       The definition of the derived data type sectionType.          
 !
        type sectionType
 

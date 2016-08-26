@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          allocMemHaloList.f90                            *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-12-2003                                      *
-!      * Last modified: 11-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          allocMemHaloList.f90                            
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-12-2003                                      
+!       Last modified: 11-29-2007                                      
 !
        subroutine allocMemHaloList(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * allocMemHaloList allocates the memory for the variables        *
-!      * needed to construct the communication lists and the periodic   *
-!      * information. These variables are located in the module         *
-!      * haloList. Only the 1st level halo variables are allocated here *
-!      * to avoid unnecessary memory usage. The 2nd level cell halo     *
-!      * are allocated later on in init2ndLevelCellHalos.               *
-!      *                                                                *
-!      ******************************************************************
+!       allocMemHaloList allocates the memory for the variables        
+!       needed to construct the communication lists and the periodic   
+!       information. These variables are located in the module         
+!       haloList. Only the 1st level halo variables are allocated here 
+!       to avoid unnecessary memory usage. The 2nd level cell halo     
+!       are allocated later on in init2ndLevelCellHalos.               
 !
        use block
        use haloList
@@ -37,11 +29,7 @@
        integer(kind=intType) :: i
        integer(kind=intType) :: ie, je, ke, ib, jb, kb
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Allocate the memory for the 1st level cell and node halo lists.
 

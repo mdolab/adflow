@@ -1,11 +1,7 @@
        subroutine writeCGNSMenterSSTInfo(cgnsInd, cgnsBase)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * WriteCGNSMenterSSTInfo writes information about menter's       *
-!      * SST turbulence model to the cgns file.                         *
-!      *                                                                *
-!      ******************************************************************
+!       WriteCGNSMenterSSTInfo writes information about menter's       
+!       SST turbulence model to the cgns file.                         
 !
        use inputPhysics
        use cgnsNames

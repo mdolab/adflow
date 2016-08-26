@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          turbResidual.f90                                *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 05-01-2003                                      *
-!      * Last modified: 04-11-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          turbResidual.f90                                
+!       Author:        Edwin van der Weide                             
+!       Starting date: 05-01-2003                                      
+!       Last modified: 04-11-2005                                      
 !
 subroutine turbResidual
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * turbResidual computes the residual of the residual of the      *
-  !      * turbulent transport equations on the current multigrid level.  *
-  !      *                                                                *
-  !      ******************************************************************
+  !       turbResidual computes the residual of the residual of the      
+  !       turbulent transport equations on the current multigrid level.  
   !
   use inputDiscretization
   use inputPhysics
@@ -24,11 +16,7 @@ subroutine turbResidual
   use saModule
   implicit none
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Determine whether or not a second order discretization for the
   ! advective terms must be used.

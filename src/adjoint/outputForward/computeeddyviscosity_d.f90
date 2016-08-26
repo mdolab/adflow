@@ -6,25 +6,17 @@
 !   with respect to varying inputs: *w *rlv
 !   plus diff mem management of: rev:in w:in rlv:in
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          computeeddyviscosity.f90                        *
-!      * author:        georgi kalitzin, edwin van der weide            *
-!      * starting date: 03-10-2003                                      *
-!      * last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          computeeddyviscosity.f90                        
+!       author:        georgi kalitzin, edwin van der weide            
+!       starting date: 03-10-2003                                      
+!       last modified: 06-12-2005                                      
 !
 subroutine computeeddyviscosity_d()
 !
-!      ******************************************************************
-!      *                                                                *
-!      * computeeddyviscosity computes the eddy viscosity in the        *
-!      * owned cell centers of the given block. it is assumed that the  *
-!      * pointes already point to the correct block before entering     *
-!      * this subroutine.                                               *
-!      *                                                                *
-!      ******************************************************************
+!       computeeddyviscosity computes the eddy viscosity in the        
+!       owned cell centers of the given block. it is assumed that the  
+!       pointes already point to the correct block before entering     
+!       this subroutine.                                               
 !
   use constants
   use flowvarrefstate
@@ -37,11 +29,7 @@ subroutine computeeddyviscosity_d()
 !
   logical :: returnimmediately
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! check if an immediate return can be made.
   if (eddymodel) then

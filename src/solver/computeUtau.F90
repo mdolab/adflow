@@ -35,24 +35,16 @@ subroutine computeUtau
 end subroutine computeUtau
 #endif
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          computeUtau.f90                                 *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 03-03-2004                                      *
-!      * Last modified: 03-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          computeUtau.f90                                 
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 03-03-2004                                      
+!       Last modified: 03-25-2005                                      
 !
 subroutine computeUtau_block
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * computeUtau computes the skin friction velocity for the        *
-  !      * viscous subfaces. This data is only needed if wall functions   *
-  !      * are used.                                                      *
-  !      *                                                                *
-  !      ******************************************************************
+  !       computeUtau computes the skin friction velocity for the        
+  !       viscous subfaces. This data is only needed if wall functions   
+  !       are used.                                                      
   !
   use constants
   use blockPointers
@@ -75,11 +67,7 @@ subroutine computeUtau_block
   !
   real(kind=realType) :: curveUpRe
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Return immediately if no wall functions must be used.
 

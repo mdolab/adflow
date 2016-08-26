@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          determineRotationMatrices.f90                   *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 11-11-2003                                      *
-!      * Last modified: 03-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          determineRotationMatrices.f90                   
+!       Author:        Edwin van der Weide                             
+!       Starting date: 11-11-2003                                      
+!       Last modified: 03-25-2005                                      
 !
        subroutine determineRotationMatrices
 !
-!      ******************************************************************
-!      *                                                                *
-!      * determineRotationMatrices determines the rotation matrices     *
-!      * for the velocities for the periodic transformations of the     *
-!      * sliding mesh interfaces.                                       *
-!      *                                                                *
-!      ******************************************************************
+!       determineRotationMatrices determines the rotation matrices     
+!       for the velocities for the periodic transformations of the     
+!       sliding mesh interfaces.                                       
 !
        use constants
        use communication
@@ -36,11 +28,7 @@
 
        real(kind=realType), dimension(3) :: ax, r1, r2
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! The rotation matrices are only needed for unsteady
        ! computations. Threrefore return directly if a steady

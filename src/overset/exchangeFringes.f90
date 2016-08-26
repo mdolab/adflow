@@ -1,14 +1,10 @@
 subroutine exchangeFringes(level, sps, commPattern, internal)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * ExchangeFringes exchanges the donorInformation of the fringes: *
-  !      * donorProc, donorBlock, dI, dJ, dK and donorFrac. It does this  *
-  !      * the 1:1 halos for the given level and spectral instance. Since *
-  !      * we have real values and integer values we will do all the ints *
-  !      * first and then the reals.                                      *
-  !      *                                                                *
-  !      ******************************************************************
+  !       ExchangeFringes exchanges the donorInformation of the fringes: 
+  !       donorProc, donorBlock, dI, dJ, dK and donorFrac. It does this  
+  !       the 1:1 halos for the given level and spectral instance. Since 
+  !       we have real values and integer values we will do all the ints 
+  !       first and then the reals.                                      
   !
   use constants
   use blockPointers, only : flowDoms

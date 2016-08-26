@@ -4,19 +4,15 @@
 !  differentiation of normalvelocities_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *(*bcdata.rface)
 !   with respect to varying inputs: *sfacei *sfacej *sfacek *si
-!                *sj *sk
+!                sj 
 !   plus diff mem management of: sfacei:in sfacej:in sfacek:in
 !                si:in sj:in sk:in bcdata:in *bcdata.rface:in
 subroutine normalvelocities_block_d(sps)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * normalvelocitiesalllevels computes the normal grid             *
-!      * velocities of some boundary faces of the moving blocks for     *
-!      * spectral mode sps. all grid levels from ground level to the    *
-!      * coarsest level are considered.                                 *
-!      *                                                                *
-!      ******************************************************************
+!       normalvelocitiesalllevels computes the normal grid             
+!       velocities of some boundary faces of the moving blocks for     
+!       spectral mode sps. all grid levels from ground level to the    
+!       coarsest level are considered.                                 
 !
   use constants
   use blockpointers
@@ -53,17 +49,13 @@ subroutine normalvelocities_block_d(sps)
       bcdatad(ii1)%rface = 0.0_8
     end do
 !
-!            ************************************************************
-!            *                                                          *
-!            * determine the normal grid velocities of the boundaries.  *
-!            * as these values are based on the unit normal. a division *
-!            * by the length of the normal is needed.                   *
-!            * furthermore the boundary unit normals are per definition *
-!            * outward pointing, while on the imin, jmin and kmin       *
-!            * boundaries the face normals are inward pointing. this    *
-!            * is taken into account by the factor mult.                *
-!            *                                                          *
-!            ************************************************************
+!             determine the normal grid velocities of the boundaries.  
+!             as these values are based on the unit normal. a division 
+!             by the length of the normal is needed.                   
+!             furthermore the boundary unit normals are per definition 
+!             outward pointing, while on the imin, jmin and kmin       
+!             boundaries the face normals are inward pointing. this    
+!             is taken into account by the factor mult.                
 !
 ! loop over the boundary subfaces.
 bocoloop:do mm=1,nbocos

@@ -1,33 +1,21 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          localSubfaces.f90                               *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 10-17-2003                                      *
-!      * Last modified: 04-07-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          localSubfaces.f90                               
+!       Author:        Edwin van der Weide                             
+!       Starting date: 10-17-2003                                      
+!       Last modified: 04-07-2005                                      
 !
        module localSubfacesMod
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Local module to store the halo information for the cells as    *
-!      * well as the subfaces and its quadrilateral faces whose values  *
-!      * must be interpolated.                                          *
-!      *                                                                *
-!      ******************************************************************
+!       Local module to store the halo information for the cells as    
+!       well as the subfaces and its quadrilateral faces whose values  
+!       must be interpolated.                                          
 !
        use precision
        implicit none
        save
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Definition of the derived data type to store the information   *
-!      * of the quadrilateral faces for a subface on the interface.     *
-!      *                                                                *
-!      ******************************************************************
+!       Definition of the derived data type to store the information   
+!       of the quadrilateral faces for a subface on the interface.     
 !
        integer(kind=porType), parameter :: normalQuad    = 0_porType
        integer(kind=porType), parameter :: piCrossed     = 1_porType
@@ -136,15 +124,11 @@
 
        end type localSubfaceType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Definition of the derived data type to store for the local     *
-!      * blocks the type information of the cells, including the 1st    *
-!      * halos. See the parameters below for the possibilities; another *
-!      * possibility is a sliding mesh halo, but then the haloInfo gets *
-!      * the number of the sliding interface.                           *
-!      *                                                                *
-!      ******************************************************************
+!       Definition of the derived data type to store for the local     
+!       blocks the type information of the cells, including the 1st    
+!       halos. See the parameters below for the possibilities; another 
+!       possibility is a sliding mesh halo, but then the haloInfo gets 
+!       the number of the sliding interface.                           
 !
        integer(kind=intType), parameter :: boundaryHalo = -3_intType
        integer(kind=intType), parameter :: unownedDonor = -2_intType
@@ -159,11 +143,7 @@
 
        end type blockHaloType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Definition of the variables stored in this module.             *
-!      *                                                                *
-!      ******************************************************************
+!       Definition of the variables stored in this module.             
 !
        ! nMySubfaces1:              Number of subfaces locally stored
        !                            for part 1 of the interface.

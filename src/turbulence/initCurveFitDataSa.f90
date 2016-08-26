@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          initCurveFitDataSa.f90                          *
-!      * Author:        Georgi Kalitzin, Edwin van der Weide            *
-!      * Starting date: 07-27-2004                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          initCurveFitDataSa.f90                          
+!       Author:        Georgi Kalitzin, Edwin van der Weide            
+!       Starting date: 07-27-2004                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine initCurveFitDataSa
 !
-!      ******************************************************************
-!      *                                                                *
-!      * initCurveFitDataSa contains the curve fit constants for        *
-!      * the wall function data for the Spalart-Allmaras turbulence     *
-!      * model.                                                         *
-!      *                                                                *
-!      ******************************************************************
+!       initCurveFitDataSa contains the curve fit constants for        
+!       the wall function data for the Spalart-Allmaras turbulence     
+!       model.                                                         
 !
        use constants
        use flowVarRefState
@@ -28,11 +20,7 @@
 !
        integer :: ierr
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Set the number of data points and allocate the memory for the
        ! arrays of the curve fits.

@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          createCoarseBlocks.f90                          *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-21-2003                                      *
-!      * Last modified: 10-16-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          createCoarseBlocks.f90                          
+!       Author:        Edwin van der Weide                             
+!       Starting date: 02-21-2003                                      
+!       Last modified: 10-16-2005                                      
 !
        subroutine createCoarseBlocks(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * createCoarseBlocks creates the block data structure for the    *
-!      * given coarse grid from the 1 level finer grid. Only direct     *
-!      * info is created, like owned coordinates, block sizes and       *
-!      * subface info. Indirect info, like face normals, volumes, wall  *
-!      * distances, etc. Are created later on. That info can be created *
-!      * independent of the finer grid.                                 *
-!      *                                                                *
-!      ******************************************************************
+!       createCoarseBlocks creates the block data structure for the    
+!       given coarse grid from the 1 level finer grid. Only direct     
+!       info is created, like owned coordinates, block sizes and       
+!       subface info. Indirect info, like face normals, volumes, wall  
+!       distances, etc. Are created later on. That info can be created 
+!       independent of the finer grid.                                 
 !
        use constants
        use block
@@ -51,11 +43,7 @@
 
        logical, dimension(:), pointer :: iCo, jCo, kCo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Store the finer grid level in levm1
 
@@ -258,12 +246,8 @@
          if(flowDoms(nn,levm1,1)%nz == 2*flowDoms(nn,level,1)%nz) &
              flowDoms(nn,level,1)%kCoarsened = regular
 !
-!        ****************************************************************
-!        *                                                              *
-!        * The variables, which control the restriction to and the      *
-!        * interpolation from the coarser grid level.                   *
-!        *                                                              *
-!        ****************************************************************
+!         The variables, which control the restriction to and the      
+!         interpolation from the coarser grid level.                   
 !
          ! Allocate the memory.
 
@@ -409,13 +393,9 @@
            endif
          enddo
 !
-!        ****************************************************************
-!        *                                                              *
-!        * The coordinate mapping from fine to coarse and coarse to     *
-!        * fine. These are needed to determine the coarse grid subface  *
-!        * info.                                                        *
-!        *                                                              *
-!        ****************************************************************
+!         The coordinate mapping from fine to coarse and coarse to     
+!         fine. These are needed to determine the coarse grid subface  
+!         info.                                                        
 !
          ! Allocate the memory.
 
@@ -458,14 +438,10 @@
            endif
          enddo
 !
-!        ****************************************************************
-!        *                                                              *
-!        * The subface info. Except for the subface range all other     *
-!        * data can be copied. The range must be adapted and the donor  *
-!        * range is created later, because the coarsening info of the   *
-!        * donor block must be known.                                   *
-!        *                                                              *
-!        ****************************************************************
+!         The subface info. Except for the subface range all other     
+!         data can be copied. The range must be adapted and the donor  
+!         range is created later, because the coarsening info of the   
+!         donor block must be known.                                   
 !
          flowDoms(nn,level,1)%nSubface   = flowDoms(nn,levm1,1)%nSubface
          flowDoms(nn,level,1)%n1to1      = flowDoms(nn,levm1,1)%n1to1
@@ -807,15 +783,11 @@
 
        subroutine coarseOwnedCoordinates(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * coarseOwnedCoordinates determines from the coarsening info     *
-!      * the owned coordinates of the coarse grid. This is done in a    *
-!      * separate routine, because in unsteady moving mesh mode or for  *
-!      * deforming meshes only new coordinates need to be computed,     *
-!      * while the connectivity remains the same.                       *
-!      *                                                                *
-!      ******************************************************************
+!       coarseOwnedCoordinates determines from the coarsening info     
+!       the owned coordinates of the coarse grid. This is done in a    
+!       separate routine, because in unsteady moving mesh mode or for  
+!       deforming meshes only new coordinates need to be computed,     
+!       while the connectivity remains the same.                       
 !
        use block
        use inputTimeSpectral
@@ -832,11 +804,7 @@
 
        logical, dimension(:), pointer :: iCo, jCo, kCo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Store the finer grid level in levm1
 

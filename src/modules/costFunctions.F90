@@ -1,30 +1,18 @@
 !
-!     ******************************************************************
-!     *                                                                *
-!     * File:          costFunctions.F90                               *
-!     * Author:        Gaetan Kenway                                   *
-!     * Starting date: 11-07-2010                                      *
-!     * Last modified: 11-07-2010                                      *
-!     *                                                                *
-!     ******************************************************************
+!      File:          costFunctions.F90                               
+!      Author:        Gaetan Kenway                                   
+!      Starting date: 11-07-2010                                      
+!      Last modified: 11-07-2010                                      
 !
 module costFunctions
   !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * This module contains the paramter values for the solver and    *
-  !     * adjoint cost functions                                         *
-  !     *                                                                *
-  !     ******************************************************************
+  !      This module contains the paramter values for the solver and    
+  !      adjoint cost functions                                         
   !
   use constants, only : intType, realType, maxCGNSNameLen
   implicit none
   !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Cost functions.                                                *
-  !     *                                                                *
-  !     ******************************************************************
+  !      Cost functions.                                                
 
   integer(kind=intType), parameter :: nCostFunction = 42
   integer(kind=intType), parameter :: &

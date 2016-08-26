@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          writeCoorCGNSZone.F90                           *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 01-20-2004                                      *
-!      * Last modified: 10-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          writeCoorCGNSZone.F90                           
+!       Author:        Edwin van der Weide                             
+!       Starting date: 01-20-2004                                      
+!       Last modified: 10-12-2005                                      
 !
        subroutine writeCoorCGNSZone(zone, cgnsZone)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * writeCoorCGNSZone writes the coordinates of the given zone     *
-!      * to the cgns file(s).                                           *
-!      *                                                                *
-!      ******************************************************************
+!       writeCoorCGNSZone writes the coordinates of the given zone     
+!       to the cgns file(s).                                           
 !
        use constants
        use block
@@ -64,11 +56,7 @@
 
        character(len=maxCGNSNameLen), dimension(3) :: coorNames
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Set the cgns real type depending on the input option.
 
@@ -434,12 +422,8 @@
        subroutine storeCoorInBuffer(buffer, zone, ind, coorID, &
                                     blockID, nn)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * storeCoorInBuffer stores the given coordinate for the given    *
-!      * blockID. The total size of the buffer is returned in nn.       *
-!      *                                                                *
-!      ******************************************************************
+!       storeCoorInBuffer stores the given coordinate for the given    
+!       blockID. The total size of the buffer is returned in nn.       
 !
        use constants
        use block
@@ -462,11 +446,7 @@
 
        real(kind=realType) :: LRefInv
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Compute the multiplication factor to obtain the original
        ! coordinates. Note that LRef is corrected to 1.0 when the

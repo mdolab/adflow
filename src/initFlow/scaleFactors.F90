@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          scaleFactors.F90                                *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-28-2003                                      *
-!      * Last modified: 10-10-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          scaleFactors.F90                                
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-28-2003                                      
+!       Last modified: 10-10-2005                                      
 !
        subroutine scaleFactors(fileIDs)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * scaleFactors determines the scale factors for the density,     *
-!      * pressure and velocity from either the reference state in the   *
-!      * given cgns file or they are simply set to 1.0; the latter      *
-!      * occurs if the input parameter checkRestartSol is .false.       *
-!      * If no reference state is present checkRestartSol is .true.     *
-!      * An error message will be printed and the program terminates.   *
-!      *                                                                *
-!      ******************************************************************
+!       scaleFactors determines the scale factors for the density,     
+!       pressure and velocity from either the reference state in the   
+!       given cgns file or they are simply set to 1.0; the latter      
+!       occurs if the input parameter checkRestartSol is .false.       
+!       If no reference state is present checkRestartSol is .true.     
+!       An error message will be printed and the program terminates.   
 !
        use constants
        use cgnsNames
@@ -59,11 +51,7 @@
 
        logical :: muScalePresent
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Store the file ID and the base a bit easier. Note that the
        ! reference state only needs to be present in the first file.

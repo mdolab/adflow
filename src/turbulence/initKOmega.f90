@@ -1,26 +1,18 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          initKOmega.f90                                  *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 07-01-2003                                      *
-!      * Last modified: 07-23-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          initKOmega.f90                                  
+!       Author:        Edwin van der Weide                             
+!       Starting date: 07-01-2003                                      
+!       Last modified: 07-23-2005                                      
 !
        subroutine initKOmega(pOffset)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * initKOmega initializes the values of k and omega a bit more    *
-!      * intelligently than just free-stream values.                    *
-!      * It is assumed that the pointers in blockPointers already       *
-!      * point to the correct block on the correct level.               *
-!      * The argument pOffset is present such that in case of restart   *
-!      * a possible pointer offset is taken into account. For more      *
-!      * details see the corresponding routines in initFlow.            *
-!      *                                                                *
-!      ******************************************************************
+!       initKOmega initializes the values of k and omega a bit more    
+!       intelligently than just free-stream values.                    
+!       It is assumed that the pointers in blockPointers already       
+!       point to the correct block on the correct level.               
+!       The argument pOffset is present such that in case of restart   
+!       a possible pointer offset is taken into account. For more      
+!       details see the corresponding routines in initFlow.            
 !
        use blockPointers
        use constants
@@ -37,11 +29,7 @@
        integer(kind=intType) :: i, j, k, ip, jp, kp
        real(kind=realType)   :: rhoi, tmp
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Loop over the owned cells of the block.
 

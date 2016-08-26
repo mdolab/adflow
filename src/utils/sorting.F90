@@ -5,15 +5,11 @@ contains
 
   function bsearchIntegers(key, base, nn)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * bsearchIntegers returns the index in base where key is stored. *
-    !      * A binary search algorithm is used here, so it is assumed that  *
-    !      * base is sorted in increasing order. In case key appears more   *
-    !      * than once in base, the result is arbitrary. If key is not      *
-    !      * found, a zero is returned.                                     *
-    !      *                                                                *
-    !      ******************************************************************
+    !       bsearchIntegers returns the index in base where key is stored. 
+    !       A binary search algorithm is used here, so it is assumed that  
+    !       base is sorted in increasing order. In case key appears more   
+    !       than once in base, the result is arbitrary. If key is not      
+    !       found, a zero is returned.                                     
     !
     use precision
     implicit none
@@ -93,12 +89,8 @@ contains
 
   subroutine qsortIntegers(arr, nn)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * qsortIntegers sorts the given number of integers in            *
-    !      * increasing order.                                              *
-    !      *                                                                *
-    !      ******************************************************************
+    !       qsortIntegers sorts the given number of integers in            
+    !       increasing order.                                              
     !
     use precision
     implicit none
@@ -309,12 +301,8 @@ contains
 
   subroutine qsortReals(arr, nn)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * qsortReals sorts the given number of reals in increasing       *
-    !      * order.                                                         *
-    !      *                                                                *
-    !      ******************************************************************
+    !       qsortReals sorts the given number of reals in increasing       
+    !       order.                                                         
     !
     use constants
     implicit none
@@ -525,12 +513,8 @@ contains
 
   subroutine qsortStrings(arr, nn)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * qsortStrings sorts the given number of strings in increasing   *
-    !      * order.                                                         *
-    !      *                                                                *
-    !      ******************************************************************
+    !       qsortStrings sorts the given number of strings in increasing   
+    !       order.                                                         
     !
     use constants
     implicit none
@@ -742,15 +726,11 @@ contains
 
   function bsearchReals(key, base, nn)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * bsearchReals returns the index in base where key is stored.    *
-    !      * A binary search algorithm is used here, so it is assumed that  *
-    !      * base is sorted in increasing order. In case key appears more   *
-    !      * than once in base, the result is arbitrary. If key is not      *
-    !      * found, a zero is returned.                                     *
-    !      *                                                                *
-    !      ******************************************************************
+    !       bsearchReals returns the index in base where key is stored.    
+    !       A binary search algorithm is used here, so it is assumed that  
+    !       base is sorted in increasing order. In case key appears more   
+    !       than once in base, the result is arbitrary. If key is not      
+    !       found, a zero is returned.                                     
     !
     use precision
     implicit none
@@ -821,15 +801,11 @@ contains
 
   function bsearchStrings(key, base, nn)
     !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * bsearchStrings returns the index in base where key is stored.  *
-    !      * A binary search algorithm is used here, so it is assumed that  *
-    !      * base is sorted in increasing order. In case key appears more   *
-    !      * than once in base, the result is arbitrary. If key is not      *
-    !      * found, a zero is returned.                                     *
-    !      *                                                                *
-    !      ******************************************************************
+    !       bsearchStrings returns the index in base where key is stored.  
+    !       A binary search algorithm is used here, so it is assumed that  
+    !       base is sorted in increasing order. In case key appears more   
+    !       than once in base, the result is arbitrary. If key is not      
+    !       found, a zero is returned.                                     
     !
     use precision
     implicit none

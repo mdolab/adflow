@@ -1,30 +1,20 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * This set of utilities operates on geometry-related data        *
-!      * members for ALE scheme. They are seperated out so that         *
-!      * cumbersome loops over spectral and domains can be removed from *
-!      * other subroutines.                                             *
-!      * Subroutines labeled _block operates only on one block, so      *
-!      * setPointer has to be used in advance. In those cases, block    *
-!      * and boundary data are treated seperately.                      *
-!      *                                                                *
-!      * The data members considered here include:                      *
-!      * sFace[I,J,K], s[I,J,K], norm, rFace, uSlip,                    *
-!      * and their ALE counterparts                                     *
-!      *                                                                *
-!      * Added by HDN                                                   *
-!      *                                                                *
-!      ******************************************************************
+!       This set of utilities operates on geometry-related data        
+!       members for ALE scheme. They are seperated out so that         
+!       cumbersome loops over spectral and domains can be removed from 
+!       other subroutines.                                             
+!       Subroutines labeled _block operates only on one block, so      
+!       setPointer has to be used in advance. In those cases, block    
+!       and boundary data are treated seperately.                      
+!       The data members considered here include:                      
+!       sFace[I,J,K], s[I,J,K], norm, rFace, uSlip,                    
+!       and their ALE counterparts                                     
+!       Added by HDN                                                   
 !
 ! ===========================================================
 subroutine setLevelALE(setType)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * setLevelALE sets specified ALE level(s) with current data.     *
-  !      *                                                                *
-  !      ******************************************************************
+  !       setLevelALE sets specified ALE level(s) with current data.     
   !
   use blockPointers
   use iteration
@@ -149,12 +139,8 @@ end subroutine setLevelALE
 ! ===========================================================
 subroutine shiftLevelALE
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * shiftLevelALE move current ALE levels to older levels and      *
-  !      * update them with current data.                                 *
-  !      *                                                                *
-  !      ******************************************************************
+  !       shiftLevelALE move current ALE levels to older levels and      
+  !       update them with current data.                                 
   !
   use blockPointers
   use iteration
@@ -266,12 +252,8 @@ end subroutine shiftLevelALE
 ! ===========================================================
 subroutine interpLevelALE_block
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * interpLevelALE_block interpolates geometric data over the      *
-  !      * latest time step.                                              *
-  !      *                                                                *
-  !      ******************************************************************
+  !       interpLevelALE_block interpolates geometric data over the      
+  !       latest time step.                                              
   !
   use blockPointers
   use iteration
@@ -380,12 +362,8 @@ end subroutine interpLevelALE_block
 ! ===========================================================
 subroutine recoverLevelALE_block
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * recoverLevelALE_block recovers current geometric data from     *
-  !      * temporary interpolation                                        *
-  !      *                                                                *
-  !      ******************************************************************
+  !       recoverLevelALE_block recovers current geometric data from     
+  !       temporary interpolation                                        
   !
   use blockPointers
   use inputUnsteady
@@ -439,12 +417,8 @@ end subroutine recoverLevelALE_block
 ! ===========================================================
 subroutine interpLevelALEBC_block
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * interpLevelALEBC_block interpolates geometric data on boundary *
-  !      * over the latest time step.                                     *
-  !      *                                                                *
-  !      ******************************************************************
+  !       interpLevelALEBC_block interpolates geometric data on boundary 
+  !       over the latest time step.                                     
   !
   use blockPointers
   use iteration
@@ -547,12 +521,8 @@ end subroutine interpLevelALEBC_block
 ! ===========================================================
 subroutine recoverLevelALEBC_block
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * recoverLevelALEBC_block recovers current geometric data on     *
-  !      * boundary from temporary interpolation                          *
-  !      *                                                                *
-  !      ******************************************************************
+  !       recoverLevelALEBC_block recovers current geometric data on     
+  !       boundary from temporary interpolation                          
   !
   use blockPointers
   use inputUnsteady

@@ -1,11 +1,7 @@
 module adtBuild
   !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Module which contains all the subroutines for the building of  *
-  !     * an ADT, both surface and volume.                               *
-  !     *                                                                *
-  !     ******************************************************************
+  !      Module which contains all the subroutines for the building of  
+  !      an ADT, both surface and volume.                               
   !
   use adtUtils
   implicit none
@@ -18,18 +14,13 @@ contains
 
   subroutine buildADT(ADT)
     !
-    !       ****************************************************************
-    !       *                                                              *
-    !       * This routine builds the 6 dimensional ADT for the given      *
-    !       * ADT. When this routine is called it is assumed that the      *
-    !       * bounding boxes of the grid have already been computed; the   *
-    !       * ADT for these bounding boxes is built here.                  *
-    !       *                                                              *
-    !       * Subroutine intent(inout) arguments.                          *
-    !       * --------------------------------                             *
-    !       * ADT: adt derived type to build                               *
-    !       *                                                              *
-    !       ****************************************************************
+    !        This routine builds the 6 dimensional ADT for the given      
+    !        ADT. When this routine is called it is assumed that the      
+    !        bounding boxes of the grid have already been computed; the   
+    !        ADT for these bounding boxes is built here.                  
+    !        Subroutine intent(inout) arguments.                          
+    !        --------------------------------                             
+    !        ADT: adt derived type to build                               
     !
     implicit none
     !
@@ -314,12 +305,8 @@ contains
          call adtTerminate(ADT, "buildADT", &
          "Deallocation failure for the local arrays.")
     !
-    !       ****************************************************************
-    !       *                                                              *
-    !       * Local tree has been built. Now determine the global          *
-    !       * information for this tree.                                   *
-    !       *                                                              *
-    !       ****************************************************************
+    !        Local tree has been built. Now determine the global          
+    !        information for this tree.                                   
     !
     ! Determine the number and processor ID's of the non-empty local
     ! trees by gathering the data from the participating processors.
@@ -401,42 +388,34 @@ contains
 
   end subroutine buildADT
 
-  !***************************************************************
-  !***************************************************************
 
   subroutine buildSurfaceADT(nTria,  nQuads,   nNodes,    &
        coor,   triaConn, quadsConn, &
        BBox,   useBBox,  comm,      &
        adtID)
     !
-    !       ****************************************************************
-    !       *                                                              *
-    !       * This routine builds the 6 dimensional ADT, which stores the  *
-    !       * given surface grid. The memory intensive part of these       *
-    !       * arguments, the arrays with the coordinates and               *
-    !       * connectivities, are not copied. Instead pointers are set to  *
-    !       * these arrays. It is therefore the responsibility of the user *
-    !       * not to deallocate this memory before all the searches have   *
-    !       * been performed.                                              *
-    !       *                                                              *
-    !       * Subroutine intent(in) arguments.                             *
-    !       * --------------------------------                             *
-    !       * nNodes:    Number of local nodes in the given grid.          *
-    !       * nTria:     Idem for the triangles.                           *
-    !       * nQuads:    Idem for the quadrilaterals.                      *
-    !       * BBox(3,2): The possible bounding box. Only elements within   *
-    !       *            this box will be stored in the ADT.               *
-    !       * useBBox:   Whether or not to use the bounding box.           *
-    !       * comm:      MPI-communicator for the global ADT.              *
-    !       * adtID:     The ID of the ADT.                                *
-    !       *                                                              *
-    !       * Subroutine intent(in), target arguments.                     *
-    !       * ----------------------------------------                     *
-    !       * coor(3,nNodes):      Nodal coordinates of the local grid.    *
-    !       * triaConn(3,nTria):   Local connectivity of the triangles.    *
-    !       * quadsConn(4,nQuads): Idem for the quadrilaterals.            *
-    !       *                                                              *
-    !       ****************************************************************
+    !        This routine builds the 6 dimensional ADT, which stores the  
+    !        given surface grid. The memory intensive part of these       
+    !        arguments, the arrays with the coordinates and               
+    !        connectivities, are not copied. Instead pointers are set to  
+    !        these arrays. It is therefore the responsibility of the user 
+    !        not to deallocate this memory before all the searches have   
+    !        been performed.                                              
+    !        Subroutine intent(in) arguments.                             
+    !        --------------------------------                             
+    !        nNodes:    Number of local nodes in the given grid.          
+    !        nTria:     Idem for the triangles.                           
+    !        nQuads:    Idem for the quadrilaterals.                      
+    !        BBox(3,2): The possible bounding box. Only elements within   
+    !                   this box will be stored in the ADT.               
+    !        useBBox:   Whether or not to use the bounding box.           
+    !        comm:      MPI-communicator for the global ADT.              
+    !        adtID:     The ID of the ADT.                                
+    !        Subroutine intent(in), target arguments.                     
+    !        ----------------------------------------                     
+    !        coor(3,nNodes):      Nodal coordinates of the local grid.    
+    !        triaConn(3,nTria):   Local connectivity of the triangles.    
+    !        quadsConn(4,nQuads): Idem for the quadrilaterals.            
     !
     implicit none
     !
@@ -748,17 +727,12 @@ contains
 
     subroutine setSurfacePointers(ll)
       !
-      !         **************************************************************
-      !         *                                                            *
-      !         * This internal subroutine sets the pointers to the correct  *
-      !         * surface element, such that a loop over the element types   *
-      !         * can be used.                                               *
-      !         *                                                            *
-      !         * Subroutine intent(in) arguments.                           *
-      !         * --------------------------------                           *
-      !         * ll: Element type for which the pointers must be used.      *
-      !         *                                                            *
-      !         **************************************************************
+      !          This internal subroutine sets the pointers to the correct  
+      !          surface element, such that a loop over the element types   
+      !          can be used.                                               
+      !          Subroutine intent(in) arguments.                           
+      !          --------------------------------                           
+      !          ll: Element type for which the pointers must be used.      
       !
       implicit none
       !
@@ -780,8 +754,6 @@ contains
 
   end subroutine buildSurfaceADT
 
-  !***************************************************************
-  !***************************************************************
 
   subroutine buildVolumeADT(nTetra,    nPyra,    nPrisms,    &
        nHexa,     nNodes,   coor,       &
@@ -789,38 +761,32 @@ contains
        hexaConn,  BBox,     useBBox,    &
        comm,      adtID)
     !
-    !       ****************************************************************
-    !       *                                                              *
-    !       * This routine builds the 6 dimensional ADT, which stores the  *
-    !       * given volume grid. The memory intensive part of these        *
-    !       * arguments, the arrays with the coordinates and               *
-    !       * connectivities, are not copied. Instead pointers are set to  *
-    !       * these arrays. It is therefore the responsibility of the user *
-    !       * not to deallocate this memory before all the searches have   *
-    !       * been performed.                                              *
-    !       *                                                              *
-    !       * Subroutine intent(in) arguments.                             *
-    !       * --------------------------------                             *
-    !       * nNodes:    Number of local nodes in the given grid.          *
-    !       * nTetra:    Idem for the tetrahedra.                          *
-    !       * nPyra:     Idem for the pyramids.                            *
-    !       * nPrisms:   Idem for the prisms.                              *
-    !       * nHexa:     Idem for the hexahedra.                           *
-    !       * BBox(3,2): The possible bounding box. Only elements within   *
-    !       *            this box will be stored in the ADT.               *
-    !       * useBBox:   Whether or not to use the bounding box.           *
-    !       * comm:      MPI-communicator for the global ADT.              *
-    !       * adtID:     The ID of the ADT.                                *
-    !       *                                                              *
-    !       * Subroutine intent(in), target arguments.                     *
-    !       * ----------------------------------------                     *
-    !       * coor(3,nNodes):        Nodal coordinates of the local grid.  *
-    !       * tetraConn(4,nTetra):   Local connectivity of the tetrahedra. *
-    !       * pyraConn(5,nPyra):     Idem for the pyramids.                *
-    !       * prismsConn(6,nPrisms): Idem for the prisms.                  *
-    !       * hexaConn(8,nHexa):     Idem for the hexahedra.               *
-    !       *                                                              *
-    !       ****************************************************************
+    !        This routine builds the 6 dimensional ADT, which stores the  
+    !        given volume grid. The memory intensive part of these        
+    !        arguments, the arrays with the coordinates and               
+    !        connectivities, are not copied. Instead pointers are set to  
+    !        these arrays. It is therefore the responsibility of the user 
+    !        not to deallocate this memory before all the searches have   
+    !        been performed.                                              
+    !        Subroutine intent(in) arguments.                             
+    !        --------------------------------                             
+    !        nNodes:    Number of local nodes in the given grid.          
+    !        nTetra:    Idem for the tetrahedra.                          
+    !        nPyra:     Idem for the pyramids.                            
+    !        nPrisms:   Idem for the prisms.                              
+    !        nHexa:     Idem for the hexahedra.                           
+    !        BBox(3,2): The possible bounding box. Only elements within   
+    !                   this box will be stored in the ADT.               
+    !        useBBox:   Whether or not to use the bounding box.           
+    !        comm:      MPI-communicator for the global ADT.              
+    !        adtID:     The ID of the ADT.                                
+    !        Subroutine intent(in), target arguments.                     
+    !        ----------------------------------------                     
+    !        coor(3,nNodes):        Nodal coordinates of the local grid.  
+    !        tetraConn(4,nTetra):   Local connectivity of the tetrahedra. 
+    !        pyraConn(5,nPyra):     Idem for the pyramids.                
+    !        prismsConn(6,nPrisms): Idem for the prisms.                  
+    !        hexaConn(8,nHexa):     Idem for the hexahedra.               
     !
     implicit none
     !
@@ -1138,17 +1104,12 @@ contains
 
     subroutine setVolumePointers(ll)
       !
-      !         **************************************************************
-      !         *                                                            *
-      !         * This internal subroutine sets the pointers to the correct  *
-      !         * volume element, such that a loop over the element types    *
-      !         * can be used.                                               *
-      !         *                                                            *
-      !         * Subroutine intent(in) arguments.                           *
-      !         * --------------------------------                           *
-      !         * ll: Element type for which the pointers must be used.      *
-      !         *                                                            *
-      !         **************************************************************
+      !          This internal subroutine sets the pointers to the correct  
+      !          volume element, such that a loop over the element types    
+      !          can be used.                                               
+      !          Subroutine intent(in) arguments.                           
+      !          --------------------------------                           
+      !          ll: Element type for which the pointers must be used.      
       !
       implicit none
       !
@@ -1177,35 +1138,28 @@ contains
 
   subroutine buildSerialHex(nHexa, nNodes, coor, hexaConn, ADT)
     !
-    !       ****************************************************************
-    !       *                                                              *
-    !       * This a specialized routine that builds and ADT tree for      *
-    !       * hex volumes only and only in serial. Also, this routine does *
-    !       * use adtDats's ADTs() array list...the user must supply the   *
-    !       * adtType to use and is responsible for all data management of *
-    !       * this type.                                                   *
-    !       * The memory intensive part of these                           *
-    !       * arguments, the arrays with the coordinates and               *
-    !       * connectivities, are not copied. Instead pointers are set to  *
-    !       * these arrays. It is therefore the responsibility of the user *
-    !       * not to deallocate this memory before all the searches have   *
-    !       * been performed.                                              *
-    !       *                                                              *
-    !       * Subroutine intent(in) arguments.                             *
-    !       * --------------------------------                             *
+    !        This a specialized routine that builds and ADT tree for      
+    !        hex volumes only and only in serial. Also, this routine does 
+    !        use adtDats's ADTs() array list...the user must supply the   
+    !        adtType to use and is responsible for all data management of 
+    !        this type.                                                   
+    !        The memory intensive part of these                           
+    !        arguments, the arrays with the coordinates and               
+    !        connectivities, are not copied. Instead pointers are set to  
+    !        these arrays. It is therefore the responsibility of the user 
+    !        not to deallocate this memory before all the searches have   
+    !        been performed.                                              
+    !        Subroutine intent(in) arguments.                             
+    !        --------------------------------                             
     !       * nHexa :    Number of hexa cells
-    !       * nNodes:    Number of nodes in the given grid.                *
-    !       *                                                              *
-    !       * Subroutine intent(in), target arguments.                     *
-    !       * ----------------------------------------                     *
-    !       * coor(3,nNodes):        Nodal coordinates of the local grid.  *
-    !       * hexaConn(8,nHexa):     Idem for the hexahedra.               *
-    !       *                                                              *
-    !       * Subroutine intent(out), arguments.                           *
-    !       * ----------------------------------------                     *
-    !       * ADT : The newly completed ADT                                *
-    !       *                                                              *
-    !       ****************************************************************
+    !        nNodes:    Number of nodes in the given grid.                
+    !        Subroutine intent(in), target arguments.                     
+    !        ----------------------------------------                     
+    !        coor(3,nNodes):        Nodal coordinates of the local grid.  
+    !        hexaConn(8,nHexa):     Idem for the hexahedra.               
+    !        Subroutine intent(out), arguments.                           
+    !        ----------------------------------------                     
+    !        ADT : The newly completed ADT                                
     !
     implicit none
     !
@@ -1322,36 +1276,29 @@ contains
 
   subroutine buildSerialQuad(nQuad, nNodes, coor, quadsConn, ADT)
     !
-    !       ****************************************************************
-    !       *                                                              *
-    !       * This a specialized routine that builds and ADT tree for      *
-    !       * quad surface meshes and only in serial. Also, this routine   *
-    !       * does not                                                     *
-    !       * use adtDats's ADTs() array list...the user must supply the   *
-    !       * adtType to use and is responsible for all data management of *
-    !       * this type.                                                   *
-    !       * The memory intensive part of these                           *
-    !       * arguments, the arrays with the coordinates and               *
-    !       * connectivities, are not copied. Instead pointers are set to  *
-    !       * these arrays. It is therefore the responsibility of the user *
-    !       * not to deallocate this memory before all the searches have   *
-    !       * been performed.                                              *
-    !       *                                                              *
-    !       * Subroutine intent(in) arguments.                             *
-    !       * --------------------------------                             *
+    !        This a specialized routine that builds and ADT tree for      
+    !        quad surface meshes and only in serial. Also, this routine   
+    !        does not                                                     
+    !        use adtDats's ADTs() array list...the user must supply the   
+    !        adtType to use and is responsible for all data management of 
+    !        this type.                                                   
+    !        The memory intensive part of these                           
+    !        arguments, the arrays with the coordinates and               
+    !        connectivities, are not copied. Instead pointers are set to  
+    !        these arrays. It is therefore the responsibility of the user 
+    !        not to deallocate this memory before all the searches have   
+    !        been performed.                                              
+    !        Subroutine intent(in) arguments.                             
+    !        --------------------------------                             
     !       * nQuad :    Number of quad cells
-    !       * nNodes:    Number of nodes in the given grid.                *
-    !       *                                                              *
-    !       * Subroutine intent(in), target arguments.                     *
-    !       * ----------------------------------------                     *
-    !       * coor(3,nNodes):        Nodal coordinates of the local grid.  *
-    !       * quadsConn(8,nHexa):     Connectivity for quad cells           *
-    !       *                                                              *
-    !       * Subroutine intent(out), arguments.                           *
-    !       * ----------------------------------------                     *
-    !       * ADT : The newly completed ADT                                *
-    !       *                                                              *
-    !       ****************************************************************
+    !        nNodes:    Number of nodes in the given grid.                
+    !        Subroutine intent(in), target arguments.                     
+    !        ----------------------------------------                     
+    !        coor(3,nNodes):        Nodal coordinates of the local grid.  
+    !        quadsConn(8,nHexa):     Connectivity for quad cells           
+    !        Subroutine intent(out), arguments.                           
+    !        ----------------------------------------                     
+    !        ADT : The newly completed ADT                                
     !
     implicit none
     !

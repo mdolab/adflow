@@ -5,7 +5,7 @@
 !   variations   of useful results: *dw *w *(*viscsubface.tau)
 !   with respect to varying inputs: gammainf timeref rhoinf winf
 !                pinfcorr *rev *p *sfacei *sfacej *sfacek *dw *w
-!                *rlv *x *vol *si *sj *sk *radi *radj *radk
+!                rlv *x *vol *si *sj *sk *radi *radj 
 !   plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
 !                p:in sfacei:in sfacej:in sfacek:in dw:in w:in
 !                rlv:in x:in qx:in qy:in qz:in ux:in vol:in uy:in
@@ -14,12 +14,8 @@
 !                radk:in
 subroutine residual_block_d()
 !
-!      ******************************************************************
-!      *                                                                *
-!      * residual computes the residual of the mean flow equations on   *
-!      * the current mg level.                                          *
-!      *                                                                *
-!      ******************************************************************
+!       residual computes the residual of the mean flow equations on   
+!       the current mg level.                                          
 !
   use blockpointers
   use cgnsgrid
@@ -101,11 +97,7 @@ subroutine residual_block_d()
   real(kind=realtype) :: max2
   real(kind=realtype) :: max1
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! set the value of rfil, which controls the fraction of the old
 ! dissipation residual to be used. this is only for the runge-kutta

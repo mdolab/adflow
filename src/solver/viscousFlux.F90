@@ -1,13 +1,9 @@
 subroutine viscousFlux
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * viscousFlux computes the viscous fluxes using a central        *
-  !      * difference scheme for a block.                                 *
-  !      * It is assumed that the pointers in block pointer already point *
-  !      * to the correct block.                                          *
-  !      *                                                                *
-  !      ******************************************************************
+  !       viscousFlux computes the viscous fluxes using a central        
+  !       difference scheme for a block.                                 
+  !       It is assumed that the pointers in block pointer already point 
+  !       to the correct block.                                          
   !
   use constants
   use blockPointers
@@ -54,11 +50,7 @@ subroutine viscousFlux
   endif
 
   !
-  !        ****************************************************************
-  !        *                                                              *
-  !        * viscous fluxes in the k-direction.                           *
-  !        *                                                              *
-  !        ****************************************************************
+  !         viscous fluxes in the k-direction.                           
   !
   continue
   !$AD CHECKPOINT-START
@@ -275,11 +267,7 @@ subroutine viscousFlux
   !$AD CHECKPOINT-END
 
   !
-  !        ****************************************************************
-  !        *                                                              *
-  !        * Viscous fluxes in the j-direction.                           *
-  !        *                                                              *
-  !        ****************************************************************
+  !         Viscous fluxes in the j-direction.                           
   !
   continue
   !$AD CHECKPOINT-START
@@ -498,11 +486,7 @@ subroutine viscousFlux
 
 
   !
-  !        ****************************************************************
-  !        *                                                              *
-  !        * Viscous fluxes in the i-direction.                           *
-  !        *                                                              *
-  !        ****************************************************************
+  !         Viscous fluxes in the i-direction.                           
   !
   continue
   !$AD CHECKPOINT-START
@@ -729,14 +713,10 @@ end subroutine viscousFlux
 
 subroutine allNodalGradients
   !
-  !        ****************************************************************
-  !        *                                                              *
-  !        * nodalGradients computes the nodal velocity gradients and     *
-  !        * minus the gradient of the speed of sound squared. The minus  *
-  !        * sign is present, because this is the definition of the heat  *
-  !        * flux. These gradients are computed for all nodes.            * 
-  !        *                                                              *
-  !        ****************************************************************
+  !         nodalGradients computes the nodal velocity gradients and     
+  !         minus the gradient of the speed of sound squared. The minus  
+  !         sign is present, because this is the definition of the heat  
+  !         flux. These gradients are computed for all nodes.            
   !
   use constants
   use blockPointers
@@ -751,11 +731,7 @@ subroutine allNodalGradients
   real(kind=realType) :: oneOverV, ubar, vbar, wbar, a2
   real(kind=realType) :: sx, sx1, sy, sy1, sz, sz1
   !
-  !        ****************************************************************
-  !        *                                                              *
-  !        * Begin execution                                              *
-  !        *                                                              *
-  !        ****************************************************************
+  !         Begin execution                                              
   !
 
   ! Zero all nodeal gradients:

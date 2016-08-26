@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          read1to1Conn.F90                                *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 12-17-2002                                      *
-!      * Last modified: 11-07-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          read1to1Conn.F90                                
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 12-17-2002                                      
+!       Last modified: 11-07-2005                                      
 !
        subroutine read1to1Conn(cgnsInd, cgnsBase, nZone)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * read1to1Conn reads the 1 to 1 block to block, i.e.             *
-!      * continuous grid lines across block boundaries, connectivities  *
-!      * for the given zone/block.                                      *
-!      *                                                                *
-!      ******************************************************************
+!       read1to1Conn reads the 1 to 1 block to block, i.e.             
+!       continuous grid lines across block boundaries, connectivities  
+!       for the given zone/block.                                      
 !
        use constants
        use cgnsGrid
@@ -37,11 +29,7 @@
        integer, dimension(3,2) :: zoneRange, donorRange
        integer, dimension(3)   :: transform
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
 #ifdef USE_NO_CGNS
 

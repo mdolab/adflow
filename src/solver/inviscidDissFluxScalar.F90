@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          inviscidDissFluxScalar.f90                      *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-24-2003                                      *
-!      * Last modified: 10-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          inviscidDissFluxScalar.f90                      
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-24-2003                                      
+!       Last modified: 10-29-2007                                      
 !
 subroutine inviscidDissFluxScalar
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * inviscidDissFluxScalar computes the scalar artificial          *
-  !      * dissipation, see AIAA paper 81-1259, for a given block.        *
-  !      * Therefore it is assumed that the pointers in  blockPointers    *
-  !      * already point to the correct block.                            *
-  !      *                                                                *
-  !      ******************************************************************
+  !       inviscidDissFluxScalar computes the scalar artificial          
+  !       dissipation, see AIAA paper 81-1259, for a given block.        
+  !       Therefore it is assumed that the pointers in  blockPointers    
+  !       already point to the correct block.                            
   !
   use constants
   use blockPointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb, kb, &
@@ -44,11 +36,7 @@ subroutine inviscidDissFluxScalar
   real(kind=realType),dimension(1:ie,1:je,1:ke,3) :: dss
   real(kind=realType), dimension(0:ib,0:jb,0:kb) :: ss
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Check if rFil == 0. If so, the dissipative flux needs not to
   ! be computed.
@@ -148,11 +136,7 @@ subroutine inviscidDissFluxScalar
 
   fw = sfil*fw
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Dissipative fluxes in the i-direction.                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Dissipative fluxes in the i-direction.                         
   !
 #ifdef TAPENADE_REVERSE
   !$AD II-LOOP
@@ -229,11 +213,7 @@ subroutine inviscidDissFluxScalar
 #endif
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Dissipative fluxes in the j-direction.                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Dissipative fluxes in the j-direction.                         
   !
 #ifdef TAPENADE_REVERSE
   !$AD II-LOOP
@@ -309,11 +289,7 @@ subroutine inviscidDissFluxScalar
   end do
 #endif
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Dissipative fluxes in the k-direction.                         *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Dissipative fluxes in the k-direction.                         
   !
 #ifdef TAPENADE_REVERSE
   !$AD II-LOOP

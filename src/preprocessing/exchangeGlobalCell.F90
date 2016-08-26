@@ -1,11 +1,7 @@
 subroutine exchangeGlobalCells(level, sps, commPattern, internal)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * ExchangeIblank exchanges the 1 to 1 internal halo's for the    *
-  !      * given level and sps instance.                                  *
-  !      *                                                                *
-  !      ******************************************************************
+  !       ExchangeIblank exchanges the 1 to 1 internal halo's for the    
+  !       given level and sps instance.                                  
   !
   use block
   use communication
@@ -29,11 +25,7 @@ subroutine exchangeGlobalCells(level, sps, commPattern, internal)
   integer(kind=intType), dimension(:), allocatable :: sendBufInt
   integer(kind=intType), dimension(:), allocatable :: recvBufInt
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Allocate the memory for the sending and receiving buffers.
 

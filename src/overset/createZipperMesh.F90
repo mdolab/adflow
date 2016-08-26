@@ -1,20 +1,15 @@
 !
-!     **********************************************************************
-!     *                                                                    *
-!     * createZipperMesh zips multiple overlapping surface meshes.         *
-!     * First, it eliminates overlapping quads and then stiches the        *
-!     * non-overlapping surface mesh boundaries with triangular            *
-!     * surface grids.                                                     *
-!     *                                                                    *
-!     * In an overset framework the overlapping surface grids give         *
-!     * wrong estimate of airloads. Zipper mesh overcomes this by          *
-!     * creating a more accurate representation of the surface in the      *
-!     * mesh overlap regions.                                              *
-!     *                                                                    *
-!     * ref:  "Enhancements to the Hybrid Mesh Approach to Surface Loads   *
-!     *        Integration on Overset Structured Grids", William M. Chan   *
-!     * http://people.nas.nasa.gov/~wchan/publications/AIAA-2009-3990.pdf  *
-!     **********************************************************************
+!      createZipperMesh zips multiple overlapping surface meshes.         
+!      First, it eliminates overlapping quads and then stiches the        
+!      non-overlapping surface mesh boundaries with triangular            
+!      surface grids.                                                     
+!      In an overset framework the overlapping surface grids give         
+!      wrong estimate of airloads. Zipper mesh overcomes this by          
+!      creating a more accurate representation of the surface in the      
+!      mesh overlap regions.                                              
+!      ref:  "Enhancements to the Hybrid Mesh Approach to Surface Loads   
+!             Integration on Overset Structured Grids", William M. Chan   
+!      http://people.nas.nasa.gov/~wchan/publications/AIAA-2009-3990.pdf  
 !
 
 subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &

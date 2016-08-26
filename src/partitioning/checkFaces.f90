@@ -1,13 +1,9 @@
        subroutine checkFaces
 !
-!      ******************************************************************
-!      *                                                                *
-!      * checkFaces determines whether or not a boundary condition or   *
-!      * a connectivity has been specified for all block faces. If this *
-!      * is not the case, the corresponding blocks are printed and the  *
-!      * code terminates.                                               *
-!      *                                                                *
-!      ******************************************************************
+!       checkFaces determines whether or not a boundary condition or   
+!       a connectivity has been specified for all block faces. If this 
+!       is not the case, the corresponding blocks are printed and the  
+!       code terminates.                                               
 !
        use constants
        use blockPointers
@@ -39,11 +35,7 @@
 
        character(len=7) :: intString
 
-!      ******************************************************************
-!      *                                                                *
-!      * Determine the local bad blocks.                                *
-!      *                                                                *
-!      ******************************************************************
+!       Determine the local bad blocks.                                
 !
        ! Loop over the number of spectral solutions to be checked and
        ! the number of local blocks.
@@ -70,12 +62,8 @@
          enddo
        enddo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Determine the global number of bad blocks and gather this      *
-!      * information.                                                   *
-!      *                                                                *
-!      ******************************************************************
+!       Determine the global number of bad blocks and gather this      
+!       information.                                                   
 !
        ! Determine the number of bad blocks per processor.
 
@@ -247,14 +235,10 @@
 
        subroutine checkFacesBlock(blockIsBad, faceID, multiple)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * checkFacesBlock checks if for the currently active block all   *
-!      * the necessary boundary and connectivity info is specified.     *
-!      * If not, blockIsBad is set to .true. and the block face ID      *
-!      * which is bad, is returned as well.                             *
-!      *                                                                *
-!      ******************************************************************
+!       checkFacesBlock checks if for the currently active block all   
+!       the necessary boundary and connectivity info is specified.     
+!       If not, blockIsBad is set to .true. and the block face ID      
+!       which is bad, is returned as well.                             
 !
        use constants
        use blockPointers
@@ -279,11 +263,7 @@
        logical :: iMinBad, iMaxBad, jMinBad, jMaxBad
        logical :: kMinBad, kMaxBad
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize iMinFace, etc to 0. These arrays will contain the
        ! number of specified connectivities and BC's for each face on

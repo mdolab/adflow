@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          solveState.F90                                  *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 01-29-2004                                      *
-!      * Last modified: 10-31-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          solveState.F90                                  
+!       Author:        Edwin van der Weide                             
+!       Starting date: 01-29-2004                                      
+!       Last modified: 10-31-2007                                      
 !
 subroutine solveState
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * solveState computes either the steady or unsteady state        *
-  !      * vector for the multigrid level groundLevel, which can be       *
-  !      * found in the module iteration.                                 *
-  !      *                                                                *
-  !      ******************************************************************
+  !       solveState computes either the steady or unsteady state        
+  !       vector for the multigrid level groundLevel, which can be       
+  !       found in the module iteration.                                 
   !
   use constants
   use communication, only : myID, sumb_comm_world
@@ -48,11 +40,7 @@ subroutine solveState
   logical :: absConv, relConv, firstNK, firstANK
 
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Allocate the memory for cycling.
   if (allocated(cycling)) then 

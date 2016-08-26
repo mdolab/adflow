@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          sortBadEntities.f90                             *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 08-30-2004                                      *
-!      * Last modified: 04-20-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          sortBadEntities.f90                             
+!       Author:        Edwin van der Weide                             
+!       Starting date: 08-30-2004                                      
+!       Last modified: 04-20-2005                                      
 !
        module fourIntPlusRealDataType
 !
-!      ******************************************************************
-!      *                                                                *
-!      * This local module contains the derived data type, which        *
-!      * consists of four integers and one real.                        *
-!      *                                                                *
-!      ******************************************************************
+!       This local module contains the derived data type, which        
+!       consists of four integers and one real.                        
 !
        use precision
        use utils, only : terminate
@@ -61,15 +53,11 @@
 
          !===============================================================
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Functions to define the operators <, <= and /=.              *
-!        * Note that the comparison is only based on the integers.      *
-!        * The real contains additional info, the maximum deviation,    *
-!        * which is normally different even if the subfaces are         *
-!        * identical.                                                   *
-!        *                                                              *
-!        ****************************************************************
+!         Functions to define the operators <, <= and /=.              
+!         Note that the comparison is only based on the integers.      
+!         The real contains additional info, the maximum deviation,    
+!         which is normally different even if the subfaces are         
+!         identical.                                                   
 !
          logical function lessEqualFourIntPlusRealType(g1, g2)
          implicit none
@@ -192,12 +180,8 @@
 
        subroutine sortBadEntities(nEntities, entities, dist, sortDist)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * sortBadEntities sorts the given number of entities in          *
-!      * increasing order and gets rid of the multiple entries.         *
-!      *                                                                *
-!      ******************************************************************
+!       sortBadEntities sorts the given number of entities in          
+!       increasing order and gets rid of the multiple entries.         
 !
        use constants
        use fourIntPlusRealDataType
@@ -221,11 +205,7 @@
 
        type(fourIntPlusRealType), dimension(nEntities) :: tmp
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Return immediately if there are no entities to be sorted.
 
@@ -285,13 +265,9 @@
 
        subroutine qsortFourIntPlusRealType(arr, nn)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * qsortFourIntPlusRealType sorts the given number of halo's in   *
-!      * increasing order based on the <= operator for this derived     *
-!      * data type.                                                     *
-!      *                                                                *
-!      ******************************************************************
+!       qsortFourIntPlusRealType sorts the given number of halo's in   
+!       increasing order based on the <= operator for this derived     
+!       data type.                                                     
 !
        use fourIntPlusRealDataType
        implicit none
@@ -316,11 +292,7 @@
        integer(kind=intType), allocatable, dimension(:) :: stack
        integer(kind=intType), allocatable, dimension(:) :: tmpStack
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Allocate the memory for stack.
 

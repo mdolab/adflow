@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          storeSolInBuffer.f90                            *
-!      * Author:        Edwin van der Weide, Georgi Kalitzin,           *
-!      *                Steve Repsher                                   *
-!      * Starting date: 04-14-2003                                      *
-!      * Last modified: 10-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          storeSolInBuffer.f90                            
+!       Author:        Edwin van der Weide, Georgi Kalitzin,           
+!                      Steve Repsher                                   
+!       Starting date: 04-14-2003                                      
+!       Last modified: 10-12-2005                                      
 !
        subroutine storeSolInBuffer(buffer, copyInBuffer, solName, &
                                    iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * StoreSolInBuffer stores the given range of the variable        *
-!      * indicated by solName in IOVar and copies it into buffer if     *
-!      * desired. It is assumed that the variables in blockPointers     *
-!      * already point to the correct block.                            *
-!      *                                                                *
-!      ******************************************************************
+!       StoreSolInBuffer stores the given range of the variable        
+!       indicated by solName in IOVar and copies it into buffer if     
+!       desired. It is assumed that the variables in blockPointers     
+!       already point to the correct block.                            
 !
        use constants
        use blockPointers
@@ -57,11 +49,7 @@
 
        real(kind=realType), dimension(:,:,:,:), pointer :: wIO
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Set the pointer to the correct entry of IOVar. I'm cheating a
        ! bit here, because I know that only memory has been allocated

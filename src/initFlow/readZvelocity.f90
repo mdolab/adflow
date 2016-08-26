@@ -1,28 +1,20 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          readZvelocity.f90                               *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-21-2003                                      *
-!      * Last modified: 09-10-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          readZvelocity.f90                               
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-21-2003                                      
+!       Last modified: 09-10-2007                                      
 !
        subroutine readZvelocity(nTypeMismatch)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * readZvelocity reads the z-velocity variable from the given     *
-!      * place in the cgns file. If the z-velocity itself is not stored *
-!      * then it is tried to construct it from the z-momentum and       *
-!      * density; it is assumed that the latter is already stored in    *
-!      * the pointer variable w.                                        *
-!      * If it is not possible to create the z-velocity an error        *
-!      * message is printed and the program will stop.                  *
-!      * It is assumed that the pointers in blockPointers already       *
-!      * point to the correct block.                                    *
-!      *                                                                *
-!      ******************************************************************
+!       readZvelocity reads the z-velocity variable from the given     
+!       place in the cgns file. If the z-velocity itself is not stored 
+!       then it is tried to construct it from the z-momentum and       
+!       density; it is assumed that the latter is already stored in    
+!       the pointer variable w.                                        
+!       If it is not possible to create the z-velocity an error        
+!       message is printed and the program will stop.                  
+!       It is assumed that the pointers in blockPointers already       
+!       point to the correct block.                                    
 !
        use blockPointers
        use constants

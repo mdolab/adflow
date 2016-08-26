@@ -7,19 +7,15 @@
 !   plus diff mem management of: p:in w:in si:in sj:in sk:in fw:in
 subroutine inviscidupwindflux_b(finegrid)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * inviscidupwindflux computes the artificial dissipation part of *
-!      * the euler fluxes by means of an approximate solution of the 1d *
-!      * riemann problem on the face. for first order schemes,          *
-!      * finegrid == .false., the states in the cells are assumed to    *
-!      * be constant; for the second order schemes on the fine grid a   *
-!      * nonlinear reconstruction of the left and right state is done   *
-!      * for which several options exist.                               *
-!      * it is assumed that the pointers in blockpointers already       *
-!      * point to the correct block.                                    *
-!      *                                                                *
-!      ******************************************************************
+!       inviscidupwindflux computes the artificial dissipation part of 
+!       the euler fluxes by means of an approximate solution of the 1d 
+!       riemann problem on the face. for first order schemes,          
+!       finegrid == .false., the states in the cells are assumed to    
+!       be constant; for the second order schemes on the fine grid a   
+!       nonlinear reconstruction of the left and right state is done   
+!       for which several options exist.                               
+!       it is assumed that the pointers in blockpointers already       
+!       point to the correct block.                                    
 !
   use constants
   use blockpointers, only : il, jl, kl, ie, je, ke, ib, jb, kb, w, wd,&
@@ -124,22 +120,14 @@ subroutine inviscidupwindflux_b(finegrid)
       firstorderk = .false.
     end if
 !
-!      ******************************************************************
-!      *                                                                *
-!      * flux computation. a distinction is made between first and      *
-!      * second order schemes to avoid the overhead for the first order *
-!      * scheme.                                                        *
-!      *                                                                *
-!      ******************************************************************
+!       flux computation. a distinction is made between first and      
+!       second order schemes to avoid the overhead for the first order 
+!       scheme.                                                        
 !
     if (limused .eq. firstorder) then
 !
-!        ****************************************************************
-!        *                                                              *
-!        * first order reconstruction. the states in the cells are      *
-!        * constant. the left and right states are constructed easily.  *
-!        *                                                              *
-!        ****************************************************************
+!         first order reconstruction. the states in the cells are      
+!         constant. the left and right states are constructed easily.  
 !
 ! fluxes in the i-direction.
       do k=2,kl
@@ -532,16 +520,12 @@ subroutine inviscidupwindflux_b(finegrid)
 !      ==================================================================
 !      ==================================================================
 !
-!        ****************************************************************
-!        *                                                              *
-!        * second order reconstruction of the left and right state.     *
-!        * the three differences used in the, possibly nonlinear,       *
-!        * interpolation are constructed here; the actual left and      *
-!        * right states, or at least the differences from the first     *
-!        * order interpolation, are computed in the subroutine          *
-!        * leftrightstate.                                              *
-!        *                                                              *
-!        ****************************************************************
+!         second order reconstruction of the left and right state.     
+!         the three differences used in the, possibly nonlinear,       
+!         interpolation are constructed here; the actual left and      
+!         right states, or at least the differences from the first     
+!         order interpolation, are computed in the subroutine          
+!         leftrightstate.                                              
 !
 ! fluxes in the i-direction.
       do k=2,kl
@@ -1182,11 +1166,7 @@ contains
     real(kind=realtype) :: y1d
     real(kind=realtype) :: temp4
 !
-!        ****************************************************************
-!        *                                                              *
-!        * begin execution.                                             *
-!        *                                                              *
-!        ****************************************************************
+!         begin execution.                                             
 !
 ! check if the velocity components should be transformed to
 ! the cylindrical frame.
@@ -1851,11 +1831,7 @@ contains
     real(kind=realtype) :: y2
     real(kind=realtype) :: y1
 !
-!        ****************************************************************
-!        *                                                              *
-!        * begin execution.                                             *
-!        *                                                              *
-!        ****************************************************************
+!         begin execution.                                             
 !
 ! check if the velocity components should be transformed to
 ! the cylindrical frame.
@@ -2160,11 +2136,7 @@ contains
     real(kind=realtype) :: tempd16
     real(kind=realtype) :: tempd15
 !
-!        ****************************************************************
-!        *                                                              *
-!        * begin execution.                                             *
-!        *                                                              *
-!        ****************************************************************
+!         begin execution.                                             
 !
 ! set the porosity for the flux. the default value, 0.5*rfil, is
 ! a scaling factor where an rfil != 1 is taken into account.
@@ -2678,11 +2650,7 @@ contains
     real(kind=realtype) :: abs1
     real(kind=realtype) :: max2
 !
-!        ****************************************************************
-!        *                                                              *
-!        * begin execution.                                             *
-!        *                                                              *
-!        ****************************************************************
+!         begin execution.                                             
 !
 ! set the porosity for the flux. the default value, 0.5*rfil, is
 ! a scaling factor where an rfil != 1 is taken into account.

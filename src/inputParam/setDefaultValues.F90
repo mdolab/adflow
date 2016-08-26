@@ -1,24 +1,16 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          setDefaultValues.F90                            *
-!      * Author:        Edwin van der Weide, Steve Repsher,             *
-!      *                Seonghyeon Hahn                                 *
-!      * Starting date: 12-11-2002                                      *
-!      * Last modified: 09-19-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          setDefaultValues.F90                            
+!       Author:        Edwin van der Weide, Steve Repsher,             
+!                      Seonghyeon Hahn                                 
+!       Starting date: 12-11-2002                                      
+!       Last modified: 09-19-2007                                      
 !
        subroutine setDefaultValues
 !
-!      ******************************************************************
-!      *                                                                *
-!      * setDefaultValues sets the default values for the input         *
-!      * parameters where-ever possible. The parameters that must be    *
-!      * set by the user are initialized such a check can be performed  *
-!      * later.                                                         *
-!      *                                                                *
-!      ******************************************************************
+!       setDefaultValues sets the default values for the input         
+!       parameters where-ever possible. The parameters that must be    
+!       set by the user are initialized such a check can be performed  
+!       later.                                                         
 !
        use constants
        use allInputParam
@@ -36,11 +28,7 @@
        use costFunctions, only : sepSensorOffset, sepSensorSharpNess
        implicit none
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize monitoring the turbulent residuals as well as the
        ! monitoring of mass flow of the sliding interfaces to .false.
@@ -57,11 +45,7 @@
        volumeOutSpecified  = .false.
        isoOutSpecified     = .false.
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Set the default values for the discretization parameters.      *
-!      *                                                                *
-!      ******************************************************************
+!       Set the default values for the discretization parameters.      
 !
        spaceDiscr = none                  ! Serves as a check later on.
        orderTurb  = firstOrder            ! First order discretization.
@@ -104,11 +88,7 @@
 
        kappaCoef = third
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Set the default values for the IO-parameters.                  *
-!      *                                                                *
-!      ******************************************************************
+!       Set the default values for the IO-parameters.                  
 
        gridFile       = ""          ! Serves as a check later on.
 
@@ -144,11 +124,7 @@
        precisionSol  = precisionDouble   ! IO takes place in double
 #endif                                   ! precision.
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Set the default values for the iteration parameters.           *
-!      *                                                                *
-!      ******************************************************************
+!       Set the default values for the iteration parameters.           
 !
        nCycles       = -1    ! Serves as a check later on.
        nsgStartup    =  0    ! No single grid startup iterations.
@@ -201,12 +177,8 @@
                             ! when no restart is performed.
        mgDescription = "sg" ! Single grid computation.
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Set the default values for the motion parameters,              *
-!      * i.e. no motion.                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Set the default values for the motion parameters,              
+!       i.e. no motion.                                                
 !
        ! Translation data.
 
@@ -233,22 +205,14 @@
 
        gridMotionSpecified = .false.
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Set the default values for the parallel parameters.            *
-!      *                                                                *
-!      ******************************************************************
+!       Set the default values for the parallel parameters.            
 !
        loadImbalance = 0.1_realType  ! Allow 10 percent load imbalance.
        splitBlocks   = .true.        ! Allow the splitting of blocks to
                                      ! obtain a better load balancing.
        loadbalanceiter = 2           ! Do two iterations
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Set the default values for the physics parameters.             *
-!      *                                                                *
-!      ******************************************************************
+!       Set the default values for the physics parameters.             
 !
        equations     = none       ! These are parameters that must be
        equationMode = none        ! specified. If not, the program
@@ -304,11 +268,7 @@
        pointRef(2) = zero
        pointRef(3) = zero
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Set the default values for the time spectral parameters.       *
-!      *                                                                *
-!      ******************************************************************
+!       Set the default values for the time spectral parameters.       
 !
        nTimeIntervalsSpectral   = -1   ! Serves as a check later on.
 
@@ -322,11 +282,7 @@
 
        dtUnsteadyRestartSpectral    = -one    ! Is checked later on.
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Set the default values for the unsteady parameters.            *
-!      *                                                                *
-!      ******************************************************************
+!       Set the default values for the unsteady parameters.            
 !
        timeAccuracy = secondOrder  ! Second order time accuracy.
 
@@ -341,50 +297,30 @@
                                             ! overruled for models that
                                             ! are wall distance free.
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The reference state variables. Set them to -1, such that they  *
-!      * can be checked later on.                                       *
-!      *                                                                *
-!      ******************************************************************
+!       The reference state variables. Set them to -1, such that they  
+!       can be checked later on.                                       
 !
        pRef   = -one
        rhoRef = -one
        TRef   = -one
 !
-!      ******************************************************************
-!      *                                                                *
-!      * The conversion factor of the grid units to meters. Default 1.  *
-!      *                                                                *
-!      ******************************************************************
+!       The conversion factor of the grid units to meters. Default 1.  
 !
        LRef           = one
        LRefSpecified = .false.
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Initialization of some unsteady restart parameters. These will *
-!      * be overwritten when an actual unsteady restart is performed.   *
-!      *                                                                *
-!      ******************************************************************
+!       Initialization of some unsteady restart parameters. These will 
+!       be overwritten when an actual unsteady restart is performed.   
 !
        nOldSolAvail        = 1
        nTimeStepsRestart   = 0
        timeUnsteadyRestart = zero
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Variables needed for the writing of grid and solution files.   *
-!      *                                                                *
-!      ******************************************************************
+!       Variables needed for the writing of grid and solution files.   
 !
        timeSpectralGridsNotWritten = .true.
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Coupler parameters.                                            *
-!      *                                                                *
-!      ******************************************************************
+!       Coupler parameters.                                            
 !
        codeName        = "SUmb"
        cplGetCoarseSol = .false.

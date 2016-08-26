@@ -1,9 +1,7 @@
 subroutine setRestartFiles(fileName, i)
   !
-  !      ******************************************************************
-  !      *    Populates the restartfiles                                  *
-  !      *    The array is populated from Python using setRestartFiles    *
-  !      ******************************************************************
+  !          Populates the restartfiles                                  
+  !          The array is populated from Python using setRestartFiles    
   !
   use constants
   use inputIO, only : restartFiles
@@ -14,11 +12,7 @@ subroutine setRestartFiles(fileName, i)
   character(len=*), intent(inout) :: fileName
   integer(kind=intType) :: i
 
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
 
   restartFiles(i) = fileName

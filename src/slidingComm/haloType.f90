@@ -1,23 +1,15 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          haloType.f90                                    *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 10-17-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          haloType.f90                                    
+!       Author:        Edwin van der Weide                             
+!       Starting date: 10-17-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine haloType(level)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * haloType determines for the internal and 1st level halo cells  *
-!      * what type of halo's they are. This information is needed to    *
-!      * determine which halo cells/nodes should be interpolated and    *
-!      * which not.                                                     *
-!      *                                                                *
-!      ******************************************************************
+!       haloType determines for the internal and 1st level halo cells  
+!       what type of halo's they are. This information is needed to    
+!       determine which halo cells/nodes should be interpolated and    
+!       which not.                                                     
 !
        use constants
        use blockPointers
@@ -41,11 +33,7 @@
 
        integer(kind=intType), dimension(:,:), pointer :: haloInfo
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Allocate the memory for donorDoms.
 
@@ -227,20 +215,12 @@
 
          subroutine haloTypePointers
 !
-!        ****************************************************************
-!        *                                                              *
-!        * HaloTypePointers set the pointer for haloInfo depending      *
-!        * on the block face on which the subface is located.           *
-!        *                                                              *
-!        ****************************************************************
+!         HaloTypePointers set the pointer for haloInfo depending      
+!         on the block face on which the subface is located.           
 !
          implicit none
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution.                                             *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution.                                             
 !
          select case (BCFaceID(jj))
 

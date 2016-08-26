@@ -1,21 +1,13 @@
 !
-!     ******************************************************************
-!     *                                                                *
-!     * File:          updateFlow.f90                                  *
-!     * Authors:       C.A(Sandy) Mader                                *
-!     * Starting date: 24-02-2009                                      *
-!     * Last modified: 24-02-2009                                      *
-!     *                                                                *
-!     ******************************************************************
+!      File:          updateFlow.f90                                  
+!      Authors:       C.A(Sandy) Mader                                
+!      Starting date: 24-02-2009                                      
+!      Last modified: 24-02-2009                                      
 !
 subroutine updateFlow
   !
-  !     ******************************************************************
-  !     *                                                                *
-  !     *  reruns the initialization routines to update AOA and other    *
-  !     *  flow variables after a design change                          *
-  !     *                                                                *
-  !     ******************************************************************
+  !       reruns the initialization routines to update AOA and other    
+  !       flow variables after a design change                          
   !
   use constants
   use inputTimeSpectral

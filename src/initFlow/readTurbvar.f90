@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          readTurbvar.f90                                 *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-21-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          readTurbvar.f90                                 
+!       Author:        Edwin van der Weide                             
+!       Starting date: 04-21-2003                                      
+!       Last modified: 06-12-2005                                      
 !
        subroutine readTurbvar(nTypeMismatch)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * readTurbvar controls the reading of the turbulent variables    *
-!      * for a restart. It calls the routine, which corresponds to the  *
-!      * turbulence model used.                                         *
-!      *                                                                *
-!      ******************************************************************
+!       readTurbvar controls the reading of the turbulent variables    
+!       for a restart. It calls the routine, which corresponds to the  
+!       turbulence model used.                                         
 !
        use constants
        use communication, only : myid, sumb_comm_world
@@ -32,11 +24,7 @@
 !
        integer :: ierr
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Check if the rans equations must be solved. If not return.
 

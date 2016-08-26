@@ -1,21 +1,13 @@
 !
-!     ******************************************************************
-!     *                                                                *
-!     * File:          ADjointPETSc.F90                                *
-!     * Author:        Andre C. Marta                                  *
-!     * Starting date: 12-15-2005                                      *
-!     * Last modified: 06-14-2007                                      *
-!     *                                                                *
-!     ******************************************************************
+!      File:          ADjointPETSc.F90                                
+!      Author:        Andre C. Marta                                  
+!      Starting date: 12-15-2005                                      
+!      Last modified: 06-14-2007                                      
 !
 module ADjointPETSc
 
-  !     ******************************************************************
-  !     *                                                                *
-  !     * This module contains the objects used by PETSc for the         *
-  !     * solution of the discrete adjoint equations.                    *
-  !     *                                                                *
-  !     ******************************************************************
+  !      This module contains the objects used by PETSc for the         
+  !      solution of the discrete adjoint equations.                    
   !
   use constants
   implicit none

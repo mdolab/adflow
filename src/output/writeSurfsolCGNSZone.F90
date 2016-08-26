@@ -1,25 +1,17 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          writeSurfsolCGNSZone.F90                        *
-!      * Author:        Edwin van der Weide, Seonghyeon Hahn            *
-!      * Starting date: 05-15-2003                                      *
-!      * Last modified: 11-04-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          writeSurfsolCGNSZone.F90                        
+!       Author:        Edwin van der Weide, Seonghyeon Hahn            
+!       Starting date: 05-15-2003                                      
+!       Last modified: 11-04-2005                                      
 !
        subroutine writeSurfsolCGNSZone(zone, nBlocks, subface, nSolVar, &
                                        solNames, nZonesWritten, periodic)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * writeSurfsolCGNSZone writes a surface solution of the given    *
-!      * zone (block) and boundary subface to the cgns surface file(s). *
-!      * A distinction must be made between true boundaries and         *
-!      * periodic boundaries; the latter are a special kind of internal *
-!      * block boundaries. This is indicated by the logical periodic.   *
-!      *                                                                *
-!      ******************************************************************
+!       writeSurfsolCGNSZone writes a surface solution of the given    
+!       zone (block) and boundary subface to the cgns surface file(s). 
+!       A distinction must be made between true boundaries and         
+!       periodic boundaries; the latter are a special kind of internal 
+!       block boundaries. This is indicated by the logical periodic.   
 !
        use block
        use cgnsGrid
@@ -72,11 +64,7 @@
        logical :: viscousSubface
        logical, dimension(nBlocks) :: contributeToFace
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
 
        ! Store the offset in blocksCGNSblock for this zone in offset.
@@ -422,12 +410,8 @@
 
          subroutine determineSubranges
 !
-!        ****************************************************************
-!        *                                                              *
-!        * determineSubranges determines the nodal and cell subrange    *
-!        * for the given local block ID mm in the current cgns subface. *
-!        *                                                              *
-!        ****************************************************************
+!         determineSubranges determines the nodal and cell subrange    
+!         for the given local block ID mm in the current cgns subface. 
 !
          use inputIO
          implicit none
@@ -436,11 +420,7 @@
 !
          integer(kind=intType) :: ii
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Store mBlocks, the current number of local blocks that
          ! participate to the cgns subface, a bit easier in ii.
@@ -522,13 +502,9 @@
 
          subroutine createSurfaceZone
 !
-!        ****************************************************************
-!        *                                                              *
-!        * createSurfaceZone creates a surface node in the given        *
-!        * cgns surface solution file. This routine should only be      *
-!        * called by processor 0.                                       *
-!        *                                                              *
-!        ****************************************************************
+!         createSurfaceZone creates a surface node in the given        
+!         cgns surface solution file. This routine should only be      
+!         called by processor 0.                                       
 !
          use inputIO
          implicit none
@@ -542,11 +518,7 @@
          character(len=maxCGNSNameLen) :: zonename
          character(len=7)              :: integerString
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Determine the sizes of the subface.
 
@@ -694,13 +666,9 @@
 
          subroutine writeSurfaceCoord
 !
-!        ****************************************************************
-!        *                                                              *
-!        * WriteSurfaceCoord write the vertex values of the             *
-!        * coordinates to the given zone of the cgns surface solution   *
-!        * file.                                                        *
-!        *                                                              *
-!        ****************************************************************
+!         WriteSurfaceCoord write the vertex values of the             
+!         coordinates to the given zone of the cgns surface solution   
+!         file.                                                        
 !
          use cgnsNames
          use inputIO
@@ -718,11 +686,7 @@
 
          character, dimension(:), allocatable :: writeBuffer
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Set the cgns real type depending on the input option.
 
@@ -949,12 +913,8 @@
 
          subroutine writeSurfaceSol
 !
-!        ****************************************************************
-!        *                                                              *
-!        * writeSurfaceSol writes the cell centered surface solution    *
-!        * to the cgns surface file.                                    *
-!        *                                                              *
-!        ****************************************************************
+!         writeSurfaceSol writes the cell centered surface solution    
+!         to the cgns surface file.                                    
 !
          implicit none
 !
@@ -969,11 +929,7 @@
 
          character, dimension(:), allocatable :: writeBuffer
 !
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
+!         Begin execution                                              
 !
          ! Set the cgns real type depending on the input option.
 

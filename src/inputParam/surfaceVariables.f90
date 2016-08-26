@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          surfaceVariables.f90                            *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 03-26-2003                                      *
-!      * Last modified: 07-13-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          surfaceVariables.f90                            
+!       Author:        Edwin van der Weide, Steve Repsher              
+!       Starting date: 03-26-2003                                      
+!       Last modified: 07-13-2005                                      
 !
        subroutine surfaceVariables(variables)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * surfaceVariables extracts from the given string the surface    *
-!      * variables to be written to the solution file.                  *
-!      *                                                                *
-!      ******************************************************************
+!       surfaceVariables extracts from the given string the surface    
+!       variables to be written to the solution file.                  
 !
        use constants
        use extraOutput
@@ -34,11 +26,7 @@
        character(len=15) :: keyword
        character(len=maxStringLen) :: errorMessage
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Convert the string variables to lower case.
 

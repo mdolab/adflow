@@ -9,18 +9,14 @@
 !                x:in si:in sj:in sk:in
 subroutine gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * gridvelocitiesfinelevel computes the grid velocities for       *
-!      * the cell centers and the normal grid velocities for the faces  *
-!      * of moving blocks for the currently finest grid, i.e.           *
-!      * groundlevel. the velocities are computed at time t for         *
-!      * spectral mode sps. if useoldcoor is .true. the velocities      *
-!      * are determined using the unsteady time integrator in           *
-!      * combination with the old coordinates; otherwise the analytic   *
-!      * form is used.                                                  *
-!      *                                                                *
-!      ******************************************************************
+!       gridvelocitiesfinelevel computes the grid velocities for       
+!       the cell centers and the normal grid velocities for the faces  
+!       of moving blocks for the currently finest grid, i.e.           
+!       groundlevel. the velocities are computed at time t for         
+!       spectral mode sps. if useoldcoor is .true. the velocities      
+!       are determined using the unsteady time integrator in           
+!       combination with the old coordinates; otherwise the analytic   
+!       form is used.                                                  
 !
   use blockpointers
   use cgnsgrid
@@ -77,11 +73,7 @@ subroutine gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
   real(kind=realtype) :: arg1
   real(kind=realtype) :: arg1d
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! compute the mesh velocity from the given mesh mach number.
 ! vel{x,y,z}grid0 is the actual velocity you want at the
@@ -217,13 +209,9 @@ subroutine gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
 ! determine the situation we are having here.
     if (useoldcoor) then
 !
-!            ************************************************************
-!            *                                                          *
-!            * the velocities must be determined via a finite           *
-!            * difference formula using the coordinates of the old      *
-!            * levels.                                                  *
-!            *                                                          *
-!            ************************************************************
+!             the velocities must be determined via a finite           
+!             difference formula using the coordinates of the old      
+!             levels.                                                  
 !
 ! set the coefficients for the time integrator and store
 ! the inverse of the physical nondimensional time step,
@@ -236,12 +224,8 @@ subroutine gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
       sd = 0.0_8
       scd = 0.0_8
 !
-!            ************************************************************
-!            *                                                          *
-!            * grid velocities of the cell centers, including the       *
-!            * 1st level halo cells.                                    *
-!            *                                                          *
-!            ************************************************************
+!             grid velocities of the cell centers, including the       
+!             1st level halo cells.                                    
 !
 ! loop over the cells, including the 1st level halo's.
       do k=1,ke
@@ -300,11 +284,7 @@ subroutine gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
       sfacejd = 0.0_8
       sfacekd = 0.0_8
 !
-!            ************************************************************
-!            *                                                          *
-!            * normal grid velocities of the faces.                     *
-!            *                                                          *
-!            ************************************************************
+!             normal grid velocities of the faces.                     
 !
 ! loop over the three directions.
 loopdir:do mm=1,3
@@ -327,14 +307,10 @@ loopdir:do mm=1,3
           kke = je
         end select
 !
-!              **********************************************************
-!              *                                                        *
-!              * normal grid velocities in generalized i-direction.     *
-!              * mm == 1: i-direction                                   *
-!              * mm == 2: j-direction                                   *
-!              * mm == 3: k-direction                                   *
-!              *                                                        *
-!              **********************************************************
+!               normal grid velocities in generalized i-direction.     
+!               mm == 1: i-direction                                   
+!               mm == 2: j-direction                                   
+!               mm == 3: k-direction                                   
 !
         do i=0,iie
 ! set the pointers for the coordinates, normals and
@@ -422,11 +398,7 @@ loopdir:do mm=1,3
       end do loopdir
     else
 !
-!            ************************************************************
-!            *                                                          *
-!            * the velocities must be determined analytically.          *
-!            *                                                          *
-!            ************************************************************
+!             the velocities must be determined analytically.          
 !
 ! store the rotation center and determine the
 ! nondimensional rotation rate of this block. as the
@@ -447,12 +419,8 @@ loopdir:do mm=1,3
       xxcd = 0.0_8
       scd = 0.0_8
 !
-!            ************************************************************
-!            *                                                          *
-!            * grid velocities of the cell centers, including the       *
-!            * 1st level halo cells.                                    *
-!            *                                                          *
-!            ************************************************************
+!             grid velocities of the cell centers, including the       
+!             1st level halo cells.                                    
 !
 ! loop over the cells, including the 1st level halo's.
       do k=1,ke
@@ -539,11 +507,7 @@ loopdir:do mm=1,3
       sfacejd = 0.0_8
       sfacekd = 0.0_8
 !
-!            ************************************************************
-!            *                                                          *
-!            * normal grid velocities of the faces.                     *
-!            *                                                          *
-!            ************************************************************
+!             normal grid velocities of the faces.                     
 !
 ! loop over the three directions.
 loopdirection:do mm=1,3
@@ -566,14 +530,10 @@ loopdirection:do mm=1,3
           kke = je
         end select
 !
-!              **********************************************************
-!              *                                                        *
-!              * normal grid velocities in generalized i-direction.     *
-!              * mm == 1: i-direction                                   *
-!              * mm == 2: j-direction                                   *
-!              * mm == 3: k-direction                                   *
-!              *                                                        *
-!              **********************************************************
+!               normal grid velocities in generalized i-direction.     
+!               mm == 1: i-direction                                   
+!               mm == 2: j-direction                                   
+!               mm == 3: k-direction                                   
 !
         do i=0,iie
 ! set the pointers for the coordinates, normals and

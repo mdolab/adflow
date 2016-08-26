@@ -5,43 +5,33 @@
 !   variations   of useful results: alpha beta
 !   with respect to varying inputs: freestreamaxis
 !
-!     ******************************************************************
-!     *                                                                *
-!     * file:          getdirangle.f90                                 *
-!     * author:        andre c. marta,c.a.(sandy) mader                *
-!     * starting date: 10-25-2005                                      *
-!     * last modified: 06-13-2008                                      *
-!     *                                                                *
-!     ******************************************************************
+!      file:          getdirangle.f90                                 
+!      author:        andre c. marta,c.a.(sandy) mader                
+!      starting date: 10-25-2005                                      
+!      last modified: 06-13-2008                                      
 !
 subroutine getdirangle_d(freestreamaxis, freestreamaxisd, liftaxis, &
 & liftindex, alpha, alphad, beta, betad)
 !
-!     ******************************************************************
-!     *                                                                *
-!     * convert the wind axes to angle of attack and side slip angle.  *
-!     * the direction angles alpha and beta are computed given the     *
-!     * components of the wind direction vector (freestreamaxis), the  *
-!     * lift direction vector (liftaxis) and assuming that the         *
-!     * body direction (xb,yb,zb) is in the default ijk coordinate     *
-!     * system. the rotations are determined by first determining      *
-!     * whether the lift is primarily in the j or k direction and then *
-!     * determining the angles accordingly.                            *
-!     * direction vector:                                              *
-!     *   1) rotation about the zb or yb -axis: alpha clockwise (cw)   *
-!     *      (xb,yb,zb) -> (x1,y1,z1)                                  *
-!     *                                                                *
-!     *   2) rotation about the yl or z1 -axis: beta counter-clockwise *
-!     *      (ccw) (x1,y1,z1) -> (xw,yw,zw)                            *
-!     *                                                                *
-!     *    input arguments:                                            *
-!     *       freestreamaxis = wind vector in body axes                *
-!     *       liftaxis       = lift direction vector in body axis      *       
-!     *    output arguments:                                           *
-!     *       alpha    = angle of attack in radians                    *
-!     *       beta     = side slip angle in radians                    *
-!     *                                                                *
-!     ******************************************************************
+!      convert the wind axes to angle of attack and side slip angle.  
+!      the direction angles alpha and beta are computed given the     
+!      components of the wind direction vector (freestreamaxis), the  
+!      lift direction vector (liftaxis) and assuming that the         
+!      body direction (xb,yb,zb) is in the default ijk coordinate     
+!      system. the rotations are determined by first determining      
+!      whether the lift is primarily in the j or k direction and then 
+!      determining the angles accordingly.                            
+!      direction vector:                                              
+!        1) rotation about the zb or yb -axis: alpha clockwise (cw)   
+!           (xb,yb,zb) -> (x1,y1,z1)                                  
+!        2) rotation about the yl or z1 -axis: beta counter-clockwise 
+!           (ccw) (x1,y1,z1) -> (xw,yw,zw)                            
+!         input arguments:                                            
+!            freestreamaxis = wind vector in body axes                
+!            liftaxis       = lift direction vector in body axis      
+!         output arguments:                                           
+!            alpha    = angle of attack in radians                    
+!            beta     = side slip angle in radians                    
 !
   use constants
   use utils_d, only : terminate
@@ -80,11 +70,7 @@ subroutine getdirangle_d(freestreamaxis, freestreamaxisd, liftaxis, &
   real(kind=realtype) :: abs1
   real(kind=realtype) :: abs0
 !
-!     ******************************************************************
-!     *                                                                *
-!     * begin execution.                                               *
-!     *                                                                *
-!     ******************************************************************
+!      begin execution.                                               
 !
 ! assume domoniate flow is x
   flowindex = 1

@@ -1,12 +1,8 @@
        subroutine update1to1Coarse(level, subface)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * update1to1Coarse determines whether or not the given 1 to 1    *
-!      * block boundary subface on the fine level is still a 1 to 1     *
-!      * subface on the coarser grid level.                             *
-!      *                                                                *
-!      ******************************************************************
+!       update1to1Coarse determines whether or not the given 1 to 1    
+!       block boundary subface on the fine level is still a 1 to 1     
+!       subface on the coarser grid level.                             
 !
        use block
        use coarse1to1Subface

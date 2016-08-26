@@ -1,13 +1,9 @@
        subroutine initDepvarAndHalos(halosRead)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * InitDepvarAndHalos computes the dependent flow variables,      *
-!      * like viscosities, and initializes the halo cells by applying   *
-!      * the boundary conditions and exchanging the internal halo's.    *
-!      * This is all done on the start level grid.                      *
-!      *                                                                *
-!      ******************************************************************
+!       InitDepvarAndHalos computes the dependent flow variables,      
+!       like viscosities, and initializes the halo cells by applying   
+!       the boundary conditions and exchanging the internal halo's.    
+!       This is all done on the start level grid.                      
 !
        use blockPointers
        use flowVarRefState
@@ -36,11 +32,7 @@
 
        logical :: initBleeds
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Set the logical whether or not to initialize the prescribed
        ! data for the bleed regions. If the halos were read the bleeds

@@ -3,33 +3,25 @@
 !
 !  differentiation of bcturbfarfield in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: winf *bvtj1 *bvtj2 *bvtk1 *bvtk2
-!                *bvti1 *bvti2
+!                bvti1 
 !   with respect to varying inputs: winf *bvtj1 *bvtj2 *bvtk1 *bvtk2
-!                *bvti1 *bvti2
+!                bvti1 
 !   plus diff mem management of: bvtj1:in bvtj2:in bvtk1:in bvtk2:in
 !                bvti1:in bvti2:in bcdata:in
 !
-!      ******************************************************************
-!      *                                                                *
-!      * file:          bcturbfarfield.f90                              *
-!      * author:        georgi kalitzin, edwin van der weide            *
-!      * starting date: 06-15-2003                                      *
-!      * last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       file:          bcturbfarfield.f90                              
+!       author:        georgi kalitzin, edwin van der weide            
+!       starting date: 06-15-2003                                      
+!       last modified: 06-12-2005                                      
 !
 subroutine bcturbfarfield_b(nn)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * bcturbfarfield applies the implicit treatment of the           *
-!      * farfield boundary condition to subface nn. as the farfield     *
-!      * boundary condition is independent of the turbulence model,     *
-!      * this routine is valid for all models. it is assumed that the   *
-!      * pointers in blockpointers are already set to the correct       *
-!      * block on the correct grid level.                               *
-!      *                                                                *
-!      ******************************************************************
+!       bcturbfarfield applies the implicit treatment of the           
+!       farfield boundary condition to subface nn. as the farfield     
+!       boundary condition is independent of the turbulence model,     
+!       this routine is valid for all models. it is assumed that the   
+!       pointers in blockpointers are already set to the correct       
+!       block on the correct grid level.                               
 !
   use constants
   use blockpointers
@@ -46,11 +38,7 @@ subroutine bcturbfarfield_b(nn)
   real(kind=realtype) :: nnx, nny, nnz, dot
   integer :: branch
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       begin execution                                                
 !
 ! loop over the faces of the subfaces and set the values of
 ! bmt and bvt for an implicit treatment.

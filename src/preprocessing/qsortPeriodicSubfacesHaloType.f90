@@ -1,22 +1,14 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          qsortPeriodicSubfacesHaloType.f90               *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 11-29-2007                                      *
-!      * Last modified: 11-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          qsortPeriodicSubfacesHaloType.f90               
+!       Author:        Edwin van der Weide                             
+!       Starting date: 11-29-2007                                      
+!       Last modified: 11-29-2007                                      
 !
        subroutine qsortPeriodicSubfacesHaloType(arr, nn)
 !
-!      ******************************************************************
-!      *                                                                *
-!      * qsortPeriodicSubfacesHaloType sorts the given number of halo's *
-!      * with periodic subfaces in increasing order based on the        *
-!      * <= operator for this derived data type.                        *
-!      *                                                                *
-!      ******************************************************************
+!       qsortPeriodicSubfacesHaloType sorts the given number of halo's 
+!       with periodic subfaces in increasing order based on the        
+!       <= operator for this derived data type.                        
 !
        use periodicInfo
        use utils, only : terminate
@@ -42,11 +34,7 @@
        integer(kind=intType), allocatable, dimension(:) :: stack
        integer(kind=intType), allocatable, dimension(:) :: tmpStack
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Allocate the memory for stack.
 

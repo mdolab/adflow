@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          executeMGCycle.f90                              *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-15-2003                                      *
-!      * Last modified: 08-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          executeMGCycle.f90                              
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-15-2003                                      
+!       Last modified: 08-25-2005                                      
 !
        subroutine executeMGCycle
 !
-!      ******************************************************************
-!      *                                                                *
-!      * executeMGCycle performs a multigrid cycle defined by           *
-!      * cycling, see the module iteration.                             *
-!      *                                                                *
-!      ******************************************************************
+!       executeMGCycle performs a multigrid cycle defined by           
+!       cycling, see the module iteration.                             
 !
        use flowVarRefState
        use iteration
@@ -28,11 +20,7 @@
 !
        integer(kind=intType) :: nn
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+!       Begin execution                                                
 !
        ! Initialize currentLevel to groundLevel, the ground level
        ! of this multigrid cycle.

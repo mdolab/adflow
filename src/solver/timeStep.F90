@@ -39,27 +39,19 @@ subroutine timeStep(onlyRadii)
 end subroutine timeStep
 #endif
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          timeStep.f90                                    *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-17-2003                                      *
-!      * Last modified: 06-28-2005                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          timeStep.f90                                    
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-17-2003                                      
+!       Last modified: 06-28-2005                                      
 !
 subroutine timeStep_block(onlyRadii)
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * timeStep computes the time step, or more precisely the time    *
-  !      * step divided by the volume per unit CFL, in the owned cells.   *
-  !      * However, for the artificial dissipation schemes, the spectral  *
-  !      * radIi in the halo's are needed. Therefore the loop is taken    *
-  !      * over the the first level of halo cells. The spectral radIi are *
-  !      * stored and possibly modified for high aspect ratio cells.      *
-  !      *                                                                *
-  !      ******************************************************************
+  !       timeStep computes the time step, or more precisely the time    
+  !       step divided by the volume per unit CFL, in the owned cells.   
+  !       However, for the artificial dissipation schemes, the spectral  
+  !       radIi in the halo's are needed. Therefore the loop is taken    
+  !       over the the first level of halo cells. The spectral radIi are 
+  !       stored and possibly modified for high aspect ratio cells.      
   !
   use constants
   use blockPointers, only : ie, je, ke, il, jl, kl, w, p, rlv, rev, &
@@ -96,11 +88,7 @@ subroutine timeStep_block(onlyRadii)
 
   logical :: radiiNeeded, doScaling
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
+  !       Begin execution                                                
   !
   ! Determine whether or not the spectral radii are needed for the
   ! flux computation.
@@ -128,12 +116,8 @@ subroutine timeStep_block(onlyRadii)
 
   sFace = zero
   !
-  !          **************************************************************
-  !          *                                                            *
-  !          * Inviscid contribution, depending on the preconditioner.    *
-  !          * Compute the cell centered values of the spectral radii.    *
-  !          *                                                            *
-  !          **************************************************************
+  !           Inviscid contribution, depending on the preconditioner.    
+  !           Compute the cell centered values of the spectral radii.    
   !
   select case (precond)
 
@@ -217,12 +201,8 @@ subroutine timeStep_block(onlyRadii)
                  dtl(i,j,k) = ri + rj + rk
                  
                  !
-                 !          **************************************************************
-                 !          *                                                            *
-                 !          * Adapt the spectral radii if directional scaling must be    *
-                 !          * applied.                                                   *
-                 !          *                                                            *
-                 !          **************************************************************
+                 !           Adapt the spectral radii if directional scaling must be    
+                 !           applied.                                                   
                  !
                  if(doScaling) then
 

@@ -1,13 +1,9 @@
 module liftDistributionData
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * This module contains the definition of the derived data type   *
-  !      * for slice which is the basic building block for lift           *
-  !      * distribuions. It also contains the data required for           *
+  !       This module contains the definition of the derived data type   
+  !       for slice which is the basic building block for lift           
+  !       distribuions. It also contains the data required for           
   !      * communicaiting force data. 
-  !      *                                                                *
-  !      ******************************************************************
   !
 
 

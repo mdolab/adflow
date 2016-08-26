@@ -1,21 +1,13 @@
 !
-!      ******************************************************************
-!      *                                                                *
-!      * File:          initFlowRestart.f90                             *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-06-2003                                      *
-!      * Last modified: 09-13-2007                                      *
-!      *                                                                *
-!      ******************************************************************
+!       File:          initFlowRestart.f90                             
+!       Author:        Edwin van der Weide                             
+!       Starting date: 03-06-2003                                      
+!       Last modified: 09-13-2007                                      
 !
 subroutine initFlowRestart
   !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * initFlowRestart loads restart information from the restart     *
-  !      * file into the state variables.                                 *
-  !      *                                                                *
-  !      ******************************************************************
+  !       initFlowRestart loads restart information from the restart     
+  !       file into the state variables.                                 
   !
   use constants
   use IOModule, only : IOVar
