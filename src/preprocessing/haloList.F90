@@ -144,9 +144,7 @@
 !        Function arguments.
 !
          type(haloListType), intent(in) :: g1, g2
-!
-!         Begin execution                                              
-!
+
          ! Compare the donor processors first. If not equal,
          ! set lessEqual appropriately and return.
 
@@ -336,9 +334,7 @@
 !        Function arguments.
 !
          type(haloListType), intent(in) :: g1, g2
-!
-!         Begin execution                                              
-!
+
          ! Compare the donor processors first. If not equal,
          ! set the function appropriately and return.
 

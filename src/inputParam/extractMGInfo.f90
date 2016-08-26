@@ -36,9 +36,7 @@
 !
        logical          :: digitsOnlyInString
        integer(intType) :: computeNstepsWcycle
-!
-!       Begin execution                                                
-!
+
        ! For an unsteady computation using explicit Runge-Kutta schemes
        ! overrule mgDescription to sg.
 
@@ -265,9 +263,7 @@
 !      Local variables
 !
        integer :: i, stringLen
-!
-!       Begin execution                                                
-!
+
        ! Initialize digitsOnlyInString to .True.
 
        digitsOnlyInString = .true.
@@ -308,9 +304,7 @@
 !      Local variables
 !
        character (len=maxStringLen) :: errorMessage
-!
-!       Begin execution                                                
-!
+
        ! Determine the case we are having here. For nLevels is less
        ! than 2 an error message is printed, in case nLevels is 2
        ! the recursion is broken and otherwise a recursive call is made.
@@ -347,9 +341,7 @@
 !      Local variables
 !
        character (len=maxStringLen) :: errorMessage
-!
-!       Begin execution                                                
-!
+
        ! Determine the case we are having here. For nLevels is less
        ! than 2 an error message is printed, in case nLevels is 2
        ! the recursion is broken and otherwise a recursive call is made.

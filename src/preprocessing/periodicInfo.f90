@@ -110,9 +110,7 @@
 !        Function arguments.
 !
          type(cgnsPeriodicType), intent(in) :: g1, g2
-!
-!         Begin execution                                              
-!
+
          ! Compare the block ID. If not equal set lessCGNSPeriodicType
          ! accordingly.
 
@@ -153,9 +151,7 @@
 !        Function arguments.
 !
          type(cgnsPeriodicType), intent(in) :: g1, g2
-!
-!         Begin execution                                              
-!
+
          equalCGNSPeriodicType = .false.
          if(g1%cgnsBlock   == g2%cgnsBlock .and. &
             g1%cgnsSubface == g2%cgnsSubface)    &
@@ -179,9 +175,7 @@
 !        Local variables.
 !
          integer(kind=intType) :: nn, i1, i2
-!
-!         Begin execution                                              
-!
+
          ! First compare whether or not both g1 and g2 are internal
          ! halo's. Fortran does not allow a direct comparison of
          ! logicals and therefore the integers i1 and i2 are used.
@@ -255,9 +249,7 @@
 !        Local variables.
 !
          integer(kind=intType) :: nn, i1, i2
-!
-!         Begin execution                                              
-!
+
          ! First compare whether or not both g1 and g2 are internal
          ! halo's. Fortran does not allow a direct comparison of
          ! logicals and therefore the integers i1 and i2 are used.
@@ -336,9 +328,7 @@
 !        Local variables.
 !
          integer(kind=intType) :: nn
-!
-!         Begin execution                                              
-!
+
          if(g1%nPeriodicSubfaces /= g2%nPeriodicSubfaces) then
            equalPeriodicSubfacesHaloT = .false.
            return

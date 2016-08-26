@@ -103,9 +103,7 @@
        type(indexListType), dimension(:), intent(inout) :: entityIndex
        end subroutine indirectHalosPerLevel
        end interface
-!
-!       Begin execution                                                
-!
+
        ! Determine for every indirect halo the closest direct halo.
 
        call closestDirectHalos(entityHalo, entityIndex, start, &

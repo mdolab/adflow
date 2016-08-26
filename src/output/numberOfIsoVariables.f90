@@ -18,9 +18,7 @@ subroutine numberOfIsoSurfVariables(nIsoSolVar)
   !      Subroutine arguments.
   !
   integer(kind=intType), intent(out) :: nIsoSolVar
-  !
-  !       Begin execution                                                
-  !
+
   nIsoSolvar   = 0
 
   ! Check whether or not some additional solution variables must

@@ -51,9 +51,7 @@
        integer(kind=intType) :: ii, nn, mm, il, jl, kl
 
        type(intersectType), dimension(cgnsNSliding) :: slideInt
-!
-!       Begin execution                                                
-!
+
        ! Initialize the number of intersections for the sliding mesh
        ! interfaces to 0 and do an initial allocation of the
        ! intersections.
@@ -144,9 +142,7 @@
          integer(kind=intType), dimension(il) :: j1k1, jlk1, j1kl, jlkl
          integer(kind=intType), dimension(jl) :: i1k1, ilk1, i1kl, ilkl
          integer(kind=intType), dimension(kl) :: i1j1, ilj1, i1jl, iljl
-!
-!         Begin execution                                              
-!
+
          ! Initialize the edge indicators of the block to 0.
 
          do i=1,il

@@ -25,9 +25,7 @@ subroutine bcTurbOutflow(nn)
   !      Local variables.
   !
   integer(kind=intType) :: i, j, l
-  !
-  !       Begin execution                                                
-  !
+
   ! Loop over the faces of the subfaces and set the values of bmt
   ! for an implicit treatment. For an outflow the turbulent variable
   ! variable is either extrapolated or zero Neumann. As constant

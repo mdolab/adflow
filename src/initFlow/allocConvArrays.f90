@@ -26,8 +26,7 @@ subroutine allocConvArrays(nIterTot)
   !      Local variables.
   !
   integer :: ierr
-  !       Begin execution                                                
-  !
+
   ! Return immediately if the convergence history (of the inner
   ! iterations) does not need to be stored. This logical can
   ! only be .false. for an unsteady computation.

@@ -20,9 +20,7 @@
 !      Local variables.
 !
        integer :: ierr
-!
-!       Begin execution                                                
-!
+
        ! CPU time is written to stdout.
 
        showCPU = .true.

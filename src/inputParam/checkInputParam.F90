@@ -39,9 +39,7 @@
        real(kind=realType) :: vecLength, dot
 
        logical :: gridPrecisionWarning, solPrecisionWarning
-!
-!       Begin execution                                                
-!
+
 !       Discretization parameters. Check if the key parameters have    
 !       been specified and set some coarse grid parameters in case     
 !       these have not been specified.                                 

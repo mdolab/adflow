@@ -584,8 +584,7 @@ contains
     real(kind=realType)   :: ovgm1, factK, scale
     !
 40  format (1x,I4,I4,I4,E20.6)
-    !       Begin execution                                                
-    !
+
     ! Determine the cp model used in the computation.
 
     select case (cpModel)
@@ -882,9 +881,7 @@ contains
     integer(kind=intType) :: nn, mm, ii, start
 
     real(kind=realType) :: pp, t, t2, cv, eint
-    !
-    !       Begin execution                                                
-    !
+
     ! Compute the dimensional temperature.
 
     pp = p(i,j,k)

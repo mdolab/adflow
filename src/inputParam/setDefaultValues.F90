@@ -27,9 +27,7 @@
        use ADjointPETSc, only : adjointPETScVarsAllocated
        use costFunctions, only : sepSensorOffset, sepSensorSharpNess
        implicit none
-!
-!       Begin execution                                                
-!
+
        ! Initialize monitoring the turbulent residuals as well as the
        ! monitoring of mass flow of the sliding interfaces to .false.
 

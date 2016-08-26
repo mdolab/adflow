@@ -34,9 +34,7 @@
        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
 
        integer(kind=intType), dimension(:,:), pointer :: viscPointer
-!
-!       Begin execution                                                
-!
+
        ! Loop over the number blocks stored on this processor.
 
        domains: do nn=1,nDom

@@ -27,9 +27,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: i, j, k, ll
-!
-!       Begin execution                                                
-!
+
        ! Copy the subrange into val.
 
        ll = 0
@@ -69,9 +67,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: i, j, k, ll
-!
-!       Begin execution                                                
-!
+
        ! Copy the subrange into val.
 
        ll = 0

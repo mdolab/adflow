@@ -24,9 +24,7 @@ subroutine turbBCNSWall(secondHalo)
   !
   integer(kind=intType) :: nn, i, j, l, m
 
-  !
-  !       Begin execution                                                
-  !
+
   ! Loop over the viscous subfaces of this block.
 
   bocos: do nn=1,nViscBocos

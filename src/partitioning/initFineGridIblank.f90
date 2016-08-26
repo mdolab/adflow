@@ -23,9 +23,7 @@
        integer :: ierr
 
        integer(kind=intType) :: i, j, k, l, m, n, cgnsId
-!
-!       Begin execution                                                
-!
+
        ! Loop over the local blocks.
 
        domains: do n = 1,nDom

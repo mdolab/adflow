@@ -23,9 +23,7 @@
 !      Local variables.
 !
        integer :: ierr
-!
-!       Begin execution                                                
-!
+
        ! Check if the rans equations must be solved. If not return.
 
        if(equations /= RANSEquations) return

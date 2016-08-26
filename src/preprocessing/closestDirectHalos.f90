@@ -42,9 +42,7 @@
 !      Function definitions.
 !
        integer(kind=intType) :: getNumberIndirectHalos
-!
-!       Begin execution                                                
-!
+
        ! Determine the number of indirect halo's for which the donor must
        ! be determined. Initialize iindHalo, the actual counter, to 0.
 
@@ -281,9 +279,7 @@
 !
        integer(kind=intType) :: nn, il, jl, kl
        integer(kind=intType) :: i, j, k, ii, jj, kk
-!
-!       Begin execution                                                
-!
+
        ! Initialize getNumberIndirectHalos and loop over the blocks.
 
        getNumberIndirectHalos = 0

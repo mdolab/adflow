@@ -16,9 +16,7 @@
        use inputDiscretization
        use iteration
        implicit none
-!
-!       Begin execution                                                
-!
+
        call returnFail("inviscidDissFluxCusp", "not implemented yet")
 
        end subroutine inviscidDissFluxCusp

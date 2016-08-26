@@ -21,9 +21,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: nn
-!
-!       Begin execution                                                
-!
+
        ! Initialize nn to 0.
 
        nn = 0

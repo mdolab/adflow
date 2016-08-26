@@ -17,9 +17,7 @@
 !      Local variables.
 !
      ! integer :: ierr
-!
-!       Begin execution                                                
-!
+
        call terminate("initCurveFitDataKtau", &
                       "Not implemented yet")
 

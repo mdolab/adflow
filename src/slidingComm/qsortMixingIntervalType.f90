@@ -33,9 +33,7 @@
 
        integer(kind=intType), allocatable, dimension(:) :: stack
        integer(kind=intType), allocatable, dimension(:) :: tmpStack
-!
-!       Begin execution                                                
-!
+
        ! Allocate the memory for stack.
 
        nStack = 100

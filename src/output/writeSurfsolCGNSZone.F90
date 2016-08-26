@@ -63,9 +63,7 @@
        logical :: iOverlap, jOverlap, kOverlap
        logical :: viscousSubface
        logical, dimension(nBlocks) :: contributeToFace
-!
-!       Begin execution                                                
-!
+
 
        ! Store the offset in blocksCGNSblock for this zone in offset.
 
@@ -419,9 +417,7 @@
 !        Local variable
 !
          integer(kind=intType) :: ii
-!
-!         Begin execution                                              
-!
+
          ! Store mBlocks, the current number of local blocks that
          ! participate to the cgns subface, a bit easier in ii.
 
@@ -517,9 +513,7 @@
 
          character(len=maxCGNSNameLen) :: zonename
          character(len=7)              :: integerString
-!
-!         Begin execution                                              
-!
+
          ! Determine the sizes of the subface.
 
          sizes(1) = il
@@ -685,9 +679,7 @@
          real(kind=realType) :: LRefInv
 
          character, dimension(:), allocatable :: writeBuffer
-!
-!         Begin execution                                              
-!
+
          ! Set the cgns real type depending on the input option.
 
          select case (precisionGrid)
@@ -928,9 +920,7 @@
          integer(kind=intType) :: sizeCGNSWriteType
 
          character, dimension(:), allocatable :: writeBuffer
-!
-!         Begin execution                                              
-!
+
          ! Set the cgns real type depending on the input option.
 
          select case (precisionSol)

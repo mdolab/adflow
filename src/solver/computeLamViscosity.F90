@@ -28,9 +28,7 @@ subroutine computeLamViscosity
   integer(kind=intType) :: i, j, k, ii
   real(kind=realType)   :: muSuth, TSuth, SSuth, T, pp
   logical               :: correctForK
-  !
-  !       Begin execution                                                
-  !
+
   ! Return immediately if no laminar viscosity needs to be computed.
 
   if(.not. viscous ) return

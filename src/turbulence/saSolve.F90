@@ -54,9 +54,7 @@
        logical, dimension(2:il,2:jl), target :: flagK2, flagKl
 
        logical, dimension(:,:), pointer :: flag
-!
-!       Begin execution                                                
-!
+
        ! Set model constants
 
        cv13    = rsaCv1**3

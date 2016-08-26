@@ -54,9 +54,7 @@
        integer(kind=intType) :: il, jl, kl, ie, je, ke, ib, jb, kb
 
        type(BCDataType), dimension(:), pointer :: BCData
-!
-!       Begin execution                                                
-!
+
        ! Loop over the number of spectral solutions and local blocks.
 
        spectral: do sps=1,nTimeIntervalsSpectral
@@ -208,9 +206,7 @@
 
        type(checkVolBlockType), &
                   dimension(nDom,nTimeIntervalsSpectral) :: checkVolDoms
-!
-!       Begin execution                                                
-!
+
        ! Initialize the number of bad volumes and bad blocks to 0.
 
        nVolBad   = 0
@@ -786,9 +782,7 @@
 !
          real(kind=realType), intent(in) :: xa, ya, za, xb, yb, zb
          real(kind=realType), intent(in) :: xc, yc, zc, xd, yd, zd
-!
-!         Begin execution                                              
-!
+
          volpym = (xp - fourth*(xa + xb  + xc + xd))              &
                 * ((ya - yc)*(zb - zd) - (za - zc)*(yb - yd))   + &
                   (yp - fourth*(ya + yb  + yc + yd))              &
@@ -832,9 +826,7 @@
        real(kind=realType), dimension(3) :: xc
 
        character(len=10) :: intString1, intString2, intString3
-!
-!       Begin execution                                                
-!
+
        ! Processor 0 prints a message that negative volumes are present
        ! in the grid.
 

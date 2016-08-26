@@ -22,9 +22,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: mm
-!
-!       Begin execution                                                
-!
+
        ! Loop over the number of spectral solutions.
 
        do mm=1,nTimeIntervalsSpectral
@@ -65,9 +63,7 @@
 !
        integer :: ierr
        integer(kind=intType) :: nn
-!
-!       Begin execution                                                
-!
+
        do nn=1,commSlidingCell%nProcSend
 
          deallocate(commSlidingCell%sendList(nn)%block,   &
@@ -123,9 +119,7 @@
 !      Local variables.
 !
        integer :: ierr
-!
-!       Begin execution                                                
-!
+
        deallocate(intSlidingCell%slidingHaloList%block,   &
                   intSlidingCell%slidingHaloList%indices, &
                   intSlidingCell%donorList%block,         &

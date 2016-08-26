@@ -44,9 +44,7 @@
        integer(kind=porType), dimension(:),   pointer :: statusFace
 
        logical, dimension(:), pointer :: storeFace
-!
-!       Begin execution                                                
-!
+
        ! Loop over the number of subfaces of the interface stored on
        ! this processor to determine the local number of nodes and
        ! quads of this interface.

@@ -31,9 +31,7 @@
        integer :: ierr
 
        integer(kind=intType) :: nn
-!
-!       Begin execution                                                
-!
+
        ! Allocate the memory of donorInfo, for which the amount is
        ! guessed to be 4 times the number of values to be interpolated.
 
@@ -95,9 +93,7 @@
 
          real(kind=realType) :: u, v, uv
          real(kind=realType), dimension(4) :: weight
-!
-!         Begin execution                                              
-!
+
          ! Loop over the number of halo cells stored in intInfo
          ! and realInfo.
 

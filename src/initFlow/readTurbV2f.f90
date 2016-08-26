@@ -39,9 +39,7 @@
        real(kind=realType), dimension(4) :: turbScale
 
        character(len=maxCGNSNameLen), dimension(4) :: namesVar
-!
-!       Begin execution                                                
-!
+
        ! Set the cell range to be copied from the buffer.
 
        iBeg = lbound(buffer,1); iEnd = ubound(buffer,1)

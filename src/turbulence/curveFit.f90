@@ -26,9 +26,7 @@
 !
        integer(kind=intType) :: ii, nn, start
        real(kind=realType)   :: x, x2, x3, upRe
-!
-!       Begin execution                                                
-!
+
        ! Determine the situation we are dealing with.
 
        if(Re <= reT(0)) then
@@ -129,9 +127,7 @@
 !
        integer(kind=intType) :: ii, nn, start, mm
        real(kind=realType)   :: x, x2, x3, epsWall, fWall
-!
-!       Begin execution                                                
-!
+
        ! Determine the situation we are dealing with.
 
        if(yp <= ypT(0)) then

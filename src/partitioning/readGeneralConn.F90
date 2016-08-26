@@ -61,9 +61,7 @@
 !      Function definition.
 !
        integer :: setCGNSRealType
-!
-!       Begin execution                                                
-!
+
        ! Set some pointers for the connectivities to make the code
        ! more readable.
 

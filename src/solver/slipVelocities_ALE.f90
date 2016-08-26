@@ -98,9 +98,7 @@ subroutine slipVelocitiesFineLevelALE_block(useOldCoor, t, sps)
   !Function Definitions
 
   real(kind=realType) :: TSAlpha,TSBeta,TSMach
-  !
-  !       Begin execution                                                
-  !
+
   ! Determine the situation we are having here.
 
      ! REMOVED the rigid body rotation part for simplicity

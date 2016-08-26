@@ -9,9 +9,7 @@
             eddyModel, kPresent
        use inputPhysics, only : equations, turbModel, wallFunctions, rvfN
        implicit none
-!
-!       Begin execution                                                
-!
+
        ! Set the number of flow variables to 5, nt1 to 6. This is valid
        ! for all governing equations. Furthermore initialize viscous,
        ! kPresent and eddyModel to .False., which indicates an inviscid

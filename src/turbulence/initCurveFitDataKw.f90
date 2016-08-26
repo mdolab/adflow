@@ -18,9 +18,7 @@
 !      Local variables.
 !
        integer :: ierr
-!
-!       Begin execution                                                
-!
+
        ! Set the number of data points and allocate the memory for the
        ! arrays of the curve fits.
 

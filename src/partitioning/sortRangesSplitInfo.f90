@@ -181,9 +181,7 @@
        integer(kind=intType) :: i, nSubBlocks
 
        type(sortSubRangeType), dimension(splitInfo%nSubBlocks) :: subRanges
-!
-!       Begin execution                                                
-!
+
        ! Copy the subface range from splitInfo into subRanges.
 
        nSubBlocks = splitInfo%nSubBlocks
@@ -247,9 +245,7 @@
 
        integer(kind=intType), allocatable, dimension(:) :: stack
        integer(kind=intType), allocatable, dimension(:) :: tmpStack
-!
-!       Begin execution                                                
-!
+
        ! Allocate the memory for stack.
 
        nStack = 100

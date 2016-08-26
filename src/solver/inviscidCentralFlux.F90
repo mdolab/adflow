@@ -24,9 +24,7 @@ subroutine inviscidCentralFlux
   real(kind=realType) :: qsp, qsm, rqsp, rqsm, porVel, porFlux
   real(kind=realType) :: pa, fs, sFace, vnp, vnm
   real(kind=realType) :: wwx, wwy, wwz, rvol
-  !
-  !       Begin execution                                                
-  !
+
   continue
   !$AD CHECKPOINT-START
   ! Initialize sFace to zero. This value will be used if the

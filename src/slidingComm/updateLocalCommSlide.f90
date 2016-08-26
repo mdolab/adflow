@@ -27,9 +27,7 @@
 !      Local variables.
 !
        integer :: ierr
-!
-!       Begin execution                                                
-!
+
        ! Update the internal communication pattern for the 1st and 2nd
        ! level halo cells.
 

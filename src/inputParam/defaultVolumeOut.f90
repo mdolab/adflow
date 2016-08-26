@@ -9,9 +9,7 @@
        use extraOutput
        use inputPhysics, only : equations
        implicit none
-!
-!       Begin execution                                                
-!
+
        ! First set the variables, which are independent from the
        ! governing equations to be solved.
 

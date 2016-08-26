@@ -21,9 +21,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: slideID
-!
-!       Begin execution                                                
-!
+
        ! Check if this processor actually participates in a search.
        ! If not, return immediately.
 

@@ -70,9 +70,7 @@ subroutine initres_block(varStart, varEnd, nn, sps)
 
   real(kind=realType), dimension(:,:,:,:), pointer :: ww, wsp, wsp1
   real(kind=realType), dimension(:,:,:),   pointer :: volsp
-  !
-  !       Begin execution                                                
-  !
+
   ! Return immediately of no variables are in the range.
 
   if(varEnd < varStart) return

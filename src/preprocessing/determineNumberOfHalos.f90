@@ -22,9 +22,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: i, nn
-!
-!       Begin execution                                                
-!
+
        ! Initialize the amount of halo cells and nodes to 0.
 
        nCellHalo1st = 0

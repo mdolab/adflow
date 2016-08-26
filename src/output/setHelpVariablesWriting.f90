@@ -26,9 +26,7 @@
 
        integer(kind=intType), dimension(cgnsNDom) :: tmp
        integer(kind=intType), dimension(4,nDom)   :: buffer
-!
-!       Begin execution                                                
-!
+
        ! Determine for each CGNS block how many (sub) blocks are stored
        ! on this processor. Note that this info is the same for all
        ! spectral solutions, so the 1st is fine.

@@ -32,9 +32,7 @@ subroutine exchangeStatusTranspose(level, sps, commPattern, internal)
   logical :: DisDonor, DisHole, DisCompute, DisFloodSeed, DisFlooded, DisWall, DisWallDonor
 integer(kind=intType) :: cellStatus, donorStatus
 
-  !
-  !       Begin execution                                                
-  !
+
 
   ii = commPattern(level)%nProcSend
   ii = commPattern(level)%nsendCum(ii)

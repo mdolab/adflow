@@ -31,9 +31,7 @@
        integer(kind=intType), dimension(:), pointer :: block1, block2
        integer(kind=intType), dimension(:), pointer :: rotInd1, rotInd2
        integer(kind=intType), dimension(:,:), pointer :: ind1, ind2
-!
-!       Begin execution                                                
-!
+
        ! Determine the local number of first and second level halo cells
        ! for this sliding interface.
 
@@ -160,9 +158,7 @@
 !        Local variables.
 !
          integer :: ierr
-!
-!         Begin execution                                              
-!
+
          subfaceLoop: do nn=1,nMySubfaces
            quadLoop: do mm=1,mySubfaces(nn)%nQuad
 

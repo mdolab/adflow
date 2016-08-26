@@ -45,9 +45,7 @@
            type(BCDataType), dimension(:), pointer :: BCData
          end subroutine velMagnAndDirectionSubface
        end interface
-!
-!       Begin execution                                                
-!
+
        ! Loop over the number of spectral solutions and blocks.
        spectralLoop: do mm=1,nTimeIntervalsSpectral
          domains: do nn=1,nDom
@@ -193,9 +191,7 @@ subroutine velMagnAndDirectionSubface(vmag, dir, BCData, mm)
   !
   integer(kind=intType) :: i, j
   real(kind=realType)   :: vel
-  !
-  !       Begin execution                                                
-  !
+
   ! Initialize vmag to -1.0.
 
   vmag = -one

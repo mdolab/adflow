@@ -251,9 +251,7 @@
 !       Function arguments.
 !
         type(adtBBoxTargetType), intent(in) :: g1, g2
-!
-!        Begin execution.                                             
-!
+
         ! Compare the possible minimum distances.
 
         if(g1%posDist2 < g2%posDist2) then
@@ -298,9 +296,7 @@
 !       Function arguments.
 !
         type(adtBBoxTargetType), intent(in) :: g1, g2
-!
-!        Begin execution.                                             
-!
+
         ! Compare the possible minimum distances.
 
         if(g1%posDist2 < g2%posDist2) then
@@ -348,9 +344,7 @@
 !
         type(adtType), intent(in)  :: g2
         type(adtType), intent(out) :: g1
-!
-!        Begin execution.                                             
-!
+
         g1%comm     = g2%comm
         g1%nProcs   = g2%nProcs
         g1%myID     = g2%myID

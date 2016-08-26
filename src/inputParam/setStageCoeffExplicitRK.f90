@@ -19,9 +19,7 @@
 !      Local variables.
 !
        integer :: ierr
-!
-!       Begin execution                                                
-!
+
        ! Determine the number of Runge Kutta stages as a function of
        ! the accuracy.
 

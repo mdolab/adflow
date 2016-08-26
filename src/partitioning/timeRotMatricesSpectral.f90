@@ -22,9 +22,7 @@ subroutine timeRotMatricesSpectral
   real(kind=realType)   :: tmp, theta, cosTheta, sinTheta
 
   real(kind=realType), dimension(3) :: xt, yt, zt
-  !
-  !       Begin execution                                                
-  !
+
   ! This routine is only used for the spectral solutions. Return
   ! immediately if a different mode is solved.
 

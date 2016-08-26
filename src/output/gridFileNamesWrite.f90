@@ -28,9 +28,7 @@
        integer(kind=intType) :: nn, mm, kk, nAvail
 
        character(len=7) :: intString
-!
-!       Begin execution                                                
-!
+
 !       Determine the names and number of grid files to be written.    
 !
        ! Determine the situation we are having here.

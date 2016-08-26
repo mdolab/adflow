@@ -68,9 +68,7 @@
        logical :: rindLayerThisSol, unsteadyHigherSol, writeLink
 
        character(len=maxStringLen) :: linkName, solName
-!
-!       Begin execution                                                
-!
+
        ! Set the cgns real type depending on the input option.
 
 
@@ -612,9 +610,7 @@
 
          integer(kind=intType) :: i, j, ll
          integer(kind=intType), dimension(6) :: ii
-!
-!         Begin execution.                                             
-!
+
          ! Initialize bufSize.
 
          bufSize = 0

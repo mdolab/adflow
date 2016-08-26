@@ -28,9 +28,7 @@
 !
        integer(kind=intType) :: nn, mm, i, j, k, l
        integer(kind=intType) :: jj, kk
-!
-!       Begin execution                                                
-!
+
        ! Loop over the number of spectral solutions and blocks.
 
        spectralLoop: do mm=1,nTimeIntervalsSpectral

@@ -75,8 +75,7 @@ contains
     !      Local variables.
     !
     integer(kind=intType) :: nn, sps
-    !
-    !       Begin execution                                                
+
 
     ! Set the arrays for the boundary condition treatment.
     call bcTurbTreatment

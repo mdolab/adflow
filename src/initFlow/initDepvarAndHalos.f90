@@ -31,9 +31,7 @@
        real(kind=realType), dimension(nSections) :: t
 
        logical :: initBleeds
-!
-!       Begin execution                                                
-!
+
        ! Set the logical whether or not to initialize the prescribed
        ! data for the bleed regions. If the halos were read the bleeds
        ! have been initialized already and nothing needs to be done.

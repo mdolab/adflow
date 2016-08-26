@@ -63,9 +63,7 @@
        real(kind=realType), dimension(:,:),   pointer :: gamma1, gamma2
        real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
        real(kind=realType), dimension(:,:),   pointer :: dd2Wall
-!
-!       Begin execution                                                
-!
+
        ! Set the pointers to this block.
 
        call setPointers(blockID, 1_intType, sps)

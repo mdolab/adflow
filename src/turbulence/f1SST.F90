@@ -26,9 +26,7 @@
        integer(kind=intType) :: sps, nn, mm, i, j, k
 
        real(kind=realType) :: t1, t2, arg1
-!
-!       Begin execution                                                
-!
+
        ! First part. Compute the values of the blending function f1
        ! for each block and spectral solution.
 
@@ -176,9 +174,7 @@
 
        integer(kind=intType) :: i, j, ii, jj, sps, ll
        integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
-!
-!       Begin execution                                                
-!
+
        ! Easier storage of the current mg level.
 
        ll = currentLevel
@@ -348,9 +344,7 @@
        integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
 
        real(kind=realType) :: alp
-!
-!       Begin execution                                                
-!
+
        ! Easier storage of the current mg level.
 
        ll = currentLevel
@@ -545,9 +539,7 @@
        integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
 
        real(kind=realType), dimension(:), pointer :: weight
-!
-!       Begin execution                                                
-!
+
        ! Easier storage of the current mg level.
 
        ll = currentLevel

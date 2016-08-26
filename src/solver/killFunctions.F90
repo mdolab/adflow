@@ -24,9 +24,7 @@
 !      Local variables.
 !
        character(len=7) :: integerString
-!
-!       Begin execution.                                               
-!
+
        ! The user signals must be reconnected again, because the
        ! connection is lost after a signal has been given.
 
@@ -128,9 +126,7 @@
 !      Local variables.
 !
        character(len=7) :: integerString
-!
-!       Begin execution                                                
-!
+
        ! The user signals must be reconnected again, because the
        ! connection is lost after a signal has been given.
        ! Only when signalling is wanted.

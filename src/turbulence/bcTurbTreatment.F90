@@ -26,9 +26,7 @@
 !      Local variable.
 !
        integer(kind=intType) :: nn, i, j, k, l, m
-!
-!       Begin execution                                                
-!
+
        ! Initialize the arrays for the boundary condition treatment
        ! to zero, such that internal block boundaries are solved
        ! correctly (i.e. explicitly).

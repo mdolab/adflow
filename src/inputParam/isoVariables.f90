@@ -25,9 +25,7 @@
 
        character(len=15) :: keyword
        character(len=maxStringLen) :: errorMessage
-!
-!       Begin execution                                                
-!
+
        ! Convert the string variables to lower case.
 
        call convertToLowerCase(variables)

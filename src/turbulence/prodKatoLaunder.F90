@@ -24,9 +24,7 @@ subroutine prodKatoLaunder
   real(kind=realType) :: qxx, qyy, qzz, qxy, qxz, qyz, sijsij
   real(kind=realType) :: oxy, oxz, oyz, oijoij
   real(kind=realType) :: fact, omegax, omegay, omegaz
-  !
-  !       Begin execution                                                
-  !
+
   ! Determine the non-dimensional wheel speed of this block.
   ! The vorticity term, which appears in Kato-Launder is of course
   ! not frame invariant. To approximate frame invariance the wheel

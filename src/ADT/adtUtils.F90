@@ -61,9 +61,7 @@ contains
 
     character(len=len_trim(errorMessage)) :: message
     character(len=8) :: integerString
-    !
-    !        Begin execution.                                             
-    !
+
     ! Copy the errorMessage into message. It is not possible to work
     ! with errorMessage directly, because it is modified in this
     ! routine. Sometimes a constant string is passed to this routine
@@ -153,9 +151,7 @@ contains
     !       Local variables.
     !
     integer :: ierr
-    !
-    !        Begin execution.                                             
-    !
+
     ! Allocate the memory for 1 ADT. Note that adtTerminate is not
     ! called when the memory allocation fails. The reason is that
     ! the processor ID for the current tree is used in this routine
@@ -209,9 +205,7 @@ contains
     integer(kind=intType) :: jj, nn, nAlloc, nAllocNew
 
     type(adtType), dimension(:), allocatable :: tmpADTs
-    !
-    !        Begin execution.                                             
-    !
+
     ! Determine the index in the array ADTs, which stores the given
     ! ID. As the number of trees stored is limited, a linear search
     ! algorithm is okay.
@@ -373,9 +367,7 @@ contains
 
     real(kind=realType) :: ra
     real(kind=realType), dimension(:,:), pointer :: xBBox
-    !
-    !        Begin execution.                                             
-    !
+
     ! Set the pointer for the coordinates of the bounding boxes.
 
     xBBox => ADT%xBBox
@@ -544,9 +536,7 @@ contains
     integer(kind=intType) :: i, j, k, r, l, jStack
 
     type(adtBBoxTargetType) :: a, tmp
-    !
-    !        Begin execution                                              
-    !
+
     ! Initialize the variables that control the sorting.
 
     jStack = 0
@@ -715,9 +705,7 @@ contains
     integer(kind=intType) :: nn, nAlloc
 
     type(adtType), dimension(:), allocatable :: tmpADTs
-    !
-    !        Begin execution.                                             
-    !
+
     ! Determine the current size of ADTs and look for an empty spot
     ! in the currently allocated array. Also check if an ADT with
     ! the given ID is not already active. A linear search algorithm
@@ -842,9 +830,7 @@ contains
     integer(kind=intType) :: i, nOld
 
     type(adtBBoxTargetType), dimension(:), pointer :: tmp
-    !
-    !        Begin execution.                                             
-    !
+
     ! Store the input value of nSize and set the pointer tmp to the
     ! original array.
 
@@ -909,9 +895,7 @@ contains
     integer(kind=intType) :: i, nOld
 
     integer(kind=intType), dimension(:), pointer :: tmp
-    !
-    !        Begin execution.                                             
-    !
+
     ! Store the input value of nSize and set the pointer tmp to the
     ! original array.
 

@@ -24,8 +24,7 @@ subroutine applyAllBC(secondHalo)
   !      Local Variables
   integer(kind=intType) :: sps, nn
   
-  !
-  !       Begin execution                                                
+
  
   ! Loop over the number of spectral solutions.
 

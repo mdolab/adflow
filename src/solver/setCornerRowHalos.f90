@@ -26,9 +26,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: i, j, k, l, mm, ll
-!
-!       Begin execution                                                
-!
+
 !       Halo's on the i=iMin and i=iMax plane.                         
 !
        ! K-rows.

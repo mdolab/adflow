@@ -23,9 +23,7 @@
        integer(kind=intType) :: i, j, k
 
        real(kind=realType) :: eddyvis
-!
-!       Begin execution                                                
-!
+
        ! Initialize the maximum value to zero and return immediately if
        ! not an eddy viscosity model is used.
 

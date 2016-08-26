@@ -29,9 +29,7 @@
 !
        integer(kind=intType) :: ii, pos, start
        logical                :: entryFound
-!
-!       Begin execution                                                
-!
+
        ! Initialize some values.
 
        start       = 1

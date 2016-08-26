@@ -26,9 +26,7 @@
        integer(kind=intType) :: nn
 
        character(len=maxStringLen) :: errorMessage
-!
-!       Begin execution                                                
-!
+
 #ifdef USE_NO_CGNS
 
        call terminate("openCGNSVolumeSol", &

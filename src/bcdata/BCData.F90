@@ -407,9 +407,7 @@ contains
       real(kind=realType) :: ax, r1, r2, var, wax, wrad, wtheta
 
       real(kind=realType), dimension(3) :: xc, dir
-      !
-      !         Begin execution                                              
-      !
+
       ! Set the subsonic inlet treatment to totalConditions.
 
       BCData(boco)%subsonicInletTreatment = totalConditions
@@ -2740,9 +2738,7 @@ contains
       real(kind=realType)   :: nuRef, tmp
 
       real(kind=realType), dimension(nt1:nt2) :: ref
-      !
-      !         Begin execution                                              
-      !
+
       ! Set the reference values depending on the turbulence model.
 
       nuRef = muRef/rhoRef

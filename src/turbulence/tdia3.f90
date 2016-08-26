@@ -32,9 +32,7 @@
 !
        integer(kind=intType) :: n
        real(kind=realType)   :: deti, f11, f12, f21, f22, r1
-!
-!       Begin execution                                                
-!
+
        ! Perform the backward sweep to eliMinate the upper diagonal uu.
        ! f     = u(n)*c^-1(n+1),
        ! c'(n) = c(n) - f*l(n+1)

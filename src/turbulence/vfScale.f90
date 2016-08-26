@@ -24,9 +24,7 @@
        real(kind=realType) :: sqrt3
        real(kind=realType) :: tkea, tepa, tv2a, supi, rn2
        real(kind=realType) :: rsct, rscl2, rnu, rstrain
-!
-!       Begin execution                                                
-!
+
        ! Some constants in the model.
 
        sqrt3 = sqrt(three)

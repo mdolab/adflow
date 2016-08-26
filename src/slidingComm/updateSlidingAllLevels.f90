@@ -19,9 +19,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: nLevels, nn
-!
-!       Begin execution                                                
-!
+
        ! Find out if there are sliding mesh interfaces in the grid.
        ! If not, return immediately.
 

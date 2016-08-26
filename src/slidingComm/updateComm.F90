@@ -94,9 +94,7 @@
 !        Function arguments.
 !
          type(sortedDonorCommType), intent(in) :: g1, g2
-!
-!         Begin execution                                              
-!
+
          ! Compare the halo level.
 
          if(g1%haloLevel < g2%haloLevel) then
@@ -162,9 +160,7 @@
 !        Function arguments.
 !
          type(sortedDonorCommType), intent(in) :: g1, g2
-!
-!         Begin execution                                              
-!
+
          ! Compare the halo level.
 
          if(g1%haloLevel < g2%haloLevel) then
@@ -230,9 +226,7 @@
 !        Function arguments.
 !
          type(sortedDonorCommType), intent(in) :: g1, g2
-!
-!         Begin execution                                              
-!
+
          ! Initialize equalSortedDonorComm to .False.
 
          equalSortedDonorComm = .false.

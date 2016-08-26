@@ -22,9 +22,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: i, j, l
-!
-!       Begin execution                                                
-!
+
        ! Determine the face on which this subface is located and set
        ! some pointers accordingly.
 

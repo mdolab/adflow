@@ -32,9 +32,7 @@ subroutine bcTurbWall(nn)
   real(kind=realType), dimension(:,:,:,:), pointer :: bmt
   real(kind=realType), dimension(:,:,:),   pointer :: bvt, ww2
   real(kind=realType), dimension(:,:),     pointer :: rlv2, dd2Wall
-  !
-  !       Begin execution                                                
-  !
+
 
 
   ! Determine the turbulence model used and loop over the faces

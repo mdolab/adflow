@@ -51,9 +51,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   real(kind=realType), dimension(3) :: refPoint
   real(kind=realType) :: mx, my, mz, cellArea
   logical :: viscousSubface
-  !
-  !       Begin execution                                                
-  !
+
   ! Set the actual scaling factor such that ACTUAL forces are computed
   scaleDim = pRef/pInf
 

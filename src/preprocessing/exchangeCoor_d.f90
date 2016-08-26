@@ -20,9 +20,7 @@ subroutine exchangeCoor_d(level)
   integer(kind=intType) :: i, j, ii, jj, mm
   integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
 
-  !
-  !       Begin execution                                                
-  !
+
   ! Loop over the number of spectral solutions.
 
   spectralLoop: do mm=1,nTimeIntervalsSpectral

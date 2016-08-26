@@ -12,9 +12,7 @@ subroutine finalizePETSc
   !
   use ADjointPETSc, only : PETScIerr
   implicit none
-  !
-  !      Begin execution.                                               
-  !
+
 #ifndef USE_NO_PETSC
 
   call PetscFinalize(PETScIerr)

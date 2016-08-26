@@ -15,9 +15,7 @@
 !      Local variables
 !
        integer, parameter :: readUnit = 32
-!
-!       Begin execution                                                
-!
+
 
        ! Check if all the desired input parameters were specified and
        ! print warnings if some irrelevant ones are specified.

@@ -21,9 +21,7 @@
 !      Local variables.
 !
        logical :: returnImmediately
-!
-!       Begin execution                                                
-!
+
        ! Check if an immediate return can be made.
 
        if( eddyModel ) then
@@ -89,9 +87,7 @@
        real(kind=realType), dimension(:,:),   pointer :: rrlv, rrev
        real(kind=realType), dimension(:,:),   pointer :: dd2Wall
 
-!
-!       Begin execution                                                
-!
+
        ! Compute time and length scale
  
        call vfScale
@@ -201,9 +197,7 @@
 !
        integer(kind=intType) :: i, j, k, ii
        real(kind=realType)   :: chi, chi3, fv1, rnuSA, cv13
-!
-!       Begin execution                                                
-!
+
        ! Store the cv1^3; cv1 is a constant of the Spalart-Allmaras model.
 
        cv13 = rsaCv1**3
@@ -249,9 +243,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: i, j, k
-!
-!       Begin execution                                                
-!
+
        ! Loop over the cells of this block and compute the eddy viscosity.
        ! Do not include halo's.
 
@@ -284,9 +276,7 @@
        integer(kind=intType) :: i, j, k
 
        real(kind=realType) :: t1, t2, arg2, f2, vortMag
-!
-!       Begin execution                                                
-!
+
        ! Compute the vorticity squared in the cell centers. The reason
        ! for computing the vorticity squared is that a routine exists
        ! for it; for the actual eddy viscosity computation the vorticity
@@ -338,9 +328,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: i, j, k
-!
-!       Begin execution                                                
-!
+
        ! Loop over the cells of this block and compute the eddy viscosity.
        ! Do not include halo's.
 

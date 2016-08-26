@@ -30,7 +30,7 @@ subroutine solverUnsteady_ALE(alecallback_python)
   integer(kind=intType) :: iter, nTimeSteps
   external alecallback_python
 
-  !       Begin execution                                                
+
 
   call solverUnsteadyWrapBegin
 

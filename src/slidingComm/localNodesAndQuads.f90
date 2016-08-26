@@ -68,9 +68,7 @@
        logical :: thetaPiCrossed, thetaZeroCrossed, storeIntCoor
 
        logical, dimension(:), pointer :: storeFace
-!
-!       Begin execution                                                
-!
+
        ! Some initializations.
 
        iNode = 0

@@ -25,9 +25,7 @@
 
        real(kind=realType) :: thetapMin, thetanMin
        real(kind=realType) :: thetapMax, thetanMax
-!
-!       Begin execution                                                
-!
+
        ! Store the communicator of this sliding mesh a bit easier.
 
        comm = myInterfaces(color)%commSlide

@@ -34,9 +34,7 @@
        integer(kind=intType), dimension(2) :: ri, rj, rk
 
        integer(kind=porType) :: por
-!
-!       Begin execution                                                
-!
+
        ! Loop over the number of domains.
 
        domains: do nn=1,nDom

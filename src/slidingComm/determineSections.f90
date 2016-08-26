@@ -42,9 +42,7 @@
        real(kind=realType) :: d1, d2, a1, a0, lamr, lami, angle, dAngle
 
        logical :: situationChanged
-!
-!       Begin execution                                                
-!
+
        ! Initialize sectionID to the cgns block number.
 
        do nn=1,cgnsNDom

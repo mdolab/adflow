@@ -21,9 +21,7 @@
        integer :: ierr
 
        integer(kind=intType) :: i, j, k, nn
-!
-!       Begin execution                                                
-!
+
        ! Allocate the memory for flowDoms. Set nn to the maximum of the
        ! number of mg levels needed in the cycle and mg start level.
        ! This is namely the amount of grid levels the solver needs.

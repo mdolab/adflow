@@ -30,9 +30,7 @@
 !
        integer(kind=intType) :: nCopy1st, nCopy2nd
        integer(kind=intType) :: nHalo1st, nHalo2nd
-!
-!       Begin execution                                                
-!
+
        ! Store the number of entities to copy and the number of halo's in
        ! the receive buffer for both the 1st and 2nd halo cells a bit
        ! easier.

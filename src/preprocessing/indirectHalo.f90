@@ -87,9 +87,7 @@
 !        Function arguments.
 !
          type(indirectHaloType), intent(in) :: g1, g2
-!
-!         Begin execution                                              
-!
+
          ! Compare the level of indirectness. If not equal, set
          ! lessEqual appropriately and return.
 
@@ -181,9 +179,7 @@
 !        Function arguments.
 !
          type(indirectHaloType), intent(in) :: g1, g2
-!
-!         Begin execution                                              
-!
+
          ! Compare the level of indirectness. If not equal, set
          ! lessIndirectHaloType appropriately and return.
 

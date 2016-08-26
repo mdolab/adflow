@@ -27,9 +27,7 @@
        integer(kind=intType) :: nx, ny, nz, nAlloc
 
        integer(kind=intType), dimension(0:cgnsNDom) :: nSubPerCGNS
-!
-!       Begin execution                                                
-!
+
        ! Determine the number of subblocks per cgns block in
        ! cumulative storage format.
 
@@ -206,9 +204,7 @@
 
        character(len=maxCGNSNameLen) :: zoneName, subName
        character(len=2*maxStringLen) :: errorMessage
-!
-!       Begin execution                                                
-!
+
        ! Loop over the physical boundaries of the original block.
 
        bocoLoop: do j=1,cgnsDoms(cgnsID)%nBocos
@@ -797,9 +793,7 @@
 !
        integer(kind=intType) :: indFace, jBeg, jEnd, kBeg, kEnd
        integer(kind=intType) :: i, i2, j, k, faceID
-!
-!       Begin execution                                                
-!
+
        ! iMin face.
 
        if(blocks(ii)%iBegor > 1) then
@@ -960,9 +954,7 @@
          integer(kind=intType), dimension(3,2) :: subRange
 
          integer(kind=intType), dimension(:,:,:), pointer :: ranges
-!
-!         Begin execution                                              
-!
+
          ! Set the pointer for ranges to make the code more readable.
 
          ranges => splitInfo%ranges
