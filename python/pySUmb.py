@@ -212,10 +212,10 @@ class SUMB(AeroSolver):
         # Finally complete loading
         self.sumb.inputparamroutines.dummyreadparamfile()
         if self.getOption('partitionOnly'):
-            self.sumb.partitionandreadgrid(True)
+            self.sumb.partitioning.partitionandreadgrid(True)
             return
 
-        self.sumb.partitionandreadgrid(False)
+        self.sumb.partitioning.partitionandreadgrid(False)
         self.sumb.preprocessing()
         self.sumb.initializeflow.initflow()
         self.sumb.preprocessingadjoint()
@@ -593,7 +593,7 @@ class SUMB(AeroSolver):
             The fraction of inbalance for faces. This gives an idea of
             communication code. 0 is god. 1.0 is really bad.
         """
-        loadInbalance, faceInbalance = self.sumb.checkpartitioning(nprocs)
+        loadInbalance, faceInbalance = self.sumb.partitioning.checkpartitioning(nprocs)
 
         return loadInbalance, faceInbalance
 
