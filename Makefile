@@ -7,12 +7,21 @@
 #      *                                                                *
 #      ******************************************************************
 
-SUBDIR_SRC    = src/modules       \
+SUBDIR_SRC    = src \
+		src/utils \
+		src/ADT \
+		src/bcdata \
+		src/partitioning \
+		src/modules       \
 	        src/solver        \
 	        src/metis-4.0     \
+		src/NKSolver \
+		src/initFlow \
+		src/inputParam\
 	        src/output        \
 	        src/overset       \
 	        src/preprocessing \
+		src/wallDistance \
 	        src/slidingComm   \
 	        src/turbulence    \
 		src/warping       \
@@ -22,9 +31,6 @@ SUBDIR_SRC    = src/modules       \
 		src/adjoint/outputReverse \
                 src/adjoint/outputReverseFast \
 		src/adjoint 
-
-SUMB_SUBDIRS       = $(SUBDIR_SRC)
-SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC)
 
 default:
 # Check if the config.mk file is in the config dir.
@@ -43,14 +49,12 @@ default:
 
 clean:
 	ln -sf SUmb_Common_real.mk SUmb_Common.mk
-	@echo " Making clean ... "
-	@for subdir in $(SUMB_CLEAN_SUBDIRS) ; \
+	@for subdir in $(SUBDIR_SRC)  ; \
 		do \
-			echo; \
 			echo "making $@ in $$subdir"; \
-			echo; \
-			(cd $$subdir && make $@) || exit 1; \
+			rm -fr $$subdir/*.o; \
 		done
+	rm -fr src/*.mod
 	rm -f *~ config.mk;
 	rm -f lib/lib* mod/* obj/*
 
@@ -60,13 +64,4 @@ sumb:
 	mkdir -p mod;
 	ln -sf config/config.mk config.mk;
 	ln -sf SUmb_Common_real.mk SUmb_Common.mk;
-
-	@for subdir in $(SUMB_SUBDIRS) ; \
-		do \
-			echo "making $@ in $$subdir"; \
-			echo; \
-			(cd $$subdir && make) || exit 1; \
-		done
-	(cd lib && make)
-#	(cd src/exec && make)
-	(cd src/python/f2py && make)
+	(cd src && make)

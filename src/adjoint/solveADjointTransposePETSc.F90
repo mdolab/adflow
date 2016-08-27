@@ -19,13 +19,7 @@ subroutine solveAdjoint(RHS, psi, checkSolution, nState)
   use utils, only : EChk
   implicit none
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
-#else
-#include "include/finclude/petsc.h"
-#endif
 
   ! Input Parameters
   real(kind=realType), dimension(nState) :: RHS, psi

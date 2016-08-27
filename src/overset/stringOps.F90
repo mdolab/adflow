@@ -1325,7 +1325,6 @@ contains
           curOtherID = s1%otherID(1, iStart)
 
           if (curOtherID == -1) then 
-             print *,' fucked:', iString, iStart
              stop
           end if
 

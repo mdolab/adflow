@@ -113,7 +113,7 @@ python module libsumb
        end module inputparamroutines
 
        module nksolver
-         use constants
+
          integer(kind=inttype) :: nk_innerpreconits
          integer(kind=inttype) :: nk_outerpreconits
          integer(kind=inttype) :: nk_jacobianlag

@@ -19,13 +19,7 @@ subroutine testpc()
        use precision
        implicit none
 #define PETSC_AVOID_MPIF_H
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
-#else
-#include "include/finclude/petsc.h"
-#endif
-
        Mat :: matrix
        Mat, optional :: matrixTurb
        ! Input Variables
@@ -208,15 +202,8 @@ subroutine PCMatMult(A, vecX,  vecY, ierr)
   use utils, only : EChk, setPointers
   implicit none
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petsc.h"
-#include "include/finclude/petscvec.h90"
-#endif
 
   ! PETSc Arguments
   Mat   A
@@ -286,15 +273,8 @@ subroutine myShellPCApply(pc, vecX, vecY, ierr)
   use communication
   implicit none
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petsc.h"
-#include "include/finclude/petscvec.h90"
-#endif
 
   ! PETSc Arguments
   PC   pc
@@ -328,15 +308,8 @@ subroutine setPCVec(vecX)
   use utils, only : EChk, setPointers
   implicit none
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petsc.h"
-#include "include/finclude/petscvec.h90"
-#endif
   
   ! PETSc Arguments
   Vec   vecX
