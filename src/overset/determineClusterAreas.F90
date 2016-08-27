@@ -10,6 +10,7 @@ subroutine determineClusterAreas
   use communication, only : sumb_comm_world, myid
   use overset, onlY : clusterAreas, nClusters, clusters, cumDomProc
   use surfaceFamilies, onlY : totalWallFamilies, wallFamilies
+  use surfaceUtils, only : getSurfaceSize, getSurfacePoints, setFamilyInfo
   use utils, only : setPointers, EChk
   implicit none
 

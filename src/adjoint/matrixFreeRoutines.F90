@@ -813,6 +813,7 @@ subroutine dRdwMatMult(A, vecX,  vecY, ierr)
   use inputTimeSpectral  
   use surfaceFamilies, only: wallFamilies, totalWallFamilies
   use utils, only : EChk
+  use surfaceUtils, only : getSurfaceSize, setFulLFamilyList
   use costFunctions
   implicit none
 #define PETSC_AVOID_MPIF_H

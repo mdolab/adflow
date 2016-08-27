@@ -37,7 +37,7 @@ include ${SUMB_RULES_FILE}
 #      *                                                                *
 #      ******************************************************************
 
-vpath %.o $(SUMB_OBJDIR)
+vpath %.o $(SUMB_OBJDIR):../utils/:../ADT:../partitioning/
 
 FF90_OBJECTS_0 =	complexify.o\
 			precision.o\
@@ -80,19 +80,21 @@ FF90_OBJECTS_1 =	IOModule.o\
 			overset.o\
 			liftDistributionData.o\
 
-FF90_OBJECTS_1b =	../utils/utils.o\
+FF90_OBJECTS_2 =	../utils/utils.o\
 			../utils/myIsNaNC.o\
 			../ADT/adtUtils.o\
 
-FF90_OBJECTS_2 =../utils/sorting.o\
+FF90_OBJECTS_3 =../utils/sorting.o\
 		../utils/flowUtils.o\
 		../ADT/adtBuild.o\
 		../ADT/adtLocalSearch.o\
 		../bcdata/BCData.o\
 		../partitioning/partitionMod.o\
 		../partitioning/metisInterface.o\
+		../warping/warping.o\
 
-FF90_OBJECTS_3 =../utils/haloExchange.o\
+FF90_OBJECTS_4 =../utils/haloExchange.o\
+		../utils/surfaceUtils.o\
 		../ADT/adtSearch.o\
 		../initFlow/variableReading.o\
 		../partitioning/loadBalance.o\
@@ -100,13 +102,13 @@ FF90_OBJECTS_3 =../utils/haloExchange.o\
 		../partitioning/readCGNSGrid.o\
 
 
-FF90_OBJECTS_4 =../inputParam/inputParamRoutines.o\
+FF90_OBJECTS_5 =../inputParam/inputParamRoutines.o\
 		../ADT/adtAPI.o\
 		../NKSolver/NKSolvers.o\
 		../partitioning/partitioning.o\
 
 
-FF90_OBJECTS_5 =../wallDistance/wallDistance.o\
+FF90_OBJECTS_6 =../wallDistance/wallDistance.o\
 		../initFlow/initializeFlow.o\
 
 FILES_TO_COMPLEXIFY =  precision.F90\
@@ -166,11 +168,11 @@ default: all
 all:
 	$(MAKE) src_0
 	$(PMAKE) src_1
-	$(PMAKE) src_1b
 	$(PMAKE) src_2
 	$(PMAKE) src_3
 	$(PMAKE) src_4
 	$(PMAKE) src_5
+	$(PMAKE) src_6
 
 	cp -f *.mod $(SUMB_MODDIR)
 
@@ -204,8 +206,8 @@ complexify:
 
 src_0:	$(FF90_OBJECTS_0)
 src_1:	$(FF90_OBJECTS_1)
-src_1b:	$(FF90_OBJECTS_1b)
 src_2:	$(FF90_OBJECTS_2)
 src_3:	$(FF90_OBJECTS_3)
 src_4:	$(FF90_OBJECTS_4)
 src_5:	$(FF90_OBJECTS_5)
+src_6:	$(FF90_OBJECTS_6)
