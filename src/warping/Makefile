@@ -39,9 +39,7 @@ vpath %.o $(SUMB_OBJDIR)
 FILES_TO_COMPLEXIFY = 	getForces.F90\
 	        getHeatFlux.f90\
 	        getAreas.f90\
-	        setGrid.f90\
 	        setTNSWall.f90\
-	        initializeExternalWarping.f90\
 
 FILES_TO_COPY = 
 

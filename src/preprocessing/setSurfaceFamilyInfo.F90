@@ -11,11 +11,8 @@ subroutine setSurfaceFamilyInfo
   use utils, only : setPointers, EChk, pointReduce, terminate, convertToLowerCase
   use sorting, only : qsortStrings, bsearchStrings
   implicit none
-  !
-  !      Local variables.
-  !
+ 
   integer :: ierr
-
   integer(kind=intType) :: nLevels, level, nn, mm, nsMin, nsMax, i, j, k, nFam, famID, cgb, iFam
   integer(kind=intType) :: sps, currentFamily, curFam(1)
   character(maxCGNSNameLen), dimension(25) :: defaultFamName 
@@ -235,6 +232,8 @@ subroutine createNodeScatterForFamilies(famList, nFam, famExchange, sps)
   use surfaceFamilies, only : famGroups, familyExchange, &
        IS1, IS2, PETSC_COPY_VALUES, PETSC_DETERMINE
   use utils, only : pointReduce, eChk
+  use surfaceUtils, only : getSurfaceSize, getSurfaceConnectivity, getSurfaceFamily, &
+       getSurfacePoints
   implicit none
 
   ! Input Parameters
@@ -425,111 +424,3 @@ subroutine createNodeScatterForFamilies(famList, nFam, famExchange, sps)
 end subroutine createNodeScatterForFamilies
 
 
-! The only two groups we need to deal with in fortran directly is the
-! fullFamilyList and all walls. We write special routines for them. 
-subroutine setFullFamilyList()
-
-  use surfaceFamilies
-  implicit none
-
-  integer(kind=intType) :: i
-  if (allocated(famGroups)) then 
-     deallocate(famGroups)
-  end if
-  allocate(famGroups(totalFamilies))
-  do i=1, totalFamilies
-     famGroups(i) = i
-  end do
-
-end subroutine setFullFamilyList
-
-subroutine setWallFamilyList()
-
-  use surfaceFamilies
-  implicit none
-  integer(kind=intType) :: i
-
-  if (allocated(famGroups)) then 
-     deallocate(famGroups)
-  end if
-  allocate(famGroups(totalWallFamilies))
-  do i=1, totalWallFamilies
-     famGroups(i) = wallFamilies(i)
-  end do
-
-end subroutine setWallFamilyList
-
-subroutine setFamilyInfo(famList, n)
-
-  use surfaceFamilies
-  implicit none
-  integer(kind=intType), intent(in) :: famList(n), n
-
-  if (allocated(famGroups)) then 
-     deallocate(famGroups)
-  end if
-  allocate(famGroups(n))
-  famGroups = famList
-
-end subroutine setFamilyInfo
-
-subroutine mapVector(vec1, n1, famList1, nf1, vec2, n2, famList2, nf2)
-
-  ! Map one vector, vec1 of size (3,n1) defined on family list 'famList1' onto
-  ! vector, vec2, of size (3, n2) defined on family list 'famList2'
-
-  ! This operation is actually pretty fast since it just requires a
-  ! single copy of surface-based data. 
-  use constants
-  use blockPointers
-  use sorting, only : bsearchIntegers
-  implicit none
-
-  ! Input/Output
-  integer(kind=intType) :: n1, n2, nf1, nf2
-  integer(kind=intType), intent(in) :: famList1(nf1), famList2(nf2)
-  real(kind=realType), intent(in) :: vec1(3, n1)
-  real(kind=realType), intent(inout) :: vec2(3, n2)
-
-  ! Working
-  integer(kind=intType) :: k, ii, jj, nn, mm, iSize, iBeg, iEnd, jBeg, jEnd, famID
-  logical :: fam1Included, fam2Included
-
-  ii = 0 
-  jj = 0
-  domains: do nn=1,nDom
-     ! Don't set pointers for speed
-     
-     ! Loop over the number of boundary subfaces of this block.
-     bocos: do mm=1,flowDoms(nn, 1, 1)%nBocos
-        famId = flowDoms(nn, 1, 1)%BCdata(mm)%famID
-
-        fam1Included = bsearchIntegers(famID, famList1, nf1) > 0
-        fam2Included = bsearchIntegers(famID, famList2, nf2) > 0
-
-        jBeg = flowDoms(nn, 1, 1)%bcData(mm)%jnBeg
-        jEnd = flowDoms(nn, 1, 1)%bcData(mm)%jnEnd
-        
-        iBeg = flowDoms(nn, 1, 1)%bcData(mm)%inBeg
-        iEnd = flowDoms(nn, 1, 1)%bcData(mm)%inEnd
-        iSize = (iEnd-iBeg+1)*(jEnd-jBeg+1)
-
-        if (fam1Included .and. fam2Included) then 
-           ! The two lists overlap so copy:
-           do k=1, iSize
-              vec2(:, k+jj) = vec1(:, k+ii)
-           end do
-        end if
-
-        ! Finally increment the counters if the face had been inclded
-        if (fam1Included) then 
-           ii = ii + iSize
-        end if
-
-        if (fam2Included) then 
-           jj =jj + iSize
-        end if
-
-     end do bocos
-  end do domains
-end subroutine mapVector
