@@ -884,16 +884,10 @@ contains
     implicit none
     include 'cgnslib_f.h'
 #define PETSC_AVOID_MPIF_H
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petscsys.h"
-#include "include/finclude/petscvec.h"
-#include "include/finclude/petscvec.h90"
-#endif
+
     ! Input
     integer(kind=intType), intent(in), dimension(3) :: cellDims
     real(kind=realType), intent(in), dimension(3) :: xMin

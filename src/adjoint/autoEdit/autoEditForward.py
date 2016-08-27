@@ -84,7 +84,6 @@ for f in os.listdir(DIR_ORI):
                 for m in useful_modules:
                     if m in line:
                         found = True
-                        print ('fucking useful module:', m)
                 if not found:
                     line = line.replace('_d', '')
 
