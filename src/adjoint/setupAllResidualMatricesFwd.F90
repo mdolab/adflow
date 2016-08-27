@@ -17,12 +17,7 @@ subroutine setupAllResidualMatricesfwd
        use precision
        implicit none
 #define PETSC_AVOID_MPIF_H
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
-#else
-#include "include/finclude/petsc.h"
-#endif
 
        Mat :: matrix
        Mat, optional :: matrixTurb

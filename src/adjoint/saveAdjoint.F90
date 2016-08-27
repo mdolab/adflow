@@ -12,15 +12,8 @@ subroutine saveADjointMatrix(fileName)
   use utils, only : EChk
   implicit none
 
-#ifndef USE_NO_PETSC
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
-#else
-#include "include/finclude/petsc.h"
-#endif
 
   ! Input params
   character*(*), intent(in) :: fileName
@@ -37,7 +30,7 @@ subroutine saveADjointMatrix(fileName)
 
   call PetscViewerDestroy(binViewer,ierr)
   call EChk(ierr, __FILE__, __LINE__)
-#endif
+
 end subroutine saveADjointMatrix
 
 subroutine saveAdjointPC(fileName)
@@ -48,15 +41,8 @@ subroutine saveAdjointPC(fileName)
   use utils, only : EChk
   implicit none
 
-#ifndef USE_NO_PETSC
-#define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
+ PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
-#else
-#include "include/finclude/petsc.h"
-#endif
 
   ! Input params
   character*(*), intent(in) :: fileName
@@ -73,7 +59,7 @@ subroutine saveAdjointPC(fileName)
 
   call PetscViewerDestroy(binViewer,ierr)
   call EChk(ierr, __FILE__, __LINE__)
-#endif
+
 end subroutine saveAdjointPC
 
 subroutine saveADjointRHS(fileName)
@@ -82,7 +68,6 @@ subroutine saveADjointRHS(fileName)
 !   use communication
 !   implicit none
 
-! #ifndef USE_NO_PETSC
 ! #define PETSC_AVOID_MPIF_H
 ! #include "finclude/petsc.h"
 !   ! Input params
@@ -100,7 +85,7 @@ subroutine saveADjointRHS(fileName)
 
 !   call PetscViewerDestroy(binViewer,ierr)
 !   call EChk(ierr, __FILE__, __LINE__)
-! #endif
+
 end subroutine saveADjointRHS
 
 subroutine saveCellCenters(fileName)
@@ -113,15 +98,8 @@ subroutine saveCellCenters(fileName)
   use utils, only : setPointers, EChk
   implicit none
 
-#ifndef USE_NO_PETSC
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
-#else
-#include "include/finclude/petsc.h"
-#endif
 
   ! Input params
   character*(*), intent(in) :: fileName
@@ -191,5 +169,5 @@ subroutine saveCellCenters(fileName)
 
   call PetscViewerDestroy(binViewer,ierr)
   call EChk(ierr, __FILE__, __LINE__)
-#endif
+
 end subroutine saveCellCenters

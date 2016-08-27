@@ -15,17 +15,8 @@ subroutine preprocessingADjoint
   use utils, only : setPointers, EChk
   implicit none
 
-#ifndef USE_NO_PETSC
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
-#else
-#include "include/finclude/petsc.h"
-#endif
-
-#endif
 
   !     Local variables.
   !

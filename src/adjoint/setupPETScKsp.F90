@@ -7,13 +7,7 @@ subroutine setupPETScKsp
   implicit none
 
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
-#else
-#include "include/finclude/petsc.h"
-#endif
 
   !     Local variables.
   logical :: useAD, usePC, useTranspose, useObjective
@@ -25,12 +19,7 @@ subroutine setupPETScKsp
        use precision
        implicit none
 #define PETSC_AVOID_MPIF_H
-
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
-#else
-#include "include/finclude/petsc.h"
-#endif
 
        Mat :: matrix
        Mat, optional :: matrixTurb
@@ -157,15 +146,8 @@ subroutine setupStandardKSP(kspObject, kspObjectType, gmresRestart, preConSide, 
   use utils, only : ECHk
   implicit none
 
-#ifndef USE_NO_PETSC
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
-#else
-#include "include/finclude/petsc.h"
-#endif
 
   ! Input Params
   KSP kspObject
@@ -309,5 +291,5 @@ subroutine setupStandardKSP(kspObject, kspObjectType, gmresRestart, preConSide, 
   call PCFactorSetLevels(subpc, localFillLevel , ierr)
   call EChk(ierr, __FILE__, __LINE__) 
 
-#endif
+
 end subroutine setupStandardKSP

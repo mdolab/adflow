@@ -73,7 +73,7 @@ MAKE_CLEAN_ARGUMENTS = *~ *.o *.mod *.il *.stb
 #      *                                                                *
 #      ******************************************************************
 
-FF90_LOCAL_FLAGS = -I$(SUMB_MODDIR) -I$(INPUT_DIR) -I$(TURB_DIR) -I$(SOLVER_DIR)
+FF90_LOCAL_FLAGS = -I$(SUMB_MODDIR) -I$(INPUT_DIR) -I$(TURB_DIR) -I$(SOLVER_DIR) -I$(SUMB_DIR)/src
 
 FF90_ALL_FLAGS   = $(FF90_LOCAL_FLAGS) $(CGNS_INCLUDE_FLAGS) \
 		   $(FF90_FLAGS) $(ADDITIONAL_FF90_FLAGS) $(PV3_FLAGS) \
