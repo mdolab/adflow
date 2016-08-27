@@ -199,7 +199,18 @@ python module libsumb
          
        end module anksolver
      
+       module partitioning
+         subroutine partitionandreadgrid(partitiononly)
+           logical :: partitiononly
+         end subroutine partitionandreadgrid
 
+         subroutine checkpartitioning(np,load_inbalance,face_inbalance) ! in :test:checkPartitioning.f90
+           integer(kind=inttype) intent(in) :: np
+           real(kind=realtype) intent(out) :: load_inbalance
+           real(kind=realtype) intent(out) :: face_inbalance
+         end subroutine checkpartitioning
+         
+       end module partitioning
 ! ================ bare subroutines =============
 
        subroutine addparaslice(slicename,pt,direction,famlist,n) ! in :test:liftDistribution.F90
@@ -238,9 +249,6 @@ python module libsumb
        end subroutine writeliftdistributionfile
 
       
-       subroutine partitionandreadgrid(partitiononly) ! in :sumb:../../partitioning/partitionAndReadGrid.f90
-         logical :: partitiononly
-       end subroutine partitionandreadgrid
 
        subroutine preprocessing ! in :sumb:../../preprocessing/preprocessing.f90
        end subroutine preprocessing
@@ -280,11 +288,6 @@ python module libsumb
        subroutine solver ! in :sumb:../../solver/solver.F90
        end subroutine solver
 
-       subroutine checkpartitioning(np,load_inbalance,face_inbalance) ! in :test:checkPartitioning.f90
-         integer(kind=inttype) intent(in) :: np
-         real(kind=realtype) intent(out) :: load_inbalance
-         real(kind=realtype) intent(out) :: face_inbalance
-       end subroutine checkpartitioning
 
        subroutine writesol ! in :sumb:../../output/writeSol.f90
        end subroutine writesol

@@ -140,16 +140,12 @@ subroutine updatePeriodicInfoAllLevels
   use inputTimeSpectral
   use inputPhysics
   use communication
-  use initializeFlow, onlY : timeSPectralMatrices
+  use initializeFlow, onlY : timeSpectralMatrices
+  use partitioning, only : fineGridSpectralCoor, timeRotMatricesSpectral, &
+       timePeriodSpectral
+    !
   implicit none
 
-  !subroutine variables
-
-  !Local Variables
-
-
-
-  !from partitionAndReadGrid.f90
   ! Determine for the time spectral mode the time of one period,
   ! the rotation matrices for the velocity components and
   ! create the fine grid coordinates of all time spectral locations.

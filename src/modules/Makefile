@@ -89,15 +89,22 @@ FF90_OBJECTS_2 =../utils/sorting.o\
 		../ADT/adtBuild.o\
 		../ADT/adtLocalSearch.o\
 		../bcdata/BCData.o\
+		../partitioning/partitionMod.o\
+		../partitioning/metisInterface.o\
 
 FF90_OBJECTS_3 =../utils/haloExchange.o\
 		../ADT/adtSearch.o\
 		../initFlow/variableReading.o\
+		../partitioning/loadBalance.o\
+		../partitioning/gridChecking.o\
+		../partitioning/readCGNSGrid.o\
 
 
 FF90_OBJECTS_4 =../inputParam/inputParamRoutines.o\
 		../ADT/adtAPI.o\
 		../NKSolver/NKSolvers.o\
+		../partitioning/partitioning.o\
+
 
 FF90_OBJECTS_5 =../wallDistance/wallDistance.o\
 		../initFlow/initializeFlow.o\
