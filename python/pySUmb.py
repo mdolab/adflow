@@ -270,7 +270,7 @@ class SUMB(AeroSolver):
 
         # Setup External Warping with volume indices
         ndof_1_instance = self.sumb.adjointvars.nnodeslocal[0]*3
-        meshInd = self.sumb.getcgnsmeshindices(ndof_1_instance)
+        meshInd = self.sumb.warping.getcgnsmeshindices(ndof_1_instance)
         self.mesh.setExternalMeshIndices(meshInd)
 
         # Set the surface the user has supplied:
@@ -2216,7 +2216,7 @@ class SUMB(AeroSolver):
         self._setFamilyList(groupName)
 
         if npts > 0:
-            self.sumb.getsurfacepoints(pts.T, TS+1)
+            self.sumb.surfaceutils.getsurfacepoints(pts.T, TS+1)
 
         return pts
 
@@ -2241,7 +2241,7 @@ class SUMB(AeroSolver):
         self._setFamilyList(groupName)
         npts, ncell = self._getSurfaceSize(groupName)
         conn =  numpy.zeros((ncell, 4), dtype='intc')
-        self.sumb.getsurfaceconnectivity(numpy.ravel(conn))
+        self.sumb.surfaceutils.getsurfaceconnectivity(numpy.ravel(conn))
 
         # Conver to 0-based ordering becuase we are in python
         return conn-1
@@ -2552,7 +2552,7 @@ class SUMB(AeroSolver):
             self.sumb.killsignals.fatalFail = False
             self.updateTime = time.time()-timeA
             if newGrid is not None:
-                self.sumb.setgrid(newGrid)
+                self.sumb.warping.setgrid(newGrid)
             self.sumb.updatecoordinatesalllevels()
             self.sumb.walldistance.updatewalldistancealllevels()
             self.sumb.updateslidingalllevels()
@@ -3000,7 +3000,7 @@ class SUMB(AeroSolver):
             
         famList1 = self.families[groupName1]
         famList2 = self.families[groupName2]
-        self.sumb.mapvector(vec1.T, famList1, vec2.T, famList2)
+        self.sumb.surfaceutils.mapvector(vec1.T, famList1, vec2.T, famList2)
 
         return vec2
 
@@ -3136,7 +3136,7 @@ class SUMB(AeroSolver):
             raise Error("'%s' is not a family in the CGNS file or has not been added"
                         " as a combination of families"%groupName)
 
-        [nPts, nCells] = self.sumb.getsurfacesize(self.families[groupName])
+        [nPts, nCells] = self.sumb.surfaceutils.getsurfacesize(self.families[groupName])
         return nPts, nCells
 
     def _setFamilyList(self, groupName):
@@ -3154,7 +3154,7 @@ class SUMB(AeroSolver):
             raise Error("'%s' is not a family in the CGNS file or has not been added"
                         " as a combination of families"%groupName)
 
-        self.sumb.setfamilyinfo(self.families[groupName])
+        self.sumb.surfaceutils.setfamilyinfo(self.families[groupName])
         
     def _getFamilyList(self, groupName):
         

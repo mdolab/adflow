@@ -20,18 +20,18 @@ python module libsumb
        ! ############################################################################
 
        module utils
-         subroutine writeintromessage ! in :sumb:../../utils/initExec.F90
+         subroutine writeintromessage 
          end subroutine writeintromessage
 
          subroutine getliftdirfromsymmetry(liftdir)
            integer(kind=inttype), intent(out) :: liftdir
          end subroutine getliftdirfromsymmetry
 
-         subroutine allocconvarrays(nitertot) ! in :sumb:../../initFlow/allocConvArrays.f90
+         subroutine allocconvarrays(nitertot)
            integer(kind=inttype) :: nitertot
          end subroutine allocconvarrays
          
-         subroutine alloctimearrays(nitertot) ! in :sumb:../../initFlow/allocTimeArrays.f90
+         subroutine alloctimearrays(nitertot) 
            integer(kind=inttype) :: ntimetot
          end subroutine alloctimearrays
          
@@ -39,7 +39,7 @@ python module libsumb
 
        module walldistance
 
-         subroutine updatewalldistancealllevels ! in :sumb:../../wallDistance/updateWallDistanceAllLevels.f90
+         subroutine updatewalldistancealllevels 
          end subroutine updatewalldistancealllevels
 
        end module walldistance
@@ -204,13 +204,70 @@ python module libsumb
            logical :: partitiononly
          end subroutine partitionandreadgrid
 
-         subroutine checkpartitioning(np,load_inbalance,face_inbalance) ! in :test:checkPartitioning.f90
+         subroutine checkpartitioning(np,load_inbalance,face_inbalance)
            integer(kind=inttype) intent(in) :: np
            real(kind=realtype) intent(out) :: load_inbalance
            real(kind=realtype) intent(out) :: face_inbalance
          end subroutine checkpartitioning
          
        end module partitioning
+
+       module warping
+
+         subroutine getcgnsmeshindices(ndof,indices)
+           integer(kind=inttype) intent(in) :: ndof
+           integer(kind=inttype) dimension(ndof),intent(out),depend(ndof) :: indices
+         end subroutine getcgnsmeshindices
+         
+         subroutine setgrid(grid,ndof)
+           real(kind=realtype) dimension(ndof),intent(in) :: grid
+           integer(kind=inttype) optional,intent(in),check(len(grid)>=ndof),depend(grid) :: ndof=len(grid)
+         end subroutine setgrid
+         
+         subroutine getgrid(grid,ndof) 
+           real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: grid
+           integer(kind=inttype) intent(in) :: ndof
+         end subroutine getgrid
+       end module warping
+       
+       module surfaceutils
+
+         subroutine getsurfacesize(npts, ncells, famlist, n) 
+           integer(kind=inttype) intent(out) :: npts
+           integer(kind=inttype) intent(out) :: ncells
+           integer(kind=inttype) dimension(n),intent(in) :: famlist
+           integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
+         end subroutine getsurfacesize
+         
+         subroutine getsurfaceconnectivity(conn,ncell) 
+           integer(kind=inttype) dimension(4 * ncell),intent(inout) :: conn
+           integer(kind=inttype) optional,intent(in),check((len(conn))/(4)>=ncell),depend(conn) :: ncell=(len(conn))/(4)
+         end subroutine getsurfaceconnectivity
+         
+         subroutine getsurfacepoints(points,npts,sps_in) 
+           integer(kind=inttype), intent(in) :: sps_in
+           real(kind=realtype) dimension(3,npts),intent(inout) :: points
+           integer(kind=inttype) optional,intent(in),check(shape(points,1)==npts),depend(points) :: npts=shape(points,1)
+         end subroutine getsurfacepoints
+
+         subroutine mapvector(vec1,n1,famlist1,nf1,vec2,n2,famlist2,nf2)
+           real(kind=realtype) dimension(3,n1),intent(in) :: vec1
+           integer(kind=inttype), optional,check(shape(vec1,1)==n1),depend(vec1) :: n1=shape(vec1,1)
+           integer(kind=inttype) dimension(nf1),intent(in) :: famlist1
+           integer(kind=inttype), optional,check(len(famlist1)>=nf1),depend(famlist1) :: nf1=len(famlist1)
+           real(kind=realtype) dimension(3,n2),intent(inout) :: vec2
+           integer(kind=inttype), optional,check(shape(vec2,1)==n2),depend(vec2) :: n2=shape(vec2,1)
+           integer(kind=inttype) dimension(nf2),intent(in) :: famlist2
+           integer(kind=inttype), optional,check(len(famlist2)>=nf2),depend(famlist2) :: nf2=len(famlist2)
+         end subroutine mapvector
+
+         subroutine setfamilyinfo(famlist,n) ! in :test:getForces.F90
+           integer(kind=inttype) dimension(n),intent(in) :: famlist
+           integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
+         end subroutine setfamilyinfo
+         
+       end module surfaceutils
+
 ! ================ bare subroutines =============
 
        subroutine addparaslice(slicename,pt,direction,famlist,n) ! in :test:liftDistribution.F90
@@ -249,7 +306,6 @@ python module libsumb
        end subroutine writeliftdistributionfile
 
       
-
        subroutine preprocessing ! in :sumb:../../preprocessing/preprocessing.f90
        end subroutine preprocessing
      
@@ -308,26 +364,10 @@ python module libsumb
        subroutine solvestate ! in :sumb:../../solver/solveState.F90
        end subroutine solvestate
 
-       subroutine checkwriteunsteadyinloop ! in :sumb:../../solver/solverUnsteady.F90
-       end subroutine checkwriteunsteadyinloop
-
-       subroutine checkwriteunsteadyendloop ! in :sumb:../../solver/solverUnsteady.F90
-       end subroutine checkwriteunsteadyendloop
-
-       subroutine getsolution(sps) ! in :test:getSolution.f90
+         subroutine getsolution(sps) ! in :test:getSolution.f90
          integer(kind=inttype) :: sps
         end subroutine getsolution
 
-        subroutine mapvector(vec1,n1,famlist1,nf1,vec2,n2,famlist2,nf2) ! in :test:liftDistribution.F90
-          real(kind=realtype) dimension(3,n1),intent(in) :: vec1
-          integer(kind=inttype), optional,check(shape(vec1,1)==n1),depend(vec1) :: n1=shape(vec1,1)
-          integer(kind=inttype) dimension(nf1),intent(in) :: famlist1
-          integer(kind=inttype), optional,check(len(famlist1)>=nf1),depend(famlist1) :: nf1=len(famlist1)
-          real(kind=realtype) dimension(3,n2),intent(inout) :: vec2
-          integer(kind=inttype), optional,check(shape(vec2,1)==n2),depend(vec2) :: n2=shape(vec2,1)
-          integer(kind=inttype) dimension(nf2),intent(in) :: famlist2
-          integer(kind=inttype), optional,check(len(famlist2)>=nf2),depend(famlist2) :: nf2=len(famlist2)
-        end subroutine mapvector
 
        ! ############################################################################
        ! Added by HDN
@@ -358,49 +398,11 @@ python module libsumb
        ! SUmb Mesh/Forces Interface Routines
        ! ############################################################################
 
-        subroutine setfamilyinfo(famlist,n) ! in :test:getForces.F90
-          integer(kind=inttype) dimension(n),intent(in) :: famlist
-          integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
-        end subroutine setfamilyinfo
-
-       subroutine getcgnsmeshindices(ndof,indices)
-         integer(kind=inttype) intent(in) :: ndof
-         integer(kind=inttype) dimension(ndof),intent(out),depend(ndof) :: indices
-       end subroutine getcgnsmeshindices
-
-       subroutine setgrid(grid,ndof) ! in :test:setGrid.f90
-         real(kind=realtype) dimension(ndof),intent(in) :: grid
-         integer(kind=inttype) optional,intent(in),check(len(grid)>=ndof),depend(grid) :: ndof=len(grid)
-       end subroutine setgrid
-
-       subroutine getgrid(grid,ndof) ! in :test:setGrid.f90
-            real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: grid
-            integer(kind=inttype) intent(in) :: ndof
-        end subroutine getgrid
-
-       subroutine getsurfacesize(npts, ncells, famlist, n) ! in :test:getForces.f90
-         integer(kind=inttype) intent(out) :: npts
-         integer(kind=inttype) intent(out) :: ncells
-         integer(kind=inttype) dimension(n),intent(in) :: famlist
-         integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
-       end subroutine getsurfacesize
-
-        subroutine getsurfaceconnectivity(conn,ncell) ! in :test:getForces.f90
-          integer(kind=inttype) dimension(4 * ncell),intent(inout) :: conn
-          integer(kind=inttype) optional,intent(in),check((len(conn))/(4)>=ncell),depend(conn) :: ncell=(len(conn))/(4)
-        end subroutine getsurfaceconnectivity
-
         subroutine getforces(forces,npts,sps_in) ! in :test:getForces.F90
             real(kind=realtype) dimension(3 * npts),intent(inout) :: forces
             integer(kind=inttype), optional,intent(in),check((len(forces))/(3)>=npts),depend(forces) :: npts=(len(forces))/(3)
             integer(kind=inttype) intent(in) :: sps_in
         end subroutine getforces
-
-        subroutine getsurfacepoints(points,npts,sps_in) ! in :test:getForces.f90
-          integer(kind=inttype), intent(in) :: sps_in
-          real(kind=realtype) dimension(3,npts),intent(inout) :: points
-          integer(kind=inttype) optional,intent(in),check(shape(points,1)==npts),depend(points) :: npts=shape(points,1)
-        end subroutine getsurfacepoints
 
        subroutine getareas(areas,pts,npts,sps_in,axis) ! in :test:getAreas.f90
          real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: areas
@@ -423,16 +425,7 @@ python module libsumb
          real(kind=realtype), dimension(*), intent(in) :: dtadvance
        end subroutine updatecoorfinemesh
 
-       
-
-       ! ############################################################################
-       ! SUmb ADjoint Debugging Routines
-       ! ############################################################################
-
-       subroutine determinestencil(lumped)
-         logical :: lumped 
-       end subroutine determinestencil
-       
+           
        ! ############################################################################
        ! SUmb ADjoint Core Routines
        ! ############################################################################
@@ -541,9 +534,7 @@ python module libsumb
           integer(kind=inttype), optional,check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
         end subroutine computematrixfreeproductbwdfast
 #endif
-       ! ------------- Misc --------------------
  
-
    
        
        ! ############################################################################
@@ -624,14 +615,6 @@ python module libsumb
          integer :: sumb_comm_world
          integer :: myid
          integer :: nproc
-         integer(kind=inttype) :: sendbuffersize_1to1
-         integer(kind=inttype) :: sendbuffersize
-         integer(kind=inttype) :: recvbuffersize_1to1
-         integer(kind=inttype) :: recvbuffersize
-         integer(kind=inttype) :: sendbuffersizeover
-         integer(kind=inttype) :: recvbuffersizeover
-         real(kind=realtype) allocatable,dimension(:) :: sendbuffer
-         real(kind=realtype) allocatable,dimension(:) :: recvbuffer
          integer allocatable,dimension(:) :: sendrequests
          integer allocatable,dimension(:) :: recvrequests
        end module communication
@@ -671,7 +654,6 @@ python module libsumb
        module inputio ! in :sumb:../../modules/inputParam.f90
          use constants
          character(len=maxstringlen) :: solfile
-         integer(kind=inttype) parameter,optional :: precisiondouble=2
          character(len=maxstringlen) :: surfacesolfile
          character(len=maxstringlen) :: slicesolfile ! TEMPORARY
          character(len=maxstringlen) :: liftdistributionfile ! TEMPORARY
@@ -688,7 +670,6 @@ python module libsumb
          logical :: writesymmetry
          logical :: writefarfield
          logical :: viscoussurfacevelocities
-         integer(kind=inttype) parameter,optional :: precisionsingle=1
          logical optional :: firstwrite=.true.
          character(len=maxstringlen) :: paramfile
          character(len=maxstringlen) :: forcedvolumefile

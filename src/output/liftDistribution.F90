@@ -188,6 +188,7 @@ subroutine writeSlicesFile(fileName, updateSurfaceData)
   use inputIteration
   use inputIO
   use surfaceFamilies
+  use surfaceUtils, only  : setWallFamilyList
   use utils, only : EChk
   implicit none
 
@@ -221,7 +222,7 @@ subroutine writeSlicesFile(fileName, updateSurfaceData)
         print "(a)", "#"
         print "(a)", "# Writing slices file(s) ..."
      endif
-     call setWallFamilyList(sps)
+     call setWallFamilyList
      do sps=1,nTimeIntervalsSpectral
 
         ! Gather the forces and nodes
@@ -955,6 +956,7 @@ subroutine computeSurfaceOutputNodalData(exch, includeTractions)
   use communication
   use inputPhysics
   use blockPointers
+  use surfaceUtils, only : getSurfacePoints, setFamilyInfo
   use surfaceFamilies, only: famGroups
   use utils, only : setPointers, EChk
   use sorting, only : bsearchIntegers
