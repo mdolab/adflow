@@ -8,7 +8,6 @@
 #      ******************************************************************
 
 SUBDIR_SRC    = src/modules       \
-	        src/partitioning  \
 	        src/solver        \
 	        src/metis-4.0     \
 	        src/output        \
