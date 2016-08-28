@@ -217,6 +217,7 @@ class SUMB(AeroSolver):
 
         self.sumb.partitioning.partitionandreadgrid(False)
         self.sumb.preprocessing()
+        self.sumb.tecplotio.initializeliftdistributiondata()
         self.sumb.initializeflow.initflow()
         self.sumb.preprocessingadjoint()
 
@@ -389,7 +390,8 @@ class SUMB(AeroSolver):
             self.nLiftDist + 1, groupTag, direction)
         self.nLiftDist += 1
 
-        self.sumb.addliftdistribution(nSegments, dirVec, dirInd, distName, famList)
+        self.sumb.tecplotio.addliftdistribution(
+            nSegments, dirVec, dirInd, distName, famList)
 
     def addSlices(self, direction, positions, sliceType='relative',
                   groupName=None):
@@ -453,11 +455,11 @@ class SUMB(AeroSolver):
             if sliceType == 'relative':
                 sliceName = 'Slice_%4.4d %s Para Init %s=%7.3f'% (
                     j, groupTag, direction, positions[i])
-                self.sumb.addparaslice(sliceName, tmp[i], dirVec, famList)
+                self.sumb.tecplotio.addparaslice(sliceName, tmp[i], dirVec, famList)
             else:
                 sliceName = 'Slice_%4.4d %s Absolute %s=%7.3f'% (
                     j, groupTag, direction, positions[i])
-                self.sumb.addabsslice(sliceName, tmp[i], dirVec, famList)
+                self.sumb.tecplotio.addabsslice(sliceName, tmp[i], dirVec, famList)
 
         self.nSlice += N
 
@@ -1414,7 +1416,8 @@ class SUMB(AeroSolver):
             sliceName = base + '_slices.dat'
             surfName = base + '_surf.dat'
         writeSurf = self.getOption('writeTecplotSurfaceSolution')
-        self.sumb.writetecplot(sliceName, True, liftName, True, surfName, writeSurf)
+        self.sumb.tecplotio.writetecplot(sliceName, True, liftName, True, 
+                                         surfName, writeSurf)
 
     def writeMeshFile(self, fileName):
         """Write the current mesh to a CGNS file. This call isn't used
@@ -1522,7 +1525,8 @@ class SUMB(AeroSolver):
         # Actual write command
         sliceName = ""
         surfName = ""
-        self.sumb.writetecplot(sliceName, False, fileName, True, surfName, False)
+        self.sumb.tecplotio.writetecplot(sliceName, False, fileName, True, 
+                                         surfName, False)
 
     def writeSlicesFile(self, fileName):
         """Evaluate and write the defined slice information to a
@@ -1541,7 +1545,8 @@ class SUMB(AeroSolver):
         # Actual write command
         sliceName = ""
         surfName = "" 
-        self.sumb.writetecplot(sliceName, False, fileName, True, surfName, False)
+        self.sumb.tecplotio.writetecplot(sliceName, False, fileName, True, 
+                                         surfName, False)
 
     def writeForceFile(self, fileName, TS=0, groupName=None,
                        cfdForcePts=None):
