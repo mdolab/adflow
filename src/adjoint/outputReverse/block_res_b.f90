@@ -85,8 +85,10 @@ subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad, &
   use walldistance_b, only : updatewalldistancesquickly, &
 & updatewalldistancesquickly_b, xsurf, xsurfd
   use inputdiscretization
-  use samodule_b
+  use sa_b
   use inputunsteady
+  use turbbcroutines_b
+  use turbutils_b
   use utils_b, only : terminate
   implicit none
 ! input arguments:

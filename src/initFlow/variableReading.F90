@@ -596,6 +596,7 @@ contains
     use sorting, only : bsearchStrings
     use flowVarRefState, only : muInf
     use inputPhysics, only : turbModel
+    use turbUtils, only : initKOmega
     implicit none
     !
     !      Subroutine argument.
@@ -931,6 +932,7 @@ contains
     use utils, only : setCGNSRealType, terminate
     use sorting, only : bsearchStrings
     use flowVarRefState, only : muInf, wInf
+    use turbUtils, only : saNuKnownEddyRatio
     implicit none
     !
     !      Subroutine argument.
@@ -947,8 +949,6 @@ contains
     real(kind=realType) :: nuScale, ratio, nu
 
     logical :: eddyVisPresent
-
-    real(kind=realType) :: saNuKnownEddyRatio
 
     ! Set the cell range to be copied from the buffer.
 

@@ -51,12 +51,12 @@ contains
 &   muinf, muinfd, gammainf, gammainfd, winf, winfd, nw, nwf, kpresent, &
 &   winf, winfd
     use flowutils_b, only : computegamma, computegamma_b, etot, etot_b
+    use turbutils_b, only : sanuknowneddyratio, sanuknowneddyratio_b
     implicit none
     integer(kind=inttype) :: sps, nn, mm, ierr
     real(kind=realtype) :: gm1, ratio
     real(kind=realtype) :: nuinf, ktmp, uinf2
     real(kind=realtype) :: nuinfd, ktmpd, uinf2d
-    real(kind=realtype) :: sanuknowneddyratio
     real(kind=realtype) :: vinf, zinf, tmp1(1), tmp2(1)
     real(kind=realtype) :: vinfd, zinfd, tmp1d(1), tmp2d(1)
     intrinsic sqrt
@@ -348,11 +348,11 @@ contains
 &   pref, rhoref, tref, muref, timeref, pinf, pinfcorr, rhoinf, uinf, &
 &   rgas, muinf, gammainf, winf, nw, nwf, kpresent, winf
     use flowutils_b, only : computegamma, etot
+    use turbutils_b, only : sanuknowneddyratio
     implicit none
     integer(kind=inttype) :: sps, nn, mm, ierr
     real(kind=realtype) :: gm1, ratio
     real(kind=realtype) :: nuinf, ktmp, uinf2
-    real(kind=realtype) :: sanuknowneddyratio
     real(kind=realtype) :: vinf, zinf, tmp1(1), tmp2(1)
     intrinsic sqrt
 ! compute the dimensional viscosity from sutherland's law

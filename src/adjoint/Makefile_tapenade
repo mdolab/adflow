@@ -69,32 +69,14 @@ ALL_RES_FILES =	$(SRC)/adjoint/residualInput/block_res.F90\
 		$(SRC)/solver/vectorRotation.f90\
 		$(SRC)/solver/slipVelocities.F90\
 		$(SRC)/solver/viscousFlux.F90\
-		$(SRC)/solver/utauWF.F90\
 		$(SRC)/solver/gridVelocitiesFineLevel.F90\
 		$(SRC)/solver/normalVelocities.F90\
 		$(SRC)/solver/forcesAndMoments.F90\
 		$(SRC)/initFlow/initializeFlow.F90\
-		$(SRC)/turbulence/computeEddyViscosity.F90\
-		$(SRC)/turbulence/curveFit.f90\
-		$(SRC)/turbulence/turbBCNSWall.f90\
+		$(SRC)/turbulence/turbUtils.F90\
+		$(SRC)/turbulence/turbBCRoutines.F90\
 		$(SRC)/turbulence/turbMod.F90\
-		$(SRC)/turbulence/saNuFromEddyRatio.f90\
-		$(SRC)/turbulence/saModule.F90\
-		$(SRC)/turbulence/prodKatoLaunder.F90\
-		$(SRC)/turbulence/prodSmag2.F90\
-		$(SRC)/turbulence/prodWmag2.F90\
-		$(SRC)/turbulence/turbAdvection.F90\
-		$(SRC)/turbulence/unsteadyTurbTerm.f90\
-		$(SRC)/turbulence/bcTurbSymm.f90\
-		$(SRC)/turbulence/bcTurbWall.F90\
-		$(SRC)/turbulence/bcTurbFarfield.f90\
-		$(SRC)/turbulence/unsteadyTurbSpectral.F90\
-		$(SRC)/turbulence/bcTurbTreatment.F90\
-		$(SRC)/turbulence/bcTurbInterface.f90\
-		$(SRC)/turbulence/applyAllTurbBC.F90\
-		$(SRC)/turbulence/bcEddyWall.f90\
-		$(SRC)/turbulence/bcEddyNoWall.f90\
-		$(SRC)/turbulence/turb2ndHalo.f90\
+		$(SRC)/turbulence/sa.F90\
 		$(SRC)/utils/flowUtils.F90\
 		$(SRC)/utils/utils.F90\
 		$(SRC)/utils/sorting.F90\
@@ -169,7 +151,7 @@ xhalo_block(x)>(x)" \
 	sed -i 's/do ii1=1,size(bcdata(ii1)%f, 1)/do ii1=1,size(bcdata)/' outputReverse/block_res_b.f90
 	sed -i 's/do ii1=size(bcdata(ii1)%f, 1),1,-1/do ii1=size(bcdata),1,-1/' outputReverse/block_res_b.f90
 	sed -i 's/do ii1=1,size(bcdatad(ii1)%norm, 1)/do ii1=1,size(bcdatad)/' outputReverse/bcroutines_b.f90
-	sed -i 's/end subroutine sa_block_b/deallocate(qq)\nend subroutine sa_block_b/' outputReverse/samodule_b.f90
+	sed -i 's/end subroutine sa_block_b/deallocate(qq)\nend subroutine sa_block_b/' outputReverse/sa_b.f90
 
 ad_reverse_fast:
 # First delete the holding directory if it exists
@@ -206,14 +188,14 @@ ad_reverse_fast:
 	BCRoutines%bcEulerWall(ww1, ww2, pp1, pp2, pp3, rlv1, rlv2, rev1, rev2)>\
 			      (ww1, ww2, pp1, pp2, pp3, rlv1, rlv2, rev1, rev2) \
 	computePressureSimple(w, p)>(w,p) \
-	prodsmag2(w,scratch)>(w, scratch) \
-	prodwmag2(w,scratch)>(w, scratch) \
-	prodKatoLaunder(w,scratch)>(w, scratch) \
-	saModule%saSource(scratch,w,rlv)>(scratch,w,rlv) \
-	saModule%saViscous(scratch, w,rlv)>(scratch,w,rlv) \
-	saModule%saResScale(scratch)>(dw) \
-	saEddyViscosity(w,rlv)>(w,rlv,rev) \
-	turbAdvection(w,scratch)>(w,scratch)" \
+	turbutils%prodsmag2(w,scratch)>(w, scratch) \
+	turbutils%prodwmag2(w,scratch)>(w, scratch) \
+	turbutils%prodKatoLaunder(w,scratch)>(w, scratch) \
+	sa%saSource(scratch,w,rlv)>(scratch,w,rlv) \
+	sa%saViscous(scratch, w,rlv)>(scratch,w,rlv) \
+	sa%saResScale(scratch)>(dw) \
+	turbutils%saEddyViscosity(w,rlv)>(w,rlv,rev) \
+	turbutils%turbAdvection(w,scratch)>(w,scratch)" \
 	-adjvarname %d \
 	-adjfuncname %_fast_b \
 	-reverse $(TAPENADE_PRECISION) \
@@ -248,9 +230,9 @@ ad_reverse_spatial:
 	prodsmag2(vol, si, sj, sk, scratch)>(vol, si, sj, sk, scratch) \
 	prodwmag2(vol, si, sj, sk, scratch)>(vol, si, sj, sk, scratch) \
 	prodKatoLaunder(vol, si, sj, sk, scratch)>(vol, si, sj, sk, scratch) \
-	saModule%saSource(scratch,d2wall)>(scratch,d2wall) \
-	saModule%saViscous(scratch, vol, si, sj, sk)>(scratch, vol, si, sj, sk) \
-	saModule%saResScale(scratch, vol)>(dw) \
+	sa%saSource(scratch,d2wall)>(scratch,d2wall) \
+	sa%saViscous(scratch, vol, si, sj, sk)>(scratch, vol, si, sj, sk) \
+	sa%saResScale(scratch, vol)>(dw) \
 	resScale(dw, fw, vol)>(dw) \
 	BCRoutines%bcSymm1stHalo(ww2, ww3, pp2, pp3, rlv2, rlv3, rev2, rev3 bcData%norm)>\
 			 (ww0, ww1, pp0, pp1, rlv0, rlv1, rev0, rev1) \

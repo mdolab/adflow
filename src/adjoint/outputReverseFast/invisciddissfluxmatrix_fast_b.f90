@@ -6,12 +6,6 @@
 !   with respect to varying inputs: *p *w *fw
 !   rw status of diff variables: *p:incr *w:incr *fw:in-out
 !   plus diff mem management of: p:in w:in fw:in
-!
-!       file:          invisciddissfluxmatrix.f90                      
-!       author:        edwin van der weide                             
-!       starting date: 03-25-2003                                      
-!       last modified: 10-29-2007                                      
-!
 subroutine invisciddissfluxmatrix_fast_b()
 !
 !       invisciddissfluxmatrix computes the matrix artificial          
