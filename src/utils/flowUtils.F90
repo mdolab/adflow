@@ -839,6 +839,48 @@ contains
 
   end subroutine eint
 
+  subroutine computePressureSimple
+
+    ! Compute the pressure on a block with the pointers already set. This
+    ! routine is used by the forward mode AD code only. 
+
+    use constants
+    use blockPointers
+    use flowVarRefState
+    use inputPhysics
+    implicit none
+
+    ! Local Variables
+    integer(kind=intType) :: i, j, k, ii
+    real(kind=realType) :: gm1, v2
+
+    ! Compute the pressures
+    gm1 = gammaConstant - one
+
+#ifdef TAPENADE_FAST
+    !$AD II-LOOP
+    do ii=0,(ib+1)*(jb+1)*(kb+1)-1
+       i = mod(ii, ib+1) 
+       j = mod(ii/(ib+1), (jb+1))
+       k = ii/((ib+1)*(jb+1))
+#else
+       do k=0,kb
+          do j=0,jb
+             do i=0,ib
+#endif             
+                v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)**2
+                p(i, j, k) = gm1*(w(i, j, k, irhoE) - half*w( i, j, k, irho)*v2)
+                p(i, j, k) = max(p(i, j, k), 1.e-4_realType*pInfCorr)
+
+#ifdef TAPENADE_FAST
+             end do
+#else
+          end do
+       end do
+    end do
+#endif
+  end subroutine computePressureSimple
+
   subroutine computePressure(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd, &
        pointerOffset)
     !
@@ -1107,6 +1149,817 @@ contains
     end select
 
   end subroutine computePressure
+
+subroutine computeLamViscosity
+  !
+  !       computeLamViscosity computes the laminar viscosity ratio in    
+  !       the owned cell centers of the given block. Sutherland's law is 
+  !       used. It is assumed that the pointes already point to the      
+  !       correct block before entering this subroutine.                 
+  !
+  use blockPointers
+  use constants
+  use flowVarRefState
+  use inputPhysics
+  use iteration
+  use utils, only : getCorrectForK
+  implicit none
+  !
+  !      Local parameter.
+  !
+  real(kind=realType), parameter :: twoThird = two*third
+  !
+  !      Local variables.
+  !
+  integer(kind=intType) :: i, j, k, ii
+  real(kind=realType)   :: muSuth, TSuth, SSuth, T, pp
+  logical               :: correctForK
+
+  ! Return immediately if no laminar viscosity needs to be computed.
+
+  if(.not. viscous ) return
+
+  ! Determine whether or not the pressure must be corrected
+  ! for the presence of the turbulent kinetic energy.
+
+  correctForK = getCorrectForK()
+
+  ! Compute the nonDimensional constants in sutherland's law.
+
+  muSuth = muSuthDim/muRef
+  TSuth  = TSuthDim/Tref
+  SSuth  = SSuthDim/Tref
+
+  ! Substract 2/3 rho k, which is a part of the normal turbulent
+  ! stresses, in case the pressure must be corrected.
+
+  if( correctForK ) then
+#ifdef TAPENADE_FAST
+     !$AD II-LOOP
+     do ii=0,ie*je*ke - 1
+        i = mod(ii, ie) + 1
+        j = mod(ii/ie, je) + 1
+        k = ii/(ie*je) + 1
+#else
+        do k=1,ke
+           do j=1,je
+              do i=1,ie
+#endif             
+                 pp = p(i,j,k) - twoThird*w(i,j,k,irho)*w(i,j,k,itu1)
+
+                 T = pp/(RGas*w(i,j,k,irho))
+                 rlv(i,j,k) = muSuth*((TSuth + SSuth)/(T + SSuth)) &
+                      * ((T/TSuth)**1.5_realType)
+#ifdef TAPENADE_FAST
+              end do
+#else
+           enddo
+        enddo
+     enddo
+#endif   
+  else
+     ! Loop over the owned cells *AND* first level halos of this
+     ! block and compute the laminar viscosity ratio.
+#ifdef TAPENADE_FAST
+     !$AD II-LOOP
+     do ii=0,ie*je*ke - 1
+        i = mod(ii, ie) + 1
+        j = mod(ii/ie, je) + 1
+        k = ii/(ie*je) + 1
+#else
+        do k=1,ke
+           do j=1,je
+              do i=1,ie
+#endif             
+                 ! Compute the nonDimensional temperature and the
+                 ! nonDimensional laminar viscosity.
+
+                 T = p(i,j,k)/(RGas*w(i,j,k,irho))
+                 rlv(i,j,k) = muSuth*((TSuth + SSuth)/(T + SSuth)) &
+                      * ((T/TSuth)**1.5_realType)
+#ifdef TAPENADE_FAST
+              end do
+#else
+           enddo
+        enddo
+     enddo
+#endif   
+  end if
+end subroutine computeLamViscosity
+
+
+subroutine adjustInflowAngle(alpha, beta, liftIndex)
+
+  use constants
+  use inputPhysics
+
+  implicit none
+
+  !Subroutine Vars
+  real(kind=realType), intent(in) :: alpha, beta
+  integer(kind=intType), intent(in) :: liftIndex
+
+  !Local Vars
+  real(kind=realType), dimension(3) :: refDirection
+
+  ! Velocity direction given by the rotation of a unit vector
+  ! initially aligned along the positive x-direction (1,0,0)
+  ! 1) rotate alpha radians cw about y or z-axis
+  ! 2) rotate beta radians ccw about z or y-axis
+
+  refDirection(:) = zero
+  refDirection(1) = one
+  call getDirVector(refDirection, alpha, beta, velDirFreestream,&
+       liftIndex)
+
+  ! Drag direction given by the rotation of a unit vector
+  ! initially aligned along the positive x-direction (1,0,0)
+  ! 1) rotate alpha radians cw about y or z-axis
+  ! 2) rotate beta radians ccw about z or y-axis
+
+  refDirection(:) = zero
+  refDirection(1) = one
+  call getDirVector(refDirection, alpha, beta, dragDirection, &
+       liftIndex)
+
+  ! Lift direction given by the rotation of a unit vector
+  ! initially aligned along the positive z-direction (0,0,1)
+  ! 1) rotate alpha radians cw about y or z-axis
+  ! 2) rotate beta radians ccw about z or y-axis
+
+  refDirection(:) = zero
+  refDirection(liftIndex) = one
+
+  call getDirVector(refDirection, alpha, beta,liftDirection, liftIndex)
+
+end subroutine adjustInflowAngle
+
+       subroutine derivativeRotMatrixRigid(rotationMatrix, &
+                                           rotationPoint, t)
+!
+!       derivativeRotMatrixRigid determines the derivative of the      
+!       rotation matrix at the given time for the rigid body rotation, 
+!       such that the grid velocities can be determined analytically.  
+!       Also the rotation point of the current time level is           
+!       determined. This value can change due to translation of the    
+!       entire grid.                                                   
+!
+       use constants
+       use flowVarRefState
+       use inputMotion
+       use monitor
+       use utils, only : rigidRotAngle, derivativeRigidRotAngle
+       implicit none
+!
+!      Subroutine arguments.
+!
+       real(kind=realType), intent(in) :: t
+
+       real(kind=realType), dimension(3),   intent(out) :: rotationPoint
+       real(kind=realType), dimension(3,3), intent(out) :: rotationMatrix
+!
+!      Local variables.
+!
+       integer(kind=intType) :: i, j
+
+       real(kind=realType) :: phi, dphiX, dphiY, dphiZ
+       real(kind=realType) :: cosX, cosY, cosZ, sinX, sinY, sinZ
+
+       real(kind=realType), dimension(3,3) :: dm, m
+
+       ! Determine the rotation angle around the x-axis for the new
+       ! time level and the corresponding values of the sine and cosine.
+
+       phi = rigidRotAngle(degreePolXRot,   coefPolXRot,      &
+                           degreeFourXRot,  omegaFourXRot,    &
+                           cosCoefFourXRot, sinCoefFourXRot, t)
+       sinX = sin(phi)
+       cosX = cos(phi)
+       ! Idem for the y-axis.
+
+       phi = rigidRotAngle(degreePolYRot,   coefPolYRot,      &
+                           degreeFourYRot,  omegaFourYRot,    &
+                           cosCoefFourYRot, sinCoefFourYRot, t)
+       sinY = sin(phi)
+       cosY = cos(phi)
+       ! Idem for the z-axis.
+
+       phi = rigidRotAngle(degreePolZRot,   coefPolZRot,      &
+                           degreeFourZRot,  omegaFourZRot,    &
+                           cosCoefFourZRot, sinCoefFourZRot, t)
+       sinZ = sin(phi)
+       cosZ = cos(phi)
+       ! Compute the time derivative of the rotation angles around the
+       ! x-axis, y-axis and z-axis.
+
+       dphiX = derivativeRigidRotAngle(degreePolXRot,   &
+                                       coefPolXRot,     &
+                                       degreeFourXRot,  &
+                                       omegaFourXRot,   &
+                                       cosCoefFourXRot, &
+                                       sinCoefFourXRot, t)
+
+       dphiY = derivativeRigidRotAngle(degreePolYRot,   &
+                                       coefPolYRot,     &
+                                       degreeFourYRot,  &
+                                       omegaFourYRot,   &
+                                       cosCoefFourYRot, &
+                                       sinCoefFourYRot, t)
+
+       dphiZ = derivativeRigidRotAngle(degreePolZRot,   &
+                                       coefPolZRot,     &
+                                       degreeFourZRot,  &
+                                       omegaFourZRot,   &
+                                       cosCoefFourZRot, &
+                                       sinCoefFourZRot, t)
+
+       ! Compute the time derivative of the rotation matrix applied to
+       ! the coordinates at t == 0.
+
+       ! Part 1. Derivative of the z-rotation matrix multiplied by the
+       ! x and y rotation matrix, i.e. dmz * my * mx
+
+       dm(1,1) = -cosY*sinZ*dphiZ
+       dm(1,2) = (-cosX*cosZ - sinX*sinY*sinZ)*dphiZ
+       dm(1,3) = ( sinX*cosZ - cosX*sinY*sinZ)*dphiZ
+
+       dm(2,1) = cosY*cosZ*dphiZ
+       dm(2,2) = (sinX*sinY*cosZ - cosX*sinZ)*dphiZ
+       dm(2,3) = (cosX*sinY*cosZ + sinX*sinZ)*dphiZ
+
+       dm(3,1) = zero
+       dm(3,2) = zero
+       dm(3,3) = zero
+
+       ! Part 2: mz * dmy * mx.
+
+       dm(1,1) = dm(1,1) - sinY*cosZ*dphiY
+       dm(1,2) = dm(1,2) + sinX*cosY*cosZ*dphiY
+       dm(1,3) = dm(1,3) + cosX*cosY*cosZ*dphiY
+
+       dm(2,1) = dm(2,1) - sinY*sinZ*dphiY
+       dm(2,2) = dm(2,2) + sinX*cosY*sinZ*dphiY
+       dm(2,3) = dm(2,3) + cosX*cosY*sinZ*dphiY
+
+       dm(3,1) = dm(3,1) - cosY*dphiY
+       dm(3,2) = dm(3,2) - sinX*sinY*dphiY
+       dm(3,3) = dm(3,3) - cosX*sinY*dphiY
+
+       ! Part 3: mz * my * dmx
+
+       dm(1,2) = dm(1,2) + (sinX*sinZ + cosX*sinY*cosZ)*dphiX
+       dm(1,3) = dm(1,3) + (cosX*sinZ - sinX*sinY*cosZ)*dphiX
+
+       dm(2,2) = dm(2,2) + (cosX*sinY*sinZ - sinX*cosZ)*dphiX
+       dm(2,3) = dm(2,3) - (sinX*sinY*sinZ + cosX*cosZ)*dphiX
+
+       dm(3,2) = dm(3,2) + cosX*cosY*dphiX
+       dm(3,3) = dm(3,3) - sinX*cosY*dphiX
+
+       ! Determine the rotation matrix at t == t.
+
+       m(1,1) =  cosY*cosZ
+       m(2,1) =  cosY*sinZ
+       m(3,1) = -sinY
+
+       m(1,2) = sinX*sinY*cosZ - cosX*sinZ
+       m(2,2) = sinX*sinY*sinZ + cosX*cosZ
+       m(3,2) = sinX*cosY
+
+       m(1,3) = cosX*sinY*cosZ + sinX*sinZ
+       m(2,3) = cosX*sinY*sinZ - sinX*cosZ
+       m(3,3) = cosX*cosY
+
+       ! Determine the matrix product dm * inverse(m), which will give
+       ! the derivative of the rotation matrix when applied to the
+       ! current coordinates. Note that inverse(m) == transpose(m).
+
+       do j=1,3
+         do i=1,3
+           rotationMatrix(i,j) = dm(i,1)*m(j,1) + dm(i,2)*m(j,2) &
+                               + dm(i,3)*m(j,3)
+         enddo
+       enddo
+
+       ! Determine the rotation point at the new time level; it is
+       ! possible that this value changes due to translation of the grid.
+
+    !  aInf = sqrt(gammaInf*pInf/rhoInf)
+
+    !  RotationPoint(1) = LRef*rotPoint(1) &
+    !                    + MachGrid(1)*aInf*t/timeRef
+    !  rotationPoint(2) = LRef*rotPoint(2) &
+    !                    + MachGrid(2)*aInf*t/timeRef
+    !  rotationPoint(3) = LRef*rotPoint(3) &
+    !                    + MachGrid(3)*aInf*t/timeRef
+
+       rotationPoint(1) = LRef*rotPoint(1)
+       rotationPoint(2) = LRef*rotPoint(2)
+       rotationPoint(3) = LRef*rotPoint(3)
+
+       end subroutine derivativeRotMatrixRigid
+
+
+      subroutine getDirVector(refDirection, alpha, beta,&
+           windDirection,liftIndex)
+        !(xb,yb,zb,alpha,beta,xw,yw,zw)
+!
+!      Convert the angle of attack and side slip angle to wind axes.  
+!      The components of the wind direction vector (xw,yw,zw) are     
+!      computed given the direction angles in radians and the body    
+!      direction by performing two rotations on the original          
+!      direction vector:                                              
+!        1) Rotation about the zb or yb-axis: alpha clockwise (CW)    
+!           (xb,yb,zb) -> (x1,y1,z1)                                  
+!        2) Rotation about the yl or z1-axis: beta counter-clockwise  
+!           (CCW)  (x1,y1,z1) -> (xw,yw,zw)                           
+!         input arguments:                                            
+!            alpha    = angle of attack in radians                    
+!            beta     = side slip angle in radians                    
+!            refDirection = reference direction vector                
+!         output arguments:                                           
+!            windDirection = unit wind vector in body axes            
+!
+      use constants
+      use utils, only : terminate
+      implicit none
+!
+!     Subroutine arguments.
+!
+      real(kind=realType),dimension(3), intent(in)  :: refDirection
+      real(kind=realType)  :: alpha, beta
+      real(kind=realType),dimension (3), intent(out) :: windDirection
+      integer(kind=intType)::liftIndex
+!
+!     Local variables.
+!
+      real(kind=realType) :: rnorm,x1,y1,z1,xbn,ybn,zbn,xw,yw,zw
+      real(kind=realType) :: tmp
+
+      ! Normalize the input vector.
+
+      rnorm = sqrt( refDirection(1)**2 + refDirection(2)**2 + refDirection(3)**2 )
+      xbn = refDirection(1) / rnorm
+      ybn = refDirection(2) / rnorm
+      zbn = refDirection(3) / rnorm
+
+!!$      ! Compute the wind direction vector.
+!!$
+!!$      ! 1) rotate alpha radians cw about y-axis
+!!$      !    ( <=> rotate y-axis alpha radians ccw)
+!!$
+!!$      call vectorRotation(x1, y1, z1, 2, alpha, xbn, ybn, zbn)
+!!$
+!!$      ! 2) rotate beta radians ccw about z-axis
+!!$      !    ( <=> rotate z-axis -beta radians ccw)
+!!$
+!!$      call vectorRotation(xw, yw, zw, 3, -beta, x1, y1, z1)
+
+      if (liftIndex==2)then
+         ! Compute the wind direction vector.Aerosurf axes different!!
+         
+         ! 1) rotate alpha radians cw about z-axis
+         !    ( <=> rotate z-axis alpha radians ccw)
+         
+         tmp = -alpha
+         call vectorRotation(x1, y1, z1, 3, tmp, xbn, ybn, zbn)
+         
+         ! 2) rotate beta radians ccw about y-axis
+         !    ( <=> rotate z-axis -beta radians ccw)
+         tmp = -beta
+         call vectorRotation(xw, yw, zw, 2, tmp, x1, y1, z1)
+
+      elseif(liftIndex==3)then
+         ! Compute the wind direction vector.Aerosurf axes different!!
+         
+         ! 1) rotate alpha radians cw about z-axis
+         !    ( <=> rotate z-axis alpha radians ccw)
+         
+         call vectorRotation(x1, y1, z1, 2, alpha, xbn, ybn, zbn)
+         
+         ! 2) rotate beta radians ccw about y-axis
+         !    ( <=> rotate z-axis -beta radians ccw)
+         
+         call vectorRotation(xw, yw, zw, 3, beta, x1, y1, z1)
+         
+         
+      else
+         call terminate('getDirVector', 'Invalid Lift Direction')
+         
+      endif
+      
+      windDirection(1) = xw
+      windDirection(2) = yw
+      windDirection(3) = zw
+      
+      end subroutine getDirVector
+      subroutine vectorRotation(xp, yp, zp, iaxis, angle, x, y, z)
+!
+!      vectorRotation rotates a given vector with respect to a      
+!      specified axis by a given angle.                             
+!         input arguments:                                          
+!            iaxis      = rotation axis (1-x, 2-y, 3-z)             
+!            angle      = rotation angle (measured ccw in radians)  
+!            x, y, z    = coordinates in original system            
+!         output arguments:                                         
+!            xp, yp, zp = coordinates in rotated system             
+!
+      use precision
+      implicit none
+!
+!     Subroutine arguments.
+!
+      integer(kind=intType), intent(in) :: iaxis
+      real(kind=realType), intent(in)   :: angle, x, y, z
+      real(kind=realType), intent(out)  :: xp, yp, zp
+
+      ! rotation about specified axis by specified angle
+
+      select case(iaxis)
+
+        ! rotation about the x-axis
+
+        case(1)
+          xp =        1.    * x +     0.     * y +     0.     * z
+          yp =        0.    * x + cos(angle) * y + sin(angle) * z
+          zp =        0.    * x - sin(angle) * y + cos(angle) * z
+
+        ! rotation about the y-axis
+
+        case(2)
+          xp =   cos(angle) * x +     0.     * y - sin(angle) * z
+          yp =        0.    * x +     1.     * y +     0.     * z
+          zp =   sin(angle) * x +     0.     * y + cos(angle) * z
+
+        ! rotation about the z-axis
+
+        case(3)
+          xp =   cos(angle) * x + sin(angle) * y +     0.     * z
+          yp = - sin(angle) * x + cos(angle) * y +     0.     * z
+          zp =       0.     * x +     0.     * y +     1.     * z
+
+        case default
+          write(*,*) "vectorRotation called with invalid arguments"
+          stop
+
+      end select
+
+      end subroutine vectorRotation
+
+subroutine allNodalGradients
+  !
+  !         nodalGradients computes the nodal velocity gradients and     
+  !         minus the gradient of the speed of sound squared. The minus  
+  !         sign is present, because this is the definition of the heat  
+  !         flux. These gradients are computed for all nodes.            
+  !
+  use constants
+  use blockPointers
+  implicit none
+  !        Local variables.
+  integer(kind=intType) :: i, j, k
+  integer(kind=intType) :: k1, kk
+  integer(kind=intType) :: istart, iend, isize, ii
+  integer(kind=intType) :: jstart, jend, jsize
+  integer(kind=intType) :: kstart, kend, ksize
+
+  real(kind=realType) :: oneOverV, ubar, vbar, wbar, a2
+  real(kind=realType) :: sx, sx1, sy, sy1, sz, sz1
+
+
+  ! Zero all nodeal gradients:
+  ux = zero; uy = zero; uz = zero;
+  vx = zero; vy = zero; vz = zero;
+  wx = zero; wy = zero; wz = zero;
+  qx = zero; qy = zero; qz = zero;
+
+  ! First part. Contribution in the k-direction.
+  ! The contribution is scattered to both the left and right node
+  ! in k-direction.
+
+#ifdef TAPENADE_FAST
+  !$AD II-LOOP
+  do ii=0,il*jl*ke-1
+     i = mod(ii, il) + 1
+     j = mod(ii/il, jl) + 1
+     k = ii/(il*jl) + 1
+#else
+     do k=1, ke
+        do j=1, jl
+           do i=1, il
+#endif      
+              ! Compute 8 times the average normal for this part of
+              ! the control volume. The factor 8 is taken care of later
+              ! on when the division by the volume takes place.
+
+              sx = sk(i,j,k-1,  1) + sk(i+1,j,k-1,  1) &
+                   + sk(i,j+1,k-1,1) + sk(i+1,j+1,k-1,1) &
+                   + sk(i,j,  k,  1) + sk(i+1,j,  k,  1) &
+                   + sk(i,j+1,k  ,1) + sk(i+1,j+1,k  ,1)
+              sy = sk(i,j,k-1,  2) + sk(i+1,j,k-1,  2) &
+                   + sk(i,j+1,k-1,2) + sk(i+1,j+1,k-1,2) &
+                   + sk(i,j,  k,  2) + sk(i+1,j,  k,  2) &
+                   + sk(i,j+1,k  ,2) + sk(i+1,j+1,k  ,2)
+              sz = sk(i,j,k-1,  3) + sk(i+1,j,k-1,  3) &
+                   + sk(i,j+1,k-1,3) + sk(i+1,j+1,k-1,3) &
+                   + sk(i,j,  k,  3) + sk(i+1,j,  k,  3) &
+                   + sk(i,j+1,k  ,3) + sk(i+1,j+1,k  ,3)
+
+              ! Compute the average velocities and speed of sound squared
+              ! for this integration point. Node that these variables are
+              ! stored in w(ivx), w(ivy), w(ivz) and p.
+
+              ubar = fourth*(w(i,j,  k,ivx) + w(i+1,j,  k,ivx) &
+                   +         w(i,j+1,k,ivx) + w(i+1,j+1,k,ivx))
+              vbar = fourth*(w(i,j,  k,ivy) + w(i+1,j,  k,ivy) &
+                   +         w(i,j+1,k,ivy) + w(i+1,j+1,k,ivy))
+              wbar = fourth*(w(i,j,  k,ivz) + w(i+1,j,  k,ivz) &
+                   +         w(i,j+1,k,ivz) + w(i+1,j+1,k,ivz))
+
+              a2 = fourth*(aa(i,j,k) + aa(i+1,j,k) + aa(i,j+1,k) + aa(i+1,j+1,k))
+
+
+              ! Add the contributions to the surface integral to the node
+              ! j-1 and substract it from the node j. For the heat flux it
+              ! is reversed, because the negative of the gradient of the
+              ! speed of sound must be computed.
+
+              if(k > 1) then
+                 ux(i,j,k-1) = ux(i,j,k-1) + ubar*sx
+                 uy(i,j,k-1) = uy(i,j,k-1) + ubar*sy
+                 uz(i,j,k-1) = uz(i,j,k-1) + ubar*sz
+
+                 vx(i,j,k-1) = vx(i,j,k-1) + vbar*sx
+                 vy(i,j,k-1) = vy(i,j,k-1) + vbar*sy
+                 vz(i,j,k-1) = vz(i,j,k-1) + vbar*sz
+
+                 wx(i,j,k-1) = wx(i,j,k-1) + wbar*sx
+                 wy(i,j,k-1) = wy(i,j,k-1) + wbar*sy
+                 wz(i,j,k-1) = wz(i,j,k-1) + wbar*sz
+
+                 qx(i,j,k-1) = qx(i,j,k-1) - a2*sx
+                 qy(i,j,k-1) = qy(i,j,k-1) - a2*sy
+                 qz(i,j,k-1) = qz(i,j,k-1) - a2*sz
+              endif
+
+              if(k < ke) then
+                 ux(i,j,k) = ux(i,j,k) - ubar*sx
+                 uy(i,j,k) = uy(i,j,k) - ubar*sy
+                 uz(i,j,k) = uz(i,j,k) - ubar*sz
+
+                 vx(i,j,k) = vx(i,j,k) - vbar*sx
+                 vy(i,j,k) = vy(i,j,k) - vbar*sy
+                 vz(i,j,k) = vz(i,j,k) - vbar*sz
+
+                 wx(i,j,k) = wx(i,j,k) - wbar*sx
+                 wy(i,j,k) = wy(i,j,k) - wbar*sy
+                 wz(i,j,k) = wz(i,j,k) - wbar*sz
+
+                 qx(i,j,k) = qx(i,j,k) + a2*sx
+                 qy(i,j,k) = qy(i,j,k) + a2*sy
+                 qz(i,j,k) = qz(i,j,k) + a2*sz
+              endif
+#ifdef TAPENADE_FAST
+           end do
+#else
+        enddo
+     enddo
+  enddo
+#endif   
+
+  ! Second part. Contribution in the j-direction.
+  ! The contribution is scattered to both the left and right node
+  ! in j-direction.
+
+#ifdef TAPENADE_FAST
+  !$AD II-LOOP
+  do ii=0,il*je*kl-1
+     i = mod(ii, il) + 1
+     j = mod(ii/il, je) + 1
+     k = ii/(il*je) + 1
+#else
+     do k=1, kl
+        do j=1, je
+           do i=1, il
+#endif   
+
+              ! Compute 8 times the average normal for this part of
+              ! the control volume. The factor 8 is taken care of later
+              ! on when the division by the volume takes place.
+
+              sx = sj(i,j-1,k,  1) + sj(i+1,j-1,k,  1) &
+                   + sj(i,j-1,k+1,1) + sj(i+1,j-1,k+1,1) &
+                   + sj(i,j,  k,  1) + sj(i+1,j,  k,  1) &
+                   + sj(i,j,  k+1,1) + sj(i+1,j,  k+1,1)
+              sy = sj(i,j-1,k,  2) + sj(i+1,j-1,k,  2) &
+                   + sj(i,j-1,k+1,2) + sj(i+1,j-1,k+1,2) &
+                   + sj(i,j,  k,  2) + sj(i+1,j,  k,  2) &
+                   + sj(i,j,  k+1,2) + sj(i+1,j,  k+1,2)
+              sz = sj(i,j-1,k,  3) + sj(i+1,j-1,k,  3) &
+                   + sj(i,j-1,k+1,3) + sj(i+1,j-1,k+1,3) &
+                   + sj(i,j,  k,  3) + sj(i+1,j,  k,  3) &
+                   + sj(i,j,  k+1,3) + sj(i+1,j,  k+1,3)
+
+              ! Compute the average velocities and speed of sound squared
+              ! for this integration point. Node that these variables are
+              ! stored in w(ivx), w(ivy), w(ivz) and p.
+
+              ubar = fourth*(w(i,j,k,  ivx) + w(i+1,j,k,  ivx) &
+                   +         w(i,j,k+1,ivx) + w(i+1,j,k+1,ivx))
+              vbar = fourth*(w(i,j,k,  ivy) + w(i+1,j,k,  ivy) &
+                   +         w(i,j,k+1,ivy) + w(i+1,j,k+1,ivy))
+              wbar = fourth*(w(i,j,k,  ivz) + w(i+1,j,k,  ivz) &
+                   +         w(i,j,k+1,ivz) + w(i+1,j,k+1,ivz))
+
+              a2 = fourth*(aa(i,j,k) + aa(i+1,j,k) + aa(i,j,k+1) + aa(i+1,j,k+1))
+
+              ! Add the contributions to the surface integral to the node
+              ! j-1 and substract it from the node j. For the heat flux it
+              ! is reversed, because the negative of the gradient of the
+              ! speed of sound must be computed.
+
+              if(j > 1) then
+                 ux(i,j-1,k) = ux(i,j-1,k) + ubar*sx
+                 uy(i,j-1,k) = uy(i,j-1,k) + ubar*sy
+                 uz(i,j-1,k) = uz(i,j-1,k) + ubar*sz
+
+                 vx(i,j-1,k) = vx(i,j-1,k) + vbar*sx
+                 vy(i,j-1,k) = vy(i,j-1,k) + vbar*sy
+                 vz(i,j-1,k) = vz(i,j-1,k) + vbar*sz
+
+                 wx(i,j-1,k) = wx(i,j-1,k) + wbar*sx
+                 wy(i,j-1,k) = wy(i,j-1,k) + wbar*sy
+                 wz(i,j-1,k) = wz(i,j-1,k) + wbar*sz
+
+                 qx(i,j-1,k) = qx(i,j-1,k) - a2*sx
+                 qy(i,j-1,k) = qy(i,j-1,k) - a2*sy
+                 qz(i,j-1,k) = qz(i,j-1,k) - a2*sz
+              endif
+
+              if(j < je) then
+                 ux(i,j,k) = ux(i,j,k) - ubar*sx
+                 uy(i,j,k) = uy(i,j,k) - ubar*sy
+                 uz(i,j,k) = uz(i,j,k) - ubar*sz
+
+                 vx(i,j,k) = vx(i,j,k) - vbar*sx
+                 vy(i,j,k) = vy(i,j,k) - vbar*sy
+                 vz(i,j,k) = vz(i,j,k) - vbar*sz
+
+                 wx(i,j,k) = wx(i,j,k) - wbar*sx
+                 wy(i,j,k) = wy(i,j,k) - wbar*sy
+                 wz(i,j,k) = wz(i,j,k) - wbar*sz
+
+                 qx(i,j,k) = qx(i,j,k) + a2*sx
+                 qy(i,j,k) = qy(i,j,k) + a2*sy
+                 qz(i,j,k) = qz(i,j,k) + a2*sz
+              endif
+#ifdef TAPENADE_FAST
+           end do
+#else
+        enddo
+     enddo
+  enddo
+#endif 
+
+  ! Third part. Contribution in the i-direction.
+  ! The contribution is scattered to both the left and right node
+  ! in i-direction.
+
+#ifdef TAPENADE_FAST
+  !$AD II-LOOP
+  do ii=0,ie*jl*kl-1
+     i = mod(ii, ie) + 1
+     j = mod(ii/ie, jl) + 1
+     k = ii/(ie*jl) + 1
+#else
+     do k=1,kl
+        do j=1,jl
+           do i=1,ie
+#endif   
+
+              ! Compute 8 times the average normal for this part of
+              ! the control volume. The factor 8 is taken care of later
+              ! on when the division by the volume takes place.
+
+              sx = si(i-1,j,k,  1) + si(i-1,j+1,k,  1) &
+                   + si(i-1,j,k+1,1) + si(i-1,j+1,k+1,1) &
+                   + si(i,  j,k,  1) + si(i,  j+1,k,  1) &
+                   + si(i,  j,k+1,1) + si(i,  j+1,k+1,1)
+              sy = si(i-1,j,k,  2) + si(i-1,j+1,k,  2) &
+                   + si(i-1,j,k+1,2) + si(i-1,j+1,k+1,2) &
+                   + si(i,  j,k,  2) + si(i,  j+1,k,  2) &
+                   + si(i,  j,k+1,2) + si(i,  j+1,k+1,2)
+              sz = si(i-1,j,k,  3) + si(i-1,j+1,k,  3) &
+                   + si(i-1,j,k+1,3) + si(i-1,j+1,k+1,3) &
+                   + si(i,  j,k,  3) + si(i,  j+1,k,  3) &
+                   + si(i,  j,k+1,3) + si(i,  j+1,k+1,3)
+
+              ! Compute the average velocities and speed of sound squared
+              ! for this integration point. Node that these variables are
+              ! stored in w(ivx), w(ivy), w(ivz) and p.
+
+              ubar = fourth*(w(i,j,k,  ivx) + w(i,j+1,k,  ivx) &
+                   +         w(i,j,k+1,ivx) + w(i,j+1,k+1,ivx))
+              vbar = fourth*(w(i,j,k,  ivy) + w(i,j+1,k,  ivy) &
+                   +         w(i,j,k+1,ivy) + w(i,j+1,k+1,ivy))
+              wbar = fourth*(w(i,j,k,  ivz) + w(i,j+1,k,  ivz) &
+                   +         w(i,j,k+1,ivz) + w(i,j+1,k+1,ivz))
+
+              a2 = fourth*(aa(i,j,k) + aa(i,j+1,k) + aa(i,j,k+1) + aa(i,j+1,k+1))
+
+              ! Add the contributions to the surface integral to the node
+              ! j-1 and substract it from the node j. For the heat flux it
+              ! is reversed, because the negative of the gradient of the
+              ! speed of sound must be computed.
+
+              if(i > 1) then
+                 ux(i-1,j,k) = ux(i-1,j,k) + ubar*sx
+                 uy(i-1,j,k) = uy(i-1,j,k) + ubar*sy
+                 uz(i-1,j,k) = uz(i-1,j,k) + ubar*sz
+
+                 vx(i-1,j,k) = vx(i-1,j,k) + vbar*sx
+                 vy(i-1,j,k) = vy(i-1,j,k) + vbar*sy
+                 vz(i-1,j,k) = vz(i-1,j,k) + vbar*sz
+
+                 wx(i-1,j,k) = wx(i-1,j,k) + wbar*sx
+                 wy(i-1,j,k) = wy(i-1,j,k) + wbar*sy
+                 wz(i-1,j,k) = wz(i-1,j,k) + wbar*sz
+
+                 qx(i-1,j,k) = qx(i-1,j,k) - a2*sx
+                 qy(i-1,j,k) = qy(i-1,j,k) - a2*sy
+                 qz(i-1,j,k) = qz(i-1,j,k) - a2*sz
+              endif
+
+              if(i < ie) then
+                 ux(i,j,k) = ux(i,j,k) - ubar*sx
+                 uy(i,j,k) = uy(i,j,k) - ubar*sy
+                 uz(i,j,k) = uz(i,j,k) - ubar*sz
+
+                 vx(i,j,k) = vx(i,j,k) - vbar*sx
+                 vy(i,j,k) = vy(i,j,k) - vbar*sy
+                 vz(i,j,k) = vz(i,j,k) - vbar*sz
+
+                 wx(i,j,k) = wx(i,j,k) - wbar*sx
+                 wy(i,j,k) = wy(i,j,k) - wbar*sy
+                 wz(i,j,k) = wz(i,j,k) - wbar*sz
+
+                 qx(i,j,k) = qx(i,j,k) + a2*sx
+                 qy(i,j,k) = qy(i,j,k) + a2*sy
+                 qz(i,j,k) = qz(i,j,k) + a2*sz
+              endif
+#ifdef TAPENADE_FAST
+           end do
+#else
+        enddo
+     enddo
+  enddo
+#endif   
+  ! Divide by 8 times the volume to obtain the correct gradients.
+
+#ifdef TAPENADE_FAST
+  !$AD II-LOOP
+  do ii=0,il*jl*kl-1
+     i = mod(ii, il) + 1
+     j = mod(ii/il, jl) + 1
+     k = ii/(il*jl) + 1
+#else
+     do k=1,kl
+        do j=1,jl
+           do i=1,il
+#endif  
+              ! Compute the inverse of 8 times the volume for this node.
+
+              oneOverV = one/(vol(i,  j,  k) + vol(i,  j,  k+1) &
+                   +      vol(i+1,j,  k) + vol(i+1,j,  k+1) &
+                   +      vol(i,  j+1,k) + vol(i,  j+1,k+1) &
+                   +      vol(i+1,j+1,k) + vol(i+1,j+1,k+1))
+
+              ! Compute the correct velocity gradients and "unit" heat
+              ! fluxes. The velocity gradients are stored in ux, etc.
+
+              ux(i,j,k) = ux(i,j,k)*oneOverV
+              uy(i,j,k) = uy(i,j,k)*oneOverV
+              uz(i,j,k) = uz(i,j,k)*oneOverV
+
+              vx(i,j,k) = vx(i,j,k)*oneOverV
+              vy(i,j,k) = vy(i,j,k)*oneOverV
+              vz(i,j,k) = vz(i,j,k)*oneOverV
+
+              wx(i,j,k) = wx(i,j,k)*oneOverV
+              wy(i,j,k) = wy(i,j,k)*oneOverV
+              wz(i,j,k) = wz(i,j,k)*oneOverV
+
+              qx(i,j,k) = qx(i,j,k)*oneOverV
+              qy(i,j,k) = qy(i,j,k)*oneOverV
+              qz(i,j,k) = qz(i,j,k)*oneOverV
+#ifdef TAPENADE_FAST
+           end do
+#else
+        enddo
+     enddo
+  enddo
+#endif
+end subroutine allNodalGradients
 
   ! ----------------------------------------------------------------------
   !                                                                      |

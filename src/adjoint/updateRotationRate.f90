@@ -9,6 +9,7 @@ subroutine updateRotationRate(rotCenter, rotRate, blocks, nblocks)
   use monitor, only : timeUnsteadyRestart
   use iteration, only : groundLevel
   use blockpointers, only : nDom, nbkGlobal, flowDoms
+  use solverUtils
   implicit none
 
   real(kind=realType),intent(in)::rotCenter(3), rotRate(3)

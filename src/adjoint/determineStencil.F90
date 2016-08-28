@@ -11,7 +11,7 @@ subroutine determineStencil(lumped)
   use flowvarrefstate
   use inputPhysics
   use iteration
-  use utils, only : EChk, setPointers
+  use utils, only : EChk, setPointers, getDirAngle
 
   implicit none
   logical :: lumped

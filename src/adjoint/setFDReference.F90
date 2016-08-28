@@ -4,7 +4,8 @@ subroutine setFDReference(level)
   use flowVarRefState
   use inputTimeSpectral
   use inputPhysics
-  use utils, only : EChk, setPointers
+  use utils, only : EChk, setPointers, getDirAngle
+  use residuals, only : initRes_block
   implicit none
 
   ! Input Parameters

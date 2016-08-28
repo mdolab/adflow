@@ -13,6 +13,7 @@ subroutine computeAeroCoef(globalCFVals,sps)
   use flowVarRefState
   use overset, only : oversetPresent
   use utils, only : EChk, setPointers
+  use surfaceIntegrations, only : forcesAndMoments, forcesAndMomentsZipper
   implicit none
 
   ! Input/Ouput Variables

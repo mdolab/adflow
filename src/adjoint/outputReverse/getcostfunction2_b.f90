@@ -3,10 +3,10 @@
 !
 !  differentiation of getcostfunction2 in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: funcvalues
-!   with respect to varying inputs: gammainf pinf rhoinfdim pinfdim
-!                pref machgrid lengthref machcoef dragdirection
-!                liftdirection pointref moment sepsensoravg force
-!                cavitation sepsensor
+!   with respect to varying inputs: machgrid lengthref machcoef
+!                dragdirection liftdirection pointref gammainf
+!                pinf rhoinfdim pinfdim pref moment sepsensoravg
+!                force cavitation sepsensor
 subroutine getcostfunction2_b(force, forced, moment, momentd, sepsensor&
 & , sepsensord, sepsensoravg, sepsensoravgd, cavitation, cavitationd, &
 & alpha, beta, liftindex)
@@ -293,13 +293,13 @@ subroutine getcostfunction2_b(force, forced, moment, momentd, sepsensor&
 &                         liftindex, coef0, coef0d, dcdalpha, dcdalphad&
 &                         , dcdalphadot, dcdalphadotd, dcdq, dcdqdot)
   else
+    machgridd = 0.0_8
+    machcoefd = 0.0_8
     gammainfd = 0.0_8
     pinfd = 0.0_8
     rhoinfdimd = 0.0_8
     pinfdimd = 0.0_8
     prefd = 0.0_8
-    machgridd = 0.0_8
-    machcoefd = 0.0_8
   end if
   tempd = factmomentd/(lref*lengthref)
   factd = factd + tempd

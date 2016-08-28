@@ -1569,271 +1569,525 @@ contains
 
   end subroutine resetBCPointers
 
-subroutine computeRootBendingMoment(cf, cm, liftIndex, bendingMoment)
+  subroutine computeRootBendingMoment(cf, cm, liftIndex, bendingMoment)
 
-  !                                                      *
-  ! Compute a normalized bending moment coefficient from *
-  ! the force and moment coefficient. At the moment this *
-  ! Routine only works for a half body. Additional logic *
-  ! would be needed for a full body.                     *
-  !                                                      *
+    !                                                      *
+    ! Compute a normalized bending moment coefficient from *
+    ! the force and moment coefficient. At the moment this *
+    ! Routine only works for a half body. Additional logic *
+    ! would be needed for a full body.                     *
+    !                                                      *
 
+    use constants
+    use inputPhysics, only : lengthRef, pointRef, pointRefEC
+    implicit none
+
+    !input/output variables
+    real(kind=realType), intent(in), dimension(3) :: cf, cm
+    integer(kind=intType), intent(in) :: liftIndex
+    real(kind=realType), intent(out) :: bendingMoment
+
+    !Subroutine Variables
+    real(kind=realType):: elasticMomentx, elasticMomenty, elasticMomentz
+    bendingMoment = zero
+    if (liftIndex == 2) then
+       !z out wing sum momentx,momentz
+       elasticMomentx = cm(1) + cf(2)*(pointRefEC(3)-pointRef(3))/lengthref-cf(3)*(pointRefEC(2)-pointRef(2))/lengthref
+       elasticMomentz = cm(3) - cf(2)*(pointRefEC(1)-pointref(1))/lengthref+cf(1)*(pointRefEC(2)-pointRef(2))/lengthref
+       bendingMoment = sqrt(elasticMomentx**2+elasticMomentz**2)
+    elseif (liftIndex == 3) then
+       !y out wing sum momentx,momenty
+       elasticMomentx = cm(1) + cf(3)*(pointrefEC(2)-pointRef(2))/lengthref+cf(3)*(pointrefEC(3)-pointref(3))/lengthref
+       elasticMomenty = cm(2) + cf(3)*(pointRefEC(1)-pointRef(1))/lengthref+cf(1)*(pointrefEC(3)-pointRef(3))/lengthref
+       bendingMoment = sqrt(elasticMomentx**2+elasticMomenty**2)
+    end if
+
+  end subroutine computeRootBendingMoment
+
+  subroutine computeLeastSquaresRegression(y,x,npts,m,b)
+    !
+    !       Computes the slope of best fit for a set of x,y data of length 
+    !       npts                                                           
+    !
+    use constants
+    implicit none
+    !Subroutine arguments 
+    integer(kind=intType)::npts
+    real(kind=realType),dimension(npts)  :: x,y
+    real(kind=realType)::m,b
+
+    !local variables
+    real(kind=realType)::sumx,sumy,sumx2,sumxy
+    integer(kind=intType)::i
+
+    !begin execution
+    sumx=0.0
+    sumy=0.0
+    sumx2=0.0
+    sumxy=0.0
+    do i = 1,npts
+
+       sumx=sumx+x(i)
+       sumy=sumy+y(i)
+       sumx2=sumx2+x(i)*x(i)
+       sumxy=sumxy+x(i)*y(i)
+    enddo
+
+    m = ((npts*sumxy)-(sumy*sumx))/((npts*sumx2)-(sumx)**2)
+    b = (sumy*sumx2-(sumx*sumxy))/((npts*sumx2)-(sumx)**2)
+
+  end subroutine computeLeastSquaresRegression
+
+  subroutine computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
+       dcdalphadot, dcdq, dcdqdot)
+    !
+    !      Computes the stability derivatives based on the time spectral  
+    !      solution of a given mesh. Takes in the force coefficients at   
+    !      all time instantces and computes the agregate parameters       
+    !
+    use constants
+    use communication     
+    use inputPhysics      
+    use inputTimeSpectral 
+    use inputTSStabDeriv
+    use flowvarrefstate   
+    use monitor           
+    use section           
+    use inputMotion
+    implicit none
+
+    !
+    !     Subroutine arguments.
+    !
+    real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment
+    real(kind=realType), dimension(8):: dcdq, dcdqdot
+    real(kind=realType), dimension(8):: dcdalpha,dcdalphadot
+    real(kind=realType), dimension(8):: Coef0
+    integer(kind=intType) :: liftIndex
+
+    ! Working Variables
+    real(kind=realType), dimension(nTimeIntervalsSpectral, 8) :: baseCoef
+    real(kind=realType), dimension(8) ::coef0dot
+    real(kind=realType), dimension(nTimeIntervalsSpectral,8)::ResBaseCoef
+    real(kind=realType), dimension(nTimeIntervalsSpectral)  :: intervalAlpha,intervalAlphadot
+    real(kind=realType), dimension(nTimeIntervalsSpectral)  :: intervalMach,intervalMachdot
+    real(kind=realType), dimension(nSections) :: t
+    real(kind=realType) :: alpha, beta
+    integer(kind=intType):: i,sps,nn
+    !speed of sound: for normalization of q derivatives
+    real(kind=realType)::a
+    real(kind=realType) :: scaleDim, fact, factMoment
+    ! Functions
+    real(kind=realType),dimension(nTimeIntervalsSpectral)  :: dPhix, dPhiy, dphiz
+    real(kind=realType),dimension(nTimeIntervalsSpectral)  :: dPhixdot, dPhiydot, dphizdot
+    real(kind=realType)::derivativeRigidRotAngle, secondDerivativeRigidRotAngle
+
+
+    scaleDim = pRef/pInf
+
+    fact = two/(gammaInf*pInf*MachCoef**2 &
+         *surfaceRef*LRef**2*scaleDim)
+    factMoment = fact/(lengthRef*LRef)
+
+    call getDirAngle(velDirFreestream, LiftDirection,&
+         liftIndex, alpha, beta)
+
+    if (TSqMode)then
+
+       print *,'TS Q Mode code needs to be updated in computeTSDerivatives!'
+       stop
+
+       ! !q is pitch
+       ! do sps =1,nTimeIntervalsSpectral
+       !    !compute the time of this intervavc
+       !    t = timeUnsteadyRestart
+
+       !    if(equationMode == timeSpectral) then
+       !       do nn=1,nSections
+       !          t(nn) = t(nn) + (sps-1)*sections(nn)%timePeriod &
+       !               /         (nTimeIntervalsSpectral*1.0)
+       !       enddo
+       !    endif
+
+       !    ! Compute the time derivative of the rotation angles around the
+       !    ! z-axis. i.e. compute q
+
+       !    dphiZ(sps) = derivativeRigidRotAngle(degreePolZRot,   &
+       !         coefPolZRot,     &
+       !         degreeFourZRot,  &
+       !         omegaFourZRot,   &
+       !         cosCoefFourZRot, &
+       !         sinCoefFourZRot, t)
+
+       !    ! add in q_dot computation
+       !    dphiZdot(sps) = secondDerivativeRigidRotAngle(degreePolZRot,   &
+       !         coefPolZRot,     &
+       !         degreeFourZRot,  &
+       !         omegaFourZRot,   &
+       !         cosCoefFourZRot, &
+       !         sinCoefFourZRot, t)
+       ! end do
+
+       ! !now compute dCl/dq
+       ! do i =1,8
+       !    call computeLeastSquaresRegression(BaseCoef(:,i),dphiz,nTimeIntervalsSpectral,dcdq(i),coef0(i))
+       ! end do
+
+       ! ! now subtract off estimated cl,cmz and use remainder to compute 
+       ! ! clqdot and cmzqdot.
+       ! do i = 1,8
+       !    do sps = 1,nTimeIntervalsSpectral
+       !       ResBaseCoef(sps,i) = BaseCoef(sps,i)-(dcdq(i)*dphiz(sps)+Coef0(i))
+       !    enddo
+       ! enddo
+
+       ! !now normalize the results...
+       ! a  = sqrt(gammaInf*pInfDim/rhoInfDim)
+       ! dcdq = dcdq*timeRef*2*(machGrid*a)/lengthRef
+
+       ! !now compute dCl/dpdot
+       ! do i = 1,8
+       !    call computeLeastSquaresRegression(ResBaseCoef(:,i),dphizdot,nTimeIntervalsSpectral,dcdqdot(i),Coef0dot(i))
+       ! enddo
+
+    elseif(TSAlphaMode)then
+
+       do sps=1,nTimeIntervalsSpectral
+
+          !compute the time of this interval
+          t = timeUnsteadyRestart
+
+          if(equationMode == timeSpectral) then
+             do nn=1,nSections
+                t(nn) = t(nn) + (sps-1)*sections(nn)%timePeriod &
+                     /         (nTimeIntervalsSpectral*1.0)
+             enddo
+          endif
+
+          intervalAlpha(sps) = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
+               degreeFourAlpha,  omegaFourAlpha,     &
+               cosCoefFourAlpha, sinCoefFourAlpha, t(1))
+
+          intervalAlphadot(sps) = TSAlphadot(degreePolAlpha,   coefPolAlpha,       &
+               degreeFourAlpha,  omegaFourAlpha,     &
+               cosCoefFourAlpha, sinCoefFourAlpha, t(1))
+
+          ! THIS CALL IS WRONG!!!! 
+          !call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha+intervalAlpha(sps), beta)
+
+          BaseCoef(sps,1) = fact*(&
+               force(1, sps)*liftDirection(1) + &
+               force(2, sps)*liftDirection(2) + &
+               force(3, sps)*liftDIrection(3))
+          BaseCoef(sps,2) = fact*(&
+               force(1, sps)*dragDirection(1) + &
+               force(2, sps)*dragDirection(2) + &
+               force(3, sps)*dragDIrection(3))
+          BaseCoef(sps,3) = force(1, sps)*fact
+          BaseCoef(sps,4) = force(2, sps)*fact
+          BaseCoef(sps,5) = force(3, sps)*fact
+          BaseCoef(sps,6) = moment(1, sps)*factMoment
+          BaseCoef(sps,7) = moment(2, sps)*factMoment
+          BaseCoef(sps,8) = moment(3, sps)*factMoment
+       end do
+
+       !now compute dCl/dalpha
+       do i =1,8
+          call computeLeastSquaresRegression(BaseCoef(:,i),intervalAlpha,nTimeIntervalsSpectral,dcdAlpha(i),coef0(i))
+       end do
+
+       ! now subtract off estimated cl,cmz and use remainder to compute 
+       ! clalphadot and cmzalphadot.
+       do i = 1,8
+          do sps = 1,nTimeIntervalsSpectral
+             ResBaseCoef(sps,i) = BaseCoef(sps,i)-(dcdalpha(i)*intervalAlpha(sps)+Coef0(i))
+          enddo
+       enddo
+
+       !now compute dCi/dalphadot
+       do i = 1,8
+          call computeLeastSquaresRegression(ResBaseCoef(:,i),intervalAlphadot,nTimeIntervalsSpectral,dcdalphadot(i),Coef0dot(i))
+       enddo
+
+       a  = sqrt(gammaInf*pInfDim/rhoInfDim)
+       dcdalphadot = dcdalphadot*2*(machGrid*a)/lengthRef
+
+    else
+       call terminate('computeTSDerivatives','Not a valid stability motion')
+    endif
+
+  end subroutine computeTSDerivatives
+
+subroutine getDirAngle(freeStreamAxis,liftAxis,liftIndex,alpha,beta)
+  !
+  !      Convert the wind axes to angle of attack and side slip angle.  
+  !      The direction angles alpha and beta are computed given the     
+  !      components of the wind direction vector (freeStreamAxis), the  
+  !      lift direction vector (liftAxis) and assuming that the         
+  !      body direction (xb,yb,zb) is in the default ijk coordinate     
+  !      system. The rotations are determined by first determining      
+  !      whether the lift is primarily in the j or k direction and then 
+  !      determining the angles accordingly.                            
+  !      direction vector:                                              
+  !        1) Rotation about the zb or yb -axis: alpha clockwise (CW)   
+  !           (xb,yb,zb) -> (x1,y1,z1)                                  
+  !        2) Rotation about the yl or z1 -axis: beta counter-clockwise 
+  !           (CCW) (x1,y1,z1) -> (xw,yw,zw)                            
+  !         input arguments:                                            
+  !            freeStreamAxis = wind vector in body axes                
+  !            liftAxis       = lift direction vector in body axis      
+  !         output arguments:                                           
+  !            alpha    = angle of attack in radians                    
+  !            beta     = side slip angle in radians                    
+  !
   use constants
-  use inputPhysics, only : lengthRef, pointRef, pointRefEC
+
   implicit none
-
-  !input/output variables
-  real(kind=realType), intent(in), dimension(3) :: cf, cm
-  integer(kind=intType), intent(in) :: liftIndex
-  real(kind=realType), intent(out) :: bendingMoment
-
-  !Subroutine Variables
-  real(kind=realType):: elasticMomentx, elasticMomenty, elasticMomentz
-  bendingMoment = zero
-  if (liftIndex == 2) then
-     !z out wing sum momentx,momentz
-     elasticMomentx = cm(1) + cf(2)*(pointRefEC(3)-pointRef(3))/lengthref-cf(3)*(pointRefEC(2)-pointRef(2))/lengthref
-     elasticMomentz = cm(3) - cf(2)*(pointRefEC(1)-pointref(1))/lengthref+cf(1)*(pointRefEC(2)-pointRef(2))/lengthref
-     bendingMoment = sqrt(elasticMomentx**2+elasticMomentz**2)
-  elseif (liftIndex == 3) then
-     !y out wing sum momentx,momenty
-     elasticMomentx = cm(1) + cf(3)*(pointrefEC(2)-pointRef(2))/lengthref+cf(3)*(pointrefEC(3)-pointref(3))/lengthref
-     elasticMomenty = cm(2) + cf(3)*(pointRefEC(1)-pointRef(1))/lengthref+cf(1)*(pointrefEC(3)-pointRef(3))/lengthref
-     bendingMoment = sqrt(elasticMomentx**2+elasticMomenty**2)
-  end if
-
-end subroutine computeRootBendingMoment
-
-subroutine computeLeastSquaresRegression(y,x,npts,m,b)
-  !
-  !       Computes the slope of best fit for a set of x,y data of length 
-  !       npts                                                           
-  !
-  use constants
-  implicit none
-  !Subroutine arguments 
-  integer(kind=intType)::npts
-  real(kind=realType),dimension(npts)  :: x,y
-  real(kind=realType)::m,b
-
-  !local variables
-  real(kind=realType)::sumx,sumy,sumx2,sumxy
-  integer(kind=intType)::i
-
-  !begin execution
-  sumx=0.0
-  sumy=0.0
-  sumx2=0.0
-  sumxy=0.0
-  do i = 1,npts
-
-     sumx=sumx+x(i)
-     sumy=sumy+y(i)
-     sumx2=sumx2+x(i)*x(i)
-     sumxy=sumxy+x(i)*y(i)
-  enddo
-
-  m = ((npts*sumxy)-(sumy*sumx))/((npts*sumx2)-(sumx)**2)
-  b = (sumy*sumx2-(sumx*sumxy))/((npts*sumx2)-(sumx)**2)
-
-end subroutine computeLeastSquaresRegression
-
-subroutine computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
-     dcdalphadot, dcdq, dcdqdot)
-  !
-  !      Computes the stability derivatives based on the time spectral  
-  !      solution of a given mesh. Takes in the force coefficients at   
-  !      all time instantces and computes the agregate parameters       
-  !
-  use constants
-  use communication     
-  use inputPhysics      
-  use inputTimeSpectral 
-  use inputTSStabDeriv
-  use flowvarrefstate   
-  use monitor           
-  use section           
-  use inputMotion
-  implicit none
-
   !
   !     Subroutine arguments.
   !
-  real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment
-  real(kind=realType), dimension(8):: dcdq, dcdqdot
-  real(kind=realType), dimension(8):: dcdalpha,dcdalphadot
-  real(kind=realType), dimension(8):: Coef0
-  integer(kind=intType) :: liftIndex
-
-  ! Working Variables
-  real(kind=realType), dimension(nTimeIntervalsSpectral, 8) :: baseCoef
-  real(kind=realType), dimension(8) ::coef0dot
-  real(kind=realType), dimension(nTimeIntervalsSpectral,8)::ResBaseCoef
-  real(kind=realType), dimension(nTimeIntervalsSpectral)  :: intervalAlpha,intervalAlphadot
-  real(kind=realType), dimension(nTimeIntervalsSpectral)  :: intervalMach,intervalMachdot
-  real(kind=realType), dimension(nSections) :: t
-  real(kind=realType) :: alpha, beta
-  integer(kind=intType):: i,sps,nn
-  !speed of sound: for normalization of q derivatives
-  real(kind=realType)::a
-  real(kind=realType) :: scaleDim, fact, factMoment
-  ! Functions
-  real(kind=realType),dimension(nTimeIntervalsSpectral)  :: dPhix, dPhiy, dphiz
-  real(kind=realType),dimension(nTimeIntervalsSpectral)  :: dPhixdot, dPhiydot, dphizdot
-  real(kind=realType)::derivativeRigidRotAngle, secondDerivativeRigidRotAngle
+  !      real(kind=realType), intent(in)  :: xw, yw, zw
+  real(kind=realType), dimension(3),intent(in) :: freeStreamAxis
+  real(kind=realType), dimension(3),intent(in) :: liftAxis
+  real(kind=realType), intent(out) :: alpha, beta
+  integer(kind=intType), intent(out)::liftIndex
+  !
+  !     Local variables.
+  !
+  real(kind=realType) :: rnorm
+  integer(kind=intType):: flowIndex,i
+  real(kind=realType), dimension(3) :: freeStreamAxisNorm
+  integer(kind=intType) ::  temp
 
 
-  scaleDim = pRef/pInf
+  ! Assume domoniate flow is x
 
-  fact = two/(gammaInf*pInf*MachCoef**2 &
-       *surfaceRef*LRef**2*scaleDim)
-  factMoment = fact/(lengthRef*LRef)
+  flowIndex = 1
 
-  call getDirAngle(velDirFreestream, LiftDirection,&
-       liftIndex, alpha, beta)
-
-  if (TSqMode)then
-
-     print *,'TS Q Mode code needs to be updated in computeTSDerivatives!'
-     stop
-
-     ! !q is pitch
-     ! do sps =1,nTimeIntervalsSpectral
-     !    !compute the time of this intervavc
-     !    t = timeUnsteadyRestart
-
-     !    if(equationMode == timeSpectral) then
-     !       do nn=1,nSections
-     !          t(nn) = t(nn) + (sps-1)*sections(nn)%timePeriod &
-     !               /         (nTimeIntervalsSpectral*1.0)
-     !       enddo
-     !    endif
-
-     !    ! Compute the time derivative of the rotation angles around the
-     !    ! z-axis. i.e. compute q
-
-     !    dphiZ(sps) = derivativeRigidRotAngle(degreePolZRot,   &
-     !         coefPolZRot,     &
-     !         degreeFourZRot,  &
-     !         omegaFourZRot,   &
-     !         cosCoefFourZRot, &
-     !         sinCoefFourZRot, t)
-
-     !    ! add in q_dot computation
-     !    dphiZdot(sps) = secondDerivativeRigidRotAngle(degreePolZRot,   &
-     !         coefPolZRot,     &
-     !         degreeFourZRot,  &
-     !         omegaFourZRot,   &
-     !         cosCoefFourZRot, &
-     !         sinCoefFourZRot, t)
-     ! end do
-
-     ! !now compute dCl/dq
-     ! do i =1,8
-     !    call computeLeastSquaresRegression(BaseCoef(:,i),dphiz,nTimeIntervalsSpectral,dcdq(i),coef0(i))
-     ! end do
-
-     ! ! now subtract off estimated cl,cmz and use remainder to compute 
-     ! ! clqdot and cmzqdot.
-     ! do i = 1,8
-     !    do sps = 1,nTimeIntervalsSpectral
-     !       ResBaseCoef(sps,i) = BaseCoef(sps,i)-(dcdq(i)*dphiz(sps)+Coef0(i))
-     !    enddo
-     ! enddo
-
-     ! !now normalize the results...
-     ! a  = sqrt(gammaInf*pInfDim/rhoInfDim)
-     ! dcdq = dcdq*timeRef*2*(machGrid*a)/lengthRef
-
-     ! !now compute dCl/dpdot
-     ! do i = 1,8
-     !    call computeLeastSquaresRegression(ResBaseCoef(:,i),dphizdot,nTimeIntervalsSpectral,dcdqdot(i),Coef0dot(i))
-     ! enddo
-
-  elseif(TSAlphaMode)then
-
-     do sps=1,nTimeIntervalsSpectral
-
-        !compute the time of this interval
-        t = timeUnsteadyRestart
-
-        if(equationMode == timeSpectral) then
-           do nn=1,nSections
-              t(nn) = t(nn) + (sps-1)*sections(nn)%timePeriod &
-                   /         (nTimeIntervalsSpectral*1.0)
-           enddo
-        endif
-
-        intervalAlpha(sps) = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
-             degreeFourAlpha,  omegaFourAlpha,     &
-             cosCoefFourAlpha, sinCoefFourAlpha, t(1))
-
-        intervalAlphadot(sps) = TSAlphadot(degreePolAlpha,   coefPolAlpha,       &
-             degreeFourAlpha,  omegaFourAlpha,     &
-             cosCoefFourAlpha, sinCoefFourAlpha, t(1))
-
-        call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha+intervalAlpha(sps), beta)
-
-        BaseCoef(sps,1) = fact*(&
-             force(1, sps)*liftDirection(1) + &
-             force(2, sps)*liftDirection(2) + &
-             force(3, sps)*liftDIrection(3))
-        BaseCoef(sps,2) = fact*(&
-             force(1, sps)*dragDirection(1) + &
-             force(2, sps)*dragDirection(2) + &
-             force(3, sps)*dragDIrection(3))
-        BaseCoef(sps,3) = force(1, sps)*fact
-        BaseCoef(sps,4) = force(2, sps)*fact
-        BaseCoef(sps,5) = force(3, sps)*fact
-        BaseCoef(sps,6) = moment(1, sps)*factMoment
-        BaseCoef(sps,7) = moment(2, sps)*factMoment
-        BaseCoef(sps,8) = moment(3, sps)*factMoment
-     end do
-
-     !now compute dCl/dalpha
-     do i =1,8
-        call computeLeastSquaresRegression(BaseCoef(:,i),intervalAlpha,nTimeIntervalsSpectral,dcdAlpha(i),coef0(i))
-     end do
-     
-     ! now subtract off estimated cl,cmz and use remainder to compute 
-     ! clalphadot and cmzalphadot.
-     do i = 1,8
-        do sps = 1,nTimeIntervalsSpectral
-           ResBaseCoef(sps,i) = BaseCoef(sps,i)-(dcdalpha(i)*intervalAlpha(sps)+Coef0(i))
-        enddo
-     enddo
-     
-     !now compute dCi/dalphadot
-     do i = 1,8
-        call computeLeastSquaresRegression(ResBaseCoef(:,i),intervalAlphadot,nTimeIntervalsSpectral,dcdalphadot(i),Coef0dot(i))
-     enddo
-     
-     a  = sqrt(gammaInf*pInfDim/rhoInfDim)
-     dcdalphadot = dcdalphadot*2*(machGrid*a)/lengthRef
-
+  ! Determine the dominant lift direction
+  if ( abs(liftAxis(1)) > abs(liftAxis(2)) .and. &
+       abs(liftAxis(1)) > abs(liftAxis(3))) then
+     temp = 1
+  else if( abs(liftAxis(2)) > abs(liftAxis(1)) .and. &
+       abs(liftAxis(2)) > abs(liftAxis(3))) then
+     temp = 2
   else
-     call terminate('computeTSDerivatives','Not a valid stability motion')
+     temp = 3
+  end if
+
+  liftIndex = temp
+
+  ! Normalize the freeStreamDirection vector.
+  rnorm = sqrt( freeStreamAxis(1)**2 + freeStreamAxis(2)**2 + freeStreamAxis(3)**2 )
+  do i =1,3
+     freeStreamAxisNorm(i) = freeStreamAxis(i)/rnorm
+  enddo
+
+  if (liftIndex == 2) then
+     ! different coordinate system for aerosurf
+     ! Wing is in z- direction
+     ! Compute angle of attack alpha.
+
+     alpha = asin(freeStreamAxisNorm(2))
+
+     ! Compute side-slip angle beta.
+
+     beta  = -atan2(freeStreamAxisNorm(3),freeStreamAxisNorm(1))
+
+
+  elseif (liftIndex == 3) then
+     ! Wing is in y- direction
+
+     ! Compute angle of attack alpha.
+
+     alpha = asin(freeStreamAxisNorm(3))
+
+     ! Compute side-slip angle beta.
+
+     beta  = atan2(freeStreamAxisNorm(2),freeStreamAxisNorm(1))
+  else
+     call terminate('getDirAngle', 'Invalid Lift Direction')
   endif
+end subroutine getDirAngle
 
-end subroutine computeTSDerivatives
-   subroutine stabilityDerivativeDriver
-!
-!      Runs the Time spectral stability derivative routines from the  
-!      main program file                                              
-!
-      use precision
-      implicit none
-!
-!     Local variables.
-! 
-      real(kind=realType),dimension(8)::dcdalpha,dcdalphadot,dcdbeta,&
-           dcdbetadot,dcdMach,dcdMachdot
-      real(kind=realType),dimension(8)::dcdp,dcdpdot,dcdq,dcdqdot,dcdr,dcdrdot
-      real(kind=realType),dimension(8)::Coef0,Coef0dot
+  subroutine stabilityDerivativeDriver
+    !
+    !      Runs the Time spectral stability derivative routines from the  
+    !      main program file                                              
+    !
+    use precision
+    implicit none
+    !
+    !     Local variables.
+    ! 
+    real(kind=realType),dimension(8)::dcdalpha,dcdalphadot,dcdbeta,&
+         dcdbetadot,dcdMach,dcdMachdot
+    real(kind=realType),dimension(8)::dcdp,dcdpdot,dcdq,dcdqdot,dcdr,dcdrdot
+    real(kind=realType),dimension(8)::Coef0,Coef0dot
 
-      !call computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
- 
-   end subroutine stabilityDerivativeDriver
+    !call computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
+
+  end subroutine stabilityDerivativeDriver
+  subroutine setCoefTimeIntegrator
+    !
+    !       setCoefTimeIntegrator determines the coefficients of the       
+    !       time integration scheme in unsteady mode. Normally these are   
+    !       equal to the coefficients corresponding to the specified       
+    !       accuracy. However during the initial phase there are not       
+    !       enough states in the past and the accuracy is reduced.         
+    !
+    use constants
+    use inputUnsteady
+    use inputPhysics
+    use iteration
+    use monitor
+    implicit none
+    !
+    !      Local variables.
+    !
+    integer(kind=intType) :: nn, nLevelsSet
+
+    ! Determine which time integrator must be used.
+
+    ! Modified by HDN
+    select case (timeAccuracy)
+    case (firstOrder)
+
+       ! 1st order. No need to check the number of available
+       ! states in the past. Set the two coefficients and
+       ! nLevelsSet to 2.
+
+       coefTime(0) =  1.0_realType
+       coefTime(1) = -1.0_realType
+
+       if ( useALE .and. equationMode .eq. unsteady)  then
+          coefTimeALE(1)   = 1.0_realType
+          coefMeshALE(1,1) = half
+          coefMeshALE(1,2) = half
+       end if
+
+       nLevelsSet = 2
+
+       !=============================================================
+
+    case (secondOrder)
+
+       ! Second order time integrator. Determine the amount of
+       ! available states and set the coefficients accordingly.
+       select case (nOldSolAvail)
+
+       case (1_intType)
+          coefTime(0) =  1.0_realType
+          coefTime(1) = -1.0_realType
+
+          if ( useALE .and. equationMode .eq. unsteady)  then
+             coefTimeALE(1)   = half
+             coefTimeALE(2)   = half
+             coefTimeALE(3)   = zero
+             coefTimeALE(4)   = zero
+
+             coefMeshALE(1,1) = half
+             coefMeshALE(1,2) = half
+             coefMeshALE(2,1) = half
+             coefMeshALE(2,2) = half
+          end if
+
+          nLevelsSet  = 2
+
+       case default   ! 2 or bigger.
+          coefTime(0) =  1.5_realType
+          coefTime(1) = -2.0_realType
+          coefTime(2) =  0.5_realType
+
+          if ( useALE .and. equationMode .eq. unsteady)  then
+             coefTimeALE(1)   = threefourth
+             coefTimeALE(2)   = threefourth
+             coefTimeALE(3)   = -fourth
+             coefTimeALE(4)   = -fourth
+
+             coefMeshALE(1,1) = half*(1.0_realType+1.0_realType/sqrtthree)
+             coefMeshALE(1,2) = half*(1.0_realType-1.0_realType/sqrtthree)
+             coefMeshALE(2,1) = coefMeshALE(1,2)
+             coefMeshALE(2,2) = coefMeshALE(1,1)
+          end if
+
+          nLevelsSet  = 3
+
+       end select
+
+       !=============================================================
+
+    case (thirdOrder)
+
+       ! Third order time integrator.  Determine the amount of
+       ! available states and set the coefficients accordingly.
+
+       select case (nOldSolAvail)
+
+       case (1_intType)
+          coefTime(0) =  1.0_realType
+          coefTime(1) = -1.0_realType
+
+          if ( useALE .and. equationMode .eq. unsteady)  then
+             coefTimeALE(1)   = 1.0_realType
+             coefMeshALE(1,1) = half
+             coefMeshALE(1,2) = half
+          end if
+
+          nLevelsSet  = 2
+
+       case (2_intType)
+          coefTime(0) =  1.5_realType
+          coefTime(1) = -2.0_realType
+          coefTime(2) =  0.5_realType
+
+          if ( useALE .and. equationMode .eq. unsteady)  then
+             coefTimeALE(1)   = threefourth
+             coefTimeALE(2)   = -fourth
+             coefMeshALE(1,1) = half*(1.0_realType+1.0_realType/sqrtthree)
+             coefMeshALE(1,2) = half*(1.0_realType-1.0_realType/sqrtthree)
+             coefMeshALE(2,1) = coefMeshALE(1,2)
+             coefMeshALE(2,2) = coefMeshALE(1,1)
+          end if
+
+          nLevelsSet  = 3
+
+       case default   ! 3 or bigger.
+          coefTime(0) = 11.0_realType/6.0_realType
+          coefTime(1) = -3.0_realType
+          coefTime(2) =  1.5_realType
+          coefTime(3) = -1.0_realType/3.0_realType
+
+          ! These numbers are NOT correct
+          ! DO NOT use 3rd order ALE for now
+          if ( useALE .and. equationMode .eq. unsteady)  then
+             print *, 'Third-order ALE not implemented yet.'
+             coefTimeALE(1)   = threefourth
+             coefTimeALE(2)   = threefourth
+             coefTimeALE(3)   = -fourth
+             coefTimeALE(4)   = -fourth
+             coefMeshALE(1,1) = half*(1.0_realType+1.0_realType/sqrtthree)
+             coefMeshALE(1,2) = half*(1.0_realType-1.0_realType/sqrtthree)
+             coefMeshALE(2,1) = coefMeshALE(1,2)
+             coefMeshALE(2,2) = coefMeshALE(1,1)
+             coefMeshALE(3,1) = coefMeshALE(1,2)
+             coefMeshALE(3,2) = coefMeshALE(1,1)
+          end if
+
+          nLevelsSet  = 4
+
+       end select
+
+    end select
+
+    ! Set the rest of the coefficients to 0 if not enough states
+    ! in the past are available.
+
+    do nn=nLevelsSet,nOldLevels
+       coefTime(nn) = zero
+    enddo
+
+  end subroutine setCoefTimeIntegrator
 
   ! ----------------------------------------------------------------------
   !                                                                      |
@@ -1842,6 +2096,119 @@ end subroutine computeTSDerivatives
   ! ----------------------------------------------------------------------
 
 #ifndef  USE_TAPENADE
+
+  subroutine maxEddyv(eddyvisMax)
+    !
+    !       maxEddyv determines the maximum value of the eddy viscosity    
+    !       ratio of the block given by the pointers in blockPointes.      
+    !
+    use constants
+    use blockPointers, only : il, jl, kl, rlv, rev
+    use flowVarRefState, only : nwf, eddyModel
+    implicit none
+    !
+    !      Subroutine arguments.
+    !
+    real(kind=realType), intent(out) :: eddyvisMax
+    !
+    !      Local variables.
+    !
+    integer(kind=intType) :: i, j, k
+
+    real(kind=realType) :: eddyvis
+
+    ! Initialize the maximum value to zero and return immediately if
+    ! not an eddy viscosity model is used.
+
+    eddyvisMax = zero
+    if(.not. eddyModel) return
+
+    ! Loop over the owned cells of this block.
+
+    do k=2,kl
+       do j=2,jl
+          do i=2,il
+
+             ! Compute the local viscosity ratio and take the maximum
+             ! with the currently stored value.
+
+             eddyvis = rev(i,j,k)/rlv(i,j,k)
+             eddyvisMax = max(eddyvisMax, eddyvis)
+
+          enddo
+       enddo
+    enddo
+
+  end subroutine maxEddyv
+
+  subroutine maxHdiffMach(hdiffMax, MachMax)
+    !
+    !       maxHdiffMach determines the maximum value of the Mach number   
+    !       and total enthalpy (or better the relative total enthalpy      
+    !       difference with the freestream).                               
+    !
+    use constants
+    use blockPointers, only : il, jl, kl, w, p, gamma
+    use flowVarRefState, only : pInfCorr, rhoInf, wInf
+    use monitor, only : monMachOrHMax
+    implicit none
+    !
+    !      Subroutine arguments.
+    !
+    real(kind=realType), intent(out) :: hdiffMax, MachMax
+    !
+    !      Local variables.
+    !
+    integer(kind=intType) :: i, j, k
+
+    real(kind=realType) :: hdiff, hInf, Mach2
+
+    ! Initialize the maximum values to zero.
+
+    hdiffMax = zero
+    MachMax  = zero
+
+    ! In case none of the two variables needs to be monitored,
+    ! a return is made.
+
+    if(.not. monMachOrHMax) return
+
+    ! Set the free stream value of the total enthalpy.
+
+    hInf = (wInf(irhoE) + pInfCorr)/rhoInf
+
+    ! Loop over the owned cells of this block.
+
+    do k=2,kl
+       do j=2,jl
+          do i=2,il
+
+             ! Compute the local total enthalpy and Mach number squared.
+
+             hdiff = abs((w(i,j,k,irhoE) + p(i,j,k))/w(i,j,k,irho) - hInf)
+             Mach2 = (w(i,j,k,ivx)**2 + w(i,j,k,ivy)**2 &
+                  +  w(i,j,k,ivz)**2)*w(i,j,k,irho)/(gamma(i,j,k)*p(i,j,k))
+
+             ! Determine the maximum of these values and the
+             ! currently stored maximum values.
+
+             hdiffMax = max(hdiffMax, hdiff)
+             MachMax  = max(MachMax,  Mach2)
+
+          enddo
+       enddo
+    enddo
+
+    ! Currently the maximum Mach number squared is stored in
+    ! MachMax. Take the square root. Also create a relative
+    ! total enthalpy difference.
+
+    MachMax  = sqrt(MachMax)
+    hdiffMax = hdiffMax/hInf
+
+  end subroutine maxHdiffMach
+
+
 
   function delta(val1,val2)
     !
@@ -5316,6 +5683,361 @@ end subroutine computeTSDerivatives
          &and timeDataArray")
 
   end subroutine allocTimeArrays
+
+
+
+  subroutine convergenceHeader
+    !
+    !       convergenceHeader writes the convergence header to stdout.     
+    !
+    use cgnsNames
+    use inputPhysics
+    use inputUnsteady
+    use flowVarRefState
+    use monitor
+    use iteration
+    use inputIteration
+    use couplerParam     ! eran_idendifyname 
+    implicit none
+    !
+    !      Local variables.
+    !
+    integer(kind=intType) :: i, nCharWrite
+    logical :: writeIterations
+
+    ! Determine whether or not the iterations must be written.
+
+    if (printIterations) then
+       writeIterations = .true.
+       if(equationMode          == unsteady .and. &
+            timeIntegrationScheme == explicitRK) writeIterations = .false.
+
+       ! Determine the number of characters to write.
+       ! First initialize this number with the variables which are
+       ! always written. This depends on the equation mode. For unsteady
+       ! and spectral computations a bit more info is written.
+
+       nCharWrite = 10
+       if( writeIterations ) nCharWrite = nCharWrite + 7 + 7 + 7 + 10
+       if(equationMode == unsteady) then
+          nCharWrite = nCharWrite + 7 + fieldWidth + 1
+       else if(equationMode == timeSpectral) then
+          nCharWrite = nCharWrite + 11
+       endif
+
+       ! Add the number of characters needed for the actual variables.
+
+       nCharWrite = nCharWrite + nMon*(fieldWidthLarge+1)
+       if( showCPU ) nCharWrite = nCharWrite + fieldWidth + 1
+
+       ! Write the line of - signs. This line starts with a #, such
+       ! that it is ignored by some plotting software.
+
+       write(*,"(a)",advance="no") "#"
+       do i=2,nCharWrite
+          write(*,"(a)",advance="no") "-"
+       enddo
+       print "(1x)"
+
+       ! Write the first line of the header. First the variables that
+       ! will always be written. Some extra variables must be written
+       ! for unsteady and time spectral problems.
+       write(*,'("# ")',advance="no")
+       write(*,"(a)",advance="no") " Grid  |"
+
+       if(equationMode == unsteady) then
+          write(*,"(a)",advance="no") " Time |    Time    |"
+       else if(equationMode == timeSpectral) then
+          write(*,"(a)",advance="no") " Spectral |"
+       endif
+
+       if( writeIterations ) write(*,"(a)",advance="no") " Iter | Iter | Iter |   CFL   |"
+       if( showCPU )         write(*,"(a)",advance="no") "    Wall    |"
+
+       ! Write the header for the variables to be monitored.
+       do i=1, nMon
+          ! Determine the variable name and write the
+          ! corresponding text.
+          select case (monNames(i))
+
+          case ("totalR")
+             write(*,"(a)",advance="no") "        totalRes        |"
+
+          case (cgnsL2resRho)
+             write(*,"(a)",advance="no") "        Res rho         |"
+
+          case (cgnsL2resMomx)
+             write(*,"(a)",advance="no") "        Res rhou        |"
+
+          case (cgnsL2resMomy)
+             write(*,"(a)",advance="no") "        Res rhov        |"
+
+          case (cgnsL2resMomz)
+             write(*,"(a)",advance="no") "        Res rhow        |"
+
+          case (cgnsL2resRhoe)
+             write(*,"(a)",advance="no") "        Res rhoE        |"
+
+          case (cgnsL2resNu)
+             write(*,"(a)",advance="no") "       Res nuturb       |"
+
+          case (cgnsL2resK)
+             write(*,"(a)",advance="no") "       Res kturb        |"
+
+          case (cgnsL2resOmega)
+             write(*,"(a)",advance="no") "       Res wturb        |"
+
+          case (cgnsL2resTau)
+             write(*,"(a)",advance="no") "       Res tauturb      |"
+
+          case (cgnsL2resEpsilon)
+             write(*,"(a)",advance="no") "       Res epsturb      |"
+
+          case (cgnsL2resV2)
+             write(*,"(a)",advance="no") "       Res v2turb       |"
+
+          case (cgnsL2resF)
+             write(*,"(a)",advance="no") "       Res fturb        |"
+
+          case (cgnsCl)
+             write(*,"(a)",advance="no") "         C_lift         |"
+
+          case (cgnsClp)
+             write(*,"(a)",advance="no") "        C_lift_p        |"
+
+          case (cgnsClv)
+             write(*,"(a)",advance="no") "        C_lift_v        |"
+
+          case (cgnsCd)
+             write(*,"(a)",advance="no") "        C_drag          |"
+
+          case (cgnsCdp)
+             write(*,"(a)",advance="no") "        C_drag_p        |"
+
+          case (cgnsCdv)
+             write(*,"(a)",advance="no") "        C_drag_v        |"
+
+          case (cgnsCfx)
+             write(*,"(a)",advance="no") "          C_Fx          |"
+
+          case (cgnsCfy)
+             write(*,"(a)",advance="no") "          C_Fy          |"
+
+          case (cgnsCfz)
+             write(*,"(a)",advance="no") "          C_Fz          |"
+
+          case (cgnsCmx)
+             write(*,"(a)",advance="no") "          C_Mx          |"
+
+          case (cgnsCmy)
+             write(*,"(a)",advance="no") "          C_My          |"
+
+          case (cgnsCmz)
+             write(*,"(a)",advance="no") "          C_Mz          |"
+
+          case (cgnsHdiffMax)
+             write(*,"(a)",advance="no") "       |H-H_inf|        |"
+
+          case (cgnsMachMax)
+             write(*,"(a)",advance="no") "        Mach_max        |"
+
+          case (cgnsYplusMax)
+             write(*,"(a)",advance="no") "         Y+_max         |"
+
+          case (cgnsEddyMax)
+             write(*,"(a)",advance="no") "        Eddyv_max       |"
+
+          case (cgnsSepSensor)
+             write(*,"(a)",advance="no") "        SepSensor       |"
+          case (cgnsCavitation)
+
+             write(*,"(a)",advance="no") "       Cavitation       |"
+          end select
+       enddo
+
+       print "(1x)"
+
+       ! Write the second line of the header. Most of them are empty,
+       ! but some variables require a second line.
+       write(*,'("# ")',advance="no")
+
+       write(*,"(a)",advance="no")   " level |"
+
+       if(equationMode == unsteady) then
+          write(*,"(a)",advance="no") " Step |            |"
+       else if(equationMode == timeSpectral) then
+          write(*,"(a)",advance="no") " Solution |"
+       endif
+
+
+       if( writeIterations ) write(*,"(a)",advance="no") "      | Tot  | Type |         |"
+       if( showCPU )         write(*,"(a)",advance="no") " Clock (s)  |"
+
+       ! Loop over the variables to be monitored and write the
+       ! second line.
+
+       do i=1,nMon
+
+          ! Determine the variable name and write the
+          ! corresponding text.
+          select case (monNames(i))
+
+          case (cgnsHdiffMax)
+             write(*,"(a)",advance="no") "           max          |"
+
+          case default
+             write(*,"(a)",advance="no") "                        |"
+
+          end select
+       end do
+       print "(1x)"
+    end if
+
+    ! Write again a line of - signs (starting with a #).
+
+    write(*,"(a)",advance="no") "#"
+    do i=2,nCharWrite
+       write(*,"(a)",advance="no") "-"
+    enddo
+    print "(1x)"
+
+  end subroutine convergenceHeader
+  subroutine sumResiduals(nn, mm)
+    !
+    !       sumResiduals adds the sum of the residuals squared at          
+    !       position nn to the array monLoc at position mm. It is assumed  
+    !       that the arrays of blockPointers already point to the correct  
+    !       block.                                                         
+    !
+    use blockPointers
+    use monitor
+    implicit none
+    !
+    !      Subroutine arguments.
+    !
+    integer(kind=intType), intent(in) :: nn, mm
+    !
+    !      Local variables.
+    !
+    integer(kind=intType) :: i, j, k
+
+    ! Loop over the number of owned cells of this block and
+    ! accumulate the residual.
+
+    do k=2,kl
+       do j=2,jl
+          do i=2,il
+             monLoc(mm) = monLoc(mm) + (dw(i,j,k,nn)/vol(i,j,k))**2
+          enddo
+       enddo
+    enddo
+
+  end subroutine sumResiduals
+
+  subroutine sumAllResiduals(mm)
+    !
+    !       sumAllResiduals adds the sum of the ALL residuals squared at   
+    !       to monLoc at position mm.                                      
+    !
+    use blockPointers
+    use monitor
+    use flowvarrefstate
+    use inputIteration
+    implicit none
+    !
+    !      Subroutine arguments.
+    !
+    integer(kind=intType), intent(in) :: mm
+    !
+    !      Local variables.
+    !
+    integer(kind=intType) :: i, j, k, l
+    real(kind=realType) :: state_sum,ovv
+
+
+    ! Loop over the number of owned cells of this block and
+    ! accumulate the residual.
+
+    do k=2,kl
+       do j=2,jl
+          do i=2,il
+             state_sum = 0.0
+             ovv = one/vol(i,j,k)
+             do l=1,nwf
+                state_sum = state_sum + (dw(i,j,k,l)*ovv)**2
+             end do
+             do l=nt1,nt2
+                ! l-nt1+1 will index the turbResScale properly
+                state_sum = state_sum + (dw(i,j,k,l)*ovv*turbResScale(l-nt1+1))**2
+             end do
+             monLoc(mm) = monLoc(mm) + state_sum
+          enddo
+       enddo
+    enddo
+
+  end subroutine sumAllResiduals
+!
+!      ******************************************************************
+!      *                                                                *
+!      * File:          unsteadyHeader.f90                              *
+!      * Author:        Edwin van der Weide                             *
+!      * Starting date: 02-03-2004                                      *
+!      * Last modified: 03-26-2005                                      *
+!      *                                                                *
+!      ******************************************************************
+!
+       subroutine unsteadyHeader
+!
+!      ******************************************************************
+!      *                                                                *
+!      * unsteadyHeader writes a header to stdout when a new time step  *
+!      * is started.                                                    *
+!      *                                                                *
+!      ******************************************************************
+!
+       use constants
+       use iteration
+       use monitor
+       implicit none
+!
+!      Local variables
+!
+       character(len=7)  :: integerString
+       character(len=12) :: realString
+!
+!      ******************************************************************
+!      *                                                                *
+!      * Begin execution                                                *
+!      *                                                                *
+!      ******************************************************************
+!
+       ! Write the time step number to the integer string and the
+       ! physical time to the real string.
+
+       write(integerString,"(i7)") timeStepUnsteady + &
+                                   nTimeStepsRestart
+       write(realString,"(e12.5)") timeUnsteady + &
+                                   timeUnsteadyRestart
+
+       integerString = adjustl(integerString)
+       realString    = adjustl(realString)
+
+       ! Write the header to stdout.
+
+       print "(a)", "#"
+       print 100
+       print 101
+       print 102, trim(integerString), trim(realString)
+       print 101
+       print 100
+       print "(a)", "#"
+
+ 100   format("#*************************************************&
+              &*************************")
+ 101   format("#")
+ 102   format("# Unsteady time step ",a,", physical time ",a, " seconds")
+
+       end subroutine unsteadyHeader
 
 #endif
 end module utils

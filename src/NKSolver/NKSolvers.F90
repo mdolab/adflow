@@ -49,7 +49,7 @@ module NKSolver
   ! Misc variables
   logical :: NK_solverSetup=.False.
   integer(kind=intType) :: NK_iter
-  logical :: rkReset
+
   ! Eisenstat-Walker Parameters
   integer(kind=intType) :: ew_version
   real(kind=realType) :: ew_rtol_0
@@ -61,8 +61,6 @@ module NKSolver
   real(kind=realType) :: rtolLast, oldNorm
 
   ! Misc Parameters
-  real(kind=realType) :: totalR0, totalRStart, totalRFinal, totalR
-  real(kind=realType) :: rhoRes0, rhoResStart, rhoResFinal, rhoRes
   logical :: freeStreamResSet=.False.
   real(kind=realType) :: NK_CFL
 
@@ -288,7 +286,7 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use iteration, only : currentLevel
     use monitor, only: monLoc, monGlob, nMonSum
-    use utils, only : setPointers
+    use utils, only : setPointers, sumResiduals, sumAllResiduals
     implicit none
 
     ! Compute rhoRes and totalR. The actual residual must have already
@@ -471,7 +469,7 @@ contains
     use inputPhysics, only : equations
     use flowVarRefState, only :  nw, nwf
     use inputIteration, only : L2conv
-    use iteration, only : approxTotalIts
+    use iteration, only : approxTotalIts, totalR0
     use utils, only : EChk
     use killSignals, only : routineFailed
     implicit none
@@ -988,6 +986,10 @@ contains
     use turbUtils, only : computeEddyViscosity
     use turbAPI, only : turbResidual
     use turbBCRoutines, only : applyAllTurbBCThisBLock, bcturbTreatment
+    use flowUtils, only : computeLamViscosity
+    use BCRoutines, only : applyAllBC
+    use solverUtils, only : timeStep, computeUtau
+    use residuals, only :residual, initRes
     implicit none
 
     ! Local Variables
@@ -1943,6 +1945,10 @@ contains
     use utils, only : setPointers
     use haloExchange, only : whalo2
     use turbUtils, only : computeEddyViscosity
+    use flowUtils, only : computeLamViscosity
+    use BCRoutines, only : applyAllBC
+    use solverUtils, only : timeStep, computeUtau
+    use residuals, only :residual, initRes 
     implicit none
 
     ! Local Variables
@@ -2289,13 +2295,14 @@ contains
 
     use constants
     use flowVarRefState, only : nw
-    use NKSolver, only : totalR0, computeResidualNK
+    use NKSolver, only : computeResidualNK
     use inputPhysics, only : equations
     use flowVarRefState, only :  nw, nwf
     use inputIteration, only : L2conv
-    use iteration, only : approxTotalIts
+    use iteration, only : approxTotalIts, totalR0
     use utils, only : EChk
     use turbAPI, only : turbSolveSegregated
+    use solverUtils, only : computeUTau
     implicit none
 
     ! Input Variables

@@ -13,11 +13,11 @@ module initializeflow_b
 
 contains
 !  differentiation of referencestate in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: gammainf pinf timeref rhoinf
-!                muref rhoinfdim tref winf pinfcorr rgas pinfdim
-!                pref veldirfreestream machcoef
-!   with respect to varying inputs: tinfdim rhoinfdim pinfdim mach
-!                veldirfreestream rgasdim machcoef
+!   gradient     of useful results: veldirfreestream machcoef gammainf
+!                pinf timeref rhoinf muref rhoinfdim tref winf
+!                pinfcorr rgas pinfdim pref
+!   with respect to varying inputs: mach veldirfreestream rgasdim
+!                machcoef tinfdim rhoinfdim pinfdim
   subroutine referencestate_b()
 !
 !       the original version has been nuked since the computations are 

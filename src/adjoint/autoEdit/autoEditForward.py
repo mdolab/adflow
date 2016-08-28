@@ -29,7 +29,8 @@ print "Directory of output source files :", DIR_MOD
 
 useful_modules = ['bcroutines_d','turbbcroutines_d',
                   'utils_d', 'flowutils_d', 'walldistance_d', 'bcpointers_d',
-                  'initializeflow_d', 'turbutils_d', 'sa_d']
+                  'initializeflow_d', 'turbutils_d', 'sa_d', 'fluxes_d',
+                  'solverutils_d', 'residuals_d', 'surfaceintegrations_d']
 modSubToKeep = []
 
 for f in os.listdir(DIR_ORI):

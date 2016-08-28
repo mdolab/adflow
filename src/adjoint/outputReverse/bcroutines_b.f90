@@ -11,20 +11,20 @@ module bcroutines_b
 
 contains
 !  differentiation of applyallbc_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *xx *rev0 *rev1 *rev2 *rev3
+!   gradient     of useful results: *rev *p *w *rlv *x *si *sj
+!                *sk *xx *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2
+!                *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2
+!                *ww3 (global)gammainf (global)winf[1:10] (global)pinfcorr
+!   with respect to varying inputs: *rev *p *w *rlv *x *si *sj
+!                *sk *(*bcdata.norm) *xx *rev0 *rev1 *rev2 *rev3
 !                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi
-!                *ww0 *ww1 *ww2 *ww3 *rev *p *w *rlv *x *si *sj
-!                *sk (global)gammainf (global)winf[1:10] (global)pinfcorr
-!   with respect to varying inputs: *xx *rev0 *rev1 *rev2 *rev3
-!                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi
-!                *ww0 *ww1 *ww2 *ww3 *rev *p *w *rlv *x *si *sj
-!                *sk *(*bcdata.norm) (global)gammainf (global)winf[1:10]
+!                *ww0 *ww1 *ww2 *ww3 (global)gammainf (global)winf[1:10]
 !                (global)pinfcorr (global)rgas
-!   plus diff mem management of: xx:in rev0:in rev1:in rev2:in
-!                rev3:in pp0:in pp1:in pp2:in pp3:in rlv0:in rlv1:in
-!                rlv2:in rlv3:in ssi:in ww0:in ww1:in ww2:in ww3:in
-!                rev:in p:in w:in rlv:in x:in si:in sj:in sk:in
-!                bcdata:in *bcdata.norm:in
+!   plus diff mem management of: rev:in p:in w:in rlv:in x:in si:in
+!                sj:in sk:in bcdata:in *bcdata.norm:in xx:in rev0:in
+!                rev1:in rev2:in rev3:in pp0:in pp1:in pp2:in pp3:in
+!                rlv0:in rlv1:in rlv2:in rlv3:in ssi:in ww0:in
+!                ww1:in ww2:in ww3:in
   subroutine applyallbc_block_b(secondhalo)
 ! apply bc's for a single block
     use constants
@@ -48,7 +48,6 @@ contains
 ! determine whether or not the total energy must be corrected
 ! for the presence of the turbulent kinetic energy.
     correctfork = getcorrectfork()
-    call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
     call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma&
@@ -62,6 +61,7 @@ contains
 &                 , 4))
     call pushreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk&
 &                 , 4))
+    call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
 ! apply all the boundary conditions. the order is important!  only
 ! some of them have been ad'ed
 ! ------------------------------------
@@ -80,7 +80,6 @@ contains
       call pushinteger4(jsize)
       call pushinteger4(istart)
       call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
-      call pushreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
       call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
       call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
       call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(&
@@ -96,6 +95,7 @@ contains
 &                   sj, 4))
       call pushreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(&
 &                   sk, 4))
+      call pushreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
       do nn=1,nbocos
         if (bctype(nn) .eq. symm) then
           call setbcpointers(nn, .false.)
@@ -113,7 +113,6 @@ contains
     call pushinteger4(istart)
     call pushreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
     call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
-    call pushreal8array(xx, size(xx, 1)*size(xx, 2)*size(xx, 3))
     call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma&
@@ -127,6 +126,7 @@ contains
 &                 , 4))
     call pushreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk&
 &                 , 4))
+    call pushreal8array(xx, size(xx, 1)*size(xx, 2)*size(xx, 3))
 ! ------------------------------------
 !  symmetry polar boundary condition
 ! ------------------------------------
@@ -178,12 +178,6 @@ contains
     call pushinteger4(istart)
     call pushreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
     call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
-    call pushreal8array(pp0, size(pp0, 1)*size(pp0, 2))
-    call pushreal8array(pp1, size(pp1, 1)*size(pp1, 2))
-    call pushreal8array(pp2, size(pp2, 1)*size(pp2, 2))
-    call pushreal8array(pp3, size(pp3, 1)*size(pp3, 2))
-    call pushreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
-    call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma&
@@ -197,6 +191,12 @@ contains
 &                 , 4))
     call pushreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk&
 &                 , 4))
+    call pushreal8array(pp0, size(pp0, 1)*size(pp0, 2))
+    call pushreal8array(pp1, size(pp1, 1)*size(pp1, 2))
+    call pushreal8array(pp2, size(pp2, 1)*size(pp2, 2))
+    call pushreal8array(pp3, size(pp3, 1)*size(pp3, 2))
+    call pushreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
+    call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
 ! ------------------------------------
 !  adibatic wall boundary condition
 ! ------------------------------------
@@ -216,10 +216,6 @@ contains
     call pushreal8array(pp2, size(pp2, 1)*size(pp2, 2))
     call pushreal8array(pp3, size(pp3, 1)*size(pp3, 2))
     call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
-    call pushreal8array(pp0, size(pp0, 1)*size(pp0, 2))
-    call pushreal8array(pp1, size(pp1, 1)*size(pp1, 2))
-    call pushreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
-    call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma&
@@ -233,6 +229,10 @@ contains
 &                 , 4))
     call pushreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk&
 &                 , 4))
+    call pushreal8array(pp0, size(pp0, 1)*size(pp0, 2))
+    call pushreal8array(pp1, size(pp1, 1)*size(pp1, 2))
+    call pushreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
+    call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
 ! ------------------------------------
 !  isotermal wall boundary condition
 ! ------------------------------------
@@ -252,11 +252,6 @@ contains
     call pushreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
     call pushreal8array(pp2, size(pp2, 1)*size(pp2, 2))
     call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
-    call pushreal8array(gamma2, size(gamma2, 1)*size(gamma2, 2))
-    call pushreal8array(pp0, size(pp0, 1)*size(pp0, 2))
-    call pushreal8array(pp1, size(pp1, 1)*size(pp1, 2))
-    call pushreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
-    call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma&
@@ -270,6 +265,11 @@ contains
 &                 , 4))
     call pushreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk&
 &                 , 4))
+    call pushreal8array(gamma2, size(gamma2, 1)*size(gamma2, 2))
+    call pushreal8array(pp0, size(pp0, 1)*size(pp0, 2))
+    call pushreal8array(pp1, size(pp1, 1)*size(pp1, 2))
+    call pushreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
+    call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
 ! ------------------------------------
 !  farfield boundary condition
 ! ------------------------------------
@@ -415,10 +415,6 @@ contains
     call pushreal8array(pp2, size(pp2, 1)*size(pp2, 2))
     call pushreal8array(pp3, size(pp3, 1)*size(pp3, 2))
     call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
-    call pushreal8array(pp0, size(pp0, 1)*size(pp0, 2))
-    call pushreal8array(pp1, size(pp1, 1)*size(pp1, 2))
-    call pushreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
-    call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma&
@@ -432,6 +428,10 @@ contains
 &                 , 4))
     call pushreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk&
 &                 , 4))
+    call pushreal8array(pp0, size(pp0, 1)*size(pp0, 2))
+    call pushreal8array(pp1, size(pp1, 1)*size(pp1, 2))
+    call pushreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
+    call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
 ! ------------------------------------
 !  euler wall boundary condition
 ! ------------------------------------
@@ -518,6 +518,10 @@ contains
     do ii1=1,size(bcdatad)
       bcdatad(ii1)%norm = 0.0_8
     end do
+    call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
+    call popreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
+    call popreal8array(pp1, size(pp1, 1)*size(pp1, 2))
+    call popreal8array(pp0, size(pp0, 1)*size(pp0, 2))
     call popreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk, &
 &                4))
     call popreal8array(sj, size(sj, 1)*size(sj, 2)*size(sj, 3)*size(sj, &
@@ -531,10 +535,6 @@ contains
 &                3))
     call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
-    call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
-    call popreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
-    call popreal8array(pp1, size(pp1, 1)*size(pp1, 2))
-    call popreal8array(pp0, size(pp0, 1)*size(pp0, 2))
     call lookreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
     call lookreal8array(pp3, size(pp3, 1)*size(pp3, 2))
     call lookreal8array(pp2, size(pp2, 1)*size(pp2, 2))
@@ -658,6 +658,11 @@ contains
         call setbcpointers_b(nn, .false.)
       end if
     end do
+    call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
+    call popreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
+    call popreal8array(pp1, size(pp1, 1)*size(pp1, 2))
+    call popreal8array(pp0, size(pp0, 1)*size(pp0, 2))
+    call popreal8array(gamma2, size(gamma2, 1)*size(gamma2, 2))
     call popreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk, &
 &                4))
     call popreal8array(sj, size(sj, 1)*size(sj, 2)*size(sj, 3)*size(sj, &
@@ -671,11 +676,6 @@ contains
 &                3))
     call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
-    call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
-    call popreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
-    call popreal8array(pp1, size(pp1, 1)*size(pp1, 2))
-    call popreal8array(pp0, size(pp0, 1)*size(pp0, 2))
-    call popreal8array(gamma2, size(gamma2, 1)*size(gamma2, 2))
     call lookreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
     call lookreal8array(pp2, size(pp2, 1)*size(pp2, 2))
     do nn=1,nbocos
@@ -695,6 +695,10 @@ contains
     call popreal8array(pp3, size(pp3, 1)*size(pp3, 2))
     call popinteger4(jstart)
     call popreal8array(xx, size(xx, 1)*size(xx, 2)*size(xx, 3))
+    call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
+    call popreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
+    call popreal8array(pp1, size(pp1, 1)*size(pp1, 2))
+    call popreal8array(pp0, size(pp0, 1)*size(pp0, 2))
     call popreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk, &
 &                4))
     call popreal8array(sj, size(sj, 1)*size(sj, 2)*size(sj, 3)*size(sj, &
@@ -708,10 +712,6 @@ contains
 &                3))
     call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
-    call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
-    call popreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
-    call popreal8array(pp1, size(pp1, 1)*size(pp1, 2))
-    call popreal8array(pp0, size(pp0, 1)*size(pp0, 2))
     call lookreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
     call lookreal8array(pp3, size(pp3, 1)*size(pp3, 2))
     call lookreal8array(pp2, size(pp2, 1)*size(pp2, 2))
@@ -732,6 +732,12 @@ contains
     call popinteger4(isize)
     call popinteger4(jstart)
     call popreal8array(xx, size(xx, 1)*size(xx, 2)*size(xx, 3))
+    call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
+    call popreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
+    call popreal8array(pp3, size(pp3, 1)*size(pp3, 2))
+    call popreal8array(pp2, size(pp2, 1)*size(pp2, 2))
+    call popreal8array(pp1, size(pp1, 1)*size(pp1, 2))
+    call popreal8array(pp0, size(pp0, 1)*size(pp0, 2))
     call popreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk, &
 &                4))
     call popreal8array(sj, size(sj, 1)*size(sj, 2)*size(sj, 3)*size(sj, &
@@ -745,12 +751,6 @@ contains
 &                3))
     call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
-    call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
-    call popreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
-    call popreal8array(pp3, size(pp3, 1)*size(pp3, 2))
-    call popreal8array(pp2, size(pp2, 1)*size(pp2, 2))
-    call popreal8array(pp1, size(pp1, 1)*size(pp1, 2))
-    call popreal8array(pp0, size(pp0, 1)*size(pp0, 2))
     call lookreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
     do nn=1,nviscbocos
       if (bctype(nn) .eq. nswalladiabatic) then
@@ -800,6 +800,7 @@ contains
       call popinteger4(isize)
       call popinteger4(jstart)
     end if
+    call popreal8array(xx, size(xx, 1)*size(xx, 2)*size(xx, 3))
     call popreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk, &
 &                4))
     call popreal8array(sj, size(sj, 1)*size(sj, 2)*size(sj, 3)*size(sj, &
@@ -813,7 +814,6 @@ contains
 &                3))
     call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
-    call popreal8array(xx, size(xx, 1)*size(xx, 2)*size(xx, 3))
     call lookreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
     do nn=1,nbocos
       if (bctype(nn) .eq. symmpolar) then
@@ -831,6 +831,7 @@ contains
     call popinteger4(jstart)
     call popcontrol1b(branch)
     if (branch .ne. 0) then
+      call popreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
       call popreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk&
 &                  , 4))
       call popreal8array(sj, size(sj, 1)*size(sj, 2)*size(sj, 3)*size(sj&
@@ -844,7 +845,6 @@ contains
 &                  , 3))
       call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
       call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
-      call popreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
       do nn=1,nbocos
         if (bctype(nn) .eq. symm) then
           call setbcpointers(nn, .false.)
@@ -859,6 +859,7 @@ contains
       call popinteger4(isize)
       call popinteger4(jstart)
     end if
+    call popreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
     call popreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk, &
 &                4))
     call popreal8array(sj, size(sj, 1)*size(sj, 2)*size(sj, 3)*size(sj, &
@@ -872,7 +873,6 @@ contains
 &                3))
     call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
-    call popreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
     do nn=1,nbocos
       if (bctype(nn) .eq. symm) then
         call setbcpointers(nn, .false.)
@@ -1031,12 +1031,12 @@ contains
     end do
   end subroutine applyallbc_block
 !  differentiation of bcsymm1sthalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *rev1 *rev2 *pp1 *pp2 *rlv1
-!                *rlv2 *ww1 *ww2 *(*bcdata.norm)
-!   with respect to varying inputs: *rev1 *rev2 *pp1 *pp2 *rlv1
-!                *rlv2 *ww1 *ww2 *(*bcdata.norm)
-!   plus diff mem management of: rev1:in rev2:in pp1:in pp2:in
-!                rlv1:in rlv2:in ww1:in ww2:in bcdata:in *bcdata.norm:in
+!   gradient     of useful results: *(*bcdata.norm) *rev1 *rev2
+!                *pp1 *pp2 *rlv1 *rlv2 *ww1 *ww2
+!   with respect to varying inputs: *(*bcdata.norm) *rev1 *rev2
+!                *pp1 *pp2 *rlv1 *rlv2 *ww1 *ww2
+!   plus diff mem management of: bcdata:in *bcdata.norm:in rev1:in
+!                rev2:in pp1:in pp2:in rlv1:in rlv2:in ww1:in ww2:in
 ! ===================================================================
 !   actual implementation of each of the boundary condition routines
 ! ===================================================================
@@ -1174,12 +1174,12 @@ contains
     end do
   end subroutine bcsymm1sthalo
 !  differentiation of bcsymm2ndhalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *rev0 *rev3 *pp0 *pp3 *rlv0
-!                *rlv3 *ww0 *ww3 *(*bcdata.norm)
-!   with respect to varying inputs: *rev0 *rev3 *pp0 *pp3 *rlv0
-!                *rlv3 *ww0 *ww3 *(*bcdata.norm)
-!   plus diff mem management of: rev0:in rev3:in pp0:in pp3:in
-!                rlv0:in rlv3:in ww0:in ww3:in bcdata:in *bcdata.norm:in
+!   gradient     of useful results: *(*bcdata.norm) *rev0 *rev3
+!                *pp0 *pp3 *rlv0 *rlv3 *ww0 *ww3
+!   with respect to varying inputs: *(*bcdata.norm) *rev0 *rev3
+!                *pp0 *pp3 *rlv0 *rlv3 *ww0 *ww3
+!   plus diff mem management of: bcdata:in *bcdata.norm:in rev0:in
+!                rev3:in pp0:in pp3:in rlv0:in rlv3:in ww0:in ww3:in
   subroutine bcsymm2ndhalo_b(nn)
 !  bcsymm2ndhalo applies the symmetry boundary conditions to a
 !  block for the 2nd halo. this routine is separate as it makes
@@ -1679,9 +1679,9 @@ contains
 !                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
 !   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
 !                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
-!   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
-!                pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in ww0:in
-!                ww1:in ww2:in bcdata:in
+!   plus diff mem management of: bcdata:in rev0:in rev1:in rev2:in
+!                pp0:in pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in
+!                ww0:in ww1:in ww2:in
   subroutine bcnswalladiabatic_b(nn, secondhalo, correctfork)
 ! bcnswalladiabatic applies the viscous adiabatic wall boundary
 ! condition the pointers already defined.
@@ -1891,9 +1891,9 @@ contains
 !                *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
 !   with respect to varying inputs: rgas *rev0 *rev1 *rev2 *pp0
 !                *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
-!   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
-!                pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in ww0:in
-!                ww1:in ww2:in bcdata:in
+!   plus diff mem management of: bcdata:in rev0:in rev1:in rev2:in
+!                pp0:in pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in
+!                ww0:in ww1:in ww2:in
   subroutine bcnswallisothermal_b(nn, secondhalo, correctfork)
 ! bcnswalladiabatic applies the viscous isothermal wall boundary
 ! condition to a block. it is assumed that the bcpointers are
@@ -2198,13 +2198,15 @@ contains
     if (secondhalo) call extrapolate2ndhalo(correctfork)
   end subroutine bcnswallisothermal
 !  differentiation of bcsubsonicoutflow in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.norm)
-!   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.norm)
-!   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
-!                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
-!                ww2:in bcdata:in *bcdata.norm:in
+!   gradient     of useful results: *(*bcdata.norm) *rev0 *rev1
+!                *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1
+!                *ww2
+!   with respect to varying inputs: *(*bcdata.norm) *rev0 *rev1
+!                *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1
+!                *ww2
+!   plus diff mem management of: bcdata:in *bcdata.norm:in rev0:in
+!                rev1:in rev2:in pp0:in pp1:in pp2:in rlv0:in rlv1:in
+!                rlv2:in ww0:in ww1:in ww2:in
   subroutine bcsubsonicoutflow_b(nn, secondhalo, correctfork)
 !  bcsubsonicoutflow applies the subsonic outflow boundary
 !  condition, static pressure prescribed, to a block. it is
@@ -2523,13 +2525,15 @@ contains
     if (secondhalo) call extrapolate2ndhalo(correctfork)
   end subroutine bcsubsonicoutflow
 !  differentiation of bcsubsonicinflow in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: rgas *rev0 *rev1 *rev2 *pp0
-!                *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.norm)
-!   with respect to varying inputs: rgas *rev0 *rev1 *rev2 *pp0
-!                *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.norm)
-!   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
-!                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
-!                ww2:in bcdata:in *bcdata.norm:in
+!   gradient     of useful results: *(*bcdata.norm) rgas *rev0
+!                *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0
+!                *ww1 *ww2
+!   with respect to varying inputs: *(*bcdata.norm) rgas *rev0
+!                *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0
+!                *ww1 *ww2
+!   plus diff mem management of: bcdata:in *bcdata.norm:in rev0:in
+!                rev1:in rev2:in pp0:in pp1:in pp2:in rlv0:in rlv1:in
+!                rlv2:in ww0:in ww1:in ww2:in
   subroutine bcsubsonicinflow_b(nn, secondhalo, correctfork)
 !  bcsubsonicinflow applies the subsonic outflow boundary
 !  condition, total pressure, total density and flow direction
@@ -3233,13 +3237,15 @@ contains
     if (secondhalo) call extrapolate2ndhalo(correctfork)
   end subroutine bcsubsonicinflow
 !  differentiation of bceulerwall in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.norm)
-!   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.norm)
-!   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
-!                pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in ww0:in
-!                ww1:in ww2:in bcdata:in *bcdata.norm:in
+!   gradient     of useful results: *(*bcdata.norm) *rev0 *rev1
+!                *rev2 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0
+!                *ww1 *ww2
+!   with respect to varying inputs: *(*bcdata.norm) *rev0 *rev1
+!                *rev2 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0
+!                *ww1 *ww2
+!   plus diff mem management of: bcdata:in *bcdata.norm:in rev0:in
+!                rev1:in rev2:in pp0:in pp1:in pp2:in pp3:in rlv0:in
+!                rlv1:in rlv2:in ww0:in ww1:in ww2:in
   subroutine bceulerwall_b(nn, secondhalo, correctfork)
 !  bceulerwall applies the inviscid wall boundary condition to a
 !  block. it is assumed that the bcpointers are already set to the
@@ -3470,15 +3476,15 @@ contains
     if (secondhalo) call extrapolate2ndhalo(correctfork)
   end subroutine bceulerwall
 !  differentiation of bcfarfield in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: gammainf winf pinfcorr *rev0
-!                *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0
-!                *ww1 *ww2 *(*bcdata.norm)
-!   with respect to varying inputs: gammainf winf pinfcorr *rev0
-!                *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0
-!                *ww1 *ww2 *(*bcdata.norm)
-!   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
-!                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
-!                ww2:in bcdata:in *bcdata.norm:in
+!   gradient     of useful results: *(*bcdata.norm) gammainf winf
+!                pinfcorr *rev0 *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0
+!                *rlv1 *rlv2 *ww0 *ww1 *ww2
+!   with respect to varying inputs: *(*bcdata.norm) gammainf winf
+!                pinfcorr *rev0 *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0
+!                *rlv1 *rlv2 *ww0 *ww1 *ww2
+!   plus diff mem management of: bcdata:in *bcdata.norm:in rev0:in
+!                rev1:in rev2:in pp0:in pp1:in pp2:in rlv0:in rlv1:in
+!                rlv2:in ww0:in ww1:in ww2:in
   subroutine bcfarfield_b(nn, secondhalo, correctfork)
 ! bcfarfield applies the farfield boundary condition to a block.
 ! it is assumed that the bcpointers are already set *
@@ -3953,8 +3959,8 @@ contains
 !                *rlv0 *rlv1 *rlv2 *ww0 *ww1
 !   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
 !                *rlv0 *rlv1 *rlv2 *ww0 *ww1
-!   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
-!                pp1:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in bcdata:in
+!   plus diff mem management of: bcdata:in rev0:in rev1:in rev2:in
+!                pp0:in pp1:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
   subroutine bcsupersonicinflow_b(nn, secondhalo, correctfork)
 ! bcsupersonicinflow applies the supersonic inflow boundary
 ! conditions, entire state vector is prescribed, to a block. it is

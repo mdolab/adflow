@@ -10,6 +10,7 @@ subroutine getForces(forces, npts, sps)
   use surfaceUtils, only : setFullFamilyList
   use utils, only : setPointers
   use sorting, only : bsearchIntegers
+  use surfaceIntegrations, only : forcesAndMoments
   implicit none
 
   integer(kind=intType), intent(in) :: npts, sps

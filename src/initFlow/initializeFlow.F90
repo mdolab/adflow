@@ -1144,6 +1144,10 @@ contains
     use haloExchange, only : whalo2
     use turbUtils, only : computeEddyViscosity
     use turbBCRoutines, only :applyAllTurbBC
+    use solverUtils, only : gridVelocitiesFineLevel, gridVelocitiesCoarseLevels, &
+         normalVelocitiesAllLevels, slipVelocitiesFineLevel, slipVelocitiesCoarseLevels
+    use flowUtils, only : computeLamViscosity
+    use BCRoutines, only : applyAllBC
     implicit none
     !
     !      Subroutine arguments.
@@ -1205,7 +1209,7 @@ contains
     do mm=1,nTimeIntervalsSpectral
        do nn=1,nDom
           call setPointers(nn,mgStartlevel,mm)
-          call computeLamViscosity(.False.)
+          call computeLamViscosity
        enddo
     enddo
 

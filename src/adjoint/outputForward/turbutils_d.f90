@@ -12,7 +12,7 @@ module turbutils_d
 contains
 !  differentiation of prodkatolaunder in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *scratch
-!   with respect to varying inputs: timeref *w *vol *si *sj *sk
+!   with respect to varying inputs: *w *vol *si *sj *sk timeref
 !   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
   subroutine prodkatolaunder_d()
@@ -604,7 +604,7 @@ contains
   end subroutine prodsmag2
 !  differentiation of prodwmag2 in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *scratch
-!   with respect to varying inputs: timeref *w *vol *si *sj *sk
+!   with respect to varying inputs: *w *vol *si *sj *sk timeref
 !   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
   subroutine prodwmag2_d()
@@ -889,7 +889,7 @@ contains
   end function sanuknowneddyratio
 !  differentiation of unsteadyturbterm in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *scratch
-!   with respect to varying inputs: timeref *w *scratch
+!   with respect to varying inputs: *w *scratch timeref
 !   plus diff mem management of: dw:in w:in scratch:in
   subroutine unsteadyturbterm_d(madv, nadv, offset, qq)
 !
