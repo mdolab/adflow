@@ -33,7 +33,7 @@ subroutine computeUtau
   end do spectralLoop
 
 end subroutine computeUtau
-#endif
+
 subroutine computeUtau_block
   !
   !       computeUtau computes the skin friction velocity for the        
@@ -45,6 +45,8 @@ subroutine computeUtau_block
   use inputPhysics
   use inputTimeSpectral
   use iteration
+  use turbCurveFits, only : curveUpRe
+
   implicit none
   !
   !      Local variables.
@@ -56,10 +58,6 @@ subroutine computeUtau_block
   real(kind=realType), dimension(:,:,:), pointer :: ww, norm, uSlip
   real(kind=realType), dimension(:,:),   pointer :: dd2Wall, rrlv
   real(kind=realType), dimension(:,:),   pointer :: utau
-  !
-  !      Function definition.
-  !
-  real(kind=realType) :: curveUpRe
 
   ! Return immediately if no wall functions must be used.
 
@@ -157,3 +155,4 @@ subroutine computeUtau_block
   enddo viscSubfaces
   
 end subroutine computeUtau_block
+#endif

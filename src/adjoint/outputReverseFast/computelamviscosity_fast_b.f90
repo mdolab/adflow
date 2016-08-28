@@ -6,12 +6,6 @@
 !   with respect to varying inputs: *p *w *rlv
 !   rw status of diff variables: *p:incr *w:incr *rlv:in-out
 !   plus diff mem management of: p:in w:in rlv:in
-!
-!       file:          computelamviscosity.f90                         
-!       author:        edwin van der weide                             
-!       starting date: 03-10-2003                                      
-!       last modified: 06-12-2005                                      
-!
 subroutine computelamviscosity_fast_b()
 !
 !       computelamviscosity computes the laminar viscosity ratio in    
@@ -42,9 +36,6 @@ subroutine computelamviscosity_fast_b()
   real(kind=realtype) :: tempd
   real(kind=realtype) :: tempd0
   real(kind=realtype) :: temp
-!
-!       begin execution                                                
-!
 ! return immediately if no laminar viscosity needs to be computed.
   if (viscous) then
 ! determine whether or not the pressure must be corrected

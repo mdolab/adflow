@@ -54,6 +54,8 @@ subroutine executeDADIStep
   use utils, only : getCorrectForK, setPointers
   use haloExchange, only : whalo1, whalo2
   use flowUtils, only : computeETotBlock
+  use turbutils, only : computeeddyviscosity
+
   implicit none
   !
   !      Local parameter.

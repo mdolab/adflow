@@ -98,6 +98,7 @@ subroutine executeRkStage
   use haloExchange, only : whalo1, whalo2
   use utils, only : setPointers
   use flowUtils, only : computeEtotBlock
+  use turbutils, only : computeeddyviscosity
 
   implicit none
   !

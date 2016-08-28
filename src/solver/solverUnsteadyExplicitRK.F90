@@ -16,7 +16,10 @@
        use flowUtils, only : computePressure
        use haloExchange, only : whalo1, whalo2
        use bcdata, only : setSupersonicInletFreeStream
-       implicit none
+       use turbutils, only : computeeddyviscosity    
+       use turbAPI, only : turbResidual
+       use turbBCRoutines, only : applyAllTurbBC 
+      implicit none
 !
 !      Local parameter.
 !

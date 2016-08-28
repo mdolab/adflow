@@ -572,7 +572,7 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
   use inputAdjoint       
   use iteration
   use inputIteration
-  use saModule_fast_b, only : saresscale_fast_b, saviscous_fast_b, &
+  use sa_fast_b, only : saresscale_fast_b, saviscous_fast_b, &
        sasource_fast_b, cb3Inv, cv13, cw36, kar2inv, qq
   use adjointvars
   use communication, only : sumb_comm_world
@@ -580,6 +580,9 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
   use utils, only : terminate
   use haloExchange, only : whalo2_b
   use flowutils_fast_b, only : computespeedofsoundsquared_fast_b
+  use turbutils_fast_b
+  use turbbcroutines_b
+  use turbutils_b, only : saeddyviscosity_b
   implicit none
 
   ! Input Variables

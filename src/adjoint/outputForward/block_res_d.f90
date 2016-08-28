@@ -85,8 +85,10 @@ subroutine block_res_d(nn, sps, usespatial, alpha, alphad, beta, betad, &
   use initializeflow_d, only : referencestate, referencestate_d
   use walldistance_d, only : updatewalldistancesquickly, xsurf
   use inputdiscretization
-  use samodule_d
+  use sa_d
   use inputunsteady
+  use turbbcroutines_d
+  use turbutils_d
   use utils_d, only : terminate
   use diffsizes
 !  hint: isize1ofdrfbcdata should be the size of dimension 1 of array *bcdata

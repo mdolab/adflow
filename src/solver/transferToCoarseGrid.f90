@@ -12,6 +12,7 @@
        use utils, only : setPointers
        use haloExchange, only : whalo1
        use flowUtils, only : computeEtotBlock
+       use turbutils, only : computeeddyviscosity
 
        implicit none
 !

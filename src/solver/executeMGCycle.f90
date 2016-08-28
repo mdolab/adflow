@@ -8,6 +8,8 @@
        use inputIteration
        use inputPhysics
        use utils, only : terminate
+       use turbAPI, only : turbSolveSegregated
+
        implicit none
 !
 !      Local variables.

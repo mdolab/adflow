@@ -35,8 +35,10 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, &
   use initializeFlow, only : referenceState
   use wallDistance, only : updateWallDistancesQuickly, xsurf
   use inputDiscretization 
-  use saModule
+  use sa
   use inputUnsteady
+  use turbBCRoutines
+  use turbUtils
   use utils, only : terminate
   implicit none
 

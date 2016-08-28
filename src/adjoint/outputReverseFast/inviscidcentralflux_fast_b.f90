@@ -6,12 +6,6 @@
 !   with respect to varying inputs: *p *dw *w
 !   rw status of diff variables: *p:incr *dw:in-out *w:incr
 !   plus diff mem management of: p:in dw:in w:in
-!
-!       file:          inviscidcentralflux.f90                         
-!       author:        edwin van der weide                             
-!       starting date: 03-24-2003                                      
-!       last modified: 10-29-2007                                      
-!
 subroutine inviscidcentralflux_fast_b()
 !
 !       inviscidcentralflux computes the euler fluxes using a central  
@@ -263,9 +257,6 @@ branch = myIntStack(myIntPtr)
     wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + sj(i, j, k, 2)*vnpd
     wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + sj(i, j, k, 3)*vnpd
   end do
-!
-!       begin execution                                                
-!
 ! initialize sface to zero. this value will be used if the
 ! block is not moving.
   sface = zero

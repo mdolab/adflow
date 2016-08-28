@@ -3,13 +3,13 @@
 !
 !  differentiation of allnodalgradients in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *aa *wx *wy *wz *w *qx *qy
-!                qz *ux *uy *uz *vx *vy 
+!                *qz *ux *uy *uz *vx *vy *vz
 !   with respect to varying inputs: *aa *wx *wy *wz *w *qx *qy
-!                qz *ux *uy *uz *vx *vy 
+!                *qz *ux *uy *uz *vx *vy *vz
 !   rw status of diff variables: *aa:incr *wx:in-zero *wy:in-zero
-!                wz:in-zero *w:incr *qx:in-zero *qy:in-zero 
-!                ux:in-zero *uy:in-zero *uz:in-zero 
-!                vy:in-zero 
+!                *wz:in-zero *w:incr *qx:in-zero *qy:in-zero *qz:in-zero
+!                *ux:in-zero *uy:in-zero *uz:in-zero *vx:in-zero
+!                *vy:in-zero *vz:in-zero
 !   plus diff mem management of: aa:in wx:in wy:in wz:in w:in qx:in
 !                qy:in qz:in ux:in uy:in uz:in vx:in vy:in vz:in
 subroutine allnodalgradients_fast_b()
@@ -32,9 +32,6 @@ subroutine allnodalgradients_fast_b()
   real(kind=realtype) :: ubard, vbard, wbard, a2d
   real(kind=realtype) :: sx, sx1, sy, sy1, sz, sz1
   intrinsic mod
-!
-!         begin execution                                              
-!
 ! zero all nodeal gradients:
   integer :: branch
   real(kind=realtype) :: tempd10

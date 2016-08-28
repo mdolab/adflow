@@ -50,13 +50,12 @@ contains
 &   muinf, muinfd, gammainf, gammainfd, winf, winfd, nw, nwf, kpresent, &
 &   winf, winfd
     use flowutils_d, only : computegamma, computegamma_d, etot, etot_d
+    use turbutils_d, only : sanuknowneddyratio, sanuknowneddyratio_d
     implicit none
     integer(kind=inttype) :: sps, nn, mm, ierr
     real(kind=realtype) :: gm1, ratio
     real(kind=realtype) :: nuinf, ktmp, uinf2
     real(kind=realtype) :: nuinfd, ktmpd, uinf2d
-    real(kind=realtype) :: sanuknowneddyratio
-    real(kind=realtype) :: sanuknowneddyratio_d
     real(kind=realtype) :: vinf, zinf, tmp1(1), tmp2(1)
     real(kind=realtype) :: vinfd, zinfd, tmp1d(1), tmp2d(1)
     intrinsic sqrt
@@ -252,11 +251,11 @@ contains
 &   pref, rhoref, tref, muref, timeref, pinf, pinfcorr, rhoinf, uinf, &
 &   rgas, muinf, gammainf, winf, nw, nwf, kpresent, winf
     use flowutils_d, only : computegamma, etot
+    use turbutils_d, only : sanuknowneddyratio
     implicit none
     integer(kind=inttype) :: sps, nn, mm, ierr
     real(kind=realtype) :: gm1, ratio
     real(kind=realtype) :: nuinf, ktmp, uinf2
-    real(kind=realtype) :: sanuknowneddyratio
     real(kind=realtype) :: vinf, zinf, tmp1(1), tmp2(1)
     intrinsic sqrt
     real(kind=realtype) :: arg1
