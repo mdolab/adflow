@@ -602,13 +602,12 @@ contains
     end if
   end function rigidrotangle
 !  differentiation of setbcpointers in forward (tangent) mode (with options i4 dr8 r8):
-!   plus diff mem management of: xx:in-out rev0:in-out rev1:in-out
-!                rev2:in-out rev3:in-out pp0:in-out pp1:in-out
-!                pp2:in-out pp3:in-out rlv0:in-out rlv1:in-out
+!   plus diff mem management of: rev:in p:in s:in w:in rlv:in x:in
+!                si:in sj:in sk:in bcdata:in xx:in-out rev0:in-out
+!                rev1:in-out rev2:in-out rev3:in-out pp0:in-out
+!                pp1:in-out pp2:in-out pp3:in-out rlv0:in-out rlv1:in-out
 !                rlv2:in-out rlv3:in-out ss:in-out ssi:in-out ssj:in-out
 !                ssk:in-out ww0:in-out ww1:in-out ww2:in-out ww3:in-out
-!                rev:in p:in s:in w:in rlv:in x:in si:in sj:in
-!                sk:in bcdata:in
   subroutine setbcpointers_d(nn, spatialpointers)
 !
 !       setbcpointers sets the pointers needed for the boundary        
@@ -1337,9 +1336,9 @@ contains
   end subroutine computerootbendingmoment
 !  differentiation of computetsderivatives in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: dcdalphadot coef0 dcdalpha
-!   with respect to varying inputs: gammainf pinf rhoinfdim pinfdim
-!                pref machgrid lengthref machcoef dragdirection
-!                liftdirection moment force
+!   with respect to varying inputs: machgrid lengthref machcoef
+!                dragdirection liftdirection gammainf pinf rhoinfdim
+!                pinfdim pref moment force
   subroutine computetsderivatives_d(force, forced, moment, momentd, &
 &   liftindex, coef0, coef0d, dcdalpha, dcdalphad, dcdalphadot, &
 &   dcdalphadotd, dcdq, dcdqdot)
@@ -1415,8 +1414,8 @@ contains
     factmomentd = (factd*lengthref*lref-fact*lref*lengthrefd)/(lengthref&
 &     *lref)**2
     factmoment = fact/(lengthref*lref)
-    call getdirangle(veldirfreestream, liftdirection, liftindex, &
-&                 alpha, beta)
+    call getdirangle(veldirfreestream, liftdirection, liftindex, alpha, &
+&              beta)
     if (tsqmode) then
       print*, &
 &     'ts q mode code needs to be updated in computetsderivatives!'
@@ -1482,8 +1481,8 @@ contains
         intervalalphadot(sps) = tsalphadot(degreepolalpha, coefpolalpha&
 &         , degreefouralpha, omegafouralpha, coscoeffouralpha, &
 &         sincoeffouralpha, t(1))
-        call getdirangle(veldirfreestream, liftdirection, liftindex, &
-&                     alpha + intervalalpha(sps), beta)
+! this call is wrong!!!! 
+!call getdirangle(veldirfreestream,liftdirection,liftindex,alpha+intervalalpha(sps), beta)
         basecoefd(sps, 1) = factd*(force(1, sps)*liftdirection(1)+force(&
 &         2, sps)*liftdirection(2)+force(3, sps)*liftdirection(3)) + &
 &         fact*(forced(1, sps)*liftdirection(1)+force(1, sps)*&
@@ -1663,8 +1662,8 @@ contains
     scaledim = pref/pinf
     fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2*scaledim)
     factmoment = fact/(lengthref*lref)
-    call getdirangle(veldirfreestream, liftdirection, liftindex, &
-&                 alpha, beta)
+    call getdirangle(veldirfreestream, liftdirection, liftindex, alpha, &
+&              beta)
     if (tsqmode) then
       print*, &
 &     'ts q mode code needs to be updated in computetsderivatives!'
@@ -1729,8 +1728,8 @@ contains
         intervalalphadot(sps) = tsalphadot(degreepolalpha, coefpolalpha&
 &         , degreefouralpha, omegafouralpha, coscoeffouralpha, &
 &         sincoeffouralpha, t(1))
-        call getdirangle(veldirfreestream, liftdirection, liftindex, &
-&                     alpha + intervalalpha(sps), beta)
+! this call is wrong!!!! 
+!call getdirangle(veldirfreestream,liftdirection,liftindex,alpha+intervalalpha(sps), beta)
         basecoef(sps, 1) = fact*(force(1, sps)*liftdirection(1)+force(2&
 &         , sps)*liftdirection(2)+force(3, sps)*liftdirection(3))
         basecoef(sps, 2) = fact*(force(1, sps)*dragdirection(1)+force(2&
@@ -1881,20 +1880,6 @@ contains
       tsalphadot = alphadot
     end if
   end function tsalphadot
-  subroutine terminate(routinename, errormessage)
-!
-!       terminate writes an error message to standard output and       
-!       terminates the execution of the program.                       
-!
-    use constants
-    use communication, only : sumb_comm_world, myid
-    implicit none
-!
-!      subroutine arguments
-!
-    character(len=*), intent(in) :: routinename
-    character(len=*), intent(in) :: errormessage
-  end subroutine terminate
   subroutine computeleastsquaresregression(y, x, npts, m, b)
 !
 !       computes the slope of best fit for a set of x,y data of length 
@@ -1923,6 +1908,320 @@ contains
     m = (npts*sumxy-sumy*sumx)/(npts*sumx2-sumx**2)
     b = (sumy*sumx2-sumx*sumxy)/(npts*sumx2-sumx**2)
   end subroutine computeleastsquaresregression
+!  differentiation of getdirangle in forward (tangent) mode (with options i4 dr8 r8):
+!   variations   of useful results: alpha beta
+!   with respect to varying inputs: freestreamaxis
+  subroutine getdirangle_d(freestreamaxis, freestreamaxisd, liftaxis, &
+&   liftindex, alpha, alphad, beta, betad)
+!
+!      convert the wind axes to angle of attack and side slip angle.  
+!      the direction angles alpha and beta are computed given the     
+!      components of the wind direction vector (freestreamaxis), the  
+!      lift direction vector (liftaxis) and assuming that the         
+!      body direction (xb,yb,zb) is in the default ijk coordinate     
+!      system. the rotations are determined by first determining      
+!      whether the lift is primarily in the j or k direction and then 
+!      determining the angles accordingly.                            
+!      direction vector:                                              
+!        1) rotation about the zb or yb -axis: alpha clockwise (cw)   
+!           (xb,yb,zb) -> (x1,y1,z1)                                  
+!        2) rotation about the yl or z1 -axis: beta counter-clockwise 
+!           (ccw) (x1,y1,z1) -> (xw,yw,zw)                            
+!         input arguments:                                            
+!            freestreamaxis = wind vector in body axes                
+!            liftaxis       = lift direction vector in body axis      
+!         output arguments:                                           
+!            alpha    = angle of attack in radians                    
+!            beta     = side slip angle in radians                    
+!
+    use constants
+    implicit none
+!
+!     subroutine arguments.
+!
+!      real(kind=realtype), intent(in)  :: xw, yw, zw
+    real(kind=realtype), dimension(3), intent(in) :: freestreamaxis
+    real(kind=realtype), dimension(3), intent(in) :: freestreamaxisd
+    real(kind=realtype), dimension(3), intent(in) :: liftaxis
+    real(kind=realtype), intent(out) :: alpha, beta
+    real(kind=realtype), intent(out) :: alphad, betad
+    integer(kind=inttype), intent(out) :: liftindex
+!
+!     local variables.
+!
+    real(kind=realtype) :: rnorm
+    real(kind=realtype) :: rnormd
+    integer(kind=inttype) :: flowindex, i
+    real(kind=realtype), dimension(3) :: freestreamaxisnorm
+    real(kind=realtype), dimension(3) :: freestreamaxisnormd
+    integer(kind=inttype) :: temp
+    intrinsic abs
+    intrinsic sqrt
+    intrinsic asin
+    intrinsic atan2
+    real(kind=realtype) :: arg1
+    real(kind=realtype) :: arg1d
+    real(kind=realtype) :: abs7
+    real(kind=realtype) :: abs6
+    real(kind=realtype) :: abs5
+    real(kind=realtype) :: abs4
+    real(kind=realtype) :: abs3
+    real(kind=realtype) :: abs2
+    real(kind=realtype) :: abs1
+    real(kind=realtype) :: abs0
+! assume domoniate flow is x
+    flowindex = 1
+    if (liftaxis(1) .ge. 0.) then
+      abs0 = liftaxis(1)
+    else
+      abs0 = -liftaxis(1)
+    end if
+    if (liftaxis(2) .ge. 0.) then
+      abs2 = liftaxis(2)
+    else
+      abs2 = -liftaxis(2)
+    end if
+    if (liftaxis(1) .ge. 0.) then
+      abs4 = liftaxis(1)
+    else
+      abs4 = -liftaxis(1)
+    end if
+    if (liftaxis(3) .ge. 0.) then
+      abs6 = liftaxis(3)
+    else
+      abs6 = -liftaxis(3)
+    end if
+! determine the dominant lift direction
+    if (abs0 .gt. abs2 .and. abs4 .gt. abs6) then
+      temp = 1
+    else
+      if (liftaxis(2) .ge. 0.) then
+        abs1 = liftaxis(2)
+      else
+        abs1 = -liftaxis(2)
+      end if
+      if (liftaxis(1) .ge. 0.) then
+        abs3 = liftaxis(1)
+      else
+        abs3 = -liftaxis(1)
+      end if
+      if (liftaxis(2) .ge. 0.) then
+        abs5 = liftaxis(2)
+      else
+        abs5 = -liftaxis(2)
+      end if
+      if (liftaxis(3) .ge. 0.) then
+        abs7 = liftaxis(3)
+      else
+        abs7 = -liftaxis(3)
+      end if
+      if (abs1 .gt. abs3 .and. abs5 .gt. abs7) then
+        temp = 2
+      else
+        temp = 3
+      end if
+    end if
+    liftindex = temp
+! normalize the freestreamdirection vector.
+    arg1d = 2*freestreamaxis(1)*freestreamaxisd(1) + 2*freestreamaxis(2)&
+&     *freestreamaxisd(2) + 2*freestreamaxis(3)*freestreamaxisd(3)
+    arg1 = freestreamaxis(1)**2 + freestreamaxis(2)**2 + freestreamaxis(&
+&     3)**2
+    if (arg1 .eq. 0.0_8) then
+      rnormd = 0.0_8
+    else
+      rnormd = arg1d/(2.0*sqrt(arg1))
+    end if
+    rnorm = sqrt(arg1)
+    freestreamaxisnormd = 0.0_8
+    do i=1,3
+      freestreamaxisnormd(i) = (freestreamaxisd(i)*rnorm-freestreamaxis(&
+&       i)*rnormd)/rnorm**2
+      freestreamaxisnorm(i) = freestreamaxis(i)/rnorm
+    end do
+    if (liftindex .eq. 2) then
+! different coordinate system for aerosurf
+! wing is in z- direction
+! compute angle of attack alpha.
+      if (freestreamaxisnorm(2) .eq. 1.0 .or. freestreamaxisnorm(2) .eq.&
+&         (-1.0)) then
+        alphad = 0.0_8
+      else
+        alphad = freestreamaxisnormd(2)/sqrt(1.0-freestreamaxisnorm(2)**&
+&         2)
+      end if
+      alpha = asin(freestreamaxisnorm(2))
+! compute side-slip angle beta.
+      betad = -((freestreamaxisnormd(3)*freestreamaxisnorm(1)-&
+&       freestreamaxisnormd(1)*freestreamaxisnorm(3))/(&
+&       freestreamaxisnorm(3)**2+freestreamaxisnorm(1)**2))
+      beta = -atan2(freestreamaxisnorm(3), freestreamaxisnorm(1))
+    else if (liftindex .eq. 3) then
+! wing is in y- direction
+! compute angle of attack alpha.
+      if (freestreamaxisnorm(3) .eq. 1.0 .or. freestreamaxisnorm(3) .eq.&
+&         (-1.0)) then
+        alphad = 0.0_8
+      else
+        alphad = freestreamaxisnormd(3)/sqrt(1.0-freestreamaxisnorm(3)**&
+&         2)
+      end if
+      alpha = asin(freestreamaxisnorm(3))
+! compute side-slip angle beta.
+      betad = (freestreamaxisnormd(2)*freestreamaxisnorm(1)-&
+&       freestreamaxisnormd(1)*freestreamaxisnorm(2))/(&
+&       freestreamaxisnorm(2)**2+freestreamaxisnorm(1)**2)
+      beta = atan2(freestreamaxisnorm(2), freestreamaxisnorm(1))
+    else
+      call terminate('getdirangle', 'invalid lift direction')
+      alphad = 0.0_8
+      betad = 0.0_8
+    end if
+  end subroutine getdirangle_d
+  subroutine getdirangle(freestreamaxis, liftaxis, liftindex, alpha, &
+&   beta)
+!
+!      convert the wind axes to angle of attack and side slip angle.  
+!      the direction angles alpha and beta are computed given the     
+!      components of the wind direction vector (freestreamaxis), the  
+!      lift direction vector (liftaxis) and assuming that the         
+!      body direction (xb,yb,zb) is in the default ijk coordinate     
+!      system. the rotations are determined by first determining      
+!      whether the lift is primarily in the j or k direction and then 
+!      determining the angles accordingly.                            
+!      direction vector:                                              
+!        1) rotation about the zb or yb -axis: alpha clockwise (cw)   
+!           (xb,yb,zb) -> (x1,y1,z1)                                  
+!        2) rotation about the yl or z1 -axis: beta counter-clockwise 
+!           (ccw) (x1,y1,z1) -> (xw,yw,zw)                            
+!         input arguments:                                            
+!            freestreamaxis = wind vector in body axes                
+!            liftaxis       = lift direction vector in body axis      
+!         output arguments:                                           
+!            alpha    = angle of attack in radians                    
+!            beta     = side slip angle in radians                    
+!
+    use constants
+    implicit none
+!
+!     subroutine arguments.
+!
+!      real(kind=realtype), intent(in)  :: xw, yw, zw
+    real(kind=realtype), dimension(3), intent(in) :: freestreamaxis
+    real(kind=realtype), dimension(3), intent(in) :: liftaxis
+    real(kind=realtype), intent(out) :: alpha, beta
+    integer(kind=inttype), intent(out) :: liftindex
+!
+!     local variables.
+!
+    real(kind=realtype) :: rnorm
+    integer(kind=inttype) :: flowindex, i
+    real(kind=realtype), dimension(3) :: freestreamaxisnorm
+    integer(kind=inttype) :: temp
+    intrinsic abs
+    intrinsic sqrt
+    intrinsic asin
+    intrinsic atan2
+    real(kind=realtype) :: arg1
+    real(kind=realtype) :: abs7
+    real(kind=realtype) :: abs6
+    real(kind=realtype) :: abs5
+    real(kind=realtype) :: abs4
+    real(kind=realtype) :: abs3
+    real(kind=realtype) :: abs2
+    real(kind=realtype) :: abs1
+    real(kind=realtype) :: abs0
+! assume domoniate flow is x
+    flowindex = 1
+    if (liftaxis(1) .ge. 0.) then
+      abs0 = liftaxis(1)
+    else
+      abs0 = -liftaxis(1)
+    end if
+    if (liftaxis(2) .ge. 0.) then
+      abs2 = liftaxis(2)
+    else
+      abs2 = -liftaxis(2)
+    end if
+    if (liftaxis(1) .ge. 0.) then
+      abs4 = liftaxis(1)
+    else
+      abs4 = -liftaxis(1)
+    end if
+    if (liftaxis(3) .ge. 0.) then
+      abs6 = liftaxis(3)
+    else
+      abs6 = -liftaxis(3)
+    end if
+! determine the dominant lift direction
+    if (abs0 .gt. abs2 .and. abs4 .gt. abs6) then
+      temp = 1
+    else
+      if (liftaxis(2) .ge. 0.) then
+        abs1 = liftaxis(2)
+      else
+        abs1 = -liftaxis(2)
+      end if
+      if (liftaxis(1) .ge. 0.) then
+        abs3 = liftaxis(1)
+      else
+        abs3 = -liftaxis(1)
+      end if
+      if (liftaxis(2) .ge. 0.) then
+        abs5 = liftaxis(2)
+      else
+        abs5 = -liftaxis(2)
+      end if
+      if (liftaxis(3) .ge. 0.) then
+        abs7 = liftaxis(3)
+      else
+        abs7 = -liftaxis(3)
+      end if
+      if (abs1 .gt. abs3 .and. abs5 .gt. abs7) then
+        temp = 2
+      else
+        temp = 3
+      end if
+    end if
+    liftindex = temp
+! normalize the freestreamdirection vector.
+    arg1 = freestreamaxis(1)**2 + freestreamaxis(2)**2 + freestreamaxis(&
+&     3)**2
+    rnorm = sqrt(arg1)
+    do i=1,3
+      freestreamaxisnorm(i) = freestreamaxis(i)/rnorm
+    end do
+    if (liftindex .eq. 2) then
+! different coordinate system for aerosurf
+! wing is in z- direction
+! compute angle of attack alpha.
+      alpha = asin(freestreamaxisnorm(2))
+! compute side-slip angle beta.
+      beta = -atan2(freestreamaxisnorm(3), freestreamaxisnorm(1))
+    else if (liftindex .eq. 3) then
+! wing is in y- direction
+! compute angle of attack alpha.
+      alpha = asin(freestreamaxisnorm(3))
+! compute side-slip angle beta.
+      beta = atan2(freestreamaxisnorm(2), freestreamaxisnorm(1))
+    else
+      call terminate('getdirangle', 'invalid lift direction')
+    end if
+  end subroutine getdirangle
+  subroutine terminate(routinename, errormessage)
+!
+!       terminate writes an error message to standard output and       
+!       terminates the execution of the program.                       
+!
+    use constants
+    use communication, only : sumb_comm_world, myid
+    implicit none
+!
+!      subroutine arguments
+!
+    character(len=*), intent(in) :: routinename
+    character(len=*), intent(in) :: errormessage
+  end subroutine terminate
   subroutine stabilityderivativedriver()
 !
 !      runs the time spectral stability derivative routines from the  
@@ -1940,4 +2239,130 @@ contains
 &   dcdr, dcdrdot
     real(kind=realtype), dimension(8) :: coef0, coef0dot
   end subroutine stabilityderivativedriver
+  subroutine setcoeftimeintegrator()
+!
+!       setcoeftimeintegrator determines the coefficients of the       
+!       time integration scheme in unsteady mode. normally these are   
+!       equal to the coefficients corresponding to the specified       
+!       accuracy. however during the initial phase there are not       
+!       enough states in the past and the accuracy is reduced.         
+!
+    use constants
+    use inputunsteady
+    use inputphysics
+    use iteration
+    use monitor
+    implicit none
+!
+!      local variables.
+!
+    integer(kind=inttype) :: nn, nlevelsset
+! determine which time integrator must be used.
+! modified by hdn
+    select case  (timeaccuracy) 
+    case (firstorder) 
+! 1st order. no need to check the number of available
+! states in the past. set the two coefficients and
+! nlevelsset to 2.
+      coeftime(0) = 1.0_realtype
+      coeftime(1) = -1.0_realtype
+      if (useale .and. equationmode .eq. unsteady) then
+        coeftimeale(1) = 1.0_realtype
+        coefmeshale(1, 1) = half
+        coefmeshale(1, 2) = half
+      end if
+      nlevelsset = 2
+    case (secondorder) 
+!=============================================================
+! second order time integrator. determine the amount of
+! available states and set the coefficients accordingly.
+      select case  (noldsolavail) 
+      case (1_inttype) 
+        coeftime(0) = 1.0_realtype
+        coeftime(1) = -1.0_realtype
+        if (useale .and. equationmode .eq. unsteady) then
+          coeftimeale(1) = half
+          coeftimeale(2) = half
+          coeftimeale(3) = zero
+          coeftimeale(4) = zero
+          coefmeshale(1, 1) = half
+          coefmeshale(1, 2) = half
+          coefmeshale(2, 1) = half
+          coefmeshale(2, 2) = half
+        end if
+        nlevelsset = 2
+      case default
+! 2 or bigger.
+        coeftime(0) = 1.5_realtype
+        coeftime(1) = -2.0_realtype
+        coeftime(2) = 0.5_realtype
+        if (useale .and. equationmode .eq. unsteady) then
+          coeftimeale(1) = threefourth
+          coeftimeale(2) = threefourth
+          coeftimeale(3) = -fourth
+          coeftimeale(4) = -fourth
+          coefmeshale(1, 1) = half*(1.0_realtype+1.0_realtype/sqrtthree)
+          coefmeshale(1, 2) = half*(1.0_realtype-1.0_realtype/sqrtthree)
+          coefmeshale(2, 1) = coefmeshale(1, 2)
+          coefmeshale(2, 2) = coefmeshale(1, 1)
+        end if
+        nlevelsset = 3
+      end select
+    case (thirdorder) 
+!=============================================================
+! third order time integrator.  determine the amount of
+! available states and set the coefficients accordingly.
+      select case  (noldsolavail) 
+      case (1_inttype) 
+        coeftime(0) = 1.0_realtype
+        coeftime(1) = -1.0_realtype
+        if (useale .and. equationmode .eq. unsteady) then
+          coeftimeale(1) = 1.0_realtype
+          coefmeshale(1, 1) = half
+          coefmeshale(1, 2) = half
+        end if
+        nlevelsset = 2
+      case (2_inttype) 
+        coeftime(0) = 1.5_realtype
+        coeftime(1) = -2.0_realtype
+        coeftime(2) = 0.5_realtype
+        if (useale .and. equationmode .eq. unsteady) then
+          coeftimeale(1) = threefourth
+          coeftimeale(2) = -fourth
+          coefmeshale(1, 1) = half*(1.0_realtype+1.0_realtype/sqrtthree)
+          coefmeshale(1, 2) = half*(1.0_realtype-1.0_realtype/sqrtthree)
+          coefmeshale(2, 1) = coefmeshale(1, 2)
+          coefmeshale(2, 2) = coefmeshale(1, 1)
+        end if
+        nlevelsset = 3
+      case default
+! 3 or bigger.
+        coeftime(0) = 11.0_realtype/6.0_realtype
+        coeftime(1) = -3.0_realtype
+        coeftime(2) = 1.5_realtype
+        coeftime(3) = -(1.0_realtype/3.0_realtype)
+! these numbers are not correct
+! do not use 3rd order ale for now
+        if (useale .and. equationmode .eq. unsteady) then
+          print*, 'third-order ale not implemented yet.'
+          coeftimeale(1) = threefourth
+          coeftimeale(2) = threefourth
+          coeftimeale(3) = -fourth
+          coeftimeale(4) = -fourth
+          coefmeshale(1, 1) = half*(1.0_realtype+1.0_realtype/sqrtthree)
+          coefmeshale(1, 2) = half*(1.0_realtype-1.0_realtype/sqrtthree)
+          coefmeshale(2, 1) = coefmeshale(1, 2)
+          coefmeshale(2, 2) = coefmeshale(1, 1)
+          coefmeshale(3, 1) = coefmeshale(1, 2)
+          coefmeshale(3, 2) = coefmeshale(1, 1)
+        end if
+        nlevelsset = 4
+      end select
+    end select
+! set the rest of the coefficients to 0 if not enough states
+! in the past are available.
+    do nn=nlevelsset,noldlevels
+      coeftime(nn) = zero
+    end do
+  end subroutine setcoeftimeintegrator
 end module utils_d

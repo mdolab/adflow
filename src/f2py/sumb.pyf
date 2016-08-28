@@ -74,6 +74,12 @@ python module libsumb
          subroutine updategamma
          end subroutine updategamma
 
+         subroutine adjustinflowangle(alpha, beta, liftindex)
+           real(kind=realtype) intent(in) :: alpha
+           real(kind=realtype) intent(in):: beta
+           integer(kind=inttype) intent(in) :: liftindex
+         end subroutine adjustinflowangle
+
        end module flowutils
 
        module inputparamroutines
@@ -121,7 +127,6 @@ python module libsumb
          logical :: nk_adpc
          logical :: nk_useew
          logical :: nk_viscpc
-         logical :: rkreset
          integer(kind=inttype) :: nk_ls
          integer(kind=inttype) :: nk_subspace
          integer(kind=inttype) :: nk_asmoverlap
@@ -129,9 +134,6 @@ python module libsumb
          integer(kind=inttype) :: nk_ilufill
          real(kind=realtype) :: nk_switchtol
          real(kind=realtype) :: nk_cfl0
-         real(kind=realtype) :: totalr0
-         real(kind=realtype) :: totalrstart
-         real(kind=realtype) :: totalrfinal
          integer(kind=inttype) :: applypcsubspacesize
          logical :: freestreamresset
 
@@ -307,8 +309,31 @@ python module libsumb
          end subroutine initializeliftdistributiondata
        end subroutine tecplotio
 
+       module solvers
+
+         subroutine solver 
+         end subroutine solver
+
+         subroutine solverunsteady_ale(alecallback_python) ! in :test:solverUnsteady_ALE.F90
+           use solverunsteadyale__user__routines
+           external alecallback_python
+         end subroutine solverunsteady_ale
+         
+       end module solvers
+       
+       
+
 ! ================ bare subroutines =============
 
+       subroutine writesol ! in :sumb:../../output/writeSol.f90
+       end subroutine writesol
+
+       subroutine getsolution(sps) ! in :test:getSolution.f90
+         integer(kind=inttype) :: sps
+       end subroutine getsolution
+
+       subroutine updateslidingalllevels ! in :sumb:../../slidingComm/updateSlidingAllLevels.f90
+       end subroutine updateslidingalllevels
       
        subroutine preprocessing ! in :sumb:../../preprocessing/preprocessing.f90
        end subroutine preprocessing
@@ -338,59 +363,12 @@ python module libsumb
          integer(kind=inttype), optional,intent(in),check(len(blocks)>=nblocks),depend(blocks) :: nblocks=len(blocks)
        end subroutine updaterotationrate
 
-       subroutine adjustinflowangle(alpha, beta, liftindex)
-         real(kind=realtype) intent(in) :: alpha
-         real(kind=realtype) intent(in):: beta
-         integer(kind=inttype) intent(in) :: liftindex
-       end subroutine adjustinflowangle
-
-
-       subroutine solver ! in :sumb:../../solver/solver.F90
-       end subroutine solver
-
-
-       subroutine writesol ! in :sumb:../../output/writeSol.f90
-       end subroutine writesol
-
-       subroutine updateslidingalllevels ! in :sumb:../../slidingComm/updateSlidingAllLevels.f90
-       end subroutine updateslidingalllevels
-
-       subroutine solversteady ! in :sumb:../../solver/solverSteady.f90
-       end subroutine solversteady
-
-       subroutine inittimesteppart1 ! in :sumb:../../solver/solverUnsteady.F90
-       end subroutine inittimesteppart1
-
-       subroutine inittimesteppart2 ! in :sumb:../../solver/solverUnsteady.F90
-       end subroutine inittimesteppart2
-
-       subroutine solvestate ! in :sumb:../../solver/solveState.F90
-       end subroutine solvestate
-
-         subroutine getsolution(sps) ! in :test:getSolution.f90
-         integer(kind=inttype) :: sps
-        end subroutine getsolution
-
-      subroutine solverunsteady_ale(alecallback_python) ! in :test:solverUnsteady_ALE.F90
-         use solverunsteadyale__user__routines
-         external alecallback_python
-       end subroutine solverunsteady_ale
 
        ! For operations related to mesh-warping
        subroutine shiftcoorandvolumes ! in :sumb:../../preprocessing/shiftCoorAndVolumes.F90
        end subroutine shiftcoorandvolumes
 
-       subroutine shiftlevelale ! in :sumb:../../sovler/geomUtilsALE.F90
-       end subroutine shiftlevelale
-
-       subroutine solverunsteadywrapbegin ! in :sumb:../../solver/solverUnsteadyWrap.F90
-       end subroutine solverunsteadyerapbegin
-
-       subroutine solverunsteadywrapinloop ! in :sumb:../../solver/solverUnsteadyWrap.F90
-       end subroutine solverunsteadywrapinloop
-
-       subroutine solverunsteadywrapend ! in :sumb:../../solver/solverUnsteadyWrap.F90
-       end subroutine solverunsteadywrapend
+  
      
 
        ! ############################################################################
@@ -675,6 +653,7 @@ python module libsumb
 
        module inputiteration ! in :sumb:../../modules/inputParam.f90
          use constants
+         logical :: rkreset
          character(len=maxstringlen) :: mgdescription
          integer(kind=inttype) :: ncycles
          integer(kind=inttype) :: ncyclescoarse
@@ -890,6 +869,9 @@ python module libsumb
          real(kind=realtype) allocatable,dimension(:) :: coeftime
          logical :: timespectralgridsnotwritten
          logical, dimension(:), allocatable :: oldsolwritten       
+         real(kind=realtype) :: totalr0
+         real(kind=realtype) :: totalrstart
+         real(kind=realtype) :: totalrfinal
        end module iteration
 
        module monitor ! in :sumb:../../modules/monitor.f90

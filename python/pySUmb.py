@@ -755,9 +755,9 @@ class SUMB(AeroSolver):
         # When callback is not given, or time integration scheme is not md/ale
         # use normal solver instead
         if MDCallBack is None or not self.getOption('timeIntegrationScheme') == 'md' :
-            self.sumb.solver()
+            self.sumb.solvers.solver()
         else:
-            self.sumb.solverunsteady_ale(MDCallBack)
+            self.sumb.solvers.solverunsteady_ale(MDCallBack)
 
         # Save the states into the aeroProblem
         self.curAP.sumbData.stateInfo = self._getInfo()
@@ -2049,7 +2049,7 @@ class SUMB(AeroSolver):
 
         # 1. Angle of attack:
         dToR = numpy.pi/180.0
-        self.sumb.adjustinflowangle(alpha*dToR, beta*dToR, liftIndex)
+        self.sumb.flowutils.adjustinflowangle(alpha*dToR, beta*dToR, liftIndex)
         if self.getOption('printIterations') and self.comm.rank == 0:
             print('-> Alpha... %f '% numpy.real(alpha))
 
@@ -2586,19 +2586,19 @@ class SUMB(AeroSolver):
     def getResNorms(self):
         """Return the initial, starting and final Res Norms. Typically
         used by an external solver."""
-        return (numpy.real(self.sumb.nksolver.totalr0), 
-                numpy.real(self.sumb.nksolver.totalrstart),
-                numpy.real(self.sumb.nksolver.totalrfinal))
+        return (numpy.real(self.sumb.iteration.totalr0), 
+                numpy.real(self.sumb.iteration.totalrstart),
+                numpy.real(self.sumb.iteration.totalrfinal))
 
     def setResNorms(self, initNorm=None, startNorm=None, finalNorm=None):
         """ Set one of these norms if not None. Typlically used by an
         external solver"""
         if initNorm is not None:
-            self.sumb.nksolver.totalr0 = initNorm
+            self.sumb.iteration.totalr0 = initNorm
         if startNorm is not None:
-            self.sumb.nksolver.totalrstart = startNorm
+            self.sumb.iteration.totalrstart = startNorm
         if finalNorm is not None:
-            self.sumb.nksolver.finalNorm = finalNorm
+            self.sumb.iteration.finalNorm = finalNorm
 
     def _prescribedTSMotion(self):
         """Determine if we have prescribed motion timespectral analysis"""
@@ -3812,7 +3812,7 @@ class SUMB(AeroSolver):
                     'cubic':self.sumb.constants.cubiclinesearch,
                     'non monotone':self.sumb.constants.nonmonotonelinesearch,
                     'location':['nk', 'nk_ls']},
-            'rkreset':['nk', 'rkreset'],
+            'rkreset':['iter', 'rkreset'],
             'nrkreset':['iter', 'miniternum'],
 
             # Approximate Newton-Krylov Paramters

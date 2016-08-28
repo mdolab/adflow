@@ -275,7 +275,8 @@ module inputIteration
   integer(kind=inttype) :: convcheckwindowsize
   real(kind=realType), allocatable, dimension(:) :: etaRK, cdisRK
   character (len=maxStringLen) :: mgDescription
-
+  logical :: rkReset
+  
   logical :: freezeTurbSource
   logical :: printIterations
   logical :: printWarnings

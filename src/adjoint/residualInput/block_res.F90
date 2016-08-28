@@ -40,6 +40,11 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, &
   use turbBCRoutines
   use turbUtils
   use utils, only : terminate
+  use flowUtils, only : adjustInflowAngle, computePressureSimple, computeLamViscosity
+  use solverUtils, only : gridVelocitiesFineLevel_Block, normalVelocities_block, &
+       slipVelocitiesFineLevel_block, timeStep_block
+  use residuals, only: residual_block
+  use surfaceIntegrations, only : forcesAndMoments
   implicit none
 
   ! Input Arguments:

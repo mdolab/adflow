@@ -13,6 +13,7 @@ subroutine updateReferencePoint
   use iteration, only : groundLevel
   use blockpointers, only : nDom, nbkGlobal
   use utils, onlY : setPointers
+  use solverUtils
   implicit none
 
   ! Working variables

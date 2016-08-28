@@ -120,6 +120,12 @@
 
        logical, dimension(:), allocatable :: oldSolWritten
 
+       
+       ! Variables for monitoring the residuals
+       real(kind=realType) :: totalR0, totalRStart, totalRFinal, totalR
+       real(kind=realType) :: rhoRes0, rhoResStart, rhoResFinal, rhoRes
+
+
        external signalwritecallback
 
        end module iteration

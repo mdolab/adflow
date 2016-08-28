@@ -18,7 +18,7 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
   use stencils
   use diffSizes
   use surfaceFamilies, only: wallFamilies, totalWallFamilies
-  use utils, only : setPointers, EChk
+  use utils, only : setPointers, EChk, getDirAngle
   use haloExchange, only : whalo2_d
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -255,7 +255,10 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
   use adjointvars
   use costfunctions
   use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
-  use utils, only : setPointers, EChk
+  use utils, only : setPointers, EChk, getDirAngle
+  use solverUtils, only : timeStep_block
+  use flowUtils, only : allNodalGradients
+  use fluxes, only : viscousFlux
   implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -579,10 +582,13 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
   use paramTurb
   use utils, only : terminate
   use haloExchange, only : whalo2_b
-  use flowutils_fast_b, only : computespeedofsoundsquared_fast_b
+  use flowutils_fast_b
   use turbutils_fast_b
   use turbbcroutines_b
   use turbutils_b, only : saeddyviscosity_b
+  use fluxes_fast_b
+  use solverutils_fast_b
+  use flowutils_fast_b, only : computelamviscosity_fast_b, allnodalgradients_fast_b
   implicit none
 
   ! Input Variables

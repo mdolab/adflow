@@ -11,9 +11,9 @@ module turbutils_b
 
 contains
 !  differentiation of prodkatolaunder in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: timeref *w *scratch *vol *si
-!                *sj *sk
-!   with respect to varying inputs: timeref *w *vol *si *sj *sk
+!   gradient     of useful results: *w *scratch *vol *si *sj *sk
+!                timeref
+!   with respect to varying inputs: *w *vol *si *sj *sk timeref
 !   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
   subroutine prodkatolaunder_b()
@@ -701,9 +701,9 @@ contains
     end do
   end subroutine prodsmag2
 !  differentiation of prodwmag2 in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: timeref *w *scratch *vol *si
-!                *sj *sk
-!   with respect to varying inputs: timeref *w *vol *si *sj *sk
+!   gradient     of useful results: *w *scratch *vol *si *sj *sk
+!                timeref
+!   with respect to varying inputs: *w *vol *si *sj *sk timeref
 !   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
   subroutine prodwmag2_b()
@@ -1008,8 +1008,8 @@ contains
  100 continue
   end function sanuknowneddyratio
 !  differentiation of unsteadyturbterm in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: timeref *dw *w *scratch
-!   with respect to varying inputs: timeref *dw *w *scratch
+!   gradient     of useful results: *dw *w *scratch timeref
+!   with respect to varying inputs: *dw *w *scratch timeref
 !   plus diff mem management of: dw:in w:in scratch:in
   subroutine unsteadyturbterm_b(madv, nadv, offset, qq)
 !
