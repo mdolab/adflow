@@ -16,7 +16,8 @@
        use utils, only : setPointers, getCorrectForK
        use haloExchange, only : whalo1, whalo2
        use flowUtils, only : computeEtotBlock
-
+       use turbutils, only : computeeddyviscosity
+       use turbBCRoutines, only : applyAllTurbBC
        implicit none
 !
 !      Subroutine arguments.

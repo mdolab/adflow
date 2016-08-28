@@ -985,6 +985,9 @@ contains
     use inputPhysics, only : equations, gammaConstant
     use utils, only : setPointers
     use haloExchange, only : whalo2
+    use turbUtils, only : computeEddyViscosity
+    use turbAPI, only : turbResidual
+    use turbBCRoutines, only : applyAllTurbBCThisBLock, bcturbTreatment
     implicit none
 
     ! Local Variables
@@ -1939,6 +1942,7 @@ contains
     use inputPhysics 
     use utils, only : setPointers
     use haloExchange, only : whalo2
+    use turbUtils, only : computeEddyViscosity
     implicit none
 
     ! Local Variables
@@ -2291,6 +2295,7 @@ contains
     use inputIteration, only : L2conv
     use iteration, only : approxTotalIts
     use utils, only : EChk
+    use turbAPI, only : turbSolveSegregated
     implicit none
 
     ! Input Variables

@@ -79,41 +79,70 @@ FF90_OBJECTS_1 =	modules/IOModule.o\
 			modules/diffSizes.o\
 			modules/overset.o\
 
-FF90_OBJECTS_2= 	ADT/adtUtils.o\
+FF90_OBJECTS_2= 	\
 			utils/utils.o\
 			adjoint/outputForward/utils_d.o\
 			adjoint/outputReverse/utils_b.o\
 			adjoint/outputReverseFast/utils_fast_b.o\
+\
+			ADT/adtUtils.o\
 			utils/myIsNaNC.o\
+			turbulence/turbMod.o\
+
 
 FF90_OBJECTS_3 =utils/sorting.o\
+		turbulence/turbCurveFits.o\
+		\
 		utils/flowUtils.o\
 		adjoint/outputForward/flowutils_d.o\
 		adjoint/outputReverse/flowutils_b.o\
 		adjoint/outputReverseFast/flowutils_fast_b.o\
+		\
+		solver/BCRoutines.o\
+		adjoint/outputForward/bcroutines_d.o\
+		adjoint/outputReverse/bcroutines_b.o\
+		adjoint/outputReverseFast/bcroutines_fast_b.o\
+		\
+		turbulence/turbUtils.o\
+		adjoint/outputForward/turbutils_d.o\
+		adjoint/outputReverse/turbutils_b.o\
+		adjoint/outputReverseFast/turbutils_fast_b.o\
+		\
 		ADT/adtBuild.o\
 		ADT/adtLocalSearch.o\
 		bcdata/BCData.o\
 		partitioning/partitionMod.o\
 		partitioning/metisInterface.o\
 		warping/warping.o\
-		solver/BCRoutines.o\
-		adjoint/outputForward/bcroutines_d.o\
-		adjoint/outputReverse/bcroutines_b.o\
-		adjoint/outputReverseFast/bcroutines_fast_b.o\
 
-FF90_OBJECTS_4 =utils/haloExchange.o\
+FF90_OBJECTS_4 =\
+		\
+		turbulence/turbBCRoutines.o\
+		adjoint/outputForward/turbbcroutines_d.o\
+		adjoint/outputReverse/turbbcroutines_b.o\
+		adjoint/outputReverseFast/turbbcroutines_fast_b.o\
+		utils/haloExchange.o\
 		utils/surfaceUtils.o\
 		ADT/adtSearch.o\
 		initFlow/variableReading.o\
 		partitioning/loadBalance.o\
 		partitioning/gridChecking.o\
 		partitioning/readCGNSGrid.o\
-		adjoint/outputReverseFast/BCExtra.o\
 
-FF90_OBJECTS_5 =inputParam/inputParamRoutines.o\
-		ADT/adtAPI.o\
-		NKSolver/NKSolvers.o\
+FF90_OBJECTS_5 =\
+		\
+		turbulence/sa.o\
+		adjoint/outputForward/sa_d.o\
+		adjoint/outputReverse/sa_b.o\
+		adjoint/outputReverseFast/sa_fast_b.o\
+		\
+		adjoint/outputReverseFast/BCExtra.o\
+		turbulence/kw.o\
+		turbulence/kt.o\
+		turbulence/SST.o\
+		turbulence/vf.o\
+		\
+		inputParam/inputParamRoutines.o\
 		partitioning/partitioning.o\
 		preprocessing/bcHalo.o\
 		preprocessing/coarse1to1Subface.o\
@@ -121,32 +150,34 @@ FF90_OBJECTS_5 =inputParam/inputParamRoutines.o\
 		preprocessing/indirectHalo.o\
 		preprocessing/periodicInfo.o\
 		output/outputMod.o\
-		turbulence/turbMod.o\
-		turbulence/saModule.o\
-		adjoint/outputForward/samodule_d.o\
-		adjoint/outputReverse/samodule_b.o\
-		adjoint/outputReverseFast/samodule_fast_b.o\
 		overset/stringOps.o\
 		overset/cartMesh.o\
+		turbulence/turbAPI.o\
+		ADT/adtAPI.o\
 
-FF90_OBJECTS_6 =wallDistance/wallDistance.o\
+FF90_OBJECTS_6 =\
+		output/writeCGNSSurface.o\
+		output/tecplotIO.o\
+		output/writeCGNSGrid.o\
+		output/writeCGNSVolume.o\
+		\
+		wallDistance/wallDistance.o\
 		adjoint/outputForward/walldistance_d.o\
 		adjoint/outputReverse/walldistance_b.o\
+		\
 		initFlow/initializeFlow.o\
 		adjoint/outputForward/initializeflow_d.o\
 		adjoint/outputReverse/initializeflow_b.o\
+		\
+		NKSolver/NKSolvers.o\
 		slidingComm/localSubfaces.o\
 		slidingComm/mixingData.o\
 		slidingComm/thisSlide.o\
 		slidingComm/tmpSliding.o\
 		slidingComm/updateComm.o\
-		output/writeCGNSGrid.o\
-		output/writeCGNSVolume.o\
-		output/writeCGNSSurface.o\
-		output/tecplotIO.o\
 
 # These are the solver ones
-FF90_OBJECTS_7 =\
+FF90_OBJECTS_8 =\
 		output/writeSol.o\
 		slidingComm/bsearchSortedDonorCommType.o\
 		metis-4.0/metis.o\
@@ -283,52 +314,6 @@ FF90_OBJECTS_7 =\
 		slidingComm/updateSlidingAllLevels.o\
 		slidingComm/updateSlidingCommPattern.o\
 		slidingComm/volumeInterpol.o\
-		turbulence/applyAllTurbBC.o\
-		turbulence/bcEddyNoWall.o\
-		turbulence/bcEddyWall.o\
-		turbulence/bcTurbFarfield.o\
-		turbulence/bcTurbInflow.o\
-		turbulence/bcTurbInterface.o\
-		turbulence/bcTurbOutflow.o\
-		turbulence/bcTurbSymm.o\
-		turbulence/bcTurbTreatment.o\
-		turbulence/bcTurbWall.o\
-		turbulence/computeEddyViscosity.o\
-		turbulence/curveFit.o\
-		turbulence/f1SST.o\
-		turbulence/initCurveFitDataKtau.o\
-		turbulence/initCurveFitDataKw.o\
-		turbulence/initCurveFitDataKwMod.o\
-		turbulence/initCurveFitDataSa.o\
-		turbulence/initCurveFitDataSae.o\
-		turbulence/initCurveFitDataSST.o\
-		turbulence/initCurveFitDataVf.o\
-		turbulence/initKOmega.o\
-		turbulence/keSolve.o\
-		turbulence/kt.o\
-		turbulence/ktCDterm.o\
-		turbulence/ktSolve.o\
-		turbulence/kw.o\
-		turbulence/kwCDterm.o\
-		turbulence/kwSolve.o\
-		turbulence/prodKatoLaunder.o\
-		turbulence/prodSmag2.o\
-		turbulence/prodWmag2.o\
-		turbulence/saNuFromEddyRatio.o\
-		turbulence/SST.o\
-		turbulence/SSTSolve.o\
-		turbulence/tdia3.o\
-		turbulence/turb2ndHalo.o\
-		turbulence/turbAdvection.o\
-		turbulence/turbBCNSWall.o\
-		turbulence/turbResidual.o\
-		turbulence/turbSolveSegregated.o\
-		turbulence/unsteadyTurbSpectral.o\
-		turbulence/unsteadyTurbTerm.o\
-		turbulence/vf.o\
-		turbulence/vfScale.o\
-		turbulence/vfSolve.o\
-		turbulence/writeLoglaw.o\
 		adjoint/outputForward/allnodalgradients_d.o\
 		adjoint/outputForward/viscousflux_d.o \
 		adjoint/outputForward/viscousfluxapprox_d.o\
@@ -343,7 +328,6 @@ FF90_OBJECTS_7 =\
 		adjoint/outputForward/block_res_d.o  \
 		adjoint/outputForward/residual_block_d.o \
 		adjoint/outputForward/inviscidcentralflux_d.o\
-		adjoint/outputForward/saeddyviscosity_d.o\
 		adjoint/outputForward/xhalo_block_d.o\
 		adjoint/outputForward/metric_block_d.o\
 		adjoint/outputForward/gridvelocitiesfinelevel_block_d.o\
@@ -353,23 +337,8 @@ FF90_OBJECTS_7 =\
 		adjoint/outputForward/getdirangle_d.o\
 		adjoint/outputForward/getdirvector_d.o\
 		adjoint/outputForward/vectorrotation_d.o\
-		adjoint/outputForward/computeeddyviscosity_d.o\
-		adjoint/outputForward/sanuknowneddyratio_d.o\
-		adjoint/outputForward/prodkatolaunder_d.o\
-		adjoint/outputForward/prodwmag2_d.o\
-		adjoint/outputForward/prodsmag2_d.o\
-		adjoint/outputForward/turbadvection_d.o\
-		adjoint/outputForward/unsteadyturbterm_d.o\
 		adjoint/outputForward/slipvelocitiesfinelevel_block_d.o\
 		adjoint/outputForward/getcostfunction2_d.o\
-		adjoint/outputForward/bcturbwall_d.o\
-		adjoint/outputForward/bcturbtreatment_d.o\
-		adjoint/outputForward/applyallturbbcthisblock_d.o\
-		adjoint/outputForward/bceddynowall_d.o\
-		adjoint/outputForward/bceddywall_d.o\
-		adjoint/outputForward/bcturbfarfield_d.o\
-		adjoint/outputForward/bcturbinterface_d.o\
-		adjoint/outputForward/turb2ndhalo_d.o\
 		adjoint/outputForward/boundarynormals_d.o\
 		adjoint/outputForward/volume_block_d.o\
 		adjoint/outputForward/derivativerotmatrixrigid_d.o\
@@ -389,28 +358,12 @@ FF90_OBJECTS_7 =\
 		adjoint/outputReverse/viscousflux_b.o \
 		adjoint/outputReverse/viscousfluxapprox_b.o\
 		adjoint/outputReverse/inviscidcentralflux_b.o\
-		adjoint/outputReverse/saeddyviscosity_b.o\
-		adjoint/outputReverse/computeeddyviscosity_b.o\
-		adjoint/outputReverse/unsteadyturbterm_b.o\
-		adjoint/outputReverse/prodkatolaunder_b.o\
-		adjoint/outputReverse/prodwmag2_b.o\
-		adjoint/outputReverse/prodsmag2_b.o\
-		adjoint/outputReverse/turbadvection_b.o\
 		adjoint/outputReverse/forcesandmoments_b.o\
-		adjoint/outputReverse/sanuknowneddyratio_b.o\
 		adjoint/outputReverse/getcostfunction2_b.o\
 		adjoint/outputReverse/invisciddissfluxscalarapprox_b.o\
 		adjoint/outputReverse/invisciddissfluxmatrix_b.o\
 		adjoint/outputReverse/inviscidupwindflux_b.o\
 		adjoint/outputReverse/invisciddissfluxmatrixapprox_b.o\
-		adjoint/outputReverse/applyallturbbcthisblock_b.o\
-		adjoint/outputReverse/bcturbtreatment_b.o\
-		adjoint/outputReverse/turb2ndhalo_b.o\
-		adjoint/outputReverse/bceddywall_b.o\
-		adjoint/outputReverse/bceddynowall_b.o\
-		adjoint/outputReverse/bcturbwall_b.o\
-		adjoint/outputReverse/bcturbinterface_b.o\
-		adjoint/outputReverse/bcturbfarfield_b.o\
 		adjoint/outputReverse/boundarynormals_b.o\
 		adjoint/outputReverse/volume_block_b.o\
 		adjoint/outputReverseFast/allnodalgradients_fast_b.o\
@@ -422,11 +375,6 @@ FF90_OBJECTS_7 =\
 		adjoint/outputReverseFast/inviscidcentralflux_fast_b.o\
 		adjoint/outputReverseFast/computepressuresimple_fast_b.o\
 		adjoint/outputReverseFast/BCExtra.o\
-		adjoint/outputReverseFast/prodsmag2_fast_b.o\
-		adjoint/outputReverseFast/prodwmag2_fast_b.o\
-		adjoint/outputReverseFast/prodkatolaunder_fast_b.o\
-		adjoint/outputReverseFast/turbadvection_fast_b.o\
-		adjoint/outputReverseFast/saeddyviscosity_fast_b.o\
 		adjoint/residualInput/block_res.o\
 		adjoint/residualInput/metric_block.o\
 		adjoint/residualInput/xhalo_block.o\
@@ -529,9 +477,10 @@ all:
 	$(PMAKE) src5
 	$(PMAKE) src6
 	$(PMAKE) src7
+	$(PMAKE) src8
 	$(AR) $(AR_FLAGS) ../lib/libsumb.a $(FF90_OBJECTS_0) $(FF90_OBJECTS_1) \
 	$(FF90_OBJECTS_2) $(FF90_OBJECTS_3) $(FF90_OBJECTS_4) $(FF90_OBJECTS_5) \
-	$(FF90_OBJECTS_6) $(FF90_OBJECTS_7)
+	$(FF90_OBJECTS_6) $(FF90_OBJECTS_7) $(FF90_OBJECTS_8)
 
 # --------------------- f2py python module building ---------------
 
@@ -593,3 +542,4 @@ src4: $(FF90_OBJECTS_4)
 src5: $(FF90_OBJECTS_5)
 src6: $(FF90_OBJECTS_6)
 src7: $(FF90_OBJECTS_7)
+src8: $(FF90_OBJECTS_8)

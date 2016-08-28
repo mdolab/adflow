@@ -38,13 +38,12 @@ contains
          pInf, pInfCorr, rhoInf, uInf, rGas, muInf, gammaInf, wInf, &
          nw, nwf, kPresent, wInf
     use flowUtils, only : computeGamma, eTot
-
+    use turbUtils, only : saNuKnownEddyRatio
     implicit none
 
     integer(kind=intType) :: sps, nn, mm, ierr
     real(kind=realType) :: gm1, ratio
     real(kind=realType) :: nuInf, ktmp, uInf2
-    real(kind=realType) :: saNuKnownEddyRatio
     real(kind=realType) :: vinf, zinf, tmp1(1), tmp2(1)
 
     ! Compute the dimensional viscosity from Sutherland's law
@@ -1143,7 +1142,8 @@ contains
     use section
     use utils, only : setPointers
     use haloExchange, only : whalo2
-
+    use turbUtils, only : computeEddyViscosity
+    use turbBCRoutines, only :applyAllTurbBC
     implicit none
     !
     !      Subroutine arguments.

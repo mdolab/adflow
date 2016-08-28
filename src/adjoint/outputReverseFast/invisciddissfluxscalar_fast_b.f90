@@ -5,15 +5,9 @@
 !   gradient     of useful results: *p *w *fw
 !   with respect to varying inputs: *p *w *fw *radi *radj *radk
 !   rw status of diff variables: *p:incr *w:incr *fw:in-out *radi:out
-!                radj:out 
+!                *radj:out *radk:out
 !   plus diff mem management of: p:in w:in fw:in radi:in radj:in
 !                radk:in
-!
-!       file:          invisciddissfluxscalar.f90                      
-!       author:        edwin van der weide                             
-!       starting date: 03-24-2003                                      
-!       last modified: 10-29-2007                                      
-!
 subroutine invisciddissfluxscalar_fast_b()
 !
 !       invisciddissfluxscalar computes the scalar artificial          
@@ -143,9 +137,6 @@ subroutine invisciddissfluxscalar_fast_b()
   else
     abs0 = -rfil
   end if
-!
-!       begin execution                                                
-!
 ! check if rfil == 0. if so, the dissipative flux needs not to
 ! be computed.
   if (abs0 .lt. thresholdreal) then

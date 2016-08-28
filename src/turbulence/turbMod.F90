@@ -39,7 +39,6 @@ module turbMod
   real(kind=realType), dimension(:,:,:),   pointer :: sct
   real(kind=realType), dimension(:,:,:),   pointer :: scl2
   real(kind=realType), dimension(:,:,:),   pointer :: strain2
-  !real(kind=realType), dimension(:,:,:), pointer :: qq
 
 #ifndef USE_TAPENADE
   real(kind=realType), dimension(:,:,:,:), pointer :: dvtd
@@ -51,7 +50,6 @@ module turbMod
   real(kind=realType), dimension(:,:,:),   pointer :: sctd
   real(kind=realType), dimension(:,:,:),   pointer :: scl2d
   real(kind=realType), dimension(:,:,:),   pointer :: strain2d
-  !real(kind=realType), dimension(:,:,:), pointer :: qqd
 #endif
 end module turbMod
 

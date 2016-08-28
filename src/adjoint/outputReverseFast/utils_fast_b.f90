@@ -217,110 +217,6 @@ contains
       tsmachdot = machdot
     end if
   end function tsmachdot
-  function tsalpha(degreepolalpha, coefpolalpha, degreefouralpha, &
-&   omegafouralpha, coscoeffouralpha, sincoeffouralpha, t)
-!
-!       tsalpha computes the angle of attack for a given time interval 
-!       in a time spectral solution.                                   
-!
-    use constants
-    use inputphysics, only : equationmode
-    implicit none
-!
-!      function type
-!
-    real(kind=realtype) :: tsalpha
-!
-!      function arguments.
-!
-    integer(kind=inttype), intent(in) :: degreepolalpha
-    integer(kind=inttype), intent(in) :: degreefouralpha
-    real(kind=realtype), intent(in) :: omegafouralpha, t
-    real(kind=realtype), dimension(0:*), intent(in) :: coefpolalpha
-    real(kind=realtype), dimension(0:*), intent(in) :: coscoeffouralpha
-    real(kind=realtype), dimension(*), intent(in) :: sincoeffouralpha
-!
-!      local variables.
-!
-    integer(kind=inttype) :: nn
-    real(kind=realtype) :: alpha, val
-    intrinsic cos
-    intrinsic sin
-! return immediately if this is a steady computation.
-    if (equationmode .eq. steady) then
-      tsalpha = zero
-      return
-    else
-! compute the polynomial contribution. if no polynomial was
-! specified, the value of index 0 is set to zero automatically.
-      alpha = coefpolalpha(0)
-      do nn=1,degreepolalpha
-        alpha = alpha + coefpolalpha(nn)*t**nn
-      end do
-! compute the fourier contribution. again the cosine coefficient
-! of index 0 is defaulted to zero if not specified.
-      alpha = alpha + coscoeffouralpha(0)
-      do nn=1,degreefouralpha
-        val = nn*omegafouralpha*t
-        alpha = alpha + coscoeffouralpha(nn)*cos(val) + sincoeffouralpha&
-&         (nn)*sin(val)
-      end do
-!print *,'intsalpha',alpha,nn,val,t
-! set tsalpha to phi.
-      tsalpha = alpha
-    end if
-  end function tsalpha
-  function tsalphadot(degreepolalpha, coefpolalpha, degreefouralpha, &
-&   omegafouralpha, coscoeffouralpha, sincoeffouralpha, t)
-!
-!       tsalpha computes the angle of attack for a given time interval 
-!       in a time spectral solution.                                   
-!
-    use constants
-    use inputphysics, only : equationmode
-    implicit none
-!
-!      function type
-!
-    real(kind=realtype) :: tsalphadot
-!
-!      function arguments.
-!
-    integer(kind=inttype), intent(in) :: degreepolalpha
-    integer(kind=inttype), intent(in) :: degreefouralpha
-    real(kind=realtype), intent(in) :: omegafouralpha, t
-    real(kind=realtype), dimension(0:*), intent(in) :: coefpolalpha
-    real(kind=realtype), dimension(0:*), intent(in) :: coscoeffouralpha
-    real(kind=realtype), dimension(*), intent(in) :: sincoeffouralpha
-!
-!      local variables.
-!
-    integer(kind=inttype) :: nn
-    real(kind=realtype) :: alphadot, val
-    intrinsic sin
-    intrinsic cos
-! return immediately if this is a steady computation.
-    if (equationmode .eq. steady) then
-      tsalphadot = zero
-      return
-    else
-! compute the polynomial contribution. if no polynomial was
-! specified, the value of index 0 is set to zero automatically.
-      alphadot = zero
-      do nn=1,degreepolalpha
-        alphadot = alphadot + nn*coefpolalpha(nn)*t**(nn-1)
-      end do
-! compute the fourier contribution. again the cosine coefficient
-! of index 0 is defaulted to zero if not specified.
-      do nn=1,degreefouralpha
-        val = nn*omegafouralpha
-        alphadot = alphadot - val*coscoeffouralpha(nn)*sin(val*t) + val*&
-&         sincoeffouralpha(nn)*cos(val*t)
-      end do
-! set tsalpha to phi.
-      tsalphadot = alphadot
-    end if
-  end function tsalphadot
   function derivativerigidrotangle(degreepolrot, coefpolrot, &
 &   degreefourrot, omegafourrot, coscoeffourrot, sincoeffourrot, t)
 !
@@ -409,20 +305,6 @@ contains
       getcorrectfork = .false.
     end if
   end function getcorrectfork
-  subroutine terminate(routinename, errormessage)
-!
-!       terminate writes an error message to standard output and       
-!       terminates the execution of the program.                       
-!
-    use constants
-    use communication, only : sumb_comm_world, myid
-    implicit none
-!
-!      subroutine arguments
-!
-    character(len=*), intent(in) :: routinename
-    character(len=*), intent(in) :: errormessage
-  end subroutine terminate
   subroutine rotmatrixrigidbody(tnew, told, rotationmatrix, &
 &   rotationpoint)
 !
@@ -1035,4 +917,364 @@ contains
       end select
     end if
   end subroutine resetbcpointers
+  subroutine computerootbendingmoment(cf, cm, liftindex, bendingmoment)
+!                                                      *
+! compute a normalized bending moment coefficient from *
+! the force and moment coefficient. at the moment this *
+! routine only works for a half body. additional logic *
+! would be needed for a full body.                     *
+!                                                      *
+    use constants
+    use inputphysics, only : lengthref, pointref, pointrefec
+    implicit none
+!input/output variables
+    real(kind=realtype), dimension(3), intent(in) :: cf, cm
+    integer(kind=inttype), intent(in) :: liftindex
+    real(kind=realtype), intent(out) :: bendingmoment
+!subroutine variables
+    real(kind=realtype) :: elasticmomentx, elasticmomenty, &
+&   elasticmomentz
+    intrinsic sqrt
+    bendingmoment = zero
+    if (liftindex .eq. 2) then
+!z out wing sum momentx,momentz
+      elasticmomentx = cm(1) + cf(2)*(pointrefec(3)-pointref(3))/&
+&       lengthref - cf(3)*(pointrefec(2)-pointref(2))/lengthref
+      elasticmomentz = cm(3) - cf(2)*(pointrefec(1)-pointref(1))/&
+&       lengthref + cf(1)*(pointrefec(2)-pointref(2))/lengthref
+      bendingmoment = sqrt(elasticmomentx**2 + elasticmomentz**2)
+    else if (liftindex .eq. 3) then
+!y out wing sum momentx,momenty
+      elasticmomentx = cm(1) + cf(3)*(pointrefec(2)-pointref(2))/&
+&       lengthref + cf(3)*(pointrefec(3)-pointref(3))/lengthref
+      elasticmomenty = cm(2) + cf(3)*(pointrefec(1)-pointref(1))/&
+&       lengthref + cf(1)*(pointrefec(3)-pointref(3))/lengthref
+      bendingmoment = sqrt(elasticmomentx**2 + elasticmomenty**2)
+    end if
+  end subroutine computerootbendingmoment
+  subroutine computetsderivatives(force, moment, liftindex, coef0, &
+&   dcdalpha, dcdalphadot, dcdq, dcdqdot)
+!
+!      computes the stability derivatives based on the time spectral  
+!      solution of a given mesh. takes in the force coefficients at   
+!      all time instantces and computes the agregate parameters       
+!
+    use constants
+    use communication
+    use inputphysics
+    use inputtimespectral
+    use inputtsstabderiv
+    use flowvarrefstate
+    use monitor
+    use section
+    use inputmotion
+    implicit none
+!
+!     subroutine arguments.
+!
+    real(kind=realtype), dimension(3, ntimeintervalsspectral) :: force, &
+&   moment
+    real(kind=realtype), dimension(8) :: dcdq, dcdqdot
+    real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
+    real(kind=realtype), dimension(8) :: coef0
+    integer(kind=inttype) :: liftindex
+! working variables
+    real(kind=realtype), dimension(ntimeintervalsspectral, 8) :: &
+&   basecoef
+    real(kind=realtype), dimension(8) :: coef0dot
+    real(kind=realtype), dimension(ntimeintervalsspectral, 8) :: &
+&   resbasecoef
+    real(kind=realtype), dimension(ntimeintervalsspectral) :: &
+&   intervalalpha, intervalalphadot
+    real(kind=realtype), dimension(ntimeintervalsspectral) :: &
+&   intervalmach, intervalmachdot
+    real(kind=realtype), dimension(nsections) :: t
+    real(kind=realtype) :: alpha, beta
+    integer(kind=inttype) :: i, sps, nn
+!speed of sound: for normalization of q derivatives
+    real(kind=realtype) :: a
+    real(kind=realtype) :: scaledim, fact, factmoment
+! functions
+    real(kind=realtype), dimension(ntimeintervalsspectral) :: dphix, &
+&   dphiy, dphiz
+    real(kind=realtype), dimension(ntimeintervalsspectral) :: dphixdot, &
+&   dphiydot, dphizdot
+    real(kind=realtype) :: derivativerigidrotangle, &
+&   secondderivativerigidrotangle
+    intrinsic sqrt
+    real(kind=realtype) :: arg1
+    scaledim = pref/pinf
+    fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2*scaledim)
+    factmoment = fact/(lengthref*lref)
+    call getdirangle(veldirfreestream, liftdirection, liftindex, &
+&                 alpha, beta)
+    if (tsqmode) then
+      print*, &
+&     'ts q mode code needs to be updated in computetsderivatives!'
+      stop
+! !q is pitch
+! do sps =1,ntimeintervalsspectral
+!    !compute the time of this intervavc
+!    t = timeunsteadyrestart
+!    if(equationmode == timespectral) then
+!       do nn=1,nsections
+!          t(nn) = t(nn) + (sps-1)*sections(nn)%timeperiod &
+!               /         (ntimeintervalsspectral*1.0)
+!       enddo
+!    endif
+!    ! compute the time derivative of the rotation angles around the
+!    ! z-axis. i.e. compute q
+!    dphiz(sps) = derivativerigidrotangle(degreepolzrot,   &
+!         coefpolzrot,     &
+!         degreefourzrot,  &
+!         omegafourzrot,   &
+!         coscoeffourzrot, &
+!         sincoeffourzrot, t)
+!    ! add in q_dot computation
+!    dphizdot(sps) = secondderivativerigidrotangle(degreepolzrot,   &
+!         coefpolzrot,     &
+!         degreefourzrot,  &
+!         omegafourzrot,   &
+!         coscoeffourzrot, &
+!         sincoeffourzrot, t)
+! end do
+! !now compute dcl/dq
+! do i =1,8
+!    call computeleastsquaresregression(basecoef(:,i),dphiz,ntimeintervalsspectral,dcdq(i),coef0(i))
+! end do
+! ! now subtract off estimated cl,cmz and use remainder to compute 
+! ! clqdot and cmzqdot.
+! do i = 1,8
+!    do sps = 1,ntimeintervalsspectral
+!       resbasecoef(sps,i) = basecoef(sps,i)-(dcdq(i)*dphiz(sps)+coef0(i))
+!    enddo
+! enddo
+! !now normalize the results...
+! a  = sqrt(gammainf*pinfdim/rhoinfdim)
+! dcdq = dcdq*timeref*2*(machgrid*a)/lengthref
+! !now compute dcl/dpdot
+! do i = 1,8
+!    call computeleastsquaresregression(resbasecoef(:,i),dphizdot,ntimeintervalsspectral,dcdqdot(i),coef0dot(i))
+! enddo
+    else if (tsalphamode) then
+      do sps=1,ntimeintervalsspectral
+!compute the time of this interval
+        t = timeunsteadyrestart
+        if (equationmode .eq. timespectral) then
+          do nn=1,nsections
+            t(nn) = t(nn) + (sps-1)*sections(nn)%timeperiod/(&
+&             ntimeintervalsspectral*1.0)
+          end do
+        end if
+        intervalalpha(sps) = tsalpha(degreepolalpha, coefpolalpha, &
+&         degreefouralpha, omegafouralpha, coscoeffouralpha, &
+&         sincoeffouralpha, t(1))
+        intervalalphadot(sps) = tsalphadot(degreepolalpha, coefpolalpha&
+&         , degreefouralpha, omegafouralpha, coscoeffouralpha, &
+&         sincoeffouralpha, t(1))
+        arg1 = alpha + intervalalpha(sps)
+        call getdirangle(veldirfreestream, liftdirection, liftindex, &
+&                     arg1, beta)
+        basecoef(sps, 1) = fact*(force(1, sps)*liftdirection(1)+force(2&
+&         , sps)*liftdirection(2)+force(3, sps)*liftdirection(3))
+        basecoef(sps, 2) = fact*(force(1, sps)*dragdirection(1)+force(2&
+&         , sps)*dragdirection(2)+force(3, sps)*dragdirection(3))
+        basecoef(sps, 3) = force(1, sps)*fact
+        basecoef(sps, 4) = force(2, sps)*fact
+        basecoef(sps, 5) = force(3, sps)*fact
+        basecoef(sps, 6) = moment(1, sps)*factmoment
+        basecoef(sps, 7) = moment(2, sps)*factmoment
+        basecoef(sps, 8) = moment(3, sps)*factmoment
+      end do
+!now compute dcl/dalpha
+      do i=1,8
+        call computeleastsquaresregression(basecoef(:, i), intervalalpha&
+&                                    , ntimeintervalsspectral, dcdalpha(&
+&                                    i), coef0(i))
+      end do
+! now subtract off estimated cl,cmz and use remainder to compute 
+! clalphadot and cmzalphadot.
+      do i=1,8
+        do sps=1,ntimeintervalsspectral
+          resbasecoef(sps, i) = basecoef(sps, i) - (dcdalpha(i)*&
+&           intervalalpha(sps)+coef0(i))
+        end do
+      end do
+!now compute dci/dalphadot
+      do i=1,8
+        call computeleastsquaresregression(resbasecoef(:, i), &
+&                                    intervalalphadot, &
+&                                    ntimeintervalsspectral, dcdalphadot&
+&                                    (i), coef0dot(i))
+      end do
+      a = sqrt(gammainf*pinfdim/rhoinfdim)
+      dcdalphadot = dcdalphadot*2*(machgrid*a)/lengthref
+    else
+      call terminate('computetsderivatives', &
+&              'not a valid stability motion')
+    end if
+  end subroutine computetsderivatives
+  function tsalpha(degreepolalpha, coefpolalpha, degreefouralpha, &
+&   omegafouralpha, coscoeffouralpha, sincoeffouralpha, t)
+!
+!       tsalpha computes the angle of attack for a given time interval 
+!       in a time spectral solution.                                   
+!
+    use constants
+    use inputphysics, only : equationmode
+    implicit none
+!
+!      function type
+!
+    real(kind=realtype) :: tsalpha
+!
+!      function arguments.
+!
+    integer(kind=inttype), intent(in) :: degreepolalpha
+    integer(kind=inttype), intent(in) :: degreefouralpha
+    real(kind=realtype), intent(in) :: omegafouralpha, t
+    real(kind=realtype), dimension(0:*), intent(in) :: coefpolalpha
+    real(kind=realtype), dimension(0:*), intent(in) :: coscoeffouralpha
+    real(kind=realtype), dimension(*), intent(in) :: sincoeffouralpha
+!
+!      local variables.
+!
+    integer(kind=inttype) :: nn
+    real(kind=realtype) :: alpha, val
+    intrinsic cos
+    intrinsic sin
+! return immediately if this is a steady computation.
+    if (equationmode .eq. steady) then
+      tsalpha = zero
+      return
+    else
+! compute the polynomial contribution. if no polynomial was
+! specified, the value of index 0 is set to zero automatically.
+      alpha = coefpolalpha(0)
+      do nn=1,degreepolalpha
+        alpha = alpha + coefpolalpha(nn)*t**nn
+      end do
+! compute the fourier contribution. again the cosine coefficient
+! of index 0 is defaulted to zero if not specified.
+      alpha = alpha + coscoeffouralpha(0)
+      do nn=1,degreefouralpha
+        val = nn*omegafouralpha*t
+        alpha = alpha + coscoeffouralpha(nn)*cos(val) + sincoeffouralpha&
+&         (nn)*sin(val)
+      end do
+!print *,'intsalpha',alpha,nn,val,t
+! set tsalpha to phi.
+      tsalpha = alpha
+    end if
+  end function tsalpha
+  function tsalphadot(degreepolalpha, coefpolalpha, degreefouralpha, &
+&   omegafouralpha, coscoeffouralpha, sincoeffouralpha, t)
+!
+!       tsalpha computes the angle of attack for a given time interval 
+!       in a time spectral solution.                                   
+!
+    use constants
+    use inputphysics, only : equationmode
+    implicit none
+!
+!      function type
+!
+    real(kind=realtype) :: tsalphadot
+!
+!      function arguments.
+!
+    integer(kind=inttype), intent(in) :: degreepolalpha
+    integer(kind=inttype), intent(in) :: degreefouralpha
+    real(kind=realtype), intent(in) :: omegafouralpha, t
+    real(kind=realtype), dimension(0:*), intent(in) :: coefpolalpha
+    real(kind=realtype), dimension(0:*), intent(in) :: coscoeffouralpha
+    real(kind=realtype), dimension(*), intent(in) :: sincoeffouralpha
+!
+!      local variables.
+!
+    integer(kind=inttype) :: nn
+    real(kind=realtype) :: alphadot, val
+    intrinsic sin
+    intrinsic cos
+! return immediately if this is a steady computation.
+    if (equationmode .eq. steady) then
+      tsalphadot = zero
+      return
+    else
+! compute the polynomial contribution. if no polynomial was
+! specified, the value of index 0 is set to zero automatically.
+      alphadot = zero
+      do nn=1,degreepolalpha
+        alphadot = alphadot + nn*coefpolalpha(nn)*t**(nn-1)
+      end do
+! compute the fourier contribution. again the cosine coefficient
+! of index 0 is defaulted to zero if not specified.
+      do nn=1,degreefouralpha
+        val = nn*omegafouralpha
+        alphadot = alphadot - val*coscoeffouralpha(nn)*sin(val*t) + val*&
+&         sincoeffouralpha(nn)*cos(val*t)
+      end do
+! set tsalpha to phi.
+      tsalphadot = alphadot
+    end if
+  end function tsalphadot
+  subroutine terminate(routinename, errormessage)
+!
+!       terminate writes an error message to standard output and       
+!       terminates the execution of the program.                       
+!
+    use constants
+    use communication, only : sumb_comm_world, myid
+    implicit none
+!
+!      subroutine arguments
+!
+    character(len=*), intent(in) :: routinename
+    character(len=*), intent(in) :: errormessage
+  end subroutine terminate
+  subroutine computeleastsquaresregression(y, x, npts, m, b)
+!
+!       computes the slope of best fit for a set of x,y data of length 
+!       npts                                                           
+!
+    use constants
+    implicit none
+!subroutine arguments 
+    integer(kind=inttype) :: npts
+    real(kind=realtype), dimension(npts) :: x, y
+    real(kind=realtype) :: m, b
+!local variables
+    real(kind=realtype) :: sumx, sumy, sumx2, sumxy
+    integer(kind=inttype) :: i
+!begin execution
+    sumx = 0.0
+    sumy = 0.0
+    sumx2 = 0.0
+    sumxy = 0.0
+    do i=1,npts
+      sumx = sumx + x(i)
+      sumy = sumy + y(i)
+      sumx2 = sumx2 + x(i)*x(i)
+      sumxy = sumxy + x(i)*y(i)
+    end do
+    m = (npts*sumxy-sumy*sumx)/(npts*sumx2-sumx**2)
+    b = (sumy*sumx2-sumx*sumxy)/(npts*sumx2-sumx**2)
+  end subroutine computeleastsquaresregression
+  subroutine stabilityderivativedriver()
+!
+!      runs the time spectral stability derivative routines from the  
+!      main program file                                              
+!
+    use precision
+    implicit none
+!call computetsderivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
+!
+!     local variables.
+! 
+    real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot, dcdbeta&
+&   , dcdbetadot, dcdmach, dcdmachdot
+    real(kind=realtype), dimension(8) :: dcdp, dcdpdot, dcdq, dcdqdot, &
+&   dcdr, dcdrdot
+    real(kind=realtype), dimension(8) :: coef0, coef0dot
+  end subroutine stabilityderivativedriver
 end module utils_fast_b

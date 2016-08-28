@@ -7,6 +7,7 @@
        use blockPointers, only : si, sj, sk, fw, rlv, d2wall, w, BCData, viscSubFace, &
             ie, je, ke, il, jl, kl, nViscBocos, BCFaceID
        use inputPhysics, only : wallFunctions
+       use turbCurveFits, only : curveUpRe
        implicit none
 !
 !      Subroutine argument.
@@ -32,10 +33,6 @@
        real(kind=realType), dimension(:,:,:), pointer :: ss, rres
        real(kind=realType), dimension(:,:,:), pointer :: norm
        real(kind=realType), dimension(:,:),   pointer :: rrlv2, dd2Wall2
-!
-!      Function definition.
-!
-       real(kind=realType) :: curveUpRe
 
        ! Return immediately if no wall functions must be used.
 
