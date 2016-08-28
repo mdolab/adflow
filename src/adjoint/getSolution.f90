@@ -6,7 +6,7 @@ subroutine getSolution(sps)
   use inputTimeSpectral 
   use communication
   use inputIteration
-  use utils, only : computeTSDerivatives, computeRootBendingMoment
+  use utils, only : computeTSDerivatives, computeRootBendingMoment, getDirAngle
   implicit none
 
   ! Input Variables

@@ -11,21 +11,21 @@ module bcroutines_d
 
 contains
 !  differentiation of applyallbc_block in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
-!                *rlv1 *ww0 *ww1 *rev *p *w *rlv
-!   with respect to varying inputs: *xx *rev0 *rev1 *rev2 *rev3
-!                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ss
-!                *ssi *ssj *ssk *ww0 *ww1 *ww2 *ww3 *rev *p *s
-!                *w *rlv *x *si *sj *sk *(*bcdata.norm) *(*bcdata.rface)
-!                *(*bcdata.uslip) (global)gammainf (global)winf[1:10]
+!   variations   of useful results: *rev *p *w *rlv *rev0 *rev1
+!                *pp0 *pp1 *rlv0 *rlv1 *ww0 *ww1
+!   with respect to varying inputs: *rev *p *s *w *rlv *x *si *sj
+!                *sk *(*bcdata.norm) *(*bcdata.rface) *(*bcdata.uslip)
+!                *xx *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3
+!                *rlv0 *rlv1 *rlv2 *rlv3 *ss *ssi *ssj *ssk *ww0
+!                *ww1 *ww2 *ww3 (global)gammainf (global)winf[1:10]
 !                (global)pinfcorr (global)rgas
-!   plus diff mem management of: xx:in-out rev0:in-out rev1:in-out
+!   plus diff mem management of: rev:in p:in w:in rlv:in x:in si:in
+!                sj:in sk:in bcdata:in *bcdata.norm:in *bcdata.rface:in
+!                *bcdata.uslip:in xx:in-out rev0:in-out rev1:in-out
 !                rev2:in-out rev3:in-out pp0:in-out pp1:in-out
 !                pp2:in-out pp3:in-out rlv0:in-out rlv1:in-out
 !                rlv2:in-out rlv3:in-out ss:in-out ssi:in-out ssj:in-out
 !                ssk:in-out ww0:in-out ww1:in-out ww2:in-out ww3:in-out
-!                rev:in p:in w:in rlv:in x:in si:in sj:in sk:in
-!                bcdata:in *bcdata.norm:in *bcdata.rface:in *bcdata.uslip:in
   subroutine applyallbc_block_d(secondhalo)
 ! apply bc's for a single block
     use constants
@@ -327,10 +327,10 @@ contains
   end subroutine applyallbc_block
 !  differentiation of bcsymm1sthalo in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev1 *pp1 *rlv1 *ww1
-!   with respect to varying inputs: *rev1 *rev2 *pp1 *pp2 *rlv1
-!                *rlv2 *ww1 *ww2 *(*bcdata.norm)
-!   plus diff mem management of: rev1:in rev2:in pp1:in pp2:in
-!                rlv1:in rlv2:in ww1:in ww2:in bcdata:in *bcdata.norm:in
+!   with respect to varying inputs: *(*bcdata.norm) *rev1 *rev2
+!                *pp1 *pp2 *rlv1 *rlv2 *ww1 *ww2
+!   plus diff mem management of: bcdata:in *bcdata.norm:in rev1:in
+!                rev2:in pp1:in pp2:in rlv1:in rlv2:in ww1:in ww2:in
 ! ===================================================================
 !   actual implementation of each of the boundary condition routines
 ! ===================================================================
@@ -453,10 +453,10 @@ contains
   end subroutine bcsymm1sthalo
 !  differentiation of bcsymm2ndhalo in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *pp0 *rlv0 *ww0
-!   with respect to varying inputs: *rev0 *rev3 *pp0 *pp3 *rlv0
-!                *rlv3 *ww0 *ww3 *(*bcdata.norm)
-!   plus diff mem management of: rev0:in rev3:in pp0:in pp3:in
-!                rlv0:in rlv3:in ww0:in ww3:in bcdata:in *bcdata.norm:in
+!   with respect to varying inputs: *(*bcdata.norm) *rev0 *rev3
+!                *pp0 *pp3 *rlv0 *rlv3 *ww0 *ww3
+!   plus diff mem management of: bcdata:in *bcdata.norm:in rev0:in
+!                rev3:in pp0:in pp3:in rlv0:in rlv3:in ww0:in ww3:in
   subroutine bcsymm2ndhalo_d(nn)
 !  bcsymm2ndhalo applies the symmetry boundary conditions to a
 !  block for the 2nd halo. this routine is separate as it makes
@@ -910,11 +910,12 @@ contains
 !  differentiation of bcnswalladiabatic in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
 !                *rlv1 *ww0 *ww1
-!   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.uslip)
-!   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
-!                pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in ww0:in
-!                ww1:in ww2:in bcdata:in *bcdata.uslip:in
+!   with respect to varying inputs: *(*bcdata.uslip) *rev0 *rev1
+!                *rev2 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0
+!                *ww1 *ww2
+!   plus diff mem management of: bcdata:in *bcdata.uslip:in rev0:in
+!                rev1:in rev2:in pp0:in pp1:in pp2:in pp3:in rlv0:in
+!                rlv1:in rlv2:in ww0:in ww1:in ww2:in
   subroutine bcnswalladiabatic_d(nn, secondhalo, correctfork)
 ! bcnswalladiabatic applies the viscous adiabatic wall boundary
 ! condition the pointers already defined.
@@ -1066,12 +1067,12 @@ contains
 !  differentiation of bcnswallisothermal in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
 !                *rlv1 *ww0 *ww1
-!   with respect to varying inputs: rgas *rev0 *rev1 *rev2 *pp0
-!                *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
-!                *(*bcdata.uslip)
-!   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
-!                pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in ww0:in
-!                ww1:in ww2:in bcdata:in *bcdata.uslip:in
+!   with respect to varying inputs: *(*bcdata.uslip) rgas *rev0
+!                *rev1 *rev2 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2
+!                *ww0 *ww1 *ww2
+!   plus diff mem management of: bcdata:in *bcdata.uslip:in rev0:in
+!                rev1:in rev2:in pp0:in pp1:in pp2:in pp3:in rlv0:in
+!                rlv1:in rlv2:in ww0:in ww1:in ww2:in
   subroutine bcnswallisothermal_d(nn, secondhalo, correctfork)
 ! bcnswalladiabatic applies the viscous isothermal wall boundary
 ! condition to a block. it is assumed that the bcpointers are
@@ -1275,11 +1276,12 @@ contains
 !  differentiation of bcsubsonicoutflow in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
 !                *rlv1 *ww0 *ww1
-!   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.norm)
-!   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
-!                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
-!                ww2:in bcdata:in *bcdata.norm:in
+!   with respect to varying inputs: *(*bcdata.norm) *rev0 *rev1
+!                *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1
+!                *ww2
+!   plus diff mem management of: bcdata:in *bcdata.norm:in rev0:in
+!                rev1:in rev2:in pp0:in pp1:in pp2:in rlv0:in rlv1:in
+!                rlv2:in ww0:in ww1:in ww2:in
   subroutine bcsubsonicoutflow_d(nn, secondhalo, correctfork)
 !  bcsubsonicoutflow applies the subsonic outflow boundary
 !  condition, static pressure prescribed, to a block. it is
@@ -1519,11 +1521,12 @@ contains
 !  differentiation of bcsubsonicinflow in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
 !                *rlv1 *ww0 *ww1
-!   with respect to varying inputs: rgas *rev0 *rev1 *rev2 *pp0
-!                *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.norm)
-!   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
-!                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
-!                ww2:in bcdata:in *bcdata.norm:in
+!   with respect to varying inputs: *(*bcdata.norm) rgas *rev0
+!                *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0
+!                *ww1 *ww2
+!   plus diff mem management of: bcdata:in *bcdata.norm:in rev0:in
+!                rev1:in rev2:in pp0:in pp1:in pp2:in rlv0:in rlv1:in
+!                rlv2:in ww0:in ww1:in ww2:in
   subroutine bcsubsonicinflow_d(nn, secondhalo, correctfork)
 !  bcsubsonicinflow applies the subsonic outflow boundary
 !  condition, total pressure, total density and flow direction
@@ -2015,13 +2018,13 @@ contains
 !  differentiation of bceulerwall in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
 !                *rlv1 *ww0 *ww1
-!   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ss *ssi *ssj *ssk
-!                *ww0 *ww1 *ww2 *(*bcdata.norm) *(*bcdata.rface)
-!   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
-!                pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in ss:in
-!                ssi:in ssj:in ssk:in ww0:in ww1:in ww2:in bcdata:in
-!                *bcdata.norm:in *bcdata.rface:in
+!   with respect to varying inputs: *(*bcdata.norm) *(*bcdata.rface)
+!                *rev0 *rev1 *rev2 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1
+!                *rlv2 *ss *ssi *ssj *ssk *ww0 *ww1 *ww2
+!   plus diff mem management of: bcdata:in *bcdata.norm:in *bcdata.rface:in
+!                rev0:in rev1:in rev2:in pp0:in pp1:in pp2:in pp3:in
+!                rlv0:in rlv1:in rlv2:in ss:in ssi:in ssj:in ssk:in
+!                ww0:in ww1:in ww2:in
   subroutine bceulerwall_d(nn, secondhalo, correctfork)
 !  bceulerwall applies the inviscid wall boundary condition to a
 !  block. it is assumed that the bcpointers are already set to the
@@ -2498,12 +2501,12 @@ contains
 !  differentiation of bcfarfield in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
 !                *rlv1 *ww0 *ww1
-!   with respect to varying inputs: gammainf winf pinfcorr *rev0
-!                *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0
-!                *ww1 *ww2 *(*bcdata.norm)
-!   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
-!                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
-!                ww2:in bcdata:in *bcdata.norm:in *bcdata.rface:in
+!   with respect to varying inputs: *(*bcdata.norm) gammainf winf
+!                pinfcorr *rev0 *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0
+!                *rlv1 *rlv2 *ww0 *ww1 *ww2
+!   plus diff mem management of: bcdata:in *bcdata.norm:in *bcdata.rface:in
+!                rev0:in rev1:in rev2:in pp0:in pp1:in pp2:in rlv0:in
+!                rlv1:in rlv2:in ww0:in ww1:in ww2:in
   subroutine bcfarfield_d(nn, secondhalo, correctfork)
 ! bcfarfield applies the farfield boundary condition to a block.
 ! it is assumed that the bcpointers are already set *
@@ -2848,8 +2851,8 @@ contains
 !                *rlv1 *ww0 *ww1
 !   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
 !                *rlv0 *rlv1 *rlv2 *ww0 *ww1
-!   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
-!                pp1:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in bcdata:in
+!   plus diff mem management of: bcdata:in rev0:in rev1:in rev2:in
+!                pp0:in pp1:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
   subroutine bcsupersonicinflow_d(nn, secondhalo, correctfork)
 ! bcsupersonicinflow applies the supersonic inflow boundary
 ! conditions, entire state vector is prescribed, to a block. it is

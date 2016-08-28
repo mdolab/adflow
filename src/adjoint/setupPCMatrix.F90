@@ -16,7 +16,7 @@ subroutine setupPCMatrix(useAD,  useTranspose, frozenTurb, level)
   use communication
   use adjointVars
   use turbMod
-  use utils, only : setPointers, EChk
+  use utils, only : setPointers, EChk, getDirAngle
   use haloExchange, only : whalo2
   implicit none
 

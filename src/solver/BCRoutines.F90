@@ -11,6 +11,51 @@ module BCRoutines
 
 contains
 
+#ifndef USE_TAPENADE
+subroutine applyAllBC(secondHalo)
+  !
+  !       applyAllBC applies all boundary conditions for the all         
+  !       blocks on the grid level currentLevel.                         
+  !
+  use constants
+  use blockPointers, only : nDom
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use iteration, only :currentLevel
+  use utils, only : setPointers
+  use ALEUtils, only : interpLevelALEBC_Block, recoverLevelALEBC_block
+  implicit none
+  !
+  !      Subroutine arguments.
+  !
+  logical, intent(in) :: secondHalo
+  !
+  !      Local Variables
+  integer(kind=intType) :: sps, nn
+  
+
+ 
+  ! Loop over the number of spectral solutions.
+
+  spectralLoop: do sps=1,nTimeIntervalsSpectral
+
+     ! Loop over the number of blocks.
+
+     domains: do nn=1,nDom
+
+        ! Set the pointers for this block.
+
+        call setPointers(nn, currentLevel, sps)
+
+        call interpLevelALEBC_block
+        call applyAllBC_block(secondHalo)
+        call recoverLevelALEBC_block
+  
+     enddo domains
+  enddo spectralLoop
+
+end subroutine applyAllBC
+#endif
+
   subroutine applyAllBC_block(secondHalo)
 
     ! Apply BC's for a single block

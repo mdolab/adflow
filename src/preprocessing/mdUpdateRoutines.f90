@@ -87,6 +87,7 @@ subroutine updateGridVelocitiesAllLevels
   use monitor
   use inputTimeSpectral
   use inputPhysics
+  use solverUtils
   implicit none
 
   !subroutine variables

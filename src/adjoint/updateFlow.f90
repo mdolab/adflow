@@ -10,6 +10,7 @@ subroutine updateFlow
   use monitor
   use iteration
   use initializeFlow, only : referenceState
+  use solverUtils
   implicit none
 
   ! Local Variables

@@ -2,51 +2,52 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of block_res in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *xx *rev0 *rev1 *rev2 *rev3
-!                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi
-!                *ww0 *ww1 *ww2 *ww3 *(flowdoms.x) *(flowdoms.w)
+!   gradient     of useful results: *(flowdoms.x) *(flowdoms.w)
 !                *(flowdoms.dw) *(*bcdata.fv) *(*bcdata.fp) *(*bcdata.area)
+!                *xx *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3
+!                *rlv0 *rlv1 *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 *ww3
 !                funcvalues
-!   with respect to varying inputs: tinfdim rhoinfdim pinfdim *xx
-!                *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0
-!                *rlv1 *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 *ww3 mach
-!                machgrid rgasdim lengthref machcoef pointref *(flowdoms.x)
-!                *(flowdoms.w) *(flowdoms.dw) *(*bcdata.fv) *(*bcdata.fp)
-!                *(*bcdata.area) *xsurf funcvalues alpha beta
-!   rw status of diff variables: gammainf:(loc) tinfdim:out pinf:(loc)
-!                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:out
-!                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
+!   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
+!                *(flowdoms.dw) *(*bcdata.fv) *(*bcdata.fp) *(*bcdata.area)
+!                *xsurf mach machgrid rgasdim lengthref machcoef
+!                pointref tinfdim rhoinfdim pinfdim *xx *rev0 *rev1
+!                *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2
+!                *rlv3 *ssi *ww0 *ww1 *ww2 *ww3 funcvalues alpha
+!                beta
+!   rw status of diff variables: *(flowdoms.x):in-out *(flowdoms.vol):(loc)
+!                *(flowdoms.w):in-out *(flowdoms.dw):in-out *rev:(loc)
+!                *aa:(loc) *bvtj1:(loc) *bvtj2:(loc) *wx:(loc)
+!                *wy:(loc) *wz:(loc) *p:(loc) *rlv:(loc) *qx:(loc)
+!                *qy:(loc) *qz:(loc) *scratch:(loc) *bvtk1:(loc)
+!                *bvtk2:(loc) *ux:(loc) *uy:(loc) *uz:(loc) *d2wall:(loc)
+!                *si:(loc) *sj:(loc) *sk:(loc) *bvti1:(loc) *bvti2:(loc)
+!                *vx:(loc) *vy:(loc) *vz:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
+!                *(*bcdata.norm):(loc) *(*bcdata.fv):in-out *(*bcdata.fp):in-out
+!                *(*bcdata.area):in-out *radi:(loc) *radj:(loc)
+!                *radk:(loc) *xsurf:out mach:out veldirfreestream:(loc)
+!                machgrid:out rgasdim:out lengthref:out machcoef:out
+!                dragdirection:(loc) liftdirection:(loc) pointref:out
+!                gammainf:(loc) tinfdim:out pinf:(loc) timeref:(loc)
+!                rhoinf:(loc) muref:(loc) rhoinfdim:out tref:(loc)
+!                winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
 !                rgas:(loc) muinfdim:(loc) pinfdim:out pref:(loc)
 !                rhoref:(loc) *xx:in-out *rev0:in-out *rev1:in-out
 !                *rev2:in-out *rev3:in-out *pp0:in-out *pp1:in-out
 !                *pp2:in-out *pp3:in-out *rlv0:in-out *rlv1:in-out
 !                *rlv2:in-out *rlv3:in-out *ssi:in-out *ww0:in-out
-!                *ww1:in-out *ww2:in-out *ww3:in-out mach:out veldirfreestream:(loc)
-!                machgrid:out rgasdim:out lengthref:out machcoef:out
-!                dragdirection:(loc) liftdirection:(loc) pointref:out
-!                *(flowdoms.x):in-out *(flowdoms.vol):(loc) *(flowdoms.w):in-out
-!                *(flowdoms.dw):in-out *rev:(loc) *aa:(loc) *bvtj1:(loc)
-!                *bvtj2:(loc) *wx:(loc) *wy:(loc) *wz:(loc) *p:(loc)
-!                *rlv:(loc) *qx:(loc) *qy:(loc) *qz:(loc) *scratch:(loc)
-!                *bvtk1:(loc) *bvtk2:(loc) *ux:(loc) *uy:(loc)
-!                *uz:(loc) *d2wall:(loc) *si:(loc) *sj:(loc) *sk:(loc)
-!                *bvti1:(loc) *bvti2:(loc) *vx:(loc) *vy:(loc)
-!                *vz:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
-!                *(*bcdata.norm):(loc) *(*bcdata.fv):in-out *(*bcdata.fp):in-out
-!                *(*bcdata.area):in-out *radi:(loc) *radj:(loc)
-!                *radk:(loc) *xsurf:out funcvalues:in-zero alpha:out
-!                beta:out
-!   plus diff mem management of: xx:in rev0:in rev1:in rev2:in
-!                rev3:in pp0:in pp1:in pp2:in pp3:in rlv0:in rlv1:in
-!                rlv2:in rlv3:in ssi:in ww0:in ww1:in ww2:in ww3:in
-!                flowdoms.x:in flowdoms.vol:in flowdoms.w:in flowdoms.dw:in
-!                rev:in aa:in bvtj1:in bvtj2:in wx:in wy:in wz:in
-!                p:in rlv:in qx:in qy:in qz:in scratch:in bvtk1:in
-!                bvtk2:in ux:in uy:in uz:in d2wall:in si:in sj:in
-!                sk:in bvti1:in bvti2:in vx:in vy:in vz:in fw:in
-!                viscsubface:in *viscsubface.tau:in bcdata:in *bcdata.norm:in
-!                *bcdata.fv:in *bcdata.fp:in *bcdata.area:in radi:in
-!                radj:in radk:in xsurf:in
+!                *ww1:in-out *ww2:in-out *ww3:in-out funcvalues:in-zero
+!                alpha:out beta:out
+!   plus diff mem management of: flowdoms.x:in flowdoms.vol:in
+!                flowdoms.w:in flowdoms.dw:in rev:in aa:in bvtj1:in
+!                bvtj2:in wx:in wy:in wz:in p:in rlv:in qx:in qy:in
+!                qz:in scratch:in bvtk1:in bvtk2:in ux:in uy:in
+!                uz:in d2wall:in si:in sj:in sk:in bvti1:in bvti2:in
+!                vx:in vy:in vz:in fw:in viscsubface:in *viscsubface.tau:in
+!                bcdata:in *bcdata.norm:in *bcdata.fv:in *bcdata.fp:in
+!                *bcdata.area:in radi:in radj:in radk:in xsurf:in
+!                xx:in rev0:in rev1:in rev2:in rev3:in pp0:in pp1:in
+!                pp2:in pp3:in rlv0:in rlv1:in rlv2:in rlv3:in
+!                ssi:in ww0:in ww1:in ww2:in ww3:in
 ! this is a super-combined function that combines the original
 ! functionality of: 
 ! pressure computation
@@ -90,6 +91,14 @@ subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad, &
   use turbbcroutines_b
   use turbutils_b
   use utils_b, only : terminate
+  use flowutils_b, only : adjustinflowangle, adjustinflowangle_b, &
+& computepressuresimple, computepressuresimple_b, computelamviscosity, &
+& computelamviscosity_b
+  use solverutils_b, only : gridvelocitiesfinelevel_block, &
+& normalvelocities_block, slipvelocitiesfinelevel_block, timestep_block,&
+& timestep_block_b
+  use residuals_b, only : residual_block, residual_block_b
+  use surfaceintegrations_b, only : forcesandmoments, forcesandmoments_b
   implicit none
 ! input arguments:
   integer(kind=inttype), intent(in) :: nn, sps
@@ -178,6 +187,28 @@ subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad, &
 ! compute laminar/eddy viscosity if required
   call computelamviscosity()
   call computeeddyviscosity()
+  call pushreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
+  call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
+  call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
+  call pushreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
+  call pushreal8array(ssi, size(ssi, 1)*size(ssi, 2)*size(ssi, 3))
+  call pushreal8array(rlv3, size(rlv3, 1)*size(rlv3, 2))
+  call pushreal8array(rlv2, size(rlv2, 1)*size(rlv2, 2))
+  call pushreal8array(rlv1, size(rlv1, 1)*size(rlv1, 2))
+  call pushreal8array(rlv0, size(rlv0, 1)*size(rlv0, 2))
+  call pushreal8array(pp3, size(pp3, 1)*size(pp3, 2))
+  call pushreal8array(pp2, size(pp2, 1)*size(pp2, 2))
+  call pushreal8array(pp1, size(pp1, 1)*size(pp1, 2))
+  call pushreal8array(pp0, size(pp0, 1)*size(pp0, 2))
+  call pushreal8array(rev3, size(rev3, 1)*size(rev3, 2))
+  call pushreal8array(rev2, size(rev2, 1)*size(rev2, 2))
+  call pushreal8array(rev1, size(rev1, 1)*size(rev1, 2))
+  call pushreal8array(rev0, size(rev0, 1)*size(rev0, 2))
+  call pushreal8array(xx, size(xx, 1)*size(xx, 2)*size(xx, 3))
+  call pushreal8array(gamma3, size(gamma3, 1)*size(gamma3, 2))
+  call pushreal8array(gamma2, size(gamma2, 1)*size(gamma2, 2))
+  call pushreal8array(gamma1, size(gamma1, 1)*size(gamma1, 2))
+  call pushreal8array(gamma0, size(gamma0, 1)*size(gamma0, 2))
   call pushreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk, 4&
 &               ))
   call pushreal8array(sj, size(sj, 1)*size(sj, 2)*size(sj, 3)*size(sj, 4&
@@ -209,28 +240,6 @@ subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad, &
       end do
     end do
   end do
-  call pushreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
-  call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
-  call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
-  call pushreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
-  call pushreal8array(ssi, size(ssi, 1)*size(ssi, 2)*size(ssi, 3))
-  call pushreal8array(rlv3, size(rlv3, 1)*size(rlv3, 2))
-  call pushreal8array(rlv2, size(rlv2, 1)*size(rlv2, 2))
-  call pushreal8array(rlv1, size(rlv1, 1)*size(rlv1, 2))
-  call pushreal8array(rlv0, size(rlv0, 1)*size(rlv0, 2))
-  call pushreal8array(pp3, size(pp3, 1)*size(pp3, 2))
-  call pushreal8array(pp2, size(pp2, 1)*size(pp2, 2))
-  call pushreal8array(pp1, size(pp1, 1)*size(pp1, 2))
-  call pushreal8array(pp0, size(pp0, 1)*size(pp0, 2))
-  call pushreal8array(rev3, size(rev3, 1)*size(rev3, 2))
-  call pushreal8array(rev2, size(rev2, 1)*size(rev2, 2))
-  call pushreal8array(rev1, size(rev1, 1)*size(rev1, 2))
-  call pushreal8array(rev0, size(rev0, 1)*size(rev0, 2))
-  call pushreal8array(xx, size(xx, 1)*size(xx, 2)*size(xx, 3))
-  call pushreal8array(gamma3, size(gamma3, 1)*size(gamma3, 2))
-  call pushreal8array(gamma2, size(gamma2, 1)*size(gamma2, 2))
-  call pushreal8array(gamma1, size(gamma1, 1)*size(gamma1, 2))
-  call pushreal8array(gamma0, size(gamma0, 1)*size(gamma0, 2))
   call applyallbc_block(.true.)
   if (equations .eq. ransequations) then
     call bcturbtreatment()
@@ -494,6 +503,28 @@ varloopfine:do l=1,nwf
     end do
   end do
   call residual_block()
+  call pushreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
+  call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
+  call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
+  call pushreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
+  call pushreal8array(ssi, size(ssi, 1)*size(ssi, 2)*size(ssi, 3))
+  call pushreal8array(rlv3, size(rlv3, 1)*size(rlv3, 2))
+  call pushreal8array(rlv2, size(rlv2, 1)*size(rlv2, 2))
+  call pushreal8array(rlv1, size(rlv1, 1)*size(rlv1, 2))
+  call pushreal8array(rlv0, size(rlv0, 1)*size(rlv0, 2))
+  call pushreal8array(pp3, size(pp3, 1)*size(pp3, 2))
+  call pushreal8array(pp2, size(pp2, 1)*size(pp2, 2))
+  call pushreal8array(pp1, size(pp1, 1)*size(pp1, 2))
+  call pushreal8array(pp0, size(pp0, 1)*size(pp0, 2))
+  call pushreal8array(rev3, size(rev3, 1)*size(rev3, 2))
+  call pushreal8array(rev2, size(rev2, 1)*size(rev2, 2))
+  call pushreal8array(rev1, size(rev1, 1)*size(rev1, 2))
+  call pushreal8array(rev0, size(rev0, 1)*size(rev0, 2))
+  call pushreal8array(xx, size(xx, 1)*size(xx, 2)*size(xx, 3))
+  call pushreal8array(gamma3, size(gamma3, 1)*size(gamma3, 2))
+  call pushreal8array(gamma2, size(gamma2, 1)*size(gamma2, 2))
+  call pushreal8array(gamma1, size(gamma1, 1)*size(gamma1, 2))
+  call pushreal8array(gamma0, size(gamma0, 1)*size(gamma0, 2))
   call pushreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk, 4&
 &               ))
   call pushreal8array(sj, size(sj, 1)*size(sj, 2)*size(sj, 3)*size(sj, 4&
@@ -525,34 +556,12 @@ varloopfine:do l=1,nwf
       end do
     end do
   end do
-  call pushreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
-  call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
-  call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
-  call pushreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
-  call pushreal8array(ssi, size(ssi, 1)*size(ssi, 2)*size(ssi, 3))
-  call pushreal8array(rlv3, size(rlv3, 1)*size(rlv3, 2))
-  call pushreal8array(rlv2, size(rlv2, 1)*size(rlv2, 2))
-  call pushreal8array(rlv1, size(rlv1, 1)*size(rlv1, 2))
-  call pushreal8array(rlv0, size(rlv0, 1)*size(rlv0, 2))
-  call pushreal8array(pp3, size(pp3, 1)*size(pp3, 2))
-  call pushreal8array(pp2, size(pp2, 1)*size(pp2, 2))
-  call pushreal8array(pp1, size(pp1, 1)*size(pp1, 2))
-  call pushreal8array(pp0, size(pp0, 1)*size(pp0, 2))
-  call pushreal8array(rev3, size(rev3, 1)*size(rev3, 2))
-  call pushreal8array(rev2, size(rev2, 1)*size(rev2, 2))
-  call pushreal8array(rev1, size(rev1, 1)*size(rev1, 2))
-  call pushreal8array(rev0, size(rev0, 1)*size(rev0, 2))
-  call pushreal8array(xx, size(xx, 1)*size(xx, 2)*size(xx, 3))
-  call pushreal8array(gamma3, size(gamma3, 1)*size(gamma3, 2))
-  call pushreal8array(gamma2, size(gamma2, 1)*size(gamma2, 2))
-  call pushreal8array(gamma1, size(gamma1, 1)*size(gamma1, 2))
-  call pushreal8array(gamma0, size(gamma0, 1)*size(gamma0, 2))
   call pushreal8array(cmv, 3)
   call pushreal8array(cmp, 3)
   call pushreal8array(cfv, 3)
   call pushreal8array(cfp, 3)
   call forcesandmoments(cfp, cfv, cmp, cmv, yplusmax, sepsensor, &
-&                    sepsensoravg, cavitation)
+&                 sepsensoravg, cavitation)
 ! convert back to actual forces. note that even though we use
 ! machcoef, lref, and surfaceref here, they are not differented,
 ! since f doesn't actually depend on them. ideally we would just get
@@ -610,28 +619,6 @@ varloopfine:do l=1,nwf
   call popreal8array(cfv, 3)
   call popreal8array(cmp, 3)
   call popreal8array(cmv, 3)
-  call popreal8array(gamma0, size(gamma0, 1)*size(gamma0, 2))
-  call popreal8array(gamma1, size(gamma1, 1)*size(gamma1, 2))
-  call popreal8array(gamma2, size(gamma2, 1)*size(gamma2, 2))
-  call popreal8array(gamma3, size(gamma3, 1)*size(gamma3, 2))
-  call popreal8array(xx, size(xx, 1)*size(xx, 2)*size(xx, 3))
-  call popreal8array(rev0, size(rev0, 1)*size(rev0, 2))
-  call popreal8array(rev1, size(rev1, 1)*size(rev1, 2))
-  call popreal8array(rev2, size(rev2, 1)*size(rev2, 2))
-  call popreal8array(rev3, size(rev3, 1)*size(rev3, 2))
-  call popreal8array(pp0, size(pp0, 1)*size(pp0, 2))
-  call popreal8array(pp1, size(pp1, 1)*size(pp1, 2))
-  call popreal8array(pp2, size(pp2, 1)*size(pp2, 2))
-  call popreal8array(pp3, size(pp3, 1)*size(pp3, 2))
-  call popreal8array(rlv0, size(rlv0, 1)*size(rlv0, 2))
-  call popreal8array(rlv1, size(rlv1, 1)*size(rlv1, 2))
-  call popreal8array(rlv2, size(rlv2, 1)*size(rlv2, 2))
-  call popreal8array(rlv3, size(rlv3, 1)*size(rlv3, 2))
-  call popreal8array(ssi, size(ssi, 1)*size(ssi, 2)*size(ssi, 3))
-  call popreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
-  call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
-  call popreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
-  call popreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
   do ii1=ntimeintervalsspectral,1,-1
     do ii2=1,1,-1
       do ii3=nn,nn,-1
@@ -663,6 +650,28 @@ varloopfine:do l=1,nwf
 &             )
   call popreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk, 4)&
 &             )
+  call popreal8array(gamma0, size(gamma0, 1)*size(gamma0, 2))
+  call popreal8array(gamma1, size(gamma1, 1)*size(gamma1, 2))
+  call popreal8array(gamma2, size(gamma2, 1)*size(gamma2, 2))
+  call popreal8array(gamma3, size(gamma3, 1)*size(gamma3, 2))
+  call popreal8array(xx, size(xx, 1)*size(xx, 2)*size(xx, 3))
+  call popreal8array(rev0, size(rev0, 1)*size(rev0, 2))
+  call popreal8array(rev1, size(rev1, 1)*size(rev1, 2))
+  call popreal8array(rev2, size(rev2, 1)*size(rev2, 2))
+  call popreal8array(rev3, size(rev3, 1)*size(rev3, 2))
+  call popreal8array(pp0, size(pp0, 1)*size(pp0, 2))
+  call popreal8array(pp1, size(pp1, 1)*size(pp1, 2))
+  call popreal8array(pp2, size(pp2, 1)*size(pp2, 2))
+  call popreal8array(pp3, size(pp3, 1)*size(pp3, 2))
+  call popreal8array(rlv0, size(rlv0, 1)*size(rlv0, 2))
+  call popreal8array(rlv1, size(rlv1, 1)*size(rlv1, 2))
+  call popreal8array(rlv2, size(rlv2, 1)*size(rlv2, 2))
+  call popreal8array(rlv3, size(rlv3, 1)*size(rlv3, 2))
+  call popreal8array(ssi, size(ssi, 1)*size(ssi, 2)*size(ssi, 3))
+  call popreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
+  call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
+  call popreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
+  call popreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
   call forcesandmoments_b(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd, &
 &                   yplusmax, sepsensor, sepsensord, sepsensoravg, &
 &                   sepsensoravgd, cavitation, cavitationd)
@@ -894,28 +903,6 @@ varloopfine:do l=1,nwf
     call applyallturbbcthisblock_b(.true.)
     call bcturbtreatment_b()
   end if
-  call popreal8array(gamma0, size(gamma0, 1)*size(gamma0, 2))
-  call popreal8array(gamma1, size(gamma1, 1)*size(gamma1, 2))
-  call popreal8array(gamma2, size(gamma2, 1)*size(gamma2, 2))
-  call popreal8array(gamma3, size(gamma3, 1)*size(gamma3, 2))
-  call popreal8array(xx, size(xx, 1)*size(xx, 2)*size(xx, 3))
-  call popreal8array(rev0, size(rev0, 1)*size(rev0, 2))
-  call popreal8array(rev1, size(rev1, 1)*size(rev1, 2))
-  call popreal8array(rev2, size(rev2, 1)*size(rev2, 2))
-  call popreal8array(rev3, size(rev3, 1)*size(rev3, 2))
-  call popreal8array(pp0, size(pp0, 1)*size(pp0, 2))
-  call popreal8array(pp1, size(pp1, 1)*size(pp1, 2))
-  call popreal8array(pp2, size(pp2, 1)*size(pp2, 2))
-  call popreal8array(pp3, size(pp3, 1)*size(pp3, 2))
-  call popreal8array(rlv0, size(rlv0, 1)*size(rlv0, 2))
-  call popreal8array(rlv1, size(rlv1, 1)*size(rlv1, 2))
-  call popreal8array(rlv2, size(rlv2, 1)*size(rlv2, 2))
-  call popreal8array(rlv3, size(rlv3, 1)*size(rlv3, 2))
-  call popreal8array(ssi, size(ssi, 1)*size(ssi, 2)*size(ssi, 3))
-  call popreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
-  call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
-  call popreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
-  call popreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
   do ii1=ntimeintervalsspectral,1,-1
     do ii2=1,1,-1
       do ii3=nn,nn,-1
@@ -947,6 +934,28 @@ varloopfine:do l=1,nwf
 &             )
   call popreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk, 4)&
 &             )
+  call popreal8array(gamma0, size(gamma0, 1)*size(gamma0, 2))
+  call popreal8array(gamma1, size(gamma1, 1)*size(gamma1, 2))
+  call popreal8array(gamma2, size(gamma2, 1)*size(gamma2, 2))
+  call popreal8array(gamma3, size(gamma3, 1)*size(gamma3, 2))
+  call popreal8array(xx, size(xx, 1)*size(xx, 2)*size(xx, 3))
+  call popreal8array(rev0, size(rev0, 1)*size(rev0, 2))
+  call popreal8array(rev1, size(rev1, 1)*size(rev1, 2))
+  call popreal8array(rev2, size(rev2, 1)*size(rev2, 2))
+  call popreal8array(rev3, size(rev3, 1)*size(rev3, 2))
+  call popreal8array(pp0, size(pp0, 1)*size(pp0, 2))
+  call popreal8array(pp1, size(pp1, 1)*size(pp1, 2))
+  call popreal8array(pp2, size(pp2, 1)*size(pp2, 2))
+  call popreal8array(pp3, size(pp3, 1)*size(pp3, 2))
+  call popreal8array(rlv0, size(rlv0, 1)*size(rlv0, 2))
+  call popreal8array(rlv1, size(rlv1, 1)*size(rlv1, 2))
+  call popreal8array(rlv2, size(rlv2, 1)*size(rlv2, 2))
+  call popreal8array(rlv3, size(rlv3, 1)*size(rlv3, 2))
+  call popreal8array(ssi, size(ssi, 1)*size(ssi, 2)*size(ssi, 3))
+  call popreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
+  call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
+  call popreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
+  call popreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
   call applyallbc_block_b(.true.)
   call computeeddyviscosity_b()
   call computelamviscosity_b()

@@ -28,8 +28,8 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   use communication
   use adjointVars
   use turbMod
-  use utils, only : EChk, setPointers
-  use haloExchange, only :whalo2
+  use utils, only : EChk, setPointers, getDirAngle
+  use haloExchange, only : whalo2
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"

@@ -17,7 +17,7 @@ subroutine allocDerivativeValues(level)
   use wallDistanceData, only : xSurfVec, xSurfVecd, PETSC_DETERMINE
   use BCPointers_b
   use adjointVars
-  use utils, only : EChk, setPointers
+  use utils, only : EChk, setPointers, getDirAngle
   implicit none
 
   ! Input parameters

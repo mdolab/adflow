@@ -78,21 +78,26 @@ FF90_OBJECTS_1 =	modules/IOModule.o\
 			modules/stencils.o\
 			modules/diffSizes.o\
 			modules/overset.o\
+			turbulence/turbMod.o\
 
 FF90_OBJECTS_2= 	\
 			utils/utils.o\
 			adjoint/outputForward/utils_d.o\
 			adjoint/outputReverse/utils_b.o\
 			adjoint/outputReverseFast/utils_fast_b.o\
-\
+			\
 			ADT/adtUtils.o\
 			utils/myIsNaNC.o\
-			turbulence/turbMod.o\
+			utils/connect_signals.o\
+			utils/signals.o\
+			turbulence/turbCurveFits.o\
 
+FF90_OBJECTS_2b = 	solver/ALEUtils.o\
+			adjoint/outputForward/aleutils_d.o\
+			adjoint/outputReverse/aleutils_b.o\
+			adjoint/outputReverseFast/aleutils_fast_b.o\
 
-FF90_OBJECTS_3 =utils/sorting.o\
-		turbulence/turbCurveFits.o\
-		\
+FF90_OBJECTS_3 =\
 		utils/flowUtils.o\
 		adjoint/outputForward/flowutils_d.o\
 		adjoint/outputReverse/flowutils_b.o\
@@ -108,19 +113,37 @@ FF90_OBJECTS_3 =utils/sorting.o\
 		adjoint/outputReverse/turbutils_b.o\
 		adjoint/outputReverseFast/turbutils_fast_b.o\
 		\
+		solver/solverUtils.o\
+		adjoint/outputForward/solverutils_d.o\
+		adjoint/outputReverse/solverutils_b.o\
+		adjoint/outputReverseFast/solverutils_fast_b.o\
+		\
 		ADT/adtBuild.o\
 		ADT/adtLocalSearch.o\
 		bcdata/BCData.o\
 		partitioning/partitionMod.o\
 		partitioning/metisInterface.o\
 		warping/warping.o\
+		utils/sorting.o\
+
+
+
 
 FF90_OBJECTS_4 =\
+		solver/fluxes.o\
+		adjoint/outputForward/fluxes_d.o\
+		adjoint/outputReverse/fluxes_b.o\
+		adjoint/outputReverseFast/fluxes_fast_b.o\
 		\
 		turbulence/turbBCRoutines.o\
 		adjoint/outputForward/turbbcroutines_d.o\
 		adjoint/outputReverse/turbbcroutines_b.o\
 		adjoint/outputReverseFast/turbbcroutines_fast_b.o\
+		\
+		solver/surfaceIntegrations.o\
+		adjoint/outputForward/surfaceintegrations_d.o\
+		adjoint/outputReverse/surfaceintegrations_b.o\
+		\
 		utils/haloExchange.o\
 		utils/surfaceUtils.o\
 		ADT/adtSearch.o\
@@ -130,6 +153,10 @@ FF90_OBJECTS_4 =\
 		partitioning/readCGNSGrid.o\
 
 FF90_OBJECTS_5 =\
+		\
+		solver/residuals.o\
+		adjoint/outputForward/residuals_d.o\
+		adjoint/outputReverse/residuals_b.o\
 		\
 		turbulence/sa.o\
 		adjoint/outputForward/sa_d.o\
@@ -141,7 +168,6 @@ FF90_OBJECTS_5 =\
 		turbulence/kt.o\
 		turbulence/SST.o\
 		turbulence/vf.o\
-		\
 		inputParam/inputParamRoutines.o\
 		partitioning/partitioning.o\
 		preprocessing/bcHalo.o\
@@ -152,10 +178,10 @@ FF90_OBJECTS_5 =\
 		output/outputMod.o\
 		overset/stringOps.o\
 		overset/cartMesh.o\
-		turbulence/turbAPI.o\
 		ADT/adtAPI.o\
 
-FF90_OBJECTS_6 =\
+
+FF90_OBJECTS_6 = \
 		output/writeCGNSSurface.o\
 		output/tecplotIO.o\
 		output/writeCGNSGrid.o\
@@ -169,77 +195,23 @@ FF90_OBJECTS_6 =\
 		adjoint/outputForward/initializeflow_d.o\
 		adjoint/outputReverse/initializeflow_b.o\
 		\
-		NKSolver/NKSolvers.o\
+		turbulence/turbAPI.o\
 		slidingComm/localSubfaces.o\
 		slidingComm/mixingData.o\
 		slidingComm/thisSlide.o\
 		slidingComm/tmpSliding.o\
 		slidingComm/updateComm.o\
+		solver/smoothers.o\
+
+
+FF90_OBJECTS_7 =NKSolver/NKSolvers.o\
+		solver/multiGrid.o\
 
 # These are the solver ones
-FF90_OBJECTS_8 =\
+FF90_OBJECTS_8 =solver/solvers.o\
 		output/writeSol.o\
 		slidingComm/bsearchSortedDonorCommType.o\
 		metis-4.0/metis.o\
-		solver/applyAllBC.o\
-		solver/convergenceHeader.o\
-		solver/adjustInflowAngle.o\
-		solver/convergenceInfo.o\
-		solver/computedwD3ADI.o\
-		solver/computeLamViscosity.o\
-		solver/computeUtau.o\
-		solver/coorUtilsALE.o\
-		solver/DADISmoother.o\
-		solver/derivativeRotMatrixRigid.o\
-		solver/executeMGCycle.o\
-		solver/farFieldDrag.o\
-		solver/farFieldInducedDrag.o\
-		solver/forcesAndMoments.o\
-		solver/forcesAndMomentsZipper.o\
-		solver/farFieldDrag.o\
-		solver/geomUtilsALE.o\
-		solver/getDirAngle.o\
-		solver/getDirVector.o\
-		solver/gridVelocitiesCoarseLevels.o\
-		solver/gridVelocitiesFineLevel.o\
-		solver/gridVelocitiesFineLevel_ALE.o\
-		solver/initres.o\
-		solver/inviscidCentralFlux.o\
-		solver/inviscidDissFluxMatrix.o\
-		solver/inviscidDissFluxMatrixCoarse.o\
-		solver/inviscidDissFluxScalar.o\
-		solver/inviscidDissFluxScalarCoarse.o\
-		solver/inviscidUpwindFlux.o\
-		solver/killFunctions.o\
-		solver/connect_signals.o\
-		solver/maxEddyv.o\
-		solver/maxHdiffMach.o\
-		solver/normalVelocities.o\
-		solver/residual.o\
-		solver/residual2.o\
-		solver/residualAveraging.o\
-		solver/rungeKuttaSmoother.o\
-		solver/setCoefTimeIntegrator.o\
-		solver/setCornerRowHalos.o\
-		solver/setCorrectionsCoarseHalos.o\
-		solver/setCycleStrategy.o\
-		solver/shiftSolution.o\
-		solver/slipVelocities.o\
-		solver/slipVelocities_ALE.o\
-		solver/solveState.o\
-		solver/solver.o\
-		solver/solverSteady.o\
-		solver/solverUnsteadyExplicitRK.o\
-		solver/solverUnsteadyBDF.o\
-		solver/solverUnsteady_ALE.o\
-		solver/solverUnsteadyWrap.o\
-		solver/timeStep.o\
-		solver/transferToCoarseGrid.o\
-		solver/transferToFineGrid.o\
-		solver/unsteadyHeader.o\
-		solver/utauWF.o\
-		solver/vectorRotation.o\
-		solver/viscousFlux.o\
 		preprocessing/coarse1to1Subface.o\
 		preprocessing/allocMemHaloList.o\
 		preprocessing/cellRangeSubface.o\
@@ -314,74 +286,23 @@ FF90_OBJECTS_8 =\
 		slidingComm/updateSlidingAllLevels.o\
 		slidingComm/updateSlidingCommPattern.o\
 		slidingComm/volumeInterpol.o\
-		adjoint/outputForward/allnodalgradients_d.o\
-		adjoint/outputForward/viscousflux_d.o \
-		adjoint/outputForward/viscousfluxapprox_d.o\
-		adjoint/outputForward/invisciddissfluxmatrix_d.o \
-		adjoint/outputForward/computelamviscosity_d.o\
-		adjoint/outputForward/computepressuresimple_d.o\
-		adjoint/outputForward/timestep_block_d.o\
-		adjoint/outputForward/invisciddissfluxscalar_d.o\
-		adjoint/outputForward/invisciddissfluxscalarapprox_d.o\
-		adjoint/outputForward/invisciddissfluxmatrixapprox_d.o\
-		adjoint/outputForward/inviscidupwindflux_d.o  \
 		adjoint/outputForward/block_res_d.o  \
-		adjoint/outputForward/residual_block_d.o \
-		adjoint/outputForward/inviscidcentralflux_d.o\
 		adjoint/outputForward/xhalo_block_d.o\
 		adjoint/outputForward/metric_block_d.o\
-		adjoint/outputForward/gridvelocitiesfinelevel_block_d.o\
-		adjoint/outputForward/normalvelocities_block_d.o\
-		adjoint/outputForward/adjustinflowangle_d.o\
-		adjoint/outputForward/forcesandmoments_d.o\
-		adjoint/outputForward/getdirangle_d.o\
-		adjoint/outputForward/getdirvector_d.o\
-		adjoint/outputForward/vectorrotation_d.o\
-		adjoint/outputForward/slipvelocitiesfinelevel_block_d.o\
 		adjoint/outputForward/getcostfunction2_d.o\
 		adjoint/outputForward/boundarynormals_d.o\
 		adjoint/outputForward/volume_block_d.o\
-		adjoint/outputForward/derivativerotmatrixrigid_d.o\
-		adjoint/outputReverse/allnodalgradients_b.o\
-		adjoint/outputReverse/adjustinflowangle_b.o\
-		adjoint/outputReverse/getdirvector_b.o\
-		adjoint/outputReverse/vectorrotation_b.o\
-		adjoint/outputReverse/computelamviscosity_b.o\
-		adjoint/outputReverse/computepressuresimple_b.o\
 		adjoint/outputReverse/getcostfunction2_b.o\
-		adjoint/outputReverse/timestep_block_b.o\
 		adjoint/outputReverse/metric_block_b.o\
 		adjoint/outputReverse/xhalo_block_b.o\
-		adjoint/outputReverse/residual_block_b.o\
-		adjoint/outputReverse/invisciddissfluxscalar_b.o\
 		adjoint/outputReverse/block_res_b.o  \
-		adjoint/outputReverse/viscousflux_b.o \
-		adjoint/outputReverse/viscousfluxapprox_b.o\
-		adjoint/outputReverse/inviscidcentralflux_b.o\
-		adjoint/outputReverse/forcesandmoments_b.o\
 		adjoint/outputReverse/getcostfunction2_b.o\
-		adjoint/outputReverse/invisciddissfluxscalarapprox_b.o\
-		adjoint/outputReverse/invisciddissfluxmatrix_b.o\
-		adjoint/outputReverse/inviscidupwindflux_b.o\
-		adjoint/outputReverse/invisciddissfluxmatrixapprox_b.o\
 		adjoint/outputReverse/boundarynormals_b.o\
 		adjoint/outputReverse/volume_block_b.o\
-		adjoint/outputReverseFast/allnodalgradients_fast_b.o\
-		adjoint/outputReverseFast/computelamviscosity_fast_b.o\
-		adjoint/outputReverseFast/timestep_block_fast_b.o\
-		adjoint/outputReverseFast/invisciddissfluxscalar_fast_b.o\
-		adjoint/outputReverseFast/invisciddissfluxmatrix_fast_b.o\
-		adjoint/outputReverseFast/viscousflux_fast_b.o\
-		adjoint/outputReverseFast/inviscidcentralflux_fast_b.o\
-		adjoint/outputReverseFast/computepressuresimple_fast_b.o\
 		adjoint/outputReverseFast/BCExtra.o\
 		adjoint/residualInput/block_res.o\
 		adjoint/residualInput/metric_block.o\
 		adjoint/residualInput/xhalo_block.o\
-		adjoint/residualInput/viscousFluxApprox.o\
-		adjoint/residualInput/inviscidDissFluxScalarApprox.o\
-		adjoint/residualInput/inviscidDissFluxMatrixApprox.o\
-		adjoint/residualInput/computePressureSimple.o\
 		adjoint/residualInput/costFunction2.o\
 		adjoint/adjointPythonInterfaceFunctions.o\
 		adjoint/computeAeroCoef.o\
@@ -472,6 +393,7 @@ all:
 	$(MAKE) src0
 	$(PMAKE) src1
 	$(PMAKE) src2
+	$(PMAKE) src2b
 	$(PMAKE) src3
 	$(PMAKE) src4
 	$(PMAKE) src5
@@ -479,7 +401,7 @@ all:
 	$(PMAKE) src7
 	$(PMAKE) src8
 	$(AR) $(AR_FLAGS) ../lib/libsumb.a $(FF90_OBJECTS_0) $(FF90_OBJECTS_1) \
-	$(FF90_OBJECTS_2) $(FF90_OBJECTS_3) $(FF90_OBJECTS_4) $(FF90_OBJECTS_5) \
+	$(FF90_OBJECTS_2) $(FF90_OBJECTS_2b) $(FF90_OBJECTS_3) $(FF90_OBJECTS_4) $(FF90_OBJECTS_5) \
 	$(FF90_OBJECTS_6) $(FF90_OBJECTS_7) $(FF90_OBJECTS_8)
 
 # --------------------- f2py python module building ---------------
@@ -537,6 +459,7 @@ clean:
 src0: $(FF90_OBJECTS_0)
 src1: $(FF90_OBJECTS_1)
 src2: $(FF90_OBJECTS_2)
+src2b: $(FF90_OBJECTS_2b)
 src3: $(FF90_OBJECTS_3)
 src4: $(FF90_OBJECTS_4)
 src5: $(FF90_OBJECTS_5)
