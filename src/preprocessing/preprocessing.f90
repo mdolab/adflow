@@ -261,8 +261,6 @@
       end do
 
       call setSurfaceFamilyInfo
-      call initializeLiftDistributionData
-
        
      end subroutine preprocessing
 

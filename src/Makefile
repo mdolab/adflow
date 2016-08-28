@@ -78,8 +78,6 @@ FF90_OBJECTS_1 =	modules/IOModule.o\
 			modules/stencils.o\
 			modules/diffSizes.o\
 			modules/overset.o\
-			modules/liftDistributionData.o\
-
 
 FF90_OBJECTS_2= 	ADT/adtUtils.o\
 			utils/utils.o\
@@ -142,9 +140,15 @@ FF90_OBJECTS_6 =wallDistance/wallDistance.o\
 		slidingComm/thisSlide.o\
 		slidingComm/tmpSliding.o\
 		slidingComm/updateComm.o\
+		output/writeCGNSGrid.o\
+		output/writeCGNSVolume.o\
+		output/writeCGNSSurface.o\
+		output/tecplotIO.o\
 
 # These are the solver ones
-FF90_OBJECTS_7 =slidingComm/bsearchSortedDonorCommType.o\
+FF90_OBJECTS_7 =\
+		output/writeSol.o\
+		slidingComm/bsearchSortedDonorCommType.o\
 		metis-4.0/metis.o\
 		solver/applyAllBC.o\
 		solver/convergenceHeader.o\
@@ -245,49 +249,6 @@ FF90_OBJECTS_7 =slidingComm/bsearchSortedDonorCommType.o\
 		preprocessing/setReferenceVolume.o\
 		preprocessing/bsearchCGNSPeriodicType.o\
 		preprocessing/determinePeriodicData.o\
-		output/copyDataBuf.o\
-		output/computeIsoVariable.o\
-		output/describeScheme.o\
-		output/gridFileNamesWrite.o\
-		output/isoSurfNames.o\
-		output/liftDistribution.o\
-		output/marchingCubesData.o\
-		output/numberOfSurfSolVariables.o\
-		output/numberOfVolSolVariables.o\
-		output/numberOfIsoVariables.o\
-		output/openCGNSVolumeSol.o\
-		output/releaseHelpVariablesWriting.o\
-		output/setHelpVariablesWriting.o\
-		output/storeOldSolInBuffer.o\
-		output/storeSolInBuffer.o\
-		output/storeSurfsolInBuffer.o\
-		output/surfSolFileNamesWrite.o\
-		output/surfSolNames.o\
-		output/updateParamfile.o\
-		output/volSolFileNamesWrite.o\
-		output/volSolNames.o\
-		output/writeCGNSConvInfo.o\
-		output/writeCGNSGridFile.o\
-		output/writeCGNSGridFrame.o\
-		output/writeCGNSHeader.o\
-		output/writeCGNSKomegaModifiedInfo.o\
-		output/writeCGNSKomegaWilcoxInfo.o\
-		output/writeCGNSKtauInfo.o\
-		output/writeCGNSMenterSSTInfo.o\
-		output/writeCGNSReferenceState.o\
-		output/writeCGNSSaInfo.o\
-		output/writeCGNSSaeInfo.o\
-		output/writeCGNSSurfaceSol.o\
-		output/writeCGNSTimeHistory.o\
-		output/writeCGNSV2fInfo.o\
-		output/writeCGNSVolumeSol.o\
-		output/writeCoorCGNSZone.o\
-		output/writeInterpolFromSpectral.o\
-		output/writeIsoSurface.o\
-		output/writeSol.o\
-		output/writeSolCGNSZone.o\
-		output/writeSurfsolCGNSZone.o\
-		output/writeUnsteadyFromSpectral.o\
 		slidingComm/cumulativeNSendReceives.o\
 		slidingComm/cylCoorNodesOnBlockFace.o\
 		slidingComm/determineNSlices.o\
@@ -616,7 +577,7 @@ all:
 # Final Link:
 	$(FF90) -shared $(PYTHON_OBJECTS) $(LINKER_ALL_FLAGS) -o libsumb.so
 	python f2py/importTest.py
-	mv libsumb.so ../../../python
+	mv libsumb.so ../python
 	-rm *.o
 	-rm *.f90
 	-rm *.c

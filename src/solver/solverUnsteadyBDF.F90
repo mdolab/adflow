@@ -274,6 +274,7 @@
        use killSignals
        use monitor
        use inputIO
+       use tecplotIO, only : writeLiftDistributionFile, writeSlicesFile
        implicit none
 !
 !      Local variables.

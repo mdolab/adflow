@@ -1,18 +1,22 @@
-       subroutine writeSol
+
+           subroutine writeSol
 !
 !       writeSol controls the writing of a new grid file, a volume     
-!       solution file and a surface solution file. And if needed the   
-!       parameter file is updated to the new situation.                
+!       solution file and a surface solution file.            
 !
-       use block
-       use communication
+       use constants
        use extraOutput
-       use flowVarRefState
-       use inputIO
-       use inputTimeSpectral
-       use killSignals
-       use monitor
-       use outputMod
+       use communication, only : sumb_comm_world
+       use monitor, only : writeVolume
+       use inputIO, only : storeRindLayer
+       use killSignals, only : localSignal, globalSignal
+       use flowVarRefState, only : nw
+       use outputMod, only : setHelpVariablesWriting, &
+            releaseHelpVariablesWriting, gridFileNames, volSolFileNames, &
+            surfSolFileNames
+       use writeCGNSGrid, only : writeCGNSGridFile
+       use writeCGNSVolume, only : writeCGNSVolumeSol
+       use writeCGNSSurface, only : writeCGNSSurfaceSol
        use utils, only : terminate, deallocateTempMemory, allocateTempMemory
        use haloExchange, only : resHalo1
        implicit none
@@ -37,13 +41,6 @@
 
        call deallocateTempMemory(.true.)
 
-       ! If the reading format is different from the writing format
-       ! and a volume solution file must be written automatically
-       ! a grid file is written as well if this is the first time
-       ! a solution file is written.
-
-       writeFormatInParam = .false.
-
        ! Write the files. The routines called depend on the IO
        ! format used.
 
@@ -52,10 +49,6 @@
        call writeCGNSVolumeSol
        call writeCGNSSurfaceSol
        call releaseHelpVariablesWriting
-
-       ! Update the parameter file, if needed.
-
-       call updateParamfile
 
        ! Release the memory of the file names.
 
@@ -81,3 +74,5 @@
 #endif
 
        end subroutine writeSol
+
+
