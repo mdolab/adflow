@@ -21,6 +21,7 @@ subroutine solveState
        signalWriteQuit
   use monitor, only : writeGrid, writeSurface, writeVolume
   use utils, only: allocConvArrays
+  use tecplotIO, only : writeTecplot
   implicit none
   !
   !      Local parameter

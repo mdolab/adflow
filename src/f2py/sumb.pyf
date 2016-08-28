@@ -268,42 +268,46 @@ python module libsumb
          
        end module surfaceutils
 
+       module tecplotio
+         subroutine addparaslice(slicename,pt,direction,famlist,n) ! in :test:liftDistribution.F90
+           character*(*) intent(in) :: slicename
+           real(kind=realtype) dimension(3),intent(in) :: pt
+           real(kind=realtype) dimension(3),intent(in) :: direction
+           integer(kind=inttype) dimension(n),intent(in) :: famlist
+           integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
+         end subroutine addparaslice
+
+         subroutine addabsslice(slicename,pt,direction,famlist,n) ! in :test:liftDistribution.F90
+           character*(*) intent(in) :: slicename
+           real(kind=realtype) dimension(3),intent(in) :: pt
+           real(kind=realtype) dimension(3),intent(in) :: direction
+           integer(kind=inttype) dimension(n),intent(in) :: famlist
+           integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
+         end subroutine addabsslice
+         
+         subroutine addliftdistribution(nsegments,dir_vec,dir_ind, distname,famlist,n) ! in :test:liftDistribution.F90
+           integer(kind=inttype) intent(in) :: nsegments
+           real(kind=realtype) dimension(3), intent(in) :: dir_vec
+           integer(kind=inttype), intent(in) :: dir_ind
+           character*(*) intent(in) :: distname
+           integer(kind=inttype) dimension(n),intent(in) :: famlist
+           integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
+         end subroutine addliftdistribution
+         
+         subroutine writetecplot(slicefile, writeslices, liftfile, writelift, surffile, writesurf)
+           character*(*), intent(in) :: slicefile
+           logical, intent(in) :: writeslices
+           character*(*), intent(in) :: liftfile
+           logical, intent(in) :: writelift
+           character*(*), intent(in) :: surffile
+           logical, intent(in) :: writesurf
+         end subroutine writetecplot
+
+         subroutine initializeliftdistributiondata
+         end subroutine initializeliftdistributiondata
+       end subroutine tecplotio
+
 ! ================ bare subroutines =============
-
-       subroutine addparaslice(slicename,pt,direction,famlist,n) ! in :test:liftDistribution.F90
-         character*(*) intent(in) :: slicename
-         real(kind=realtype) dimension(3),intent(in) :: pt
-         real(kind=realtype) dimension(3),intent(in) :: direction
-         integer(kind=inttype) dimension(n),intent(in) :: famlist
-         integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
-
-       end subroutine addparaslice
-
-       subroutine addabsslice(slicename,pt,direction,famlist,n) ! in :test:liftDistribution.F90
-         character*(*) intent(in) :: slicename
-         real(kind=realtype) dimension(3),intent(in) :: pt
-         real(kind=realtype) dimension(3),intent(in) :: direction
-         integer(kind=inttype) dimension(n),intent(in) :: famlist
-         integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
-       end subroutine addabsslice
-
-       subroutine addliftdistribution(nsegments,dir_vec,dir_ind, distname,famlist,n) ! in :test:liftDistribution.F90
-         integer(kind=inttype) intent(in) :: nsegments
-         real(kind=realtype) dimension(3), intent(in) :: dir_vec
-         integer(kind=inttype), intent(in) :: dir_ind
-         character*(*) intent(in) :: distname
-         integer(kind=inttype) dimension(n),intent(in) :: famlist
-         integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
-       end subroutine addliftdistribution
-       
-       subroutine writetecplot(slicefile, writeslices, liftfile, writelift, surffile, writesurf)
-         character*(*), intent(in) :: slicefile
-         logical, intent(in) :: writeslices
-         character*(*), intent(in) :: liftfile
-         logical, intent(in) :: writelift
-         character*(*), intent(in) :: surffile
-         logical, intent(in) :: writesurf
-       end subroutine writeliftdistributionfile
 
       
        subroutine preprocessing ! in :sumb:../../preprocessing/preprocessing.f90
@@ -348,7 +352,6 @@ python module libsumb
        subroutine writesol ! in :sumb:../../output/writeSol.f90
        end subroutine writesol
 
-
        subroutine updateslidingalllevels ! in :sumb:../../slidingComm/updateSlidingAllLevels.f90
        end subroutine updateslidingalllevels
 
@@ -368,11 +371,7 @@ python module libsumb
          integer(kind=inttype) :: sps
         end subroutine getsolution
 
-
-       ! ############################################################################
-       ! Added by HDN
-       ! ############################################################################
-       subroutine solverunsteady_ale(alecallback_python) ! in :test:solverUnsteady_ALE.F90
+      subroutine solverunsteady_ale(alecallback_python) ! in :test:solverUnsteady_ALE.F90
          use solverunsteadyale__user__routines
          external alecallback_python
        end subroutine solverunsteady_ale
@@ -471,7 +470,6 @@ python module libsumb
             real(kind=realtype) intent(in) :: relativetolerance
         end subroutine solvedirectforrhs
 
-
         subroutine saveadjointmatrix(filename) ! in :test:saveAdjoint.F90
             character*(*) intent(in) :: filename
         end subroutine saveadjointmatrix
@@ -485,9 +483,6 @@ python module libsumb
           subroutine savecellcenters(filename) ! in :test:saveAdjoint.F90
             character*(*) intent(in) :: filename
           end subroutine savecellcenters
-
-
-       
 
        subroutine spectralprecscribedmotion(input,nin,dxv,nout)
          real(kind=realtype) dimension(nin),intent(in) :: input
