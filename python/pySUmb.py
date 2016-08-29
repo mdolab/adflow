@@ -2110,7 +2110,7 @@ class SUMB(AeroSolver):
         conn =  numpy.zeros((ncell, 4), dtype='intc')
         self.sumb.getsurfaceconnectivity(numpy.ravel(conn))
 
-        faceSizes = 4*np.ones(len(conn)/4, 'intc')
+        faceSizes = 4*numpy.ones(len(conn)/4, 'intc')
 
         # Conver to 0-based ordering becuase we are in python
         return conn-1, faceSizes
