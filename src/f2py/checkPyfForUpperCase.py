@@ -17,7 +17,7 @@ def error(i,line):
 # Define charachter set
 ignoreChars = set("!#")
 
-f = open("f2py/sumb.pyf","r")
+f = open("../f2py/sumb.pyf","r")
 for i, line in enumerate(f):
     line = line.rstrip()
     if not line:

@@ -7,31 +7,6 @@
 #      *                                                                *
 #      ******************************************************************
 
-SUBDIR_SRC    = src \
-		src/utils \
-		src/ADT \
-		src/bcdata \
-		src/partitioning \
-		src/modules       \
-	        src/solver        \
-	        src/metis-4.0     \
-		src/NKSolver \
-		src/initFlow \
-		src/inputParam\
-	        src/output        \
-	        src/overset       \
-	        src/preprocessing \
-		src/wallDistance \
-	        src/slidingComm   \
-	        src/turbulence    \
-		src/warping       \
-                src/adjoint/ADFirstAidKit \
-                src/adjoint/residualInput \
-		src/adjoint/outputForward \
-		src/adjoint/outputReverse \
-                src/adjoint/outputReverseFast \
-		src/adjoint 
-
 default:
 # Check if the config.mk file is in the config dir.
 	@if [ ! -f "config/config.mk" ]; then \
@@ -49,19 +24,13 @@ default:
 
 clean:
 	ln -sf SUmb_Common_real.mk SUmb_Common.mk
-	@for subdir in $(SUBDIR_SRC)  ; \
-		do \
-			echo "making $@ in $$subdir"; \
-			rm -fr $$subdir/*.o; \
-		done
-	rm -fr src/*.mod
+	rm -fr src/build/*.mod
+	rm -fr src/build/*.o
 	rm -f *~ config.mk;
-	rm -f lib/lib* mod/* obj/*
+
 
 sumb:
-	mkdir -p bin;
-	mkdir -p obj;
-	mkdir -p mod;
 	ln -sf config/config.mk config.mk;
-	ln -sf SUmb_Common_real.mk SUmb_Common.mk;
-	(cd src && make)
+	ln -sf SUmb_Common_real.mk SUmb_Common.mk
+	(cd src/build/ && make)
+
