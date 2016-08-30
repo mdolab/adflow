@@ -130,10 +130,10 @@ def get_depends(fob=[],m2f=[]):
         tmp=[]
         for j in i.uses:
             try:
-                tmp.append(m2f[j.lower()])
+                if m2f[j.lower()] != i.file_name:
+                    tmp.append(m2f[j.lower()])
             except:
                 print "\033[031mError\033[039m module \033[032m"+j+"\033[039m not defined in any files. Skipping..."
-
         deps[i.file_name]=tmp
 
     return deps

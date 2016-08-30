@@ -4,106 +4,7 @@ This is the SUmb README. Please read this before trying to compile.
 ----------------
 Prerequisites:
 -----------------
-
-0. Python/Numpy Essentials. (Ubuntu Specific)
-
-   Several modules are required before compiling anything on Ubuntu.
-   These are:
-   'python-dev', 'python-numpy', 'python-scipy', 'build-essential', 'gfortran', 'g++'
-   'libatlas3gf-base', 'libatlas-base-dev', 'libatlas-dev'
-   
-   These can be installed using the following commands:
-
-   $ sudo apt-get install python-dev python-numpy python-scipy build-essential gfortran g++ 
-   $ sudo apt-get install libatlas3gf-base libatlas-base-dev libatlas-dev 
-
-1. CGNS
- 
-   The CGNS library is used to provide input/output CGNS functionality
-   for SUmb. This library MUST be installed before trying to compile
-   SUmb. CGNS version 2.5 is REQUIRED. Version 3.x WILL NOT WORK. A
-   copy of the correct CGNS version is available on the sumb bitbucket
-   site at 'https://bitbucket.org/mdolab/sumb/downloads'.  After
-   cgns_2.5.tar.gz is downloaded untar using:
-
-   $ tar -xzf cgns_2.5.tar.gz
-
-   Enter cgnslib_2.5 and run the following:
-
-   $ ./configure --enable-shared 
-
-   Then build the library using:
-
-   $ make
-
-   If you are compiling on machine without root access, you're done.
-   If you are on a local machine with root access, it is usually
-   easiest to 'install' into the default directory using:
-
-   $ sudo make install
-
-2. MPI + mpi4py
-
-   Technically SUmb can be compiled without MPI but it is HIGHLY
-   recommended that it is compiled with MPI. On a cluster, MPI
-   compilers should already be installed; contact your system admin to
-   determine which compilers/MPI implementations are available. If you
-   are compiling on a Desktop/Laptop MPI is not too difficult to
-   install. 
-
-   For Ubuntu 12.04+ the most straight forward way is to use the
-   pre-compiled binaries on the repository. A simple way to do this
-   is:
-
-   $ sudo apt-get install openmpi-bin libopenmpi-dev python-mpi4py
-
-   For other systems (and other compilers) it is somewhat more complex. 
-   See your system admin for help with this. 
-
-3. PETSc 
-
-   PETSc --- The Portable Extensible Toolkit for Scientific Computing is
-   not strictly required for SUmb but it is HIGHLY recommend that it
-   is installed since it is required for the Newton-Krylov solution
-   technique and the adjoint technique. 
-
-   Download petsc-3.3 from: http://www.mcs.anl.gov/petsc/download/index.html
-
-   Untar the tar-ball using: (exact patch level may change)
-
-   $ tar -xzf petsc-3.3-p5.tar.gz
-
-   PETSc must be first configured. There are a wide variety of
-   options. The only ones that is strictly necessary are
-   --with-shared-libraries and --with-fortran-interfaces. However, it
-   is recommend the following options are used since some are required
-   for pyWarp. To compile without debugging use:
-   --with-debugging=no. It is HIGHLY recommended to use debugging
-   until ready to perform production runs. In that case, you should
-   compile with a SEPARATE architecture for the optimized build. In
-   this case use '--PETSC_ARCH=real-opt' for example
-
-   $ ./configure --with-shared-libraries --download-superlu_dist=yes --download-parmetis=yes --download-metis=yes --with-fortran-interfaces=1 --with-debuggig=yes --with-scalar-type=real --PETSC_ARCH=real-debug 
-
-   After the configuration step, PETSc must be built. This is
-   accomplished with the command provided at the end of the configure
-   script. It will look something like below. DO NOT USE THIS
-   PARTICULAR COMMAND!
-
-   $ make PETSC_DIR=/home/gaetan/Downloads/petsc-3.3-p5 PETSC_ARCH=real-debug all
-
-   The last step is to add PETSC_DIR and PETSC_ARCH entries to your
-   .bashrc file. This is essential. It should look something like
-   this: (Make sure the CORRECT directory is used!)
-
-   export PETSC_ARCH=real-debug
-   export PETSC_DIR=/home/user/packages/petsc-3.3-p5
-   
-   Make sure the .bashrc file is sourced before SUmb is compiled using:
-
-   source ~/.bashrc
-
-   Or simply open a new terminal before compiling SUmb below.
+See the MDOLab website for setting up the prerequresites. 
 
 ---------------------
    SUmb -- Build
@@ -114,12 +15,13 @@ Prerequisites:
 
    $ make
 
-   At the root sumb directory. A list of supported configurations will
-   be displayed. Select the closest architecture and try a build using:
+   A set of instructions on how to setup a config files will be
+   displayed. Do as requested and modify the config.mk file
+   accordingly. 
 
-   $ make <ARCH>
+   Then re-run 
 
-   where <ARCH> is something like LINUX_INTEL_OPENMPI
+   $ mkae
 
    If this is successful and the end of output contains
 
@@ -128,13 +30,7 @@ Prerequisites:
    The SUmb build was successful and we're done.
 
    If there was an issue compiling it will be necessary to modify the
-   config file. When make <ARCH> is called the first time, a default
-   configuration file for that architecture will be copied
-   automatically into the ./config directory. Modify THIS file NOT the
-   files in the config/default folder. If the cgns library was not
-   installed, it will be necessary to specify the directory for the
-   CGNS library. Other compile flags can be set in the this config
-   file.
+   config file.
 
 ---------------------
      SUmb -- Verify
