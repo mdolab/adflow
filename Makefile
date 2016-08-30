@@ -23,7 +23,6 @@ default:
 	fi;
 
 clean:
-	ln -sf SUmb_Common_real.mk SUmb_Common.mk
 	rm -fr src/build/*.mod
 	rm -fr src/build/*.o
 	rm -f *~ config.mk;
@@ -31,6 +30,5 @@ clean:
 
 sumb:
 	ln -sf config/config.mk config.mk;
-	ln -sf SUmb_Common_real.mk SUmb_Common.mk
 	(cd src/build/ && make)
 
