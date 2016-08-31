@@ -1695,16 +1695,13 @@ class SUMB(AeroSolver):
         except AttributeError:
             aeroProblem.sumbData = sumbFlowCase()
             aeroProblem.ptSetName = ptSetName
-            aeroProblem.surfMesh = None
-            if self.mesh is not None:
-                aeroProblem.surfMesh = self.getSurfaceCoordinates(self.allFamilies)
+            aeroProblem.surfMesh = self.getSurfaceCoordinates(self.designFamilies)
 
         if self.curAP is not None:
             # If we have already solved something and are now
             # switching, save what we need:
             self.curAP.stateInfo = self._getInfo()
-            if self.mesh is not None:
-                self.curAP.surfMesh = self.getSurfaceCoordinates(self.designFamilies)
+            self.curAP.surfMesh = self.getSurfaceCoordinates(self.designFamilies)
 
             # Restore any options that the current aeroProblem
             # (self.curAP) modified. We have to be slightly careful
@@ -2544,6 +2541,8 @@ class SUMB(AeroSolver):
         # Process the Xs perturbation
         if xSDot is None:
             xsdot = numpy.zeros_like(self.coords0)
+            xsdot = self.mapVector(xsdot, self.allFamilies, 
+                                   self.designFamilies)
         else:
             xsdot = xSDot
             useSpatial = True
