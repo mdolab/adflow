@@ -1,66 +1,5 @@
-#      ******************************************************************
-#      *                                                                *
-#      * File:          Makefile                                        *
-#      * Author:        Edwin van der Weide, Gaetan Kenway              *
-#      * Starting date: 12-10-2002                                      *
-#      * Last modified: 11-16-2014                                      *
-#      *                                                                *
-#      ******************************************************************
-
-# These are the directories that will be automatically complexified.
-REAL_SRC    =	src/modules       \
-	    	src/ADT           \
-		src/bcdata        \
-	        src/initFlow      \
-	        src/inputParam    \
-		src/metis-4.0     \
-	        src/output        \
-	        src/overset       \
-	        src/partitioning  \
-	        src/preprocessing \
-	        src/slidingComm   \
-	        src/solver        \
-		src/NKSolver      \
-		src/ANKSolver     \
-	        src/turbulence    \
-	        src/utils         \
-	        src/wallDistance  \
-		src/warping       \
-		src/exec          \
-		src/adjoint       \
-		src/adjoint/residualInput\
-		src/bendingMomentAnalysis \
-	        src/stabilityDerivatives \
-
-# These are the directories that will actually be compiled:
-SUBDIR_SRC    = src_cs/modules       \
-		src_cs/ADT           \
-		src_cs/solver        \
-		src_cs/bcdata        \
-	        src_cs/initFlow      \
-	        src_cs/metis-4.0     \
-	        src_cs/inputParam    \
-	        src_cs/output        \
-	        src_cs/overset       \
-	        src_cs/partitioning  \
-	        src_cs/preprocessing \
-	        src_cs/slidingComm   \
-	        src_cs/turbulence    \
-		src_cs/NKSolver      \
-		src_cs/ANKSolver      \
-	        src_cs/utils         \
-	        src_cs/wallDistance  \
-		src_cs/warping       \
-		src_cs/adjoint               \
-		src_cs/adjoint/residualInput\
-		src_cs/bendingMomentAnalysis \
-	        src_cs/stabilityDerivatives \
-
-CONFIG_DEFAULT_DIR = config/defaults
-CONFIG_DIR         = config
-SUMB_SUBDIRS       = $(SUBDIR_SRC)
-SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC)
-
+# Master makefilefor complex SUmb. The actual makefile you want is 
+# src/build/Makefile_CS
 default:
 # Check if the config.mk file is in the config dir.
 	@if [ ! -f "config/config.mk" ]; then \
@@ -76,50 +15,35 @@ default:
 	else make -f Makefile_CS sumb;\
 	fi;
 
-dirs:	
-	mkdir -p bin
-	mkdir -p obj_cs
-	mkdir -p mod_cs
-	@for subdir in $(SUMB_SUBDIRS) ; \
-	     do \
-	     	 echo "Creating Complex Directory $$subdir"; \
-	         (mkdir -p $$subdir) || exit 1;  \
-	     done
-	mkdir -p src_cs/exec
 
 clean:
-	ln -sf SUmb_Common_CS.mk SUmb_Common.mk
-	@echo " Making clean ... "
-	@for subdir in $(SUMB_SUBDIRS) ; \
-	     do \
-	     	 echo "Removing Complex Directory $$subdir"; \
-	         (rm -fr $$subdir) || exit 1;  \
-	     done
-	(cd src_cs/exec && make clean)
-	(cd src_cs/python/f2py && make clean)
+	rm -fr src_cs/build/*.mod
+	rm -fr src_cs/build/*.o
+	rm -fr src_cs/build/*.a
+	rm -fr src_cs/build/*.so
+	rm -fr src_cs/build/sumb_project.dep
 	rm -f *~ config.mk;
-	rm -f lib_cs/lib* mod_cs/* obj_cs/*
+# Completely nuke most of the directories
+	rm -fr src_cs/adjoint
+	rm -fr src_cs/ADT
+	rm -fr src_cs/bcdata
+	rm -fr src_cs/initFlow
+	rm -fr src_cs/inputParam
+	rm -fr src_cs/NKSolver
+	rm -fr src_cs/metis-4.0
+	rm -fr src_cs/output
+	rm -fr src_cs/overset
+	rm -fr src_cs/partitioning
+	rm -fr src_cs/slidingComm
+	rm -fr src_cs/solver
+	rm -fr src_cs/turbulence
+	rm -fr src_cs/utils
+	rm -fr src_cs/wallDistance
+	rm -fr src_cs/warping
 
 sumb:
-	make -f Makefile_CS dirs
-	ln -sf config/config.mk config.mk
-	ln -sf SUmb_Common_CS.mk SUmb_Common.mk
+	ln -sf config/config.mk config.mk;
+	(cd src_cs/build/ && make -f Makefile1 directories)
+	(cd src_cs/build/ && make -f Makefile1 complexify)
+	(cd src_cs/build/ && make)
 
-	@for subdir in $(REAL_SRC) ; \
-		do \
-			echo "complexifying $@ in $$subdir"; \
-			echo; \
-			(cd $$subdir && make complexify) || exit 1; \
-		done
-
-	@for subdir in $(SUMB_SUBDIRS) ; \
-		do \
-			echo "making $@ in $$subdir"; \
-			echo; \
-			(cd $$subdir && make) || exit 1; \
-		done
-
-	(cd lib_cs && make)
-	(cd $(SUBDIR_EXEC) && make)
-	(cd src/python/f2py && make complexify)
-	(cd src_cs/python/f2py && make)	

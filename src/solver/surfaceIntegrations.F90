@@ -1,6 +1,6 @@
 module surfaceIntegrations
 
-contains
+ contains
 
 
   subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
@@ -387,7 +387,7 @@ contains
     use overset, only : nodeZipperScatter, globalNodalVec, localZipperNodes, localZipperTp, localZipperTv
     use inputTimeSpectral
     use inputIteration
-    use utils, only : EChk, setPointers
+    use utils, only : EChk, setPointers, myNorm2
     implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -559,7 +559,7 @@ contains
           ! Compute area
           call cross_prod(x2-x1, x3-x1, norm)
           ss = half * norm
-          triArea = norm2(ss)
+          triArea = mynorm2(ss)
 
           ! This is the actual integration
           presForce = third*(pp1 + pp2 + pp3) * triArea

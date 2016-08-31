@@ -11,6 +11,7 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
   use cgnsGrid
   use communication
   use stencils
+  use utils, only : mynorm2
   implicit none 
 
   ! Input Params
@@ -100,7 +101,7 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
                    x(ii-1, jj  , kk  , :) + &
                    x(ii  , jj  , kk  , :))
 
-              ! dist = norm2(xp - xSeed(i, j, k, :))
+              ! dist = mynorm2(xp - xSeed(i, j, k, :))
               ! frac = dist/clusterMarchDist(oBlock%cluster)
               frac = one
               oBlock%qualDonor(1, mm) = frac*vol(i, j, k)**third 
@@ -150,7 +151,7 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
            ! Determine if this point is near wall. Note that the
            ! boundary halos sill have xSeed as "large" so these won't
            ! be flagged as nearWall. We will account for this below. 
-           dist = norm2(xp - xSeed(i, j, k, :))
+           dist = mynorm2(xp - xSeed(i, j, k, :))
            if (dist < nearWallDist) then 
               nearWallTmp(i, j, k) = .True. 
            end if

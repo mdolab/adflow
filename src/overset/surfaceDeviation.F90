@@ -10,7 +10,7 @@ subroutine surfaceDeviation(level, sps)
 
   use constants
   use blockPointers, only :BCdata, x, nBocos, nDom, BCType, il, jl, kl, BCFaceID
-  use utils, only : setPointers
+  use utils, only : setPointers, myNorm2
   implicit none
 
   ! Input Parameters
@@ -166,6 +166,7 @@ function checkDeviation(P0, P1, P2, P3)
   ! https://en.wikipedia.org/wiki/Centripetal_Catmull-Rom_spline
 
   use constants
+  use utils, only : myNorm2
   implicit none
 
   ! Input Parameters
@@ -183,9 +184,9 @@ function checkDeviation(P0, P1, P2, P3)
   real(kind=realType) :: t, P(3), Q(3), s
 
   t0 = zero
-  t1 = t0 + norm2(P1-P0)**alpha
-  t2 = t1 + norm2(P2-P1)**alpha
-  t3 = t2 + norm2(P3-P2)**alpha
+  t1 = t0 + mynorm2(P1-P0)**alpha
+  t2 = t1 + mynorm2(P2-P1)**alpha
+  t3 = t2 + mynorm2(P3-P2)**alpha
 
   ! Normalize
   t1 = t1/t3
@@ -217,7 +218,7 @@ function checkDeviation(P0, P1, P2, P3)
      Q = P1 + dot_product(P-P1, P2-P1)/dot_product(P2-P1, P2-P1) * (P2 - P1)
 
      ! Just get the distance between the two points.
-     checkDeviation = max(checkDeviation, norm2(Q-P))
+     checkDeviation = max(checkDeviation, mynorm2(Q-P))
      
  end do
 

@@ -4,6 +4,7 @@ subroutine fringeSearch(oBlock, oFringe)
   use overset
   use inputOverset
   use adtLocalSearch
+  use utils, only : mynorm2
   implicit none
 
   type(oversetBlock), intent(inout) :: oBlock
@@ -74,7 +75,7 @@ subroutine fringeSearch(oBlock, oFringe)
               xcheck = xcheck + weight(j)*oBlock%xADT(:, oBlock%hexaConn(j, intInfo(3)))
            end do
            
-           if (norm2(xcheck - xx(1:3)) > oversetProjTol) then 
+           if (mynorm2(xcheck - xx(1:3)) > oversetProjTol) then 
               failed = .True.
            end if
         end if
@@ -93,7 +94,7 @@ subroutine fringeSearch(oBlock, oFringe)
            end do
            
            ! Since this is the last line of defence, relax the tolerance a bit
-           if (norm2(xcheck - xx(1:3)) > 100*oversetProjTol) then 
+           if (mynorm2(xcheck - xx(1:3)) > 100*oversetProjTol) then 
               ! This fringe has not found a donor
               intInfo(1) = -1
            else

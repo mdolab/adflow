@@ -381,10 +381,9 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, &
      moment(:, sps2) = (cMp + cMV)/fact
   end do
 
-#ifndef USE_COMPLEX  
   call getCostFunction2(force, moment, sepSensor, sepSensorAvg, &
        Cavitation, alpha, beta, liftIndex)
-#endif
+
 end subroutine block_res
 
 subroutine resScale

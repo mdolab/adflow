@@ -8,7 +8,7 @@ subroutine makeGapBoundaryStrings(level, sps, master)
   use stringOps
   use kdtree2_module
   use inputOverset
-  use utils, only : setPointers, EChk
+  use utils, only : setPointers, EChk, myNorm2
   implicit none
 
   ! Input Params
@@ -160,15 +160,15 @@ subroutine makeGapBoundaryStrings(level, sps, master)
                  call cross_prod(v3, v4, s3)
                  call cross_prod(v4, v1, s4)
 
-                 s1 = s1/norm2(s1)
-                 s2 = s2/norm2(s2)
-                 s3 = s3/norm2(s3)
-                 s4 = s4/norm2(s4)
+                 s1 = s1/mynorm2(s1)
+                 s2 = s2/mynorm2(s2)
+                 s3 = s3/mynorm2(s3)
+                 s4 = s4/mynorm2(s4)
 
                  ! Average and do final normalization including
                  ! correcting for inward normals. 
                  s1 = fourth*(s1 + s2 + s3 + s4)
-                 patchNormals(:, i, j) = s1/norm2(s1)*fact
+                 patchNormals(:, i, j) = s1/mynorm2(s1)*fact
                  
                  ! Get the maximum edge length for this node. Use the
                  ! 4 diagonal nodes:
@@ -177,7 +177,7 @@ subroutine makeGapBoundaryStrings(level, sps, master)
                  v3 = xx(i  , j  , :) - x0
                  v4 = xx(i+2, j  , :) - x0
 
-                 patchH(i, j) = max(norm2(v1), norm2(v2), norm2(v3), norm2(v4))
+                 patchH(i, j) = max(mynorm2(v1), mynorm2(v2), mynorm2(v3), mynorm2(v4))
 
               end do
            end do
@@ -218,10 +218,10 @@ subroutine makeGapBoundaryStrings(level, sps, master)
                        localStrings(c)%nodeData(1:3, 2*e  ) = xx(i2+1, j2+1, :)
 
                        v1 = xx(i1+1, j1+1, :) - xx(i3+1, j3+1, :)
-                       v1 = v1 / norm2(v1)
+                       v1 = v1 / mynorm2(v1)
 
                        v2 = xx(i2+1, j2+1, :) - xx(i4+1, j4+1, :)
-                       v2 = v2 / norm2(v2)
+                       v2 = v2 / mynorm2(v2)
 
                        ! Perpendicular vector
                        localStrings(c)%nodeData(7:9, 2*e-1) = v1
@@ -294,10 +294,10 @@ subroutine makeGapBoundaryStrings(level, sps, master)
                        localStrings(c)%nodeData(1:3, 2*e  ) = xx(i2+1, j2+1, :)
 
                        v1 = xx(i1+1, j1+1, :) - xx(i3+1, j3+1, :)
-                       v1 = v1 / norm2(v1)
+                       v1 = v1 / mynorm2(v1)
 
                        v2 = xx(i2+1, j2+1, :) - xx(i4+1, j4+1, :)
-                       v2 = v2 / norm2(v2)
+                       v2 = v2 / mynorm2(v2)
 
                        ! Perpendicular vector
                        localStrings(c)%nodeData(7:9, 2*e-1) = v1

@@ -1,6 +1,6 @@
 module utils
 
-contains
+ contains
 
   function TSbeta(degreePolBeta,   coefPolBeta,       &
        degreeFourBeta,  omegaFourBeta,     &
@@ -890,7 +890,7 @@ contains
 #if !defined USE_TAPENADE || defined TAPENADE_POINTERS || defined TAPENADE_FORWARD
     select case (BCFaceID(nn))
 
-       !===============================================================
+       !---------------------------------------------------------------------------
     case (iMin)
 
        ww3 => w(3, 1:, 1:, :)
@@ -919,7 +919,7 @@ contains
        gamma0 => gamma(0, 1:, 1:)
 
        gcp => globalCell(2, 1:, 1:)
-       !===============================================================
+       !---------------------------------------------------------------------------
 
     case (iMax)
 
@@ -949,7 +949,7 @@ contains
        gamma0 => gamma(ib, 1:, 1:)
 
        gcp => globalCell(il, 1:, 1:)
-       !===============================================================
+       !---------------------------------------------------------------------------
 
     case (jMin)
 
@@ -979,7 +979,7 @@ contains
        gamma0 => gamma(1:, 0, 1:)
 
        gcp => globalCell(1:, 2, 1:)
-       !===============================================================
+       !---------------------------------------------------------------------------
 
     case (jMax)
 
@@ -1009,7 +1009,7 @@ contains
        gamma0 => gamma(1:, jb, 1:)
 
        gcp => globalCell(1:, jl, 1:)
-       !===============================================================
+       !---------------------------------------------------------------------------
 
     case (kMin)
 
@@ -1039,7 +1039,7 @@ contains
        gamma0 => gamma(1:, 1:, 0)
 
        gcp => globalCell(1:, 1:, 2)
-       !===============================================================
+       !---------------------------------------------------------------------------
 
     case (kMax)
 
@@ -1135,7 +1135,7 @@ contains
 #else
     select case (BCFaceID(nn))
 
-       !===============================================================
+       !---------------------------------------------------------------------------
     case (iMin)
        ww3(1:je, 1:ke,:) = w(3, 1:je, 1:ke, :)
        ww2(1:je, 1:ke,:) = w(2, 1:je, 1:ke, :)
@@ -1163,7 +1163,7 @@ contains
        gamma0(1:je, 1:ke) = gamma(0, 1:je, 1:ke)
 
        gcp(1:je, 1:ke) = globalCell(2, 1:je, 1:ke)
-       !===============================================================
+       !---------------------------------------------------------------------------
 
     case (iMax)
 
@@ -1193,7 +1193,7 @@ contains
        gamma0(1:je, 1:ke) = gamma(ib, 1:je, 1:ke)
 
        gcp(1:je, 1:ke) = globalCell(il, 1:je, 1:ke)
-       !===============================================================
+       !---------------------------------------------------------------------------
 
     case (jMin)
 
@@ -1223,7 +1223,7 @@ contains
        gamma0(1:ie, 1:ke) = gamma(1:ie, 0, 1:ke)
 
        gcp(1:ie, 1:ke) = globalCell(1:ie, 2, 1:ke)
-       !===============================================================
+       !---------------------------------------------------------------------------
 
     case (jMax)
 
@@ -1253,7 +1253,7 @@ contains
        gamma0(1:ie, 1:ke) = gamma(1:ie, jb, 1:ke)
 
        gcp(1:ie, 1:ke) = globalCell(1:ie, jl, 1:ke)
-       !===============================================================
+       !---------------------------------------------------------------------------
 
     case (kMin)
 
@@ -1283,7 +1283,7 @@ contains
        gamma0(1:ie, 1:je) = gamma(1:ie, 1:je, 0)
 
        gcp(1:ie, 1:je) = globalCell(1:ie, 1:je, 2)
-       !===============================================================
+       !---------------------------------------------------------------------------
 
     case (kMax)
 
@@ -1368,7 +1368,7 @@ contains
     ! anything.
 #else
     select case (BCFaceID(nn))
-       !===============================================================
+       !---------------------------------------------------------------------------
     case (iMin)
        w(3, 1:je, 1:ke, :) = ww3(1:je, 1:ke,:)
        w(2, 1:je, 1:ke, :) = ww2(1:je, 1:ke,:)
@@ -1395,7 +1395,7 @@ contains
        gamma(1, 1:je, 1:ke) = gamma1(1:je, 1:ke)
        gamma(0, 1:je, 1:ke) = gamma0(1:je, 1:ke)
 
-       !===============================================================
+       !---------------------------------------------------------------------------
 
     case (iMax)
        w(nx, 1:je, 1:ke, :) = ww3(1:je, 1:ke,:)
@@ -1423,7 +1423,7 @@ contains
        gamma(ie, 1:je, 1:ke) = gamma1(1:je, 1:ke)
        gamma(ib, 1:je, 1:ke) = gamma0(1:je, 1:ke)
 
-       !===============================================================
+       !---------------------------------------------------------------------------
 
     case (jMin)
 
@@ -1452,7 +1452,7 @@ contains
        gamma(1:ie, 1, 1:ke) = gamma1(1:ie, 1:ke)
        gamma(1:ie, 0, 1:ke) = gamma0(1:ie, 1:ke)
 
-       !===============================================================
+       !---------------------------------------------------------------------------
 
     case (jMax)
 
@@ -1481,7 +1481,7 @@ contains
        gamma(1:ie, je, 1:ke) = gamma1(1:ie, 1:ke)
        gamma(1:ie, jb, 1:ke) = gamma0(1:ie, 1:ke)
 
-       !===============================================================
+       !---------------------------------------------------------------------------
 
     case (kMin)
 
@@ -1510,7 +1510,7 @@ contains
        gamma(1:ie, 1:je, 1) = gamma1(1:ie, 1:je)
        gamma(1:ie, 1:je, 0) = gamma0(1:ie, 1:je)
 
-       !===============================================================
+       !---------------------------------------------------------------------------
 
     case (kMax)
 
@@ -1818,97 +1818,97 @@ contains
 
   end subroutine computeTSDerivatives
 
-subroutine getDirAngle(freeStreamAxis,liftAxis,liftIndex,alpha,beta)
-  !
-  !      Convert the wind axes to angle of attack and side slip angle.  
-  !      The direction angles alpha and beta are computed given the     
-  !      components of the wind direction vector (freeStreamAxis), the  
-  !      lift direction vector (liftAxis) and assuming that the         
-  !      body direction (xb,yb,zb) is in the default ijk coordinate     
-  !      system. The rotations are determined by first determining      
-  !      whether the lift is primarily in the j or k direction and then 
-  !      determining the angles accordingly.                            
-  !      direction vector:                                              
-  !        1) Rotation about the zb or yb -axis: alpha clockwise (CW)   
-  !           (xb,yb,zb) -> (x1,y1,z1)                                  
-  !        2) Rotation about the yl or z1 -axis: beta counter-clockwise 
-  !           (CCW) (x1,y1,z1) -> (xw,yw,zw)                            
-  !         input arguments:                                            
-  !            freeStreamAxis = wind vector in body axes                
-  !            liftAxis       = lift direction vector in body axis      
-  !         output arguments:                                           
-  !            alpha    = angle of attack in radians                    
-  !            beta     = side slip angle in radians                    
-  !
-  use constants
+  subroutine getDirAngle(freeStreamAxis,liftAxis,liftIndex,alpha,beta)
+    !
+    !      Convert the wind axes to angle of attack and side slip angle.  
+    !      The direction angles alpha and beta are computed given the     
+    !      components of the wind direction vector (freeStreamAxis), the  
+    !      lift direction vector (liftAxis) and assuming that the         
+    !      body direction (xb,yb,zb) is in the default ijk coordinate     
+    !      system. The rotations are determined by first determining      
+    !      whether the lift is primarily in the j or k direction and then 
+    !      determining the angles accordingly.                            
+    !      direction vector:                                              
+    !        1) Rotation about the zb or yb -axis: alpha clockwise (CW)   
+    !           (xb,yb,zb) -> (x1,y1,z1)                                  
+    !        2) Rotation about the yl or z1 -axis: beta counter-clockwise 
+    !           (CCW) (x1,y1,z1) -> (xw,yw,zw)                            
+    !         input arguments:                                            
+    !            freeStreamAxis = wind vector in body axes                
+    !            liftAxis       = lift direction vector in body axis      
+    !         output arguments:                                           
+    !            alpha    = angle of attack in radians                    
+    !            beta     = side slip angle in radians                    
+    !
+    use constants
 
-  implicit none
-  !
-  !     Subroutine arguments.
-  !
-  !      real(kind=realType), intent(in)  :: xw, yw, zw
-  real(kind=realType), dimension(3),intent(in) :: freeStreamAxis
-  real(kind=realType), dimension(3),intent(in) :: liftAxis
-  real(kind=realType), intent(out) :: alpha, beta
-  integer(kind=intType), intent(out)::liftIndex
-  !
-  !     Local variables.
-  !
-  real(kind=realType) :: rnorm
-  integer(kind=intType):: flowIndex,i
-  real(kind=realType), dimension(3) :: freeStreamAxisNorm
-  integer(kind=intType) ::  temp
-
-
-  ! Assume domoniate flow is x
-
-  flowIndex = 1
-
-  ! Determine the dominant lift direction
-  if ( abs(liftAxis(1)) > abs(liftAxis(2)) .and. &
-       abs(liftAxis(1)) > abs(liftAxis(3))) then
-     temp = 1
-  else if( abs(liftAxis(2)) > abs(liftAxis(1)) .and. &
-       abs(liftAxis(2)) > abs(liftAxis(3))) then
-     temp = 2
-  else
-     temp = 3
-  end if
-
-  liftIndex = temp
-
-  ! Normalize the freeStreamDirection vector.
-  rnorm = sqrt( freeStreamAxis(1)**2 + freeStreamAxis(2)**2 + freeStreamAxis(3)**2 )
-  do i =1,3
-     freeStreamAxisNorm(i) = freeStreamAxis(i)/rnorm
-  enddo
-
-  if (liftIndex == 2) then
-     ! different coordinate system for aerosurf
-     ! Wing is in z- direction
-     ! Compute angle of attack alpha.
-
-     alpha = asin(freeStreamAxisNorm(2))
-
-     ! Compute side-slip angle beta.
-
-     beta  = -atan2(freeStreamAxisNorm(3),freeStreamAxisNorm(1))
+    implicit none
+    !
+    !     Subroutine arguments.
+    !
+    !      real(kind=realType), intent(in)  :: xw, yw, zw
+    real(kind=realType), dimension(3),intent(in) :: freeStreamAxis
+    real(kind=realType), dimension(3),intent(in) :: liftAxis
+    real(kind=realType), intent(out) :: alpha, beta
+    integer(kind=intType), intent(out)::liftIndex
+    !
+    !     Local variables.
+    !
+    real(kind=realType) :: rnorm
+    integer(kind=intType):: flowIndex,i
+    real(kind=realType), dimension(3) :: freeStreamAxisNorm
+    integer(kind=intType) ::  temp
 
 
-  elseif (liftIndex == 3) then
-     ! Wing is in y- direction
+    ! Assume domoniate flow is x
 
-     ! Compute angle of attack alpha.
+    flowIndex = 1
 
-     alpha = asin(freeStreamAxisNorm(3))
+    ! Determine the dominant lift direction
+    if ( abs(liftAxis(1)) > abs(liftAxis(2)) .and. &
+         abs(liftAxis(1)) > abs(liftAxis(3))) then
+       temp = 1
+    else if( abs(liftAxis(2)) > abs(liftAxis(1)) .and. &
+         abs(liftAxis(2)) > abs(liftAxis(3))) then
+       temp = 2
+    else
+       temp = 3
+    end if
 
-     ! Compute side-slip angle beta.
+    liftIndex = temp
 
-     beta  = atan2(freeStreamAxisNorm(2),freeStreamAxisNorm(1))
-  else
-     call terminate('getDirAngle', 'Invalid Lift Direction')
-  endif
-end subroutine getDirAngle
+    ! Normalize the freeStreamDirection vector.
+    rnorm = sqrt( freeStreamAxis(1)**2 + freeStreamAxis(2)**2 + freeStreamAxis(3)**2 )
+    do i =1,3
+       freeStreamAxisNorm(i) = freeStreamAxis(i)/rnorm
+    enddo
+
+    if (liftIndex == 2) then
+       ! different coordinate system for aerosurf
+       ! Wing is in z- direction
+       ! Compute angle of attack alpha.
+
+       alpha = asin(freeStreamAxisNorm(2))
+
+       ! Compute side-slip angle beta.
+
+       beta  = -atan2(freeStreamAxisNorm(3),freeStreamAxisNorm(1))
+
+
+    elseif (liftIndex == 3) then
+       ! Wing is in y- direction
+
+       ! Compute angle of attack alpha.
+
+       alpha = asin(freeStreamAxisNorm(3))
+
+       ! Compute side-slip angle beta.
+
+       beta  = atan2(freeStreamAxisNorm(2),freeStreamAxisNorm(1))
+    else
+       call terminate('getDirAngle', 'Invalid Lift Direction')
+    endif
+  end subroutine getDirAngle
 
   subroutine stabilityDerivativeDriver
     !
@@ -1968,7 +1968,7 @@ end subroutine getDirAngle
 
        nLevelsSet = 2
 
-       !=============================================================
+       !--------------------------------------------------
 
     case (secondOrder)
 
@@ -2015,7 +2015,7 @@ end subroutine getDirAngle
 
        end select
 
-       !=============================================================
+       !--------------------------------------------------
 
     case (thirdOrder)
 
@@ -2088,6 +2088,14 @@ end subroutine getDirAngle
     enddo
 
   end subroutine setCoefTimeIntegrator
+
+  function myNorm2(x)
+    use constants
+    implicit none
+    real(kind=realType), dimension(3), intent(in) :: x
+    real(kind=realType) :: myNorm2
+    myNorm2 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)
+  end function myNorm2
 
   ! ----------------------------------------------------------------------
   !                                                                      |
@@ -2543,7 +2551,7 @@ end subroutine getDirAngle
 
   end subroutine reallocateInteger
 
-  !================================================================
+  !---------------------------------------------------------------------------=
 
   subroutine reallocateMpiOffsetKindInteger(intArray, newSize, &
        oldSize, alwaysFreeMem)
@@ -2608,7 +2616,7 @@ end subroutine getDirAngle
 
   end subroutine reallocateMpiOffsetKindInteger
 
-  !================================================================
+  !---------------------------------------------------------------------------=
 
   subroutine reallocateInteger2(intArray, newSize1, newSize2, &
        oldSize1, oldSize2,           &
@@ -2744,7 +2752,7 @@ end subroutine getDirAngle
 
   end subroutine reallocateReal
 
-  !================================================================
+  !---------------------------------------------------------------------------=
 
   subroutine reallocateReal2(realArray, newSize1, newSize2, &
        oldSize1, oldSize2,            &
@@ -4535,7 +4543,7 @@ end subroutine getDirAngle
 
   end subroutine deallocateslidingCommType
 
-  !      ==================================================================
+  !      ---------------------------------------------------------------------------
 
   subroutine releaseMemoryPart2
     !
@@ -5511,10 +5519,10 @@ end subroutine getDirAngle
     else
 #ifndef USE_TAPENADE
 #ifndef USE_COMPLEX
-       print *,'================================================================='
+       print *,'---------------------------------------------------------------------------'
        write(*,900) "PETSc or MPI Error. Error Code ",ierr,". Detected on Proc ",myid
        write(*,901) "Error at line: ",line," in file: ",file
-       print *,'================================================================='
+       print *,'---------------------------------------------------------------------------'
 #else
        print *,'-----------------------------------------------------------------'
        write(*,900) "PETSc or MPI Error. Error Code ",ierr,". Detected on Proc ",myid
@@ -5976,68 +5984,69 @@ end subroutine getDirAngle
     enddo
 
   end subroutine sumAllResiduals
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          unsteadyHeader.f90                              *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-03-2004                                      *
-!      * Last modified: 03-26-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
-       subroutine unsteadyHeader
-!
-!      ******************************************************************
-!      *                                                                *
-!      * unsteadyHeader writes a header to stdout when a new time step  *
-!      * is started.                                                    *
-!      *                                                                *
-!      ******************************************************************
-!
-       use constants
-       use iteration
-       use monitor
-       implicit none
-!
-!      Local variables
-!
-       character(len=7)  :: integerString
-       character(len=12) :: realString
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       ! Write the time step number to the integer string and the
-       ! physical time to the real string.
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * File:          unsteadyHeader.f90                              *
+  !      * Author:        Edwin van der Weide                             *
+  !      * Starting date: 02-03-2004                                      *
+  !      * Last modified: 03-26-2005                                      *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  subroutine unsteadyHeader
+    !
+    !      ******************************************************************
+    !      *                                                                *
+    !      * unsteadyHeader writes a header to stdout when a new time step  *
+    !      * is started.                                                    *
+    !      *                                                                *
+    !      ******************************************************************
+    !
+    use constants
+    use iteration
+    use monitor
+    implicit none
+    !
+    !      Local variables
+    !
+    character(len=7)  :: integerString
+    character(len=12) :: realString
+    !
+    !      ******************************************************************
+    !      *                                                                *
+    !      * Begin execution                                                *
+    !      *                                                                *
+    !      ******************************************************************
+    !
+    ! Write the time step number to the integer string and the
+    ! physical time to the real string.
 
-       write(integerString,"(i7)") timeStepUnsteady + &
-                                   nTimeStepsRestart
-       write(realString,"(e12.5)") timeUnsteady + &
-                                   timeUnsteadyRestart
+    write(integerString,"(i7)") timeStepUnsteady + &
+         nTimeStepsRestart
+    write(realString,"(e12.5)") timeUnsteady + &
+         timeUnsteadyRestart
 
-       integerString = adjustl(integerString)
-       realString    = adjustl(realString)
+    integerString = adjustl(integerString)
+    realString    = adjustl(realString)
 
-       ! Write the header to stdout.
+    ! Write the header to stdout.
 
-       print "(a)", "#"
-       print 100
-       print 101
-       print 102, trim(integerString), trim(realString)
-       print 101
-       print 100
-       print "(a)", "#"
+    print "(a)", "#"
+    print 100
+    print 101
+    print 102, trim(integerString), trim(realString)
+    print 101
+    print 100
+    print "(a)", "#"
 
- 100   format("#*************************************************&
-              &*************************")
- 101   format("#")
- 102   format("# Unsteady time step ",a,", physical time ",a, " seconds")
+100 format("#*************************************************&
+         &*************************")
+101 format("#")
+102 format("# Unsteady time step ",a,", physical time ",a, " seconds")
 
-       end subroutine unsteadyHeader
+  end subroutine unsteadyHeader
+
 
 #endif
 end module utils

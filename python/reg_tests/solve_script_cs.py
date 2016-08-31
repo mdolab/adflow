@@ -219,7 +219,7 @@ def test1():
     ap.addDV('alpha')
     ap.addDV('mach')
     ap.addDV('altitude')
-    CFDSolver = SUMB(options=aeroOptions)
+    CFDSolver = SUMB(options=aeroOptions, debug=True)
 
     if not 'complex' in sys.argv:
         # Solve system

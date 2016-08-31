@@ -1,0 +1,25 @@
+# These are the rules to make each of the 4 different types of files. 
+%.o : %.f90
+	$(FF90) $(FF90_ALL_FLAGS) -c $< -o $*.o
+	@echo
+	@echo "        --- Compiled $*.f90 successfully ---"
+	@echo
+
+%.o : %.F90
+	$(FF90) $(FF90_ALL_FLAGS) -c $< -o $*.o
+	@echo
+	@echo "        --- Compiled $*.F90 successfully ---"
+	@echo
+
+%.o : %.c
+	$(CC) $(CC_ALL_FLAGS) -c $< -o $*.o
+	@echo
+	@echo "        --- Compiled $*.c successfully ---"
+	@echo
+
+
+%.o: %.f
+	$(FF90) $(FF90_ALL_FLAGS) -c $< -o $*.o
+	@echo
+	@echo "        --- Compiled $*.f successfully ---"
+	@echo
