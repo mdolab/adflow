@@ -137,7 +137,6 @@ class SUMB(AeroSolver):
         self.sumb.communication.nproc = self.comm.size
 
         # Initialize the inherited aerosolver.
-        self.solverCreated = False
         if options is None:
             raise Error("The 'options' keyword argument must be passed "
                         "sumb. The options dictionary must contain (at least) "
@@ -148,7 +147,6 @@ class SUMB(AeroSolver):
 
         AeroSolver.__init__(self, name, category, defOpts, informs,
                             options=options)
-        self.solverCreated = True
 
         # Update turbresscale depending on the turbulence model specified
         self._updateTurbResScale()
@@ -227,7 +225,6 @@ class SUMB(AeroSolver):
 
         # Add the initial families that already exist in the CGNS
         # file.
-        self.families = {}
         wallList = []
         for i in range(len(famList)):
             self.families[famList[i]] = [i+1]
@@ -254,51 +251,6 @@ class SUMB(AeroSolver):
             self.meshFamilies = self.allWallsGroup
 
         self.coords0 = self.getSurfaceCoordinates(self.allFamilies)
-
-
-    def setMesh(self, mesh):
-        """
-        Set the mesh object to SUmb to do geometric deformations
-
-        Parameters
-        ----------
-        mesh : multiBlockMesh object
-            The pyWarp mesh object for doing the warping
-        """
-
-        # Store a reference to the mesh
-        self.mesh = mesh
-
-        # Setup External Warping with volume indices
-        ndof_1_instance = self.sumb.adjointvars.nnodeslocal[0]*3
-        meshInd = self.sumb.warping.getcgnsmeshindices(ndof_1_instance)
-        self.mesh.setExternalMeshIndices(meshInd)
-
-        # Set the surface the user has supplied:
-        conn = self.getSurfaceConnectivity(self.meshFamilies)
-        pts = self.getSurfaceCoordinates(self.meshFamilies)
-        self.mesh.setSurfaceDefinition(pts, conn)
-
-    def setDVGeo(self, DVGeo):
-        """
-        Set the DVGeometry object that will manipulate 'geometry' in
-        this object. Note that SUmb doe not **strictly** need a
-        DVGeometry object, but if optimization with geometric
-        changes is desired, then it is required.
-
-        Parameters
-        ----------
-        dvGeo : A DVGeometry object.
-            Object responsible for manipulating the constraints that
-            this object is responsible for.
-
-        Examples
-        --------
-        >>> CFDsolver = SUMB(comm=comm, options=CFDoptions)
-        >>> CFDsolver.setDVGeo(DVGeo)
-        """
-
-        self.DVGeo = DVGeo
 
     def setDisplacements(self, aeroProblem, dispFile):
         """
@@ -599,49 +551,6 @@ class SUMB(AeroSolver):
 
         return loadInbalance, faceInbalance
 
-    def getTriangulatedMeshSurface(self, groupName=None, TS=0):
-        """
-        This function returns a trianguled verision of the surface
-        mesh on all processors. The intent is to use this for doing
-        constraints in DVConstraints.
-
-        Returns
-        -------
-        surf : list
-           List of points and vectors describing the surface. This may
-           be passed directly to DVConstraint setSurface() function.
-        """
-
-        if groupName is None:
-            groupName = self.allWallsGroup
-
-        # Obtain the points and connectivity for the specified
-        # groupName
-        pts = self.comm.allgather(self.getSurfaceCoordinates(groupName, TS))
-        conn = self.comm.allgather(self.getSurfaceConnectivity(groupName))
-
-        # Triangle info...point and two vectors
-        p0 = []
-        v1 = []
-        v2 = []
-
-        for iProc in xrange(len(conn)):
-            for i in xrange(len(conn[iProc])):
-                i0 = conn[iProc][i, 0]
-                i1 = conn[iProc][i, 1]
-                i2 = conn[iProc][i, 2]
-                i3 = conn[iProc][i, 3]
-
-                p0.append(pts[iProc][i0])
-                v1.append(pts[iProc][i1]-pts[iProc][i0])
-                v2.append(pts[iProc][i3]-pts[iProc][i0])
-
-                p0.append(pts[iProc][i2])
-                v1.append(pts[iProc][i1]-pts[iProc][i2])
-                v2.append(pts[iProc][i3]-pts[iProc][i2])
-
-        return [p0, v1, v2]
-
     def __call__(self, aeroProblem, **kwargs):
         """
         Common routine for solving the problem specified in
@@ -858,39 +767,6 @@ class SUMB(AeroSolver):
                 key = self.curAP.name + '_%s'% g[1]
                 self.curAP.funcNames[g[1]] = key
                 funcs[key] = res[g[0]]
-
-    def checkSolutionFailure(self, aeroProblem, funcs):
-        """Take in a an aeroProblem and check for failure. Then append the
-        fail flag in funcs. Information regarding whether or not the
-        last analysis with the aeroProblem was sucessful is
-        included. This information is included as "funcs['fail']". If
-        the 'fail' entry already exits in the dictionary the following
-        operation is performed:
-
-        funcs['fail'] = funcs['fail'] or <did this problem fail>
-
-        In other words, if any one problem fails, the funcs['fail']
-        entry will be True. This information can then be used
-        directly in the pyOptSparse.
-
-        Parameters
-        ----------
-        aeroProblem : pyAero_problem class
-            The aerodynamic problem to to get the solution for
-
-        funcs : dict
-            Dictionary into which the functions are saved.
-
-        """
-        self.setAeroProblem(aeroProblem)
-        # We also add the fail flag into the funcs dictionary. If fail
-        # is already there, we just logically 'or' what was
-        # there. Otherwise we add a new entry.
-        failFlag = self.curAP.solveFailed or self.curAP.fatalFail
-        if 'fail' in funcs:
-            funcs['fail'] = funcs['fail'] or failFlag
-        else:
-            funcs['fail'] = failFlag
 
     def evalFunctionsSens(self, aeroProblem, funcsSens, evalFuncs=None, sps=1):
         """
@@ -1566,13 +1442,14 @@ class SUMB(AeroSolver):
 
         # Now we need to gather the data:
         if cfdForcePts is None:
-            pts = self.comm.gather(self.getSurfaceCoordinates(groupName, TS), root=0)
+            pts = self.comm.gather(self.getSurfacePoints(groupName, TS), root=0)
         else:
             pts = self.comm.gather(cfdForcePts)
 
         # Get the forces and connectivity
         forces = self.comm.gather(self.getForces(groupName, TS=TS), root=0)
-        conn   = self.comm.gather(self.getSurfaceConnectivity(groupName), root=0)
+        conn, faceSize = self.getSurfaceConnectivity(groupName)
+        conn = self.comm.gather(conn, root=0)
 
         # Write out Data only on root proc:
         if self.myid == 0:
@@ -1719,38 +1596,6 @@ class SUMB(AeroSolver):
 
         return SUmbsolution
 
-    def printCurrentOptions(self):
-
-        """
-        Prints a nicely formatted dictionary of all the current SUmb
-        options to the stdout on the root processor"""
-        if self.comm.rank == 0:
-            print('+---------------------------------------+')
-            print('|          All SUmb Options:            |')
-            print('+---------------------------------------+')
-            # Need to assemble a temporary dictionary
-            tmpDict = {}
-            for key in self.options:
-                tmpDict[key] = self.getOption(key)
-            pp(tmpDict)
-
-    def printModifiedOptions(self):
-
-        """
-        Prints a nicely formatted dictionary of all the current SUmb
-        options that have been modified from the defaults to the root
-        processor"""
-        if self.comm.rank == 0:
-            print('+---------------------------------------+')
-            print('|      All Modified SUmb Options:       |')
-            print('+---------------------------------------+')
-            # Need to assemble a temporary dictionary
-            tmpDict = {}
-            for key in self.options:
-                if self.getOption(key) != self.defaultOptions[key][1]:
-                    tmpDict[key] = self.getOption(key)
-            pp(tmpDict)
-
     # =========================================================================
     #   The following routines are public functions however, they should
     #   not need to be used by a user using this class directly. They are
@@ -1758,27 +1603,17 @@ class SUMB(AeroSolver):
     #   i.e. an Aerostructural solver
     # =========================================================================
 
-    def getInitialSurfaceCoordinates(self, groupName=None):
+    def getSurfaceCoordinates(self, groupName=None):
+        # This is an alias for getSurfacePoints
+        return self.getSurfacePoints(groupName)
+
+    def getPointSetName(self,apName):
         """
+        Take the apName and return the mangled point set name.
 
         """
-        if groupName is None:
-            groupName = self.allWallsGroup
+        return 'sumb_%s_coords'% apName
 
-        if self.mesh is not None:
-            if self.DVGeo is not None:
-                # if we have a geometry object, return the undeflected
-                # shape generated directly from the design variables
-                ptSetName = 'sumb_%s_coords'% self.curAP.name
-                self.setSurfaceCoordinates(
-                    self.DVGeo.update(ptSetName, config=self.curAP.name), 
-                    self.designFamilies)
-                self.updateGeometryInfo()
-                return self.getSurfaceCoordinates(groupName)
-            else:
-                # otherwise, the initial mesh is the undeflected mesh, so
-                # return that
-                return self.coords0
 
     def setSurfaceCoordinates(self, coordinates, groupName=None):
         """
@@ -1853,16 +1688,13 @@ class SUMB(AeroSolver):
         except AttributeError:
             aeroProblem.sumbData = sumbFlowCase()
             aeroProblem.ptSetName = ptSetName
-            aeroProblem.surfMesh = None
-            if self.mesh is not None:
-                aeroProblem.surfMesh = self.getSurfaceCoordinates(self.allFamilies)
+            aeroProblem.surfMesh = self.getSurfaceCoordinates(self.designFamilies)
 
         if self.curAP is not None:
             # If we have already solved something and are now
             # switching, save what we need:
             self.curAP.stateInfo = self._getInfo()
-            if self.mesh is not None:
-                self.curAP.surfMesh = self.getSurfaceCoordinates(self.allFamilies)
+            self.curAP.surfMesh = self.getSurfaceCoordinates(self.designFamilies)
 
             # Restore any options that the current aeroProblem
             # (self.curAP) modified. We have to be slightly careful
@@ -2195,7 +2027,7 @@ class SUMB(AeroSolver):
         # Finally map the vector as required. 
         return self.mapVector(forces, self.allWallsGroup, groupName)
 
-    def getSurfaceCoordinates(self, groupName=None, TS=0):
+    def getSurfacePoints(self, groupName=None, TS=0):
         """Return the coordinates for the surfaces defined by groupName. 
 
         Parameters
@@ -2246,10 +2078,12 @@ class SUMB(AeroSolver):
         self._setFamilyList(groupName)
         npts, ncell = self._getSurfaceSize(groupName)
         conn =  numpy.zeros((ncell, 4), dtype='intc')
-        self.sumb.surfaceutils.getsurfaceconnectivity(numpy.ravel(conn))
+        self.sumb.getsurfaceconnectivity(numpy.ravel(conn))
+
+        faceSizes = 4*numpy.ones(len(conn), 'intc')
 
         # Conver to 0-based ordering becuase we are in python
-        return conn-1
+        return conn-1, faceSizes
 
     def globalNKPreCon(self, inVec, outVec):
         """This function is ONLY used as a preconditioner to the
@@ -2535,6 +2369,7 @@ class SUMB(AeroSolver):
         adjointMatrixName = baseFileNmae + '_drdw.bin'
         pcMatrixName = baseFileNmae + '_drdwPre.bin'
         rhsName = baseFileName + '_rsh.bin'
+        cellCenterName = baseFileName + '_cellCen.bin'
         self.sumb.saveadjointmatrix(adjointMatrixName)
         self.sumb.saveadjointpc(pcMatrixName)
         self.sumb.saveadjointrhs(rhsName)
@@ -2679,6 +2514,8 @@ class SUMB(AeroSolver):
         # Process the Xs perturbation
         if xSDot is None:
             xsdot = numpy.zeros_like(self.coords0)
+            xsdot = self.mapVector(xsdot, self.allFamilies, 
+                                   self.designFamilies)
         else:
             xsdot = xSDot
             useSpatial = True
@@ -2713,7 +2550,7 @@ class SUMB(AeroSolver):
 
         # For the geometric xDvDot perturbation we accumulate into the
         # already existing (and possibly nonzero) xsdot and xvdot
-        if self.DVGeo and (xDvDot is not None or xSDot is not None):
+        if xDvDot is not None or xSDot is not None:
             if xDvDot is not None:
                 xsdot += self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName).reshape(xsdot.shape)
             xvdot += self.mesh.warpDerivFwd(xsdot)
@@ -3095,41 +2932,7 @@ class SUMB(AeroSolver):
             res = numpy.zeros(self.getStateSize())
         res = self.sumb.nksolver.getres(res)
 
-        return res
-
-    def addFamilyGroup(self, groupName, families):
-        """Add a custom grouping of families called groupName. The groupName
-        must be distinct from the existing families. All families must
-        in the 'families' list must be present in the CGNS file.
-
-        Parameters
-        ----------
-        groupName : str
-            User-supplied custom name for the family groupings
-        families : list
-            List of string. Family names to combine into the family group
-        """
-
-        # Do some error checking
-        if groupName in self.families:
-            raise Error("The specified groupName '%s' already exists in the "
-                        "cgns file or has already been added."%groupName)
-
-        # We can actually allow for nested groups. That is, an entry
-        # in families may already be a group added in a previous call. 
-
-        indices = []
-        for fam in families:
-            if fam.lower() not in self.families:
-                raise Error("The specified family '%s' for group '%s', does "
-                            "not exist in the cgns file or has "
-                            "not already been added. The current list of "
-                            "families (original and grouped) is: %s"%(
-                                fam, groupName, repr(self.families.keys())))
-
-            indices.extend(self.families[fam.lower()])
-            
-        self.families[groupName] = sorted(numpy.unique(indices))
+        return res 
 
     def _getSurfaceSize(self, groupName):
         """Internal routine to return the size of a particular surface. This
