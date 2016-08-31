@@ -1704,7 +1704,7 @@ class SUMB(AeroSolver):
             # switching, save what we need:
             self.curAP.stateInfo = self._getInfo()
             if self.mesh is not None:
-                self.curAP.surfMesh = self.getSurfaceCoordinates(self.allFamilies)
+                self.curAP.surfMesh = self.getSurfaceCoordinates(self.designFamilies)
 
             # Restore any options that the current aeroProblem
             # (self.curAP) modified. We have to be slightly careful
