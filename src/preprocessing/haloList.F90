@@ -39,11 +39,7 @@
          integer(kind=intType) :: donorProc, donorBlock
          integer(kind=intType) :: dI, dJ, dK
          integer(kind=intType) :: levOfInd
-#ifdef USE_COMPLEX
-         complex(kind=realType), dimension(:), pointer :: interp
-#else
          real(kind=realType), dimension(:), pointer :: interp
-#endif
 
          integer(kind=intType) :: nPeriodicSubfaces
          integer(kind=intType), dimension(:), pointer :: periodicSubfaces

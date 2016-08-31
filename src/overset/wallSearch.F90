@@ -5,6 +5,7 @@ subroutine wallSearch(aWall, bWall)
   use inputOverset
   use adtLocalSearch
   use communication
+  use utils, only : mynorm2
   implicit none
 
   ! Input/Output
@@ -340,6 +341,8 @@ subroutine quadOverlap(q1, q2, overlapped)
   ! the cell normal. Check both normals from each quad.
 
   use constants
+  use utils, only : mynorm2
+  
   implicit none
 
   ! input/output
@@ -363,12 +366,12 @@ subroutine quadOverlap(q1, q2, overlapped)
   e1 = zero
   e2 = zero
   do ii=1,4
-     e1 = max(e1, norm2(c1 - q1(:, ii)))
-     e2 = max(e2, norm2(c2 - q2(:, ii)))
+     e1 = max(e1, mynorm2(c1 - q1(:, ii)))
+     e2 = max(e2, mynorm2(c2 - q2(:, ii)))
   end do
 
   ! Check if distance between cell center sid beyond the threshold
-  if (norm2(c1-c2) .ge. (e1 + e2)) then
+  if (mynorm2(c1-c2) .ge. (e1 + e2)) then
      overlapped = .False.
      return
   end if
@@ -379,13 +382,13 @@ subroutine quadOverlap(q1, q2, overlapped)
   v1 = q1(:, 3) - q1(:, 1)
   v2 = q1(:, 4) - q1(:, 2)
   call cross_prod(v1, v2, n1)
-  n1 = n1 / norm2(n1)
+  n1 = n1 / mynorm2(n1)
 
   ! Normal of second quad
   v1 = q2(:, 3) - q2(:, 1)
   v2 = q2(:, 4) - q2(:, 2)
   call cross_prod(v1, v2, n2)
-  n2 = n2/norm2(n2)
+  n2 = n2/mynorm2(n2)
 
   ! f the normals are not in the same direction, must be a thin
   ! surface. 
@@ -405,11 +408,11 @@ subroutine quadOverlap(q1, q2, overlapped)
 
      ! Project axis1 onto the plane and normalize
      axis1 = axis1 - dot_product(axis1, normal)*normal
-     axis1 = axis1/norm2(axis1)
+     axis1 = axis1/mynorm2(axis1)
 
      ! Axis 2 is now the normal cross axis1
      call cross_prod(normal, axis1, axis2)
-     axis2 = axis2/norm2(axis2)
+     axis2 = axis2/mynorm2(axis2)
 
      do jj=1, 4
         qq1(1, jj) = dot_product(axis1, q1(:, jj))

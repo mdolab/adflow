@@ -27,9 +27,9 @@ subroutine solveAdjoint(RHS, psi, checkSolution, nState)
   logical :: checkSolution 
   !
   !     Local variables.
-  real(kind=realType)   :: norm
-  real(kind=realType), dimension(2) :: time
-  real(kind=realType)               :: timeAdjLocal, timeAdj
+  real(kind=alwaysRealType)   :: norm
+  real(kind=alwaysRealType), dimension(2) :: time
+  real(kind=alwaysRealType)               :: timeAdjLocal, timeAdj
   real(kind=realType) :: l2abs, l2rel
   integer(kind=intType) :: ierr, nn, sps
   integer(kind=intType) :: adjConvIts

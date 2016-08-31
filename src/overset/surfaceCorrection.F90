@@ -5,6 +5,7 @@ subroutine surfaceCorrection(oBlock, oFringe, offset, n)
   use kdtree2_module
   use inputOverset
   use sorting, only : unique
+  use utils, only : myNorm2
   implicit none
 
   ! Input/Output
@@ -145,7 +146,7 @@ subroutine surfaceCorrection(oBlock, oFringe, offset, n)
 
   do ii=1, n
      ! Attenuate the offset over nearWallDist
-     distY = norm2(oFringe%x(:, ii) - uniqueWallPts(:, link(ii)))
+     distY = mynorm2(oFringe%x(:, ii) - uniqueWallPts(:, link(ii)))
      ratio = distY / nearWallDist
      fact = max(one - ratio**3, zero)
      offset(:, ii) = offset(:, ii) + fact*masterOffset(:, link(ii))

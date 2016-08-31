@@ -2,7 +2,7 @@
 include ../../config/config.mk
 
 # Group all the fortran, C and compiler flags together. 
-FF90_ALL_FLAGS   = $(FF90_FLAGS) $(CGNS_INCLUDE_FLAGS) -I. \
+FF90_ALL_FLAGS   = $(FF90_FLAGS) $(CGNS_INCLUDE_FLAGS) -I. -DUSE_COMPLEX \
 		   $(PETSC_CC_INCLUDES) $(FF90_PRECISION_FLAGS)
 
 CC_ALL_FLAGS     = $(C_FLAGS) -I../c_defines  -I../metis-4.0  $(PETSC_CC_INCLUDES) \
@@ -11,18 +11,32 @@ CC_ALL_FLAGS     = $(C_FLAGS) -I../c_defines  -I../metis-4.0  $(PETSC_CC_INCLUDE
 LINKER_ALL_FLAGS = $(CGNS_LINKER_FLAGS) $(PETSC_LIB) $(LINKER_FLAGS)
 
 # Include the full filelist
-include fileList
+include ../../src/build/fileList
 
-# Include the full list of directories
-include directoryList
+# Include the directory list
+include ../../src/build/directoryList
+
+# Now, systematically remove the automatically generated tapenade AD
+# code.
+
+fortranFiles:=$(patsubst adjoint/outputForward/%,,$(fortranFiles))
+fortranFiles:=$(patsubst adjoint/outputReverse/%,,$(fortranFiles))
+fortranFiles:=$(patsubst adjoint/outputReverseFast/%,,$(fortranFiles))
+
+dirs:=$(patsubst adjoint/outputForward/%,,$(dirs))
+dirs:=$(patsubst adjoint/outputReverse/%,,$(dirs))
+dirs:=$(patsubst adjoint/outputReverseFast/%,,$(dirs))
 
 # Include the rule list:
-include rules
+include ../../src/build/rules
 
 # Set the make VPATH variable to the "dirs" variable from
 # directorylist. We must first append the '../'
 dirs:=$(addprefix ../,$(dirs))
 VPATH:=$(dirs)
+
+# Add the special extra complexify module to the list of files:
+fortranFiles:=$(fortranFiles) modules/complexify.f90
 
 # Need to add the ../ to each of the file lists:
 fortranFiles:=$(addprefix ../,$(fortranFiles))
@@ -38,6 +52,10 @@ f77FilesNoDir=$(notdir $(f77Files))
 # Generate two separate list of .F90 and .f90 files using the filter command
 f90Files=$(filter %.f90,$(fortranFilesNoDir))
 F90Files=$(filter %.F90,$(fortranFilesNoDir))
+
+# Define the list of real files and where the complex ones will end up. 
+realFiles:=$(addprefix ../../src/,$(fortranFiles))
+cmplxFiles:=$(addprefix ../,$(fortranFiles))
 
 # Finally convert all source files to .o 
 OFILES=$(f90Files:%.f90=%.o) $(F90Files:%.F90=%.o) $(cFilesNoDir:%.c=%.o) $(f77FilesNoDir:%.f=%.o)
@@ -55,10 +73,11 @@ sources: $(OFILES) $(DEP_FILE)
 
 # The .dep file depends on the source files, so it automatically gets updated
 # when you change your source
-$(DEP_FILE): $(fortranFiles)
+$(DEP_FILE): $(fortranFiles) 
 	@echo "Making dependencies!\n"
-	python fort_depend.py -w -o $(DEP_FILE) -f $(fortranFiles)
-
+	@echo "fortran Files" $(fortranFiles)
+	python ../../src/build/fort_depend.py -w -o $(DEP_FILE) -f $(fortranFiles)
+	@echo "VPATH" $(dirs)
 # Include the automatically generated file.
 include $(DEP_FILE)
 
@@ -68,8 +87,8 @@ lib: sources
 
 # These are the extra python objects for the python library
 PYTHON_OBJECTS = fortranobject.o\
-		 libsumbmodule.o\
-		 libsumb-f2pywrappers2.o
+		 libsumb_csmodule.o\
+		 libsumb_cs-f2pywrappers2.o
 
 # For all (driven by default)...we depend on having the library 'lib'
 # up to date as well changes to the pyf file. This is where we execute
@@ -100,26 +119,23 @@ python: lib ../f2py/sumb.pyf
 	python ../f2py/checkPyfForUpperCase.py
 
 # Run the preprocessor on the pyf file:
-	python ../f2py/pyf_preprocessor.py real ../f2py/sumb.pyf 
+	python ../f2py/pyf_preprocessor.py complex ../f2py/sumb.pyf 
 
 # Run f2py to get sumbmodule.c and sumb-f2pywrapper2.f90
 	f2py ../f2py/sumb.pyf.autogen
 
 # Compile c wrapper. Don't use CC_ALL_FLAGS...PETSc wil F-up this command.
 	$(CC) $(CC_ALL_FLAGS) $(PYTHON_INCLUDES) -I$(NUMPY_INCLUDES) \
-	-I$(F2PY_ROOT)/src -c libsumbmodule.c
+	-I$(F2PY_ROOT)/src -c libsumb_csmodule.c
 
 # Compile fortranobject needed by all f2py modules
 	$(CC) $(CC_ALL_FLAGS) $(PYTHON_INCLUDES) -I$(NUMPY_INCLUDES) \
 	-c $(F2PY_ROOT)/src/fortranobject.c -o fortranobject.o
 
 # Compiled f2py-generated wrapper file
-	$(FF90) $(FF90_ALL_FLAGS) -I./ -c libsumb-f2pywrappers2.f90
+	$(FF90) $(FF90_ALL_FLAGS) -I./ -c libsumb_cs-f2pywrappers2.f90
 
 # Final Link:
-	$(FF90) -shared $(PYTHON_OBJECTS) libsumb.a $(LINKER_ALL_FLAGS) -o libsumb.so
+	$(FF90) -shared $(PYTHON_OBJECTS) libsumb.a $(LINKER_ALL_FLAGS) -o libsumb_cs.so
 	python ../f2py/importTest.py
-	mv libsumb.so ../../python
-
-
-
+	mv libsumb_cs.so ../../python

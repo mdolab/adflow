@@ -53,12 +53,3 @@ module turbMod
 #endif
 end module turbMod
 
-#ifndef USE_TAPENADE
-module turbmod_d
-  use turbmod
-end module turbmod_d
-module turbmod_b
-  use turbmod
-end module turbmod_b
-
-#endif

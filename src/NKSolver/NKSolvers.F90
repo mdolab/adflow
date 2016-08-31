@@ -58,7 +58,7 @@ module NKSolver
   real(kind=realType) :: ew_alpha
   real(kind=realType) :: ew_alpha2
   real(kind=realType) :: ew_threshold
-  real(kind=realType) :: rtolLast, oldNorm
+  real(kind=alwaysRealType) :: rtolLast, oldNorm
 
   ! Misc Parameters
   logical :: freeStreamResSet=.False.
@@ -480,8 +480,8 @@ contains
     ! Working Variables
     integer(kind=intType) :: iter, ierr, kspIterations
     integer(kind=intType) :: maxNonLinearIts, nfevals, maxIt
-    real(kind=realType) :: norm, rtol, atol
-    real(kind=realType) :: fnorm, ynorm, gnorm
+    real(kind=alwaysRealType) :: norm, rtol, atol
+    real(kind=alwaysrealType) :: fnorm, ynorm, gnorm
     logical :: flag
 
     if (firstCall) then 
@@ -601,7 +601,7 @@ contains
     !w 	- work vector -> On output, new iterate
     !g    - residual evaluated at new iterate y
 
-    real(kind=realType) :: fnorm, gnorm, ynorm
+    real(kind=alwaysrealType) :: fnorm, gnorm, ynorm
     real(kind=realType) :: alpha
     logical :: flag
     integer(kind=intType) :: nfevals
@@ -612,10 +612,8 @@ contains
     !         
 
     real(kind=realType) :: initslope, lambdaprev, gnormprev, a, b, d, t1, t2
-    real(kind=realType) :: minlambda, lambda, lambdatemp, rellength
-#ifdef USE_COMPLEX
-    complex(kind=realType) :: cinitslope
-#endif
+    real(kind=alwaysRealType) :: minlambda, lambda, lambdatemp
+    real(kind=alwaysRealType) :: rellength
     integer(kind=intType) :: ierr, iter
 
     ! Set some defaults:
@@ -639,29 +637,18 @@ contains
     call EChk(ierr, __FILE__, __LINE__)
     nfevals = nfevals + 1
 
-#ifdef USE_COMPLEX
-    call VecDot(f, w, cinitslope, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-    initslope = real(cinitslope)
-#else
     call VecDot(f, w, initslope, ierr)
     call EChk(ierr, __FILE__, __LINE__)
-#endif
 
-    if (initslope > 0.0_realType)  then
+    if (initslope > zero)  then
        initslope = -initslope
     end if
 
     if (initslope == 0.0_realType) then
        initslope = -1.0_realType
     end if
-#ifdef USE_COMPLEX
-    call VecWAXPY(w, cmplx(-1.0, 0.0), y, x, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-#else
     call VecWAXPY(w, -one, y, x, ierr)
     call EChk(ierr, __FILE__, __LINE__)
-#endif
 
     ! Compute Function:
     call setW(w)
@@ -679,8 +666,8 @@ contains
        backtrack: do iter=1, 10
           ! Compute new x value:
 #ifdef USE_COMPLEX
-          call VecWAXPY(w, cmplx(-lambda, 0.0), y, x, ierr)
-          call EChk(ierr, __FILE__, __LINE__)
+           call VecWAXPY(w, cmplx(-lambda, 0.0), y, x, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
 #else
           call VecWAXPY(w, -lambda, y, x, ierr)
           call EChk(ierr, __FILE__, __LINE__)
@@ -796,8 +783,8 @@ contains
        end if
 
 #ifdef USE_COMPLEX
-       call VecWAXPY(w, cmplx(-lambda, 0.0), y, x, ierr)
-       call EChk(ierr, __FILE__, __LINE__)
+        call VecWAXPY(w, cmplx(-lambda, 0.0), y, x, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
 #else
        call VecWAXPY(w, -lambda, y, x, ierr)
        call EChk(ierr, __FILE__, __LINE__)
@@ -841,7 +828,7 @@ contains
     flag = .True. 
     ! We just accept the step and compute the new residual at the new iterate
     nfevals = 0
-    call VecWAXPY(w, -1.0_realType, y, x, ierr)
+    call VecWAXPY(w, -one, y, x, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Compute new function:
@@ -867,7 +854,7 @@ contains
     !w 	- work vector -> On output, new iterate
     !g    - residual evaluated at new iterate y
 
-    real(kind=realType) :: fnorm, gnorm, ynorm
+    real(kind=alwaysRealType) :: fnorm, gnorm, ynorm
     real(kind=realType) :: alpha
     logical :: flag
     integer(kind=intType) :: nfevals
@@ -876,9 +863,6 @@ contains
     !      min  z(x):  R^n -> R, 
     !   where z(x) = .5 * fnorm*fnorm, and fnorm = || f ||_2.
     !         
-#ifdef USE_COMPLEX
-    complex(kind=realType) :: cinitslope
-#endif
     real(kind=realType) :: initslope, gamma, sigma,  max_val
     integer(kind=intType) :: ierr, iter, j
 
@@ -902,14 +886,8 @@ contains
     call EChk(ierr, __FILE__, __LINE__)
     nfevals = nfevals + 1
 
-#ifdef USE_COMPLEX
-    call VecDot(f, w, cinitslope, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-    initslope = real(cinitslope)
-#else
     call VecDot(f, w, initslope, ierr)
     call EChk(ierr, __FILE__, __LINE__)
-#endif
 
     if (initslope > 0.0_realType)  then
        initslope = -initslope
@@ -923,13 +901,8 @@ contains
     backtrack: do iter=1, 10
 
        ! Compute new x value:
-#ifdef USE_COMPLEX
-       call VecWAXPY(w, cmplx(-alpha, 0.0), y, x, ierr)
-       call EChk(ierr, __FILE__, __LINE__)
-#else
        call VecWAXPY(w, -alpha, y, x, ierr)
        call EChk(ierr, __FILE__, __LINE__)
-#endif
 
        ! Compute Function @ new x (w is the work vector
        call setW(w)
@@ -1564,9 +1537,9 @@ contains
     !alpha2:   1.61803398874989     
     !threshold:  0.100000000000000     
 
-    real(kind=realType), intent(in) :: norm, old_norm, rtol_last
-    real(kind=realType), intent(out) :: rtol
-    real(kind=realType) :: rtol_max, gamma, alpha, alpha2, threshold, stol
+    real(kind=alwaysrealType), intent(in) :: norm, old_norm, rtol_last
+    real(kind=alwaysrealType), intent(out) :: rtol
+    real(kind=alwaysrealType) :: rtol_max, gamma, alpha, alpha2, threshold, stol
 
     rtol_max  = 0.5_realType
     gamma     = 1.0_realType

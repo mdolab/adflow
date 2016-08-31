@@ -6,8 +6,8 @@ module cartMesh
   use haloExchange
   implicit none
 
+ contains
 
-contains
   subroutine createCartMesh(level, sps)
 
     use constants
@@ -85,10 +85,14 @@ contains
              case (kMax)
                 xx   => x(:,:,kl,:)
              end select
-
-             do iDim=1,3
-                xMinLocal(iDim) = min(xMinLocal(iDim), minval(xx(iBeg+1:iEnd+1, jBeg+1:jEnd+1, iDim)))
-                xMaxLocal(iDim) = max(xMaxLocal(iDim), maxval(xx(iBeg+1:iEnd+1, jBeg+1:jEnd+1, iDim)))
+             
+             do j=jBeg+1, jEnd+1
+                do i=iBeg+1,iEnd+1
+                   do iDim=1,3
+                      xMinLocal(iDim) = min(xMinLocal(iDim), xx(i, j, iDim))
+                      xMaxLocal(iDim) = max(xMaxLocal(iDim), xx(i, j, iDim))
+                   end do
+                end do
              end do
 
              ! Determine the total area of the patch:
@@ -141,7 +145,7 @@ contains
     ! to that value. Then we all reduce so that everyone knows which
     ! of the 6 faces cannot be extended. 
 
-    scaleSize = norm2(xMax-xMin)
+    scaleSize = mynorm2(xMax-xMin)
 
     symOnFaceLocal = 0
     do nn=1,nDom
@@ -337,7 +341,7 @@ contains
                    pt1 = xx(i  , j+1, :)
                    pt2 = xx(i+1, j+1, :)
 
-                   length = norm2(pt1-pt2)
+                   length = mynorm2(pt1-pt2)
                    nSubI = int(length/h)
 
                    do k=1, nSubI
@@ -362,7 +366,7 @@ contains
                    pt1 = xx(i+1, j  , :)
                    pt2 = xx(i+1, j+1, :)
 
-                   length = norm2(pt1-pt2)
+                   length = mynorm2(pt1-pt2)
                    nSubJ = int(length/h)
                    do k=1, nSubJ
 
@@ -390,17 +394,17 @@ contains
                    pt4 = xx(i  , j+1, :)
 
                    ! Sub pts in I
-                   length = norm2(pt2-pt1)
+                   length = mynorm2(pt2-pt1)
                    nSubI = int(length/h)
 
-                   length = norm2(pt3-pt4)
+                   length = mynorm2(pt3-pt4)
                    nSubI = max(nSubI, int(length/h))
 
                    ! Sub Pts in J
-                   length = norm2(pt4-pt1)
+                   length = mynorm2(pt4-pt1)
                    nSubJ = int(length/h)
 
-                   length = norm2(pt3-pt2)
+                   length = mynorm2(pt3-pt2)
                    nSubJ = max(nSubJ, int(length/h))
 
                    do l=1, nSubJ
@@ -816,7 +820,7 @@ contains
                 ! Only blank if we are more than sqrt(3)*h from our own wall:
                 if (xSeed(i, j, k, 1) < large) then
                    ! We have a wall: See how far we are away form it
-                   length = norm2(pt1 - xSeed(i, j, k, :))
+                   length = mynorm2(pt1 - xSeed(i, j, k, :))
                    if (length > 1.73205080*h) then 
                       if (int(cartPointer(globalInd+1) ) == -3) then 
                          iblank(i, j, k) = -3
