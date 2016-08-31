@@ -212,9 +212,9 @@
      -> Communicating Wall Points
      -> Generating Edge and Face Modification Data
 Sum of Triangulated Surface:
-@value    31730.20547862643 1e-12 1e-12
-@value    770.4998881259613 1e-12 1e-12
-@value   -770.5399522879721 1e-12 1e-12
+@value    63460.39092517163 1e-12 1e-12
+@value -7.216449660063518e-15 1e-12 1e-12
+@value -4.551914400963142e-15 1e-12 1e-12
 +----------------------------------------------------------------------+
 |  Switching to Aero Problem: mdo_tutorial                             |
 +----------------------------------------------------------------------+

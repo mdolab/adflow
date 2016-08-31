@@ -252,6 +252,17 @@ class SUMB(AeroSolver):
 
         self.coords0 = self.getSurfaceCoordinates(self.allFamilies)
 
+
+    def getSolverMeshIndices(self):
+        '''
+        Get the list of indices to pass to the mesh object for the
+        volume mesh mapping
+        '''
+        ndof_1_instance = self.sumb.adjointvars.nnodeslocal[0]*3
+        meshInd = self.sumb.getcgnsmeshindices(ndof_1_instance)
+        
+        return meshInd
+
     def setDisplacements(self, aeroProblem, dispFile):
         """
         This function allows the user to perform aerodyanmic
@@ -2964,16 +2975,16 @@ class SUMB(AeroSolver):
 
         self.sumb.surfaceutils.setfamilyinfo(self.families[groupName])
         
-    def _getFamilyList(self, groupName):
+    # def _getFamilyList(self, groupName):
         
-        if groupName is None:
-            groupName = self.allFamilies
+    #     if groupName is None:
+    #         groupName = self.allFamilies
 
-        if groupName not in self.families:
-            raise Error("'%s' is not a family in the CGNS file or has not been added"
-                        " as a combination of families"%groupName)
+    #     if groupName not in self.families:
+    #         raise Error("'%s' is not a family in the CGNS file or has not been added"
+    #                     " as a combination of families"%groupName)
 
-        return self.families[groupName]
+    #     return self.families[groupName]
 
 
     # def computeArea(self, aeroProblem, funcs, axis, groupName=None, TS=0):
