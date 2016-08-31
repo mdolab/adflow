@@ -1,11 +1,5 @@
-#      ******************************************************************
-#      *                                                                *
-#      * File:          Makefile                                        *
-#      * Author:        Edwin van der Weide, Gaetan Kenway              *
-#      * Starting date: 12-10-2002                                      *
-#      * Last modified: 11-16-2014                                      *
-#      *                                                                *
-#      ******************************************************************
+# Master makefile for SUmb. The actual makefile you want is:
+# src/build/Makefile
 
 default:
 # Check if the config.mk file is in the config dir.
@@ -25,7 +19,11 @@ default:
 clean:
 	rm -fr src/build/*.mod
 	rm -fr src/build/*.o
+	rm -fr src/build/*.a
+	rm -fr src/build/*.so
+	rm -fr src/sumb_project.dep
 	rm -f *~ config.mk;
+
 
 
 sumb:

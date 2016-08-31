@@ -1,8 +1,10 @@
 module stringOps
   use constants
   use overset
+  use utils, only : mynorm2
 
-contains
+  contains
+
   subroutine nullifyString(string)
 
     use overset
@@ -179,7 +181,7 @@ contains
        call createSubStringFromElems(master, str, nString)
 
        ! Scan through until we find the next unused element:
-       do while(master%elemUsed(curElem) == 1 .and. curElem < master%nElems) 
+       do while((master%elemUsed(curElem) == 1) .and. (curElem < master%nElems))
           curElem = curElem + 1
        end do
     end do
@@ -316,12 +318,12 @@ contains
     ! We will do a sort of adaptive tolernace here: Get the minium edge
     ! length and base the tolerance on that:
 
-    minEdge = huge(one)
+    minEdge = huge(1.0d0)
 
     do i=1, string%nElems
        n1 = string%conn(1, i)
        n2 = string%conn(2, i)
-       minEdge = min(minEdge, norm2(string%x(:, n1) - string%x(:, n2)))
+       minEdge = min(minEdge, mynorm2(string%x(:, n1) - string%x(:, n2)))
     end do
 
     allocate(link(string%nNodes), uniqueNodes(3, string%nNodes))
@@ -705,10 +707,10 @@ contains
        ! Determine the anlge between the vectors
        v1 = s%x(:, ip1) - s%x(:, ii)
        v2 = s%x(:, im1) - s%x(:, ii)
-       v1nrm = norm2(v1)
-       v2nrm = norm2(v2)
+       v1nrm = mynorm2(v1)
+       v2nrm = mynorm2(v2)
        call cross_prod(v2, v1, norm)
-       norm = norm / norm2(norm)
+       norm = norm / mynorm2(norm)
 
        if (dot_product(norm, s%norm(:, ii)) > zero) then 
 
@@ -925,14 +927,14 @@ contains
        ! ---------------------------------------------------------------
 
        call cross_prod(ptB-ptA, ptAp-ptA, triNorm1)
-       triNorm1 = triNorm1 / norm2(triNorm1)
+       triNorm1 = triNorm1 / mynorm2(triNorm1)
 
        ! Compute the sum of the dot product of the nodal norms with the triNorm
        sum1 = dot_product(triNorm1, normA) + dot_product(triNorm1, normB) + &
             dot_product(triNorm1, normAp)
 
        call cross_prod(ptB-ptA, ptBp-ptA, triNorm2)
-       triNorm2 = triNorm2 / norm2(triNorm2)
+       triNorm2 = triNorm2 / mynorm2(triNorm2)
 
        sum2 = dot_product(triNorm2, normA) + dot_product(triNorm2, normB) + &
             dot_product(triNorm2, normBp)
@@ -1166,8 +1168,8 @@ contains
       ! Working
       real(kind=realType), dimension(3) :: vecA, vecB
 
-      vecA = vec1 / norm2(vec1)
-      vecB = vec2 / norm2(vec2)
+      vecA = vec1 / mynorm2(vec1)
+      vecB = vec2 / mynorm2(vec2)
 
       vecAngle = acos(dot_product(vecA, vecB))
 
@@ -1223,7 +1225,7 @@ contains
       real(kind=realType), dimension(3) :: norm
 
       call cross_prod(pt2-pt1, pt3-pt1, norm)
-      triArea = half * norm2(norm)
+      triArea = half * mynorm2(norm)
 
     end function triArea
 
@@ -1840,7 +1842,8 @@ contains
        call createSubStringFromElems(pocketMaster, str, nFullStrings)
 
        ! Scan through until we find the next unused element:
-       do while(pocketMaster%elemUsed(curElem) == 1 .and. curElem < pocketMaster%nElems) 
+       do while((pocketMaster%elemUsed(curElem) == 1) .and. &
+            (curElem < pocketMaster%nElems))
           curElem = curElem + 1
        end do
     end do
@@ -1939,10 +1942,10 @@ contains
           ! Determine the angle between the vectors
           v1 = s%x(:, im1) - s%x(:, ii)
           v2 = s%x(:, ip1) - s%x(:, ii)
-          v1nrm = norm2(v1)
-          v2nrm = norm2(v2)
+          v1nrm = mynorm2(v1)
+          v2nrm = mynorm2(v2)
           call cross_prod(v2, v1, norm)
-          norm = norm / norm2(norm)
+          norm = norm / mynorm2(norm)
 
           ! Interior node norm and potential node norm should point
           ! in the same direction.
@@ -2024,7 +2027,7 @@ contains
        v1 = master%x(:, n2) - master%x(:, n1)
        v2 = master%x(:, n3) - master%x(:, n1)
        call cross_prod(v1, v2, norm)
-       area = area + half*norm2(norm)
+       area = area + half*mynorm2(norm)
     end do
 
   end subroutine computeTriSurfArea
@@ -2046,7 +2049,7 @@ contains
     ! only check the nodes around the current point. 
 
     call cross_prod(pt2-pt1, pt3-pt1, triNorm)
-    triNorm = triNorm / norm2(triNorm)
+    triNorm = triNorm / mynorm2(triNorm)
 
     triOverlap = .False. 
     do i=1, str%nNodes
@@ -2278,7 +2281,7 @@ contains
 
        if (s2%otherID(2, s1%otherID(2, ii)) == ii) then 
 
-          dist = norm2(s1%x(:, ii) - s2%x(:, s1%otherID(2, ii)))
+          dist = mynorm2(s1%x(:, ii) - s2%x(:, s1%otherID(2, ii)))
 
           if (dist < minDist) then 
              minDist = dist
@@ -2481,7 +2484,7 @@ contains
 
                 ! Now calculate our new distance
                 v =  pt - xj
-                v = v/norm2(v)
+                v = v/mynorm2(v)
 
                 ! Recompute the distance function
                 cosTheta = abs(dot_product(normj, v))
@@ -2610,7 +2613,7 @@ contains
        if (id /= -1) then 
           index = str%otherID(2, i)
           otherPt = strings(id)%x(:, index)
-          dist = norm2(myPt - otherPt)
+          dist = mynorm2(myPt - otherPt)
           maxH = max(str%h(i), strings(id)%h(index))
           ratio = dist/maxH
        else
@@ -2861,11 +2864,11 @@ contains
     norm = str%norm(:, j)
 
     u = pt - x0
-    uNrm = norm2(u)
+    uNrm = mynorm2(u)
     u = u/uNrm
 
     call cross_prod(norm, u, v)
-    v = v /norm2(v)
+    v = v /mynorm2(v)
 
     ! Now u,v,norm is an orthogonal coordinate system
     x1 = zero
@@ -2950,11 +2953,11 @@ contains
     x0 = pt1
 
     u = pt2 - x0
-    uNrm = norm2(u)
+    uNrm = mynorm2(u)
     u = u/uNrm
 
     call cross_prod(norm, u, v)
-    v = v /norm2(v)
+    v = v /mynorm2(v)
 
     ! Now u,v,norm is an orthogonal coordinate system
     x1 = zero

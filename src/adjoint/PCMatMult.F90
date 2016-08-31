@@ -8,8 +8,8 @@ subroutine testpc()
   use blockPointers
   use utils, only : Echk
   implicit none
-#ifndef USE_COMPLEX
-  real(kind=realType) , dimension(:), allocatable :: v1, v2
+
+  real(kind=alwaysRealType) , dimension(:), allocatable :: v1, v2
   real(kind=realType) :: timeA, timeB, timeC, val
   integer(kind=intType) :: nDimw, ierr, i, nn, sps, j, k, ii, jj, kk, info
   logical :: useAD
@@ -70,7 +70,6 @@ subroutine testpc()
    print *,'My Norm:', val
   call VecResetArray(psi_like1, ierr)
   call VecResetArray(psi_like2, ierr)
-#endif
 end subroutine testpc
 
 subroutine factorPCMatrix()

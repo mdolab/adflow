@@ -10,7 +10,7 @@ subroutine setupAllResidualMatricesfwd
   logical :: useAD, useTranspose, usePC, useObjective
   real(kind=realType) :: timeAdjLocal, timeAdj, time(2)
   integer(kind=intType) :: ierr
-#ifndef USE_COMPLEX
+
  interface
      subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
           useObjective, frozenTurb, level, matrixTurb)
@@ -57,5 +57,5 @@ subroutine setupAllResidualMatricesfwd
   ! Output formats.
 10 format(a)
 20 format(a, 1x, f8.2)
-#endif
+
 end subroutine setupAllResidualMatricesfwd

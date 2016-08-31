@@ -48,19 +48,14 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   integer(kind=intType) :: nTransfer, nState, tmp, icount, cols(8), nCol
   integer(kind=intType) :: n_stencil, i_stencil, m
   integer(kind=intType), dimension(:, :), pointer :: stencil
-  real(kind=realType) :: delta_x, one_over_dx, weights(8)
+  real(kind=alwaysRealType) :: delta_x, one_over_dx, weights(8)
 
-#ifdef USE_COMPLEX
-  complex(kind=realType) :: alpha, beta, alphad, betad
-  complex(kind=realType), dimension(:,:), allocatable :: blk
-#else
   real(kind=realType) :: alpha, beta, alphad, betad
   real(kind=realType), dimension(:,:), allocatable :: blk
-#endif
+
   integer(kind=intType) :: liftIndex
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, colInd
   logical :: resetToRANS, secondOrdSave,  splitMat
-  real :: val
 
   if (present(matrixTurb)) then 
      splitMat = .True. 
@@ -432,8 +427,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
 
                                 rowBlank: if (flowDoms(nn, level, sps)%iBlank(i+ii, j+jj, k+kk) == 1) then 
 
-                                   centerCell: if ( ii == 0 .and. jj == 0 &
-                                        .and. kk == 0) then
+                                   centerCell: if ( ii == 0 .and. jj == 0  .and. kk == 0) then
                                       useDiagPC: if (usePC .and. useDiagTSPC) then
                                          ! If we're doing the PC and we want
                                          ! to use TS diagonal form, only set
@@ -540,11 +534,8 @@ contains
     ! Sets a block at icol, irow with transpose of blk if useTranspose is True
 
     implicit none
-#ifndef USE_COMPLEX
     real(kind=realType), dimension(nState, nState) :: blk
-#else
-    complex(kind=realType), dimension(nState, nState) :: blk
-#endif
+
     ! local variables
     integer(kind=intType) :: i, j, tmp, iRowSet, iColSet
     logical :: zeroFlag

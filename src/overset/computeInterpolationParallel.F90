@@ -1033,17 +1033,22 @@ contains
     ! Working Variables
     real(kind=realType), dimension(3, nDom) :: xMinLocal, xMaxLocal
 
+    xMinLocal = huge(1.0d0)
+    xMaxLocal = -huge(1.0d0)
     do nn=1,nDom
        call setPointers(nn, level, sps)
-
-       xMinLocal(1, nn) = minval(x(:, :, :, 1))
-       xMinLocal(2, nn) = minval(x(:, :, :, 2))
-       xMinLocal(3, nn) = minval(x(:, :, :, 3))
-
-       xMaxLocal(1, nn) = maxval(x(:, :, :, 1))
-       xMaxLocal(2, nn) = maxval(x(:, :, :, 2))
-       xMaxLocal(3, nn) = maxval(x(:, :, :, 3))
-
+       do k=1, kl
+          do j=1, jl
+             do i=1, il
+                do iDim=1,3
+                   xMinLocal(iDim, nn) = &
+                        min(xMinLocal(iDim, nn), x(i, j, k, iDim))
+                   xMaxLocal(iDim, nn) = &
+                        max(xMaxLocal(iDim, nn), x(i, j, k, iDim))
+                end do
+             end do
+          end do
+       end do
     end do
 
     ! Now we can allgather the xMin and xMax  from each

@@ -14,8 +14,9 @@ module precision
   !       omitted the default integer and double precision are used.     
   !
   !
-  implicit none
 
+  use complexify
+  implicit none
   save
 #include "mpif.h"
   !
@@ -54,8 +55,8 @@ module precision
 
   ! Single precision reals are used as default real types.
 
-  real(kind=4), private :: dummyReal
-  integer, parameter    :: sumb_real  = mpi_real4
+  complex(kind=4), private :: dummyReal
+  integer, parameter    :: sumb_real  = MPI_DOUBLE_COMPLEX
   integer, parameter    :: sizeOfReal = 4
   real(kind=4), private :: dummyCGNSReal
 
@@ -66,8 +67,8 @@ module precision
   ! As cgns does not support quadrupole precision, double
   ! precision is used instead.
 
-  real(kind=16), private :: dummyReal
-  integer, parameter     :: sumb_real  = mpi_real16
+  complex(kind=16), private :: dummyReal
+  integer, parameter     :: sumb_real  = mpi_DOUBLE_COMPLE16
   integer, parameter     :: sizeOfReal = 16
   real(kind=8), private :: dummyCGNSReal
 
@@ -75,8 +76,8 @@ module precision
 
   ! Double precision reals are used as default real types.
 
-  real(kind=8), private :: dummyReal
-  integer, parameter    :: sumb_real   = mpi_real8
+  complex(kind=8), private :: dummyReal
+  integer, parameter    :: sumb_real   = MPI_DOUBLE_COMPLEX
   integer, parameter    :: sizeOfReal = 8
   real(kind=8), private :: dummyCGNSReal
 

@@ -163,15 +163,6 @@
 
          integer(kind=intType), pointer, dimension(:)   :: blockID
          integer(kind=intType), pointer, dimension(:,:) :: indices
-#ifdef USE_COMPLEX
-         complex(kind=realType) :: theta, phi, psi
-         complex(kind=realType) :: cosTheta, cosPhi, cosPsi
-         complex(kind=realType) :: sinTheta, sinPhi, sinPsi
-
-         complex(kind=realType), dimension(3,3) :: rotMat, rotMatrix, tmpMat
-         complex(kind=realType), dimension(3)   :: trans, translation
-         complex(kind=realType), dimension(3)   :: rotCenter
-#else
          real(kind=realType) :: theta, phi, psi
          real(kind=realType) :: cosTheta, cosPhi, cosPsi
          real(kind=realType) :: sinTheta, sinPhi, sinPsi
@@ -179,8 +170,6 @@
          real(kind=realType), dimension(3,3) :: rotMat, rotMatrix, tmpMat
          real(kind=realType), dimension(3)   :: trans, translation
          real(kind=realType), dimension(3)   :: rotCenter
-#endif
-
 
          ! Determine the number of different periodic transformations
          ! as well as the number of halo's per transformation.

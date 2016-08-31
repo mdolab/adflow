@@ -36,8 +36,10 @@ subroutine determineClusterMarchDist
                    x(i-1, j  , k  , :) + &
                    x(i  , j  , k  , :))
               if (xSeed(i, j, k, 1) < large) then 
-                 localDist(clusterID) = max(localDist(clusterID), &
-                      norm2(xp - xSeed(i, j, k, :)))
+                 localDist(clusterID) = max(localDist(clusterID), sqrt(&
+                      (xp(1) -xSeed(i,j,k,1))**2 + &
+                      (xp(2) -xSeed(i,j,k,2))**2 + &
+                      (xp(3) -xSeed(i,j,k,3))**2))
               end if
            end do
         end do
