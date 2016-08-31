@@ -1455,8 +1455,6 @@ class SUMB(AeroSolver):
         forces = self.comm.gather(self.getForces(groupName, TS=TS), root=0)
         conn, faceSize = self.getSurfaceConnectivity(groupName)
         conn = self.comm.gather(conn, root=0)
-        #faceSize = self.comm.gather(faceSize, root=0)
-        #conn   = self.comm.gather(self.getSurfaceConnectivity(groupName), root=0)
 
         # Write out Data only on root proc:
         if self.myid == 0:
@@ -2110,7 +2108,7 @@ class SUMB(AeroSolver):
         conn =  numpy.zeros((ncell, 4), dtype='intc')
         self.sumb.getsurfaceconnectivity(numpy.ravel(conn))
 
-        faceSizes = 4*numpy.ones(len(conn)/4, 'intc')
+        faceSizes = 4*numpy.ones(len(conn), 'intc')
 
         # Conver to 0-based ordering becuase we are in python
         return conn-1, faceSizes
