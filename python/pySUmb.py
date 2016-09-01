@@ -214,7 +214,7 @@ class SUMB(AeroSolver):
             return
 
         self.sumb.partitioning.partitionandreadgrid(False)
-        self.sumb.preprocessing()
+        self.sumb.preprocessingapi.preprocessing()
         self.sumb.tecplotio.initializeliftdistributiondata()
         self.sumb.initializeflow.initflow()
         self.sumb.preprocessingadjoint()
@@ -1988,8 +1988,8 @@ class SUMB(AeroSolver):
         if not firstCall:
             self.sumb.initializeflow.referencestate()
             self.sumb.iteration.groundlevel = 1
-            self.sumb.updateperiodicinfoalllevels()
-            self.sumb.updategridvelocitiesalllevels()
+            self.sumb.preprocessingapi.updateperiodicinfoalllevels()
+            self.sumb.preprocessingapi.updategridvelocitiesalllevels()
             self.sumb.bcdata.nondimbounddata()
 
 
@@ -2409,10 +2409,10 @@ class SUMB(AeroSolver):
             self.updateTime = time.time()-timeA
             if newGrid is not None:
                 self.sumb.warping.setgrid(newGrid)
-            self.sumb.updatecoordinatesalllevels()
+            self.sumb.preprocessingapi.updatecoordinatesalllevels()
             self.sumb.walldistance.updatewalldistancealllevels()
-            self.sumb.updatemetricsalllevels()
-            self.sumb.updategridvelocitiesalllevels()
+            self.sumb.preprocessingapi.updatemetricsalllevels()
+            self.sumb.preprocessingapi.updategridvelocitiesalllevels()
             self._updateGeomInfo = False
             self.sumb.killsignals.routinefailed = \
                 self.comm.allreduce(

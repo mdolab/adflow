@@ -19,6 +19,7 @@ contains
     use section, only : nSections
     use utils, only : eulerWallsPresent
     use multiGrid, only : transferToFineGrid
+    use partitioning, only : updateCoorFineMesh
     implicit none
     !
     !      Local variables.
@@ -253,6 +254,9 @@ contains
     use wallDistance, only : updateWallDistanceAllLevels
     use utils, only : unsteadyHeader
     use solverUtils, only : gridVelocitiesFineLevel, slipVelocitiesFineLevel
+    use preprocessingAPI, only : shiftCoorAndVolumes, &
+         updateCoordinatesAllLevels, updateMetricsAllLevels, faceRotationMatrices
+    use partitioning, onlY : updateCoorFineMesh
     implicit none
     !
     !      Local variables.
@@ -549,6 +553,9 @@ contains
     use wallDistance, only : updateWallDistanceAllLevels
     use utils, only : unsteadyHeader
     use solverUtils, only : gridVelocitiesFineLevel, slipVelocitiesFineLevel
+    use preprocessingAPI, only : shiftCoorAndVolumes, &
+         updateCoordinatesAllLevels, updateMetricsAllLevels, faceRotationMatrices
+    use partitioning, onlY : updateCoorFineMesh
     implicit none
     !
     !      Local variables.
@@ -657,6 +664,7 @@ contains
     use residuals, only :initRes, residual
     use flowUtils, only : computeLamViscosity
     use BCRoutines, only : applyAllBC
+    use preprocessingAPI, only : updateCoordinatesAllLevels
     implicit none
     !
     !      Local parameter.
@@ -953,6 +961,9 @@ contains
     use wallDistance, only : updateWallDistanceAllLevels
     use solverUtils
     use ALEUtils
+    use preprocessingAPI, only :  updateMetricsAllLevels, &
+         updateCoordinatesAllLevels, faceRotationMatrices
+    use partitioning, only : updateCoorFineMesh
     implicit none
     !
     !      Subroutine arguments.
@@ -1167,6 +1178,9 @@ contains
     use utils, only : setCoefTimeIntegrator
     use solverUtils
     use ALEUtils
+    use preprocessingAPI, only : updateCoordinatesAllLevels, &
+         updateMetricsAllLevels, metric
+    use partitioning, only : updateCoorFineMesh
     implicit none
     !
     !      Local variables.
