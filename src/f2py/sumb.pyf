@@ -321,7 +321,26 @@ python module libsumb
          
        end module solvers
        
-       
+       module preprocessingapi
+         subroutine preprocessing ! in :sumb:../../preprocessing/preprocessing.f90
+         end subroutine preprocessing
+         
+         subroutine updatecoordinatesalllevels ! in :sumb:../../preprocessing/mdUpdateRoutines.f90
+         end subroutine updatecoordinatesalllevels
+
+         subroutine updatemetricsalllevels ! in :sumb:../../preprocessing/mdUpdateRoutines.f90
+         end subroutine updatemetricsalllevels
+         
+         subroutine updategridvelocitiesalllevels ! in :sumb:../../preprocessing/mdUpdateRoutines.f90
+         end subroutine updategridvelocitiesalllevels
+         
+         subroutine updateperiodicinfoalllevels
+         end subroutine updateperiodicinfoalllevels
+
+         subroutine shiftcoorandvolumes ! in :sumb:../../preprocessing/shiftCoorAndVolumes.F90
+         end subroutine shiftcoorandvolumes
+
+       end module preprocessingapi
 
 ! ================ bare subroutines =============
 
@@ -331,21 +350,6 @@ python module libsumb
        subroutine getsolution(sps) ! in :test:getSolution.f90
          integer(kind=inttype) :: sps
        end subroutine getsolution
-
-       subroutine preprocessing ! in :sumb:../../preprocessing/preprocessing.f90
-       end subroutine preprocessing
-     
-       subroutine updatecoordinatesalllevels ! in :sumb:../../preprocessing/mdUpdateRoutines.f90
-       end subroutine updatecoordinatesalllevels
-
-       subroutine updatemetricsalllevels ! in :sumb:../../preprocessing/mdUpdateRoutines.f90
-       end subroutine updatemetricsalllevels
-
-       subroutine updategridvelocitiesalllevels ! in :sumb:../../preprocessing/mdUpdateRoutines.f90
-       end subroutine updategridvelocitiesalllevels
-
-       subroutine updateperiodicinfoalllevels
-       end subroutine updateperiodicinfoalllevels
 
        subroutine updateflow
        end subroutine updateflow
@@ -360,14 +364,7 @@ python module libsumb
          integer(kind=inttype), optional,intent(in),check(len(blocks)>=nblocks),depend(blocks) :: nblocks=len(blocks)
        end subroutine updaterotationrate
 
-
-       ! For operations related to mesh-warping
-       subroutine shiftcoorandvolumes ! in :sumb:../../preprocessing/shiftCoorAndVolumes.F90
-       end subroutine shiftcoorandvolumes
-
-  
-     
-
+       
        ! ############################################################################
        ! SUmb Mesh/Forces Interface Routines
        ! ############################################################################
@@ -394,10 +391,6 @@ python module libsumb
          real(kind=realtype) dimension(3),intent(in) :: axis
        end subroutine getareasensitivity
 
-       subroutine updatecoorfinemesh(dtadvance, sps) ! in preprocessing/updateCoorFineMesh.f90 
-         integer(kind=inttype), intent(in) :: sps
-         real(kind=realtype), dimension(*), intent(in) :: dtadvance
-       end subroutine updatecoorfinemesh
 
            
        ! ############################################################################
