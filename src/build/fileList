@@ -21,20 +21,9 @@ fortranFiles=	ADT/adtUtils.F90\
 		adjoint/outputForward/sa_d.f90\
 		adjoint/outputForward/walldistance_d.f90\
 		adjoint/outputForward/initializeflow_d.f90\
-		adjoint/outputForward/xhalo_block_d.f90\
-		adjoint/outputForward/metric_block_d.f90\
-		adjoint/outputForward/getcostfunction2_d.f90\
-		adjoint/outputForward/boundarynormals_d.f90\
-		adjoint/outputForward/volume_block_d.f90\
-		adjoint/outputForward/block_res_d.f90  \
+		adjoint/outputForward/adjointextra_d.f90\
 		\
-		adjoint/outputReverse/getcostfunction2_b.f90\
-		adjoint/outputReverse/metric_block_b.f90\
-		adjoint/outputReverse/xhalo_block_b.f90\
-		adjoint/outputReverse/block_res_b.f90  \
-		adjoint/outputReverse/getcostfunction2_b.f90\
-		adjoint/outputReverse/boundarynormals_b.f90\
-		adjoint/outputReverse/volume_block_b.f90\
+		adjoint/outputReverse/adjointextra_b.f90\
 		adjoint/outputReverseFast/BCExtra.F90\
 		adjoint/outputReverse/utils_b.f90\
 		adjoint/outputReverse/flowutils_b.f90\
@@ -70,10 +59,7 @@ fortranFiles=	ADT/adtUtils.F90\
 		adjoint/outputReverseFast/sa_fast_b.f90\
 		adjoint/outputReverseFast/BCExtra.F90\
 		\
-		adjoint/residualInput/block_res.F90\
-		adjoint/residualInput/metric_block.F90\
-		adjoint/residualInput/xhalo_block.F90\
-		adjoint/residualInput/costFunction2.F90\
+		adjoint/residualInput/adjointExtra.F90\
 		\
 		adjoint/adjointPythonInterfaceFunctions.F90\
 		adjoint/computeAeroCoef.f90\

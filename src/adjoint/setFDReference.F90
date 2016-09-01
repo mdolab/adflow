@@ -6,6 +6,7 @@ subroutine setFDReference(level)
   use inputPhysics
   use utils, only : EChk, setPointers, getDirAngle
   use residuals, only : initRes_block
+  use adjointExtra, only : block_res
   implicit none
 
   ! Input Parameters

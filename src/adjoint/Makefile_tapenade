@@ -27,10 +27,7 @@ SRC = ..
 # Integer, double and real precision (bytes)
 TAPENADE_PRECISION = -i4 -dr8 -r8
 
-ALL_RES_FILES =	$(SRC)/adjoint/residualInput/block_res.F90\
-		$(SRC)/adjoint/residualInput/xhalo_block.F90\
-		$(SRC)/adjoint/residualInput/metric_block.F90\
-		$(SRC)/adjoint/residualInput/costFunction2.F90\
+ALL_RES_FILES =	$(SRC)/adjoint/residualInput/adjointExtra.F90\
 		$(SRC)/modules/surfaceFamilies.F90\
 		$(SRC)/modules/monitor.f90\
 		$(SRC)/modules/diffSizes.f90\
@@ -91,9 +88,9 @@ ad_forward:
 
 # The following is the single Tapenade command to run:
 	$(TAPENADE_HOME)/bin/tapenade -html \
-	-head "block_res(flowdoms%w flowdoms%x xsurf alpha beta mach machgrid machcoef pointref lengthRef PinfDim TinfDim rhoInfDim rGasDim ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 ssi ssj ssk ss xx) > \
+	-head "adjointExtra%block_res(flowdoms%w flowdoms%x xsurf alpha beta mach machgrid machcoef pointref lengthRef PinfDim TinfDim rhoInfDim rGasDim ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 ssi ssj ssk ss xx) > \
 (flowdoms%dw  bcData%Fv bcData%Fp bcData%area flowdoms%w flowdoms%x funcValues) \
-xhalo_block(x)>(x)" \
+adjointExtra%xhalo_block(x)>(x)" \
 	-forward $(TAPENADE_PRECISION) \
 	-O temp_forward $(I_RES_FILES)
 
@@ -115,9 +112,9 @@ ad_reverse:
 
 # The following is the single Tapenade command to run:
 	$(TAPENADE_HOME)/bin/tapenade -html \
-	-head "block_res(flowdoms%w flowdoms%x xsurf alpha beta mach machgrid machcoef pointref lengthRef PinfDim TinfDim rhoInfDim rGasDim ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 xx ssi) > \
+	-head "adjointExtra%block_res(flowdoms%w flowdoms%x xsurf alpha beta mach machgrid machcoef pointref lengthRef PinfDim TinfDim rhoInfDim rGasDim ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 xx ssi) > \
 (flowdoms%dw  bcData%Fp bcData%Fv bcData%area flowdoms%w flowdoms%x funcValues ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 xx ssi) \
-xhalo_block(x)>(x)" \
+adjointExtra%xhalo_block(x)>(x)" \
 	-adjvarname %d \
 	-reverse -msglevel 30 $(TAPENADE_PRECISION) \
 	-noisize \
@@ -131,8 +128,8 @@ xhalo_block(x)>(x)" \
 
 # Fix the AD bugs
 	sed -i 's/do ii1=1,size(viscsubfaced(ii1)%tau, 1)/do ii1=1,size(viscsubfaced)/' outputReverse/surfaceintegrations_b.f90
-	sed -i 's/do ii1=1,size(bcdata(ii1)%f, 1)/do ii1=1,size(bcdata)/' outputReverse/block_res_b.f90
-	sed -i 's/do ii1=size(bcdata(ii1)%f, 1),1,-1/do ii1=size(bcdata),1,-1/' outputReverse/block_res_b.f90
+	sed -i 's/do ii1=1,size(bcdata(ii1)%f, 1)/do ii1=1,size(bcdata)/' outputReverse/adjointextra_b.f90
+	sed -i 's/do ii1=size(bcdata(ii1)%f, 1),1,-1/do ii1=size(bcdata),1,-1/' outputReverse/adjointextra_b.f90
 	sed -i 's/do ii1=1,size(bcdatad(ii1)%norm, 1)/do ii1=1,size(bcdatad)/' outputReverse/bcroutines_b.f90
 	sed -i 's/end subroutine sa_block_b/deallocate(qq)\nend subroutine sa_block_b/' outputReverse/sa_b.f90
 
