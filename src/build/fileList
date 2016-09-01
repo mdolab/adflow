@@ -224,9 +224,6 @@ fortranFiles=	ADT/adtUtils.F90\
 		preprocessing/determineNumberOfHalos.f90\
 		preprocessing/determineNcellGlobal.f90\
 		preprocessing/determinePeriodicFaces.f90\
-		preprocessing/exchangeCoor.f90\
-		preprocessing/exchangeCoor_d.f90\
-		preprocessing/exchangeCoor_b.f90\
 		preprocessing/faceRotationMatrices.f90\
 		preprocessing/finalCommStructures.f90\
 		preprocessing/indirectHalosPerLevel.f90\
@@ -296,51 +293,3 @@ cFiles = 	metis-4.0/metis.c\
 
 f77Files = 	adjoint/ADFirstAidKit/adBuffer.f\
 		adjoint/ADFirstAidKit/debugAD.f\
-
-
-
-#		modules/commMixing.f90\
-#		modules/commSliding.f90\
-#		modules/couplerParam.f90\
-#		modules/interfaceGroups.f90\
-#		slidingComm/cumulativeNSendReceives.f90\
-		slidingComm/cylCoorNodesOnBlockFace.f90\
-		slidingComm/determineNSlices.f90\
-		slidingComm/determineRotationMatrices.f90\
-		slidingComm/determineSections.f90\
-		slidingComm/haloType.f90\
-		slidingComm/initMemMixingPlane.f90\
-		slidingComm/initMemSliding.f90\
-		slidingComm/initThisSlide.f90\
-		slidingComm/interpolateSlide.f90\
-		slidingComm/localNodesAndQuads.f90\
-		slidingComm/localSurfaceGrids.f90\
-		slidingComm/mixingDonorInterpol.f90\
-		slidingComm/mixingHaloInterpol.f90\
-		slidingComm/mixingIntervals.f90\
-		slidingComm/mixingPlaneComm.f90\
-		slidingComm/mixingPlaneInterpol.f90\
-		slidingComm/mySubfacesSlide.f90\
-		slidingComm/nLocalNodesAndQuads.f90\
-		slidingComm/procSliding.f90\
-		slidingComm/qsortMixingIntervalType.f90\
-		slidingComm/qsortSortedDonorCommType.f90\
-		slidingComm/releaseMemSliding.f90\
-		slidingComm/slidingComm.f90\
-		slidingComm/slidingIntersections.f90\
-		slidingComm/slidingMesh.f90\
-		slidingComm/slidingMeshGroups.f90\
-		slidingComm/updateExternalCommSlide.f90\
-		slidingComm/updateInterpolSendBuf.f90\
-		slidingComm/updateLocalCommSlide.f90\
-		slidingComm/updateRotationInfo.f90\
-		slidingComm/updateSlidingAllLevels.f90\
-		slidingComm/updateSlidingCommPattern.f90\
-		slidingComm/volumeInterpol.f90\
-		slidingComm/localSubfaces.f90\
-		slidingComm/mixingData.F90\
-		slidingComm/thisSlide.f90\
-		slidingComm/tmpSliding.f90\
-		slidingComm/updateComm.F90\
-		slidingComm/bsearchSortedDonorCommType.f90\
-		
