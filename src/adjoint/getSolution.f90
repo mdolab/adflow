@@ -3,7 +3,7 @@ subroutine getSolution(sps)
   use costFunctions
   use inputTSStabDeriv
   use inputPhysics
-  use inputTimeSpectral 
+  use inputTimeSpectral
   use communication
   use inputIteration
   use utils, only : computeTSDerivatives, computeRootBendingMoment, getDirAngle
@@ -42,31 +42,31 @@ subroutine getSolution(sps)
      cf = (/globalCFVals(costFuncForceXCoef), &
           globalCFVals(costFuncForceYCoef), &
           globalCFVals(costFuncForceZCoef)/)
-     
+
      cm = (/globalCFVals(costFuncMomXCoef), &
           globalCFVals(costFuncMomYCoef), &
           globalCFVals(costFuncMomZCoef)/)
      call computeRootBendingMoment(cf, cm, liftIndex, bendingMoment)
      bendingsum = bendingsum+bendingMoment
   end do
-  
+
   call computeAeroCoef(globalCFVals,sps)
   funcValues(costFuncBendingCoef)=bendingSum/nTimeIntervalsSpectral
 
-  funcValues(costFuncLift) = globalCFVals(costFuncLift) 
-  funcValues(costFuncDrag) = globalCFVals(costFuncDrag) 
-  funcValues(costFuncLiftCoef) = globalCFVals(costFuncLiftCoef) 
-  funcValues(costFuncDragCoef) = globalCFVals(costFuncDragCoef) 
-  funcValues(costFuncForceX) = globalCFVals(costFuncForceX) 
-  funcValues(costFuncForceY) = globalCFVals(costFuncForceY) 
-  funcValues(costFuncForceZ) = globalCFVals(costFuncForceZ) 
-  funcValues(costFuncForceXCoef) = globalCFVals(costFuncForceXCoef) 
-  funcValues(costFuncForceYCoef) = globalCFVals(costFuncForceYCoef) 
-  funcValues(costFuncForceZCoef) = globalCFVals(costFuncForceZCoef) 
-  funcValues(costFuncMomX) = globalCFVals(costFuncMomX) 
-  funcValues(costFuncMomY) = globalCFVals(costFuncMomY) 
-  funcValues(costFuncMomZ) = globalCFVals(costFuncMomZ) 
-  funcValues(costFuncMomXCoef) = globalCFVals(costFuncMomXCoef) 
+  funcValues(costFuncLift) = globalCFVals(costFuncLift)
+  funcValues(costFuncDrag) = globalCFVals(costFuncDrag)
+  funcValues(costFuncLiftCoef) = globalCFVals(costFuncLiftCoef)
+  funcValues(costFuncDragCoef) = globalCFVals(costFuncDragCoef)
+  funcValues(costFuncForceX) = globalCFVals(costFuncForceX)
+  funcValues(costFuncForceY) = globalCFVals(costFuncForceY)
+  funcValues(costFuncForceZ) = globalCFVals(costFuncForceZ)
+  funcValues(costFuncForceXCoef) = globalCFVals(costFuncForceXCoef)
+  funcValues(costFuncForceYCoef) = globalCFVals(costFuncForceYCoef)
+  funcValues(costFuncForceZCoef) = globalCFVals(costFuncForceZCoef)
+  funcValues(costFuncMomX) = globalCFVals(costFuncMomX)
+  funcValues(costFuncMomY) = globalCFVals(costFuncMomY)
+  funcValues(costFuncMomZ) = globalCFVals(costFuncMomZ)
+  funcValues(costFuncMomXCoef) = globalCFVals(costFuncMomXCoef)
   funcValues(costFuncMomYCoef) = globalCFVals(costFuncMomYCoef)
   funcValues(costFuncMomZCoef) = globalCFVals(costFuncMomZCoef)
   funcValues(costFuncSepSensor) = globalCFVals(costFuncSepSensor)
@@ -75,6 +75,10 @@ subroutine getSolution(sps)
   funcValues(costFuncSepSensorAvgZ) = globalCFVals(costFuncSepSensorAvgZ)
 
   funcValues(costFuncCavitation) = globalCFVals(costFuncCavitation)
+  funcValues(costFuncMdot) = globalCFVals(costFuncMdot)
+  funcValues(costFuncMavgPtot) = globalCFVals(costFuncMavgPtot)
+  funcValues(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)
+  funcValues(costFuncMavgPs) = globalCFVals(costFuncMavgPs)
 
   if(TSStability)then
 
@@ -95,7 +99,7 @@ subroutine getSolution(sps)
      funcValues( costFuncCdAlphaDot)     = dcdalphadot(2)
      funcValues( costFuncCFyAlphaDot)    = dcdalphadot(4)
      funcValues( costFuncCmzAlphaDot)    = dcdalphadot(8)
-    
+
      funcValues( costFuncClq)         = dcdq(1)
      funcValues( costFuncCdq)         = dcdq(2)
      funcValues( costFuncCfyq)        = dcdq(4)

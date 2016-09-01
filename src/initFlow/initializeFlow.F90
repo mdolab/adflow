@@ -9,23 +9,23 @@ contains
 
   subroutine referenceState
     !
-    !       The original version has been nuked since the computations are 
-    !       no longer necessary when calling from python                   
-    !       This is the most compliclated routine in all of SUMb. It is    
-    !       stupidly complicated. This is most likely the reason your      
-    !       derivatives are wrong. You don't understand this routine       
-    !       and its effects.                                               
-    !       This routine *requries* the following as input:                
-    !       Mach, pInfDim, TInfDim, rhoInfDim, rGasDim (machCoef non-SA    
-    !        turbulence only)                                              
-    !       Optionally, pRef, rhoRef and Tref are used if they are         
+    !       The original version has been nuked since the computations are
+    !       no longer necessary when calling from python
+    !       This is the most compliclated routine in all of SUMb. It is
+    !       stupidly complicated. This is most likely the reason your
+    !       derivatives are wrong. You don't understand this routine
+    !       and its effects.
+    !       This routine *requries* the following as input:
+    !       Mach, pInfDim, TInfDim, rhoInfDim, rGasDim (machCoef non-SA
+    !        turbulence only)
+    !       Optionally, pRef, rhoRef and Tref are used if they are
     !       are non-negative. This only happens when you want the equations
-    !       normalized by values other than the freestream                 
-    !      * This routine computes as output:  
+    !       normalized by values other than the freestream
+    !      * This routine computes as output:
     !      *   muInfDim, (unused anywhere in code)
-    !         pRef, rhoRef, Tref, muRef, timeRef ('dimensional' reference) 
-    !         pInf, pInfCorr, rhoInf, uInf, rGas, muInf, gammaInf and wInf 
-    !         (Non-dimensionalized values used in actual computations)     
+    !         pRef, rhoRef, Tref, muRef, timeRef ('dimensional' reference)
+    !         pInf, pInfCorr, rhoInf, uInf, rGas, muInf, gammaInf and wInf
+    !         (Non-dimensionalized values used in actual computations)
     !
     use constants
     use paramTurb
@@ -53,7 +53,7 @@ contains
 
     ! Set the reference values. They *COULD* be different from the
     ! free-stream values for an internal flow simulation. For now,
-    ! we just use the actual free stream values. 
+    ! we just use the actual free stream values.
     pref = PInfDim
     tref = TInfDim
     rhoref = rhoInfDim
@@ -121,9 +121,9 @@ contains
     ! actually solving the rans equations. The issue is that, the
     ! freestream turb variables will be changed to zero, thus
     ! changing the solution. Insteady we check if nw > nwf which
-    ! will accomplish the same thing. 
+    ! will accomplish the same thing.
 
-    if(nw > nwf) then 
+    if(nw > nwf) then
 
        nuInf  = muInf/rhoInf
 
@@ -189,10 +189,10 @@ contains
 
   subroutine initFlow
     !
-    !       initFlow sets the prescribed boundary data, allocates the      
-    !       memory for and initializes the flow variables. In case a       
-    !       restart is performed the owned variables are read from the     
-    !       previous solution file(s).                                     
+    !       initFlow sets the prescribed boundary data, allocates the
+    !       memory for and initializes the flow variables. In case a
+    !       restart is performed the owned variables are read from the
+    !       previous solution file(s).
     !
     use constants
     use block, only : flowDoms
@@ -293,9 +293,9 @@ contains
 
   subroutine allocMemFlovarPart1(sps,level)
     !
-    !       allocMemFlovarPart1 allocates the memory for the flow          
-    !       variables w and p for all the blocks on the given multigrid    
-    !       level and spectral solution sps.                               
+    !       allocMemFlovarPart1 allocates the memory for the flow
+    !       variables w and p for all the blocks on the given multigrid
+    !       level and spectral solution sps.
     !
     use constants
     use block, only : flowDoms, nDOm
@@ -353,7 +353,7 @@ contains
             call terminate("allocMemFlovarPart1", &
             "Memory allocation failure for w")
 
-       ! Alloc mem for nodal gradients 
+       ! Alloc mem for nodal gradients
        allocate(flowDoms(nn,level,sps)%ux(il,jl,kl), stat=ierr)
        allocate(flowDoms(nn,level,sps)%uy(il,jl,kl), stat=ierr)
        allocate(flowDoms(nn,level,sps)%uz(il,jl,kl), stat=ierr)
@@ -387,7 +387,7 @@ contains
        ! levels, because the eddy viscosity might be frozen in the
        ! multigrid.
 
-       ! Always allocate rev due to reverse mode - Peter Lyu 
+       ! Always allocate rev due to reverse mode - Peter Lyu
        !if( eddyModel ) then
        allocate(flowDoms(nn,level,sps)%rev(0:ib,0:jb,0:kb), &
             stat=ierr)
@@ -412,7 +412,7 @@ contains
           flowDoms(nn,level,sps)%gamma = gammaConstant
 
           ! The laminar viscosity for viscous computations.
-          ! Always allocate rlv due to reverse mode - Peter Lyu 
+          ! Always allocate rlv due to reverse mode - Peter Lyu
           !if( viscous ) then
           allocate(flowDoms(nn,level,sps)%rlv(0:ib,0:jb,0:kb), &
                stat=ierr)
@@ -457,7 +457,7 @@ contains
           ! only be allocated for RANS but the derivative calcs require
           ! these be allocated.
 
-          sps1RansTest: if(sps == 1) then 
+          sps1RansTest: if(sps == 1) then
              allocate(flowDoms(nn,level,sps)%bmti1(je,ke,nt1:nt2,nt1:nt2), &
                   flowDoms(nn,level,sps)%bmti2(je,ke,nt1:nt2,nt1:nt2), &
                   flowDoms(nn,level,sps)%bmtj1(ie,ke,nt1:nt2,nt1:nt2), &
@@ -486,16 +486,16 @@ contains
 
   subroutine allocMemFlovarPart2(sps, level)
     !
-    !       AllocMemFlovarPart2 allocates the memory for the dependent  
-    !       flow variables and iteration variables for all the blocks on   
-    !       the given multigrid level and spectral solution sps. Some      
-    !       variables are only allocated on the coarser grids, e.g. the    
-    !       multigrid forcing terms and the state vector upon entrance on  
-    !       the mg level. Other variables are only allocated on the finest 
-    !       mesh. These are typically dependent variables like laminar     
-    !       viscosity, or residuals, time step, etc. Exceptions are        
-    !       pressure and eddy viscosity. Although these are dependent      
-    !       variables, they are allocated on all grid levels.              
+    !       AllocMemFlovarPart2 allocates the memory for the dependent
+    !       flow variables and iteration variables for all the blocks on
+    !       the given multigrid level and spectral solution sps. Some
+    !       variables are only allocated on the coarser grids, e.g. the
+    !       multigrid forcing terms and the state vector upon entrance on
+    !       the mg level. Other variables are only allocated on the finest
+    !       mesh. These are typically dependent variables like laminar
+    !       viscosity, or residuals, time step, etc. Exceptions are
+    !       pressure and eddy viscosity. Although these are dependent
+    !       variables, they are allocated on all grid levels.
     !
     use block
     use constants
@@ -550,7 +550,7 @@ contains
             &sFaceI, sFaceJ and sFaceK.")
 
        ! Extra face velocities for ALE
-       if (equationMode == unSteady .and. useALE) then 
+       if (equationMode == unSteady .and. useALE) then
           allocate( &
                flowDoms(nn,level,sps)%sVeloIALE(0:ie,je,ke,3), &
                flowDoms(nn,level,sps)%sVeloJALE(ie,0:je,ke,3), &
@@ -593,7 +593,7 @@ contains
 
 
           ! Extra variables for ALE
-          if (equationMode == unSteady .and. useALE) then 
+          if (equationMode == unSteady .and. useALE) then
              allocate( &
                   flowDoms(nn,level,sps)%dwALE(0:nALEsteps,0:ib,0:jb,0:kb,1:nw),  &
                   flowDoms(nn,level,sps)%fwALE(0:nALEsteps,0:ib,0:jb,0:kb,1:nwf), &
@@ -655,10 +655,10 @@ contains
 
   subroutine allocRestartFiles(nFiles)
     !
-    !          Allocate memory for the restartfles                         *                                   
-    !          The array is populated from Python using setRestartFiles    
-    !          If memeory has been allocated for the array there exist at  
-    !          least one element in the array.                             
+    !          Allocate memory for the restartfles                         *
+    !          The array is populated from Python using setRestartFiles
+    !          If memeory has been allocated for the array there exist at
+    !          least one element in the array.
     !
     use constants
     use inputIO, only : restartFiles
@@ -689,11 +689,11 @@ contains
 
   subroutine copySpectralSolution
     !
-    !       copySpectralSolution copies the solution of the 1st spectral   
-    !       solution to all spectral solutions. This typically occurs when 
-    !       a for the spectral mode a restart is made from a steady or an  
-    !       unsteady solution. Possible rotation effects are taken into    
-    !       account for the velocity components.                           
+    !       copySpectralSolution copies the solution of the 1st spectral
+    !       solution to all spectral solutions. This typically occurs when
+    !       a for the spectral mode a restart is made from a steady or an
+    !       unsteady solution. Possible rotation effects are taken into
+    !       account for the velocity components.
     !
     use constants
     use block, only : flowDoms, nDom
@@ -934,14 +934,14 @@ contains
 
   subroutine determineSolFileNames
     !
-    !       determineSolFileNames determines the number and names of the   
-    !       files that contain the solutions. For steady computations only 
-    !       one file must be present. For unsteady the situation is a      
-    !       little more complicated. It is attempted to read as many       
-    !       solutions as needed for a consistent restart. If not possible  
-    !       as many as possible solutions are read. For an unsteady        
-    !       computation the order will be reduced; for time spectral mode  
-    !       the solution will be interpolated.                             
+    !       determineSolFileNames determines the number and names of the
+    !       files that contain the solutions. For steady computations only
+    !       one file must be present. For unsteady the situation is a
+    !       little more complicated. It is attempted to read as many
+    !       solutions as needed for a consistent restart. If not possible
+    !       as many as possible solutions are read. For an unsteady
+    !       computation the order will be reduced; for time spectral mode
+    !       the solution will be interpolated.
     !
     use constants
     use communication, only : myID
@@ -1032,7 +1032,7 @@ contains
     case (timeSpectral)
 
        ! Time spectral computation. For a consistent restart
-       ! nTimeIntervalsSpectral solutions must be read. First 
+       ! nTimeIntervalsSpectral solutions must be read. First
        ! determine the the restart files.
        call setSolFileNames()
 
@@ -1054,11 +1054,11 @@ contains
 
   subroutine setSolFileNames
     !
-    !       setSolFileNames allocates and set the solution files that      
-    !       will be read and loaded in the restart                         
+    !       setSolFileNames allocates and set the solution files that
+    !       will be read and loaded in the restart
     !
     use communication
-    use inputIO 
+    use inputIO
     use utils, only : terminate
     use variableReading, only : solFiles, nSolsRead
     implicit none
@@ -1088,10 +1088,10 @@ contains
 
   subroutine checkSolFileNames
     !
-    !       checkSolFileNames will check if the provided restart files     
-    !       are readable on disk. If not readable return fail, if readable 
-    !       message will be printed to let the user know that restart file 
-    !       will be tried to read.                                         
+    !       checkSolFileNames will check if the provided restart files
+    !       are readable on disk. If not readable return fail, if readable
+    !       message will be printed to let the user know that restart file
+    !       will be tried to read.
     !
     use communication
     use utils, only : terminate
@@ -1126,10 +1126,10 @@ contains
 
   subroutine initDepvarAndHalos(halosRead)
     !
-    !       InitDepvarAndHalos computes the dependent flow variables,      
-    !       like viscosities, and initializes the halo cells by applying   
-    !       the boundary conditions and exchanging the internal halo's.    
-    !       This is all done on the start level grid.                      
+    !       InitDepvarAndHalos computes the dependent flow variables,
+    !       like viscosities, and initializes the halo cells by applying
+    !       the boundary conditions and exchanging the internal halo's.
+    !       This is all done on the start level grid.
     !
     use blockPointers
     use flowVarRefState
@@ -1223,7 +1223,7 @@ contains
     ! Apply all flow boundary conditions to be sure that the halo's
     ! contain the correct values. These might be needed to compute
     ! the eddy-viscosity. Also the data for the outflow bleeds
-    ! is determined. 
+    ! is determined.
 
     currentLevel = mgStartlevel
     groundLevel  = mgStartlevel
@@ -1269,7 +1269,7 @@ contains
     call whalo2(mgStartlevel, 1_intType, 0_intType, .false., &
          .false., .true.)
 
-    if (equations == RANSEquations) then 
+    if (equations == RANSEquations) then
        call applyAllTurbBC(.true.)
     end if
     call applyAllBC(.true.)
@@ -1285,8 +1285,8 @@ contains
 
   subroutine initFlowRestart
     !
-    !       initFlowRestart loads restart information from the restart     
-    !       file into the state variables.                                 
+    !       initFlowRestart loads restart information from the restart
+    !       file into the state variables.
     !
     use constants
     use IOModule, only : IOVar
@@ -1347,9 +1347,9 @@ contains
 
   subroutine initFlowfield
     !
-    !       initFlowfield initializes the flow field to a uniform flow on  
-    !       the start level grid. Exception may be some turbulence         
-    !       variables, which are initialized a bit smarter.                
+    !       initFlowfield initializes the flow field to a uniform flow on
+    !       the start level grid. Exception may be some turbulence
+    !       variables, which are initialized a bit smarter.
     !
     use constants
     use communication, only : myID
@@ -1396,9 +1396,9 @@ contains
 
   subroutine initializeHalos(halosRead)
     !
-    !       initializeHalos sets the flow variables in the halo cells      
-    !       using a constant extrapolation. If the halos are read only the 
-    !       second halos are initialized, otherwise both.                  
+    !       initializeHalos sets the flow variables in the halo cells
+    !       using a constant extrapolation. If the halos are read only the
+    !       second halos are initialized, otherwise both.
     !
     use constants
     use blockPointers, only : nDom, w, p, rlv, ib, jb, kb, &
@@ -1574,11 +1574,11 @@ contains
   end subroutine initializeHalos
   subroutine interpolateSpectralSolution
     !
-    !       interpolateSpectralSolution uses a spectral interpolation to   
-    !       determine the initialization of the flow solution.             
-    !       The solution is interpolated from the solution read, which     
-    !       contains a different number of time instances and is stored in 
-    !       IOVar()%w. This variable can be found in IOModule.             
+    !       interpolateSpectralSolution uses a spectral interpolation to
+    !       determine the initialization of the flow solution.
+    !       The solution is interpolated from the solution read, which
+    !       contains a different number of time instances and is stored in
+    !       IOVar()%w. This variable can be found in IOModule.
     !
     use constants
     use blockPointers, only : w, il, jl, kl, nDom, sectionID
@@ -1718,10 +1718,10 @@ contains
 
   subroutine releaseExtraMemBCs
     !
-    !       releaseExtraMemBCs releases the extra memory allocated in      
-    !       allocMemBcdata. This additional memory was allocated, such     
-    !       that alternative boundary condition treatments can be handled  
-    !       in setBCDataFineGrid.                                          
+    !       releaseExtraMemBCs releases the extra memory allocated in
+    !       allocMemBcdata. This additional memory was allocated, such
+    !       that alternative boundary condition treatments can be handled
+    !       in setBCDataFineGrid.
     !
     use constants
     use blockPointers, only : flowDoms, nDom, BCType, BCData, nBocos
@@ -1780,6 +1780,8 @@ contains
 
                       deallocate(BCData(mm)%rho,  BCData(mm)%velx, &
                            BCData(mm)%vely, BCData(mm)%velz, &
+                           BCData(mm)%rhoInput,  BCData(mm)%velxInput, &
+                           BCData(mm)%velyInput, BCData(mm)%velzInput, &
                            stat=ierr)
                       if(ierr /= 0) &
                            call terminate("releaseExtraMemBCs", &
@@ -1790,6 +1792,10 @@ contains
                       nullify(BCData(mm)%velx)
                       nullify(BCData(mm)%vely)
                       nullify(BCData(mm)%velz)
+                      nullify(BCData(mm)%rhoInput)
+                      nullify(BCData(mm)%velxInput)
+                      nullify(BCData(mm)%velyInput)
+                      nullify(BCData(mm)%velzInput)
 
                       !===================================================
 
@@ -1803,6 +1809,9 @@ contains
                       deallocate(BCData(mm)%ptInlet,        &
                            BCData(mm)%ttInlet,        &
                            BCData(mm)%htInlet,        &
+                           BCData(mm)%ptInletInput,   &
+                           BCData(mm)%ttInletInput,   &
+                           BCData(mm)%htInletInput,   &
                            BCData(mm)%flowXdirInlet, &
                            BCData(mm)%flowYdirInlet, &
                            BCData(mm)%flowZdirInlet, stat=ierr)
@@ -1814,6 +1823,9 @@ contains
                       nullify(BCData(mm)%ptInlet)
                       nullify(BCData(mm)%ttInlet)
                       nullify(BCData(mm)%htInlet)
+                      nullify(BCData(mm)%ptInletInput)
+                      nullify(BCData(mm)%ttInletInput)
+                      nullify(BCData(mm)%htInletInput)
                       nullify(BCData(mm)%flowXdirInlet)
                       nullify(BCData(mm)%flowYdirInlet)
                       nullify(BCData(mm)%flowZdirInlet)
@@ -1831,12 +1843,12 @@ contains
 
   subroutine setIOVar
     !
-    !       setIOVar allocates the memory for the derived data type IOVar, 
-    !       which is simplifies the reading. If an interpolation must be   
-    !       performed for the time spectral method also the solution of    
-    !       this IO type is allocated. For all other cases the pointers of 
-    !       IOVar are set the the appropriate entries of flowDoms, with    
-    !       possible offset due to the usage of pointers.                  
+    !       setIOVar allocates the memory for the derived data type IOVar,
+    !       which is simplifies the reading. If an interpolation must be
+    !       performed for the time spectral method also the solution of
+    !       this IO type is allocated. For all other cases the pointers of
+    !       IOVar are set the the appropriate entries of flowDoms, with
+    !       possible offset due to the usage of pointers.
     !
     use constants
     use block, only : flowDoms, nDom
@@ -1949,11 +1961,11 @@ contains
 
   subroutine setPressureAndComputeEnergy(halosRead)
     !
-    !       Due to the usage of the variable IOVar, which generalizes the  
-    !       IO and leads to reuse of code, currently the pressure is       
-    !       stored at the position of rhoE. In this routine that data is   
-    !       copied to the pressure array and the total energy is computed. 
-    !       Note that this routine is only called when a restart is done.  
+    !       Due to the usage of the variable IOVar, which generalizes the
+    !       IO and leads to reuse of code, currently the pressure is
+    !       stored at the position of rhoE. In this routine that data is
+    !       copied to the pressure array and the total energy is computed.
+    !       Note that this routine is only called when a restart is done.
     !
     use constants
     use blockPointers, only : nDom, p, w, il, jl, kl
@@ -2016,8 +2028,8 @@ contains
   end subroutine setPressureAndComputeEnergy
   subroutine setRestartFiles(fileName, i)
     !
-    !          Populates the restartfiles                                  
-    !          The array is populated from Python using setRestartFiles    
+    !          Populates the restartfiles
+    !          The array is populated from Python using setRestartFiles
     !
     use constants
     use inputIO, only : restartFiles
@@ -2036,8 +2048,8 @@ contains
 
   subroutine setUniformFlow
     !
-    !       setUniformFlow set the flow variables of all local blocks on   
-    !       the start level to the uniform flow field.                     
+    !       setUniformFlow set the flow variables of all local blocks on
+    !       the start level to the uniform flow field.
     !
     use constants
     use blockPointers, only : w, dw, fw, flowDoms, ib, jb, kb, &
@@ -2185,9 +2197,9 @@ contains
 
   subroutine velMagnAndDirectionSubface(vmag, dir, BCData, mm)
     !
-    !       VelMagnAndDirectionSubface determines the maximum value    
-    !       of the magnitude of the velocity as well as the sum of the     
-    !       flow directions for the currently active subface.              
+    !       VelMagnAndDirectionSubface determines the maximum value
+    !       of the magnitude of the velocity as well as the sum of the
+    !       flow directions for the currently active subface.
     !
     use constants
     use block
@@ -2268,13 +2280,13 @@ contains
   subroutine timeSpectralCoef(coefSpectral, matrixCoefSpectral, &
        diagMatCoefSpectral)
     !
-    !       timeSpectralCoef computes the time integration coefficients    
-    !       for the time spectral method. As it is possible that sections  
-    !       have different periodic times these coefficients are           
-    !       determined for all the sections. For vector quantities, such   
-    !       as momentum, these coefficients can also be different due to   
-    !       rotation and the fact that only a part of the wheel is         
-    !       simulated.                                                     
+    !       timeSpectralCoef computes the time integration coefficients
+    !       for the time spectral method. As it is possible that sections
+    !       have different periodic times these coefficients are
+    !       determined for all the sections. For vector quantities, such
+    !       as momentum, these coefficients can also be different due to
+    !       rotation and the fact that only a part of the wheel is
+    !       simulated.
     !
     use constants
     use flowVarRefState, only : timeRef
@@ -2324,7 +2336,7 @@ contains
 
           coefSpectral(mm,nn) = coef/sin(angle)
 
-          if (mod(nTimeIntervalsSpectral,2_intType) == 0) & 
+          if (mod(nTimeIntervalsSpectral,2_intType) == 0) &
                coefSpectral(mm,nn) = coefSpectral(mm,nn)*cos(angle)
 
           ! Negate coef for the next spectral coefficient.
@@ -2334,7 +2346,7 @@ contains
        enddo scalarLoop
 
        ! Initialize dAngle to the smallest angle in the cotangent
-       ! or cosecant function. Now this angle is for the entire wheel, 
+       ! or cosecant function. Now this angle is for the entire wheel,
        ! i.e. the number of slices must be taken into account.
 
        ntot   = nTimeIntervalsSpectral*sections(mm)%nSlices
@@ -2424,10 +2436,10 @@ contains
           slicesFact = one/real(sections(mm)%nSlices,realType)
 
           ! Loop over the number of spectral coefficients and update
-          ! matrixCoefSpectral. The multiplication with (-1)**nn 
+          ! matrixCoefSpectral. The multiplication with (-1)**nn
           ! takes place here too.
 
-          ! Multiply also by the term (-1)**(pN+1) 
+          ! Multiply also by the term (-1)**(pN+1)
 
           fact = one
           if (mod(pp*nTimeIntervalsSpectral,2_intType) /= 0) &
@@ -2486,12 +2498,12 @@ contains
        ! The matrix coefficients must be multiplied by the leading
        ! coefficient, which depends on the actual periodic time.
 
-       coef = pi*timeRef/sections(mm)%timePeriod     
+       coef = pi*timeRef/sections(mm)%timePeriod
 
        do j=1,3
           do i=1,3
              diagMatCoefSpectral(mm,i,j) = &
-                  coef*diagMatCoefSpectral(mm,i,j) 
+                  coef*diagMatCoefSpectral(mm,i,j)
           enddo
        enddo
 
@@ -2500,7 +2512,7 @@ contains
           do j=1,3
              do i=1,3
                 matrixCoefSpectral(mm,nn,i,j) = &
-                     coef*matrixCoefSpectral(mm,nn,i,j) 
+                     coef*matrixCoefSpectral(mm,nn,i,j)
              enddo
           enddo
 
@@ -2512,13 +2524,13 @@ contains
 
   subroutine timeSpectralMatrices
     !
-    !       timeSpectralMatrices computes the matrices for the time        
-    !       derivative of the time spectral method for all sections. For   
-    !       scalar quantities these matrices only differ if sections have  
-    !       different periodic times. For vector quantities, such as       
-    !       momentum, these matrices can be different depending on whether 
-    !       the section is rotating or not and the number of slices        
-    !       present.                                                       
+    !       timeSpectralMatrices computes the matrices for the time
+    !       derivative of the time spectral method for all sections. For
+    !       scalar quantities these matrices only differ if sections have
+    !       different periodic times. For vector quantities, such as
+    !       momentum, these matrices can be different depending on whether
+    !       the section is rotating or not and the number of slices
+    !       present.
     !
     use constants
     use inputPhysics, only : equationMode
@@ -2577,13 +2589,13 @@ contains
     call timeSpectralCoef(coefSpectral, matrixCoefSpectral, &
          diagMatCoefSpectral)
     !
-    !       Determine the time derivative matrices for the sections.       
+    !       Determine the time derivative matrices for the sections.
     !
     ! Loop over the number of sections.
 
     sectionLoop: do ii=1,nSections
        !
-       !         Matrix for scalar quantities.                                
+       !         Matrix for scalar quantities.
        !
        ! Loop over the number of rows.
 
@@ -2611,7 +2623,7 @@ contains
           enddo
        enddo
        !
-       !         Matrices for vector quantities.                              
+       !         Matrices for vector quantities.
        !
        ! Loop over the number of time intervals; the number of rows
        ! is 3 times this number.
@@ -2699,13 +2711,13 @@ contains
 
   subroutine readRestartFile()
     !
-    !       readRestartFile reads the fine grid solution(s) from the       
-    !       restart file(s). If the restart file(s) do not correspond to   
-    !       the current mesh, the solution(s) are interpolated onto this   
-    !       mesh. It is also allowed to change boundary conditions, e.g.   
-    !       an alpha and/or Mach sweep is possible. Furthermore there is   
-    !       some support when starting from a different turbulence model,  
-    !       although this should be used with care.                        
+    !       readRestartFile reads the fine grid solution(s) from the
+    !       restart file(s). If the restart file(s) do not correspond to
+    !       the current mesh, the solution(s) are interpolated onto this
+    !       mesh. It is also allowed to change boundary conditions, e.g.
+    !       an alpha and/or Mach sweep is possible. Furthermore there is
+    !       some support when starting from a different turbulence model,
+    !       although this should be used with care.
     !
     use constants
     use cgnsGrid
@@ -3129,13 +3141,13 @@ contains
 
   subroutine getSortedZoneNumbers
     !
-    !       getSortedZoneNumbers reads the names of the zones of the       
-    !       cgns file given by cgnsInd and cgnsBase. Afterwards the        
-    !       zonenames are sorted in increasing order, such that a binary   
-    !       search algorithm can be employed. The original zone numbers    
-    !       are stored in zoneNumbers.                                     
-    !       If the zone contains a link to a zone containing the           
-    !       coordinates the name of the linked zone is taken.              
+    !       getSortedZoneNumbers reads the names of the zones of the
+    !       cgns file given by cgnsInd and cgnsBase. Afterwards the
+    !       zonenames are sorted in increasing order, such that a binary
+    !       search algorithm can be employed. The original zone numbers
+    !       are stored in zoneNumbers.
+    !       If the zone contains a link to a zone containing the
+    !       coordinates the name of the linked zone is taken.
     !
 
     use constants
@@ -3315,12 +3327,12 @@ contains
 
   subroutine getSortedVarNumbers
     !
-    !       getSortedVarNumbers reads the names of variables stored in     
-    !       the given solution node of the cgns file, indicated by         
-    !       cgnsInd, cgnsBase and cgnsZone. Afterwards the variable        
-    !       names are sorted in increasing order, such that they can be    
-    !       used in a binary search. Their original variable number and    
-    !       type is stored.                                                
+    !       getSortedVarNumbers reads the names of variables stored in
+    !       the given solution node of the cgns file, indicated by
+    !       cgnsInd, cgnsBase and cgnsZone. Afterwards the variable
+    !       names are sorted in increasing order, such that they can be
+    !       used in a binary search. Their original variable number and
+    !       type is stored.
     !
     use constants
     use su_cgns

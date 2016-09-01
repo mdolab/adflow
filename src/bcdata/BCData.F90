@@ -1,7 +1,7 @@
 module BCData
   !
-  !       This local module contains the variables and subroutine to     
-  !       handle the prescribed boundary data.                           
+  !       This local module contains the variables and subroutine to
+  !       handle the prescribed boundary data.
   !
   use cgnsGrid
   implicit none
@@ -94,11 +94,11 @@ contains
 
   subroutine BCDataDomainInterface(boco)
     !
-    !       BCDataDomainInterface initializes the boundary data for the    
-    !       domain interfaces to zero to avoid unexpected behavior later.  
-    !       The true values of the data is set by the coupler, although    
-    !       a better initial guess is made as soon as the field data has   
-    !       been initialized.                                              
+    !       BCDataDomainInterface initializes the boundary data for the
+    !       domain interfaces to zero to avoid unexpected behavior later.
+    !       The true values of the data is set by the coupler, although
+    !       a better initial guess is made as soon as the field data has
+    !       been initialized.
     !
     use constants
     use blockPointers, only : BCData
@@ -119,11 +119,11 @@ contains
 
     ! Initialize the allocated data to proper values.
 
-    if( associated(BCData(boco)%rho)  ) BCData(boco)%rho  = rhoIni
-    if( associated(BCData(boco)%velx) ) BCData(boco)%velx = velMag*velDirIni(1)
-    if( associated(BCData(boco)%vely) ) BCData(boco)%vely = velMag*velDirIni(2)
-    if( associated(BCData(boco)%velz) ) BCData(boco)%velz = velMag*velDirIni(3)
-    if( associated(BCData(boco)%ps  ) ) BCData(boco)%ps   = pIni
+    if( associated(BCData(boco)%rhoInput)  ) BCData(boco)%rhoInput  = rhoIni
+    if( associated(BCData(boco)%velxInput) ) BCData(boco)%velxInput = velMag*velDirIni(1)
+    if( associated(BCData(boco)%velyInput) ) BCData(boco)%velyInput = velMag*velDirIni(2)
+    if( associated(BCData(boco)%velzInput) ) BCData(boco)%velzInput = velMag*velDirIni(3)
+    if( associated(BCData(boco)%psInput  ) ) BCData(boco)%psInput   = pIni
 
     if( associated(BCData(boco)%flowXdirInlet) ) &
          BCData(boco)%flowXdirInlet = velDirIni(1)
@@ -132,23 +132,23 @@ contains
     if( associated(BCData(boco)%flowZdirInlet) ) &
          BCData(boco)%flowZdirInlet = velDirIni(3)
 
-    if( associated(BCData(boco)%ptInlet) ) &
-         BCData(boco)%ptInlet = zero
-    if( associated(BCData(boco)%ttInlet) ) &
-         BCData(boco)%ttInlet = zero
-    if( associated(BCData(boco)%htInlet) ) &
-         BCData(boco)%htInlet = zero
+    if( associated(BCData(boco)%ptInletInput) ) &
+         BCData(boco)%ptInletInput = zero
+    if( associated(BCData(boco)%ttInletInput) ) &
+         BCData(boco)%ttInletInput = zero
+    if( associated(BCData(boco)%htInletInput) ) &
+         BCData(boco)%htInletInput = zero
 
-    if( associated(BCData(boco)%turbInlet) ) &
-         BCData(boco)%turbInlet = zero
+    if( associated(BCData(boco)%turbInletInput) ) &
+         BCData(boco)%turbInletInput = zero
 
   end subroutine BCDataDomainInterface
 
   subroutine BCDataIsothermalWall(boco)
     !
-    !       BCDataIsothermalWall tries to extract the wall temperature     
-    !       for the currently active boundary face, which is an isothermal 
-    !       viscous wall.                                                  
+    !       BCDataIsothermalWall tries to extract the wall temperature
+    !       for the currently active boundary face, which is an isothermal
+    !       viscous wall.
     !
     use constants
     use cgnsNames
@@ -206,7 +206,7 @@ contains
 
     do j=jBeg,jEnd
        do i=iBeg,iEnd
-          BCData(boco)%TNS_Wall(i,j) = mult*bcVarArray(i,j,1) + trans
+          BCData(boco)%TNS_WallInput(i,j) = mult*bcVarArray(i,j,1) + trans
        enddo
     enddo
 
@@ -221,14 +221,14 @@ contains
 
   subroutine BCDataSubsonicInflow(boco, allTurbPresent)
     !
-    !       BCDataSubsonicInflow tries to extract the prescribed data      
-    !       for the currently active boundary face, which is a subsonic    
-    !       inflow. Either total conditions and velocity direction or the  
-    !       velocity and density can be prescribed. In the latter case the 
-    !       mass flow is prescribed, which is okay as long as the flow is  
-    !       not choked.                                                    
+    !       BCDataSubsonicInflow tries to extract the prescribed data
+    !       for the currently active boundary face, which is a subsonic
+    !       inflow. Either total conditions and velocity direction or the
+    !       velocity and density can be prescribed. In the latter case the
+    !       mass flow is prescribed, which is okay as long as the flow is
+    !       not choked.
     !
-    use constants 
+    use constants
     use cgnsNames
     use blockPointers, only : nbkGlobal, sectionID, BCFaceID, BCData
     use flowVarRefState, only : nwt
@@ -373,7 +373,7 @@ contains
     ! prescribed. If not set allTurbPresent to .false.
 
     allTurbSubface = setBcVarTurb(17_intType, boco, &
-         BCData(boco)%turbInlet)
+         BCData(boco)%turbInletInput)
 
     if(.not. allTurbSubface) allTurbPresent = .false.
 
@@ -392,8 +392,8 @@ contains
 
     subroutine totalSubsonicInlet
       !
-      !         TotalSubsonicInlet converts the prescribed total           
-      !         conditions and velocity direction into a useable format.     
+      !         TotalSubsonicInlet converts the prescribed total
+      !         conditions and velocity direction into a useable format.
       !
       use inputPhysics, only : RGasDim
       use section, only : sections
@@ -420,7 +420,7 @@ contains
 
          do j=jBeg,jEnd
             do i=iBeg,iEnd
-               BCData(boco)%ptInlet(i,j) = mult*bcVarArray(i,j,1) &
+               BCData(boco)%ptInletInput(i,j) = mult*bcVarArray(i,j,1) &
                     + trans
             enddo
          enddo
@@ -434,7 +434,7 @@ contains
 
          do j=jBeg,jEnd
             do i=iBeg,iEnd
-               BCData(boco)%ttInlet(i,j) = mult*bcVarArray(i,j,2) &
+               BCData(boco)%ttInletInput(i,j) = mult*bcVarArray(i,j,2) &
                     + trans
             enddo
          enddo
@@ -457,8 +457,8 @@ contains
                do i=iBeg,iEnd
                   rhot = mult*bcVarArray(i,j,3) + trans
 
-                  BCData(boco)%ttInlet(i,j) = &
-                       BCData(boco)%ptInlet(i,j)/(RGasDim*rhot)
+                  BCData(boco)%ttInletInput(i,j) = &
+                       BCData(boco)%ptInletInput(i,j)/(RGasDim*rhot)
                enddo
             enddo
 
@@ -472,8 +472,8 @@ contains
                do i=iBeg,iEnd
                   rhot = mult*bcVarArray(i,j,3) + trans
 
-                  BCData(boco)%ptInlet(i,j) = RGasDim*rhot &
-                       * BCData(boco)%ttInlet(i,j)
+                  BCData(boco)%ptInletInput(i,j) = RGasDim*rhot &
+                       * BCData(boco)%ttInletInput(i,j)
                enddo
             enddo
 
@@ -661,8 +661,8 @@ contains
             ! Compute the total enthalpy from the given
             ! total temperature.
 
-            call computeHtot(BCData(boco)%ttInlet(i,j), &
-                 BCData(boco)%htInlet(i,j))
+            call computeHtot(BCData(boco)%ttInletInput(i,j), &
+                 BCData(boco)%htInletInput(i,j))
 
             ! Determine the unit vector of the flow direction.
 
@@ -714,8 +714,8 @@ contains
 
     subroutine massflowSubsonicInlet
       !
-      !         MassflowSubsonicInlet converts the prescribed mass flow    
-      !         conditions (density and velocity) into a useable format.     
+      !         MassflowSubsonicInlet converts the prescribed mass flow
+      !         conditions (density and velocity) into a useable format.
       !
       use section, only: sections
       implicit none
@@ -744,7 +744,7 @@ contains
 
       do j=jBeg,jEnd
          do i=iBeg,iEnd
-            BCData(boco)%rho(i,j) = mult*bcVarArray(i,j,12) + trans
+            BCData(boco)%rhoInput(i,j) = mult*bcVarArray(i,j,12) + trans
          enddo
       enddo
 
@@ -827,15 +827,15 @@ contains
                ! Transform vloc to the global cartesian frame and
                ! store the values.
 
-               BCData(boco)%velx(i,j) = vloc(1)*axis(1)    &
+               BCData(boco)%velxInput(i,j) = vloc(1)*axis(1)    &
                     + vloc(2)*radVec1(1) &
                     + vloc(3)*radVec2(1)
 
-               BCData(boco)%vely(i,j) = vloc(1)*axis(2)    &
+               BCData(boco)%velyInput(i,j) = vloc(1)*axis(2)    &
                     + vloc(2)*radVec1(2) &
                     + vloc(3)*radVec2(2)
 
-               BCData(boco)%velz(i,j) = vloc(1)*axis(3)    &
+               BCData(boco)%velzInput(i,j) = vloc(1)*axis(3)    &
                     + vloc(2)*radVec1(3) &
                     + vloc(3)*radVec2(3)
             enddo
@@ -856,11 +856,11 @@ contains
 
          do j=jBeg,jEnd
             do i=iBeg,iEnd
-               BCData(boco)%velx(i,j) = multVel(1)*bcVarArray(i,j,13) &
+               BCData(boco)%velxInput(i,j) = multVel(1)*bcVarArray(i,j,13) &
                     + transVel(1)
-               BCData(boco)%vely(i,j) = multVel(2)*bcVarArray(i,j,14) &
+               BCData(boco)%velyInput(i,j) = multVel(2)*bcVarArray(i,j,14) &
                     + transVel(2)
-               BCData(boco)%velz(i,j) = multVel(3)*bcVarArray(i,j,15) &
+               BCData(boco)%velzInput(i,j) = multVel(3)*bcVarArray(i,j,15) &
                     + transVel(3)
             enddo
          enddo
@@ -875,9 +875,9 @@ contains
       do j=(BCData(boco)%jnbeg+1), BCData(boco)%jnend
          do i=(BCData(boco)%inbeg+1), BCData(boco)%inend
 
-            var = BCData(boco)%velx(i,j)*BCData(boco)%norm(i,j,1) &
-                 + BCData(boco)%vely(i,j)*BCData(boco)%norm(i,j,2) &
-                 + BCData(boco)%velz(i,j)*BCData(boco)%norm(i,j,3)
+            var = BCData(boco)%velxInput(i,j)*BCData(boco)%norm(i,j,1) &
+                 + BCData(boco)%velyInput(i,j)*BCData(boco)%norm(i,j,2) &
+                 + BCData(boco)%velzInput(i,j)*BCData(boco)%norm(i,j,3)
 
             if(var > zero) nn = nn + 1
 
@@ -900,9 +900,9 @@ contains
 
   subroutine BCDataSubsonicOutflow(boco)
     !
-    !       BCDataSubsonicOutflow tries to extract the static pressure     
-    !       for the currently active boundary face, which is a subsonic    
-    !       outflow boundary.                                              
+    !       BCDataSubsonicOutflow tries to extract the static pressure
+    !       for the currently active boundary face, which is a subsonic
+    !       outflow boundary.
     !
     use constants
     use cgnsNames
@@ -960,7 +960,7 @@ contains
 
     do j=jBeg,jEnd
        do i=iBeg,iEnd
-          BCData(boco)%ps(i,j) = mult*bcVarArray(i,j,1) + trans
+          BCData(boco)%psInput(i,j) = mult*bcVarArray(i,j,1) + trans
        enddo
     enddo
 
@@ -976,9 +976,9 @@ contains
   subroutine BCDataSupersonicInflow(boco, allFlowPresent, &
        allTurbPresent)
     !
-    !       BCDataSupersonicInflow tries to extract the primitive state    
-    !       vector for the currently active boundary face, which is a      
-    !       supersonic inflow.                                             
+    !       BCDataSupersonicInflow tries to extract the primitive state
+    !       vector for the currently active boundary face, which is a
+    !       supersonic inflow.
     !
     use constants
     use cgnsNames
@@ -1099,7 +1099,7 @@ contains
           bcVarPresent(8) = .false.
 
           allTurbSubface = setBCVarTurb(7_intType, boco, &
-               BCData(boco)%turbInlet)
+               BCData(boco)%turbInletInput)
 
           ! Set the velocity to the free stream direction such that
           ! the inflow test below can be applied. Furthermore give
@@ -1110,11 +1110,11 @@ contains
 
           do j=jBeg,jEnd
              do i=iBeg,iEnd
-                BCData(boco)%rho(i,j)  = zero
-                BCData(boco)%velx(i,j) = velDirFreestream(1)
-                BCData(boco)%vely(i,j) = velDirFreestream(2)
-                BCData(boco)%velz(i,j) = velDirFreestream(3)
-                BCData(boco)%ps(i,j)   = zero
+                BCData(boco)%rhoInput(i,j)  = zero
+                BCData(boco)%velxInput(i,j) = velDirFreestream(1)
+                BCData(boco)%velyInput(i,j) = velDirFreestream(2)
+                BCData(boco)%velzInput(i,j) = velDirFreestream(3)
+                BCData(boco)%psInput(i,j)   = zero
              enddo
           enddo
 
@@ -1141,9 +1141,9 @@ contains
     do j=(BCData(boco)%jnbeg+1), BCData(boco)%jnend
        do i=(BCData(boco)%inbeg+1), BCData(boco)%inend
 
-          var = BCData(boco)%velx(i,j)*BCData(boco)%norm(i,j,1) &
-               + BCData(boco)%vely(i,j)*BCData(boco)%norm(i,j,2) &
-               + BCData(boco)%velz(i,j)*BCData(boco)%norm(i,j,3)
+          var = BCData(boco)%velxInput(i,j)*BCData(boco)%norm(i,j,1) &
+               + BCData(boco)%velyInput(i,j)*BCData(boco)%norm(i,j,2) &
+               + BCData(boco)%velzInput(i,j)*BCData(boco)%norm(i,j,3)
 
           if(var > zero) nn = nn + 1
 
@@ -1165,8 +1165,8 @@ contains
 
     subroutine prescribedSupersonicInlet
       !
-      !         prescribedSupersonicInlet sets the variables for this        
-      !         supersonic inlet to prescribed values.                       
+      !         prescribedSupersonicInlet sets the variables for this
+      !         supersonic inlet to prescribed values.
       !
       use section, only : sections
       implicit none
@@ -1190,7 +1190,7 @@ contains
 
       do j=jBeg,jEnd
          do i=iBeg,iEnd
-            BCData(boco)%rho(i,j) = mult*bcVarArray(i,j,1) + trans
+            BCData(boco)%rhoInput(i,j) = mult*bcVarArray(i,j,1) + trans
          enddo
       enddo
 
@@ -1201,7 +1201,7 @@ contains
 
       do j=jBeg,jEnd
          do i=iBeg,iEnd
-            BCData(boco)%ps(i,j) = mult*bcVarArray(i,j,2) + trans
+            BCData(boco)%psInput(i,j) = mult*bcVarArray(i,j,2) + trans
          enddo
       enddo
 
@@ -1284,15 +1284,15 @@ contains
                ! Transform vloc to the global cartesian frame and
                ! store the values.
 
-               BCData(boco)%velx(i,j) = vloc(1)*axis(1)    &
+               BCData(boco)%velxInput(i,j) = vloc(1)*axis(1)    &
                     + vloc(2)*radVec1(1) &
                     + vloc(3)*radVec2(1)
 
-               BCData(boco)%vely(i,j) = vloc(1)*axis(2)    &
+               BCData(boco)%velyInput(i,j) = vloc(1)*axis(2)    &
                     + vloc(2)*radVec1(2) &
                     + vloc(3)*radVec2(2)
 
-               BCData(boco)%velz(i,j) = vloc(1)*axis(3)    &
+               BCData(boco)%velzInput(i,j) = vloc(1)*axis(3)    &
                     + vloc(2)*radVec1(3) &
                     + vloc(3)*radVec2(3)
             enddo
@@ -1313,11 +1313,11 @@ contains
 
          do j=jBeg,jEnd
             do i=iBeg,iEnd
-               BCData(boco)%velx(i,j) = multVel(1)*bcVarArray(i,j,3) &
+               BCData(boco)%velxInput(i,j) = multVel(1)*bcVarArray(i,j,3) &
                     + transVel(1)
-               BCData(boco)%vely(i,j) = multVel(2)*bcVarArray(i,j,4) &
+               BCData(boco)%velyInput(i,j) = multVel(2)*bcVarArray(i,j,4) &
                     + transVel(2)
-               BCData(boco)%velz(i,j) = multVel(3)*bcVarArray(i,j,5) &
+               BCData(boco)%velzInput(i,j) = multVel(3)*bcVarArray(i,j,5) &
                     + transVel(3)
             enddo
          enddo
@@ -1328,7 +1328,7 @@ contains
       ! prescribed. If not set allTurbPresent to .false.
 
       allTurbPresent = setBCVarTurb(7_intType, boco, &
-           BCData(boco)%turbInlet)
+           BCData(boco)%turbInletInput)
 
       if(.not. allTurbSubface) allTurbPresent = .false.
 
@@ -1338,9 +1338,9 @@ contains
 
   subroutine allocMemBCData
     !
-    !       allocMemBCData allocates the memory for the prescribed         
-    !       boundary data for all multigrid levels and all spectral        
-    !       solutions for all blocks.                                      
+    !       allocMemBCData allocates the memory for the prescribed
+    !       boundary data for all multigrid levels and all spectral
+    !       solutions for all blocks.
     !
     use constants
     use blockPointers, only : BCData, flowDoms, nBocos, nDom, BCType
@@ -1396,16 +1396,17 @@ contains
                    allocate(BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), &
                         BCData(mm)%uSlipALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd,3), &
                         BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
+                        BCData(mm)%TNS_WallInput(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                        BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &                         
+                        BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                        BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), & 
+                        BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%fIndex(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                         BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                         BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                         BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
                                 ! Note: iBlank/delta are cell based, but uses the
-                                ! node number to guarantee a halo exists. 
+                                ! node number to guarantee a halo exists.
                         BCData(mm)%iBlank(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
                         BCData(mm)%delta(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
                         BCData(mm)%deltaNode(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
@@ -1423,21 +1424,22 @@ contains
                    allocate(BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3),  &
                         BCData(mm)%uSlipALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd,3), &
                         BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
+                        BCData(mm)%TNS_WallInput(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                        BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &                         
+                        BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                        BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), & 
+                        BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%fIndex(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                         BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                         BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                         BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
                                 ! Note: iBlank/delta are cell based, but uses the
-                                ! node number to guarantee a halo exists. 
+                                ! node number to guarantee a halo exists.
                         BCData(mm)%iBlank(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
                         BCData(mm)%delta(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
                         BCData(mm)%deltaNode(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                         BCData(mm)%area(iBeg:iEnd,jBeg:jEnd), &
-                        
+
                         stat=ierr)
                    if(ierr /= 0)                      &
                         call terminate("allocMemBCData", &
@@ -1451,16 +1453,17 @@ contains
                    allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%rFaceALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
+                        BCData(mm)%TNS_WallInput(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                        BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &                         
+                        BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                        BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), & 
+                        BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%fIndex(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                         BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                         BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                         BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
                                 ! Note: iBlank/delta are cell based, but uses the
-                                ! node number to guarantee a halo exists. 
+                                ! node number to guarantee a halo exists.
                         BCData(mm)%iBlank(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
                         BCData(mm)%delta(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
                         BCData(mm)%deltaNode(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
@@ -1510,10 +1513,15 @@ contains
                    ! the entire state vector to be prescribed.
 
                    allocate(BCData(mm)%rho(iBeg:iEnd,jBeg:jEnd),   &
+                        BCData(mm)%rhoInput(iBeg:iEnd,jBeg:jEnd),   &
                         BCData(mm)%velx(iBeg:iEnd,jBeg:jEnd),  &
+                        BCData(mm)%velxInput(iBeg:iEnd,jBeg:jEnd),  &
                         BCData(mm)%vely(iBeg:iEnd,jBeg:jEnd),  &
+                        BCData(mm)%velyInput(iBeg:iEnd,jBeg:jEnd),  &
                         BCData(mm)%velz(iBeg:iEnd,jBeg:jEnd),  &
+                        BCData(mm)%velzInput(iBeg:iEnd,jBeg:jEnd),  &
                         BCData(mm)%ps(iBeg:iEnd,jBeg:jEnd), &
+                        BCData(mm)%psInput(iBeg:iEnd,jBeg:jEnd), &
                         stat=ierr)
                    if(ierr /= 0)                      &
                         call terminate("allocMemBCData", &
@@ -1526,6 +1534,7 @@ contains
                    if(nt2 >= nt1) then
                       allocate(&
                            BCData(mm)%turbInlet(iBeg:iEnd,jBeg:jEnd,nt1:nt2), &
+                           BCData(mm)%turbInletInput(iBeg:iEnd,jBeg:jEnd,nt1:nt2), &
                            stat=ierr)
                       if(ierr /= 0)                      &
                            call terminate("allocMemBCData", &
@@ -1553,12 +1562,19 @@ contains
                         BCData(mm)%flowYdirInlet(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%flowZdirInlet(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%ptInlet(iBeg:iEnd,jBeg:jEnd),       &
+                        BCData(mm)%ptInletInput(iBeg:iEnd,jBeg:jEnd),       &
                         BCData(mm)%ttInlet(iBeg:iEnd,jBeg:jEnd),       &
+                        BCData(mm)%ttInletInput(iBeg:iEnd,jBeg:jEnd),       &
                         BCData(mm)%htInlet(iBeg:iEnd,jBeg:jEnd),       &
+                        BCData(mm)%htInletInput(iBeg:iEnd,jBeg:jEnd),       &
                         BCData(mm)%rho(iBeg:iEnd,jBeg:jEnd),           &
+                        BCData(mm)%rhoInput(iBeg:iEnd,jBeg:jEnd),           &
                         BCData(mm)%velx(iBeg:iEnd,jBeg:jEnd),          &
+                        BCData(mm)%velxInput(iBeg:iEnd,jBeg:jEnd),          &
                         BCData(mm)%vely(iBeg:iEnd,jBeg:jEnd),          &
+                        BCData(mm)%velyInput(iBeg:iEnd,jBeg:jEnd),          &
                         BCData(mm)%velz(iBeg:iEnd,jBeg:jEnd), &
+                        BCData(mm)%velzInput(iBeg:iEnd,jBeg:jEnd), &
                         stat=ierr)
                    if(ierr /= 0)                      &
                         call terminate("allocMemBCData", &
@@ -1571,6 +1587,7 @@ contains
                    if(nt2 >= nt1) then
                       allocate(&
                            BCData(mm)%turbInlet(iBeg:iEnd,jBeg:jEnd,nt1:nt2), &
+                           BCData(mm)%turbInletInput(iBeg:iEnd,jBeg:jEnd,nt1:nt2), &
                            stat=ierr)
                       if(ierr /= 0)                      &
                            call terminate("allocMemBCData", &
@@ -1588,6 +1605,7 @@ contains
                    ! memory for the static pressure.
 
                    allocate(BCData(mm)%ps(iBeg:iEnd,jBeg:jEnd), &
+                            BCData(mm)%psInput(iBeg:iEnd,jBeg:jEnd), &
                         stat=ierr)
                    if(ierr /= 0)                      &
                         call terminate("allocMemBCData", &
@@ -1600,19 +1618,24 @@ contains
                    ! the bleed flows.
 
                    BCData(mm)%ps = zero
+                   BCData(mm)%psInput = zero
 
                    !=======================================================
 
                 case (DomainInterfaceRhoUVW)
 
-                   ! Domain interface with prescribed density and 
+                   ! Domain interface with prescribed density and
                    ! velocities, i.e. mass flow is prescribed. Allocate
                    ! the memory for the variables needed.
 
                    allocate(BCData(mm)%rho(iBeg:iEnd,jBeg:jEnd),  &
+                        BCData(mm)%rhoInput(iBeg:iEnd,jBeg:jEnd),  &
                         BCData(mm)%velx(iBeg:iEnd,jBeg:jEnd), &
+                        BCData(mm)%velxInput(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%vely(iBeg:iEnd,jBeg:jEnd), &
+                        BCData(mm)%velyInput(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%velz(iBeg:iEnd,jBeg:jEnd), &
+                        BCData(mm)%velzInput(iBeg:iEnd,jBeg:jEnd), &
                         stat=ierr)
                    if(ierr /= 0)                      &
                         call terminate("allocMemBCData", &
@@ -1626,6 +1649,7 @@ contains
                    if(nt2 >= nt1) then
                       allocate(&
                            BCData(mm)%turbInlet(iBeg:iEnd,jBeg:jEnd,nt1:nt2), &
+                           BCData(mm)%turbInletInput(iBeg:iEnd,jBeg:jEnd,nt1:nt2), &
                            stat=ierr)
                       if(ierr /= 0)                      &
                            call terminate("allocMemBCData", &
@@ -1645,8 +1669,11 @@ contains
                         BCData(mm)%flowYdirInlet(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%flowZdirInlet(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%ptInlet(iBeg:iEnd,jBeg:jEnd),       &
+                        BCData(mm)%ptInletInput(iBeg:iEnd,jBeg:jEnd),       &
                         BCData(mm)%ttInlet(iBeg:iEnd,jBeg:jEnd),       &
+                        BCData(mm)%ttInletInput(iBeg:iEnd,jBeg:jEnd),       &
                         BCData(mm)%htInlet(iBeg:iEnd,jBeg:jEnd),       &
+                        BCData(mm)%htInletInput(iBeg:iEnd,jBeg:jEnd),       &
                         stat=ierr)
                    if(ierr /= 0)                      &
                         call terminate("allocMemBCData", &
@@ -1660,6 +1687,7 @@ contains
                    if(nt2 >= nt1) then
                       allocate(&
                            BCData(mm)%turbInlet(iBeg:iEnd,jBeg:jEnd,nt1:nt2), &
+                           BCData(mm)%turbInletInput(iBeg:iEnd,jBeg:jEnd,nt1:nt2), &
                            stat=ierr)
                       if(ierr /= 0)                      &
                            call terminate("allocMemBCData", &
@@ -1672,10 +1700,11 @@ contains
 
                 case (domainInterfaceRho)
 
-                   ! Domain interface with prescribed density. 
+                   ! Domain interface with prescribed density.
                    ! Allocate the memory for the density.
 
                    allocate(BCData(mm)%rho(iBeg:iEnd,jBeg:jEnd), &
+                        BCData(mm)%rhoInput(iBeg:iEnd,jBeg:jEnd), &
                         stat=ierr)
                    if(ierr /= 0)                      &
                         call terminate("allocMemBCData", &
@@ -1699,13 +1728,13 @@ contains
        bcVarPresent,           &
        bcVarArray)
     !
-    !       cart1D_InterpolSubface interpolates the prescribed variables   
-    !       in the data set of the given cgns subface onto the subface     
-    !       indicated by iBeg, iEnd, jBeg, jEnd and blockFaceId.           
-    !       This routine performs a 1d cartesian interpolation for the     
-    !       coordinate coorId and it is assumed that there is no           
-    !       variation in the other directions.                             
-    !       The variables in blockPointers are already set.                
+    !       cart1D_InterpolSubface interpolates the prescribed variables
+    !       in the data set of the given cgns subface onto the subface
+    !       indicated by iBeg, iEnd, jBeg, jEnd and blockFaceId.
+    !       This routine performs a 1d cartesian interpolation for the
+    !       coordinate coorId and it is assumed that there is no
+    !       variation in the other directions.
+    !       The variables in blockPointers are already set.
     !
     use constants
     use blockPointers, only : x, il, jl, kl, nBKGlobal
@@ -1909,10 +1938,10 @@ contains
 
   subroutine computeHtot(tt, ht)
     !
-    !       computeHtot computes the total enthalpy from the given total   
-    !       temperature. The total enthalpy is the integral of cp, which   
-    !       is a very simple expression for constant cp. For a variable cp 
-    !       it is a bit more work.                                         
+    !       computeHtot computes the total enthalpy from the given total
+    !       temperature. The total enthalpy is the integral of cp, which
+    !       is a very simple expression for constant cp. For a variable cp
+    !       it is a bit more work.
     !
     use constants
     use cpCurveFits
@@ -2054,10 +2083,10 @@ contains
 
   subroutine extractFromDataSet(blockFaceID)
     !
-    !       extractFromDataSet tries to extract and interpolate the        
-    !       variables in bcVarNames from the cgns data set.                
-    !       If successful the corresponding entry of bcVarPresent is       
-    !       set to .true., otherwise it is set to .false.                  
+    !       extractFromDataSet tries to extract and interpolate the
+    !       variables in bcVarNames from the cgns data set.
+    !       If successful the corresponding entry of bcVarPresent is
+    !       set to .true., otherwise it is set to .false.
     !
     use constants
     use cgnsNames
@@ -2492,9 +2521,9 @@ contains
 
   subroutine initBCData
     !
-    !       initBCData allocates and initializes the arrays BCData for     
-    !       all boundary subfaces on all grid levels for all spectral      
-    !       solutions.                                                     
+    !       initBCData allocates and initializes the arrays BCData for
+    !       all boundary subfaces on all grid levels for all spectral
+    !       solutions.
     !
     use constants
     use blockPointers, only : flowDoms, BCData, nDom, nBocos, inBeg, inEnd, &
@@ -2603,6 +2632,7 @@ contains
                 nullify(BCData(j)%fIndex)
                 nullify(BCData(j)%uSlip)
                 nullify(BCData(j)%TNS_Wall)
+                nullify(BCData(j)%TNS_WallInput)
 
                 nullify(BCData(j)%normALE)
                 nullify(BCData(j)%rfaceALE)
@@ -2610,19 +2640,28 @@ contains
                 nullify(BCData(j)%sHeatFlux)
 
                 nullify(BCData(j)%ptInlet)
+                nullify(BCData(j)%ptInletInput)
                 nullify(BCData(j)%ttInlet)
+                nullify(BCData(j)%ttInletInput)
                 nullify(BCData(j)%htInlet)
+                nullify(BCData(j)%htInletInput)
                 nullify(BCData(j)%flowXdirInlet)
                 nullify(BCData(j)%flowYdirInlet)
                 nullify(BCData(j)%flowZdirInlet)
 
                 nullify(BCData(j)%turbInlet)
+                nullify(BCData(j)%turbInletInput)
 
                 nullify(BCData(j)%rho)
+                nullify(BCData(j)%rhoInput)
                 nullify(BCData(j)%velx)
+                nullify(BCData(j)%velxInput)
                 nullify(BCData(j)%vely)
+                nullify(BCData(j)%velyInput)
                 nullify(BCData(j)%velz)
+                nullify(BCData(j)%velzInput)
                 nullify(BCData(j)%ps)
+                nullify(BCData(j)%psInput)
                 bcData(j)%symNormSet = .False.
                 bcData(j)%symNorm = zero
                 nullify(BCData(j)%iblank)
@@ -2638,8 +2677,8 @@ contains
 
   subroutine nondimBoundData
     !
-    !       nondimBoundData nondimensionalizes the boundary data           
-    !       specified in the cgns file.                                    
+    !       nondimBoundData nondimensionalizes the boundary data
+    !       specified in the cgns file.
     !
     use constants
     use block, only : flowDoms, BCDataType, nDom
@@ -2677,39 +2716,38 @@ contains
 
              do i=1,flowDoms(nn,mm,sps)%nBocos
 
-                ! Nondimensionalize the data if the pointer is associated
-                ! with data.
+               ! Nondimensionalize the data if the pointer is associated
+               ! with data.
 
-                if( associated(BCData(i)%TNS_Wall) ) &
-                     BCData(i)%TNS_Wall = BCData(i)%TNS_Wall/TRef
+               if( associated(BCData(i)%TNS_WallInput) ) &
+                 BCData(i)%TNS_Wall = BCData(i)%TNS_WallInput/TRef
 
-                if( associated(BCData(i)%ptInlet) ) &
-                     BCData(i)%ptInlet = BCData(i)%ptInlet/pRef
+               if( associated(BCData(i)%ptInletInput) ) &
+                 BCData(i)%ptInlet = BCData(i)%ptInletInput/pRef
 
-                if( associated(BCData(i)%ttInlet) ) &
-                     BCData(i)%ttInlet = BCData(i)%ttInlet/TRef
+               if( associated(BCData(i)%ttInletInput) ) &
+                 BCData(i)%ttInlet = BCData(i)%ttInletInput/TRef
 
-                if( associated(BCData(i)%htInlet) ) &
-                     BCData(i)%htInlet = BCData(i)%htInlet/HRef
+               if( associated(BCData(i)%htInletInput) ) &
+                 BCData(i)%htInlet = BCData(i)%htInletInput/HRef
 
-                if( associated(BCData(i)%turbInlet) ) &
-                     call nondimTurb(BCData(i)%turbInlet)
+               if( associated(BCData(i)%turbInletInput) ) &
+                 call nondimTurb(BCData(i)%turbInletInput)
 
-                if( associated(BCData(i)%rho) ) &
-                     BCData(i)%rho = BCData(i)%rho/rhoRef
+               if( associated(BCData(i)%rhoInput) ) &
+                 BCData(i)%rho = BCData(i)%rhoInput/rhoRef
 
-                if( associated(BCData(i)%velx) ) &
-                     BCData(i)%velx = BCData(i)%velx/uRef
+               if( associated(BCData(i)%velxInput) ) &
+                 BCData(i)%velx = BCData(i)%velxInput/uRef
 
-                if( associated(BCData(i)%vely) ) &
-                     BCData(i)%vely = BCData(i)%vely/uRef
+               if( associated(BCData(i)%velyInput) ) &
+                 BCData(i)%vely = BCData(i)%velyInput/uRef
 
-                if( associated(BCData(i)%velz) ) &
-                     BCData(i)%velz = BCData(i)%velz/uRef
+               if( associated(BCData(i)%velzInput) ) &
+                 BCData(i)%velz = BCData(i)%velzInput/uRef
 
-                if( associated(BCData(i)%ps) ) &
-                     BCData(i)%ps = BCData(i)%ps/pRef
-
+               if( associated(BCData(i)%psInput) ) &
+                 BCData(i)%ps = BCData(i)%psInput/pRef
              enddo
           enddo
        enddo
@@ -2723,8 +2761,8 @@ contains
 
     subroutine nondimTurb(turbInlet)
       !
-      !         NondimTurb nondimensionalizes the turbulent data for inlet  
-      !         boundary conditions.                                         
+      !         NondimTurb nondimensionalizes the turbulent data for inlet
+      !         boundary conditions.
       !
       implicit none
       !
@@ -2780,12 +2818,12 @@ contains
        ind, bcVarPresent, bcVarArray,  &
        axAssumed)
     !
-    !       radialInterpolSubface interpolates the prescribed variables    
-    !       in the data set of the given cgns subface onto the subface     
-    !       indicated by iBeg, iEnd, jBeg, jEnd and blockFaceId.           
-    !       This routine performs a 1d interpolation in radial direction   
-    !       assuming that there is no variation in the other directions.   
-    !       The variables in blockPointers are already set.                
+    !       radialInterpolSubface interpolates the prescribed variables
+    !       in the data set of the given cgns subface onto the subface
+    !       indicated by iBeg, iEnd, jBeg, jEnd and blockFaceId.
+    !       This routine performs a 1d interpolation in radial direction
+    !       assuming that there is no variation in the other directions.
+    !       The variables in blockPointers are already set.
     !
     use constants
     use blockPointers, only: BCData, x, il, jl, kl, nbkglobal, sectionID
@@ -3034,9 +3072,9 @@ contains
 
   subroutine setBCDataCoarseGrid
     !
-    !       setBCDataCoarseGrid determines the boundary condition info     
-    !       on the coarse grid from the known info on the fine grid. It    
-    !       will be stored in the BCData arrays of flowDoms.               
+    !       setBCDataCoarseGrid determines the boundary condition info
+    !       on the coarse grid from the known info on the fine grid. It
+    !       will be stored in the BCData arrays of flowDoms.
     !
     use constants
     use blockPointers, only : BCFaceID, BCData, nDom, flowDoms, il, jl, kl, &
@@ -3125,6 +3163,10 @@ contains
                      flowDoms(i,levm1,sps)%BCData(j)%ptInlet)
                 call interpolateBcData(BCData(j)%ttInlet, &
                      flowDoms(i,levm1,sps)%BCData(j)%ttInlet)
+                call interpolateBcData(BCData(j)%ptInletInput, &
+                     flowDoms(i,levm1,sps)%BCData(j)%ptInletInput)
+                call interpolateBcData(BCData(j)%ttInletInput, &
+                     flowDoms(i,levm1,sps)%BCData(j)%ttInletInput)
                 call interpolateBcData(BCData(j)%flowXdirInlet, &
                      flowDoms(i,levm1,sps)%BCData(j)%flowXdirInlet)
                 call interpolateBcData(BCData(j)%flowYdirInlet, &
@@ -3135,17 +3177,30 @@ contains
                 call interpolateBCVecData(BCData(j)%turbInlet, &
                      flowDoms(i,levm1,sps)%BCData(j)%turbInlet, &
                      nt1, nt2)
+                call interpolateBCVecData(BCData(j)%turbInletInput, &
+                     flowDoms(i,levm1,sps)%BCData(j)%turbInletInput, &
+                     nt1, nt2)
 
                 call interpolateBcData(BCData(j)%rho,  &
-                     flowDoms(i,levm1,sps)%BCData(j)%rho)
+                    flowDoms(i,levm1,sps)%BCData(j)%rho)
+                call interpolateBcData(BCData(j)%rhoInput,  &
+                    flowDoms(i,levm1,sps)%BCData(j)%rhoInput)
                 call interpolateBcData(BCData(j)%velx, &
-                     flowDoms(i,levm1,sps)%BCData(j)%velx)
+                    flowDoms(i,levm1,sps)%BCData(j)%velx)
+                call interpolateBcData(BCData(j)%velxInput, &
+                    flowDoms(i,levm1,sps)%BCData(j)%velxInput)
                 call interpolateBcData(BCData(j)%vely, &
-                     flowDoms(i,levm1,sps)%BCData(j)%vely)
+                    flowDoms(i,levm1,sps)%BCData(j)%vely)
+                call interpolateBcData(BCData(j)%velyInput, &
+                    flowDoms(i,levm1,sps)%BCData(j)%velyInput)
                 call interpolateBcData(BCData(j)%velz, &
-                     flowDoms(i,levm1,sps)%BCData(j)%velz)
+                    flowDoms(i,levm1,sps)%BCData(j)%velz)
+                call interpolateBcData(BCData(j)%velzInput, &
+                    flowDoms(i,levm1,sps)%BCData(j)%velzInput)
                 call interpolateBcData(BCData(j)%ps,   &
-                     flowDoms(i,levm1,sps)%BCData(j)%ps)
+                    flowDoms(i,levm1,sps)%BCData(j)%ps)
+                call interpolateBcData(BCData(j)%psInput,   &
+                    flowDoms(i,levm1,sps)%BCData(j)%psInput)
 
                 ! Some additional variables should be computed/corrected
                 ! for some boundary conditions. Determine the type of
@@ -3170,6 +3225,8 @@ contains
 
                          call computeHtot(BCData(j)%ttInlet(k,l), &
                               BCData(j)%htInlet(k,l))
+                        call computeHtot(BCData(j)%ttInletInput(k,l), &
+                              BCData(j)%htInletInput(k,l))
 
                          ! Flow direction.
 
@@ -3198,9 +3255,9 @@ contains
 
     subroutine interpolateBcData(varCoarse, varFine)
       !
-      !         InterpolateBcData interpolates the given data array from   
-      !         the fine to the coarse grid. Of course only if the fine      
-      !         array is associated with some data.                          
+      !         InterpolateBcData interpolates the given data array from
+      !         the fine to the coarse grid. Of course only if the fine
+      !         array is associated with some data.
       !
       implicit none
       !
@@ -3263,9 +3320,9 @@ contains
     subroutine interpolateBCVecData(varCoarse, varFine, &
          nstart, nend)
       !
-      !         interpolateBCVecData interpolates the given data array       
-      !         from the fine to the coarse grid. Of course only if the fine 
-      !         array is associated with some data.                          
+      !         interpolateBCVecData interpolates the given data array
+      !         from the fine to the coarse grid. Of course only if the fine
+      !         array is associated with some data.
       !
       implicit none
       !
@@ -3332,9 +3389,9 @@ contains
 
   subroutine setBCDataFineGrid(initializationPart)
     !
-    !       setBCDataFineGrid extracts the boundary condition data from    
-    !       the cgnsGrid and stores it in useable form in the BCData       
-    !       arrays of the currently finest grid, i.e. groundLevel.         
+    !       setBCDataFineGrid extracts the boundary condition data from
+    !       the cgnsGrid and stores it in useable form in the BCData
+    !       arrays of the currently finest grid, i.e. groundLevel.
     !
     use constants
     use blockPointers, only : BCData, BCType, nBKGlobal, nBocos, nDom, cgnsSubFace
@@ -3585,10 +3642,10 @@ contains
 
   subroutine setBCVarNamesTurb(offset)
     !
-    !       setBCVarNamesTurb sets the names for the turbulence            
-    !       variables to be determined. This depends on the turbulence     
-    !       model. If not the RANS equations are solved an immediate       
-    !       return is made.                                                
+    !       setBCVarNamesTurb sets the names for the turbulence
+    !       variables to be determined. This depends on the turbulence
+    !       model. If not the RANS equations are solved an immediate
+    !       return is made.
     !
     use constants
     use cgnsNames
@@ -3631,10 +3688,10 @@ contains
 
   logical function setBCVarTurb(offset, boco, turbInlet)
     !
-    !       SetBCVarTurb sets the array for the turbulent halo data        
-    !       for inlet boundaries. This function returns .true. If all      
-    !       turbulence variables could be interpolated and .false.         
-    !       otherwise.                                                     
+    !       SetBCVarTurb sets the array for the turbulent halo data
+    !       for inlet boundaries. This function returns .true. If all
+    !       turbulence variables could be interpolated and .false.
+    !       otherwise.
     !
     use constants
     use flowVarRefState, only : nt1, nt2
@@ -3716,10 +3773,10 @@ contains
 
     subroutine storeTurbFreestreamSubface
       !
-      !         storeTurbFreestreamSubface stores the currently active       
-      !         subface in the array turbFreestreamSubfaces, such that the   
-      !         turbulence variables can be set to the free stream values    
-      !         later on in setInletFreestreamTurb.                          
+      !         storeTurbFreestreamSubface stores the currently active
+      !         subface in the array turbFreestreamSubfaces, such that the
+      !         turbulence variables can be set to the free stream values
+      !         later on in setInletFreestreamTurb.
       !
       use blockPointers, only: nbkLocal, spectralSol
       implicit none
@@ -3811,10 +3868,10 @@ contains
 
   subroutine setInletFreestreamTurb
     !
-    !       setInletFreestreamTurb sets for all boundary subfaces          
-    !       stored in turbFreestreamSubfaces the turbulence variables to   
-    !       the free stream variables. This is done for all multigrid      
-    !       levels starting from groundLevel.                              
+    !       setInletFreestreamTurb sets for all boundary subfaces
+    !       stored in turbFreestreamSubfaces the turbulence variables to
+    !       the free stream variables. This is done for all multigrid
+    !       levels starting from groundLevel.
     !
     use constants
     use block, only : BCDataType, flowDoms
@@ -3891,10 +3948,10 @@ contains
 
   subroutine setSupersonicInletFreeStream
     !
-    !       setSupersonicInletFreeStream sets for all boundary subfaces    
-    !       stored in freestreamSubfaces the primitive flow variables to   
-    !       the free stream variables. This is done for all multigrid      
-    !       levels starting from groundLevel.                              
+    !       setSupersonicInletFreeStream sets for all boundary subfaces
+    !       stored in freestreamSubfaces the primitive flow variables to
+    !       the free stream variables. This is done for all multigrid
+    !       levels starting from groundLevel.
     !
     use constants
     use block, only : BCDataType, flowDoms
@@ -3974,10 +4031,10 @@ contains
 
   subroutine storeFreestreamSubface(boco)
     !
-    !       storeFreestreamSubface stores the currently active subface in  
-    !       the array freestreamSubfaces, such that the primitive flow     
-    !       field variables can be set to the free stream values later on  
-    !       in setSupersonicInletFreeStream.                               
+    !       storeFreestreamSubface stores the currently active subface in
+    !       the array freestreamSubfaces, such that the primitive flow
+    !       field variables can be set to the free stream values later on
+    !       in setSupersonicInletFreeStream.
     !
     use constants
     use blockPointers, only : nbkLocal, spectralSol
@@ -4072,10 +4129,10 @@ contains
 
   subroutine unitVectorsCylSystem(boco)
     !
-    !       unitVectorsCylSystem determines the unit vectors of the        
-    !       local coordinate systen of the boundary face defined by the    
-    !       data in BCDataMod. In that local system the axial direction    
-    !       is rotation axis.                                              
+    !       unitVectorsCylSystem determines the unit vectors of the
+    !       local coordinate systen of the boundary face defined by the
+    !       data in BCDataMod. In that local system the axial direction
+    !       is rotation axis.
     !
     use constants
     use blockPointers, only : BCFaceID, BCData, x, si, sj, sk, il, jl, kl, &
@@ -4198,11 +4255,11 @@ contains
 
   subroutine initBCDataDomainInterfaces
     !
-    !       initBCDataDomainInterfaces initializes the prescribed boundary 
-    !       data for domain interfaces. It is just an initialization such  
-    !       the initial halo computations behave normally. During the      
-    !       actual computation this data should be renewed constantly by   
-    !       the coupler.                                                   
+    !       initBCDataDomainInterfaces initializes the prescribed boundary
+    !       data for domain interfaces. It is just an initialization such
+    !       the initial halo computations behave normally. During the
+    !       actual computation this data should be renewed constantly by
+    !       the coupler.
     !
     use constants
     use blockPointers, only : BCData, nBocos, BCType, nDom
