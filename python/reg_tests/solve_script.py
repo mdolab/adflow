@@ -627,7 +627,10 @@ def test6():
 
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs)
-    CFDSolver.checkSolutionFailure(ap, funcs)
+    # Do not check the solution failure, becuase it is so close to be
+    # machine precision, it may have had a line search failure, which
+    # would give a random result for failed
+    
     if MPI.COMM_WORLD.rank == 0:
         print 'Eval Functions:'
         reg_write_dict(funcs, 1e-10, 1e-10)

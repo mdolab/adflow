@@ -259,7 +259,7 @@ class SUMB(AeroSolver):
         volume mesh mapping
         '''
         ndof_1_instance = self.sumb.adjointvars.nnodeslocal[0]*3
-        meshInd = self.sumb.getcgnsmeshindices(ndof_1_instance)
+        meshInd = self.sumb.warping.getcgnsmeshindices(ndof_1_instance)
         
         return meshInd
 
@@ -2089,7 +2089,7 @@ class SUMB(AeroSolver):
         self._setFamilyList(groupName)
         npts, ncell = self._getSurfaceSize(groupName)
         conn =  numpy.zeros((ncell, 4), dtype='intc')
-        self.sumb.getsurfaceconnectivity(numpy.ravel(conn))
+        self.sumb.surfaceutils.getsurfaceconnectivity(numpy.ravel(conn))
 
         faceSizes = 4*numpy.ones(len(conn), 'intc')
 
