@@ -6,8 +6,8 @@ module utils
        degreeFourBeta,  omegaFourBeta,     &
        cosCoefFourBeta, sinCoefFourBeta, t)
     !
-    !       TSbeta computes the angle of attack for a given Time interval
-    !       in a time spectral solution.
+    !       TSbeta computes the angle of attack for a given Time interval 
+    !       in a time spectral solution.                                   
     !
     use constants
     use inputPhysics, only : equationMode
@@ -69,8 +69,8 @@ module utils
        degreeFourBeta,  omegaFourBeta,     &
        cosCoefFourBeta, sinCoefFourBeta, t)
     !
-    !       TSbeta computes the angle of attack for a given Time interval
-    !       in a time spectral solution.
+    !       TSbeta computes the angle of attack for a given Time interval  
+    !       in a time spectral solution.                                   
     !
     use constants
     use inputPhysics, only : equationMode
@@ -131,8 +131,8 @@ module utils
        degreeFourMach,  omegaFourMach,     &
        cosCoefFourMach, sinCoefFourMach, t)
     !
-    !       TSMach computes the Mach Number for a given time interval
-    !       in a time spectral solution.
+    !       TSMach computes the Mach Number for a given time interval      
+    !       in a time spectral solution.                                   
     !
     use constants
     use inputPhysics, only : equationMode
@@ -194,8 +194,8 @@ module utils
        degreeFourMach,  omegaFourMach,     &
        cosCoefFourMach, sinCoefFourMach, t)
     !
-    !       TSmach computes the angle of attack for a given Time interval
-    !       in a time spectral solution.
+    !       TSmach computes the angle of attack for a given Time interval 
+    !       in a time spectral solution.                                   
     !
     use constants
     use inputPhysics, only : equationMode
@@ -256,8 +256,8 @@ module utils
        degreeFourAlpha,  omegaFourAlpha,     &
        cosCoefFourAlpha, sinCoefFourAlpha, t)
     !
-    !       TSalpha computes the angle of attack for a given Time interval
-    !       in a time spectral solution.
+    !       TSalpha computes the angle of attack for a given Time interval 
+    !       in a time spectral solution.                                   
     !
     use constants
     use inputPhysics, only : equationMode
@@ -318,8 +318,8 @@ module utils
        degreeFourAlpha,  omegaFourAlpha,     &
        cosCoefFourAlpha, sinCoefFourAlpha, t)
     !
-    !       TSalpha computes the angle of attack for a given Time interval
-    !       in a time spectral solution.
+    !       TSalpha computes the angle of attack for a given Time interval 
+    !       in a time spectral solution.                                   
     !
     use constants
     use inputPhysics, only : equationMode
@@ -384,10 +384,10 @@ module utils
        cosCoefFourRot, &
        sinCoefFourRot, t)
     !
-    !       derivativeRigidRotAngle computes the time derivative of the
-    !       rigid body rotation angle at the given time for the given
-    !       arguments. The angle is described by a combination of a
-    !       polynomial and fourier series.
+    !       derivativeRigidRotAngle computes the time derivative of the    
+    !       rigid body rotation angle at the given time for the given      
+    !       arguments. The angle is described by a combination of a        
+    !       polynomial and fourier series.                                 
     !
     use constants
     use inputPhysics, only : equationMode
@@ -451,7 +451,7 @@ module utils
     real(kind=realType) x,y
     real(kind=realType) :: myDim
 
-    myDim = x - y
+    myDim = x - y 
     if (myDim < 0.0) then
        myDim = 0.0
     end if
@@ -475,8 +475,8 @@ module utils
   end function getCorrectForK
   subroutine terminate(routineName, errorMessage)
     !
-    !       terminate writes an error message to standard output and
-    !       terminates the execution of the program.
+    !       terminate writes an error message to standard output and       
+    !       terminates the execution of the program.                       
     !
     use constants
     use communication, only : sumb_comm_world, myid
@@ -587,9 +587,9 @@ module utils
   subroutine rotMatrixRigidBody(tNew, tOld, rotationMatrix, &
        rotationPoint)
     !
-    !       rotMatrixRigidBody determines the rotation matrix and the
-    !       rotation point to determine the coordinates of the new time
-    !       level starting from the coordinates of the old time level.
+    !       rotMatrixRigidBody determines the rotation matrix and the      
+    !       rotation point to determine the coordinates of the new time    
+    !       level starting from the coordinates of the old time level.     
     !
     use constants
     use inputMotion
@@ -729,10 +729,10 @@ module utils
        cosCoefFourRot, &
        sinCoefFourRot, t)
     !
-    !       2ndderivativeRigidRotAngle computes the 2nd time derivative of
-    !       the rigid body rotation angle at the given time for the given
-    !       arguments. The angle is described by a combination of a
-    !       polynomial and fourier series.
+    !       2ndderivativeRigidRotAngle computes the 2nd time derivative of 
+    !       the rigid body rotation angle at the given time for the given  
+    !       arguments. The angle is described by a combination of a        
+    !       polynomial and fourier series.                                 
     !
     use constants
     use flowVarRefState, only : timeRef
@@ -793,9 +793,9 @@ module utils
        degreeFourRot,  omegaFourRot,     &
        cosCoefFourRot, sinCoefFourRot, t)
     !
-    !       rigidRotAngle computes the rigid body rotation angle at the
-    !       given time for the given arguments. The angle is described by
-    !       a combination of a polynomial and fourier series.
+    !       rigidRotAngle computes the rigid body rotation angle at the    
+    !       given time for the given arguments. The angle is described by  
+    !       a combination of a polynomial and fourier series.              
     !
     use constants
     use inputPhysics, only : equationMode
@@ -855,19 +855,18 @@ module utils
 
   subroutine setBCPointers(nn, spatialPointers)
     !
-    !       setBCPointers sets the pointers needed for the boundary
-    !       condition treatment on a general face, such that the boundary
-    !       routines are only implemented once instead of 6 times.
+    !       setBCPointers sets the pointers needed for the boundary        
+    !       condition treatment on a general face, such that the boundary  
+    !       routines are only implemented once instead of 6 times.         
     !
-    use constants
+    use constants 
     use blockPointers, only : w, p, rlv, rev, gamma, x, d2wall, &
          si, sj, sk, s,  globalCell, BCData, nx, il, ie, ib, &
-         ny, jl, je, jb, nz, kl, ke, kb, BCFaceID, addgridvelocities, &
-         sFaceI, sFaceJ, sFaceK
+         ny, jl, je, jb, nz, kl, ke, kb, BCFaceID
     use BCPointers, only : ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, &
          rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3, &
          gamma0, gamma1, gamma2, gamma3, gcp, xx, ss, ssi, ssj, ssk, dd2wall, &
-         sFace, iStart, iEnd, jStart, jEnd, iSize, jSize
+         iStart, iEnd, jStart, jEnd, iSize, jSize
     use inputPhysics, only: cpModel, equations
     implicit none
 
@@ -876,7 +875,7 @@ module utils
     logical, intent(in) :: spatialPointers
 
     ! Determine the sizes of each face and point to just the range we
-    ! need on each face.
+    ! need on each face. 
     iStart = BCData(nn)%icBeg
     iEnd   = BCData(nn)%icEnd
     jStart = BCData(nn)%jcBeg
@@ -1072,63 +1071,45 @@ module utils
        gcp => globalCell(1:, 1:, kl)
     end select
 
-    if (spatialPointers) then
-         select case (BCFaceID(nn))
-         case (iMin)
-            xx => x(1,:,:,:)
-            ssi => si(1,:,:,:)
-            ssj => sj(2,:,:,:)
-            ssk => sk(2,:,:,:)
-            ss  => s (2,:,:,:)
-            if( addGridVelocities ) then 
-               sFace => sFaceI(1,:,:)
-            end if
-         case (iMax)
-            xx => x(il,:,:,:)
-            ssi => si(il,:,:,:)
-            ssj => sj(il,:,:,:)
-            ssk => sk(il,:,:,:)
-            ss  =>  s(il,:,:,:)
-            if( addGridVelocities ) then 
-               sFace => sFaceI(il,:,:)
-            end if
-         case (jMin)
-            xx => x(:,1,:,:)
-            ssi => sj(:,1,:,:)
-            ssj => si(:,2,:,:)
-            ssk => sk(:,2,:,:)
-            ss   => s(:,2,:,:)
-            if( addGridVelocities ) then 
-               sFace => sFaceJ(:,1,:)
-            end if
-         case (jMax)
-            xx => x(:,jl,:,:)
-            ssi => sj(:,jl,:,:)
-            ssj => si(:,jl,:,:)
-            ssk => sk(:,jl,:,:)
-            ss  =>  s(:,jl,:,:)
-            if( addGridVelocities ) then
-               sFace => sFaceJ(:,jl,:)
-            end if
-         case (kMin)
-            xx => x(:,:,1,:)
-            ssi => sk(:,:,1,:)
-            ssj => si(:,:,2,:)
-            ssk => sj(:,:,2,:)
-            ss  =>  s(:,:,2,:)
-            if( addGridVelocities ) then
-               sFace => sFaceK(:,:,1)
-            end if
-         case (kMax) 
-            xx => x(:,:,kl,:)
-            ssi => sk(:,:,kl,:)
-            ssj => si(:,:,kl,:)
-            ssk => sj(:,:,kl,:)
-            ss  =>  s(:,:,kl,:)
-            if( addGridVelocities ) then
-               sFace => sFaceK(:,:,kl)
-            end if
-         end select
+    if (spatialPointers) then 
+       select case (BCFaceID(nn))
+       case (iMin)
+          xx => x(1,:,:,:)
+          ssi => si(1,:,:,:)
+          ssj => sj(2,:,:,:)
+          ssk => sk(2,:,:,:)
+          ss  => s (2,:,:,:)
+       case (iMax)
+          xx => x(il,:,:,:)
+          ssi => si(il,:,:,:)
+          ssj => sj(il,:,:,:)
+          ssk => sk(il,:,:,:)
+          ss  =>  s(il,:,:,:)
+       case (jMin)
+          xx => x(:,1,:,:)
+          ssi => sj(:,1,:,:)
+          ssj => si(:,2,:,:)
+          ssk => sk(:,2,:,:)
+          ss   => s(:,2,:,:)
+       case (jMax)
+          xx => x(:,jl,:,:)
+          ssi => sj(:,jl,:,:)
+          ssj => si(:,jl,:,:)
+          ssk => sk(:,jl,:,:)
+          ss  =>  s(:,jl,:,:)
+       case (kMin)
+          xx => x(:,:,1,:)
+          ssi => sk(:,:,1,:)
+          ssj => si(:,:,2,:)
+          ssk => sj(:,:,2,:)
+          ss  =>  s(:,:,2,:)
+       case (kMax)
+          xx => x(:,:,kl,:)
+          ssi => sk(:,:,kl,:)
+          ssj => si(:,:,kl,:)
+          ssk => sj(:,:,kl,:)
+          ss  =>  s(:,:,kl,:)
+       end select
 
        if(equations == RANSEquations) then
           select case (BCFaceID(nn))
@@ -1336,7 +1317,7 @@ module utils
 
     ! These spatial pointers are only required for
     ! forcesAndMoments. Eulerwall normal moment is is reverse AD'ed.
-    if (spatialPointers) then
+    if (spatialPointers) then 
        select case (BCFaceID(nn))
        case (iMin)
 
@@ -1365,10 +1346,10 @@ module utils
 
   subroutine resetBCPointers(nn, spatialPointers)
     !
-    !       resetBCPointers nullifyies the boundary pointers. For reverse
-    !       mode AD it copies the values back in to the respective arrays
+    !       resetBCPointers nullifyies the boundary pointers. For reverse  
+    !       mode AD it copies the values back in to the respective arrays  
     !
-    use constants
+    use constants 
     use blockPointers, only : w, p, rlv, rev, gamma, x, d2wall, &
          si, sj, sk, s,  globalCell, BCData, nx, il, ie, ib, &
          ny, jl, je, jb, nz, kl, ke, kb, BCFaceID
@@ -1562,7 +1543,7 @@ module utils
 
     ! These spatial pointers are only required for
     ! forcesAndMoments. Eulerwall normal moment is is reverse AD'ed.
-    if (spatialPointers) then
+    if (spatialPointers) then 
        select case (BCFaceID(nn))
        case (iMin)
           x(1,0:je,0:ke,:)  = xx(1:je+1,1:ke+1,:)
@@ -1625,12 +1606,12 @@ module utils
 
   subroutine computeLeastSquaresRegression(y,x,npts,m,b)
     !
-    !       Computes the slope of best fit for a set of x,y data of length
-    !       npts
+    !       Computes the slope of best fit for a set of x,y data of length 
+    !       npts                                                           
     !
     use constants
     implicit none
-    !Subroutine arguments
+    !Subroutine arguments 
     integer(kind=intType)::npts
     real(kind=realType),dimension(npts)  :: x,y
     real(kind=realType)::m,b
@@ -1660,18 +1641,18 @@ module utils
   subroutine computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
        dcdalphadot, dcdq, dcdqdot)
     !
-    !      Computes the stability derivatives based on the time spectral
-    !      solution of a given mesh. Takes in the force coefficients at
-    !      all time instantces and computes the agregate parameters
+    !      Computes the stability derivatives based on the time spectral  
+    !      solution of a given mesh. Takes in the force coefficients at   
+    !      all time instantces and computes the agregate parameters       
     !
     use constants
-    use communication
-    use inputPhysics
-    use inputTimeSpectral
+    use communication     
+    use inputPhysics      
+    use inputTimeSpectral 
     use inputTSStabDeriv
-    use flowvarrefstate
-    use monitor
-    use section
+    use flowvarrefstate   
+    use monitor           
+    use section           
     use inputMotion
     implicit none
 
@@ -1752,7 +1733,7 @@ module utils
        !    call computeLeastSquaresRegression(BaseCoef(:,i),dphiz,nTimeIntervalsSpectral,dcdq(i),coef0(i))
        ! end do
 
-       ! ! now subtract off estimated cl,cmz and use remainder to compute
+       ! ! now subtract off estimated cl,cmz and use remainder to compute 
        ! ! clqdot and cmzqdot.
        ! do i = 1,8
        !    do sps = 1,nTimeIntervalsSpectral
@@ -1791,7 +1772,7 @@ module utils
                degreeFourAlpha,  omegaFourAlpha,     &
                cosCoefFourAlpha, sinCoefFourAlpha, t(1))
 
-          ! THIS CALL IS WRONG!!!!
+          ! THIS CALL IS WRONG!!!! 
           !call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha+intervalAlpha(sps), beta)
 
           BaseCoef(sps,1) = fact*(&
@@ -1815,7 +1796,7 @@ module utils
           call computeLeastSquaresRegression(BaseCoef(:,i),intervalAlpha,nTimeIntervalsSpectral,dcdAlpha(i),coef0(i))
        end do
 
-       ! now subtract off estimated cl,cmz and use remainder to compute
+       ! now subtract off estimated cl,cmz and use remainder to compute 
        ! clalphadot and cmzalphadot.
        do i = 1,8
           do sps = 1,nTimeIntervalsSpectral
@@ -1839,25 +1820,25 @@ module utils
 
   subroutine getDirAngle(freeStreamAxis,liftAxis,liftIndex,alpha,beta)
     !
-    !      Convert the wind axes to angle of attack and side slip angle.
-    !      The direction angles alpha and beta are computed given the
-    !      components of the wind direction vector (freeStreamAxis), the
-    !      lift direction vector (liftAxis) and assuming that the
-    !      body direction (xb,yb,zb) is in the default ijk coordinate
-    !      system. The rotations are determined by first determining
-    !      whether the lift is primarily in the j or k direction and then
-    !      determining the angles accordingly.
-    !      direction vector:
-    !        1) Rotation about the zb or yb -axis: alpha clockwise (CW)
-    !           (xb,yb,zb) -> (x1,y1,z1)
-    !        2) Rotation about the yl or z1 -axis: beta counter-clockwise
-    !           (CCW) (x1,y1,z1) -> (xw,yw,zw)
-    !         input arguments:
-    !            freeStreamAxis = wind vector in body axes
-    !            liftAxis       = lift direction vector in body axis
-    !         output arguments:
-    !            alpha    = angle of attack in radians
-    !            beta     = side slip angle in radians
+    !      Convert the wind axes to angle of attack and side slip angle.  
+    !      The direction angles alpha and beta are computed given the     
+    !      components of the wind direction vector (freeStreamAxis), the  
+    !      lift direction vector (liftAxis) and assuming that the         
+    !      body direction (xb,yb,zb) is in the default ijk coordinate     
+    !      system. The rotations are determined by first determining      
+    !      whether the lift is primarily in the j or k direction and then 
+    !      determining the angles accordingly.                            
+    !      direction vector:                                              
+    !        1) Rotation about the zb or yb -axis: alpha clockwise (CW)   
+    !           (xb,yb,zb) -> (x1,y1,z1)                                  
+    !        2) Rotation about the yl or z1 -axis: beta counter-clockwise 
+    !           (CCW) (x1,y1,z1) -> (xw,yw,zw)                            
+    !         input arguments:                                            
+    !            freeStreamAxis = wind vector in body axes                
+    !            liftAxis       = lift direction vector in body axis      
+    !         output arguments:                                           
+    !            alpha    = angle of attack in radians                    
+    !            beta     = side slip angle in radians                    
     !
     use constants
 
@@ -1931,14 +1912,14 @@ module utils
 
   subroutine stabilityDerivativeDriver
     !
-    !      Runs the Time spectral stability derivative routines from the
-    !      main program file
+    !      Runs the Time spectral stability derivative routines from the  
+    !      main program file                                              
     !
     use precision
     implicit none
     !
     !     Local variables.
-    !
+    ! 
     real(kind=realType),dimension(8)::dcdalpha,dcdalphadot,dcdbeta,&
          dcdbetadot,dcdMach,dcdMachdot
     real(kind=realType),dimension(8)::dcdp,dcdpdot,dcdq,dcdqdot,dcdr,dcdrdot
@@ -1949,11 +1930,11 @@ module utils
   end subroutine stabilityDerivativeDriver
   subroutine setCoefTimeIntegrator
     !
-    !       setCoefTimeIntegrator determines the coefficients of the
-    !       time integration scheme in unsteady mode. Normally these are
-    !       equal to the coefficients corresponding to the specified
-    !       accuracy. However during the initial phase there are not
-    !       enough states in the past and the accuracy is reduced.
+    !       setCoefTimeIntegrator determines the coefficients of the       
+    !       time integration scheme in unsteady mode. Normally these are   
+    !       equal to the coefficients corresponding to the specified       
+    !       accuracy. However during the initial phase there are not       
+    !       enough states in the past and the accuracy is reduced.         
     !
     use constants
     use inputUnsteady
@@ -2126,8 +2107,8 @@ module utils
 
   subroutine maxEddyv(eddyvisMax)
     !
-    !       maxEddyv determines the maximum value of the eddy viscosity
-    !       ratio of the block given by the pointers in blockPointes.
+    !       maxEddyv determines the maximum value of the eddy viscosity    
+    !       ratio of the block given by the pointers in blockPointes.      
     !
     use constants
     use blockPointers, only : il, jl, kl, rlv, rev
@@ -2170,9 +2151,9 @@ module utils
 
   subroutine maxHdiffMach(hdiffMax, MachMax)
     !
-    !       maxHdiffMach determines the maximum value of the Mach number
-    !       and total enthalpy (or better the relative total enthalpy
-    !       difference with the freestream).
+    !       maxHdiffMach determines the maximum value of the Mach number   
+    !       and total enthalpy (or better the relative total enthalpy      
+    !       difference with the freestream).                               
     !
     use constants
     use blockPointers, only : il, jl, kl, w, p, gamma
@@ -2239,10 +2220,10 @@ module utils
 
   function delta(val1,val2)
     !
-    !       delta is a function used to determine the contents of the full
-    !       transformation matrix from the shorthand form. It returns 1
-    !       if the absolute value of the two arguments are identical.
-    !       Otherwise it returns 0.
+    !       delta is a function used to determine the contents of the full 
+    !       transformation matrix from the shorthand form. It returns 1    
+    !       if the absolute value of the two arguments are identical.      
+    !       Otherwise it returns 0.                                        
     !
     use constants
     implicit none
@@ -2266,8 +2247,8 @@ module utils
 
   logical function myIsNAN(val)
     !
-    !       myIsNAN determines whether or not the given value is a NAN and
-    !       returns the according logical.
+    !       myIsNAN determines whether or not the given value is a NAN and 
+    !       returns the according logical.                                 
     !
     use constants
     implicit none
@@ -2291,8 +2272,8 @@ module utils
   !
   subroutine nullifyCGNSDomPointers(nn)
     !
-    !       nullifyCGNSDomPointers nullifies all the pointers of the
-    !       given CGNS block.
+    !       nullifyCGNSDomPointers nullifies all the pointers of the       
+    !       given CGNS block.                                              
     !
     use constants
     use cgnsGrid, only : cgnsDoms
@@ -2311,8 +2292,8 @@ module utils
 
   subroutine nullifyFlowDomPointers(nn,level,sps)
     !
-    !       nullifyFlowDomPointers nullifies all the pointers of the
-    !       given block.
+    !       nullifyFlowDomPointers nullifies all the pointers of the       
+    !       given block.                                                   
     !
     use constants
     use block, only : flowDoms
@@ -2511,9 +2492,9 @@ module utils
   subroutine reallocateInteger(intArray, newSize, oldSize, &
        alwaysFreeMem)
     !
-    !       reallocateInteger reallocates the given integer array to the
-    !       given new size. The old values of the array are copied. Note
-    !       that newSize can be both smaller and larger than oldSize.
+    !       reallocateInteger reallocates the given integer array to the   
+    !       given new size. The old values of the array are copied. Note   
+    !       that newSize can be both smaller and larger than oldSize.      
     !
     use constants
     implicit none
@@ -2575,10 +2556,10 @@ module utils
   subroutine reallocateMpiOffsetKindInteger(intArray, newSize, &
        oldSize, alwaysFreeMem)
     !
-    !       reallocateMpiOffsetKindInteger reallocates the given
-    !       mpi_offset_kind integer array to the given new size. The old
-    !       values of the array are copied. Note that newSize can be both
-    !       smaller and larger than oldSize.
+    !       reallocateMpiOffsetKindInteger reallocates the given           
+    !       mpi_offset_kind integer array to the given new size. The old   
+    !       values of the array are copied. Note that newSize can be both  
+    !       smaller and larger than oldSize.                               
     !
     use constants
     implicit none
@@ -2641,10 +2622,10 @@ module utils
        oldSize1, oldSize2,           &
        alwaysFreeMem)
     !
-    !       reallocateInteger2 reallocates the given 2D integer array to
-    !       the given new sizes. The old values of the array are copied.
-    !       Note that the newSizes can be both smaller and larger than
-    !       the oldSizes.
+    !       reallocateInteger2 reallocates the given 2D integer array to   
+    !       the given new sizes. The old values of the array are copied.   
+    !       Note that the newSizes can be both smaller and larger than     
+    !       the oldSizes.                                                  
     !
     use constants
     implicit none
@@ -2716,9 +2697,9 @@ module utils
   subroutine reallocateReal(realArray, newSize, oldSize, &
        alwaysFreeMem)
     !
-    !       ReallocateReal reallocates the given real array to the given
-    !       new size. The old values of the array are copied. Note that
-    !       newSize can be both smaller and larger than oldSize.
+    !       ReallocateReal reallocates the given real array to the given   
+    !       new size. The old values of the array are copied. Note that    
+    !       newSize can be both smaller and larger than oldSize.           
     !
     use constants
     implicit none
@@ -2777,10 +2758,10 @@ module utils
        oldSize1, oldSize2,            &
        alwaysFreeMem)
     !
-    !       ReallocateReal2 reallocates the given 2d integer array to
-    !       the given new sizes. The old values of the array are copied.
-    !       Note that the newSizes can be both smaller and larger than
-    !       the oldSizes.
+    !       ReallocateReal2 reallocates the given 2d integer array to      
+    !       the given new sizes. The old values of the array are copied.   
+    !       Note that the newSizes can be both smaller and larger than     
+    !       the oldSizes.                                                  
     !
     use constants
     implicit none
@@ -2849,41 +2830,28 @@ module utils
 
   end subroutine reallocateReal2
 
-  subroutine setBufferSizes(level, sps, determine1to1Buf,    &
-       determineSlidingBuf, &
-       determineOversetBuf)
+  subroutine setBufferSizes(level, sps, determine1to1Buf, determineOversetBuf)
     !
-    !       setBufferSizes determines the size of the send and receive
-    !       buffers for this grid level. After that the maximum value of
-    !       these sizes and the currently stored value is taken, such that
-    !       for all mg levels the same buffer can be used. Normally the
-    !       size on the finest grid should be enough, but it is just as
-    !       safe to check on all mg levels. A distinction is made between
-    !       1 to 1 and sliding mesh communication, because these happen
-    !       consecutively and not simultaneously. Consequently the actual
-    !       buffer size is the maximum of the two and not the sum.
-    !       For steady state computations a mixing plane boundary
-    !       condition is used instead of a sliding mesh. However, both
-    !       communication patterns are allocated and initialized.
-    !       Therefore the maximum of the two can be taken without checking
-    !       the situation we are dealing with.
+    !       setBufferSizes determines the size of the send and receive     
+    !       buffers for this grid level. After that the maximum value of   
+    !       these sizes and the currently stored value is taken, such that 
+    !       for all mg levels the same buffer can be used. Normally the    
+    !       size on the finest grid should be enough, but it is just as    
+    !       safe to check on all mg levels.                             
     !
     use constants
-    use commMixing, only : commPatternMixing
-    use commSliding, only : commSlidingCell_2nd, sendBufferSizeSlide, recvBufferSizeSlide
     use communication, only : commPatternNode_1st, commPatternCell_2nd, &
          commPatternOverset,  recvBufferSize, recvBufferSize_1to1, &
          recvBufferSizeOver, recvBufferSizeOver, sendBufferSize, recvBufferSize, &
          sendBufferSizeOver, sendBufferSize_1to1
     use flowVarRefState, only : nw, eddyModel, viscous
     use inputPhysics, only : cpModel
-    use interfaceGroups, only : nInterfaceGroups
     implicit none
     !
     !      Subroutine arguments.
     !
     integer(kind=intType), intent(in) :: level, sps
-    logical, intent(in) :: determine1to1Buf, determineSlidingBuf
+    logical, intent(in) :: determine1to1Buf
     logical, intent(in) :: determineOversetBuf
     !
     !      Local variables.
@@ -2941,52 +2909,6 @@ module utils
 
     endif
 
-    ! Check if the sliding mesh communication must be considered.
-
-    if( determineSlidingBuf ) then
-
-       ! Only the second level cell halo communication pattern needs
-       ! to be considered. Note that there is no nodal communication
-       ! pattern for sliding meshes.
-
-       i = commSlidingCell_2nd(level,sps)%nProcSend
-       sendSize = commSlidingCell_2nd(level,sps)%nsendCum(i)
-
-       i = commSlidingCell_2nd(level,sps)%nProcRecv
-       recvSize = commSlidingCell_2nd(level,sps)%nrecvCum(i)
-
-       ! Multiply sendSize and recvSize with the number of variables to
-       ! be communicated.
-
-       sendSize = sendSize*nVarComm
-       recvSize = recvSize*nVarComm
-
-       ! Store the maximum of the current values and the old values
-       ! in sendBufferSizeSlide and recvBufferSizeSlide.
-
-       sendBufferSizeSlide = max(sendBufferSizeSlide, sendSize)
-       recvBufferSizeSlide = max(recvBufferSizeSlide, recvSize)
-
-       ! Take possible mixing plane boundaries into account.
-
-       sendSize = 0
-       do i=1,nInterfaceGroups
-          sendSize = max(sendSize,                            &
-               commPatternMixing(level,i,1)%nInter, &
-               commPatternMixing(level,i,2)%nInter)
-       enddo
-
-       sendSize = sendSize*nVarComm
-       recvSize = sendSize
-
-       ! Store the maximum value in sendBufferSizeSlide and
-       ! recvBufferSizeSlide.
-
-       sendBufferSizeSlide = max(sendBufferSizeSlide, sendSize)
-       recvBufferSizeSlide = max(recvBufferSizeSlide, recvSize)
-
-    endif
-
     ! Check if the overset communication must be considered.
 
     if( determineOversetBuf ) then
@@ -3016,21 +2938,19 @@ module utils
     ! obtain the actual size to be allocated.
 
     sendBufferSize = max(sendBufferSize_1to1, &
-         sendBufferSizeOver,  &
-         sendBufferSizeSlide)
+         sendBufferSizeOver)
     recvBufferSize = max(recvBufferSize_1to1, &
-         recvBufferSizeOver,  &
-         recvBufferSizeSlide)
+         recvBufferSizeOver)
 
   end subroutine setBufferSizes
 
   subroutine setPointers(nn,mm,ll)
     !
-    !       setPointers makes the variables in blockPointers point to
-    !       block nn for grid level mm and spectral solution ll.
+    !       setPointers makes the variables in blockPointers point to      
+    !       block nn for grid level mm and spectral solution ll.           
     !
     ! Make an exception to use..only. We literally need everything
-    ! from blockPointers so use a bare use.
+    ! from blockPointers so use a bare use. 
     use constants
     use blockPointers
     implicit none
@@ -3043,7 +2963,7 @@ module utils
     ! module blockPointers it is known to which block the data
     ! belongs.
 
-    sectionID   = flowDoms(nn,mm,ll)%sectionID
+    sectionID   = 1 ! We currently are only ever allowed 1 section
     nbkLocal    = nn
     nbkGlobal   = flowDoms(nn,mm,ll)%cgnsBlockID
     mgLevel     = mm
@@ -3373,11 +3293,11 @@ module utils
 
   subroutine siDensity(mass, len, mult, trans)
     !
-    !       siDensity computes the conversion from the given density
-    !       unit, which can be constructed from mass and length, to the
-    !       SI-unit kg/m^3. The conversion will look like:
-    !       density in kg/m^3 = mult*(density in NCU) + trans.
-    !       NCU means non-christian units, i.e. everything that is not SI.
+    !       siDensity computes the conversion from the given density       
+    !       unit, which can be constructed from mass and length, to the    
+    !       SI-unit kg/m^3. The conversion will look like:                 
+    !       density in kg/m^3 = mult*(density in NCU) + trans.             
+    !       NCU means non-christian units, i.e. everything that is not SI. 
     !
     use constants
     use su_cgns, only : Kilogram, meter
@@ -3408,10 +3328,10 @@ module utils
 
   subroutine siLen(len, mult, trans)
     !
-    !       siLen computes the conversion from the given length unit to
-    !       the SI-unit meter. The conversion will look like:
-    !       length in meter = mult*(length in NCU) + trans.
-    !       NCU means non-christian units, i.e. everything that is not SI.
+    !       siLen computes the conversion from the given length unit to    
+    !       the SI-unit meter. The conversion will look like:              
+    !       length in meter = mult*(length in NCU) + trans.                
+    !       NCU means non-christian units, i.e. everything that is not SI. 
     !
     use constants
     use su_cgns, only: Meter, Centimeter, millimeter, Foot, Inch
@@ -3451,11 +3371,11 @@ module utils
 
   subroutine siPressure(mass, len, time, mult, trans)
     !
-    !       siPressure computes the conversion from the given pressure
-    !       unit, which can be constructed from mass, length and time, to
-    !       the SI-unit Pa. The conversion will look like:
-    !       pressure in Pa = mult*(pressure in NCU) + trans.
-    !       NCU means non-christian units, i.e. everything that is not SI.
+    !       siPressure computes the conversion from the given pressure     
+    !       unit, which can be constructed from mass, length and time, to  
+    !       the SI-unit Pa. The conversion will look like:                 
+    !       pressure in Pa = mult*(pressure in NCU) + trans.               
+    !       NCU means non-christian units, i.e. everything that is not SI. 
     !
     use constants
     use su_cgns, only : Kilogram, Meter, Second
@@ -3486,11 +3406,11 @@ module utils
 
   subroutine siTemperature(temp, mult, trans)
     !
-    !       siTemperature computes the conversion from the given
-    !       temperature unit to the SI-unit kelvin. The conversion will
-    !       look like:
-    !       temperature in K = mult*(temperature in NCU) + trans.
-    !       NCU means non-christian units, i.e. everything that is not SI.
+    !       siTemperature computes the conversion from the given           
+    !       temperature unit to the SI-unit kelvin. The conversion will    
+    !       look like:                                                     
+    !       temperature in K = mult*(temperature in NCU) + trans.          
+    !       NCU means non-christian units, i.e. everything that is not SI. 
     !
     use constants
     use su_cgns, only : Kelvin, Celsius, Rankine, Fahrenheit
@@ -3547,11 +3467,11 @@ module utils
   end subroutine siTemperature
   subroutine siTurb(mass, len, time, temp, turbName, mult, trans)
     !
-    !       siTurb computes the conversion from the given turbulence
-    !       unit, which can be constructed from mass, len, time and temp,
-    !       to the SI-unit for the given variable. The conversion will
-    !       look like: var in SI = mult*(var in NCU) + trans.
-    !       NCU means non-christian units, i.e. everything that is not SI.
+    !       siTurb computes the conversion from the given turbulence       
+    !       unit, which can be constructed from mass, len, time and temp,  
+    !       to the SI-unit for the given variable. The conversion will     
+    !       look like: var in SI = mult*(var in NCU) + trans.              
+    !       NCU means non-christian units, i.e. everything that is not SI. 
     !
     use constants
     use su_cgns, only : Kilogram, Meter, Second, Kelvin
@@ -3584,11 +3504,11 @@ module utils
 
   subroutine siVelocity(length, time, mult, trans)
     !
-    !       siVelocity computes the conversion from the given velocity
-    !       unit, which can be constructed from length and time, to the
-    !       SI-unit m/s. The conversion will look like:
-    !       velocity in m/s = mult*(velocity in ncu) + trans.
-    !       Ncu means non-christian units, i.e. everything that is not SI.
+    !       siVelocity computes the conversion from the given velocity     
+    !       unit, which can be constructed from length and time, to the    
+    !       SI-unit m/s. The conversion will look like:                    
+    !       velocity in m/s = mult*(velocity in ncu) + trans.              
+    !       Ncu means non-christian units, i.e. everything that is not SI. 
     !
     use constants
     use su_cgns, only : Meter, CentiMeter, Millimeter, Foot, Inch, Second
@@ -3644,12 +3564,12 @@ module utils
 
   subroutine spectralInterpolCoef(nsps, t, alpScal, alpMat)
     !
-    !       spectralInterpolCoef determines the scalar and matrix
-    !       spectral interpolation coefficients for the given number of
-    !       spectral solutions for the given t, where t is the ratio of
-    !       the time and the periodic interval time. Note that the index
-    !       of the spectral solutions of both alpScal and alpMat start
-    !       at 0. In this way these coefficients are easier to determine.
+    !       spectralInterpolCoef determines the scalar and matrix          
+    !       spectral interpolation coefficients for the given number of    
+    !       spectral solutions for the given t, where t is the ratio of    
+    !       the time and the periodic interval time. Note that the index   
+    !       of the spectral solutions of both alpScal and alpMat start     
+    !       at 0. In this way these coefficients are easier to determine.  
     !
     use constants
     use inputTimeSpectral, only : nTimeIntervalsSpectral, rotMatrixSpectral
@@ -3673,7 +3593,7 @@ module utils
 
     real(kind=realType), dimension(3,3) :: rp, tmp
 
-    !       Scalar coefficients.
+    !       Scalar coefficients.                                           
     !
     ! Loop over the number of spectral solutions to compute the
     ! coefficients. Note that the loop starts at 0.
@@ -3689,7 +3609,7 @@ module utils
     do j=0,(nsps-1)
        if (mod(nsps,2).eq.0) then
           alpScal(j) = one + cos(j*pi)*cos(nsps*pi*t)
-       else
+       else 
           alpScal(j) = one + cos(j*pi*(nsps+1)/nsps)*cos((nsps+1)*pi*t)
        endif
 
@@ -3703,9 +3623,9 @@ module utils
 
     enddo
     !
-    !       Matrix coefficients. These are (can be) different for every
-    !       section and they must therefore be determined for every
-    !       section.
+    !       Matrix coefficients. These are (can be) different for every    
+    !       section and they must therefore be determined for every        
+    !       section.                                                       
     !
     ! Loop over the number of sections in the grid.
 
@@ -3718,8 +3638,8 @@ module utils
        m        = nsps*sections(nn)%nSlices
        if (mod(m,2).eq.0) then
           mhalfM1 = m/2 - 1
-       else
-          mhalfM1 = (m-1)/2
+       else 
+          mhalfM1 = (m-1)/2 
        endif
        mInv    = one/real(m,realType)
        tm       = t/real(sections(nn)%nSlices,realType)
@@ -3810,10 +3730,10 @@ module utils
 
   subroutine deallocateTempMemory(resNeeded)
     !
-    !       deallocateTempMemory deallocates memory used in the solver,
-    !       but which is not needed to store the actual solution. In this
-    !       way the memory can be used differently, e.g. when writing the
-    !       solution or computing the wall distances.
+    !       deallocateTempMemory deallocates memory used in the solver,    
+    !       but which is not needed to store the actual solution. In this  
+    !       way the memory can be used differently, e.g. when writing the  
+    !       solution or computing the wall distances.                      
     !
     use constants
     use block, only : flowDoms, nDom
@@ -3884,8 +3804,8 @@ module utils
 
   subroutine allocateTempMemory(resNeeded)
     !
-    !       AllocateTempMemory allocates the memory again that was
-    !       temporarily deallocted by deallocateTempMemory.
+    !       AllocateTempMemory allocates the memory again that was         
+    !       temporarily deallocted by deallocateTempMemory.                
     !
     use constants
     use block, only : flowDoms, nDom
@@ -3984,7 +3904,7 @@ module utils
 
     ! The purpose of this function is to determine what coordinate
     ! direction the mirror plane is in. It does NOT handle multiple mirror
-    ! planes. It is used just to determine what the lift direction is.
+    ! planes. It is used just to determine what the lift direction is. 
 
     use constants
     use blockPointers, only : x, il, jl, kl, BCType, nDom, BCData, BCFaceID, nBocos
@@ -4033,7 +3953,7 @@ module utils
              ! Cross Product
              cp(1) = (v1(2)*v2(3) - v1(3)*v2(2))
              cp(2) = (v1(3)*v2(1) - v1(1)*v2(3))
-             cp(3) = (v1(1)*v2(2) - v1(2)*v2(1))
+             cp(3) = (v1(1)*v2(2) - v1(2)*v2(1))  
 
              ! Only interesed in abs values
              cp = abs(cp)
@@ -4072,10 +3992,10 @@ module utils
 
   subroutine writeIntroMessage
     !
-    !       writeIntroMessage writes a message to stdout with
-    !       information how the executable was built, e.g. whether single
-    !       or double precision is used for the integers and reals, etc.
-    !       To avoid a messy output only processor 0 prints this info.
+    !       writeIntroMessage writes a message to stdout with              
+    !       information how the executable was built, e.g. whether single  
+    !       or double precision is used for the integers and reals, etc.   
+    !       To avoid a messy output only processor 0 prints this info.     
     !
     use constants
     use communication, only : myid, nProc
@@ -4173,9 +4093,9 @@ module utils
     integer(kind=intType) :: nFound, i, j, nAlloc
     type(kdtree2_result), allocatable, dimension(:) :: results
 
-    if (N==0) then
+    if (N==0) then 
        nUnique = 0
-       return
+       return 
     end if
 
     ! We will use the KD_tree to do most of the heavy lifting here:
@@ -4195,24 +4115,24 @@ module utils
 
     ! Loop over all nodes
     do i=1, N
-       if (link(i) == 0) then
+       if (link(i) == 0) then 
           call kdtree2_r_nearest(mytree, pts(:, i), tol2, nFound, nAlloc, results)
 
           ! Expand if necesary and re-run
-          if (nfound > nalloc) then
+          if (nfound > nalloc) then 
              deallocate(results)
              nalloc = nfound
              allocate(results(nalloc))
              call kdtree2_r_nearest(mytree, pts(:, i), tol2, nFound, nAlloc, results)
           end if
 
-          if (nFound == 1) then
+          if (nFound == 1) then 
              ! This one is easy, it is already a unique node
              nUnique = nUnique + 1
              link(i) = nUnique
              uniquePts(:, nUnique) = pts(:, i)
           else
-             if (link(i) == 0) then
+             if (link(i) == 0) then 
                 ! This node hasn't been assigned yet:
                 nUnique = nUnique + 1
                 uniquePts(:, nUnique) = pts(:, i)
@@ -4232,9 +4152,9 @@ module utils
   end subroutine pointReduce
   subroutine releaseMemoryPart1
     !
-    !       releaseMemoryPart1 releases all the memory on the coarser
-    !       grids of flowDoms and the fine grid memory which is not needed
-    !       for the possible interpolation of the spectral solution.
+    !       releaseMemoryPart1 releases all the memory on the coarser      
+    !       grids of flowDoms and the fine grid memory which is not needed 
+    !       for the possible interpolation of the spectral solution.       
     !
 
     ! This is a free-for-all on the imports. Oh well.
@@ -4249,9 +4169,6 @@ module utils
     use iteration
     use cgnsGrid
     use section
-    use interfaceGroups
-    use commSliding
-    use commMixing
     use wallDistanceData
     use adjointVars
     use ADJointPETSc
@@ -4346,7 +4263,7 @@ module utils
     enddo spectralLoop
 
     ! derivative values
-    if (derivVarsAllocated) then
+    if (derivVarsAllocated) then 
        call deallocDerivativeValues(1)
     end if
 
@@ -4355,23 +4272,23 @@ module utils
        deallocate(cycleStrategy)
     end if
 
-    if (allocated(monNames)) then
+    if (allocated(monNames)) then 
        deallocate(monNames)
     end if
 
-    if (allocated(monLoc)) then
+    if (allocated(monLoc)) then 
        deallocate(monLoc)
     end if
 
-    if (allocated(monGlob)) then
+    if (allocated(monGlob)) then 
        deallocate(monGlob)
     end if
 
-    if (allocated(monRef)) then
+    if (allocated(monRef)) then 
        deallocate(monRef)
     end if
 
-    if (allocated(cgnsFamilies)) then
+    if (allocated(cgnsFamilies)) then 
        deallocate(cgnsFamilies)
     end if
 
@@ -4380,7 +4297,6 @@ module utils
          bcIDsDomainInterfaces,  &
          famIDsSliding)
     deallocate(sections)
-    deallocate(myinterfaces)
 
     ! Destroy the traction force stuff
     do j=1, size(familyExchanges, 2)
@@ -4406,11 +4322,6 @@ module utils
        call deallocateInternalCommType(internalCell_2nd(l))
        call deallocateInternalCommType(internalNode_1st(l))
 
-       do sps=1,nTimeIntervalsSpectral
-          call deallocateSlidingCommType(commslidingCell_1st(l,sps))
-          call deallocateSlidingCommType(commslidingCell_2nd(l,sps))
-       end do
-
     end do
     deallocate(nCellGlobal)
 
@@ -4419,17 +4330,12 @@ module utils
          commPatternCell_1st, commPatternCell_2nd, commPatternNode_1st, &
          internalCell_1st, internalCell_2nd, internalNode_1st)
 
-    ! The remainder of the comms are just deallocated...these still need
-    ! to be treated properly
-    deallocate(commSlidingCell_1st, commSlidingCell_2nd, &
-         intSlidingCell_1st, intSlidingCell_2nd, commPatternMixing)
-
     ! Send/recv buffer
     if (allocated(sendBuffer)) then
        deallocate(sendBuffer)
     end if
 
-    if (allocated(recvBuffer)) then
+    if (allocated(recvBuffer)) then 
        deallocate(recvBuffer)
     end if
 
@@ -4497,7 +4403,7 @@ module utils
     deallocate(comm%indexrecvproc, stat=ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    if (comm%nPeriodic > 0) then
+    if (comm%nPeriodic > 0) then 
        do i=1,comm%nPeriodic
           deallocate(comm%periodicData(i)%block, stat=ierr)
           call EChk(ierr, __FILE__, __LINE__)
@@ -4534,7 +4440,7 @@ module utils
     deallocate(comm%haloIndices, stat=ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    if (comm%nPeriodic > 0) then
+    if (comm%nPeriodic > 0) then 
        do i=1,comm%nPeriodic
           deallocate(comm%periodicData(i)%block, stat=ierr)
           call EChk(ierr, __FILE__, __LINE__)
@@ -4548,27 +4454,13 @@ module utils
 
   end subroutine deallocateInternalCommType
 
-  subroutine deallocateslidingCommType(comm)
-    use communication
-    use commSliding
-    implicit none
-    type(slidingCommType) :: comm
-    integer(kind=intType) :: ierr
-    deallocate(comm%nSendCum, stat=ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-
-    deallocate(comm%nRecvCum, stat=ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-
-  end subroutine deallocateslidingCommType
-
   !      ---------------------------------------------------------------------------
 
   subroutine releaseMemoryPart2
     !
-    !       releaseMemoryPart2 releases all the memory of flowDoms on the
-    !       finest grid as well as the memory allocated in the other
-    !       modules.
+    !       releaseMemoryPart2 releases all the memory of flowDoms on the  
+    !       finest grid as well as the memory allocated in the other       
+    !       modules.                                                       
     !
     use block
     use inputTimeSpectral
@@ -4644,8 +4536,8 @@ module utils
 
   subroutine deallocateBlock(nn, level, sps)
     !
-    !       deallocateBlock deallocates all the allocated memory of the
-    !       given block.
+    !       deallocateBlock deallocates all the allocated memory of the    
+    !       given block.                                                   
     !
     use constants
     use block, only : viscSubfaceType, BCDataType, flowDoms
@@ -5378,10 +5270,10 @@ module utils
 
   integer function setCGNSRealType()
     !
-    !       setCGNSRealType sets the cgns real type, depending on the
-    !       compiler options. Note that quadrupole precision is not
-    !       supported by CGNS; double precision is used instead for the
-    !       CGNS IO.
+    !       setCGNSRealType sets the cgns real type, depending on the      
+    !       compiler options. Note that quadrupole precision is not        
+    !       supported by CGNS; double precision is used instead for the    
+    !       CGNS IO.                                                       
     !
     use su_cgns, only : RealSingle, RealDouble
     implicit none
@@ -5406,8 +5298,8 @@ module utils
 
   subroutine returnFail(routineName, errorMessage)
     !
-    !       returnFail writes an error message to standard output and
-    !       sets fail flags to be returned to python.
+    !       returnFail writes an error message to standard output and      
+    !       sets fail flags to be returned to python.                      
     !
     use constants
     use communication, only : sumb_comm_world, myid
@@ -5524,7 +5416,7 @@ module utils
   subroutine EChk(ierr, file, line)
 
     ! Check if ierr that resulted from a petsc or MPI call is in fact an
-    ! error.
+    ! error. 
     use constants
     use communication, only : sumb_comm_world, myid
     implicit none
@@ -5561,7 +5453,7 @@ module utils
 
   subroutine convertToLowerCase(string)
     !
-    !       convertToLowerCase converts the given string to lower case.
+    !       convertToLowerCase converts the given string to lower case.    
     !
     use constants
     implicit none
@@ -5635,12 +5527,12 @@ module utils
   end function EulerWallsPresent
   subroutine allocConvArrays(nIterTot)
     !
-    !       allocConvArrays allocates the memory for the convergence
-    !       arrays. The number of iterations allocated, nIterTot, is
-    !       enough to store the maximum number of iterations specified
-    !       plus possible earlier iterations read from the restart file.
-    !       This routine MAY be called with data already inside of
-    !       convArray and this will be saved.
+    !       allocConvArrays allocates the memory for the convergence       
+    !       arrays. The number of iterations allocated, nIterTot, is       
+    !       enough to store the maximum number of iterations specified     
+    !       plus possible earlier iterations read from the restart file.   
+    !       This routine MAY be called with data already inside of         
+    !       convArray and this will be saved.                              
     !
     use constants
     use inputTimeSpectral, only : nTimeIntervalsSpectral
@@ -5659,7 +5551,7 @@ module utils
     ! Return immediately if the convergence history (of the inner
     ! iterations) does not need to be stored. This logical can
     ! only be .false. for an unsteady computation.
-    if(.not. storeConvInnerIter) return
+    if(.not. storeConvInnerIter) return 
 
     if (allocated(convArray)) then
        deallocate(convArray)
@@ -5715,7 +5607,7 @@ module utils
 
   subroutine convergenceHeader
     !
-    !       convergenceHeader writes the convergence header to stdout.
+    !       convergenceHeader writes the convergence header to stdout.     
     !
     use cgnsNames
     use inputPhysics
@@ -5724,7 +5616,6 @@ module utils
     use monitor
     use iteration
     use inputIteration
-    use couplerParam     ! eran_idendifyname
     implicit none
     !
     !      Local variables.
@@ -5931,10 +5822,10 @@ module utils
   end subroutine convergenceHeader
   subroutine sumResiduals(nn, mm)
     !
-    !       sumResiduals adds the sum of the residuals squared at
-    !       position nn to the array monLoc at position mm. It is assumed
-    !       that the arrays of blockPointers already point to the correct
-    !       block.
+    !       sumResiduals adds the sum of the residuals squared at          
+    !       position nn to the array monLoc at position mm. It is assumed  
+    !       that the arrays of blockPointers already point to the correct  
+    !       block.                                                         
     !
     use blockPointers
     use monitor
@@ -5963,8 +5854,8 @@ module utils
 
   subroutine sumAllResiduals(mm)
     !
-    !       sumAllResiduals adds the sum of the ALL residuals squared at
-    !       to monLoc at position mm.
+    !       sumAllResiduals adds the sum of the ALL residuals squared at   
+    !       to monLoc at position mm.                                      
     !
     use blockPointers
     use monitor

@@ -55,7 +55,8 @@
 
        domains: do nn=1,nDom
 
-         sectionID = flowDoms(nn,1,1)%sectionID
+          ! Hard coded section ID to 1
+         sectionID = 1
 
          ! Determine the two unit vectors in the plane normal to
          ! the rotation axis of this section.

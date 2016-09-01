@@ -21,7 +21,7 @@ clean:
 	rm -fr src/build/*.o
 	rm -fr src/build/*.a
 	rm -fr src/build/*.so
-	rm -fr src/sumb_project.dep
+	rm -fr src/build/sumb_project.dep
 	rm -f *~ config.mk;
 
 
