@@ -8,8 +8,6 @@
        use block
        use blockPointers, only : BCType, nBocos
        use cgnsGrid
-       use commMixing
-       use commSliding
        use bcdata, only : initBCData, allocMemBCData
        use communication, only : sumb_comm_world, commPatternCell_1st, &
             commPatternCell_2nd, commPatternNode_1st, internalCell_1st, &
@@ -19,7 +17,6 @@
             recvBuffer, sendBufferSize, recvBufferSize
        use inputPhysics
        use inputTimeSpectral
-       use interfaceGroups
        use section
        use wallDistance, only : xVolumeVec, xSurfVec, wallScatter, &
             wallDistanceDataAllocated, updateWallAssociation, &
@@ -94,33 +91,6 @@
           internalNode_1st(i)%nPeriodic = 0
        end do
 
-       ! Allocate the memory for the sliding mesh communication pattern.
-       ! This pattern changes in time and therefore each spectral time
-       ! value has its own sliding mesh communication pattern.
-
-       mm = nTimeIntervalsSpectral
-
-       allocate(commSlidingCell_1st(nn,mm), &
-                commSlidingCell_2nd(nn,mm), &
-                intSlidingCell_1st(nn,mm),  &
-                intSlidingCell_2nd(nn,mm),  stat=ierr)
-       if(ierr /= 0)                     &
-         call terminate("preprocessing", &
-                        "Memory allocation failure for &
-                        &slidingCommPatterns")
-
-       ! Allocate the memory for the communication of the mixing plane
-       ! halo cells. As this type of "boundary condition" can only
-       ! be applied for steady state computations, there is no
-       ! dependency on the number of time spectral solutions.
-
-       mm = nInterfaceGroups
-       allocate(commPatternMixing(nn,mm,2), stat=ierr)
-       if(ierr /= 0)                     &
-         call terminate("preprocessing", &
-                        "Memory allocation failure for &
-                        &commPatternMixing")
-
        ! Allocate the memory for the overset mesh communication pattern.
        ! This pattern changes in time and therefore each spectral time
        ! value has its own sliding mesh communication pattern.
@@ -141,12 +111,10 @@
 
        sendBufferSize_1to1  = 0
        recvBufferSize_1to1  = 0
-       sendBufferSizeSlide  = 0
-       recvBufferSizeSlide  = 0
        sendBufferSizeOver   = 0
        recvBufferSizeOver   = 0
 
-       call setBufferSizes(1_intType, 1_intType, .true., .false., .false.)
+       call setBufferSizes(1_intType, 1_intType, .true., .false.)
 
        ! Loop to create the coarse grid levels.
 
@@ -158,7 +126,7 @@
 
          call createCoarseBlocks(level)
          call determineCommPattern(level)
-         call setBufferSizes(level, 1_intType, .true., .false., .false.)
+         call setBufferSizes(level, 1_intType, .true., .false.)
 
        enddo
 
@@ -233,7 +201,6 @@
 
        do level=1,nLevels
          call xhalo(level)
-         call slidingComm(level, .true.)
          call allocateMetric(level)
          call metric(level)
          call setPorosities(level)

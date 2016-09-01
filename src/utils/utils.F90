@@ -2830,41 +2830,28 @@ module utils
 
   end subroutine reallocateReal2
 
-  subroutine setBufferSizes(level, sps, determine1to1Buf,    &
-       determineSlidingBuf, & 
-       determineOversetBuf)
+  subroutine setBufferSizes(level, sps, determine1to1Buf, determineOversetBuf)
     !
     !       setBufferSizes determines the size of the send and receive     
     !       buffers for this grid level. After that the maximum value of   
     !       these sizes and the currently stored value is taken, such that 
     !       for all mg levels the same buffer can be used. Normally the    
     !       size on the finest grid should be enough, but it is just as    
-    !       safe to check on all mg levels. A distinction is made between  
-    !       1 to 1 and sliding mesh communication, because these happen    
-    !       consecutively and not simultaneously. Consequently the actual  
-    !       buffer size is the maximum of the two and not the sum.         
-    !       For steady state computations a mixing plane boundary          
-    !       condition is used instead of a sliding mesh. However, both     
-    !       communication patterns are allocated and initialized.          
-    !       Therefore the maximum of the two can be taken without checking 
-    !       the situation we are dealing with.                             
+    !       safe to check on all mg levels.                             
     !
     use constants
-    use commMixing, only : commPatternMixing
-    use commSliding, only : commSlidingCell_2nd, sendBufferSizeSlide, recvBufferSizeSlide
     use communication, only : commPatternNode_1st, commPatternCell_2nd, &
          commPatternOverset,  recvBufferSize, recvBufferSize_1to1, &
          recvBufferSizeOver, recvBufferSizeOver, sendBufferSize, recvBufferSize, &
          sendBufferSizeOver, sendBufferSize_1to1
     use flowVarRefState, only : nw, eddyModel, viscous
     use inputPhysics, only : cpModel
-    use interfaceGroups, only : nInterfaceGroups
     implicit none
     !
     !      Subroutine arguments.
     !
     integer(kind=intType), intent(in) :: level, sps
-    logical, intent(in) :: determine1to1Buf, determineSlidingBuf
+    logical, intent(in) :: determine1to1Buf
     logical, intent(in) :: determineOversetBuf
     !
     !      Local variables.
@@ -2922,52 +2909,6 @@ module utils
 
     endif
 
-    ! Check if the sliding mesh communication must be considered.
-
-    if( determineSlidingBuf ) then
-
-       ! Only the second level cell halo communication pattern needs
-       ! to be considered. Note that there is no nodal communication
-       ! pattern for sliding meshes.
-
-       i = commSlidingCell_2nd(level,sps)%nProcSend
-       sendSize = commSlidingCell_2nd(level,sps)%nsendCum(i)
-
-       i = commSlidingCell_2nd(level,sps)%nProcRecv
-       recvSize = commSlidingCell_2nd(level,sps)%nrecvCum(i)
-
-       ! Multiply sendSize and recvSize with the number of variables to
-       ! be communicated.
-
-       sendSize = sendSize*nVarComm
-       recvSize = recvSize*nVarComm
-
-       ! Store the maximum of the current values and the old values
-       ! in sendBufferSizeSlide and recvBufferSizeSlide.
-
-       sendBufferSizeSlide = max(sendBufferSizeSlide, sendSize)
-       recvBufferSizeSlide = max(recvBufferSizeSlide, recvSize)
-
-       ! Take possible mixing plane boundaries into account.
-
-       sendSize = 0
-       do i=1,nInterfaceGroups
-          sendSize = max(sendSize,                            &
-               commPatternMixing(level,i,1)%nInter, &
-               commPatternMixing(level,i,2)%nInter)
-       enddo
-
-       sendSize = sendSize*nVarComm
-       recvSize = sendSize
-
-       ! Store the maximum value in sendBufferSizeSlide and
-       ! recvBufferSizeSlide.
-
-       sendBufferSizeSlide = max(sendBufferSizeSlide, sendSize)
-       recvBufferSizeSlide = max(recvBufferSizeSlide, recvSize)
-
-    endif
-
     ! Check if the overset communication must be considered.
 
     if( determineOversetBuf ) then
@@ -2997,11 +2938,9 @@ module utils
     ! obtain the actual size to be allocated.
 
     sendBufferSize = max(sendBufferSize_1to1, &
-         sendBufferSizeOver,  &
-         sendBufferSizeSlide)
+         sendBufferSizeOver)
     recvBufferSize = max(recvBufferSize_1to1, &
-         recvBufferSizeOver,  &
-         recvBufferSizeSlide)
+         recvBufferSizeOver)
 
   end subroutine setBufferSizes
 
@@ -3024,7 +2963,7 @@ module utils
     ! module blockPointers it is known to which block the data
     ! belongs.
 
-    sectionID   = flowDoms(nn,mm,ll)%sectionID
+    sectionID   = 1 ! We currently are only ever allowed 1 section
     nbkLocal    = nn
     nbkGlobal   = flowDoms(nn,mm,ll)%cgnsBlockID
     mgLevel     = mm
@@ -4230,9 +4169,6 @@ module utils
     use iteration
     use cgnsGrid
     use section
-    use interfaceGroups
-    use commSliding
-    use commMixing
     use wallDistanceData
     use adjointVars
     use ADJointPETSc
@@ -4361,7 +4297,6 @@ module utils
          bcIDsDomainInterfaces,  &
          famIDsSliding)
     deallocate(sections)
-    deallocate(myinterfaces)
 
     ! Destroy the traction force stuff
     do j=1, size(familyExchanges, 2)
@@ -4387,11 +4322,6 @@ module utils
        call deallocateInternalCommType(internalCell_2nd(l))
        call deallocateInternalCommType(internalNode_1st(l))
 
-       do sps=1,nTimeIntervalsSpectral
-          call deallocateSlidingCommType(commslidingCell_1st(l,sps))
-          call deallocateSlidingCommType(commslidingCell_2nd(l,sps))
-       end do
-
     end do
     deallocate(nCellGlobal)
 
@@ -4399,11 +4329,6 @@ module utils
     deallocate(&
          commPatternCell_1st, commPatternCell_2nd, commPatternNode_1st, &
          internalCell_1st, internalCell_2nd, internalNode_1st)
-
-    ! The remainder of the comms are just deallocated...these still need
-    ! to be treated properly
-    deallocate(commSlidingCell_1st, commSlidingCell_2nd, &
-         intSlidingCell_1st, intSlidingCell_2nd, commPatternMixing)
 
     ! Send/recv buffer
     if (allocated(sendBuffer)) then
@@ -4528,20 +4453,6 @@ module utils
     end if
 
   end subroutine deallocateInternalCommType
-
-  subroutine deallocateslidingCommType(comm)
-    use communication
-    use commSliding
-    implicit none
-    type(slidingCommType) :: comm
-    integer(kind=intType) :: ierr
-    deallocate(comm%nSendCum, stat=ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-
-    deallocate(comm%nRecvCum, stat=ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-
-  end subroutine deallocateslidingCommType
 
   !      ---------------------------------------------------------------------------
 
@@ -5705,7 +5616,6 @@ module utils
     use monitor
     use iteration
     use inputIteration
-    use couplerParam     ! eran_idendifyname 
     implicit none
     !
     !      Local variables.
