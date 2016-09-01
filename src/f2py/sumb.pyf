@@ -1,6 +1,6 @@
 !    -*- f90 -*-
-python module solverunsteadyale__user__routines
-    interface solverunsteadyale_user_interface
+python module solverunsteadyale__user__routines 
+    interface solverunsteadyale_user_interface 
         subroutine alecallback_python(t) ! in :test:solverUnsteady_ALE.f90
           real(kind=realtype) :: t
         end subroutine alecallback_python
@@ -9,7 +9,7 @@ end python module solverunsteadyale__user__routines
 
 
 #ifdef USE_COMPLEX
-python module libsumb_cs ! in
+python module libsumb_cs ! in 
 #else
 python module libsumb
 #endif
@@ -20,7 +20,7 @@ python module libsumb
        ! ############################################################################
 
        module utils
-         subroutine writeintromessage
+         subroutine writeintromessage 
          end subroutine writeintromessage
 
          subroutine getliftdirfromsymmetry(liftdir)
@@ -30,25 +30,25 @@ python module libsumb
          subroutine allocconvarrays(nitertot)
            integer(kind=inttype) :: nitertot
          end subroutine allocconvarrays
-
-         subroutine alloctimearrays(nitertot)
+         
+         subroutine alloctimearrays(nitertot) 
            integer(kind=inttype) :: ntimetot
          end subroutine alloctimearrays
-
+         
        end module utils
 
        module walldistance
 
-         subroutine updatewalldistancealllevels
+         subroutine updatewalldistancealllevels 
          end subroutine updatewalldistancealllevels
 
        end module walldistance
 
        module initializeflow
 
-         subroutine initflow
+         subroutine initflow 
          end subroutine initflow
-
+       
          subroutine initflowrestart
          end subroutine initflowrestart
 
@@ -58,7 +58,7 @@ python module libsumb
          subroutine setuniformflow
          end subroutine setuniformflow
 
-         subroutine allocrestartfiles(nfiles)
+         subroutine allocrestartfiles(nfiles) 
            integer(kind=inttype) :: nfiles
          end subroutine allocrestartfiles
 
@@ -95,24 +95,24 @@ python module libsumb
          subroutine monitorvariables(variables) ! in :test:monitorVariables.f90
            character*(*) intent(inout) :: variables
          end subroutine monitorvariables
-
+         
          subroutine surfacevariables(variables) ! in :test:surfaceVariables.f90
            character*(*) intent(inout) :: variables
          end subroutine surfacevariables
-
+         
          subroutine volumevariables(variables) ! in :test:volumeVariables.f90
            character*(*) intent(inout) :: variables
          end subroutine volumevariables
-
+         
          subroutine isovariables(variables) ! in :test:volumeVariables.f90
            character*(*) intent(inout) :: variables
          end subroutine isovariables
-
+         
          subroutine initializeisosurfacevariables(values,nvalues) ! in :test:setIsoSurfaceValues.F90
            real(kind=realtype), dimension(nvalues),intent(in) :: values
            integer(kind=inttype), optional,intent(in),check(len(values)>=nvalues),depend(values) :: nvalues=len(values)
          end subroutine initializeisosurfacevariables
-
+         
          subroutine setisosurfacevariable(variable,ivar) ! in :test:setIsoSurfaceValues.F90
            character*(*), intent(in) :: variable
            integer(kind=inttype), intent(in) :: ivar
@@ -155,29 +155,29 @@ python module libsumb
          subroutine getinfosize(isize)
            integer(kind=inttype) intent(out) :: isize
          end subroutine getinfosize
-
-         subroutine setinfo(info,isize)
+         
+         subroutine setinfo(info,isize) 
            real(kind=realtype) dimension(isize),intent(in) :: info
            integer(kind=inttype) optional,intent(in),check(len(info)>=isize),depend(info) :: isize=len(info)
          end subroutine setinfo
-
-         subroutine getinfo(info,isize)
+         
+         subroutine getinfo(info,isize) 
            real(kind=realtype) dimension(isize),intent(out),depend(isize) :: info
            integer(kind=inttype) intent(in) :: isize
          end subroutine getinfo
-
+         
          subroutine getres(res,ndimw)
            real(kind=realtype) dimension(ndimw),intent(in,out) :: res
            integer(kind=inttype) optional,intent(in),check(len(res)>=ndimw),depend(res) :: ndimw=len(res)
          end subroutine getres
-
+ 
          subroutine applypc(in_vec,out_vec,ndof)
            real(kind=realtype) dimension(ndof),intent(in) :: in_vec
            real(kind=realtype) dimension(ndof),intent(in, out),depend(ndof) :: out_vec
            integer(kind=inttype) optional,check(len(in_vec)>=ndof),depend(in_vec) :: ndof=len(in_vec)
          end subroutine applypc
-
-         subroutine applyadjointpc(in_vec,out_vec,ndof)
+         
+         subroutine applyadjointpc(in_vec,out_vec,ndof) 
            real(kind=realtype) dimension(ndof),intent(in) :: in_vec
            real(kind=realtype) dimension(ndof),intent(in, out),depend(ndof) :: out_vec
            integer(kind=inttype) optional,check(len(in_vec)>=ndof),depend(in_vec) :: ndof=len(in_vec)
@@ -185,7 +185,7 @@ python module libsumb
 
          subroutine destroynksolver
          end subroutine destroynksolver
-
+         
        end module nksolver
 
        module anksolver
@@ -200,12 +200,12 @@ python module libsumb
          integer(kind=inttype) :: ank_ilufill
          real(kind=realtype) :: ank_switchtol
          real(kind=realtype) :: ank_cfl0
-
+       
          subroutine destroyanksolver
          end subroutine destroyanksolver
-
+         
        end module anksolver
-
+     
        module partitioning
          subroutine partitionandreadgrid(partitiononly)
            logical :: partitiononly
@@ -216,7 +216,7 @@ python module libsumb
            real(kind=realtype) intent(out) :: load_inbalance
            real(kind=realtype) intent(out) :: face_inbalance
          end subroutine checkpartitioning
-
+         
        end module partitioning
 
        module warping
@@ -225,33 +225,33 @@ python module libsumb
            integer(kind=inttype) intent(in) :: ndof
            integer(kind=inttype) dimension(ndof),intent(out),depend(ndof) :: indices
          end subroutine getcgnsmeshindices
-
+         
          subroutine setgrid(grid,ndof)
            real(kind=realtype) dimension(ndof),intent(in) :: grid
            integer(kind=inttype) optional,intent(in),check(len(grid)>=ndof),depend(grid) :: ndof=len(grid)
          end subroutine setgrid
-
-         subroutine getgrid(grid,ndof)
+         
+         subroutine getgrid(grid,ndof) 
            real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: grid
            integer(kind=inttype) intent(in) :: ndof
          end subroutine getgrid
        end module warping
-
+       
        module surfaceutils
 
-         subroutine getsurfacesize(npts, ncells, famlist, n)
+         subroutine getsurfacesize(npts, ncells, famlist, n) 
            integer(kind=inttype) intent(out) :: npts
            integer(kind=inttype) intent(out) :: ncells
            integer(kind=inttype) dimension(n),intent(in) :: famlist
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
          end subroutine getsurfacesize
-
-         subroutine getsurfaceconnectivity(conn,ncell)
+         
+         subroutine getsurfaceconnectivity(conn,ncell) 
            integer(kind=inttype) dimension(4 * ncell),intent(inout) :: conn
            integer(kind=inttype) optional,intent(in),check((len(conn))/(4)>=ncell),depend(conn) :: ncell=(len(conn))/(4)
          end subroutine getsurfaceconnectivity
-
-         subroutine getsurfacepoints(points,npts,sps_in)
+         
+         subroutine getsurfacepoints(points,npts,sps_in) 
            integer(kind=inttype), intent(in) :: sps_in
            real(kind=realtype) dimension(3,npts),intent(inout) :: points
            integer(kind=inttype) optional,intent(in),check(shape(points,1)==npts),depend(points) :: npts=shape(points,1)
@@ -272,7 +272,7 @@ python module libsumb
            integer(kind=inttype) dimension(n),intent(in) :: famlist
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
          end subroutine setfamilyinfo
-
+         
        end module surfaceutils
 
        module tecplotio
@@ -291,7 +291,7 @@ python module libsumb
            integer(kind=inttype) dimension(n),intent(in) :: famlist
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
          end subroutine addabsslice
-
+         
          subroutine addliftdistribution(nsegments,dir_vec,dir_ind, distname,famlist,n) ! in :test:liftDistribution.F90
            integer(kind=inttype) intent(in) :: nsegments
            real(kind=realtype) dimension(3), intent(in) :: dir_vec
@@ -300,7 +300,7 @@ python module libsumb
            integer(kind=inttype) dimension(n),intent(in) :: famlist
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
          end subroutine addliftdistribution
-
+         
          subroutine writetecplot(slicefile, writeslices, liftfile, writelift, surffile, writesurf)
            character*(*), intent(in) :: slicefile
            logical, intent(in) :: writeslices
@@ -316,17 +316,17 @@ python module libsumb
 
        module solvers
 
-         subroutine solver
+         subroutine solver 
          end subroutine solver
 
          subroutine solverunsteady_ale(alecallback_python) ! in :test:solverUnsteady_ALE.F90
            use solverunsteadyale__user__routines
            external alecallback_python
          end subroutine solverunsteady_ale
-
+         
        end module solvers
-
-
+       
+       
 
 ! ================ bare subroutines =============
 
@@ -337,12 +337,9 @@ python module libsumb
          integer(kind=inttype) :: sps
        end subroutine getsolution
 
-       subroutine updateslidingalllevels ! in :sumb:../../slidingComm/updateSlidingAllLevels.f90
-       end subroutine updateslidingalllevels
-
        subroutine preprocessing ! in :sumb:../../preprocessing/preprocessing.f90
        end subroutine preprocessing
-
+     
        subroutine updatecoordinatesalllevels ! in :sumb:../../preprocessing/mdUpdateRoutines.f90
        end subroutine updatecoordinatesalllevels
 
@@ -373,8 +370,8 @@ python module libsumb
        subroutine shiftcoorandvolumes ! in :sumb:../../preprocessing/shiftCoorAndVolumes.F90
        end subroutine shiftcoorandvolumes
 
-
-
+  
+     
 
        ! ############################################################################
        ! SUmb Mesh/Forces Interface Routines
@@ -402,22 +399,22 @@ python module libsumb
          real(kind=realtype) dimension(3),intent(in) :: axis
        end subroutine getareasensitivity
 
-       subroutine updatecoorfinemesh(dtadvance, sps) ! in preprocessing/updateCoorFineMesh.f90
+       subroutine updatecoorfinemesh(dtadvance, sps) ! in preprocessing/updateCoorFineMesh.f90 
          integer(kind=inttype), intent(in) :: sps
          real(kind=realtype), dimension(*), intent(in) :: dtadvance
        end subroutine updatecoorfinemesh
 
-
+           
        ! ############################################################################
        ! SUmb ADjoint Core Routines
        ! ############################################################################
 
-       subroutine initializepetsc
+       subroutine initializepetsc 
        end subroutine initializepetsc
 
-       subroutine preprocessingadjoint
+       subroutine preprocessingadjoint 
        end subroutine preprocessingadjoint
-
+    
        ! State Variables
        subroutine createpetscvars
        end subroutine createpetscvars
@@ -426,7 +423,7 @@ python module libsumb
        end subroutine destroypetscvars
 
        ! KSP Setup
-       subroutine setuppetscksp
+       subroutine setuppetscksp 
        end subroutine setuppetscksp
 
        subroutine setupallresidualmatricesfwd
@@ -512,9 +509,9 @@ python module libsumb
           integer(kind=inttype), optional,check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
         end subroutine computematrixfreeproductbwdfast
 #endif
-
-
-
+ 
+   
+       
        ! ############################################################################
        ! SUmb Modules
        ! ############################################################################
@@ -741,7 +738,7 @@ python module libsumb
          real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
          real(kind=realtype) allocatable,dimension(:) :: coefpolbeta
        end module inputmotion
-
+       
        module inputparallel ! in :sumb:../../modules/inputParam.f90
          real(kind=realtype) :: loadimbalance
          logical :: splitblocks
@@ -873,7 +870,7 @@ python module libsumb
          integer(kind=inttype) :: noldlevels
          real(kind=realtype) allocatable,dimension(:) :: coeftime
          logical :: timespectralgridsnotwritten
-         logical, dimension(:), allocatable :: oldsolwritten
+         logical, dimension(:), allocatable :: oldsolwritten       
          real(kind=realtype) :: totalr0
          real(kind=realtype) :: totalrstart
          real(kind=realtype) :: totalrfinal
@@ -984,8 +981,8 @@ python module libsumb
             integer(kind=inttype) parameter,optional :: costfuncforceycoef=9
             integer(kind=inttype) parameter,optional :: costfuncclalpha=23
             integer(kind=inttype) parameter,optional :: costfuncmomycoef=15
-            integer(kind=inttype) parameter,optional :: costfunccfy0=32
-            integer(kind=inttype) parameter,optional :: costfunccfyalpha=33
+            integer(kind=inttype) parameter,optional :: costfunccfy0=32	
+            integer(kind=inttype) parameter,optional :: costfunccfyalpha=33 
             integer(kind=inttype) parameter,optional :: costfunccfyalphadot=34
             integer(kind=inttype) parameter,optional :: costfunccfyq=35
             integer(kind=inttype) parameter,optional :: costfunccfyqdot=36
@@ -995,15 +992,11 @@ python module libsumb
             integer(kind=inttype) parameter,optional :: costfuncsepsensoravgy=40
             integer(kind=inttype) parameter,optional :: costfuncsepsensoravgz=41
             integer(kind=inttype) parameter,optional :: costfunccavitation=42
-            integer(kind=inttype) parameter,optional :: costfuncmdot=43
-            integer(kind=inttype) parameter,optional :: costfuncmavgptot=44
-            integer(kind=inttype) parameter,optional :: costfuncmavgttot=45
-            integer(kind=inttype) parameter,optional :: costfuncmavgps=46
-            real(kind=realtype) dimension(46) :: funcvalues
+            real(kind=realtype) dimension(42) :: funcvalues
             real(kind=realtype) sepsensoroffset
             real(kind=realtype) sepsensorsharpness
        end module costfunctions
-
+      
        module adjointvars ! in :test:ADjointVars.F90
          use constants
          use costfunctions
@@ -1045,7 +1038,7 @@ python module libsumb
          logical :: tspmode
          logical :: tsqmode
          logical :: tsalphamode
-         logical :: tsalphafollowing
+         logical :: tsalphafollowing 
        end module inputtsstabderiv
 
         module surfacefamilies ! in :test:inputParam.F90
@@ -1055,10 +1048,12 @@ python module libsumb
         end module surfacefamilies
 
 
-    end interface
+    end interface 
 
 #ifdef USE_COMPLEX
 end python module libsumb_cs
 #else
 end python module libsumb
 #endif
+
+

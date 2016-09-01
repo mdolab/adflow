@@ -2745,7 +2745,6 @@ contains
     !  ------------------------------------------------
     use inputPhysics, only : velDirFreeStream, liftDirection, dragDirection
     use communication, only : myid, sumb_comm_world
-    use couplerParam, only : velDirIni
     use iteration, only : coefTime, coefTimeALE, coefMeshALE, &
          oldSolWritten, nALEMeshes, nALESteps, nOldLevels
     use monitor, only : nTimeStepsRestart
@@ -3023,25 +3022,6 @@ contains
           liftDirection(3) = -liftDirection(3)
        endif
     endif
-
-    ! Normalize the velocity direction used for the initialization
-    ! of a multi-disciplinary computation.
-
-    vecLength = sqrt(velDirIni(1)*velDirIni(1) &
-         +      velDirIni(2)*velDirIni(2) &
-         +      velDirIni(3)*velDirIni(3))
-    if(vecLength < eps) then
-       if(myID == 0)                       &
-            call terminate("checkInputParam", &
-            "Velocity direction for initialization &
-            &wrongly specified")
-       call mpi_barrier(SUmb_comm_world, ierr)
-    endif
-
-    vecLength = one/vecLength
-    velDirIni(1) = velDirIni(1)*vecLength
-    velDirIni(2) = velDirIni(2)*vecLength
-    velDirIni(3) = velDirIni(3)*vecLength
 
     ! Set the Mach number for the coefficients equal to the Mach
     ! number if it was not specified. For internal flow field this
@@ -3725,8 +3705,6 @@ contains
          TinfDim, Tref
     use iteration, only : nOldSolAvail, timeSpectralGridsNotWritten
     use monitor, only : monMassSliding, nTimeStepsRestart, timeUnsteadyRestart
-    use couplerParam, only : velDirIni, codeName, machIni, pIni, rhoIni, &
-         cplGetCoarseSol
     use killSignals, only : fatalFail, routineFailed
     use ADjointPETSc, only : adjointPETScVarsAllocated
     use costFunctions, only : sepSensorOffset, sepSensorSharpNess
@@ -4021,24 +3999,6 @@ contains
     !       Variables needed for the writing of grid and solution files.   
     !
     timeSpectralGridsNotWritten = .true.
-    !
-    !       Coupler parameters.                                            
-    !
-    codeName        = "SUmb"
-    cplGetCoarseSol = .false.
-
-    ! Parameters used for the flow field initialization if not
-    ! enough boundary data is present in multidisciplinary mode.
-
-    MachIni =      0.5_realType
-    pIni    = 101325.0_realType
-    rhoIni  =      1.2_realType
-
-    ! Velocity direction in the free stream.
-
-    velDirIni(1) = one
-    velDirIni(2) = zero
-    velDirIni(3) = zero
 
     ! Additional Paramters Requiring Defaults
     printIterations = .True.

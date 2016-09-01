@@ -2411,7 +2411,6 @@ class SUMB(AeroSolver):
                 self.sumb.warping.setgrid(newGrid)
             self.sumb.updatecoordinatesalllevels()
             self.sumb.walldistance.updatewalldistancealllevels()
-            self.sumb.updateslidingalllevels()
             self.sumb.updatemetricsalllevels()
             self.sumb.updategridvelocitiesalllevels()
             self._updateGeomInfo = False

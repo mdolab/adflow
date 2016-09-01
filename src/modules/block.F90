@@ -711,8 +711,8 @@ module block
      !                  kBegOr <= k <= kEndOr.
      !                  It is of course possible that the entire
      !                  block is stored.
-
-     integer(kind=intType) :: cgnsBlockID, sectionID
+     integer(kind=intType) :: sectionID=1
+     integer(kind=intType) :: cgnsBlockID
      integer(kind=intType) :: iBegOr, iEndOr, jBegOr, jEndOr
      integer(kind=intType) :: kBegOr, kEndOr
      type(surfaceNodeWeightArray) , dimension(6) :: nodalWeights
