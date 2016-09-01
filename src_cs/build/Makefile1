@@ -1,0 +1,65 @@
+# Becuase make is stupid. 
+include ../../config/config.mk
+include ../../src/build/fileList
+include ../../src/build/directoryList
+includeFiles:=	metis-4.0/defs.h\
+		metis-4.0/macros.h\
+		metis-4.0/metis.h\
+		metis-4.0/proto.h\
+		metis-4.0/rename.h\
+		metis-4.0/struct.h\
+		c_defines/SUmb_c_types.h\
+		adjoint/ADFirstAidKit/debugAD.inc\
+		f2py/sumb.pyf\
+		f2py/checkPyfForUpperCase.py\
+		f2py/get_f2py.py\
+		f2py/pyf_preprocessor.py\
+		modules/complexify.f90\
+
+
+# Filter out the precision.F90 file. That is set manually. 
+fortranFiles:=$(filter-out modules/precision.F90,$(fortranFiles))
+
+complexify: 
+# create the full path to the real file and the complex
+	@for file in $(fortranFiles); do \
+		realFile=$(addprefix ../../src/,$$file); \
+		cmplxFile=$(addprefix ../,$$file); \
+		echo Checking $$file $$realFile $$cmplxFile; \
+		if [ $$realFile -nt $$cmplxFile -o ! -e $$cmplxFile ];  then \
+			python complexify.py $$realFile; \
+			mv newFile $$cmplxFile; \
+		fi;\
+	done
+
+	@for file in $(f77Files); do \
+		realFile=$(addprefix ../../src/,$$file); \
+		cmplxFile=$(addprefix ../,$$file); \
+		echo Copying $$file $$realFile $$cmplxFile; \
+		cp $$realFile $$cmplxFile; \
+	done
+
+	@for file in $(cFiles); do \
+		realFile=$(addprefix ../../src/,$$file); \
+		cmplxFile=$(addprefix ../,$$file); \
+		echo Copying $$file $$realFile $$cmplxFile; \
+		cp $$realFile $$cmplxFile; \
+	done
+
+	@for file in $(includeFiles); do \
+		realFile=$(addprefix ../../src/,$$file); \
+		cmplxFile=$(addprefix ../,$$file); \
+		echo Copying $$file $$realFile $$cmplxFile; \
+		cp $$realFile $$cmplxFile; \
+	done
+
+
+directories: 
+	@for dir in $(dirs); do \
+		mkdir -p ../$$dir; \
+	done;
+# Add a couple of extra ones
+	mkdir -p ../c_defines
+	mkdir -p ../f2py
+
+
