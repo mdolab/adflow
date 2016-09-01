@@ -3346,7 +3346,7 @@ contains
     use communication, only : sumb_comm_world, myid
     use inputTimeSpectral, only :nTimeIntervalsSpectral
     use iteration, only : groundLevel
-    use utils, only : setPointers
+    use utils, only : setPointers, terminate
     implicit none
     !
     !      Subroutine arguments.
@@ -3429,8 +3429,8 @@ contains
              case (DomainInterfaceAll, DomainInterfaceRhoUVW, &
                   DomainInterfaceP,   DomainInterfaceRho,    &
                   DomainInterfaceTotal)
-                if( initializationPart ) call BCDataDomainInterface(j)
-
+                call terminate('setBCDataFineGrid', &
+                     'Domain interface BCs are not fully implemented')
              end select
 
           enddo bocoLoop
