@@ -11,6 +11,7 @@
        use communication
        use inputTimeSpectral
        use utils, only : setPointers
+       use haloExchange, only : exchangeCoor
        implicit none
 !
 !      Subroutine arguments.
