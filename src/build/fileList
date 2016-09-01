@@ -21,20 +21,9 @@ fortranFiles=	ADT/adtUtils.F90\
 		adjoint/outputForward/sa_d.f90\
 		adjoint/outputForward/walldistance_d.f90\
 		adjoint/outputForward/initializeflow_d.f90\
-		adjoint/outputForward/xhalo_block_d.f90\
-		adjoint/outputForward/metric_block_d.f90\
-		adjoint/outputForward/getcostfunction2_d.f90\
-		adjoint/outputForward/boundarynormals_d.f90\
-		adjoint/outputForward/volume_block_d.f90\
-		adjoint/outputForward/block_res_d.f90  \
+		adjoint/outputForward/adjointextra_d.f90\
 		\
-		adjoint/outputReverse/getcostfunction2_b.f90\
-		adjoint/outputReverse/metric_block_b.f90\
-		adjoint/outputReverse/xhalo_block_b.f90\
-		adjoint/outputReverse/block_res_b.f90  \
-		adjoint/outputReverse/getcostfunction2_b.f90\
-		adjoint/outputReverse/boundarynormals_b.f90\
-		adjoint/outputReverse/volume_block_b.f90\
+		adjoint/outputReverse/adjointextra_b.f90\
 		adjoint/outputReverseFast/BCExtra.F90\
 		adjoint/outputReverse/utils_b.f90\
 		adjoint/outputReverse/flowutils_b.f90\
@@ -70,10 +59,7 @@ fortranFiles=	ADT/adtUtils.F90\
 		adjoint/outputReverseFast/sa_fast_b.f90\
 		adjoint/outputReverseFast/BCExtra.F90\
 		\
-		adjoint/residualInput/block_res.F90\
-		adjoint/residualInput/metric_block.F90\
-		adjoint/residualInput/xhalo_block.F90\
-		adjoint/residualInput/costFunction2.F90\
+		adjoint/residualInput/adjointExtra.F90\
 		\
 		adjoint/adjointPythonInterfaceFunctions.F90\
 		adjoint/computeAeroCoef.f90\
@@ -205,51 +191,10 @@ fortranFiles=	ADT/adtUtils.F90\
 		partitioning/readCGNSGrid.F90\
 		partitioning/partitioning.F90\
 		\
-		preprocessing/bcHalo.f90\
-		preprocessing/coarse1to1Subface.f90\
-		preprocessing/haloList.F90\
-		preprocessing/indirectHalo.f90\
-		preprocessing/periodicInfo.f90\
-		preprocessing/coarse1to1Subface.f90\
-		preprocessing/allocMemHaloList.f90\
-		preprocessing/cellRangeSubface.f90\
-		preprocessing/checkCoarse1to1.f90\
-		preprocessing/checkSymmetry.f90\
-		preprocessing/closestDirectHalos.f90\
-		preprocessing/coarseDonorInfo.f90\
-		preprocessing/createCoarseBlocks.f90\
-		preprocessing/determineCommPattern.f90\
-		preprocessing/determineFaceHalos.f90\
-		preprocessing/determineIndirectHalos.f90\
-		preprocessing/determineNumberOfHalos.f90\
-		preprocessing/determineNcellGlobal.f90\
-		preprocessing/determinePeriodicFaces.f90\
-		preprocessing/exchangeCoor.f90\
-		preprocessing/exchangeCoor_d.f90\
-		preprocessing/exchangeCoor_b.f90\
-		preprocessing/faceRotationMatrices.f90\
-		preprocessing/finalCommStructures.f90\
-		preprocessing/indirectHalosPerLevel.f90\
-		preprocessing/init2ndLevelCellHalos.f90\
-		preprocessing/setSurfaceFamilyInfo.F90\
-		preprocessing/mdUpdateRoutines.f90\
-		preprocessing/metric.f90\
-		preprocessing/preprocessing.f90\
-		preprocessing/qsortHaloListType.f90\
-		preprocessing/qsortIndHaloType.f90\
-		preprocessing/qsortPeriodicSubfacesHaloType.f90\
-		preprocessing/setFamilyInfoFaces.f90\
-		preprocessing/setGlobalCellsAndNodes.f90\
-		preprocessing/setPorosities.f90\
-		preprocessing/shiftCoorAndVolumes.f90\
-		preprocessing/unitVectorsInAxialPlane.f90\
-		preprocessing/update1to1Coarse.f90\
-		preprocessing/updateCoorFineMesh.f90\
-		preprocessing/viscSubfaceInfo.f90\
-		preprocessing/xhalo.f90\
-		preprocessing/setReferenceVolume.F90\
-		preprocessing/bsearchCGNSPeriodicType.f90\
-		preprocessing/determinePeriodicData.F90\
+		preprocessing/pointMatchedCommPattern.F90\
+		preprocessing/coarseUtils.F90\
+		preprocessing/preprocessingModules.F90\
+		preprocessing/preprocessingAPI.F90\
 		\
 		solver/BCRoutines.F90\
 		solver/solverUtils.F90\
@@ -296,51 +241,3 @@ cFiles = 	metis-4.0/metis.c\
 
 f77Files = 	adjoint/ADFirstAidKit/adBuffer.f\
 		adjoint/ADFirstAidKit/debugAD.f\
-
-
-
-#		modules/commMixing.f90\
-#		modules/commSliding.f90\
-#		modules/couplerParam.f90\
-#		modules/interfaceGroups.f90\
-#		slidingComm/cumulativeNSendReceives.f90\
-		slidingComm/cylCoorNodesOnBlockFace.f90\
-		slidingComm/determineNSlices.f90\
-		slidingComm/determineRotationMatrices.f90\
-		slidingComm/determineSections.f90\
-		slidingComm/haloType.f90\
-		slidingComm/initMemMixingPlane.f90\
-		slidingComm/initMemSliding.f90\
-		slidingComm/initThisSlide.f90\
-		slidingComm/interpolateSlide.f90\
-		slidingComm/localNodesAndQuads.f90\
-		slidingComm/localSurfaceGrids.f90\
-		slidingComm/mixingDonorInterpol.f90\
-		slidingComm/mixingHaloInterpol.f90\
-		slidingComm/mixingIntervals.f90\
-		slidingComm/mixingPlaneComm.f90\
-		slidingComm/mixingPlaneInterpol.f90\
-		slidingComm/mySubfacesSlide.f90\
-		slidingComm/nLocalNodesAndQuads.f90\
-		slidingComm/procSliding.f90\
-		slidingComm/qsortMixingIntervalType.f90\
-		slidingComm/qsortSortedDonorCommType.f90\
-		slidingComm/releaseMemSliding.f90\
-		slidingComm/slidingComm.f90\
-		slidingComm/slidingIntersections.f90\
-		slidingComm/slidingMesh.f90\
-		slidingComm/slidingMeshGroups.f90\
-		slidingComm/updateExternalCommSlide.f90\
-		slidingComm/updateInterpolSendBuf.f90\
-		slidingComm/updateLocalCommSlide.f90\
-		slidingComm/updateRotationInfo.f90\
-		slidingComm/updateSlidingAllLevels.f90\
-		slidingComm/updateSlidingCommPattern.f90\
-		slidingComm/volumeInterpol.f90\
-		slidingComm/localSubfaces.f90\
-		slidingComm/mixingData.F90\
-		slidingComm/thisSlide.f90\
-		slidingComm/tmpSliding.f90\
-		slidingComm/updateComm.F90\
-		slidingComm/bsearchSortedDonorCommType.f90\
-		
