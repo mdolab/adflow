@@ -79,6 +79,7 @@ contains
     use monitor, only : timeUnsteadyRestart, timeUnsteady
     use inputPhysics, only : equationMode
     use utils, only : setPointers, rotMatrixRigidBody
+    use preprocessingAPI, only : xhalo
     implicit none
 
     integer(kind=intType),intent(in) :: ndof
