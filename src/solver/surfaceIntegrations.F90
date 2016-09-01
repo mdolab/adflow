@@ -2,18 +2,136 @@ module surfaceIntegrations
 
  contains
 
+   subroutine flowProperties(massFlowRate, mass_Ptot, mass_Ttot, mass_Ps)
+
+     use blockPointers
+     use flowVarRefState
+     use inputPhysics
+     use bcroutines
+     use costFunctions
+     use surfaceFamilies
+     use constants, only: zero, half, one, irho, ivx, ivy, ivz, imin, imax, & 
+                          jmin, jmax, kmin, kmax
+     use sorting, only : bsearchIntegers
+     use utils, only : setBCPointers, resetBCPointers
+     use flowUtils, only : computePtot, computeTtot
+     use BCPointers
+
+
+     implicit none
+     !
+     !      Subroutine arguments
+     !
+     real(kind=realType), intent(out) :: massFlowRate, mass_Ptot, mass_Ttot, mass_Ps
+
+     integer(kind=intType) :: nn, i, j, ii
+     real(kind=realType) :: fact
+     real(kind=realType) :: sF, vnm, vxm, vym, vzm
+     real(kind=realType) :: pm, Ptot, Ttot, rhom, massFlowRateLocal, tmp
+
+     massFlowRate = zero
+     mass_Ptot = zero
+     mass_Ttot = zero
+     mass_Ps = zero
+     sF = zero
+
+     bocos: do nn=1,nBocos
+        famInclude: if (bsearchIntegers(BCdata(nn)%famID, &
+            famGroups, size(famGroups)) > 0) then
+
+             call setBCPointers(nn, .True.)
+             if( addGridVelocities ) sF = sFace(i,j)
+
+             select case (BCFaceID(nn))
+             case (iMin)
+                fact = -one
+             case (iMax)
+                fact = one
+             case (jMin)
+                fact = -one
+             case (jMax)
+                fact = one
+             case (kMin)
+                fact = -one
+             case (kMax)
+                fact = one
+             end select
+
+
+             ! Loop over the quadrilateral faces of the subface. Note that
+             ! the nodal range of BCData must be used and not the cell
+             ! range, because the latter may include the halo's in i and
+             ! j-direction. The offset +1 is there, because inBeg and jnBeg
+             ! refer to nodal ranges and not to cell ranges. The loop
+             ! (without the AD stuff) would look like:
+             !
+             ! do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
+             !    do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
+
+             !$AD II-LOOP
+             ! print *, "start", nn, massFlowRate
+             do ii=0,(BCData(nn)%jnEnd - bcData(nn)%jnBeg)*(bcData(nn)%inEnd - bcData(nn)%inBeg) -1
+                i = mod(ii, (bcData(nn)%inEnd-bcData(nn)%inBeg)) + bcData(nn)%inBeg + 1
+                j = ii/(bcData(nn)%inEnd-bcData(nn)%inBeg) + bcData(nn)%jnBeg + 1
+
+                if( addGridVelocities ) sF = sFace(i,j)
+                vxm = half*(ww1(i,j,ivx) + ww2(i,j,ivx))
+                vym = half*(ww1(i,j,ivy) + ww2(i,j,ivy))
+                vzm = half*(ww1(i,j,ivz) + ww2(i,j,ivz))
+                rhom = half*(ww1(i,j,irho) + ww2(i,j,irho))
+                pm = half*(pp1(i,j)+ pp2(i,j))
+
+                vnm = vxm*ssi(i,j,1) + vym*ssi(i,j,2) + vzm*ssi(i,j,3)  - sF
+
+                massFlowRateLocal = rhom*vnm
+
+               !  vn1 = ww1(i,j,ivx)*ssi(i,j,1) + ww1(i,j,ivy)*ssi(i,j,2) &
+               ! + ww1(i,j,ivz)*ssi(i,j,3) - sF
+               !  vn2 = ww2(i,j,ivx)*ssi(i,j,1) + ww2(i,j,ivy)*ssi(i,j,2) &
+               ! + ww2(i,j,ivz)*ssi(i,j,3) - sF
+
+               ! massFlowRateLocal = half*(ww1(i,j,irho)*vn1 &
+               !                     + ww2(i,j,irho)*vn2)
+
+               massFlowRate = massFlowRate + massFlowRateLocal
+
+               call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
+               call computeTtot(rhom, vxm, vym, vzm, pm, Ttot)
+
+               mass_Ptot = mass_pTot + Ptot * massFlowRateLocal
+               mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal
+               mass_Ps = mass_Ps + pm*massFlowRateLocal
+
+               ! print *, nn, pm*pref, massFlowRateLocal*sqrt(pRef*rhoRef)
+            enddo
+           !  if(BCType(nn) == SubsonicOutflow) then
+           !    print *, nn, "foobar", pTot*pRef, pm1*pRef, bcData(nn)%ps(1,1)*pRef
+           !    print *, nn, "foobar", massFlowRate
+           !  endif
+           !  if(BCType(nn) == SubsonicInflow) then
+           !     print *, nn, "foobar", pm1*pRef, pTot*pRef, bcData(nn)%ptInlet(1,1)*pRef
+           !  endif
+            massFlowRate = massFlowRate*fact
+            mass_Ptot = mass_pTot*fact
+            mass_Ttot = mass_Ttot*fact
+            mass_Ps = mass_Ps*fact
+
+       end if famInclude
+
+     end do bocos
+   end subroutine flowProperties
 
   subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
        sepSensorAvg, Cavitation)
     !
-    !       forcesAndMoments computes the contribution of the block        
-    !       given by the pointers in blockPointers to the force and        
-    !       moment coefficients of the geometry. A distinction is made     
-    !       between the inviscid and viscous parts. In case the maximum    
-    !       yplus value must be monitored (only possible for rans), this   
-    !       value is also computed. The separation sensor and the cavita-  
-    !       tion sensor is also computed                                   
-    !       here.                                                          
+    !       forcesAndMoments computes the contribution of the block
+    !       given by the pointers in blockPointers to the force and
+    !       moment coefficients of the geometry. A distinction is made
+    !       between the inviscid and viscous parts. In case the maximum
+    !       yplus value must be monitored (only possible for rans), this
+    !       value is also computed. The separation sensor and the cavita-
+    !       tion sensor is also computed
+    !       here.
     !
     use constants
     use communication
@@ -78,16 +196,16 @@ module surfaceIntegrations
 
     bocos: do nn=1,nBocos
        !
-       !         Integrate the inviscid contribution over the solid walls,    
-       !         either inviscid or viscous. The integration is done with     
-       !         cp. For closed contours this is equal to the integration     
-       !         of p; for open contours this is not the case anymore.        
-       !         Question is whether a force for an open contour is           
-       !         meaningful anyway.                                           
+       !         Integrate the inviscid contribution over the solid walls,
+       !         either inviscid or viscous. The integration is done with
+       !         cp. For closed contours this is equal to the integration
+       !         of p; for open contours this is not the case anymore.
+       !         Question is whether a force for an open contour is
+       !         meaningful anyway.
        !
 
        famInclude: if (bsearchIntegers(BCdata(nn)%famID, &
-            famGroups, size(famGroups)) > 0) then 
+            famGroups, size(famGroups)) > 0) then
 
           invForce: if(BCType(nn) == EulerWall .or. &
                BCType(nn) == NSWallAdiabatic .or. &
@@ -128,7 +246,7 @@ module surfaceIntegrations
              !    do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
 
              !$AD II-LOOP
-             do ii=0,(BCData(nn)%jnEnd - bcData(nn)%jnBeg)*(bcData(nn)%inEnd - bcData(nn)%inBeg) -1 
+             do ii=0,(BCData(nn)%jnEnd - bcData(nn)%jnBeg)*(bcData(nn)%inEnd - bcData(nn)%inBeg) -1
                 i = mod(ii, (bcData(nn)%inEnd-bcData(nn)%inBeg)) + bcData(nn)%inBeg + 1
                 j = ii/(bcData(nn)%inEnd-bcData(nn)%inBeg) + bcData(nn)%jnBeg + 1
 
@@ -220,8 +338,8 @@ module surfaceIntegrations
                 Cavitation = Cavitation + Sensor1
              enddo
              !
-             !           Integration of the viscous forces.                         
-             !           Only for viscous boundaries.                               
+             !           Integration of the viscous forces.
+             !           Only for viscous boundaries.
              !
              visForce: if( viscousSubface ) then
 
@@ -236,7 +354,7 @@ module surfaceIntegrations
                 ! compute the viscous contribution to the force and
                 ! moment and update the maximum value of y+.
 
-                do ii=0,(BCData(nn)%jnEnd - bcData(nn)%jnBeg)*(bcData(nn)%inEnd - bcData(nn)%inBeg) -1 
+                do ii=0,(BCData(nn)%jnEnd - bcData(nn)%jnBeg)*(bcData(nn)%inEnd - bcData(nn)%inBeg) -1
                    i = mod(ii, (bcData(nn)%inEnd-bcData(nn)%inBeg)) + bcData(nn)%inBeg + 1
                    j = ii/(bcData(nn)%inEnd-bcData(nn)%inBeg) + bcData(nn)%jnBeg + 1
 
@@ -325,8 +443,8 @@ module surfaceIntegrations
 
                    ! Compute the local value of y+. Due to the usage
                    ! of pointers there is on offset of -1 in dd2Wall..
-#ifndef TAPENADE_REVERSE                 
-                   if(equations == RANSEquations) then 
+#ifndef TAPENADE_REVERSE
+                   if(equations == RANSEquations) then
                       dwall = dd2Wall(i-1,j-1)
                       rho   = half*(ww2(i,j,irho) + ww1(i,j,irho))
                       mul   = half*(rlv2(i,j) + rlv1(i,j))
@@ -459,7 +577,7 @@ module surfaceIntegrations
                    xx => x(:, jl, :, :)
                    gnp => globalNode(:, jl, :)
                 case (kMin)
-                   xx => x(:, :, 1, :)          
+                   xx => x(:, :, 1, :)
                    gnp => globalNode(:, :, 1)
                 case (kMax)
                    xx => x(:, :, kl, :)
@@ -467,14 +585,14 @@ module surfaceIntegrations
                 end select
 
                 jBeg = BCdata(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
-                iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd  
+                iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd
 
                 ! Loop over the nodes of the subface:
                 do j=jBeg, jEnd
                    do i=iBeg, iEnd
                       gInd = gnp(i+1, j+1)
                       ind = (gInd-rowStart/3)*3+1
-                      if (ind < 0) then 
+                      if (ind < 0) then
                          print *,'something wrong:', myid, gind, rowstart, ind
                          stop
                       end if
@@ -521,7 +639,7 @@ module surfaceIntegrations
     cFv = zero
     cMp = zero
     cMv = zero
-    if (myid == 0) then 
+    if (myid == 0) then
 
        Fp = zero
        Fv = zero

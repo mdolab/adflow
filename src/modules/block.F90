@@ -1,21 +1,21 @@
 module block
   !
-  !       This module contains the definition of the derived data type   
-  !       for block, which is the basic building block for this code.    
-  !       Apart from the derived data type for block, this module also   
-  !       contains the actual array for storing the blocks and the       
-  !       number of blocks stored on this processor.                     
+  !       This module contains the definition of the derived data type
+  !       for block, which is the basic building block for this code.
+  !       Apart from the derived data type for block, this module also
+  !       contains the actual array for storing the blocks and the
+  !       number of blocks stored on this processor.
   !
   use constants, only : realType, intType, porType, maxCGNSNameLen
   implicit none
   save
 
   !
-  !       The definition of the derived data type visc_subface_type,     
-  !       which stores the viscous stress tensor and heat flux vector.   
-  !       In this way it is avoided that these quantities must be        
-  !       recomputed for the viscous forces and postprocessing. This     
-  !       saves both time and a considerable amount of code.             
+  !       The definition of the derived data type visc_subface_type,
+  !       which stores the viscous stress tensor and heat flux vector.
+  !       In this way it is avoided that these quantities must be
+  !       recomputed for the viscous forces and postprocessing. This
+  !       saves both time and a considerable amount of code.
   !
   type viscSubfaceType
 
@@ -41,12 +41,12 @@ module block
      integer(kind=intType), dimension(:, :, :), pointer :: var
   end type iPtr
   !
-  !       The definition of the derived data type BCDataType, which      
-  !       stores the prescribed data of boundary faces as well as unit   
-  !       normals. For all the arrays the first two dimensions equal the 
-  !       dimensions of the subface, possibly extended with halo cells.  
-  !       Consequently the starting index is arbitrary, such that no     
-  !       offset computation is needed when the array is accessed.       
+  !       The definition of the derived data type BCDataType, which
+  !       stores the prescribed data of boundary faces as well as unit
+  !       normals. For all the arrays the first two dimensions equal the
+  !       dimensions of the subface, possibly extended with halo cells.
+  !       Consequently the starting index is arbitrary, such that no
+  !       offset computation is needed when the array is accessed.
   !
   type BCDataType
 
@@ -79,7 +79,7 @@ module block
      ! plane. They are undefined for other BC's.
      real(kind=realType), dimension(3) :: symNorm
 
-     logical :: symNormSet 
+     logical :: symNormSet
 
      ! subsonicInletTreatment: which boundary condition treatment
      !                         to use for subsonic inlets; either
@@ -88,11 +88,16 @@ module block
      integer(kind=intType) :: subsonicInletTreatment
 
      ! uSlip(:,:,3):  the 3 components of the velocity vector on
-     !                a viscous wall. 
+     !                a viscous wall.
      ! TNS_Wall(:,:): Wall temperature for isothermal walls.
 
      real(kind=realType), dimension(:,:,:), pointer :: uSlip
      real(kind=realType), dimension(:,:),   pointer :: TNS_Wall
+
+     ! any variable with `Input` at the end indicates a value read in
+     ! from the CGNS file or otherwise user specified. The input values are used
+     ! to compute nondimenional values
+     real(kind=realType), dimension(:,:),   pointer :: TNS_WallInput
 
      ! The name of this boundary condition and it's index
      character(maxCGNSNameLen) :: family
@@ -121,14 +126,14 @@ module block
      ! flowZDirInlet(:,:): Idem in z-direction.
 
      real(kind=realType), dimension(:,:), pointer :: ptInlet, ttInlet, htInlet
-     real(kind=realType), dimension(:,:), pointer :: flowXDirInlet
-     real(kind=realType), dimension(:,:), pointer :: flowYDirInlet
-     real(kind=realType), dimension(:,:), pointer :: flowZDirInlet
+     real(kind=realType), dimension(:,:), pointer :: ptInletInput, ttInletInput, htInletInput
+     real(kind=realType), dimension(:,:), pointer :: flowXDirInlet, flowYDirInlet, flowZDirInlet
 
      ! turbInlet(:,:,nt1:nt2): Turbulence variables at inlets,
      !                         either subsonic or supersonic.
 
      real(kind=realType), dimension(:,:,:), pointer :: turbInlet
+     real(kind=realType), dimension(:,:,:), pointer :: turbInletInput
 
      ! rho(:,:):  density; used for multiple bc's.
      ! velX(:,:): x-velocity; used for multiple bc's.
@@ -137,14 +142,15 @@ module block
      ! ps(:,:):   static pressure; used for multiple bc's.
 
      real(kind=realType), dimension(:,:), pointer :: rho
-     real(kind=realType), dimension(:,:), pointer :: velX
-     real(kind=realType), dimension(:,:), pointer :: velY
-     real(kind=realType), dimension(:,:), pointer :: velZ
+     real(kind=realType), dimension(:,:), pointer :: rhoInput
+     real(kind=realType), dimension(:,:), pointer :: velX, velY, velZ
+     real(kind=realType), dimension(:,:), pointer :: velXInput, velYInput, velZInput
      real(kind=realType), dimension(:,:), pointer :: ps
+     real(kind=realType), dimension(:,:), pointer :: psInput
 
      ! Surface blanking for force integration
      integer(kind=intType), dimension(:,:), pointer :: iblank
-      
+
      ! Surface deviation. This is an estimate of how much the surface
      ! deviates from the "real" underlying surface'
      real(Kind=realType), dimension(:, :), pointer :: delta
@@ -169,7 +175,7 @@ module block
 
     real(kind=realType) :: origQuality
 
-    ! This is the information regarding where the cell came from. 
+    ! This is the information regarding where the cell came from.
     integer(kind=intType) :: myBlock, myI, myJ, myK
 
     ! This is the information about the donor that was found. Note we
@@ -180,15 +186,15 @@ module block
     ! gInd are the global indices of the donor cells. We will need
     ! these for forming the PC for the Newton Krylov solver
     integer(kind=intType), dimension(8) :: gInd
-    
+
     ! Status integer: This stores the following status information:
     ! isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall and
-    ! is wallDonor. 
+    ! is wallDonor.
 
     integer(kind=intType) :: status
 
   end type fringeType
-  
+
   interface operator(<=)
      module procedure lessEqualFringeType
   end interface operator(<=)
@@ -198,12 +204,12 @@ module block
   end interface operator(<)
 
 
-  !       The definition of the derived data type block_type, which      
-  !       stores dimensions, coordinates, solution, etc.                 
+  !       The definition of the derived data type block_type, which
+  !       stores dimensions, coordinates, solution, etc.
   !
   type blockType
      !
-     !         Block dimensions and orientation.                            
+     !         Block dimensions and orientation.
      !
      !  nx, ny, nz - Block integer dimensions for no halo cell based
      !               quantities.
@@ -223,7 +229,7 @@ module block
 
      logical :: rightHanded
      !
-     !         Block boundary conditions.                                   
+     !         Block boundary conditions.
      !
      !  nSubface             - Number of subfaces on this block.
      !  n1to1                - Number of 1 to 1 block boundaries.
@@ -255,7 +261,7 @@ module block
      !  icBeg(:), icEnd(:)   - Lower and upper limits for the cells
      !  jcBeg(:), jcEnd(:)     in each of the index directions for
      !  kcBeg(:), kcEnd(:)     the subface. The cells indicated by
-     !                         this range are halo cells (the 
+     !                         this range are halo cells (the
      !                         constant index) adjacent to the face.
      !                         a possible overlap outside the block
      !                         is stored.
@@ -277,7 +283,7 @@ module block
      !                         belong to any group, the corresponding
      !                         entry in this array is zeroed out. If
      !                         the subface belongs to a sliding mesh
-     !                         interface the absolute value of 
+     !                         interface the absolute value of
      !                         groupNum contains the number of the
      !                         sliding mesh interface. One side of
      !                         the interface gets a positive number,
@@ -309,7 +315,7 @@ module block
      integer(kind=intType), dimension(:), pointer :: groupNum
 
      !
-     !         Overset interpolation information                            
+     !         Overset interpolation information
 
      integer(kind=intType), dimension(:,:,:), pointer :: iblank
      type(fringeType) , dimension(:, :, :), pointer :: fringes
@@ -317,20 +323,20 @@ module block
      integer(kind=intType) :: nOrphans
 
      !
-     !         Boundary data for the boundary subfaces.                     
+     !         Boundary data for the boundary subfaces.
      !
      ! BCData(nBocos): The boundary data for each of the boundary
      !                 subfaces.
 
      type(BCDataType), dimension(:), pointer :: BCData
      !
-     !         The stress tensor and heat flux vector at viscous wall faces 
-     !         as well as the face pointers to these viscous wall faces.    
+     !         The stress tensor and heat flux vector at viscous wall faces
+     !         as well as the face pointers to these viscous wall faces.
      !
      ! viscSubface(nViscBocos):    Storage for the viscous stress
      !                             tensor and heat flux vector for
      !                             the viscous subfaces.
-     ! viscIMinPointer(2:jl,2:kl): Pointer to viscous subface for 
+     ! viscIMinPointer(2:jl,2:kl): Pointer to viscous subface for
      !                             the iMin block face. If the face
      !                             is not part of a viscous subface
      !                             this value is set to 0.
@@ -349,7 +355,7 @@ module block
      integer(kind=intType), dimension(:,:), pointer :: viscKMinPointer
      integer(kind=intType), dimension(:,:), pointer :: viscKMaxPointer
      !
-     !         Mesh related variables.                                      
+     !         Mesh related variables.
      !
      !  x(0:ie,0:je,0:ke,3)  - xyz locations of grid points in block.
      !  xOld(nOld,:,:,:,:)   - Coordinates on older time levels;
@@ -373,8 +379,8 @@ module block
      !                         needed for unsteady problems on
      !                         deforming grids. Only allocated on
      !                         the finest grid level.
-     !  uv(2,2:il,2:jl,2:kl) - Parametric location on elemID for each cell. 
-     !                         Only used for fast wall distance calcs. 
+     !  uv(2,2:il,2:jl,2:kl) - Parametric location on elemID for each cell.
+     !                         Only used for fast wall distance calcs.
      !  porI(1:il,2:jl,2:kl) - Porosity in the i direction.
      !  porJ(2:il,1:jl,2:kl) - Porosity in the j direction.
      !  porK(2:il,2:jl,1:kl) - Porosity in the k direction.
@@ -464,15 +470,15 @@ module block
      integer(kind=intType), dimension(:, :, :), pointer :: wallInd
 
      !
-     !         Flow variables.                                              
+     !         Flow variables.
      !
      ! w(0:ib,0:jb,0:kb,1:nw)       - The set of independent variables
      !                                w(i,j,k,1:nwf) flow field
-     !                                variables, which are rho, u, 
+     !                                variables, which are rho, u,
      !                                v, w and rhoE. In other words
      !                                the velocities  are stored and
      !                                not the momentum!!!!
-     !                                w(i,j,k,nt1:nt2) turbulent 
+     !                                w(i,j,k,nt1:nt2) turbulent
      !                                variables; also the primitive
      !                                variables are stored.
      ! wOld(nOld,2:il,2:jl,2:kl,nw) - Solution on older time levels,
@@ -508,15 +514,15 @@ module block
 
      ! Nodal Fluxes: ux,uy,uz,vx,vy,vz,wx,wy,wz,qx,qy,qz(il, jl, kl)
      real(kind=realType), dimension(:, :, :), pointer:: ux, uy, uz
-     real(kind=realType), dimension(:, :, :), pointer:: vx, vy, vz 
-     real(kind=realType), dimension(:, :, :), pointer:: wx, wy, wz 
-     real(kind=realType), dimension(:, :, :), pointer:: qx, qy, qz 
-     
+     real(kind=realType), dimension(:, :, :), pointer:: vx, vy, vz
+     real(kind=realType), dimension(:, :, :), pointer:: wx, wy, wz
+     real(kind=realType), dimension(:, :, :), pointer:: qx, qy, qz
+
 
 
 
      !
-     !         Residual and multigrid variables.                            
+     !         Residual and multigrid variables.
      !
      ! dw(0:ib,0:jb,0:kb,1:nw)   - Values of convective and combined
      !                             flow residuals. Only allocated on
@@ -545,19 +551,19 @@ module block
      !                               first entry to a coarser grid;
      !                               only allocated on the coarser
      !                               grids.
-     ! wr(2:il,2:jl,2:kl,1:nMGVar) - Multigrid forcing terms; only 
+     ! wr(2:il,2:jl,2:kl,1:nMGVar) - Multigrid forcing terms; only
      !                               allocated on the coarser grids.
      !                               The forcing term of course
      !                               contains conservative residuals,
      !                               at least for the flow variables.
-     ! shockSensor(0:ib,0:jb,0:kb)   Precomputed sensor value for shock 
-     !                               that is *NOT* differentated. 
+     ! shockSensor(0:ib,0:jb,0:kb)   Precomputed sensor value for shock
+     !                               that is *NOT* differentated.
      ! scratch(0:ib,0:jb,0:kb,5)     Scratch space for the turbulence
      !                               models. NOMINALLY this could use
      !                               dw and the code was nominally setup
-     !                               for this originally. However, this 
+     !                               for this originally. However, this
      !                               complicates reverse mode sensitivities
-     !                               So we use this instead. 
+     !                               So we use this instead.
 
      real(kind=realType), dimension(:,:,:),     pointer :: p1
      real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw
@@ -622,8 +628,8 @@ module block
 
      logical, dimension(:), pointer :: iCo, jCo, kCo
      !
-     !         Time-stepping and spectral radii variables.                  
-     !         only allocated on the finest grid.                           
+     !         Time-stepping and spectral radii variables.
+     !         only allocated on the finest grid.
      !
      ! wn(2:il,2:jl,2:kl,1:nMGVar) - Values of the update variables
      !                               at the beginning of the RungeKutta
@@ -642,18 +648,18 @@ module block
      real(kind=realType), dimension(:,:,:),   pointer :: radI, radJ, radK
 
      !
-     !         Variables for Iso/Surface Slice generation                   
+     !         Variables for Iso/Surface Slice generation
      ! fc(1:ie,1:je,1:ke) - cell center values of the function to be iso-valued
      ! fn(1:il,1:jl,1:kl) - node values of the function to be iso-valued
      ! Note these are are only allocated temporaily during solution writing.
 
      real(kind=realType), dimension(:, :, :), pointer :: fc
      real(kind=realType), dimension(:, :, :), pointer :: fn
-     
+
 
 
      !
-     !         Turbulence model variables.                                  
+     !         Turbulence model variables.
      !
      ! d2Wall(2:il,2:jl,2:kl) - Distance from the center of the cell
      !                          to the nearest viscous wall.
@@ -694,14 +700,14 @@ module block
      real(kind=realType), dimension(:,:,:), pointer :: bvtj1, bvtj2
      real(kind=realType), dimension(:,:,:), pointer :: bvtk1, bvtk2
      !
-     !         Relation to the original cgns grid.                          
+     !         Relation to the original cgns grid.
      !
      ! sectionID      - The section of the grid this block belongs to.
      ! cgnsBlockID    - Block/zone number of the cgns grid to which
      !                  this block is related.
      ! iBegOr, iEndOr - Range of points of this block in the
      ! jBegOr, jEndOr   corresponding cgns block, i.e. for this block
-     ! kBegOr, kEndOr   iBegOr <= i <= iEndOr, jBegOr <= j <= jEndOr, 
+     ! kBegOr, kEndOr   iBegOr <= i <= iEndOr, jBegOr <= j <= jEndOr,
      !                  kBegOr <= k <= kEndOr.
      !                  It is of course possible that the entire
      !                  block is stored.
@@ -709,13 +715,13 @@ module block
      integer(kind=intType) :: cgnsBlockID, sectionID
      integer(kind=intType) :: iBegOr, iEndOr, jBegOr, jEndOr
      integer(kind=intType) :: kBegOr, kEndOr
-     type(surfaceNodeWeightArray) , dimension(6) :: nodalWeights 
+     type(surfaceNodeWeightArray) , dimension(6) :: nodalWeights
      !
-     !         Adjoint solver variables.                                    
+     !         Adjoint solver variables.
      !
      ! globalNode(ib:ie,jb:je,kb:ke):  Global node numbering.
      ! globalCell(0:ib,0:jb,0:kb):     Global cell numbering.
-     ! color(0:ib,0:jb,0:kb)     :     Temporary coloring array used for 
+     ! color(0:ib,0:jb,0:kb)     :     Temporary coloring array used for
      !                                 forward mode AD/FD calculations
      integer(kind=intType), dimension(:,:,:), pointer :: globalNode
      integer(kind=intType), dimension(:,:,:), pointer :: globalCell
@@ -724,7 +730,7 @@ module block
      integer(kind=intType),dimension(:),pointer::ifaceptb
      integer(kind=intType),dimension(:),pointer::iedgeptb
 
-     ! Data storing the first order PC in tri-diagonal ordering. 7 
+     ! Data storing the first order PC in tri-diagonal ordering. 7
      ! real(kind=realType), dimension(:, :, :, :, :), pointer :: Diag
      ! real(kind=realType), dimension(:, :, :, :, :), pointer :: i_L, i_U
      ! real(kind=realType), dimension(:, :, :, :, :), pointer :: j_L, j_U
@@ -734,13 +740,13 @@ module block
 
      ! Generic vectors for doing products/preconditioning. Like w, but
      ! only 1 level of halos, and it is in block ordering (nw first)
-     ! instead of field ordering like w is. 
+     ! instead of field ordering like w is.
      real(kind=realType), dimension(:, :, :, :), pointer :: PCVec1, PCVec2
 
      ! Data for the factorized trigonal solves
-     real(kind=realType), dimension(:, :, :, :), pointer :: i_D_fact,  j_D_fact,  k_D_fact 
-     real(kind=realType), dimension(:, :, :, :), pointer :: i_L_Fact,  j_L_Fact,  k_L_Fact 
-     real(kind=realType), dimension(:, :, :, :), pointer :: i_U_Fact,  j_U_Fact,  k_U_Fact 
+     real(kind=realType), dimension(:, :, :, :), pointer :: i_D_fact,  j_D_fact,  k_D_fact
+     real(kind=realType), dimension(:, :, :, :), pointer :: i_L_Fact,  j_L_Fact,  k_L_Fact
+     real(kind=realType), dimension(:, :, :, :), pointer :: i_U_Fact,  j_U_Fact,  k_U_Fact
      real(kind=realType), dimension(:, :, :, :), pointer :: i_U2_Fact, j_U2_Fact, k_U2_Fact
 
      integer(kind=intType), dimension(:, :, :, :), pointer :: i_ipiv, j_ipiv, k_ipiv
@@ -753,7 +759,7 @@ module block
   end type blockType
 
   !
-  !       Array of all blocks at all multigrid levels and spectral sols. 
+  !       Array of all blocks at all multigrid levels and spectral sols.
   !
   ! nDom:            total number of computational blocks.
   ! flowDoms(:,:,:): array of blocks. Dimensions are
@@ -773,7 +779,7 @@ module block
 #endif
 
   !
-  !       Additional info needed in the flow solver.                     
+  !       Additional info needed in the flow solver.
   !
   ! nCellGlobal(nLev) - Global number of cells on every mg level.
 
@@ -783,10 +789,10 @@ module block
 
 
   logical function lessEqualFringeType(g1, g2)
-    
-    !         lessEqual returns .true. if g1 <= g2 and .false. otherwise.  
-    !         The comparison is firstly based on the processor ID of the   
-    !         donor, then the block, then then the I, J, K                 
+
+    !         lessEqual returns .true. if g1 <= g2 and .false. otherwise.
+    !         The comparison is firstly based on the processor ID of the
+    !         donor, then the block, then then the I, J, K
     !
     implicit none
     !
@@ -796,7 +802,7 @@ module block
     !
     ! Compare the donor processors first. If not equal,
     ! set lessEqual appropriately and return.
-    
+
     if(g1%donorProc < g2%donorProc) then
        lessEqualfringeType = .true.
        return
@@ -806,7 +812,7 @@ module block
     endif
 
     ! Donor processors are identical. Now we check the block
-    
+
     if(g1%donorBlock < g2%donorBlock) then
        lessEqualfringeType = .true.
        return
@@ -814,10 +820,10 @@ module block
        lessEqualfringeType = .false.
        return
     endif
-    
+
     ! Compare the indices of the halo. First k, then j and
     ! finally i.
-    
+
     if(g1%dK < g2%dK) then
        lessEqualfringeType = .true.
        return
@@ -825,7 +831,7 @@ module block
        lessEqualfringeType = .false.
        return
     endif
-    
+
     if(g1%dJ < g2%dJ) then
        lessEqualfringeType = .true.
        return
@@ -833,7 +839,7 @@ module block
        lessEqualfringeType = .false.
        return
     endif
-         
+
     if(g1%dI < g2%dI) then
        lessEqualfringeType = .true.
        return
@@ -843,16 +849,16 @@ module block
     endif
 
     ! Both entities are identical. So set lessEqual to .true.
-    
+
     lessEqualfringeType = .true.
-    
+
   end function lessEqualFringeType
 
   logical function lessFringeType(g1, g2)
-    
-    !         less returns .true. if g1 <= g2 and .false. otherwise.  
-    !         The comparison is firstly based on the processor ID of the   
-    !         donor, then the block, then then the I, J, K                 
+
+    !         less returns .true. if g1 <= g2 and .false. otherwise.
+    !         The comparison is firstly based on the processor ID of the
+    !         donor, then the block, then then the I, J, K
     !
     implicit none
     !
@@ -862,7 +868,7 @@ module block
     !
     ! Compare the donor processors first. If not equal,
     ! set less appropriately and return.
-    
+
     if(g1%donorProc < g2%donorProc) then
        lessfringeType = .true.
        return
@@ -872,7 +878,7 @@ module block
     endif
 
     ! Donor processors are identical. Now we check the block
-    
+
     if(g1%donorBlock < g2%donorBlock) then
        lessfringeType = .true.
        return
@@ -880,10 +886,10 @@ module block
        lessfringeType = .false.
        return
     endif
-    
+
     ! Compare the indices of the halo. First k, then j and
     ! finally i.
-    
+
     if(g1%dK < g2%dK) then
        lessfringeType = .true.
        return
@@ -891,7 +897,7 @@ module block
        lessfringeType = .false.
        return
     endif
-    
+
     if(g1%dJ < g2%dJ) then
        lessfringeType = .true.
        return
@@ -899,7 +905,7 @@ module block
        lessfringeType = .false.
        return
     endif
-         
+
     if(g1%dI < g2%dI) then
        lessfringeType = .true.
        return
@@ -909,9 +915,9 @@ module block
     endif
 
     ! Both entities are identical. So set less to .False.
-    
+
     lessFringeType = .False.
-    
+
   end function lessFringeType
 
 end module block

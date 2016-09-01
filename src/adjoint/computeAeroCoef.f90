@@ -1,19 +1,19 @@
 subroutine computeAeroCoef(globalCFVals,sps)
   !
-  !      Compute the aerodynamic coefficients from the force and moment 
-  !      produced by the pressure and shear stresses on the body walls: 
+  !      Compute the aerodynamic coefficients from the force and moment
+  !      produced by the pressure and shear stresses on the body walls:
   !
   use constants
-  use blockPointers 
+  use blockPointers
   use communication, only : sumb_comm_world, myid
-  use inputPhysics   
-  use iteration      
+  use inputPhysics
+  use iteration
   use costFunctions
   use inputTimeSpectral
   use flowVarRefState
   use overset, only : oversetPresent
   use utils, only : EChk, setPointers
-  use surfaceIntegrations, only : forcesAndMoments, forcesAndMomentsZipper
+  use surfaceIntegrations, only : forcesAndMoments, forcesAndMomentsZipper, flowProperties
   implicit none
 
   ! Input/Ouput Variables
@@ -27,6 +27,7 @@ subroutine computeAeroCoef(globalCFVals,sps)
   real(kind=realType), dimension(3) :: cFpLocal, cFvLocal, cMpLocal, cMvLocal, sepSensorAvgLocal
   real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yPlusMax, sepSensorLocal, cavitationLocal
   real(Kind=realType) :: sepSensor, sepSensorAvg(3), Cavitation
+  real(Kind=realType) :: massFlowRate, mass_Ptot, mass_Ttot, mass_Ps
   real(kind=realType), dimension(nCostFunction)::localCFVals
 
 
@@ -39,7 +40,7 @@ subroutine computeAeroCoef(globalCFVals,sps)
   cavitationLocal = zero
   domains: do nn=1,nDom
      call setPointers(nn,1_intType,sps)
-     
+
      call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
           sepSensorAvg, Cavitation)
 
@@ -50,13 +51,16 @@ subroutine computeAeroCoef(globalCFVals,sps)
      sepSensorLocal = sepSensorLocal + sepSensor
      sepSensorAvgLocal = sepSensorAvgLocal + sepSensorAvg
      cavitationLocal = cavitationLocal + cavitation
+
+     call flowProperties(massFlowRate, mass_Ptot, mass_Ttot, mass_Ps)
+     ! Compute the dimensional mass flow
   end do domains
 
-  if (oversetPresent) then 
+  if (oversetPresent) then
      call forcesAndMomentsZipper(cfp, cfv, cmp, cmv, sps)
-  
+
      ! Add the extra zipper component on the root proc
-     if (myid == 0) then 
+     if (myid == 0) then
         cFpLocal = cFpLocal + cFp
         cFvLocal = cFvLocal + cFv
         cMpLocal = cMpLocal + cMp
@@ -72,7 +76,7 @@ subroutine computeAeroCoef(globalCFVals,sps)
   sepSensor = sepSensorLocal
   cavitation = cavitationLocal
   sepSensorAvg = sepSensorAvgLocal
-  
+
 
   scaleDim = pRef/pInf
 
@@ -84,18 +88,18 @@ subroutine computeAeroCoef(globalCFVals,sps)
   CD =  cForce(1)*dragDirection(1) &
        + cForce(2)*dragDirection(2) &
        + cForce(3)*dragDirection(3)
-  
+
   CL =  cForce(1)*liftDirection(1) &
        + cForce(2)*liftDirection(2) &
        + cForce(3)*liftDirection(3)
-  
+
   ! Divide by fact to get the forces, Lift and Drag back
   fact = two/(gammaInf*pInf*MachCoef*MachCoef &
        *surfaceRef*LRef*LRef*scaleDim)
   Force = cForce / fact
   Lift  = CL / fact
   Drag  = CD / fact
-  
+
   ! Moment factor has an extra lengthRef
   fact = fact/(lengthRef*LRef)
   Moment = cMoment / fact
@@ -121,9 +125,18 @@ subroutine computeAeroCoef(globalCFVals,sps)
   localCFVals(costFuncSepSensorAvgY) = sepSensorAvg(2)
   localCFVals(costFuncSepSensorAvgZ) = sepSensorAvg(3)
   localCFVals(costFuncCavitation) = Cavitation
+  localCFVals(costFuncMdot) = localCFVals(costFuncMdot) + massFlowRate
+  localCFVals(costFuncMavgPtot) = localCFVals(costFuncMavgPtot) + mass_Ptot
+  localCFVals(costFuncMavgTtot) = localCFVals(costFuncMavgTtot) + mass_Ttot
+  localCFVals(costFuncMavgPs) = localCFVals(costFuncMavgPs) + mass_Ps
 
   ! Now we will mpi_allReduce them into globalCFVals
   call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, sumb_real, &
        mpi_sum, SUmb_comm_world, ierr)
+
+  globalCFVals(costFuncMavgPtot) = globalCFVals(costFuncMavgPtot)/globalCFVals(costFuncMdot)*pRef
+  globalCFVals(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)/globalCFVals(costFuncMdot)*tRef
+  globalCFVals(costFuncMavgPs) = globalCFVals(costFuncMavgPs)/globalCFVals(costFuncMdot)*pRef
+  globalCFVals(costFuncMdot) = globalCFVals(costFuncMdot)*sqrt(pRef*rhoRef)
 
 end subroutine computeAeroCoef

@@ -1,7 +1,7 @@
 
 module BCPointers
 
-! Thiss module contains data structures used to apply BCs. 
+! Thiss module contains data structures used to apply BCs.
 
   use constants, only : intType, realType
   implicit none
@@ -14,7 +14,7 @@ module BCPointers
   real(kind=realType), dimension(:,:),   pointer :: gamma0, gamma1, gamma2, gamma3
   real(kind=realType), dimension(:,:,:), pointer :: ssi, ssj, ssk
   real(kind=realType), dimension(:,:,:), pointer :: ss, xx
-  real(kind=realType), dimension(:,:),   pointer :: dd2wall
+  real(kind=realType), dimension(:,:),   pointer :: dd2wall, sFace
   integer(kind=intType), dimension(:,:), pointer :: gcp
 #else
   real(kind=realType), dimension(:,:,:), allocatable :: ww0, ww1, ww2, ww3

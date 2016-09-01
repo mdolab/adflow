@@ -1,14 +1,14 @@
 module costFunctions
   !
-  !      This module contains the paramter values for the solver and    
-  !      adjoint cost functions                                         
+  !      This module contains the paramter values for the solver and
+  !      adjoint cost functions
   !
   use constants, only : intType, realType, maxCGNSNameLen
   implicit none
   !
-  !      Cost functions.                                                
+  !      Cost functions.
 
-  integer(kind=intType), parameter :: nCostFunction = 42
+  integer(kind=intType), parameter :: nCostFunction = 46
   integer(kind=intType), parameter :: &
        costFuncLift       = 1,&
        costFuncDrag       = 2,&
@@ -37,12 +37,12 @@ module costFunctions
        costFuncClq        = 25,&
        costFuncClqDot     = 26,&
        costFuncCd0        = 27,&
-       costFuncCdAlpha    = 28,& 
+       costFuncCdAlpha    = 28,&
        costFuncCdAlphadot = 29,&
        costFuncCdq        = 30,&
        costFuncCdqDot     = 31,&
-       costFuncCfy0       = 32,&	
-       costFuncCfyAlpha   = 33,& 
+       costFuncCfy0       = 32,&
+       costFuncCfyAlpha   = 33,&
        costFuncCfyAlphadot= 34,&
        costFuncCfyq       = 35,&
        costFuncCfyqDot    = 36,&
@@ -51,7 +51,11 @@ module costFunctions
        costFuncSepSensorAvgX = 39, &
        costFuncSepSensorAvgY = 40, &
        costFuncSepSensorAvgZ = 41, &
-       costFuncCavitation = 42
+       costFuncCavitation = 42, &
+       costFuncMdot = 43, &
+       costFuncMavgPtot = 44, &
+       costFuncMavgTtot = 45, &
+       costFuncMavgPs = 46
 
   integer(kind=intType), parameter :: &
        icFp1 = 1, &
@@ -77,12 +81,10 @@ module costFunctions
        iyPlus = 30
   integer(kind=intType), parameter :: nLocalValues=30
   real(kind=realType), dimension(nCostFunction) ::  funcValues
-#ifndef USE_TAPENADE 
+#ifndef USE_TAPENADE
   real(kind=realType), dimension(nCostFunction) ::  funcValuesd
 #endif
-  
+
   real(kind=realtype) :: sepSensorOffset, sepSensorSharpness
   character(len=maxCGNSNameLen), dimension(:), allocatable :: maskFams
 end module costFunctions
-
-
