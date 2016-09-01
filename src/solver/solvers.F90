@@ -310,7 +310,6 @@ contains
             call updateWallDistanceAllLevels
 
 
-       call updateSlidingAllLevels
        call updateMetricsAllLevels
 
        ! Update the rotation matrices of the faces. Only needed
@@ -610,7 +609,6 @@ contains
        if(changing_Grid .and. updateWallDistanceUnsteady) &
             call updateWallDistanceAllLevels
 
-       call updateSlidingAllLevels
        call updateMetricsAllLevels
 
        ! Update the rotation matrices of the faces. Only needed
@@ -1008,7 +1006,6 @@ contains
        if(changing_Grid .and. updateWallDistanceUnsteady) &
             call updateWallDistanceAllLevels
 
-       call updateSlidingAllLevels
        call updateMetricsAllLevels
 
        ! Update the rotation matrices of the faces. Only needed
@@ -1215,7 +1212,6 @@ contains
 
        !if(changingOverset) call updateOversetAllLevels
        ! To be done in ALE loop
-       ! call updateSlidingAllLevels
        ! call updateMetricsAllLevels
 
        ! --------------------------------

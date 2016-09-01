@@ -1011,7 +1011,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
           size(oWallRecvList, 2), work, nWork)
 
      ! Setup the buffer sizes
-     call setBufferSizes(level, sps, .false., .false., .True.)
+     call setBufferSizes(level, sps, .false., .True.)
 
      ! Deallocate some data we no longer need
      deallocate(Xmin, Xmax, work)
