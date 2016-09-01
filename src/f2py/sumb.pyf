@@ -332,9 +332,6 @@ python module libsumb
          integer(kind=inttype) :: sps
        end subroutine getsolution
 
-       subroutine updateslidingalllevels ! in :sumb:../../slidingComm/updateSlidingAllLevels.f90
-       end subroutine updateslidingalllevels
-      
        subroutine preprocessing ! in :sumb:../../preprocessing/preprocessing.f90
        end subroutine preprocessing
      
