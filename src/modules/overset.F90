@@ -1,11 +1,11 @@
 module overset
 
-  use constants, only : realType, intType, maxCGNSNameLen
+  use constants
   use adtData, only : adtType
   use block, only : fringeType
   use kdtree2_module, only : kdtree2
   implicit none
-
+#define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
 
