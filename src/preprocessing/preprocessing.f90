@@ -6,10 +6,11 @@
 !
        use constants
        use block
-       use blockPointers
+       use blockPointers, only : BCType, nBocos
        use cgnsGrid
        use commMixing
        use commSliding
+       use bcdata, only : initBCData, allocMemBCData
        use communication, only : sumb_comm_world, commPatternCell_1st, &
             commPatternCell_2nd, commPatternNode_1st, internalCell_1st, &
             internalCell_2nd, internalNode_1st, myid, nProc, &
@@ -26,7 +27,6 @@
        use overset, only : cumDomProc, nDomProc, wallFringes, nDomTotal, &
             overlapMatrix, oversetPresent, localWallFringes
        use utils, only : setPointers, EChk, setBufferSizes, terminate
-       use bcdata, only : initBCData, allocMemBCData
        implicit none
 !
 !      Local variables.
