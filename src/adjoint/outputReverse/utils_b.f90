@@ -884,7 +884,7 @@ contains
 ! the pointers accordinly.
     select case  (bcfaceid(nn)) 
     case (imin) 
-!===============================================================
+!---------------------------------------------------------------------------
       ww3(1:je, 1:ke, :) = w(3, 1:je, 1:ke, :)
       ww2(1:je, 1:ke, :) = w(2, 1:je, 1:ke, :)
       ww1(1:je, 1:ke, :) = w(1, 1:je, 1:ke, :)
@@ -907,7 +907,7 @@ contains
       gamma0(1:je, 1:ke) = gamma(0, 1:je, 1:ke)
       gcp(1:je, 1:ke) = globalcell(2, 1:je, 1:ke)
     case (imax) 
-!===============================================================
+!---------------------------------------------------------------------------
       ww3(1:je, 1:ke, :) = w(nx, 1:je, 1:ke, :)
       ww2(1:je, 1:ke, :) = w(il, 1:je, 1:ke, :)
       ww1(1:je, 1:ke, :) = w(ie, 1:je, 1:ke, :)
@@ -930,7 +930,7 @@ contains
       gamma0(1:je, 1:ke) = gamma(ib, 1:je, 1:ke)
       gcp(1:je, 1:ke) = globalcell(il, 1:je, 1:ke)
     case (jmin) 
-!===============================================================
+!---------------------------------------------------------------------------
       ww3(1:ie, 1:ke, :) = w(1:ie, 3, 1:ke, :)
       ww2(1:ie, 1:ke, :) = w(1:ie, 2, 1:ke, :)
       ww1(1:ie, 1:ke, :) = w(1:ie, 1, 1:ke, :)
@@ -953,7 +953,7 @@ contains
       gamma0(1:ie, 1:ke) = gamma(1:ie, 0, 1:ke)
       gcp(1:ie, 1:ke) = globalcell(1:ie, 2, 1:ke)
     case (jmax) 
-!===============================================================
+!---------------------------------------------------------------------------
       ww3(1:ie, 1:ke, :) = w(1:ie, ny, 1:ke, :)
       ww2(1:ie, 1:ke, :) = w(1:ie, jl, 1:ke, :)
       ww1(1:ie, 1:ke, :) = w(1:ie, je, 1:ke, :)
@@ -976,7 +976,7 @@ contains
       gamma0(1:ie, 1:ke) = gamma(1:ie, jb, 1:ke)
       gcp(1:ie, 1:ke) = globalcell(1:ie, jl, 1:ke)
     case (kmin) 
-!===============================================================
+!---------------------------------------------------------------------------
       ww3(1:ie, 1:je, :) = w(1:ie, 1:je, 3, :)
       ww2(1:ie, 1:je, :) = w(1:ie, 1:je, 2, :)
       ww1(1:ie, 1:je, :) = w(1:ie, 1:je, 1, :)
@@ -999,7 +999,7 @@ contains
       gamma0(1:ie, 1:je) = gamma(1:ie, 1:je, 0)
       gcp(1:ie, 1:je) = globalcell(1:ie, 1:je, 2)
     case (kmax) 
-!===============================================================
+!---------------------------------------------------------------------------
       ww3(1:ie, 1:je, :) = w(1:ie, 1:je, nz, :)
       ww2(1:ie, 1:je, :) = w(1:ie, 1:je, kl, :)
       ww1(1:ie, 1:je, :) = w(1:ie, 1:je, ke, :)
@@ -1384,7 +1384,7 @@ contains
     logical, intent(in) :: spatialpointers
     select case  (bcfaceid(nn)) 
     case (imin) 
-!===============================================================
+!---------------------------------------------------------------------------
       w(3, 1:je, 1:ke, :) = ww3(1:je, 1:ke, :)
       w(2, 1:je, 1:ke, :) = ww2(1:je, 1:ke, :)
       w(1, 1:je, 1:ke, :) = ww1(1:je, 1:ke, :)
@@ -1406,7 +1406,7 @@ contains
       gamma(1, 1:je, 1:ke) = gamma1(1:je, 1:ke)
       gamma(0, 1:je, 1:ke) = gamma0(1:je, 1:ke)
     case (imax) 
-!===============================================================
+!---------------------------------------------------------------------------
       w(nx, 1:je, 1:ke, :) = ww3(1:je, 1:ke, :)
       w(il, 1:je, 1:ke, :) = ww2(1:je, 1:ke, :)
       w(ie, 1:je, 1:ke, :) = ww1(1:je, 1:ke, :)
@@ -1428,7 +1428,7 @@ contains
       gamma(ie, 1:je, 1:ke) = gamma1(1:je, 1:ke)
       gamma(ib, 1:je, 1:ke) = gamma0(1:je, 1:ke)
     case (jmin) 
-!===============================================================
+!---------------------------------------------------------------------------
       w(1:ie, 3, 1:ke, :) = ww3(1:ie, 1:ke, :)
       w(1:ie, 2, 1:ke, :) = ww2(1:ie, 1:ke, :)
       w(1:ie, 1, 1:ke, :) = ww1(1:ie, 1:ke, :)
@@ -1450,7 +1450,7 @@ contains
       gamma(1:ie, 1, 1:ke) = gamma1(1:ie, 1:ke)
       gamma(1:ie, 0, 1:ke) = gamma0(1:ie, 1:ke)
     case (jmax) 
-!===============================================================
+!---------------------------------------------------------------------------
       w(1:ie, ny, 1:ke, :) = ww3(1:ie, 1:ke, :)
       w(1:ie, jl, 1:ke, :) = ww2(1:ie, 1:ke, :)
       w(1:ie, je, 1:ke, :) = ww1(1:ie, 1:ke, :)
@@ -1472,7 +1472,7 @@ contains
       gamma(1:ie, je, 1:ke) = gamma1(1:ie, 1:ke)
       gamma(1:ie, jb, 1:ke) = gamma0(1:ie, 1:ke)
     case (kmin) 
-!===============================================================
+!---------------------------------------------------------------------------
       w(1:ie, 1:je, 3, :) = ww3(1:ie, 1:je, :)
       w(1:ie, 1:je, 2, :) = ww2(1:ie, 1:je, :)
       w(1:ie, 1:je, 1, :) = ww1(1:ie, 1:je, :)
@@ -1494,7 +1494,7 @@ contains
       gamma(1:ie, 1:je, 1) = gamma1(1:ie, 1:je)
       gamma(1:ie, 1:je, 0) = gamma0(1:ie, 1:je)
     case (kmax) 
-!===============================================================
+!---------------------------------------------------------------------------
       w(1:ie, 1:je, nz, :) = ww3(1:ie, 1:je, :)
       w(1:ie, 1:je, kl, :) = ww2(1:ie, 1:je, :)
       w(1:ie, 1:je, ke, :) = ww1(1:ie, 1:je, :)
@@ -2518,7 +2518,7 @@ contains
       end if
       nlevelsset = 2
     case (secondorder) 
-!=============================================================
+!--------------------------------------------------
 ! second order time integrator. determine the amount of
 ! available states and set the coefficients accordingly.
       select case  (noldsolavail) 
@@ -2554,7 +2554,7 @@ contains
         nlevelsset = 3
       end select
     case (thirdorder) 
-!=============================================================
+!--------------------------------------------------
 ! third order time integrator.  determine the amount of
 ! available states and set the coefficients accordingly.
       select case  (noldsolavail) 
@@ -2610,4 +2610,12 @@ contains
       coeftime(nn) = zero
     end do
   end subroutine setcoeftimeintegrator
+  function mynorm2(x)
+    use constants
+    implicit none
+    real(kind=realtype), dimension(3), intent(in) :: x
+    real(kind=realtype) :: mynorm2
+    intrinsic sqrt
+    mynorm2 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)
+  end function mynorm2
 end module utils_b

@@ -18,6 +18,9 @@ subroutine setupPCMatrix(useAD,  useTranspose, frozenTurb, level)
   use turbMod
   use utils, only : setPointers, EChk, getDirAngle
   use haloExchange, only : whalo2
+  use adjointExtra_d, only : block_res_d
+  use adjointExtra, only : block_res
+
   implicit none
 
   ! Input Variables
