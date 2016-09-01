@@ -992,7 +992,11 @@ python module libsumb
             integer(kind=inttype) parameter,optional :: costfuncsepsensoravgy=40
             integer(kind=inttype) parameter,optional :: costfuncsepsensoravgz=41
             integer(kind=inttype) parameter,optional :: costfunccavitation=42
-            real(kind=realtype) dimension(42) :: funcvalues
+            integer(kind=inttype) parameter,optional :: costfuncmdot=43
+            integer(kind=inttype) parameter,optional :: costfuncmavgptot=44
+            integer(kind=inttype) parameter,optional :: costfuncmavgttot=45
+            integer(kind=inttype) parameter,optional :: costfuncmavgps=46
+            real(kind=realtype) dimension(46) :: funcvalues
             real(kind=realtype) sepsensoroffset
             real(kind=realtype) sepsensorsharpness
        end module costfunctions
