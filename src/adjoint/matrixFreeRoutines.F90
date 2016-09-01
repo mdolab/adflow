@@ -19,7 +19,8 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
   use diffSizes
   use surfaceFamilies, only: wallFamilies, totalWallFamilies
   use utils, only : setPointers, EChk, getDirAngle
-  use haloExchange, only : whalo2_d
+  use haloExchange, only : whalo2_d, exchangeCoor_d
+  use adjointextra_d, only : xhalo_block_d, block_res_d
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
@@ -259,6 +260,8 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
   use solverUtils, only : timeStep_block
   use flowUtils, only : allNodalGradients
   use fluxes, only : viscousFlux
+  use haloExchange, only : exchangeCoor_b
+  use adjointextra_b, only : block_res_b, xhalo_block_b
   implicit none
 
 #define PETSC_AVOID_MPIF_H
