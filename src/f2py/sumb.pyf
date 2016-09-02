@@ -46,14 +46,14 @@ python module libsumb
 
        module initializeflow
 
+         subroutine updatebcdataalllevels
+         end subroutine updatebcdataalllevels
+
          subroutine initflow 
          end subroutine initflow
        
          subroutine initflowrestart
          end subroutine initflowrestart
-
-         subroutine referencestate
-         end subroutine referencestate
 
          subroutine setuniformflow
          end subroutine setuniformflow
@@ -69,10 +69,10 @@ python module libsumb
 
        end module initializeflow
 
-       module bcdata
-         subroutine nondimbounddata
-         end subroutine nondimbounddata
-       end module
+       ! module bcdata
+       !   subroutine insertBCData !!!!!TODO
+       !   end subroutine insertBCData
+       ! end module
 
        module flowutils
 
