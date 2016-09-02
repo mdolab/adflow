@@ -40,7 +40,6 @@ module surfaceIntegrations
             famGroups, size(famGroups)) > 0) then
 
              call setBCPointers(nn, .True.)
-             if( addGridVelocities ) sF = sFace(i,j)
 
              select case (BCFaceID(nn))
              case (iMin)
@@ -69,7 +68,6 @@ module surfaceIntegrations
              !    do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
 
              !$AD II-LOOP
-             ! print *, "start", nn, massFlowRate
              do ii=0,(BCData(nn)%jnEnd - bcData(nn)%jnBeg)*(bcData(nn)%inEnd - bcData(nn)%inBeg) -1
                 i = mod(ii, (bcData(nn)%inEnd-bcData(nn)%inBeg)) + bcData(nn)%inBeg + 1
                 j = ii/(bcData(nn)%inEnd-bcData(nn)%inBeg) + bcData(nn)%jnBeg + 1
@@ -101,16 +99,8 @@ module surfaceIntegrations
                mass_Ptot = mass_pTot + Ptot * massFlowRateLocal
                mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal
                mass_Ps = mass_Ps + pm*massFlowRateLocal
-
-               ! print *, nn, pm*pref, massFlowRateLocal*sqrt(pRef*rhoRef)
             enddo
-           !  if(BCType(nn) == SubsonicOutflow) then
-           !    print *, nn, "foobar", pTot*pRef, pm1*pRef, bcData(nn)%ps(1,1)*pRef
-           !    print *, nn, "foobar", massFlowRate
-           !  endif
-           !  if(BCType(nn) == SubsonicInflow) then
-           !     print *, nn, "foobar", pm1*pRef, pTot*pRef, bcData(nn)%ptInlet(1,1)*pRef
-           !  endif
+
             massFlowRate = massFlowRate*fact
             mass_Ptot = mass_pTot*fact
             mass_Ttot = mass_Ttot*fact
