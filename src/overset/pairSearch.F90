@@ -9,8 +9,8 @@ subroutine pairSearch(B)
   use constants
   use overset
   use inputOverset
-  use adtLocalSearch
-use blockPointers
+  use adtLocalSearch, only : containmenttreesearchsinglepoint
+  use blockPointers
   implicit none
 
   ! Input/Ouput

@@ -1666,7 +1666,12 @@ contains
     ! This routine will determine the closest surface point for every
     ! field cell. Special treatment is required for overlapping surfaces. 
 
-    use adtAPI
+    use constants
+    use adtAPI, only : minDistanceSearch
+    use adtData, only : adtBBOXTargetType
+    use adtLocalSearch, only :  mindistancetreesearchsinglepoint
+    use adtUtils, only : stack
+    use adtBuild, only : buildSerialQuad, destroyserialquad
     use blockPointers
     use communication
     use inputphysics

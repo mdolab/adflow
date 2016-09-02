@@ -18,7 +18,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
        overlapMatrix
   use stencils, only : N_visc_drdw, visc_drdw_stencil
   use inputTimeSpectral, only : nTimeIntervalsSpectral
-  use ADTapi, only : destroySerialQuad
+  use adtBuild, only : destroySerialQuad
   use inputOverset
   use utils, only : EChk, setPointers, setBufferSizes, terminate
   use kdtree2_module

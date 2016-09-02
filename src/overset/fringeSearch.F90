@@ -3,7 +3,11 @@ subroutine fringeSearch(oBlock, oFringe)
   use constants
   use overset
   use inputOverset
-  use adtLocalSearch
+  use adtLocalSearch, only : 
+  use adtLocalSearch, only :  mindistancetreesearchsinglepoint, &
+       containmenttreesearchsinglepoint
+  use adtData, only : adtBBoxTargetType
+  use adtUtils, only : stack
   use utils, only : mynorm2
   implicit none
 
