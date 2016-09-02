@@ -34,7 +34,7 @@
         ! xMax(6):     The maximum coordinates of the leaf.
 
         integer(kind=intType), dimension(2) :: children
-        real(kind=alwaysRealType),   dimension(6) :: xMin, xMax
+        real(kind=realType),   dimension(6) :: xMin, xMax
 
       end type adtLeafType
 !
@@ -49,7 +49,7 @@
         !           coordinate.
 
         integer(kind=intType) :: ID
-        real(kind=alwaysRealType)   :: posDist2
+        real(kind=realType)   :: posDist2
 
       end type adtBBoxTargetType
 
@@ -101,7 +101,7 @@
         ! coor(3,nNodes): Nodal coordinates of the local grid.
         !                 To save memory this pointer is not
         !                 allocated, but set to the data given.
-        real(kind=alwaysRealType), dimension(:,:), pointer :: coor
+        real(kind=realType), dimension(:,:), pointer :: coor
 
         ! triaConn(3,nTria):     Local connectivity of the triangles.
         !                        To save memory this pointer is not
@@ -130,7 +130,7 @@
 
         integer :: nRootLeaves, myEntryInRootProcs
         integer, dimension(:), pointer :: rootLeavesProcs
-        real(kind=alwaysRealType), dimension(:,:,:), pointer :: rootBBoxes
+        real(kind=realType), dimension(:,:,:), pointer :: rootBBoxes
 
         ! nBBoxes:              Number of bounding boxes stored in
         !                       the ADT.
@@ -145,7 +145,7 @@
 
         integer(kind=adtElementType), dimension(:), pointer :: elementType
         integer(kind=intType),     dimension(:), pointer :: elementID
-        real(kind=alwaysRealType),     dimension(:,:), pointer :: xBBox
+        real(kind=realType),     dimension(:,:), pointer :: xBBox
 
         ! nLeaves:         Number of present in the ADT. Due to the
         !                  variable splitting the tree is optimally
