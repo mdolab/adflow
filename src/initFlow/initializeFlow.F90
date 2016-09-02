@@ -179,6 +179,8 @@ contains
   end subroutine referenceState
 
 
+
+
   ! ----------------------------------------------------------------------
   !                                                                      |
   !                    No Tapenade Routine below this line               |
@@ -187,35 +189,16 @@ contains
 
 #ifndef  USE_TAPENADE
 
-  subroutine initFlow
-    !
-    !       initFlow sets the prescribed boundary data, allocates the
-    !       memory for and initializes the flow variables. In case a
-    !       restart is performed the owned variables are read from the
-    !       previous solution file(s).
-    !
+  ! Section out the BCdata setup so that it can by called from python when needed
+  subroutine updateBCDataAllLevels()
+    ! sets the prescribed boundary data from the CGNS arrays
+
     use constants
-    use block, only : flowDoms
-    use inputTimeSpectral, only : nTimeIntervalsSpectral
     use iteration, only : groundLevel
     use bcdata, only : setSupersonicInletFreeStream, setbcdataFineGrid, &
-         setBCDataCoarseGrid, nonDimBoundData, setInletFreeStreamTurb, &
-         initBCDataDomainInterfaces
-    use variableReading, only : halosRead
-
+         setBCDataCoarseGrid, nonDimBoundData, setInletFreeStreamTurb
     implicit none
-    !
-    !      Local variables.
-    !
-    integer :: ierr
-
-    integer(kind=intType) :: sps, level, nLevels
-
-
-    ! Determine the number of multigrid levels.
-
-    nLevels = ubound(flowDoms,2)
-
+    
     ! Allocate the memory for the prescribed boundary data at the
     ! boundary faces and determine the data for both the fine grid.
 
@@ -223,10 +206,11 @@ contains
 
     call setBCDataFineGrid(.true.)
 
-    ! As some boundary conditions can be treated in multiple ways,
-    ! some memory allocated must be released again.
+    ! This code probably isn't necessary, we are commenting it out for now
+    ! ! As some boundary conditions can be treated in multiple ways,
+    ! ! some memory allocated must be released again.
 
-    call releaseExtraMemBcs
+    ! call releaseExtraMemBcs
 
     ! Determine the reference state.
     call referenceState
@@ -251,6 +235,33 @@ contains
     ! These can be both subsonic and supersonic inflow faces.
 
     call setInletFreestreamTurb
+
+  end subroutine updateBCDataAllLevels
+
+  subroutine initFlow
+    !
+    !       initFlow allocates the
+    !       memory for and initializes the flow variables. In case a
+    !       restart is performed the owned variables are read from the
+    !       previous solution file(s).
+    !
+    use constants
+    use block, only : flowDoms
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use bcdata, only : initBCDataDomainInterfaces
+    use variableReading, only : halosRead
+
+    implicit none
+    !
+    !      Local variables.
+    !
+    integer :: ierr
+
+    integer(kind=intType) :: sps, level, nLevels
+
+    ! Determine the number of multigrid levels.
+
+    nLevels = ubound(flowDoms,2)
 
     ! Determine for the time spectral mode the matrices for the
     ! time derivatives.

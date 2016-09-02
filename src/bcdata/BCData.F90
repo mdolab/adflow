@@ -2029,6 +2029,44 @@ contains
 
   end subroutine computeHtot
 
+  ! subroutine setBCData()
+  ! nVarPresent = 0
+
+  !   do m=1,nbcVar
+  !      bcVarPresent(m) = .false.
+
+  !      dataSetLoop: do k=1,nDataSet
+  !         do l=1,dataSet(k)%nDirichletArrays
+  !            if(dataSet(k)%dirichletArrays(l)%arrayName == &
+  !                 bcVarNames(m)) then
+
+  !               ! Variable is present. Store the indices, update
+  !               ! nVarPresent and set bcVarPresent(m) to .True.
+
+  !               ind(1,m) = k; ind(2,m) = l
+
+  !               nVarPresent      = nVarPresent + 1
+  !               bcVarPresent(m) = .true.
+
+  !               ! Set the units for this variable.
+
+  !               mass(m)   = dataSet(k)%dirichletArrays(l)%mass
+  !               length(m) = dataSet(k)%dirichletArrays(l)%len
+  !               time(m)   = dataSet(k)%dirichletArrays(l)%time
+  !               temp(m)   = dataSet(k)%dirichletArrays(l)%temp
+  !               angle(m)  = dataSet(k)%dirichletArrays(l)%angle
+
+  !               ! Exit the search loop, as the variable was found.
+
+  !               exit dataSetLoop
+
+  !            endif
+  !         enddo
+  !      enddo dataSetLoop
+  !   enddo
+
+  ! end subroutine setBCData
+
   subroutine extractFromDataSet(blockFaceID)
     !
     !       extractFromDataSet tries to extract and interpolate the        

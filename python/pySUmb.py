@@ -216,6 +216,7 @@ class SUMB(AeroSolver):
         self.sumb.partitioning.partitionandreadgrid(False)
         self.sumb.preprocessingapi.preprocessing()
         self.sumb.tecplotio.initializeliftdistributiondata()
+        self.sumb.initializeflow.updatebcdataalllevels()
         self.sumb.initializeflow.initflow()
         self.sumb.preprocessingadjoint()
 
@@ -1986,11 +1987,9 @@ class SUMB(AeroSolver):
             self.sumb.inputmotion.sincoeffouryrot = AP.sinCoefFourier
 
         if not firstCall:
-            self.sumb.initializeflow.referencestate()
-            self.sumb.iteration.groundlevel = 1
+            self.sumb.initializeflow.updatebcdataalllevels()
             self.sumb.preprocessingapi.updateperiodicinfoalllevels()
             self.sumb.preprocessingapi.updategridvelocitiesalllevels()
-            self.sumb.bcdata.nondimbounddata()
 
 
     def getPointRef(self):
