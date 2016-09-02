@@ -1,115 +1,109 @@
 module surfaceIntegrations
 
- contains
+contains
 
-   subroutine flowProperties(massFlowRate, mass_Ptot, mass_Ttot, mass_Ps)
+  subroutine flowProperties(massFlowRate, mass_Ptot, mass_Ttot, mass_Ps)
 
-     use blockPointers
-     use flowVarRefState
-     use inputPhysics
-     use bcroutines
-     use costFunctions
-     use surfaceFamilies
-     use constants, only: zero, half, one, irho, ivx, ivy, ivz, imin, imax, & 
-                          jmin, jmax, kmin, kmax
-     use sorting, only : bsearchIntegers
-     use utils, only : setBCPointers, resetBCPointers
-     use flowUtils, only : computePtot, computeTtot
-     use BCPointers
+    use constants
+    use blockPointers
+    use flowVarRefState
+    use inputPhysics
+    use bcroutines
+    use costFunctions
+    use surfaceFamilies
+    use sorting, only : bsearchIntegers
+    use utils, only : setBCPointers, resetBCPointers
+    use flowUtils, only : computePtot, computeTtot
+    use BCPointers
+    implicit none
 
+    !
+    !      Subroutine arguments
+    !
+    real(kind=realType), intent(out) :: massFlowRate, mass_Ptot, mass_Ttot, mass_Ps
+    integer(kind=intType) :: nn, i, j, ii
+    real(kind=realType) :: fact
+    real(kind=realType) :: sF, vnm, vxm, vym, vzm
+    real(kind=realType) :: pm, Ptot, Ttot, rhom, massFlowRateLocal, tmp
 
-     implicit none
-     !
-     !      Subroutine arguments
-     !
-     real(kind=realType), intent(out) :: massFlowRate, mass_Ptot, mass_Ttot, mass_Ps
+    massFlowRate = zero
+    mass_Ptot = zero
+    mass_Ttot = zero
+    mass_Ps = zero
+    sF = zero
 
-     integer(kind=intType) :: nn, i, j, ii
-     real(kind=realType) :: fact
-     real(kind=realType) :: sF, vnm, vxm, vym, vzm
-     real(kind=realType) :: pm, Ptot, Ttot, rhom, massFlowRateLocal, tmp
+    bocos: do nn=1,nBocos
+       famInclude: if (bsearchIntegers(BCdata(nn)%famID, famGroups, size(famGroups)) > 0) then
+          call setBCPointers(nn, .True.)
 
-     massFlowRate = zero
-     mass_Ptot = zero
-     mass_Ttot = zero
-     mass_Ps = zero
-     sF = zero
-
-     bocos: do nn=1,nBocos
-        famInclude: if (bsearchIntegers(BCdata(nn)%famID, &
-            famGroups, size(famGroups)) > 0) then
-
-             call setBCPointers(nn, .True.)
-
-             select case (BCFaceID(nn))
-             case (iMin)
-                fact = -one
-             case (iMax)
-                fact = one
-             case (jMin)
-                fact = -one
-             case (jMax)
-                fact = one
-             case (kMin)
-                fact = -one
-             case (kMax)
-                fact = one
-             end select
+          select case (BCFaceID(nn))
+          case (iMin)
+             fact = -one
+          case (iMax)
+             fact = one
+          case (jMin)
+             fact = -one
+          case (jMax)
+             fact = one
+          case (kMin)
+             fact = -one
+          case (kMax)
+             fact = one
+          end select
 
 
-             ! Loop over the quadrilateral faces of the subface. Note that
-             ! the nodal range of BCData must be used and not the cell
-             ! range, because the latter may include the halo's in i and
-             ! j-direction. The offset +1 is there, because inBeg and jnBeg
-             ! refer to nodal ranges and not to cell ranges. The loop
-             ! (without the AD stuff) would look like:
-             !
-             ! do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
-             !    do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
+          ! Loop over the quadrilateral faces of the subface. Note that
+          ! the nodal range of BCData must be used and not the cell
+          ! range, because the latter may include the halo's in i and
+          ! j-direction. The offset +1 is there, because inBeg and jnBeg
+          ! refer to nodal ranges and not to cell ranges. The loop
+          ! (without the AD stuff) would look like:
+          !
+          ! do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
+          !    do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
 
-             !$AD II-LOOP
-             do ii=0,(BCData(nn)%jnEnd - bcData(nn)%jnBeg)*(bcData(nn)%inEnd - bcData(nn)%inBeg) -1
-                i = mod(ii, (bcData(nn)%inEnd-bcData(nn)%inBeg)) + bcData(nn)%inBeg + 1
-                j = ii/(bcData(nn)%inEnd-bcData(nn)%inBeg) + bcData(nn)%jnBeg + 1
+          !$AD II-LOOP
+          do ii=0,(BCData(nn)%jnEnd - bcData(nn)%jnBeg)*(bcData(nn)%inEnd - bcData(nn)%inBeg) -1
+             i = mod(ii, (bcData(nn)%inEnd-bcData(nn)%inBeg)) + bcData(nn)%inBeg + 1
+             j = ii/(bcData(nn)%inEnd-bcData(nn)%inBeg) + bcData(nn)%jnBeg + 1
 
-                if( addGridVelocities ) sF = sFace(i,j)
-                vxm = half*(ww1(i,j,ivx) + ww2(i,j,ivx))
-                vym = half*(ww1(i,j,ivy) + ww2(i,j,ivy))
-                vzm = half*(ww1(i,j,ivz) + ww2(i,j,ivz))
-                rhom = half*(ww1(i,j,irho) + ww2(i,j,irho))
-                pm = half*(pp1(i,j)+ pp2(i,j))
+             if( addGridVelocities ) sF = sFace(i,j)
+             vxm = half*(ww1(i,j,ivx) + ww2(i,j,ivx))
+             vym = half*(ww1(i,j,ivy) + ww2(i,j,ivy))
+             vzm = half*(ww1(i,j,ivz) + ww2(i,j,ivz))
+             rhom = half*(ww1(i,j,irho) + ww2(i,j,irho))
+             pm = half*(pp1(i,j)+ pp2(i,j))
 
-                vnm = vxm*ssi(i,j,1) + vym*ssi(i,j,2) + vzm*ssi(i,j,3)  - sF
+             vnm = vxm*ssi(i,j,1) + vym*ssi(i,j,2) + vzm*ssi(i,j,3)  - sF
 
-                massFlowRateLocal = rhom*vnm
+             massFlowRateLocal = rhom*vnm
 
-               !  vn1 = ww1(i,j,ivx)*ssi(i,j,1) + ww1(i,j,ivy)*ssi(i,j,2) &
-               ! + ww1(i,j,ivz)*ssi(i,j,3) - sF
-               !  vn2 = ww2(i,j,ivx)*ssi(i,j,1) + ww2(i,j,ivy)*ssi(i,j,2) &
-               ! + ww2(i,j,ivz)*ssi(i,j,3) - sF
+             !  vn1 = ww1(i,j,ivx)*ssi(i,j,1) + ww1(i,j,ivy)*ssi(i,j,2) &
+             ! + ww1(i,j,ivz)*ssi(i,j,3) - sF
+             !  vn2 = ww2(i,j,ivx)*ssi(i,j,1) + ww2(i,j,ivy)*ssi(i,j,2) &
+             ! + ww2(i,j,ivz)*ssi(i,j,3) - sF
 
-               ! massFlowRateLocal = half*(ww1(i,j,irho)*vn1 &
-               !                     + ww2(i,j,irho)*vn2)
+             ! massFlowRateLocal = half*(ww1(i,j,irho)*vn1 &
+             !                     + ww2(i,j,irho)*vn2)
 
-               massFlowRate = massFlowRate + massFlowRateLocal
+             massFlowRate = massFlowRate + massFlowRateLocal
 
-               call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
-               call computeTtot(rhom, vxm, vym, vzm, pm, Ttot)
+             call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
+             call computeTtot(rhom, vxm, vym, vzm, pm, Ttot)
 
-               mass_Ptot = mass_pTot + Ptot * massFlowRateLocal
-               mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal
-               mass_Ps = mass_Ps + pm*massFlowRateLocal
-            enddo
+             mass_Ptot = mass_pTot + Ptot * massFlowRateLocal
+             mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal
+             mass_Ps = mass_Ps + pm*massFlowRateLocal
+          enddo
 
-            massFlowRate = massFlowRate*fact
-            mass_Ptot = mass_pTot*fact
-            mass_Ttot = mass_Ttot*fact
-            mass_Ps = mass_Ps*fact
+          massFlowRate = massFlowRate*fact
+          mass_Ptot = mass_pTot*fact
+          mass_Ttot = mass_Ttot*fact
+          mass_Ps = mass_Ps*fact
 
        end if famInclude
-
-     end do bocos
-   end subroutine flowProperties
+    end do bocos
+  end subroutine flowProperties
 
   subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
        sepSensorAvg, Cavitation)
