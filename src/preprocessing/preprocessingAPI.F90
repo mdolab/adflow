@@ -235,7 +235,7 @@ contains
     end do
 
     call setSurfaceFamilyInfo
-
+    call preprocessingADjoint
   end subroutine preprocessing
 
 
@@ -1278,7 +1278,7 @@ contains
 
   end subroutine xhalo
 
- 
+
   subroutine setSurfaceFamilyInfo
 
     use constants
@@ -3761,5 +3761,199 @@ contains
     vecR2(3) = axis(1)*vecR1(2) - axis(2)*vecR1(1)
 
   end subroutine unitVectorsInAxialPlane
+
+  subroutine preprocessingADjoint
+    !
+    !      Perform the preprocessing tasks for the adjoint solver. This   
+    !      routine is called only once. The memory allcoated here is      
+    !      deallocated in src/utils/releaseMemory.f90                     
+    !
+    use constants
+    use communication, only : sumb_comm_world
+    use adjointVars, only :nCellsLocal, nNOdesLocal
+    use flowVarRefState, only : nw, nwf
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use inputAdjoint, only : frozenTurbulence
+    use ADjointPETSc, only: w_like1, w_like2, PETScIerr, &
+         psi_like1, psi_like2, x_like, psi_like3
+    use utils, only : setPointers, EChk
+    implicit none
+
+#define PETSC_AVOID_MPIF_H
+#include "petsc/finclude/petsc.h"
+
+    !     Local variables.
+    !
+    integer(kind=intType) :: ndimW, ncell, nState, nDimPsi, nDimX
+    !
+    !
+    ! Create PETSc Vectors that are actually empty. These do NOT take
+    ! any (substantial) memory. We want to keep these around inbetween
+    ! creations/deletions of adjoint/NKsolver memory
+
+    ! Setup number of state variable based on turbulence assumption
+    if ( frozenTurbulence ) then
+       nState = nwf
+    else
+       nState = nw
+    endif
+
+    nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
+    nDimPsi = nState*  nCellsLocal(1_intType)*nTimeIntervalsSpectral
+    nDimX = 3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
+
+    ! Two w-like vectors. 
+    call VecCreateMPIWithArray(SUMB_COMM_WORLD,nw,ndimW,PETSC_DECIDE, &
+         PETSC_NULL_SCALAR,w_like1,PETScIerr)
+    call EChk(PETScIerr,__FILE__,__LINE__)
+
+    call VecCreateMPIWithArray(SUMB_COMM_WORLD,nw,ndimW,PETSC_DECIDE, &
+         PETSC_NULL_SCALAR,w_like2,PETScIerr)
+    call EChk(PETScIerr,__FILE__,__LINE__)
+
+    ! Two psi-like vectors. 
+    call VecCreateMPIWithArray(SUMB_COMM_WORLD,nState,ndimPsi,PETSC_DECIDE, &
+         PETSC_NULL_SCALAR,psi_like1,PETScIerr)
+    call EChk(PETScIerr,__FILE__,__LINE__)
+
+    call VecCreateMPIWithArray(SUMB_COMM_WORLD,nstate,ndimPsi,PETSC_DECIDE, &
+         PETSC_NULL_SCALAR,psi_like2,PETScIerr)
+    call EChk(PETScIerr,__FILE__,__LINE__)
+
+    call VecCreateMPIWithArray(SUMB_COMM_WORLD,nstate,ndimPsi,PETSC_DECIDE, &
+         PETSC_NULL_SCALAR,psi_like3,PETScIerr)
+    call EChk(PETScIerr,__FILE__,__LINE__)
+
+    call VecCreateMPIWithArray(SUMB_COMM_WORLD,3,ndimX,PETSC_DECIDE, &
+         PETSC_NULL_SCALAR,x_like,PETScIerr)
+    call EChk(PETScIerr,__FILE__,__LINE__)
+
+    ! Need to initialize the stencils as well, only once:
+    call initialize_stencils
+
+  end subroutine preprocessingADjoint
+
+  subroutine updateReferencePoint
+    !
+    !       reruns the initialization routines to update AOA and other    
+    !       flow variables after a design change                          
+    !
+    use constants
+    use inputTimeSpectral, only : nTimeINTervalsSpectral
+    use section, only : sections, nSections
+    use inputPhysics, only : equationMode
+    use inputMotion, only : rotPoint
+    use cgnsGrid, only : cgnsDoms
+    use monitor, only : timeUnsteadyRestart
+    use iteration, only : groundLevel
+    use blockpointers, only : nDom, nbkGlobal
+    use utils, onlY : setPointers
+    use solverUtils
+    implicit none
+
+    ! Working variables
+    integer(kind=intType) ::mm,nnn,nn
+    real(kind=realType), dimension(nSections) :: t
+
+    groundlevel = 1
+    do mm=1,nTimeIntervalsSpectral
+       do nn=1,nDom
+          ! Set the pointers for this block.
+          call setPointers(nn, groundLevel, mm)
+          !lref is outside
+          cgnsDoms(nbkglobal)%rotCenter = rotPoint
+       enddo
+    enddo
+
+    groundlevel = 1
+    do mm=1,nTimeIntervalsSpectral
+
+       ! Compute the time, which corresponds to this spectral solution.
+       ! For steady and unsteady mode this is simply the restart time;
+       ! for the spectral mode the periodic time must be taken into
+       ! account, which can be different for every section.
+       t = timeUnsteadyRestart
+
+       if(equationMode == timeSpectral) then
+          do nnn=1,nSections
+             t(nnn) = t(nnn) + (mm-1)*sections(nnn)%timePeriod &
+                  /         real(nTimeIntervalsSpectral,realType)
+          enddo
+       endif
+
+       call gridVelocitiesFineLevel(.false., t, mm)
+       call gridVelocitiesCoarseLevels(mm)
+       call normalVelocitiesAllLevels(mm)
+       call slipVelocitiesFineLevel(.false., t, mm)
+       call slipVelocitiesCoarseLevels(mm)
+    enddo
+  end subroutine updateReferencePoint
+
+  subroutine updateRotationRate(rotCenter, rotRate, blocks, nblocks)
+
+    use constants
+    use inputTimeSpectral, only : nTimeInTervalsSpectral
+    use section, only : sections, nSections
+    use inputPhysics, only : equationMode
+    use inputMotion, only : rotPoint
+    use cgnsGrid, only : cgnsDoms
+    use monitor, only : timeUnsteadyRestart
+    use iteration, only : groundLevel
+    use blockpointers, only : nDom, nbkGlobal, flowDoms
+    use solverUtils
+    implicit none
+
+    real(kind=realType),intent(in)::rotCenter(3), rotRate(3)
+    integer(kind=intType), intent(in) :: nblocks
+    integer(kind=intType), intent(in) :: blocks(nblocks)
+
+    integer(kind=intType) ::mm,nnn,nn, level, sps, i
+    real(kind=realType), dimension(nSections) :: t
+
+    groundlevel = 1
+
+    do nn=1,nblocks
+       cgnsDoms(nn)%rotRate = rotRate
+       cgnsDoms(nn)%rotCenter = rotCenter
+
+       do i=1,cgnsDoms(nn)%nBocos
+          cgnsDoms(nn)%bocoInfo(i)%rotRate = rotRate
+       end do
+    enddo
+
+    do sps=1,nTimeIntervalsSpectral
+       do level=1,ubound(flowDoms,2)
+          do nn=1,nDom
+             flowDoms(nn,level,sps)%blockIsMoving = .True.
+             flowDoms(nn,level,sps)%addGridVelocities = .True.
+          end do
+       end do
+    end do
+    groundlevel = 1
+    do mm=1,nTimeIntervalsSpectral
+
+       ! Compute the time, which corresponds to this spectral solution.
+       ! For steady and unsteady mode this is simply the restart time;
+       ! for the spectral mode the periodic time must be taken into
+       ! account, which can be different for every section.
+
+       t = timeUnsteadyRestart
+
+       if(equationMode == timeSpectral) then
+          do nnn=1,nSections
+             t(nnn) = t(nnn) + (mm-1)*sections(nnn)%timePeriod &
+                  /         real(nTimeIntervalsSpectral,realType)
+          enddo
+       endif
+
+       call gridVelocitiesFineLevel(.false., t, mm)
+       call gridVelocitiesCoarseLevels(mm)
+       call normalVelocitiesAllLevels(mm)
+       call slipVelocitiesFineLevel(.false., t, mm)
+       call slipVelocitiesCoarseLevels(mm)
+
+    enddo
+
+  end subroutine updateRotationRate
 
 end module preprocessingAPI

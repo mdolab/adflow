@@ -61,36 +61,9 @@ fortranFiles=	ADT/adtUtils.F90\
 		\
 		adjoint/residualInput/adjointExtra.F90\
 		\
-		adjoint/adjointPythonInterfaceFunctions.F90\
-		adjoint/computeAeroCoef.f90\
-		adjoint/createPETScVars.F90\
-		adjoint/destroyPETScVars.F90\
-		adjoint/preallocation.F90\
-		adjoint/getSolution.f90\
-		adjoint/initializePETSc.F90\
-		adjoint/finalizePETSc.F90\
-		adjoint/preprocessingADjoint.F90\
-		adjoint/setupPETScKsp.F90\
-		adjoint/updateFlow.f90\
-		adjoint/updateReferencePoint.f90\
-		adjoint/updateRotationRate.f90\
-		adjoint/matrixFreeRoutines.F90\
-		adjoint/alloc_derivative_values.F90\
-		adjoint/dealloc_derivative_values.F90\
-		adjoint/allocPCMem.F90\
-		adjoint/determineStencil.F90\
-		adjoint/setupAllResidualMatricesFwd.F90\
-		adjoint/setupColoring.F90\
-		adjoint/setPointers_d.f90\
-		adjoint/setDiffSizes.F90\
-		adjoint/zeroADSeeds.F90\
-		adjoint/setFDReference.F90\
-		adjoint/referenceShockSensor.F90\
-		adjoint/PCMatMult.F90\
-		adjoint/solveADjointTransposePETSc.F90\
-		adjoint/saveAdjoint.F90\
-		adjoint/setupStateResidualMatrix.F90\
-		adjoint/setupPCMatrix.F90\
+		adjoint/adjointUtils.F90\
+		adjoint/adjointAPI.F90\
+		adjoint/fortranPC.F90\
 		\
 		bcdata/BCData.F90\
 		\

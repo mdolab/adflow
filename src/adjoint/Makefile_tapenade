@@ -11,13 +11,13 @@
 #     * jacobian. There are three main commands:                       *
 #     *                                                                *
 #     * ad_forward: Run in forward mode. Preprocessed output is in     *
-#     *             'foward' directory                                 *
+#     *             'outputFoward' directory                           *
 #     *                                                                *
 #     * ad_reverse: Run in reverse mode. Preprocessed output is in the *
-#     *             'reverse' directory                                *
+#     *             'outputReverse' directory                          *
 #     *                                                                *
-#     * The following are commands that are used to produce tangent/   *
-#     * adjoint debug code.                                            *
+#     * ad_reverse_fast : Run the state-only reverse mode.             *
+#     * Preprocessed output is in the 'outputReverseFast' directory    *
 #     *                                                                *
 #     ******************************************************************
 
@@ -62,9 +62,7 @@ ALL_RES_FILES =	$(SRC)/adjoint/residualInput/adjointExtra.F90\
 		$(SRC)/utils/sorting.F90\
 		$(SRC)/wallDistance/wallDistance.F90\
 
-
-
-# intermediate residual files.
+# intermediate preprocessed files.
 I_RES_FILES := $(ALL_RES_FILES:%=%.f90)
 # ---------------------------------------------------------------------
 
@@ -216,13 +214,3 @@ cleanpreprocess_res:
 	done
 
 all:	 default
-
-clean:
-	@echo " Making clean ... "
-	@for subdir in $(TAPENADE_OUT_DIRS) ; \
-		do \
-			echo; \
-			echo "making $@ in $$subdir"; \
-			echo; \
-			(cd $$subdir && rm -f *_b.f90 *_d.f90  *.msg *~) || exit 1; \
-		done
