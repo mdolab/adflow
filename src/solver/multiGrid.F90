@@ -8,11 +8,14 @@ contains
     !       residual to the next coarser grid level and computes the       
     !       residual forcing term on this level.                           
     !
-    use blockPointers
-    use flowVarRefState
-    use inputIteration
-    use inputTimeSpectral
-    use iteration
+    use constants
+    use blockPointers, only : flowDoms, dw, il, jl, kl, ie, je, ke, w, &
+         p1, p, rev, w1, mgIFine, mgJFine, mgKFine, nDom, wr, mgIWeight, &
+         mgJWeight, mgKWeight, iblank
+    use flowVarRefState, only : nwf, kPresent
+    use inputIteration, only: fcoll
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use iteration, only : currentLevel, rkStage
     use utils, only : setPointers
     use haloExchange, only : whalo1
     use flowUtils, only : computeEtotBlock, computeLamViscosity

@@ -36,7 +36,6 @@ fortranFiles=	ADT/adtUtils.F90\
 		adjoint/outputReverse/turbutils_b.f90\
 		adjoint/outputReverse/solverutils_b.f90\
 		adjoint/outputReverse/turbbcroutines_b.f90\
-		adjoint/outputReverse/turbbcroutines_b.f90\
 		adjoint/outputReverse/residuals_b.f90\
 		adjoint/outputReverse/surfaceintegrations_b.f90\
 		adjoint/outputReverse/sa_b.f90\

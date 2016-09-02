@@ -1526,11 +1526,11 @@ contains
 
     ! Compute the reference shock sensor for PC computations
     use constants
-    use blockPointers
-    use inputTimeSpectral
-    use flowvarrefstate
-    use inputPhysics
-    use inputDiscretization
+    use blockPointers, only : ib, jb, kb, il, jl, kl, ie, je, ke, shockSensor, &
+         w, gamma, p, nDom, flowDoms
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use inputPhysics, only : equations
+    use inputDiscretization, only : spaceDiscr
     use utils, only : setPointers, EChk
     implicit none
 

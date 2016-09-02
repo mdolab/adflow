@@ -8,11 +8,14 @@ contains
     !       the pointers in block pointer already point to the correct     
     !       block on the correct multigrid level.                          
     !
-    use blockPointers
-    use cgnsGrid
     use constants
-    use flowVarRefState
-    use inputPhysics
+    use blockPointers, only : nx, il, ie, ny, jl, je, nz, kl, ke, spectralSol, &
+         w, si, sj, sk, dw, porI, porJ, porK, &
+         indFamilyI, indFamilyJ, indFamilyK, p, sFaceI, sFaceJ, sFaceK, nbkglobal, &
+         addgridVelocities, blockIsMoving, vol, factFamilyI, factFamilyJ, factFamilyK
+    use cgnsGrid, only : cgnsDoms, massFlowFamilyInv
+    use flowVarRefState, only : timeRef
+    use inputPhysics, only : equationMode
     implicit none
     !
     !      Local variables.
