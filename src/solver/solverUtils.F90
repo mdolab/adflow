@@ -1464,8 +1464,9 @@ contains
     !       coarsest level are considered.                                 
     !
     use constants
-    use blockPointers
-    use iteration
+    use blockPointers, only : il, jl, kl, addGridVelocities, nBocos, BCData, &
+         sfaceI, sfaceJ, sfaceK, bcFaceID, si, sj, sk
+    !use iteration
     implicit none
     !
     !      Subroutine arguments.
