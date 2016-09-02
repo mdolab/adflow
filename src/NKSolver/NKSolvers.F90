@@ -89,6 +89,7 @@ contains
     use InputAdjoint, only: viscPC
     use ADjointVars , only: nCellsLocal
     use utils, only : EChk
+    use adjointUtils, only : myMatCreate, statePreAllocation
     implicit none
 
     ! Working Variables
@@ -145,7 +146,7 @@ contains
 
        level = 1
        call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nw, stencil, n_stencil, &
-            level, .False.)
+            level)
        call myMatCreate(dRdwPre, nw, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
             __FILE__, __LINE__)
 
@@ -319,6 +320,7 @@ contains
     use constants
     use inputADjoint, only : viscPC
     use utils, only : EChk
+    use adjointUtils, only :setupStateResidualMatrix, setupStandardKSP
     implicit none
 
     ! Local Variables
@@ -328,20 +330,7 @@ contains
     integer(kind=intType) :: i, j, k, l, ii, nn, sps
     real(kind=realType) :: dt
     real(kind=realType), pointer :: diag(:)
-    interface
-       subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
-            useObjective, frozenTurb, level, matrixTurb)
-         use precision
-         implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-         Mat :: matrix
-         Mat, optional :: matrixTurb
-         ! Input Variables
-         logical, intent(in) :: useAD, usePC, useTranspose, useObjective, frozenTurb
-         integer(kind=intType), intent(in) :: level
-       end subroutine setupStateResidualMatrix
-    end interface
+ 
 
     ! Dummy assembly begin/end calls for the matrix-free Matrx
     call MatAssemblyBegin(dRdw, MAT_FINAL_ASSEMBLY, ierr)
@@ -1612,6 +1601,7 @@ contains
     use ADjointVars , only: nCellsLocal
     use NKSolver, only : destroyNKSolver
     use utils, only : EChk
+    use adjointUtils, only : myMatCreate, statePreAllocation
     implicit none
 
     ! Working Variables
@@ -1743,13 +1733,13 @@ contains
 
   end subroutine setupANKsolver
 
-
   subroutine FormJacobianANK
 
     use constants
     use flowVarRefState, only : nw, nwf
     use inputADjoint, only : viscPC
     use utils, only : EChk
+    use adjointUtils, only :setupStateResidualMatrix, setupStandardKSP
     implicit none
 
     ! Local Variables
@@ -1759,21 +1749,6 @@ contains
     real(kind=realType) ::  dt
     integer(kind=intType) :: i, j, k, l, ii, nn, sps, outerPreConIts
     real(kind=realType), pointer :: diag(:)
-    external :: myKSPMonitor
-    interface
-       subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
-            useObjective, frozenTurb, level, matrixTurb)
-         use precision
-         implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-         Mat :: matrix
-         Mat, optional :: matrixTurb
-         ! Input Variables
-         logical, intent(in) :: useAD, usePC, useTranspose, useObjective, frozenTurb
-         integer(kind=intType), intent(in) :: level
-       end subroutine setupStateResidualMatrix
-    end interface
 
     ! Assemble the approximate PC (fine leve, level 1)
     useAD = .False.

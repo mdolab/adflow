@@ -152,7 +152,7 @@ class SUMB(AeroSolver):
         self._updateTurbResScale()
 
         # Initialize petec in case the user has not already
-        self.sumb.initializepetsc()
+        self.sumb.adjointutils.initializepetsc()
 
         # Set the stand-alone sumb flag to false...this changes how
         # terminate calls are handled.
@@ -217,7 +217,6 @@ class SUMB(AeroSolver):
         self.sumb.preprocessingapi.preprocessing()
         self.sumb.tecplotio.initializeliftdistributiondata()
         self.sumb.initializeflow.initflow()
-        self.sumb.preprocessingadjoint()
 
         famList = self._processFortranStringArray(
             self.sumb.surfacefamilies.famnames)
@@ -1561,7 +1560,7 @@ class SUMB(AeroSolver):
 
         # We should return the list of results that is the same as the
         # possibleObjectives list
-        self.sumb.getsolution(sps)
+        self.sumb.adjointapi.getsolution(sps)
 
         funcVals = self.sumb.costfunctions.funcvalues
         SUmbsolution = {
@@ -2174,12 +2173,12 @@ class SUMB(AeroSolver):
 
         if not self.adjointSetup or reform:
             # Create any PETSc variables if necessary
-            self.sumb.createpetscvars()
+            self.sumb.adjointapi.createpetscvars()
 
             # Setup all required matrices in forward mode. (possibly none
             # of them)
-            self.sumb.setupallresidualmatricesfwd()
-            self.sumb.setuppetscksp()
+            self.sumb.adjointapi.setupallresidualmatricesfwd()
+            self.sumb.adjointapi.setuppetscksp()
             self.adjointSetup = True
 
     def releaseAdjointMemory(self):
@@ -2187,7 +2186,7 @@ class SUMB(AeroSolver):
         release the PETSc Memory that have been allocated
         """
         if self.adjointSetup:
-            self.sumb.destroypetscvars()
+            self.sumb.adjointutils.destroypetscvars()
             self.adjointSetup = False
 
     def solveAdjoint(self, aeroProblem, objective, forcePoints=None,
@@ -2226,7 +2225,7 @@ class SUMB(AeroSolver):
 
         # Actually Solve the adjoint system...psi is updated with the
         # new solution.
-        self.sumb.solveadjoint(RHS, psi, True)
+        self.sumb.adjointapi.solveadjoint(RHS, psi, True)
 
         # Now set the flags and possibly reset adjoint
         if self.sumb.killsignals.adjointfailed:
@@ -2348,7 +2347,7 @@ class SUMB(AeroSolver):
         """
         if relTol is None:
             relTol = self.getOption('adjointl2convergence')
-        outVec = self.sumb.solveadjointforrhs(inVec, relTol)
+        outVec = self.sumb.adjointapi.solveadjointforrhs(inVec, relTol)
 
         return outVec
 
@@ -2386,8 +2385,8 @@ class SUMB(AeroSolver):
         pcMatrixName = baseFileNmae + '_drdwPre.bin'
         rhsName = baseFileName + '_rsh.bin'
         cellCenterName = baseFileName + '_cellCen.bin'
-        self.sumb.saveadjointmatrix(adjointMatrixName)
-        self.sumb.saveadjointpc(pcMatrixName)
+        self.sumb.adjointapi.saveadjointmatrix(adjointMatrixName)
+        self.sumb.adjointapi.saveadjointpc(pcMatrixName)
         self.sumb.saveadjointrhs(rhsName)
 
     def computeStabilityParameters(self):
@@ -2575,7 +2574,7 @@ class SUMB(AeroSolver):
         costSize = self.sumb.costfunctions.ncostfunction
         fSize, nCell = self._getSurfaceSize(self.allWallsGroup)
 
-        dwdot,tmp,fdot = self.sumb.computematrixfreeproductfwd(
+        dwdot,tmp,fdot = self.sumb.adjointapi.computematrixfreeproductfwd(
             xvdot, extradot, wdot, useSpatial, useState, costSize,  max(1, fSize))
 
         # Explictly put fdot to nothing if size is zero
@@ -2727,7 +2726,7 @@ class SUMB(AeroSolver):
             useSpatial = True
 
         # Do actual Fortran call.
-        xvbar, extrabar, wbar = self.sumb.computematrixfreeproductbwd(
+        xvbar, extrabar, wbar = self.sumb.adjointapi.computematrixfreeproductbwd(
             resBar, funcsBar, fBar.T, useSpatial, useState, self.getSpatialSize(),
             max(1, self.nDVAero))
 

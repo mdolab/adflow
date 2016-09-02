@@ -328,7 +328,7 @@ subroutine getForces_b(forces_b, npts, sps)
   use inputPhysics
   use surfaceFamilies, only: wallExchange, familyExchange
   use communication
-  use utils, only : EChk, setPointers
+  use utils, only : EChk, setPointers, setPointers_d
 
   implicit none
 #define PETSC_AVOID_MPIF_H
