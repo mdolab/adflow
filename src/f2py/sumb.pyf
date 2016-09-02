@@ -345,36 +345,120 @@ python module libsumb
          subroutine shiftcoorandvolumes ! in :sumb:../../preprocessing/shiftCoorAndVolumes.F90
          end subroutine shiftcoorandvolumes
 
+         subroutine updatereferencepoint
+         end subroutine updatereferencepoint
+
+         subroutine updaterotationrate(rotcenter,rotrate,blocks,nblocks) ! in :test:updateRotationRate.f90
+           real(kind=realtype) dimension(3),intent(in) :: rotcenter
+           real(kind=realtype) dimension(3),intent(in) :: rotrate
+           integer(kind=inttype) dimension(nblocks),intent(in) :: blocks
+           integer(kind=inttype), optional,intent(in),check(len(blocks)>=nblocks),depend(blocks) :: nblocks=len(blocks)
+         end subroutine updaterotationrate
        end module preprocessingapi
+
+       module adjointapi
+         subroutine getsolution(sps) ! in :test:getSolution.f90
+           integer(kind=inttype) :: sps
+         end subroutine getsolution
+         
+         subroutine setuppetscksp 
+         end subroutine setuppetscksp
+         
+         subroutine setupallresidualmatricesfwd
+         end subroutine setupallresidualmatricesfwd
+         
+         subroutine solveadjoint(rhs,psi,checksolution,nstate) ! in :test:solveADjointTransposePETSc.F90
+           real(kind=realtype) dimension(nstate) :: rhs
+           real(kind=realtype) dimension(nstate),depend(nstate) :: psi
+           logical :: checksolution
+           integer(kind=inttype), optional,check(len(rhs)>=nstate),depend(rhs) :: nstate=len(rhs)
+         end subroutine solveadjoint
+         
+         subroutine solveadjointforrhs(invec,outvec,ndof,relativetolerance) ! in :test:matrixFreeRoutines.F90
+           real(kind=realtype) dimension(ndof),intent(in) :: invec
+           real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: outvec
+           integer(kind=inttype), optional,intent(in),check(len(invec)>=ndof),depend(invec) :: ndof=len(invec)
+           real(kind=realtype) intent(in) :: relativetolerance
+         end subroutine solveadjointforrhs
+         subroutine solvedirectforrhs(invec,outvec,ndof,relativetolerance) ! in :test:matrixFreeRoutines.F90
+           real(kind=realtype) dimension(ndof),intent(in) :: invec
+           real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: outvec
+           integer(kind=inttype), optional,intent(in),check(len(invec)>=ndof),depend(invec) :: ndof=len(invec)
+           real(kind=realtype) intent(in) :: relativetolerance
+         end subroutine solvedirectforrhs
+         
+         subroutine saveadjointmatrix(filename)
+           character*(*) intent(in) :: filename
+         end subroutine saveadjointmatrix
+
+         subroutine saveadjointpc(filename) 
+           character*(*) intent(in) :: filename
+         end subroutine saveadjointpc
+        
+         subroutine savecellcenters(filename) 
+           character*(*) intent(in) :: filename
+         end subroutine savecellcenters
+         
+         subroutine spectralprecscribedmotion(input,nin,dxv,nout)
+           real(kind=realtype) dimension(nin),intent(in) :: input
+           integer(kind=inttype), optional,intent(in),check(len(input)>=nin),depend(input) :: nin=len(input)
+           real(kind=realtype) dimension(nout),intent(out),depend(nout) :: dxv
+           integer(kind=inttype) intent(in) :: nout
+         end subroutine spectralprecscribedmotion
+
+         subroutine createpetscvars
+         end subroutine createpetscvars
+
+#ifndef USE_COMPLEX
+         subroutine computematrixfreeproductfwd(xvdot,extradot,wdot,usespatial,usestate,dwdot,funcsdot,fdot,spatialsize,extrasize,statesize,costsize,fsize) ! in :test:matrixFreeRoutines.F90
+           real(kind=realtype) dimension(spatialsize),intent(in) :: xvdot
+           real(kind=realtype) dimension(extrasize),intent(in) :: extradot
+           real(kind=realtype) dimension(statesize),intent(in) :: wdot
+           logical intent(in) :: usespatial
+           logical intent(in) :: usestate
+           real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: dwdot
+           real(kind=realtype) dimension(costsize),intent(out),depend(costsize) :: funcsdot
+           real(kind=realtype) dimension(3,fsize),intent(out),depend(fsize) :: fdot
+           integer(kind=inttype), optional,intent(in),check(len(xvdot)>=spatialsize),depend(xvdot) :: spatialsize=len(xvdot)
+           integer(kind=inttype), optional,intent(in),check(len(extradot)>=extrasize),depend(extradot) :: extrasize=len(extradot)
+           integer(kind=inttype), optional,intent(in),check(len(wdot)>=statesize),depend(wdot) :: statesize=len(wdot)
+           integer(kind=inttype) intent(in) :: costsize
+           integer(kind=inttype) intent(in) :: fsize
+         end subroutine computematrixfreeproductfwd
+         
+         subroutine computematrixfreeproductbwd(dwbar,funcsbar,fbar,usespatial,usestate,xvbar,extrabar,wbar,spatialsize,extrasize,statesize,costsize,fsize) ! in :test:matrixFreeRoutines.F90
+           real(kind=realtype) dimension(statesize),intent(in) :: dwbar
+           real(kind=realtype) dimension(costsize),intent(in) :: funcsbar
+           real(kind=realtype) dimension(3,fsize),intent(in) :: fbar
+           logical intent(in) :: usespatial
+           logical intent(in) :: usestate
+           real(kind=realtype) dimension(spatialsize),intent(out),depend(spatialsize) :: xvbar
+           real(kind=realtype) dimension(extrasize),intent(out),depend(extrasize) :: extrabar
+           real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: wbar
+           integer(kind=inttype) intent(in) :: spatialsize
+           integer(kind=inttype) intent(in) :: extrasize
+           integer(kind=inttype), optional,intent(in),check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
+           integer(kind=inttype), optional,intent(in),check(len(funcsbar)>=costsize),depend(funcsbar) :: costsize=len(funcsbar)
+           integer(kind=inttype), optional,intent(in),check(shape(fbar,1)==fsize),depend(fbar) :: fsize=shape(fbar,1)
+         end subroutine computematrixfreeproductbwd
+#endif
+       end module adjointapi
+       module adjointutils
+
+         subroutine initializepetsc 
+         end subroutine initializepetsc
+
+         
+         subroutine destroypetscvars
+         end subroutine destroypetscvars
+       end module adjointutils
 
 ! ================ bare subroutines =============
 
        subroutine writesol ! in :sumb:../../output/writeSol.f90
        end subroutine writesol
 
-       subroutine getsolution(sps) ! in :test:getSolution.f90
-         integer(kind=inttype) :: sps
-       end subroutine getsolution
-
-       subroutine updateflow
-       end subroutine updateflow
-
-       subroutine updatereferencepoint
-       end subroutine updatereferencepoint
-
-       subroutine updaterotationrate(rotcenter,rotrate,blocks,nblocks) ! in :test:updateRotationRate.f90
-         real(kind=realtype) dimension(3),intent(in) :: rotcenter
-         real(kind=realtype) dimension(3),intent(in) :: rotrate
-         integer(kind=inttype) dimension(nblocks),intent(in) :: blocks
-         integer(kind=inttype), optional,intent(in),check(len(blocks)>=nblocks),depend(blocks) :: nblocks=len(blocks)
-       end subroutine updaterotationrate
-
-       
-       ! ############################################################################
-       ! SUmb Mesh/Forces Interface Routines
-       ! ############################################################################
-
-        subroutine getforces(forces,npts,sps_in) ! in :test:getForces.F90
+       subroutine getforces(forces,npts,sps_in) ! in :test:getForces.F90
             real(kind=realtype) dimension(3 * npts),intent(inout) :: forces
             integer(kind=inttype), optional,intent(in),check((len(forces))/(3)>=npts),depend(forces) :: npts=(len(forces))/(3)
             integer(kind=inttype) intent(in) :: sps_in
@@ -396,114 +480,6 @@ python module libsumb
          real(kind=realtype) dimension(3),intent(in) :: axis
        end subroutine getareasensitivity
 
-
-           
-       ! ############################################################################
-       ! SUmb ADjoint Core Routines
-       ! ############################################################################
-
-       subroutine initializepetsc 
-       end subroutine initializepetsc
-
-       subroutine preprocessingadjoint 
-       end subroutine preprocessingadjoint
-    
-       ! State Variables
-       subroutine createpetscvars
-       end subroutine createpetscvars
-
-       subroutine destroypetscvars
-       end subroutine destroypetscvars
-
-       ! KSP Setup
-       subroutine setuppetscksp 
-       end subroutine setuppetscksp
-
-       subroutine setupallresidualmatricesfwd
-       end subroutine setupallresidualmatricesfwd
-
-
-       subroutine solveadjoint(rhs,psi,checksolution,nstate) ! in :test:solveADjointTransposePETSc.F90
-         real(kind=realtype) dimension(nstate) :: rhs
-         real(kind=realtype) dimension(nstate),depend(nstate) :: psi
-         logical :: checksolution
-         integer(kind=inttype), optional,check(len(rhs)>=nstate),depend(rhs) :: nstate=len(rhs)
-       end subroutine solveadjoint
-
-        subroutine solveadjointforrhs(invec,outvec,ndof,relativetolerance) ! in :test:matrixFreeRoutines.F90
-            real(kind=realtype) dimension(ndof),intent(in) :: invec
-            real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: outvec
-            integer(kind=inttype), optional,intent(in),check(len(invec)>=ndof),depend(invec) :: ndof=len(invec)
-            real(kind=realtype) intent(in) :: relativetolerance
-        end subroutine solveadjointforrhs
-        subroutine solvedirectforrhs(invec,outvec,ndof,relativetolerance) ! in :test:matrixFreeRoutines.F90
-            real(kind=realtype) dimension(ndof),intent(in) :: invec
-            real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: outvec
-            integer(kind=inttype), optional,intent(in),check(len(invec)>=ndof),depend(invec) :: ndof=len(invec)
-            real(kind=realtype) intent(in) :: relativetolerance
-        end subroutine solvedirectforrhs
-
-        subroutine saveadjointmatrix(filename) ! in :test:saveAdjoint.F90
-            character*(*) intent(in) :: filename
-        end subroutine saveadjointmatrix
-        subroutine saveadjointpc(filename) ! in :test:saveAdjoint.F90
-            character*(*) intent(in) :: filename
-          end subroutine saveadjointpc
-          subroutine saveadjointrhs(filename) ! in :test:saveAdjoint.F90
-            character*(*) intent(in) :: filename
-          end subroutine saveadjointrhs
-
-          subroutine savecellcenters(filename) ! in :test:saveAdjoint.F90
-            character*(*) intent(in) :: filename
-          end subroutine savecellcenters
-
-       subroutine spectralprecscribedmotion(input,nin,dxv,nout)
-         real(kind=realtype) dimension(nin),intent(in) :: input
-         integer(kind=inttype), optional,intent(in),check(len(input)>=nin),depend(input) :: nin=len(input)
-         real(kind=realtype) dimension(nout),intent(out),depend(nout) :: dxv
-         integer(kind=inttype) intent(in) :: nout
-       end subroutine spectralprecscribedmotion
-#ifndef USE_COMPLEX
-        subroutine computematrixfreeproductfwd(xvdot,extradot,wdot,usespatial,usestate,dwdot,funcsdot,fdot,spatialsize,extrasize,statesize,costsize,fsize) ! in :test:matrixFreeRoutines.F90
-            real(kind=realtype) dimension(spatialsize),intent(in) :: xvdot
-            real(kind=realtype) dimension(extrasize),intent(in) :: extradot
-            real(kind=realtype) dimension(statesize),intent(in) :: wdot
-            logical intent(in) :: usespatial
-            logical intent(in) :: usestate
-            real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: dwdot
-            real(kind=realtype) dimension(costsize),intent(out),depend(costsize) :: funcsdot
-            real(kind=realtype) dimension(3,fsize),intent(out),depend(fsize) :: fdot
-            integer(kind=inttype), optional,intent(in),check(len(xvdot)>=spatialsize),depend(xvdot) :: spatialsize=len(xvdot)
-            integer(kind=inttype), optional,intent(in),check(len(extradot)>=extrasize),depend(extradot) :: extrasize=len(extradot)
-            integer(kind=inttype), optional,intent(in),check(len(wdot)>=statesize),depend(wdot) :: statesize=len(wdot)
-            integer(kind=inttype) intent(in) :: costsize
-            integer(kind=inttype) intent(in) :: fsize
-        end subroutine computematrixfreeproductfwd
-
-        subroutine computematrixfreeproductbwd(dwbar,funcsbar,fbar,usespatial,usestate,xvbar,extrabar,wbar,spatialsize,extrasize,statesize,costsize,fsize) ! in :test:matrixFreeRoutines.F90
-            real(kind=realtype) dimension(statesize),intent(in) :: dwbar
-            real(kind=realtype) dimension(costsize),intent(in) :: funcsbar
-            real(kind=realtype) dimension(3,fsize),intent(in) :: fbar
-            logical intent(in) :: usespatial
-            logical intent(in) :: usestate
-            real(kind=realtype) dimension(spatialsize),intent(out),depend(spatialsize) :: xvbar
-            real(kind=realtype) dimension(extrasize),intent(out),depend(extrasize) :: extrabar
-            real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: wbar
-            integer(kind=inttype) intent(in) :: spatialsize
-            integer(kind=inttype) intent(in) :: extrasize
-            integer(kind=inttype), optional,intent(in),check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
-            integer(kind=inttype), optional,intent(in),check(len(funcsbar)>=costsize),depend(funcsbar) :: costsize=len(funcsbar)
-            integer(kind=inttype), optional,intent(in),check(shape(fbar,1)==fsize),depend(fbar) :: fsize=shape(fbar,1)
-        end subroutine computematrixfreeproductbwd
-
-        subroutine computematrixfreeproductbwdfast(dwbar,wbar,statesize) ! in :test:test.F90
-          real(kind=realtype) dimension(statesize),intent(in) :: dwbar
-          real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: wbar
-          integer(kind=inttype), optional,check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
-        end subroutine computematrixfreeproductbwdfast
-#endif
- 
-   
        
        ! ############################################################################
        ! SUmb Modules

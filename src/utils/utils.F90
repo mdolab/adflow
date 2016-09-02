@@ -3245,7 +3245,6 @@ module utils
     dwALE     => flowDoms(nn,1,ll)%dwALE
     fwALE     => flowDoms(nn,1,ll)%fwALE
 
-#ifndef USE_TAPENADE
     ! Pointers for PC
     PCMat => flowDoms(nn,mm,ll)%pcMat
 
@@ -3270,8 +3269,111 @@ module utils
     i_ipiv => flowDoms(nn,mm,ll)%i_ipiv
     j_ipiv => flowDoms(nn,mm,ll)%j_ipiv
     k_ipiv => flowDoms(nn,mm,ll)%k_ipiv
-#endif
+
   end subroutine setPointers
+
+  ! Set the pointers for the derivative values AND the normal pointers
+  subroutine setPointers_d(nn, level, sps)
+
+    use block, only : flowDomsd
+    use blockPointers
+    implicit none
+    !
+    !      Subroutine arguments
+    !
+    integer(kind=intType), intent(in) :: nn,level,sps
+
+    ! Set normal pointers
+    call setPointers(nn, level, sps)
+
+    viscSubfaced => flowDomsd(nn,1,sps)%viscSubface
+
+    xd    => flowDomsd(nn,1,sps)%x
+
+    sid     => flowDomsd(nn,1,sps)%si
+    sjd     => flowDomsd(nn,1,sps)%sj
+    skd     => flowDomsd(nn,1,sps)%sk
+
+    vold    => flowDomsd(nn,1,sps)%vol
+
+    rotMatrixId => flowDomsd(nn,1,sps)%rotMatrixI
+    rotMatrixJd => flowDomsd(nn,1,sps)%rotMatrixJ
+    rotMatrixKd => flowDomsd(nn,1,sps)%rotMatrixK
+
+    sFaceId => flowDomsd(nn,1,sps)%sFaceI
+    sFaceJd => flowDomsd(nn,1,sps)%sFaceJ
+    sFaceKd => flowDomsd(nn,1,sps)%sFaceK
+
+    ! Flow variables. Note that wOld, gamma and the laminar viscosity
+    ! point to the entries on the finest mesh. The reason is that
+    ! they are computed from the other variables. For the eddy
+    ! viscosity this is not the case because in a segregated solver
+    ! its values are obtained from the fine grid level.
+
+    wd     => flowDomsd(nn,1,sps)%w
+    pd     => flowDomsd(nn,1,sps)%p
+
+    gammad => flowDomsd(nn,1,sps)%gamma
+    aad    => flowDomsd(nn,1,sps)%aa
+    rlvd   => flowDomsd(nn,1,sps)%rlv
+    revd   => flowDomsd(nn,1,sps)%rev
+    sd     => flowDomsd(nn,1,sps)%s
+
+    uxd => flowDomsd(nn,1,sps)%ux
+    uyd => flowDomsd(nn,1,sps)%uy
+    uzd => flowDomsd(nn,1,sps)%uz
+
+    vxd => flowDomsd(nn,1,sps)%vx
+    vyd => flowDomsd(nn,1,sps)%vy
+    vzd => flowDomsd(nn,1,sps)%vz
+
+    wxd => flowDomsd(nn,1,sps)%wx
+    wyd => flowDomsd(nn,1,sps)%wy
+    wzd => flowDomsd(nn,1,sps)%wz
+
+    qxd => flowDomsd(nn,1,sps)%qx
+    qyd => flowDomsd(nn,1,sps)%qy
+    qzd => flowDomsd(nn,1,sps)%qz
+
+    ! Residual and multigrid variables. The residual point to the
+    ! finest grid entry, the multigrid variables to their own level.
+
+    dwd => flowDomsd(nn,1,sps)%dw
+    fwd => flowDomsd(nn,1,sps)%fw
+    scratchd => flowDomsd(nn,1,sps)%scratch
+
+    ! Time-stepping variables and spectral radIi.
+    ! They asps point to the fine mesh entry.
+
+    radId => flowDomsd(nn,1,sps)%radI
+    radJd => flowDomsd(nn,1,sps)%radJ
+    radKd => flowDomsd(nn,1,sps)%radK
+
+    d2Walld => flowDomsd(nn,1,sps)%d2Wall
+
+    ! Arrays used for the implicit treatment of the turbulent wasps
+    ! boundary conditions. As these variables are only aspocated for
+    ! the 1st spectral solution of the fine mesh, the pointers point
+    ! to those arrays.
+
+    bmti1d => flowDomsd(nn,1,1)%bmti1
+    bmti2d => flowDomsd(nn,1,1)%bmti2
+    bmtj1d => flowDomsd(nn,1,1)%bmtj1
+    bmtj2d => flowDomsd(nn,1,1)%bmtj2
+    bmtk1d => flowDomsd(nn,1,1)%bmtk1
+    bmtk2d => flowDomsd(nn,1,1)%bmtk2
+
+    bvti1d => flowDomsd(nn,1,1)%bvti1
+    bvti2d => flowDomsd(nn,1,1)%bvti2
+    bvtj1d => flowDomsd(nn,1,1)%bvtj1
+    bvtj2d => flowDomsd(nn,1,1)%bvtj2
+    bvtk1d => flowDomsd(nn,1,1)%bvtk1
+    bvtk2d => flowDomsd(nn,1,1)%bvtk2
+
+    !BCData Array
+    BCDatad => flowDomsd(nn,1,sps)%BCdata
+
+  end subroutine setPointers_d
 
   subroutine siAngle(angle, mult, trans)
 
@@ -4472,6 +4574,141 @@ module utils
     end if
 
   end subroutine deallocateInternalCommType
+
+  subroutine deallocDerivativeValues(level)
+
+    use constants
+    use block, only : flowDomsd, flowDoms, nDom
+    use inputtimespectral, only : nTimeIntervalsSpectral
+    use wallDistanceData, only : xSurfVec, xSurfVecd
+    use flowVarRefState, only : winfd
+    use inputPhysics, only : wallDistanceNeeded
+    use adjointVars, only : derivVarsAllocated
+    use BCPointers_b
+
+    implicit none
+
+    ! Input Parameters
+    integer(kind=intType) :: level
+
+    ! Local variables
+    integer(kind=intType) :: nn, sps, stat, mm, ierr
+
+    do nn=1,nDom
+       do sps=1,nTimeIntervalsSpectral
+
+          deallocate(&
+               flowDomsd(nn, level, sps)%x, &
+               flowDomsd(nn, level, sps)%si, &
+               flowDomsd(nn, level, sps)%sj, &
+               flowDomsd(nn, level, sps)%sk, &
+               flowDomsd(nn, level, sps)%vol, &
+               flowDomsd(nn, level, sps)%rotMatrixI, &
+               flowDomsd(nn, level, sps)%rotMatrixJ, &
+               flowDomsd(nn, level, sps)%rotMatrixK, &
+               flowDomsd(nn, level, sps)%s, &
+               flowDomsd(nn, level, sps)%sFaceI, &
+               flowDomsd(nn, level, sps)%sFaceJ, &
+               flowDomsd(nn, level, sps)%sFaceK, &
+               flowDomsd(nn, level, sps)%w, &
+               flowDomsd(nn, level, sps)%dw, &
+               flowDomsd(nn, level, sps)%fw, &
+               flowDomsd(nn, level, sps)%scratch, &
+               flowDomsd(nn, level, sps)%p, &
+               flowDomsd(nn, level, sps)%gamma, &
+               flowDomsd(nn, level, sps)%aa, &
+               flowDomsd(nn, level, sps)%rlv, &
+               flowDomsd(nn, level, sps)%rev, &
+               flowDomsd(nn, level, sps)%radI, &
+               flowDomsd(nn, level, sps)%radJ, &
+               flowDomsd(nn, level, sps)%radK, &
+               flowDomsd(nn, level, sps)%ux, &
+               flowDomsd(nn, level, sps)%uy, &
+               flowDomsd(nn, level, sps)%uz, &
+               flowDomsd(nn, level, sps)%vx, &
+               flowDomsd(nn, level, sps)%vy, &
+               flowDomsd(nn, level, sps)%vz, &
+               flowDomsd(nn, level, sps)%wx, &
+               flowDomsd(nn, level, sps)%wy, &
+               flowDomsd(nn, level, sps)%wz, &
+               flowDomsd(nn, level, sps)%qx, &
+               flowDomsd(nn, level, sps)%qy, &
+               flowDomsd(nn, level, sps)%qz, &
+               flowDomsd(nn, level, sps)%bmti1,&
+               flowDomsd(nn, level, sps)%bmti2,&
+               flowDomsd(nn, level, sps)%bmtj1,&
+               flowDomsd(nn, level, sps)%bmtj2,&
+               flowDomsd(nn, level, sps)%bmtk1,&
+               flowDomsd(nn, level, sps)%bmtk2,&
+               flowDomsd(nn, level, sps)%bvti1,&
+               flowDomsd(nn, level, sps)%bvti2,&
+               flowDomsd(nn, level, sps)%bvtj1,&
+               flowDomsd(nn, level, sps)%bvtj2,&
+               flowDomsd(nn, level, sps)%bvtk1,&
+               flowDomsd(nn, level, sps)%bvtk2,&
+               flowDomsd(nn, level, sps)%d2Wall, &
+               stat=ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+
+          ! Deallocate allocated boundary data
+          do mm=1, flowDoms(nn, level, sps)%nBocos
+             deallocate(&
+                  flowDomsd(nn, level, sps)%BCData(mm)%norm, &
+                  flowDomsd(nn, level, sps)%BCData(mm)%rface, &
+                  flowDomsd(nn, level, sps)%BCData(mm)%Fp, &
+                  flowDomsd(nn, level, sps)%BCData(mm)%Fv, &
+                  flowDomsd(nn, level, sps)%BCData(mm)%area, &
+                  flowDomsd(nn, level, sps)%BCData(mm)%uSlip, &
+                  flowDomsd(nn, level, sps)%BCData(mm)%TNS_Wall, &
+                  stat=ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+          enddo
+
+          deallocate(flowDomsd(nn, level, sps)%BCData, stat=ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+
+          viscbocoLoop: do mm=1, flowDoms(nn, level, sps)%nViscBocos
+             deallocate(&
+                  flowDomsd(nn, level, sps)%viscSubface(mm)%tau, &
+                  flowDomsd(nn, level, sps)%viscSubface(mm)%q, &
+                  stat=ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+          end do viscbocoLoop
+
+          deallocate(flowDomsd(nn, level, sps)%viscSubFace, stat=ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+
+       end do
+    end do
+
+    ! Also dealloc winfd
+    deallocate(winfd)
+
+    ! Finally deallocate flowdomsd
+    deallocate(flowdomsd, stat=ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    ! And the petsc vector(s)
+    if (.not. wallDistanceNeeded) then 
+       do sps=1, nTimeIntervalsSpectral
+          call VecDestroy(xSurfVec(1, sps), ierr)
+       end do
+    end if
+
+    do sps=1, nTimeIntervalsSpectral
+       call VecDestroy(xSurfVecd(sps), ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+    end do
+    deallocate(xSurfVecd)
+
+    ! Deallocate reverse mode space for bcpointers
+    deallocate(ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, &
+         rev0, rev1, rev2, rev3, gamma0, gamma1, gamma2, gamma3, ssi, xx, gcp)
+    deallocate(ww0d, ww1d, ww2d, ww3d, pp0d, pp1d, pp2d, pp3d, rlv0d, rlv1d, rlv2d, rlv3d, &
+         rev0d, rev1d, rev2d, rev3d, ssid, xxd)
+
+    derivVarsAllocated = .False.
+  end subroutine deallocDerivativeValues
 
   !      ---------------------------------------------------------------------------
 
