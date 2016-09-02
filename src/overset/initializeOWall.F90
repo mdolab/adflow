@@ -4,7 +4,7 @@ subroutine initializeOWall(oWall, dualMesh, cluster)
   ! block currently being pointed to by block Pointers.
   use overset
   use blockPointers
-  use adtAPI
+  use adtBuild, only : buildSerialQuad
   use kdtree2_module
   implicit none 
 

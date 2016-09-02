@@ -4,12 +4,13 @@ subroutine determineZipperWallAssociation(master, pocketMaster, fullWall)
   ! This routine determines global cell indices of the primal cells that
   ! contain the cell center of all zipper triangles. Saves them in
   ! master and pocketMaster strings.
-
-  use adtAPI
+  use constants
+  use adtData, only : adtBBoxTargetType
+  use adtUtils, only : stack
+  use adtLocalSearch, only : minDistanceTreeSearchSinglePoint
   use blockPointers
   use communication
   use overset
-  use constants
   implicit none
 
   ! Input Variables

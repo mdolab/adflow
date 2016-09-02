@@ -635,7 +635,7 @@ subroutine deallocateOBlocks(oBlocks, n)
 
   ! This subroutine deallocates all data stores in a list of oBlocks
   use constants
-  use adtAPI, only : destroySerialHex
+  use adtBuild, only : destroySerialHex
   use overset, only : oversetBlock
   implicit none
 
@@ -712,7 +712,7 @@ subroutine deallocateOWalls(oWalls, n)
   ! This subroutine deallocates all data stores in a list of oWalls
 
   use constants
-  use adtAPI, only : destroySerialQuad
+  use adtBuild, only : destroySerialQuad
   use overset, only : oversetWall
   use kdtree2_module, only : kdtree2destroy
   implicit none

@@ -1593,14 +1593,16 @@ contains
   end subroutine referenceShockSensor
 
   subroutine setFDReference(level)
-
-    use blockPointers
-    use flowVarRefState
-    use inputTimeSpectral
-    use inputPhysics
+    use constants
+    use blockPointers, only : nDom, flowDoms, ib, jb, kb, il, jl, kl, &
+         shockSensor, w, volRef, dw
+    use inputPhysics, only : liftDirection, velDirFreeStream
+    use flowVarRefState, only : nw, nwf
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
     use utils, only : EChk, setPointers, getDirAngle
     use residuals, only : initRes_block
     use adjointExtra, only : block_res
+
     implicit none
 
     ! Input Parameters
@@ -1640,7 +1642,7 @@ contains
                 do j=0, jb
                    do i=0, ib
                       flowdoms(nn, 1, sps)%dwtmp2(i, j, k, l) = &
-                           dw(i, j, k, l)/vol(i, j, k)
+                           dw(i, j, k, l)/volRef(i, j, k)
                    end do
                 end do
              end do
@@ -1651,10 +1653,10 @@ contains
 
   subroutine resetFDReference(level)
 
-    use blockPointers
-    use flowVarRefState
-    use inputTimeSpectral
-    use inputPhysics
+    use constants
+    use blockPointers, only : nDom, flowDoms, ib, jb, kb, w, dw
+    use flowVarRefState, only : nw, nwf
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
     use utils, only : setPointers
     implicit none
 

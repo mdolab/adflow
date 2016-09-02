@@ -1,7 +1,7 @@
 subroutine makeGapBoundaryStrings(level, sps, master)
 
   use constants
-  use adtAPI
+   use adtBuild, only : buildSerialQuad
   use blockPointers
   use communication, only : sumb_comm_world, myid, nProc
   use overset, only : oversetString, oversetWall

@@ -2,8 +2,10 @@ module adtSearch
   !
   !      Module which contains the subroutines for the global search.   
   !
-  use adtLocalSearch
-  use adtUtils
+  use constants
+  use adtLocalSearch, only : containmenttreesearch, mindistancetreesearch
+  use adtUtils, only : adtTerminate
+  use adtData
   implicit none
 
   !=================================================================

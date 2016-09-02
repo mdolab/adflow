@@ -3,7 +3,11 @@ module adtLocalSearch
   !      Module which contains the subroutines to perform the local     
   !      searches, i.e. the tree traversals.                            
   !
-  use adtUtils
+  use constants
+  use adtUtils, only : ADTs, adtLeafType, adtBBoxTargetType, stack, &
+       nStack, adtTerminate, reallocbboxtargettypeplus, reallocplus, &
+       qsortbboxtargets
+  use adtData, only : adtType
   implicit none
 
   !=================================================================

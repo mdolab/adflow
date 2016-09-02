@@ -4,9 +4,11 @@ module adtAPI
   !      included in a module, such that an explicit interface is       
   !      present.                                                       
   !
-  use adtBuild
-  use adtSearch
-  use adtUtils
+
+  use constants
+  use adtBuild, only : buildVolumeADT, buildSurfaceADT
+  use adtSearch, only : minDistanceSearch, failSafeSearch, &
+       containmentsearch
   implicit none
 
   !=================================================================
@@ -218,6 +220,7 @@ contains
     !        --------------------------------                             
     !        adtID: The entry in ADTs to be deallocated.                  
     !
+    use adtUtils, only : deallocateADTs
     implicit none
     !
     !       Subroutine arguments.

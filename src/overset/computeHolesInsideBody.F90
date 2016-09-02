@@ -5,8 +5,8 @@ subroutine computeHolesInsideBody(level, sps)
   ! implementation: The global surface mesh is communicated to all
   ! processors who then search accordingly. This scalable in terms of
   ! computation but not strictly memory. 
-
-  use adtAPI
+  use adtLocalSearch, only : minDistanceTreeSearchSinglePoint
+  use adtBuild, only : buildSerialQuad, destroySerialHex
   use blockPointers
   use wallDistanceData
   use communication
