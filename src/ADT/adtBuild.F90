@@ -3,8 +3,11 @@ module adtBuild
   !      Module which contains all the subroutines for the building of  
   !      an ADT, both surface and volume.                               
   !
-  use adtUtils
-  implicit none
+   use constants
+   use adtUtils, only : adtLeafType, adts, stack, nStack, adtTerminate, &
+        qsortbboxes, reallocateadts, allocateadts
+   use adtData, only : adtType
+   implicit none
 
   !=================================================================
 

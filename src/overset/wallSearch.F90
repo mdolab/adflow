@@ -3,7 +3,9 @@ subroutine wallSearch(aWall, bWall)
   use constants
   use overset
   use inputOverset
-  use adtLocalSearch
+  use adtLocalSearch, only : minDistanceTreeSearchSinglePoint
+  use adtData, only : adtBBoxTargetType, adtLeafType
+  use adtUtils, only : stack
   use communication
   use utils, only : mynorm2
   implicit none

@@ -4,7 +4,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
   ! for each cluster. It can build using either the primal mesh or the
   ! dual mesh depending on the  useDual option. 
 
-  use adtAPI
+  use adtBuild, only : buildSerialQuad
   use blockPointers
   use communication
   use inputphysics

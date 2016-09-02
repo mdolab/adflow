@@ -7,7 +7,7 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
   use overset
   use inputOverset
   use blockPointers
-  use adtAPI
+  use adtBuild, only : buildSerialHex
   use cgnsGrid
   use communication
   use stencils

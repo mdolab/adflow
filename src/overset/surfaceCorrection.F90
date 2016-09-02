@@ -1,7 +1,8 @@
 subroutine surfaceCorrection(oBlock, oFringe, offset, n)
 
   use overset
-  use adtAPI
+  use adtData, only : adtBBoxTargetType
+  use adtLocalSearch, only : minDistanceTreeSearchSinglePoint
   use kdtree2_module
   use inputOverset
   use sorting, only : unique
