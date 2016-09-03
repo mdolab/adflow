@@ -206,12 +206,6 @@ contains
 
     call setBCDataFineGrid(.true.)
 
-    ! This code probably isn't necessary, we are commenting it out for now
-    ! ! As some boundary conditions can be treated in multiple ways,
-    ! ! some memory allocated must be released again.
-
-    ! call releaseExtraMemBcs
-
     ! Determine the reference state.
     call referenceState
 
@@ -263,6 +257,11 @@ contains
 
     nLevels = ubound(flowDoms,2)
 
+    ! As some boundary conditions can be treated in multiple ways,
+    ! some memory allocated must be released again.
+
+     call releaseExtraMemBcs
+    
     ! Determine for the time spectral mode the matrices for the
     ! time derivatives.
     call timeSpectralMatrices

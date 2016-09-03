@@ -69,10 +69,14 @@ python module libsumb
 
        end module initializeflow
 
-       ! module bcdata
-       !   subroutine insertBCData !!!!!TODO
-       !   end subroutine insertBCData
-       ! end module
+       module bcdata
+         subroutine setbcdata(bcinarray,nbcinvar,famlist,n,sps)
+           real(kind=realtype),dimension(nbcinvar),intent(in)::bcinarray
+           integer(kind=inttype), optional,intent(in),check(len(bcinarray)>=nbcinvar),depend(bcinarray) :: nbcinvar=len(bcinarray)
+           integer(kind=inttype) dimension(n),intent(in) :: famlist
+           integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
+         end subroutine setbcdata
+       end module bcdata
 
        module flowutils
 
