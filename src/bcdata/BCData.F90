@@ -2029,43 +2029,158 @@ contains
 
   end subroutine computeHtot
 
-  ! subroutine setBCData()
-  ! nVarPresent = 0
+  subroutine setBCData(bcDataNamesIn,bcInArray,nBCInVar, famList, n,sps)
 
-  !   do m=1,nbcVar
-  !      bcVarPresent(m) = .false.
+    use constants
+    use cgnsNames
+    use blockPointers, only : BCData, nDom, nBocos, nBKGlobal, cgnsSubFace
+    use sorting, only : bsearchIntegers
+    use utils, only : setPointers,terminate
+    !
+    !      Subroutine arguments.
+    !
+    character(len=maxCGNSNameLen),dimension(nBCInVar), intent(in)::bcDataNamesIn
+    real(kind=realType),dimension(nBCInVar), intent(in)::bcInArray
+    integer(kind=intType),intent(in)::nBCInVar
+    integer(kind=intType), intent(in) :: famList(n), n,sps 
+    !
+    !      Local variables.
+    !
+    integer(kind=intType) :: i, j
+    integer(kind=intType) :: k, l, m
+    integer(kind=intType) :: nVarPresent
 
-  !      dataSetLoop: do k=1,nDataSet
-  !         do l=1,dataSet(k)%nDirichletArrays
-  !            if(dataSet(k)%dirichletArrays(l)%arrayName == &
-  !                 bcVarNames(m)) then
+    integer(kind=intType), dimension(2,nbcVar) :: ind
 
-  !               ! Variable is present. Store the indices, update
-  !               ! nVarPresent and set bcVarPresent(m) to .True.
+    character(len=maxStringLen) :: errorMessage
 
-  !               ind(1,m) = k; ind(2,m) = l
+    domainsLoop: do i=1,nDom
 
-  !               nVarPresent      = nVarPresent + 1
-  !               bcVarPresent(m) = .true.
+          ! Set the pointers to this block on groundLevel to make
+          ! the code readable.
 
-  !               ! Set the units for this variable.
+          call setPointers(i,1_intType,sps)
 
-  !               mass(m)   = dataSet(k)%dirichletArrays(l)%mass
-  !               length(m) = dataSet(k)%dirichletArrays(l)%len
-  !               time(m)   = dataSet(k)%dirichletArrays(l)%time
-  !               temp(m)   = dataSet(k)%dirichletArrays(l)%temp
-  !               angle(m)  = dataSet(k)%dirichletArrays(l)%angle
+          ! Loop over the number of boundary condition subfaces.
 
-  !               ! Exit the search loop, as the variable was found.
+          bocoLoop: do j=1,nBocos
 
-  !               exit dataSetLoop
+             ! Store the cgns boundary subface number, the number of
+             ! boundary condition data sets and the data sets a bit easier.
 
-  !            endif
-  !         enddo
-  !      enddo dataSetLoop
-  !   enddo
+             cgnsBoco = cgnsSubface(j)
+             nDataSet = &
+                  cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%nDataSet
+             dataSet => &
+                  cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%dataSet
 
-  ! end subroutine setBCData
+             ! Check if this surface should be included or not:
+             famInclude: if (bsearchIntegers(BCdata(j)%famID, famList, n) > 0) then 
+
+                ! Modify from here  +++++++++++++++++++++==
+                select case (BCType(j))
+                   
+                case (NSWallIsothermal)
+                   call setBCDataIsothermalWall()!
+                   
+                case (SupersonicInflow)
+                   call setBCDataSupersonicInflow()
+                   
+                case (SubsonicInflow)
+                   call setBCDataSubsonicInflow()
+                   
+                case (SubsonicOutflow)
+                   call setBCDataSubsonicOutflow())
+                   
+                case (default)
+                   call terminate('setBCData', &
+                        'This is not a valid boundary condtion for setBCData')! add bc name to error
+                end select
+             end if famInclude
+          end do bocoLoop
+       end do domainsLoop
+
+  end subroutine setBCData
+
+  subroutine insertToDataSet()
+    nVarPresent = 0
+    
+    ! ! check that the number of bc vars passed in are consistent
+    ! if(nBCInVar.ne.nbcVar) then
+    !    call terminate("setBCData", &
+    !         "Wrong number of bcVars in bcInArray")
+    ! end if
+
+    do m=1,nbcVar
+       bcVarPresent(m) = .false.
+       
+       dataSetLoop: do k=1,nDataSet
+          do l=1,dataSet(k)%nDirichletArrays
+             if(dataSet(k)%dirichletArrays(l)%arrayName == &
+                  bcVarNames(m)) then
+                
+                ! Variable is present. Store the indices, update
+                ! nVarPresent and set bcVarPresent(m) to .True.
+                
+                ind(1,m) = k; ind(2,m) = l
+                
+                nVarPresent      = nVarPresent + 1
+                bcVarPresent(m) = .true.
+                
+                ! Exit the search loop, as the variable was found.
+                
+                exit dataSetLoop
+                
+             endif
+          enddo
+       enddo dataSetLoop
+    enddo
+    
+    do m=1,nbcVar
+        if( bcVarPresent(m) ) then
+          k = ind(1,m)
+          l = ind(2,m)
+          
+          dataSet(k)%dirichletArrays(l)%dataArr(1) = bcInArray(m)
+        endif
+    enddo
+  end subroutine insertToDataSet
+
+  subroutine setBCDataSubsonicInflow(j, allTurbSubsonicInflow)
+    nbcVar = 17
+    if(equations == RANSEquations) nbcVar = nbcVar + nwt
+
+    allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVar), stat=ierr)
+    if(ierr /= 0) then                         
+        call terminate("BCDataSubsonicInflow", &
+        "Memory allocation failure for bcVarArray")
+    endif
+
+    bcVarNames(1)  = cgnsPtot
+    bcVarNames(2)  = cgnsTtot
+    bcVarNames(3)  = cgnsRhotot
+    bcVarNames(4)  = cgnsVelAnglex
+    bcVarNames(5)  = cgnsVelAngley
+    bcVarNames(6)  = cgnsVelAnglez
+    bcVarNames(7)  = cgnsVelVecx
+    bcVarNames(8)  = cgnsVelVecy
+    bcVarNames(9)  = cgnsVelVecz
+    bcVarNames(10) = cgnsVelVecr
+    bcVarNames(11) = cgnsVelVectheta
+    bcVarNames(12) = cgnsDensity
+    bcVarNames(13) = cgnsVelx
+    bcVarNames(14) = cgnsVely
+    bcVarNames(15) = cgnsVelz
+    bcVarNames(16) = cgnsVelr
+    bcVarNames(17) = cgnsVeltheta
+
+    call setBcVarNamesTurb(17_intType)
+
+    ! set the data
+    call insertToDataSet()
+
+
+  end subroutine setBCDataSubsonicInflow
 
   subroutine extractFromDataSet(blockFaceID)
     !
