@@ -14,7 +14,7 @@ module BCPointers_d
   real(kind=realType), dimension(:,:  ), pointer :: gamma0, gamma1, gamma2, gamma3
   real(kind=realType), dimension(:,:,:), pointer :: ssi, ssj, ssk, xx
   real(kind=realType), dimension(:,:,:), pointer :: ss
-  real(kind=realType), dimension(:,:),   pointer :: dd2wall
+  real(kind=realType), dimension(:,:),   pointer :: dd2wall, sFace
   integer(kind=intType), dimension(:,:), pointer :: gcp
 
   integer(kind=intType) :: iStart, iEnd, iSize
@@ -27,7 +27,7 @@ module BCPointers_d
   real(kind=realType), dimension(:,:),   pointer :: gamma0d, gamma1d, gamma2d, gamma3d
   real(kind=realType), dimension(:,:,:), pointer :: ssid, ssjd, sskd, xxd
   real(kind=realType), dimension(:,:,:), pointer :: ssd
-  real(kind=realType), dimension(:,:),   pointer :: dd2walld
+  real(kind=realType), dimension(:,:),   pointer :: dd2walld, sFaced
 
 
 

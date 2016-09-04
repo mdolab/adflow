@@ -2566,8 +2566,9 @@ bocoloop2:do mm=1,nviscbocos
 !       coarsest level are considered.                                 
 !
     use constants
-    use blockpointers
-    use iteration
+    use blockpointers, only : il, jl, kl, addgridvelocities, nbocos, &
+&   bcdata, bcdatad, sfacei, sfaceid, sfacej, sfacejd, sfacek, sfacekd, &
+&   bcfaceid, si, sid, sj, sjd, sk, skd
     use diffsizes
 !  hint: isize1ofdrfbcdata should be the size of dimension 1 of array *bcdata
     implicit none
@@ -2701,8 +2702,8 @@ bocoloop:do mm=1,nbocos
 !       coarsest level are considered.                                 
 !
     use constants
-    use blockpointers
-    use iteration
+    use blockpointers, only : il, jl, kl, addgridvelocities, nbocos, &
+&   bcdata, sfacei, sfacej, sfacek, bcfaceid, si, sj, sk
     implicit none
 !
 !      subroutine arguments.

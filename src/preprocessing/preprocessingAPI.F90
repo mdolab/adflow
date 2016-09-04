@@ -1708,7 +1708,7 @@ contains
   subroutine setReferenceVolume(level)
 
     use constants
-    use blockPointers, only : nDom, flowDoms, il, jl, kl
+    use blockPointers, only : nDom, flowDoms, ib, jb, kb
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use utils, only : setPointers
     implicit none
@@ -1721,11 +1721,11 @@ contains
     spectral: do sps=1,nTimeIntervalsSpectral
        domains: do nn=1,nDom
           call setPointers(nn, level, sps)
-          allocate(flowDoms(nn, level, sps)%volRef(2:il, 2:jl, 2:kl))
+          allocate(flowDoms(nn, level, sps)%volRef(0:ib, 0:jb, 0:kb))
 
-          do k=2, kl
-             do j=2, jl
-                do i=2, il
+          do k=0, kb
+             do j=0, jb
+                do i=0, ib
                    flowDoms(nn, level, sps)%volRef(i, j, k) = &
                         flowDoms(nn, level, sps)%vol(i, j, k)
                 end do

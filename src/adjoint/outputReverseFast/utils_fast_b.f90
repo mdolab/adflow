@@ -522,11 +522,12 @@ contains
     use constants
     use blockpointers, only : w, p, rlv, rev, gamma, x, d2wall, si, sj&
 &   , sk, s, globalcell, bcdata, nx, il, ie, ib, ny, jl, je, jb, nz, kl,&
-&   ke, kb, bcfaceid
+&   ke, kb, bcfaceid, addgridvelocities, sfacei, sfacej, sfacek, &
+&   addgridvelocities
     use bcpointers_fast_b, only : ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, &
 &   rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3, gamma0, gamma1, &
-&   gamma2, gamma3, gcp, xx, ss, ssi, ssj, ssk, dd2wall, istart, iend, &
-&   jstart, jend, isize, jsize
+&   gamma2, gamma3, gcp, xx, ss, ssi, ssj, ssk, dd2wall, sface, istart, &
+&   iend, jstart, jend, isize, jsize
     use inputphysics, only : cpmodel, equations
     implicit none
 ! subroutine arguments.
@@ -545,7 +546,7 @@ contains
 ! the pointers accordinly.
     select case  (bcfaceid(nn)) 
     case (imin) 
-!===============================================================
+!---------------------------------------------------------------------------
       ww3 => w(3, 1:, 1:, :)
       ww2 => w(2, 1:, 1:, :)
       ww1 => w(1, 1:, 1:, :)
@@ -568,7 +569,7 @@ contains
       gamma0 => gamma(0, 1:, 1:)
       gcp => globalcell(2, 1:, 1:)
     case (imax) 
-!===============================================================
+!---------------------------------------------------------------------------
       ww3 => w(nx, 1:, 1:, :)
       ww2 => w(il, 1:, 1:, :)
       ww1 => w(ie, 1:, 1:, :)
@@ -591,7 +592,7 @@ contains
       gamma0 => gamma(ib, 1:, 1:)
       gcp => globalcell(il, 1:, 1:)
     case (jmin) 
-!===============================================================
+!---------------------------------------------------------------------------
       ww3 => w(1:, 3, 1:, :)
       ww2 => w(1:, 2, 1:, :)
       ww1 => w(1:, 1, 1:, :)
@@ -614,7 +615,7 @@ contains
       gamma0 => gamma(1:, 0, 1:)
       gcp => globalcell(1:, 2, 1:)
     case (jmax) 
-!===============================================================
+!---------------------------------------------------------------------------
       ww3 => w(1:, ny, 1:, :)
       ww2 => w(1:, jl, 1:, :)
       ww1 => w(1:, je, 1:, :)
@@ -637,7 +638,7 @@ contains
       gamma0 => gamma(1:, jb, 1:)
       gcp => globalcell(1:, jl, 1:)
     case (kmin) 
-!===============================================================
+!---------------------------------------------------------------------------
       ww3 => w(1:, 1:, 3, :)
       ww2 => w(1:, 1:, 2, :)
       ww1 => w(1:, 1:, 1, :)
@@ -660,7 +661,7 @@ contains
       gamma0 => gamma(1:, 1:, 0)
       gcp => globalcell(1:, 1:, 2)
     case (kmax) 
-!===============================================================
+!---------------------------------------------------------------------------
       ww3 => w(1:, 1:, nz, :)
       ww2 => w(1:, 1:, kl, :)
       ww1 => w(1:, 1:, ke, :)
@@ -722,6 +723,22 @@ contains
         ssk => sj(:, :, kl, :)
         ss => s(:, :, kl, :)
       end select
+      if (addgridvelocities) then
+        select case  (bcfaceid(nn)) 
+        case (imin) 
+          sface => sfacei(1, :, :)
+        case (imax) 
+          sface => sfacei(il, :, :)
+        case (jmin) 
+          sface => sfacej(:, 1, :)
+        case (jmax) 
+          sface => sfacej(:, jl, :)
+        case (kmin) 
+          sface => sfacek(:, :, 1)
+        case (kmax) 
+          sface => sfacek(:, :, kl)
+        end select
+      end if
       if (equations .eq. ransequations) then
         select case  (bcfaceid(nn)) 
         case (imin) 
@@ -748,11 +765,11 @@ contains
     use constants
     use blockpointers, only : w, p, rlv, rev, gamma, x, d2wall, si, sj&
 &   , sk, s, globalcell, bcdata, nx, il, ie, ib, ny, jl, je, jb, nz, kl,&
-&   ke, kb, bcfaceid
+&   ke, kb, bcfaceid, sfacei, sfacej, sfacek, addgridvelocities
     use bcpointers_fast_b, only : ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, &
 &   rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3, gamma0, gamma1, &
 &   gamma2, gamma3, gcp, xx, ss, ssi, ssj, ssk, dd2wall, istart, iend, &
-&   jstart, jend, isize, jsize
+&   jstart, jend, isize, jsize, sface
     use inputphysics, only : cpmodel, equations
     implicit none
 ! subroutine arguments.
@@ -760,7 +777,7 @@ contains
     logical, intent(in) :: spatialpointers
     select case  (bcfaceid(nn)) 
     case (imin) 
-!===============================================================
+!---------------------------------------------------------------------------
       w(3, 1:je, 1:ke, :) = ww3(1:je, 1:ke, :)
       w(2, 1:je, 1:ke, :) = ww2(1:je, 1:ke, :)
       w(1, 1:je, 1:ke, :) = ww1(1:je, 1:ke, :)
@@ -782,7 +799,7 @@ contains
       gamma(1, 1:je, 1:ke) = gamma1(1:je, 1:ke)
       gamma(0, 1:je, 1:ke) = gamma0(1:je, 1:ke)
     case (imax) 
-!===============================================================
+!---------------------------------------------------------------------------
       w(nx, 1:je, 1:ke, :) = ww3(1:je, 1:ke, :)
       w(il, 1:je, 1:ke, :) = ww2(1:je, 1:ke, :)
       w(ie, 1:je, 1:ke, :) = ww1(1:je, 1:ke, :)
@@ -804,7 +821,7 @@ contains
       gamma(ie, 1:je, 1:ke) = gamma1(1:je, 1:ke)
       gamma(ib, 1:je, 1:ke) = gamma0(1:je, 1:ke)
     case (jmin) 
-!===============================================================
+!---------------------------------------------------------------------------
       w(1:ie, 3, 1:ke, :) = ww3(1:ie, 1:ke, :)
       w(1:ie, 2, 1:ke, :) = ww2(1:ie, 1:ke, :)
       w(1:ie, 1, 1:ke, :) = ww1(1:ie, 1:ke, :)
@@ -826,7 +843,7 @@ contains
       gamma(1:ie, 1, 1:ke) = gamma1(1:ie, 1:ke)
       gamma(1:ie, 0, 1:ke) = gamma0(1:ie, 1:ke)
     case (jmax) 
-!===============================================================
+!---------------------------------------------------------------------------
       w(1:ie, ny, 1:ke, :) = ww3(1:ie, 1:ke, :)
       w(1:ie, jl, 1:ke, :) = ww2(1:ie, 1:ke, :)
       w(1:ie, je, 1:ke, :) = ww1(1:ie, 1:ke, :)
@@ -848,7 +865,7 @@ contains
       gamma(1:ie, je, 1:ke) = gamma1(1:ie, 1:ke)
       gamma(1:ie, jb, 1:ke) = gamma0(1:ie, 1:ke)
     case (kmin) 
-!===============================================================
+!---------------------------------------------------------------------------
       w(1:ie, 1:je, 3, :) = ww3(1:ie, 1:je, :)
       w(1:ie, 1:je, 2, :) = ww2(1:ie, 1:je, :)
       w(1:ie, 1:je, 1, :) = ww1(1:ie, 1:je, :)
@@ -870,7 +887,7 @@ contains
       gamma(1:ie, 1:je, 1) = gamma1(1:ie, 1:je)
       gamma(1:ie, 1:je, 0) = gamma0(1:ie, 1:je)
     case (kmax) 
-!===============================================================
+!---------------------------------------------------------------------------
       w(1:ie, 1:je, nz, :) = ww3(1:ie, 1:je, :)
       w(1:ie, 1:je, kl, :) = ww2(1:ie, 1:je, :)
       w(1:ie, 1:je, ke, :) = ww1(1:ie, 1:je, :)
@@ -915,6 +932,22 @@ contains
         x(0:ie, 0:je, kl, :) = xx(1:ie+1, 1:je+1, :)
         sk(1:ie, 1:je, kl, :) = ssi(1:ie, 1:je, :)
       end select
+      if (addgridvelocities) then
+        select case  (bcfaceid(nn)) 
+        case (imin) 
+          sfacei(1, 1:je, 1:ke) = sface(1:je, 1:ke)
+        case (imax) 
+          sfacei(il, 1:je, 1:ke) = sface(1:je, 1:ke)
+        case (jmin) 
+          sfacej(1:ie, 1, 1:ke) = sface(1:ie, 1:ke)
+        case (jmax) 
+          sfacej(1:ie, jl, 1:ke) = sface(1:ie, 1:ke)
+        case (kmin) 
+          sfacek(1:ie, 1:je, 1) = sface(1:ie, 1:je)
+        case (kmax) 
+          sfacek(1:ie, 1:je, kl) = sface(1:ie, 1:je)
+        end select
+      end if
     end if
   end subroutine resetbcpointers
   subroutine computerootbendingmoment(cf, cm, liftindex, bendingmoment)
@@ -1437,7 +1470,7 @@ contains
       end if
       nlevelsset = 2
     case (secondorder) 
-!=============================================================
+!--------------------------------------------------
 ! second order time integrator. determine the amount of
 ! available states and set the coefficients accordingly.
       select case  (noldsolavail) 
@@ -1473,7 +1506,7 @@ contains
         nlevelsset = 3
       end select
     case (thirdorder) 
-!=============================================================
+!--------------------------------------------------
 ! third order time integrator.  determine the amount of
 ! available states and set the coefficients accordingly.
       select case  (noldsolavail) 
@@ -1529,4 +1562,12 @@ contains
       coeftime(nn) = zero
     end do
   end subroutine setcoeftimeintegrator
+  function mynorm2(x)
+    use constants
+    implicit none
+    real(kind=realtype), dimension(3), intent(in) :: x
+    real(kind=realtype) :: mynorm2
+    intrinsic sqrt
+    mynorm2 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)
+  end function mynorm2
 end module utils_fast_b

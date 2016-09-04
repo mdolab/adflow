@@ -19,13 +19,14 @@ contains
 !                *rlv0 *rlv1 *rlv2 *rlv3 *ss *ssi *ssj *ssk *ww0
 !                *ww1 *ww2 *ww3 (global)gammainf (global)winf[1:10]
 !                (global)pinfcorr (global)rgas
-!   plus diff mem management of: rev:in p:in w:in rlv:in x:in si:in
-!                sj:in sk:in bcdata:in *bcdata.norm:in *bcdata.rface:in
-!                *bcdata.uslip:in xx:in-out rev0:in-out rev1:in-out
-!                rev2:in-out rev3:in-out pp0:in-out pp1:in-out
-!                pp2:in-out pp3:in-out rlv0:in-out rlv1:in-out
-!                rlv2:in-out rlv3:in-out ss:in-out ssi:in-out ssj:in-out
-!                ssk:in-out ww0:in-out ww1:in-out ww2:in-out ww3:in-out
+!   plus diff mem management of: rev:in p:in sfacei:in sfacej:in
+!                sfacek:in w:in rlv:in x:in si:in sj:in sk:in bcdata:in
+!                *bcdata.norm:in *bcdata.rface:in *bcdata.uslip:in
+!                xx:in-out rev0:in-out rev1:in-out rev2:in-out
+!                rev3:in-out pp0:in-out pp1:in-out pp2:in-out pp3:in-out
+!                rlv0:in-out rlv1:in-out rlv2:in-out rlv3:in-out
+!                ss:in-out ssi:in-out ssj:in-out ssk:in-out ww0:in-out
+!                ww1:in-out ww2:in-out ww3:in-out
   subroutine applyallbc_block_d(secondhalo)
 ! apply bc's for a single block
     use constants
