@@ -896,7 +896,7 @@ intervaltt:do
 !   with respect to varying inputs: *p *w *rlv
 !   rw status of diff variables: *p:incr *w:incr *rlv:in-out
 !   plus diff mem management of: p:in w:in rlv:in
-  subroutine computelamviscosity_fast_b()
+  subroutine computelamviscosity_fast_b(includehalos)
 !
 !       computelamviscosity computes the laminar viscosity ratio in    
 !       the owned cell centers of the given block. sutherland's law is 
@@ -910,6 +910,8 @@ intervaltt:do
     use iteration
     use utils_fast_b, only : getcorrectfork
     implicit none
+! input variables
+    logical, intent(in) :: includehalos
 !
 !      local parameter.
 !
@@ -921,6 +923,8 @@ intervaltt:do
     real(kind=realtype) :: musuth, tsuth, ssuth, t, pp
     real(kind=realtype) :: td, ppd
     logical :: correctfork
+    integer(kind=inttype) :: ibeg, iend, isize, jbeg, jend, jsize, kbeg&
+&   , kend, ksize
     intrinsic mod
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tempd
@@ -935,13 +939,31 @@ intervaltt:do
       musuth = musuthdim/muref
       tsuth = tsuthdim/tref
       ssuth = ssuthdim/tref
+      if (includehalos) then
+        ibeg = 1
+        jbeg = 1
+        kbeg = 1
+        iend = ie
+        jend = je
+        kend = ke
+      else
+        ibeg = 2
+        jbeg = 2
+        kbeg = 2
+        iend = il
+        jend = jl
+        kend = kl
+      end if
 ! substract 2/3 rho k, which is a part of the normal turbulent
 ! stresses, in case the pressure must be corrected.
       if (correctfork) then
-        do ii=0,ie*je*ke-1
-          i = mod(ii, ie) + 1
-          j = mod(ii/ie, je) + 1
-          k = ii/(ie*je) + 1
+        isize = iend - ibeg + 1
+        jsize = jend - jbeg + 1
+        ksize = kend - kbeg + 1
+        do ii=0,isize*jsize*ksize-1
+          i = mod(ii, isize) + ibeg
+          j = mod(ii/isize, jsize) + jbeg
+          k = ii/(isize*jsize) + kbeg
           pp = p(i, j, k) - twothird*w(i, j, k, irho)*w(i, j, k, itu1)
           t = pp/(rgas*w(i, j, k, irho))
           tempd = musuth*(tsuth+ssuth)*rlvd(i, j, k)/(ssuth+t)
@@ -958,10 +980,15 @@ intervaltt:do
 &           irho)*ppd
         end do
       else
-        do ii=0,ie*je*ke-1
-          i = mod(ii, ie) + 1
-          j = mod(ii/ie, je) + 1
-          k = ii/(ie*je) + 1
+! loop over the owned cells *and* first level halos of this
+! block and compute the laminar viscosity ratio.
+        isize = iend - ibeg + 1
+        jsize = jend - jbeg + 1
+        ksize = kend - kbeg + 1
+        do ii=0,isize*jsize*ksize-1
+          i = mod(ii, isize) + ibeg
+          j = mod(ii/isize, jsize) + jbeg
+          k = ii/(isize*jsize) + kbeg
 ! compute the nondimensional temperature and the
 ! nondimensional laminar viscosity.
           t = p(i, j, k)/(rgas*w(i, j, k, irho))
@@ -977,7 +1004,7 @@ intervaltt:do
       end if
     end if
   end subroutine computelamviscosity_fast_b
-  subroutine computelamviscosity()
+  subroutine computelamviscosity(includehalos)
 !
 !       computelamviscosity computes the laminar viscosity ratio in    
 !       the owned cell centers of the given block. sutherland's law is 
@@ -991,6 +1018,8 @@ intervaltt:do
     use iteration
     use utils_fast_b, only : getcorrectfork
     implicit none
+! input variables
+    logical, intent(in) :: includehalos
 !
 !      local parameter.
 !
@@ -1001,6 +1030,8 @@ intervaltt:do
     integer(kind=inttype) :: i, j, k, ii
     real(kind=realtype) :: musuth, tsuth, ssuth, t, pp
     logical :: correctfork
+    integer(kind=inttype) :: ibeg, iend, isize, jbeg, jend, jsize, kbeg&
+&   , kend, ksize
     intrinsic mod
 ! return immediately if no laminar viscosity needs to be computed.
     if (.not.viscous) then
@@ -1013,13 +1044,31 @@ intervaltt:do
       musuth = musuthdim/muref
       tsuth = tsuthdim/tref
       ssuth = ssuthdim/tref
+      if (includehalos) then
+        ibeg = 1
+        jbeg = 1
+        kbeg = 1
+        iend = ie
+        jend = je
+        kend = ke
+      else
+        ibeg = 2
+        jbeg = 2
+        kbeg = 2
+        iend = il
+        jend = jl
+        kend = kl
+      end if
 ! substract 2/3 rho k, which is a part of the normal turbulent
 ! stresses, in case the pressure must be corrected.
       if (correctfork) then
-        do ii=0,ie*je*ke-1
-          i = mod(ii, ie) + 1
-          j = mod(ii/ie, je) + 1
-          k = ii/(ie*je) + 1
+        isize = iend - ibeg + 1
+        jsize = jend - jbeg + 1
+        ksize = kend - kbeg + 1
+        do ii=0,isize*jsize*ksize-1
+          i = mod(ii, isize) + ibeg
+          j = mod(ii/isize, jsize) + jbeg
+          k = ii/(isize*jsize) + kbeg
           pp = p(i, j, k) - twothird*w(i, j, k, irho)*w(i, j, k, itu1)
           t = pp/(rgas*w(i, j, k, irho))
           rlv(i, j, k) = musuth*((tsuth+ssuth)/(t+ssuth))*(t/tsuth)**&
@@ -1028,10 +1077,13 @@ intervaltt:do
       else
 ! loop over the owned cells *and* first level halos of this
 ! block and compute the laminar viscosity ratio.
-        do ii=0,ie*je*ke-1
-          i = mod(ii, ie) + 1
-          j = mod(ii/ie, je) + 1
-          k = ii/(ie*je) + 1
+        isize = iend - ibeg + 1
+        jsize = jend - jbeg + 1
+        ksize = kend - kbeg + 1
+        do ii=0,isize*jsize*ksize-1
+          i = mod(ii, isize) + ibeg
+          j = mod(ii/isize, jsize) + jbeg
+          k = ii/(isize*jsize) + kbeg
 ! compute the nondimensional temperature and the
 ! nondimensional laminar viscosity.
           t = p(i, j, k)/(rgas*w(i, j, k, irho))

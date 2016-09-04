@@ -190,7 +190,7 @@ contains
     call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call computepressuresimple(.true.)
 ! compute laminar/eddy viscosity if required
-    call computelamviscosity()
+    call computelamviscosity(.true.)
     call computeeddyviscosity()
     call pushreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
     call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
@@ -991,7 +991,7 @@ varloopfine:do l=1,nwf
     call popreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
     call applyallbc_block_b(.true.)
     call computeeddyviscosity_b()
-    call computelamviscosity_b()
+    call computelamviscosity_b(.true.)
     call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call computepressuresimple_b(.true.)
     call popcontrol2b(branch)
@@ -1110,7 +1110,7 @@ varloopfine:do l=1,nwf
 ! compute the pressures
     call computepressuresimple(.true.)
 ! compute laminar/eddy viscosity if required
-    call computelamviscosity()
+    call computelamviscosity(.true.)
     call computeeddyviscosity()
     call applyallbc_block(.true.)
     if (equations .eq. ransequations) then

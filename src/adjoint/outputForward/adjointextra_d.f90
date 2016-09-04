@@ -208,7 +208,7 @@ contains
 ! compute the pressures
     call computepressuresimple_d(.true.)
 ! compute laminar/eddy viscosity if required
-    call computelamviscosity_d()
+    call computelamviscosity_d(.true.)
     call computeeddyviscosity_d()
     call applyallbc_block_d(.true.)
     if (equations .eq. ransequations) then
@@ -606,7 +606,7 @@ varloopfine:do l=1,nwf
 ! compute the pressures
     call computepressuresimple(.true.)
 ! compute laminar/eddy viscosity if required
-    call computelamviscosity()
+    call computelamviscosity(.true.)
     call computeeddyviscosity()
     call applyallbc_block(.true.)
     if (equations .eq. ransequations) then

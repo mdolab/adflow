@@ -1209,7 +1209,7 @@ contains
     do mm=1,nTimeIntervalsSpectral
        do nn=1,nDom
           call setPointers(nn,mgStartlevel,mm)
-          call computeLamViscosity
+          call computeLamViscosity(.False.)
        enddo
     enddo
 
