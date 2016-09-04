@@ -736,7 +736,7 @@ contains
           if (equations == RANSEquations) then 
              select case(turbModel)
              case (spalartAllmaras)
-                call saeddyviscosity_b
+                call saeddyviscosity_b(0, ib, 0, jb, 0, kb)
              end select
           end if
 

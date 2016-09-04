@@ -91,7 +91,7 @@ contains
 
        ! Compute the corresponding eddy viscosity.
 
-       call saEddyViscosity
+       call saEddyViscosity(2, il, 2, jl, 2, kl)
 
        ! Set the halo values for the turbulent variables.
        ! We are on the finest mesh, so the second layer of halo

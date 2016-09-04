@@ -3,6 +3,11 @@
 !
 module surfaceintegrations_fast_b
   implicit none
+! ----------------------------------------------------------------------
+!                                                                      |
+!                    no tapenade routine below this line               |
+!                                                                      |
+! ----------------------------------------------------------------------
 
 contains
   subroutine flowproperties(massflowrate, mass_ptot, mass_ttot, mass_ps)

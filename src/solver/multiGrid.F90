@@ -208,7 +208,7 @@ contains
           call computeEtotBlock(2_intType,il, 2_intType,jl, &
                2_intType,kl, correctForK)
           call computeLamViscosity(.False.)
-          call computeEddyViscosity
+          call computeEddyViscosity(.False.)
 
           ! Set the values of the 1st layer of corner row halo's to avoid
           ! divisions by zero and uninitialized variables.
@@ -588,8 +588,8 @@ contains
           ! owned cells of this block. If the solution must be
           ! interpolated, extrapolate the viscosities in the halo's.
 
-          call computeLamViscosity(.True.)
-          call computeEddyViscosity
+          call computeLamViscosity(.False.)
+          call computeEddyViscosity(.False.)
           if(.not. corrections) call extrapolateViscosities
 
        enddo domains
