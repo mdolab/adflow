@@ -23,6 +23,7 @@ module BCPointers
   real(kind=realType), dimension(:,:)  , allocatable :: rev0, rev1, rev2, rev3
   real(kind=realType), dimension(:,:  ), allocatable :: gamma0, gamma1, gamma2, gamma3
   real(kind=realType), dimension(:,:,:), allocatable :: ssi, xx
+  real(kind=realType), dimension(:,:),   allocatable :: sFace
   integer(kind=intType), dimension(:,:), allocatable :: gcp
 #endif
   integer(kind=intType) :: iStart, iEnd, iSize

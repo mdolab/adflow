@@ -197,6 +197,7 @@ contains
     call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     call pushreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
     call pushreal8array(ssi, size(ssi, 1)*size(ssi, 2)*size(ssi, 3))
+    call pushreal8array(sface, size(sface, 1)*size(sface, 2))
     call pushreal8array(rlv3, size(rlv3, 1)*size(rlv3, 2))
     call pushreal8array(rlv2, size(rlv2, 1)*size(rlv2, 2))
     call pushreal8array(rlv1, size(rlv1, 1)*size(rlv1, 2))
@@ -221,8 +222,14 @@ contains
     call pushreal8array(si, size(si, 1)*size(si, 2)*size(si, 3)*size(si&
 &                 , 4))
     call pushreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
+    call pushreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                 sfacek, 3))
     call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma&
 &                 , 3))
+    call pushreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                 sfacej, 3))
+    call pushreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                 sfacei, 3))
     call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     do ii1=1,ntimeintervalsspectral
@@ -513,6 +520,7 @@ varloopfine:do l=1,nwf
     call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     call pushreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
     call pushreal8array(ssi, size(ssi, 1)*size(ssi, 2)*size(ssi, 3))
+    call pushreal8array(sface, size(sface, 1)*size(sface, 2))
     call pushreal8array(rlv3, size(rlv3, 1)*size(rlv3, 2))
     call pushreal8array(rlv2, size(rlv2, 1)*size(rlv2, 2))
     call pushreal8array(rlv1, size(rlv1, 1)*size(rlv1, 2))
@@ -537,8 +545,14 @@ varloopfine:do l=1,nwf
     call pushreal8array(si, size(si, 1)*size(si, 2)*size(si, 3)*size(si&
 &                 , 4))
     call pushreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
+    call pushreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                 sfacek, 3))
     call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma&
 &                 , 3))
+    call pushreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                 sfacej, 3))
+    call pushreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                 sfacei, 3))
     call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     do ii1=1,ntimeintervalsspectral
@@ -646,8 +660,14 @@ varloopfine:do l=1,nwf
     end do
     call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
+    call popreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                sfacei, 3))
+    call popreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                sfacej, 3))
     call popreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma, &
 &                3))
+    call popreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                sfacek, 3))
     call popreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
     call popreal8array(si, size(si, 1)*size(si, 2)*size(si, 3)*size(si, &
 &                4))
@@ -672,6 +692,7 @@ varloopfine:do l=1,nwf
     call popreal8array(rlv1, size(rlv1, 1)*size(rlv1, 2))
     call popreal8array(rlv2, size(rlv2, 1)*size(rlv2, 2))
     call popreal8array(rlv3, size(rlv3, 1)*size(rlv3, 2))
+    call popreal8array(sface, size(sface, 1)*size(sface, 2))
     call popreal8array(ssi, size(ssi, 1)*size(ssi, 2)*size(ssi, 3))
     call popreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
     call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
@@ -930,8 +951,14 @@ varloopfine:do l=1,nwf
     end do
     call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
+    call popreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                sfacei, 3))
+    call popreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                sfacej, 3))
     call popreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma, &
 &                3))
+    call popreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                sfacek, 3))
     call popreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
     call popreal8array(si, size(si, 1)*size(si, 2)*size(si, 3)*size(si, &
 &                4))
@@ -956,6 +983,7 @@ varloopfine:do l=1,nwf
     call popreal8array(rlv1, size(rlv1, 1)*size(rlv1, 2))
     call popreal8array(rlv2, size(rlv2, 1)*size(rlv2, 2))
     call popreal8array(rlv3, size(rlv3, 1)*size(rlv3, 2))
+    call popreal8array(sface, size(sface, 1)*size(sface, 2))
     call popreal8array(ssi, size(ssi, 1)*size(ssi, 2)*size(ssi, 3))
     call popreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
     call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))

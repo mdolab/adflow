@@ -23,11 +23,15 @@ contains
 !       the pointers in block pointer already point to the correct     
 !       block on the correct multigrid level.                          
 !
-    use blockpointers
-    use cgnsgrid
     use constants
-    use flowvarrefstate
-    use inputphysics
+    use blockpointers, only : nx, il, ie, ny, jl, je, nz, kl, ke, &
+&   spectralsol, w, wd, si, sid, sj, sjd, sk, skd, dw, dwd, pori, porj, &
+&   pork, indfamilyi, indfamilyj, indfamilyk, p, pd, sfacei, sfaceid, &
+&   sfacej, sfacejd, sfacek, sfacekd, nbkglobal, addgridvelocities, &
+&   blockismoving, vol, vold, factfamilyi, factfamilyj, factfamilyk
+    use cgnsgrid, only : cgnsdoms, massflowfamilyinv
+    use flowvarrefstate, only : timeref, timerefd
+    use inputphysics, only : equationmode
     implicit none
 !
 !      local variables.
@@ -425,11 +429,15 @@ contains
 !       the pointers in block pointer already point to the correct     
 !       block on the correct multigrid level.                          
 !
-    use blockpointers
-    use cgnsgrid
     use constants
-    use flowvarrefstate
-    use inputphysics
+    use blockpointers, only : nx, il, ie, ny, jl, je, nz, kl, ke, &
+&   spectralsol, w, si, sj, sk, dw, pori, porj, pork, indfamilyi, &
+&   indfamilyj, indfamilyk, p, sfacei, sfacej, sfacek, nbkglobal, &
+&   addgridvelocities, blockismoving, vol, factfamilyi, factfamilyj, &
+&   factfamilyk
+    use cgnsgrid, only : cgnsdoms, massflowfamilyinv
+    use flowvarrefstate, only : timeref
+    use inputphysics, only : equationmode
     implicit none
 !
 !      local variables.

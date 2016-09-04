@@ -5,6 +5,97 @@ module surfaceintegrations_b
   implicit none
 
 contains
+  subroutine flowproperties(massflowrate, mass_ptot, mass_ttot, mass_ps)
+    use constants
+    use blockpointers
+    use flowvarrefstate
+    use inputphysics
+    use bcroutines_b
+    use costfunctions
+    use surfacefamilies
+    use sorting, only : bsearchintegers
+    use utils_b, only : setbcpointers, resetbcpointers
+    use flowutils_b, only : computeptot, computettot
+    use bcpointers_b
+    implicit none
+!
+!      subroutine arguments
+!
+    real(kind=realtype), intent(out) :: massflowrate, mass_ptot, &
+&   mass_ttot, mass_ps
+    integer(kind=inttype) :: nn, i, j, ii
+    real(kind=realtype) :: fact
+    real(kind=realtype) :: sf, vnm, vxm, vym, vzm
+    real(kind=realtype) :: pm, ptot, ttot, rhom, massflowratelocal, tmp
+    intrinsic size
+    intrinsic mod
+    massflowrate = zero
+    mass_ptot = zero
+    mass_ttot = zero
+    mass_ps = zero
+    sf = zero
+bocos:do nn=1,nbocos
+      if (bsearchintegers(bcdata(nn)%famid, famgroups, size(famgroups)) &
+&         .gt. 0) then
+        call setbcpointers(nn, .true.)
+        select case  (bcfaceid(nn)) 
+        case (imin) 
+          fact = -one
+        case (imax) 
+          fact = one
+        case (jmin) 
+          fact = -one
+        case (jmax) 
+          fact = one
+        case (kmin) 
+          fact = -one
+        case (kmax) 
+          fact = one
+        end select
+! loop over the quadrilateral faces of the subface. note that
+! the nodal range of bcdata must be used and not the cell
+! range, because the latter may include the halo's in i and
+! j-direction. the offset +1 is there, because inbeg and jnbeg
+! refer to nodal ranges and not to cell ranges. the loop
+! (without the ad stuff) would look like:
+!
+! do j=(bcdata(nn)%jnbeg+1),bcdata(nn)%jnend
+!    do i=(bcdata(nn)%inbeg+1),bcdata(nn)%inend
+        do ii=0,(bcdata(nn)%jnend-bcdata(nn)%jnbeg)*(bcdata(nn)%inend-&
+&           bcdata(nn)%inbeg)-1
+          i = mod(ii, bcdata(nn)%inend - bcdata(nn)%inbeg) + bcdata(nn)%&
+&           inbeg + 1
+          j = ii/(bcdata(nn)%inend-bcdata(nn)%inbeg) + bcdata(nn)%jnbeg &
+&           + 1
+          if (addgridvelocities) sf = sface(i, j)
+          vxm = half*(ww1(i, j, ivx)+ww2(i, j, ivx))
+          vym = half*(ww1(i, j, ivy)+ww2(i, j, ivy))
+          vzm = half*(ww1(i, j, ivz)+ww2(i, j, ivz))
+          rhom = half*(ww1(i, j, irho)+ww2(i, j, irho))
+          pm = half*(pp1(i, j)+pp2(i, j))
+          vnm = vxm*ssi(i, j, 1) + vym*ssi(i, j, 2) + vzm*ssi(i, j, 3) -&
+&           sf
+          massflowratelocal = rhom*vnm
+!  vn1 = ww1(i,j,ivx)*ssi(i,j,1) + ww1(i,j,ivy)*ssi(i,j,2) &
+! + ww1(i,j,ivz)*ssi(i,j,3) - sf
+!  vn2 = ww2(i,j,ivx)*ssi(i,j,1) + ww2(i,j,ivy)*ssi(i,j,2) &
+! + ww2(i,j,ivz)*ssi(i,j,3) - sf
+! massflowratelocal = half*(ww1(i,j,irho)*vn1 &
+!                     + ww2(i,j,irho)*vn2)
+          massflowrate = massflowrate + massflowratelocal
+          call computeptot(rhom, vxm, vym, vzm, pm, ptot)
+          call computettot(rhom, vxm, vym, vzm, pm, ttot)
+          mass_ptot = mass_ptot + ptot*massflowratelocal
+          mass_ttot = mass_ttot + ttot*massflowratelocal
+          mass_ps = mass_ps + pm*massflowratelocal
+        end do
+        massflowrate = massflowrate*fact
+        mass_ptot = mass_ptot*fact
+        mass_ttot = mass_ttot*fact
+        mass_ps = mass_ps*fact
+      end if
+    end do bocos
+  end subroutine flowproperties
 !  differentiation of forcesandmoments in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *w *x *(*bcdata.fv) *(*bcdata.fp)
 !                *(*bcdata.area) lengthref machcoef pointref gammainf
@@ -28,14 +119,14 @@ contains
 &   cmvd, yplusmax, sepsensor, sepsensord, sepsensoravg, sepsensoravgd, &
 &   cavitation, cavitationd)
 !
-!       forcesandmoments computes the contribution of the block        
-!       given by the pointers in blockpointers to the force and        
-!       moment coefficients of the geometry. a distinction is made     
-!       between the inviscid and viscous parts. in case the maximum    
-!       yplus value must be monitored (only possible for rans), this   
-!       value is also computed. the separation sensor and the cavita-  
-!       tion sensor is also computed                                   
-!       here.                                                          
+!       forcesandmoments computes the contribution of the block
+!       given by the pointers in blockpointers to the force and
+!       moment coefficients of the geometry. a distinction is made
+!       between the inviscid and viscous parts. in case the maximum
+!       yplus value must be monitored (only possible for rans), this
+!       value is also computed. the separation sensor and the cavita-
+!       tion sensor is also computed
+!       here.
 !
     use constants
     use communication
@@ -150,12 +241,12 @@ contains
 ! loop over the boundary subfaces of this block.
 bocos:do nn=1,nbocos
 !
-!         integrate the inviscid contribution over the solid walls,    
-!         either inviscid or viscous. the integration is done with     
-!         cp. for closed contours this is equal to the integration     
-!         of p; for open contours this is not the case anymore.        
-!         question is whether a force for an open contour is           
-!         meaningful anyway.                                           
+!         integrate the inviscid contribution over the solid walls,
+!         either inviscid or viscous. the integration is done with
+!         cp. for closed contours this is equal to the integration
+!         of p; for open contours this is not the case anymore.
+!         question is whether a force for an open contour is
+!         meaningful anyway.
 !
       res = bsearchintegers(bcdata(nn)%famid, famgroups, size(famgroups)&
 &       )
@@ -315,8 +406,8 @@ bocos:do nn=1,nbocos
             cavitation = cavitation + sensor1
           end do
 !
-!           integration of the viscous forces.                         
-!           only for viscous boundaries.                               
+!           integration of the viscous forces.
+!           only for viscous boundaries.
 !
           if (viscoussubface) then
 ! replace norm with bcdata norm - peter lyu
@@ -408,8 +499,14 @@ bocos:do nn=1,nbocos
 &                       , 4))
           call pushreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3&
 &                       ))
+          call pushreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*&
+&                       size(sfacek, 3))
           call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(&
 &                       gamma, 3))
+          call pushreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*&
+&                       size(sfacej, 3))
+          call pushreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*&
+&                       size(sfacei, 3))
           call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
           call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3&
 &                       ))
@@ -516,8 +613,14 @@ bocos:do nn=1,nbocos
       else if (branch .ne. 2) then
         call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
         call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
+        call popreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                    sfacei, 3))
+        call popreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                    sfacej, 3))
         call popreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(&
 &                    gamma, 3))
+        call popreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                    sfacek, 3))
         call popreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
         call popreal8array(x, size(x, 1)*size(x, 2)*size(x, 3)*size(x, 4&
 &                    ))
@@ -886,14 +989,14 @@ bocos:do nn=1,nbocos
   subroutine forcesandmoments(cfp, cfv, cmp, cmv, yplusmax, sepsensor, &
 &   sepsensoravg, cavitation)
 !
-!       forcesandmoments computes the contribution of the block        
-!       given by the pointers in blockpointers to the force and        
-!       moment coefficients of the geometry. a distinction is made     
-!       between the inviscid and viscous parts. in case the maximum    
-!       yplus value must be monitored (only possible for rans), this   
-!       value is also computed. the separation sensor and the cavita-  
-!       tion sensor is also computed                                   
-!       here.                                                          
+!       forcesandmoments computes the contribution of the block
+!       given by the pointers in blockpointers to the force and
+!       moment coefficients of the geometry. a distinction is made
+!       between the inviscid and viscous parts. in case the maximum
+!       yplus value must be monitored (only possible for rans), this
+!       value is also computed. the separation sensor and the cavita-
+!       tion sensor is also computed
+!       here.
 !
     use constants
     use communication
@@ -961,12 +1064,12 @@ bocos:do nn=1,nbocos
 ! loop over the boundary subfaces of this block.
 bocos:do nn=1,nbocos
 !
-!         integrate the inviscid contribution over the solid walls,    
-!         either inviscid or viscous. the integration is done with     
-!         cp. for closed contours this is equal to the integration     
-!         of p; for open contours this is not the case anymore.        
-!         question is whether a force for an open contour is           
-!         meaningful anyway.                                           
+!         integrate the inviscid contribution over the solid walls,
+!         either inviscid or viscous. the integration is done with
+!         cp. for closed contours this is equal to the integration
+!         of p; for open contours this is not the case anymore.
+!         question is whether a force for an open contour is
+!         meaningful anyway.
 !
       if (bsearchintegers(bcdata(nn)%famid, famgroups, size(famgroups)) &
 &         .gt. 0) then
@@ -1085,8 +1188,8 @@ bocos:do nn=1,nbocos
             cavitation = cavitation + sensor1
           end do
 !
-!           integration of the viscous forces.                         
-!           only for viscous boundaries.                               
+!           integration of the viscous forces.
+!           only for viscous boundaries.
 !
           if (viscoussubface) then
 ! initialize dwall for the laminar case and set the pointer

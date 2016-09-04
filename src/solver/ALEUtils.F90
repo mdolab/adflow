@@ -609,12 +609,13 @@ end subroutine recoverLevelALEBC_block
 ! ===========================================================
 
 subroutine fillCoor
+
   use constants
-  use blockPointers
-  use iteration
-  use inputTimeSpectral
-  use inputUnsteady
-  use inputPhysics
+  use blockPointers, only : ie, je, ke, il, jl, kl, vol, volOld, nDom, xOld, x
+  use iteration, only : groundLevel
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use inputUnsteady, only : useALE
+  use inputPhysics, only : equationMode
   use utils, only : setPointers
   implicit none
   !
@@ -659,11 +660,11 @@ end subroutine fillCoor
 ! ===========================================================
 subroutine storeCoor
   use constants
-  use blockPointers
-  use iteration
-  use inputTimeSpectral
-  use inputUnsteady
-  use inputPhysics
+  use blockPointers, only : ie, je, ke, il, jl, kl, xAle, x, nDom
+  use iteration, only : groundLevel
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use inputUnsteady, only : useALE
+  use inputPhysics, only : equationMode
   use utils, only : setPointers
   implicit none
   !
@@ -700,11 +701,11 @@ end subroutine storeCoor
 ! ===========================================================
 subroutine interpCoor(lale)
   use constants
-  use blockPointers
-  use iteration
-  use inputTimeSpectral
-  use inputUnsteady
-  use inputPhysics
+  use blockPointers, only : ie, je, ke, il, jl, kl, xOld, xAle, x, nDom
+  use iteration, only : groundLevel, coefMeshALE
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use inputUnsteady, only : useALE
+  use inputPhysics, only : equationMode
   use utils, only : setPointers
   implicit none
   !
@@ -748,11 +749,12 @@ end subroutine interpCoor
 
 ! ===========================================================
 subroutine recoverCoor
-  use blockPointers
-  use iteration
-  use inputTimeSpectral
-  use inputUnsteady
-  use inputPhysics
+  use constants
+  use blockPointers, only : ie, je, ke, x, xALe, nDom
+  use iteration, only : groundLevel
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use inputUnsteady, only : useALE
+  use inputPhysics, only : equationMode
   use utils, only : setPointers
   implicit none
   !

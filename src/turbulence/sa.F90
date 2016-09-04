@@ -15,14 +15,18 @@ contains
 
   subroutine sa_block(resOnly)
     !
-    !       sa solves the transport equation for the Spalart-Allmaras      
-    !       turbulence model in a segregated manner using a diagonal       
-    !       dominant ADI-scheme.                                           
+    !       sa solves the transport equation for the Spalart-Allmaras
+    !       turbulence model in a segregated manner using a diagonal
+    !       dominant ADI-scheme. Note that the scratch and boundary
+    !       matrix values are not strictly, but tapande would like to
+    !       see them becuase it must save them.
     !
-    use blockPointers
-    use inputTimeSpectral
-    use iteration
-    use inputPhysics
+    use constants
+    use blockPointers, only : nDom, il, jl, kl, scratch, bmtj1, bmtj2, &
+         bmti1, bmti2, bmtk1, bmtk2
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use iteration, only : currentLevel
+    use inputPhysics, only : turbProd
     use paramTurb
     use turbutils
     use turbBCRoutines

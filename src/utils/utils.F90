@@ -863,7 +863,7 @@ module utils
     use blockPointers, only : w, p, rlv, rev, gamma, x, d2wall, &
          si, sj, sk, s,  globalCell, BCData, nx, il, ie, ib, &
          ny, jl, je, jb, nz, kl, ke, kb, BCFaceID, & 
-         addgridvelocities, sFaceI, sFaceJ, sFaceK
+         addgridvelocities, sFaceI, sFaceJ, sFaceK, addGridVelocities
     use BCPointers, only : ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, &
          rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3, &
          gamma0, gamma1, gamma2, gamma3, gcp, xx, ss, ssi, ssj, ssk, dd2wall, &
@@ -1080,55 +1080,54 @@ module utils
           ssj => sj(2,:,:,:)
           ssk => sk(2,:,:,:)
           ss  => s (2,:,:,:)
-          if( addGridVelocities ) then 
-             sFace => sFaceI(1,:,:)
-          end if
        case (iMax)
           xx => x(il,:,:,:)
           ssi => si(il,:,:,:)
           ssj => sj(il,:,:,:)
           ssk => sk(il,:,:,:)
           ss  =>  s(il,:,:,:)
-          if( addGridVelocities ) then 
-             sFace => sFaceI(il,:,:)
-          end if
        case (jMin)
           xx => x(:,1,:,:)
           ssi => sj(:,1,:,:)
           ssj => si(:,2,:,:)
           ssk => sk(:,2,:,:)
           ss   => s(:,2,:,:)
-          if( addGridVelocities ) then 
-             sFace => sFaceJ(:,1,:)
-          end if
        case (jMax)
           xx => x(:,jl,:,:)
           ssi => sj(:,jl,:,:)
           ssj => si(:,jl,:,:)
           ssk => sk(:,jl,:,:)
           ss  =>  s(:,jl,:,:)
-          if( addGridVelocities ) then
-             sFace => sFaceJ(:,jl,:)
-          end if
        case (kMin)
           xx => x(:,:,1,:)
           ssi => sk(:,:,1,:)
           ssj => si(:,:,2,:)
           ssk => sj(:,:,2,:)
           ss  =>  s(:,:,2,:)
-          if( addGridVelocities ) then
-             sFace => sFaceK(:,:,1)
-          end if
        case (kMax) 
           xx => x(:,:,kl,:)
           ssi => sk(:,:,kl,:)
           ssj => si(:,:,kl,:)
           ssk => sj(:,:,kl,:)
           ss  =>  s(:,:,kl,:)
-          if( addGridVelocities ) then
-             sFace => sFaceK(:,:,kl)
-          end if
-      end select
+       end select
+
+      if (addGridVelocities) then 
+         select case (BCFaceID(nn))
+         case (iMin)
+            sFace => sFaceI(1,:,:)
+         case (iMax)
+            sFace => sFaceI(il,:,:)
+         case (jMin)
+            sFace => sFaceJ(:,1,:)
+         case (jMax)
+            sFace => sFaceJ(:,jl,:)
+         case (kMin)
+            sFace => sFaceK(:,:,1)
+         case (kMax) 
+            sFace => sFaceK(:,:,kl)
+         end select
+      end if
 
        if(equations == RANSEquations) then
           select case (BCFaceID(nn))
@@ -1339,10 +1338,8 @@ module utils
     if (spatialPointers) then 
        select case (BCFaceID(nn))
        case (iMin)
-
           xx(1:je+1,1:ke+1,:) = x(1,0:je,0:ke,:)
           ssi(1:je,1:ke, :)   = si(1,1:je,1:ke,:)
-
        case (iMax)
           xx(1:je+1,1:ke+1,:) = x(il,0:je,0:ke,:)
           ssi(1:je,1:ke,:)    = si(il,1:je,1:ke,:)
@@ -1359,6 +1356,24 @@ module utils
           xx(1:ie+1,1:je+1,:) = x(0:ie,0:je,kl,:)
           ssi(1:ie,1:je,:)    = sk(1:ie,1:je,kl,:)
        end select
+
+       if (addGridVelocities) then 
+          select case (BCFaceID(nn))
+          case (iMin)
+             sFace(1:je, 1:ke) = sFaceI(1,1:je,1:ke)
+          case (iMax)
+             sFace(1:je, 1:ke) = sFaceI(il,1:je,1:ke)
+          case (jMin)
+             sFace(1:ie, 1:ke) = sFaceJ(1:ie,1,1:ke)
+          case (jMax)
+             sFace(1:ie, 1:ke) = sFaceJ(1:ie,jl,1:ke)
+          case (kMin)
+             sFace(1:ie, 1:je) = sFaceK(1:ie,1:je,1)
+          case (kMax) 
+             sFace(1:ie, 1:je) = sFaceK(1:ie,1:je,kl)
+         end select
+      end if
+
     end if
 #endif
   end subroutine setBCPointers
@@ -1371,11 +1386,12 @@ module utils
     use constants 
     use blockPointers, only : w, p, rlv, rev, gamma, x, d2wall, &
          si, sj, sk, s,  globalCell, BCData, nx, il, ie, ib, &
-         ny, jl, je, jb, nz, kl, ke, kb, BCFaceID
+         ny, jl, je, jb, nz, kl, ke, kb, BCFaceID, sfaceI, sfaceJ, sfaceK, &
+         addGridVelocities
     use BCPointers, only : ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, &
          rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3, &
          gamma0, gamma1, gamma2, gamma3, gcp, xx, ss, ssi, ssj, ssk, dd2wall, &
-         iStart, iEnd, jStart, jEnd, iSize, jSize
+         iStart, iEnd, jStart, jEnd, iSize, jSize, sFace
     use inputPhysics, only: cpModel, equations
     implicit none
 
@@ -1583,6 +1599,23 @@ module utils
           x(0:ie,0:je,kl,:)  = xx(1:ie+1,1:je+1,:)
           sk(1:ie,1:je,kl,:) = ssi(1:ie,1:je,:)
        end select
+       if (addGridVelocities) then 
+          select case (BCFaceID(nn))
+          case (iMin)
+             sFaceI(1,1:je,1:ke) = sFace(1:je, 1:ke)
+          case (iMax)
+             sFaceI(il,1:je,1:ke) = sFace(1:je, 1:ke)
+          case (jMin)
+             sFaceJ(1:ie,1,1:ke) =  sFace(1:ie, 1:ke)
+          case (jMax)
+             sFaceJ(1:ie,jl,1:ke) = sFace(1:ie, 1:ke)
+          case (kMin)
+             sFaceK(1:ie,1:je,1) = sFace(1:ie, 1:je)
+          case (kMax) 
+             sFaceK(1:ie,1:je,kl) = sFace(1:ie, 1:je)
+         end select
+      end if
+
     end if
 #endif
 

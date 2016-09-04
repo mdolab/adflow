@@ -22,10 +22,11 @@ contains
 !       the kato-launder formulation.                                  
 !
     use constants
-    use blockpointers
-    use flowvarrefstate
-    use section
-    use turbmod
+    use blockpointers, only : nx, ny, nz, il, jl, kl, w, wd, si, sid, &
+&   sj, sjd, sk, skd, vol, vold, sectionid, scratch, scratchd
+    use flowvarrefstate, only : timeref, timerefd
+    use section, only : sections
+    use turbmod, only : prod
     implicit none
 !
 !      local variables.
@@ -287,10 +288,11 @@ contains
 !       the kato-launder formulation.                                  
 !
     use constants
-    use blockpointers
-    use flowvarrefstate
-    use section
-    use turbmod
+    use blockpointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, &
+&   vol, sectionid, scratch
+    use flowvarrefstate, only : timeref
+    use section, only : sections
+    use turbmod, only : prod
     implicit none
 !
 !      local variables.
@@ -396,8 +398,8 @@ contains
 !       already set to the correct entry.                              
 !
     use constants
-    use blockpointers
-    use turbmod
+    use blockpointers, only : nx, ny, nz, il, jl, kl, w, wd, si, sid, &
+&   sj, sjd, sk, skd, vol, vold, sectionid, scratch, scratchd
     implicit none
 !
 !      local parameter
@@ -618,8 +620,8 @@ contains
 !       already set to the correct entry.                              
 !
     use constants
-    use blockpointers
-    use turbmod
+    use blockpointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, &
+&   vol, sectionid, scratch
     implicit none
 !
 !      local parameter
@@ -715,10 +717,10 @@ contains
 !       already set to the correct entry.                              
 !
     use constants
-    use blockpointers
-    use flowvarrefstate
-    use section
-    use turbmod
+    use blockpointers, only : nx, ny, nz, il, jl, kl, w, wd, si, sid, &
+&   sj, sjd, sk, skd, vol, vold, sectionid, scratch, scratchd
+    use flowvarrefstate, only : timeref, timerefd
+    use section, only : sections
     implicit none
 !
 !      local variables.
@@ -1512,10 +1514,10 @@ nadvloopspectral:do ii=1,nadv
 !       already set to the correct entry.                              
 !
     use constants
-    use blockpointers
-    use flowvarrefstate
-    use section
-    use turbmod
+    use blockpointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, &
+&   vol, sectionid, scratch
+    use flowvarrefstate, only : timeref
+    use section, only : sections
     implicit none
 !
 !      local variables.
@@ -1603,8 +1605,11 @@ nadvloopspectral:do ii=1,nadv
 !       last index in w is offset+1 and offset+2 respectively.         
 !
     use constants
-    use blockpointers
-    use turbmod
+    use blockpointers, only : nx, ny, nz, il, jl, kl, vol, vold, &
+&   sfacei, sfacej, sfacek, w, wd, si, sid, sj, sjd, sk, skd, &
+&   addgridvelocities, bmti1, bmti2, bmtj1, bmtj2, bmtk1, bmtk2, scratch&
+&   , scratchd
+    use turbmod, only : secondord
     implicit none
 !
 !      subroutine arguments.
@@ -2440,8 +2445,10 @@ nadvloopspectral:do ii=1,nadv
 !       last index in w is offset+1 and offset+2 respectively.         
 !
     use constants
-    use blockpointers
-    use turbmod
+    use blockpointers, only : nx, ny, nz, il, jl, kl, vol, sfacei, &
+&   sfacej, sfacek, w, si, sj, sk, addgridvelocities, bmti1, bmti2, &
+&   bmtj1, bmtj2, bmtk1, bmtk2, scratch
+    use turbmod, only : secondord
     implicit none
 !
 !      subroutine arguments.

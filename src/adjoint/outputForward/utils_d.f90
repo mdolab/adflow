@@ -602,12 +602,13 @@ contains
     end if
   end function rigidrotangle
 !  differentiation of setbcpointers in forward (tangent) mode (with options i4 dr8 r8):
-!   plus diff mem management of: rev:in p:in s:in w:in rlv:in x:in
-!                si:in sj:in sk:in bcdata:in xx:in-out rev0:in-out
-!                rev1:in-out rev2:in-out rev3:in-out pp0:in-out
-!                pp1:in-out pp2:in-out pp3:in-out rlv0:in-out rlv1:in-out
-!                rlv2:in-out rlv3:in-out ss:in-out ssi:in-out ssj:in-out
-!                ssk:in-out ww0:in-out ww1:in-out ww2:in-out ww3:in-out
+!   plus diff mem management of: rev:in p:in sfacei:in sfacej:in
+!                s:in sfacek:in w:in rlv:in x:in si:in sj:in sk:in
+!                bcdata:in xx:in-out rev0:in-out rev1:in-out rev2:in-out
+!                rev3:in-out pp0:in-out pp1:in-out pp2:in-out pp3:in-out
+!                rlv0:in-out rlv1:in-out rlv2:in-out rlv3:in-out
+!                ss:in-out ssi:in-out ssj:in-out ssk:in-out ww0:in-out
+!                ww1:in-out ww2:in-out ww3:in-out
   subroutine setbcpointers_d(nn, spatialpointers)
 !
 !       setbcpointers sets the pointers needed for the boundary        
@@ -618,13 +619,14 @@ contains
     use blockpointers, only : w, wd, p, pd, rlv, rlvd, rev, revd, &
 &   gamma, x, xd, d2wall, si, sid, sj, sjd, sk, skd, s, sd, globalcell, &
 &   bcdata, bcdatad, nx, il, ie, ib, ny, jl, je, jb, nz, kl, ke, kb, &
-&   bcfaceid
+&   bcfaceid, addgridvelocities, sfacei, sfaceid, sfacej, sfacejd, &
+&   sfacek, sfacekd, addgridvelocities
     use bcpointers_d, only : ww0, ww0d, ww1, ww1d, ww2, ww2d, ww3, ww3d,&
 &   pp0, pp0d, pp1, pp1d, pp2, pp2d, pp3, pp3d, rlv0, rlv0d, rlv1, rlv1d&
 &   , rlv2, rlv2d, rlv3, rlv3d, rev0, rev0d, rev1, rev1d, rev2, rev2d, &
 &   rev3, rev3d, gamma0, gamma1, gamma2, gamma3, gcp, xx, xxd, ss, ssd, &
-&   ssi, ssid, ssj, ssjd, ssk, sskd, dd2wall, istart, iend, jstart, jend&
-&   , isize, jsize
+&   ssi, ssid, ssj, ssjd, ssk, sskd, dd2wall, sface, istart, iend, &
+&   jstart, jend, isize, jsize
     use inputphysics, only : cpmodel, equations
     implicit none
 ! subroutine arguments.
@@ -946,6 +948,22 @@ contains
         ssd => sd(:, :, kl, :)
         ss => s(:, :, kl, :)
       end select
+      if (addgridvelocities) then
+        select case  (bcfaceid(nn)) 
+        case (imin) 
+          sface => sfacei(1, :, :)
+        case (imax) 
+          sface => sfacei(il, :, :)
+        case (jmin) 
+          sface => sfacej(:, 1, :)
+        case (jmax) 
+          sface => sfacej(:, jl, :)
+        case (kmin) 
+          sface => sfacek(:, :, 1)
+        case (kmax) 
+          sface => sfacek(:, :, kl)
+        end select
+      end if
       if (equations .eq. ransequations) then
         select case  (bcfaceid(nn)) 
         case (imin) 
@@ -973,11 +991,12 @@ contains
     use constants
     use blockpointers, only : w, p, rlv, rev, gamma, x, d2wall, si, sj&
 &   , sk, s, globalcell, bcdata, nx, il, ie, ib, ny, jl, je, jb, nz, kl,&
-&   ke, kb, bcfaceid
+&   ke, kb, bcfaceid, addgridvelocities, sfacei, sfacej, sfacek, &
+&   addgridvelocities
     use bcpointers_d, only : ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, &
 &   rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3, gamma0, gamma1, &
-&   gamma2, gamma3, gcp, xx, ss, ssi, ssj, ssk, dd2wall, istart, iend, &
-&   jstart, jend, isize, jsize
+&   gamma2, gamma3, gcp, xx, ss, ssi, ssj, ssk, dd2wall, sface, istart, &
+&   iend, jstart, jend, isize, jsize
     use inputphysics, only : cpmodel, equations
     implicit none
 ! subroutine arguments.
@@ -1173,6 +1192,22 @@ contains
         ssk => sj(:, :, kl, :)
         ss => s(:, :, kl, :)
       end select
+      if (addgridvelocities) then
+        select case  (bcfaceid(nn)) 
+        case (imin) 
+          sface => sfacei(1, :, :)
+        case (imax) 
+          sface => sfacei(il, :, :)
+        case (jmin) 
+          sface => sfacej(:, 1, :)
+        case (jmax) 
+          sface => sfacej(:, jl, :)
+        case (kmin) 
+          sface => sfacek(:, :, 1)
+        case (kmax) 
+          sface => sfacek(:, :, kl)
+        end select
+      end if
       if (equations .eq. ransequations) then
         select case  (bcfaceid(nn)) 
         case (imin) 
@@ -1199,11 +1234,11 @@ contains
     use constants
     use blockpointers, only : w, p, rlv, rev, gamma, x, d2wall, si, sj&
 &   , sk, s, globalcell, bcdata, nx, il, ie, ib, ny, jl, je, jb, nz, kl,&
-&   ke, kb, bcfaceid
+&   ke, kb, bcfaceid, sfacei, sfacej, sfacek, addgridvelocities
     use bcpointers_d, only : ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, &
 &   rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3, gamma0, gamma1, &
 &   gamma2, gamma3, gcp, xx, ss, ssi, ssj, ssk, dd2wall, istart, iend, &
-&   jstart, jend, isize, jsize
+&   jstart, jend, isize, jsize, sface
     use inputphysics, only : cpmodel, equations
     implicit none
 ! for forward mode we are using pointers so we just don't do
