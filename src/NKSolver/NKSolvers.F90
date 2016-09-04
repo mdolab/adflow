@@ -1002,7 +1002,7 @@ contains
 
           ! Compute Viscosities
           call computeLamViscosity(.False.)
-          call computeEddyViscosity 
+          call computeEddyViscosity (.False.)
        end do domainsState
     end do spectralLoop
 
@@ -1947,7 +1947,7 @@ contains
 
           ! Compute Viscosities
           call computeLamViscosity(.False.)
-          call computeEddyViscosity 
+          call computeEddyViscosity(.False.)
        end do domainsState
     end do spectralLoop
 

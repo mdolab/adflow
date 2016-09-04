@@ -134,7 +134,7 @@ contains
 
     ! Compute Laminar/eddy viscosity if required
     call computeLamViscosity(.True.)
-    call computeEddyViscosity 
+    call computeEddyViscosity(.True.)
 
     call applyAllBC_block(.True.)
 

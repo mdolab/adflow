@@ -1243,7 +1243,7 @@ contains
           ! Compute the eddy viscosity for rans computations using
           ! an eddy viscosity model.
 
-          call computeEddyViscosity
+          call computeEddyViscosity(.False.)
 
           ! In case of a rans computation and no restart, initialize
           ! the turbulent variables a bit better for some turbulence

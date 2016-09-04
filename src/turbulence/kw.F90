@@ -9,7 +9,7 @@ contains
     !       using a diagonal dominant adi-scheme.                          
     !
     use constants
-    use blockPointers
+    use blockPointers, only : il, jl, kl
     use inputTimeSpectral
     use iteration
     use utils, only : setPointers
@@ -36,7 +36,7 @@ contains
        
        ! Compute the corresponding eddy viscosity.
        
-       call kwEddyViscosity
+       call kwEddyViscosity(2, il, 2, jl, 2, kl)
        
        ! Set the halo values for the turbulent variables.
        ! We are on the finest mesh, so the second layer of halo

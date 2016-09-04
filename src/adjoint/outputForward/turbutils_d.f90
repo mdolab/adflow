@@ -1146,7 +1146,7 @@ nadvloopspectral:do ii=1,nadv
 !   variations   of useful results: *rev
 !   with respect to varying inputs: *w *rlv
 !   plus diff mem management of: rev:in w:in rlv:in
-  subroutine computeeddyviscosity_d()
+  subroutine computeeddyviscosity_d(includehalos)
 !
 !       computeeddyviscosity computes the eddy viscosity in the        
 !       owned cell centers of the given block. it is assumed that the  
@@ -1159,10 +1159,13 @@ nadvloopspectral:do ii=1,nadv
     use iteration
     use blockpointers
     implicit none
+! input parameter
+    logical, intent(in) :: includehalos
 !
 !      local variables.
 !
     logical :: returnimmediately
+    integer(kind=inttype) :: ibeg, iend, jbeg, jend, kbeg, kend
 ! check if an immediate return can be made.
     if (eddymodel) then
       if (currentlevel .le. groundlevel) then
@@ -1179,15 +1182,30 @@ nadvloopspectral:do ii=1,nadv
     else
 ! determine the turbulence model and call the appropriate
 ! routine to compute the eddy viscosity.
+      if (includehalos) then
+        ibeg = 1
+        iend = ie
+        jbeg = 1
+        jend = je
+        kbeg = 1
+        kend = ke
+      else
+        ibeg = 2
+        iend = il
+        jbeg = 2
+        jend = jl
+        kbeg = 2
+        kend = kl
+      end if
       select case  (turbmodel) 
       case (spalartallmaras, spalartallmarasedwards) 
-        call saeddyviscosity_d()
+        call saeddyviscosity_d(ibeg, iend, jbeg, jend, kbeg, kend)
       case default
         revd = 0.0_8
       end select
     end if
   end subroutine computeeddyviscosity_d
-  subroutine computeeddyviscosity()
+  subroutine computeeddyviscosity(includehalos)
 !
 !       computeeddyviscosity computes the eddy viscosity in the        
 !       owned cell centers of the given block. it is assumed that the  
@@ -1200,10 +1218,13 @@ nadvloopspectral:do ii=1,nadv
     use iteration
     use blockpointers
     implicit none
+! input parameter
+    logical, intent(in) :: includehalos
 !
 !      local variables.
 !
     logical :: returnimmediately
+    integer(kind=inttype) :: ibeg, iend, jbeg, jend, kbeg, kend
 ! check if an immediate return can be made.
     if (eddymodel) then
       if (currentlevel .le. groundlevel) then
@@ -1219,9 +1240,24 @@ nadvloopspectral:do ii=1,nadv
     else
 ! determine the turbulence model and call the appropriate
 ! routine to compute the eddy viscosity.
+      if (includehalos) then
+        ibeg = 1
+        iend = ie
+        jbeg = 1
+        jend = je
+        kbeg = 1
+        kend = ke
+      else
+        ibeg = 2
+        iend = il
+        jbeg = 2
+        jend = jl
+        kbeg = 2
+        kend = kl
+      end if
       select case  (turbmodel) 
       case (spalartallmaras, spalartallmarasedwards) 
-        call saeddyviscosity()
+        call saeddyviscosity(ibeg, iend, jbeg, jend, kbeg, kend)
       end select
     end if
   end subroutine computeeddyviscosity
@@ -1229,7 +1265,7 @@ nadvloopspectral:do ii=1,nadv
 !   variations   of useful results: *rev
 !   with respect to varying inputs: *w *rlv
 !   plus diff mem management of: rev:in w:in rlv:in
-  subroutine saeddyviscosity_d()
+  subroutine saeddyviscosity_d(ibeg, iend, jbeg, jend, kbeg, kend)
 !
 !       saeddyviscosity computes the eddy-viscosity according to the   
 !       spalart-allmaras model for the block given in blockpointers.   
@@ -1241,10 +1277,12 @@ nadvloopspectral:do ii=1,nadv
     use constants
     use paramturb
     implicit none
+! input variables
+    integer(kind=inttype) :: ibeg, iend, jbeg, jend, kbeg, kend
 !
 !      local variables.
 !
-    integer(kind=inttype) :: i, j, k, ii
+    integer(kind=inttype) :: i, j, k, ii, isize, jsize, ksize
     real(kind=realtype) :: chi, chi3, fv1, rnusa, cv13
     real(kind=realtype) :: chid, chi3d, fv1d, rnusad
 ! store the cv1^3; cv1 is a constant of the spalart-allmaras model.
@@ -1252,9 +1290,9 @@ nadvloopspectral:do ii=1,nadv
     revd = 0.0_8
 ! loop over the cells of this block and compute the eddy viscosity.
 ! do not include halo's.
-    do k=1,ke
-      do j=1,je
-        do i=1,ie
+    do k=kbeg,kend
+      do j=jbeg,jend
+        do i=ibeg,iend
           rnusad = wd(i, j, k, itu1)*w(i, j, k, irho) + w(i, j, k, itu1)&
 &           *wd(i, j, k, irho)
           rnusa = w(i, j, k, itu1)*w(i, j, k, irho)
@@ -1271,7 +1309,7 @@ nadvloopspectral:do ii=1,nadv
       end do
     end do
   end subroutine saeddyviscosity_d
-  subroutine saeddyviscosity()
+  subroutine saeddyviscosity(ibeg, iend, jbeg, jend, kbeg, kend)
 !
 !       saeddyviscosity computes the eddy-viscosity according to the   
 !       spalart-allmaras model for the block given in blockpointers.   
@@ -1283,18 +1321,20 @@ nadvloopspectral:do ii=1,nadv
     use constants
     use paramturb
     implicit none
+! input variables
+    integer(kind=inttype) :: ibeg, iend, jbeg, jend, kbeg, kend
 !
 !      local variables.
 !
-    integer(kind=inttype) :: i, j, k, ii
+    integer(kind=inttype) :: i, j, k, ii, isize, jsize, ksize
     real(kind=realtype) :: chi, chi3, fv1, rnusa, cv13
 ! store the cv1^3; cv1 is a constant of the spalart-allmaras model.
     cv13 = rsacv1**3
 ! loop over the cells of this block and compute the eddy viscosity.
 ! do not include halo's.
-    do k=1,ke
-      do j=1,je
-        do i=1,ie
+    do k=kbeg,kend
+      do j=jbeg,jend
+        do i=ibeg,iend
           rnusa = w(i, j, k, itu1)*w(i, j, k, irho)
           chi = rnusa/rlv(i, j, k)
           chi3 = chi**3
@@ -1304,8 +1344,7 @@ nadvloopspectral:do ii=1,nadv
       end do
     end do
   end subroutine saeddyviscosity
-!      ==================================================================
-  subroutine kweddyviscosity()
+  subroutine kweddyviscosity(ibeg, iend, jbeg, jend, kbeg, kend)
 !
 !       kweddyviscosity computes the eddy viscosity according to the   
 !       k-omega models (both the original wilcox as well as the        
@@ -1314,17 +1353,19 @@ nadvloopspectral:do ii=1,nadv
     use constants
     use blockpointers
     implicit none
+! input variables
+    integer(kind=inttype) :: ibeg, iend, jbeg, jend, kbeg, kend
 !
 !      local variables.
 !
-    integer(kind=inttype) :: i, j, k
+    integer(kind=inttype) :: i, j, k, isize, jsize, ksize
     intrinsic abs
     real(kind=realtype) :: x1
 ! loop over the cells of this block and compute the eddy viscosity.
 ! do not include halo's.
-    do k=2,kl
-      do j=2,jl
-        do i=2,il
+    do k=kbeg,kend
+      do j=jbeg,jend
+        do i=ibeg,iend
           x1 = w(i, j, k, irho)*w(i, j, k, itu1)/w(i, j, k, itu2)
           if (x1 .ge. 0.) then
             rev(i, j, k) = x1
@@ -1335,8 +1376,7 @@ nadvloopspectral:do ii=1,nadv
       end do
     end do
   end subroutine kweddyviscosity
-!      ==================================================================
-  subroutine ssteddyviscosity()
+  subroutine ssteddyviscosity(ibeg, iend, jbeg, jend, kbeg, kend)
 !
 !       ssteddyviscosity computes the eddy viscosity according to      
 !       menter's sst variant of the k-omega turbulence model for the   
@@ -1347,10 +1387,12 @@ nadvloopspectral:do ii=1,nadv
     use paramturb
     use turbmod
     implicit none
+! input variables
+    integer(kind=inttype) :: ibeg, iend, jbeg, jend, kbeg, kend
 !
 !      local variables.
 !
-    integer(kind=inttype) :: i, j, k
+    integer(kind=inttype) :: i, j, k, isize, jsize, ksize
     real(kind=realtype) :: t1, t2, arg2, f2, vortmag
     intrinsic sqrt
     intrinsic max
@@ -1365,9 +1407,9 @@ nadvloopspectral:do ii=1,nadv
     call prodwmag2()
 ! loop over the cells of this block and compute the eddy viscosity.
 ! do not include halo's.
-    do k=2,kl
-      do j=2,jl
-        do i=2,il
+    do k=kbeg,kend
+      do j=jbeg,jend
+        do i=ibeg,iend
 ! compute the value of the function f2, which occurs in the
 ! eddy-viscosity computation.
           result1 = sqrt(w(i, j, k, itu1))

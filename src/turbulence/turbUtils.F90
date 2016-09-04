@@ -577,7 +577,7 @@ contains
 
   end subroutine unsteadyTurbTerm
 
-  subroutine computeEddyViscosity
+  subroutine computeEddyViscosity(includeHalos)
     !
     !       computeEddyViscosity computes the eddy viscosity in the        
     !       owned cell centers of the given block. It is assumed that the  
@@ -590,10 +590,15 @@ contains
     use iteration
     use blockPointers
     implicit none
+
+    ! Input Parameter
+    logical, intent(in) :: includeHalos
+
     !
     !      Local variables.
     !
     logical :: returnImmediately
+    integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
 
     ! Check if an immediate return can be made.
 
@@ -611,29 +616,44 @@ contains
 
     ! Determine the turbulence model and call the appropriate
     ! routine to compute the eddy viscosity.
+    if (includeHalos) then 
+       iBeg = 1
+       iEnd = ie
+       jBeg = 1
+       jEnd = je
+       kBeg = 1
+       kEnd = ke
+    else
+       iBeg = 2
+       iEnd = il
+       jBeg = 2
+       jEnd = jl
+       kBeg = 2
+       kEnd = kl
+    end if
 
     select case (turbModel)
 
     case (spalartAllmaras, spalartAllmarasEdwards)
-       call saEddyViscosity
+       call saEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
 #ifndef USE_TAPENADE          
 
     case (v2f)
-       call vfEddyViscosity
+       call vfEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
     case (komegaWilcox, komegaModified)
-       call kwEddyViscosity
+       call kwEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
 
     case (menterSST)
-       call SSTEddyViscosity
+       call SSTEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
 
     case (ktau)
-       call ktEddyViscosity
+       call ktEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
 #endif
     end select
 
   end subroutine computeEddyViscosity
 
-  subroutine saEddyViscosity
+  subroutine saEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
     !
     !       saEddyViscosity computes the eddy-viscosity according to the   
     !       Spalart-Allmaras model for the block given in blockPointers.   
@@ -645,10 +665,13 @@ contains
     use constants
     use paramTurb
     implicit none
+    ! Input variables
+    integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
+
     !
     !      Local variables.
     !
-    integer(kind=intType) :: i, j, k, ii
+    integer(kind=intType) :: i, j, k, ii, iSize, jSize, kSize
     real(kind=realType)   :: chi, chi3, fv1, rnuSA, cv13
 
     ! Store the cv1^3; cv1 is a constant of the Spalart-Allmaras model.
@@ -658,16 +681,20 @@ contains
     ! Loop over the cells of this block and compute the eddy viscosity.
     ! Do not include halo's.
 #ifdef TAPENADE_FAST
+    iSize = (iEnd-iBeg)+1
+    jSize = (jEnd-jBeg)+1
+    kSize = (kEnd-kBeg)+1
+
     !$AD II-LOOP
-    do ii=0,ie*je*ke-1
-       i = mod(ii, ie) + 1
-       j = mod(ii/ie, je) + 1
-       k = ii/(ie*je) + 1
+    do ii=0, iSize*jSize*kSize-1
+       i = mod(ii, iSize) + iBeg
+       j = mod(ii/iSize, jSize) + jBeg
+       k = ii/((iSize*jSize)) + kBeg
 #else
-       do k=1,ke
-          do j=1,je
-             do i=1,ie
-#endif   
+       do k=kBeg, kEnd
+          do j=jBeg, jEnd
+             do i=iBeg, iEnd
+#endif             
                 rnuSA      = w(i,j,k,itu1)*w(i,j,k,irho)
                 chi        = rnuSA/rlv(i,j,k)
                 chi3       = chi**3
@@ -682,8 +709,7 @@ contains
 #endif 
   end subroutine saEddyViscosity
 
-  !      ==================================================================
-  subroutine kwEddyViscosity
+  subroutine kwEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
     !
     !       kwEddyViscosity computes the eddy viscosity according to the   
     !       k-omega models (both the original Wilcox as well as the        
@@ -692,27 +718,43 @@ contains
     use constants
     use blockPointers
     implicit none
+    ! Input variables
+    integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
     !
     !      Local variables.
     !
-    integer(kind=intType) :: i, j, k
+    integer(kind=intType) :: i, j, k, ii, iSize, jSize, kSize
+
 
     ! Loop over the cells of this block and compute the eddy viscosity.
     ! Do not include halo's.
+#ifdef TAPENADE_FAST
+    iSize = (iEnd-iBeg)+1
+    jSize = (jEnd-jBeg)+1
+    kSize = (kEnd-kBeg)+1
 
-    do k=2,kl
-       do j=2,jl
-          do i=2,il
-             rev(i,j,k) = abs(w(i,j,k,irho)*w(i,j,k,itu1)/w(i,j,k,itu2))
+    !$AD II-LOOP
+    do ii=0, iSize*jSize*kSize-1
+       i = mod(ii, iSize) + iBeg
+       j = mod(ii/iSize, jSize) + jBeg
+       k = ii/((iSize*jSize)) + kBeg
+#else
+       do k=kBeg, kEnd
+          do j=jBeg, jEnd
+             do i=iBeg, iEnd
+#endif            
+                rev(i,j,k) = abs(w(i,j,k,irho)*w(i,j,k,itu1)/w(i,j,k,itu2))
+#ifdef TAPENADE_FAST
+             end do
+#else
           enddo
        enddo
     enddo
+#endif
 
   end subroutine kwEddyViscosity
 
-  !      ==================================================================
-
-  subroutine SSTEddyViscosity
+  subroutine SSTEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
     !
     !       SSTEddyViscosity computes the eddy viscosity according to      
     !       menter's SST variant of the k-omega turbulence model for the   
@@ -723,11 +765,12 @@ contains
     use paramTurb
     use turbMod
     implicit none
+    ! Input variables
+    integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
     !
     !      Local variables.
     !
-    integer(kind=intType) :: i, j, k
-
+    integer(kind=intType) :: i, j, k, ii, iSize, jSize, kSize
     real(kind=realType) :: t1, t2, arg2, f2, vortMag
 
     ! Compute the vorticity squared in the cell centers. The reason
@@ -739,31 +782,44 @@ contains
 
     ! Loop over the cells of this block and compute the eddy viscosity.
     ! Do not include halo's.
+#ifdef TAPENADE_FAST
+    iSize = (iEnd-iBeg)+1
+    jSize = (jEnd-jBeg)+1
+    kSize = (kEnd-kBeg)+1
 
-    do k=2,kl
-       do j=2,jl
-          do i=2,il
+    !$AD II-LOOP
+    do ii=0, iSize*jSize*kSize-1
+       i = mod(ii, iSize) + iBeg
+       j = mod(ii/iSize, jSize) + jBeg
+       k = ii/((iSize*jSize)) + kBeg
+#else
+       do k=kBeg, kEnd
+          do j=jBeg, jEnd
+             do i=iBeg, iEnd
+#endif            
+                ! Compute the value of the function f2, which occurs in the
+                ! eddy-viscosity computation.
 
-             ! Compute the value of the function f2, which occurs in the
-             ! eddy-viscosity computation.
+                t1 = two*sqrt(w(i,j,k,itu1)) &
+                     / (0.09_realType*w(i,j,k,itu2)*d2Wall(i,j,k))
+                t2 = 500.0_realType*rlv(i,j,k) &
+                     / (w(i,j,k,irho)*w(i,j,k,itu2)*d2Wall(i,j,k)**2)
 
-             t1 = two*sqrt(w(i,j,k,itu1)) &
-                  / (0.09_realType*w(i,j,k,itu2)*d2Wall(i,j,k))
-             t2 = 500.0_realType*rlv(i,j,k) &
-                  / (w(i,j,k,irho)*w(i,j,k,itu2)*d2Wall(i,j,k)**2)
+                arg2 = max(t1,t2)
+                f2   = tanh(arg2**2)
 
-             arg2 = max(t1,t2)
-             f2   = tanh(arg2**2)
+                ! And compute the eddy viscosity.
 
-             ! And compute the eddy viscosity.
-
-             vortMag    = sqrt(scratch(i,j,k,iprod))
-             rev(i,j,k) = w(i,j,k,irho)*rSSTA1*w(i,j,k,itu1) &
-                  / max(rSSTA1*w(i,j,k,itu2), f2*vortMag)
-
+                vortMag    = sqrt(scratch(i,j,k,iprod))
+                rev(i,j,k) = w(i,j,k,irho)*rSSTA1*w(i,j,k,itu1) &
+                     / max(rSSTA1*w(i,j,k,itu2), f2*vortMag)
+#ifdef TAPENADE_FAST
+             end do
+#else
           enddo
        enddo
     enddo
+#endif
 
   end subroutine SSTEddyViscosity
 
@@ -1567,7 +1623,7 @@ contains
 
   end subroutine tdia3
 
-  subroutine vfEddyViscosity
+  subroutine vfEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
     !
     !       vfEddyViscosity computes the eddy-viscosity according to the   
     !       v2f turbulence model for the block given in blockPointers.     
@@ -1581,10 +1637,12 @@ contains
     use inputPhysics
     use turbCurveFits, only : curvetupyp
     implicit none
+    ! Input variables
+    integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
     !
     !      Local variables.
     !
-    integer(kind=intType) :: i, j, k, nn
+    integer(kind=intType) :: i, j, k, nn, ii, iSize, jSize, kSize
     real(kind=realType)   :: tke, tep, tkea, tepa, tepl, tv2, tv2a
     real(kind=realType)   :: yp, utau
 
@@ -1600,23 +1658,38 @@ contains
 
     ! Loop over the cells of this block and compute the eddy viscosity.
     ! Do not include halo's.
+#ifdef TAPENADE_FAST
+    iSize = (iEnd-iBeg)+1
+    jSize = (jEnd-jBeg)+1
+    kSize = (kEnd-kBeg)+1
 
-    do k=2,kl
-       do j=2,jl
-          do i=2,il
-             tke   = w(i,j,k,itu1)
-             tep   = w(i,j,k,itu2)
-             tv2   = w(i,j,k,itu3)
-             tkea  = abs(tke)
-             tepa  = abs(tep)
-             tv2a  = abs(tv2)
-             tepl  = max(tepa,rvfLimitE)
+    !$AD II-LOOP
+    do ii=0, iSize*jSize*kSize-1
+       i = mod(ii, iSize) + iBeg
+       j = mod(ii/iSize, jSize) + jBeg
+       k = ii/((iSize*jSize)) + kBeg
+#else
+       do k=kBeg, kEnd
+          do j=jBeg, jEnd
+             do i=iBeg, iEnd
+#endif            
 
-             rev(i,j,k) = rvfCmu*w(i,j,k,irho)*tv2a/tepl*sct(i,j,k)
+                tke   = w(i,j,k,itu1)
+                tep   = w(i,j,k,itu2)
+                tv2   = w(i,j,k,itu3)
+                tkea  = abs(tke)
+                tepa  = abs(tep)
+                tv2a  = abs(tv2)
+                tepl  = max(tepa,rvfLimitE)
 
+                rev(i,j,k) = rvfCmu*w(i,j,k,irho)*tv2a/tepl*sct(i,j,k)
+#ifdef TAPENADE_FAST
+             end do
+#else
           enddo
        enddo
     enddo
+#endif
 
     ! Modify the rhs of the 1st internal cell, if wall functions
     ! are used; their value is determined by the table.
@@ -1784,7 +1857,7 @@ contains
 
   end subroutine vfScale
 
-  subroutine ktEddyViscosity
+  subroutine ktEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
     !
     !       ktEddyViscosity computes the eddy viscosity according to the   
     !       k-tau turbulence model for the block given in blockPointers.   
@@ -1792,22 +1865,38 @@ contains
     use blockPointers
     use constants
     implicit none
+    ! Input variables
+    integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
     !
     !      Local variables.
     !
-    integer(kind=intType) :: i, j, k
+    integer(kind=intType) :: i, j, k, ii, iSize, jSize, kSize
 
     ! Loop over the cells of this block and compute the eddy viscosity.
     ! Do not include halo's.
+#ifdef TAPENADE_FAST
+    iSize = (iEnd-iBeg)+1
+    jSize = (jEnd-jBeg)+1
+    kSize = (kEnd-kBeg)+1
 
-    do k=2,kl
-       do j=2,jl
-          do i=2,il
-             rev(i,j,k) = abs(w(i,j,k,irho)*w(i,j,k,itu1)*w(i,j,k,itu2))
+    !$AD II-LOOP
+    do ii=0, iSize*jSize*kSize-1
+       i = mod(ii, iSize) + iBeg
+       j = mod(ii/iSize, jSize) + jBeg
+       k = ii/((iSize*jSize)) + kBeg
+#else
+       do k=kBeg, kEnd
+          do j=jBeg, jEnd
+             do i=iBeg, iEnd
+#endif     
+                rev(i,j,k) = abs(w(i,j,k,irho)*w(i,j,k,itu1)*w(i,j,k,itu2))
+#ifdef TAPENADE_FAST
+             end do
+#else
           enddo
        enddo
     enddo
-
+#endif
   end subroutine ktEddyViscosity
 
 
