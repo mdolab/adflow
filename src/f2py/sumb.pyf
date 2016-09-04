@@ -314,6 +314,12 @@ python module libsumb
          end subroutine initializeliftdistributiondata
        end subroutine tecplotio
 
+       module surfaceintegrations
+         subroutine getsolution(sps) ! in :test:getSolution.f90
+           integer(kind=inttype) :: sps
+         end subroutine getsolution
+       end module surfaceintegrations
+
        module solvers
 
          subroutine solver 
@@ -357,9 +363,6 @@ python module libsumb
        end module preprocessingapi
 
        module adjointapi
-         subroutine getsolution(sps) ! in :test:getSolution.f90
-           integer(kind=inttype) :: sps
-         end subroutine getsolution
          
          subroutine setuppetscksp 
          end subroutine setuppetscksp
