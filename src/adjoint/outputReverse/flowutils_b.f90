@@ -786,7 +786,7 @@ intervaltt:do
 !   gradient     of useful results: *p *w pinfcorr
 !   with respect to varying inputs: *w pinfcorr
 !   plus diff mem management of: p:in w:in
-  subroutine computepressuresimple_b()
+  subroutine computepressuresimple_b(includehalos)
 ! compute the pressure on a block with the pointers already set. this
 ! routine is used by the forward mode ad code only. 
     use constants
@@ -794,19 +794,41 @@ intervaltt:do
     use flowvarrefstate
     use inputphysics
     implicit none
+! input parameter
+    logical, intent(in) :: includehalos
 ! local variables
     integer(kind=inttype) :: i, j, k, ii
     real(kind=realtype) :: gm1, v2
     real(kind=realtype) :: v2d
+    integer(kind=inttype) :: ibeg, iend, isize, jbeg, jend, jsize, kbeg&
+&   , kend, ksize
     intrinsic mod
     intrinsic max
     real(kind=realtype) :: tempd
 ! compute the pressures
     gm1 = gammaconstant - one
-    do ii=0,(ib+1)*(jb+1)*(kb+1)-1
-      i = mod(ii, ib + 1)
-      j = mod(ii/(ib+1), jb + 1)
-      k = ii/((ib+1)*(jb+1))
+    if (includehalos) then
+      ibeg = 0
+      jbeg = 0
+      kbeg = 0
+      iend = ib
+      jend = jb
+      kend = kb
+    else
+      ibeg = 2
+      jbeg = 2
+      kbeg = 2
+      iend = il
+      jend = jl
+      kend = kl
+    end if
+    isize = iend - ibeg + 1
+    jsize = jend - jbeg + 1
+    ksize = kend - kbeg + 1
+    do ii=0,isize*jsize*ksize-1
+      i = mod(ii, isize) + ibeg
+      j = mod(ii/isize, jsize) + jbeg
+      k = ii/(isize*jsize) + kbeg
       v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)**2
       p(i, j, k) = gm1*(w(i, j, k, irhoe)-half*w(i, j, k, irho)*v2)
       if (p(i, j, k) .lt. 1.e-4_realtype*pinfcorr) then
@@ -823,7 +845,7 @@ intervaltt:do
       wd(i, j, k, ivz) = wd(i, j, k, ivz) + 2*w(i, j, k, ivz)*v2d
     end do
   end subroutine computepressuresimple_b
-  subroutine computepressuresimple()
+  subroutine computepressuresimple(includehalos)
 ! compute the pressure on a block with the pointers already set. this
 ! routine is used by the forward mode ad code only. 
     use constants
@@ -831,17 +853,39 @@ intervaltt:do
     use flowvarrefstate
     use inputphysics
     implicit none
+! input parameter
+    logical, intent(in) :: includehalos
 ! local variables
     integer(kind=inttype) :: i, j, k, ii
     real(kind=realtype) :: gm1, v2
+    integer(kind=inttype) :: ibeg, iend, isize, jbeg, jend, jsize, kbeg&
+&   , kend, ksize
     intrinsic mod
     intrinsic max
 ! compute the pressures
     gm1 = gammaconstant - one
-    do ii=0,(ib+1)*(jb+1)*(kb+1)-1
-      i = mod(ii, ib + 1)
-      j = mod(ii/(ib+1), jb + 1)
-      k = ii/((ib+1)*(jb+1))
+    if (includehalos) then
+      ibeg = 0
+      jbeg = 0
+      kbeg = 0
+      iend = ib
+      jend = jb
+      kend = kb
+    else
+      ibeg = 2
+      jbeg = 2
+      kbeg = 2
+      iend = il
+      jend = jl
+      kend = kl
+    end if
+    isize = iend - ibeg + 1
+    jsize = jend - jbeg + 1
+    ksize = kend - kbeg + 1
+    do ii=0,isize*jsize*ksize-1
+      i = mod(ii, isize) + ibeg
+      j = mod(ii/isize, jsize) + jbeg
+      k = ii/(isize*jsize) + kbeg
       v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)**2
       p(i, j, k) = gm1*(w(i, j, k, irhoe)-half*w(i, j, k, irho)*v2)
       if (p(i, j, k) .lt. 1.e-4_realtype*pinfcorr) then

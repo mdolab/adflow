@@ -188,7 +188,7 @@ contains
 ! ------------------------------------------------
 ! compute the pressures
     call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
-    call computepressuresimple()
+    call computepressuresimple(.true.)
 ! compute laminar/eddy viscosity if required
     call computelamviscosity()
     call computeeddyviscosity()
@@ -993,7 +993,7 @@ varloopfine:do l=1,nwf
     call computeeddyviscosity_b()
     call computelamviscosity_b()
     call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
-    call computepressuresimple_b()
+    call computepressuresimple_b(.true.)
     call popcontrol2b(branch)
     if (branch .eq. 0) then
       call updatewalldistancesquickly_b(nn, 1, sps)
@@ -1108,7 +1108,7 @@ varloopfine:do l=1,nwf
 !        normal residual computation
 ! ------------------------------------------------
 ! compute the pressures
-    call computepressuresimple()
+    call computepressuresimple(.true.)
 ! compute laminar/eddy viscosity if required
     call computelamviscosity()
     call computeeddyviscosity()
