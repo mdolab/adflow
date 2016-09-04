@@ -349,7 +349,7 @@ contains
 
           call computeEtotBlock(2_intType,il, 2_intType,jl, &
                2_intType,kl, correctForK)
-          call computeLamViscosity
+          call computeLamViscosity(.False.)
           call computeEddyViscosity
 
        enddo domainsState
@@ -661,7 +661,7 @@ contains
 
           call computeEtotBlock(2_intType,il, 2_intType,jl, &
                2_intType,kl, correctForK)
-          call computeLamViscosity
+          call computeLamViscosity(.False.)
           call computeEddyViscosity
 
        enddo domainsState
