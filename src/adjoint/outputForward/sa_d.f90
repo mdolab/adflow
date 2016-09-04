@@ -24,14 +24,18 @@ contains
 !                bcdata:in
   subroutine sa_block_d(resonly)
 !
-!       sa solves the transport equation for the spalart-allmaras      
-!       turbulence model in a segregated manner using a diagonal       
-!       dominant adi-scheme.                                           
+!       sa solves the transport equation for the spalart-allmaras
+!       turbulence model in a segregated manner using a diagonal
+!       dominant adi-scheme. note that the scratch and boundary
+!       matrix values are not strictly, but tapande would like to
+!       see them becuase it must save them.
 !
-    use blockpointers
-    use inputtimespectral
-    use iteration
-    use inputphysics
+    use constants
+    use blockpointers, only : ndom, il, jl, kl, scratch, scratchd, &
+&   bmtj1, bmtj2, bmti1, bmti2, bmtk1, bmtk2
+    use inputtimespectral, only : ntimeintervalsspectral
+    use iteration, only : currentlevel
+    use inputphysics, only : turbprod
     use paramturb
     use turbutils_d
     use turbbcroutines_d
@@ -83,14 +87,18 @@ contains
   end subroutine sa_block_d
   subroutine sa_block(resonly)
 !
-!       sa solves the transport equation for the spalart-allmaras      
-!       turbulence model in a segregated manner using a diagonal       
-!       dominant adi-scheme.                                           
+!       sa solves the transport equation for the spalart-allmaras
+!       turbulence model in a segregated manner using a diagonal
+!       dominant adi-scheme. note that the scratch and boundary
+!       matrix values are not strictly, but tapande would like to
+!       see them becuase it must save them.
 !
-    use blockpointers
-    use inputtimespectral
-    use iteration
-    use inputphysics
+    use constants
+    use blockpointers, only : ndom, il, jl, kl, scratch, bmtj1, bmtj2,&
+&   bmti1, bmti2, bmtk1, bmtk2
+    use inputtimespectral, only : ntimeintervalsspectral
+    use iteration, only : currentlevel
+    use inputphysics, only : turbprod
     use paramturb
     use turbutils_d
     use turbbcroutines_d

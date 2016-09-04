@@ -637,7 +637,7 @@ contains
 
     allocate(flowDomsd(nDom, 1, nTimeIntervalsSpectral), stat=ierr)
     call EChk(ierr,__FILE__,__LINE__)
-    print *,'flowdomsd is alloced'
+
     ! winfd hasn't be allocated so we'll do it here
     allocate(winfd(size(winf)))
 
@@ -784,6 +784,7 @@ contains
          rev0d(isizemax, jsizemax), rev1d(isizemax, jsizemax), &
          rev2d(isizemax, jsizemax), rev3d(isizemax, jsizemax), &
          ssid(isizemax, jsizemax,3), xxd(isizemax+1, jsizemax+1,3), &
+         sfaced(isizemax, jsizemax), &
          gcp(isizemax, jsizemax), stat=ierr)
     call EChk(ierr,__FILE__,__LINE__)
     allocate(&
@@ -798,6 +799,7 @@ contains
          gamma0(isizemax, jsizemax), gamma1(isizemax, jsizemax), &
          gamma2(isizemax, jsizemax), gamma3(isizemax, jsizemax), &
          ssi(isizemax, jsizemax,3), xx(isizemax+1, jsizemax+1,3), &
+         sface(isizemax, jsizemax), &
          stat=ierr)
     call EChk(ierr,__FILE__,__LINE__) 
 
@@ -913,6 +915,7 @@ contains
     rev3d = zero
     ssid = zero
     xxd = zero
+    sfaced = zero
 #endif
   end subroutine zeroADSeeds
   ! This is a special function that is sued to dealloc derivative values

@@ -50,8 +50,14 @@ contains
     correctfork = getcorrectfork()
     call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
+    call pushreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                 sfacei, 3))
+    call pushreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                 sfacej, 3))
     call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma&
 &                 , 3))
+    call pushreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                 sfacek, 3))
     call pushreal8array(w, size(w, 1)*size(w, 2)*size(w, 3)*size(w, 4))
     call pushreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
     call pushreal8array(x, size(x, 1)*size(x, 2)*size(x, 3)*size(x, 4))
@@ -82,8 +88,14 @@ contains
       call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
       call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
       call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
+      call pushreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                   sfacei, 3))
+      call pushreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                   sfacej, 3))
       call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(&
 &                   gamma, 3))
+      call pushreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                   sfacek, 3))
       call pushreal8array(w, size(w, 1)*size(w, 2)*size(w, 3)*size(w, 4)&
 &                  )
       call pushreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
@@ -115,8 +127,14 @@ contains
     call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
     call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
+    call pushreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                 sfacei, 3))
+    call pushreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                 sfacej, 3))
     call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma&
 &                 , 3))
+    call pushreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                 sfacek, 3))
     call pushreal8array(w, size(w, 1)*size(w, 2)*size(w, 3)*size(w, 4))
     call pushreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
     call pushreal8array(x, size(x, 1)*size(x, 2)*size(x, 3)*size(x, 4))
@@ -147,8 +165,14 @@ contains
       call pushreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
       call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
       call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
+      call pushreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                   sfacei, 3))
+      call pushreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                   sfacej, 3))
       call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(&
 &                   gamma, 3))
+      call pushreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                   sfacek, 3))
       call pushreal8array(w, size(w, 1)*size(w, 2)*size(w, 3)*size(w, 4)&
 &                  )
       call pushreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
@@ -180,8 +204,14 @@ contains
     call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
     call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
+    call pushreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                 sfacei, 3))
+    call pushreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                 sfacej, 3))
     call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma&
 &                 , 3))
+    call pushreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                 sfacek, 3))
     call pushreal8array(w, size(w, 1)*size(w, 2)*size(w, 3)*size(w, 4))
     call pushreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
     call pushreal8array(x, size(x, 1)*size(x, 2)*size(x, 3)*size(x, 4))
@@ -218,8 +248,14 @@ contains
     call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
     call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
+    call pushreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                 sfacei, 3))
+    call pushreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                 sfacej, 3))
     call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma&
 &                 , 3))
+    call pushreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                 sfacek, 3))
     call pushreal8array(w, size(w, 1)*size(w, 2)*size(w, 3)*size(w, 4))
     call pushreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
     call pushreal8array(x, size(x, 1)*size(x, 2)*size(x, 3)*size(x, 4))
@@ -254,8 +290,14 @@ contains
     call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
     call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
+    call pushreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                 sfacei, 3))
+    call pushreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                 sfacej, 3))
     call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma&
 &                 , 3))
+    call pushreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                 sfacek, 3))
     call pushreal8array(w, size(w, 1)*size(w, 2)*size(w, 3)*size(w, 4))
     call pushreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
     call pushreal8array(x, size(x, 1)*size(x, 2)*size(x, 3)*size(x, 4))
@@ -417,8 +459,14 @@ contains
     call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
     call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
+    call pushreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                 sfacei, 3))
+    call pushreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                 sfacej, 3))
     call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma&
 &                 , 3))
+    call pushreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                 sfacek, 3))
     call pushreal8array(w, size(w, 1)*size(w, 2)*size(w, 3)*size(w, 4))
     call pushreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
     call pushreal8array(x, size(x, 1)*size(x, 2)*size(x, 3)*size(x, 4))
@@ -531,8 +579,14 @@ contains
     call popreal8array(x, size(x, 1)*size(x, 2)*size(x, 3)*size(x, 4))
     call popreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
     call popreal8array(w, size(w, 1)*size(w, 2)*size(w, 3)*size(w, 4))
+    call popreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                sfacek, 3))
     call popreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma, &
 &                3))
+    call popreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                sfacej, 3))
+    call popreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                sfacei, 3))
     call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     call lookreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
@@ -672,8 +726,14 @@ contains
     call popreal8array(x, size(x, 1)*size(x, 2)*size(x, 3)*size(x, 4))
     call popreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
     call popreal8array(w, size(w, 1)*size(w, 2)*size(w, 3)*size(w, 4))
+    call popreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                sfacek, 3))
     call popreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma, &
 &                3))
+    call popreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                sfacej, 3))
+    call popreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                sfacei, 3))
     call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     call lookreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
@@ -708,8 +768,14 @@ contains
     call popreal8array(x, size(x, 1)*size(x, 2)*size(x, 3)*size(x, 4))
     call popreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
     call popreal8array(w, size(w, 1)*size(w, 2)*size(w, 3)*size(w, 4))
+    call popreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                sfacek, 3))
     call popreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma, &
 &                3))
+    call popreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                sfacej, 3))
+    call popreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                sfacei, 3))
     call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     call lookreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
@@ -747,8 +813,14 @@ contains
     call popreal8array(x, size(x, 1)*size(x, 2)*size(x, 3)*size(x, 4))
     call popreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
     call popreal8array(w, size(w, 1)*size(w, 2)*size(w, 3)*size(w, 4))
+    call popreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                sfacek, 3))
     call popreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma, &
 &                3))
+    call popreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                sfacej, 3))
+    call popreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                sfacei, 3))
     call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     call lookreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
@@ -778,8 +850,14 @@ contains
       call popreal8array(x, size(x, 1)*size(x, 2)*size(x, 3)*size(x, 4))
       call popreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
       call popreal8array(w, size(w, 1)*size(w, 2)*size(w, 3)*size(w, 4))
+      call popreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                  sfacek, 3))
       call popreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma&
 &                  , 3))
+      call popreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                  sfacej, 3))
+      call popreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                  sfacei, 3))
       call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
       call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
       call lookreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
@@ -810,8 +888,14 @@ contains
     call popreal8array(x, size(x, 1)*size(x, 2)*size(x, 3)*size(x, 4))
     call popreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
     call popreal8array(w, size(w, 1)*size(w, 2)*size(w, 3)*size(w, 4))
+    call popreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                sfacek, 3))
     call popreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma, &
 &                3))
+    call popreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                sfacej, 3))
+    call popreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                sfacei, 3))
     call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     call lookreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
@@ -841,8 +925,14 @@ contains
       call popreal8array(x, size(x, 1)*size(x, 2)*size(x, 3)*size(x, 4))
       call popreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
       call popreal8array(w, size(w, 1)*size(w, 2)*size(w, 3)*size(w, 4))
+      call popreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                  sfacek, 3))
       call popreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma&
 &                  , 3))
+      call popreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                  sfacej, 3))
+      call popreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                  sfacei, 3))
       call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
       call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
       do nn=1,nbocos
@@ -869,8 +959,14 @@ contains
     call popreal8array(x, size(x, 1)*size(x, 2)*size(x, 3)*size(x, 4))
     call popreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
     call popreal8array(w, size(w, 1)*size(w, 2)*size(w, 3)*size(w, 4))
+    call popreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
+&                sfacek, 3))
     call popreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma, &
 &                3))
+    call popreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
+&                sfacej, 3))
+    call popreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
+&                sfacei, 3))
     call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     do nn=1,nbocos

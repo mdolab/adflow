@@ -20,23 +20,23 @@ contains
 !                machcoef tinfdim rhoinfdim pinfdim
   subroutine referencestate_b()
 !
-!       the original version has been nuked since the computations are 
-!       no longer necessary when calling from python                   
-!       this is the most compliclated routine in all of sumb. it is    
-!       stupidly complicated. this is most likely the reason your      
-!       derivatives are wrong. you don't understand this routine       
-!       and its effects.                                               
-!       this routine *requries* the following as input:                
-!       mach, pinfdim, tinfdim, rhoinfdim, rgasdim (machcoef non-sa    
-!        turbulence only)                                              
-!       optionally, pref, rhoref and tref are used if they are         
+!       the original version has been nuked since the computations are
+!       no longer necessary when calling from python
+!       this is the most compliclated routine in all of sumb. it is
+!       stupidly complicated. this is most likely the reason your
+!       derivatives are wrong. you don't understand this routine
+!       and its effects.
+!       this routine *requries* the following as input:
+!       mach, pinfdim, tinfdim, rhoinfdim, rgasdim (machcoef non-sa
+!        turbulence only)
+!       optionally, pref, rhoref and tref are used if they are
 !       are non-negative. this only happens when you want the equations
-!       normalized by values other than the freestream                 
-!      * this routine computes as output:  
+!       normalized by values other than the freestream
+!      * this routine computes as output:
 !      *   muinfdim, (unused anywhere in code)
-!         pref, rhoref, tref, muref, timeref ('dimensional' reference) 
-!         pinf, pinfcorr, rhoinf, uinf, rgas, muinf, gammainf and winf 
-!         (non-dimensionalized values used in actual computations)     
+!         pref, rhoref, tref, muref, timeref ('dimensional' reference)
+!         pinf, pinfcorr, rhoinf, uinf, rgas, muinf, gammainf and winf
+!         (non-dimensionalized values used in actual computations)
 !
     use constants
     use paramturb
@@ -88,7 +88,7 @@ contains
 &     tinfdim/tsuthdim)**1.5_realtype
 ! set the reference values. they *could* be different from the
 ! free-stream values for an internal flow simulation. for now,
-! we just use the actual free stream values. 
+! we just use the actual free stream values.
     pref = pinfdim
     tref = tinfdim
     rhoref = rhoinfdim
@@ -137,7 +137,7 @@ contains
 ! actually solving the rans equations. the issue is that, the
 ! freestream turb variables will be changed to zero, thus
 ! changing the solution. insteady we check if nw > nwf which
-! will accomplish the same thing. 
+! will accomplish the same thing.
     if (nw .gt. nwf) then
       nuinf = muinf/rhoinf
       select case  (turbmodel) 
@@ -321,23 +321,23 @@ contains
   end subroutine referencestate_b
   subroutine referencestate()
 !
-!       the original version has been nuked since the computations are 
-!       no longer necessary when calling from python                   
-!       this is the most compliclated routine in all of sumb. it is    
-!       stupidly complicated. this is most likely the reason your      
-!       derivatives are wrong. you don't understand this routine       
-!       and its effects.                                               
-!       this routine *requries* the following as input:                
-!       mach, pinfdim, tinfdim, rhoinfdim, rgasdim (machcoef non-sa    
-!        turbulence only)                                              
-!       optionally, pref, rhoref and tref are used if they are         
+!       the original version has been nuked since the computations are
+!       no longer necessary when calling from python
+!       this is the most compliclated routine in all of sumb. it is
+!       stupidly complicated. this is most likely the reason your
+!       derivatives are wrong. you don't understand this routine
+!       and its effects.
+!       this routine *requries* the following as input:
+!       mach, pinfdim, tinfdim, rhoinfdim, rgasdim (machcoef non-sa
+!        turbulence only)
+!       optionally, pref, rhoref and tref are used if they are
 !       are non-negative. this only happens when you want the equations
-!       normalized by values other than the freestream                 
-!      * this routine computes as output:  
+!       normalized by values other than the freestream
+!      * this routine computes as output:
 !      *   muinfdim, (unused anywhere in code)
-!         pref, rhoref, tref, muref, timeref ('dimensional' reference) 
-!         pinf, pinfcorr, rhoinf, uinf, rgas, muinf, gammainf and winf 
-!         (non-dimensionalized values used in actual computations)     
+!         pref, rhoref, tref, muref, timeref ('dimensional' reference)
+!         pinf, pinfcorr, rhoinf, uinf, rgas, muinf, gammainf and winf
+!         (non-dimensionalized values used in actual computations)
 !
     use constants
     use paramturb
@@ -360,7 +360,7 @@ contains
 &     tinfdim/tsuthdim)**1.5_realtype
 ! set the reference values. they *could* be different from the
 ! free-stream values for an internal flow simulation. for now,
-! we just use the actual free stream values. 
+! we just use the actual free stream values.
     pref = pinfdim
     tref = tinfdim
     rhoref = rhoinfdim
@@ -410,7 +410,7 @@ contains
 ! actually solving the rans equations. the issue is that, the
 ! freestream turb variables will be changed to zero, thus
 ! changing the solution. insteady we check if nw > nwf which
-! will accomplish the same thing. 
+! will accomplish the same thing.
     if (nw .gt. nwf) then
       nuinf = muinf/rhoinf
       select case  (turbmodel) 

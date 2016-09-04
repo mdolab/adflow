@@ -1333,8 +1333,8 @@ bocoloop2:do mm=1,nviscbocos
 !       coarsest level are considered.                                 
 !
     use constants
-    use blockpointers
-    use iteration
+    use blockpointers, only : il, jl, kl, addgridvelocities, nbocos, &
+&   bcdata, sfacei, sfacej, sfacek, bcfaceid, si, sj, sk
     implicit none
 !
 !      subroutine arguments.

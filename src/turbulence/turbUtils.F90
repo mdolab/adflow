@@ -8,10 +8,10 @@ contains
     !       the Kato-Launder formulation.                                  
     !
     use constants
-    use blockPointers
-    use flowVarRefState
-    use section
-    use turbMod
+    use blockPointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, vol, sectionID, scratch
+    use flowVarRefState, only : timeRef
+    use section, only : sections
+    use turbMod, only : prod
     implicit none
     !
     !      Local variables.
@@ -135,8 +135,7 @@ contains
     !       already set to the correct entry.                              
     !
     use constants
-    use blockPointers
-    use turbMod
+    use blockPointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, vol, sectionID, scratch
     implicit none
     !
     !      Local parameter
@@ -246,10 +245,9 @@ contains
     !       already set to the correct entry.                              
     !
     use constants
-    use blockPointers
-    use flowVarRefState
-    use section
-    use turbMod
+    use blockPointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, vol, sectionID, scratch
+    use flowVarRefState, only : timeRef
+    use section, only : sections
     implicit none
     !
     !      Local variables.
@@ -790,8 +788,10 @@ contains
     !       Last index in w is offset+1 and offset+2 respectively.         
     !
     use constants
-    use blockPointers
-    use turbMod
+    use blockPointers, only : nx, ny, nz, il, jl, kl, vol, sfaceI, sfaceJ, sfaceK, &
+         w, si, sj, sk, addGridVelocities, bmti1, bmti2, bmtj1, bmtj2, &
+         bmtk1, bmtk2, scratch
+    use turbMod, only : secondOrd
     implicit none
     !
     !      Subroutine arguments.
