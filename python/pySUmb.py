@@ -815,7 +815,7 @@ class SUMB(AeroSolver):
         if evalFuncs is None:
             evalFuncs = self.curAP.evalFuncs
         else:
-            evalFuncs = set(evalFuncs)
+            evalFuncs = list(evalFuncs)
 
         # Do the functions one at a time:
         for f in evalFuncs:
