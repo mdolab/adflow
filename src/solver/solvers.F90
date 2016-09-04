@@ -858,7 +858,7 @@ contains
 
              ! Compute the laminar and eddy viscosities.
 
-             call computeLamViscosity
+             call computeLamViscosity(.False.)
              call computeEddyViscosity
 
              ! Step 4. Store dw in dwOldRK if this is not the last

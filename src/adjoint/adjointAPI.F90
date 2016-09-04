@@ -741,7 +741,7 @@ contains
           end if
 
           if (viscous) then 
-             call computelamviscosity_fast_b
+             call computelamviscosity_fast_b(.True.)
           end if
 
           call computepressuresimple_fast_b(.true.)

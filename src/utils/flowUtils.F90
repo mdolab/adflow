@@ -839,7 +839,7 @@ contains
 
   end subroutine eint
 
-  subroutine computePressureSimple(includeHalos)
+  subroutine computePressureSimple(includeHalos) 
 
     ! Compute the pressure on a block with the pointers already set. This
     ! routine is used by the forward mode AD code only. 
@@ -1173,7 +1173,7 @@ contains
 
   end subroutine computePressure
 
-subroutine computeLamViscosity
+subroutine computeLamViscosity(includeHalos) 
   !
   !       computeLamViscosity computes the laminar viscosity ratio in    
   !       the owned cell centers of the given block. Sutherland's law is 
@@ -1187,6 +1187,9 @@ subroutine computeLamViscosity
   use iteration
   use utils, only : getCorrectForK
   implicit none
+
+  ! input variables
+  logical, intent(in) :: includeHalos
   !
   !      Local parameter.
   !
@@ -1197,6 +1200,7 @@ subroutine computeLamViscosity
   integer(kind=intType) :: i, j, k, ii
   real(kind=realType)   :: muSuth, TSuth, SSuth, T, pp
   logical               :: correctForK
+  integer(kind=intType) :: iBeg, iEnd, iSize, jBeg, jEnd, jSize, kBeg, kEnd, kSize
 
   ! Return immediately if no laminar viscosity needs to be computed.
 
@@ -1213,23 +1217,42 @@ subroutine computeLamViscosity
   TSuth  = TSuthDim/Tref
   SSuth  = SSuthDim/Tref
 
+    if (includeHalos) then 
+       iBeg = 1
+       jBeg = 1
+       kBeg = 1
+       iEnd = ie
+       jEnd = je
+       kEnd = ke
+    else
+       iBeg = 2
+       jBeg = 2
+       kBeg = 2
+       iEnd = il
+       jEnd = jl
+       kEnd = kl
+    end if
+
   ! Substract 2/3 rho k, which is a part of the normal turbulent
   ! stresses, in case the pressure must be corrected.
 
   if( correctForK ) then
 #ifdef TAPENADE_FAST
+     iSize = (iEnd-iBeg)+1
+     jSize = (jEnd-jBeg)+1
+     kSize = (kEnd-kBeg)+1
+
      !$AD II-LOOP
-     do ii=0,ie*je*ke - 1
-        i = mod(ii, ie) + 1
-        j = mod(ii/ie, je) + 1
-        k = ii/(ie*je) + 1
+     do ii=0, iSize*jSize*kSize-1
+        i = mod(ii, iSize) + iBeg
+        j = mod(ii/(iSize), jSize) + jBeg
+        k = ii/((iSize*jSize)) + kBeg
 #else
-        do k=1,ke
-           do j=1,je
-              do i=1,ie
+        do k=kBeg, kEnd
+           do j=jBeg, jEnd
+              do i=iBeg, iEnd
 #endif             
                  pp = p(i,j,k) - twoThird*w(i,j,k,irho)*w(i,j,k,itu1)
-
                  T = pp/(RGas*w(i,j,k,irho))
                  rlv(i,j,k) = muSuth*((TSuth + SSuth)/(T + SSuth)) &
                       * ((T/TSuth)**1.5_realType)
@@ -1244,19 +1267,23 @@ subroutine computeLamViscosity
      ! Loop over the owned cells *AND* first level halos of this
      ! block and compute the laminar viscosity ratio.
 #ifdef TAPENADE_FAST
+     iSize = (iEnd-iBeg)+1
+     jSize = (jEnd-jBeg)+1
+     kSize = (kEnd-kBeg)+1
+
      !$AD II-LOOP
-     do ii=0,ie*je*ke - 1
-        i = mod(ii, ie) + 1
-        j = mod(ii/ie, je) + 1
-        k = ii/(ie*je) + 1
+     do ii=0, iSize*jSize*kSize-1
+        i = mod(ii, iSize) + iBeg
+        j = mod(ii/(iSize), jSize) + jBeg
+        k = ii/((iSize*jSize)) + kBeg
 #else
-        do k=1,ke
-           do j=1,je
-              do i=1,ie
+        do k=kBeg, kEnd
+           do j=jBeg, jEnd
+              do i=iBeg, iEnd
 #endif             
+
                  ! Compute the nonDimensional temperature and the
                  ! nonDimensional laminar viscosity.
-
                  T = p(i,j,k)/(RGas*w(i,j,k,irho))
                  rlv(i,j,k) = muSuth*((TSuth + SSuth)/(T + SSuth)) &
                       * ((T/TSuth)**1.5_realType)
@@ -1269,7 +1296,6 @@ subroutine computeLamViscosity
 #endif   
   end if
 end subroutine computeLamViscosity
-
 
 subroutine adjustInflowAngle(alpha, beta, liftIndex)
 

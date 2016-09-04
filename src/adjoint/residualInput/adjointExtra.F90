@@ -133,7 +133,7 @@ contains
     call computePressureSimple(.True.)
 
     ! Compute Laminar/eddy viscosity if required
-    call computeLamViscosity
+    call computeLamViscosity(.True.)
     call computeEddyViscosity 
 
     call applyAllBC_block(.True.)
