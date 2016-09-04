@@ -206,7 +206,7 @@ contains
 !        normal residual computation
 ! ------------------------------------------------
 ! compute the pressures
-    call computepressuresimple_d()
+    call computepressuresimple_d(.true.)
 ! compute laminar/eddy viscosity if required
     call computelamviscosity_d()
     call computeeddyviscosity_d()
@@ -604,7 +604,7 @@ varloopfine:do l=1,nwf
 !        normal residual computation
 ! ------------------------------------------------
 ! compute the pressures
-    call computepressuresimple()
+    call computepressuresimple(.true.)
 ! compute laminar/eddy viscosity if required
     call computelamviscosity()
     call computeeddyviscosity()

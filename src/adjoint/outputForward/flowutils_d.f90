@@ -759,7 +759,7 @@ intervaltt:do
 !   variations   of useful results: *p
 !   with respect to varying inputs: *w pinfcorr
 !   plus diff mem management of: p:in w:in
-  subroutine computepressuresimple_d()
+  subroutine computepressuresimple_d(includehalos)
 ! compute the pressure on a block with the pointers already set. this
 ! routine is used by the forward mode ad code only. 
     use constants
@@ -767,17 +767,37 @@ intervaltt:do
     use flowvarrefstate
     use inputphysics
     implicit none
+! input parameter
+    logical, intent(in) :: includehalos
 ! local variables
     integer(kind=inttype) :: i, j, k, ii
     real(kind=realtype) :: gm1, v2
     real(kind=realtype) :: v2d
+    integer(kind=inttype) :: ibeg, iend, isize, jbeg, jend, jsize, kbeg&
+&   , kend, ksize
     intrinsic max
 ! compute the pressures
     gm1 = gammaconstant - one
-    pd = 0.0_8
-    do k=0,kb
-      do j=0,jb
-        do i=0,ib
+    if (includehalos) then
+      ibeg = 0
+      jbeg = 0
+      kbeg = 0
+      iend = ib
+      jend = jb
+      kend = kb
+      pd = 0.0_8
+    else
+      ibeg = 2
+      jbeg = 2
+      kbeg = 2
+      iend = il
+      jend = jl
+      kend = kl
+      pd = 0.0_8
+    end if
+    do k=kbeg,kend
+      do j=jbeg,jend
+        do i=ibeg,iend
           v2d = 2*w(i, j, k, ivx)*wd(i, j, k, ivx) + 2*w(i, j, k, ivy)*&
 &           wd(i, j, k, ivy) + 2*w(i, j, k, ivz)*wd(i, j, k, ivz)
           v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)&
@@ -795,7 +815,7 @@ intervaltt:do
       end do
     end do
   end subroutine computepressuresimple_d
-  subroutine computepressuresimple()
+  subroutine computepressuresimple(includehalos)
 ! compute the pressure on a block with the pointers already set. this
 ! routine is used by the forward mode ad code only. 
     use constants
@@ -803,15 +823,34 @@ intervaltt:do
     use flowvarrefstate
     use inputphysics
     implicit none
+! input parameter
+    logical, intent(in) :: includehalos
 ! local variables
     integer(kind=inttype) :: i, j, k, ii
     real(kind=realtype) :: gm1, v2
+    integer(kind=inttype) :: ibeg, iend, isize, jbeg, jend, jsize, kbeg&
+&   , kend, ksize
     intrinsic max
 ! compute the pressures
     gm1 = gammaconstant - one
-    do k=0,kb
-      do j=0,jb
-        do i=0,ib
+    if (includehalos) then
+      ibeg = 0
+      jbeg = 0
+      kbeg = 0
+      iend = ib
+      jend = jb
+      kend = kb
+    else
+      ibeg = 2
+      jbeg = 2
+      kbeg = 2
+      iend = il
+      jend = jl
+      kend = kl
+    end if
+    do k=kbeg,kend
+      do j=jbeg,jend
+        do i=ibeg,iend
           v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)&
 &           **2
           p(i, j, k) = gm1*(w(i, j, k, irhoe)-half*w(i, j, k, irho)*v2)

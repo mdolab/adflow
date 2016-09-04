@@ -130,7 +130,7 @@ contains
     ! ------------------------------------------------
 
     ! Compute the pressures
-    call computePressureSimple
+    call computePressureSimple(.True.)
 
     ! Compute Laminar/eddy viscosity if required
     call computeLamViscosity
