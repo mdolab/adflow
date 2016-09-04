@@ -1560,7 +1560,7 @@ class SUMB(AeroSolver):
 
         # We should return the list of results that is the same as the
         # possibleObjectives list
-        self.sumb.adjointapi.getsolution(sps)
+        self.sumb.surfaceintegrations.getsolution(sps)
 
         funcVals = self.sumb.costfunctions.funcvalues
         SUmbsolution = {

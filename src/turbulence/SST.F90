@@ -8,8 +8,9 @@ module SST
 contains
 
   subroutine SST_block(resOnly)
-
-    use blockPointers
+    
+    use constants
+    use blockPointers, only : il, jl, kl
     use inputTimeSpectral
     use iteration
     use turbUtils, only : SSTEddyViscosity
@@ -41,7 +42,7 @@ contains
 
        ! Compute the corresponding eddy viscosity.
 
-       call SSTEddyViscosity
+       call SSTEddyViscosity(2, il, 2, jl, 2, kl)
 
        ! Set the halo values for the turbulent variables.
        ! We are on the finest mesh, so the second layer of halo
