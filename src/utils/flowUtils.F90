@@ -839,7 +839,7 @@ contains
 
   end subroutine eint
 
-  subroutine computePressureSimple
+  subroutine computePressureSimple(includeHalos)
 
     ! Compute the pressure on a block with the pointers already set. This
     ! routine is used by the forward mode AD code only. 
@@ -850,23 +850,46 @@ contains
     use inputPhysics
     implicit none
 
+    ! Input parameter
+    logical, intent(in) :: includeHalos
+
     ! Local Variables
     integer(kind=intType) :: i, j, k, ii
     real(kind=realType) :: gm1, v2
-
+    integer(kind=intType) :: iBeg, iEnd, iSize, jBeg, jEnd, jSize, kBeg, kEnd, kSize
     ! Compute the pressures
     gm1 = gammaConstant - one
 
+    if (includeHalos) then 
+       iBeg = 0
+       jBeg = 0
+       kBeg = 0
+       iEnd = ib
+       jEnd = jb
+       kEnd = kb
+    else
+       iBeg = 2
+       jBeg = 2
+       kBeg = 2
+       iEnd = il
+       jEnd = jl
+       kEnd = kl
+    end if
+
 #ifdef TAPENADE_FAST
+    iSize = (iEnd-iBeg)+1
+    jSize = (jEnd-jBeg)+1
+    kSize = (kEnd-kBeg)+1
+
     !$AD II-LOOP
-    do ii=0,(ib+1)*(jb+1)*(kb+1)-1
-       i = mod(ii, ib+1) 
-       j = mod(ii/(ib+1), (jb+1))
-       k = ii/((ib+1)*(jb+1))
+    do ii=0, iSize*jSize*kSize-1
+       i = mod(ii, iSize) + iBeg
+       j = mod(ii/(iSize), jSize) + jBeg
+       k = ii/((iSize*jSize)) + kBeg
 #else
-       do k=0,kb
-          do j=0,jb
-             do i=0,ib
+       do k=kBeg, kEnd
+          do j=jBeg, jEnd
+             do i=iBeg, iEnd
 #endif             
                 v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)**2
                 p(i, j, k) = gm1*(w(i, j, k, irhoE) - half*w( i, j, k, irho)*v2)

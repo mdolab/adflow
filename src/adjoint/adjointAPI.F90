@@ -744,7 +744,7 @@ contains
              call computelamviscosity_fast_b
           end if
 
-          call computepressuresimple_fast_b
+          call computepressuresimple_fast_b(.true.)
 
           ! We can put stuff directly into wbar with no assembly; the
           ! whalo_b already takes care of it. 
