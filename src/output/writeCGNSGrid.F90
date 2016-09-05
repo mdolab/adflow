@@ -1081,21 +1081,10 @@ contains
 
     real(kind=realType), dimension(:), allocatable :: buffer
 
-    character, dimension(:), allocatable :: coor
+    real(kind=4), dimension(:) , allocatable :: coor4
+    real(kind=8), dimension(:) , allocatable :: coor8
 
     character(len=maxCGNSNameLen), dimension(3) :: coorNames
-    real(kind=4) :: singleReal
-    real(kind=8) :: doubleReal
-    ! Set the cgns real type depending on the input option.
-
-    select case (precisionGrid)
-    case (precisionSingle)
-       realTypeCGNS      = RealSingle
-       sizeCGNSWriteType = 4
-    case (precisionDouble)
-       realTypeCGNS      = RealDouble
-       sizeCGNSWriteType = 8
-    end select
 
     ! Store the number of local blocks and the offset in
     ! blocksCGNSblock for this zone a bit easier.
@@ -1211,10 +1200,15 @@ contains
        ! coordinates and set the cgns names for them. Note that the
        ! coor array is of type character and therefore the size in
        ! bytes must be allocated.
+       ll = cgnsDoms(zone)%il * cgnsDoms(zone)%jl * cgnsDoms(zone)%kl
 
-       ll = cgnsDoms(zone)%il * cgnsDoms(zone)%jl &
-            * cgnsDoms(zone)%kl * sizeCGNSWriteType
-       allocate(coor(ll), stat=ierr)
+       select case (precisionGrid)
+       case (precisionSingle)
+          allocate(coor4(ll), coor8(0), stat=ierr)
+          
+       case (precisionDouble)
+          allocate(coor8(ll), coor4(0), stat=ierr)
+       end select
        if(ierr /= 0)                         &
             call terminate("writeCoorCGNSZone", &
             "Memory allocation failure for coor")
@@ -1251,7 +1245,7 @@ contains
                 select case (precisionGrid)
                 case (precisionSingle)
                    call copyDataBufSinglePrecision(&
-                        coor, buffer,  &
+                        coor4, buffer,  &
                         1_intType,         &
                         1_intType,         &
                         1_intType,         &
@@ -1261,7 +1255,7 @@ contains
                         subRanges(1,1,mm))
                 case (precisionDouble)
                    call copyDataBufDoublePrecision(&
-                        coor, buffer, &
+                        coor8, buffer, &
                         1_intType,         &
                         1_intType,         &
                         1_intType,         &
@@ -1285,7 +1279,7 @@ contains
 
                 select case (precisionGrid)
                 case (precisionSingle)
-                   call copyDataBufSinglePrecision(coor, buffer,      &
+                   call copyDataBufSinglePrecision(coor4, buffer,      &
                         1_intType,         &
                         1_intType,         &
                         1_intType,         &
@@ -1294,7 +1288,7 @@ contains
                         cgnsDoms(zone)%kl, &
                         subRanges(1,1,mm))
                 case (precisionDouble)
-                   call copyDataBufDoublePrecision(coor, buffer,      &
+                   call copyDataBufDoublePrecision(coor8, buffer,      &
                         1_intType,         &
                         1_intType,         &
                         1_intType,         &
@@ -1309,10 +1303,15 @@ contains
              ! Write this coordinate to file; tmp is used to store
              ! the actual number of the coordinate; usually this is
              ! equal to nn.
+             select case (precisionGrid)
+             case (precisionSingle)
+                call cg_coord_write_f(fileInd, cgnsBase, cgnsZone, &
+                     realSingle, coorNames(nn), coor4, tmp, ierr)
+             case (precisionDouble)
+                call cg_coord_write_f(fileInd, cgnsBase, cgnsZone, &
+                     realDouble, coorNames(nn), coor8, tmp, ierr)
+             end select
 
-             call cg_coord_write_f(fileInd, cgnsBase, cgnsZone, &
-                  realTypeCGNS, coorNames(nn), &
-                  coor, tmp, ierr)
              if(ierr /= CG_OK)                    &
                   call terminate("writeCoorCGNSZone", &
                   "Something wrong when calling &
@@ -1352,7 +1351,7 @@ contains
        ! Deallocate the memory which is only allocated on the
        ! root processor.
 
-       deallocate(subRanges, proc, coor, stat=ierr)
+       deallocate(subRanges, proc, coor4, coor8, stat=ierr)
        if(ierr /= 0) call terminate("writeCoorCGNSZone", &
             "Deallocation error on root proc")
 
