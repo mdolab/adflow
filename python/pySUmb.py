@@ -202,8 +202,7 @@ class SUMB(AeroSolver):
                               omegaFourier=6.28, sinCoefFourier=[0, 0],
                               cosCoefFourier=[0, 0])
 
-        self.curAP = dummyAP
-        self._setAeroProblemData(firstCall=True)
+        self._setAeroProblemData(dummyAP, firstCall=True)
         # Now set it back to None so the user is none the wiser
         self.curAP = None
 
@@ -601,17 +600,6 @@ class SUMB(AeroSolver):
         # Remind the users of the modified options:
         if self.getOption('printIterations'):
             self.printModifiedOptions()
-
-        # If this problem has't been solved yet, reset flow to this
-        # flight condition. If restarting load restart files and set
-        # mgstartlevel to finest lever since we are starting on a
-        # converged solution.
-        if self.curAP.sumbData.stateInfo is None:
-            if self.getOption('restartFile') is not None:
-                self.sumb.inputiteration.mgstartlevel = 1
-                self.sumb.initflowrestart()
-            else:
-                self.resetFlow(aeroProblem, releaseAdjointMemory)
 
         # Possibly release adjoint memory if not already done so.
         if releaseAdjointMemory:
@@ -1662,39 +1650,18 @@ class SUMB(AeroSolver):
         self.mesh.setSurfaceCoordinates(meshSurfCoords)
 
     def setAeroProblem(self, aeroProblem, releaseAdjointMemory=True):
-
         """Set the supplied aeroProblem to be used in SUmb"""
+
         ptSetName = 'sumb_%s_coords'% aeroProblem.name
 
-        # If the aeroProblem is the same as the currently stored
-        # reference; only check the DV changes
-        if aeroProblem is self.curAP:
-            if self.DVGeo is not None:
-
-                # DVGeo appeared and we have not embedded points!
-                if not ptSetName in self.DVGeo.points:
-                    coords0 = self.mapVector(self.coords0, self.allFamilies,
-                                             self.getOption('designSurfaceFamily'))
-                    self.DVGeo.addPointSet(coords0, ptSetName)
-
-                if not self.DVGeo.pointSetUpToDate(ptSetName):
-                    coords = self.DVGeo.update(ptSetName, config=self.curAP.name)
-
-                    if self.curAP.sumbData.disp is not None:
-                        coords += self.curAP.sumbData.disp
-                    self.setSurfaceCoordinates(
-                        coords, self.getOption('designSurfaceFamily'))
-
-            # Finally update other data
-            self._setAeroProblemData()
-            self.updateGeometryInfo()
-
-            return
-
-        if self.comm.rank == 0:
-            print('+'+'-'*70+'+')
-            print('|  Switching to Aero Problem: %-41s|'% aeroProblem.name)
-            print('+'+'-'*70+'+')
+        newAP = False
+        # Tell the user if we are switching aeroProblems
+        if self.curAP != aeroProblem:
+            newAP = True
+            if self.comm.rank == 0:
+                print('+'+'-'*70+'+')
+                print('|  Switching to Aero Problem: %-41s|'% aeroProblem.name)
+                print('+'+'-'*70+'+')
 
         # See if the aeroProblem has sumbData already, if not, create.
         try:
@@ -1729,54 +1696,61 @@ class SUMB(AeroSolver):
                     # aeroProblem had set
                     self.setOption(key, savedVal)
 
-        # If not done so already, embed the coordinates:
-        if self.DVGeo is not None and ptSetName not in self.DVGeo.points:
+        # Now check if we have an DVGeo object to deal with:
+        if self.DVGeo is not None:
+            # DVGeo appeared and we have not embedded points!
+            if not ptSetName in self.DVGeo.points:
+                coords0 = self.mapVector(self.coords0, self.allFamilies,
+                                         self.designFamilyGroup)
+                self.DVGeo.addPointSet(coords0, ptSetName)
 
-            coords0 = self.mapVector(self.coords0, self.allFamilies,
-                                     self.designFamilyGroup)
-            self.DVGeo.addPointSet(coords0, ptSetName)
+            # Check if our point-set is up to date:
+            if not self.DVGeo.pointSetUpToDate(ptSetName):
+                coords = self.DVGeo.update(ptSetName, config=aeroProblem.name)
+
+                # Potentially add a fixed set of displacements to it.
+                if aeroProblem.sumbData.disp is not None:
+                    coords += self.curAP.sumbData.disp
+                self.setSurfaceCoordinates(coords, self.designFamilyGroup)
+
+        self._setAeroProblemData(aeroProblem)
+
+        # Note that it is safe to call updateGeometryInfo since it
+        # only updates the mesh if necessary
+        self.updateGeometryInfo()
+
+        # If the state info none, initialize to the supplied
+        # restart file or the free-stream values by calling
+        # resetFlow()
+        if aeroProblem.sumbData.stateInfo is None:
+            if self.getOption('restartFile') is not None:
+                self.sumb.inputiteration.mgstartlevel = 1
+                self.sumb.initializeflow.initflowrestart()
+                # Save this state information
+                aeroProblem.sumbData.stateInfo = self._getInfo()
+            else:
+                self._resetFlow()
+     
+        # Now set the data from the incomming aeroProblem:
+        stateInfo = aeroProblem.sumbData.stateInfo
+        if stateInfo is not None and newAP:
+            self._setInfo(stateInfo)
+
+        self.sumb.killsignals.routinefailed = False
+        self.sumb.killsignals.fatalFail = False
 
         # We are now ready to associate self.curAP with the supplied AP
         self.curAP = aeroProblem
         self.curAP.adjointRHS = None
 
-        # Now set the data from the incomming aeroProblem:
-        stateInfo = aeroProblem.sumbData.stateInfo
-        if stateInfo is not None:
-            self._setInfo(stateInfo)
-
-        # We have to update coordinates here as well:
-        if self.DVGeo is not None:
-            if not self.DVGeo.pointSetUpToDate(ptSetName):
-                coords = self.DVGeo.update(ptSetName, config=self.curAP.name)
-            else:
-                coords = self.curAP.surfMesh
-        else:
-            coords = self.curAP.surfMesh
-
-        if self.curAP.sumbData.disp is not None:
-            coords += self.curAP.sumbData.disp
-
-        self.setSurfaceCoordinates(coords, self.designFamilyGroup)
-
-        # Finally update other data
-        self._setAeroProblemData()
-
-        # Now we have to do a bunch of updates. This is fairly
-        # expensive so switchign aeroProblems should not be done that
-        #  frequently
-        self.updateGeometryInfo()
-
-        self.sumb.killsignals.routinefailed = False
-        self.sumb.killsignals.fatalFail = False
-
         # Destroy the ANK/NK solver and the adjoint memory
-        self.sumb.nksolver.destroynksolver()
-        self.sumb.anksolver.destroyanksolver()
+        if newAP:
+            self.sumb.nksolver.destroynksolver()
+            self.sumb.anksolver.destroyanksolver()
         if releaseAdjointMemory:
             self.releaseAdjointMemory()
 
-    def _setAeroProblemData(self, firstCall=False):
+    def _setAeroProblemData(self, aeroProblem, firstCall=False):
         """
         After an aeroProblem has been associated with self.cuAP, set
         all the updated information in SUmb."""
@@ -1784,21 +1758,21 @@ class SUMB(AeroSolver):
         # Set any additional sumb options that may be defined in the
         # aeroproblem. While we do it we save the options that we've
         # modified if they are different than the current option.
+        AP = aeroProblem
         try:
-            self.curAP.savedOptions
+            AP.savedOptions
         except:
-            self.curAP.savedOptions = {'sumb':{}}
+            AP.savedOptions = {'sumb':{}}
 
 
-        if 'sumb' in self.curAP.solverOptions:
-            for key in self.curAP.solverOptions['sumb']:
+        if 'sumb' in AP.solverOptions:
+            for key in AP.solverOptions['sumb']:
                 curVal = self.getOption(key)
-                overwriteVal =  self.curAP.solverOptions['sumb'][key]
+                overwriteVal =  AP.solverOptions['sumb'][key]
                 if overwriteVal != curVal:
                     self.setOption(key, overwriteVal)
-                    self.curAP.savedOptions['sumb'][key] = curVal
+                    AP.savedOptions['sumb'][key] = curVal
 
-        AP = self.curAP
         alpha = AP.alpha
         beta = AP.beta
         beta = AP.beta
@@ -1990,25 +1964,6 @@ class SUMB(AeroSolver):
             self.sumb.preprocessingapi.updateperiodicinfoalllevels()
             self.sumb.preprocessingapi.updategridvelocitiesalllevels()
             self.sumb.bcdata.nondimbounddata()
-
-
-    def getPointRef(self):
-        return self.sumb.inputphysics.pointref
-
-    def setPointRef(self, pointRef):
-        """
-        This function can be used to update the reference point during
-        run such as between timesteps for unsteady run
-
-        Parameters
-        ----------
-        pointRef : list
-            Contrains the reference point. Format of the list is
-            as follows [xRef, yRef, zRef]
-        """
-        if len(pointRef) < 3:
-            raise Error("'pointRef' needs to be list of three numbers. Length of list is {0:d}".format(len(pointRef)))
-        self.sumb.inputphysics.pointref = pointRef
 
     def getForces(self, groupName=None, TS=0):
         """ Return the forces on this processor on the families defined by groupName.
@@ -2978,81 +2933,6 @@ class SUMB(AeroSolver):
 
         self.sumb.surfaceutils.setfamilyinfo(self.families[groupName])
 
-    # def _getFamilyList(self, groupName):
-
-    #     if groupName is None:
-    #         groupName = self.allFamilies
-
-    #     if groupName not in self.families:
-    #         raise Error("'%s' is not a family in the CGNS file or has not been added"
-    #                     " as a combination of families"%groupName)
-
-    #     return self.families[groupName]
-
-
-    # def computeArea(self, aeroProblem, funcs, axis, groupName=None, TS=0):
-    #
-
-        """
-    #     Compute the projected area of the surface mesh
-
-    #     Input Arguments:
-    #        axis, numpy array, size(3): The projection vector
-    #            along which to determine the shadow area
-    #        groupName, str: The group from which to obtain the coordinates.
-    #            This name must have been obtained from addFamilyGroup() or
-    #            be the default 'all' which contains all surface coordiantes
-
-    #     Output Arguments:
-    #         Area: The resulting area
-    #         """
-    #     self.setAeroProblem(aeroProblem)
-    #     cfdForcePts = self.getForcePoints(TS)
-    #     if len(cfdForcePts) > 0:
-    #         areas = self.sumb.getareas(cfdForcePts.T, TS+1, axis).T
-    #     else:
-    #         areas = numpy.zeros((0,3), self.dtype)
-    #     # end if
-
-    #     if groupName is not None:
-    #         areas = self.sectionVectorByFamily(groupName, areas)
-    #     # end if
-
-    #     # Now we do an mpiallreduce with sum:
-    #     area = self.comm.allreduce(numpy.sum(areas), op=MPI.SUM)
-
-    #     key = self.curAP.name + '_area'
-    #     self.curAP.funcNames['area'] = key
-    #     funcs[key] = area
-
-    # def computeAreaSensitivity(self, aeroProblem, funcsSens, axis, groupName=None, TS=0):
-    #     """
-    #     Compute the projected area of the surface mesh
-
-    #     Input Arguments:
-    #        axis, numpy array, size(3): The projection vector
-    #            along which to determine the shadow area
-    #        groupName, str: The group from which to obtain the coordinates.
-    #            This name must have been obtained from addFamilyGroup() or
-    #            be the default 'all' which contains all surface coordiantes
-
-    #     Output Arguments:
-    #         Area: The resulting area
-    #         """
-    #     self.setAeroProblem(aeroProblem)
-    #     cfdForcePts = self.getForcePoints(TS)
-
-    #     if len(cfdForcePts) > 0:
-    #         da = self.sumb.getareasensitivity(cfdForcePts.T, TS+1, axis).T
-    #     else:
-    #         da = numpy.zeros((0,3), self.dtype)
-
-    #     if groupName is not None:
-    #         da = self.sectionVectorByFamily(groupName, da)
-    #         da = self.expandVectorByFamily(groupName, da)
-
-    #     funcsSens[self.curAP.name + '_area'] = self.DVGeo.totalSensitivity(
-    #         da, ptSetName=self.curAP.ptSetName, comm=self.comm, config=self.curAP.name)
 
     def setOption(self, name, value):
         """
@@ -3123,8 +3003,8 @@ class SUMB(AeroSolver):
                         if value:
                             # Allocate only one slot since we have
                             # only one filename
-                            self.sumb.allocrestartfiles(1)
-                            self.sumb.setrestartfiles(value, 1)
+                            self.sumb.initializeflow.allocrestartfiles(1)
+                            self.sumb.initializeflow.setrestartfiles(value, 1)
                         else:
                             # Empty string. Raise error
                             raise Error("Option 'restartfile' string cannot be empty. "
@@ -3136,11 +3016,11 @@ class SUMB(AeroSolver):
                         if nFiles > 0:
                             if type(value[0]) is str:
                                 # Allocate for the entire list
-                                self.sumb.allocrestartfiles(nFiles)
+                                self.sumb.initializeflow.allocrestartfiles(nFiles)
                                 # Populate the array
                                 for i, val in enumerate(value):
                                     # The +1 is to match fortran indexing
-                                    self.sumb.setrestartfiles(val,i+1)
+                                    self.sumb.initializeflow.setrestartfiles(val,i+1)
                             else:
                                 raise Error("Datatype for Option %-35s was not "
                                             "valid. Expected list of <type 'str'>. "
@@ -3267,6 +3147,8 @@ class SUMB(AeroSolver):
             'nsavesurface':[int,1],
             'solutionprecision':[str,'single'],
             'gridprecision':[str,'double'],
+            'solutionprecisionsurface':[str,'single'],
+            'gridprecisionsurface':[str,'single'],
             'isosurface':[dict, {}],
             'isovariables':[list, []],
             'nodaloutput':[bool, True],
@@ -3488,7 +3370,12 @@ class SUMB(AeroSolver):
             'gridprecision':{'single':self.sumb.constants.precisionsingle,
                              'double':self.sumb.constants.precisiondouble,
                              'location':['io', 'precisiongrid']},
-
+            'solutionprecisionsurface':{'single':self.sumb.constants.precisionsingle,
+                                        'double':self.sumb.constants.precisiondouble,
+                                        'location':['io', 'precisionsol']},
+            'gridprecisionsurface':{'single':self.sumb.constants.precisionsingle,
+                                    'double':self.sumb.constants.precisiondouble,
+                                    'location':['io', 'precisiongrid']},
             # Physics Paramters
             'discretization':{'central plus scalar dissipation': self.sumb.constants.dissscalar,
                               'central plus matrix dissipation': self.sumb.constants.dissmatrix,
