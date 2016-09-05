@@ -234,20 +234,20 @@ class SUMB(AeroSolver):
         self.allFamilies = 'allSurfaces'
         self.addFamilyGroup(self.allFamilies, famList)
 
-        self.allWallsGroup = 'all'
+        self.allWallsGroup = 'allWalls'
         self.addFamilyGroup(self.allWallsGroup, wallList)
 
         # Set the design families if given, otherwise default to all
         # walls
-        self.designFamilies = self.getOption('designSurfaceFamily')
-        if self.designFamilies is None:
-            self.designFamilies = self.allWallsGroup
+        self.designFamilyGroup = self.getOption('designSurfaceFamily')
+        if self.designFamilyGroup is None:
+            self.designFamilyGroup = self.allWallsGroup
 
         # Set the mesh families if given, otherwise default to all
         # walls
-        self.meshFamilies = self.getOption('meshSurfaceFamily')
-        if self.meshFamilies is None:
-            self.meshFamilies = self.allWallsGroup
+        self.meshFamilyGroup = self.getOption('meshSurfaceFamily')
+        if self.meshFamilyGroup is None:
+            self.meshFamilyGroup = self.allWallsGroup
 
         self.coords0 = self.getSurfaceCoordinates(self.allFamilies)
 
@@ -1656,9 +1656,9 @@ class SUMB(AeroSolver):
 
         # First get the surface coordinates of the meshFamily in case
         # the groupName is a subset, those values will remain unchanged.
-        meshSurfCoords = self.getSurfaceCoordinates(self.meshFamilies)
+        meshSurfCoords = self.getSurfaceCoordinates(self.meshFamilyGroup)
         meshSurfCoords = self.mapVector(coordinates, groupName,
-                                        self.meshFamilies, meshSurfCoords)
+                                        self.meshFamilyGroup, meshSurfCoords)
         self.mesh.setSurfaceCoordinates(meshSurfCoords)
 
     def setAeroProblem(self, aeroProblem, releaseAdjointMemory=True):
@@ -1702,13 +1702,13 @@ class SUMB(AeroSolver):
         except AttributeError:
             aeroProblem.sumbData = sumbFlowCase()
             aeroProblem.ptSetName = ptSetName
-            aeroProblem.surfMesh = self.getSurfaceCoordinates(self.designFamilies)
+            aeroProblem.surfMesh = self.getSurfaceCoordinates(self.designFamilyGroup)
 
         if self.curAP is not None:
             # If we have already solved something and are now
             # switching, save what we need:
             self.curAP.stateInfo = self._getInfo()
-            self.curAP.surfMesh = self.getSurfaceCoordinates(self.designFamilies)
+            self.curAP.surfMesh = self.getSurfaceCoordinates(self.designFamilyGroup)
 
             # Restore any options that the current aeroProblem
             # (self.curAP) modified. We have to be slightly careful
@@ -1733,7 +1733,7 @@ class SUMB(AeroSolver):
         if self.DVGeo is not None and ptSetName not in self.DVGeo.points:
 
             coords0 = self.mapVector(self.coords0, self.allFamilies,
-                                     self.designFamilies)
+                                     self.designFamilyGroup)
             self.DVGeo.addPointSet(coords0, ptSetName)
 
         # We are now ready to associate self.curAP with the supplied AP
@@ -1757,7 +1757,7 @@ class SUMB(AeroSolver):
         if self.curAP.sumbData.disp is not None:
             coords += self.curAP.sumbData.disp
 
-        self.setSurfaceCoordinates(coords, self.designFamilies)
+        self.setSurfaceCoordinates(coords, self.designFamilyGroup)
 
         # Finally update other data
         self._setAeroProblemData()
@@ -2529,7 +2529,7 @@ class SUMB(AeroSolver):
         if xSDot is None:
             xsdot = numpy.zeros_like(self.coords0)
             xsdot = self.mapVector(xsdot, self.allFamilies,
-                                   self.designFamilies)
+                                   self.designFamilyGroup)
         else:
             xsdot = xSDot
             useSpatial = True
@@ -2742,8 +2742,8 @@ class SUMB(AeroSolver):
             if self.mesh is not None:
                 self.mesh.warpDeriv(xvbar)
                 xsbar = self.mesh.getdXs()
-                xsbar = self.mapVector(xsbar, self.meshFamilies,
-                                       self.designFamilies)
+                xsbar = self.mapVector(xsbar, self.meshFamilyGroup,
+                                       self.designFamilyGroup)
 
                 if xSDeriv:
                     returns.append(xsbar)
