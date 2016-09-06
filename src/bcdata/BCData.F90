@@ -2531,11 +2531,8 @@ contains
               if( associated(BCData(i)%ttInlet) ) & 
                 BCData(i)%ttInlet = BCData(i)%ttInlet/TRef
 
-              if( associated(BCData(i)%htInlet) ) then
-                print *, "foo2", nn, i, BCData(i)%htInlet(1,1), HRef
+              if( associated(BCData(i)%htInlet) ) &
                 BCData(i)%htInlet = BCData(i)%htInlet/HRef
-                print *, "bar2", nn, i, BCData(i)%htInlet(1,1), HRef
-              end if
 
               if( associated(BCData(i)%turbInlet) ) &
                 call nondimTurb(BCData(i)%turbInlet)
