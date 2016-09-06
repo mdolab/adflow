@@ -286,5 +286,9 @@ module constants
   integer(kind=intType) :: myIntStack(32)
   integer(kind=intType) :: myIntPtr = 0
 
+  ! BC specific constants
+  real(kind=realType), parameter :: nbcVarSubsonicInflow = 17
+  real(kind=realType), parameter :: nbcVarSupersonicInflow = 7
+
 
 end module constants
