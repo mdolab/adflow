@@ -516,6 +516,7 @@ contains
     real(kind=realType), dimension(3) :: cFpLocal, cFvLocal, cMpLocal, cMvLocal, sepSensorAvgLocal
     real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yPlusMax, sepSensorLocal, cavitationLocal
     real(Kind=realType) :: sepSensor, sepSensorAvg(3), Cavitation
+    real(Kind=realType) :: massFlowRateLocal, mass_PtotLocal, mass_TtotLocal, mass_PsLocal
     real(Kind=realType) :: massFlowRate, mass_Ptot, mass_Ttot, mass_Ps
     real(kind=realType), dimension(nCostFunction)::localCFVals
 
@@ -527,6 +528,11 @@ contains
     sepSensorLocal = zero
     sepSensorAvgLocal = zero
     cavitationLocal = zero
+    massFlowRateLocal = zero
+    mass_PtotLocal = zero
+    mass_TtotLocal = zero 
+    mass_PsLocal = zero 
+
     domains: do nn=1,nDom
        call setPointers(nn,1_intType,sps)
 
@@ -543,6 +549,11 @@ contains
 
        call flowProperties(massFlowRate, mass_Ptot, mass_Ttot, mass_Ps)
        ! Compute the dimensional mass flow
+
+       massFlowRateLocal = massFlowRateLocal + massFlowRate
+       mass_PtotLocal = mass_PtotLocal + mass_Ptot
+       mass_TtotLocal = mass_TtotLocal + mass_Ttot
+       mass_PsLocal = mass_PsLocal + mass_Ps
     end do domains
 
     if (oversetPresent) then
@@ -614,10 +625,10 @@ contains
     localCFVals(costFuncSepSensorAvgY) = sepSensorAvg(2)
     localCFVals(costFuncSepSensorAvgZ) = sepSensorAvg(3)
     localCFVals(costFuncCavitation) = Cavitation
-    localCFVals(costFuncMdot) = localCFVals(costFuncMdot) + massFlowRate
-    localCFVals(costFuncMavgPtot) = localCFVals(costFuncMavgPtot) + mass_Ptot
-    localCFVals(costFuncMavgTtot) = localCFVals(costFuncMavgTtot) + mass_Ttot
-    localCFVals(costFuncMavgPs) = localCFVals(costFuncMavgPs) + mass_Ps
+    localCFVals(costFuncMdot) = massFlowRateLocal
+    localCFVals(costFuncMavgPtot) = mass_PtotLocal
+    localCFVals(costFuncMavgTtot) = mass_TtotLocal
+    localCFVals(costFuncMavgPs) = mass_PsLocal
 
     ! Now we will mpi_allReduce them into globalCFVals
     call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, sumb_real, &
