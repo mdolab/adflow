@@ -179,6 +179,8 @@ contains
   end subroutine referenceState
 
 
+
+
   ! ----------------------------------------------------------------------
   !                                                                      |
   !                    No Tapenade Routine below this line               |
@@ -187,46 +189,22 @@ contains
 
 #ifndef  USE_TAPENADE
 
-  subroutine initFlow
-    !
-    !       initFlow sets the prescribed boundary data, allocates the
-    !       memory for and initializes the flow variables. In case a
-    !       restart is performed the owned variables are read from the
-    !       previous solution file(s).
-    !
+  ! Section out the BCdata setup so that it can by called from python when needed
+  subroutine updateBCDataAllLevels()
+    ! sets the prescribed boundary data from the CGNS arrays
+
     use constants
-    use block, only : flowDoms
-    use inputTimeSpectral, only : nTimeIntervalsSpectral
     use iteration, only : groundLevel
     use bcdata, only : setSupersonicInletFreeStream, setbcdataFineGrid, &
-         setBCDataCoarseGrid, nonDimBoundData, setInletFreeStreamTurb, &
-         initBCDataDomainInterfaces
-    use variableReading, only : halosRead
-
+         setBCDataCoarseGrid, nonDimBoundData, setInletFreeStreamTurb
     implicit none
-    !
-    !      Local variables.
-    !
-    integer :: ierr
-
-    integer(kind=intType) :: sps, level, nLevels
-
-
-    ! Determine the number of multigrid levels.
-
-    nLevels = ubound(flowDoms,2)
-
+    
     ! Allocate the memory for the prescribed boundary data at the
     ! boundary faces and determine the data for both the fine grid.
 
     groundLevel = 1
 
     call setBCDataFineGrid(.true.)
-
-    ! As some boundary conditions can be treated in multiple ways,
-    ! some memory allocated must be released again.
-
-    call releaseExtraMemBcs
 
     ! Determine the reference state.
     call referenceState
@@ -252,6 +230,37 @@ contains
 
     call setInletFreestreamTurb
 
+  end subroutine updateBCDataAllLevels
+
+  subroutine initFlow
+    !
+    !       initFlow allocates the
+    !       memory for and initializes the flow variables. In case a
+    !       restart is performed the owned variables are read from the
+    !       previous solution file(s).
+    !
+    use constants
+    use block, only : flowDoms
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use variableReading, only : halosRead
+
+    implicit none
+    !
+    !      Local variables.
+    !
+    integer :: ierr
+
+    integer(kind=intType) :: sps, level, nLevels
+
+    ! Determine the number of multigrid levels.
+
+    nLevels = ubound(flowDoms,2)
+
+    ! As some boundary conditions can be treated in multiple ways,
+    ! some memory allocated must be released again.
+
+     call releaseExtraMemBcs
+    
     ! Determine for the time spectral mode the matrices for the
     ! time derivatives.
     call timeSpectralMatrices
@@ -276,13 +285,6 @@ contains
 
     ! Initialize free stream field
     call initFlowfield
-
-    ! Initialize the prescribed boundary data for domain interfaces.
-    ! This is just to avoid weird behavior in initDepvarAndHalos due
-    ! to a wrong initialization. The actual values should be
-    ! overwritten by the coupler.
-
-    call initBCDataDomainInterfaces
 
     ! Initialize the dependent flow variables and the halo values.
 
@@ -1780,8 +1782,6 @@ contains
 
                       deallocate(BCData(mm)%rho,  BCData(mm)%velx, &
                            BCData(mm)%vely, BCData(mm)%velz, &
-                           BCData(mm)%rhoInput,  BCData(mm)%velxInput, &
-                           BCData(mm)%velyInput, BCData(mm)%velzInput, &
                            stat=ierr)
                       if(ierr /= 0) &
                            call terminate("releaseExtraMemBCs", &
@@ -1792,11 +1792,6 @@ contains
                       nullify(BCData(mm)%velx)
                       nullify(BCData(mm)%vely)
                       nullify(BCData(mm)%velz)
-                      nullify(BCData(mm)%rhoInput)
-                      nullify(BCData(mm)%velxInput)
-                      nullify(BCData(mm)%velyInput)
-                      nullify(BCData(mm)%velzInput)
-
                       !===================================================
 
                    case (massFlow)
@@ -1809,9 +1804,6 @@ contains
                       deallocate(BCData(mm)%ptInlet,        &
                            BCData(mm)%ttInlet,        &
                            BCData(mm)%htInlet,        &
-                           BCData(mm)%ptInletInput,   &
-                           BCData(mm)%ttInletInput,   &
-                           BCData(mm)%htInletInput,   &
                            BCData(mm)%flowXdirInlet, &
                            BCData(mm)%flowYdirInlet, &
                            BCData(mm)%flowZdirInlet, stat=ierr)
@@ -1823,9 +1815,6 @@ contains
                       nullify(BCData(mm)%ptInlet)
                       nullify(BCData(mm)%ttInlet)
                       nullify(BCData(mm)%htInlet)
-                      nullify(BCData(mm)%ptInletInput)
-                      nullify(BCData(mm)%ttInletInput)
-                      nullify(BCData(mm)%htInletInput)
                       nullify(BCData(mm)%flowXdirInlet)
                       nullify(BCData(mm)%flowYdirInlet)
                       nullify(BCData(mm)%flowZdirInlet)
