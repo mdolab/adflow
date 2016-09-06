@@ -2511,18 +2511,21 @@ class SUMB(AeroSolver):
             for key in self.aeroDVs:
                 execStr = 'mapping = self.sumb.%s'%self.possibleAeroDVs[key.lower()]
                 exec(execStr)
-                if key == 'alpha':
-                    # convert angle of attack to radians
-                    extradot[mapping] = xDvDot[key]*(numpy.pi/180.0)
-                else:
-                    extradot[mapping] = xDvDot[key]
+                extradot[mapping] = 0.0
+                if key in xDvDot:
+                    if key == 'alpha':
+                        # convert angle of attack to radians
+                        extradot[mapping] = xDvDot[key]*(numpy.pi/180.0)
+                    else:
+                        extradot[mapping] = xDvDot[key]
 
         # For the geometric xDvDot perturbation we accumulate into the
         # already existing (and possibly nonzero) xsdot and xvdot
         if xDvDot is not None or xSDot is not None:
-            if xDvDot is not None:
+            if xDvDot is not None and self.DVGeo is not None:
                 xsdot += self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName).reshape(xsdot.shape)
-            xvdot += self.mesh.warpDerivFwd(xsdot)
+            if self.mesh is not None:
+                xvdot += self.mesh.warpDerivFwd(xsdot)
             useSpatial = True
 
         # Sizes for output arrays
@@ -2865,8 +2868,58 @@ class SUMB(AeroSolver):
         and for switching aeroproblems
         """
         self.sumb.nksolver.setstates(states)
+    
+    def getStatePerturbation(self, seed=314):
+        """This is is a debugging routine only. It is used only in regression
+        tests when it is necessary to compute a consistent random
+        state vector seed that is independent of per-processor block
+        distribution. This routine is *not* memory scalable as a
+        complete state vector is generated on each process.
+
+        Parameters
+        ----------
+        seed : integer
+            Seed to use for random number. Only significant on root processor
+        """
+
+        # Get the total number of DOF
+        totalDOF = self.comm.reduce(self.getStateSize())
+        numpy.random.seed(seed)
+        randVec = None
+        if self.comm.rank == 0:
+            randVec = numpy.random.random(totalDOF)
+
+        randVec = self.comm.bcast(randVec)
+
+        return self.sumb.warping.getstateperturbation(
+            randVec, self.getStateSize())
+        
+    def getSpatialPerturbation(self, seed=314):
+        """This is is a debugging routine only. It is used only in regression
+        tests when it is necessary to compute a consistent random
+        spatial vector seed that is independent of per-processor block
+        distribution. 
+
+        Parameters
+        ----------
+        seed : integer
+            Seed to use for random number. Only significant on root processor
+        """
+
+        # Get the total number of spatial DOF
+        totalDOF = self.comm.reduce(self.getStateSize())
+        numpy.random.seed(seed)
+        randVec = None
+        if self.comm.rank == 0:
+            randVec = numpy.random.random(totalDOF)
+
+        randVec = self.comm.bcast(randVec)
+
+        return self.sumb.warping.getspatialperturbation(
+            randVec, self.getSpatialSize())
 
     def _getInfo(self):
+
         """Get the haloed state vector, pressure (and viscocities). Used to
         save "state" between aeroProblems
 
