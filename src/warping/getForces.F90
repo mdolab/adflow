@@ -1006,7 +1006,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
 
         ii = 0
         do nn=1, nDom
-           call setPointers(nn, 1_intType, sps)
+           call setPointers_d(nn, 1_intType, sps)
            do mm=1, nBocos
               iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
               jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
@@ -1035,7 +1035,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
 
      ! Finally sum the Tpd and Tvd together
      do nn=1, nDom
-        call setPointers(nn, 1_intType, sps)
+        call setPointers_d(nn, 1_intType, sps)
         do mm=1, nBocos
            iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
            jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd

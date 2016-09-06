@@ -24,7 +24,8 @@ contains
     allocate(dof_offset(cgnsNDom))
     dof_offset(1) = 0
     do nn=2,cgnsNDom
-       dof_offset(nn) = dof_offset(nn-1) + cgnsDoms(nn-1)%il*cgnsDoms(nn-1)%jl*cgnsDoms(nn-1)%kl*3
+       dof_offset(nn) = dof_offset(nn-1) + &
+            cgnsDoms(nn-1)%il*cgnsDoms(nn-1)%jl*cgnsDoms(nn-1)%kl*3
     end do
 
     ii = 0
@@ -59,10 +60,11 @@ contains
                      (indy-1)*il_cg*3       + &
                      (indx-1)*3 + 2
 
-             end do ! k loop
+             end do ! i loop
           end do ! j loop
-       end do ! i loop
+       end do ! k loop
     end do ! domain loop
+    deallocate(dof_offset)
   end subroutine getCGNSMeshIndices
 
   subroutine setGrid(grid,ndof)
@@ -191,4 +193,141 @@ contains
     end do
 
   end subroutine getGrid
+
+  subroutine getStatePerturbation(randVec, nRand, randState, nRandState)
+
+    use constants
+    use cgnsGrid, only : cgnsDoms, cgnsNDom
+    use blockPointers, only : nDom, il, jl, kl, nx, ny, nz, x, nbkglobal, iBegOr, jBegOr, kBegOr
+    use communication, only : sumb_comm_world, myid
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use adjointVars, only : nCellsLocal
+    use flowVarRefState, only : nw
+    use utils, only : setPointers, EChk
+    implicit none
+
+    ! Input Parameters
+    real(kind=realType), intent(in), dimension(nRand) :: randVec
+    integer(kind=intType), intent(in) :: nRand, nRandState
+
+    ! Ouput Parameters
+    real(kind=realType), intent(out), dimension(nRandState) :: randState
+
+    ! Working parameters
+    integer(kind=intType) :: i, j, k, ierr, l, nx_cg, ny_cg, nz_cg
+    integer(kind=intType) :: sps, ii, indx, indy, indz, nn, cgnsInd
+    integer(kind=intType) :: dofCGNSPerInstance
+    integer(kind=intType) ,allocatable, dimension(:) :: dof_offset
+
+    allocate(dof_offset(cgnsNDom))
+    dof_offset(1) = 0
+    do nn=2,cgnsNDom
+       dof_offset(nn) = dof_offset(nn-1) + &
+            cgnsDoms(nn-1)%nx*cgnsDoms(nn-1)%ny*cgnsDoms(nn-1)%nz*nw
+    end do
+
+    dofCGNSPerInstance = nRand/nTimeIntervalsSpectral
+
+    ii = 0
+    do nn=1, nDom
+       do sps=1, nTimeIntervalsSpectral
+          call setPointers(nn, 1, sps)
+          do k=2, kl
+             do j=2, jl
+                do i=2, il
+
+                   nx_cg = cgnsDoms(nbkGlobal)%nx
+                   ny_cg = cgnsDoms(nbkGlobal)%ny
+                   nz_cg = cgnsDoms(nbkGlobal)%nz
+
+                   indx = iBegOr + i - 2
+                   indy = jBegOr + j - 2
+                   indz = kBegOr + k - 2
+
+                   do l=1, nw
+                      cgnsInd =  (sps-1)*dofCGNSPerInstance + &
+                           dof_offset(nbkGlobal)  + &
+                           (indz-1)*ny_cg*nx_cg*nw + &
+                           (indy-1)*nx_cg*nw       + &
+                           (indx-1)*nw + l
+                      randState(nw*ii + l) = randVec(cgnsInd)
+                   end do
+
+                   ii = ii + 1
+
+                end do
+             end do
+          end do
+       end do
+    end do
+  end subroutine getStatePerturbation
+
+  subroutine getSpatialPerturbation(randVec, nRand, randSpatial, nRandSpatial)
+
+    use constants
+    use cgnsGrid, only : cgnsDoms, cgnsNDom
+    use blockPointers, only : nDom, il, jl, kl, nx, ny, nz, x, nbkglobal, iBegOr, jBegOr, kBegOr
+    use communication, only : sumb_comm_world, myid
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use adjointVars, only : nCellsLocal
+    use flowVarRefState, only : nw
+    use utils, only : setPointers, EChk
+    implicit none
+
+    ! Input Parameters
+    real(kind=realType), intent(in), dimension(nRand) :: randVec
+    integer(kind=intType), intent(in) :: nRand, nRandSpatial
+
+    ! Ouput Parameters
+    real(kind=realType), intent(out), dimension(nRandSpatial) :: randSpatial
+
+    ! Working parameters
+    integer(kind=intType) :: i, j, k, ierr, l, il_cg, jl_cg, kl_cg
+    integer(kind=intType) :: sps, ii, indx, indy, indz, nn, cgnsInd
+    integer(kind=intType) :: dofCGNSPerInstance
+    integer(kind=intType) ,allocatable, dimension(:) :: dof_offset
+
+    allocate(dof_offset(cgnsNDom))
+    dof_offset(1) = 0
+    do nn=2,cgnsNDom
+       dof_offset(nn) = dof_offset(nn-1) + &
+            cgnsDoms(nn-1)%il*cgnsDoms(nn-1)%jl*cgnsDoms(nn-1)%kl*3
+    end do
+
+    dofCGNSPerInstance = nRand/nTimeIntervalsSpectral
+
+    ii = 0
+    do nn=1, nDom
+       do sps=1, nTimeIntervalsSpectral
+          call setPointers(nn, 1, sps)
+          do k=1, kl
+             do j=1, jl
+                do i=1, il
+
+                   il_cg = cgnsDoms(nbkGlobal)%il
+                   jl_cg = cgnsDoms(nbkGlobal)%jl
+                   kl_cg = cgnsDoms(nbkGlobal)%kl
+
+                   indx = iBegOr + i - 1
+                   indy = jBegOr + j - 1
+                   indz = kBegOr + k - 1
+
+                   do l=1, 3
+                      cgnsInd =  (sps-1)*dofCGNSPerInstance + &
+                           dof_offset(nbkGlobal)  + &
+                           (indz-1)*jl_cg*il_cg*3  + &
+                           (indy-1)*il_cg*3        + &
+                           (indx-1)*3  + l
+                      randSpatial(3*ii + l) = randVec(cgnsInd)
+                   end do
+
+                   ii = ii + 1
+
+                end do
+             end do
+          end do
+       end do
+    end do
+  end subroutine getSpatialPerturbation
+
 end module warping
