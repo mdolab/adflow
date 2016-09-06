@@ -216,6 +216,7 @@ class SUMB(AeroSolver):
         self.sumb.partitioning.partitionandreadgrid(False)
         self.sumb.preprocessingapi.preprocessing()
         self.sumb.tecplotio.initializeliftdistributiondata()
+        self.sumb.initializeflow.updatebcdataalllevels()
         self.sumb.initializeflow.initflow()
 
         famList = self._processFortranStringArray(
@@ -1985,11 +1986,9 @@ class SUMB(AeroSolver):
             self.sumb.inputmotion.sincoeffouryrot = AP.sinCoefFourier
 
         if not firstCall:
-            self.sumb.initializeflow.referencestate()
-            self.sumb.iteration.groundlevel = 1
+            self.sumb.initializeflow.updatebcdataalllevels()
             self.sumb.preprocessingapi.updateperiodicinfoalllevels()
             self.sumb.preprocessingapi.updategridvelocitiesalllevels()
-            self.sumb.bcdata.nondimbounddata()
 
 
     def getPointRef(self):
@@ -2099,6 +2098,28 @@ class SUMB(AeroSolver):
 
         # Conver to 0-based ordering becuase we are in python
         return conn-1, faceSizes
+
+    def setBCData(self, data, groupName=None,sps = 1):
+        """
+        Take in the data for a bc and set it into the solver
+
+        Data is a dictionary of the form:
+
+        {'variable1':value1, 'variable2':value2 , ...}
+        """
+
+        if groupName is None:
+            raise Error("Cannot set BCdata without specifying a group")
+
+            
+        nameList = data.keys()
+        nameArray = self._createFortranStringArray(nameList)
+
+        #TODO
+        # turn values into bcInArray
+
+        self.sumb.bcdata.setbcdata(nameArray,bcInArray, self.families[groupName],sps)
+
 
     def globalNKPreCon(self, inVec, outVec):
         """This function is ONLY used as a preconditioner to the
@@ -3914,6 +3935,18 @@ class SUMB(AeroSolver):
             tmp.append(''.join(arr[:, i]).strip().lower())
 
         return tmp
+
+    def _createFortranStringArray(self, strList):
+        """Setting arrays of strings in Fortran can be kinda nasty. This
+        takesa list of strings and returns the array"""
+
+        arr = numpy.zeros((len(strList),self.sumb.constants.maxcgnsnamelen),order='F')
+        
+        for s in strList:
+            for i in range(len(s)):
+                arr[i] = s[i]
+        
+        return arr
 
     def createSlaveAeroProblem(self, master):
         """Create a slave aeroproblem"""

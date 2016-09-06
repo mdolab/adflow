@@ -95,6 +95,8 @@ contains
              mass_Ptot = mass_pTot + Ptot * massFlowRateLocal
              mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal
              mass_Ps = mass_Ps + pm*massFlowRateLocal
+             print *, nn, i, j, pTot, massFlowRateLocal
+
           enddo
 
           massFlowRate = massFlowRate*fact
