@@ -94,11 +94,6 @@ module block
      real(kind=realType), dimension(:,:,:), pointer :: uSlip
      real(kind=realType), dimension(:,:),   pointer :: TNS_Wall
 
-     ! any variable with `Input` at the end indicates a value read in
-     ! from the CGNS file or otherwise user specified. The input values are used
-     ! to compute nondimenional values
-     real(kind=realType), dimension(:,:),   pointer :: TNS_WallInput
-
      ! The name of this boundary condition and it's index
      character(maxCGNSNameLen) :: family
      integer(kind=intType) :: famID
@@ -126,14 +121,12 @@ module block
      ! flowZDirInlet(:,:): Idem in z-direction.
 
      real(kind=realType), dimension(:,:), pointer :: ptInlet, ttInlet, htInlet
-     real(kind=realType), dimension(:,:), pointer :: ptInletInput, ttInletInput, htInletInput
      real(kind=realType), dimension(:,:), pointer :: flowXDirInlet, flowYDirInlet, flowZDirInlet
 
      ! turbInlet(:,:,nt1:nt2): Turbulence variables at inlets,
      !                         either subsonic or supersonic.
 
      real(kind=realType), dimension(:,:,:), pointer :: turbInlet
-     real(kind=realType), dimension(:,:,:), pointer :: turbInletInput
 
      ! rho(:,:):  density; used for multiple bc's.
      ! velX(:,:): x-velocity; used for multiple bc's.
@@ -142,11 +135,8 @@ module block
      ! ps(:,:):   static pressure; used for multiple bc's.
 
      real(kind=realType), dimension(:,:), pointer :: rho
-     real(kind=realType), dimension(:,:), pointer :: rhoInput
      real(kind=realType), dimension(:,:), pointer :: velX, velY, velZ
-     real(kind=realType), dimension(:,:), pointer :: velXInput, velYInput, velZInput
      real(kind=realType), dimension(:,:), pointer :: ps
-     real(kind=realType), dimension(:,:), pointer :: psInput
 
      ! Surface blanking for force integration
      integer(kind=intType), dimension(:,:), pointer :: iblank
