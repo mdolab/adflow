@@ -43,6 +43,7 @@ contains
     real(kind=realType), dimension(3, fSize), intent(out) :: fDot
 
     ! Working Variables
+    real(kind=realType), dimension(3, fSize) :: forces
     integer(kind=intType) :: ierr,nn,mm,sps,i,j,k,l,ii,jj,idim,sps2
     real(kind=realType) :: alpha, beta, alphad, betad
     integer(kind=intType) ::  level, irow, liftIndex
@@ -96,7 +97,7 @@ contains
        domainLoop1: do nn=1,nDom
 
           ! Just to get sizes
-          call setPointers(nn, level, 1)
+          call setPointers_d(nn, level, 1)
 
           spectalLoop1: do sps=1,nTimeIntervalsSpectral
              do k=1, kl
@@ -212,26 +213,12 @@ contains
           ! We need to SUM the funcs into the local array
           funcsLocalDot = funcsLocalDot + funcValuesd
 
-          ! And extract fDot
-          bocos: do mm=1,nBocos
-             if (bctype(mm) .eq. eulerwall .or. &
-                  bctype(mm) .eq. nswalladiabatic  .or. &
-                  bctype(mm) .eq. nswallisothermal) then
-
-                ! Loop over the nodes since that's where the forces get
-                ! defined.
-                do j=BCData(mm)%jnBeg,BCData(mm)%jnEnd
-                   do i=BCData(mm)%inBeg,BCData(mm)%inEnd
-                      jj = jj + 1
-                      do iDim=1,3
-                         fDot(idim, jj) = bcDatad(mm)%F(i, j, iDim)
-                      end do
-                   end do
-                end do
-             end if
-          end do bocos
        end do spectalLoopAD
     end do domainLoopAD
+
+    ! This only works currently with 1 spectral instance
+    sps = 1
+    call getForces_d(forces, fDot, fSize, sps)
 
     ! We need to allreduce the function values to all processors
     call mpi_allreduce(funcsLocalDot, funcsDot, costSize, sumb_real, mpi_sum, SUmb_comm_world, ierr)
@@ -1428,9 +1415,9 @@ contains
     domainLoop: do nn=1, nDom
        spectralLoop: do sps=1, nTimeIntervalsSpectral
           call setPointers(nn, level, sps)
-          do k=1,kl
-             do j=1,jl
-                do i=1,il
+          do k=2,kl
+             do j=2,jl
+                do i=2,il
                    iRow = flowDoms(nn, level, sps)%globalCell(i, j, k)
                    ! The location of the cell center is determined
                    ! by averaging the cell coordinates.

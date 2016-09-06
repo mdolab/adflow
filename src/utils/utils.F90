@@ -4690,6 +4690,10 @@ module utils
                   flowDomsd(nn, level, sps)%BCData(mm)%rface, &
                   flowDomsd(nn, level, sps)%BCData(mm)%Fp, &
                   flowDomsd(nn, level, sps)%BCData(mm)%Fv, &
+                  flowDomsd(nn, level, sps)%BCData(mm)%Tp, &
+                  flowDomsd(nn, level, sps)%BCData(mm)%Tv, &
+                  flowDomsd(nn, level, sps)%BCData(mm)%F, &
+                  flowDomsd(nn, level, sps)%BCData(mm)%T, &
                   flowDomsd(nn, level, sps)%BCData(mm)%area, &
                   flowDomsd(nn, level, sps)%BCData(mm)%uSlip, &
                   flowDomsd(nn, level, sps)%BCData(mm)%TNS_Wall, &
