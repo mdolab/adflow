@@ -242,7 +242,6 @@ contains
     use constants
     use block, only : flowDoms
     use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use bcdata, only : initBCDataDomainInterfaces
     use variableReading, only : halosRead
 
     implicit none
@@ -286,13 +285,6 @@ contains
 
     ! Initialize free stream field
     call initFlowfield
-
-    ! Initialize the prescribed boundary data for domain interfaces.
-    ! This is just to avoid weird behavior in initDepvarAndHalos due
-    ! to a wrong initialization. The actual values should be
-    ! overwritten by the coupler.
-
-    call initBCDataDomainInterfaces
 
     ! Initialize the dependent flow variables and the halo values.
 
@@ -1790,8 +1782,6 @@ contains
 
                       deallocate(BCData(mm)%rho,  BCData(mm)%velx, &
                            BCData(mm)%vely, BCData(mm)%velz, &
-                           BCData(mm)%rhoInput,  BCData(mm)%velxInput, &
-                           BCData(mm)%velyInput, BCData(mm)%velzInput, &
                            stat=ierr)
                       if(ierr /= 0) &
                            call terminate("releaseExtraMemBCs", &
@@ -1802,11 +1792,6 @@ contains
                       nullify(BCData(mm)%velx)
                       nullify(BCData(mm)%vely)
                       nullify(BCData(mm)%velz)
-                      nullify(BCData(mm)%rhoInput)
-                      nullify(BCData(mm)%velxInput)
-                      nullify(BCData(mm)%velyInput)
-                      nullify(BCData(mm)%velzInput)
-
                       !===================================================
 
                    case (massFlow)
@@ -1819,9 +1804,6 @@ contains
                       deallocate(BCData(mm)%ptInlet,        &
                            BCData(mm)%ttInlet,        &
                            BCData(mm)%htInlet,        &
-                           BCData(mm)%ptInletInput,   &
-                           BCData(mm)%ttInletInput,   &
-                           BCData(mm)%htInletInput,   &
                            BCData(mm)%flowXdirInlet, &
                            BCData(mm)%flowYdirInlet, &
                            BCData(mm)%flowZdirInlet, stat=ierr)
@@ -1833,9 +1815,6 @@ contains
                       nullify(BCData(mm)%ptInlet)
                       nullify(BCData(mm)%ttInlet)
                       nullify(BCData(mm)%htInlet)
-                      nullify(BCData(mm)%ptInletInput)
-                      nullify(BCData(mm)%ttInletInput)
-                      nullify(BCData(mm)%htInletInput)
                       nullify(BCData(mm)%flowXdirInlet)
                       nullify(BCData(mm)%flowYdirInlet)
                       nullify(BCData(mm)%flowZdirInlet)
