@@ -74,7 +74,6 @@ module BCData
   !                        prescribed variables.
 
   character(len=maxCGNSNameLen), dimension(nbcVarMax) :: bcVarNames
-  character(len=maxCGNSNameLen), dimension(nbcVarMax) :: allowBCDataNames
 
   ! axAssumed:               Whether or not the x-axis is assumed
   !                          to be the axial direction.
@@ -95,6 +94,16 @@ module BCData
 
 contains
 
+  subroutine setBCVarNamesIsothermalWall
+    use cgnsNames
+    use constants
+
+    nbcVar = nbcVarIsothermalWall
+    bcVarNames(1) = cgnsTemp
+
+  end subroutine setBCVarNamesIsothermalWall
+
+
  subroutine setBCDataIsothermalWall(bcDataNamesIn, bcDataIn, nBCInVar)
     use constants
     use cgnsNames
@@ -103,7 +112,7 @@ contains
     !
     !      Subroutine arguments.
     !
-    character(len=maxCGNSNameLen), dimension(nbcVar), intent(in) :: bcDataNamesIn
+    character, dimension(nBCInVar, maxCGNSNameLen), intent(in) :: bcdatanamesin
     real(kind=realType), dimension(nbcVar), intent(in) :: bcDataIn
     integer(kind=intType), intent(in) :: nBCInVar
 
@@ -138,13 +147,11 @@ contains
     ! Allocate the memory for the buffer bcVarArray, which is used
     ! for the interpolation and set the cgns names.
 
-    nbcVar = 1
+    call setBCVarNamesIsothermalWall ! sets bcVarNames and nbcVar
     allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVar), stat=ierr)
     if(ierr /= 0)                            &
          call terminate("BCDataIsothermalWall", &
          "Memory allocation failure for bcVarArray")
-
-    bcVarNames(1) = cgnsTemp
 
     ! Try to determine the temperature from the data set.
 
@@ -185,23 +192,16 @@ contains
   end subroutine BCDataIsothermalWall
 
   subroutine setBCVarNamesSubsonicInflow
-    use cgnsNames
     use constants
+    use cgnsNames
     use inputPhysics, only : equations
     use flowVarRefState, only : nwt
-    use utils, only : terminate
-
-    integer(kind=intType) :: ierr
 
     nbcVar = nbcVarSubsonicInflow
     if(equations == RANSEquations) then
       nbcVar = nbcVar + nwt
     end if
 
-    allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVar), stat=ierr)
-    if(ierr /= 0)                            &
-         call terminate("BCDataSubsonicInflow", &
-         "Memory allocation failure for bcVarArray")
 
     bcVarNames(1)  = cgnsPtot
     bcVarNames(2)  = cgnsTtot
@@ -233,14 +233,15 @@ contains
     !
     !      Subroutine arguments.
     !
-    character(len=maxCGNSNameLen), dimension(nbcVar), intent(in) :: bcDataNamesIn
-    real(kind=realType), dimension(nbcVar), intent(in) :: bcDataIn
+    character, dimension(nBCInVar, maxCGNSNameLen), intent(in) :: bcdatanamesin
+    real(kind=realType), dimension(nBCInVar), intent(in) :: bcDataIn
     integer(kind=intType), intent(in) :: nBCInVar
 
-    call setBCVarNamesSubsonicInflow
+    call setBCVarNamesSubsonicInflow ! sets bcVarNames and nbcVar
 
     ! set the data
-    call insertToDataSet(allowBCDataNames, bcDataNamesIn, bcDataIn, nbcVar, nBCInVar)
+    print *, "test setSubInflow ", nBCInVar, bcDataIn
+    call insertToDataSet(bcDataNamesIn, bcDataIn, nbcVar, nBCInVar)
 
   end subroutine setBCDataSubsonicInflow
 
@@ -285,7 +286,13 @@ contains
     ! Allocate the memory for the buffer bcVarArray, which is used
     ! for the interpolation and set the cgns names.
 
-    call setBCVarNamesSubsonicInflow
+    call setBCVarNamesSubsonicInflow ! sets bcVarNames and nbcVar
+
+
+    allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVar), stat=ierr)
+    if(ierr /= 0)                            &
+         call terminate("BCDataSubsonicInflow", &
+         "Memory allocation failure for bcVarArray")
 
     ! Try to determine these variables.
 
@@ -899,7 +906,18 @@ contains
 
   end subroutine BCDataSubsonicInflow
 
-    subroutine setBCDataSubsonicOutflow(bcDataNamesIn, bcDataIn, nBCInVar)
+  subroutine setBCVarNamesSubsonicOutflow
+    use cgnsNames
+    use constants
+    use flowVarRefState, only : nwt
+
+    nbcVar = nbcVarSubsonicOutflow
+    
+    bcVarNames(1) = cgnsPressure
+
+  end subroutine setBCVarNamesSubsonicOutflow
+
+  subroutine setBCDataSubsonicOutflow(bcDataNamesIn, bcDataIn, nBCInVar)
     use constants
     use cgnsNames
     use flowVarRefState, only : nwt
@@ -907,14 +925,15 @@ contains
     !
     !      Subroutine arguments.
     !
-    character(len=maxCGNSNameLen), dimension(nbcVar), intent(in) :: bcDataNamesIn
+    character, dimension(nBCInVar, maxCGNSNameLen), intent(in) :: bcdatanamesin
     real(kind=realType), dimension(nbcVar), intent(in) :: bcDataIn
     integer(kind=intType), intent(in) :: nBCInVar
 
-    call setBCVarNamesSubsonicInflow
-
+    call setBCVarNamesSubsonicOutflow ! sets bcVarNames and nbcVar
+   
     ! set the data
-    call insertToDataSet(allowBCDataNames, bcDataNamesIn, bcDataIn, nbcVar, nBCInVar)
+    call insertToDataSet(bcDataNamesIn, bcDataIn, nbcVar, nBCInVar)
+
 
   end subroutine setBCDataSubsonicOutflow
 
@@ -947,13 +966,12 @@ contains
     ! Allocate the memory for the buffer bcVarArray, which is used
     ! for the interpolation and set the cgns names.
 
-    nbcVar = 1
+    call setBCVarNamesSubsonicOutflow ! sets bcVarNames and nbcVar
+
     allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVar), stat=ierr)
     if(ierr /= 0)                             &
          call terminate("BCDataSubsonicOutflow", &
          "Memory allocation failure for bcVarArray")
-
-    bcVarNames(1) = cgnsPressure
 
     ! Try to determine the static pressure from the data set.
 
@@ -994,18 +1012,15 @@ contains
   end subroutine BCDataSubsonicOutflow
 
   subroutine setBCVarNamesSupersonicInflow
-    use cgnsNames, only : cgnsDensity, cgnsPressure, cgnsVelx, & 
-        cgnsVely, cgnsVelz, cgnsVelr, cgnsVeltheta
-    use utils, only : terminate
-    !
-    !      Local variables.
-    !
-    integer :: ierr
+    use constants
+    use cgnsNames
+    use inputPhysics, only : equations
+    use flowVarRefState, only : nwt
 
-    allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVar), stat=ierr)
-    if(ierr /= 0)                                &
-         call terminate("BCDataSupersonicInflow", &
-         "Memory allocation failure for bcVarArray")
+    nbcVar = nbcVarSupersonicInflow
+    if(equations == RANSEquations) then
+      nbcVar = nbcVar + nwt
+    end if
 
     bcVarNames(1) = cgnsDensity
     bcVarNames(2) = cgnsPressure
@@ -1027,9 +1042,14 @@ contains
     !
     !      Subroutine arguments.
     !
-    character(len=maxCGNSNameLen), dimension(nbcVar), intent(in) :: bcDataNamesIn
+    character, dimension(nBCInVar, maxCGNSNameLen), intent(in) :: bcdatanamesin
     real(kind=realType), dimension(nbcVar), intent(in) :: bcDataIn
     integer(kind=intType), intent(in) :: nBCInVar
+
+    call setBCVarNamesSupersonicInflow
+
+    ! set the data
+    call insertToDataSet(bcDataNamesIn, bcDataIn, nbcVar, nBCInVar)
 
   end subroutine setBCDataSupersonicInflow
 
@@ -1073,6 +1093,11 @@ contains
     ! for the interpolation and set the cgns names.
 
     call setBCVarNamesSupersonicInflow
+
+    allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVar), stat=ierr)
+    if(ierr /= 0)                                &
+         call terminate("BCDataSupersonicInflow", &
+         "Memory allocation failure for bcVarArray")
 
     ! Try to determine these variables.
 
@@ -2096,7 +2121,7 @@ contains
 
   end subroutine computeHtot
 
-  subroutine setBCData(bcDataNamesIn,bcDataIn,nBCInVar, famList, nFams,sps)
+  subroutine setBCData(bcDataNamesIn,bcDataIn,famList, sps, nbcDataNamesIn, nbcDataIn, nFams)
 
     use constants
     use cgnsNames
@@ -2107,15 +2132,16 @@ contains
     !
     !      Subroutine arguments.
     !
-    character(len=maxCGNSNameLen),dimension(nBCInVar), intent(in)::bcDataNamesIn
-    real(kind=realType),dimension(nBCInVar), intent(in)::bcDataIn
-    integer(kind=intType),intent(in)::nBCInVar, nFams
+    ! character(len=maxCGNSNameLen),dimension(nbcDataNamesIn), intent(in)::bcDataNamesIn
+    character, dimension(nbcdatanamesin, maxCGNSNameLen), intent(in) :: bcdatanamesin
+    real(kind=realType),dimension(nbcDataIn), intent(in)::bcDataIn
+    integer(kind=intType),intent(in) :: nbcDataNamesIn, nbcDataIn , nFams
     integer(kind=intType), intent(in) :: famList(nFams), sps 
     !
     !      Local variables.
     !
     integer(kind=intType) :: i, j
-    integer(kind=intType) :: k, l, m
+    integer(kind=intType) :: k, l, m, n
     integer(kind=intType) :: nVarPresent
 
     integer(kind=intType), dimension(2,nbcVar) :: ind
@@ -2144,21 +2170,21 @@ contains
 
              ! Check if this surface should be included or not:
              famInclude: if (bsearchIntegers(BCdata(j)%famID, famList, nFams) > 0) then 
-
+                print *, "test top ", nbcDataIn, bcDataIn
                 ! Modify from here  +++++++++++++++++++++==
                 select case (BCType(j))
                    
                 case (NSWallIsothermal)
-                   call setBCDataIsothermalWall(bcDataNamesIn, bcDataIn, nBCInVar)
+                   call setBCDataIsothermalWall(bcDataNamesIn, bcDataIn, nbcDataIn)
                    
                 case (SupersonicInflow)
-                   call setBCDataSupersonicInflow(bcDataNamesIn, bcDataIn, nBCInVar)
+                   call setBCDataSupersonicInflow(bcDataNamesIn, bcDataIn, nbcDataIn)
                    
                 case (SubsonicInflow)
-                   call setBCDataSubsonicInflow(bcDataNamesIn, bcDataIn, nBCInVar)
+                   call setBCDataSubsonicInflow(bcDataNamesIn, bcDataIn, nbcDataIn)
                    
                 case (SubsonicOutflow)
-                   call setBCDataSubsonicOutflow(bcDataNamesIn, bcDataIn, nBCInVar)
+                   call setBCDataSubsonicOutflow(bcDataNamesIn, bcDataIn, nbcDataIn)
                    
                 case default
                    call terminate('setBCData', &
@@ -2170,22 +2196,22 @@ contains
 
   end subroutine setBCData
 
-  subroutine insertToDataSet(allowBCDataNames, bcDataNamesIn, bcDataIn, nbcVar, nbcInVar)
+  subroutine insertToDataSet(bcDataNamesIn, bcDataIn, nbcVar, nbcInVar)
     use constants
 
     implicit none
     !
     !      Subroutine arguments.
     !
-    character(len=maxCGNSNameLen), dimension(nbcVar),   intent(in):: allowBCDataNames
-    character(len=maxCGNSNameLen), dimension(nBCInVar), intent(in):: bcDataNamesIn
-    real(kind=realType),           dimension(nBCInVar), intent(in):: bcDataIn
+    character, dimension(nBCInVar, maxCGNSNameLen), intent(in) :: bcdatanamesin
+    real(kind=realType), dimension(nBCInVar), intent(in):: bcDataIn
     integer(kind=intType), intent(in):: nbcVar, nbcInVar
     !
     !      Local variables.
     !
-    integer(kind=intType) :: k, l, m, n
+    integer(kind=intType) :: k, l, m, n, q
     integer(kind=intType) :: ind(2,nbcVar), nVarPresent
+    character(len=maxCGNSNameLen) :: varName
 
     nVarPresent = 0
     
@@ -2220,13 +2246,25 @@ contains
        enddo dataSetLoop
     enddo
     
+    print *, "bcdatain ", bcDataIn
     
     do m=1,nbcVar
         if( bcVarPresent(m) ) then
           k = ind(1,m)
           l = ind(2,m)
-          
-          dataSet(k)%dirichletArrays(l)%dataArr(1) = bcDataIn(m)
+          do n=1,nbcInVar
+            
+            do q=1,maxCGNSNameLen
+              varName(q:q) = bcDataNamesIn(n,q)
+            end do
+            
+            ! print *, "test ", m, n, bcVarNames(m), bcDataNamesIn(n,:), " ; " , varName, trim(varname) == trim(bcVarNames(m))
+            ! print *, len(varname), len(bcVarNames(m))
+            if (bcVarNames(m) == varname) then
+              dataSet(k)%dirichletArrays(l)%dataArr(1) = bcDataIn(n)
+              print *, "insert", m, varname, bcDataIn(n)
+            end if
+          end do 
         endif
     enddo
   end subroutine insertToDataSet
