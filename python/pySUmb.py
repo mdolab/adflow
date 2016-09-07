@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from __future__ import print_function
 from __future__ import division
+from six import iteritems
 """
 pySUmb - A Python interface to SUmb.
 
@@ -2099,7 +2100,7 @@ class SUMB(AeroSolver):
         # Conver to 0-based ordering becuase we are in python
         return conn-1, faceSizes
 
-    def setBCData(self, data, groupName=None,sps = 1):
+    def setBCData(self, data, groupName=None, sps=1):
         """
         Take in the data for a bc and set it into the solver
 
@@ -2111,14 +2112,16 @@ class SUMB(AeroSolver):
         if groupName is None:
             raise Error("Cannot set BCdata without specifying a group")
 
-            
-        nameList = data.keys()
+        nameList = []
+        valList = []
+        for k,v in iteritems(data):
+            nameList.append(k)
+            valList.append(v)
+
         nameArray = self._createFortranStringArray(nameList)
-
-        #TODO
-        # turn values into bcInArray
-
-        self.sumb.bcdata.setbcdata(nameArray,bcInArray, self.families[groupName],sps)
+        bcInArray = numpy.array(valList, dtype=self.dtype)
+        print("python check", nameArray, bcInArray)
+        self.sumb.bcdata.setbcdata(nameArray,bcInArray,self.families[groupName],sps)
 
 
     def globalNKPreCon(self, inVec, outVec):
@@ -3940,12 +3943,12 @@ class SUMB(AeroSolver):
         """Setting arrays of strings in Fortran can be kinda nasty. This
         takesa list of strings and returns the array"""
 
-        arr = numpy.zeros((len(strList),self.sumb.constants.maxcgnsnamelen),order='F')
-        
-        for s in strList:
-            for i in range(len(s)):
-                arr[i] = s[i]
-        
+        arr = numpy.zeros((len(strList),self.sumb.constants.maxcgnsnamelen), dtype="str")
+        arr[:] = " "
+        for i,s in enumerate(strList):
+            for j in range(len(s)):
+                arr[i,j] = s[j]
+            
         return arr
 
     def createSlaveAeroProblem(self, master):
