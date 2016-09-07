@@ -249,6 +249,13 @@ python module libsumb
            real(kind=realtype) dimension(nrandspatial),intent(out),depend(nrandstate) :: randspatial
            integer(kind=inttype) intent(in) :: nrandspatial
          end subroutine getstateperturbation         
+
+         subroutine getsurfaceperturbation(xrand,nrand,randsurface,nrandsurface) ! in :test:warping.F90:warping
+           real(kind=realtype) dimension(nrand),intent(in) :: xrand
+           integer(kind=inttype), optional,intent(in),check(len(xrand)>=nrand),depend(xrand) :: nrand=len(xrand)
+           real(kind=realtype) dimension(3,nrandsurface),intent(out),depend(nrandsurface) :: randsurface
+           integer(kind=inttype) intent(in) :: nrandsurface
+         end subroutine getsurfaceperturbation
        end module warping
        
        module surfaceutils

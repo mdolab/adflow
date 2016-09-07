@@ -330,4 +330,73 @@ contains
     end do
   end subroutine getSpatialPerturbation
 
+
+  subroutine getSurfacePerturbation(xRand, nRand, randSurface, nRandSurface)
+
+    use constants
+    use blockPointers, only : nDom, BCData, nBocos, BCFaceID
+    use communication, only : sumb_comm_world, myid
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use surfaceFamilies, only : famGroups
+    use utils, only : setPointers
+    use sorting, only : bsearchIntegers
+    implicit none
+
+    ! Input Parameters
+    real(kind=realType), intent(in), dimension(nRand) :: xRand
+    integer(kind=intType), intent(in) :: nRand, nRandSurface
+
+    ! Ouput Parameters
+    real(kind=realType), intent(out), dimension(3, nRandSurface) :: randSurface
+
+    ! Working parameters
+    integer(kind=intType) :: i, j, k, ierr, iDim, iBeg, iEnd, jBeg, jEnd, nn, mm
+    integer(kind=intType) :: sps, ii, jj
+
+    ii = 0 
+    jj = 0
+    domains: do nn=1,nDom
+       do sps=1, nTimeIntervalsSpectral
+          call setPointers(nn, 1_intType, sps)
+
+          ! Loop over the number of boundary subfaces of this block.
+          bocos: do mm=1,nBocos
+
+             ! NODE Based
+             jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
+             iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
+
+             famInclude: if (bsearchIntegers(BCdata(mm)%famID, &
+                  famGroups, size(famGroups)) > 0) then 
+
+                do j=jBeg, jEnd ! This is a node loop
+                   do i=iBeg, iEnd ! This is a node loop
+                      ii = ii +1
+                      do iDim=1, 3
+                         jj = jj + 1
+                         select case(BCFaceID(mm))
+                         case(imin)
+                            randSurface(iDim, ii) = xRand(jj)
+                         case(imax)
+                            randSurface(iDim, ii) = xRand(jj)
+                         case(jmin) 
+                            randSurface(iDim, ii) = xRand(jj)
+                         case(jmax) 
+                            randSurface(iDim, ii) = xRand(jj)
+                         case(kmin) 
+                            randSurface(iDim, ii) = xRand(jj)
+                         case(kmax) 
+                            randSurface(iDim, ii) = xRand(jj)
+                         end select
+                      end do
+                   end do
+                end do
+             else
+                jj = jj + (iEnd-iBeg+1)*(jEnd-jBeg+1)*3
+             end if famInclude
+          end do bocos
+       end do
+    end do domains
+  end subroutine getSurfacePerturbation
+
 end module warping
