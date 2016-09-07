@@ -836,7 +836,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
                     ind(4) = ii + (j+1)*ni + i + 1
                     do jj=1,4
                        localPtrd(ind(jj)) = localPtrd(ind(jj)) + qad
-                       localPtrd(ind(jj)) = localPtrd(ind(jj)) + qa
+                       localPtr(ind(jj)) = localPtr(ind(jj)) + qa
                     end do
                  end do
               end do

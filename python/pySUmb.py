@@ -601,7 +601,10 @@ class SUMB(AeroSolver):
         if self.getOption('printIterations'):
             self.printModifiedOptions()
 
-        # Possibly release adjoint memory if not already done so.
+        # Possibly release adjoint memory if not already done
+        # so. Don't remove this. If switching problems, this is done
+        # in setAeroProblem, but for when not switching it must be
+        # done here regardless. 
         if releaseAdjointMemory:
             self.releaseAdjointMemory()
 
@@ -1747,8 +1750,8 @@ class SUMB(AeroSolver):
         if newAP:
             self.sumb.nksolver.destroynksolver()
             self.sumb.anksolver.destroyanksolver()
-        if releaseAdjointMemory:
-            self.releaseAdjointMemory()
+            if releaseAdjointMemory:
+                self.releaseAdjointMemory()
 
     def _setAeroProblemData(self, aeroProblem, firstCall=False):
         """
@@ -2091,12 +2094,6 @@ class SUMB(AeroSolver):
         """
         return self.sumb.nksolver.applyadjointpc(inVec, outVec)
 
-    def verifyAD(self):
-        """
-        Use Tapenade TGT debugger to verify AD
-        """
-        self.sumb.verifyad()
-
     def _addAeroDV(self, dv):
         """Add a single desgin variable that SUmb knows about.
 
@@ -2200,8 +2197,9 @@ class SUMB(AeroSolver):
 
         DVsRequired = list(self.curAP.DVNames.keys())
         for dv in DVsRequired:
+            dvl = dv.lower()
             tmp = {}
-            if dv.lower() in ['altitude']:
+            if dvl in ['altitude']:
                 # This design variable is special. It combines changes
                 # in temperature, pressure and density into a single
                 # variable. Since we have derivatives for T, P and
@@ -2232,16 +2230,16 @@ class SUMB(AeroSolver):
                 # any harm.
                 dIdP = dIda[self.aeroDVs['p']]
                 dIdrho = dIda[self.aeroDVs['rho']]
-
+                
                 # Chain-rule to get the final derivative:
                 funcsSens[self.curAP.DVNames[dv]] = (
                     tmp[self.curAP['P']][self.curAP.DVNames[dv]]*dIdP +
                     tmp[self.curAP['rho']][self.curAP.DVNames[dv]]*dIdrho +
                     dIda[self.aeroDVs[dv]])
 
-            elif dv in self.possibleAeroDVs:
-                funcsSens[self.curAP.DVNames[dv]] = dIda[self.aeroDVs[dv]]
-                if dv == 'alpha':
+            elif dvl in self.possibleAeroDVs:
+                funcsSens[self.curAP.DVNames[dv]] = dIda[self.aeroDVs[dvl]]
+                if dvl == 'alpha':
                     funcsSens[self.curAP.DVNames[dv]] *= numpy.pi/180.0
 
 	return funcsSens
@@ -2279,7 +2277,6 @@ class SUMB(AeroSolver):
         # Set the required paramters for the aero-Only design vars:
         self.nDVAero = len(self.aeroDVs)
         self.sumb.adjointvars.ndesignextra = self.nDVAero
-        self.sumb.adjointvars.dida = numpy.zeros(self.nDVAero)
         for adv in self.aeroDVs:
             execStr = 'self.sumb.' + self.possibleAeroDVs[adv] + \
                       '= %d'% self.aeroDVs[adv]
@@ -2508,16 +2505,16 @@ class SUMB(AeroSolver):
         extradot = numpy.zeros(max(1, self.nDVAero))
         if xDvDot is not None:
             useSpatial = True
-            for key in self.aeroDVs:
-                execStr = 'mapping = self.sumb.%s'%self.possibleAeroDVs[key.lower()]
+
+            for key in xDvDot:
+                lkey = key.lower()
+                execStr = 'mapping = self.sumb.%s'%self.possibleAeroDVs[lkey]
                 exec(execStr)
-                extradot[mapping] = 0.0
-                if key in xDvDot:
-                    if key == 'alpha':
-                        # convert angle of attack to radians
-                        extradot[mapping] = xDvDot[key]*(numpy.pi/180.0)
-                    else:
-                        extradot[mapping] = xDvDot[key]
+
+                if lkey == 'alpha':
+                    extradot[mapping] = xDvDot[key]*(numpy.pi/180)
+                else:
+                    extradot[mapping] = xDvDot[key]
 
         # For the geometric xDvDot perturbation we accumulate into the
         # already existing (and possibly nonzero) xsdot and xvdot
@@ -2869,6 +2866,23 @@ class SUMB(AeroSolver):
         """
         self.sumb.nksolver.setstates(states)
     
+    def getSurfacePerturbation(self, seed=314):
+        """This is is a debugging routine only. It is used only in regression
+        tests when it is necessary to compute a consistent random
+        surface perturbation seed that is independent of per-processor
+        block distribution. 
+
+        Parameters
+        ----------
+        seed : integer
+            Seed to use for random number. Only significant on root processor
+
+        """
+        nPts, nCell = self._getSurfaceSize(self.allWallsGroup)
+        self._setFamilyList(self.allWallsGroup)
+        xRand = self.getSpatialPerturbation(seed)
+        return self.sumb.warping.getsurfaceperturbation(xRand, nPts).T
+
     def getStatePerturbation(self, seed=314):
         """This is is a debugging routine only. It is used only in regression
         tests when it is necessary to compute a consistent random

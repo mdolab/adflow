@@ -21,14 +21,18 @@ contains
     use adjointvars
     use stencils
     use diffSizes
+    use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
+    use adjointPETSc, only : x_like
     use surfaceFamilies, only: wallFamilies, totalWallFamilies
     use utils, only : setPointers, EChk, getDirAngle, setPointers_d
     use haloExchange, only : whalo2_d, exchangeCoor_d
     use adjointextra_d, only : xhalo_block_d, block_res_d
     use adjointUtils, only : allocDerivativeValues, zeroADSeeds
     implicit none
+
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
+#include "petsc/finclude/petscvec.h90"
 
     ! Input Variables
     integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize, fSize
@@ -57,6 +61,9 @@ contains
        resetToRANS = .True.
     end if
 
+    call VecPlaceArray(x_like, xvdot, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+    
     ! Need to trick the residual evalution to use coupled (mean flow and
     ! turbulent) together.
     level = 1
@@ -90,6 +97,7 @@ contains
     pinfdimd = zero
     tinfdimd = zero
     rhoinfdimd = zero
+    rgasdimd = zero
 
     if (useSpatial) then 
        ! Here we set the spatial and extra seeds if necessary.
@@ -156,7 +164,7 @@ contains
        domainLoop2: do nn=1,nDom
 
           ! Just to get sizes
-          call setPointers(nn, level, 1)
+          call setPointers_d(nn, level, 1)
 
           spectalLoop2: do sps=1,nTimeIntervalsSpectral
              do k=2, kl
@@ -176,6 +184,19 @@ contains
        call whalo2_d(level, 1, nw, .False., .False., .False.)
     end if
 
+    ! Now set the xsurfd contrib ution from the full x perturbation.
+    ! scatter from the global seed (in x_like) to xSurfVecd...but only
+    ! if wallDistances were used
+    if (wallDistanceNeeded .and. useApproxWallDistance) then 
+       do sps=1, nTimeIntervalsSpectral
+          call VecScatterBegin(wallScatter(1, sps), x_like, xSurfVecd(sps), INSERT_VALUES, SCATTER_FORWARD, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+          
+          call VecScatterEnd(wallScatter(1, sps), x_like, xSurfVecd(sps),  INSERT_VALUES, SCATTER_FORWARD, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+       end do
+    end if
+
     funcsLocalDot = zero
 
     ! Now we are ready to call block_res_d with all the correct seeds
@@ -192,6 +213,15 @@ contains
        spectalLoopAD: do sps=1,nTimeIntervalsSpectral
           ! Set pointers and derivative pointers
           call setPointers_d(nn, level, sps)
+
+          ! Get the pointers from the petsc vector for the surface
+          ! perturbation for wall distance. 
+          call VecGetArrayF90(xSurfVec(level, sps), xSurf, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+
+          ! And it's derivative
+          call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
 
           call BLOCK_RES_D(nn, level, useSpatial, alpha, alphad, beta, betad, &
                & liftindex, frozenTurbulence)
@@ -213,6 +243,14 @@ contains
           ! We need to SUM the funcs into the local array
           funcsLocalDot = funcsLocalDot + funcValuesd
 
+          ! These arrays need to be restored before we can move to the next spectral instance. 
+          call VecRestoreArrayF90(xSurfVec(level, sps), xSurf, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+
+          ! And it's derivative
+          call VecRestoreArrayF90(xSurfVecd(sps), xSurfd, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+
        end do spectalLoopAD
     end do domainLoopAD
 
@@ -229,6 +267,17 @@ contains
     if (resetToRANS) then
        equations = RANSEquations
     end if
+
+    call VecResetArray(x_like, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    ! Just to be sure, we'll zero everything when we're done.
+    do nn=1,nDom
+       do sps=1,nTimeIntervalsSpectral
+          call setPointers(nn, level, sps)
+          call zeroADSeeds(nn,level, sps)
+       end do
+    end do
   end subroutine computeMatrixFreeProductFwd
 
   subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useState, xvbar, &
@@ -1696,4 +1745,5 @@ contains
 
     adjointPETScVarsAllocated = .True.
   end subroutine createPETScVars
+
 end module adjointAPI
