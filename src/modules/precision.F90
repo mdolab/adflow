@@ -82,6 +82,10 @@ module precision
 
 #endif
 
+  ! Dummy single and double types
+  real(kind=4) :: dummySingle
+  real(kind=8) :: dummyDouble
+
   !
   !       Definition of the porosity type. As this is only a flag to     
   !       indicate whether or not fluxes must be computed, an integer1   
@@ -109,6 +113,8 @@ module precision
   integer, parameter :: cgnsRealType = kind(dummyCGNSReal)
   integer, parameter :: cgnsPerType  = kind(dummyCGNSPer)
   integer, parameter :: alwaysRealType = kind(dummyReal)
+  integer, parameter :: singleType   = kind(dummySingle)
+  integer, parameter :: doubleType   = kind(dummyDouble)
   !
   !       Set the parameter debug, depending on the compiler option.     
   !

@@ -248,13 +248,13 @@ contains
     integer(kind=intType), dimension(3,2), intent(in) :: subRange
 
     real(kind=realType), dimension(*), intent(in) :: buffer
-    character, dimension(iBeg:iEnd,jBeg:jEnd,kBeg:kEnd), &
+    real(kind=4), dimension(iBeg:iEnd,jBeg:jEnd,kBeg:kEnd), &
          intent(inout) :: val
     !
     !      Local variables.
     !
     integer(kind=intType) :: i, j, k, ll
-    character :: dummyChar
+
     ! Copy the subrange into val.
 
     ll = 0
@@ -262,7 +262,7 @@ contains
        do j=subRange(2,1), subRange(2,2)
           do i=subRange(1,1), subRange(1,2)
              ll = ll + 1
-             val(i,j,k) = transfer(buffer(ll), dummyChar)
+             val(i,j,k) = real(buffer(ll), singleType)
           enddo
        enddo
     enddo
@@ -288,13 +288,13 @@ contains
     integer(kind=intType), dimension(3,2), intent(in) :: subRange
 
     real(kind=realType), dimension(*), intent(in) :: buffer
-    character, dimension(iBeg:iEnd,jBeg:jEnd,kBeg:kEnd), &
+    real(kind=8), dimension(iBeg:iEnd,jBeg:jEnd,kBeg:kEnd), &
          intent(inout) :: val
     !
     !      Local variables.
     !
     integer(kind=intType) :: i, j, k, ll
-    character :: dummyChar
+
     ! Copy the subrange into val.
 
     ll = 0
@@ -302,7 +302,7 @@ contains
        do j=subRange(2,1), subRange(2,2)
           do i=subRange(1,1), subRange(1,2)
              ll = ll + 1
-             val(i,j,k) = transfer(buffer(ll), dummyChar)
+             val(i,j,k) = real(buffer(ll), doubleType)
           enddo
        enddo
     enddo

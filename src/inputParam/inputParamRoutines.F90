@@ -3803,6 +3803,11 @@ contains
     precisionGrid = precisionDouble   ! for quadrupole precision the
     precisionSol  = precisionDouble   ! IO takes place in double
 #endif                                   ! precision.
+
+    ! Surface solution defaults to single precision
+    precisionSurfGrid = precisionSingle
+    precisionSurfSol  = precisionSingle
+
     !
     !       Set the default values for the iteration parameters.           
     !

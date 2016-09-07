@@ -633,9 +633,10 @@ bocos:do nn=1,nbocos
 !  differentiation of bcturbtreatment in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *bvtj1 *bvtj2 *bvtk1 *bvtk2
 !                *bvti1 *bvti2
-!   with respect to varying inputs: *w *rlv winf
+!   with respect to varying inputs: *w *rlv *d2wall winf
 !   plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
-!                bvtk1:in bvtk2:in bvti1:in bvti2:in bcdata:in
+!                bvtk1:in bvtk2:in d2wall:in bvti1:in bvti2:in
+!                bcdata:in
   subroutine bcturbtreatment_d()
 !
 !       bcturbtreatment sets the arrays bmti1, bvti1, etc, such that   
@@ -1143,9 +1144,10 @@ bocos:do nn=1,nbocos
 !   variations   of useful results: *bvtj1 *bvtj2 *bvtk1 *bvtk2
 !                *bvti1 *bvti2
 !   with respect to varying inputs: *bvtj1 *bvtj2 *w *rlv *bvtk1
-!                *bvtk2 *bvti1 *bvti2
+!                *bvtk2 *d2wall *bvti1 *bvti2
 !   plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
-!                bvtk1:in bvtk2:in bvti1:in bvti2:in bcdata:in
+!                bvtk1:in bvtk2:in d2wall:in bvti1:in bvti2:in
+!                bcdata:in
   subroutine bcturbwall_d(nn)
 !
 !       bcturbwall applies the implicit treatment of the viscous       
@@ -1169,7 +1171,7 @@ bocos:do nn=1,nbocos
 !
     integer(kind=inttype) :: i, j, ii, jj, iimax, jjmax
     real(kind=realtype) :: tmpd, tmpe, tmpf, nu
-    real(kind=realtype) :: nud
+    real(kind=realtype) :: tmpdd, nud
     real(kind=realtype), dimension(:, :, :, :), pointer :: bmt
     real(kind=realtype), dimension(:, :, :), pointer :: bvt, ww2
     real(kind=realtype), dimension(:, :), pointer :: rlv2, dd2wall
@@ -1274,10 +1276,12 @@ bocos:do nn=1,nbocos
             nud = (rlvd(2, i, j)*w(2, i, j, irho)-rlv(2, i, j)*wd(2, i, &
 &             j, irho))/w(2, i, j, irho)**2
             nu = rlv(2, i, j)/w(2, i, j, irho)
+            tmpdd = -(one*rkwbeta1*2*d2wall(2, ii, jj)*d2walld(2, ii, jj&
+&             )/(rkwbeta1*d2wall(2, ii, jj)**2)**2)
             tmpd = one/(rkwbeta1*d2wall(2, ii, jj)**2)
             bmti1(i, j, itu1, itu1) = one
             bmti1(i, j, itu2, itu2) = one
-            bvti1d(i, j, itu2) = two*60.0_realtype*tmpd*nud
+            bvti1d(i, j, itu2) = two*60.0_realtype*(nud*tmpd+nu*tmpdd)
             bvti1(i, j, itu2) = two*60.0_realtype*nu*tmpd
           end do
         end do
@@ -1309,10 +1313,12 @@ bocos:do nn=1,nbocos
             nud = (rlvd(jl, i, j)*w(il, i, j, irho)-rlv(jl, i, j)*wd(il&
 &             , i, j, irho))/w(il, i, j, irho)**2
             nu = rlv(jl, i, j)/w(il, i, j, irho)
+            tmpdd = -(one*rkwbeta1*2*d2wall(il, ii, jj)*d2walld(il, ii, &
+&             jj)/(rkwbeta1*d2wall(il, ii, jj)**2)**2)
             tmpd = one/(rkwbeta1*d2wall(il, ii, jj)**2)
             bmti2(i, j, itu1, itu1) = one
             bmti2(i, j, itu2, itu2) = one
-            bvti2d(i, j, itu2) = two*60.0_realtype*tmpd*nud
+            bvti2d(i, j, itu2) = two*60.0_realtype*(nud*tmpd+nu*tmpdd)
             bvti2(i, j, itu2) = two*60.0_realtype*nu*tmpd
           end do
         end do
@@ -1344,10 +1350,12 @@ bocos:do nn=1,nbocos
             nud = (rlvd(i, 2, j)*w(i, 2, j, irho)-rlv(i, 2, j)*wd(i, 2, &
 &             j, irho))/w(i, 2, j, irho)**2
             nu = rlv(i, 2, j)/w(i, 2, j, irho)
+            tmpdd = -(one*rkwbeta1*2*d2wall(ii, 2, jj)*d2walld(ii, 2, jj&
+&             )/(rkwbeta1*d2wall(ii, 2, jj)**2)**2)
             tmpd = one/(rkwbeta1*d2wall(ii, 2, jj)**2)
             bmtj1(i, j, itu1, itu1) = one
             bmtj1(i, j, itu2, itu2) = one
-            bvtj1d(i, j, itu2) = two*60.0_realtype*tmpd*nud
+            bvtj1d(i, j, itu2) = two*60.0_realtype*(nud*tmpd+nu*tmpdd)
             bvtj1(i, j, itu2) = two*60.0_realtype*nu*tmpd
           end do
         end do
@@ -1379,10 +1387,12 @@ bocos:do nn=1,nbocos
             nud = (rlvd(i, jl, j)*w(i, jl, j, irho)-rlv(i, jl, j)*wd(i, &
 &             jl, j, irho))/w(i, jl, j, irho)**2
             nu = rlv(i, jl, j)/w(i, jl, j, irho)
+            tmpdd = -(one*rkwbeta1*2*d2wall(ii, jl, jj)*d2walld(ii, jl, &
+&             jj)/(rkwbeta1*d2wall(ii, jl, jj)**2)**2)
             tmpd = one/(rkwbeta1*d2wall(ii, jl, jj)**2)
             bmtj2(i, j, itu1, itu1) = one
             bmtj2(i, j, itu2, itu2) = one
-            bvtj2d(i, j, itu2) = two*60.0_realtype*tmpd*nud
+            bvtj2d(i, j, itu2) = two*60.0_realtype*(nud*tmpd+nu*tmpdd)
             bvtj2(i, j, itu2) = two*60.0_realtype*nu*tmpd
           end do
         end do
@@ -1414,10 +1424,12 @@ bocos:do nn=1,nbocos
             nud = (rlvd(i, j, 2)*w(i, j, 2, irho)-rlv(i, j, 2)*wd(i, j, &
 &             2, irho))/w(i, j, 2, irho)**2
             nu = rlv(i, j, 2)/w(i, j, 2, irho)
+            tmpdd = -(one*rkwbeta1*2*d2wall(ii, jj, 2)*d2walld(ii, jj, 2&
+&             )/(rkwbeta1*d2wall(ii, jj, 2)**2)**2)
             tmpd = one/(rkwbeta1*d2wall(ii, jj, 2)**2)
             bmtk1(i, j, itu1, itu1) = one
             bmtk1(i, j, itu2, itu2) = one
-            bvtk1d(i, j, itu2) = two*60.0_realtype*tmpd*nud
+            bvtk1d(i, j, itu2) = two*60.0_realtype*(nud*tmpd+nu*tmpdd)
             bvtk1(i, j, itu2) = two*60.0_realtype*nu*tmpd
           end do
         end do
@@ -1449,10 +1461,12 @@ bocos:do nn=1,nbocos
             nud = (rlvd(i, j, kl)*w(i, j, kl, irho)-rlv(i, j, kl)*wd(i, &
 &             j, kl, irho))/w(i, j, kl, irho)**2
             nu = rlv(i, j, kl)/w(i, j, kl, irho)
+            tmpdd = -(one*rkwbeta1*2*d2wall(ii, jj, kl)*d2walld(ii, jj, &
+&             kl)/(rkwbeta1*d2wall(ii, jj, kl)**2)**2)
             tmpd = one/(rkwbeta1*d2wall(ii, jj, kl)**2)
             bmtk2(i, j, itu1, itu1) = one
             bmtk2(i, j, itu2, itu2) = one
-            bvtk2d(i, j, itu2) = two*60.0_realtype*tmpd*nud
+            bvtk2d(i, j, itu2) = two*60.0_realtype*(nud*tmpd+nu*tmpdd)
             bvtk2(i, j, itu2) = two*60.0_realtype*nu*tmpd
           end do
         end do

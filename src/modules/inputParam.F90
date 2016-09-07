@@ -127,6 +127,9 @@ module inputIO
   !                      Possibilities are precisionSingle and
   !                      precisionDouble.
   ! precisionSol:        Idem for the solution file(s).
+
+  ! precisionSurfGrid:   Precision of the grid in the surface file
+  ! precisionSurfSol:    Precision of the solution in the surface file
   ! storeRindLayer:      Whether or not to store 1 layer of rind
   !                      (halo) cells in the solution file.
   ! checkRestartSol:     Whether or not the solution in the restart
@@ -146,7 +149,7 @@ module inputIO
   !                      bottleneck for memory.
 
   integer(kind=intType) :: precisionGrid, precisionSol
-
+  integer(kind=intType) :: precisionSurfGrid, precisionSurfSol
   character(len=maxStringLen) :: paramFile, gridFile
   character(len=maxStringLen) :: newGridFile
   character(len=maxStringLen) :: solFile

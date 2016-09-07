@@ -100,11 +100,9 @@ contains
        call metric_block
        call boundaryNormals
 
-#ifdef TAPENADE_REVERSE
        if (equations == RANSEquations .and. useApproxWallDistance) then 
           call updateWallDistancesQuickly(nn, 1, sps)
        end if
-#endif
 
 #ifndef TAPENADE_REVERSE
        ! -------------------------------------
