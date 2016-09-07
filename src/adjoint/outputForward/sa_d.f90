@@ -17,11 +17,11 @@ contains
 !  differentiation of sa_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *dw
 !   with respect to varying inputs: *sfacei *sfacej *sfacek *w
-!                *rlv *vol *si *sj *sk (global)timeref
+!                *rlv *vol *d2wall *si *sj *sk (global)timeref
 !   plus diff mem management of: bvtj1:in bvtj2:in sfacei:in sfacej:in
 !                sfacek:in dw:in w:in rlv:in scratch:in bvtk1:in
-!                bvtk2:in vol:in si:in sj:in sk:in bvti1:in bvti2:in
-!                bcdata:in
+!                bvtk2:in vol:in d2wall:in si:in sj:in sk:in bvti1:in
+!                bvti2:in bcdata:in
   subroutine sa_block_d(resonly)
 !
 !       sa solves the transport equation for the spalart-allmaras
@@ -148,8 +148,8 @@ contains
   end subroutine sa_block
 !  differentiation of sasource in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *scratch
-!   with respect to varying inputs: *w *rlv *scratch
-!   plus diff mem management of: w:in rlv:in scratch:in
+!   with respect to varying inputs: *w *rlv *scratch *d2wall
+!   plus diff mem management of: w:in rlv:in scratch:in d2wall:in
   subroutine sasource_d()
 !
 !  source terms.                                                  
@@ -171,7 +171,7 @@ contains
     real(kind=realtype) :: fv1, fv2, ft2
     real(kind=realtype) :: fv1d, fv2d, ft2d
     real(kind=realtype) :: ss, sst, nu, dist2inv, chi, chi2, chi3
-    real(kind=realtype) :: ssd, sstd, nud, chid, chi2d, chi3d
+    real(kind=realtype) :: ssd, sstd, nud, dist2invd, chid, chi2d, chi3d
     real(kind=realtype) :: rr, gg, gg6, termfw, fwsa, term1, term2
     real(kind=realtype) :: rrd, ggd, gg6d, termfwd, fwsad, term1d, &
 &   term2d
@@ -202,6 +202,8 @@ contains
           nud = (rlvd(i, j, k)*w(i, j, k, irho)-rlv(i, j, k)*wd(i, j, k&
 &           , irho))/w(i, j, k, irho)**2
           nu = rlv(i, j, k)/w(i, j, k, irho)
+          dist2invd = -(one*2*d2wall(i, j, k)*d2walld(i, j, k)/(d2wall(i&
+&           , j, k)**2)**2)
           dist2inv = one/d2wall(i, j, k)**2
           chid = (wd(i, j, k, itu1)*nu-w(i, j, k, itu1)*nud)/nu**2
           chi = w(i, j, k, itu1)/nu
@@ -224,8 +226,8 @@ contains
 ! of the wall. make sure that this term remains positive
 ! (the function fv2 is negative between chi = 1 and 18.4,
 ! which can cause sst to go negative, which is undesirable).
-          sstd = ssd + kar2inv*dist2inv*(wd(i, j, k, itu1)*fv2+w(i, j, k&
-&           , itu1)*fv2d)
+          sstd = ssd + kar2inv*(wd(i, j, k, itu1)*fv2*dist2inv+w(i, j, k&
+&           , itu1)*(fv2d*dist2inv+fv2*dist2invd))
           sst = ss + w(i, j, k, itu1)*fv2*kar2inv*dist2inv
           if (sst .lt. xminn) then
             sst = xminn
@@ -236,8 +238,9 @@ contains
 ! compute the function fw. the argument rr is cut off at 10
 ! to avoid numerical problems. this is ok, because the
 ! asymptotical value of fw is then already reached.
-          rrd = (kar2inv*dist2inv*wd(i, j, k, itu1)*sst-w(i, j, k, itu1)&
-&           *kar2inv*dist2inv*sstd)/sst**2
+          rrd = (kar2inv*(wd(i, j, k, itu1)*dist2inv+w(i, j, k, itu1)*&
+&           dist2invd)*sst-w(i, j, k, itu1)*kar2inv*dist2inv*sstd)/sst**&
+&           2
           rr = w(i, j, k, itu1)*kar2inv*dist2inv/sst
           if (rr .gt. 10.0_realtype) then
             rr = 10.0_realtype
@@ -266,7 +269,8 @@ contains
 ! linearization. the source term is stored in dvt.
           term1d = rsacb1*((one-ft2)*ssd-ft2d*ss)
           term1 = rsacb1*(one-ft2)*ss
-          term2d = dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2d-ft2d*fv2+&
+          term2d = dist2invd*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*&
+&           fwsa) + dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2d-ft2d*fv2+&
 &           ft2d)-rsacw1*fwsad)
           term2 = dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*&
 &           fwsa)

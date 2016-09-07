@@ -10,27 +10,28 @@ contains
 !                *(*bcdata.fv) *(*bcdata.fp) *(*bcdata.area) *rev0
 !                *rev1 *pp0 *pp1 *rlv0 *rlv1 *ww0 *ww1 funcvalues
 !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
-!                mach machgrid rgasdim lengthref machcoef pointref
-!                tinfdim rhoinfdim pinfdim *xx *rev0 *rev1 *rev2
-!                *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3
-!                *ss *ssi *ssj *ssk *ww0 *ww1 *ww2 *ww3 alpha beta
+!                *xsurf mach machgrid rgasdim lengthref machcoef
+!                pointref tinfdim rhoinfdim pinfdim *xx *rev0 *rev1
+!                *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2
+!                *rlv3 *ss *ssi *ssj *ssk *ww0 *ww1 *ww2 *ww3 alpha
+!                beta
 !   rw status of diff variables: *(flowdoms.x):in *(flowdoms.vol):(loc)
 !                *(flowdoms.w):in-out *(flowdoms.dw):out *rev:(loc)
 !                *aa:(loc) *bvtj1:(loc) *bvtj2:(loc) *wx:(loc)
 !                *wy:(loc) *wz:(loc) *p:(loc) *sfacei:(loc) *sfacej:(loc)
 !                *s:(loc) *sfacek:(loc) *rlv:(loc) *qx:(loc) *qy:(loc)
 !                *qz:(loc) *scratch:(loc) *bvtk1:(loc) *bvtk2:(loc)
-!                *ux:(loc) *uy:(loc) *uz:(loc) *si:(loc) *sj:(loc)
-!                *sk:(loc) *bvti1:(loc) *bvti2:(loc) *vx:(loc)
-!                *vy:(loc) *vz:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
+!                *ux:(loc) *uy:(loc) *uz:(loc) *d2wall:(loc) *si:(loc)
+!                *sj:(loc) *sk:(loc) *bvti1:(loc) *bvti2:(loc)
+!                *vx:(loc) *vy:(loc) *vz:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
 !                *(*bcdata.norm):(loc) *(*bcdata.rface):(loc) *(*bcdata.fv):out
 !                *(*bcdata.fp):out *(*bcdata.area):out *(*bcdata.uslip):(loc)
-!                *radi:(loc) *radj:(loc) *radk:(loc) mach:in veldirfreestream:(loc)
-!                machgrid:in rgasdim:in lengthref:in machcoef:in
-!                dragdirection:(loc) liftdirection:(loc) pointref:in
-!                gammainf:(loc) tinfdim:in pinf:(loc) timeref:(loc)
-!                rhoinf:(loc) muref:(loc) rhoinfdim:in tref:(loc)
-!                winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
+!                *radi:(loc) *radj:(loc) *radk:(loc) *xsurf:in
+!                mach:in veldirfreestream:(loc) machgrid:in rgasdim:in
+!                lengthref:in machcoef:in dragdirection:(loc) liftdirection:(loc)
+!                pointref:in gammainf:(loc) tinfdim:in pinf:(loc)
+!                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:in
+!                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
 !                rgas:(loc) muinfdim:(loc) pinfdim:in pref:(loc)
 !                rhoref:(loc) *xx:in *rev0:in-out *rev1:in-out
 !                *rev2:in *rev3:in *pp0:in-out *pp1:in-out *pp2:in
@@ -41,16 +42,16 @@ contains
 !                flowdoms.w:in flowdoms.dw:in rev:in aa:in bvtj1:in
 !                bvtj2:in wx:in wy:in wz:in p:in sfacei:in sfacej:in
 !                s:in sfacek:in rlv:in qx:in qy:in qz:in scratch:in
-!                bvtk1:in bvtk2:in ux:in uy:in uz:in si:in sj:in
-!                sk:in bvti1:in bvti2:in vx:in vy:in vz:in fw:in
-!                viscsubface:in *viscsubface.tau:in bcdata:in *bcdata.norm:in
-!                *bcdata.rface:in *bcdata.fv:in *bcdata.fp:in *bcdata.area:in
-!                *bcdata.uslip:in radi:in radj:in radk:in xx:in-out
-!                rev0:in-out rev1:in-out rev2:in-out rev3:in-out
-!                pp0:in-out pp1:in-out pp2:in-out pp3:in-out rlv0:in-out
-!                rlv1:in-out rlv2:in-out rlv3:in-out ss:in-out
-!                ssi:in-out ssj:in-out ssk:in-out ww0:in-out ww1:in-out
-!                ww2:in-out ww3:in-out
+!                bvtk1:in bvtk2:in ux:in uy:in uz:in d2wall:in
+!                si:in sj:in sk:in bvti1:in bvti2:in vx:in vy:in
+!                vz:in fw:in viscsubface:in *viscsubface.tau:in
+!                bcdata:in *bcdata.norm:in *bcdata.rface:in *bcdata.fv:in
+!                *bcdata.fp:in *bcdata.area:in *bcdata.uslip:in
+!                radi:in radj:in radk:in xsurf:in xx:in-out rev0:in-out
+!                rev1:in-out rev2:in-out rev3:in-out pp0:in-out
+!                pp1:in-out pp2:in-out pp3:in-out rlv0:in-out rlv1:in-out
+!                rlv2:in-out rlv3:in-out ss:in-out ssi:in-out ssj:in-out
+!                ssk:in-out ww0:in-out ww1:in-out ww2:in-out ww3:in-out
 ! this is a super-combined function that combines the original
 ! functionality of: 
 ! pressure computation
@@ -75,7 +76,7 @@ contains
 &   , kl, sectionid, wold, volold, bcdata, bcdatad, si, sid, sj, sjd, sk&
 &   , skd, sfacei, sfaceid, sfacej, sfacejd, sfacek, sfacekd, rlv, rlvd,&
 &   gamma, p, pd, rev, revd, bmtj1, bmtj2, scratch, scratchd, bmtk2, &
-&   bmtk1, fw, fwd, aa, aad, d2wall, bmti1, bmti2, s, sd
+&   bmtk1, fw, fwd, aa, aad, d2wall, d2walld, bmti1, bmti2, s, sd
     use flowvarrefstate
     use inputphysics
     use inputiteration
@@ -86,7 +87,8 @@ contains
     use diffsizes
     use costfunctions
     use initializeflow_d, only : referencestate, referencestate_d
-    use walldistance_d, only : updatewalldistancesquickly, xsurf
+    use walldistance_d, only : updatewalldistancesquickly, &
+&   updatewalldistancesquickly_d, xsurf, xsurfd
     use inputdiscretization
     use sa_d
     use inputunsteady
@@ -162,6 +164,11 @@ contains
       call volume_block_d()
       call metric_block_d()
       call boundarynormals_d()
+      if (equations .eq. ransequations .and. useapproxwalldistance) then
+        call updatewalldistancesquickly_d(nn, 1, sps)
+      else
+        d2walld = 0.0_8
+      end if
 ! -------------------------------------
 ! these functions are required for ts
 ! --------------------------------------
@@ -189,6 +196,7 @@ contains
       sfacejd = 0.0_8
       sd = 0.0_8
       sfacekd = 0.0_8
+      d2walld = 0.0_8
       sid = 0.0_8
       sjd = 0.0_8
       skd = 0.0_8
@@ -584,6 +592,8 @@ varloopfine:do l=1,nwf
       call volume_block()
       call metric_block()
       call boundarynormals()
+      if (equations .eq. ransequations .and. useapproxwalldistance) call&
+&       updatewalldistancesquickly(nn, 1, sps)
 ! -------------------------------------
 ! these functions are required for ts
 ! --------------------------------------
