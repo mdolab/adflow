@@ -790,7 +790,6 @@ contains
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
     integer(kind=intType) :: iBegCGNS, jBegCGNS, kBegCGNS
     integer(kind=intType) :: iEndCGNS, jEndCGNS, kEndCGNS
-    integer(kind=intType) :: sizeCGNSWriteType
 
     integer(kind=intType), dimension(nProc) :: nMessages
 
@@ -800,23 +799,14 @@ contains
 
     real(kind=realType), dimension(:), allocatable :: buffer
 
-    character, dimension(:), allocatable :: sol
+    real(kind=4), dimension(:), allocatable :: sol4
+    real(kind=8), dimension(:), allocatable :: sol8
 
     logical :: rindLayerThisSol, unsteadyHigherSol, writeLink
 
     character(len=maxStringLen) :: linkName, solName
 
     ! Set the cgns real type depending on the input option.
-
-
-    select case (precisionSol)
-    case (precisionSingle)
-       realTypeCGNS      = RealSingle
-       sizeCGNSWriteType = 4
-    case (precisionDouble)
-       realTypeCGNS      = RealDouble
-       sizeCGNSWriteType = 8
-    end select
 
     ! Store the number of local blocks and the offset in
     ! blocksCGNSblock for this zone a bit easier.
@@ -844,13 +834,19 @@ contains
 
        if( storeRindLayer ) then
           ll = (cgnsDoms(zone)%kl+1) * (cgnsDoms(zone)%jl+1) &
-               * (cgnsDoms(zone)%il+1) * sizeCGNSWriteType
+               * (cgnsDoms(zone)%il+1) 
        else
           ll = (cgnsDoms(zone)%kl-1) * (cgnsDoms(zone)%jl-1) &
-               * (cgnsDoms(zone)%il-1) * sizeCGNSWriteType
+               * (cgnsDoms(zone)%il-1) 
        endif
 
-       allocate(sol(ll), stat=ierr)
+       select case(precisionSol)
+       case (precisionSingle)
+          allocate(sol4(ll), sol8(0), stat=ierr)
+       case (precisionDouble)
+          allocate(sol4(0), sol8(ll), stat=ierr)
+       end select
+
        if(ierr /= 0)                        &
             call terminate("writeSolCGNSZone", &
             "Memory allocation failure for sol")
@@ -1138,13 +1134,13 @@ contains
 
                 select case (precisionSol)
                 case (precisionSingle)
-                   call copyDataBufSinglePrecision(sol, buffer,        &
+                   call copyDataBufSinglePrecision(sol4, buffer,        &
                         iBegCGNS, jBegCGNS, &
                         kBegCGNS, iEndCGNS, &
                         jEndCGNS, kEndCGNS, &
                         subRanges(1,1,mm))
                 case (precisionDouble)
-                   call copyDataBufDoublePrecision(sol, buffer,        &
+                   call copyDataBufDoublePrecision(sol8, buffer,        &
                         iBegCGNS, jBegCGNS, &
                         kBegCGNS, iEndCGNS, &
                         jEndCGNS, kEndCGNS, &
@@ -1168,13 +1164,13 @@ contains
 
                 select case (precisionSol)
                 case (precisionSingle)
-                   call copyDataBufSinglePrecision(sol, buffer,        &
+                   call copyDataBufSinglePrecision(sol4, buffer,        &
                         iBegCGNS, jBegCGNS, &
                         kBegCGNS, iEndCGNS, &
                         jEndCGNS, kEndCGNS, &
                         subRanges(1,1,mm))
                 case (precisionDouble)
-                   call copyDataBufDoublePrecision(sol, buffer,        &
+                   call copyDataBufDoublePrecision(sol8, buffer,        &
                         iBegCGNS, jBegCGNS, &
                         kBegCGNS, iEndCGNS, &
                         jEndCGNS, kEndCGNS, &
@@ -1185,11 +1181,16 @@ contains
 
              ! Write the solution variable to file. Source is just used
              ! as a dummy variable and does not have a meaning.
+             select case(precisionSol)
+             case (precisionSingle)
+                call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, &
+                     cgnsSol, realSingle, solName, sol4, source, ierr)
+             case (precisionDouble)
+                print *,'why are you not fucking writing this'
 
-             call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, &
-                  cgnsSol, realTypeCGNS,       &
-                  solName, sol, source, ierr)
-
+                call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, &
+                     cgnsSol, realDouble, solName, sol8, source, ierr)
+             end select
              if(ierr /= CG_OK)    &
                   call terminate("writeSolCGNSZone", &
                   "Something wrong when calling &
@@ -1199,7 +1200,7 @@ contains
        enddo solLoopRoot
 
        ! Release some memory only allocated on the root processor.
-       deallocate(sol, subRanges, proc, stat=ierr)
+       deallocate(sol4, sol8, subRanges, proc, stat=ierr)
        if(ierr /= 0) call terminate("writeSolCGNSZone", &
             "Deallocation error on root proc")
 

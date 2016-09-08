@@ -836,7 +836,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
                     ind(4) = ii + (j+1)*ni + i + 1
                     do jj=1,4
                        localPtrd(ind(jj)) = localPtrd(ind(jj)) + qad
-                       localPtrd(ind(jj)) = localPtrd(ind(jj)) + qa
+                       localPtr(ind(jj)) = localPtr(ind(jj)) + qa
                     end do
                  end do
               end do
@@ -1006,7 +1006,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
 
         ii = 0
         do nn=1, nDom
-           call setPointers(nn, 1_intType, sps)
+           call setPointers_d(nn, 1_intType, sps)
            do mm=1, nBocos
               iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
               jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
@@ -1035,7 +1035,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
 
      ! Finally sum the Tpd and Tvd together
      do nn=1, nDom
-        call setPointers(nn, 1_intType, sps)
+        call setPointers_d(nn, 1_intType, sps)
         do mm=1, nBocos
            iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
            jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
