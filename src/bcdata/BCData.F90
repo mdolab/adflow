@@ -108,23 +108,20 @@ contains
     logical :: varAllowed
     integer :: i,j
     character(maxCGNSNameLen) :: varName
-    
-    do i=1,nbcVar 
-      if( bcVarPresent(i) ) then
-        varAllowed = .false.
-        do j=1, nBCInVar
-          varName = char2str(bcDataNamesIn(j,:), maxCGNSNameLen)
-          if (bcVarNames(i) == varname) then
-            varAllowed = .true. 
-            exit
-          end if
-        end do
-        print *, bcVarNames(i), varname, varAllowed
-        if (.not. varAllowed) then 
-          call terminate(setSubroutineName, trim(varName)//" is not a valid variable for this boundary condition")
+    do j=1, nBCInVar
+      varAllowed = .false.
+      varName = char2str(bcDataNamesIn(j,:), maxCGNSNameLen)
+      do i=1,nbcVar 
+        if( bcVarPresent(i) .and. bcVarNames(i) == varname) then
+          varAllowed = .true. 
+          exit
         end if
-      end if
-    end do  
+      end do 
+      if (.not. varAllowed) then 
+        call terminate(setSubroutineName, trim(varName)//" is not a valid variable for this boundary condition")
+      end if 
+    end do
+
   end subroutine
 
   subroutine setBCVarNamesIsothermalWall
