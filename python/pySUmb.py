@@ -2121,7 +2121,7 @@ class SUMB(AeroSolver):
         nameArray = self._createFortranStringArray(nameList)
         bcInArray = numpy.array(valList, dtype=self.dtype)
         print("python check", nameArray, bcInArray)
-        self.sumb.bcdata.setbcdata(nameArray,bcInArray,self.families[groupName],sps)
+        self.sumb.bcdata.setbcdata(nameArray,bcInArray, self._getFamilyList(groupName), sps)
 
 
     def globalNKPreCon(self, inVec, outVec):
