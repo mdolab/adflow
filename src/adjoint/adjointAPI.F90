@@ -21,14 +21,18 @@ contains
     use adjointvars
     use stencils
     use diffSizes
+    use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
+    use adjointPETSc, only : x_like
     use surfaceFamilies, only: wallFamilies, totalWallFamilies
     use utils, only : setPointers, EChk, getDirAngle, setPointers_d
     use haloExchange, only : whalo2_d, exchangeCoor_d
     use adjointextra_d, only : xhalo_block_d, block_res_d
     use adjointUtils, only : allocDerivativeValues, zeroADSeeds
     implicit none
+
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
+#include "petsc/finclude/petscvec.h90"
 
     ! Input Variables
     integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize, fSize
@@ -43,6 +47,7 @@ contains
     real(kind=realType), dimension(3, fSize), intent(out) :: fDot
 
     ! Working Variables
+    real(kind=realType), dimension(3, fSize) :: forces
     integer(kind=intType) :: ierr,nn,mm,sps,i,j,k,l,ii,jj,idim,sps2
     real(kind=realType) :: alpha, beta, alphad, betad
     integer(kind=intType) ::  level, irow, liftIndex
@@ -56,6 +61,9 @@ contains
        resetToRANS = .True.
     end if
 
+    call VecPlaceArray(x_like, xvdot, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+    
     ! Need to trick the residual evalution to use coupled (mean flow and
     ! turbulent) together.
     level = 1
@@ -89,6 +97,7 @@ contains
     pinfdimd = zero
     tinfdimd = zero
     rhoinfdimd = zero
+    rgasdimd = zero
 
     if (useSpatial) then 
        ! Here we set the spatial and extra seeds if necessary.
@@ -96,7 +105,7 @@ contains
        domainLoop1: do nn=1,nDom
 
           ! Just to get sizes
-          call setPointers(nn, level, 1)
+          call setPointers_d(nn, level, 1)
 
           spectalLoop1: do sps=1,nTimeIntervalsSpectral
              do k=1, kl
@@ -155,7 +164,7 @@ contains
        domainLoop2: do nn=1,nDom
 
           ! Just to get sizes
-          call setPointers(nn, level, 1)
+          call setPointers_d(nn, level, 1)
 
           spectalLoop2: do sps=1,nTimeIntervalsSpectral
              do k=2, kl
@@ -175,6 +184,19 @@ contains
        call whalo2_d(level, 1, nw, .False., .False., .False.)
     end if
 
+    ! Now set the xsurfd contrib ution from the full x perturbation.
+    ! scatter from the global seed (in x_like) to xSurfVecd...but only
+    ! if wallDistances were used
+    if (wallDistanceNeeded .and. useApproxWallDistance) then 
+       do sps=1, nTimeIntervalsSpectral
+          call VecScatterBegin(wallScatter(1, sps), x_like, xSurfVecd(sps), INSERT_VALUES, SCATTER_FORWARD, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+          
+          call VecScatterEnd(wallScatter(1, sps), x_like, xSurfVecd(sps),  INSERT_VALUES, SCATTER_FORWARD, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+       end do
+    end if
+
     funcsLocalDot = zero
 
     ! Now we are ready to call block_res_d with all the correct seeds
@@ -191,6 +213,15 @@ contains
        spectalLoopAD: do sps=1,nTimeIntervalsSpectral
           ! Set pointers and derivative pointers
           call setPointers_d(nn, level, sps)
+
+          ! Get the pointers from the petsc vector for the surface
+          ! perturbation for wall distance. 
+          call VecGetArrayF90(xSurfVec(level, sps), xSurf, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+
+          ! And it's derivative
+          call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
 
           call BLOCK_RES_D(nn, level, useSpatial, alpha, alphad, beta, betad, &
                & liftindex, frozenTurbulence)
@@ -212,26 +243,20 @@ contains
           ! We need to SUM the funcs into the local array
           funcsLocalDot = funcsLocalDot + funcValuesd
 
-          ! And extract fDot
-          bocos: do mm=1,nBocos
-             if (bctype(mm) .eq. eulerwall .or. &
-                  bctype(mm) .eq. nswalladiabatic  .or. &
-                  bctype(mm) .eq. nswallisothermal) then
+          ! These arrays need to be restored before we can move to the next spectral instance. 
+          call VecRestoreArrayF90(xSurfVec(level, sps), xSurf, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
 
-                ! Loop over the nodes since that's where the forces get
-                ! defined.
-                do j=BCData(mm)%jnBeg,BCData(mm)%jnEnd
-                   do i=BCData(mm)%inBeg,BCData(mm)%inEnd
-                      jj = jj + 1
-                      do iDim=1,3
-                         fDot(idim, jj) = bcDatad(mm)%F(i, j, iDim)
-                      end do
-                   end do
-                end do
-             end if
-          end do bocos
+          ! And it's derivative
+          call VecRestoreArrayF90(xSurfVecd(sps), xSurfd, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+
        end do spectalLoopAD
     end do domainLoopAD
+
+    ! This only works currently with 1 spectral instance
+    sps = 1
+    call getForces_d(forces, fDot, fSize, sps)
 
     ! We need to allreduce the function values to all processors
     call mpi_allreduce(funcsLocalDot, funcsDot, costSize, sumb_real, mpi_sum, SUmb_comm_world, ierr)
@@ -242,6 +267,17 @@ contains
     if (resetToRANS) then
        equations = RANSEquations
     end if
+
+    call VecResetArray(x_like, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    ! Just to be sure, we'll zero everything when we're done.
+    do nn=1,nDom
+       do sps=1,nTimeIntervalsSpectral
+          call setPointers(nn, level, sps)
+          call zeroADSeeds(nn,level, sps)
+       end do
+    end do
   end subroutine computeMatrixFreeProductFwd
 
   subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useState, xvbar, &
@@ -1428,9 +1464,9 @@ contains
     domainLoop: do nn=1, nDom
        spectralLoop: do sps=1, nTimeIntervalsSpectral
           call setPointers(nn, level, sps)
-          do k=1,kl
-             do j=1,jl
-                do i=1,il
+          do k=2,kl
+             do j=2,jl
+                do i=2,il
                    iRow = flowDoms(nn, level, sps)%globalCell(i, j, k)
                    ! The location of the cell center is determined
                    ! by averaging the cell coordinates.
@@ -1709,4 +1745,5 @@ contains
 
     adjointPETScVarsAllocated = .True.
   end subroutine createPETScVars
+
 end module adjointAPI

@@ -743,6 +743,10 @@ contains
                   flowDomsd(nn, level, sps)%BCData(mm)%rface(iBeg:iStop,jBeg:jStop), &
                   flowDomsd(nn, level, sps)%BCData(mm)%Fp(iBeg:iStop, jBeg:jStop, 3),&
                   flowDomsd(nn, level, sps)%BCData(mm)%Fv(iBeg:iStop, jBeg:jStop, 3),&
+                  flowDomsd(nn, level, sps)%BCData(mm)%Tp(iBeg:iStop, jBeg:jStop, 3),&
+                  flowDomsd(nn, level, sps)%BCData(mm)%Tv(iBeg:iStop, jBeg:jStop, 3),&
+                  flowDomsd(nn, level, sps)%BCData(mm)%F(iBeg:iStop, jBeg:jStop, 3),&
+                  flowDomsd(nn, level, sps)%BCData(mm)%T(iBeg:iStop, jBeg:jStop, 3),&
                   flowDomsd(nn, level, sps)%BCData(mm)%area(iBeg:iStop, jBeg:jStop), &
                   flowDomsd(nn, level, sps)%BCData(mm)%uSlip(iBeg:iStop,jBeg:jStop,3), &
                   flowDomsd(nn, level, sps)%BCData(mm)%TNS_Wall(iBeg:iStop,jBeg:jStop), stat=ierr)

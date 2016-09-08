@@ -3069,9 +3069,9 @@ contains
 
           endif testPrim
 
-          ! ! Release the memory of buffer, varNames and varTypes.
+          ! Release the memory of buffer, varNames and varTypes.
 
-          ! deallocate(buffer, varNames, varTypes, stat=ierr)
+          deallocate(buffer, varNames, varTypes, stat=ierr)
           if(ierr /= 0)                       &
                call terminate("readRestartFile", &
                "Deallocation error for buffer, varNames &
