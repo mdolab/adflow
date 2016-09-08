@@ -90,14 +90,47 @@ module BCData
 
   type(cgnsBcDatasetType), pointer, dimension(:) :: dataSet
 
-
-
 contains
+
+  subroutine errorCheckbcDataNamesIn(setSubroutineName, bcDataNamesIn, nBCInVar)
+    use constants
+    use utils, only: terminate, char2str
+    implicit none
+    !
+    !      Subroutine arguments.
+    !
+    character(32), intent(in) :: setSubroutineName
+    character, dimension(nBCInVar, maxCGNSNameLen), intent(in) :: bcdatanamesin
+    integer(kind=intType), intent(in) :: nBCInVar
+    !
+    !      Local variables.
+    !
+    logical :: varAllowed
+    integer :: i,j
+    character(maxCGNSNameLen) :: varName
+    
+    do i=1,nbcVar 
+      if( bcVarPresent(i) ) then
+        varAllowed = .false.
+        do j=1, nBCInVar
+          varName = char2str(bcDataNamesIn(j,:), maxCGNSNameLen)
+          if (bcVarNames(i) == varname) then
+            varAllowed = .true. 
+            exit
+          end if
+        end do
+        print *, bcVarNames(i), varname, varAllowed
+        if (.not. varAllowed) then 
+          call terminate(setSubroutineName, trim(varName)//" is not a valid variable for this boundary condition")
+        end if
+      end if
+    end do  
+  end subroutine
 
   subroutine setBCVarNamesIsothermalWall
     use cgnsNames
     use constants
-
+    implicit none
     nbcVar = nbcVarIsothermalWall
     bcVarNames(1) = cgnsTemp
 
@@ -196,12 +229,16 @@ contains
     use cgnsNames
     use inputPhysics, only : equations
     use flowVarRefState, only : nwt
+    implicit none
+    !
+    !      Local variables.
+    !
+    logical :: varAllowed
 
     nbcVar = nbcVarSubsonicInflow
     if(equations == RANSEquations) then
       nbcVar = nbcVar + nwt
     end if
-
 
     bcVarNames(1)  = cgnsPtot
     bcVarNames(2)  = cgnsTtot
@@ -238,10 +275,10 @@ contains
     integer(kind=intType), intent(in) :: nBCInVar
 
     call setBCVarNamesSubsonicInflow ! sets bcVarNames and nbcVar
+    call errorCheckbcDataNamesIn("setBCDataSubsonicInflow         ", bcDataNamesIn, nBCInVar)
 
     ! set the data
-    print *, "test setSubInflow ", nBCInVar, bcDataIn
-    call insertToDataSet(bcDataNamesIn, bcDataIn, nbcVar, nBCInVar)
+    call insertToDataSet(bcDataNamesIn, bcDataIn, nBCInVar)
 
   end subroutine setBCDataSubsonicInflow
 
@@ -932,7 +969,7 @@ contains
     call setBCVarNamesSubsonicOutflow ! sets bcVarNames and nbcVar
    
     ! set the data
-    call insertToDataSet(bcDataNamesIn, bcDataIn, nbcVar, nBCInVar)
+    call insertToDataSet(bcDataNamesIn, bcDataIn, nBCInVar)
 
 
   end subroutine setBCDataSubsonicOutflow
@@ -1049,7 +1086,7 @@ contains
     call setBCVarNamesSupersonicInflow
 
     ! set the data
-    call insertToDataSet(bcDataNamesIn, bcDataIn, nbcVar, nBCInVar)
+    call insertToDataSet(bcDataNamesIn, bcDataIn, nBCInVar)
 
   end subroutine setBCDataSupersonicInflow
 
@@ -2170,7 +2207,6 @@ contains
 
              ! Check if this surface should be included or not:
              famInclude: if (bsearchIntegers(BCdata(j)%famID, famList, nFams) > 0) then 
-                print *, "test top ", nbcDataIn, bcDataIn
                 ! Modify from here  +++++++++++++++++++++==
                 select case (BCType(j))
                    
@@ -2196,16 +2232,16 @@ contains
 
   end subroutine setBCData
 
-  subroutine insertToDataSet(bcDataNamesIn, bcDataIn, nbcVar, nbcInVar)
+  subroutine insertToDataSet(bcDataNamesIn, bcDataIn, nbcInVar)
     use constants
-
+    use utils, only: char2str
     implicit none
     !
     !      Subroutine arguments.
     !
     character, dimension(nBCInVar, maxCGNSNameLen), intent(in) :: bcdatanamesin
     real(kind=realType), dimension(nBCInVar), intent(in):: bcDataIn
-    integer(kind=intType), intent(in):: nbcVar, nbcInVar
+    integer(kind=intType), intent(in):: nbcInVar
     !
     !      Local variables.
     !
@@ -2245,24 +2281,18 @@ contains
           enddo
        enddo dataSetLoop
     enddo
-    
-    print *, "bcdatain ", bcDataIn
-    
+
+        
     do m=1,nbcVar
         if( bcVarPresent(m) ) then
           k = ind(1,m)
           l = ind(2,m)
           do n=1,nbcInVar
-            
-            do q=1,maxCGNSNameLen
-              varName(q:q) = bcDataNamesIn(n,q)
-            end do
-            
-            ! print *, "test ", m, n, bcVarNames(m), bcDataNamesIn(n,:), " ; " , varName, trim(varname) == trim(bcVarNames(m))
-            ! print *, len(varname), len(bcVarNames(m))
+
+            varName = char2str(bcDataNamesIn(n,:), maxCGNSNameLen)
+  
             if (bcVarNames(m) == varname) then
               dataSet(k)%dirichletArrays(l)%dataArr(1) = bcDataIn(n)
-              print *, "insert", m, varname, bcDataIn(n)
             end if
           end do 
         endif
