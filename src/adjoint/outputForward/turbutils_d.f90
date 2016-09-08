@@ -1358,7 +1358,7 @@ nadvloopspectral:do ii=1,nadv
 !
 !      local variables.
 !
-    integer(kind=inttype) :: i, j, k, isize, jsize, ksize
+    integer(kind=inttype) :: i, j, k, ii, isize, jsize, ksize
     intrinsic abs
     real(kind=realtype) :: x1
 ! loop over the cells of this block and compute the eddy viscosity.
@@ -1392,7 +1392,7 @@ nadvloopspectral:do ii=1,nadv
 !
 !      local variables.
 !
-    integer(kind=inttype) :: i, j, k, isize, jsize, ksize
+    integer(kind=inttype) :: i, j, k, ii, isize, jsize, ksize
     real(kind=realtype) :: t1, t2, arg2, f2, vortmag
     intrinsic sqrt
     intrinsic max

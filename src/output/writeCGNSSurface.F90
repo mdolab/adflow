@@ -1000,18 +1000,10 @@ contains
 
       real(kind=realType) :: LRefInv
 
-      character, dimension(:), allocatable :: writeBuffer
+      real(kind=4), dimension(:), allocatable :: writeBuffer4
+      real(kind=8), dimension(:), allocatable :: writeBuffer8
 
       ! Set the cgns real type depending on the input option.
-
-      select case (precisionGrid)
-      case (precisionSingle)
-         realTypeCGNS      = RealSingle
-         sizeCGNSWriteType = 4
-      case (precisionDouble)
-         realTypeCGNS      = RealDouble
-         sizeCGNSWriteType = 8
-      end select
 
       ! Compute the multiplication factor to obtain the original
       ! coordinates. Note that LRef is corrected to 1.0 when the
@@ -1024,9 +1016,13 @@ contains
       ! writeBuffer.
 
       if(myID == 0) then
-         mm = (kEnd-kBeg+1) * (jEnd-jBeg+1) * (iEnd-iBeg+1) &
-              * sizeCGNSWriteType
-         allocate(writeBuffer(mm), stat=ierr)
+         mm = (kEnd-kBeg+1) * (jEnd-jBeg+1) * (iEnd-iBeg+1)
+         select case (precisionSurfGrid)
+         case (precisionSingle)
+            allocate(writeBuffer4(mm), writeBuffer8(0), stat=ierr)
+         case (precisionDouble)
+            allocate(writeBuffer4(0), writeBuffer8(mm), stat=ierr)
+         end select
          if(ierr /= 0)                         &
               call terminate("writeSurfaceCoord", &
               "Memory allocation failure for writeBuffer")
@@ -1123,15 +1119,15 @@ contains
 
             ii = 1
             do kk=1,nSubfaces
-               select case (precisionGrid)
+               select case (precisionSurfGrid)
                case (precisionSingle)
-                  call copyDataBufSinglePrecision(writeBuffer,      &
+                  call copyDataBufSinglePrecision(writeBuffer4,      &
                        buffer(ii),       &
                        iBeg, jBeg, kBeg, &
                        iEnd, jEnd, kEnd, &
                        rangeNode(1,1,kk))
                case (precisionDouble)
-                  call copyDataBufDoublePrecision(writeBuffer,      &
+                  call copyDataBufDoublePrecision(writeBuffer8,      &
                        buffer(ii),       &
                        iBeg, jBeg, kBeg, &
                        iEnd, jEnd, kEnd, &
@@ -1148,20 +1144,32 @@ contains
             ! Write the coordinates, depending on the situation.
             ! In source the actual number is stored; normally this
             ! is equal to mm.
+            select case (precisionSurfGrid)
+            case (precisionSingle)
+               select case (mm)
+               case (1_intType)
+                  call cg_coord_write_f(cgnsInd, cgnsBase, cgnsZone, &
+                       realSingle, cgnsCoorX, writeBuffer4, source, ierr)
+               case (2_intType)
+                  call cg_coord_write_f(cgnsInd, cgnsBase, cgnsZone, &
+                       realSingle, cgnsCoorY, writeBuffer4, source, ierr)
+               case (3_intType)
+                  call cg_coord_write_f(cgnsInd, cgnsBase, cgnsZone, &
+                       realSingle, cgnsCoorZ, writeBuffer4, source, ierr)
+               end select
 
-            select case (mm)
-            case (1_intType)
-               call cg_coord_write_f(cgnsInd, cgnsBase, cgnsZone, &
-                    realTypeCGNS, cgnsCoorX,     &
-                    writeBuffer, source, ierr)
-            case (2_intType)
-               call cg_coord_write_f(cgnsInd, cgnsBase, cgnsZone, &
-                    realTypeCGNS, cgnsCoorY,     &
-                    writeBuffer, source, ierr)
-            case (3_intType)
-               call cg_coord_write_f(cgnsInd, cgnsBase, cgnsZone, &
-                    realTypeCGNS, cgnsCoorZ,     &
-                    writeBuffer, source, ierr)
+            case (precisionDouble)
+               select case(mm)
+               case (1_intType)
+                  call cg_coord_write_f(cgnsInd, cgnsBase, cgnsZone, &
+                       realDouble, cgnsCoorX, writeBuffer8, source, ierr)
+               case (2_intType)
+                  call cg_coord_write_f(cgnsInd, cgnsBase, cgnsZone, &
+                       realDouble, cgnsCoorY, writeBuffer8, source, ierr)
+               case (3_intType)
+                  call cg_coord_write_f(cgnsInd, cgnsBase, cgnsZone, &
+                       realDouble, cgnsCoorZ, writeBuffer8, source, ierr)
+               end select
             end select
 
             if(ierr /= CG_OK)                    &
@@ -1215,7 +1223,7 @@ contains
       ! Processor 0 must deallocate the writeBuffer.
 
       if(myID == 0) then
-         deallocate(writeBuffer, stat=ierr)
+         deallocate(writeBuffer4, writebuffer8, stat=ierr)
          if(ierr /= 0)                         &
               call terminate("writeSurfaceCoord", &
               "Deallocation error for writeBuffer")
@@ -1239,20 +1247,9 @@ contains
       integer(kind=intType) :: ii, jj, kk, ll, mm
       integer(kind=intType) :: iiBeg, jjBeg, kkBeg
       integer(kind=intType) :: iiEnd, jjEnd, kkEnd
-      integer(kind=intType) :: sizeCGNSWriteType
 
-      character, dimension(:), allocatable :: writeBuffer
-
-      ! Set the cgns real type depending on the input option.
-
-      select case (precisionSol)
-      case (precisionSingle)
-         realTypeCGNS      = RealSingle
-         sizeCGNSWriteType = 4
-      case (precisionDouble)
-         realTypeCGNS      = RealDouble
-         sizeCGNSWriteType = 8
-      end select
+      real(kind=4), dimension(:), allocatable :: writeBuffer4
+      real(kind=8), dimension(:), allocatable :: writeBuffer8
 
       ! Processor 0 does the writing and must therefore allocate the
       ! writeBuffer.
@@ -1272,9 +1269,13 @@ contains
             kkEnd = max(kkEnd,rangeCell(3,2,ll))
          enddo
 
-         mm = (kkEnd-kkBeg+1) * (jjEnd-jjBeg+1) * (iiEnd-iiBeg+1) &
-              * sizeCGNSWriteType
-         allocate(writeBuffer(mm), stat=ierr)
+         mm = (kkEnd-kkBeg+1) * (jjEnd-jjBeg+1) * (iiEnd-iiBeg+1) 
+         select case (precisionSurfSol)
+         case (precisionSingle)
+            allocate(writeBuffer4(mm), writeBuffer8(0), stat=ierr)
+         case (precisionDouble) 
+            allocate(writeBuffer4(0), writeBuffer8(mm), stat=ierr)
+         end select
          if(ierr /= 0)                       &
               call terminate("writeSurfaceSol", &
               "Memory allocation failure for writeBuffer")
@@ -1354,15 +1355,15 @@ contains
 
             ii = 1
             do kk=1,nSubfaces
-               select case (precisionSol)
+               select case (precisionSurfSol)
                case (precisionSingle)
-                  call copyDataBufSinglePrecision(writeBuffer,         &
+                  call copyDataBufSinglePrecision(writeBuffer4,        &
                        buffer(ii),          &
                        iiBeg, jjBeg, kkBeg, &
                        iiEnd, jjEnd, kkEnd, &
                        rangeCell(1,1,kk))
                case (precisionDouble)
-                  call copyDataBufDoublePrecision(writeBuffer,         &
+                  call copyDataBufDoublePrecision(writeBuffer8,        &
                        buffer(ii),          &
                        iiBeg, jjBeg, kkBeg, &
                        iiEnd, jjEnd, kkEnd, &
@@ -1378,11 +1379,16 @@ contains
 
             ! Write the solution variable to file. Source is just used
             ! as a dummy variable and does not have a meaning.
-
-            call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, &
-                 cgnsSol, realTypeCGNS,       &
-                 solNames(mm), writeBuffer,   &
-                 source, ierr)
+            select case(precisionSurfSol)
+            case (precisionSingle)
+               call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, &
+                    cgnsSol, realSingle, solNames(mm), writeBuffer4, &
+                    source, ierr)
+            case (precisionDouble) 
+               call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, &
+                    cgnsSol, realDouble, solNames(mm), writeBuffer8, &
+                    source, ierr)
+            end select
             if(ierr /= 0)           then
                call terminate("writeSolCGNSZone", &
                     "Something wrong when &
@@ -1408,7 +1414,7 @@ contains
       ! Processor 0 must deallocate the writeBuffer.
 
       if(myID == 0) then
-         deallocate(writeBuffer, stat=ierr)
+         deallocate(writeBuffer4, writeBuffer8, stat=ierr)
          if(ierr /= 0)                         &
               call terminate("writeSurfaceSol", &
               "Deallocation error for writeBuffer")

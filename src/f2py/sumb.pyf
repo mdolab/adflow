@@ -242,6 +242,27 @@ python module libsumb
            real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: grid
            integer(kind=inttype) intent(in) :: ndof
          end subroutine getgrid
+
+         subroutine getstateperturbation(randvec,nrand,randstate,nrandstate)
+           real(kind=realtype) dimension(nrand),intent(in) :: randvec
+           integer(kind=inttype), optional,intent(in),check(len(randvec)>=nrand),depend(randvec) :: nrand=len(randvec)
+           real(kind=realtype) dimension(nrandstate),intent(out),depend(nrandstate) :: randstate
+           integer(kind=inttype) intent(in) :: nrandstate
+         end subroutine getstateperturbation
+
+         subroutine getspatialperturbation(randvec,nrand,randspatial,nrandspatial) 
+           real(kind=realtype) dimension(nrand),intent(in) :: randvec
+           integer(kind=inttype), optional,intent(in),check(len(randvec)>=nrand),depend(randvec) :: nrand=len(randvec)
+           real(kind=realtype) dimension(nrandspatial),intent(out),depend(nrandstate) :: randspatial
+           integer(kind=inttype) intent(in) :: nrandspatial
+         end subroutine getstateperturbation         
+
+         subroutine getsurfaceperturbation(xrand,nrand,randsurface,nrandsurface) ! in :test:warping.F90:warping
+           real(kind=realtype) dimension(nrand),intent(in) :: xrand
+           integer(kind=inttype), optional,intent(in),check(len(xrand)>=nrand),depend(xrand) :: nrand=len(xrand)
+           real(kind=realtype) dimension(3,nrandsurface),intent(out),depend(nrandsurface) :: randsurface
+           integer(kind=inttype) intent(in) :: nrandsurface
+         end subroutine getsurfaceperturbation
        end module warping
        
        module surfaceutils
