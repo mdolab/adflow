@@ -964,6 +964,8 @@ contains
     integer(kind=intType), intent(in) :: nBCInVar
 
     call setBCVarNamesSubsonicOutflow ! sets bcVarNames and nbcVar
+    call errorCheckbcDataNamesIn("setBCVarNamesSubsonicOutflow    ", bcDataNamesIn, nBCInVar)
+
    
     ! set the data
     call insertToDataSet(bcDataNamesIn, bcDataIn, nBCInVar)
@@ -1081,6 +1083,8 @@ contains
     integer(kind=intType), intent(in) :: nBCInVar
 
     call setBCVarNamesSupersonicInflow
+    call errorCheckbcDataNamesIn("setBCDataSupersonicInflow       ", bcDataNamesIn, nBCInVar)
+
 
     ! set the data
     call insertToDataSet(bcDataNamesIn, bcDataIn, nBCInVar)
