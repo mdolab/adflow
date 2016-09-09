@@ -13,11 +13,10 @@ contains
 !                funcvalues
 !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
 !                *(flowdoms.dw) *(*bcdata.fv) *(*bcdata.fp) *(*bcdata.area)
-!                *xsurf mach machgrid rgasdim lengthref machcoef
-!                pointref tinfdim rhoinfdim pinfdim *xx *rev0 *rev1
-!                *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2
-!                *rlv3 *ssi *ww0 *ww1 *ww2 *ww3 funcvalues alpha
-!                beta
+!                *xsurf mach machgrid lengthref machcoef pointref
+!                tinfdim rhoinfdim pinfdim *xx *rev0 *rev1 *rev2
+!                *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3
+!                *ssi *ww0 *ww1 *ww2 *ww3 funcvalues alpha beta
 !   rw status of diff variables: *(flowdoms.x):in-out *(flowdoms.vol):(loc)
 !                *(flowdoms.w):in-out *(flowdoms.dw):in-out *rev:(loc)
 !                *aa:(loc) *bvtj1:(loc) *bvtj2:(loc) *wx:(loc)
@@ -29,18 +28,18 @@ contains
 !                *(*bcdata.norm):(loc) *(*bcdata.fv):in-out *(*bcdata.fp):in-out
 !                *(*bcdata.area):in-out *radi:(loc) *radj:(loc)
 !                *radk:(loc) *xsurf:out mach:out veldirfreestream:(loc)
-!                machgrid:out rgasdim:out lengthref:out machcoef:out
-!                dragdirection:(loc) liftdirection:(loc) pointref:out
-!                gammainf:(loc) tinfdim:out pinf:(loc) timeref:(loc)
-!                rhoinf:(loc) muref:(loc) rhoinfdim:out tref:(loc)
-!                winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
-!                rgas:(loc) muinfdim:(loc) pinfdim:out pref:(loc)
-!                rhoref:(loc) *xx:in-out *rev0:in-out *rev1:in-out
-!                *rev2:in-out *rev3:in-out *pp0:in-out *pp1:in-out
-!                *pp2:in-out *pp3:in-out *rlv0:in-out *rlv1:in-out
-!                *rlv2:in-out *rlv3:in-out *ssi:in-out *ww0:in-out
-!                *ww1:in-out *ww2:in-out *ww3:in-out funcvalues:in-zero
-!                alpha:out beta:out
+!                machgrid:out lengthref:out machcoef:out dragdirection:(loc)
+!                liftdirection:(loc) pointref:out gammainf:(loc)
+!                tinfdim:out pinf:(loc) timeref:(loc) rhoinf:(loc)
+!                muref:(loc) rhoinfdim:out tref:(loc) winf:(loc)
+!                muinf:(loc) uinf:(loc) pinfcorr:(loc) rgas:(loc)
+!                muinfdim:(loc) pinfdim:out pref:(loc) rhoref:(loc)
+!                *xx:in-out *rev0:in-out *rev1:in-out *rev2:in-out
+!                *rev3:in-out *pp0:in-out *pp1:in-out *pp2:in-out
+!                *pp3:in-out *rlv0:in-out *rlv1:in-out *rlv2:in-out
+!                *rlv3:in-out *ssi:in-out *ww0:in-out *ww1:in-out
+!                *ww2:in-out *ww3:in-out funcvalues:in-zero alpha:out
+!                beta:out
 !   plus diff mem management of: flowdoms.x:in flowdoms.vol:in
 !                flowdoms.w:in flowdoms.dw:in rev:in aa:in bvtj1:in
 !                bvtj2:in wx:in wy:in wz:in p:in rlv:in qx:in qy:in
@@ -1435,6 +1434,9 @@ varloopfine:do l=1,nwf
     ovrnts = one/ntimeintervalsspectral
 ! pre-compute ts stability info if required:
     if (tsstability) then
+      coef0 = zero
+      dcdalpha = zero
+      dcdalphadot = zero
       call pushinteger4(liftindex)
       call computetsderivatives(force, moment, liftindex, coef0, &
 &                         dcdalpha, dcdalphadot, dcdq, dcdqdot)
@@ -1718,9 +1720,15 @@ varloopfine:do l=1,nwf
     factmoment = fact/(lengthref*lref)
     ovrnts = one/ntimeintervalsspectral
 ! pre-compute ts stability info if required:
-    if (tsstability) call computetsderivatives(force, moment, liftindex&
-&                                        , coef0, dcdalpha, dcdalphadot&
-&                                        , dcdq, dcdqdot)
+    if (tsstability) then
+      coef0 = zero
+      dcdalpha = zero
+      dcdalphadot = zero
+      dcdq = zero
+      dcdqdot = zero
+      call computetsderivatives(force, moment, liftindex, coef0, &
+&                         dcdalpha, dcdalphadot, dcdq, dcdqdot)
+    end if
     funcvalues = zero
 ! now we just compute each cost function:
     do sps=1,ntimeintervalsspectral

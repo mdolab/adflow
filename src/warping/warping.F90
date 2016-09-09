@@ -334,7 +334,7 @@ contains
   subroutine getSurfacePerturbation(xRand, nRand, randSurface, nRandSurface)
 
     use constants
-    use blockPointers, only : nDom, BCData, nBocos, BCFaceID
+    use blockPointers, only : nDom, BCData, nBocos, BCFaceID, il, jl ,kl
     use communication, only : sumb_comm_world, myid
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use surfaceFamilies, only : famGroups
@@ -351,7 +351,7 @@ contains
 
     ! Working parameters
     integer(kind=intType) :: i, j, k, ierr, iDim, iBeg, iEnd, jBeg, jEnd, nn, mm
-    integer(kind=intType) :: sps, ii, jj
+    integer(kind=intType) :: sps, ii, jj, indI, indJ, indK, jjInd
 
     ii = 0 
     jj = 0
@@ -372,30 +372,45 @@ contains
                 do j=jBeg, jEnd ! This is a node loop
                    do i=iBeg, iEnd ! This is a node loop
                       ii = ii +1
-                      do iDim=1, 3
-                         jj = jj + 1
-                         select case(BCFaceID(mm))
-                         case(imin)
-                            randSurface(iDim, ii) = xRand(jj)
-                         case(imax)
-                            randSurface(iDim, ii) = xRand(jj)
-                         case(jmin) 
-                            randSurface(iDim, ii) = xRand(jj)
-                         case(jmax) 
-                            randSurface(iDim, ii) = xRand(jj)
-                         case(kmin) 
-                            randSurface(iDim, ii) = xRand(jj)
-                         case(kmax) 
-                            randSurface(iDim, ii) = xRand(jj)
-                         end select
+                      select case(BCFaceID(mm))
+                      case(imin)
+                         indI = 1
+                         indJ = i
+                         indK = j
+                      case(imax)
+                         indI = il
+                         indJ = i
+                         indK = j
+                      case(jmin) 
+                         indI = i
+                         indJ = 1
+                         indK = j
+                      case(jmax) 
+                         indI = i
+                         indJ = jl
+                         indK = j
+                      case(kmin) 
+                         indI = i
+                         indJ = j
+                         indK = 1
+                      case(kmax) 
+                         indI = i
+                         indJ = j
+                         indK = kl
+                      end select
+
+                      do iDim=1,3
+                         jjInd = jj + (indK-1)*il*jl + (indJ-1)*il + (indI-1) + iDim
+                         randSurface(iDim, ii) = xRand(jjInd)
                       end do
                    end do
                 end do
-             else
-                jj = jj + (iEnd-iBeg+1)*(jEnd-jBeg+1)*3
              end if famInclude
           end do bocos
        end do
+       ! jj is the counter through xRand. Increment it by the full
+       ! block. 
+       jj = jj + il*jl*kl*3
     end do domains
   end subroutine getSurfacePerturbation
 

@@ -184,7 +184,7 @@ contains
        call whalo2_d(level, 1, nw, .False., .False., .False.)
     end if
 
-    ! Now set the xsurfd contrib ution from the full x perturbation.
+    ! Now set the xsurfd contribution from the full x perturbation.
     ! scatter from the global seed (in x_like) to xSurfVecd...but only
     ! if wallDistances were used
     if (wallDistanceNeeded .and. useApproxWallDistance) then 
@@ -430,6 +430,10 @@ contains
 
           ! And the function value seeds
           funcValuesd = funcsBar
+
+          ! For some reason tapenade forget to zero rgasd when it
+          ! should, therefore we must manually zero here before calling the code. 
+          rgasd = zero
           call BLOCK_RES_B(nn, sps, useSpatial, alpha, alphad, beta, betad, &
                & liftindex, frozenTurbulence)
 
@@ -524,8 +528,8 @@ contains
 
                       do l=1,3
                          irow = flowDoms(nn, 1, sps)%globalNode(i,j,k)*3 + l -1
-                         call VecSetValues(x_like, 1, (/irow/), &
-                              (/flowdomsd(nn, level, sps)%x(i, j, k, l)/), INSERT_VALUES, ierr)
+                          call VecSetValues(x_like, 1, (/irow/), &
+                               (/flowdomsd(nn, level, sps)%x(i, j, k, l)/), INSERT_VALUES, ierr)
                          call EChk(ierr,__FILE__,__LINE__)
                       end do
                    end do
@@ -551,6 +555,9 @@ contains
        call EChk(ierr,__FILE__,__LINE__)
 
        xSurfd = xSurfbSum(sps, :)
+       call VecRestoreArrayF90(xSurfVecd(sps), xSurfd, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
     end do
 
     deallocate(xsurfbSum)

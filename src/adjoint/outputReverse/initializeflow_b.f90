@@ -16,8 +16,8 @@ contains
 !   gradient     of useful results: veldirfreestream machcoef gammainf
 !                pinf timeref rhoinf muref rhoinfdim tref winf
 !                pinfcorr rgas pinfdim pref
-!   with respect to varying inputs: mach veldirfreestream rgasdim
-!                machcoef tinfdim rhoinfdim pinfdim
+!   with respect to varying inputs: mach veldirfreestream machcoef
+!                tinfdim rhoinfdim pinfdim
   subroutine referencestate_b()
 !
 !       the original version has been nuked since the computations are
@@ -42,8 +42,7 @@ contains
     use paramturb
     use inputphysics, only : equations, mach, machd, machcoef, &
 &   machcoefd, musuthdim, tsuthdim, veldirfreestream, veldirfreestreamd,&
-&   rgasdim, rgasdimd, ssuthdim, eddyvisinfratio, turbmodel, &
-&   turbintensityinf
+&   rgasdim, ssuthdim, eddyvisinfratio, turbmodel, turbintensityinf
     use flowvarrefstate, only : pinfdim, pinfdimd, tinfdim, tinfdimd, &
 &   rhoinfdim, rhoinfdimd, muinfdim, muinfdimd, pref, prefd, rhoref, &
 &   rhorefd, tref, trefd, muref, murefd, timeref, timerefd, pinf, pinfd,&
@@ -65,7 +64,6 @@ contains
     real(kind=realtype) :: tmp3
     real(kind=realtype) :: tmp4
     integer :: branch
-    real(kind=realtype) :: temp2
     real(kind=realtype) :: temp1
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tmpd
@@ -265,14 +263,14 @@ contains
     muinfd = nuinfd/rhoinf
     rhoinfd = rhoinfd - muinf*nuinfd/rhoinf**2
  100 muinfdimd = muinfd/muref
-    tempd2 = rgasdim*rhoref*rgasd/pref
-    trefd = trefd + tempd2
+    tempd2 = rgasdim*rgasd/pref
+    trefd = trefd + rhoref*tempd2
     tempd1 = musuthdim*(tsuthdim+ssuthdim)*muinfdimd/(ssuthdim+tinfdim)
     tempd = gammainf*pinf*uinf2d/rhoinf
-    temp2 = machcoef**2/rhoinf
+    temp1 = machcoef**2/rhoinf
     machcoefd = machcoefd + 2*machcoef*tempd
-    gammainfd = gammainfd + temp2*pinf*uinf2d
-    pinfd = pinfd + temp2*gammainf*uinf2d
+    gammainfd = gammainfd + temp1*pinf*uinf2d
+    pinfd = pinfd + temp1*gammainf*uinf2d
     uinfd = uinfd + veldirfreestream(3)*winfd(ivz)
     veldirfreestreamd(3) = veldirfreestreamd(3) + uinf*winfd(ivz)
     winfd(ivz) = 0.0_8
@@ -290,8 +288,6 @@ contains
 &     tinfdim/tsuthdim)**1.5_realtype/(ssuthdim+tinfdim))*tempd1 + tmp1d&
 &     (1)
     murefd = murefd - muinfdim*muinfd/muref**2
-    temp1 = tref/pref
-    rgasdimd = temp1*rhoref*rgasd
     temp0 = gammainf*pinf/rhoinf
     temp = sqrt(temp0)
     if (temp0 .eq. 0.0_8) then
@@ -299,7 +295,7 @@ contains
     else
       tempd0 = gammainf*mach*uinfd/(2.0*temp*rhoinf)
     end if
-    rhoinfd = rhoinfd + winfd(irho) - pinf*tempd0/rhoinf - temp2*tempd
+    rhoinfd = rhoinfd + winfd(irho) - pinf*tempd0/rhoinf - temp1*tempd
     machd = temp*uinfd
     pinfd = pinfd + tempd0
     if (rhoref/pref .eq. 0.0_8) then
@@ -312,10 +308,10 @@ contains
     else
       tempd3 = murefd/(2.0*sqrt(pref*rhoref))
     end if
-    rhorefd = pref*tempd3 - rhoinfdim*rhoinfd/rhoref**2 + tempd4 + temp1&
-&     *rgasdim*rgasd
+    rhorefd = pref*tempd3 - rhoinfdim*rhoinfd/rhoref**2 + tempd4 + tref*&
+&     tempd2
     prefd = prefd + rhoref*tempd3 - pinfdim*pinfd/pref**2 - rhoref*&
-&     tempd4/pref - temp1*tempd2
+&     tempd4/pref - rhoref*tref*tempd2/pref
     rhoinfdimd = rhoinfdimd + rhorefd + rhoinfd/rhoref
     pinfdimd = pinfdimd + prefd + pinfd/pref
   end subroutine referencestate_b
