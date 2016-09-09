@@ -10,11 +10,10 @@ contains
 !                *(*bcdata.fv) *(*bcdata.fp) *(*bcdata.area) *rev0
 !                *rev1 *pp0 *pp1 *rlv0 *rlv1 *ww0 *ww1 funcvalues
 !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
-!                *xsurf mach machgrid rgasdim lengthref machcoef
-!                pointref tinfdim rhoinfdim pinfdim *xx *rev0 *rev1
-!                *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2
-!                *rlv3 *ss *ssi *ssj *ssk *ww0 *ww1 *ww2 *ww3 alpha
-!                beta
+!                *xsurf mach machgrid lengthref machcoef pointref
+!                tinfdim rhoinfdim pinfdim *xx *rev0 *rev1 *rev2
+!                *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3
+!                *ss *ssi *ssj *ssk *ww0 *ww1 *ww2 *ww3 alpha beta
 !   rw status of diff variables: *(flowdoms.x):in *(flowdoms.vol):(loc)
 !                *(flowdoms.w):in-out *(flowdoms.dw):out *rev:(loc)
 !                *aa:(loc) *bvtj1:(loc) *bvtj2:(loc) *wx:(loc)
@@ -27,8 +26,8 @@ contains
 !                *(*bcdata.norm):(loc) *(*bcdata.rface):(loc) *(*bcdata.fv):out
 !                *(*bcdata.fp):out *(*bcdata.area):out *(*bcdata.uslip):(loc)
 !                *radi:(loc) *radj:(loc) *radk:(loc) *xsurf:in
-!                mach:in veldirfreestream:(loc) machgrid:in rgasdim:in
-!                lengthref:in machcoef:in dragdirection:(loc) liftdirection:(loc)
+!                mach:in veldirfreestream:(loc) machgrid:in lengthref:in
+!                machcoef:in dragdirection:(loc) liftdirection:(loc)
 !                pointref:in gammainf:(loc) tinfdim:in pinf:(loc)
 !                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:in
 !                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
@@ -922,6 +921,11 @@ varloopfine:do l=1,nwf
     ovrnts = one/ntimeintervalsspectral
 ! pre-compute ts stability info if required:
     if (tsstability) then
+      coef0 = zero
+      dcdalpha = zero
+      dcdalphadot = zero
+      dcdq = zero
+      dcdqdot = zero
       call computetsderivatives_d(force, forced, moment, momentd, &
 &                           liftindex, coef0, coef0d, dcdalpha, &
 &                           dcdalphad, dcdalphadot, dcdalphadotd, dcdq, &
@@ -1101,9 +1105,15 @@ varloopfine:do l=1,nwf
     factmoment = fact/(lengthref*lref)
     ovrnts = one/ntimeintervalsspectral
 ! pre-compute ts stability info if required:
-    if (tsstability) call computetsderivatives(force, moment, liftindex&
-&                                        , coef0, dcdalpha, dcdalphadot&
-&                                        , dcdq, dcdqdot)
+    if (tsstability) then
+      coef0 = zero
+      dcdalpha = zero
+      dcdalphadot = zero
+      dcdq = zero
+      dcdqdot = zero
+      call computetsderivatives(force, moment, liftindex, coef0, &
+&                         dcdalpha, dcdalphadot, dcdq, dcdqdot)
+    end if
     funcvalues = zero
 ! now we just compute each cost function:
     do sps=1,ntimeintervalsspectral

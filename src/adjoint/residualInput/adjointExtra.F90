@@ -455,9 +455,14 @@ contains
     factMoment = fact/(lengthRef*LRef)
 
     ovrNTS = one/nTimeIntervalsSpectral
-
+    
     ! Pre-compute TS stability info if required:
     if (TSStability) then
+       coef0 = zero
+       dcdalpha = zero
+       dcdalphadot = zero
+       dcdq = zero
+       dcdqdot = zero
        call computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
             dcdalphadot, dcdq, dcdqdot)
     end if

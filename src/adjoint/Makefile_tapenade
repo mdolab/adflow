@@ -86,7 +86,9 @@ ad_forward:
 
 # The following is the single Tapenade command to run:
 	$(TAPENADE_HOME)/bin/tapenade -html \
-	-head "adjointExtra%block_res(flowdoms%w flowdoms%x xsurf alpha beta mach machgrid machcoef pointref lengthRef PinfDim TinfDim rhoInfDim rGasDim ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 ssi ssj ssk ss xx) > \
+	-head "adjointExtra%block_res(flowdoms%w flowdoms%x xsurf alpha beta mach \
+	machgrid machcoef pointref lengthRef PinfDim TinfDim rhoInfDim ww0 ww1 ww2 ww3 pp0 pp1 pp2 \
+	pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 ssi ssj ssk ss xx) > \
 (flowdoms%dw  bcData%Fv bcData%Fp bcData%area flowdoms%w flowdoms%x funcValues) \
 adjointExtra%xhalo_block(x)>(x)" \
 	-forward $(TAPENADE_PRECISION) \
@@ -110,7 +112,9 @@ ad_reverse:
 
 # The following is the single Tapenade command to run:
 	$(TAPENADE_HOME)/bin/tapenade -html \
-	-head "adjointExtra%block_res(flowdoms%w flowdoms%x xsurf alpha beta mach machgrid machcoef pointref lengthRef PinfDim TinfDim rhoInfDim rGasDim ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 xx ssi) > \
+	-head "adjointExtra%block_res(flowdoms%w flowdoms%x xsurf alpha beta mach \
+	machgrid machcoef pointref lengthRef PinfDim TinfDim rhoInfDim ww0 ww1 ww2 ww3 pp0 pp1 pp2 \
+	pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 xx ssi) > \
 (flowdoms%dw  bcData%Fp bcData%Fv bcData%area flowdoms%w flowdoms%x funcValues ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 xx ssi) \
 adjointExtra%xhalo_block(x)>(x)" \
 	-adjvarname %d \

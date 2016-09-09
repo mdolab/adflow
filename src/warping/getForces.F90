@@ -376,6 +376,7 @@ subroutine getForces_b(forces_b, npts, sps)
                        end do
                        qf_b = qf_b*fourth
                        
+                       ! Fp and Fv are face-based values
                        BCDatad(mm)%Fp(i+iBeg+1, j+jBeg+1, iDim) = & 
                             BCDatad(mm)%Fp(i+iBeg+1, j+jBeg+1, iDim) + qf_b
                        BCDatad(mm)%Fv(i+iBeg+1, j+jBeg+1, iDim) = & 
@@ -383,6 +384,7 @@ subroutine getForces_b(forces_b, npts, sps)
                     end do
                  end do
               end do
+              ii = ii + ni*nj
            end if
         end do
      end do domains
@@ -811,6 +813,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
      call EChk(ierr,__FILE__,__LINE__)
 
      localPtrd = zero
+     localPtr = zero
      ! ii is the running counter through the pointer array.
      ii = 0
      do nn=1, nDom
@@ -824,6 +827,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
            if(BCType(mm) == EulerWall .or. &
                 BCType(mm) == NSWallAdiabatic .or. &
                 BCType(mm) == NSWallIsothermal) then
+
               do j=0,nj-2
                  do i=0,ni-2
                     
@@ -844,7 +848,6 @@ subroutine getForces_d(forces, forcesd, npts, sps)
            end if
         end do
      end do
-
      call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
@@ -884,8 +887,8 @@ subroutine getForces_d(forces, forcesd, npts, sps)
      call vecGetArrayF90(sumGlobald, localPtrd, ierr)
      call EChk(ierr,__FILE__,__LINE__)
      
-     localPtr = one/localPtr
      localPtrd = -(localPtrd/localPtr**2)
+     localPtr = one/localPtr
 
      call vecGetArrayF90(exch%sumGlobal, localPtr, ierr)
      call EChk(ierr,__FILE__,__LINE__)
@@ -893,18 +896,16 @@ subroutine getForces_d(forces, forcesd, npts, sps)
      call vecRestoreArrayF90(sumGlobald, localPtrd, ierr)
      call EChk(ierr,__FILE__,__LINE__)
      
-
      ! Now do each of the three dimensions for the pressure and viscous forces
      dimLoop: do iDim=1, 6
-        
-
+       
         call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
         call EChk(ierr,__FILE__,__LINE__)
 
         call vecGetArrayF90(nodeValLocald, localPtrd, ierr)
         call EChk(ierr,__FILE__,__LINE__)
 
-        localPtr = zero
+        localPtr  = zero
         localPtrd = zero
 
         ! ii is the running counter through the pointer array.
@@ -922,10 +923,10 @@ subroutine getForces_d(forces, forcesd, npts, sps)
                  do j=0,nj-2
                     do i=0,ni-2
                        if (iDim <= 3) then 
-                          qf  = fourth*BCData(mm)%Fp(i+iBeg+1, j+jBeg+1, iDim)
+                          qf  = fourth*BCData (mm)%Fp(i+iBeg+1, j+jBeg+1, iDim)
                           qfd = fourth*BCDatad(mm)%Fp(i+iBeg+1, j+jBeg+1, iDim)
                        else
-                          qf  = fourth*BCData(mm)%Fv(i+iBeg+1, j+jBeg+1, iDim-3)
+                          qf  = fourth*BCData (mm)%Fv(i+iBeg+1, j+jBeg+1, iDim-3)
                           qfd = fourth*BCDatad(mm)%Fv(i+iBeg+1, j+jBeg+1, iDim-3)
                        end if
                        
@@ -934,7 +935,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
                        ind(3) = ii + (j+1)*ni + i + 2 
                        ind(4) = ii + (j+1)*ni + i + 1
                        do jj=1,4
-                          localPtr(ind(jj)) = localPtrd(ind(jj)) + qf
+                          localPtr (ind(jj)) = localPtr (ind(jj)) + qf
                           localPtrd(ind(jj)) = localPtrd(ind(jj)) + qfd
                        end do
                     end do
@@ -943,7 +944,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
               end if
            end do
         end do
-        
+
         call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
         call EChk(ierr,__FILE__,__LINE__)
 
@@ -973,7 +974,6 @@ subroutine getForces_d(forces, forcesd, npts, sps)
         call VecScatterEnd(exch%scatter, nodeValLocald, &
              nodeValGlobald, ADD_VALUES, SCATTER_FORWARD, ierr)
         call EChk(ierr,__FILE__,__LINE__)
-
 
         ! The product rule here: (since we are multiplying)
         ! nodeValGlobal = nodeValGlobal * invArea
@@ -1042,7 +1042,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
            
            if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
                 BCType(mm) == NSWallIsothermal) then
-              do iDim=1,3
+              do iDim=1, 3
                  do j=jBeg, jEnd
                     do i=iBeg, iEnd
                        bcDatad(mm)%T(i, j, iDim) = bcDatad(mm)%Tp(i, j, iDim) + &

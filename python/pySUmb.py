@@ -2900,8 +2900,8 @@ class SUMB(AeroSolver):
 
         """
         nPts, nCell = self._getSurfaceSize(self.allWallsGroup)
-        self._setFamilyList(self.allWallsGroup)
         xRand = self.getSpatialPerturbation(seed)
+        self._setFamilyList(self.allWallsGroup)
         return self.sumb.warping.getsurfaceperturbation(xRand, nPts).T
 
     def getStatePerturbation(self, seed=314):
