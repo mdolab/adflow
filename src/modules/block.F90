@@ -713,6 +713,7 @@ module block
      ! globalCell(0:ib,0:jb,0:kb):     Global cell numbering.
      ! color(0:ib,0:jb,0:kb)     :     Temporary coloring array used for
      !                                 forward mode AD/FD calculations
+     integer(kind=intType), dimension(:,:,:), pointer :: globalCGNSNode
      integer(kind=intType), dimension(:,:,:), pointer :: globalNode
      integer(kind=intType), dimension(:,:,:), pointer :: globalCell
      integer(kind=intType), dimension(:,:,:), pointer :: color
