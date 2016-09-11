@@ -70,11 +70,14 @@ python module libsumb
        end module initializeflow
 
        module bcdata
-         subroutine setbcdata(bcinarray,nbcinvar,famlist,n,sps)
-           real(kind=realtype),dimension(nbcinvar),intent(in)::bcinarray
-           integer(kind=inttype), optional,intent(in),check(len(bcinarray)>=nbcinvar),depend(bcinarray) :: nbcinvar=len(bcinarray)
-           integer(kind=inttype) dimension(n),intent(in) :: famlist
-           integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
+         subroutine setbcdata(bcdatanamesin,bcdatain,famlist, sps, nbcdatanamesin, nbcdatain, nfams)
+            character, dimension(nbcdatanamesin,32), intent(in) :: bcdatanamesin
+            real(kind=realtype) dimension(nbcdatain),intent(in) :: bcdatain
+            integer(kind=inttype) dimension(nfams),intent(in) :: famlist
+            integer(kind=inttype) intent(in) :: sps
+            integer(kind=inttype), optional,intent(in),check(len(bcdatanamesin)>=nbcdatanamesin),depend(bcdatanamesin) :: nbcdatanamesin=len(bcdatanamesin)
+            integer(kind=inttype), optional,intent(in),check(len(bcdatain)>=nbcdatain),depend(bcdatain) :: nbcdatain=len(bcdatain)
+            integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfams),depend(famlist) :: nfams=len(famlist)
          end subroutine setbcdata
        end module bcdata
 
