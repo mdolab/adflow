@@ -350,7 +350,7 @@ Dictionary Key: sepsensoravgy
 Dictionary Key: sepsensoravgz
 @value  1.7349573754930e-07 1e-10 1e-10
 ||dF/dXv * xVDot||
-@value  1.1059253465252e+06 1e-10 1e-10
+@value  1.1059253465252e+06 1e-09 1e-09
 -> Derivatives with respect to extra variables
   -> alpha
 ||dR/dalpha||
