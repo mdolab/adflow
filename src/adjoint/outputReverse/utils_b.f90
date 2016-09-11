@@ -1738,7 +1738,7 @@ contains
 !                moment dcdalphadot coef0 force dcdalpha
 !   with respect to varying inputs: machgrid lengthref machcoef
 !                dragdirection liftdirection gammainf pinf rhoinfdim
-!                pinfdim pref moment force
+!                pinfdim moment force
   subroutine computetsderivatives_b(force, forced, moment, momentd, &
 &   liftindex, coef0, coef0d, dcdalpha, dcdalphad, dcdalphadot, &
 &   dcdalphadotd, dcdq, dcdqdot)
@@ -1791,8 +1791,8 @@ contains
 !speed of sound: for normalization of q derivatives
     real(kind=realtype) :: a
     real(kind=realtype) :: ad
-    real(kind=realtype) :: scaledim, fact, factmoment
-    real(kind=realtype) :: scaledimd, factd, factmomentd
+    real(kind=realtype) :: fact, factmoment
+    real(kind=realtype) :: factd, factmomentd
 ! functions
     real(kind=realtype), dimension(ntimeintervalsspectral) :: dphix, &
 &   dphiy, dphiz
@@ -1801,7 +1801,6 @@ contains
     real(kind=realtype) :: derivativerigidrotangle, &
 &   secondderivativerigidrotangle
     intrinsic sqrt
-    real(kind=realtype) :: temp2
     real(kind=realtype) :: temp1
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tempd
@@ -1813,8 +1812,7 @@ contains
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: temp
-    scaledim = pref/pinf
-    fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2*scaledim)
+    fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2)
     factmoment = fact/(lengthref*lref)
     if (tsqmode) then
       stop
@@ -1921,15 +1919,15 @@ contains
         ad = tempd5
         lengthrefd = lengthrefd - a*tempd5/lengthref
         dcdalphadotd = machgrid*tempd4
-        temp2 = gammainf*pinfdim/rhoinfdim
-        if (temp2 .eq. 0.0_8) then
+        temp1 = gammainf*pinfdim/rhoinfdim
+        if (temp1 .eq. 0.0_8) then
           tempd6 = 0.0
         else
-          tempd6 = ad/(2.0*sqrt(temp2)*rhoinfdim)
+          tempd6 = ad/(2.0*sqrt(temp1)*rhoinfdim)
         end if
         gammainfd = pinfdim*tempd6
         pinfdimd = gammainf*tempd6
-        rhoinfdimd = -(temp2*tempd6)
+        rhoinfdimd = -(temp1*tempd6)
         resbasecoefd = 0.0_8
         do i=8,1,-1
           coef0dotd = 0.0_8
@@ -2019,16 +2017,13 @@ contains
       tempd = factmomentd/(lref*lengthref)
       factd = factd + tempd
       lengthrefd = lengthrefd - fact*tempd/lengthref
-      temp1 = machcoef**2*scaledim
       temp0 = surfaceref*lref**2
-      temp = temp0*gammainf*pinf
-      tempd0 = -(two*factd/(temp**2*temp1**2))
-      tempd1 = temp1*temp0*tempd0
+      temp = temp0*gammainf*pinf*machcoef**2
+      tempd0 = -(two*temp0*factd/temp**2)
+      tempd1 = machcoef**2*tempd0
       gammainfd = gammainfd + pinf*tempd1
-      machcoefd = scaledim*temp*2*machcoef*tempd0
-      scaledimd = temp*machcoef**2*tempd0
-      pinfd = gammainf*tempd1 - pref*scaledimd/pinf**2
-      prefd = scaledimd/pinf
+      pinfd = gammainf*tempd1
+      machcoefd = gammainf*pinf*2*machcoef*tempd0
     end if
   end subroutine computetsderivatives_b
 !  differentiation of computeleastsquaresregression in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
@@ -2110,7 +2105,7 @@ contains
     integer(kind=inttype) :: i, sps, nn
 !speed of sound: for normalization of q derivatives
     real(kind=realtype) :: a
-    real(kind=realtype) :: scaledim, fact, factmoment
+    real(kind=realtype) :: fact, factmoment
 ! functions
     real(kind=realtype), dimension(ntimeintervalsspectral) :: dphix, &
 &   dphiy, dphiz
@@ -2119,8 +2114,7 @@ contains
     real(kind=realtype) :: derivativerigidrotangle, &
 &   secondderivativerigidrotangle
     intrinsic sqrt
-    scaledim = pref/pinf
-    fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2*scaledim)
+    fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2)
     factmoment = fact/(lengthref*lref)
     call getdirangle(veldirfreestream, liftdirection, liftindex, alpha, &
 &              beta)

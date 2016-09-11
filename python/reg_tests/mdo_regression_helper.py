@@ -23,7 +23,7 @@ def reg_write(values, rel_tol=1e-12, abs_tol=1e-12):
     values = numpy.atleast_1d(values)
     values = values.flatten()
     for val in values:
-        s = '@value %20.14e %g %g'% (val, rel_tol, abs_tol)
+        s = '@value %20.13e %g %g'% (val, rel_tol, abs_tol)
         print(s)
  
     return

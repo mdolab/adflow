@@ -103,30 +103,30 @@ bocos:do nn=1,nbocos
   end subroutine flowproperties
 !  differentiation of forcesandmoments in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *w *x *(*bcdata.fv) *(*bcdata.fp)
-!                *(*bcdata.area) lengthref machcoef pointref gammainf
-!                pinf pref *xx *rev0 *rev1 *rev2 *rev3 *pp0 *pp1
-!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi *ww0 *ww1
-!                *ww2 *ww3 sepsensoravg cfp cfv cmp cmv cavitation
-!                sepsensor
+!                *(*bcdata.area) machcoef pointref gammainf pinf
+!                pref *xx *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2
+!                *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2
+!                *ww3 sepsensoravg fp fv mp cavitation sepsensor
+!                mv
 !   with respect to varying inputs: *rev *p *w *rlv *x *si *sj
 !                *sk *(*viscsubface.tau) *(*bcdata.fv) *(*bcdata.fp)
-!                *(*bcdata.area) veldirfreestream lengthref machcoef
-!                pointref gammainf pinf pref *xx *rev0 *rev1 *rev2
-!                *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3
-!                *ssi *ww0 *ww1 *ww2 *ww3
+!                *(*bcdata.area) veldirfreestream machcoef pointref
+!                gammainf pinf pref *xx *rev0 *rev1 *rev2 *rev3
+!                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi
+!                *ww0 *ww1 *ww2 *ww3
 !   plus diff mem management of: rev:in p:in w:in rlv:in x:in si:in
 !                sj:in sk:in viscsubface:in *viscsubface.tau:in
 !                bcdata:in *bcdata.fv:in *bcdata.fp:in *bcdata.area:in
 !                xx:in rev0:in rev1:in rev2:in rev3:in pp0:in pp1:in
 !                pp2:in pp3:in rlv0:in rlv1:in rlv2:in rlv3:in
 !                ssi:in ww0:in ww1:in ww2:in ww3:in
-  subroutine forcesandmoments_b(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, &
-&   cmvd, yplusmax, sepsensor, sepsensord, sepsensoravg, sepsensoravgd, &
+  subroutine forcesandmoments_b(fp, fpd, fv, fvd, mp, mpd, mv, mvd, &
+&   yplusmax, sepsensor, sepsensord, sepsensoravg, sepsensoravgd, &
 &   cavitation, cavitationd)
 !
 !       forcesandmoments computes the contribution of the block
 !       given by the pointers in blockpointers to the force and
-!       moment coefficients of the geometry. a distinction is made
+!       moment of the geometry. a distinction is made
 !       between the inviscid and viscous parts. in case the maximum
 !       yplus value must be monitored (only possible for rans), this
 !       value is also computed. the separation sensor and the cavita-
@@ -149,10 +149,10 @@ bocos:do nn=1,nbocos
 !
 !      subroutine arguments
 !
-    real(kind=realtype), dimension(3) :: cfp, cfv
-    real(kind=realtype), dimension(3) :: cfpd, cfvd
-    real(kind=realtype), dimension(3) :: cmp, cmv
-    real(kind=realtype), dimension(3) :: cmpd, cmvd
+    real(kind=realtype), dimension(3) :: fp, fv
+    real(kind=realtype), dimension(3) :: fpd, fvd
+    real(kind=realtype), dimension(3) :: mp, mv
+    real(kind=realtype), dimension(3) :: mpd, mvd
     real(kind=realtype) :: yplusmax, sepsensor
     real(kind=realtype) :: sepsensord
     real(kind=realtype) :: sepsensoravg(3), cavitation
@@ -166,11 +166,8 @@ bocos:do nn=1,nbocos
     real(kind=realtype) :: xc, yc, zc, qf(3)
     real(kind=realtype) :: xcd, ycd, zcd
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
-    real(kind=realtype) :: factd
-    real(kind=realtype) :: scaledim, v(3), sensor, sensor1, cp, tmp, &
-&   plocal
-    real(kind=realtype) :: scaledimd, vd(3), sensord, sensor1d, cpd, &
-&   tmpd, plocald
+    real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal
+    real(kind=realtype) :: vd(3), sensord, sensor1d, cpd, tmpd, plocald
     real(kind=realtype) :: tauxx, tauyy, tauzz
     real(kind=realtype) :: tauxxd, tauyyd, tauzzd
     real(kind=realtype) :: tauxy, tauxz, tauyz
@@ -192,7 +189,7 @@ bocos:do nn=1,nbocos
     real(kind=realtype) :: temp3
     real(kind=realtype) :: tempd14
     real(kind=realtype) :: temp2
-    real(kind=realtype) :: tempd13
+    real(kind=realtype) :: tempd13(3)
     real(kind=realtype) :: temp1
     real(kind=realtype) :: tempd12
     real(kind=realtype) :: temp0
@@ -212,18 +209,9 @@ bocos:do nn=1,nbocos
     real(kind=realtype) :: tmpd0(3)
     integer :: ii1
     real(kind=realtype) :: temp
-    real(kind=realtype) :: temp8
-    real(kind=realtype) :: tempd19
-    real(kind=realtype) :: temp7
-    real(kind=realtype) :: tempd18
-    real(kind=realtype) :: temp6
-    real(kind=realtype) :: tempd17(3)
     real(kind=realtype) :: temp5
-    real(kind=realtype) :: tempd16
     real(kind=realtype) :: temp4
     real(kind=realtype) :: tempd15
-! set the actual scaling factor such that actual forces are computed
-    scaledim = pref/pinf
 ! determine the reference point for the moment computation in
 ! meters.
     refpoint(1) = lref*pointref(1)
@@ -231,18 +219,6 @@ bocos:do nn=1,nbocos
     refpoint(3) = lref*pointref(3)
 ! initialize the force and moment coefficients to 0 as well as
 ! yplusmax.
-    cfp(1) = zero
-    cfp(2) = zero
-    cfp(3) = zero
-    cfv(1) = zero
-    cfv(2) = zero
-    cfv(3) = zero
-    cmp(1) = zero
-    cmp(2) = zero
-    cmp(3) = zero
-    cmv(1) = zero
-    cmv(2) = zero
-    cmv(3) = zero
 ! loop over the boundary subfaces of this block.
 bocos:do nn=1,nbocos
 !
@@ -341,7 +317,7 @@ bocos:do nn=1,nbocos
 ! offset of 1 must be used. the pressure is multipled by
 ! fact to account for the possibility of an inward or
 ! outward pointing normal.
-            pm1 = fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*scaledim
+            pm1 = fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*pref
             xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1&
 &             , j+1, 1)) - refpoint(1)
             yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1&
@@ -361,15 +337,15 @@ bocos:do nn=1,nbocos
             fy = fy*blk
             fz = fz*blk
 ! update the inviscid force and moment coefficients.
-            cfp(1) = cfp(1) + fx
-            cfp(2) = cfp(2) + fy
-            cfp(3) = cfp(3) + fz
+            fp(1) = fp(1) + fx
+            fp(2) = fp(2) + fy
+            fp(3) = fp(3) + fz
             mx = yc*fz - zc*fy
             my = zc*fx - xc*fz
             mz = xc*fy - yc*fx
-            cmp(1) = cmp(1) + mx
-            cmp(2) = cmp(2) + my
-            cmp(3) = cmp(3) + mz
+            mp(1) = mp(1) + mx
+            mp(2) = mp(2) + my
+            mp(3) = mp(3) + mz
 ! save the face-based forces and area
             bcdata(nn)%fp(i, j, 1) = fx
             bcdata(nn)%fp(i, j, 2) = fy
@@ -402,7 +378,7 @@ bocos:do nn=1,nbocos
             sepsensoravg(2) = sepsensoravg(2) + sensor*yc
             sepsensoravg(3) = sepsensoravg(3) + sensor*zc
             plocal = pp2(i, j)
-            tmp = two/(gammainf*pinf*machcoef*machcoef)
+            tmp = two/(gammainf*machcoef*machcoef)
             cp = tmp*(plocal-pinf)
             sigma = 1.4
             sensor1 = -cp - sigma
@@ -447,13 +423,13 @@ bocos:do nn=1,nbocos
 ! is now present, due to the definition of this force.
               call pushreal8(fx)
               fx = -(fact*(tauxx*ssi(i, j, 1)+tauxy*ssi(i, j, 2)+tauxz*&
-&               ssi(i, j, 3))*scaledim)
+&               ssi(i, j, 3))*pref)
               call pushreal8(fy)
               fy = -(fact*(tauxy*ssi(i, j, 1)+tauyy*ssi(i, j, 2)+tauyz*&
-&               ssi(i, j, 3))*scaledim)
+&               ssi(i, j, 3))*pref)
               call pushreal8(fz)
               fz = -(fact*(tauxz*ssi(i, j, 1)+tauyz*ssi(i, j, 2)+tauzz*&
-&               ssi(i, j, 3))*scaledim)
+&               ssi(i, j, 3))*pref)
 ! iblank forces after saving for zipper mesh
               fx = fx*blk
               fy = fy*blk
@@ -472,15 +448,6 @@ bocos:do nn=1,nbocos
               zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+&
 &               1, j+1, 3)) - refpoint(3)
 ! update the viscous force and moment coefficients.
-              cfv(1) = cfv(1) + fx
-              cfv(2) = cfv(2) + fy
-              cfv(3) = cfv(3) + fz
-              mx = yc*fz - zc*fy
-              my = zc*fx - xc*fz
-              mz = xc*fy - yc*fx
-              cmv(1) = cmv(1) + mx
-              cmv(2) = cmv(2) + my
-              cmv(3) = cmv(3) + mz
 ! save the face based forces for the slice operations
 ! compute the tangential component of the stress tensor,
 ! which is needed to monitor y+. the result is stored
@@ -528,73 +495,6 @@ bocos:do nn=1,nbocos
         call pushcontrol2b(0)
       end if
     end do bocos
-! currently the coefficients only contain the surface integral
-! of the pressure tensor. these values must be scaled to
-! obtain the correct coefficients.
-    call pushreal8(fact)
-    fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*&
-&     scaledim)
-    call pushreal8(cfp(1))
-    cfp(1) = cfp(1)*fact
-    call pushreal8(cfp(2))
-    cfp(2) = cfp(2)*fact
-    call pushreal8(cfv(1))
-    cfv(1) = cfv(1)*fact
-    call pushreal8(cfv(2))
-    cfv(2) = cfv(2)*fact
-    call pushreal8(fact)
-    fact = fact/(lengthref*lref)
-    call pushreal8(cmp(1))
-    cmp(1) = cmp(1)*fact
-    call pushreal8(cmp(2))
-    cmp(2) = cmp(2)*fact
-    call pushreal8(cmv(1))
-    cmv(1) = cmv(1)*fact
-    call pushreal8(cmv(2))
-    cmv(2) = cmv(2)*fact
-    factd = cmv(3)*cmvd(3)
-    cmvd(3) = fact*cmvd(3)
-    call popreal8(cmv(2))
-    factd = factd + cmv(2)*cmvd(2)
-    cmvd(2) = fact*cmvd(2)
-    call popreal8(cmv(1))
-    factd = factd + cmp(3)*cmpd(3) + cmv(1)*cmvd(1)
-    cmvd(1) = fact*cmvd(1)
-    cmpd(3) = fact*cmpd(3)
-    call popreal8(cmp(2))
-    factd = factd + cmp(2)*cmpd(2)
-    cmpd(2) = fact*cmpd(2)
-    call popreal8(cmp(1))
-    factd = factd + cmp(1)*cmpd(1)
-    cmpd(1) = fact*cmpd(1)
-    call popreal8(fact)
-    tempd5 = factd/(lref*lengthref)
-    lengthrefd = lengthrefd - fact*tempd5/lengthref
-    factd = cfv(3)*cfvd(3) + tempd5
-    cfvd(3) = fact*cfvd(3)
-    call popreal8(cfv(2))
-    factd = factd + cfv(2)*cfvd(2)
-    cfvd(2) = fact*cfvd(2)
-    call popreal8(cfv(1))
-    factd = factd + cfp(3)*cfpd(3) + cfv(1)*cfvd(1)
-    cfvd(1) = fact*cfvd(1)
-    cfpd(3) = fact*cfpd(3)
-    call popreal8(cfp(2))
-    factd = factd + cfp(2)*cfpd(2)
-    cfpd(2) = fact*cfpd(2)
-    call popreal8(cfp(1))
-    factd = factd + cfp(1)*cfpd(1)
-    cfpd(1) = fact*cfpd(1)
-    call popreal8(fact)
-    temp1 = machcoef**2*scaledim
-    temp0 = surfaceref*lref**2
-    temp = temp0*gammainf*pinf
-    tempd6 = -(two*factd/(temp**2*temp1**2))
-    tempd7 = temp1*temp0*tempd6
-    gammainfd = gammainfd + pinf*tempd7
-    pinfd = pinfd + gammainf*tempd7
-    machcoefd = machcoefd + scaledim*temp*2*machcoef*tempd6
-    scaledimd = temp*machcoef**2*tempd6
     revd = 0.0_8
     pd = 0.0_8
     rlvd = 0.0_8
@@ -648,15 +548,15 @@ bocos:do nn=1,nbocos
             bcdatad(nn)%fv(i, j, 2) = 0.0_8
             fxd = bcdatad(nn)%fv(i, j, 1)
             bcdatad(nn)%fv(i, j, 1) = 0.0_8
-            mzd = cmvd(3)
-            myd = cmvd(2)
-            mxd = cmvd(1)
+            mzd = mvd(3)
+            myd = mvd(2)
+            mxd = mvd(1)
             xcd = fy*mzd - fz*myd
-            fyd = fyd + cfvd(2) - zc*mxd + xc*mzd
+            fyd = fyd + fvd(2) - zc*mxd + xc*mzd
             ycd = fz*mxd - fx*mzd
-            fxd = fxd + zc*myd + cfvd(1) - yc*mzd
+            fxd = fxd + zc*myd + fvd(1) - yc*mzd
             zcd = fx*myd - fy*mxd
-            fzd = fzd + yc*mxd + cfvd(3) - xc*myd
+            fzd = fzd + yc*mxd + fvd(3) - xc*myd
             call popreal8(zc)
             tempd = fourth*zcd
             xxd(i, j, 3) = xxd(i, j, 3) + tempd
@@ -685,7 +585,7 @@ bocos:do nn=1,nbocos
             tauxz = viscsubface(nn)%tau(i, j, 5)
             tauyz = viscsubface(nn)%tau(i, j, 6)
             call popreal8(fz)
-            tempd2 = -(fact*scaledim*fzd)
+            tempd2 = -(fact*pref*fzd)
             ssid(i, j, 1) = ssid(i, j, 1) + tauxz*tempd2
             ssid(i, j, 2) = ssid(i, j, 2) + tauyz*tempd2
             tauzzd = ssi(i, j, 3)*tempd2
@@ -693,19 +593,19 @@ bocos:do nn=1,nbocos
             tauxy = viscsubface(nn)%tau(i, j, 4)
             tauyy = viscsubface(nn)%tau(i, j, 2)
             call popreal8(fy)
-            tempd4 = -(fact*scaledim*fyd)
+            tempd4 = -(fact*pref*fyd)
             tauyzd = ssi(i, j, 3)*tempd4 + ssi(i, j, 2)*tempd2
             ssid(i, j, 1) = ssid(i, j, 1) + tauxy*tempd4
             tauyyd = ssi(i, j, 2)*tempd4
             ssid(i, j, 2) = ssid(i, j, 2) + tauyy*tempd4
             ssid(i, j, 3) = ssid(i, j, 3) + tauyz*tempd4
             tauxx = viscsubface(nn)%tau(i, j, 1)
-            scaledimd = scaledimd - fact*(tauxy*ssi(i, j, 1)+tauyy*ssi(i&
-&             , j, 2)+tauyz*ssi(i, j, 3))*fyd - fact*(tauxx*ssi(i, j, 1)&
-&             +tauxy*ssi(i, j, 2)+tauxz*ssi(i, j, 3))*fxd - fact*(tauxz*&
-&             ssi(i, j, 1)+tauyz*ssi(i, j, 2)+tauzz*ssi(i, j, 3))*fzd
+            prefd = prefd - fact*(tauxy*ssi(i, j, 1)+tauyy*ssi(i, j, 2)+&
+&             tauyz*ssi(i, j, 3))*fyd - fact*(tauxx*ssi(i, j, 1)+tauxy*&
+&             ssi(i, j, 2)+tauxz*ssi(i, j, 3))*fxd - fact*(tauxz*ssi(i, &
+&             j, 1)+tauyz*ssi(i, j, 2)+tauzz*ssi(i, j, 3))*fzd
             call popreal8(fx)
-            tempd3 = -(fact*scaledim*fxd)
+            tempd3 = -(fact*pref*fxd)
             tauxzd = ssi(i, j, 3)*tempd3 + ssi(i, j, 1)*tempd2
             tauxyd = ssi(i, j, 2)*tempd3 + ssi(i, j, 1)*tempd4
             tauxxd = ssi(i, j, 1)*tempd3
@@ -755,7 +655,7 @@ bocos:do nn=1,nbocos
 ! offset of 1 must be used. the pressure is multipled by
 ! fact to account for the possibility of an inward or
 ! outward pointing normal.
-          pm1 = fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*scaledim
+          pm1 = fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*pref
           xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j&
 &           +1, 1)) - refpoint(1)
           yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j&
@@ -806,7 +706,7 @@ bocos:do nn=1,nbocos
           zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j&
 &           +1, 3))
           plocal = pp2(i, j)
-          tmp = two/(gammainf*pinf*machcoef*machcoef)
+          tmp = two/(gammainf*machcoef*machcoef)
           cp = tmp*(plocal-pinf)
           sigma = 1.4
           sensor1 = -cp - sigma
@@ -816,18 +716,17 @@ bocos:do nn=1,nbocos
           cellaread = sensor1*sensor1d
           sensor1d = cellarea*sensor1d
           call popreal8(sensor1)
-          temp8 = -(10*2*sensor1)
-          temp7 = one + exp(temp8)
-          sensor1d = exp(temp8)*one*10*2*sensor1d/temp7**2
+          temp5 = -(10*2*sensor1)
+          temp4 = one + exp(temp5)
+          sensor1d = exp(temp5)*one*10*2*sensor1d/temp4**2
           cpd = -sensor1d
           tmpd = (plocal-pinf)*cpd
           plocald = tmp*cpd
-          temp6 = gammainf*pinf*machcoef**2
-          tempd13 = -(two*tmpd/temp6**2)
-          tempd12 = machcoef**2*tempd13
-          pinfd = pinfd + gammainf*tempd12 - tmp*cpd
-          gammainfd = gammainfd + pinf*tempd12
-          machcoefd = machcoefd + gammainf*pinf*2*machcoef*tempd13
+          pinfd = pinfd - tmp*cpd
+          temp3 = gammainf*machcoef**2
+          tempd9 = -(two*tmpd/temp3**2)
+          gammainfd = gammainfd + machcoef**2*tempd9
+          machcoefd = machcoefd + gammainf*2*machcoef*tempd9
           pp2d(i, j) = pp2d(i, j) + plocald
           sensord = yc*sepsensoravgd(2) + sepsensord + xc*sepsensoravgd(&
 &           1) + zc*sepsensoravgd(3)
@@ -835,30 +734,30 @@ bocos:do nn=1,nbocos
           ycd = sensor*sepsensoravgd(2)
           xcd = sensor*sepsensoravgd(1)
           call popreal8(zc)
-          tempd14 = fourth*zcd
-          xxd(i, j, 3) = xxd(i, j, 3) + tempd14
-          xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd14
-          xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd14
-          xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd14
+          tempd10 = fourth*zcd
+          xxd(i, j, 3) = xxd(i, j, 3) + tempd10
+          xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd10
+          xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd10
+          xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd10
           call popreal8(yc)
-          tempd15 = fourth*ycd
-          xxd(i, j, 2) = xxd(i, j, 2) + tempd15
-          xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd15
-          xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd15
-          xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd15
+          tempd11 = fourth*ycd
+          xxd(i, j, 2) = xxd(i, j, 2) + tempd11
+          xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd11
+          xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd11
+          xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd11
           call popreal8(xc)
-          tempd16 = fourth*xcd
-          xxd(i, j, 1) = xxd(i, j, 1) + tempd16
-          xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd16
-          xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd16
-          xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd16
+          tempd12 = fourth*xcd
+          xxd(i, j, 1) = xxd(i, j, 1) + tempd12
+          xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd12
+          xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd12
+          xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd12
           call popreal8(sensor)
           cellaread = cellaread + sensor*sensord
           sensord = cellarea*sensord
           call popreal8(sensor)
-          temp5 = -(2*sepsensorsharpness*(sensor-sepsensoroffset))
-          temp4 = one + exp(temp5)
-          sensord = exp(temp5)*one*sepsensorsharpness*2*sensord/temp4**2
+          temp2 = -(2*sepsensorsharpness*(sensor-sepsensoroffset))
+          temp1 = one + exp(temp2)
+          sensord = exp(temp2)*one*sepsensorsharpness*2*sensord/temp1**2
           vd(1) = vd(1) - veldirfreestream(1)*sensord
           veldirfreestreamd(1) = veldirfreestreamd(1) - v(1)*sensord
           vd(2) = vd(2) - veldirfreestream(2)*sensord
@@ -867,18 +766,18 @@ bocos:do nn=1,nbocos
           veldirfreestreamd(3) = veldirfreestreamd(3) - v(3)*sensord
           call popreal8array(v, 3)
           tmpd0 = vd
-          temp2 = v(1)**2 + v(2)**2 + v(3)**2
-          temp3 = sqrt(temp2)
-          tempd17 = tmpd0/(temp3+1e-16)
-          vd = tempd17
-          if (temp2 .eq. 0.0_8) then
-            tempd18 = 0.0
+          temp = v(1)**2 + v(2)**2 + v(3)**2
+          temp0 = sqrt(temp)
+          tempd13 = tmpd0/(temp0+1e-16)
+          vd = tempd13
+          if (temp .eq. 0.0_8) then
+            tempd14 = 0.0
           else
-            tempd18 = sum(-(v*tempd17/(temp3+1e-16)))/(2.0*temp3)
+            tempd14 = sum(-(v*tempd13/(temp0+1e-16)))/(2.0*temp0)
           end if
-          vd(1) = vd(1) + 2*v(1)*tempd18
-          vd(2) = vd(2) + 2*v(2)*tempd18
-          vd(3) = vd(3) + 2*v(3)*tempd18
+          vd(1) = vd(1) + 2*v(1)*tempd14
+          vd(2) = vd(2) + 2*v(2)*tempd14
+          vd(3) = vd(3) + 2*v(3)*tempd14
           ww2d(i, j, ivz) = ww2d(i, j, ivz) + vd(3)
           vd(3) = 0.0_8
           ww2d(i, j, ivy) = ww2d(i, j, ivy) + vd(2)
@@ -889,29 +788,29 @@ bocos:do nn=1,nbocos
           bcdatad(nn)%area(i, j) = 0.0_8
           if (ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**2 .eq. &
 &             0.0_8) then
-            tempd19 = 0.0
+            tempd15 = 0.0
           else
-            tempd19 = cellaread/(2.0*sqrt(ssi(i, j, 1)**2+ssi(i, j, 2)**&
+            tempd15 = cellaread/(2.0*sqrt(ssi(i, j, 1)**2+ssi(i, j, 2)**&
 &             2+ssi(i, j, 3)**2))
           end if
-          ssid(i, j, 1) = ssid(i, j, 1) + 2*ssi(i, j, 1)*tempd19
-          ssid(i, j, 2) = ssid(i, j, 2) + 2*ssi(i, j, 2)*tempd19
-          ssid(i, j, 3) = ssid(i, j, 3) + 2*ssi(i, j, 3)*tempd19
+          ssid(i, j, 1) = ssid(i, j, 1) + 2*ssi(i, j, 1)*tempd15
+          ssid(i, j, 2) = ssid(i, j, 2) + 2*ssi(i, j, 2)*tempd15
+          ssid(i, j, 3) = ssid(i, j, 3) + 2*ssi(i, j, 3)*tempd15
           fzd = bcdatad(nn)%fp(i, j, 3)
           bcdatad(nn)%fp(i, j, 3) = 0.0_8
           fyd = bcdatad(nn)%fp(i, j, 2)
           bcdatad(nn)%fp(i, j, 2) = 0.0_8
           fxd = bcdatad(nn)%fp(i, j, 1)
           bcdatad(nn)%fp(i, j, 1) = 0.0_8
-          mzd = cmpd(3)
-          myd = cmpd(2)
-          mxd = cmpd(1)
+          mzd = mpd(3)
+          myd = mpd(2)
+          mxd = mpd(1)
           xcd = fy*mzd - fz*myd
-          fyd = fyd + cfpd(2) - zc*mxd + xc*mzd
+          fyd = fyd + fpd(2) - zc*mxd + xc*mzd
           ycd = fz*mxd - fx*mzd
-          fxd = fxd + zc*myd + cfpd(1) - yc*mzd
+          fxd = fxd + zc*myd + fpd(1) - yc*mzd
           zcd = fx*myd - fy*mxd
-          fzd = fzd + yc*mxd + cfpd(3) - xc*myd
+          fzd = fzd + yc*mxd + fpd(3) - xc*myd
           fzd = blk*fzd
           fyd = blk*fyd
           fxd = blk*fxd
@@ -919,30 +818,29 @@ bocos:do nn=1,nbocos
           ssid(i, j, 3) = ssid(i, j, 3) + pm1*fzd
           ssid(i, j, 2) = ssid(i, j, 2) + pm1*fyd
           ssid(i, j, 1) = ssid(i, j, 1) + pm1*fxd
-          tempd8 = fourth*zcd
-          xxd(i, j, 3) = xxd(i, j, 3) + tempd8
-          xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd8
-          xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd8
-          xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd8
+          tempd5 = fourth*zcd
+          xxd(i, j, 3) = xxd(i, j, 3) + tempd5
+          xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd5
+          xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd5
+          xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd5
           refpointd(3) = refpointd(3) - zcd
-          tempd9 = fourth*ycd
-          xxd(i, j, 2) = xxd(i, j, 2) + tempd9
-          xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd9
-          xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd9
-          xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd9
+          tempd6 = fourth*ycd
+          xxd(i, j, 2) = xxd(i, j, 2) + tempd6
+          xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd6
+          xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd6
+          xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd6
           refpointd(2) = refpointd(2) - ycd
-          tempd10 = fourth*xcd
-          xxd(i, j, 1) = xxd(i, j, 1) + tempd10
-          xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd10
-          xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd10
-          xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd10
+          tempd7 = fourth*xcd
+          xxd(i, j, 1) = xxd(i, j, 1) + tempd7
+          xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd7
+          xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd7
+          xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd7
           refpointd(1) = refpointd(1) - xcd
-          tempd11 = fact*scaledim*pm1d
-          pp2d(i, j) = pp2d(i, j) + half*tempd11
-          pp1d(i, j) = pp1d(i, j) + half*tempd11
-          pinfd = pinfd - tempd11
-          scaledimd = scaledimd + fact*(half*(pp2(i, j)+pp1(i, j))-pinf)&
-&           *pm1d
+          tempd8 = fact*pref*pm1d
+          pp2d(i, j) = pp2d(i, j) + half*tempd8
+          pp1d(i, j) = pp1d(i, j) + half*tempd8
+          pinfd = pinfd - tempd8
+          prefd = prefd + fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*pm1d
         end do
         call popreal8array(v, 3)
         call popreal8(sensor1)
@@ -988,15 +886,13 @@ bocos:do nn=1,nbocos
     pointrefd(2) = pointrefd(2) + lref*refpointd(2)
     refpointd(2) = 0.0_8
     pointrefd(1) = pointrefd(1) + lref*refpointd(1)
-    prefd = prefd + scaledimd/pinf
-    pinfd = pinfd - pref*scaledimd/pinf**2
   end subroutine forcesandmoments_b
-  subroutine forcesandmoments(cfp, cfv, cmp, cmv, yplusmax, sepsensor, &
+  subroutine forcesandmoments(fp, fv, mp, mv, yplusmax, sepsensor, &
 &   sepsensoravg, cavitation)
 !
 !       forcesandmoments computes the contribution of the block
 !       given by the pointers in blockpointers to the force and
-!       moment coefficients of the geometry. a distinction is made
+!       moment of the geometry. a distinction is made
 !       between the inviscid and viscous parts. in case the maximum
 !       yplus value must be monitored (only possible for rans), this
 !       value is also computed. the separation sensor and the cavita-
@@ -1018,8 +914,8 @@ bocos:do nn=1,nbocos
 !
 !      subroutine arguments
 !
-    real(kind=realtype), dimension(3), intent(out) :: cfp, cfv
-    real(kind=realtype), dimension(3), intent(out) :: cmp, cmv
+    real(kind=realtype), dimension(3), intent(out) :: fp, fv
+    real(kind=realtype), dimension(3), intent(out) :: mp, mv
     real(kind=realtype), intent(out) :: yplusmax, sepsensor
     real(kind=realtype), intent(out) :: sepsensoravg(3), cavitation
 !
@@ -1029,8 +925,7 @@ bocos:do nn=1,nbocos
     real(kind=realtype) :: pm1, fx, fy, fz, fn, sigma
     real(kind=realtype) :: xc, yc, zc, qf(3)
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
-    real(kind=realtype) :: scaledim, v(3), sensor, sensor1, cp, tmp, &
-&   plocal
+    real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal
     real(kind=realtype) :: tauxx, tauyy, tauzz
     real(kind=realtype) :: tauxy, tauxz, tauyz
     real(kind=realtype), dimension(3) :: refpoint
@@ -1041,8 +936,6 @@ bocos:do nn=1,nbocos
     intrinsic max
     intrinsic sqrt
     intrinsic exp
-! set the actual scaling factor such that actual forces are computed
-    scaledim = pref/pinf
 ! determine the reference point for the moment computation in
 ! meters.
     refpoint(1) = lref*pointref(1)
@@ -1050,18 +943,18 @@ bocos:do nn=1,nbocos
     refpoint(3) = lref*pointref(3)
 ! initialize the force and moment coefficients to 0 as well as
 ! yplusmax.
-    cfp(1) = zero
-    cfp(2) = zero
-    cfp(3) = zero
-    cfv(1) = zero
-    cfv(2) = zero
-    cfv(3) = zero
-    cmp(1) = zero
-    cmp(2) = zero
-    cmp(3) = zero
-    cmv(1) = zero
-    cmv(2) = zero
-    cmv(3) = zero
+    fp(1) = zero
+    fp(2) = zero
+    fp(3) = zero
+    fv(1) = zero
+    fv(2) = zero
+    fv(3) = zero
+    mp(1) = zero
+    mp(2) = zero
+    mp(3) = zero
+    mv(1) = zero
+    mv(2) = zero
+    mv(3) = zero
     yplusmax = zero
     sepsensor = zero
     cavitation = zero
@@ -1123,7 +1016,7 @@ bocos:do nn=1,nbocos
 ! offset of 1 must be used. the pressure is multipled by
 ! fact to account for the possibility of an inward or
 ! outward pointing normal.
-            pm1 = fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*scaledim
+            pm1 = fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*pref
             xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1&
 &             , j+1, 1)) - refpoint(1)
             yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1&
@@ -1143,15 +1036,15 @@ bocos:do nn=1,nbocos
             fy = fy*blk
             fz = fz*blk
 ! update the inviscid force and moment coefficients.
-            cfp(1) = cfp(1) + fx
-            cfp(2) = cfp(2) + fy
-            cfp(3) = cfp(3) + fz
+            fp(1) = fp(1) + fx
+            fp(2) = fp(2) + fy
+            fp(3) = fp(3) + fz
             mx = yc*fz - zc*fy
             my = zc*fx - xc*fz
             mz = xc*fy - yc*fx
-            cmp(1) = cmp(1) + mx
-            cmp(2) = cmp(2) + my
-            cmp(3) = cmp(3) + mz
+            mp(1) = mp(1) + mx
+            mp(2) = mp(2) + my
+            mp(3) = mp(3) + mz
 ! save the face-based forces and area
             bcdata(nn)%fp(i, j, 1) = fx
             bcdata(nn)%fp(i, j, 2) = fy
@@ -1184,7 +1077,7 @@ bocos:do nn=1,nbocos
             sepsensoravg(2) = sepsensoravg(2) + sensor*yc
             sepsensoravg(3) = sepsensoravg(3) + sensor*zc
             plocal = pp2(i, j)
-            tmp = two/(gammainf*pinf*machcoef*machcoef)
+            tmp = two/(gammainf*machcoef*machcoef)
             cp = tmp*(plocal-pinf)
             sigma = 1.4
             sensor1 = -cp - sigma
@@ -1225,11 +1118,11 @@ bocos:do nn=1,nbocos
 ! compute the viscous force on the face. a minus sign
 ! is now present, due to the definition of this force.
               fx = -(fact*(tauxx*ssi(i, j, 1)+tauxy*ssi(i, j, 2)+tauxz*&
-&               ssi(i, j, 3))*scaledim)
+&               ssi(i, j, 3))*pref)
               fy = -(fact*(tauxy*ssi(i, j, 1)+tauyy*ssi(i, j, 2)+tauyz*&
-&               ssi(i, j, 3))*scaledim)
+&               ssi(i, j, 3))*pref)
               fz = -(fact*(tauxz*ssi(i, j, 1)+tauyz*ssi(i, j, 2)+tauzz*&
-&               ssi(i, j, 3))*scaledim)
+&               ssi(i, j, 3))*pref)
 ! iblank forces after saving for zipper mesh
               tauxx = tauxx*blk
               tauyy = tauyy*blk
@@ -1251,15 +1144,15 @@ bocos:do nn=1,nbocos
               zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+&
 &               1, j+1, 3)) - refpoint(3)
 ! update the viscous force and moment coefficients.
-              cfv(1) = cfv(1) + fx
-              cfv(2) = cfv(2) + fy
-              cfv(3) = cfv(3) + fz
+              fv(1) = fv(1) + fx
+              fv(2) = fv(2) + fy
+              fv(3) = fv(3) + fz
               mx = yc*fz - zc*fy
               my = zc*fx - xc*fz
               mz = xc*fy - yc*fx
-              cmv(1) = cmv(1) + mx
-              cmv(2) = cmv(2) + my
-              cmv(3) = cmv(3) + mz
+              mv(1) = mv(1) + mx
+              mv(2) = mv(2) + my
+              mv(3) = mv(3) + mz
 ! save the face based forces for the slice operations
               bcdata(nn)%fv(i, j, 1) = fx
               bcdata(nn)%fv(i, j, 2) = fy
@@ -1298,23 +1191,5 @@ bocos:do nn=1,nbocos
         bcdata(nn)%fv = zero
       end if
     end do bocos
-! currently the coefficients only contain the surface integral
-! of the pressure tensor. these values must be scaled to
-! obtain the correct coefficients.
-    fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*&
-&     scaledim)
-    cfp(1) = cfp(1)*fact
-    cfp(2) = cfp(2)*fact
-    cfp(3) = cfp(3)*fact
-    cfv(1) = cfv(1)*fact
-    cfv(2) = cfv(2)*fact
-    cfv(3) = cfv(3)*fact
-    fact = fact/(lengthref*lref)
-    cmp(1) = cmp(1)*fact
-    cmp(2) = cmp(2)*fact
-    cmp(3) = cmp(3)*fact
-    cmv(1) = cmv(1)*fact
-    cmv(2) = cmv(2)*fact
-    cmv(3) = cmv(3)*fact
   end subroutine forcesandmoments
 end module surfaceintegrations_b

@@ -119,26 +119,18 @@ contains
     real(kind=realtype) :: sepsensord, cavitationd, sepsensoravgd(3)
 ! working variables
     real(kind=realtype) :: gm1, v2, fact, tmp
-    real(kind=realtype) :: factd, tmpd
+    real(kind=realtype) :: tmpd
     integer(kind=inttype) :: i, j, k, sps2, mm, l, ii, ll, jj, m
     integer(kind=inttype) :: nstate
     real(kind=realtype), dimension(nsections) :: t
     logical :: useoldcoor
-    real(kind=realtype), dimension(3) :: cfp, cfv, cmp, cmv
-    real(kind=realtype), dimension(3) :: cfpd, cfvd, cmpd, cmvd
-    real(kind=realtype) :: yplusmax, scaledim, oneoverdt
-    real(kind=realtype) :: scaledimd, oneoverdtd
+    real(kind=realtype), dimension(3) :: fp, fv, mp, mv
+    real(kind=realtype), dimension(3) :: fpd, fvd, mpd, mvd
+    real(kind=realtype) :: yplusmax, oneoverdt
+    real(kind=realtype) :: oneoverdtd
     integer :: branch
-    real(kind=realtype) :: temp3
-    real(kind=realtype) :: temp2
-    real(kind=realtype) :: temp1
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tempd
-    real(kind=realtype) :: tempd6(3)
-    real(kind=realtype) :: tempd5
-    real(kind=realtype) :: tempd4(3)
-    real(kind=realtype) :: tempd3
-    real(kind=realtype) :: tempd2
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
     integer :: ii3
@@ -574,11 +566,7 @@ varloopfine:do l=1,nwf
         end do
       end do
     end do
-    call pushreal8array(cmv, 3)
-    call pushreal8array(cmp, 3)
-    call pushreal8array(cfv, 3)
-    call pushreal8array(cfp, 3)
-    call forcesandmoments(cfp, cfv, cmp, cmv, yplusmax, sepsensor, &
+    call forcesandmoments(fp, fv, mp, mv, yplusmax, sepsensor, &
 &                   sepsensoravg, cavitation)
 ! convert back to actual forces. note that even though we use
 ! machcoef, lref, and surfaceref here, they are not differented,
@@ -586,57 +574,25 @@ varloopfine:do l=1,nwf
 ! the raw forces and moment form forcesandmoments. 
     force = zero
     moment = zero
-    scaledim = pref/pinf
-    fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*&
-&     scaledim)
     do sps2=1,ntimeintervalsspectral
-      force(:, sps2) = (cfp+cfv)/fact
-    end do
-    call pushreal8(fact)
-    fact = fact/(lengthref*lref)
-    do sps2=1,ntimeintervalsspectral
-      moment(:, sps2) = (cmp+cmv)/fact
+      force(:, sps2) = fp + fv
+      moment(:, sps2) = mp + mv
     end do
     call getcostfunction_b(force, forced, moment, momentd, sepsensor, &
 &                    sepsensord, sepsensoravg, sepsensoravgd, cavitation&
 &                    , cavitationd, alpha, beta, liftindex)
-    cmpd = 0.0_8
-    cmvd = 0.0_8
-    factd = 0.0_8
+    fpd = 0.0_8
+    fvd = 0.0_8
+    mpd = 0.0_8
+    mvd = 0.0_8
     do sps2=ntimeintervalsspectral,1,-1
-      tempd6 = momentd(:, sps2)/fact
-      cmpd = cmpd + tempd6
-      cmvd = cmvd + tempd6
-      factd = factd + sum(-((cmp+cmv)*tempd6/fact))
+      mpd = mpd + momentd(:, sps2)
+      mvd = mvd + momentd(:, sps2)
       momentd(:, sps2) = 0.0_8
-    end do
-    call popreal8(fact)
-    tempd5 = factd/(lref*lengthref)
-    lengthrefd = lengthrefd - fact*tempd5/lengthref
-    factd = tempd5
-    cfpd = 0.0_8
-    cfvd = 0.0_8
-    do sps2=ntimeintervalsspectral,1,-1
-      tempd4 = forced(:, sps2)/fact
-      cfpd = cfpd + tempd4
-      cfvd = cfvd + tempd4
-      factd = factd + sum(-((cfp+cfv)*tempd4/fact))
+      fpd = fpd + forced(:, sps2)
+      fvd = fvd + forced(:, sps2)
       forced(:, sps2) = 0.0_8
     end do
-    temp3 = machcoef**2*scaledim
-    temp2 = surfaceref*lref**2
-    temp1 = temp2*gammainf*pinf
-    tempd2 = -(two*factd/(temp1**2*temp3**2))
-    tempd3 = temp3*temp2*tempd2
-    gammainfd = gammainfd + pinf*tempd3
-    machcoefd = machcoefd + scaledim*temp1*2*machcoef*tempd2
-    scaledimd = temp1*machcoef**2*tempd2
-    pinfd = pinfd + gammainf*tempd3 - pref*scaledimd/pinf**2
-    prefd = prefd + scaledimd/pinf
-    call popreal8array(cfp, 3)
-    call popreal8array(cfv, 3)
-    call popreal8array(cmp, 3)
-    call popreal8array(cmv, 3)
     do ii1=ntimeintervalsspectral,1,-1
       do ii2=1,1,-1
         do ii3=nn,nn,-1
@@ -697,8 +653,8 @@ varloopfine:do l=1,nwf
     call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     call popreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
     call popreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
-    call forcesandmoments_b(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd, &
-&                     yplusmax, sepsensor, sepsensord, sepsensoravg, &
+    call forcesandmoments_b(fp, fpd, fv, fvd, mp, mpd, mv, mvd, yplusmax&
+&                     , sepsensor, sepsensord, sepsensoravg, &
 &                     sepsensoravgd, cavitation, cavitationd)
     do sps2=ntimeintervalsspectral,1,-1
       do l=nstate,nt1,-1
@@ -1074,8 +1030,8 @@ varloopfine:do l=1,nwf
     integer(kind=inttype) :: nstate
     real(kind=realtype), dimension(nsections) :: t
     logical :: useoldcoor
-    real(kind=realtype), dimension(3) :: cfp, cfv, cmp, cmv
-    real(kind=realtype) :: yplusmax, scaledim, oneoverdt
+    real(kind=realtype), dimension(3) :: fp, fv, mp, mv
+    real(kind=realtype) :: yplusmax, oneoverdt
     useoldcoor = .false.
 ! setup number of state variable based on turbulence assumption
     if (frozenturb) then
@@ -1308,7 +1264,7 @@ varloopfine:do l=1,nwf
         end do
       end do
     end do
-    call forcesandmoments(cfp, cfv, cmp, cmv, yplusmax, sepsensor, &
+    call forcesandmoments(fp, fv, mp, mv, yplusmax, sepsensor, &
 &                   sepsensoravg, cavitation)
 ! convert back to actual forces. note that even though we use
 ! machcoef, lref, and surfaceref here, they are not differented,
@@ -1316,15 +1272,9 @@ varloopfine:do l=1,nwf
 ! the raw forces and moment form forcesandmoments. 
     force = zero
     moment = zero
-    scaledim = pref/pinf
-    fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*&
-&     scaledim)
     do sps2=1,ntimeintervalsspectral
-      force(:, sps2) = (cfp+cfv)/fact
-    end do
-    fact = fact/(lengthref*lref)
-    do sps2=1,ntimeintervalsspectral
-      moment(:, sps2) = (cmp+cmv)/fact
+      force(:, sps2) = fp + fv
+      moment(:, sps2) = mp + mv
     end do
     call getcostfunction(force, moment, sepsensor, sepsensoravg, &
 &                  cavitation, alpha, beta, liftindex)
@@ -1386,8 +1336,8 @@ varloopfine:do l=1,nwf
     real(kind=realtype) :: sepsensord, cavitationd, sepsensoravgd(3)
     real(kind=realtype), intent(in) :: alpha, beta
 ! working
-    real(kind=realtype) :: fact, factmoment, scaledim, ovrnts
-    real(kind=realtype) :: factd, factmomentd, scaledimd
+    real(kind=realtype) :: fact, factmoment, ovrnts
+    real(kind=realtype) :: factd, factmomentd
     real(kind=realtype), dimension(3) :: cf, cm
     real(kind=realtype), dimension(3) :: cfd, cmd
     real(kind=realtype) :: elasticmomentx, elasticmomenty, &
@@ -1411,7 +1361,6 @@ varloopfine:do l=1,nwf
     real(kind=realtype) :: tmp7
     real(kind=realtype) :: tmp8
     integer :: branch
-    real(kind=realtype) :: temp1
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tmpd
     real(kind=realtype) :: tempd
@@ -1428,8 +1377,7 @@ varloopfine:do l=1,nwf
     real(kind=realtype) :: tmpd0
     real(kind=realtype) :: temp
 ! generate constants
-    scaledim = pref/pinf
-    fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2*scaledim)
+    fact = two/(gammainf*machcoef**2*surfaceref*lref**2*pref)
     factmoment = fact/(lengthref*lref)
     ovrnts = one/ntimeintervalsspectral
 ! pre-compute ts stability info if required:
@@ -1666,21 +1614,17 @@ varloopfine:do l=1,nwf
       pinfd = 0.0_8
       rhoinfdimd = 0.0_8
       pinfdimd = 0.0_8
-      prefd = 0.0_8
     end if
     tempd = factmomentd/(lref*lengthref)
     factd = factd + tempd
     lengthrefd = lengthrefd - fact*tempd/lengthref
-    temp1 = machcoef**2*scaledim
     temp0 = surfaceref*lref**2
-    temp = temp0*gammainf*pinf
-    tempd0 = -(two*factd/(temp**2*temp1**2))
-    tempd1 = temp1*temp0*tempd0
-    gammainfd = gammainfd + pinf*tempd1
-    machcoefd = machcoefd + scaledim*temp*2*machcoef*tempd0
-    scaledimd = temp*machcoef**2*tempd0
-    pinfd = pinfd + gammainf*tempd1 - pref*scaledimd/pinf**2
-    prefd = prefd + scaledimd/pinf
+    temp = temp0*machcoef**2*gammainf*pref
+    tempd0 = -(two*temp0*factd/temp**2)
+    tempd1 = machcoef**2*tempd0
+    machcoefd = machcoefd + gammainf*pref*2*machcoef*tempd0
+    gammainfd = gammainfd + pref*tempd1
+    prefd = gammainf*tempd1
   end subroutine getcostfunction_b
   subroutine getcostfunction(force, moment, sepsensor, sepsensoravg, &
 &   cavitation, alpha, beta, liftindex)
@@ -1704,7 +1648,7 @@ varloopfine:do l=1,nwf
 &   sepsensoravg(3)
     real(kind=realtype), intent(in) :: alpha, beta
 ! working
-    real(kind=realtype) :: fact, factmoment, scaledim, ovrnts
+    real(kind=realtype) :: fact, factmoment, ovrnts
     real(kind=realtype), dimension(3) :: cf, cm
     real(kind=realtype) :: elasticmomentx, elasticmomenty, &
 &   elasticmomentz
@@ -1715,8 +1659,7 @@ varloopfine:do l=1,nwf
     real(kind=realtype) :: bendingmoment
     integer(kind=inttype) :: sps
 ! generate constants
-    scaledim = pref/pinf
-    fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2*scaledim)
+    fact = two/(gammainf*machcoef**2*surfaceref*lref**2*pref)
     factmoment = fact/(lengthref*lref)
     ovrnts = one/ntimeintervalsspectral
 ! pre-compute ts stability info if required:
