@@ -307,47 +307,47 @@ Dictionary Key: sepsensoravgz
 @value  2.0129750625928e+04 1e-10 1e-10
 dFuncs/dXv * xVDot
 Dictionary Key: cd
-@value  2.9230378804488e-01 1e-10 1e-10
+@value  2.9230378804488e-01 1e-09 1e-09
 Dictionary Key: cfx
-@value  2.9529122646446e-01 1e-10 1e-10
+@value  2.9529122646446e-01 1e-09 1e-09
 Dictionary Key: cfy
-@value -1.7486370900483e-01 1e-10 1e-10
+@value -1.7486370900483e-01 1e-09 1e-09
 Dictionary Key: cfz
-@value -9.0469957052657e-02 1e-10 1e-10
+@value -9.0469957052657e-02 1e-09 1e-09
 Dictionary Key: cl
-@value -9.9700637162497e-02 1e-10 1e-10
+@value -9.9700637162497e-02 1e-09 1e-09
 Dictionary Key: cmx
-@value -1.9866056479855e-02 1e-10 1e-10
+@value -1.9866056479855e-02 1e-09 1e-09
 Dictionary Key: cmy
-@value  7.3102478353176e-01 1e-10 1e-10
+@value  7.3102478353176e-01 1e-09 1e-09
 Dictionary Key: cmz
-@value -3.5083429444711e+00 1e-10 1e-10
+@value -3.5083429444711e+00 1e-09 1e-09
 Dictionary Key: drag
-@value  1.1916640831014e+05 1e-10 1e-10
+@value  1.1916640831014e+05 1e-09 1e-09
 Dictionary Key: fx
-@value  1.2038432720503e+05 1e-10 1e-10
+@value  1.2038432720503e+05 1e-09 1e-09
 Dictionary Key: fy
-@value -7.1288436887090e+04 1e-10 1e-10
+@value -7.1288436887090e+04 1e-09 1e-09
 Dictionary Key: fz
-@value -3.6882792091227e+04 1e-10 1e-10
+@value -3.6882792091227e+04 1e-09 1e-09
 Dictionary Key: lift
-@value -4.0645955758407e+04 1e-10 1e-10
+@value -4.0645955758407e+04 1e-09 1e-09
 Dictionary Key: mx
-@value -2.6321730193549e+04 1e-10 1e-10
+@value -2.6321730193549e+04 1e-09 1e-09
 Dictionary Key: my
-@value  9.6857859718823e+05 1e-10 1e-10
+@value  9.6857859718823e+05 1e-09 1e-09
 Dictionary Key: mz
-@value -4.6484140677064e+06 1e-10 1e-10
+@value -4.6484140677064e+06 1e-09 1e-09
 Dictionary Key: sepsensor
-@value  9.8560138924238e-06 1e-10 1e-10
+@value  9.8560138924238e-06 1e-09 1e-09
 Dictionary Key: sepsensoravgx
-@value  3.6929115327663e-04 1e-10 1e-10
+@value  3.6929115327663e-04 1e-09 1e-09
 Dictionary Key: sepsensoravgy
-@value  9.0237743380007e-05 1e-10 1e-10
+@value  9.0237743380007e-05 1e-09 1e-09
 Dictionary Key: sepsensoravgz
-@value  6.1868666667514e-05 1e-10 1e-10
+@value  6.1868666667514e-05 1e-09 1e-09
 ||dF/dXv * xVDot||
-@value  6.5908329183542e+05 1e-09 1e-09
+@value  6.5908329183542e+05 1e-10 1e-10
 -> Derivatives with respect to extra variables
   -> alpha
 ||dR/dalpha||
