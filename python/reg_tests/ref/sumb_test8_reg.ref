@@ -1,0 +1,1224 @@
++------------------------------------------------------------------------------+
+|  Test 8: CRM WBT -- Euler -- Scalar JST                                      |
++------------------------------------------------------------------------------+
+#
+# SUmb, multiblock structured flow solver
+#
+# This code solves the 3D RANS, laminar NS or Euler equations
+# on multiblock structured hexahedral grids.
+# This is a parallel executable running on 1 processors.
+# It has been compiled with the following options:
+# - Optimized mode.
+# - Size of standard integers: 4 bytes.
+# - Size of standard floating point types: 8 bytes.
+# - With cgns support
+# - With support for signals.
+#
++---------------------------------------+
+|          All SUMB Options:            |
++---------------------------------------+
+{'adjointdivtol': 100000.0,
+ 'adjointl2convergence': 1e-14,
+ 'adjointl2convergenceabs': 1e-16,
+ 'adjointl2convergencerel': 1e-16,
+ 'adjointmaxiter': 500,
+ 'adjointmonitorstep': 10,
+ 'adjointsolver': 'gmres',
+ 'adjointsubspacesize': 100,
+ 'adpc': False,
+ 'alphafollowing': True,
+ 'alphamode': False,
+ 'altitudemode': False,
+ 'ankasmoverlap': 1,
+ 'ankcfl0': 1.0,
+ 'ankinnerpreconits': 1,
+ 'ankjacobianlag': 20,
+ 'anklinearsolvetol': 0.5,
+ 'ankpcilufill': 1,
+ 'anksubspacesize': 5,
+ 'ankswitchtol': 0.01,
+ 'ankuseturbdadi': True,
+ 'applyadjointpcsubspacesize': 20,
+ 'applypcsubspacesize': 10,
+ 'approxpc': True,
+ 'asmoverlap': 1,
+ 'autoadjointretry': False,
+ 'autosolveretry': False,
+ 'backgroundvolscale': 1.0,
+ 'betamode': False,
+ 'blocksplitting': False,
+ 'cfl': 1.5,
+ 'cflcoarse': 1.25,
+ 'cfllimit': 1.5,
+ 'coarsediscretization': 'central plus scalar dissipation',
+ 'debugzipper': False,
+ 'deltat': 0.01,
+ 'designsurfacefamily': None,
+ 'discretization': 'central plus scalar dissipation',
+ 'dissipationlumpingparameter': 6.0,
+ 'dissipationscalingexponent': 0.67,
+ 'eddyvisinfratio': 0.009,
+ 'equationmode': 'steady',
+ 'equationtype': 'euler',
+ 'eulerwalltreatment': 'linear pressure extrapolation',
+ 'firstrun': True,
+ 'flowtype': 'external',
+ 'forcesastractions': True,
+ 'frozenturbulence': True,
+ 'globalpreconditioner': 'additive schwartz',
+ 'gridfile': '../inputFiles/CRM_wbt_scalar_jst.cgns',
+ 'gridprecision': 'double',
+ 'gridprecisionsurface': 'single',
+ 'ilufill': 2,
+ 'innerpreconits': 1,
+ 'isosurface': {},
+ 'isovariables': [],
+ 'l2convergence': 1e-14,
+ 'l2convergencecoarse': 0.0001,
+ 'l2convergencerel': 1e-16,
+ 'liftindex': 3,
+ 'limiter': 'vanalbeda',
+ 'loadbalanceiter': 10,
+ 'loadimbalance': 0.1,
+ 'localpreconditioner': 'ilu',
+ 'lowspeedpreconditioner': False,
+ 'machmode': False,
+ 'matrixordering': 'rcm',
+ 'maxl2deviationfactor': 1.0,
+ 'meshsurfacefamily': None,
+ 'mgcycle': 'sg',
+ 'mgstartlevel': -1,
+ 'monitorvariables': ['resrho', 'cl', 'cd', 'cmy', 'yplus', 'totalr'],
+ 'ncycles': 1000,
+ 'ncyclescoarse': 500,
+ 'nearwalldist': 0.1,
+ 'nkadpc': False,
+ 'nkasmoverlap': 1,
+ 'nkcfl0': 1000000000000.0,
+ 'nkinnerpreconits': 1,
+ 'nkjacobianlag': 20,
+ 'nklinearsolvetol': 0.3,
+ 'nkls': 'cubic',
+ 'nkouterpreconits': 1,
+ 'nkpcilufill': 2,
+ 'nksubspacesize': 60,
+ 'nkswitchtol': 0.1,
+ 'nkuseew': True,
+ 'nkviscpc': False,
+ 'nodaloutput': True,
+ 'nrkreset': 5,
+ 'nsavesurface': 1,
+ 'nsavevolume': 1,
+ 'nsubiter': 1,
+ 'nsubiterturb': 1,
+ 'ntimestepscoarse': 48,
+ 'ntimestepsfine': 400,
+ 'numbersolutions': True,
+ 'outerpreconits': 3,
+ 'outputdirectory': './',
+ 'overlapfactor': 0.9,
+ 'oversetprojtol': 1e-12,
+ 'partitionlikenproc': -1,
+ 'partitiononly': False,
+ 'pmode': False,
+ 'preconditionerside': 'right',
+ 'printiterations': True,
+ 'printtiming': True,
+ 'printwarnings': True,
+ 'qmode': False,
+ 'resaveraging': 'noresaveraging',
+ 'restartadjoint': True,
+ 'restartfile': '../inputFiles/CRM_wbt_scalar_jst.cgns',
+ 'restrictionrelaxation': 0.8,
+ 'rkreset': False,
+ 'rmode': False,
+ 'sepsensoroffset': 0.0,
+ 'sepsensorsharpness': 10.0,
+ 'setmonitor': True,
+ 'smoother': 'runge kutta',
+ 'smoothparameter': 1.5,
+ 'solutionprecision': 'double',
+ 'solutionprecisionsurface': 'single',
+ 'storerindlayer': True,
+ 'surfacevariables': ['cp', 'vx', 'vy', 'vz', 'mach'],
+ 'timeaccuracy': 2,
+ 'timeintegrationscheme': 'bdf',
+ 'timeintervals': 1,
+ 'tsstability': False,
+ 'turbresscale': 10000.0,
+ 'turbulencemodel': 'sa',
+ 'turbulenceorder': 'first order',
+ 'useale': True,
+ 'useanksolver': False,
+ 'useapproxwalldistance': True,
+ 'usediagtspc': True,
+ 'usegridmotion': False,
+ 'usematrixfreedrdw': True,
+ 'usenksolver': True,
+ 'usewallfunctions': False,
+ 'verifyextra': True,
+ 'verifyspatial': True,
+ 'verifystate': True,
+ 'vis2': 0.25,
+ 'vis2coarse': 0.5,
+ 'vis4': 0.0156,
+ 'viscoussurfacevelocities': True,
+ 'viscpc': False,
+ 'viscwalltreatment': 'constant pressure extrapolation',
+ 'volumevariables': [],
+ 'walldistcutoff': 1e+20,
+ 'windaxis': False,
+ 'writefarfield': False,
+ 'writesurfacesolution': True,
+ 'writesymmetry': True,
+ 'writetecplotsurfacesolution': False,
+ 'writevolumesolution': True}
+-> Alpha... 0.000000 
+#
+# Specified load imbalance tolerance  0.100 acheived
+# Continuing with  0.000 load imbalance for the cells and  0.000 for the faces
+#
+#
+# Grid level: 1, Total number of cells: 38402
+#
+Total number of state DOF
+@value 1.92010000000000e+05 1e-12 1e-12
+Total number of adjoint state DOF
+@value 1.92010000000000e+05 1e-12 1e-12
+Total number of spatial DOF
+@value 1.76274000000000e+05 1e-12 1e-12
++----------------------------------------------------------------------+
+|  Switching to Aero Problem: CRM                                      |
++----------------------------------------------------------------------+
+-> Alpha... 1.800000 
+#
+# Found restart file: ../inputFiles/CRM_wbt_scalar_jst.cgns
+#
+Norm of residual
+@value 1.14170196098430e-11 1e-10 1e-10
+-> Alpha... 1.800000 
+Eval Functions:
+Dictionary Key: CRM_cd
+@value 1.38537579458539e-01 1e-10 1e-10
+Dictionary Key: CRM_cfx
+@value 7.70151743051130e-02 1e-10 1e-10
+Dictionary Key: CRM_cfy
+@value 3.34077908111930e-01 1e-10 1e-10
+Dictionary Key: CRM_cfz
+@value 1.95985099690677e+00 1e-10 1e-10
+Dictionary Key: CRM_cl
+@value 1.95646482366218e+00 1e-10 1e-10
+Dictionary Key: CRM_cmx
+@value 7.30837522942437e+00 1e-10 1e-10
+Dictionary Key: CRM_cmy
+@value -2.08392902416516e+01 1e-10 1e-10
+Dictionary Key: CRM_cmz
+@value 2.92579108318215e+00 1e-10 1e-10
+Dictionary Key: CRM_drag
+@value 5.64790003936571e+04 1e-10 1e-10
+Dictionary Key: CRM_fx
+@value 3.13975462607085e+04 1e-10 1e-10
+Dictionary Key: CRM_fy
+@value 1.36196881579072e+05 1e-10 1e-10
+Dictionary Key: CRM_fz
+@value 7.98992054418951e+05 1e-10 1e-10
+Dictionary Key: CRM_lift
+@value 7.97611579310596e+05 1e-10 1e-10
+Dictionary Key: CRM_mx
+@value 9.68330484397811e+06 1e-10 1e-10
+Dictionary Key: CRM_my
+@value -2.76112259985787e+07 1e-10 1e-10
+Dictionary Key: CRM_mz
+@value 3.87655615357302e+06 1e-10 1e-10
+Dictionary Key: CRM_sepsensor
+@value 8.98781386988304e-06 1e-10 1e-10
+Dictionary Key: CRM_sepsensoravgx
+@value 2.41785468908015e-04 1e-10 1e-10
+Dictionary Key: CRM_sepsensoravgy
+@value 4.75209239226947e-05 1e-10 1e-10
+Dictionary Key: CRM_sepsensoravgz
+@value 4.65702172436940e-05 1e-10 1e-10
+Sum of Tractions x
+@value 7.31833661759413e+05 1e-10 1e-10
+Sum of Tractions y
+@value -7.98559834779215e+05 1e-10 1e-10
+Sum of Tractions z
+@value 2.64667999795036e+06 1e-10 1e-10
+Sum of Forces x
+@value 3.13975462607085e+04 1e-10 1e-10
+Sum of Forces y
+@value 1.36196881579072e+05 1e-10 1e-10
+Sum of Forces z
+@value 7.98992054418952e+05 1e-10 1e-10
+Norm of state vector
+@value 6.34536452786726e+02 1e-10 1e-12
+# ---------------------------------------------------#
+#             Forward mode testing                   #
+# ---------------------------------------------------#
+-> Derivatives with respect to states. wDot, 
+||dR/dw * wDot||
+@value 3.25059398917358e+03 1e-10 1e-10
+dFuncs/dw * wDot
+Dictionary Key: cd
+@value -1.10951724605668e-01 1e-10 1e-10
+Dictionary Key: cfx
+@value -1.24392973920292e-01 1e-10 1e-10
+Dictionary Key: cfy
+@value 1.20952297529142e+00 1e-10 1e-10
+Dictionary Key: cfz
+@value 4.25964519284222e-01 1e-10 1e-10
+Dictionary Key: cl
+@value 4.29661609242438e-01 1e-10 1e-10
+Dictionary Key: cmx
+@value -1.76603478599042e+00 1e-10 1e-10
+Dictionary Key: cmy
+@value -3.05002711195501e+00 1e-10 1e-10
+Dictionary Key: cmz
+@value 1.18891786516528e+01 1e-10 1e-10
+Dictionary Key: drag
+@value -4.52327990872387e+04 1e-10 1e-10
+Dictionary Key: fx
+@value -5.07125276078247e+04 1e-10 1e-10
+Dictionary Key: fy
+@value 4.93098326566806e+05 1e-10 1e-10
+Dictionary Key: fz
+@value 1.73657215221792e+05 1e-10 1e-10
+Dictionary Key: lift
+@value 1.75164444855957e+05 1e-10 1e-10
+Dictionary Key: mx
+@value -2.33992545004586e+06 1e-10 1e-10
+Dictionary Key: my
+@value -4.04116392225591e+06 1e-10 1e-10
+Dictionary Key: mz
+@value 1.57526861462938e+07 1e-10 1e-10
+Dictionary Key: sepsensor
+@value -4.51911144195872e-06 1e-10 1e-10
+Dictionary Key: sepsensoravgx
+@value -1.24158285622050e-04 1e-10 1e-10
+Dictionary Key: sepsensoravgy
+@value 5.45014390408308e-06 1e-10 1e-10
+Dictionary Key: sepsensoravgz
+@value -2.39296681935741e-05 1e-10 1e-10
+||dF/dw * wDot||
+@value 1.77319019352755e+05 1e-10 1e-10
+-> Derivatives with respect to nodes
+||dR/dXv * xVDot||
+@value 2.01297506259283e+04 1e-10 1e-10
+dFuncs/dXv * xVDot
+Dictionary Key: cd
+@value 2.92303788044883e-01 1e-10 1e-10
+Dictionary Key: cfx
+@value 2.95291226464461e-01 1e-10 1e-10
+Dictionary Key: cfy
+@value -1.74863709004833e-01 1e-10 1e-10
+Dictionary Key: cfz
+@value -9.04699570526575e-02 1e-10 1e-10
+Dictionary Key: cl
+@value -9.97006371624973e-02 1e-10 1e-10
+Dictionary Key: cmx
+@value -1.98660564798546e-02 1e-10 1e-10
+Dictionary Key: cmy
+@value 7.31024783531755e-01 1e-10 1e-10
+Dictionary Key: cmz
+@value -3.50834294447111e+00 1e-10 1e-10
+Dictionary Key: drag
+@value 1.19166408310138e+05 1e-10 1e-10
+Dictionary Key: fx
+@value 1.20384327205032e+05 1e-10 1e-10
+Dictionary Key: fy
+@value -7.12884368870904e+04 1e-10 1e-10
+Dictionary Key: fz
+@value -3.68827920912274e+04 1e-10 1e-10
+Dictionary Key: lift
+@value -4.06459557584069e+04 1e-10 1e-10
+Dictionary Key: mx
+@value -2.63217301935481e+04 1e-10 1e-10
+Dictionary Key: my
+@value 9.68578597188234e+05 1e-10 1e-10
+Dictionary Key: mz
+@value -4.64841406770645e+06 1e-10 1e-10
+Dictionary Key: sepsensor
+@value 9.85601389242378e-06 1e-10 1e-10
+Dictionary Key: sepsensoravgx
+@value 3.69291153276634e-04 1e-10 1e-10
+Dictionary Key: sepsensoravgy
+@value 9.02377433800067e-05 1e-10 1e-10
+Dictionary Key: sepsensoravgz
+@value 6.18686666675138e-05 1e-10 1e-10
+||dF/dXv * xVDot||
+@value 6.59083291835415e+05 1e-10 1e-10
+-> Derivatives with respect to extra variables
+  -> alpha
+||dR/dalpha||
+@value 4.23555983681170e-02 1e-10 1e-10
+dFuncs/dalpha
+Dictionary Key: cd
+@value 3.41467528723552e-02 1e-10 1e-10
+Dictionary Key: cfx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cl
+@value -2.41793689929477e-03 1e-10 1e-10
+Dictionary Key: cmx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: drag
+@value 1.39209482110018e+04 1e-10 1e-10
+Dictionary Key: fx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: lift
+@value -9.85744515104491e+02 1e-10 1e-10
+Dictionary Key: mx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: my
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensor
+@value -3.01216701986305e-07 1e-10 1e-10
+Dictionary Key: sepsensoravgx
+@value -5.81631903653403e-06 1e-10 1e-10
+Dictionary Key: sepsensoravgy
+@value -2.94025096228701e-06 1e-10 1e-10
+Dictionary Key: sepsensoravgz
+@value -1.45177005601378e-06 1e-10 1e-10
+||dF/dalpha||
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> beta
+||dR/dbeta||
+@value 2.63328358708097e+00 1e-10 1e-10
+dFuncs/dbeta
+Dictionary Key: cd
+@value -3.33913060831135e-01 1e-10 1e-10
+Dictionary Key: cfx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cl
+@value 1.04936406850289e-02 1e-10 1e-10
+Dictionary Key: cmx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: drag
+@value -1.36129676639637e+05 1e-10 1e-10
+Dictionary Key: fx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: lift
+@value 4.27804743447260e+03 1e-10 1e-10
+Dictionary Key: mx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: my
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensor
+@value 8.00688658278497e-05 1e-10 1e-10
+Dictionary Key: sepsensoravgx
+@value 1.68700933999719e-03 1e-10 1e-10
+Dictionary Key: sepsensoravgy
+@value 3.30375795068348e-04 1e-10 1e-10
+Dictionary Key: sepsensoravgz
+@value 4.05271969631289e-04 1e-10 1e-10
+||dF/dbeta||
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> mach
+||dR/dmach||
+@value 3.57496756583202e+00 1e-10 1e-10
+dFuncs/dmach
+Dictionary Key: cd
+@value -3.46343948646347e-01 1e-10 1e-10
+Dictionary Key: cfx
+@value -1.92537935762783e-01 1e-10 1e-10
+Dictionary Key: cfy
+@value -8.35194770279826e-01 1e-10 1e-10
+Dictionary Key: cfz
+@value -4.89962749226692e+00 1e-10 1e-10
+Dictionary Key: cl
+@value -4.89116205915544e+00 1e-10 1e-10
+Dictionary Key: cmx
+@value -1.82709380735609e+01 1e-10 1e-10
+Dictionary Key: cmy
+@value 5.20982256041289e+01 1e-10 1e-10
+Dictionary Key: cmz
+@value -7.31447770795538e+00 1e-10 1e-10
+Dictionary Key: drag
+@value -5.78238528301902e-12 1e-10 1e-10
+Dictionary Key: fx
+@value -2.97266291617312e-12 1e-10 1e-10
+Dictionary Key: fy
+@value 2.68604761588318e-11 1e-10 1e-10
+Dictionary Key: fz
+@value -8.94976523666864e-11 1e-10 1e-10
+Dictionary Key: lift
+@value -8.93601170791543e-11 1e-10 1e-10
+Dictionary Key: mx
+@value 2.65061784040891e-10 1e-10 1e-10
+Dictionary Key: my
+@value 1.29449322104844e-09 1e-10 1e-10
+Dictionary Key: mz
+@value -1.29830509484166e-09 1e-10 1e-10
+Dictionary Key: sepsensor
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgz
+@value 0.00000000000000e+00 1e-10 1e-10
+||dF/dmach||
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> P
+||dR/dP||
+@value 0.00000000000000e+00 1e-10 1e-10
+dFuncs/dP
+Dictionary Key: cd
+@value -4.91305442269178e-21 1e-10 1e-10
+Dictionary Key: cfx
+@value -2.91484343295195e-21 1e-10 1e-10
+Dictionary Key: cfy
+@value 1.57415679385414e-22 1e-10 1e-10
+Dictionary Key: cfz
+@value -7.20223661822127e-20 1e-10 1e-10
+Dictionary Key: cl
+@value -6.58070621911262e-20 1e-10 1e-10
+Dictionary Key: cmx
+@value 3.35610742392498e-19 1e-10 1e-10
+Dictionary Key: cmy
+@value -1.57711189353996e-19 1e-10 1e-10
+Dictionary Key: cmz
+@value 1.11869649153971e-19 1e-10 1e-10
+Dictionary Key: drag
+@value 2.82395001968285e+00 1e-10 1e-10
+Dictionary Key: fx
+@value 1.56987731303542e+00 1e-10 1e-10
+Dictionary Key: fy
+@value 6.80984407895359e+00 1e-10 1e-10
+Dictionary Key: fz
+@value 3.99496027209475e+01 1e-10 1e-10
+Dictionary Key: lift
+@value 3.98805789655298e+01 1e-10 1e-10
+Dictionary Key: mx
+@value 4.84165242198906e+02 1e-10 1e-10
+Dictionary Key: my
+@value -1.38056129992893e+03 1e-10 1e-10
+Dictionary Key: mz
+@value 1.93827807678651e+02 1e-10 1e-10
+Dictionary Key: sepsensor
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgz
+@value 0.00000000000000e+00 1e-10 1e-10
+||dF/dP||
+@value 7.57715375870641e+00 1e-10 1e-10
+  -> T
+||dR/dT||
+@value 0.00000000000000e+00 1e-10 1e-10
+dFuncs/dT
+Dictionary Key: cd
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cl
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: drag
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: lift
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: my
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensor
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgz
+@value 0.00000000000000e+00 1e-10 1e-10
+||dF/dT||
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> xRef
+||dR/dxRef||
+@value 0.00000000000000e+00 1e-10 1e-10
+dFuncs/dxRef
+Dictionary Key: cd
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cl
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmy
+@value 6.03031075971313e-01 1e-10 1e-10
+Dictionary Key: cmz
+@value -1.02793202495979e-01 1e-10 1e-10
+Dictionary Key: drag
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: lift
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: my
+@value 7.98992054418951e+05 1e-10 1e-10
+Dictionary Key: mz
+@value -1.36196881579072e+05 1e-10 1e-10
+Dictionary Key: sepsensor
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgz
+@value 0.00000000000000e+00 1e-10 1e-10
+||dF/dxRef||
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> yRef
+||dR/dyRef||
+@value 0.00000000000000e+00 1e-10 1e-10
+dFuncs/dyRef
+Dictionary Key: cd
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cl
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmx
+@value -6.03031075971313e-01 1e-10 1e-10
+Dictionary Key: cmy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmz
+@value 2.36969767092656e-02 1e-10 1e-10
+Dictionary Key: drag
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: lift
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mx
+@value -7.98992054418951e+05 1e-10 1e-10
+Dictionary Key: my
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mz
+@value 3.13975462607085e+04 1e-10 1e-10
+Dictionary Key: sepsensor
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgz
+@value 0.00000000000000e+00 1e-10 1e-10
+||dF/dyRef||
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> zRef
+||dR/dzRef||
+@value 0.00000000000000e+00 1e-10 1e-10
+dFuncs/dzRef
+Dictionary Key: cd
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cl
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmx
+@value 1.02793202495979e-01 1e-10 1e-10
+Dictionary Key: cmy
+@value -2.36969767092656e-02 1e-10 1e-10
+Dictionary Key: cmz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: drag
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: lift
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mx
+@value 1.36196881579072e+05 1e-10 1e-10
+Dictionary Key: my
+@value -3.13975462607085e+04 1e-10 1e-10
+Dictionary Key: mz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensor
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgz
+@value 0.00000000000000e+00 1e-10 1e-10
+||dF/dzRef||
+@value 0.00000000000000e+00 1e-10 1e-10
+# ---------------------------------------------------#
+#             Reverse mode testing                   #
+# ---------------------------------------------------#
+-> Res bar Seed
+||dwBar^T * dR/dw||
+@value 4.63741693910007e+03 1e-10 1e-10
+||dwBar^T * dR/dXv||
+@value 5.55266458587026e+04 1e-10 1e-10
+||dwBar^T * dR/xDv||
+Dictionary Key: P_CRM
+@value 3.34375690957497e-19 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value 1.89180705387829e-01 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value 1.08392559840305e+01 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value 1.37796981682196e+01 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+-> F Bar Seed
+||FBar^T * dF/dw||
+@value 5.48827371253590e+05 1e-10 1e-10
+||FBar^T * dF/dXv||
+@value 2.32373269358044e+06 1e-10 1e-10
+||FBar^T * dF/xDv||
+Dictionary Key: P_CRM
+@value 6.62228803700987e+01 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+ -> Objective Seeds
+  -> lift
+||dlift/dw||
+@value 5.05620844755895e+05 1e-10 1e-10
+||dlift/dXv||
+@value 1.40734879183582e+05 1e-10 1e-10
+||dlift/dXdv||
+Dictionary Key: P_CRM
+@value 3.98805789655298e+01 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value -9.85744515104490e+02 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value -5.64790003936571e+04 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value -3.82084185904935e-10 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> drag
+||ddrag/dw||
+@value 5.87138590849599e+04 1e-10 1e-10
+||ddrag/dXv||
+@value 1.10496150363592e+05 1e-10 1e-10
+||ddrag/dXdv||
+Dictionary Key: P_CRM
+@value 2.82395001968286e+00 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value 1.39209482110018e+04 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value 7.97611579310596e+05 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value -3.76083890592238e-11 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> cl
+||dcl/dw||
+@value 1.24023951323562e+00 1e-10 1e-10
+||dcl/dXv||
+@value 3.45209181670873e-01 1e-10 1e-10
+||dcl/dXdv||
+Dictionary Key: P_CRM
+@value -2.01170324972896e-21 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value -2.41793689929477e-03 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value -1.38537579458539e-01 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value -4.89116205915544e+00 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> cd
+||dcd/dw||
+@value 1.44019473815150e-01 1e-10 1e-10
+||dcd/dXv||
+@value 2.71036475577884e-01 1e-10 1e-10
+||dcd/dXdv||
+Dictionary Key: P_CRM
+@value 2.91167575618666e-21 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value 3.41467528723552e-02 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value 1.95646482366218e+00 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value -3.46343948646347e-01 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> fx
+||dfx/dw||
+@value 5.85373951167598e+04 1e-10 1e-10
+||dfx/dXv||
+@value 1.10724031846972e+05 1e-10 1e-10
+||dfx/dXdv||
+Dictionary Key: P_CRM
+@value 1.56987731303542e+00 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value -1.48867794583533e-11 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> fy
+||dfy/dw||
+@value 4.38994148222490e+05 1e-10 1e-10
+||dfy/dXv||
+@value 9.06996575019806e+04 1e-10 1e-10
+||dfy/dXdv||
+Dictionary Key: P_CRM
+@value 6.80984407895360e+00 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value -4.14735937650026e-11 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> fz
+||dfz/dw||
+@value 5.05641304951702e+05 1e-10 1e-10
+||dfz/dXv||
+@value 1.40555662410098e+05 1e-10 1e-10
+||dfz/dXdv||
+Dictionary Key: P_CRM
+@value 3.99496027209475e+01 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value -3.81789178396930e-10 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> cfx
+||dcfx/dw||
+@value 1.43586624599587e-01 1e-10 1e-10
+||dcfx/dXv||
+@value 2.71595447034370e-01 1e-10 1e-10
+||dcfx/dXdv||
+Dictionary Key: P_CRM
+@value 1.32416106433254e-21 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value -1.92537935762783e-01 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> cfy
+||dcfy/dw||
+@value 1.07681060690367e+00 1e-10 1e-10
+||dcfy/dXv||
+@value 2.22477574327857e-01 1e-10 1e-10
+||dcfy/dXdv||
+Dictionary Key: P_CRM
+@value 3.25313591304855e-20 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value -8.35194770279826e-01 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> cfz
+||dcfz/dw||
+@value 1.24028970013663e+00 1e-10 1e-10
+||dcfz/dXv||
+@value 3.44769580087565e-01 1e-10 1e-10
+||dcfz/dXdv||
+Dictionary Key: P_CRM
+@value 2.15993401549847e-20 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value -4.89962749226692e+00 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> mx
+||dmx/dw||
+@value 4.78421782082283e+06 1e-10 1e-10
+||dmx/dXv||
+@value 2.30011981339259e+06 1e-10 1e-10
+||dmx/dXdv||
+Dictionary Key: P_CRM
+@value 4.84165242198906e+02 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value -1.38414033880319e-09 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value -7.98992054418951e+05 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value 1.36196881579072e+05 1e-10 1e-10
+  -> my
+||dmy/dw||
+@value 1.91977703263173e+07 1e-10 1e-10
+||dmy/dXv||
+@value 6.23315384881367e+06 1e-10 1e-10
+||dmy/dXdv||
+Dictionary Key: P_CRM
+@value -1.38056129992893e+03 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value 6.07147851135539e-09 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value 7.98992054418951e+05 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value -3.13975462607085e+04 1e-10 1e-10
+  -> mz
+||dmz/dw||
+@value 1.51823537363614e+07 1e-10 1e-10
+||dmz/dXv||
+@value 5.35048980008447e+06 1e-10 1e-10
+||dmz/dXdv||
+Dictionary Key: P_CRM
+@value 1.93827807678652e+02 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value -2.18753234883934e-09 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value -1.36196881579072e+05 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value 3.13975462607085e+04 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> cmx
+||dcmx/dw||
+@value 3.61083943728326e+00 1e-10 1e-10
+||dcmx/dXv||
+@value 1.73599188910804e+00 1e-10 1e-10
+||dcmx/dXdv||
+Dictionary Key: P_CRM
+@value 3.79470760369927e-19 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value -1.82709380735609e+01 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value -6.03031075971313e-01 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value 1.02793202495979e-01 1e-10 1e-10
+  -> cmy
+||dcmy/dw||
+@value 1.44893206785995e+01 1e-10 1e-10
+||dcmy/dXv||
+@value 4.70440907560506e+00 1e-10 1e-10
+||dcmy/dXdv||
+Dictionary Key: P_CRM
+@value -4.27566349906210e-19 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value 5.20982256041289e+01 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value 6.03031075971313e-01 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value -2.36969767092656e-02 1e-10 1e-10
+  -> cmz
+||dcmz/dw||
+@value 1.14587261021928e+01 1e-10 1e-10
+||dcmz/dXv||
+@value 4.03822741824997e+00 1e-10 1e-10
+||dcmz/dXdv||
+Dictionary Key: P_CRM
+@value 9.26237145267478e-19 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value -7.31447770795538e+00 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value -1.02793202495979e-01 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value 2.36969767092656e-02 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> sepsensor
+||dsepsensor/dw||
+@value 6.52080360040080e-05 1e-10 1e-10
+||dsepsensor/dXv||
+@value 1.61075328070539e-05 1e-10 1e-10
+||dsepsensor/dXdv||
+Dictionary Key: P_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value -3.01216701986305e-07 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value -1.72584457426651e-05 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> sepsensoravgx
+||dsepsensoravgx/dw||
+@value 6.60980622241416e-04 1e-10 1e-10
+||dsepsensoravgx/dXv||
+@value 5.67149621644702e-04 1e-10 1e-10
+||dsepsensoravgx/dXdv||
+Dictionary Key: P_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value -5.81631903653403e-06 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value -3.33250533094997e-04 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> sepsensoravgy
+||dsepsensoravgy/dw||
+@value 1.08209748442897e-04 1e-10 1e-10
+||dsepsensoravgy/dXv||
+@value 1.59850743541458e-04 1e-10 1e-10
+||dsepsensoravgy/dXdv||
+Dictionary Key: P_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value -2.94025096228701e-06 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value -1.68463970848325e-04 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> sepsensoravgz
+||dsepsensoravgz/dw||
+@value 3.30341284860631e-04 1e-10 1e-10
+||dsepsensoravgz/dXv||
+@value 8.23779366623183e-05 1e-10 1e-10
+||dsepsensoravgz/dXdv||
+Dictionary Key: P_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: T_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_CRM
+@value -1.45177005601378e-06 1e-10 1e-10
+Dictionary Key: beta_CRM
+@value -8.31802970330607e-05 1e-10 1e-10
+Dictionary Key: mach_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: xRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_CRM
+@value 0.00000000000000e+00 1e-10 1e-10
+# ---------------------------------------------------#
+#                 Dot product Tests                  #
+# ---------------------------------------------------#
+Dot product test for w -> R
+@value 6.54952118096762e+04 1e-10 1e-10
+@value 6.54952118096761e+04 1e-10 1e-10
+Dot product test for Xv -> R
+@value -3.71476951803771e+03 1e-09 1e-09
+@value -3.71476951803773e+03 1e-09 1e-09
+Dot product test for w -> F
+@value 3.95539172313973e+05 1e-10 1e-10
+@value 3.95539172313975e+05 1e-10 1e-10
+Dot product test for xV -> F
+@value -1.90994873584311e+05 1e-10 1e-10
+@value -1.90994873584312e+05 1e-10 1e-10
+Dot product test for (w, xV) -> (dw, F)
+@value 2.66324741021301e+05 1e-10 1e-10
+@value 2.66324741021308e+05 1e-10 1e-10

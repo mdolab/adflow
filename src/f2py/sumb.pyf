@@ -257,8 +257,8 @@ python module libsumb
          subroutine getsurfaceperturbation(xrand,nrand,randsurface,nrandsurface) ! in :test:warping.F90:warping
            real(kind=realtype) dimension(nrand),intent(in) :: xrand
            integer(kind=inttype), optional,intent(in),check(len(xrand)>=nrand),depend(xrand) :: nrand=len(xrand)
-           real(kind=realtype) dimension(3,nrandsurface),intent(out),depend(nrandsurface) :: randsurface
-           integer(kind=inttype) intent(in) :: nrandsurface
+           real(kind=realtype) dimension(3 * nrandsurface),intent(inout) :: randsurface
+           integer(kind=inttype), optional,intent(in),check((len(randsurface))/(3)>=nrandsurface),depend(randsurface) :: nrandsurface=(len(randsurface))/(3)
          end subroutine getsurfaceperturbation
        end module warping
        
@@ -438,37 +438,38 @@ python module libsumb
          end subroutine createpetscvars
 
 #ifndef USE_COMPLEX
-         subroutine computematrixfreeproductfwd(xvdot,extradot,wdot,usespatial,usestate,dwdot,funcsdot,fdot,spatialsize,extrasize,statesize,costsize,fsize) ! in :test:matrixFreeRoutines.F90
-           real(kind=realtype) dimension(spatialsize),intent(in) :: xvdot
-           real(kind=realtype) dimension(extrasize),intent(in) :: extradot
-           real(kind=realtype) dimension(statesize),intent(in) :: wdot
-           logical intent(in) :: usespatial
-           logical intent(in) :: usestate
-           real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: dwdot
-           real(kind=realtype) dimension(costsize),intent(out),depend(costsize) :: funcsdot
-           real(kind=realtype) dimension(3,fsize),intent(out),depend(fsize) :: fdot
-           integer(kind=inttype), optional,intent(in),check(len(xvdot)>=spatialsize),depend(xvdot) :: spatialsize=len(xvdot)
-           integer(kind=inttype), optional,intent(in),check(len(extradot)>=extrasize),depend(extradot) :: extrasize=len(extradot)
-           integer(kind=inttype), optional,intent(in),check(len(wdot)>=statesize),depend(wdot) :: statesize=len(wdot)
-           integer(kind=inttype) intent(in) :: costsize
-           integer(kind=inttype) intent(in) :: fsize
-         end subroutine computematrixfreeproductfwd
-         
-         subroutine computematrixfreeproductbwd(dwbar,funcsbar,fbar,usespatial,usestate,xvbar,extrabar,wbar,spatialsize,extrasize,statesize,costsize,fsize) ! in :test:matrixFreeRoutines.F90
-           real(kind=realtype) dimension(statesize),intent(in) :: dwbar
-           real(kind=realtype) dimension(costsize),intent(in) :: funcsbar
-           real(kind=realtype) dimension(3,fsize),intent(in) :: fbar
-           logical intent(in) :: usespatial
-           logical intent(in) :: usestate
-           real(kind=realtype) dimension(spatialsize),intent(out),depend(spatialsize) :: xvbar
-           real(kind=realtype) dimension(extrasize),intent(out),depend(extrasize) :: extrabar
-           real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: wbar
-           integer(kind=inttype) intent(in) :: spatialsize
-           integer(kind=inttype) intent(in) :: extrasize
-           integer(kind=inttype), optional,intent(in),check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
-           integer(kind=inttype), optional,intent(in),check(len(funcsbar)>=costsize),depend(funcsbar) :: costsize=len(funcsbar)
-           integer(kind=inttype), optional,intent(in),check(shape(fbar,1)==fsize),depend(fbar) :: fsize=shape(fbar,1)
-         end subroutine computematrixfreeproductbwd
+            subroutine computematrixfreeproductfwd(xvdot,extradot,wdot,usespatial,usestate,dwdot,funcsdot,fdot,spatialsize,extrasize,statesize,costsize,fsize,ntime) ! in :test:adjointAPI.F90:adjointapi
+                real(kind=realtype) dimension(spatialsize),intent(in) :: xvdot
+                real(kind=realtype) dimension(extrasize),intent(in) :: extradot
+                real(kind=realtype) dimension(statesize),intent(in) :: wdot
+                logical intent(in) :: usespatial
+                logical intent(in) :: usestate
+                real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: dwdot
+                real(kind=realtype) dimension(costsize),intent(out),depend(costsize) :: funcsdot
+                real(kind=realtype) dimension(3,fsize,ntime),intent(out),depend(fsize,ntime) :: fdot
+                integer(kind=inttype), optional,intent(in),check(len(xvdot)>=spatialsize),depend(xvdot) :: spatialsize=len(xvdot)
+                integer(kind=inttype), optional,intent(in),check(len(extradot)>=extrasize),depend(extradot) :: extrasize=len(extradot)
+                integer(kind=inttype), optional,intent(in),check(len(wdot)>=statesize),depend(wdot) :: statesize=len(wdot)
+                integer(kind=inttype) intent(in) :: costsize
+                integer(kind=inttype) intent(in) :: fsize
+                integer(kind=inttype) intent(in) :: ntime
+            end subroutine computematrixfreeproductfwd
+            subroutine computematrixfreeproductbwd(dwbar,funcsbar,fbar,usespatial,usestate,xvbar,extrabar,wbar,spatialsize,extrasize,statesize,costsize,fsize,ntime) ! in :test:adjointAPI.F90:adjointapi
+                real(kind=realtype) dimension(statesize),intent(in) :: dwbar
+                real(kind=realtype) dimension(costsize),intent(in) :: funcsbar
+                real(kind=realtype) dimension(3,fsize,ntime),intent(in) :: fbar
+                logical intent(in) :: usespatial
+                logical intent(in) :: usestate
+                real(kind=realtype) dimension(spatialsize),intent(out),depend(spatialsize) :: xvbar
+                real(kind=realtype) dimension(extrasize),intent(out),depend(extrasize) :: extrabar
+                real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: wbar
+                integer(kind=inttype) intent(in) :: spatialsize
+                integer(kind=inttype) intent(in) :: extrasize
+                integer(kind=inttype), optional,intent(in),check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
+                integer(kind=inttype), optional,intent(in),check(len(funcsbar)>=costsize),depend(funcsbar) :: costsize=len(funcsbar)
+                integer(kind=inttype), optional,intent(in),check(shape(fbar,1)==fsize),depend(fbar) :: fsize=shape(fbar,1)
+                integer(kind=inttype), optional,intent(in),check(shape(fbar,2)==ntime),depend(fbar) :: ntime=shape(fbar,2)
+            end subroutine computematrixfreeproductbwd
 #endif
        end module adjointapi
        module adjointutils
