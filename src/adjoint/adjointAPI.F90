@@ -4,12 +4,12 @@ contains
 
 #ifndef USE_COMPLEX
   subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useState, dwdot, funcsDot, &
-       fDot, spatialSize, extraSize, stateSize, costSize, fSize)
+       fDot, spatialSize, extraSize, stateSize, costSize, fSize, nTime)
 
     ! This is the main matrix-free forward mode computation
     use constants
     use block, only : flowDomsd
-    use communication, only : sumb_comm_world
+    use communication, only : sumb_comm_world, myid
     use costfunctions
     use blockPointers
     use inputDiscretization 
@@ -35,7 +35,7 @@ contains
 #include "petsc/finclude/petscvec.h90"
 
     ! Input Variables
-    integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize, fSize
+    integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize, fSize, nTime
     real(kind=realType), dimension(spatialSize), intent(in) :: xvdot
     real(kind=realType), dimension(extraSize), intent(in) :: extradot
     real(kind=realType), dimension(stateSize), intent(in) :: wdot
@@ -44,7 +44,7 @@ contains
     ! Ouput Variables
     real(kind=realType), dimension(stateSize), intent(out) :: dwDot
     real(kind=realType), dimension(costSize), intent(out) :: funcsDot
-    real(kind=realType), dimension(3, fSize), intent(out) :: fDot
+    real(kind=realType), dimension(3, fSize, nTime), intent(out) :: fDot
 
     ! Working Variables
     real(kind=realType), dimension(3, fSize) :: forces
@@ -256,7 +256,7 @@ contains
 
     ! This only works currently with 1 spectral instance
     sps = 1
-    call getForces_d(forces, fDot, fSize, sps)
+    call getForces_d(forces, fDot(:, :, sps), fSize, sps)
 
     ! We need to allreduce the function values to all processors
     call mpi_allreduce(funcsLocalDot, funcsDot, costSize, sumb_real, mpi_sum, SUmb_comm_world, ierr)
@@ -281,7 +281,7 @@ contains
   end subroutine computeMatrixFreeProductFwd
 
   subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useState, xvbar, &
-       extrabar, wbar, spatialSize, extraSize, stateSize, costSize, fSize)
+       extrabar, wbar, spatialSize, extraSize, stateSize, costSize, fSize, nTime)
     use constants
     use block, only : flowDomsd
     use communication, only : sumb_comm_world
@@ -311,10 +311,10 @@ contains
 #include "petsc/finclude/petscvec.h90"
 
     ! Input Variables
-    integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize, fSize
+    integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize, fSize, nTime
     real(kind=realType), dimension(stateSize), intent(in) :: dwbar
     real(kind=realType), dimension(costSize), intent(in) :: funcsbar
-    real(kind=realType), dimension(3, fSize), intent(in) :: fBar
+    real(kind=realType), dimension(3, fSize, nTime), intent(in) :: fBar
     logical, intent(in) :: useSpatial, useState
 
     ! Ouput Variables
@@ -395,7 +395,7 @@ contains
     ! spectral instance. This set the bcDatad%F and bcData%area
     ! seeds.
     do sps=1, nTimeIntervalsSpectral
-       call getForces_b(fBar, fSize, sps)
+       call getForces_b(fBar(:, :, sps), fSize, sps)
     end do
 
     domainLoopAD: do nn=1,nDom
@@ -1590,7 +1590,7 @@ contains
     integer(kind=intType) :: spatialSize, extraSize
     integer(kind=intType) :: stateSize, costSize, fSize, fSIzeCell
     real(kind=realType), dimension(:), allocatable :: Xvdot
-    real(kind=realType), dimension(:, :), allocatable :: fDot
+    real(kind=realType), dimension(:, :, :), allocatable :: fDot
     real(kind=realType) :: extraDot(nDesignExtra)
     real(kind=realType) ::funcsDot(nCostFunction)
 #ifndef USE_COMPLEX
@@ -1612,14 +1612,14 @@ contains
     call getSurfaceSize(fSize, fSizeCell, wallFamilies, totalWallFamilies)
     call setFullFamilyList()
     allocate(xvdot(spatialSize))
-    allocate(fdot(3, fSize))
+    allocate(fdot(3, fSize, nTimeIntervalsSpectral))
 
     xvdot = zero
     extradot = zero
     fdot = zero
     call computeMatrixFreeProductFwd(xvdot, extradot, wd_pointer, &
          useSpatial, useState, dwd_pointer, funcsDot, fDot, &
-         spatialSize, extraSize, stateSize, costSize, fSize)
+         spatialSize, extraSize, stateSize, costSize, fSize, nTimeIntervalsSpectral)
     deallocate(xvdot)
 
     call VecRestoreArrayReadF90(vecX, wd_pointer, ierr)

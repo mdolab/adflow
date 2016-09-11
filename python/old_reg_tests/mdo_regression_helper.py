@@ -11,19 +11,12 @@ REG_FILES_MATCH = 0
 REG_FILES_DO_NOT_MATCH = 1
 REG_ERROR = -1
 
-def printHeader(testName):
-    if MPI.COMM_WORLD.rank == 0:
-        print('+' + '-'*78 + '+')
-        print('| Test Name: ' + '%-66s'%testName + '|')
-        print('+' + '-'*78 + '+')
-
-
 def reg_write(values, rel_tol=1e-12, abs_tol=1e-12):
     '''Write values in special value format'''
     values = numpy.atleast_1d(values)
     values = values.flatten()
     for val in values:
-        s = '@value %20.14e %g %g'% (val, rel_tol, abs_tol)
+        s = '@value %20.16g %g %g'% (val, rel_tol, abs_tol)
         print(s)
  
     return
@@ -35,18 +28,6 @@ def reg_par_write(values, rel_tol=1e-12, abs_tol=1e-12):
         for i in xrange(len(values)):
             print ('Value(s) on processor: %d'%i)
             reg_write(values[i], rel_tol, abs_tol)
-
-def reg_par_write_sum(values, rel_tol=1e-12, abs_tol=1e-12):
-    """Write the sum of sum of the values from all processors."""
-    reducedSum = MPI.COMM_WORLD.reduce(numpy.sum(values))
-    if MPI.COMM_WORLD.rank == 0:
-        reg_write(reducedSum, rel_tol, abs_tol)
-
-def reg_par_write_norm(values, rel_tol=1e-12, abs_tol=1e-12):
-    """Write the sum of sum of the values from all processors."""
-    reducedSum = MPI.COMM_WORLD.reduce(numpy.sum(values**2))
-    if MPI.COMM_WORLD.rank == 0:
-        reg_write(numpy.sqrt(reducedSum), rel_tol, abs_tol)
 
 
 def reg_write_dict(d, rel_tol=1e-12, abs_tol=1e-12):

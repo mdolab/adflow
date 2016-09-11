@@ -347,7 +347,7 @@ contains
     integer(kind=intType), intent(in) :: nRand, nRandSurface
 
     ! Ouput Parameters
-    real(kind=realType), intent(out), dimension(3, nRandSurface) :: randSurface
+    real(kind=realType), intent(inout), dimension(3*nRandSurface) :: randSurface
 
     ! Working parameters
     integer(kind=intType) :: i, j, k, ierr, iDim, iBeg, iEnd, jBeg, jEnd, nn, mm
@@ -371,7 +371,6 @@ contains
 
                 do j=jBeg, jEnd ! This is a node loop
                    do i=iBeg, iEnd ! This is a node loop
-                      ii = ii +1
                       select case(BCFaceID(mm))
                       case(imin)
                          indI = 1
@@ -401,8 +400,9 @@ contains
 
                       do iDim=1,3
                          jjInd = jj + (indK-1)*il*jl + (indJ-1)*il + (indI-1) + iDim
-                         randSurface(iDim, ii) = xRand(jjInd)
+                         randSurface(3*ii+iDim) = xRand(jjInd)
                       end do
+                      ii = ii +1
                    end do
                 end do
              end if famInclude
