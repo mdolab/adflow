@@ -387,8 +387,9 @@ def standardTest(CFDSolver, ap, solve):
     if MPI.COMM_WORLD.rank == 0:
         reg_write_dict(funcsDot, 1e-10, 1e-10)
 
+    # These can be finiky sometimes so a bigger tolerance.
     parPrint('||dF/dXv * xVDot||')
-    reg_par_write_norm(fDot, 1e-10, 1e-10)
+    reg_par_write_norm(fDot, 1e-9, 1e-9)
 
     parPrint('-> Derivatives with respect to extra variables')
     for key in defaultAeroDVs:
