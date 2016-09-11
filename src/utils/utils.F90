@@ -2,6 +2,31 @@ module utils
 
  contains
 
+  function char2str(charArray, n)
+    use constants
+    !
+    ! some gymnastics to cast a char array to string 
+    !
+    implicit none
+    !
+    !      Function type
+    !
+    character(len=n) :: char2str
+    !
+    !      Function arguments.
+    !
+    character, dimension(maxCGNSNameLen), intent(in) :: charArray
+    integer(kind=intType), intent(in) :: n
+    !
+    !      Local variables.
+    !
+    integer(kind=intType) :: i
+    do i=1,n
+      char2str(i:i) = charArray(i)
+    end do
+
+  end function char2str
+
   function TSbeta(degreePolBeta,   coefPolBeta,       &
        degreeFourBeta,  omegaFourBeta,     &
        cosCoefFourBeta, sinCoefFourBeta, t)
