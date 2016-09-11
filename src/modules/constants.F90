@@ -286,9 +286,11 @@ module constants
   integer(kind=intType) :: myIntStack(32)
   integer(kind=intType) :: myIntPtr = 0
 
-  ! BC specific constants
+  ! BC specific input variable counts
   real(kind=realType), parameter :: nbcVarSubsonicInflow = 17
+  real(kind=realType), parameter :: nbcVarSubsonicOutflow = 1
   real(kind=realType), parameter :: nbcVarSupersonicInflow = 7
+  real(kind=realType), parameter :: nbcVarIsothermalWall = 1
 
 
 end module constants
