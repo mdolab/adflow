@@ -67,8 +67,8 @@ contains
     integer(kind=intType) :: nState
     real(kind=realType), dimension(nSections) :: t
     logical :: useOldCoor
-    real(kind=realType), dimension(3) :: cFp, cFv, cMp, cMv
-    real(kind=realType) :: yplusMax, scaleDim, oneOverDt
+    real(kind=realType), dimension(3) :: Fp, Fv, Mp, Mv
+    real(kind=realType) :: yplusMax,  oneOverDt
     useOldCoor = .False.
 
     ! Setup number of state variable based on turbulence assumption
@@ -361,7 +361,7 @@ contains
        end do
     end do
 
-    call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
+    call forcesAndMoments(Fp, Fv, Mp, Mv, yplusMax, sepSensor, &
          sepSensorAvg, Cavitation)
 
     ! Convert back to actual forces. Note that even though we use
@@ -370,17 +370,10 @@ contains
     ! the raw forces and moment form forcesAndMoments. 
     force = zero
     moment = zero
-    scaleDim = pRef/pInf
-    fact = two/(gammaInf*pInf*MachCoef*MachCoef &
-         *surfaceRef*LRef*LRef*scaleDim)
-    do sps2 = 1,nTimeIntervalsSpectral
-       force(:, sps2) = (cFp + cFV)/fact
-    end do
-
-    fact = fact/(lengthRef*LRef)
 
     do sps2 = 1,nTimeIntervalsSpectral
-       moment(:, sps2) = (cMp + cMV)/fact
+       force(:, sps2) = (Fp + FV)
+       moment(:, sps2) = (Mp + MV)
     end do
 
     call getCostFunction(force, moment, sepSensor, sepSensorAvg, &
@@ -440,7 +433,7 @@ contains
     real(kind=realType), intent(in) :: alpha, beta
 
     ! Working
-    real(kind=realType) :: fact, factMoment, scaleDim, ovrNTS
+    real(kind=realType) :: fact, factMoment, ovrNTS
     real(kind=realType), dimension(3) :: cf, cm
     real(kind=realType) :: elasticMomentx, elasticMomenty, elasticMomentz
     real(kind=realType), dimension(nTimeIntervalsSpectral, 8) :: baseCoef
@@ -449,9 +442,8 @@ contains
     integer(kind=intType) :: sps
 
     ! Generate constants
-    scaleDim = pRef/pInf
-    fact = two/(gammaInf*pInf*MachCoef**2 &
-         *surfaceRef*LRef**2*scaleDim)
+    fact = two/(gammaInf*MachCoef**2 &
+         *surfaceRef*LRef**2*pRef)
     factMoment = fact/(lengthRef*LRef)
 
     ovrNTS = one/nTimeIntervalsSpectral

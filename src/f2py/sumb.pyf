@@ -189,6 +189,11 @@ python module libsumb
 
          subroutine destroynksolver
          end subroutine destroynksolver
+
+         subroutine getfreestreamresidual(rhores,totalrres) ! in :test:NKSolvers.F90:nksolver
+           real(kind=realtype) intent(out) :: rhores
+           real(kind=realtype) intent(out) :: totalrres
+         end subroutine getfreestreamresidual
          
        end module nksolver
 

@@ -1373,7 +1373,7 @@ contains
 !   variations   of useful results: dcdalphadot coef0 dcdalpha
 !   with respect to varying inputs: machgrid lengthref machcoef
 !                dragdirection liftdirection gammainf pinf rhoinfdim
-!                pinfdim pref moment force
+!                pinfdim moment force
   subroutine computetsderivatives_d(force, forced, moment, momentd, &
 &   liftindex, coef0, coef0d, dcdalpha, dcdalphad, dcdalphadot, &
 &   dcdalphadotd, dcdq, dcdqdot)
@@ -1426,8 +1426,8 @@ contains
 !speed of sound: for normalization of q derivatives
     real(kind=realtype) :: a
     real(kind=realtype) :: ad
-    real(kind=realtype) :: scaledim, fact, factmoment
-    real(kind=realtype) :: scaledimd, factd, factmomentd
+    real(kind=realtype) :: fact, factmoment
+    real(kind=realtype) :: factd, factmomentd
 ! functions
     real(kind=realtype), dimension(ntimeintervalsspectral) :: dphix, &
 &   dphiy, dphiz
@@ -1439,13 +1439,10 @@ contains
     intrinsic sqrt
     real(kind=realtype) :: arg1
     real(kind=realtype) :: arg1d
-    scaledimd = (prefd*pinf-pref*pinfd)/pinf**2
-    scaledim = pref/pinf
     factd = -(two*surfaceref*lref**2*((gammainfd*pinf+gammainf*pinfd)*&
-&     machcoef**2*scaledim+gammainf*pinf*(2*machcoef*machcoefd*scaledim+&
-&     machcoef**2*scaledimd))/(gammainf*pinf*machcoef**2*surfaceref*lref&
-&     **2*scaledim)**2)
-    fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2*scaledim)
+&     machcoef**2+gammainf*pinf*2*machcoef*machcoefd)/(gammainf*pinf*&
+&     machcoef**2*surfaceref*lref**2)**2)
+    fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2)
     factmomentd = (factd*lengthref*lref-fact*lref*lengthrefd)/(lengthref&
 &     *lref)**2
     factmoment = fact/(lengthref*lref)
@@ -1684,7 +1681,7 @@ contains
     integer(kind=inttype) :: i, sps, nn
 !speed of sound: for normalization of q derivatives
     real(kind=realtype) :: a
-    real(kind=realtype) :: scaledim, fact, factmoment
+    real(kind=realtype) :: fact, factmoment
 ! functions
     real(kind=realtype), dimension(ntimeintervalsspectral) :: dphix, &
 &   dphiy, dphiz
@@ -1694,8 +1691,7 @@ contains
 &   secondderivativerigidrotangle
     intrinsic sqrt
     real(kind=realtype) :: arg1
-    scaledim = pref/pinf
-    fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2*scaledim)
+    fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2)
     factmoment = fact/(lengthref*lref)
     call getdirangle(veldirfreestream, liftdirection, liftindex, alpha, &
 &              beta)

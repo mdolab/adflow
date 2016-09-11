@@ -107,12 +107,12 @@ contains
     end do bocos
   end subroutine flowProperties
 
-  subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
+  subroutine forcesAndMoments(Fp, Fv, Mp, Mv, yplusMax, sepSensor, &
        sepSensorAvg, Cavitation)
     !
     !       forcesAndMoments computes the contribution of the block
     !       given by the pointers in blockPointers to the force and
-    !       moment coefficients of the geometry. A distinction is made
+    !       moment of the geometry. A distinction is made
     !       between the inviscid and viscous parts. In case the maximum
     !       yplus value must be monitored (only possible for rans), this
     !       value is also computed. The separation sensor and the cavita-
@@ -134,8 +134,8 @@ contains
     !
     !      Subroutine arguments
     !
-    real(kind=realType), dimension(3), intent(out) :: cFp, cFv
-    real(kind=realType), dimension(3), intent(out) :: cMp, cMv
+    real(kind=realType), dimension(3), intent(out) :: Fp, Fv
+    real(kind=realType), dimension(3), intent(out) :: Mp, Mv
 
     real(kind=realType), intent(out) :: yplusMax, sepSensor
     real(kind=realType), intent(out) :: sepSensorAvg(3), Cavitation
@@ -147,16 +147,13 @@ contains
     real(kind=realType) :: pm1, fx, fy, fz, fn, sigma
     real(kind=realType) :: xc, yc, zc, qf(3)
     real(kind=realType) :: fact, rho, mul, yplus, dwall
-    real(kind=realType) :: scaleDim, V(3), sensor, sensor1, Cp, tmp, plocal
+    real(kind=realType) :: V(3), sensor, sensor1, Cp, tmp, plocal
     real(kind=realType) :: tauXx, tauYy, tauZz
     real(kind=realType) :: tauXy, tauXz, tauYz
 
     real(kind=realType), dimension(3) :: refPoint
     real(kind=realType) :: mx, my, mz, cellArea
     logical :: viscousSubface
-
-    ! Set the actual scaling factor such that ACTUAL forces are computed
-    scaleDim = pRef/pInf
 
     ! Determine the reference point for the moment computation in
     ! meters.
@@ -168,10 +165,10 @@ contains
     ! Initialize the force and moment coefficients to 0 as well as
     ! yplusMax.
 
-    cFp(1) = zero; cFp(2) = zero; cFp(3) = zero
-    cFv(1) = zero; cFv(2) = zero; cFv(3) = zero
-    cMp(1) = zero; cMp(2) = zero; cMp(3) = zero
-    cMv(1) = zero; cMv(2) = zero; cMv(3) = zero
+    Fp(1) = zero; Fp(2) = zero; Fp(3) = zero
+    Fv(1) = zero; Fv(2) = zero; Fv(3) = zero
+    Mp(1) = zero; Mp(2) = zero; Mp(3) = zero
+    Mv(1) = zero; Mv(2) = zero; Mv(3) = zero
 
     yplusMax = zero
     sepSensor = zero
@@ -244,7 +241,7 @@ contains
                 ! fact to account for the possibility of an inward or
                 ! outward pointing normal.
 
-                pm1 = fact*(half*(pp2(i,j) + pp1(i,j)) - pInf)*scaleDim
+                pm1 = fact*(half*(pp2(i,j) + pp1(i,j)) - pInf)*pRef
 
                 xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
                      +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
@@ -265,17 +262,17 @@ contains
                 fz = fz*blk
 
                 ! Update the inviscid force and moment coefficients.
-                cFp(1) = cFp(1) + fx
-                cFp(2) = cFp(2) + fy
-                cFp(3) = cFp(3) + fz
+                Fp(1) = Fp(1) + fx
+                Fp(2) = Fp(2) + fy
+                Fp(3) = Fp(3) + fz
 
                 mx = yc*fz - zc*fy
                 my = zc*fx - xc*fz
                 mz = xc*fy - yc*fx
 
-                cMp(1) = cMp(1) + mx
-                cMp(2) = cMp(2) + my
-                cMp(3) = cMp(3) + mz
+                Mp(1) = Mp(1) + mx
+                Mp(2) = Mp(2) + my
+                Mp(3) = Mp(3) + mz
 
                 ! Save the face-based forces and area
                 bcData(nn)%Fp(i, j, 1) = fx
@@ -315,7 +312,7 @@ contains
                 sepSensorAvg(3) = sepSensorAvg(3)  + sensor * zc
 
                 plocal = pp2(i,j)
-                tmp = two/(gammaInf*pInf*MachCoef*MachCoef)
+                tmp = two/(gammaInf*MachCoef*MachCoef)
                 Cp = tmp*(plocal-pinf)
                 Sigma = 1.4
                 Sensor1 = -Cp - Sigma
@@ -358,11 +355,11 @@ contains
                    ! is now present, due to the definition of this force.
 
                    fx = -fact*(tauXx*ssi(i,j,1) + tauXy*ssi(i,j,2) &
-                        +        tauXz*ssi(i,j,3))*scaleDim
+                        +        tauXz*ssi(i,j,3))*pRef
                    fy = -fact*(tauXy*ssi(i,j,1) + tauYy*ssi(i,j,2) &
-                        +        tauYz*ssi(i,j,3))*scaleDim
+                        +        tauYz*ssi(i,j,3))*pRef
                    fz = -fact*(tauXz*ssi(i,j,1) + tauYz*ssi(i,j,2) &
-                        +        tauZz*ssi(i,j,3))*scaleDim
+                        +        tauZz*ssi(i,j,3))*pRef
 
                    ! iBlank forces after saving for zipper mesh
                    tauXx = tauXx*blk
@@ -390,17 +387,17 @@ contains
 
                    ! Update the viscous force and moment coefficients.
 
-                   cFv(1) = cFv(1) + fx
-                   cFv(2) = cFv(2) + fy
-                   cFv(3) = cFv(3) + fz
+                   Fv(1) = Fv(1) + fx
+                   Fv(2) = Fv(2) + fy
+                   Fv(3) = Fv(3) + fz
 
                    mx = yc*fz - zc*fy
                    my = zc*fx - xc*fz
                    mz = xc*fy - yc*fx
 
-                   cMv(1) = cMv(1) + mx
-                   cMv(2) = cMv(2) + my
-                   cMv(3) = cMv(3) + mz
+                   Mv(1) = Mv(1) + mx
+                   Mv(2) = Mv(2) + my
+                   Mv(3) = Mv(3) + mz
 
                    ! Save the face based forces for the slice operations
                    bcData(nn)%Fv(i, j, 1) = fx
@@ -463,20 +460,6 @@ contains
        end if famInclude
     end do bocos
 
-    ! Currently the coefficients only contain the surface integral
-    ! of the pressure tensor. These values must be scaled to
-    ! obtain the correct coefficients.
-
-    fact = two/(gammaInf*pInf*MachCoef*MachCoef &
-         *surfaceRef*LRef*LRef*scaleDim)
-
-    cFp(1) = cFp(1)*fact; cFp(2) = cFp(2)*fact; cFp(3) = cFp(3)*fact
-    cFv(1) = cFv(1)*fact; cFv(2) = cFv(2)*fact; cFv(3) = cFv(3)*fact
-
-    fact = fact/(lengthRef*LRef)
-    cMp(1) = cMp(1)*fact; cMp(2) = cMp(2)*fact; cMp(3) = cMp(3)*fact
-    cMv(1) = cMv(1)*fact; cMv(2) = cMv(2)*fact; cMv(3) = cMv(3)*fact
-
   end subroutine forcesAndMoments
 
   ! ----------------------------------------------------------------------
@@ -511,19 +494,19 @@ contains
     !      Local variables.
     integer(kind=intType) :: nn, ierr
     real(kind=realType) :: force(3), cforce(3), Lift, Drag, CL, CD
-    real(kind=realType) :: Moment(3),cMoment(3), fact, scaleDim
-    real(kind=realType), dimension(3) :: cFpLocal, cFvLocal, cMpLocal, cMvLocal, sepSensorAvgLocal
-    real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yPlusMax, sepSensorLocal, cavitationLocal
+    real(kind=realType) :: Moment(3),cMoment(3), fact
+    real(kind=realType), dimension(3) :: FpLocal, FvLocal, MpLocal, MvLocal, sepSensorAvgLocal
+    real(kind=realType) :: Fp(3), Fv(3), Mp(3), Mv(3), yPlusMax, sepSensorLocal, cavitationLocal
     real(Kind=realType) :: sepSensor, sepSensorAvg(3), Cavitation
     real(Kind=realType) :: massFlowRateLocal, mass_PtotLocal, mass_TtotLocal, mass_PsLocal
     real(Kind=realType) :: massFlowRate, mass_Ptot, mass_Ttot, mass_Ps
     real(kind=realType), dimension(nCostFunction)::localCFVals
 
 
-    cFpLocal = zero
-    cFvLocal = zero
-    cMpLocal = zero
-    cMvLocal = zero
+    FpLocal = zero
+    FvLocal = zero
+    MpLocal = zero
+    MvLocal = zero
     sepSensorLocal = zero
     sepSensorAvgLocal = zero
     cavitationLocal = zero
@@ -535,13 +518,13 @@ contains
     domains: do nn=1,nDom
        call setPointers(nn,1_intType,sps)
 
-       call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
+       call forcesAndMoments(Fp, Fv, Mp, Mv, yplusMax, sepSensor, &
             sepSensorAvg, Cavitation)
 
-       cFpLocal = cFpLocal + cFp
-       cFvLocal = cFvLocal + cFv
-       cMpLocal = cMpLocal + cMp
-       cMvLocal = cMvLocal + cMv
+       FpLocal = FpLocal + Fp
+       FvLocal = FvLocal + Fv
+       MpLocal = MpLocal + Mp
+       MvLocal = MvLocal + Mv
        sepSensorLocal = sepSensorLocal + sepSensor
        sepSensorAvgLocal = sepSensorAvgLocal + sepSensorAvg
        cavitationLocal = cavitationLocal + cavitation
@@ -556,33 +539,38 @@ contains
     end do domains
 
     if (oversetPresent) then
-       call forcesAndMomentsZipper(cfp, cfv, cmp, cmv, sps)
+       call forcesAndMomentsZipper(fp, fv, mp, mv, sps)
 
        ! Add the extra zipper component on the root proc
        if (myid == 0) then
-          cFpLocal = cFpLocal + cFp
-          cFvLocal = cFvLocal + cFv
-          cMpLocal = cMpLocal + cMp
-          cMvLocal = cMvLocal + cMv
+          FpLocal = FpLocal + Fp
+          FvLocal = FvLocal + Fv
+          MpLocal = MpLocal + Mp
+          MvLocal = MvLocal + Mv
        end if
     end if
 
     ! Now compute the other variables
-    cFp = cFpLocal
-    cFv = cFvLocal
-    cMp = cMpLocal
-    cMv = cMvLocal
+    Fp = FpLocal
+    Fv = FvLocal
+    Mp = MpLocal
+    Mv = MvLocal
     sepSensor = sepSensorLocal
     cavitation = cavitationLocal
     sepSensorAvg = sepSensorAvgLocal
 
-
-    scaleDim = pRef/pInf
-
     ! Sum pressure and viscous contributions
-    cForce = cFp + cFv
-    cMoment = cMp + cMv
+    Force = Fp + Fv
+    Moment = Mp + Mv
 
+    fact = two/(gammaInf*MachCoef*MachCoef &
+         *surfaceRef*LRef*LRef*pRef)
+    cForce = fact*Force
+
+    ! Moment factor has an extra lengthRef
+    fact = fact/(lengthRef*LRef)
+    cMoment = fact*Moment
+    
     ! Get Lift coef and Drag coef
     CD =  cForce(1)*dragDirection(1) &
          + cForce(2)*dragDirection(2) &
@@ -592,16 +580,13 @@ contains
          + cForce(2)*liftDirection(2) &
          + cForce(3)*liftDirection(3)
 
-    ! Divide by fact to get the forces, Lift and Drag back
-    fact = two/(gammaInf*pInf*MachCoef*MachCoef &
-         *surfaceRef*LRef*LRef*scaleDim)
-    Force = cForce / fact
-    Lift  = CL / fact
-    Drag  = CD / fact
+    Drag = Force(1)*dragDirection(1) &
+         + Force(2)*dragDirection(2) &
+         + Force(3)*dragDirection(3)
 
-    ! Moment factor has an extra lengthRef
-    fact = fact/(lengthRef*LRef)
-    Moment = cMoment / fact
+    Lift=  Force(1)*liftDirection(1) &
+         + Force(2)*liftDirection(2) &
+         + Force(3)*liftDirection(3)
 
     localCFVals(costFuncLift) = Lift
     localCFVals(costFuncDrag) = Drag
@@ -754,7 +739,7 @@ contains
     end if
   end subroutine getSolution
 
-  subroutine forcesAndMomentsZipper(cFp, cFv, cMp, cMv, sps)
+  subroutine forcesAndMomentsZipper(Fp, Fv, Mp, Mv, sps)
 
     use communication
     use blockPointers
@@ -773,8 +758,8 @@ contains
 #include "petsc/finclude/petscvec.h90"
 
     ! Input/Output
-    real(kind=realType), dimension(3), intent(out) :: cFp, cFv
-    real(kind=realType), dimension(3), intent(out) :: cMp, cMv
+    real(kind=realType), dimension(3), intent(out) :: Fp, Fv
+    real(kind=realType), dimension(3), intent(out) :: Mp, Mv
     integer(kind=intType), intent(in) :: sps
 
     ! Working
@@ -787,14 +772,11 @@ contains
     real(kind=realType), dimension(3) :: x1, x2, x3, xc, ss, norm, refPoint
     real(kind=realType), dimension(3) :: pp1, pp2, pp3, presForce
     real(kind=realType), dimension(3) :: vv1, vv2, vv3, viscForce
-    real(kind=realType), dimension(3) :: Fp, Fv, Mp, Mv, MTmp
-    real(kind=realType) :: fact, scaleDim, triArea
+    real(kind=realType), dimension(3) ::  MTmp
+    real(kind=realType) :: fact, triArea
 
     ! PETsc
     Vec, pointer :: localVec
-
-    ! Set the actual scaling factor such that ACTUAL forces are computed
-    scaleDim = pRef/pInf
 
     ! Determine the reference point for the moment computation in
     ! meters.
@@ -893,11 +875,7 @@ contains
 
     end do
 
-    ! Puck out pointers for the nodes and tractions
-    cFp = zero
-    cFv = zero
-    cMp = zero
-    cMv = zero
+
     if (myid == 0) then
 
        Fp = zero
@@ -905,6 +883,7 @@ contains
        Mp = zero
        Mv = zero
 
+       ! Puck out pointers for the nodes and tractions
        call VecGetArrayF90(localZipperTp, pPtr, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
@@ -967,17 +946,6 @@ contains
 
        call VecRestoreArrayF90(localZipperTv, vPtr, ierr)
        call EChk(ierr,__FILE__,__LINE__)
-
-       fact = two/(gammaInf*pInf*MachCoef*MachCoef &
-            *surfaceRef*LRef*LRef*scaleDim)
-
-       ! Convert the values to coefficients
-       cFp(:) =  fact*Fp
-       cFv(:) =  fact*Fv
-
-       fact = fact/(lengthRef*LRef)
-       cMp(:) = Mp(:)*fact
-       cMv(:) = Mv(:)*fact
 
     end if
 

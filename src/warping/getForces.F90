@@ -20,14 +20,14 @@ subroutine getForces(forces, npts, sps)
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
   real(kind=realType) :: sss(3),v2(3),v1(3), qa, sepSensor, Cavitation
   real(kind=realType) :: sepSensorAvg(3)
-  real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yplusmax, qf(3)
+  real(kind=realType) :: Fp(3), Fv(3), Mp(3), Mv(3), yplusmax, qf(3)
 
   ! Make sure *all* forces are computed. Sectioning will be done
   ! else-where.
   call setFullFamilyList()
   domains: do nn=1,nDom
      call setPointers(nn, 1_intType, sps)
-     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, &
+     call forcesAndMoments(Fp, Fv, Mp, Mv, yplusMax, &
           sepSensor, sepSensorAvg, Cavitation)
   end do domains
 
