@@ -213,7 +213,7 @@ def test1():
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridfile': '../inputFiles/mdo_tutorial_euler.cgns',
+        {'gridfile': '../oldInputFiles/mdo_tutorial_euler.cgns',
          'mgcycle':'2w',
          'cfl':1.5,
          'cflcoarse':1.25,
@@ -236,7 +236,7 @@ def test1():
     ap.addDV('mach')
     ap.addDV('altitude')
     CFDSolver = SUMB(options=aeroOptions, debug=True)
-    DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt')
+    DVGeo = DVGeometry('../oldInputFiles/mdo_tutorial_ffd.fmt')
     nTwist = 6
     DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
                                             y=numpy.zeros(nTwist),
@@ -247,7 +247,7 @@ def test1():
 
     DVGeo.addGeoDVGlobal('twist', [0]*nTwist, twist, lower=-10, upper=10, scale=1.0)
     DVGeo.addGeoDVLocal('shape', lower=-0.5, upper=0.5, axis='y', scale=10.0)
-    mesh = MBMesh(options={'gridFile':'../inputFiles/mdo_tutorial_euler.cgns'}, debug=False)
+    mesh = MBMesh(options={'gridFile':'../oldInputFiles/mdo_tutorial_euler.cgns'}, debug=False)
     CFDSolver.setMesh(mesh)
     CFDSolver.setDVGeo(DVGeo)
     CFDSolver.addLiftDistribution(10, 'z')
@@ -337,7 +337,7 @@ def test2():
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridfile': '../inputFiles/mdo_tutorial_euler_random.cgns',
+        {'gridfile': '../oldInputFiles/mdo_tutorial_euler_random.cgns',
          'mgcycle':'2w',
          'smoother':'dadi',
          'cfl':1.5,
@@ -360,7 +360,7 @@ def test2():
     ap.addDV('alpha')
     ap.addDV('mach')
     CFDSolver = SUMB(options=aeroOptions)
-    DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt')
+    DVGeo = DVGeometry('../oldInputFiles/mdo_tutorial_ffd.fmt')
     nTwist = 6
     DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
                                             y=numpy.zeros(nTwist),
@@ -372,7 +372,7 @@ def test2():
     DVGeo.addGeoDVGlobal('twist', [0]*nTwist, twist, lower=-10, upper=10, scale=1.0)
     DVGeo.addGeoDVLocal('shape', lower=-0.5, upper=0.5, axis='y', scale=10.0)
     
-    mesh = MBMesh(options={'gridFile':'../inputFiles/mdo_tutorial_euler_random.cgns'})
+    mesh = MBMesh(options={'gridFile':'../oldInputFiles/mdo_tutorial_euler_random.cgns'})
     CFDSolver.setMesh(mesh)
     CFDSolver.setDVGeo(DVGeo)
     CFDSolver(ap)
@@ -404,7 +404,7 @@ def test3():
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridfile': '../inputFiles/mdo_tutorial_euler.cgns',
+        {'gridfile': '../oldInputFiles/mdo_tutorial_euler.cgns',
          'mgcycle':'2w',
          'smoother':'dadi',
          'cfl':10.0,
@@ -448,7 +448,7 @@ def test4():
 
         # Now set the options that need to be overwritten for this example:
         aeroOptions.update(
-            {'gridfile': '../inputFiles/mdo_tutorial_euler.cgns',
+            {'gridfile': '../oldInputFiles/mdo_tutorial_euler.cgns',
              'mgcycle':'2w',
              'cfl':1.5,
              'cflcoarse':1.25,
@@ -469,7 +469,7 @@ def test4():
         ap.addDV('alpha')
         ap.addDV('mach')
         CFDSolver = SUMB(options=aeroOptions, comm=MPI.COMM_SELF)
-        DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt')
+        DVGeo = DVGeometry('../oldInputFiles/mdo_tutorial_ffd.fmt')
         nTwist = 6
         DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
                                                 y=numpy.zeros(nTwist),
@@ -480,7 +480,7 @@ def test4():
 
         DVGeo.addGeoDVGlobal('twist', [0]*nTwist, twist, lower=-10, upper=10, scale=1.0)
         DVGeo.addGeoDVLocal('shape', lower=-0.5, upper=0.5, axis='y', scale=10.0)
-        mesh = MBMesh(options={'gridFile':'../inputFiles/mdo_tutorial_euler.cgns'}, comm=MPI.COMM_SELF)
+        mesh = MBMesh(options={'gridFile':'../oldInputFiles/mdo_tutorial_euler.cgns'}, comm=MPI.COMM_SELF)
         CFDSolver.setMesh(mesh)
         CFDSolver.setDVGeo(DVGeo)
         CFDSolver(ap)
@@ -509,7 +509,7 @@ def test5():
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridfile': '../inputFiles/mdo_tutorial_euler_l2.cgns',
+        {'gridfile': '../oldInputFiles/mdo_tutorial_euler_l2.cgns',
          'mgcycle':'sg',
          'cfl':1.5,
          'cflcoarse':1.25,
@@ -543,7 +543,7 @@ def test5():
     # Note that the mach number derivative for the timspectral is
     # broken and needs to be fixed. 
     CFDSolver = SUMB(options=aeroOptions)
-    DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt')
+    DVGeo = DVGeometry('../oldInputFiles/mdo_tutorial_ffd.fmt')
     nTwist = 6
     DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
                                             y=numpy.zeros(nTwist),
@@ -554,7 +554,7 @@ def test5():
 
     DVGeo.addGeoDVGlobal('twist', [0]*nTwist, twist, lower=-10, upper=10, scale=1.0)
     DVGeo.addGeoDVLocal('shape', lower=-0.5, upper=0.5, axis='y', scale=10.0)
-    mesh = MBMesh(options={'gridFile':'../inputFiles/mdo_tutorial_euler_l2.cgns'})
+    mesh = MBMesh(options={'gridFile':'../oldInputFiles/mdo_tutorial_euler_l2.cgns'})
     CFDSolver.setMesh(mesh)
     CFDSolver.setDVGeo(DVGeo)
     CFDSolver(ap)
@@ -586,7 +586,7 @@ def test6():
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridfile': '../inputFiles/mdo_tutorial_rans.cgns',
+        {'gridfile': '../oldInputFiles/mdo_tutorial_rans.cgns',
          'mgcycle':'2w',
          'equationtype':'Laminar NS',
          'cfl':1.5,
@@ -609,7 +609,7 @@ def test6():
     ap.addDV('alpha')
     ap.addDV('mach')
     CFDSolver = SUMB(options=aeroOptions)
-    DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt')
+    DVGeo = DVGeometry('../oldInputFiles/mdo_tutorial_ffd.fmt')
     nTwist = 6
     DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
                                             y=numpy.zeros(nTwist),
@@ -620,7 +620,7 @@ def test6():
 
     DVGeo.addGeoDVGlobal('twist', [0]*nTwist, twist, lower=-10, upper=10, scale=1.0)
     DVGeo.addGeoDVLocal('shape', lower=-0.5, upper=0.5, axis='y', scale=10.0)
-    mesh = MBMesh(options={'gridFile':'../inputFiles/mdo_tutorial_rans.cgns'})
+    mesh = MBMesh(options={'gridFile':'../oldInputFiles/mdo_tutorial_rans.cgns'})
     CFDSolver.setMesh(mesh)
     CFDSolver.setDVGeo(DVGeo)
     CFDSolver(ap)
@@ -655,7 +655,7 @@ def test7():
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridfile': '../inputFiles/mdo_tutorial_rans.cgns',
+        {'gridfile': '../oldInputFiles/mdo_tutorial_rans.cgns',
          'mgcycle':'2w',
          'equationtype':'RANS',
          'smoother':'dadi',
@@ -682,7 +682,7 @@ def test7():
     ap.addDV('alpha')
     ap.addDV('mach')
     CFDSolver = SUMB(options=aeroOptions)
-    DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt')
+    DVGeo = DVGeometry('../oldInputFiles/mdo_tutorial_ffd.fmt')
     nTwist = 6
     DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
                                             y=numpy.zeros(nTwist),
@@ -693,7 +693,8 @@ def test7():
 
     DVGeo.addGeoDVGlobal('twist', [0]*nTwist, twist, lower=-10, upper=10, scale=1.0)
     DVGeo.addGeoDVLocal('shape', lower=-0.5, upper=0.5, axis='y', scale=10.0)
-    mesh = MBMesh(options={'gridFile':'../inputFiles/mdo_tutorial_rans.cgns'})
+    mesh = MBMesh(options={'gridFile':'../oldInputFiles/mdo_tutorial_rans.cgns'})
+
     CFDSolver.setMesh(mesh)
     CFDSolver.setDVGeo(DVGeo)
     CFDSolver(ap)
@@ -724,7 +725,7 @@ def test8():
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridfile': '../inputFiles/mdo_tutorial_rans_random.cgns',
+        {'gridfile': '../oldInputFiles/mdo_tutorial_rans_random.cgns',
          'mgcycle':'2w',
          'equationtype':'RANS',
          'smoother':'dadi',
@@ -752,7 +753,7 @@ def test8():
     ap.addDV('alpha')
     ap.addDV('mach')
     CFDSolver = SUMB(options=aeroOptions)
-    DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt')
+    DVGeo = DVGeometry('../oldInputFiles/mdo_tutorial_ffd.fmt')
     nTwist = 6
     DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
                                             y=numpy.zeros(nTwist),
@@ -763,7 +764,7 @@ def test8():
 
     DVGeo.addGeoDVGlobal('twist', [0]*nTwist, twist, lower=-10, upper=10, scale=1.0)
     DVGeo.addGeoDVLocal('shape', lower=-0.5, upper=0.5, axis='y', scale=10.0)
-    mesh = MBMesh(options={'gridFile':'../inputFiles/mdo_tutorial_rans_random.cgns'})
+    mesh = MBMesh(options={'gridFile':'../oldInputFiles/mdo_tutorial_rans_random.cgns'})
     CFDSolver.setMesh(mesh)
     CFDSolver.setDVGeo(DVGeo)
     CFDSolver(ap)
@@ -794,7 +795,7 @@ def test9():
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridfile': '../inputFiles/dpw4_38k.cgns',
+        {'gridfile': '../oldInputFiles/dpw4_38k.cgns',
          'mgcycle':'sg',
          'cfl':1.5,
          'cflcoarse':1.25,
@@ -818,7 +819,7 @@ def test9():
     ap.addDV('alpha')
     ap.addDV('mach')
     CFDSolver = SUMB(options=aeroOptions)
-    DVGeo = DVGeometry('../inputFiles/CRM_ffd.fmt')
+    DVGeo = DVGeometry('../oldInputFiles/CRM_ffd.fmt')
 
     # Setup curves for ref_axis
     leRoot = numpy.array([25.22, 3.08, 4.46])
@@ -881,7 +882,7 @@ def test9():
     DVGeo.addGeoDVLocal('shape', lower=-1.0, upper=1.0, axis='z', scale=1.0, 
                         volList=[0])
     meshOptions ={
-        'gridFile':'../inputFiles/dpw4_38k.cgns',
+        'gridFile':'../oldInputFiles/dpw4_38k.cgns',
         'warpType':'solid',
         'solidWarpType':'n',
         'n':3, 
@@ -947,7 +948,7 @@ def test10():
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridfile': '../inputFiles/naca0012_rans-L2.cgns',
+        {'gridfile': '../oldInputFiles/naca0012_rans-L2.cgns',
          'writevolumesolution':False,
          'vis4':.025,
          'vis2':0.5,
@@ -1016,7 +1017,7 @@ def test11():
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridfile': '../inputFiles/bscw_rans_finer_L3.cgns',
+        {'gridfile': '../oldInputFiles/bscw_rans_finer_L3.cgns',
          'liftindex':3,
          'writevolumesolution':False,
          'usenksolver':False,
@@ -1043,7 +1044,7 @@ def test11():
     )
 
     meshOptions = {
-        'gridFile':'../inputFiles/bscw_rans_finer_L3.cgns',
+        'gridFile':'../oldInputFiles/bscw_rans_finer_L3.cgns',
         }
 
     ap = AeroProblem(name='bscw', alpha=3.0, mach=0.7,

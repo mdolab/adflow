@@ -1186,8 +1186,6 @@ contains
                 call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, &
                      cgnsSol, realSingle, solName, sol4, source, ierr)
              case (precisionDouble)
-                print *,'why are you not fucking writing this'
-
                 call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, &
                      cgnsSol, realDouble, solName, sol8, source, ierr)
              end select

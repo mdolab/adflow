@@ -2493,6 +2493,7 @@ class SUMB(AeroSolver):
                         'all be None')
 
         self._setAeroDVs()
+        nTime  = self.sumb.inputtimespectral.ntimeintervalsspectral
 
         # Default flags
         useState = False
@@ -2551,7 +2552,7 @@ class SUMB(AeroSolver):
         fSize, nCell = self._getSurfaceSize(self.allWallsGroup)
 
         dwdot,tmp,fdot = self.sumb.adjointapi.computematrixfreeproductfwd(
-            xvdot, extradot, wdot, useSpatial, useState, costSize,  max(1, fSize))
+            xvdot, extradot, wdot, useSpatial, useState, costSize,  max(1, fSize), nTime)
 
         # Explictly put fdot to nothing if size is zero
         if fSize==0:
@@ -2902,7 +2903,9 @@ class SUMB(AeroSolver):
         nPts, nCell = self._getSurfaceSize(self.allWallsGroup)
         xRand = self.getSpatialPerturbation(seed)
         self._setFamilyList(self.allWallsGroup)
-        return self.sumb.warping.getsurfaceperturbation(xRand, nPts).T
+        surfRand = numpy.zeros((nPts, 3))
+        self.sumb.warping.getsurfaceperturbation(xRand, numpy.ravel(surfRand))
+        return surfRand
 
     def getStatePerturbation(self, seed=314):
         """This is is a debugging routine only. It is used only in regression

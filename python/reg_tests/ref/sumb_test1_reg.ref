@@ -1,0 +1,1227 @@
++------------------------------------------------------------------------------+
+|  Test 1: MDO tutorial -- Euler -- Scalar JST                                 |
++------------------------------------------------------------------------------+
+#
+# SUmb, multiblock structured flow solver
+#
+# This code solves the 3D RANS, laminar NS or Euler equations
+# on multiblock structured hexahedral grids.
+# This is a parallel executable running on 1 processors.
+# It has been compiled with the following options:
+# - Optimized mode.
+# - Size of standard integers: 4 bytes.
+# - Size of standard floating point types: 8 bytes.
+# - With cgns support
+# - With support for signals.
+#
++---------------------------------------+
+|          All SUMB Options:            |
++---------------------------------------+
+{'adjointdivtol': 100000.0,
+ 'adjointl2convergence': 1e-14,
+ 'adjointl2convergenceabs': 1e-16,
+ 'adjointl2convergencerel': 1e-16,
+ 'adjointmaxiter': 500,
+ 'adjointmonitorstep': 10,
+ 'adjointsolver': 'gmres',
+ 'adjointsubspacesize': 100,
+ 'adpc': False,
+ 'alphafollowing': True,
+ 'alphamode': False,
+ 'altitudemode': False,
+ 'ankasmoverlap': 1,
+ 'ankcfl0': 1.0,
+ 'ankinnerpreconits': 1,
+ 'ankjacobianlag': 20,
+ 'anklinearsolvetol': 0.5,
+ 'ankpcilufill': 1,
+ 'anksubspacesize': 5,
+ 'ankswitchtol': 0.01,
+ 'ankuseturbdadi': True,
+ 'applyadjointpcsubspacesize': 20,
+ 'applypcsubspacesize': 10,
+ 'approxpc': True,
+ 'asmoverlap': 1,
+ 'autoadjointretry': False,
+ 'autosolveretry': False,
+ 'backgroundvolscale': 1.0,
+ 'betamode': False,
+ 'blocksplitting': False,
+ 'cfl': 1.7,
+ 'cflcoarse': 1.0,
+ 'cfllimit': 1.5,
+ 'coarsediscretization': 'central plus scalar dissipation',
+ 'debugzipper': False,
+ 'deltat': 0.01,
+ 'designsurfacefamily': None,
+ 'discretization': 'central plus scalar dissipation',
+ 'dissipationlumpingparameter': 6.0,
+ 'dissipationscalingexponent': 0.67,
+ 'eddyvisinfratio': 0.009,
+ 'equationmode': 'steady',
+ 'equationtype': 'euler',
+ 'eulerwalltreatment': 'linear pressure extrapolation',
+ 'firstrun': True,
+ 'flowtype': 'external',
+ 'forcesastractions': True,
+ 'frozenturbulence': True,
+ 'globalpreconditioner': 'additive schwartz',
+ 'gridfile': '../inputFiles/mdo_tutorial_euler_scalar_jst.cgns',
+ 'gridprecision': 'double',
+ 'gridprecisionsurface': 'single',
+ 'ilufill': 2,
+ 'innerpreconits': 1,
+ 'isosurface': {},
+ 'isovariables': [],
+ 'l2convergence': 1e-14,
+ 'l2convergencecoarse': 0.01,
+ 'l2convergencerel': 1e-16,
+ 'liftindex': 2,
+ 'limiter': 'vanalbeda',
+ 'loadbalanceiter': 10,
+ 'loadimbalance': 0.1,
+ 'localpreconditioner': 'ilu',
+ 'lowspeedpreconditioner': False,
+ 'machmode': False,
+ 'matrixordering': 'rcm',
+ 'maxl2deviationfactor': 1.0,
+ 'meshsurfacefamily': None,
+ 'mgcycle': '2w',
+ 'mgstartlevel': -1,
+ 'monitorvariables': ['cpu', 'resrho', 'cl', 'cd', 'cmz', 'totalr'],
+ 'ncycles': 500,
+ 'ncyclescoarse': 250,
+ 'nearwalldist': 0.1,
+ 'nkadpc': False,
+ 'nkasmoverlap': 1,
+ 'nkcfl0': 1000000000000.0,
+ 'nkinnerpreconits': 1,
+ 'nkjacobianlag': 20,
+ 'nklinearsolvetol': 0.3,
+ 'nkls': 'cubic',
+ 'nkouterpreconits': 1,
+ 'nkpcilufill': 2,
+ 'nksubspacesize': 60,
+ 'nkswitchtol': 0.01,
+ 'nkuseew': True,
+ 'nkviscpc': False,
+ 'nodaloutput': True,
+ 'nrkreset': 5,
+ 'nsavesurface': 1,
+ 'nsavevolume': 1,
+ 'nsubiter': 1,
+ 'nsubiterturb': 1,
+ 'ntimestepscoarse': 48,
+ 'ntimestepsfine': 400,
+ 'numbersolutions': True,
+ 'outerpreconits': 3,
+ 'outputdirectory': './',
+ 'overlapfactor': 0.9,
+ 'oversetprojtol': 1e-12,
+ 'partitionlikenproc': -1,
+ 'partitiononly': False,
+ 'pmode': False,
+ 'preconditionerside': 'right',
+ 'printiterations': True,
+ 'printtiming': True,
+ 'printwarnings': True,
+ 'qmode': False,
+ 'resaveraging': 'alternateresaveraging',
+ 'restartadjoint': True,
+ 'restartfile': '../inputFiles/mdo_tutorial_euler_scalar_jst.cgns',
+ 'restrictionrelaxation': 0.8,
+ 'rkreset': False,
+ 'rmode': False,
+ 'sepsensoroffset': 0.0,
+ 'sepsensorsharpness': 10.0,
+ 'setmonitor': True,
+ 'smoother': 'runge kutta',
+ 'smoothparameter': 1.5,
+ 'solutionprecision': 'double',
+ 'solutionprecisionsurface': 'single',
+ 'storerindlayer': True,
+ 'surfacevariables': ['cp', 'vx', 'vy', 'vz', 'mach'],
+ 'timeaccuracy': 2,
+ 'timeintegrationscheme': 'bdf',
+ 'timeintervals': 1,
+ 'tsstability': False,
+ 'turbresscale': 10000.0,
+ 'turbulencemodel': 'sa',
+ 'turbulenceorder': 'first order',
+ 'useale': True,
+ 'useanksolver': False,
+ 'useapproxwalldistance': True,
+ 'usediagtspc': True,
+ 'usegridmotion': False,
+ 'usematrixfreedrdw': True,
+ 'usenksolver': True,
+ 'usewallfunctions': False,
+ 'verifyextra': True,
+ 'verifyspatial': True,
+ 'verifystate': True,
+ 'vis2': 0.25,
+ 'vis2coarse': 0.5,
+ 'vis4': 0.0156,
+ 'viscoussurfacevelocities': True,
+ 'viscpc': False,
+ 'viscwalltreatment': 'constant pressure extrapolation',
+ 'volumevariables': [],
+ 'walldistcutoff': 1e+20,
+ 'windaxis': False,
+ 'writefarfield': False,
+ 'writesurfacesolution': True,
+ 'writesymmetry': True,
+ 'writetecplotsurfacesolution': False,
+ 'writevolumesolution': True}
+-> Alpha... 0.000000 
+#
+# Specified load imbalance tolerance  0.100 acheived
+# Continuing with  0.000 load imbalance for the cells and  0.000 for the faces
+#
+#
+# Grid level: 1, Total number of cells: 12096
+#
+#
+# Grid level: 2, Total number of cells: 1512
+#
+Total number of state DOF
+@value 6.04800000000000e+04 1e-12 1e-12
+Total number of adjoint state DOF
+@value 6.04800000000000e+04 1e-12 1e-12
+Total number of spatial DOF
+@value 5.71740000000000e+04 1e-12 1e-12
++----------------------------------------------------------------------+
+|  Switching to Aero Problem: mdo_tutorial                             |
++----------------------------------------------------------------------+
+-> Alpha... 1.800000 
+#
+# Found restart file: ../inputFiles/mdo_tutorial_euler_scalar_jst.cgns
+#
+Norm of residual
+@value 2.53472914640039e-12 1e-10 1e-10
+-> Alpha... 1.800000 
+Eval Functions:
+Dictionary Key: mdo_tutorial_cd
+@value 2.02707098280514e-02 1e-10 1e-10
+Dictionary Key: mdo_tutorial_cfx
+@value 3.01826242402775e-03 1e-10 1e-10
+Dictionary Key: mdo_tutorial_cfy
+@value 5.49300215617660e-01 1e-10 1e-10
+Dictionary Key: mdo_tutorial_cfz
+@value 9.55657335723139e-03 1e-10 1e-10
+Dictionary Key: mdo_tutorial_cl
+@value 5.48934363206327e-01 1e-10 1e-10
+Dictionary Key: mdo_tutorial_cmx
+@value -1.05292502950111e+00 1e-10 1e-10
+Dictionary Key: mdo_tutorial_cmy
+@value -2.85972603390635e-02 1e-10 1e-10
+Dictionary Key: mdo_tutorial_cmz
+@value 8.55992145372878e-01 1e-10 1e-10
+Dictionary Key: mdo_tutorial_drag
+@value 8.26396298269998e+03 1e-10 1e-10
+Dictionary Key: mdo_tutorial_fx
+@value 1.23048522502763e+03 1e-10 1e-10
+Dictionary Key: mdo_tutorial_fy
+@value 2.23938711903008e+05 1e-10 1e-10
+Dictionary Key: mdo_tutorial_fz
+@value 3.89602382627609e+03 1e-10 1e-10
+Dictionary Key: mdo_tutorial_lift
+@value 2.23789561191955e+05 1e-10 1e-10
+Dictionary Key: mdo_tutorial_mx
+@value -1.39508354708778e+06 1e-10 1e-10
+Dictionary Key: mdo_tutorial_my
+@value -3.78902260588455e+04 1e-10 1e-10
+Dictionary Key: mdo_tutorial_mz
+@value 1.13415535293325e+06 1e-10 1e-10
+Dictionary Key: mdo_tutorial_sepsensor
+@value 3.23025647055549e-07 1e-10 1e-10
+Dictionary Key: mdo_tutorial_sepsensoravgx
+@value 1.39810040797912e-06 1e-10 1e-10
+Dictionary Key: mdo_tutorial_sepsensoravgy
+@value 5.37834050031423e-09 1e-10 1e-10
+Dictionary Key: mdo_tutorial_sepsensoravgz
+@value 1.84014106571292e-06 1e-10 1e-10
+Sum of Tractions x
+@value 1.61524368582506e+05 1e-10 1e-10
+Sum of Tractions y
+@value 2.60980289735907e+06 1e-10 1e-10
+Sum of Tractions z
+@value 3.77306851281332e+05 1e-10 1e-10
+Sum of Forces x
+@value 1.23048522502764e+03 1e-10 1e-10
+Sum of Forces y
+@value 2.23938711903008e+05 1e-10 1e-10
+Sum of Forces z
+@value 3.89602382627611e+03 1e-10 1e-10
+Norm of state vector
+@value 3.55639339653304e+02 1e-10 1e-12
+# ---------------------------------------------------#
+#             Forward mode testing                   #
+# ---------------------------------------------------#
+-> Derivatives with respect to states. wDot, 
+||dR/dw * wDot||
+@value 1.43683427476609e+03 1e-10 1e-10
+dFuncs/dw * wDot
+Dictionary Key: cd
+@value -1.82128904197563e-04 1e-10 1e-10
+Dictionary Key: cfx
+@value -1.95932513441588e-03 1e-10 1e-10
+Dictionary Key: cfy
+@value 5.65484398871910e-02 1e-10 1e-10
+Dictionary Key: cfz
+@value 8.39072652806346e-03 1e-10 1e-10
+Dictionary Key: cl
+@value 5.65820805354476e-02 1e-10 1e-10
+Dictionary Key: cmx
+@value -5.90719926501894e-02 1e-10 1e-10
+Dictionary Key: cmy
+@value -1.61094928292814e-02 1e-10 1e-10
+Dictionary Key: cmz
+@value 4.84691740172636e-02 1e-10 1e-10
+Dictionary Key: drag
+@value -7.42503116632635e+01 1e-10 1e-10
+Dictionary Key: fx
+@value -7.98777670798668e+02 1e-10 1e-10
+Dictionary Key: fy
+@value 2.30536679732100e+04 1e-10 1e-10
+Dictionary Key: fz
+@value 3.42073139096091e+03 1e-10 1e-10
+Dictionary Key: lift
+@value 2.30673825926912e+04 1e-10 1e-10
+Dictionary Key: mx
+@value -7.82680273817948e+04 1e-10 1e-10
+Dictionary Key: my
+@value -2.13444336190847e+04 1e-10 1e-10
+Dictionary Key: mz
+@value 6.42197168059135e+04 1e-10 1e-10
+Dictionary Key: sepsensor
+@value -6.58615971931496e-09 1e-10 1e-10
+Dictionary Key: sepsensoravgx
+@value -1.34052126322613e-07 1e-10 1e-10
+Dictionary Key: sepsensoravgy
+@value -7.61134443193144e-09 1e-10 1e-10
+Dictionary Key: sepsensoravgz
+@value 3.14338108370978e-07 1e-10 1e-10
+||dF/dw * wDot||
+@value 1.33548877517512e+05 1e-10 1e-10
+-> Derivatives with respect to nodes
+||dR/dXv * xVDot||
+@value 8.73152354016341e+03 1e-10 1e-10
+dFuncs/dXv * xVDot
+Dictionary Key: cd
+@value -7.01360894729334e-02 1e-10 1e-10
+Dictionary Key: cfx
+@value -7.08906698711267e-02 1e-10 1e-10
+Dictionary Key: cfy
+@value 2.29093518621833e-02 1e-10 1e-10
+Dictionary Key: cfz
+@value 4.73766592685009e-02 1e-10 1e-10
+Dictionary Key: cl
+@value 2.51247772321882e-02 1e-10 1e-10
+Dictionary Key: cmx
+@value -2.05450620097615e-01 1e-10 1e-10
+Dictionary Key: cmy
+@value -3.06165434535006e-01 1e-10 1e-10
+Dictionary Key: cmz
+@value 1.44309923340006e-01 1e-10 1e-10
+Dictionary Key: drag
+@value -2.85930809563255e+04 1e-10 1e-10
+Dictionary Key: fx
+@value -2.89007082930610e+04 1e-10 1e-10
+Dictionary Key: fy
+@value 9.33968456717488e+03 1e-10 1e-10
+Dictionary Key: fz
+@value 1.93145164505824e+04 1e-10 1e-10
+Dictionary Key: lift
+@value 1.02428691820185e+04 1e-10 1e-10
+Dictionary Key: mx
+@value -2.72213853604536e+05 1e-10 1e-10
+Dictionary Key: my
+@value -4.05656954141502e+05 1e-10 1e-10
+Dictionary Key: mz
+@value 1.91204876028574e+05 1e-10 1e-10
+Dictionary Key: sepsensor
+@value -1.25778481685164e-08 1e-10 1e-10
+Dictionary Key: sepsensoravgx
+@value 2.28875100848822e-07 1e-10 1e-10
+Dictionary Key: sepsensoravgy
+@value 1.61060113395830e-07 1e-10 1e-10
+Dictionary Key: sepsensoravgz
+@value 2.68898381527611e-07 1e-10 1e-10
+||dF/dXv * xVDot||
+@value 1.15542828485705e+06 1e-10 1e-10
+-> Derivatives with respect to extra variables
+  -> alpha
+||dR/dalpha||
+@value 9.34524219053862e-03 1e-10 1e-10
+dFuncs/dalpha
+Dictionary Key: cd
+@value 9.58071201528882e-03 1e-10 1e-10
+Dictionary Key: cfx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cl
+@value -3.53790628215870e-04 1e-10 1e-10
+Dictionary Key: cmx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: drag
+@value 3.90586467439295e+03 1e-10 1e-10
+Dictionary Key: fx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: lift
+@value -1.44233363311046e+02 1e-10 1e-10
+Dictionary Key: mx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: my
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensor
+@value -2.38124779265100e-09 1e-10 1e-10
+Dictionary Key: sepsensoravgx
+@value -4.29557864523580e-09 1e-10 1e-10
+Dictionary Key: sepsensoravgy
+@value -3.34360819063596e-10 1e-10 1e-10
+Dictionary Key: sepsensoravgz
+@value -2.19081309870813e-08 1e-10 1e-10
+||dF/dalpha||
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> beta
+||dR/dbeta||
+@value 4.87574988902063e-01 1e-10 1e-10
+dFuncs/dbeta
+Dictionary Key: cd
+@value -9.55185776516914e-03 1e-10 1e-10
+Dictionary Key: cfx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cl
+@value 3.00179223336455e-04 1e-10 1e-10
+Dictionary Key: cmx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: drag
+@value -3.89410137370416e+03 1e-10 1e-10
+Dictionary Key: fx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: lift
+@value 1.22377065769806e+02 1e-10 1e-10
+Dictionary Key: mx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: my
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensor
+@value 4.07641986031649e-07 1e-10 1e-10
+Dictionary Key: sepsensoravgx
+@value 8.51541961724949e-07 1e-10 1e-10
+Dictionary Key: sepsensoravgy
+@value -3.16391932269407e-08 1e-10 1e-10
+Dictionary Key: sepsensoravgz
+@value 1.79739181249336e-06 1e-10 1e-10
+||dF/dbeta||
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> mach
+||dR/dmach||
+@value 8.34755273598212e-01 1e-10 1e-10
+dFuncs/dmach
+Dictionary Key: cd
+@value -5.06767745701284e-02 1e-10 1e-10
+Dictionary Key: cfx
+@value -7.54565606006939e-03 1e-10 1e-10
+Dictionary Key: cfy
+@value -1.37325053904415e+00 1e-10 1e-10
+Dictionary Key: cfz
+@value -2.38914333930785e-02 1e-10 1e-10
+Dictionary Key: cl
+@value -1.37233590801582e+00 1e-10 1e-10
+Dictionary Key: cmx
+@value 2.63231257375276e+00 1e-10 1e-10
+Dictionary Key: cmy
+@value 7.14931508476586e-02 1e-10 1e-10
+Dictionary Key: cmz
+@value -2.13998036343219e+00 1e-10 1e-10
+Dictionary Key: drag
+@value -3.39085331873305e-13 1e-10 1e-10
+Dictionary Key: fx
+@value -1.78687027592055e-14 1e-10 1e-10
+Dictionary Key: fy
+@value -1.02266056493976e-11 1e-10 1e-10
+Dictionary Key: fz
+@value 3.21611172219076e-13 1e-10 1e-10
+Dictionary Key: lift
+@value -1.02209981673287e-11 1e-10 1e-10
+Dictionary Key: mx
+@value 2.68065406554515e-10 1e-10 1e-10
+Dictionary Key: my
+@value 5.43349263545012e-13 1e-10 1e-10
+Dictionary Key: mz
+@value 2.24627262631432e-10 1e-10 1e-10
+Dictionary Key: sepsensor
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgz
+@value 0.00000000000000e+00 1e-10 1e-10
+||dF/dmach||
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> P
+||dR/dP||
+@value 0.00000000000000e+00 1e-10 1e-10
+dFuncs/dP
+Dictionary Key: cd
+@value 3.26844808341294e-22 1e-10 1e-10
+Dictionary Key: cfx
+@value 3.31787672211208e-22 1e-10 1e-10
+Dictionary Key: cfy
+@value 1.38193059456768e-21 1e-10 1e-10
+Dictionary Key: cfz
+@value -1.89657454122221e-22 1e-10 1e-10
+Dictionary Key: cl
+@value 5.32587500632759e-22 1e-10 1e-10
+Dictionary Key: cmx
+@value -1.01079504156331e-20 1e-10 1e-10
+Dictionary Key: cmy
+@value -7.89740779514017e-22 1e-10 1e-10
+Dictionary Key: cmz
+@value 5.38716291208442e-21 1e-10 1e-10
+Dictionary Key: drag
+@value 4.13198149134999e-01 1e-10 1e-10
+Dictionary Key: fx
+@value 6.15242612513819e-02 1e-10 1e-10
+Dictionary Key: fy
+@value 1.11969355951504e+01 1e-10 1e-10
+Dictionary Key: fz
+@value 1.94801191313805e-01 1e-10 1e-10
+Dictionary Key: lift
+@value 1.11894780595978e+01 1e-10 1e-10
+Dictionary Key: mx
+@value -6.97541773543892e+01 1e-10 1e-10
+Dictionary Key: my
+@value -1.89451130294228e+00 1e-10 1e-10
+Dictionary Key: mz
+@value 5.67077676466624e+01 1e-10 1e-10
+Dictionary Key: sepsensor
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgz
+@value 0.00000000000000e+00 1e-10 1e-10
+||dF/dP||
+@value 7.17635319209658e+00 1e-10 1e-10
+  -> T
+||dR/dT||
+@value 0.00000000000000e+00 1e-10 1e-10
+dFuncs/dT
+Dictionary Key: cd
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cl
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: drag
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: lift
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: my
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensor
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgz
+@value 0.00000000000000e+00 1e-10 1e-10
+||dF/dT||
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> xRef
+||dR/dxRef||
+@value 0.00000000000000e+00 1e-10 1e-10
+dFuncs/dxRef
+Dictionary Key: cd
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cl
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmy
+@value 2.94048410991735e-03 1e-10 1e-10
+Dictionary Key: cmz
+@value -1.69015450959280e-01 1e-10 1e-10
+Dictionary Key: drag
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: lift
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: my
+@value 3.89602382627609e+03 1e-10 1e-10
+Dictionary Key: mz
+@value -2.23938711903008e+05 1e-10 1e-10
+Dictionary Key: sepsensor
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgz
+@value 0.00000000000000e+00 1e-10 1e-10
+||dF/dxRef||
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> yRef
+||dR/dyRef||
+@value 0.00000000000000e+00 1e-10 1e-10
+dFuncs/dyRef
+Dictionary Key: cd
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cl
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmx
+@value -2.94048410991735e-03 1e-10 1e-10
+Dictionary Key: cmy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmz
+@value 9.28696130470079e-04 1e-10 1e-10
+Dictionary Key: drag
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: lift
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mx
+@value -3.89602382627609e+03 1e-10 1e-10
+Dictionary Key: my
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mz
+@value 1.23048522502763e+03 1e-10 1e-10
+Dictionary Key: sepsensor
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgz
+@value 0.00000000000000e+00 1e-10 1e-10
+||dF/dyRef||
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> zRef
+||dR/dzRef||
+@value 0.00000000000000e+00 1e-10 1e-10
+dFuncs/dzRef
+Dictionary Key: cd
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cfz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cl
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: cmx
+@value 1.69015450959280e-01 1e-10 1e-10
+Dictionary Key: cmy
+@value -9.28696130470079e-04 1e-10 1e-10
+Dictionary Key: cmz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: drag
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: fz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: lift
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mx
+@value 2.23938711903008e+05 1e-10 1e-10
+Dictionary Key: my
+@value -1.23048522502763e+03 1e-10 1e-10
+Dictionary Key: mz
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensor
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgx
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgy
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: sepsensoravgz
+@value 0.00000000000000e+00 1e-10 1e-10
+||dF/dzRef||
+@value 0.00000000000000e+00 1e-10 1e-10
+# ---------------------------------------------------#
+#             Reverse mode testing                   #
+# ---------------------------------------------------#
+-> Res bar Seed
+||dwBar^T * dR/dw||
+@value 1.90579416448147e+03 1e-10 1e-10
+||dwBar^T * dR/dXv||
+@value 1.76219937417528e+04 1e-10 1e-10
+||dwBar^T * dR/xDv||
+Dictionary Key: P_mdo_tutorial
+@value -2.39286807599340e-20 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value -3.25362994950406e-03 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value -1.86419264203946e-01 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value -2.43435588586187e+00 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+-> F Bar Seed
+||FBar^T * dF/dw||
+@value 4.34737784658717e+05 1e-10 1e-10
+||FBar^T * dF/dXv||
+@value 4.12855752360622e+06 1e-10 1e-10
+||FBar^T * dF/xDv||
+Dictionary Key: P_mdo_tutorial
+@value 7.69822070031402e+01 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+ -> Objective Seeds
+  -> lift
+||dlift/dw||
+@value 9.81184483055194e+04 1e-10 1e-10
+||dlift/dXv||
+@value 7.22922146382824e+04 1e-10 1e-10
+||dlift/dXdv||
+Dictionary Key: P_mdo_tutorial
+@value 1.11894780595978e+01 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value -1.44233363311046e+02 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value -8.26396298269998e+03 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value -8.98604558073461e-11 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> drag
+||ddrag/dw||
+@value 1.13542236324762e+04 1e-10 1e-10
+||ddrag/dXv||
+@value 6.50774496371830e+04 1e-10 1e-10
+||ddrag/dXdv||
+Dictionary Key: P_mdo_tutorial
+@value 4.13198149134999e-01 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value 3.90586467439295e+03 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value 2.23789561191955e+05 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value -6.44581284032467e-12 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> cl
+||dcl/dw||
+@value 2.40675157735281e-01 1e-10 1e-10
+||dcl/dXv||
+@value 1.77325879705363e-01 1e-10 1e-10
+||dcl/dXdv||
+Dictionary Key: P_mdo_tutorial
+@value -6.65596049769622e-22 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value -3.53790628215870e-04 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value -2.02707098280514e-02 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value -1.37233590801582e+00 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> cd
+||dcd/dw||
+@value 2.78508232743236e-02 1e-10 1e-10
+||dcd/dXv||
+@value 1.59628752053530e-01 1e-10 1e-10
+||dcd/dXdv||
+Dictionary Key: P_mdo_tutorial
+@value -1.30164624203462e-22 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value 9.58071201528882e-03 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value 5.48934363206327e-01 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value -5.06767745701284e-02 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> fx
+||dfx/dw||
+@value 1.12097416171068e+04 1e-10 1e-10
+||dfx/dXv||
+@value 6.50659519599636e+04 1e-10 1e-10
+||dfx/dXdv||
+Dictionary Key: P_mdo_tutorial
+@value 6.15242612513818e-02 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value -2.06640013802363e-12 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> fy
+||dfy/dw||
+@value 9.81350599177322e+04 1e-10 1e-10
+||dfy/dXv||
+@value 7.23025631919872e+04 1e-10 1e-10
+||dfy/dXdv||
+Dictionary Key: P_mdo_tutorial
+@value 1.11969355951504e+01 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value -7.72775280994797e-11 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> fz
+||dfz/dw||
+@value 5.05871983305380e+03 1e-10 1e-10
+||dfz/dXv||
+@value 3.16192674328272e+04 1e-10 1e-10
+||dfz/dXdv||
+Dictionary Key: P_mdo_tutorial
+@value 1.94801191313805e-01 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value 7.78972600568820e-13 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> cfx
+||dcfx/dw||
+@value 2.74964227264199e-02 1e-10 1e-10
+||dcfx/dXv||
+@value 1.59600549352344e-01 1e-10 1e-10
+||dcfx/dXdv||
+Dictionary Key: P_mdo_tutorial
+@value 2.20656890747056e-22 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value -7.54565606006939e-03 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> cfy
+||dcfy/dw||
+@value 2.40715904429288e-01 1e-10 1e-10
+||dcfy/dXv||
+@value 1.77351263716609e-01 1e-10 1e-10
+||dcfy/dXdv||
+Dictionary Key: P_mdo_tutorial
+@value 2.18830631050903e-21 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value -1.37325053904415e+00 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> cfz
+||dcfz/dw||
+@value 1.24085553204812e-02 1e-10 1e-10
+||dcfz/dXv||
+@value 7.75590351079945e-02 1e-10 1e-10
+||dcfz/dXdv||
+Dictionary Key: P_mdo_tutorial
+@value -4.98667124747300e-23 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value -2.38914333930785e-02 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> mx
+||dmx/dw||
+@value 6.04202831476216e+05 1e-10 1e-10
+||dmx/dXv||
+@value 5.54941481869392e+05 1e-10 1e-10
+||dmx/dXdv||
+Dictionary Key: P_mdo_tutorial
+@value -6.97541773543893e+01 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value 3.18149191290851e-10 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value -3.89602382627609e+03 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value 2.23938711903008e+05 1e-10 1e-10
+  -> my
+||dmy/dw||
+@value 8.80468709437689e+04 1e-10 1e-10
+||dmy/dXv||
+@value 6.42043137485415e+05 1e-10 1e-10
+||dmy/dXdv||
+Dictionary Key: P_mdo_tutorial
+@value -1.89451130294228e+00 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value 6.37508112705937e-12 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value 3.89602382627609e+03 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value -1.23048522502763e+03 1e-10 1e-10
+  -> mz
+||dmz/dw||
+@value 4.78776885816522e+05 1e-10 1e-10
+||dmz/dXv||
+@value 3.91916318581360e+05 1e-10 1e-10
+||dmz/dXdv||
+Dictionary Key: P_mdo_tutorial
+@value 5.67077676466624e+01 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value -2.68085039031255e-11 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value -2.23938711903008e+05 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value 1.23048522502763e+03 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> cmx
+||dcmx/dw||
+@value 4.56015903481024e-01 1e-10 1e-10
+||dcmx/dXv||
+@value 4.18836404019285e-01 1e-10 1e-10
+||dcmx/dXdv||
+Dictionary Key: P_mdo_tutorial
+@value -1.78348411872558e-20 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value 2.63231257375276e+00 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value -2.94048410991735e-03 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value 1.69015450959280e-01 1e-10 1e-10
+  -> cmy
+||dcmy/dw||
+@value 6.64524747492518e-02 1e-10 1e-10
+||dcmy/dXv||
+@value 4.84575487173510e-01 1e-10 1e-10
+||dcmy/dXdv||
+Dictionary Key: P_mdo_tutorial
+@value -2.22087654712831e-21 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value 7.14931508476586e-02 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value 2.94048410991735e-03 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value -9.28696130470080e-04 1e-10 1e-10
+  -> cmz
+||dcmz/dw||
+@value 3.61351954637514e-01 1e-10 1e-10
+||dcmz/dXv||
+@value 2.95794830471381e-01 1e-10 1e-10
+||dcmz/dXdv||
+Dictionary Key: P_mdo_tutorial
+@value 1.08870410296932e-20 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value -2.13998036343219e+00 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value -1.69015450959280e-01 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value 9.28696130470080e-04 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> sepsensor
+||dsepsensor/dw||
+@value 2.69898260460984e-07 1e-10 1e-10
+||dsepsensor/dXv||
+@value 3.63383998555947e-07 1e-10 1e-10
+||dsepsensor/dXdv||
+Dictionary Key: P_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value -2.38124779265100e-09 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value -1.36435448493746e-07 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> sepsensoravgx
+||dsepsensoravgx/dw||
+@value 7.34225509404775e-07 1e-10 1e-10
+||dsepsensoravgx/dXv||
+@value 1.28697043876107e-06 1e-10 1e-10
+||dsepsensoravgx/dXdv||
+Dictionary Key: P_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value -4.29557864523580e-09 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value -2.46118526938535e-07 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> sepsensoravgy
+||dsepsensoravgy/dw||
+@value 8.79392465116120e-09 1e-10 1e-10
+||dsepsensoravgy/dXv||
+@value 1.92084193799444e-08 1e-10 1e-10
+||dsepsensoravgy/dXdv||
+Dictionary Key: P_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value -3.34360819063597e-10 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value -1.91574637668814e-08 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+  -> sepsensoravgz
+||dsepsensoravgz/dw||
+@value 1.34180372455902e-06 1e-10 1e-10
+||dsepsensoravgz/dXv||
+@value 2.36927847661035e-06 1e-10 1e-10
+||dsepsensoravgz/dXdv||
+Dictionary Key: P_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value -2.19081309870813e-08 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value -1.25524344257954e-06 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value 0.00000000000000e+00 1e-10 1e-10
+# ---------------------------------------------------#
+#                 Dot product Tests                  #
+# ---------------------------------------------------#
+Dot product test for w -> R
+@value 2.12714066804544e+04 1e-10 1e-10
+@value 2.12714066804545e+04 1e-10 1e-10
+Dot product test for Xv -> R
+@value 6.04059514058508e+03 1e-09 1e-09
+@value 6.04059514058503e+03 1e-09 1e-09
+Dot product test for w -> F
+@value -4.37610341820973e+03 1e-10 1e-10
+@value -4.37610341820842e+03 1e-10 1e-10
+Dot product test for xV -> F
+@value 2.50593306266263e+06 1e-10 1e-10
+@value 2.50593306266264e+06 1e-10 1e-10
+Dot product test for (w, xV) -> (dw, F)
+@value 2.52886896106547e+06 1e-10 1e-10
+@value 2.52886896106548e+06 1e-10 1e-10

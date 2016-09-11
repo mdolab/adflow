@@ -514,13 +514,17 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
         ! that case the first time wall(i)%ind(link(j)) is touched,
         ! that index is taken. 
         lj = link(j)
-        if (walls(i)%ind(lj) == -1 .or. & ! Not set yet
-             nodeIndicesCGNSGlobal(j) < curCGNSNode(jl)) then  
-           ! OR then potential gloabl CGNS node index is LOWER
-           ! than the one I already have
-
+        if (walls(i)%ind(lj) == -1) then 
+           ! Not set yet
            walls(i)%ind(lj) = tmpInd(j)
            curCGNSNode(lj) = nodeIndicesCGNSGlobal(j)
+        else
+           if (nodeIndicesCGNSGlobal(j) < curCGNSNode(lj)) then  
+              ! OR then potential global CGNS node index is LOWER
+              ! than the one I already have
+              walls(i)%ind(lj) = tmpInd(j)
+              curCGNSNode(lj) = nodeIndicesCGNSGlobal(j)
+           end if
         end if
      end do
      deallocate(tmpInd, curCGNSNode)
