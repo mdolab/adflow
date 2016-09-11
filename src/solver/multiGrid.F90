@@ -963,6 +963,7 @@ contains
     use constants
     use inputIteration, only : nMGSteps, cycleStrategy
     use iteration, only : cycling, groundLevel, nStepsCycling
+    use utils, only : returnFail
     implicit none
     !
     !      Local variables.
