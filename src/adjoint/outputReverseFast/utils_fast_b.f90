@@ -1026,7 +1026,7 @@ contains
     integer(kind=inttype) :: i, sps, nn
 !speed of sound: for normalization of q derivatives
     real(kind=realtype) :: a
-    real(kind=realtype) :: scaledim, fact, factmoment
+    real(kind=realtype) :: fact, factmoment
 ! functions
     real(kind=realtype), dimension(ntimeintervalsspectral) :: dphix, &
 &   dphiy, dphiz
@@ -1035,8 +1035,7 @@ contains
     real(kind=realtype) :: derivativerigidrotangle, &
 &   secondderivativerigidrotangle
     intrinsic sqrt
-    scaledim = pref/pinf
-    fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2*scaledim)
+    fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2)
     factmoment = fact/(lengthref*lref)
     call getdirangle(veldirfreestream, liftdirection, liftindex, alpha, &
 &              beta)

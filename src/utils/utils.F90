@@ -1728,17 +1728,15 @@ module utils
     integer(kind=intType):: i,sps,nn
     !speed of sound: for normalization of q derivatives
     real(kind=realType)::a
-    real(kind=realType) :: scaleDim, fact, factMoment
+    real(kind=realType) :: fact, factMoment
     ! Functions
     real(kind=realType),dimension(nTimeIntervalsSpectral)  :: dPhix, dPhiy, dphiz
     real(kind=realType),dimension(nTimeIntervalsSpectral)  :: dPhixdot, dPhiydot, dphizdot
     real(kind=realType)::derivativeRigidRotAngle, secondDerivativeRigidRotAngle
 
 
-    scaleDim = pRef/pInf
-
     fact = two/(gammaInf*pInf*MachCoef**2 &
-         *surfaceRef*LRef**2*scaleDim)
+         *surfaceRef*LRef**2)
     factMoment = fact/(lengthRef*LRef)
 
     call getDirAngle(velDirFreestream, LiftDirection,&

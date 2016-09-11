@@ -1682,7 +1682,9 @@ contains
     use communication, only : sumb_comm_world, myid
     use inputIteration, only : printIterations, l2convcoarse, l2conv, l2convrel, &
          minIterNum, maxL2DeviationFactor, ncycles, RKReset
-    use inputPhysics, only : liftDirection, dragDirection, equationMode
+    use inputPhysics, only : liftDirection, dragDirection, equationMode, &
+         lengthRef, machCoef, surfaceRef
+    use flowVarRefState, only : pRef, lRef, gammaInf
     use inputIO, only : storeConvInnerIter
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputUnsteady, only : timeIntegrationScheme
@@ -1709,7 +1711,7 @@ contains
     real(kind=realType) :: eddyvisMax, yplusMax, sepSensor, Cavitation
     real(kind=realType) :: sepSensorAvg(3)
 
-    real(kind=realType) :: L2ConvThisLevel
+    real(kind=realType) :: L2ConvThisLevel, fact
     real(kind=realType), dimension(3) :: cfp, cfv, cmp, cmv
     logical :: nanOccurred, writeIterations
     logical :: absConv, relConv
@@ -1749,6 +1751,15 @@ contains
 
           call forcesAndMoments(cfp, cfv, cmp, cmv, yplusMax, sepSensor, &
                sepSensorAvg, Cavitation)
+
+          ! Conver to coefficinets for monitoring:
+          fact = two/(gammaInf*MachCoef*MachCoef &
+               *surfaceRef*LRef*LRef*pRef)
+          cfp = cfp*fact
+          cfv = cfv*fact
+          fact = fact/(lengthRef*Lref)
+          cmp = cmp*fact
+          cmv = cmv*fact
 
           ! Determine the maximum values of the monitoring variables
           ! of this block.
@@ -1869,6 +1880,14 @@ contains
        ! Add the corrections from zipper meshes from proc 0
        if (oversetPresent) then 
           call forcesAndMomentsZipper(cfp, cfv, cmp, cmv, sps)
+
+          fact = two/(gammaInf*MachCoef*MachCoef &
+               *surfaceRef*LRef*LRef*pRef)
+          cfp = cfp*fact
+          cfv = cfv*fact
+          fact = fact/(lengthRef*Lref)
+          cmp = cmp*fact
+          cmv = cmv*fact
 
           !Loop over the number of monitoring variables and just modify
           !the ones that need to be updated with the zipper forces we just

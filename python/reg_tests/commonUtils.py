@@ -253,8 +253,9 @@ def adjointTest(CFDSolver, ap):
 
     res = CFDSolver.getResidual(ap)
     parPrint('Norm of residual')
+    totalR0 = CFDSolve.getFreeStreamResidual(ap)
+    res /= totalR0
     reg_par_write_norm(res, 1e-10, 1e-10)
-
     
     funcsSens = {}
     CFDSolver.evalFunctionsSens(ap, funcsSens)
@@ -289,7 +290,8 @@ def standardTest(CFDSolver, ap, solve):
 
     # Check the residual
     res = CFDSolver.getResidual(ap)
-
+    totalR0 = CFDSolver.getFreeStreamResidual(ap)
+    res /= totalR0
     parPrint('Norm of residual')
     reg_par_write_norm(res, 1e-10, 1e-10)
     

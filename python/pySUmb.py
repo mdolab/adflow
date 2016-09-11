@@ -2993,6 +2993,11 @@ class SUMB(AeroSolver):
         res = self.sumb.nksolver.getres(res)
 
         return res
+        
+    def getFreeStreamResidual(self, aeroProblem):
+        self.setAeroProblem(aeroProblem)
+        rhoRes, totalRRes = self.sumb.nksolver.getfreestreamresidual()
+        return totalRRes
 
     def _getSurfaceSize(self, groupName):
         """Internal routine to return the size of a particular surface. This
