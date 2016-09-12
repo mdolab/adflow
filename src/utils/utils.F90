@@ -1646,7 +1646,7 @@ module utils
 
   end subroutine resetBCPointers
 
-  subroutine computeRootBendingMoment(cf, cm, liftIndex, bendingMoment)
+  subroutine computeRootBendingMoment(cf, cm, bendingMoment)
 
     !                                                      *
     ! Compute a normalized bending moment coefficient from *
@@ -1656,12 +1656,11 @@ module utils
     !                                                      *
 
     use constants
-    use inputPhysics, only : lengthRef, pointRef, pointRefEC
+    use inputPhysics, only : lengthRef, pointRef, pointRefEC, liftIndex
     implicit none
 
     !input/output variables
     real(kind=realType), intent(in), dimension(3) :: cf, cm
-    integer(kind=intType), intent(in) :: liftIndex
     real(kind=realType), intent(out) :: bendingMoment
 
     !Subroutine Variables
@@ -1715,7 +1714,7 @@ module utils
 
   end subroutine computeLeastSquaresRegression
 
-  subroutine computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
+  subroutine computeTSDerivatives(force, moment, coef0, dcdalpha, &
        dcdalphadot, dcdq, dcdqdot)
     !
     !      Computes the stability derivatives based on the time spectral  
@@ -1740,7 +1739,6 @@ module utils
     real(kind=realType), dimension(8):: dcdq, dcdqdot
     real(kind=realType), dimension(8):: dcdalpha,dcdalphadot
     real(kind=realType), dimension(8):: Coef0
-    integer(kind=intType) :: liftIndex
 
     ! Working Variables
     real(kind=realType), dimension(nTimeIntervalsSpectral, 8) :: baseCoef
@@ -1749,7 +1747,6 @@ module utils
     real(kind=realType), dimension(nTimeIntervalsSpectral)  :: intervalAlpha,intervalAlphadot
     real(kind=realType), dimension(nTimeIntervalsSpectral)  :: intervalMach,intervalMachdot
     real(kind=realType), dimension(nSections) :: t
-    real(kind=realType) :: alpha, beta
     integer(kind=intType):: i,sps,nn
     !speed of sound: for normalization of q derivatives
     real(kind=realType)::a
@@ -1763,9 +1760,6 @@ module utils
     fact = two/(gammaInf*pInf*MachCoef**2 &
          *surfaceRef*LRef**2)
     factMoment = fact/(lengthRef*LRef)
-
-    call getDirAngle(velDirFreestream, LiftDirection,&
-         liftIndex, alpha, beta)
 
     if (TSqMode)then
 

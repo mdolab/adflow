@@ -15,8 +15,7 @@ contains
   ! block/sps loop is outside the calculation. This routine is suitable
   ! for forward mode AD with Tapenade
 
-  subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, &
-       frozenTurb)
+  subroutine block_res(nn, sps, useSpatial, frozenTurb)
     ! Note that we import all the pointers from block res that will be
     ! used in any routine. Otherwise, tapenade gives warnings about
     ! saving a hidden variable. 
@@ -54,8 +53,6 @@ contains
     ! Input Arguments:
     integer(kind=intType), intent(in) :: nn, sps
     logical, intent(in) :: useSpatial, frozenTurb
-    real(kind=realType), intent(in) :: alpha, beta
-    integer(kind=intType), intent(in) :: liftIndex
 
     ! Output Variables
     real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment
@@ -88,8 +85,8 @@ contains
     !        Additional 'Extra' Components
     ! ------------------------------------------------ 
 
-    call adjustInflowAngle(alpha, beta, liftIndex)
-    call referenceState
+    call adjustInflowAngle()
+    call referenceState()
 
     ! ------------------------------------------------
     !        Additional Spatial Components
@@ -377,7 +374,7 @@ contains
     end do
 
     call getCostFunction(force, moment, sepSensor, sepSensorAvg, &
-         Cavitation, alpha, beta, liftIndex)
+         Cavitation)
 
   end subroutine block_res
 
@@ -411,7 +408,7 @@ contains
   end subroutine resScale
 
   subroutine getCostFunction(force, moment, sepSensor, sepSensorAvg, &
-       Cavitation, alpha, beta, liftIndex)
+       Cavitation)
 
     ! Compute the value of the actual objective function based on the
     ! (summed) forces and moments and any other "extra" design
@@ -427,10 +424,8 @@ contains
     implicit none
 
     ! Input 
-    integer(kind=intType), intent(in) :: liftIndex
     real(kind=realType), intent(in), dimension(3, nTimeIntervalsSpectral) :: force, moment
     real(kind=realType), intent(in) ::  sepSensor, Cavitation, sepSensorAvg(3)
-    real(kind=realType), intent(in) :: alpha, beta
 
     ! Working
     real(kind=realType) :: fact, factMoment, ovrNTS
@@ -455,7 +450,7 @@ contains
        dcdalphadot = zero
        dcdq = zero
        dcdqdot = zero
-       call computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
+       call computeTSDerivatives(force, moment, coef0, dcdalpha, &
             dcdalphadot, dcdq, dcdqdot)
     end if
 
@@ -479,7 +474,7 @@ contains
        ! Bending moment calc
        cm = factMoment*moment(:, sps)
        cf = fact*force(:, sps)
-       call computeRootBendingMoment(cf, cm, liftIndex, bendingMoment)
+       call computeRootBendingMoment(cf, cm, bendingMoment)
        funcValues(costFuncBendingCoef) = funcValues(costFuncBendingCoef) + ovrNTS*bendingMoment
     end do
 

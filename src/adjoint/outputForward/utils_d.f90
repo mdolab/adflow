@@ -10,6 +10,26 @@ module utils_d
 ! ----------------------------------------------------------------------
 
 contains
+  function char2str(chararray, n)
+    use constants
+    implicit none
+    integer(kind=inttype), intent(in) :: n
+!
+!      function type
+!
+    character(len=n) :: char2str
+!
+!      function arguments.
+!
+    character, dimension(maxcgnsnamelen), intent(in) :: chararray
+!
+!      local variables.
+!
+    integer(kind=inttype) :: i
+    do i=1,n
+      char2str(i:i) = chararray(i)
+    end do
+  end function char2str
   function tsbeta(degreepolbeta, coefpolbeta, degreefourbeta, &
 &   omegafourbeta, coscoeffourbeta, sincoeffourbeta, t)
 !
@@ -1250,8 +1270,8 @@ contains
 !  differentiation of computerootbendingmoment in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: bendingmoment
 !   with respect to varying inputs: lengthref pointref cf cm
-  subroutine computerootbendingmoment_d(cf, cfd, cm, cmd, liftindex, &
-&   bendingmoment, bendingmomentd)
+  subroutine computerootbendingmoment_d(cf, cfd, cm, cmd, bendingmoment&
+&   , bendingmomentd)
 !                                                      *
 ! compute a normalized bending moment coefficient from *
 ! the force and moment coefficient. at the moment this *
@@ -1260,12 +1280,11 @@ contains
 !                                                      *
     use constants
     use inputphysics, only : lengthref, lengthrefd, pointref, &
-&   pointrefd, pointrefec
+&   pointrefd, pointrefec, liftindex
     implicit none
 !input/output variables
     real(kind=realtype), dimension(3), intent(in) :: cf, cm
     real(kind=realtype), dimension(3), intent(in) :: cfd, cmd
-    integer(kind=inttype), intent(in) :: liftindex
     real(kind=realtype), intent(out) :: bendingmoment
     real(kind=realtype), intent(out) :: bendingmomentd
 !subroutine variables
@@ -1331,7 +1350,7 @@ contains
       bendingmomentd = 0.0_8
     end if
   end subroutine computerootbendingmoment_d
-  subroutine computerootbendingmoment(cf, cm, liftindex, bendingmoment)
+  subroutine computerootbendingmoment(cf, cm, bendingmoment)
 !                                                      *
 ! compute a normalized bending moment coefficient from *
 ! the force and moment coefficient. at the moment this *
@@ -1339,11 +1358,11 @@ contains
 ! would be needed for a full body.                     *
 !                                                      *
     use constants
-    use inputphysics, only : lengthref, pointref, pointrefec
+    use inputphysics, only : lengthref, pointref, pointrefec, &
+&   liftindex
     implicit none
 !input/output variables
     real(kind=realtype), dimension(3), intent(in) :: cf, cm
-    integer(kind=inttype), intent(in) :: liftindex
     real(kind=realtype), intent(out) :: bendingmoment
 !subroutine variables
     real(kind=realtype) :: elasticmomentx, elasticmomenty, &
@@ -1375,8 +1394,8 @@ contains
 !                dragdirection liftdirection gammainf pinf rhoinfdim
 !                pinfdim moment force
   subroutine computetsderivatives_d(force, forced, moment, momentd, &
-&   liftindex, coef0, coef0d, dcdalpha, dcdalphad, dcdalphadot, &
-&   dcdalphadotd, dcdq, dcdqdot)
+&   coef0, coef0d, dcdalpha, dcdalphad, dcdalphadot, dcdalphadotd, dcdq&
+&   , dcdqdot)
 !
 !      computes the stability derivatives based on the time spectral  
 !      solution of a given mesh. takes in the force coefficients at   
@@ -1404,7 +1423,6 @@ contains
     real(kind=realtype), dimension(8) :: dcdalphad, dcdalphadotd
     real(kind=realtype), dimension(8) :: coef0
     real(kind=realtype), dimension(8) :: coef0d
-    integer(kind=inttype) :: liftindex
 ! working variables
     real(kind=realtype), dimension(ntimeintervalsspectral, 8) :: &
 &   basecoef
@@ -1421,7 +1439,6 @@ contains
     real(kind=realtype), dimension(ntimeintervalsspectral) :: &
 &   intervalmach, intervalmachdot
     real(kind=realtype), dimension(nsections) :: t
-    real(kind=realtype) :: alpha, beta
     integer(kind=inttype) :: i, sps, nn
 !speed of sound: for normalization of q derivatives
     real(kind=realtype) :: a
@@ -1446,8 +1463,6 @@ contains
     factmomentd = (factd*lengthref*lref-fact*lref*lengthrefd)/(lengthref&
 &     *lref)**2
     factmoment = fact/(lengthref*lref)
-    call getdirangle(veldirfreestream, liftdirection, liftindex, alpha, &
-&              beta)
     if (tsqmode) then
       print*, &
 &     'ts q mode code needs to be updated in computetsderivatives!'
@@ -1640,8 +1655,8 @@ contains
     bd = (sumx2*sumyd-sumx*sumxyd)/(npts*sumx2-sumx**2)
     b = (sumy*sumx2-sumx*sumxy)/(npts*sumx2-sumx**2)
   end subroutine computeleastsquaresregression_d
-  subroutine computetsderivatives(force, moment, liftindex, coef0, &
-&   dcdalpha, dcdalphadot, dcdq, dcdqdot)
+  subroutine computetsderivatives(force, moment, coef0, dcdalpha, &
+&   dcdalphadot, dcdq, dcdqdot)
 !
 !      computes the stability derivatives based on the time spectral  
 !      solution of a given mesh. takes in the force coefficients at   
@@ -1665,7 +1680,6 @@ contains
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
-    integer(kind=inttype) :: liftindex
 ! working variables
     real(kind=realtype), dimension(ntimeintervalsspectral, 8) :: &
 &   basecoef
@@ -1677,7 +1691,6 @@ contains
     real(kind=realtype), dimension(ntimeintervalsspectral) :: &
 &   intervalmach, intervalmachdot
     real(kind=realtype), dimension(nsections) :: t
-    real(kind=realtype) :: alpha, beta
     integer(kind=inttype) :: i, sps, nn
 !speed of sound: for normalization of q derivatives
     real(kind=realtype) :: a
@@ -1693,8 +1706,6 @@ contains
     real(kind=realtype) :: arg1
     fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2)
     factmoment = fact/(lengthref*lref)
-    call getdirangle(veldirfreestream, liftdirection, liftindex, alpha, &
-&              beta)
     if (tsqmode) then
       print*, &
 &     'ts q mode code needs to be updated in computetsderivatives!'
@@ -1939,176 +1950,6 @@ contains
     m = (npts*sumxy-sumy*sumx)/(npts*sumx2-sumx**2)
     b = (sumy*sumx2-sumx*sumxy)/(npts*sumx2-sumx**2)
   end subroutine computeleastsquaresregression
-!  differentiation of getdirangle in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: alpha beta
-!   with respect to varying inputs: freestreamaxis
-  subroutine getdirangle_d(freestreamaxis, freestreamaxisd, liftaxis, &
-&   liftindex, alpha, alphad, beta, betad)
-!
-!      convert the wind axes to angle of attack and side slip angle.  
-!      the direction angles alpha and beta are computed given the     
-!      components of the wind direction vector (freestreamaxis), the  
-!      lift direction vector (liftaxis) and assuming that the         
-!      body direction (xb,yb,zb) is in the default ijk coordinate     
-!      system. the rotations are determined by first determining      
-!      whether the lift is primarily in the j or k direction and then 
-!      determining the angles accordingly.                            
-!      direction vector:                                              
-!        1) rotation about the zb or yb -axis: alpha clockwise (cw)   
-!           (xb,yb,zb) -> (x1,y1,z1)                                  
-!        2) rotation about the yl or z1 -axis: beta counter-clockwise 
-!           (ccw) (x1,y1,z1) -> (xw,yw,zw)                            
-!         input arguments:                                            
-!            freestreamaxis = wind vector in body axes                
-!            liftaxis       = lift direction vector in body axis      
-!         output arguments:                                           
-!            alpha    = angle of attack in radians                    
-!            beta     = side slip angle in radians                    
-!
-    use constants
-    implicit none
-!
-!     subroutine arguments.
-!
-!      real(kind=realtype), intent(in)  :: xw, yw, zw
-    real(kind=realtype), dimension(3), intent(in) :: freestreamaxis
-    real(kind=realtype), dimension(3), intent(in) :: freestreamaxisd
-    real(kind=realtype), dimension(3), intent(in) :: liftaxis
-    real(kind=realtype), intent(out) :: alpha, beta
-    real(kind=realtype), intent(out) :: alphad, betad
-    integer(kind=inttype), intent(out) :: liftindex
-!
-!     local variables.
-!
-    real(kind=realtype) :: rnorm
-    real(kind=realtype) :: rnormd
-    integer(kind=inttype) :: flowindex, i
-    real(kind=realtype), dimension(3) :: freestreamaxisnorm
-    real(kind=realtype), dimension(3) :: freestreamaxisnormd
-    integer(kind=inttype) :: temp
-    intrinsic abs
-    intrinsic sqrt
-    intrinsic asin
-    intrinsic atan2
-    real(kind=realtype) :: arg1
-    real(kind=realtype) :: arg1d
-    real(kind=realtype) :: abs7
-    real(kind=realtype) :: abs6
-    real(kind=realtype) :: abs5
-    real(kind=realtype) :: abs4
-    real(kind=realtype) :: abs3
-    real(kind=realtype) :: abs2
-    real(kind=realtype) :: abs1
-    real(kind=realtype) :: abs0
-! assume domoniate flow is x
-    flowindex = 1
-    if (liftaxis(1) .ge. 0.) then
-      abs0 = liftaxis(1)
-    else
-      abs0 = -liftaxis(1)
-    end if
-    if (liftaxis(2) .ge. 0.) then
-      abs2 = liftaxis(2)
-    else
-      abs2 = -liftaxis(2)
-    end if
-    if (liftaxis(1) .ge. 0.) then
-      abs4 = liftaxis(1)
-    else
-      abs4 = -liftaxis(1)
-    end if
-    if (liftaxis(3) .ge. 0.) then
-      abs6 = liftaxis(3)
-    else
-      abs6 = -liftaxis(3)
-    end if
-! determine the dominant lift direction
-    if (abs0 .gt. abs2 .and. abs4 .gt. abs6) then
-      temp = 1
-    else
-      if (liftaxis(2) .ge. 0.) then
-        abs1 = liftaxis(2)
-      else
-        abs1 = -liftaxis(2)
-      end if
-      if (liftaxis(1) .ge. 0.) then
-        abs3 = liftaxis(1)
-      else
-        abs3 = -liftaxis(1)
-      end if
-      if (liftaxis(2) .ge. 0.) then
-        abs5 = liftaxis(2)
-      else
-        abs5 = -liftaxis(2)
-      end if
-      if (liftaxis(3) .ge. 0.) then
-        abs7 = liftaxis(3)
-      else
-        abs7 = -liftaxis(3)
-      end if
-      if (abs1 .gt. abs3 .and. abs5 .gt. abs7) then
-        temp = 2
-      else
-        temp = 3
-      end if
-    end if
-    liftindex = temp
-! normalize the freestreamdirection vector.
-    arg1d = 2*freestreamaxis(1)*freestreamaxisd(1) + 2*freestreamaxis(2)&
-&     *freestreamaxisd(2) + 2*freestreamaxis(3)*freestreamaxisd(3)
-    arg1 = freestreamaxis(1)**2 + freestreamaxis(2)**2 + freestreamaxis(&
-&     3)**2
-    if (arg1 .eq. 0.0_8) then
-      rnormd = 0.0_8
-    else
-      rnormd = arg1d/(2.0*sqrt(arg1))
-    end if
-    rnorm = sqrt(arg1)
-    freestreamaxisnormd = 0.0_8
-    do i=1,3
-      freestreamaxisnormd(i) = (freestreamaxisd(i)*rnorm-freestreamaxis(&
-&       i)*rnormd)/rnorm**2
-      freestreamaxisnorm(i) = freestreamaxis(i)/rnorm
-    end do
-    if (liftindex .eq. 2) then
-! different coordinate system for aerosurf
-! wing is in z- direction
-! compute angle of attack alpha.
-      if (freestreamaxisnorm(2) .eq. 1.0 .or. freestreamaxisnorm(2) .eq.&
-&         (-1.0)) then
-        alphad = 0.0_8
-      else
-        alphad = freestreamaxisnormd(2)/sqrt(1.0-freestreamaxisnorm(2)**&
-&         2)
-      end if
-      alpha = asin(freestreamaxisnorm(2))
-! compute side-slip angle beta.
-      betad = -((freestreamaxisnormd(3)*freestreamaxisnorm(1)-&
-&       freestreamaxisnormd(1)*freestreamaxisnorm(3))/(&
-&       freestreamaxisnorm(3)**2+freestreamaxisnorm(1)**2))
-      beta = -atan2(freestreamaxisnorm(3), freestreamaxisnorm(1))
-    else if (liftindex .eq. 3) then
-! wing is in y- direction
-! compute angle of attack alpha.
-      if (freestreamaxisnorm(3) .eq. 1.0 .or. freestreamaxisnorm(3) .eq.&
-&         (-1.0)) then
-        alphad = 0.0_8
-      else
-        alphad = freestreamaxisnormd(3)/sqrt(1.0-freestreamaxisnorm(3)**&
-&         2)
-      end if
-      alpha = asin(freestreamaxisnorm(3))
-! compute side-slip angle beta.
-      betad = (freestreamaxisnormd(2)*freestreamaxisnorm(1)-&
-&       freestreamaxisnormd(1)*freestreamaxisnorm(2))/(&
-&       freestreamaxisnorm(2)**2+freestreamaxisnorm(1)**2)
-      beta = atan2(freestreamaxisnorm(2), freestreamaxisnorm(1))
-    else
-      call terminate('getdirangle', 'invalid lift direction')
-      alphad = 0.0_8
-      betad = 0.0_8
-    end if
-  end subroutine getdirangle_d
   subroutine getdirangle(freestreamaxis, liftaxis, liftindex, alpha, &
 &   beta)
 !

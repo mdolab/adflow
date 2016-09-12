@@ -448,8 +448,7 @@ contains
     real(kind=realType), dimension(:,:,:),   pointer :: xx, ss
     real(kind=realType), dimension(:,:,:,:), pointer :: xxOld
 
-    integer(kind=intType) :: liftIndex
-    real(kind=realType) :: alpha,beta,intervalMach,alphaTS,alphaIncrement,&
+    real(kind=realType) :: intervalMach,alphaTS,alphaIncrement,&
          betaTS,betaIncrement
     real(kind=realType), dimension(3) ::velDir
     real(kind=realType), dimension(3) :: refDirection
@@ -504,8 +503,7 @@ contains
           end if
 
        elseif(tsAlphaMode)then
-          ! get the baseline alpha and determine the liftIndex
-          call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+          
           !Determine the alpha for this time instance
           alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
                degreeFourAlpha,  omegaFourAlpha,     &
@@ -524,8 +522,6 @@ contains
           velzGrid0 = (aInf*machgrid)*(-velDir(3))
 
        elseif(tsBetaMode)then
-          ! get the baseline alpha and determine the liftIndex
-          call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
 
           !Determine the alpha for this time instance
           betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
@@ -1041,8 +1037,7 @@ contains
     real(kind=realType), dimension(:,:,:),   pointer :: xFace
     real(kind=realType), dimension(:,:,:,:), pointer :: xFaceOld
 
-    integer(kind=intType) :: liftIndex
-    real(kind=realType) :: alpha,beta,intervalMach,alphaTS,alphaIncrement,&
+    real(kind=realType) :: intervalMach,alphaTS,alphaIncrement,&
          betaTS,betaIncrement
     real(kind=realType), dimension(3) ::velDir
     real(kind=realType), dimension(3) :: refDirection
@@ -1255,8 +1250,6 @@ contains
 
              endif
           elseif(tsAlphaMode)then
-             ! get the baseline alpha and determine the liftIndex
-             call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
              !Determine the alpha for this time instance
              alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
                   degreeFourAlpha,  omegaFourAlpha,     &
@@ -1275,8 +1268,6 @@ contains
              velzGrid0 = (aInf*machgrid)*(-velDir(3))
 
           elseif(tsBetaMode)then
-             ! get the baseline alpha and determine the liftIndex
-             call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
 
              !Determine the alpha for this time instance
              betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &
@@ -2085,8 +2076,7 @@ contains
     real(kind=realType), dimension(:,:,:),   pointer :: xx, ss
     real(kind=realType), dimension(:,:,:,:), pointer :: xxOld
 
-    integer(kind=intType) :: liftIndex
-    real(kind=realType) :: alpha,beta,intervalMach,alphaTS,alphaIncrement,&
+    real(kind=realType) :: intervalMach,alphaTS,alphaIncrement,&
          betaTS,betaIncrement
     real(kind=realType), dimension(3) ::velDir
     real(kind=realType), dimension(3) :: refDirection
@@ -2136,8 +2126,6 @@ contains
                + rotationMatrix(3,3)*velzgrid0
 
        elseif(tsAlphaMode)then
-          ! get the baseline alpha and determine the liftIndex
-          call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
           !Determine the alpha for this time instance
           alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
                degreeFourAlpha,  omegaFourAlpha,     &
@@ -2156,8 +2144,6 @@ contains
           velzGrid0 = (aInf*machgrid)*(-velDir(3))
 
        elseif(tsBetaMode)then
-          ! get the baseline alpha and determine the liftIndex
-          call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
 
           !Determine the alpha for this time instance
           betaIncrement = TSBeta(degreePolBeta,   coefPolBeta,       &

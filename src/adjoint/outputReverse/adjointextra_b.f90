@@ -13,10 +13,10 @@ contains
 !                funcvalues
 !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
 !                *(flowdoms.dw) *(*bcdata.fv) *(*bcdata.fp) *(*bcdata.area)
-!                *xsurf mach machgrid lengthref machcoef pointref
-!                tinfdim rhoinfdim pinfdim *xx *rev0 *rev1 *rev2
-!                *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3
-!                *ssi *ww0 *ww1 *ww2 *ww3 funcvalues alpha beta
+!                *xsurf mach alpha machgrid lengthref beta machcoef
+!                pointref tinfdim rhoinfdim pinfdim *xx *rev0 *rev1
+!                *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2
+!                *rlv3 *ssi *ww0 *ww1 *ww2 *ww3 funcvalues
 !   rw status of diff variables: *(flowdoms.x):in-out *(flowdoms.vol):(loc)
 !                *(flowdoms.w):in-out *(flowdoms.dw):in-out *rev:(loc)
 !                *aa:(loc) *bvtj1:(loc) *bvtj2:(loc) *wx:(loc)
@@ -27,19 +27,18 @@ contains
 !                *vx:(loc) *vy:(loc) *vz:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
 !                *(*bcdata.norm):(loc) *(*bcdata.fv):in-out *(*bcdata.fp):in-out
 !                *(*bcdata.area):in-out *radi:(loc) *radj:(loc)
-!                *radk:(loc) *xsurf:out mach:out veldirfreestream:(loc)
-!                machgrid:out lengthref:out machcoef:out dragdirection:(loc)
-!                liftdirection:(loc) pointref:out gammainf:(loc)
-!                tinfdim:out pinf:(loc) timeref:(loc) rhoinf:(loc)
-!                muref:(loc) rhoinfdim:out tref:(loc) winf:(loc)
-!                muinf:(loc) uinf:(loc) pinfcorr:(loc) rgas:(loc)
-!                muinfdim:(loc) pinfdim:out pref:(loc) rhoref:(loc)
-!                *xx:in-out *rev0:in-out *rev1:in-out *rev2:in-out
-!                *rev3:in-out *pp0:in-out *pp1:in-out *pp2:in-out
-!                *pp3:in-out *rlv0:in-out *rlv1:in-out *rlv2:in-out
-!                *rlv3:in-out *ssi:in-out *ww0:in-out *ww1:in-out
-!                *ww2:in-out *ww3:in-out funcvalues:in-zero alpha:out
-!                beta:out
+!                *radk:(loc) *xsurf:out mach:out alpha:out veldirfreestream:(loc)
+!                machgrid:out lengthref:out beta:out machcoef:out
+!                dragdirection:(loc) liftdirection:(loc) pointref:out
+!                gammainf:(loc) tinfdim:out pinf:(loc) timeref:(loc)
+!                rhoinf:(loc) muref:(loc) rhoinfdim:out tref:(loc)
+!                winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
+!                rgas:(loc) muinfdim:(loc) pinfdim:out pref:(loc)
+!                rhoref:(loc) *xx:in-out *rev0:in-out *rev1:in-out
+!                *rev2:in-out *rev3:in-out *pp0:in-out *pp1:in-out
+!                *pp2:in-out *pp3:in-out *rlv0:in-out *rlv1:in-out
+!                *rlv2:in-out *rlv3:in-out *ssi:in-out *ww0:in-out
+!                *ww1:in-out *ww2:in-out *ww3:in-out funcvalues:in-zero
 !   plus diff mem management of: flowdoms.x:in flowdoms.vol:in
 !                flowdoms.w:in flowdoms.dw:in rev:in aa:in bvtj1:in
 !                bvtj2:in wx:in wy:in wz:in p:in rlv:in qx:in qy:in
@@ -62,8 +61,7 @@ contains
 ! it only operates on a single block at a time and as such the nominal
 ! block/sps loop is outside the calculation. this routine is suitable
 ! for forward mode ad with tapenade
-  subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad&
-&   , liftindex, frozenturb)
+  subroutine block_res_b(nn, sps, usespatial, frozenturb)
 ! note that we import all the pointers from block res that will be
 ! used in any routine. otherwise, tapenade gives warnings about
 ! saving a hidden variable. 
@@ -107,9 +105,6 @@ contains
 ! input arguments:
     integer(kind=inttype), intent(in) :: nn, sps
     logical, intent(in) :: usespatial, frozenturb
-    real(kind=realtype), intent(in) :: alpha, beta
-    real(kind=realtype) :: alphad, betad
-    integer(kind=inttype), intent(in) :: liftindex
 ! output variables
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: force, &
 &   moment
@@ -155,7 +150,7 @@ contains
 ! ------------------------------------------------
 !        additional 'extra' components
 ! ------------------------------------------------ 
-    call adjustinflowangle(alpha, beta, liftindex)
+    call adjustinflowangle()
     call pushreal8(gammainf)
     call referencestate()
 ! ------------------------------------------------
@@ -580,7 +575,7 @@ varloopfine:do l=1,nwf
     end do
     call getcostfunction_b(force, forced, moment, momentd, sepsensor, &
 &                    sepsensord, sepsensoravg, sepsensoravgd, cavitation&
-&                    , cavitationd, alpha, beta, liftindex)
+&                    , cavitationd)
     fpd = 0.0_8
     fvd = 0.0_8
     mpd = 0.0_8
@@ -963,7 +958,7 @@ varloopfine:do l=1,nwf
     call volume_block_b()
  100 call popreal8(gammainf)
     call referencestate_b()
-    call adjustinflowangle_b(alpha, alphad, beta, betad, liftindex)
+    call adjustinflowangle_b()
     funcvaluesd = 0.0_8
   end subroutine block_res_b
 ! this is a super-combined function that combines the original
@@ -977,8 +972,7 @@ varloopfine:do l=1,nwf
 ! it only operates on a single block at a time and as such the nominal
 ! block/sps loop is outside the calculation. this routine is suitable
 ! for forward mode ad with tapenade
-  subroutine block_res(nn, sps, usespatial, alpha, beta, liftindex, &
-&   frozenturb)
+  subroutine block_res(nn, sps, usespatial, frozenturb)
 ! note that we import all the pointers from block res that will be
 ! used in any routine. otherwise, tapenade gives warnings about
 ! saving a hidden variable. 
@@ -1018,8 +1012,6 @@ varloopfine:do l=1,nwf
 ! input arguments:
     integer(kind=inttype), intent(in) :: nn, sps
     logical, intent(in) :: usespatial, frozenturb
-    real(kind=realtype), intent(in) :: alpha, beta
-    integer(kind=inttype), intent(in) :: liftindex
 ! output variables
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: force, &
 &   moment
@@ -1047,7 +1039,7 @@ varloopfine:do l=1,nwf
 ! ------------------------------------------------
 !        additional 'extra' components
 ! ------------------------------------------------ 
-    call adjustinflowangle(alpha, beta, liftindex)
+    call adjustinflowangle()
     call referencestate()
 ! ------------------------------------------------
 !        additional spatial components
@@ -1277,7 +1269,7 @@ varloopfine:do l=1,nwf
       moment(:, sps2) = mp + mv
     end do
     call getcostfunction(force, moment, sepsensor, sepsensoravg, &
-&                  cavitation, alpha, beta, liftindex)
+&                  cavitation)
   end subroutine block_res
   subroutine resscale()
     use blockpointers
@@ -1310,8 +1302,7 @@ varloopfine:do l=1,nwf
 !                pinf rhoinfdim pinfdim pref moment sepsensoravg
 !                force cavitation sepsensor
   subroutine getcostfunction_b(force, forced, moment, momentd, sepsensor&
-&   , sepsensord, sepsensoravg, sepsensoravgd, cavitation, cavitationd, &
-&   alpha, beta, liftindex)
+&   , sepsensord, sepsensoravg, sepsensoravgd, cavitation, cavitationd)
 ! compute the value of the actual objective function based on the
 ! (summed) forces and moments and any other "extra" design
 ! variables. the index of the objective is determined by 'idv'. this
@@ -1326,7 +1317,6 @@ varloopfine:do l=1,nwf
 &   computerootbendingmoment, computerootbendingmoment_b
     implicit none
 ! input 
-    integer(kind=inttype), intent(in) :: liftindex
     real(kind=realtype), dimension(3, ntimeintervalsspectral), intent(in&
 &   ) :: force, moment
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: forced&
@@ -1334,7 +1324,6 @@ varloopfine:do l=1,nwf
     real(kind=realtype), intent(in) :: sepsensor, cavitation, &
 &   sepsensoravg(3)
     real(kind=realtype) :: sepsensord, cavitationd, sepsensoravgd(3)
-    real(kind=realtype), intent(in) :: alpha, beta
 ! working
     real(kind=realtype) :: fact, factmoment, ovrnts
     real(kind=realtype) :: factd, factmomentd
@@ -1382,12 +1371,6 @@ varloopfine:do l=1,nwf
     ovrnts = one/ntimeintervalsspectral
 ! pre-compute ts stability info if required:
     if (tsstability) then
-      coef0 = zero
-      dcdalpha = zero
-      dcdalphadot = zero
-      call pushinteger4(liftindex)
-      call computetsderivatives(force, moment, liftindex, coef0, &
-&                         dcdalpha, dcdalphadot, dcdq, dcdqdot)
       call pushcontrol1b(0)
     else
       call pushcontrol1b(1)
@@ -1420,7 +1403,7 @@ varloopfine:do l=1,nwf
 ! bending moment calc
       cm = factmoment*moment(:, sps)
       cf = fact*force(:, sps)
-      call computerootbendingmoment(cf, cm, liftindex, bendingmoment)
+      call computerootbendingmoment(cf, cm, bendingmoment)
       funcvalues(costfuncbendingcoef) = funcvalues(costfuncbendingcoef) &
 &       + ovrnts*bendingmoment
     end do
@@ -1573,8 +1556,8 @@ varloopfine:do l=1,nwf
       bendingmomentd = ovrnts*funcvaluesd(costfuncbendingcoef)
       cf = fact*force(:, sps)
       cm = factmoment*moment(:, sps)
-      call computerootbendingmoment_b(cf, cfd, cm, cmd, liftindex, &
-&                               bendingmoment, bendingmomentd)
+      call computerootbendingmoment_b(cf, cfd, cm, cmd, bendingmoment, &
+&                               bendingmomentd)
       factd = factd + sum(force(:, sps)*cfd)
       forced(:, sps) = forced(:, sps) + fact*cfd
       factmomentd = factmomentd + sum(moment(:, sps)*cmd)
@@ -1602,11 +1585,9 @@ varloopfine:do l=1,nwf
     end do
     call popcontrol1b(branch)
     if (branch .eq. 0) then
-      call popinteger4(liftindex)
-      call computetsderivatives_b(force, forced, moment, momentd, &
-&                           liftindex, coef0, coef0d, dcdalpha, &
-&                           dcdalphad, dcdalphadot, dcdalphadotd, dcdq, &
-&                           dcdqdot)
+      call computetsderivatives_b(force, forced, moment, momentd, coef0&
+&                           , coef0d, dcdalpha, dcdalphad, dcdalphadot, &
+&                           dcdalphadotd, dcdq, dcdqdot)
     else
       machgridd = 0.0_8
       machcoefd = 0.0_8
@@ -1627,7 +1608,7 @@ varloopfine:do l=1,nwf
     prefd = gammainf*tempd1
   end subroutine getcostfunction_b
   subroutine getcostfunction(force, moment, sepsensor, sepsensoravg, &
-&   cavitation, alpha, beta, liftindex)
+&   cavitation)
 ! compute the value of the actual objective function based on the
 ! (summed) forces and moments and any other "extra" design
 ! variables. the index of the objective is determined by 'idv'. this
@@ -1641,12 +1622,10 @@ varloopfine:do l=1,nwf
     use utils_b, only : computetsderivatives, computerootbendingmoment
     implicit none
 ! input 
-    integer(kind=inttype), intent(in) :: liftindex
     real(kind=realtype), dimension(3, ntimeintervalsspectral), intent(in&
 &   ) :: force, moment
     real(kind=realtype), intent(in) :: sepsensor, cavitation, &
 &   sepsensoravg(3)
-    real(kind=realtype), intent(in) :: alpha, beta
 ! working
     real(kind=realtype) :: fact, factmoment, ovrnts
     real(kind=realtype), dimension(3) :: cf, cm
@@ -1669,8 +1648,8 @@ varloopfine:do l=1,nwf
       dcdalphadot = zero
       dcdq = zero
       dcdqdot = zero
-      call computetsderivatives(force, moment, liftindex, coef0, &
-&                         dcdalpha, dcdalphadot, dcdq, dcdqdot)
+      call computetsderivatives(force, moment, coef0, dcdalpha, &
+&                         dcdalphadot, dcdq, dcdqdot)
     end if
     funcvalues = zero
 ! now we just compute each cost function:
@@ -1700,7 +1679,7 @@ varloopfine:do l=1,nwf
 ! bending moment calc
       cm = factmoment*moment(:, sps)
       cf = fact*force(:, sps)
-      call computerootbendingmoment(cf, cm, liftindex, bendingmoment)
+      call computerootbendingmoment(cf, cm, bendingmoment)
       funcvalues(costfuncbendingcoef) = funcvalues(costfuncbendingcoef) &
 &       + ovrnts*bendingmoment
     end do

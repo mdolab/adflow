@@ -104,13 +104,10 @@ module fortranPC
     real(kind=realType) :: delta_x_turb, one_over_dx_turb
 
 #ifdef USE_COMPLEX
-    complex(kind=realType) :: alpha, beta, alphad, betad
     complex(kind=realType), dimension(:,:), allocatable :: blk
 #else
-    real(kind=realType) :: alpha, beta, alphad, betad
     real(kind=realType), dimension(:,:), allocatable :: blk
 #endif
-    integer(kind=intType) :: liftIndex
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, colInd
     logical :: resetToRANS, secondOrdSave,  splitMat
     real :: val
@@ -141,7 +138,6 @@ module fortranPC
     pinfdimd = zero
     tinfdimd = zero
     rhoinfdimd = zero
-    call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
 
     ! Set a pointer to the correct set of stencil depending on if we are
@@ -310,15 +306,13 @@ module fortranPC
                 ! Run Block-based residual 
                 if (useAD) then
 #ifndef USE_COMPLEX
-                   call block_res_d(nn, sps, .False., &
-                        alpha, alphad, beta, betad, liftIndex, frozenTurb)
+                   call block_res_d(nn, sps, .False., frozenTurb)
 #else
                    print *, 'Forward AD routines are not complexified'
                    stop
 #endif
                 else
-                   call block_res(nn, sps, .False., alpha, beta, &
-                        liftIndex, frozenTurb)
+                   call block_res(nn, sps, .False., frozenTurb)
                 end if
 
                 ! Set the computed residual in dw_deriv. If using FD, 

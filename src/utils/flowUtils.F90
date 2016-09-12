@@ -1297,28 +1297,25 @@ subroutine computeLamViscosity(includeHalos)
   end if
 end subroutine computeLamViscosity
 
-subroutine adjustInflowAngle(alpha, beta, liftIndex)
+subroutine adjustInflowAngle()
 
   use constants
-  use inputPhysics
+  use inputPhysics, only : alpha, beta, liftIndex, velDirFreeStream, &
+       liftDirection, dragDirection
 
   implicit none
 
-  !Subroutine Vars
-  real(kind=realType), intent(in) :: alpha, beta
-  integer(kind=intType), intent(in) :: liftIndex
-
   !Local Vars
-  real(kind=realType), dimension(3) :: refDirection
+  real(kind=realType), dimension(3) :: refDir1, refDir2
 
   ! Velocity direction given by the rotation of a unit vector
   ! initially aligned along the positive x-direction (1,0,0)
   ! 1) rotate alpha radians cw about y or z-axis
   ! 2) rotate beta radians ccw about z or y-axis
 
-  refDirection(:) = zero
-  refDirection(1) = one
-  call getDirVector(refDirection, alpha, beta, velDirFreestream,&
+  refDir1(:) = zero
+  refDir1(1) = one
+  call getDirVector(refDir1, alpha, beta, velDirFreestream,&
        liftIndex)
 
   ! Drag direction given by the rotation of a unit vector
@@ -1326,9 +1323,7 @@ subroutine adjustInflowAngle(alpha, beta, liftIndex)
   ! 1) rotate alpha radians cw about y or z-axis
   ! 2) rotate beta radians ccw about z or y-axis
 
-  refDirection(:) = zero
-  refDirection(1) = one
-  call getDirVector(refDirection, alpha, beta, dragDirection, &
+  call getDirVector(refDir1, alpha, beta, dragDirection, &
        liftIndex)
 
   ! Lift direction given by the rotation of a unit vector
@@ -1336,12 +1331,13 @@ subroutine adjustInflowAngle(alpha, beta, liftIndex)
   ! 1) rotate alpha radians cw about y or z-axis
   ! 2) rotate beta radians ccw about z or y-axis
 
-  refDirection(:) = zero
-  refDirection(liftIndex) = one
+  refDir2(:) = zero
+  refDir2(liftIndex) = one
 
-  call getDirVector(refDirection, alpha, beta,liftDirection, liftIndex)
+  call getDirVector(refDir2, alpha, beta,liftDirection, liftIndex)
 
 end subroutine adjustInflowAngle
+
 
        subroutine derivativeRotMatrixRigid(rotationMatrix, &
                                            rotationPoint, t)

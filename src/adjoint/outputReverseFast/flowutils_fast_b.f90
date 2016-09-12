@@ -1093,39 +1093,32 @@ intervaltt:do
       end if
     end if
   end subroutine computelamviscosity
-  subroutine adjustinflowangle(alpha, beta, liftindex)
+  subroutine adjustinflowangle()
     use constants
-    use inputphysics
+    use inputphysics, only : alpha, beta, liftindex, veldirfreestream,&
+&   liftdirection, dragdirection
     implicit none
-!subroutine vars
-    real(kind=realtype), intent(in) :: alpha, beta
-    integer(kind=inttype), intent(in) :: liftindex
 !local vars
-    real(kind=realtype), dimension(3) :: refdirection
+    real(kind=realtype), dimension(3) :: refdir1, refdir2
 ! velocity direction given by the rotation of a unit vector
 ! initially aligned along the positive x-direction (1,0,0)
 ! 1) rotate alpha radians cw about y or z-axis
 ! 2) rotate beta radians ccw about z or y-axis
-    refdirection(:) = zero
-    refdirection(1) = one
-    call getdirvector(refdirection, alpha, beta, veldirfreestream, &
-&               liftindex)
+    refdir1(:) = zero
+    refdir1(1) = one
+    call getdirvector(refdir1, alpha, beta, veldirfreestream, liftindex)
 ! drag direction given by the rotation of a unit vector
 ! initially aligned along the positive x-direction (1,0,0)
 ! 1) rotate alpha radians cw about y or z-axis
 ! 2) rotate beta radians ccw about z or y-axis
-    refdirection(:) = zero
-    refdirection(1) = one
-    call getdirvector(refdirection, alpha, beta, dragdirection, &
-&               liftindex)
+    call getdirvector(refdir1, alpha, beta, dragdirection, liftindex)
 ! lift direction given by the rotation of a unit vector
 ! initially aligned along the positive z-direction (0,0,1)
 ! 1) rotate alpha radians cw about y or z-axis
 ! 2) rotate beta radians ccw about z or y-axis
-    refdirection(:) = zero
-    refdirection(liftindex) = one
-    call getdirvector(refdirection, alpha, beta, liftdirection, &
-&               liftindex)
+    refdir2(:) = zero
+    refdir2(liftindex) = one
+    call getdirvector(refdir2, alpha, beta, liftdirection, liftindex)
   end subroutine adjustinflowangle
   subroutine derivativerotmatrixrigid(rotationmatrix, rotationpoint, t)
 !
