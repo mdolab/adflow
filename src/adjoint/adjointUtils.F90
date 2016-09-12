@@ -60,10 +60,8 @@ contains
     integer(kind=intType), dimension(:, :), pointer :: stencil
     real(kind=alwaysRealType) :: delta_x, one_over_dx, weights(8)
 
-    real(kind=realType) :: alpha, beta, alphad, betad
     real(kind=realType), dimension(:,:), allocatable :: blk
 
-    integer(kind=intType) :: liftIndex
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, colInd
     logical :: resetToRANS, secondOrdSave,  splitMat
 
@@ -99,7 +97,6 @@ contains
     pinfdimd = zero
     rhoinfdimd = zero
     tinfdimd = zero
-    call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
     rkStage = 0
 
@@ -328,15 +325,13 @@ contains
                 ! Run Block-based residual 
                 if (useAD) then
 #ifndef USE_COMPLEX
-                   call block_res_d(nn, sps, .False., &
-                        alpha, alphad, beta, betad, liftIndex, frozenTurb)
+                   call block_res_d(nn, sps, .False., frozenTurb)
 #else
                    print *, 'Forward AD routines are not complexified'
                    stop
 #endif
                 else
-                   call block_res(nn, sps, .False., alpha, beta, &
-                        liftIndex, frozenTurb)
+                   call block_res(nn, sps, .False.,  frozenTurb)
                 end if
 
                 ! Set the computed residual in dw_deriv. If using FD, 
@@ -1615,17 +1610,15 @@ contains
     ! Input Parameters
     integer(kind=intType) :: level
     ! Working Parameters
-    integer(kind=intType) :: i, j, k, l, nn, sps, liftIndex
-    real(kind=realType) :: alpha, beta
+    integer(kind=intType) :: i, j, k, l, nn, sps
 
     ! Compute the reference values for doing jacobian with FD
-    call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
     do nn=1, nDom
        do sps=1, nTimeIntervalsSpectral
 
           call setPointers(nn, level, sps)
           shockSensor => flowDoms(nn,level,sps)%shockSensor
-          call block_res(nn, sps, .False., alpha, beta, liftIndex, .False.)
+          call block_res(nn, sps, .False., .False.)
 
           ! Set the values
           do l=1, nw
@@ -1671,8 +1664,8 @@ contains
     integer(kind=intType) :: level
 
     ! Working Parameters
-    integer(kind=intType) :: i, j, k, l, nn, sps, liftIndex
-    real(kind=realType) :: alpha, beta, sepSensor, Cavitation
+    integer(kind=intType) :: i, j, k, l, nn, sps
+    real(kind=realType) :: sepSensor, Cavitation
 
     do nn=1, nDom
        do sps=1, nTimeIntervalsSpectral

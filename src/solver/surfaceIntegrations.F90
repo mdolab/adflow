@@ -647,11 +647,7 @@ contains
     real(kind=realType), dimension(nCostFunction)::globalCFVals
     real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment
     real(kind=realType)::bendingMoment,bendingSum, cf(3), cm(3)
-    integer(kind=intType) :: i, liftIndex
-
-
-    call getDirAngle(velDirFreestream, LiftDirection,&
-         liftIndex, alpha, beta)
+    integer(kind=intType) :: i
 
     funcValues(:) = 0.0
 
@@ -673,7 +669,7 @@ contains
        cm = (/globalCFVals(costFuncMomXCoef), &
             globalCFVals(costFuncMomYCoef), &
             globalCFVals(costFuncMomZCoef)/)
-       call computeRootBendingMoment(cf, cm, liftIndex, bendingMoment)
+       call computeRootBendingMoment(cf, cm, bendingMoment)
        bendingsum = bendingsum+bendingMoment
     end do
 
@@ -709,7 +705,7 @@ contains
 
     if(TSStability)then
 
-       call computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
+       call computeTSDerivatives(force, moment, coef0, dcdalpha, &
             dcdalphadot, dcdq, dcdqdot)
 
        funcValues( costFuncCl0  )       = coef0(1)

@@ -71,9 +71,8 @@ contains
     real(kind=realtype), dimension(:, :, :), pointer :: uslip
     real(kind=realtype), dimension(:, :, :), pointer :: xface
     real(kind=realtype), dimension(:, :, :, :), pointer :: xfaceold
-    integer(kind=inttype) :: liftindex
-    real(kind=realtype) :: alpha, beta, intervalmach, alphats, &
-&   alphaincrement, betats, betaincrement
+    real(kind=realtype) :: intervalmach, alphats, alphaincrement, betats&
+&   , betaincrement
     real(kind=realtype), dimension(3) :: veldir
     real(kind=realtype), dimension(3) :: refdirection
 !function definitions

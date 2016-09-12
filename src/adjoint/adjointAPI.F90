@@ -49,8 +49,7 @@ contains
     ! Working Variables
     real(kind=realType), dimension(3, fSize) :: forces
     integer(kind=intType) :: ierr,nn,mm,sps,i,j,k,l,ii,jj,idim,sps2
-    real(kind=realType) :: alpha, beta, alphad, betad
-    integer(kind=intType) ::  level, irow, liftIndex
+    integer(kind=intType) ::  level, irow
     real(kind=realType), dimension(costSize) :: funcsLocalDot
     logical :: resetToRans
 
@@ -69,8 +68,6 @@ contains
     level = 1
     currentLevel = level
     groundLevel = level
-
-    call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
     ! Allocate the memory we need for this block to do the forward
     ! mode derivatives and copy reference values
@@ -223,8 +220,7 @@ contains
           call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
           call EChk(ierr,__FILE__,__LINE__)
 
-          call BLOCK_RES_D(nn, level, useSpatial, alpha, alphad, beta, betad, &
-               & liftindex, frozenTurbulence)
+          call BLOCK_RES_D(nn, level, useSpatial, frozenTurbulence)
 
           ! Now extract dw
           do sps2=1,nTimeIntervalsSpectral
@@ -324,8 +320,7 @@ contains
 
     ! Working variables
     integer(kind=intType) :: ierr,nn,mm,sps,i,j,k,l,ii,jj,sps2, idim
-    real(kind=realType) :: alpha, beta, alphad, betad
-    integer(kind=intType) ::  level, irow, liftIndex, nState
+    integer(kind=intType) ::  level, irow, nState
     logical :: resetToRans
     real(kind=realType), dimension(extraSize) :: extraLocalBar
     real(kind=realType), dimension(:, :), allocatable :: xSurfbSum
@@ -377,7 +372,6 @@ contains
 
     ! Zero the function seeds
     funcValuesd= zero
-    call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
     call VecGetLocalSize(xSurfVec(1, 1), i, ierr)
     call EChk(ierr,__FILE__,__LINE__)
@@ -434,8 +428,7 @@ contains
           ! For some reason tapenade forget to zero rgasd when it
           ! should, therefore we must manually zero here before calling the code. 
           rgasd = zero
-          call BLOCK_RES_B(nn, sps, useSpatial, alpha, alphad, beta, betad, &
-               & liftindex, frozenTurbulence)
+          call BLOCK_RES_B(nn, sps, useSpatial, frozenTurbulence)
 
           ! Currently these tapenade has decided the output values from
           ! these routines do not matter, these need to be recomputed to

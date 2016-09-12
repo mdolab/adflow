@@ -86,10 +86,7 @@ python module libsumb
          subroutine updategamma
          end subroutine updategamma
 
-         subroutine adjustinflowangle(alpha, beta, liftindex)
-           real(kind=realtype) intent(in) :: alpha
-           real(kind=realtype) intent(in):: beta
-           integer(kind=inttype) intent(in) :: liftindex
+         subroutine adjustinflowangle()
          end subroutine adjustinflowangle
 
        end module flowutils
@@ -788,6 +785,9 @@ python module libsumb
          real(kind=realtype) :: musuthdim
          real(kind=realtype) :: tsuthdim
          real(kind=realtype) :: walldistcutoff
+         real(kind=realtype) :: alpha
+         real(kind=realtype) :: beta
+         integer(kind=inttype) :: liftindex
        end module inputphysics
 
        module inputadjoint ! in :sumb:../modules/inputParam.f90
