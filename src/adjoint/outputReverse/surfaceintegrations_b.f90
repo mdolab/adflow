@@ -10,7 +10,7 @@ module surfaceintegrations_b
 ! ----------------------------------------------------------------------
 
 contains
-  subroutine flowproperties(massflowrate, mass_ptot, mass_ttot, mass_ps)
+  subroutine flowproperties(localvalues)
     use constants
     use blockpointers
     use flowvarrefstate
@@ -26,8 +26,10 @@ contains
 !
 !      subroutine arguments
 !
-    real(kind=realtype), intent(out) :: massflowrate, mass_ptot, &
-&   mass_ttot, mass_ps
+    real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
+&   localvalues
+! local variables
+    real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps
     integer(kind=inttype) :: nn, i, j, ii
     real(kind=realtype) :: fact
     real(kind=realtype) :: sf, vnm, vxm, vym, vzm
@@ -43,20 +45,23 @@ bocos:do nn=1,nbocos
       if (bsearchintegers(bcdata(nn)%famid, famgroups, size(famgroups)) &
 &         .gt. 0) then
         call setbcpointers(nn, .true.)
-        select case  (bcfaceid(nn)) 
-        case (imin) 
-          fact = -one
-        case (imax) 
-          fact = one
-        case (jmin) 
-          fact = -one
-        case (jmax) 
-          fact = one
-        case (kmin) 
-          fact = -one
-        case (kmax) 
-          fact = one
-        end select
+        if (((bctype(nn) .eq. subsonicinflow .or. bctype(nn) .eq. &
+&           supersonicinflow) .or. bctype(nn) .eq. subsonicoutflow) .or.&
+&           bctype(nn) .eq. supersonicoutflow) then
+          select case  (bcfaceid(nn)) 
+          case (imin) 
+            fact = -one
+          case (imax) 
+            fact = one
+          case (jmin) 
+            fact = -one
+          case (jmax) 
+            fact = one
+          case (kmin) 
+            fact = -one
+          case (kmax) 
+            fact = one
+          end select
 ! loop over the quadrilateral faces of the subface. note that
 ! the nodal range of bcdata must be used and not the cell
 ! range, because the latter may include the halo's in i and
@@ -66,48 +71,47 @@ bocos:do nn=1,nbocos
 !
 ! do j=(bcdata(nn)%jnbeg+1),bcdata(nn)%jnend
 !    do i=(bcdata(nn)%inbeg+1),bcdata(nn)%inend
-        do ii=0,(bcdata(nn)%jnend-bcdata(nn)%jnbeg)*(bcdata(nn)%inend-&
-&           bcdata(nn)%inbeg)-1
-          i = mod(ii, bcdata(nn)%inend - bcdata(nn)%inbeg) + bcdata(nn)%&
-&           inbeg + 1
-          j = ii/(bcdata(nn)%inend-bcdata(nn)%inbeg) + bcdata(nn)%jnbeg &
-&           + 1
-          if (addgridvelocities) sf = sface(i, j)
-          vxm = half*(ww1(i, j, ivx)+ww2(i, j, ivx))
-          vym = half*(ww1(i, j, ivy)+ww2(i, j, ivy))
-          vzm = half*(ww1(i, j, ivz)+ww2(i, j, ivz))
-          rhom = half*(ww1(i, j, irho)+ww2(i, j, irho))
-          pm = half*(pp1(i, j)+pp2(i, j))
-          vnm = vxm*ssi(i, j, 1) + vym*ssi(i, j, 2) + vzm*ssi(i, j, 3) -&
-&           sf
-          massflowratelocal = rhom*vnm
-!  vn1 = ww1(i,j,ivx)*ssi(i,j,1) + ww1(i,j,ivy)*ssi(i,j,2) &
-! + ww1(i,j,ivz)*ssi(i,j,3) - sf
-!  vn2 = ww2(i,j,ivx)*ssi(i,j,1) + ww2(i,j,ivy)*ssi(i,j,2) &
-! + ww2(i,j,ivz)*ssi(i,j,3) - sf
-! massflowratelocal = half*(ww1(i,j,irho)*vn1 &
-!                     + ww2(i,j,irho)*vn2)
-          massflowrate = massflowrate + massflowratelocal
-          call computeptot(rhom, vxm, vym, vzm, pm, ptot)
-          call computettot(rhom, vxm, vym, vzm, pm, ttot)
-          mass_ptot = mass_ptot + ptot*massflowratelocal
-          mass_ttot = mass_ttot + ttot*massflowratelocal
-          mass_ps = mass_ps + pm*massflowratelocal
-        end do
-        massflowrate = massflowrate*fact
-        mass_ptot = mass_ptot*fact
-        mass_ttot = mass_ttot*fact
-        mass_ps = mass_ps*fact
+          do ii=0,(bcdata(nn)%jnend-bcdata(nn)%jnbeg)*(bcdata(nn)%inend-&
+&             bcdata(nn)%inbeg)-1
+            i = mod(ii, bcdata(nn)%inend - bcdata(nn)%inbeg) + bcdata(nn&
+&             )%inbeg + 1
+            j = ii/(bcdata(nn)%inend-bcdata(nn)%inbeg) + bcdata(nn)%&
+&             jnbeg + 1
+            if (addgridvelocities) sf = sface(i, j)
+            vxm = half*(ww1(i, j, ivx)+ww2(i, j, ivx))
+            vym = half*(ww1(i, j, ivy)+ww2(i, j, ivy))
+            vzm = half*(ww1(i, j, ivz)+ww2(i, j, ivz))
+            rhom = half*(ww1(i, j, irho)+ww2(i, j, irho))
+            pm = half*(pp1(i, j)+pp2(i, j))
+            vnm = vxm*ssi(i, j, 1) + vym*ssi(i, j, 2) + vzm*ssi(i, j, 3)&
+&             - sf
+            massflowratelocal = rhom*vnm
+            massflowrate = massflowrate + massflowratelocal
+            call computeptot(rhom, vxm, vym, vzm, pm, ptot)
+            call computettot(rhom, vxm, vym, vzm, pm, ttot)
+            mass_ptot = mass_ptot + ptot*massflowratelocal
+            mass_ttot = mass_ttot + ttot*massflowratelocal
+            mass_ps = mass_ps + pm*massflowratelocal
+          end do
+          massflowrate = massflowrate*fact
+          mass_ptot = mass_ptot*fact
+          mass_ttot = mass_ttot*fact
+          mass_ps = mass_ps*fact
+        end if
       end if
     end do bocos
+! increment the local values array with what we computed here
+    localvalues(imassflow) = localvalues(imassflow) + massflowrate
+    localvalues(imassptot) = localvalues(imassptot) + mass_ptot
+    localvalues(imassttot) = localvalues(imassttot) + mass_ttot
+    localvalues(imassps) = localvalues(imassps) + mass_ps
   end subroutine flowproperties
 !  differentiation of forcesandmoments in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *w *x *(*bcdata.fv) *(*bcdata.fp)
 !                *(*bcdata.area) machcoef pointref gammainf pinf
 !                pref *xx *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2
 !                *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2
-!                *ww3 sepsensoravg fp fv mp cavitation sepsensor
-!                mv
+!                *ww3 localvalues
 !   with respect to varying inputs: *rev *p *w *rlv *x *si *sj
 !                *sk *(*viscsubface.tau) *(*bcdata.fv) *(*bcdata.fp)
 !                *(*bcdata.area) veldirfreestream machcoef pointref
@@ -120,9 +124,7 @@ bocos:do nn=1,nbocos
 !                xx:in rev0:in rev1:in rev2:in rev3:in pp0:in pp1:in
 !                pp2:in pp3:in rlv0:in rlv1:in rlv2:in rlv3:in
 !                ssi:in ww0:in ww1:in ww2:in ww3:in
-  subroutine forcesandmoments_b(fp, fpd, fv, fvd, mp, mpd, mv, mvd, &
-&   yplusmax, sepsensor, sepsensord, sepsensoravg, sepsensoravgd, &
-&   cavitation, cavitationd)
+  subroutine forcesandmoments_b(localvalues, localvaluesd)
 !
 !       forcesandmoments computes the contribution of the block
 !       given by the pointers in blockpointers to the force and
@@ -149,17 +151,18 @@ bocos:do nn=1,nbocos
 !
 !      subroutine arguments
 !
-    real(kind=realtype), dimension(3) :: fp, fv
-    real(kind=realtype), dimension(3) :: fpd, fvd
-    real(kind=realtype), dimension(3) :: mp, mv
-    real(kind=realtype), dimension(3) :: mpd, mvd
-    real(kind=realtype) :: yplusmax, sepsensor
-    real(kind=realtype) :: sepsensord
-    real(kind=realtype) :: sepsensoravg(3), cavitation
-    real(kind=realtype) :: sepsensoravgd(3), cavitationd
+    real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
+&   localvalues
+    real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
+&   localvaluesd
 !
 !      local variables.
 !
+    real(kind=realtype), dimension(3) :: fp, fv, mp, mv
+    real(kind=realtype), dimension(3) :: fpd, fvd, mpd, mvd
+    real(kind=realtype) :: yplusmax, sepsensor, sepsensoravg(3), &
+&   cavitation
+    real(kind=realtype) :: sepsensord, sepsensoravgd(3), cavitationd
     integer(kind=inttype) :: nn, i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn, sigma
     real(kind=realtype) :: pm1d, fxd, fyd, fzd
@@ -495,6 +498,18 @@ bocos:do nn=1,nbocos
         call pushcontrol2b(0)
       end if
     end do bocos
+    sepsensoravgd = 0.0_8
+    sepsensoravgd = localvaluesd(isepavg:isepavg+2)
+    cavitationd = localvaluesd(icavitation)
+    sepsensord = localvaluesd(isepsensor)
+    mvd = 0.0_8
+    mvd = localvaluesd(imv:imv+2)
+    mpd = 0.0_8
+    mpd = localvaluesd(imp:imp+2)
+    fvd = 0.0_8
+    fvd = localvaluesd(ifv:ifv+2)
+    fpd = 0.0_8
+    fpd = localvaluesd(ifp:ifp+2)
     revd = 0.0_8
     pd = 0.0_8
     rlvd = 0.0_8
@@ -540,23 +555,20 @@ bocos:do nn=1,nbocos
         if (branch .eq. 0) then
           call popinteger4(ad_to)
           do ii=ad_to,0,-1
+            mxd = mvd(1)
+            myd = mvd(2)
+            mzd = mvd(3)
             j = ii/(bcdata(nn)%inend-bcdata(nn)%inbeg) + bcdata(nn)%&
 &             jnbeg + 1
-            fzd = bcdatad(nn)%fv(i, j, 3)
+            fzd = fvd(3) - xc*myd + yc*mxd + bcdatad(nn)%fv(i, j, 3)
             bcdatad(nn)%fv(i, j, 3) = 0.0_8
-            fyd = bcdatad(nn)%fv(i, j, 2)
+            fyd = xc*mzd + fvd(2) - zc*mxd + bcdatad(nn)%fv(i, j, 2)
             bcdatad(nn)%fv(i, j, 2) = 0.0_8
-            fxd = bcdatad(nn)%fv(i, j, 1)
+            fxd = fvd(1) - yc*mzd + zc*myd + bcdatad(nn)%fv(i, j, 1)
             bcdatad(nn)%fv(i, j, 1) = 0.0_8
-            mzd = mvd(3)
-            myd = mvd(2)
-            mxd = mvd(1)
             xcd = fy*mzd - fz*myd
-            fyd = fyd + fvd(2) - zc*mxd + xc*mzd
             ycd = fz*mxd - fx*mzd
-            fxd = fxd + zc*myd + fvd(1) - yc*mzd
             zcd = fx*myd - fy*mxd
-            fzd = fzd + yc*mxd + fvd(3) - xc*myd
             call popreal8(zc)
             tempd = fourth*zcd
             xxd(i, j, 3) = xxd(i, j, 3) + tempd
@@ -712,6 +724,9 @@ bocos:do nn=1,nbocos
           sensor1 = -cp - sigma
           call pushreal8(sensor1)
           sensor1 = one/(one+exp(-(2*10*sensor1)))
+          mxd = mpd(1)
+          myd = mpd(2)
+          mzd = mpd(3)
           sensor1d = cavitationd
           cellaread = sensor1*sensor1d
           sensor1d = cellarea*sensor1d
@@ -796,21 +811,15 @@ bocos:do nn=1,nbocos
           ssid(i, j, 1) = ssid(i, j, 1) + 2*ssi(i, j, 1)*tempd15
           ssid(i, j, 2) = ssid(i, j, 2) + 2*ssi(i, j, 2)*tempd15
           ssid(i, j, 3) = ssid(i, j, 3) + 2*ssi(i, j, 3)*tempd15
-          fzd = bcdatad(nn)%fp(i, j, 3)
+          fzd = fpd(3) - xc*myd + yc*mxd + bcdatad(nn)%fp(i, j, 3)
           bcdatad(nn)%fp(i, j, 3) = 0.0_8
-          fyd = bcdatad(nn)%fp(i, j, 2)
+          fyd = xc*mzd + fpd(2) - zc*mxd + bcdatad(nn)%fp(i, j, 2)
           bcdatad(nn)%fp(i, j, 2) = 0.0_8
-          fxd = bcdatad(nn)%fp(i, j, 1)
+          fxd = fpd(1) - yc*mzd + zc*myd + bcdatad(nn)%fp(i, j, 1)
           bcdatad(nn)%fp(i, j, 1) = 0.0_8
-          mzd = mpd(3)
-          myd = mpd(2)
-          mxd = mpd(1)
           xcd = fy*mzd - fz*myd
-          fyd = fyd + fpd(2) - zc*mxd + xc*mzd
           ycd = fz*mxd - fx*mzd
-          fxd = fxd + zc*myd + fpd(1) - yc*mzd
           zcd = fx*myd - fy*mxd
-          fzd = fzd + yc*mxd + fpd(3) - xc*myd
           fzd = blk*fzd
           fyd = blk*fyd
           fxd = blk*fxd
@@ -887,8 +896,7 @@ bocos:do nn=1,nbocos
     refpointd(2) = 0.0_8
     pointrefd(1) = pointrefd(1) + lref*refpointd(1)
   end subroutine forcesandmoments_b
-  subroutine forcesandmoments(fp, fv, mp, mv, yplusmax, sepsensor, &
-&   sepsensoravg, cavitation)
+  subroutine forcesandmoments(localvalues)
 !
 !       forcesandmoments computes the contribution of the block
 !       given by the pointers in blockpointers to the force and
@@ -914,13 +922,14 @@ bocos:do nn=1,nbocos
 !
 !      subroutine arguments
 !
-    real(kind=realtype), dimension(3), intent(out) :: fp, fv
-    real(kind=realtype), dimension(3), intent(out) :: mp, mv
-    real(kind=realtype), intent(out) :: yplusmax, sepsensor
-    real(kind=realtype), intent(out) :: sepsensoravg(3), cavitation
+    real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
+&   localvalues
 !
 !      local variables.
 !
+    real(kind=realtype), dimension(3) :: fp, fv, mp, mv
+    real(kind=realtype) :: yplusmax, sepsensor, sepsensoravg(3), &
+&   cavitation
     integer(kind=inttype) :: nn, i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn, sigma
     real(kind=realtype) :: xc, yc, zc, qf(3)
@@ -943,18 +952,10 @@ bocos:do nn=1,nbocos
     refpoint(3) = lref*pointref(3)
 ! initialize the force and moment coefficients to 0 as well as
 ! yplusmax.
-    fp(1) = zero
-    fp(2) = zero
-    fp(3) = zero
-    fv(1) = zero
-    fv(2) = zero
-    fv(3) = zero
-    mp(1) = zero
-    mp(2) = zero
-    mp(3) = zero
-    mv(1) = zero
-    mv(2) = zero
-    mv(3) = zero
+    fp = zero
+    fv = zero
+    mp = zero
+    mv = zero
     yplusmax = zero
     sepsensor = zero
     cavitation = zero
@@ -1191,5 +1192,14 @@ bocos:do nn=1,nbocos
         bcdata(nn)%fv = zero
       end if
     end do bocos
+! increment the local values array with the values we computed here.
+    localvalues(ifp:ifp+2) = localvalues(ifp:ifp+2) + fp
+    localvalues(ifv:ifv+2) = localvalues(ifv:ifv+2) + fv
+    localvalues(imp:imp+2) = localvalues(imp:imp+2) + mp
+    localvalues(imv:imv+2) = localvalues(imv:imv+2) + mv
+    localvalues(isepsensor) = localvalues(isepsensor) + sepsensor
+    localvalues(icavitation) = localvalues(icavitation) + cavitation
+    localvalues(isepavg:isepavg+2) = localvalues(isepavg:isepavg+2) + &
+&     sepsensoravg
   end subroutine forcesandmoments
 end module surfaceintegrations_b

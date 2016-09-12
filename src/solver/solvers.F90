@@ -1699,6 +1699,7 @@ contains
     use utils, only : setPointers, myisnan, returnFail, maxHDiffMach, maxEddyv, &
          sumResiduals, sumAllResiduals
     use surfaceIntegrations, only : forcesAndMoments, forcesAndMomentsZIpper
+    use costFunctions, only : nLocalValues, iFp, iFv, iMv, iMp
     implicit none
     !
     !      Local variables.
@@ -1715,7 +1716,7 @@ contains
     real(kind=realType), dimension(3) :: cfp, cfv, cmp, cmv
     logical :: nanOccurred, writeIterations
     logical :: absConv, relConv
-
+    real(kind=realType) :: localValues(nLocalValues)
     ! Determine whether or not the iterations must be written.
 
     writeIterations = .true.
@@ -1747,19 +1748,20 @@ contains
 
           call setPointers(nn, groundLevel, sps)
 
-          ! Compute the forces and moments for this block.
-
-          call forcesAndMoments(cfp, cfv, cmp, cmv, yplusMax, sepSensor, &
-               sepSensorAvg, Cavitation)
+          ! Compute the forces and moments for this block.  Note that
+          ! we zero localValues before each call becuase we are
+          ! summing into momLocal. 
+          localvalues = zero
+          call forcesAndMoments(localValues)
 
           ! Conver to coefficinets for monitoring:
           fact = two/(gammaInf*MachCoef*MachCoef &
                *surfaceRef*LRef*LRef*pRef)
-          cfp = cfp*fact
-          cfv = cfv*fact
+          cfp = fact*localValues(iFp:iFp+2)
+          cfv = fact*localValues(iFv:iFv+2)
           fact = fact/(lengthRef*Lref)
-          cmp = cmp*fact
-          cmv = cmv*fact
+          cmp = fact*localValues(iMp:iMp+2)
+          cmv = fact*localValues(iMv:iMv+2)
 
           ! Determine the maximum values of the monitoring variables
           ! of this block.
@@ -1879,15 +1881,16 @@ contains
 
        ! Add the corrections from zipper meshes from proc 0
        if (oversetPresent) then 
-          call forcesAndMomentsZipper(cfp, cfv, cmp, cmv, sps)
+          localValues = zero
+          call forcesAndMomentsZipper(localValues, sps)
 
           fact = two/(gammaInf*MachCoef*MachCoef &
                *surfaceRef*LRef*LRef*pRef)
-          cfp = cfp*fact
-          cfv = cfv*fact
+          cfp = localValues(iFp:iFp+2)*fact
+          cfv = localValues(iFv:iFv+2)*fact
           fact = fact/(lengthRef*Lref)
-          cmp = cmp*fact
-          cmv = cmv*fact
+          cmp = localValues(iMp:iMp+2)*fact
+          cmv = localValues(iMv:iMv+2)*fact
 
           !Loop over the number of monitoring variables and just modify
           !the ones that need to be updated with the zipper forces we just

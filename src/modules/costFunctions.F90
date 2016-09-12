@@ -58,28 +58,20 @@ module costFunctions
        costFuncMavgPs = 46
 
   integer(kind=intType), parameter :: &
-       icFp1 = 1, &
-       icFp2 = 3, &
-       icFv1 = 4, &
-       icFv2 = 6, &
-       icMp1 = 7, &
-       icMp2 = 9, &
-       icMv1 =10, &
-       icMv2 =12, &
-       iSepSensor = 13, &
-       iSepAvg1 = 14, &
-       iSepAvg2 = 16, &
-       iFp1 =17, &
-       iFp2 =19, &
-       iFv1 =20, &
-       iFv2 =22, &
-       iMp1 =23, &
-       iMp2 =25, &
-       iMv1 =26, &
-       iMv2 =28, &
-       iCavitation=29, &
-       iyPlus = 30
-  integer(kind=intType), parameter :: nLocalValues=30
+       iFp =  1, &
+       iFv =  4, &
+       iMp =  7, &
+       iMv = 10, &
+       iSepSensor  = 13, &
+       iSepAvg     = 14, &
+       iCavitation = 17, &
+       iyPlus    = 18, &
+       iMassFlow = 19, &
+       iMassPTot = 20, &
+       iMassTtot = 21, &
+       iMassPs   = 22
+  integer(kind=intType), parameter :: nLocalValues=22
+
   real(kind=realType), dimension(nCostFunction) ::  funcValues
 #ifndef USE_TAPENADE
   real(kind=realType), dimension(nCostFunction) ::  funcValuesd

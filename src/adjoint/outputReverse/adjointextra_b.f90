@@ -120,9 +120,10 @@ contains
     real(kind=realtype), dimension(nsections) :: t
     logical :: useoldcoor
     real(kind=realtype), dimension(3) :: fp, fv, mp, mv
-    real(kind=realtype), dimension(3) :: fpd, fvd, mpd, mvd
     real(kind=realtype) :: yplusmax, oneoverdt
     real(kind=realtype) :: oneoverdtd
+    real(kind=realtype) :: localvalues(nlocalvalues)
+    real(kind=realtype) :: localvaluesd(nlocalvalues)
     integer :: branch
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tempd
@@ -501,6 +502,7 @@ varloopfine:do l=1,nwf
       end do
     end do
     call residual_block()
+    localvalues = zero
     call pushreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
     call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
     call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
@@ -561,8 +563,7 @@ varloopfine:do l=1,nwf
         end do
       end do
     end do
-    call forcesandmoments(fp, fv, mp, mv, yplusmax, sepsensor, &
-&                   sepsensoravg, cavitation)
+    call forcesandmoments(localvalues)
 ! convert back to actual forces. note that even though we use
 ! machcoef, lref, and surfaceref here, they are not differented,
 ! since f doesn't actually depend on them. ideally we would just get
@@ -570,22 +571,30 @@ varloopfine:do l=1,nwf
     force = zero
     moment = zero
     do sps2=1,ntimeintervalsspectral
-      force(:, sps2) = fp + fv
-      moment(:, sps2) = mp + mv
+      force(:, sps2) = localvalues(ifp:ifp+2) + localvalues(ifv:ifv+2)
+      moment(:, sps2) = localvalues(imp:imp+2) + localvalues(imv:imv+2)
     end do
+    sepsensor = localvalues(isepsensor)
+    sepsensoravg = localvalues(isepavg:isepavg+2)
+    cavitation = localvalues(icavitation)
     call getcostfunction_b(force, forced, moment, momentd, sepsensor, &
 &                    sepsensord, sepsensoravg, sepsensoravgd, cavitation&
 &                    , cavitationd)
-    fpd = 0.0_8
-    fvd = 0.0_8
-    mpd = 0.0_8
-    mvd = 0.0_8
+    localvaluesd = 0.0_8
+    localvaluesd(icavitation) = localvaluesd(icavitation) + cavitationd
+    localvaluesd(isepavg:isepavg+2) = localvaluesd(isepavg:isepavg+2) + &
+&     sepsensoravgd
+    localvaluesd(isepsensor) = localvaluesd(isepsensor) + sepsensord
     do sps2=ntimeintervalsspectral,1,-1
-      mpd = mpd + momentd(:, sps2)
-      mvd = mvd + momentd(:, sps2)
+      localvaluesd(imp:imp+2) = localvaluesd(imp:imp+2) + momentd(:, &
+&       sps2)
+      localvaluesd(imv:imv+2) = localvaluesd(imv:imv+2) + momentd(:, &
+&       sps2)
       momentd(:, sps2) = 0.0_8
-      fpd = fpd + forced(:, sps2)
-      fvd = fvd + forced(:, sps2)
+      localvaluesd(ifp:ifp+2) = localvaluesd(ifp:ifp+2) + forced(:, sps2&
+&       )
+      localvaluesd(ifv:ifv+2) = localvaluesd(ifv:ifv+2) + forced(:, sps2&
+&       )
       forced(:, sps2) = 0.0_8
     end do
     do ii1=ntimeintervalsspectral,1,-1
@@ -648,9 +657,7 @@ varloopfine:do l=1,nwf
     call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     call popreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
     call popreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
-    call forcesandmoments_b(fp, fpd, fv, fvd, mp, mpd, mv, mvd, yplusmax&
-&                     , sepsensor, sepsensord, sepsensoravg, &
-&                     sepsensoravgd, cavitation, cavitationd)
+    call forcesandmoments_b(localvalues, localvaluesd)
     do sps2=ntimeintervalsspectral,1,-1
       do l=nstate,nt1,-1
         do k=kl,2,-1
@@ -1024,6 +1031,7 @@ varloopfine:do l=1,nwf
     logical :: useoldcoor
     real(kind=realtype), dimension(3) :: fp, fv, mp, mv
     real(kind=realtype) :: yplusmax, oneoverdt
+    real(kind=realtype) :: localvalues(nlocalvalues)
     useoldcoor = .false.
 ! setup number of state variable based on turbulence assumption
     if (frozenturb) then
@@ -1256,8 +1264,8 @@ varloopfine:do l=1,nwf
         end do
       end do
     end do
-    call forcesandmoments(fp, fv, mp, mv, yplusmax, sepsensor, &
-&                   sepsensoravg, cavitation)
+    localvalues = zero
+    call forcesandmoments(localvalues)
 ! convert back to actual forces. note that even though we use
 ! machcoef, lref, and surfaceref here, they are not differented,
 ! since f doesn't actually depend on them. ideally we would just get
@@ -1265,9 +1273,12 @@ varloopfine:do l=1,nwf
     force = zero
     moment = zero
     do sps2=1,ntimeintervalsspectral
-      force(:, sps2) = fp + fv
-      moment(:, sps2) = mp + mv
+      force(:, sps2) = localvalues(ifp:ifp+2) + localvalues(ifv:ifv+2)
+      moment(:, sps2) = localvalues(imp:imp+2) + localvalues(imv:imv+2)
     end do
+    sepsensor = localvalues(isepsensor)
+    sepsensoravg = localvalues(isepavg:isepavg+2)
+    cavitation = localvalues(icavitation)
     call getcostfunction(force, moment, sepsensor, sepsensoravg, &
 &                  cavitation)
   end subroutine block_res
