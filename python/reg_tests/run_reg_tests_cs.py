@@ -29,7 +29,7 @@ args = parser.parse_args()
 
 if args.mode == 'train':
     try:
-        os.remove('ref/%s_reg.ref'%(module_name))
+        os.remove('%s_reg.ref'%(module_name))
     except OSError:
         pass
 
@@ -51,7 +51,7 @@ else:
         args.mpiexec, module_name))
 
     # Do the comparison (reference file must be first)
-    res = reg.reg_file_comp('ref/%s_reg.ref'%(module_name),'%s_reg'%(module_name))
+    res = reg.reg_file_comp('%s_reg.ref'%(module_name),'%s_reg'%(module_name))
 
 # Set the proper return codes for the script running this:
 if res == 0: #reg.REG_FILES_MATCH
@@ -59,7 +59,7 @@ if res == 0: #reg.REG_FILES_MATCH
 elif res == 1: #reg.REG_FILES_DO_NOT_MATCH
     print '%s: Failure!'%(module_name)
     if args.diff:
-        os.system('%s ref/%s_reg.ref %s_reg'%(args.diff_cmd, module_name, module_name))
+        os.system('%s %s_reg.ref %s_reg'%(args.diff_cmd, module_name, module_name))
 elif res == -1: #reg.REG_ERROR
     print '%s: Error in regression. Missing files.'%(module_name)
 
