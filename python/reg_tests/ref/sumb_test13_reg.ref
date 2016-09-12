@@ -227,20 +227,237 @@
 # Found restart file: ../inputFiles/mdo_tutorial_euler_scalar_jst.cgns
 #
 Norm of residual
-Traceback (most recent call last):
-  File "tests/test13.py", line 73, in <module>
-    adjointTest(CFDSolver, ap)
-  File "/home/kenway/hg/sumb/python/reg_tests/commonUtils.py", line 256, in adjointTest
-    totalR0 = CFDSolve.getFreeStreamResidual(ap)
-NameError: global name 'CFDSolve' is not defined
--------------------------------------------------------
-Primary job  terminated normally, but 1 process returned
-a non-zero exit code.. Per user-direction, the job has been aborted.
--------------------------------------------------------
---------------------------------------------------------------------------
-mpirun detected that one or more processes exited with non-zero status, thus causing
-the job to be terminated. The first process to do so was:
-
-  Process name: [[21671,1],0]
-  Exit code:    1
---------------------------------------------------------------------------
+-> Alpha... 1.800000 
+@value  1.6617630046468e-11 1e-10 1e-10
+-> Alpha... 1.800000 
+Solving adjoint: cd
+-> Alpha... 1.800000 
+Solving ADjoint Transpose with PETSc...
+   0 KSP Residual norm 0.2785082327E-01
+  10 KSP Residual norm 0.1845063198E-01
+  20 KSP Residual norm 0.9753193351E-03
+  30 KSP Residual norm 0.4735673246E-04
+  40 KSP Residual norm 0.9763833258E-06
+  50 KSP Residual norm 0.3619616925E-07
+  60 KSP Residual norm 0.1003018972E-08
+  70 KSP Residual norm 0.1274244301E-10
+  80 KSP Residual norm 0.1812538544E-12
+  90 KSP Residual norm 0.2868338453E-14
+Solving ADjoint Transpose with PETSc time (s) =     4.70
+ Norm of error = 0.1635E-14    Iterations =   96
+ ------------------------------------------------
+ PETSc solver converged after    96 iterations.
+ ------------------------------------------------
+Solving adjoint: cl
+-> Alpha... 1.800000 
+Solving ADjoint Transpose with PETSc...
+   0 KSP Residual norm 0.2406751577E+00
+  10 KSP Residual norm 0.1532751011E+00
+  20 KSP Residual norm 0.1757763176E-01
+  30 KSP Residual norm 0.2976544197E-03
+  40 KSP Residual norm 0.1055231479E-04
+  50 KSP Residual norm 0.2263238340E-06
+  60 KSP Residual norm 0.4400501358E-08
+  70 KSP Residual norm 0.1187573194E-09
+  80 KSP Residual norm 0.1922130936E-11
+  90 KSP Residual norm 0.4566499696E-13
+Solving ADjoint Transpose with PETSc time (s) =     4.71
+ Norm of error = 0.2528E-13    Iterations =   97
+ ------------------------------------------------
+ PETSc solver converged after    97 iterations.
+ ------------------------------------------------
+Eval Functions Sens:
+Dictionary Key: mdo_tutorial_cd
+Dictionary Key: P_mdo_tutorial
+@value  2.6378789734316e-21 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value  0.0000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value  1.0929721615817e-02 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value  6.2622691983921e-01 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value  3.3452527495170e-01 1e-10 1e-10
+Dictionary Key: shape
+@value  1.4160826826118e-03 1e-10 1e-10
+@value -7.1466964958475e-04 1e-10 1e-10
+@value -4.5223308518423e-02 1e-10 1e-10
+@value -3.4352032779552e-02 1e-10 1e-10
+@value  3.2387054523256e-03 1e-10 1e-10
+@value  6.6649168643394e-03 1e-10 1e-10
+@value -2.1748030601536e-02 1e-10 1e-10
+@value -1.7115922666367e-02 1e-10 1e-10
+@value  1.0840817235356e-03 1e-10 1e-10
+@value -3.8383776824893e-04 1e-10 1e-10
+@value  6.2088878320206e-03 1e-10 1e-10
+@value  1.8098302244251e-02 1e-10 1e-10
+@value -8.5794535782409e-03 1e-10 1e-10
+@value  9.4111803639360e-03 1e-10 1e-10
+@value  2.5994639257842e-02 1e-10 1e-10
+@value  2.6287093475065e-02 1e-10 1e-10
+@value -1.5718258015969e-04 1e-10 1e-10
+@value -1.1550547325709e-03 1e-10 1e-10
+@value  2.1122733022788e-03 1e-10 1e-10
+@value  7.7351188794685e-03 1e-10 1e-10
+@value  8.5045222752836e-03 1e-10 1e-10
+@value  6.0905328477289e-03 1e-10 1e-10
+@value -4.2381251649784e-04 1e-10 1e-10
+@value  7.5821983273553e-03 1e-10 1e-10
+@value  1.5270291570244e-03 1e-10 1e-10
+@value  9.1071466208411e-04 1e-10 1e-10
+@value  5.7725296204940e-04 1e-10 1e-10
+@value  1.5423206398995e-03 1e-10 1e-10
+@value -5.4793444437017e-02 1e-10 1e-10
+@value -5.4978379998177e-02 1e-10 1e-10
+@value -5.0496218502058e-02 1e-10 1e-10
+@value -3.9877116982692e-02 1e-10 1e-10
+@value -3.5948420638800e-03 1e-10 1e-10
+@value -5.3791526710974e-03 1e-10 1e-10
+@value -4.4707938200392e-03 1e-10 1e-10
+@value  6.7479188731578e-04 1e-10 1e-10
+@value -4.2640855034666e-02 1e-10 1e-10
+@value -4.3019856327873e-02 1e-10 1e-10
+@value -3.9783253193035e-02 1e-10 1e-10
+@value -3.1564511509645e-02 1e-10 1e-10
+@value  2.7489440758719e-04 1e-10 1e-10
+@value  8.8817163214572e-05 1e-10 1e-10
+@value  3.5637178656114e-04 1e-10 1e-10
+@value  6.2132806404009e-04 1e-10 1e-10
+@value  1.9799143218471e-04 1e-10 1e-10
+@value  6.7278856811667e-04 1e-10 1e-10
+@value  7.1460745872229e-04 1e-10 1e-10
+@value  2.8164745753019e-05 1e-10 1e-10
+@value  7.1692705426036e-03 1e-10 1e-10
+@value  6.1191006866958e-03 1e-10 1e-10
+@value  4.8263468818674e-03 1e-10 1e-10
+@value  3.3838765545035e-03 1e-10 1e-10
+@value  1.9212531812100e-02 1e-10 1e-10
+@value  1.8110349562936e-02 1e-10 1e-10
+@value  1.6107166442745e-02 1e-10 1e-10
+@value  1.2782074374564e-02 1e-10 1e-10
+@value -5.2645463508904e-03 1e-10 1e-10
+@value  4.5385517225053e-03 1e-10 1e-10
+@value  1.3597457954089e-02 1e-10 1e-10
+@value  1.7073333147675e-02 1e-10 1e-10
+@value  2.5687578735120e-02 1e-10 1e-10
+@value  3.4365503644145e-02 1e-10 1e-10
+@value  3.3767705115398e-02 1e-10 1e-10
+@value  2.3196394423560e-02 1e-10 1e-10
+@value  2.9374872885656e-02 1e-10 1e-10
+@value  2.1606156697669e-02 1e-10 1e-10
+@value  1.1959411781962e-02 1e-10 1e-10
+@value  2.5240398954145e-03 1e-10 1e-10
+@value  2.2629847802519e-02 1e-10 1e-10
+@value  1.6904356803352e-02 1e-10 1e-10
+@value  1.2661513501772e-02 1e-10 1e-10
+@value  9.5032268508039e-03 1e-10 1e-10
+Dictionary Key: twist
+@value -2.0056181970250e-03 1e-10 1e-10
+@value -2.4880560856569e-03 1e-10 1e-10
+@value -2.4420549108700e-03 1e-10 1e-10
+@value -2.0773440642823e-03 1e-10 1e-10
+@value -1.4512170172364e-03 1e-10 1e-10
+@value -6.1719273109067e-04 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value  0.0000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value  0.0000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value  0.0000000000000e+00 1e-10 1e-10
+Dictionary Key: mdo_tutorial_cl
+Dictionary Key: P_mdo_tutorial
+@value  1.1117307432713e-21 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value  0.0000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value  1.3569359289467e-01 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value  7.7746701798312e+00 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value  1.5633352545544e+00 1e-10 1e-10
+Dictionary Key: shape
+@value  1.1160085968841e-02 1e-10 1e-10
+@value -5.6458883040170e-03 1e-10 1e-10
+@value -6.0858847298937e-01 1e-10 1e-10
+@value -4.2754827497797e-01 1e-10 1e-10
+@value  3.5088230814051e-04 1e-10 1e-10
+@value -2.5826193795083e-03 1e-10 1e-10
+@value -2.7635963491755e-01 1e-10 1e-10
+@value -2.1470448189587e-01 1e-10 1e-10
+@value  2.4080112358531e-02 1e-10 1e-10
+@value  4.9338831070919e-02 1e-10 1e-10
+@value  9.1018191961317e-02 1e-10 1e-10
+@value  2.7554488047668e-01 1e-10 1e-10
+@value  1.8015143463996e-02 1e-10 1e-10
+@value  6.8120940849117e-02 1e-10 1e-10
+@value  1.2634833227119e-01 1e-10 1e-10
+@value  3.7048243419674e-01 1e-10 1e-10
+@value  2.8752889646203e-02 1e-10 1e-10
+@value  2.7667807991663e-02 1e-10 1e-10
+@value  4.2740205641774e-02 1e-10 1e-10
+@value  1.0115651507624e-01 1e-10 1e-10
+@value  4.1199374069404e-02 1e-10 1e-10
+@value  3.3517567088899e-02 1e-10 1e-10
+@value  7.6764615998422e-02 1e-10 1e-10
+@value  1.4864082860777e-01 1e-10 1e-10
+@value  9.7743987223712e-03 1e-10 1e-10
+@value  6.5967302301799e-03 1e-10 1e-10
+@value  2.9613765292828e-03 1e-10 1e-10
+@value  1.5070709871431e-03 1e-10 1e-10
+@value -7.3837227937745e-01 1e-10 1e-10
+@value -7.3864857465379e-01 1e-10 1e-10
+@value -6.7772190734741e-01 1e-10 1e-10
+@value -5.3470663849604e-01 1e-10 1e-10
+@value -6.2614660436062e-03 1e-10 1e-10
+@value  5.1488265916767e-03 1e-10 1e-10
+@value  1.3892683320766e-02 1e-10 1e-10
+@value  1.1594217864178e-02 1e-10 1e-10
+@value -5.3732287702388e-01 1e-10 1e-10
+@value -5.4656276282981e-01 1e-10 1e-10
+@value -5.0938078576108e-01 1e-10 1e-10
+@value -4.0968504603621e-01 1e-10 1e-10
+@value  4.7024639931124e-02 1e-10 1e-10
+@value  6.0784625974784e-02 1e-10 1e-10
+@value  6.4235106827383e-02 1e-10 1e-10
+@value  5.4972120708393e-02 1e-10 1e-10
+@value  6.9195402095764e-02 1e-10 1e-10
+@value  7.0288741439504e-02 1e-10 1e-10
+@value  6.4909755256664e-02 1e-10 1e-10
+@value  5.2680463005447e-02 1e-10 1e-10
+@value  1.1028412037679e-01 1e-10 1e-10
+@value  1.0884691941302e-01 1e-10 1e-10
+@value  1.0213747889926e-01 1e-10 1e-10
+@value  8.3161173299521e-02 1e-10 1e-10
+@value  3.0723259356902e-01 1e-10 1e-10
+@value  2.9744268575076e-01 1e-10 1e-10
+@value  2.6758400650042e-01 1e-10 1e-10
+@value  2.0442114965468e-01 1e-10 1e-10
+@value  7.5723677010949e-02 1e-10 1e-10
+@value  1.1688517085566e-01 1e-10 1e-10
+@value  1.1940814121007e-01 1e-10 1e-10
+@value  8.7013096779102e-02 1e-10 1e-10
+@value  9.4373552916212e-02 1e-10 1e-10
+@value  6.7794916954068e-02 1e-10 1e-10
+@value  3.4613493390272e-02 1e-10 1e-10
+@value  2.3914095490985e-02 1e-10 1e-10
+@value  1.4406275939610e-01 1e-10 1e-10
+@value  1.3224165109772e-01 1e-10 1e-10
+@value  1.2916083658779e-01 1e-10 1e-10
+@value  1.2291504551686e-01 1e-10 1e-10
+@value  4.2341390485619e-01 1e-10 1e-10
+@value  4.2069271883041e-01 1e-10 1e-10
+@value  3.8891426640779e-01 1e-10 1e-10
+@value  3.0138845673939e-01 1e-10 1e-10
+Dictionary Key: twist
+@value -2.9488954083819e-02 1e-10 1e-10
+@value -3.4065600928564e-02 1e-10 1e-10
+@value -3.0221580878077e-02 1e-10 1e-10
+@value -2.2931303559402e-02 1e-10 1e-10
+@value -1.4004195316305e-02 1e-10 1e-10
+@value -5.1169675853194e-03 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value  0.0000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value  0.0000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value  0.0000000000000e+00 1e-10 1e-10

@@ -549,6 +549,8 @@ module inputPhysics
 
   logical :: wallFunctions, wallDistanceNeeded
 
+  real(kind=realType) :: alpha, beta
+  integer(kind=intType) :: liftIndex
   real(kind=realType) :: Mach, MachCoef, MachGrid
   real(kind=realType) :: Reynolds, ReynoldsLength
   real(kind=realType) :: gammaConstant, RGasDim
@@ -562,6 +564,7 @@ module inputPhysics
   real(kind=realType) :: SSuthDim, muSuthDim, TSuthDim
 
 #ifndef USE_TAPENADE
+  real(kind=realType) :: alphad, betad
   real(kind=realType), dimension(3) :: velDirFreestreamd, velDirFreeStreamb
   real(kind=realType), dimension(3) :: liftDirectiond, liftDirectionb
   real(kind=realType), dimension(3) :: dragDirectiond, dragDirectionb

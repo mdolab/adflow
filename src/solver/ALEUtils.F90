@@ -106,8 +106,7 @@ subroutine slipVelocitiesFineLevelALE_block(useOldCoor, t, sps)
   real(kind=realType), dimension(:,:,:),   pointer :: xFace
   real(kind=realType), dimension(:,:,:,:), pointer :: xFaceOld
 
-  integer(kind=intType) :: liftIndex
-  real(kind=realType) :: alpha,beta,intervalMach,alphaTS,alphaIncrement,&
+  real(kind=realType) :: intervalMach,alphaTS,alphaIncrement,&
        betaTS,betaIncrement
   real(kind=realType), dimension(3) ::velDir
   real(kind=realType), dimension(3) :: refDirection

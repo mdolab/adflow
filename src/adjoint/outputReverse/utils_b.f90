@@ -10,6 +10,26 @@ module utils_b
 ! ----------------------------------------------------------------------
 
 contains
+  function char2str(chararray, n)
+    use constants
+    implicit none
+    integer(kind=inttype), intent(in) :: n
+!
+!      function type
+!
+    character(len=n) :: char2str
+!
+!      function arguments.
+!
+    character, dimension(maxcgnsnamelen), intent(in) :: chararray
+!
+!      local variables.
+!
+    integer(kind=inttype) :: i
+    do i=1,n
+      char2str(i:i) = chararray(i)
+    end do
+  end function char2str
   function tsbeta(degreepolbeta, coefpolbeta, degreefourbeta, &
 &   omegafourbeta, coscoeffourbeta, sincoeffourbeta, t)
 !
@@ -1580,8 +1600,8 @@ contains
 !  differentiation of computerootbendingmoment in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: lengthref pointref bendingmoment
 !   with respect to varying inputs: lengthref pointref cf cm
-  subroutine computerootbendingmoment_b(cf, cfd, cm, cmd, liftindex, &
-&   bendingmoment, bendingmomentd)
+  subroutine computerootbendingmoment_b(cf, cfd, cm, cmd, bendingmoment&
+&   , bendingmomentd)
 !                                                      *
 ! compute a normalized bending moment coefficient from *
 ! the force and moment coefficient. at the moment this *
@@ -1590,12 +1610,11 @@ contains
 !                                                      *
     use constants
     use inputphysics, only : lengthref, lengthrefd, pointref, &
-&   pointrefd, pointrefec
+&   pointrefd, pointrefec, liftindex
     implicit none
 !input/output variables
     real(kind=realtype), dimension(3), intent(in) :: cf, cm
     real(kind=realtype), dimension(3) :: cfd, cmd
-    integer(kind=inttype), intent(in) :: liftindex
     real(kind=realtype) :: bendingmoment
     real(kind=realtype) :: bendingmomentd
 !subroutine variables
@@ -1698,7 +1717,7 @@ contains
       cmd = 0.0_8
     end if
   end subroutine computerootbendingmoment_b
-  subroutine computerootbendingmoment(cf, cm, liftindex, bendingmoment)
+  subroutine computerootbendingmoment(cf, cm, bendingmoment)
 !                                                      *
 ! compute a normalized bending moment coefficient from *
 ! the force and moment coefficient. at the moment this *
@@ -1706,11 +1725,11 @@ contains
 ! would be needed for a full body.                     *
 !                                                      *
     use constants
-    use inputphysics, only : lengthref, pointref, pointrefec
+    use inputphysics, only : lengthref, pointref, pointrefec, &
+&   liftindex
     implicit none
 !input/output variables
     real(kind=realtype), dimension(3), intent(in) :: cf, cm
-    integer(kind=inttype), intent(in) :: liftindex
     real(kind=realtype), intent(out) :: bendingmoment
 !subroutine variables
     real(kind=realtype) :: elasticmomentx, elasticmomenty, &
@@ -1740,8 +1759,8 @@ contains
 !                dragdirection liftdirection gammainf pinf rhoinfdim
 !                pinfdim moment force
   subroutine computetsderivatives_b(force, forced, moment, momentd, &
-&   liftindex, coef0, coef0d, dcdalpha, dcdalphad, dcdalphadot, &
-&   dcdalphadotd, dcdq, dcdqdot)
+&   coef0, coef0d, dcdalpha, dcdalphad, dcdalphadot, dcdalphadotd, dcdq&
+&   , dcdqdot)
 !
 !      computes the stability derivatives based on the time spectral  
 !      solution of a given mesh. takes in the force coefficients at   
@@ -1769,7 +1788,6 @@ contains
     real(kind=realtype), dimension(8) :: dcdalphad, dcdalphadotd
     real(kind=realtype), dimension(8) :: coef0
     real(kind=realtype), dimension(8) :: coef0d
-    integer(kind=inttype) :: liftindex
 ! working variables
     real(kind=realtype), dimension(ntimeintervalsspectral, 8) :: &
 &   basecoef
@@ -1786,7 +1804,6 @@ contains
     real(kind=realtype), dimension(ntimeintervalsspectral) :: &
 &   intervalmach, intervalmachdot
     real(kind=realtype), dimension(nsections) :: t
-    real(kind=realtype) :: alpha, beta
     integer(kind=inttype) :: i, sps, nn
 !speed of sound: for normalization of q derivatives
     real(kind=realtype) :: a
@@ -2064,8 +2081,8 @@ contains
       yd(i) = yd(i) + sumyd + x(i)*sumxyd
     end do
   end subroutine computeleastsquaresregression_b
-  subroutine computetsderivatives(force, moment, liftindex, coef0, &
-&   dcdalpha, dcdalphadot, dcdq, dcdqdot)
+  subroutine computetsderivatives(force, moment, coef0, dcdalpha, &
+&   dcdalphadot, dcdq, dcdqdot)
 !
 !      computes the stability derivatives based on the time spectral  
 !      solution of a given mesh. takes in the force coefficients at   
@@ -2089,7 +2106,6 @@ contains
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
-    integer(kind=inttype) :: liftindex
 ! working variables
     real(kind=realtype), dimension(ntimeintervalsspectral, 8) :: &
 &   basecoef
@@ -2101,7 +2117,6 @@ contains
     real(kind=realtype), dimension(ntimeintervalsspectral) :: &
 &   intervalmach, intervalmachdot
     real(kind=realtype), dimension(nsections) :: t
-    real(kind=realtype) :: alpha, beta
     integer(kind=inttype) :: i, sps, nn
 !speed of sound: for normalization of q derivatives
     real(kind=realtype) :: a
@@ -2116,8 +2131,6 @@ contains
     intrinsic sqrt
     fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2)
     factmoment = fact/(lengthref*lref)
-    call getdirangle(veldirfreestream, liftdirection, liftindex, alpha, &
-&              beta)
     if (tsqmode) then
       print*, &
 &     'ts q mode code needs to be updated in computetsderivatives!'

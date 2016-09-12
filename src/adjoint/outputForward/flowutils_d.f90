@@ -1275,74 +1275,63 @@ intervaltt:do
 !   variations   of useful results: veldirfreestream dragdirection
 !                liftdirection
 !   with respect to varying inputs: alpha beta
-  subroutine adjustinflowangle_d(alpha, alphad, beta, betad, liftindex)
+  subroutine adjustinflowangle_d()
     use constants
-    use inputphysics
+    use inputphysics, only : alpha, alphad, beta, betad, liftindex, &
+&   veldirfreestream, veldirfreestreamd, liftdirection, liftdirectiond, &
+&   dragdirection, dragdirectiond
     implicit none
-!subroutine vars
-    real(kind=realtype), intent(in) :: alpha, beta
-    real(kind=realtype), intent(in) :: alphad, betad
-    integer(kind=inttype), intent(in) :: liftindex
 !local vars
-    real(kind=realtype), dimension(3) :: refdirection
+    real(kind=realtype), dimension(3) :: refdir1, refdir2
 ! velocity direction given by the rotation of a unit vector
 ! initially aligned along the positive x-direction (1,0,0)
 ! 1) rotate alpha radians cw about y or z-axis
 ! 2) rotate beta radians ccw about z or y-axis
-    refdirection(:) = zero
-    refdirection(1) = one
-    call getdirvector_d(refdirection, alpha, alphad, beta, betad, &
+    refdir1(:) = zero
+    refdir1(1) = one
+    call getdirvector_d(refdir1, alpha, alphad, beta, betad, &
 &                 veldirfreestream, veldirfreestreamd, liftindex)
 ! drag direction given by the rotation of a unit vector
 ! initially aligned along the positive x-direction (1,0,0)
 ! 1) rotate alpha radians cw about y or z-axis
 ! 2) rotate beta radians ccw about z or y-axis
-    refdirection(:) = zero
-    refdirection(1) = one
-    call getdirvector_d(refdirection, alpha, alphad, beta, betad, &
+    call getdirvector_d(refdir1, alpha, alphad, beta, betad, &
 &                 dragdirection, dragdirectiond, liftindex)
 ! lift direction given by the rotation of a unit vector
 ! initially aligned along the positive z-direction (0,0,1)
 ! 1) rotate alpha radians cw about y or z-axis
 ! 2) rotate beta radians ccw about z or y-axis
-    refdirection(:) = zero
-    refdirection(liftindex) = one
-    call getdirvector_d(refdirection, alpha, alphad, beta, betad, &
+    refdir2(:) = zero
+    refdir2(liftindex) = one
+    call getdirvector_d(refdir2, alpha, alphad, beta, betad, &
 &                 liftdirection, liftdirectiond, liftindex)
   end subroutine adjustinflowangle_d
-  subroutine adjustinflowangle(alpha, beta, liftindex)
+  subroutine adjustinflowangle()
     use constants
-    use inputphysics
+    use inputphysics, only : alpha, beta, liftindex, veldirfreestream,&
+&   liftdirection, dragdirection
     implicit none
-!subroutine vars
-    real(kind=realtype), intent(in) :: alpha, beta
-    integer(kind=inttype), intent(in) :: liftindex
 !local vars
-    real(kind=realtype), dimension(3) :: refdirection
+    real(kind=realtype), dimension(3) :: refdir1, refdir2
 ! velocity direction given by the rotation of a unit vector
 ! initially aligned along the positive x-direction (1,0,0)
 ! 1) rotate alpha radians cw about y or z-axis
 ! 2) rotate beta radians ccw about z or y-axis
-    refdirection(:) = zero
-    refdirection(1) = one
-    call getdirvector(refdirection, alpha, beta, veldirfreestream, &
-&               liftindex)
+    refdir1(:) = zero
+    refdir1(1) = one
+    call getdirvector(refdir1, alpha, beta, veldirfreestream, liftindex)
 ! drag direction given by the rotation of a unit vector
 ! initially aligned along the positive x-direction (1,0,0)
 ! 1) rotate alpha radians cw about y or z-axis
 ! 2) rotate beta radians ccw about z or y-axis
-    refdirection(:) = zero
-    refdirection(1) = one
-    call getdirvector(refdirection, alpha, beta, dragdirection, &
-&               liftindex)
+    call getdirvector(refdir1, alpha, beta, dragdirection, liftindex)
 ! lift direction given by the rotation of a unit vector
 ! initially aligned along the positive z-direction (0,0,1)
 ! 1) rotate alpha radians cw about y or z-axis
 ! 2) rotate beta radians ccw about z or y-axis
-    refdirection(:) = zero
-    refdirection(liftindex) = one
-    call getdirvector(refdirection, alpha, beta, liftdirection, &
-&               liftindex)
+    refdir2(:) = zero
+    refdir2(liftindex) = one
+    call getdirvector(refdir2, alpha, beta, liftdirection, liftindex)
   end subroutine adjustinflowangle
 !  differentiation of derivativerotmatrixrigid in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: rotationmatrix

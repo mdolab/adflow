@@ -699,7 +699,7 @@ class SUMB(AeroSolver):
         if self.getOption('TSStability'):
             self.computeStabilityParameters()
 
-    def evalFunctions(self, aeroProblem, funcs, evalFuncs=None, sps=1,
+    def evalFunctions(self, aeroProblem, funcs, evalFuncs=None, 
                       ignoreMissing=False):
         """
         Evaluate the desired functions given in iterable object,
@@ -717,9 +717,6 @@ class SUMB(AeroSolver):
 
         evalFuncs : iterable object containing strings
           If not None, use these functions to evaluate.
-
-        sps : int, optional
-            Spectral instance to use for funcions
 
         ignoreMissing : bool
             Flag to supress checking for a valid function. Please use
@@ -762,7 +759,7 @@ class SUMB(AeroSolver):
         for group in groupMap:
 
             # Call the lower level getSolution() function
-            res = self.getSolution(sps, groupName=group)
+            res = self.getSolution(groupName=group)
 
             # g contains the "basic function" (index 0) and the actual
             # function name (index 1)
@@ -771,7 +768,7 @@ class SUMB(AeroSolver):
                 self.curAP.funcNames[g[1]] = key
                 funcs[key] = res[g[0]]
 
-    def evalFunctionsSens(self, aeroProblem, funcsSens, evalFuncs=None, sps=1):
+    def evalFunctionsSens(self, aeroProblem, funcsSens, evalFuncs=None):
         """
         Evaluate the sensitivity of the desired functions given in
         iterable object,'evalFuncs' and add them to the dictionary
@@ -789,9 +786,6 @@ class SUMB(AeroSolver):
         evalFuncs : iterable object containing strings
             The additaion functions the user wants returned that are
             not already defined in the aeroProblem
-
-        sps : int, optional
-            Spectral instance to use for funcions
 
         Examples
         --------
@@ -1543,7 +1537,7 @@ class SUMB(AeroSolver):
         self.sumb.killsignals.fatalfail = False
         self.sumb.nksolver.freestreamresset = False
 
-    def getSolution(self, sps=1, groupName=None):
+    def getSolution(self, groupName=None):
         """ Retrieve the solution variables from the solver. Note this
         is a collective function and must be called on all processors
         """
@@ -1553,7 +1547,7 @@ class SUMB(AeroSolver):
 
         # We should return the list of results that is the same as the
         # possibleObjectives list
-        self.sumb.surfaceintegrations.getsolution(sps)
+        self.sumb.surfaceintegrations.getsolution(1)
 
         funcVals = self.sumb.costfunctions.funcvalues
         SUmbsolution = {
@@ -1874,7 +1868,11 @@ class SUMB(AeroSolver):
 
         # 1. Angle of attack:
         dToR = numpy.pi/180.0
-        self.sumb.flowutils.adjustinflowangle(alpha*dToR, beta*dToR, liftIndex)
+        self.sumb.inputphysics.alpha = alpha*dToR
+        self.sumb.inputphysics.beta = beta*dToR
+        self.sumb.inputphysics.liftindex = liftIndex
+        self.sumb.flowutils.adjustinflowangle()
+
         if self.getOption('printIterations') and self.comm.rank == 0:
             print('-> Alpha... %f '% numpy.real(alpha))
 

@@ -620,9 +620,8 @@ contains
     real(kind=realtype), dimension(:, :), pointer :: sface
     real(kind=realtype), dimension(:, :, :), pointer :: xx, ss
     real(kind=realtype), dimension(:, :, :, :), pointer :: xxold
-    integer(kind=inttype) :: liftindex
-    real(kind=realtype) :: alpha, beta, intervalmach, alphats, &
-&   alphaincrement, betats, betaincrement
+    real(kind=realtype) :: intervalmach, alphats, alphaincrement, betats&
+&   , betaincrement
     real(kind=realtype), dimension(3) :: veldir
     real(kind=realtype), dimension(3) :: refdirection
     intrinsic sqrt
@@ -662,9 +661,6 @@ contains
 &           , 2)*velygrid0 + rotationmatrix(3, 3)*velzgrid0
         end if
       else if (tsalphamode) then
-! get the baseline alpha and determine the liftindex
-        call getdirangle(veldirfreestream, liftdirection, liftindex, &
-&                  alpha, beta)
 !determine the alpha for this time instance
         alphaincrement = tsalpha(degreepolalpha, coefpolalpha, &
 &         degreefouralpha, omegafouralpha, coscoeffouralpha, &
@@ -681,9 +677,6 @@ contains
         velygrid0 = ainf*machgrid*(-veldir(2))
         velzgrid0 = ainf*machgrid*(-veldir(3))
       else if (tsbetamode) then
-! get the baseline alpha and determine the liftindex
-        call getdirangle(veldirfreestream, liftdirection, liftindex, &
-&                  alpha, beta)
 !determine the alpha for this time instance
         betaincrement = tsbeta(degreepolbeta, coefpolbeta, &
 &         degreefourbeta, omegafourbeta, coscoeffourbeta, &
@@ -1082,9 +1075,8 @@ loopdirection:do mm=1,3
     real(kind=realtype), dimension(:, :, :), pointer :: uslip
     real(kind=realtype), dimension(:, :, :), pointer :: xface
     real(kind=realtype), dimension(:, :, :, :), pointer :: xfaceold
-    integer(kind=inttype) :: liftindex
-    real(kind=realtype) :: alpha, beta, intervalmach, alphats, &
-&   alphaincrement, betats, betaincrement
+    real(kind=realtype) :: intervalmach, alphats, alphaincrement, betats&
+&   , betaincrement
     real(kind=realtype), dimension(3) :: veldir
     real(kind=realtype), dimension(3) :: refdirection
     intrinsic sqrt
@@ -1239,9 +1231,6 @@ bocoloop1:do mm=1,nviscbocos
 &             3, 2)*velygrid0 + rotationmatrix(3, 3)*velzgrid0
           end if
         else if (tsalphamode) then
-! get the baseline alpha and determine the liftindex
-          call getdirangle(veldirfreestream, liftdirection, liftindex, &
-&                    alpha, beta)
 !determine the alpha for this time instance
           alphaincrement = tsalpha(degreepolalpha, coefpolalpha, &
 &           degreefouralpha, omegafouralpha, coscoeffouralpha, &
@@ -1258,9 +1247,6 @@ bocoloop1:do mm=1,nviscbocos
           velygrid0 = ainf*machgrid*(-veldir(2))
           velzgrid0 = ainf*machgrid*(-veldir(3))
         else if (tsbetamode) then
-! get the baseline alpha and determine the liftindex
-          call getdirangle(veldirfreestream, liftdirection, liftindex, &
-&                    alpha, beta)
 !determine the alpha for this time instance
           betaincrement = tsbeta(degreepolbeta, coefpolbeta, &
 &           degreefourbeta, omegafourbeta, coscoeffourbeta, &
