@@ -48,6 +48,7 @@ contains
          slipVelocitiesFineLevel_block, timeStep_block
     use residuals, only: residual_block
     use surfaceIntegrations, only : forcesAndMoments
+
     implicit none
 
     ! Input Arguments:
@@ -66,6 +67,8 @@ contains
     logical :: useOldCoor
     real(kind=realType), dimension(3) :: Fp, Fv, Mp, Mv
     real(kind=realType) :: yplusMax,  oneOverDt
+    real(kind=realType) :: localValues(nLocalValues)
+
     useOldCoor = .False.
 
     ! Setup number of state variable based on turbulence assumption
@@ -358,8 +361,8 @@ contains
        end do
     end do
 
-    call forcesAndMoments(Fp, Fv, Mp, Mv, yplusMax, sepSensor, &
-         sepSensorAvg, Cavitation)
+    localValues = zero
+    call forcesAndMoments(localValues)
 
     ! Convert back to actual forces. Note that even though we use
     ! MachCoef, Lref, and surfaceRef here, they are NOT differented,
@@ -369,12 +372,13 @@ contains
     moment = zero
 
     do sps2 = 1,nTimeIntervalsSpectral
-       force(:, sps2) = (Fp + FV)
-       moment(:, sps2) = (Mp + MV)
+       force(:, sps2) = (localValues(iFp:iFp+2) + (localValues(iFv:iFv+2)))
+       moment(:, sps2) = (localValues(iMp:iMp+2) + (localValues(iMv:iMv+2)))
     end do
-
-    call getCostFunction(force, moment, sepSensor, sepSensorAvg, &
-         Cavitation)
+    sepSensor = localValues(iSepSensor)
+    sepSensorAvg =  localValues(iSepAvg:iSepAvg+2)
+    cavitation = localValues(iCavitation)
+    call getCostFunction(force, moment, sepSensor, sepSensorAvg, cavitation)
 
   end subroutine block_res
 

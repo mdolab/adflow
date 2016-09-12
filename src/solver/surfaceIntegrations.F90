@@ -3,7 +3,7 @@ module surfaceIntegrations
 contains
 
 
-  subroutine flowProperties(massFlowRate, mass_Ptot, mass_Ttot, mass_Ps)
+  subroutine flowProperties(localValues)
 
     use constants
     use blockPointers
@@ -21,7 +21,10 @@ contains
     !
     !      Subroutine arguments
     !
-    real(kind=realType), intent(out) :: massFlowRate, mass_Ptot, mass_Ttot, mass_Ps
+    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
+
+    ! Local variables
+    real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps
     integer(kind=intType) :: nn, i, j, ii
     real(kind=realType) :: fact
     real(kind=realType) :: sF, vnm, vxm, vym, vzm
@@ -37,78 +40,80 @@ contains
        famInclude: if (bsearchIntegers(BCdata(nn)%famID, famGroups, size(famGroups)) > 0) then
           call setBCPointers(nn, .True.)
 
-          select case (BCFaceID(nn))
-          case (iMin)
-             fact = -one
-          case (iMax)
-             fact = one
-          case (jMin)
-             fact = -one
-          case (jMax)
-             fact = one
-          case (kMin)
-             fact = -one
-          case (kMax)
-             fact = one
-          end select
+          inflowOutFlowType: if(BCType(nn) == SubsonicInflow .or. &
+               BCType(nn) == SupersonicInflow .or. &
+               BCType(nn) == SubsonicOutflow .or. &
+               BCType(nn) == SupersonicOutflow) then 
 
+             select case (BCFaceID(nn))
+             case (iMin)
+                fact = -one
+             case (iMax)
+                fact = one
+             case (jMin)
+                fact = -one
+             case (jMax)
+                fact = one
+             case (kMin)
+                fact = -one
+             case (kMax)
+                fact = one
+             end select
 
-          ! Loop over the quadrilateral faces of the subface. Note that
-          ! the nodal range of BCData must be used and not the cell
-          ! range, because the latter may include the halo's in i and
-          ! j-direction. The offset +1 is there, because inBeg and jnBeg
-          ! refer to nodal ranges and not to cell ranges. The loop
-          ! (without the AD stuff) would look like:
-          !
-          ! do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
-          !    do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
+             ! Loop over the quadrilateral faces of the subface. Note that
+             ! the nodal range of BCData must be used and not the cell
+             ! range, because the latter may include the halo's in i and
+             ! j-direction. The offset +1 is there, because inBeg and jnBeg
+             ! refer to nodal ranges and not to cell ranges. The loop
+             ! (without the AD stuff) would look like:
+             !
+             ! do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
+             !    do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
 
-          !$AD II-LOOP
-          do ii=0,(BCData(nn)%jnEnd - bcData(nn)%jnBeg)*(bcData(nn)%inEnd - bcData(nn)%inBeg) -1
-             i = mod(ii, (bcData(nn)%inEnd-bcData(nn)%inBeg)) + bcData(nn)%inBeg + 1
-             j = ii/(bcData(nn)%inEnd-bcData(nn)%inBeg) + bcData(nn)%jnBeg + 1
+             !$AD II-LOOP
+             do ii=0,(BCData(nn)%jnEnd - bcData(nn)%jnBeg)*(bcData(nn)%inEnd - bcData(nn)%inBeg) -1
+                i = mod(ii, (bcData(nn)%inEnd-bcData(nn)%inBeg)) + bcData(nn)%inBeg + 1
+                j = ii/(bcData(nn)%inEnd-bcData(nn)%inBeg) + bcData(nn)%jnBeg + 1
 
-             if( addGridVelocities ) sF = sFace(i,j)
-             vxm = half*(ww1(i,j,ivx) + ww2(i,j,ivx))
-             vym = half*(ww1(i,j,ivy) + ww2(i,j,ivy))
-             vzm = half*(ww1(i,j,ivz) + ww2(i,j,ivz))
-             rhom = half*(ww1(i,j,irho) + ww2(i,j,irho))
-             pm = half*(pp1(i,j)+ pp2(i,j))
+                if( addGridVelocities ) sF = sFace(i,j)
+                vxm = half*(ww1(i,j,ivx) + ww2(i,j,ivx))
+                vym = half*(ww1(i,j,ivy) + ww2(i,j,ivy))
+                vzm = half*(ww1(i,j,ivz) + ww2(i,j,ivz))
+                rhom = half*(ww1(i,j,irho) + ww2(i,j,irho))
+                pm = half*(pp1(i,j)+ pp2(i,j))
 
-             vnm = vxm*ssi(i,j,1) + vym*ssi(i,j,2) + vzm*ssi(i,j,3)  - sF
+                vnm = vxm*ssi(i,j,1) + vym*ssi(i,j,2) + vzm*ssi(i,j,3)  - sF
 
-             massFlowRateLocal = rhom*vnm
+                massFlowRateLocal = rhom*vnm
+                massFlowRate = massFlowRate + massFlowRateLocal
 
-             !  vn1 = ww1(i,j,ivx)*ssi(i,j,1) + ww1(i,j,ivy)*ssi(i,j,2) &
-             ! + ww1(i,j,ivz)*ssi(i,j,3) - sF
-             !  vn2 = ww2(i,j,ivx)*ssi(i,j,1) + ww2(i,j,ivy)*ssi(i,j,2) &
-             ! + ww2(i,j,ivz)*ssi(i,j,3) - sF
+                call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
+                call computeTtot(rhom, vxm, vym, vzm, pm, Ttot)
 
-             ! massFlowRateLocal = half*(ww1(i,j,irho)*vn1 &
-             !                     + ww2(i,j,irho)*vn2)
+                mass_Ptot = mass_pTot + Ptot * massFlowRateLocal
+                mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal
+                mass_Ps = mass_Ps + pm*massFlowRateLocal
 
-             massFlowRate = massFlowRate + massFlowRateLocal
+             enddo
 
-             call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
-             call computeTtot(rhom, vxm, vym, vzm, pm, Ttot)
+             massFlowRate = massFlowRate*fact
+             mass_Ptot = mass_pTot*fact
+             mass_Ttot = mass_Ttot*fact
+             mass_Ps = mass_Ps*fact
 
-             mass_Ptot = mass_pTot + Ptot * massFlowRateLocal
-             mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal
-             mass_Ps = mass_Ps + pm*massFlowRateLocal
-             
-          enddo
-
-          massFlowRate = massFlowRate*fact
-          mass_Ptot = mass_pTot*fact
-          mass_Ttot = mass_Ttot*fact
-          mass_Ps = mass_Ps*fact
-
+          end if inflowOutFlowType
        end if famInclude
     end do bocos
+
+    ! Increment the local values array with what we computed here
+    localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate
+    localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
+    localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
+    localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
+
   end subroutine flowProperties
 
-  subroutine forcesAndMoments(Fp, Fv, Mp, Mv, yplusMax, sepSensor, &
-       sepSensorAvg, Cavitation)
+  subroutine forcesAndMoments(localValues) 
     !
     !       forcesAndMoments computes the contribution of the block
     !       given by the pointers in blockPointers to the force and
@@ -134,14 +139,13 @@ contains
     !
     !      Subroutine arguments
     !
-    real(kind=realType), dimension(3), intent(out) :: Fp, Fv
-    real(kind=realType), dimension(3), intent(out) :: Mp, Mv
+    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
 
-    real(kind=realType), intent(out) :: yplusMax, sepSensor
-    real(kind=realType), intent(out) :: sepSensorAvg(3), Cavitation
     !
     !      Local variables.
     !
+    real(kind=realType), dimension(3)  :: Fp, Fv, Mp, Mv
+    real(kind=realType)  :: yplusMax, sepSensor, sepSensorAvg(3), Cavitation
     integer(kind=intType) :: nn, i, j, ii, blk
 
     real(kind=realType) :: pm1, fx, fy, fz, fn, sigma
@@ -165,11 +169,8 @@ contains
     ! Initialize the force and moment coefficients to 0 as well as
     ! yplusMax.
 
-    Fp(1) = zero; Fp(2) = zero; Fp(3) = zero
-    Fv(1) = zero; Fv(2) = zero; Fv(3) = zero
-    Mp(1) = zero; Mp(2) = zero; Mp(3) = zero
-    Mv(1) = zero; Mv(2) = zero; Mv(3) = zero
-
+    Fp = zero; Fv = zero;
+    Mp = zero; Mv = zero;
     yplusMax = zero
     sepSensor = zero
     Cavitation = zero
@@ -426,7 +427,7 @@ contains
 
                    ! Compute the local value of y+. Due to the usage
                    ! of pointers there is on offset of -1 in dd2Wall..
-#ifndef TAPENADE_REVERSE
+#ifndef USE_TAPENADE
                    if(equations == RANSEquations) then
                       dwall = dd2Wall(i-1,j-1)
                       rho   = half*(ww2(i,j,irho) + ww1(i,j,irho))
@@ -460,6 +461,17 @@ contains
        end if famInclude
     end do bocos
 
+    ! Increment the local values array with the values we computed here.
+    localValues(iFp:iFp+2) = localValues(iFp:iFp+2) + Fp
+    localValues(iFv:iFv+2) = localValues(iFv:iFv+2) + Fv
+    localValues(iMp:iMp+2) = localValues(iMp:iMp+2) + Mp
+    localValues(iMv:iMv+2) = localValues(iMv:iMv+2) + Mv
+    localValues(iSepSensor) = localValues(iSepSensor) + sepSensor
+    localValues(iCavitation) = localValues(iCavitation) + cavitation
+    localValues(iSepAvg:iSepAvg+2) = localValues(iSepAvg:iSepAvg+2) + sepSensorAvg
+#ifndef USE_TAPENADE
+    localValues(iyPlus) = max(localValues(iyPlus), yplusMax)
+#endif
   end subroutine forcesAndMoments
 
   ! ----------------------------------------------------------------------
@@ -483,6 +495,7 @@ contains
     use costFunctions
     use inputTimeSpectral
     use flowVarRefState
+    use costFunctions, only : nLocalValues
     use overset, only : oversetPresent
     use utils, only : EChk, setPointers
     implicit none
@@ -493,84 +506,36 @@ contains
 
     !      Local variables.
     integer(kind=intType) :: nn, ierr
-    real(kind=realType) :: force(3), cforce(3), Lift, Drag, CL, CD
-    real(kind=realType) :: Moment(3),cMoment(3), fact
-    real(kind=realType), dimension(3) :: FpLocal, FvLocal, MpLocal, MvLocal, sepSensorAvgLocal
-    real(kind=realType) :: Fp(3), Fv(3), Mp(3), Mv(3), yPlusMax, sepSensorLocal, cavitationLocal
-    real(Kind=realType) :: sepSensor, sepSensorAvg(3), Cavitation
-    real(Kind=realType) :: massFlowRateLocal, mass_PtotLocal, mass_TtotLocal, mass_PsLocal
-    real(Kind=realType) :: massFlowRate, mass_Ptot, mass_Ttot, mass_Ps
+    real(kind=realType), dimension(3) :: force, moment, cForce, cMoment
+    real(kind=realType) :: fact, cd, cl, lift, drag
+    real(kind=realType) ::localValues(nLocalValues)
     real(kind=realType), dimension(nCostFunction)::localCFVals
 
-
-    FpLocal = zero
-    FvLocal = zero
-    MpLocal = zero
-    MvLocal = zero
-    sepSensorLocal = zero
-    sepSensorAvgLocal = zero
-    cavitationLocal = zero
-    massFlowRateLocal = zero
-    mass_PtotLocal = zero
-    mass_TtotLocal = zero 
-    mass_PsLocal = zero 
-
+    localValues = zero
     domains: do nn=1,nDom
        call setPointers(nn,1_intType,sps)
 
-       call forcesAndMoments(Fp, Fv, Mp, Mv, yplusMax, sepSensor, &
-            sepSensorAvg, Cavitation)
+       call forcesAndMoments(localValues)
+       call flowProperties(localValues)
 
-       FpLocal = FpLocal + Fp
-       FvLocal = FvLocal + Fv
-       MpLocal = MpLocal + Mp
-       MvLocal = MvLocal + Mv
-       sepSensorLocal = sepSensorLocal + sepSensor
-       sepSensorAvgLocal = sepSensorAvgLocal + sepSensorAvg
-       cavitationLocal = cavitationLocal + cavitation
-
-       call flowProperties(massFlowRate, mass_Ptot, mass_Ttot, mass_Ps)
-       ! Compute the dimensional mass flow
-
-       massFlowRateLocal = massFlowRateLocal + massFlowRate
-       mass_PtotLocal = mass_PtotLocal + mass_Ptot
-       mass_TtotLocal = mass_TtotLocal + mass_Ttot
-       mass_PsLocal = mass_PsLocal + mass_Ps
     end do domains
 
     if (oversetPresent) then
-       call forcesAndMomentsZipper(fp, fv, mp, mv, sps)
-
-       ! Add the extra zipper component on the root proc
-       if (myid == 0) then
-          FpLocal = FpLocal + Fp
-          FvLocal = FvLocal + Fv
-          MpLocal = MpLocal + Mp
-          MvLocal = MvLocal + Mv
-       end if
+       call forcesAndMomentsZipper(localValues, sps)
     end if
 
-    ! Now compute the other variables
-    Fp = FpLocal
-    Fv = FvLocal
-    Mp = MpLocal
-    Mv = MvLocal
-    sepSensor = sepSensorLocal
-    cavitation = cavitationLocal
-    sepSensorAvg = sepSensorAvgLocal
-
     ! Sum pressure and viscous contributions
-    Force = Fp + Fv
-    Moment = Mp + Mv
+    Force = localValues(iFp:iFp+2) + localValues(iFv:iFv+2)
+    Moment = localValues(iMp:iMp+2) + localValues(iMv:iMv+2)
 
     fact = two/(gammaInf*MachCoef*MachCoef &
          *surfaceRef*LRef*LRef*pRef)
-    cForce = fact*Force
+    cForce = fact*force
 
     ! Moment factor has an extra lengthRef
     fact = fact/(lengthRef*LRef)
     cMoment = fact*Moment
-    
+
     ! Get Lift coef and Drag coef
     CD =  cForce(1)*dragDirection(1) &
          + cForce(2)*dragDirection(2) &
@@ -604,15 +569,15 @@ contains
     localCFVals(costFuncMomXCoef) = cmoment(1)
     localCFVals(costFuncMomYCoef) = cmoment(2)
     localCFVals(costFuncMomZCoef) = cmoment(3)
-    localCFVals(costFuncSepSensor) = sepSensor
-    localCFVals(costFuncSepSensorAvgX) = sepSensorAvg(1)
-    localCFVals(costFuncSepSensorAvgY) = sepSensorAvg(2)
-    localCFVals(costFuncSepSensorAvgZ) = sepSensorAvg(3)
-    localCFVals(costFuncCavitation) = Cavitation
-    localCFVals(costFuncMdot) = massFlowRateLocal
-    localCFVals(costFuncMavgPtot) = mass_PtotLocal
-    localCFVals(costFuncMavgTtot) = mass_TtotLocal
-    localCFVals(costFuncMavgPs) = mass_PsLocal
+    localCFVals(costFuncSepSensor) = localValues(iSepSensor)
+    localCFVals(costFuncSepSensorAvgX) = localValues(iSepAvg+0)
+    localCFVals(costFuncSepSensorAvgY) = localValues(iSepAvg+1)
+    localCFVals(costFuncSepSensorAvgZ) = localValues(iSepAvg+2)
+    localCFVals(costFuncCavitation) = localValues(iCavitation)
+    localCFVals(costFuncMdot) = localValues(iMassFlow)
+    localCFVals(costFuncMavgPtot) = localValues(iMassPtot)
+    localCFVals(costFuncMavgTtot) = localValues(iMassTtot)
+    localCFVals(costFuncMavgPs) = localValues(iMassPs)
 
     ! Now we will mpi_allReduce them into globalCFVals
     call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, sumb_real, &
@@ -673,7 +638,7 @@ contains
        bendingsum = bendingsum+bendingMoment
     end do
 
-    call computeAeroCoef(globalCFVals,sps)
+    call computeAeroCoef(globalCFVals, sps)
     funcValues(costFuncBendingCoef)=bendingSum/nTimeIntervalsSpectral
 
     funcValues(costFuncLift) = globalCFVals(costFuncLift)
@@ -735,7 +700,7 @@ contains
     end if
   end subroutine getSolution
 
-  subroutine forcesAndMomentsZipper(Fp, Fv, Mp, Mv, sps)
+  subroutine forcesAndMomentsZipper(localValues, sps)
 
     use communication
     use blockPointers
@@ -745,6 +710,7 @@ contains
     use overset, only : nodeZipperScatter, globalNodalVec, localZipperNodes, localZipperTp, localZipperTv
     use inputTimeSpectral
     use inputIteration
+    use costFunctions, only : nLocalValues
     use utils, only : EChk, setPointers, myNorm2
     implicit none
 
@@ -754,11 +720,11 @@ contains
 #include "petsc/finclude/petscvec.h90"
 
     ! Input/Output
-    real(kind=realType), dimension(3), intent(out) :: Fp, Fv
-    real(kind=realType), dimension(3), intent(out) :: Mp, Mv
     integer(kind=intType), intent(in) :: sps
-
+    real(kind=realType), intent(inout) :: localValues(nLocalValues)
     ! Working
+    real(kind=realType), dimension(3) :: Fp, Fv, Mp, Mv
+
     integer(kind=intType) :: i, j, k, l, ierr, nn, mm, gind, ind, iVar
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, rowStart, rowEnd
     real(kind=realType), dimension(:, :, :), pointer :: xx
@@ -942,6 +908,13 @@ contains
 
        call VecRestoreArrayF90(localZipperTv, vPtr, ierr)
        call EChk(ierr,__FILE__,__LINE__)
+
+       ! Increment into the local vector
+       localValues(iFp:iFp+2) = localValues(iFp:iFp+2) + Fp
+       localValues(iFv:iFv+2) = localValues(iFv:iFv+2) + Fv
+       localValues(iMp:iMp+2) = localValues(iMp:iMp+2) + Mp
+       localValues(iMv:iMv+2) = localValues(iMv:iMv+2) + Mv
+
 
     end if
 
