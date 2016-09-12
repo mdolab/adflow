@@ -7,6 +7,7 @@ subroutine getForces(forces, npts, sps)
   use communication
   use inputPhysics
   use surfaceFamilies
+  use costFunctions
   use surfaceUtils, only : setFullFamilyList
   use utils, only : setPointers
   use sorting, only : bsearchIntegers
@@ -21,14 +22,14 @@ subroutine getForces(forces, npts, sps)
   real(kind=realType) :: sss(3),v2(3),v1(3), qa, sepSensor, Cavitation
   real(kind=realType) :: sepSensorAvg(3)
   real(kind=realType) :: Fp(3), Fv(3), Mp(3), Mv(3), yplusmax, qf(3)
-
+  real(kind=realType) :: localValues(nLocalValues)
   ! Make sure *all* forces are computed. Sectioning will be done
   ! else-where.
   call setFullFamilyList()
   domains: do nn=1,nDom
      call setPointers(nn, 1_intType, sps)
-     call forcesAndMoments(Fp, Fv, Mp, Mv, yplusMax, &
-          sepSensor, sepSensorAvg, Cavitation)
+     localValues = zero
+     call forcesAndMoments(localValues)
   end do domains
 
   if (forcesAsTractions) then 
