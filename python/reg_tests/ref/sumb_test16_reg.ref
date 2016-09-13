@@ -1,0 +1,219 @@
++------------------------------------------------------------------------------+
+|  Test 16: Euler Convergenent Nozzle -- Flow Properties Integration           |
++------------------------------------------------------------------------------+
++---------------------------------------+
+|          All SUMB Options:            |
++---------------------------------------+
+{'adjointdivtol': 100000.0,
+ 'adjointl2convergence': 1e-06,
+ 'adjointl2convergenceabs': 1e-16,
+ 'adjointl2convergencerel': 1e-16,
+ 'adjointmaxiter': 500,
+ 'adjointmonitorstep': 10,
+ 'adjointsolver': 'gmres',
+ 'adjointsubspacesize': 100,
+ 'adpc': False,
+ 'alphafollowing': True,
+ 'alphamode': False,
+ 'altitudemode': False,
+ 'ankasmoverlap': 1,
+ 'ankcfl0': 1.0,
+ 'ankinnerpreconits': 1,
+ 'ankjacobianlag': 20,
+ 'anklinearsolvetol': 0.5,
+ 'ankpcilufill': 1,
+ 'anksubspacesize': 5,
+ 'ankswitchtol': 0.01,
+ 'ankuseturbdadi': True,
+ 'applyadjointpcsubspacesize': 20,
+ 'applypcsubspacesize': 10,
+ 'approxpc': True,
+ 'asmoverlap': 1,
+ 'autoadjointretry': False,
+ 'autosolveretry': False,
+ 'backgroundvolscale': 1.0,
+ 'betamode': False,
+ 'blocksplitting': True,
+ 'cfl': 3.0,
+ 'cflcoarse': 1.5,
+ 'cfllimit': 1.5,
+ 'coarsediscretization': 'central plus scalar dissipation',
+ 'debugzipper': False,
+ 'deltat': 0.01,
+ 'designsurfacefamily': None,
+ 'discretization': 'central plus scalar dissipation',
+ 'dissipationlumpingparameter': 6.0,
+ 'dissipationscalingexponent': 0.67,
+ 'eddyvisinfratio': 0.009,
+ 'equationmode': 'steady',
+ 'equationtype': 'euler',
+ 'eulerwalltreatment': 'linear pressure extrapolation',
+ 'firstrun': True,
+ 'flowtype': 'external',
+ 'forcesastractions': True,
+ 'frozenturbulence': True,
+ 'globalpreconditioner': 'additive schwartz',
+ 'gridfile': '../inputFiles/euler_conv_nozzle.cgns',
+ 'gridprecision': 'double',
+ 'gridprecisionsurface': 'single',
+ 'ilufill': 2,
+ 'innerpreconits': 1,
+ 'isosurface': {},
+ 'isovariables': [],
+ 'l2convergence': 1e-12,
+ 'l2convergencecoarse': 0.01,
+ 'l2convergencerel': 1e-16,
+ 'liftindex': 2,
+ 'limiter': 'vanalbeda',
+ 'loadbalanceiter': 10,
+ 'loadimbalance': 0.1,
+ 'localpreconditioner': 'ilu',
+ 'lowspeedpreconditioner': False,
+ 'machmode': False,
+ 'matrixordering': 'rcm',
+ 'maxl2deviationfactor': 1.0,
+ 'meshsurfacefamily': None,
+ 'mgcycle': '2w',
+ 'mgstartlevel': 2,
+ 'monitorvariables': ['resrho', 'cl', 'cd', 'yplus'],
+ 'ncycles': 2500,
+ 'ncyclescoarse': 500,
+ 'nearwalldist': 0.1,
+ 'nkadpc': False,
+ 'nkasmoverlap': 1,
+ 'nkcfl0': 100.0,
+ 'nkinnerpreconits': 1,
+ 'nkjacobianlag': 20,
+ 'nklinearsolvetol': 0.3,
+ 'nkls': 'cubic',
+ 'nkouterpreconits': 1,
+ 'nkpcilufill': 2,
+ 'nksubspacesize': 60,
+ 'nkswitchtol': 0.01,
+ 'nkuseew': True,
+ 'nkviscpc': False,
+ 'nodaloutput': True,
+ 'nrkreset': 5,
+ 'nsavesurface': 1,
+ 'nsavevolume': 1,
+ 'nsubiter': 1,
+ 'nsubiterturb': 3,
+ 'ntimestepscoarse': 48,
+ 'ntimestepsfine': 400,
+ 'numbersolutions': True,
+ 'outerpreconits': 3,
+ 'outputdirectory': './',
+ 'overlapfactor': 0.9,
+ 'oversetprojtol': 1e-12,
+ 'partitionlikenproc': -1,
+ 'partitiononly': False,
+ 'pmode': False,
+ 'preconditionerside': 'right',
+ 'printiterations': True,
+ 'printtiming': True,
+ 'printwarnings': True,
+ 'qmode': False,
+ 'resaveraging': 'alternateresaveraging',
+ 'restartadjoint': True,
+ 'restartfile': '../inputFiles/euler_conv_nozzle.cgns',
+ 'restrictionrelaxation': 0.8,
+ 'rkreset': False,
+ 'rmode': False,
+ 'sepsensoroffset': 0.0,
+ 'sepsensorsharpness': 10.0,
+ 'setmonitor': True,
+ 'smoother': 'dadi',
+ 'smoothparameter': 1.5,
+ 'solutionprecision': 'single',
+ 'solutionprecisionsurface': 'single',
+ 'storerindlayer': True,
+ 'surfacevariables': ['cp', 'vx', 'vy', 'vz', 'mach'],
+ 'timeaccuracy': 2,
+ 'timeintegrationscheme': 'bdf',
+ 'timeintervals': 1,
+ 'tsstability': False,
+ 'turbresscale': 10000.0,
+ 'turbulencemodel': 'sa',
+ 'turbulenceorder': 'first order',
+ 'useale': True,
+ 'useanksolver': False,
+ 'useapproxwalldistance': True,
+ 'usediagtspc': True,
+ 'usegridmotion': False,
+ 'usematrixfreedrdw': True,
+ 'usenksolver': True,
+ 'usewallfunctions': False,
+ 'verifyextra': True,
+ 'verifyspatial': True,
+ 'verifystate': True,
+ 'vis2': 0.0,
+ 'vis2coarse': 0.5,
+ 'vis4': 0.006,
+ 'viscoussurfacevelocities': True,
+ 'viscpc': False,
+ 'viscwalltreatment': 'constant pressure extrapolation',
+ 'volumevariables': ['resrho'],
+ 'walldistcutoff': 1e+20,
+ 'windaxis': False,
+ 'writefarfield': False,
+ 'writesurfacesolution': True,
+ 'writesymmetry': True,
+ 'writetecplotsurfacesolution': False,
+ 'writevolumesolution': True}
+-> Alpha... 0.000000 
++----------------------------------------------------------------------+
+|  Switching to Aero Problem: conv_nozzle                              |
++----------------------------------------------------------------------+
+-> Alpha... 0.000000 
+Dictionary Key: conv_nozzle_mavgps_down
+@value  7.9892167099740e+04 1e-10 1e-10
+Dictionary Key: conv_nozzle_mavgps_up
+@value  9.5934968344903e+04 1e-10 1e-10
+Dictionary Key: conv_nozzle_mavgptot_down
+@value  1.0006331170775e+05 1e-10 1e-10
+Dictionary Key: conv_nozzle_mavgptot_up
+@value  1.0008104108394e+05 1e-10 1e-10
+Dictionary Key: conv_nozzle_mavgttot_down
+@value  4.9992549147202e+02 1e-10 1e-10
+Dictionary Key: conv_nozzle_mavgttot_up
+@value  4.9999768652621e+02 1e-10 1e-10
+Dictionary Key: conv_nozzle_mdot
+@value -4.8399111735857e-02 1e-10 1e-10
+Dictionary Key: conv_nozzle_mdot_down
+@value  7.3972813689316e+01 1e-10 1e-10
+Dictionary Key: conv_nozzle_mdot_up
+@value -7.4021212801051e+01 1e-10 1e-10
+#
+# SUmb, multiblock structured flow solver
+#
+# This code solves the 3D RANS, laminar NS or Euler equations
+# on multiblock structured hexahedral grids.
+# This is a parallel executable running on 1 processors.
+# It has been compiled with the following options:
+# - Optimized mode.
+# - Size of standard integers: 4 bytes.
+# - Size of standard floating point types: 8 bytes.
+# - With cgns support
+# - With support for signals.
+#
+#
+# Specified load imbalance tolerance  0.100 acheived
+# Continuing with  0.000 load imbalance for the cells and  0.000 for the faces
+#
+#
+#                      Warning
+# 3 type mismatches occured when reading the coordinates of the blocks
+#
+#
+# Grid level: 1, Total number of cells: 2048
+#
+#
+# Grid level: 2, Total number of cells: 512
+#
+#
+# Found restart file: ../inputFiles/euler_conv_nozzle.cgns
+#
+#
+#                      Warning
+# 5 type mismatches occured when reading the solution of the blocks
+#
