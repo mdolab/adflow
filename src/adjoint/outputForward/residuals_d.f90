@@ -14,7 +14,7 @@ contains
 !   variations   of useful results: *dw *w *(*viscsubface.tau)
 !   with respect to varying inputs: *rev *p *sfacei *sfacej *sfacek
 !                *dw *w *rlv *x *vol *si *sj *sk *radi *radj *radk
-!                gammainf timeref rhoinf winf pinfcorr
+!                timeref rhoinf winf pinfcorr
 !   plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
 !                p:in sfacei:in sfacej:in sfacek:in dw:in w:in
 !                rlv:in x:in qx:in qy:in qz:in ux:in vol:in uy:in

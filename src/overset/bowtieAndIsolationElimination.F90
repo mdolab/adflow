@@ -3,7 +3,7 @@ subroutine bowTieAndIsolationElimination(level, sps)
   use constants
   use blockPointers
   use communication
-  use utils, only : setPointers
+  use utils, only : setPointers, isWallType
   implicit none
 
   ! Input Parameters
@@ -11,7 +11,7 @@ subroutine bowTieAndIsolationElimination(level, sps)
 
   ! Local variables
   integer(kind=intType) :: mm, nn, i, j, k, e, iBeg, iEnd, jBeg, jEnd
-  logical :: side(4), isWallType
+  logical :: side(4)
 
   integer(kind=intType), dimension(:, :), pointer :: ibp, gcp
   integer(kind=intType), dimension(:, :), allocatable :: toFlip, nE, nC

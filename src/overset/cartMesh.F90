@@ -45,8 +45,6 @@ module cartMesh
     real(kind=realType), dimension(3) ::  pt1, pt2, pt3, pt4, newPt, v1, v2
     real(kind=realType) :: areaLocal, area, areaAvg, err1, err2, h
     real(kind=realType) :: coorAvg, scaleSize, length, u, v
-    logical :: isWallType
-
   
     DM cartArray
     AO cartOrdering

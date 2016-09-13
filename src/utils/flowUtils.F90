@@ -86,7 +86,7 @@ contains
        enddo
 
        !        ================================================================
-
+#ifndef USE_TAPENADE
     case (cpTempCurveFits)
 
        ! Cp as function of the temperature is given via curve fits.
@@ -162,7 +162,7 @@ contains
           endif
 
        enddo
-
+#endif
     end select
 
   end subroutine computeGamma
@@ -208,7 +208,7 @@ contains
        ptot = p*((one + rho*kin/(govgm1*p))**govgm1)
 
        !===============================================================
-
+#ifndef USE_TAPENADE
     case (cpTempCurveFits)
 
        ! Cp is a function of the temperature. The formula used for
@@ -481,7 +481,7 @@ contains
        ! And finally, compute the total pressure.
 
        ptot = p*exp(intCport)
-
+#endif
     end select
 
   end subroutine computePtot

@@ -10,7 +10,7 @@ subroutine surfaceDeviation(level, sps)
 
   use constants
   use blockPointers, only :BCdata, x, nBocos, nDom, BCType, il, jl, kl, BCFaceID
-  use utils, only : setPointers, myNorm2
+  use utils, only : setPointers, myNorm2, isWallType
   implicit none
 
   ! Input Parameters
@@ -20,7 +20,6 @@ subroutine surfaceDeviation(level, sps)
   integer(kind=intType) :: i, j, k, ii, jj, kk, nn, iBeg, iEnd, jBeg, jEnd, mm
   real(kind=realType) :: checkDeviation, deviation
   real(kind=realType), dimension(:, :, :), pointer :: xx
-  logical :: isWallType
 
   ! Loop over blocks
   do nn=1, nDom

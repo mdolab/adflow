@@ -1137,7 +1137,7 @@ module utils
           ss  =>  s(:,:,kl,:)
        end select
 
-      if (addGridVelocities) then 
+       if (addGridVelocities) then 
          select case (BCFaceID(nn))
          case (iMin)
             sFace => sFaceI(1,:,:)
@@ -1624,7 +1624,7 @@ module utils
           x(0:ie,0:je,kl,:)  = xx(1:ie+1,1:je+1,:)
           sk(1:ie,1:je,kl,:) = ssi(1:ie,1:je,:)
        end select
-       if (addGridVelocities) then 
+       !if (addGridVelocities) then 
           select case (BCFaceID(nn))
           case (iMin)
              sFaceI(1,1:je,1:ke) = sFace(1:je, 1:ke)
@@ -1639,7 +1639,7 @@ module utils
           case (kMax) 
              sFaceK(1:ie,1:je,kl) = sFace(1:ie, 1:je)
          end select
-      end if
+      !end if
 
     end if
 #endif
@@ -2165,6 +2165,22 @@ module utils
     real(kind=realType) :: myNorm2
     myNorm2 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)
   end function myNorm2
+
+  function isWallType(bType)
+    
+    use constants
+    implicit none
+    integer(kind=intType) :: bType
+    logical :: isWallType
+    
+    isWallType = .False.
+    if (bType == NSWallAdiabatic .or. &
+         bType == NSWallIsoThermal .or. &
+         bType == EulerWall) then 
+       isWallType = .True.
+    end if
+
+  end function isWallType
 
   ! ----------------------------------------------------------------------
   !                                                                      |

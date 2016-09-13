@@ -17,8 +17,8 @@ contains
 !                *sk *(*bcdata.norm) *(*bcdata.rface) *(*bcdata.uslip)
 !                *xx *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3
 !                *rlv0 *rlv1 *rlv2 *rlv3 *ss *ssi *ssj *ssk *ww0
-!                *ww1 *ww2 *ww3 (global)gammainf (global)winf[1:10]
-!                (global)pinfcorr (global)rgas
+!                *ww1 *ww2 *ww3 (global)winf[1:10] (global)pinfcorr
+!                (global)rgas
 !   plus diff mem management of: rev:in p:in sfacei:in sfacej:in
 !                sfacek:in w:in rlv:in x:in d2wall:in si:in sj:in
 !                sk:in bcdata:in *bcdata.norm:in *bcdata.rface:in
@@ -2502,9 +2502,9 @@ contains
 !  differentiation of bcfarfield in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
 !                *rlv1 *ww0 *ww1
-!   with respect to varying inputs: *(*bcdata.norm) gammainf winf
-!                pinfcorr *rev0 *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0
-!                *rlv1 *rlv2 *ww0 *ww1 *ww2
+!   with respect to varying inputs: *(*bcdata.norm) winf pinfcorr
+!                *rev0 *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2
+!                *ww0 *ww1 *ww2
 !   plus diff mem management of: bcdata:in *bcdata.norm:in *bcdata.rface:in
 !                rev0:in rev1:in rev2:in pp0:in pp1:in pp2:in rlv0:in
 !                rlv1:in rlv2:in ww0:in ww1:in ww2:in
@@ -2513,8 +2513,8 @@ contains
 ! it is assumed that the bcpointers are already set *
     use constants
     use blockpointers, only : bcdata, bcdatad
-    use flowvarrefstate, only : eddymodel, viscous, gammainf, &
-&   gammainfd, winf, winfd, pinfcorr, pinfcorrd
+    use flowvarrefstate, only : eddymodel, viscous, gammainf, winf, &
+&   winfd, pinfcorr, pinfcorrd
     use bcpointers_d, only : ww0, ww0d, ww1, ww1d, ww2, ww2d, pp0, pp0d,&
 &   pp1, pp1d, pp2, pp2d, rlv0, rlv0d, rlv1, rlv1d, rlv2, rlv2d, rev0, &
 &   rev0d, rev1, rev1d, rev2, rev2d, gamma2, istart, jstart, isize, &
@@ -2526,7 +2526,7 @@ contains
     integer(kind=inttype) :: nn, i, j, k, l, ii
     real(kind=realtype) :: nnx, nny, nnz
     real(kind=realtype) :: gm1, ovgm1, ac1, ac2
-    real(kind=realtype) :: gm1d, ovgm1d, ac1d, ac2d
+    real(kind=realtype) :: ac1d, ac2d
     real(kind=realtype) :: r0, u0, v0, w0, qn0, vn0, c0, s0
     real(kind=realtype) :: r0d, u0d, v0d, w0d, qn0d, c0d, s0d
     real(kind=realtype) :: re, ue, ve, we, qne, ce
@@ -2542,9 +2542,7 @@ contains
     real(kind=realtype) :: pwx1
     real(kind=realtype) :: pwx1d
 ! some constants needed to compute the riemann invariants.
-    gm1d = gammainfd
     gm1 = gammainf - one
-    ovgm1d = -(one*gm1d/gm1**2)
     ovgm1 = one/gm1
 ! compute the three velocity components, the speed of sound and
 ! the entropy of the free stream.
@@ -2556,8 +2554,7 @@ contains
     v0 = winf(ivy)
     w0d = winfd(ivz)
     w0 = winf(ivz)
-    arg1d = (gammainfd*pinfcorr+gammainf*pinfcorrd)*r0 + gammainf*&
-&     pinfcorr*r0d
+    arg1d = gammainf*(pinfcorrd*r0+pinfcorr*r0d)
     arg1 = gammainf*pinfcorr*r0
     if (arg1 .eq. 0.0_8) then
       c0d = 0.0_8
@@ -2565,17 +2562,11 @@ contains
       c0d = arg1d/(2.0*sqrt(arg1))
     end if
     c0 = sqrt(arg1)
-    if (winf(irho) .gt. 0.0_8) then
-      pwr1d = winf(irho)**gammainf*(log(winf(irho))*gammainfd+gammainf*&
-&       winfd(irho)/winf(irho))
-    else if (winf(irho) .eq. 0.0_8) then
-      if (gammainf .eq. 1.0) then
-        pwr1d = winfd(irho)
-      else
-        pwr1d = 0.0_8
-      end if
-    else if (gammainf .eq. int(gammainf)) then
+    if (winf(irho) .gt. 0.0_8 .or. (winf(irho) .lt. 0.0_8 .and. gammainf&
+&       .eq. int(gammainf))) then
       pwr1d = gammainf*winf(irho)**(gammainf-1)*winfd(irho)
+    else if (winf(irho) .eq. 0.0_8 .and. gammainf .eq. 1.0) then
+      pwr1d = winfd(irho)
     else
       pwr1d = 0.0_8
     end if
@@ -2626,25 +2617,25 @@ contains
 ! (otherwise).
       if (vn0 .gt. -c0) then
 ! outflow or subsonic inflow.
-        ac1d = qned + two*(ovgm1d*ce+ovgm1*ced)
+        ac1d = qned + two*ovgm1*ced
         ac1 = qne + two*ovgm1*ce
       else
 ! supersonic inflow.
-        ac1d = qn0d + two*(ovgm1d*c0+ovgm1*c0d)
+        ac1d = qn0d + two*ovgm1*c0d
         ac1 = qn0 + two*ovgm1*c0
       end if
       if (vn0 .gt. c0) then
 ! supersonic outflow.
-        ac2d = qned - two*(ovgm1d*ce+ovgm1*ced)
+        ac2d = qned - two*ovgm1*ced
         ac2 = qne - two*ovgm1*ce
       else
 ! inflow or subsonic outflow.
-        ac2d = qn0d - two*(ovgm1d*c0+ovgm1*c0d)
+        ac2d = qn0d - two*ovgm1*c0d
         ac2 = qn0 - two*ovgm1*c0
       end if
       qnfd = half*(ac1d+ac2d)
       qnf = half*(ac1+ac2)
-      cfd = fourth*((ac1d-ac2d)*gm1+(ac1-ac2)*gm1d)
+      cfd = fourth*gm1*(ac1d-ac2d)
       cf = fourth*(ac1-ac2)*gm1
       if (vn0 .gt. zero) then
 ! outflow.
@@ -2691,17 +2682,11 @@ contains
       qq = uf*uf + vf*vf + wf*wf
       pwx1d = sfd*cc + sf*ccd
       pwx1 = sf*cc
-      if (pwx1 .gt. 0.0_8) then
-        ww1d(i, j, irho) = pwx1**ovgm1*(log(pwx1)*ovgm1d+ovgm1*pwx1d/&
-&         pwx1)
-      else if (pwx1 .eq. 0.0_8) then
-        if (ovgm1 .eq. 1.0) then
-          ww1d(i, j, irho) = pwx1d
-        else
-          ww1d(i, j, irho) = 0.0_8
-        end if
-      else if (ovgm1 .eq. int(ovgm1)) then
+      if (pwx1 .gt. 0.0_8 .or. (pwx1 .lt. 0.0_8 .and. ovgm1 .eq. int(&
+&         ovgm1))) then
         ww1d(i, j, irho) = ovgm1*pwx1**(ovgm1-1)*pwx1d
+      else if (pwx1 .eq. 0.0_8 .and. ovgm1 .eq. 1.0) then
+        ww1d(i, j, irho) = pwx1d
       else
         ww1d(i, j, irho) = 0.0_8
       end if

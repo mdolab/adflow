@@ -85,7 +85,7 @@ bocos:do nn=1,nbocos
             pm = half*(pp1(i, j)+pp2(i, j))
             vnm = vxm*ssi(i, j, 1) + vym*ssi(i, j, 2) + vzm*ssi(i, j, 3)&
 &             - sf
-            massflowratelocal = rhom*vnm
+            massflowratelocal = rhom*vnm*fact
             massflowrate = massflowrate + massflowratelocal
             call computeptot(rhom, vxm, vym, vzm, pm, ptot)
             call computettot(rhom, vxm, vym, vzm, pm, ttot)
@@ -93,10 +93,6 @@ bocos:do nn=1,nbocos
             mass_ttot = mass_ttot + ttot*massflowratelocal
             mass_ps = mass_ps + pm*massflowratelocal
           end do
-          massflowrate = massflowrate*fact
-          mass_ptot = mass_ptot*fact
-          mass_ttot = mass_ttot*fact
-          mass_ps = mass_ps*fact
         end if
       end if
     end do bocos

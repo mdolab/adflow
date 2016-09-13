@@ -85,7 +85,7 @@ bocos:do nn=1,nbocos
             pm = half*(pp1(i, j)+pp2(i, j))
             vnm = vxm*ssi(i, j, 1) + vym*ssi(i, j, 2) + vzm*ssi(i, j, 3)&
 &             - sf
-            massflowratelocal = rhom*vnm
+            massflowratelocal = rhom*vnm*fact
             massflowrate = massflowrate + massflowratelocal
             call computeptot(rhom, vxm, vym, vzm, pm, ptot)
             call computettot(rhom, vxm, vym, vzm, pm, ttot)
@@ -93,10 +93,6 @@ bocos:do nn=1,nbocos
             mass_ttot = mass_ttot + ttot*massflowratelocal
             mass_ps = mass_ps + pm*massflowratelocal
           end do
-          massflowrate = massflowrate*fact
-          mass_ptot = mass_ptot*fact
-          mass_ttot = mass_ttot*fact
-          mass_ps = mass_ps*fact
         end if
       end if
     end do bocos
@@ -110,8 +106,8 @@ bocos:do nn=1,nbocos
 !   variations   of useful results: *(*bcdata.fv) *(*bcdata.fp)
 !                *(*bcdata.area) localvalues
 !   with respect to varying inputs: *p *w *x *si *sj *sk *(*viscsubface.tau)
-!                veldirfreestream machcoef pointref gammainf pinf
-!                pref *xx *pp1 *pp2 *ssi *ww2
+!                veldirfreestream machcoef pointref pinf pref *xx
+!                *pp1 *pp2 *ssi *ww2
 !   plus diff mem management of: viscsubface:in *viscsubface.tau:in
 !                bcdata:in *bcdata.fv:in *bcdata.fp:in *bcdata.area:in
 !                xx:in-out rev0:out rev1:out rev2:out rev3:out
@@ -405,9 +401,8 @@ bocos:do nn=1,nbocos
             sepsensoravg(3) = sepsensoravg(3) + sensor*zc
             plocald = pp2d(i, j)
             plocal = pp2(i, j)
-            tmpd = -(two*((gammainfd*machcoef+gammainf*machcoefd)*&
-&             machcoef+gammainf*machcoef*machcoefd)/(gammainf*machcoef*&
-&             machcoef)**2)
+            tmpd = -(two*gammainf*(machcoefd*machcoef+machcoef*machcoefd&
+&             )/(gammainf*machcoef*machcoef)**2)
             tmp = two/(gammainf*machcoef*machcoef)
             cpd = tmpd*(plocal-pinf) + tmp*(plocald-pinfd)
             cp = tmp*(plocal-pinf)
