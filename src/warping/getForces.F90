@@ -7,7 +7,7 @@ subroutine getForces(forces, npts, sps)
   use surfaceUtils, only : setFullFamilyList
   use utils, only : setPointers
   use sorting, only : bsearchIntegers
-  use surfaceIntegrations, only : forcesAndMoments
+  use surfaceIntegrations, only : integrateSurfaces
   implicit none
 
   integer(kind=intType), intent(in) :: npts, sps
@@ -26,7 +26,7 @@ subroutine getForces(forces, npts, sps)
   domains: do nn=1,nDom
      call setPointers(nn, 1_intType, sps)
      localValues = zero
-     call forcesAndMoments(localValues)
+     call integrateSurfaces(localValues)
   end do domains
 
   if (forcesAsTractions) then 
