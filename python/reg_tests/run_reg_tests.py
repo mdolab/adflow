@@ -1,7 +1,7 @@
 # =============================================================================
 # Standard Python modules                                           
 # =============================================================================
-import os, sys, argparse
+import os, sys, argparse, glob
 
 # =============================================================================
 # Extension modules
@@ -36,7 +36,9 @@ parser.add_argument("--solve", action='store_true', default=False,
 args = parser.parse_args()
 
 # This is the total number of tests we have:
-nTestMax = 15
+testDir = os.path.join('tests','test*.py')
+testFiles = glob.glob(testDir)
+nTestMax = len(testFiles)
 
 if args.test is None:
     tests = range(1, nTestMax+1)
