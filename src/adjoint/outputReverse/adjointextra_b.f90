@@ -99,8 +99,8 @@ contains
 &   normalvelocities_block, slipvelocitiesfinelevel_block, &
 &   timestep_block, timestep_block_b
     use residuals_b, only : residual_block, residual_block_b
-    use surfaceintegrations_b, only : forcesandmoments, &
-&   forcesandmoments_b
+    use surfaceintegrations_b, only : integratesurfaces, &
+&   integratesurfaces_b
     implicit none
 ! input arguments:
     integer(kind=inttype), intent(in) :: nn, sps
@@ -563,7 +563,7 @@ varloopfine:do l=1,nwf
         end do
       end do
     end do
-    call forcesandmoments(localvalues)
+    call integratesurfaces(localvalues)
 ! convert back to actual forces. note that even though we use
 ! machcoef, lref, and surfaceref here, they are not differented,
 ! since f doesn't actually depend on them. ideally we would just get
@@ -657,7 +657,7 @@ varloopfine:do l=1,nwf
     call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     call popreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
     call popreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
-    call forcesandmoments_b(localvalues, localvaluesd)
+    call integratesurfaces_b(localvalues, localvaluesd)
     do sps2=ntimeintervalsspectral,1,-1
       do l=nstate,nt1,-1
         do k=kl,2,-1
@@ -1014,7 +1014,7 @@ varloopfine:do l=1,nwf
 &   normalvelocities_block, slipvelocitiesfinelevel_block, &
 &   timestep_block
     use residuals_b, only : residual_block
-    use surfaceintegrations_b, only : forcesandmoments
+    use surfaceintegrations_b, only : integratesurfaces
     implicit none
 ! input arguments:
     integer(kind=inttype), intent(in) :: nn, sps
@@ -1265,7 +1265,7 @@ varloopfine:do l=1,nwf
       end do
     end do
     localvalues = zero
-    call forcesandmoments(localvalues)
+    call integratesurfaces(localvalues)
 ! convert back to actual forces. note that even though we use
 ! machcoef, lref, and surfaceref here, they are not differented,
 ! since f doesn't actually depend on them. ideally we would just get
