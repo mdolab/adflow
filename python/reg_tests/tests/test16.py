@@ -39,13 +39,14 @@ options = {
     'nsubiterturb':3,
     'useNKSolver':True,
     'NKSubSpaceSize':60,
-    'L2Convergence':1e-12,
+    'L2Convergence':1e-14,
     'L2ConvergenceCoarse':1e-2,
     'NKSwitchTol':1e-2,
     'nkadpc': False, 
     'vis4':0.006,
     'vis2': 0.0, 
-    'blocksplitting': True
+    'blocksplitting': True, 
+    'solutionPrecision':'double'
 }
 
 ap = AeroProblem(name='conv_nozzle', alpha=0.0,  mach=0.25, T=500, P=100000,
