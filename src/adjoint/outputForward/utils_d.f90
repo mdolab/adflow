@@ -1391,8 +1391,8 @@ contains
 !  differentiation of computetsderivatives in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: dcdalphadot coef0 dcdalpha
 !   with respect to varying inputs: machgrid lengthref machcoef
-!                dragdirection liftdirection gammainf pinf rhoinfdim
-!                pinfdim moment force
+!                dragdirection liftdirection pinf rhoinfdim pinfdim
+!                moment force
   subroutine computetsderivatives_d(force, forced, moment, momentd, &
 &   coef0, coef0d, dcdalpha, dcdalphad, dcdalphadot, dcdalphadotd, dcdq&
 &   , dcdqdot)
@@ -1456,9 +1456,9 @@ contains
     intrinsic sqrt
     real(kind=realtype) :: arg1
     real(kind=realtype) :: arg1d
-    factd = -(two*surfaceref*lref**2*((gammainfd*pinf+gammainf*pinfd)*&
-&     machcoef**2+gammainf*pinf*2*machcoef*machcoefd)/(gammainf*pinf*&
-&     machcoef**2*surfaceref*lref**2)**2)
+    factd = -(two*gammainf*surfaceref*lref**2*(pinfd*machcoef**2+pinf*2*&
+&     machcoef*machcoefd)/(gammainf*pinf*machcoef**2*surfaceref*lref**2)&
+&     **2)
     fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2)
     factmomentd = (factd*lengthref*lref-fact*lref*lengthrefd)/(lengthref&
 &     *lref)**2
@@ -1593,8 +1593,8 @@ contains
 &                                      dcdalphadot(i), dcdalphadotd(i), &
 &                                      coef0dot(i), coef0dotd(i))
       end do
-      arg1d = ((gammainfd*pinfdim+gammainf*pinfdimd)*rhoinfdim-gammainf*&
-&       pinfdim*rhoinfdimd)/rhoinfdim**2
+      arg1d = (gammainf*pinfdimd*rhoinfdim-gammainf*pinfdim*rhoinfdimd)/&
+&       rhoinfdim**2
       arg1 = gammainf*pinfdim/rhoinfdim
       if (arg1 .eq. 0.0_8) then
         ad = 0.0_8
@@ -2247,4 +2247,13 @@ contains
     arg1 = x(1)**2 + x(2)**2 + x(3)**2
     mynorm2 = sqrt(arg1)
   end function mynorm2
+  function iswalltype(btype)
+    use constants
+    implicit none
+    integer(kind=inttype) :: btype
+    logical :: iswalltype
+    iswalltype = .false.
+    if ((btype .eq. nswalladiabatic .or. btype .eq. nswallisothermal) &
+&       .or. btype .eq. eulerwall) iswalltype = .true.
+  end function iswalltype
 end module utils_d

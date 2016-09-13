@@ -14,12 +14,12 @@ contains
 !   gradient     of useful results: *rev *p *w *rlv *x *si *sj
 !                *sk *xx *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2
 !                *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2
-!                *ww3 (global)gammainf (global)winf[1:10] (global)pinfcorr
+!                *ww3 (global)winf[1:10] (global)pinfcorr
 !   with respect to varying inputs: *rev *p *w *rlv *x *si *sj
 !                *sk *(*bcdata.norm) *xx *rev0 *rev1 *rev2 *rev3
 !                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi
-!                *ww0 *ww1 *ww2 *ww3 (global)gammainf (global)winf[1:10]
-!                (global)pinfcorr (global)rgas
+!                *ww0 *ww1 *ww2 *ww3 (global)winf[1:10] (global)pinfcorr
+!                (global)rgas
 !   plus diff mem management of: rev:in p:in w:in rlv:in x:in si:in
 !                sj:in sk:in bcdata:in *bcdata.norm:in xx:in rev0:in
 !                rev1:in rev2:in rev3:in pp0:in pp1:in pp2:in pp3:in
@@ -3572,12 +3572,12 @@ contains
     if (secondhalo) call extrapolate2ndhalo(correctfork)
   end subroutine bceulerwall
 !  differentiation of bcfarfield in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *(*bcdata.norm) gammainf winf
-!                pinfcorr *rev0 *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0
-!                *rlv1 *rlv2 *ww0 *ww1 *ww2
-!   with respect to varying inputs: *(*bcdata.norm) gammainf winf
-!                pinfcorr *rev0 *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0
-!                *rlv1 *rlv2 *ww0 *ww1 *ww2
+!   gradient     of useful results: *(*bcdata.norm) winf pinfcorr
+!                *rev0 *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2
+!                *ww0 *ww1 *ww2
+!   with respect to varying inputs: *(*bcdata.norm) winf pinfcorr
+!                *rev0 *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2
+!                *ww0 *ww1 *ww2
 !   plus diff mem management of: bcdata:in *bcdata.norm:in rev0:in
 !                rev1:in rev2:in pp0:in pp1:in pp2:in rlv0:in rlv1:in
 !                rlv2:in ww0:in ww1:in ww2:in
@@ -3586,8 +3586,8 @@ contains
 ! it is assumed that the bcpointers are already set *
     use constants
     use blockpointers, only : bcdata, bcdatad
-    use flowvarrefstate, only : eddymodel, viscous, gammainf, &
-&   gammainfd, winf, winfd, pinfcorr, pinfcorrd
+    use flowvarrefstate, only : eddymodel, viscous, gammainf, winf, &
+&   winfd, pinfcorr, pinfcorrd
     use bcpointers_b, only : ww0, ww0d, ww1, ww1d, ww2, ww2d, pp0, pp0d,&
 &   pp1, pp1d, pp2, pp2d, rlv0, rlv0d, rlv1, rlv1d, rlv2, rlv2d, rev0, &
 &   rev0d, rev1, rev1d, rev2, rev2d, gamma2, istart, jstart, isize, &
@@ -3599,7 +3599,7 @@ contains
     integer(kind=inttype) :: nn, i, j, k, l, ii
     real(kind=realtype) :: nnx, nny, nnz
     real(kind=realtype) :: gm1, ovgm1, ac1, ac2
-    real(kind=realtype) :: gm1d, ovgm1d, ac1d, ac2d
+    real(kind=realtype) :: ac1d, ac2d
     real(kind=realtype) :: r0, u0, v0, w0, qn0, vn0, c0, s0
     real(kind=realtype) :: r0d, u0d, v0d, w0d, qn0d, c0d, s0d
     real(kind=realtype) :: re, ue, ve, we, qne, ce
@@ -3609,9 +3609,6 @@ contains
     intrinsic sqrt
     intrinsic mod
     integer :: branch
-    real(kind=realtype) :: temp1
-    real(kind=realtype) :: temp0
-    real(kind=realtype) :: tempd10
     real(kind=realtype) :: tempd9
     real(kind=realtype) :: tempd
     real(kind=realtype) :: tempd8
@@ -3714,12 +3711,10 @@ contains
     call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     call computeetot_b(ww1, ww1d, pp1, pp1d, correctfork)
     v0d = 0.0_8
-    gm1d = 0.0_8
     s0d = 0.0_8
     c0d = 0.0_8
     w0d = 0.0_8
     u0d = 0.0_8
-    ovgm1d = 0.0_8
     call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     do ii=0,isize*jsize-1
       i = mod(ii, isize) + istart
@@ -3810,35 +3805,31 @@ contains
       ww1d(i, j, ivy) = 0.0_8
       ufd = ww1d(i, j, ivx)
       ww1d(i, j, ivx) = 0.0_8
-      temp1 = sf*cc
-      if (temp1 .le. 0.0_8 .and. (ovgm1 .eq. 0.0_8 .or. ovgm1 .ne. int(&
+      if (sf*cc .le. 0.0_8 .and. (ovgm1 .eq. 0.0_8 .or. ovgm1 .ne. int(&
 &         ovgm1))) then
-        tempd10 = 0.0
+        tempd9 = 0.0
       else
-        tempd10 = ovgm1*temp1**(ovgm1-1)*ww1d(i, j, irho)
+        tempd9 = ovgm1*(sf*cc)**(ovgm1-1)*ww1d(i, j, irho)
       end if
-      ccd = sf*tempd10 + ww1(i, j, irho)*pp1d(i, j)
+      ccd = sf*tempd9 + ww1(i, j, irho)*pp1d(i, j)
       pp1d(i, j) = 0.0_8
-      sfd = cc*tempd10
-      if (.not.temp1 .le. 0.0_8) ovgm1d = ovgm1d + temp1**ovgm1*log(&
-&         temp1)*ww1d(i, j, irho)
+      sfd = cc*tempd9
       ww1d(i, j, irho) = 0.0_8
       cfd = 2*cf*ccd/gamma2(i, j)
       call popcontrol1b(branch)
       if (branch .eq. 0) then
-        tempd6 = bcdata(nn)%norm(i, j, 1)*ufd
-        tempd5 = bcdata(nn)%norm(i, j, 2)*vfd
-        tempd3 = sfd/pp2(i, j)
-        temp0 = gamma2(i, j)
-        if (.not.(ww2(i, j, irho) .le. 0.0_8 .and. (temp0 .eq. 0.0_8 &
-&           .or. temp0 .ne. int(temp0)))) ww2d(i, j, irho) = ww2d(i, j, &
-&           irho) + temp0*ww2(i, j, irho)**(temp0-1)*tempd3
-        pp2d(i, j) = pp2d(i, j) - ww2(i, j, irho)**temp0*tempd3/pp2(i, j&
-&         )
-        tempd4 = bcdata(nn)%norm(i, j, 3)*wfd
+        tempd5 = bcdata(nn)%norm(i, j, 1)*ufd
+        tempd4 = bcdata(nn)%norm(i, j, 2)*vfd
+        tempd2 = sfd/pp2(i, j)
+        temp = gamma2(i, j)
+        if (.not.(ww2(i, j, irho) .le. 0.0_8 .and. (temp .eq. 0.0_8 .or.&
+&           temp .ne. int(temp)))) ww2d(i, j, irho) = ww2d(i, j, irho) +&
+&           temp*ww2(i, j, irho)**(temp-1)*tempd2
+        pp2d(i, j) = pp2d(i, j) - ww2(i, j, irho)**temp*tempd2/pp2(i, j)
+        tempd3 = bcdata(nn)%norm(i, j, 3)*wfd
         wed = wfd
-        qnfd = tempd5 + tempd6 + tempd4
-        qned = -tempd5 - tempd6 - tempd4
+        qnfd = tempd4 + tempd5 + tempd3
+        qned = -tempd4 - tempd5 - tempd3
         bcdatad(nn)%norm(i, j, 3) = bcdatad(nn)%norm(i, j, 3) + (qnf-qne&
 &         )*wfd
         ved = vfd
@@ -3849,13 +3840,13 @@ contains
 &         )*ufd
         qn0d = 0.0_8
       else
-        tempd9 = bcdata(nn)%norm(i, j, 1)*ufd
-        tempd8 = bcdata(nn)%norm(i, j, 2)*vfd
+        tempd8 = bcdata(nn)%norm(i, j, 1)*ufd
+        tempd7 = bcdata(nn)%norm(i, j, 2)*vfd
         s0d = s0d + sfd
-        tempd7 = bcdata(nn)%norm(i, j, 3)*wfd
+        tempd6 = bcdata(nn)%norm(i, j, 3)*wfd
         w0d = w0d + wfd
-        qnfd = tempd8 + tempd9 + tempd7
-        qn0d = -tempd8 - tempd9 - tempd7
+        qnfd = tempd7 + tempd8 + tempd6
+        qn0d = -tempd7 - tempd8 - tempd6
         bcdatad(nn)%norm(i, j, 3) = bcdatad(nn)%norm(i, j, 3) + (qnf-qn0&
 &         )*wfd
         v0d = v0d + vfd
@@ -3869,39 +3860,34 @@ contains
         ved = 0.0_8
         wed = 0.0_8
       end if
-      tempd2 = fourth*cfd
-      ac1d = half*qnfd + gm1*tempd2
-      ac2d = half*qnfd - gm1*tempd2
-      gm1d = gm1d + (ac1-ac2)*tempd2
+      tempd1 = fourth*gm1*cfd
+      ac1d = half*qnfd + tempd1
+      ac2d = half*qnfd - tempd1
       call popcontrol1b(branch)
       if (branch .eq. 0) then
         qned = qned + ac2d
-        ovgm1d = ovgm1d - two*ce*ac2d
         ced = -(two*ovgm1*ac2d)
       else
         qn0d = qn0d + ac2d
-        ovgm1d = ovgm1d - two*c0*ac2d
         c0d = c0d - two*ovgm1*ac2d
         ced = 0.0_8
       end if
       call popcontrol1b(branch)
       if (branch .eq. 0) then
         qned = qned + ac1d
-        ovgm1d = ovgm1d + two*ce*ac1d
         ced = ced + two*ovgm1*ac1d
       else
         qn0d = qn0d + ac1d
-        ovgm1d = ovgm1d + two*c0*ac1d
         c0d = c0d + two*ovgm1*ac1d
       end if
       if (gamma2(i, j)*(pp2(i, j)*re) .eq. 0.0_8) then
-        tempd1 = 0.0
+        tempd0 = 0.0
       else
-        tempd1 = gamma2(i, j)*ced/(2.0*sqrt(gamma2(i, j)*(pp2(i, j)*re))&
+        tempd0 = gamma2(i, j)*ced/(2.0*sqrt(gamma2(i, j)*(pp2(i, j)*re))&
 &         )
       end if
-      pp2d(i, j) = pp2d(i, j) + re*tempd1
-      red = pp2(i, j)*tempd1
+      pp2d(i, j) = pp2d(i, j) + re*tempd0
+      red = pp2(i, j)*tempd0
       ued = ued + bcdata(nn)%norm(i, j, 1)*qned
       bcdatad(nn)%norm(i, j, 1) = bcdatad(nn)%norm(i, j, 1) + ue*qned
       ved = ved + bcdata(nn)%norm(i, j, 2)*qned
@@ -3919,25 +3905,17 @@ contains
       w0d = w0d + bcdata(nn)%norm(i, j, 3)*qn0d
       bcdatad(nn)%norm(i, j, 3) = bcdatad(nn)%norm(i, j, 3) + w0*qn0d
     end do
-    gm1d = gm1d - one*ovgm1d/gm1**2
-    if (gammainf*pinfcorr*r0 .eq. 0.0_8) then
-      tempd0 = 0.0
+    if (gammainf*(pinfcorr*r0) .eq. 0.0_8) then
+      tempd = 0.0
     else
-      tempd0 = c0d/(2.0*sqrt(gammainf*pinfcorr*r0))
+      tempd = gammainf*c0d/(2.0*sqrt(gammainf*(pinfcorr*r0)))
     end if
-    tempd = s0d/pinfcorr
-    temp = winf(irho)**gammainf
     if (.not.(winf(irho) .le. 0.0_8 .and. (gammainf .eq. 0.0_8 .or. &
 &       gammainf .ne. int(gammainf)))) winfd(irho) = winfd(irho) + &
-&       gammainf*winf(irho)**(gammainf-1)*tempd
-    if (winf(irho) .le. 0.0_8) then
-      gammainfd = gammainfd + r0*pinfcorr*tempd0 + gm1d
-    else
-      gammainfd = gammainfd + r0*pinfcorr*tempd0 + gm1d + temp*log(winf(&
-&       irho))*tempd
-    end if
-    pinfcorrd = pinfcorrd + r0*gammainf*tempd0 - temp*tempd/pinfcorr
-    r0d = gammainf*pinfcorr*tempd0
+&       gammainf*winf(irho)**(gammainf-1)*s0d/pinfcorr
+    pinfcorrd = pinfcorrd + r0*tempd - winf(irho)**gammainf*s0d/pinfcorr&
+&     **2
+    r0d = pinfcorr*tempd
     winfd(ivz) = winfd(ivz) + w0d
     winfd(ivy) = winfd(ivy) + v0d
     winfd(ivx) = winfd(ivx) + u0d

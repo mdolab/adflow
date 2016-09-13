@@ -8,6 +8,7 @@ subroutine initializeFringes(nn, level, sps)
   use overset
   use stencils
   use inputOverset
+  use utils, only : isWallType
   implicit none
   
   ! Input Params
@@ -16,7 +17,7 @@ subroutine initializeFringes(nn, level, sps)
   ! Working Params
   integer(kind=intTYpe) :: i, j, k, mm, iDim, ii, jj, kk, iii, jjj
   integer(kind=intTYpe) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
-  logical :: wallsPresent, isWallType
+  logical :: wallsPresent
   integer(kind=intType) :: i_stencil, clusterID
   integer(kind=intType), dimension(:, :, :), allocatable :: tmp
   real(kind=realType) :: frac, dist, xp(3)

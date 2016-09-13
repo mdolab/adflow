@@ -792,6 +792,7 @@ contains
 &   jstart, jend, isize, jsize, sface
     use inputphysics, only : cpmodel, equations
     implicit none
+!end if
 ! subroutine arguments.
     integer(kind=inttype), intent(in) :: nn
     logical, intent(in) :: spatialpointers
@@ -952,22 +953,21 @@ contains
         x(0:ie, 0:je, kl, :) = xx(1:ie+1, 1:je+1, :)
         sk(1:ie, 1:je, kl, :) = ssi(1:ie, 1:je, :)
       end select
-      if (addgridvelocities) then
-        select case  (bcfaceid(nn)) 
-        case (imin) 
-          sfacei(1, 1:je, 1:ke) = sface(1:je, 1:ke)
-        case (imax) 
-          sfacei(il, 1:je, 1:ke) = sface(1:je, 1:ke)
-        case (jmin) 
-          sfacej(1:ie, 1, 1:ke) = sface(1:ie, 1:ke)
-        case (jmax) 
-          sfacej(1:ie, jl, 1:ke) = sface(1:ie, 1:ke)
-        case (kmin) 
-          sfacek(1:ie, 1:je, 1) = sface(1:ie, 1:je)
-        case (kmax) 
-          sfacek(1:ie, 1:je, kl) = sface(1:ie, 1:je)
-        end select
-      end if
+!if (addgridvelocities) then 
+      select case  (bcfaceid(nn)) 
+      case (imin) 
+        sfacei(1, 1:je, 1:ke) = sface(1:je, 1:ke)
+      case (imax) 
+        sfacei(il, 1:je, 1:ke) = sface(1:je, 1:ke)
+      case (jmin) 
+        sfacej(1:ie, 1, 1:ke) = sface(1:ie, 1:ke)
+      case (jmax) 
+        sfacej(1:ie, jl, 1:ke) = sface(1:ie, 1:ke)
+      case (kmin) 
+        sfacek(1:ie, 1:je, 1) = sface(1:ie, 1:je)
+      case (kmax) 
+        sfacek(1:ie, 1:je, kl) = sface(1:ie, 1:je)
+      end select
     end if
   end subroutine resetbcpointers
   subroutine computerootbendingmoment(cf, cm, bendingmoment)
@@ -1585,4 +1585,13 @@ contains
     intrinsic sqrt
     mynorm2 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)
   end function mynorm2
+  function iswalltype(btype)
+    use constants
+    implicit none
+    integer(kind=inttype) :: btype
+    logical :: iswalltype
+    iswalltype = .false.
+    if ((btype .eq. nswalladiabatic .or. btype .eq. nswallisothermal) &
+&       .or. btype .eq. eulerwall) iswalltype = .true.
+  end function iswalltype
 end module utils_fast_b

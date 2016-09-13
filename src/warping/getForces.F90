@@ -253,7 +253,7 @@ subroutine computeNodalTractions(sps)
   use constants
   use blockPointers, only : BCData, nDom, nBocos, BCType
   use surfaceFamilies, only : zeroCellVal, zeroNodeVal, fullExchange
-  use utils, only : setPointers, EChk
+  use utils, only : setPointers, EChk, isWallType
   implicit none
 
   integer(kind=intType), intent(in) ::  sps
@@ -261,7 +261,6 @@ subroutine computeNodalTractions(sps)
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ind(4), ni, nj
   real(kind=realType) :: qf, qa
   real(kind=realType), dimension(:), pointer :: localPtr
-  logical ::isWallType
   ! Set the weighting factors. In this case, area
 
   ii = 0

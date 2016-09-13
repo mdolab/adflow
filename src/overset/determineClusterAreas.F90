@@ -11,7 +11,7 @@ subroutine determineClusterAreas
   use overset, onlY : clusterAreas, nClusters, clusters, cumDomProc
   use surfaceFamilies, onlY : totalWallFamilies, wallFamilies
   use surfaceUtils, only : getSurfaceSize, getSurfacePoints, setFamilyInfo
-  use utils, only : setPointers, EChk
+  use utils, only : setPointers, EChk, isWallType
   implicit none
 
   ! Working
@@ -22,8 +22,6 @@ subroutine determineClusterAreas
   integer(kind=intType), dimension(:), allocatable :: localCount, globalCount
   real(kind=realType), dimension(:, :), allocatable :: pts
   real(kind=realType) :: fact , v1(3), v2(3), sss(3), da
-
-  logical :: isWallType
 
   if (allocated(clusterAreas)) then 
      ! We only ever do this once!

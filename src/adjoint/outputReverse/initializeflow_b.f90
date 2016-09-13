@@ -13,9 +13,9 @@ module initializeflow_b
 
 contains
 !  differentiation of referencestate in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: veldirfreestream machcoef gammainf
-!                pinf timeref rhoinf muref rhoinfdim tref winf
-!                pinfcorr rgas pinfdim pref
+!   gradient     of useful results: veldirfreestream machcoef pinf
+!                timeref rhoinf muref rhoinfdim tref winf pinfcorr
+!                rgas pinfdim pref
 !   with respect to varying inputs: mach veldirfreestream machcoef
 !                tinfdim rhoinfdim pinfdim
   subroutine referencestate_b()
@@ -47,9 +47,8 @@ contains
 &   rhoinfdim, rhoinfdimd, muinfdim, muinfdimd, pref, prefd, rhoref, &
 &   rhorefd, tref, trefd, muref, murefd, timeref, timerefd, pinf, pinfd,&
 &   pinfcorr, pinfcorrd, rhoinf, rhoinfd, uinf, uinfd, rgas, rgasd, &
-&   muinf, muinfd, gammainf, gammainfd, winf, winfd, nw, nwf, kpresent, &
-&   winf, winfd
-    use flowutils_b, only : computegamma, computegamma_b, etot, etot_b
+&   muinf, muinfd, gammainf, winf, winfd, nw, nwf, kpresent, winf, winfd
+    use flowutils_b, only : computegamma, etot, etot_b
     use turbutils_b, only : sanuknowneddyratio, sanuknowneddyratio_b
     implicit none
     integer(kind=inttype) :: sps, nn, mm, ierr
@@ -57,14 +56,13 @@ contains
     real(kind=realtype) :: nuinf, ktmp, uinf2
     real(kind=realtype) :: nuinfd, ktmpd, uinf2d
     real(kind=realtype) :: vinf, zinf, tmp1(1), tmp2(1)
-    real(kind=realtype) :: vinfd, zinfd, tmp1d(1), tmp2d(1)
+    real(kind=realtype) :: vinfd, zinfd
     intrinsic sqrt
     real(kind=realtype) :: tmp
     real(kind=realtype) :: tmp0
     real(kind=realtype) :: tmp3
     real(kind=realtype) :: tmp4
     integer :: branch
-    real(kind=realtype) :: temp1
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tmpd
     real(kind=realtype) :: tempd
@@ -106,7 +104,6 @@ contains
     rhoinf = rhoinfdim/rhoref
     uinf = mach*sqrt(gammainf*pinf/rhoinf)
     muinf = muinfdim/muref
-    tmp1(1) = tinfdim
     call computegamma(tmp1, tmp2, 1)
     call pushreal8(gammainf)
     gammainf = tmp2(1)
@@ -262,15 +259,8 @@ contains
     end if
     muinfd = nuinfd/rhoinf
     rhoinfd = rhoinfd - muinf*nuinfd/rhoinf**2
- 100 muinfdimd = muinfd/muref
-    tempd2 = rgasdim*rgasd/pref
-    trefd = trefd + rhoref*tempd2
-    tempd1 = musuthdim*(tsuthdim+ssuthdim)*muinfdimd/(ssuthdim+tinfdim)
-    tempd = gammainf*pinf*uinf2d/rhoinf
-    temp1 = machcoef**2/rhoinf
-    machcoefd = machcoefd + 2*machcoef*tempd
-    gammainfd = gammainfd + temp1*pinf*uinf2d
-    pinfd = pinfd + temp1*gammainf*uinf2d
+ 100 tempd = machcoef**2*gammainf*uinf2d/rhoinf
+    machcoefd = machcoefd + pinf*gammainf*2*machcoef*uinf2d/rhoinf
     uinfd = uinfd + veldirfreestream(3)*winfd(ivz)
     veldirfreestreamd(3) = veldirfreestreamd(3) + uinf*winfd(ivz)
     winfd(ivz) = 0.0_8
@@ -280,14 +270,11 @@ contains
     uinfd = uinfd + veldirfreestream(1)*winfd(ivx)
     veldirfreestreamd(1) = veldirfreestreamd(1) + uinf*winfd(ivx)
     winfd(ivx) = 0.0_8
-    tmp2d = 0.0_8
     call popreal8(gammainf)
-    tmp2d(1) = tmp2d(1) + gammainfd
-    call computegamma_b(tmp1, tmp1d, tmp2, tmp2d, 1)
-    tinfdimd = trefd + (1.5_realtype*(tinfdim/tsuthdim)**0.5/tsuthdim-(&
-&     tinfdim/tsuthdim)**1.5_realtype/(ssuthdim+tinfdim))*tempd1 + tmp1d&
-&     (1)
+    muinfdimd = muinfd/muref
     murefd = murefd - muinfdim*muinfd/muref**2
+    tempd1 = rgasdim*rgasd/pref
+    trefd = trefd + rhoref*tempd1
     temp0 = gammainf*pinf/rhoinf
     temp = sqrt(temp0)
     if (temp0 .eq. 0.0_8) then
@@ -295,25 +282,29 @@ contains
     else
       tempd0 = gammainf*mach*uinfd/(2.0*temp*rhoinf)
     end if
-    rhoinfd = rhoinfd + winfd(irho) - pinf*tempd0/rhoinf - temp1*tempd
+    pinfd = pinfd + tempd0 + tempd
+    rhoinfd = rhoinfd + winfd(irho) - pinf*tempd0/rhoinf - pinf*tempd/&
+&     rhoinf
     machd = temp*uinfd
-    pinfd = pinfd + tempd0
     if (rhoref/pref .eq. 0.0_8) then
-      tempd4 = 0.0
-    else
-      tempd4 = timerefd/(2.0*sqrt(rhoref/pref)*pref)
-    end if
-    if (pref*rhoref .eq. 0.0_8) then
       tempd3 = 0.0
     else
-      tempd3 = murefd/(2.0*sqrt(pref*rhoref))
+      tempd3 = timerefd/(2.0*sqrt(rhoref/pref)*pref)
     end if
-    rhorefd = pref*tempd3 - rhoinfdim*rhoinfd/rhoref**2 + tempd4 + tref*&
-&     tempd2
-    prefd = prefd + rhoref*tempd3 - pinfdim*pinfd/pref**2 - rhoref*&
-&     tempd4/pref - rhoref*tref*tempd2/pref
+    if (pref*rhoref .eq. 0.0_8) then
+      tempd2 = 0.0
+    else
+      tempd2 = murefd/(2.0*sqrt(pref*rhoref))
+    end if
+    rhorefd = pref*tempd2 - rhoinfdim*rhoinfd/rhoref**2 + tempd3 + tref*&
+&     tempd1
+    prefd = prefd + rhoref*tempd2 - pinfdim*pinfd/pref**2 - rhoref*&
+&     tempd3/pref - rhoref*tref*tempd1/pref
     rhoinfdimd = rhoinfdimd + rhorefd + rhoinfd/rhoref
     pinfdimd = pinfdimd + prefd + pinfd/pref
+    tempd4 = musuthdim*(tsuthdim+ssuthdim)*muinfdimd/(ssuthdim+tinfdim)
+    tinfdimd = (1.5_realtype*(tinfdim/tsuthdim)**0.5/tsuthdim-(tinfdim/&
+&     tsuthdim)**1.5_realtype/(ssuthdim+tinfdim))*tempd4 + trefd
   end subroutine referencestate_b
   subroutine referencestate()
 !

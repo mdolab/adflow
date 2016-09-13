@@ -25,6 +25,7 @@ subroutine flagNearWallCells(level, sps)
   use adtAPI
   use cgnsGrid
   use communication
+  use utils
   implicit none 
 
   ! Input Params
@@ -34,7 +35,7 @@ subroutine flagNearWallCells(level, sps)
   integer(kind=intType) :: i, j, k, nn, mm, ierr, nFlaggedLocal
   integer(kind=intType) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
   integer(kind=intType) :: loopIter, nAtBoundaryLocal, nAtBoundary
-  logical :: isWallType, tostop
+  logical :: tostop
   type(Xplane), dimension(:), allocatable :: planes
   real(Kind=realType), dimension(:, :, :, :), pointer :: xx, xSeed
 

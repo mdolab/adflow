@@ -6,6 +6,7 @@ subroutine initializeOWall(oWall, dualMesh, cluster)
   use blockPointers
   use adtBuild, only : buildSerialQuad
   use kdtree2_module
+  use utils
   implicit none 
 
   ! Input Params
@@ -16,7 +17,6 @@ subroutine initializeOWall(oWall, dualMesh, cluster)
   ! Working paramters
   integer(kind=intType) :: i, j, k, n, ii, jj, jjj, mm, ni, nj, nodeCount
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, nNodes, maxCells, nCells, iNode
-  logical :: isWallType
 
   ! Set all the sizes for this block.
   oWall%il = il

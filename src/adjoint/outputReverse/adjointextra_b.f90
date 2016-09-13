@@ -30,15 +30,15 @@ contains
 !                *radk:(loc) *xsurf:out mach:out alpha:out veldirfreestream:(loc)
 !                machgrid:out lengthref:out beta:out machcoef:out
 !                dragdirection:(loc) liftdirection:(loc) pointref:out
-!                gammainf:(loc) tinfdim:out pinf:(loc) timeref:(loc)
-!                rhoinf:(loc) muref:(loc) rhoinfdim:out tref:(loc)
-!                winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
-!                rgas:(loc) muinfdim:(loc) pinfdim:out pref:(loc)
-!                rhoref:(loc) *xx:in-out *rev0:in-out *rev1:in-out
-!                *rev2:in-out *rev3:in-out *pp0:in-out *pp1:in-out
-!                *pp2:in-out *pp3:in-out *rlv0:in-out *rlv1:in-out
-!                *rlv2:in-out *rlv3:in-out *ssi:in-out *ww0:in-out
-!                *ww1:in-out *ww2:in-out *ww3:in-out funcvalues:in-zero
+!                tinfdim:out pinf:(loc) timeref:(loc) rhoinf:(loc)
+!                muref:(loc) rhoinfdim:out tref:(loc) winf:(loc)
+!                muinf:(loc) uinf:(loc) pinfcorr:(loc) rgas:(loc)
+!                muinfdim:(loc) pinfdim:out pref:(loc) rhoref:(loc)
+!                *xx:in-out *rev0:in-out *rev1:in-out *rev2:in-out
+!                *rev3:in-out *pp0:in-out *pp1:in-out *pp2:in-out
+!                *pp3:in-out *rlv0:in-out *rlv1:in-out *rlv2:in-out
+!                *rlv3:in-out *ssi:in-out *ww0:in-out *ww1:in-out
+!                *ww2:in-out *ww3:in-out funcvalues:in-zero
 !   plus diff mem management of: flowdoms.x:in flowdoms.vol:in
 !                flowdoms.w:in flowdoms.dw:in rev:in aa:in bvtj1:in
 !                bvtj2:in wx:in wy:in wz:in p:in rlv:in qx:in qy:in
@@ -1309,9 +1309,9 @@ varloopfine:do l=1,nwf
 !  differentiation of getcostfunction in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: funcvalues
 !   with respect to varying inputs: machgrid lengthref machcoef
-!                dragdirection liftdirection pointref gammainf
-!                pinf rhoinfdim pinfdim pref moment sepsensoravg
-!                force cavitation sepsensor
+!                dragdirection liftdirection pointref pinf rhoinfdim
+!                pinfdim pref moment sepsensoravg force cavitation
+!                sepsensor
   subroutine getcostfunction_b(force, forced, moment, momentd, sepsensor&
 &   , sepsensord, sepsensoravg, sepsensoravgd, cavitation, cavitationd)
 ! compute the value of the actual objective function based on the
@@ -1366,7 +1366,6 @@ varloopfine:do l=1,nwf
     real(kind=realtype) :: tempd
     real(kind=realtype) :: tmpd8
     real(kind=realtype) :: tmpd7
-    real(kind=realtype) :: tempd1
     real(kind=realtype) :: tmpd6
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: tmpd5
@@ -1602,7 +1601,6 @@ varloopfine:do l=1,nwf
     else
       machgridd = 0.0_8
       machcoefd = 0.0_8
-      gammainfd = 0.0_8
       pinfd = 0.0_8
       rhoinfdimd = 0.0_8
       pinfdimd = 0.0_8
@@ -1610,13 +1608,11 @@ varloopfine:do l=1,nwf
     tempd = factmomentd/(lref*lengthref)
     factd = factd + tempd
     lengthrefd = lengthrefd - fact*tempd/lengthref
-    temp0 = surfaceref*lref**2
-    temp = temp0*machcoef**2*gammainf*pref
+    temp0 = gammainf*surfaceref*lref**2
+    temp = temp0*machcoef**2*pref
     tempd0 = -(two*temp0*factd/temp**2)
-    tempd1 = machcoef**2*tempd0
-    machcoefd = machcoefd + gammainf*pref*2*machcoef*tempd0
-    gammainfd = gammainfd + pref*tempd1
-    prefd = gammainf*tempd1
+    machcoefd = machcoefd + pref*2*machcoef*tempd0
+    prefd = machcoef**2*tempd0
   end subroutine getcostfunction_b
   subroutine getcostfunction(force, moment, sepsensor, sepsensoravg, &
 &   cavitation)

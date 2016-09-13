@@ -48,106 +48,6 @@ contains
 &              'variable cp formulation not implemented yet')
     end select
   end subroutine computettot
-!  differentiation of computegamma in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: gamma
-!   with respect to varying inputs: t
-  subroutine computegamma_d(t, td, gamma, gammad, mm)
-!
-!       computegamma computes the corresponding values of gamma for    
-!       the given dimensional temperatures.                            
-!
-    use constants
-    use cpcurvefits
-    use inputphysics, only : cpmodel, gammaconstant
-    implicit none
-    integer(kind=inttype), intent(in) :: mm
-!
-!      subroutine arguments.
-!
-    real(kind=realtype), dimension(mm), intent(in) :: t
-    real(kind=realtype), dimension(mm), intent(in) :: td
-    real(kind=realtype), dimension(mm), intent(out) :: gamma
-    real(kind=realtype), dimension(mm), intent(out) :: gammad
-!
-!      local variables.
-!
-    integer(kind=inttype) :: i, ii, nn, start
-    real(kind=realtype) :: cp, t2
-    real(kind=realtype) :: cpd, t2d
-! determine the cp model used in the computation.
-    select case  (cpmodel) 
-    case (cpconstant) 
-! constant cp and thus constant gamma. set the values.
-      do i=1,mm
-        gamma(i) = gammaconstant
-      end do
-      gammad = 0.0_8
-    case (cptempcurvefits) 
-      gammad = 0.0_8
-!        ================================================================
-! cp as function of the temperature is given via curve fits.
-      do i=1,mm
-! determine the case we are having here.
-        if (t(i) .le. cptrange(0)) then
-! temperature is less than the smallest temperature
-! in the curve fits. use cv0 to compute gamma.
-          gammad(i) = 0.0_8
-          gamma(i) = (cv0+one)/cv0
-        else if (t(i) .ge. cptrange(cpnparts)) then
-! temperature is larger than the largest temperature
-! in the curve fits. use cvn to compute gamma.
-          gammad(i) = 0.0_8
-          gamma(i) = (cvn+one)/cvn
-        else
-! temperature is in the curve fit range.
-! first find the valid range.
-          ii = cpnparts
-          start = 1
- interval:do 
-! next guess for the interval.
-            nn = start + ii/2
-! determine the situation we are having here.
-            if (t(i) .gt. cptrange(nn)) then
-! temperature is larger than the upper boundary of
-! the current interval. update the lower boundary.
-              start = nn + 1
-              ii = ii - 1
-            else if (t(i) .ge. cptrange(nn-1)) then
-              goto 100
-            end if
-! this is the correct range. exit the do-loop.
-! modify ii for the next branch to search.
-            ii = ii/2
-          end do interval
-! nn contains the correct curve fit interval.
-! compute the value of cp.
- 100      cp = zero
-          cpd = 0.0_8
-          do ii=1,cptempfit(nn)%nterm
-            if (t(i) .gt. 0.0_8 .or. (t(i) .lt. 0.0_8 .and. cptempfit(nn&
-&               )%exponents(ii) .eq. int(cptempfit(nn)%exponents(ii)))) &
-&           then
-              t2d = cptempfit(nn)%exponents(ii)*t(i)**(cptempfit(nn)%&
-&               exponents(ii)-1)*td(i)
-            else if (t(i) .eq. 0.0_8 .and. cptempfit(nn)%exponents(ii) &
-&               .eq. 1.0) then
-              t2d = td(i)
-            else
-              t2d = 0.0_8
-            end if
-            t2 = t(i)**cptempfit(nn)%exponents(ii)
-            cpd = cpd + cptempfit(nn)%constants(ii)*t2d
-            cp = cp + cptempfit(nn)%constants(ii)*t2
-          end do
-! compute the corresponding value of gamma.
-          gammad(i) = (cpd*(cp-one)-cp*cpd)/(cp-one)**2
-          gamma(i) = cp/(cp-one)
-        end if
-      end do
-    case default
-      gammad = 0.0_8
-    end select
-  end subroutine computegamma_d
   subroutine computegamma(t, gamma, mm)
 !
 !       computegamma computes the corresponding values of gamma for    
@@ -168,6 +68,7 @@ contains
 !
     integer(kind=inttype) :: i, ii, nn, start
     real(kind=realtype) :: cp, t2
+!        ================================================================
 ! determine the cp model used in the computation.
     select case  (cpmodel) 
     case (cpconstant) 
@@ -175,51 +76,6 @@ contains
       do i=1,mm
         gamma(i) = gammaconstant
       end do
-    case (cptempcurvefits) 
-!        ================================================================
-! cp as function of the temperature is given via curve fits.
-      do 100 i=1,mm
-! determine the case we are having here.
-        if (t(i) .le. cptrange(0)) then
-! temperature is less than the smallest temperature
-! in the curve fits. use cv0 to compute gamma.
-          gamma(i) = (cv0+one)/cv0
-        else if (t(i) .ge. cptrange(cpnparts)) then
-! temperature is larger than the largest temperature
-! in the curve fits. use cvn to compute gamma.
-          gamma(i) = (cvn+one)/cvn
-        else
-! temperature is in the curve fit range.
-! first find the valid range.
-          ii = cpnparts
-          start = 1
- interval:do 
-! next guess for the interval.
-            nn = start + ii/2
-! determine the situation we are having here.
-            if (t(i) .gt. cptrange(nn)) then
-! temperature is larger than the upper boundary of
-! the current interval. update the lower boundary.
-              start = nn + 1
-              ii = ii - 1
-            else if (t(i) .ge. cptrange(nn-1)) then
-! nn contains the correct curve fit interval.
-! compute the value of cp.
-              cp = zero
-              do ii=1,cptempfit(nn)%nterm
-                t2 = t(i)**cptempfit(nn)%exponents(ii)
-                cp = cp + cptempfit(nn)%constants(ii)*t2
-              end do
-! compute the corresponding value of gamma.
-              gamma(i) = cp/(cp-one)
-              goto 100
-            end if
-! this is the correct range. exit the do-loop.
-! modify ii for the next branch to search.
-            ii = ii/2
-          end do interval
-        end if
- 100  continue
     end select
   end subroutine computegamma
   subroutine computeptot(rho, u, v, w, p, ptot)
@@ -245,12 +101,9 @@ contains
     real(kind=realtype) :: govgm1, kin
     real(kind=realtype) :: t, t2, tt, dt, h, htot, cp, scale, alp
     real(kind=realtype) :: intcport, intcportt, intcporttt
-    intrinsic log
-    intrinsic abs
-    intrinsic exp
     real(kind=realtype) :: pwx1
     real(kind=realtype) :: pwr1
-    real(kind=realtype) :: abs0
+!===============================================================
 !
 ! determine the cp model used.
     select case  (cpmodel) 
@@ -262,191 +115,6 @@ contains
       pwx1 = one + rho*kin/(govgm1*p)
       pwr1 = pwx1**govgm1
       ptot = p*pwr1
-    case (cptempcurvefits) 
-!===============================================================
-! cp is a function of the temperature. the formula used for
-! constant cp is not valid anymore and a more complicated
-! procedure must be followed.
-! compute the dimensional temperature and the scale
-! factor to convert the integral of cp to the correct
-! nondimensional value.
-      t = tref*p/(rgas*rho)
-      scale = rgas/tref
-! compute the enthalpy and the integrand of cp/(r*t) at the
-! given temperature. take care of the exceptional situations.
-      if (t .le. cptrange(0)) then
-! temperature is smaller than the smallest temperature in
-! the curve fit range. use extrapolation using constant cp.
-        nn = 0
-        cp = cv0 + one
-        h = scale*(cphint(0)+cp*(t-cptrange(0)))
-        intcportt = cp*log(t)
-      else if (t .ge. cptrange(cpnparts)) then
-! temperature is larger than the largest temperature in the
-! curve fit range. use extrapolation using constant cp.
-        nn = cpnparts + 1
-        cp = cvn + one
-        h = scale*(cphint(cpnparts)+cp*(t-cptrange(cpnparts)))
-        intcportt = cp*log(t)
-      else
-! temperature lies in the curve fit range. find the correct
-! interval.
-        ii = cpnparts
-        start = 1
-interval:do 
-! next guess for the interval.
-          nn = start + ii/2
-! determine the situation we are having here.
-          if (t .gt. cptrange(nn)) then
-! temperature is larger than the upper boundary of
-! the current interval. update the lower boundary.
-            start = nn + 1
-            ii = ii - 1
-          else if (t .ge. cptrange(nn-1)) then
-! nn contains the correct curve fit interval.
-! integrate cp to compute h and the integrand of cp/(r*t)
-            h = cptempfit(nn)%eint0
-            intcportt = zero
-            do ii=1,cptempfit(nn)%nterm
-              if (cptempfit(nn)%exponents(ii) .eq. -1_inttype) then
-                h = h + cptempfit(nn)%constants(ii)*log(t)
-              else
-                mm = cptempfit(nn)%exponents(ii) + 1
-                t2 = t**mm
-                h = h + cptempfit(nn)%constants(ii)*t2/mm
-              end if
-              if (cptempfit(nn)%exponents(ii) .eq. 0_inttype) then
-                intcportt = intcportt + cptempfit(nn)%constants(ii)*log(&
-&                 t)
-              else
-                mm = cptempfit(nn)%exponents(ii)
-                t2 = t**mm
-                intcportt = intcportt + cptempfit(nn)%constants(ii)*t2/&
-&                 mm
-              end if
-            end do
-            h = scale*h
-            goto 100
-          end if
-! this is the correct range. exit the do-loop.
-! modify ii for the next branch to search.
-          ii = ii/2
-        end do interval
-      end if
-! compute the total enthalpy. divide by scale to get the same
-! dimensions as for the integral of cp/r.
- 100  htot = (h+half*(u*u+v*v+w*w))/scale
-! compute the corresponding total temperature. first determine
-! the situation we are having here.
-      if (htot .le. cphint(0)) then
-! total enthalpy is smaller than the lowest value of the
-! curve fit. use extrapolation using constant cp.
-        nnt = 0
-        tt = cptrange(0) + (htot-cphint(0))/(cv0+one)
-      else if (htot .ge. cphint(cpnparts)) then
-! total enthalpy is larger than the largest value of the
-! curve fit. use extrapolation using constant cp.
-        nnt = cpnparts + 1
-        tt = cptrange(cpnparts) + (htot-cphint(cpnparts))/(cvn+one)
-      else
-! total temperature is in the range of the curve fits.
-! use a newton algorithm to find the correct temperature.
-! first find the correct interval.
-        ii = cpnparts
-        start = 1
-intervaltt:do 
-! next guess for the interval.
-          nnt = start + ii/2
-! determine the situation we are having here.
-          if (htot .gt. cphint(nnt)) then
-! enthalpy is larger than the upper boundary of
-! the current interval. update the lower boundary.
-            start = nnt + 1
-            ii = ii - 1
-          else if (htot .ge. cphint(nnt-1)) then
-! nnt contains the range in which the newton algorithm must
-! be applied. initial guess of the total temperature.
-            alp = (cphint(nnt)-htot)/(cphint(nnt)-cphint(nnt-1))
-            tt = alp*cptrange(nnt-1) + (one-alp)*cptrange(nnt)
-! the actual newton algorithm to compute the total
-! temperature.
-     newton:do 
-! compute the energy as well as the value of cv/r for the
-! given temperature.
-              cp = zero
-              h = cptempfit(nnt)%eint0
-              do ii=1,cptempfit(nnt)%nterm
-! update cp.
-                t2 = tt**cptempfit(nnt)%exponents(ii)
-                cp = cp + cptempfit(nnt)%constants(ii)*t2
-! update h, for which this contribution must be
-! integrated. take the exceptional case that the
-! exponent == -1 into account.
-                if (cptempfit(nnt)%exponents(ii) .eq. -1_inttype) then
-                  h = h + cptempfit(nnt)%constants(ii)*log(tt)
-                else
-                  h = h + cptempfit(nnt)%constants(ii)*t2*tt/(cptempfit(&
-&                   nnt)%exponents(ii)+1)
-                end if
-              end do
-! compute the update and the new total temperature.
-              dt = (htot-h)/cp
-              tt = tt + dt
-              if (dt .ge. 0.) then
-                abs0 = dt
-              else
-                abs0 = -dt
-              end if
-! exit the newton loop if the update is smaller than the
-! threshold value.
-              if (abs0 .lt. dtstop) goto 110
-            end do newton
-          end if
-! this is the correct range. exit the do-loop.
-! modify ii for the next branch to search.
-          ii = ii/2
-        end do intervaltt
-      end if
-! to compute the total pressure, the integral of cp/(r*t)
-! must be computed from t = t to t = tt. compute the integrand
-! at t = tt; take care of the exceptional situations.
- 110  if (tt .le. cptrange(0)) then
-        intcporttt = (cv0+one)*log(tt)
-      else if (tt .ge. cptrange(cpnparts)) then
-        intcporttt = (cvn+one)*log(tt)
-      else
-        intcporttt = zero
-        do ii=1,cptempfit(nnt)%nterm
-          if (cptempfit(nnt)%exponents(ii) .eq. 0_inttype) then
-            intcporttt = intcporttt + cptempfit(nnt)%constants(ii)*log(&
-&             tt)
-          else
-            mm = cptempfit(nnt)%exponents(ii)
-            t2 = tt**mm
-            intcporttt = intcporttt + cptempfit(nnt)%constants(ii)*t2/mm
-          end if
-        end do
-      end if
-! compute the integral of cp/(r*t) from t to tt. first
-! substract the lower boundary from the upper boundary.
-      intcport = intcporttt - intcportt
-! add the contributions from the possible internal curve fit
-! boundaries if tt and t are in different curve fit intervals.
-      do mm=nn+1,nnt
-        ii = mm - 1
-        if (ii .eq. 0_inttype) then
-          intcport = intcport + (cv0+one)*log(cptrange(0))
-        else
-          intcport = intcport + cptempfit(ii)%intcpovrt_2
-        end if
-        if (mm .gt. cpnparts) then
-          intcport = intcport - (cvn+one)*log(cptrange(cpnparts))
-        else
-          intcport = intcport - cptempfit(mm)%intcpovrt_1
-        end if
-      end do
-! and finally, compute the total pressure.
-      ptot = p*exp(intcport)
     end select
   end subroutine computeptot
 !  differentiation of computespeedofsoundsquared in forward (tangent) mode (with options i4 dr8 r8):

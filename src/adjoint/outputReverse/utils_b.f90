@@ -1117,6 +1117,7 @@ contains
 &   sface
     use inputphysics, only : cpmodel, equations
     implicit none
+!end if
 ! subroutine arguments.
     integer(kind=inttype), intent(in) :: nn
     logical, intent(in) :: spatialpointers
@@ -1419,6 +1420,7 @@ contains
 &   jstart, jend, isize, jsize, sface
     use inputphysics, only : cpmodel, equations
     implicit none
+!end if
 ! subroutine arguments.
     integer(kind=inttype), intent(in) :: nn
     logical, intent(in) :: spatialpointers
@@ -1579,22 +1581,21 @@ contains
         x(0:ie, 0:je, kl, :) = xx(1:ie+1, 1:je+1, :)
         sk(1:ie, 1:je, kl, :) = ssi(1:ie, 1:je, :)
       end select
-      if (addgridvelocities) then
-        select case  (bcfaceid(nn)) 
-        case (imin) 
-          sfacei(1, 1:je, 1:ke) = sface(1:je, 1:ke)
-        case (imax) 
-          sfacei(il, 1:je, 1:ke) = sface(1:je, 1:ke)
-        case (jmin) 
-          sfacej(1:ie, 1, 1:ke) = sface(1:ie, 1:ke)
-        case (jmax) 
-          sfacej(1:ie, jl, 1:ke) = sface(1:ie, 1:ke)
-        case (kmin) 
-          sfacek(1:ie, 1:je, 1) = sface(1:ie, 1:je)
-        case (kmax) 
-          sfacek(1:ie, 1:je, kl) = sface(1:ie, 1:je)
-        end select
-      end if
+!if (addgridvelocities) then 
+      select case  (bcfaceid(nn)) 
+      case (imin) 
+        sfacei(1, 1:je, 1:ke) = sface(1:je, 1:ke)
+      case (imax) 
+        sfacei(il, 1:je, 1:ke) = sface(1:je, 1:ke)
+      case (jmin) 
+        sfacej(1:ie, 1, 1:ke) = sface(1:ie, 1:ke)
+      case (jmax) 
+        sfacej(1:ie, jl, 1:ke) = sface(1:ie, 1:ke)
+      case (kmin) 
+        sfacek(1:ie, 1:je, 1) = sface(1:ie, 1:je)
+      case (kmax) 
+        sfacek(1:ie, 1:je, kl) = sface(1:ie, 1:je)
+      end select
     end if
   end subroutine resetbcpointers
 !  differentiation of computerootbendingmoment in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
@@ -1756,8 +1757,8 @@ contains
 !   gradient     of useful results: lengthref dragdirection liftdirection
 !                moment dcdalphadot coef0 force dcdalpha
 !   with respect to varying inputs: machgrid lengthref machcoef
-!                dragdirection liftdirection gammainf pinf rhoinfdim
-!                pinfdim moment force
+!                dragdirection liftdirection pinf rhoinfdim pinfdim
+!                moment force
   subroutine computetsderivatives_b(force, forced, moment, momentd, &
 &   coef0, coef0d, dcdalpha, dcdalphad, dcdalphadot, dcdalphadotd, dcdq&
 &   , dcdqdot)
@@ -1818,13 +1819,11 @@ contains
     real(kind=realtype) :: derivativerigidrotangle, &
 &   secondderivativerigidrotangle
     intrinsic sqrt
-    real(kind=realtype) :: temp1
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tempd
-    real(kind=realtype) :: tempd6
     real(kind=realtype) :: tempd5
-    real(kind=realtype) :: tempd4(8)
-    real(kind=realtype) :: tempd3
+    real(kind=realtype) :: tempd4
+    real(kind=realtype) :: tempd3(8)
     real(kind=realtype) :: tempd2
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
@@ -1930,21 +1929,20 @@ contains
 &                                      dcdalphadot(i), coef0dot(i))
         end do
         a = sqrt(gammainf*pinfdim/rhoinfdim)
-        tempd4 = 2*a*dcdalphadotd/lengthref
-        tempd5 = 2*sum(dcdalphadot*machgrid*dcdalphadotd)/lengthref
-        machgridd = sum(dcdalphadot*tempd4)
-        ad = tempd5
-        lengthrefd = lengthrefd - a*tempd5/lengthref
-        dcdalphadotd = machgrid*tempd4
-        temp1 = gammainf*pinfdim/rhoinfdim
-        if (temp1 .eq. 0.0_8) then
-          tempd6 = 0.0
+        tempd3 = 2*a*dcdalphadotd/lengthref
+        tempd4 = 2*sum(dcdalphadot*machgrid*dcdalphadotd)/lengthref
+        machgridd = sum(dcdalphadot*tempd3)
+        ad = tempd4
+        lengthrefd = lengthrefd - a*tempd4/lengthref
+        dcdalphadotd = machgrid*tempd3
+        if (gammainf*(pinfdim/rhoinfdim) .eq. 0.0_8) then
+          tempd5 = 0.0
         else
-          tempd6 = ad/(2.0*sqrt(temp1)*rhoinfdim)
+          tempd5 = gammainf*ad/(2.0*sqrt(gammainf*(pinfdim/rhoinfdim))*&
+&           rhoinfdim)
         end if
-        gammainfd = pinfdim*tempd6
-        pinfdimd = gammainf*tempd6
-        rhoinfdimd = -(temp1*tempd6)
+        pinfdimd = tempd5
+        rhoinfdimd = -(pinfdim*tempd5/rhoinfdim)
         resbasecoefd = 0.0_8
         do i=8,1,-1
           coef0dotd = 0.0_8
@@ -2000,32 +1998,31 @@ contains
           forced(1, sps) = forced(1, sps) + fact*basecoefd(sps, 3)
           factd = factd + force(1, sps)*basecoefd(sps, 3)
           basecoefd(sps, 3) = 0.0_8
-          tempd2 = fact*basecoefd(sps, 2)
+          tempd1 = fact*basecoefd(sps, 2)
           factd = factd + (force(1, sps)*dragdirection(1)+force(2, sps)*&
 &           dragdirection(2)+force(3, sps)*dragdirection(3))*basecoefd(&
 &           sps, 2)
-          forced(1, sps) = forced(1, sps) + dragdirection(1)*tempd2
-          dragdirectiond(1) = dragdirectiond(1) + force(1, sps)*tempd2
-          forced(2, sps) = forced(2, sps) + dragdirection(2)*tempd2
-          dragdirectiond(2) = dragdirectiond(2) + force(2, sps)*tempd2
-          forced(3, sps) = forced(3, sps) + dragdirection(3)*tempd2
-          dragdirectiond(3) = dragdirectiond(3) + force(3, sps)*tempd2
+          forced(1, sps) = forced(1, sps) + dragdirection(1)*tempd1
+          dragdirectiond(1) = dragdirectiond(1) + force(1, sps)*tempd1
+          forced(2, sps) = forced(2, sps) + dragdirection(2)*tempd1
+          dragdirectiond(2) = dragdirectiond(2) + force(2, sps)*tempd1
+          forced(3, sps) = forced(3, sps) + dragdirection(3)*tempd1
+          dragdirectiond(3) = dragdirectiond(3) + force(3, sps)*tempd1
           basecoefd(sps, 2) = 0.0_8
-          tempd3 = fact*basecoefd(sps, 1)
+          tempd2 = fact*basecoefd(sps, 1)
           factd = factd + (force(1, sps)*liftdirection(1)+force(2, sps)*&
 &           liftdirection(2)+force(3, sps)*liftdirection(3))*basecoefd(&
 &           sps, 1)
-          forced(1, sps) = forced(1, sps) + liftdirection(1)*tempd3
-          liftdirectiond(1) = liftdirectiond(1) + force(1, sps)*tempd3
-          forced(2, sps) = forced(2, sps) + liftdirection(2)*tempd3
-          liftdirectiond(2) = liftdirectiond(2) + force(2, sps)*tempd3
-          forced(3, sps) = forced(3, sps) + liftdirection(3)*tempd3
-          liftdirectiond(3) = liftdirectiond(3) + force(3, sps)*tempd3
+          forced(1, sps) = forced(1, sps) + liftdirection(1)*tempd2
+          liftdirectiond(1) = liftdirectiond(1) + force(1, sps)*tempd2
+          forced(2, sps) = forced(2, sps) + liftdirection(2)*tempd2
+          liftdirectiond(2) = liftdirectiond(2) + force(2, sps)*tempd2
+          forced(3, sps) = forced(3, sps) + liftdirection(3)*tempd2
+          liftdirectiond(3) = liftdirectiond(3) + force(3, sps)*tempd2
           basecoefd(sps, 1) = 0.0_8
         end do
       else
         machgridd = 0.0_8
-        gammainfd = 0.0_8
         rhoinfdimd = 0.0_8
         pinfdimd = 0.0_8
         factmomentd = 0.0_8
@@ -2034,13 +2031,11 @@ contains
       tempd = factmomentd/(lref*lengthref)
       factd = factd + tempd
       lengthrefd = lengthrefd - fact*tempd/lengthref
-      temp0 = surfaceref*lref**2
-      temp = temp0*gammainf*pinf*machcoef**2
+      temp0 = gammainf*surfaceref*lref**2
+      temp = temp0*pinf*machcoef**2
       tempd0 = -(two*temp0*factd/temp**2)
-      tempd1 = machcoef**2*tempd0
-      gammainfd = gammainfd + pinf*tempd1
-      pinfd = gammainf*tempd1
-      machcoefd = gammainf*pinf*2*machcoef*tempd0
+      pinfd = machcoef**2*tempd0
+      machcoefd = pinf*2*machcoef*tempd0
     end if
   end subroutine computetsderivatives_b
 !  differentiation of computeleastsquaresregression in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
@@ -2661,4 +2656,13 @@ contains
     intrinsic sqrt
     mynorm2 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)
   end function mynorm2
+  function iswalltype(btype)
+    use constants
+    implicit none
+    integer(kind=inttype) :: btype
+    logical :: iswalltype
+    iswalltype = .false.
+    if ((btype .eq. nswalladiabatic .or. btype .eq. nswallisothermal) &
+&       .or. btype .eq. eulerwall) iswalltype = .true.
+  end function iswalltype
 end module utils_b
