@@ -373,7 +373,11 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
 
                  clusterNodeLocal(iNode) = c
                  nodeIndicesLocal(iNode) = ind(i+1, j+1) ! +1 for pointer offset
-                 nodeIndicesCGNSLocal(iNode) = indCGNS(i, j) ! No pointer offset
+                 if (.not. useDual) then 
+                    nodeIndicesCGNSLocal(iNode) = indCGNS(i, j) ! No pointer offset
+                 else
+                    nodeIndicesCGNSLocal(iNode) = 0
+                 end if
               end do
            end do
         end if
