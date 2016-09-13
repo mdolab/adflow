@@ -225,6 +225,8 @@ contains
     ! the overset computation.
     call allocMemBCData
 
+    call setSurfaceFamilyInfo
+
     do level=1,nLevels
        if (level == 1) then
           call oversetComm(level, .true., .false.)
@@ -234,7 +236,6 @@ contains
        end if
     end do
 
-    call setSurfaceFamilyInfo
     call preprocessingADjoint
   end subroutine preprocessing
 
