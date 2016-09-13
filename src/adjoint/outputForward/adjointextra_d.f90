@@ -101,8 +101,8 @@ contains
 &   normalvelocities_block_d, slipvelocitiesfinelevel_block, &
 &   slipvelocitiesfinelevel_block_d, timestep_block, timestep_block_d
     use residuals_d, only : residual_block, residual_block_d
-    use surfaceintegrations_d, only : forcesandmoments, &
-&   forcesandmoments_d
+    use surfaceintegrations_d, only : integratesurfaces, &
+&   integratesurfaces_d
     use diffsizes
 !  hint: isize1ofdrfbcdata should be the size of dimension 1 of array *bcdata
     implicit none
@@ -464,7 +464,7 @@ varloopfine:do l=1,nwf
       end do
     end do
     localvalues = zero
-    call forcesandmoments_d(localvalues, localvaluesd)
+    call integratesurfaces_d(localvalues, localvaluesd)
 ! convert back to actual forces. note that even though we use
 ! machcoef, lref, and surfaceref here, they are not differented,
 ! since f doesn't actually depend on them. ideally we would just get
@@ -537,7 +537,7 @@ varloopfine:do l=1,nwf
 &   normalvelocities_block, slipvelocitiesfinelevel_block, &
 &   timestep_block
     use residuals_d, only : residual_block
-    use surfaceintegrations_d, only : forcesandmoments
+    use surfaceintegrations_d, only : integratesurfaces
     implicit none
 ! input arguments:
     integer(kind=inttype), intent(in) :: nn, sps
@@ -804,7 +804,7 @@ varloopfine:do l=1,nwf
       end do
     end do
     localvalues = zero
-    call forcesandmoments(localvalues)
+    call integratesurfaces(localvalues)
 ! convert back to actual forces. note that even though we use
 ! machcoef, lref, and surfaceref here, they are not differented,
 ! since f doesn't actually depend on them. ideally we would just get

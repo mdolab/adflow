@@ -2,30 +2,91 @@ module surfaceIntegrations
 
 contains
 
-
-  subroutine flowProperties(localValues)
+  subroutine integrateSurfaces(localValues)
+    ! This is a shell routine that calls the specific surface
+    ! integration routines. Currently we have have the forceAndMoment
+    ! routine as well as the flow properties routine. This routine
+    ! takes care of setting pointers, while the actual computational
+    ! routine just acts on a specific fast pointed to by pointers. 
 
     use constants
-    use blockPointers
+    use blockPointers, only : nBocos, BCData, BCType, sk, sj, si, x, rlv, &
+         sfacei, sfacej, sfacek, gamma, rev, p, viscSubface
+    use surfaceFamilies, only : famGroups
+    use utils, only : setBCPointers, resetBCPointers, isWallType
+    use sorting, only : bsearchIntegers
+    use costFunctions, only : nLocalValues
+    ! Tapenade needs to see these modules that the callees use.
+    use BCPointers 
     use flowVarRefState
     use inputPhysics
-    use bcroutines
-    use costFunctions
-    use surfaceFamilies
-    use sorting, only : bsearchIntegers
-    use utils, only : setBCPointers, resetBCPointers
-    use flowUtils, only : computePtot, computeTtot
-    use BCPointers
+
     implicit none
 
-    !
-    !      Subroutine arguments
-    !
+    ! Input/output Variables
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
+
+    ! Working variables
+    integer(kind=intType) :: mm
+
+    ! Loop over all possible boundary conditions
+    bocos: do mm=1, nBocos
+       
+       ! Determine if this boundary condition is to be incldued in the
+       ! currently active group
+       famInclude: if (bsearchIntegers(BCdata(mm)%famID, &
+            famGroups, size(famGroups)) > 0) then
+          
+          ! Set a bunch of pointers depending on the face id to make
+          ! a generic treatment possible. 
+          call setBCPointers(mm, .True.)
+
+          isWall: if( isWallType(BCType(mm))) then 
+             call forcesAndMomentsFace(localvalues, mm)
+          end if isWall
+
+#ifndef USE_TAPENADE
+          isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
+               BCType(mm) == SubsonicOutflow .or. &
+               BCType(mm) == SupersonicInflow .or. &
+               BCType(mm) == SupersonicOutflow) then 
+             call flowPropertiesFace(localValues, mm)
+          end if isInflowOutflow
+#endif
+          ! Reset the pointers
+          call resetBCPointers(mm, .True.)
+
+       end if famInclude
+    end do bocos
+
+    ! Do we actually need to zero the forces/area on a wall that wasn't inclded? Maybe?
+    !       ! If it wasn't included, but still a wall...zero
+    !       if(BCType(mm) == EulerWall .or. &
+    !            BCType(mm) == NSWallAdiabatic .or. &
+    !            BCType(mm) == NSWallIsothermal) then
+    !          bcData(mm)%area = zero
+    !          bcData(mm)%Fp = zero
+    !          bcData(mm)%Fv = zero
+
+  end subroutine integrateSurfaces
+
+  subroutine flowPropertiesFace(localValues, mm)
+
+    use constants
+    use blockPointers, only : BCFaceID, BCData, addGridVelocities
+    use costFunctions, onlY : nLocalValues, iMassFlow, iMassPtot, iMassTtot, iMassPs
+    use sorting, only : bsearchIntegers
+    use flowUtils, only : computePtot, computeTtot
+    use BCPointers, only : ssi, sFace, ww1, ww2, pp1, pp2
+    implicit none
+
+    ! Input/Output variables
+    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
+    integer(kind=intType), intent(in) :: mm
 
     ! Local variables
     real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps
-    integer(kind=intType) :: nn, i, j, ii
+    integer(kind=intType) :: i, j, ii
     real(kind=realType) :: fact
     real(kind=realType) :: sF, vnm, vxm, vym, vzm
     real(kind=realType) :: pm, Ptot, Ttot, rhom, massFlowRateLocal, tmp
@@ -34,80 +95,63 @@ contains
     mass_Ptot = zero
     mass_Ttot = zero
     mass_Ps = zero
-    sF = zero
 
-    bocos: do nn=1,nBocos
-       famInclude: if (bsearchIntegers(BCdata(nn)%famID, famGroups, size(famGroups)) > 0) then
-          call setBCPointers(nn, .True.)
+    select case (BCFaceID(mm))
+    case (iMin, jMin, kMin)
+       fact = -one
+    case (iMax, jMax, kMax)
+       fact = one
+    end select
 
-          inflowOutFlowType: if(BCType(nn) == SubsonicInflow .or. &
-               BCType(nn) == SupersonicInflow .or. &
-               BCType(nn) == SubsonicOutflow .or. &
-               BCType(nn) == SupersonicOutflow) then 
+    ! Loop over the quadrilateral faces of the subface. Note that
+    ! the nodal range of BCData must be used and not the cell
+    ! range, because the latter may include the halo's in i and
+    ! j-direction. The offset +1 is there, because inBeg and jnBeg
+    ! refer to nodal ranges and not to cell ranges. The loop
+    ! (without the AD stuff) would look like:
+    !
+    ! do j=(BCData(mm)%jnBeg+1),BCData(mm)%jnEnd
+    !    do i=(BCData(mm)%inBeg+1),BCData(mm)%inEnd
+    
+    !$AD II-LOOP
+    do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
+       i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
+       j = ii/(bcData(mm)%inEnd-bcData(mm)%inBeg) + bcData(mm)%jnBeg + 1
+       
+       if( addGridVelocities ) then 
+          sF = sFace(i,j)
+       else
+          sF = zero
+       end if
+       vxm = half*(ww1(i,j,ivx) + ww2(i,j,ivx))
+       vym = half*(ww1(i,j,ivy) + ww2(i,j,ivy))
+       vzm = half*(ww1(i,j,ivz) + ww2(i,j,ivz))
+       rhom = half*(ww1(i,j,irho) + ww2(i,j,irho))
+       pm = half*(pp1(i,j)+ pp2(i,j))
 
-             select case (BCFaceID(nn))
-             case (iMin)
-                fact = -one
-             case (iMax)
-                fact = one
-             case (jMin)
-                fact = -one
-             case (jMax)
-                fact = one
-             case (kMin)
-                fact = -one
-             case (kMax)
-                fact = one
-             end select
-
-             ! Loop over the quadrilateral faces of the subface. Note that
-             ! the nodal range of BCData must be used and not the cell
-             ! range, because the latter may include the halo's in i and
-             ! j-direction. The offset +1 is there, because inBeg and jnBeg
-             ! refer to nodal ranges and not to cell ranges. The loop
-             ! (without the AD stuff) would look like:
-             !
-             ! do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
-             !    do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
-
-             !$AD II-LOOP
-             do ii=0,(BCData(nn)%jnEnd - bcData(nn)%jnBeg)*(bcData(nn)%inEnd - bcData(nn)%inBeg) -1
-                i = mod(ii, (bcData(nn)%inEnd-bcData(nn)%inBeg)) + bcData(nn)%inBeg + 1
-                j = ii/(bcData(nn)%inEnd-bcData(nn)%inBeg) + bcData(nn)%jnBeg + 1
-
-                if( addGridVelocities ) sF = sFace(i,j)
-                vxm = half*(ww1(i,j,ivx) + ww2(i,j,ivx))
-                vym = half*(ww1(i,j,ivy) + ww2(i,j,ivy))
-                vzm = half*(ww1(i,j,ivz) + ww2(i,j,ivz))
-                rhom = half*(ww1(i,j,irho) + ww2(i,j,irho))
-                pm = half*(pp1(i,j)+ pp2(i,j))
-
-                vnm = vxm*ssi(i,j,1) + vym*ssi(i,j,2) + vzm*ssi(i,j,3)  - sF
-
-                massFlowRateLocal = rhom*vnm*fact
-                massFlowRate = massFlowRate + massFlowRateLocal
-
-                call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
-                call computeTtot(rhom, vxm, vym, vzm, pm, Ttot)
-
-                mass_Ptot = mass_pTot + Ptot * massFlowRateLocal
-                mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal
-                mass_Ps = mass_Ps + pm*massFlowRateLocal
-
-             enddo
-          end if inflowOutFlowType
-       end if famInclude
-    end do bocos
-
+       vnm = vxm*ssi(i,j,1) + vym*ssi(i,j,2) + vzm*ssi(i,j,3)  - sF
+       
+       massFlowRateLocal = rhom*vnm*fact
+       massFlowRate = massFlowRate + massFlowRateLocal
+       
+       call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
+       call computeTtot(rhom, vxm, vym, vzm, pm, Ttot)
+       
+       mass_Ptot = mass_pTot + Ptot * massFlowRateLocal
+       mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal
+       mass_Ps = mass_Ps + pm*massFlowRateLocal
+       
+    enddo
+ 
     ! Increment the local values array with what we computed here
     localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate
     localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
     localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
     localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
 
-  end subroutine flowProperties
+  end subroutine flowPropertiesFace
 
-  subroutine forcesAndMoments(localValues) 
+  subroutine forcesAndMomentsFace(localValues, mm)
     !
     !       forcesAndMoments computes the contribution of the block
     !       given by the pointers in blockPointers to the force and
@@ -122,25 +166,21 @@ contains
     use communication
     use blockPointers
     use flowVarRefState
-    use inputPhysics
-    use bcroutines
-    use costFunctions
-    use surfaceFamilies
+    use inputPhysics, only : MachCoef, pointRef, velDirFreeStream, equations
+    use costFunctions, only : nLocalValues, iFp, iFv, iMp, iMv, iSepSensor, &
+         iSepAvg, iCavitation, sepSensorSharpness, sepSensorOffset, iYplus
     use sorting, only :bsearchIntegers
-    use utils, only : setBCPointers, resetBCPointers
     use BCPointers
     implicit none
-    !
-    !      Subroutine arguments
-    !
+  
+    ! Input/output variables
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
+    integer(kind=intType) :: mm
 
-    !
-    !      Local variables.
-    !
+    ! Local variables.
     real(kind=realType), dimension(3)  :: Fp, Fv, Mp, Mv
     real(kind=realType)  :: yplusMax, sepSensor, sepSensorAvg(3), Cavitation
-    integer(kind=intType) :: nn, i, j, ii, blk
+    integer(kind=intType) :: i, j, ii, blk
 
     real(kind=realType) :: pm1, fx, fy, fz, fn, sigma
     real(kind=realType) :: xc, yc, zc, qf(3)
@@ -151,7 +191,13 @@ contains
 
     real(kind=realType), dimension(3) :: refPoint
     real(kind=realType) :: mx, my, mz, cellArea
-    logical :: viscousSubface
+
+    select case (BCFaceID(mm))
+    case (iMin, jMin, kMin)
+       fact = -one
+    case (iMax, jMax, kMax)
+       fact = one
+    end select
 
     ! Determine the reference point for the moment computation in
     ! meters.
@@ -170,291 +216,242 @@ contains
     Cavitation = zero
     sepSensorAvg = zero
 
-    ! Loop over the boundary subfaces of this block.
+    !
+    !         Integrate the inviscid contribution over the solid walls,
+    !         either inviscid or viscous. The integration is done with
+    !         cp. For closed contours this is equal to the integration
+    !         of p; for open contours this is not the case anymore.
+    !         Question is whether a force for an open contour is
+    !         meaningful anyway.
+    !
+    
+   
+    ! Loop over the quadrilateral faces of the subface. Note that
+    ! the nodal range of BCData must be used and not the cell
+    ! range, because the latter may include the halo's in i and
+    ! j-direction. The offset +1 is there, because inBeg and jnBeg
+    ! refer to nodal ranges and not to cell ranges. The loop
+    ! (without the AD stuff) would look like:
+    !
+    ! do j=(BCData(mm)%jnBeg+1),BCData(mm)%jnEnd
+    !    do i=(BCData(mm)%inBeg+1),BCData(mm)%inEnd
+    
+    !$AD II-LOOP
+    do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
+       i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
+       j = ii/(bcData(mm)%inEnd-bcData(mm)%inBeg) + bcData(mm)%jnBeg + 1
+       
+       ! Compute the average pressure minus 1 and the coordinates
+       ! of the centroid of the face relative from from the
+       ! moment reference point. Due to the usage of pointers for
+       ! the coordinates, whose original array starts at 0, an
+       ! offset of 1 must be used. The pressure is multipled by
+       ! fact to account for the possibility of an inward or
+       ! outward pointing normal.
 
-    bocos: do nn=1,nBocos
-       !
-       !         Integrate the inviscid contribution over the solid walls,
-       !         either inviscid or viscous. The integration is done with
-       !         cp. For closed contours this is equal to the integration
-       !         of p; for open contours this is not the case anymore.
-       !         Question is whether a force for an open contour is
-       !         meaningful anyway.
-       !
+       pm1 = fact*(half*(pp2(i,j) + pp1(i,j)) - pInf)*pRef
+       
+       xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+            +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
+       yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+            +         xx(i,j+1,2) + xx(i+1,j+1,2)) - refPoint(2)
+       zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+            +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
+       
+       ! Compute the force components.
+       blk = max(BCData(mm)%iblank(i,j), 0)
+       fx = pm1*ssi(i,j,1)
+       fy = pm1*ssi(i,j,2)
+       fz = pm1*ssi(i,j,3)
+       
+       ! iBlank forces
+       fx = fx*blk
+       fy = fy*blk
+       fz = fz*blk
 
-       famInclude: if (bsearchIntegers(BCdata(nn)%famID, &
-            famGroups, size(famGroups)) > 0) then
+       ! Update the inviscid force and moment coefficients.
+       Fp(1) = Fp(1) + fx
+       Fp(2) = Fp(2) + fy
+       Fp(3) = Fp(3) + fz
+       
+       mx = yc*fz - zc*fy
+       my = zc*fx - xc*fz
+       mz = xc*fy - yc*fx
 
-          invForce: if(BCType(nn) == EulerWall .or. &
-               BCType(nn) == NSWallAdiabatic .or. &
-               BCType(nn) == NSWallIsothermal) then
-             ! Subface is a wall. Check if it is a viscous wall.
+       Mp(1) = Mp(1) + mx
+       Mp(2) = Mp(2) + my
+       Mp(3) = Mp(3) + mz
+       
+       ! Save the face-based forces and area
+       bcData(mm)%Fp(i, j, 1) = fx
+       bcData(mm)%Fp(i, j, 2) = fy
+       bcData(mm)%Fp(i, j, 3) = fz
+       cellArea = sqrt(ssi(i,j,1)**2 + ssi(i,j,2)**2 + ssi(i,j,3)**2)
+       bcData(mm)%area(i, j) = cellArea
+       
+       ! Get normalized surface velocity:
+       v(1) = ww2(i, j, ivx)
+       v(2) = ww2(i, j, ivy)
+       v(3) = ww2(i, j, ivz)
+       v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
 
-             viscousSubface = .true.
-             if(BCType(nn) == EulerWall) viscousSubface = .false.
+       ! Dot product with free stream
+       sensor = -(v(1)*velDirFreeStream(1) + v(2)*velDirFreeStream(2) + &
+            v(3)*velDirFreeStream(3))
+       
+       !Now run through a smooth heaviside function:
+       sensor = one/(one + exp(-2*sepSensorSharpness*(sensor-sepSensorOffset)))
+       
+       ! And integrate over the area of this cell and save:
+       sensor = sensor * cellArea
+       sepSensor = sepSensor + sensor
+       
+       ! Also accumulate into the sepSensorAvg
+       xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+            +         xx(i,j+1,1) + xx(i+1,j+1,1))
+       yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+            +         xx(i,j+1,2) + xx(i+1,j+1,2))
+       zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+            +         xx(i,j+1,3) + xx(i+1,j+1,3))
 
-             ! Set a bunch of pointers depending on the face id to make
-             ! a generic treatment possible. The routine setBcPointers
-             ! is not used, because quite a few other ones are needed.
-             call setBCPointers(nn, .True.)
+       sepSensorAvg(1) = sepSensorAvg(1)  + sensor * xc
+       sepSensorAvg(2) = sepSensorAvg(2)  + sensor * yc
+       sepSensorAvg(3) = sepSensorAvg(3)  + sensor * zc
 
-             select case (BCFaceID(nn))
-             case (iMin)
-                fact = -one
-             case (iMax)
-                fact = one
-             case (jMin)
-                fact = -one
-             case (jMax)
-                fact = one
-             case (kMin)
-                fact = -one
-             case (kMax)
-                fact = one
-             end select
+       plocal = pp2(i,j)
+       tmp = two/(gammaInf*MachCoef*MachCoef)
+       Cp = tmp*(plocal-pinf)
+       Sigma = 1.4
+       Sensor1 = -Cp - Sigma
+       Sensor1 = one/(one+exp(-2*10*Sensor1))
+       Sensor1 = Sensor1 * cellArea
+       Cavitation = Cavitation + Sensor1
+    enddo
+    
+    !
+    ! Integration of the viscous forces.
+    ! Only for viscous boundaries.
+    !
+    visForce: if( BCType(mm) == NSWallAdiabatic .or. &
+         BCType(mm) == NSWallIsoThermal) then 
+       
+       ! Initialize dwall for the laminar case and set the pointer
+       ! for the unit normals.
+       
+       dwall = zero
+       
+       ! Loop over the quadrilateral faces of the subface and
+       ! compute the viscous contribution to the force and
+       ! moment and update the maximum value of y+.
 
-             ! Loop over the quadrilateral faces of the subface. Note that
-             ! the nodal range of BCData must be used and not the cell
-             ! range, because the latter may include the halo's in i and
-             ! j-direction. The offset +1 is there, because inBeg and jnBeg
-             ! refer to nodal ranges and not to cell ranges. The loop
-             ! (without the AD stuff) would look like:
-             !
-             ! do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
-             !    do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
+       do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
+          i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
+          j = ii/(bcData(mm)%inEnd-bcData(mm)%inBeg) + bcData(mm)%jnBeg + 1
+          
+          ! Store the viscous stress tensor a bit easier.
+          blk = max(BCData(mm)%iblank(i,j), 0)
+          
+          tauXx = viscSubface(mm)%tau(i,j,1)
+          tauYy = viscSubface(mm)%tau(i,j,2)
+          tauZz = viscSubface(mm)%tau(i,j,3)
+          tauXy = viscSubface(mm)%tau(i,j,4)
+          tauXz = viscSubface(mm)%tau(i,j,5)
+          tauYz = viscSubface(mm)%tau(i,j,6)
+          
+          ! Compute the viscous force on the face. A minus sign
+          ! is now present, due to the definition of this force.
+          
+          fx = -fact*(tauXx*ssi(i,j,1) + tauXy*ssi(i,j,2) &
+               +        tauXz*ssi(i,j,3))*pRef
+          fy = -fact*(tauXy*ssi(i,j,1) + tauYy*ssi(i,j,2) &
+               +        tauYz*ssi(i,j,3))*pRef
+          fz = -fact*(tauXz*ssi(i,j,1) + tauYz*ssi(i,j,2) &
+               +        tauZz*ssi(i,j,3))*pRef
+          
+          ! iBlank forces after saving for zipper mesh
+          tauXx = tauXx*blk
+          tauYy = tauYy*blk
+          tauZz = tauZz*blk
+          tauXy = tauXy*blk
+          tauXz = tauXz*blk
+          tauYz = tauYz*blk
+          
+          fx = fx*blk
+          fy = fy*blk
+          fz = fz*blk
 
-             !$AD II-LOOP
-             do ii=0,(BCData(nn)%jnEnd - bcData(nn)%jnBeg)*(bcData(nn)%inEnd - bcData(nn)%inBeg) -1
-                i = mod(ii, (bcData(nn)%inEnd-bcData(nn)%inBeg)) + bcData(nn)%inBeg + 1
-                j = ii/(bcData(nn)%inEnd-bcData(nn)%inBeg) + bcData(nn)%jnBeg + 1
+          ! Compute the coordinates of the centroid of the face
+          ! relative from the moment reference point. Due to the
+          ! usage of pointers for xx and offset of 1 is present,
+          ! because x originally starts at 0.
+          
+          xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+               +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
+          yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+               +         xx(i,j+1,2) + xx(i+1,j+1,2)) - refPoint(2)
+          zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+               +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
+          
+          ! Update the viscous force and moment coefficients.
 
-                ! Compute the average pressure minus 1 and the coordinates
-                ! of the centroid of the face relative from from the
-                ! moment reference point. Due to the usage of pointers for
-                ! the coordinates, whose original array starts at 0, an
-                ! offset of 1 must be used. The pressure is multipled by
-                ! fact to account for the possibility of an inward or
-                ! outward pointing normal.
+          Fv(1) = Fv(1) + fx
+          Fv(2) = Fv(2) + fy
+          Fv(3) = Fv(3) + fz
+          
+          mx = yc*fz - zc*fy
+          my = zc*fx - xc*fz
+          mz = xc*fy - yc*fx
 
-                pm1 = fact*(half*(pp2(i,j) + pp1(i,j)) - pInf)*pRef
+          Mv(1) = Mv(1) + mx
+          Mv(2) = Mv(2) + my
+          Mv(3) = Mv(3) + mz
 
-                xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
-                     +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
-                yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
-                     +         xx(i,j+1,2) + xx(i+1,j+1,2)) - refPoint(2)
-                zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
-                     +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
+          ! Save the face based forces for the slice operations
+          bcData(mm)%Fv(i, j, 1) = fx
+          bcData(mm)%Fv(i, j, 2) = fy
+          bcData(mm)%Fv(i, j, 3) = fz
 
-                ! Compute the force components.
-                blk = max(BCData(nn)%iblank(i,j), 0)
-                fx = pm1*ssi(i,j,1)
-                fy = pm1*ssi(i,j,2)
-                fz = pm1*ssi(i,j,3)
+          ! Compute the tangential component of the stress tensor,
+          ! which is needed to monitor y+. The result is stored
+          ! in fx, fy, fz, although it is not really a force.
+          ! As later on only the magnitude of the tangential
+          ! component is important, there is no need to take the
+          ! sign into account (it should be a minus sign).
 
-                ! iBlank forces
-                fx = fx*blk
-                fy = fy*blk
-                fz = fz*blk
+          fx = tauXx*BCData(mm)%norm(i,j,1) + tauXy*BCData(mm)%norm(i,j,2) &
+               + tauXz*BCData(mm)%norm(i,j,3)
+          fy = tauXy*BCData(mm)%norm(i,j,1) + tauYy*BCData(mm)%norm(i,j,2) &
+               + tauYz*BCData(mm)%norm(i,j,3)
+          fz = tauXz*BCData(mm)%norm(i,j,1) + tauYz*BCData(mm)%norm(i,j,2) &
+               + tauZz*BCData(mm)%norm(i,j,3)
+          
+          fn = fx*BCData(mm)%norm(i,j,1) + fy*BCData(mm)%norm(i,j,2) + fz*BCData(mm)%norm(i,j,3)
 
-                ! Update the inviscid force and moment coefficients.
-                Fp(1) = Fp(1) + fx
-                Fp(2) = Fp(2) + fy
-                Fp(3) = Fp(3) + fz
-
-                mx = yc*fz - zc*fy
-                my = zc*fx - xc*fz
-                mz = xc*fy - yc*fx
-
-                Mp(1) = Mp(1) + mx
-                Mp(2) = Mp(2) + my
-                Mp(3) = Mp(3) + mz
-
-                ! Save the face-based forces and area
-                bcData(nn)%Fp(i, j, 1) = fx
-                bcData(nn)%Fp(i, j, 2) = fy
-                bcData(nn)%Fp(i, j, 3) = fz
-                cellArea = sqrt(ssi(i,j,1)**2 + ssi(i,j,2)**2 + ssi(i,j,3)**2)
-                bcData(nn)%area(i, j) = cellArea
-
-                ! Get normalized surface velocity:
-                v(1) = ww2(i, j, ivx)
-                v(2) = ww2(i, j, ivy)
-                v(3) = ww2(i, j, ivz)
-                v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
-
-                ! Dot product with free stream
-                sensor = -(v(1)*velDirFreeStream(1) + &
-                     v(2)*velDirFreeStream(2) + &
-                     v(3)*velDirFreeStream(3))
-
-                !Now run through a smooth heaviside function:
-                sensor = one/(one + exp(-2*sepSensorSharpness*(sensor-sepSensorOffset)))
-
-                ! And integrate over the area of this cell and save:
-                sensor = sensor * cellArea
-                sepSensor = sepSensor + sensor
-
-                ! Also accumulate into the sepSensorAvg
-                xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
-                     +         xx(i,j+1,1) + xx(i+1,j+1,1))
-                yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
-                     +         xx(i,j+1,2) + xx(i+1,j+1,2))
-                zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
-                     +         xx(i,j+1,3) + xx(i+1,j+1,3))
-
-                sepSensorAvg(1) = sepSensorAvg(1)  + sensor * xc
-                sepSensorAvg(2) = sepSensorAvg(2)  + sensor * yc
-                sepSensorAvg(3) = sepSensorAvg(3)  + sensor * zc
-
-                plocal = pp2(i,j)
-                tmp = two/(gammaInf*MachCoef*MachCoef)
-                Cp = tmp*(plocal-pinf)
-                Sigma = 1.4
-                Sensor1 = -Cp - Sigma
-                Sensor1 = one/(one+exp(-2*10*Sensor1))
-                Sensor1 = Sensor1 * cellArea
-                Cavitation = Cavitation + Sensor1
-             enddo
-             !
-             !           Integration of the viscous forces.
-             !           Only for viscous boundaries.
-             !
-             visForce: if( viscousSubface ) then
-
-                ! Initialize dwall for the laminar case and set the pointer
-                ! for the unit normals.
-
-                dwall = zero
-                ! Replace norm with BCData norm - Peter Lyu
-                !norm => BCData(nn)%norm
-
-                ! Loop over the quadrilateral faces of the subface and
-                ! compute the viscous contribution to the force and
-                ! moment and update the maximum value of y+.
-
-                do ii=0,(BCData(nn)%jnEnd - bcData(nn)%jnBeg)*(bcData(nn)%inEnd - bcData(nn)%inBeg) -1
-                   i = mod(ii, (bcData(nn)%inEnd-bcData(nn)%inBeg)) + bcData(nn)%inBeg + 1
-                   j = ii/(bcData(nn)%inEnd-bcData(nn)%inBeg) + bcData(nn)%jnBeg + 1
-
-                   ! Store the viscous stress tensor a bit easier.
-                   blk = max(BCData(nn)%iblank(i,j), 0)
-
-                   tauXx = viscSubface(nn)%tau(i,j,1)
-                   tauYy = viscSubface(nn)%tau(i,j,2)
-                   tauZz = viscSubface(nn)%tau(i,j,3)
-                   tauXy = viscSubface(nn)%tau(i,j,4)
-                   tauXz = viscSubface(nn)%tau(i,j,5)
-                   tauYz = viscSubface(nn)%tau(i,j,6)
-
-                   ! Compute the viscous force on the face. A minus sign
-                   ! is now present, due to the definition of this force.
-
-                   fx = -fact*(tauXx*ssi(i,j,1) + tauXy*ssi(i,j,2) &
-                        +        tauXz*ssi(i,j,3))*pRef
-                   fy = -fact*(tauXy*ssi(i,j,1) + tauYy*ssi(i,j,2) &
-                        +        tauYz*ssi(i,j,3))*pRef
-                   fz = -fact*(tauXz*ssi(i,j,1) + tauYz*ssi(i,j,2) &
-                        +        tauZz*ssi(i,j,3))*pRef
-
-                   ! iBlank forces after saving for zipper mesh
-                   tauXx = tauXx*blk
-                   tauYy = tauYy*blk
-                   tauZz = tauZz*blk
-                   tauXy = tauXy*blk
-                   tauXz = tauXz*blk
-                   tauYz = tauYz*blk
-
-                   fx = fx*blk
-                   fy = fy*blk
-                   fz = fz*blk
-
-                   ! Compute the coordinates of the centroid of the face
-                   ! relative from the moment reference point. Due to the
-                   ! usage of pointers for xx and offset of 1 is present,
-                   ! because x originally starts at 0.
-
-                   xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
-                        +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
-                   yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
-                        +         xx(i,j+1,2) + xx(i+1,j+1,2)) - refPoint(2)
-                   zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
-                        +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
-
-                   ! Update the viscous force and moment coefficients.
-
-                   Fv(1) = Fv(1) + fx
-                   Fv(2) = Fv(2) + fy
-                   Fv(3) = Fv(3) + fz
-
-                   mx = yc*fz - zc*fy
-                   my = zc*fx - xc*fz
-                   mz = xc*fy - yc*fx
-
-                   Mv(1) = Mv(1) + mx
-                   Mv(2) = Mv(2) + my
-                   Mv(3) = Mv(3) + mz
-
-                   ! Save the face based forces for the slice operations
-                   bcData(nn)%Fv(i, j, 1) = fx
-                   bcData(nn)%Fv(i, j, 2) = fy
-                   bcData(nn)%Fv(i, j, 3) = fz
-
-                   ! Compute the tangential component of the stress tensor,
-                   ! which is needed to monitor y+. The result is stored
-                   ! in fx, fy, fz, although it is not really a force.
-                   ! As later on only the magnitude of the tangential
-                   ! component is important, there is no need to take the
-                   ! sign into account (it should be a minus sign).
-
-                   fx = tauXx*BCData(nn)%norm(i,j,1) + tauXy*BCData(nn)%norm(i,j,2) &
-                        + tauXz*BCData(nn)%norm(i,j,3)
-                   fy = tauXy*BCData(nn)%norm(i,j,1) + tauYy*BCData(nn)%norm(i,j,2) &
-                        + tauYz*BCData(nn)%norm(i,j,3)
-                   fz = tauXz*BCData(nn)%norm(i,j,1) + tauYz*BCData(nn)%norm(i,j,2) &
-                        + tauZz*BCData(nn)%norm(i,j,3)
-
-                   fn = fx*BCData(nn)%norm(i,j,1) + fy*BCData(nn)%norm(i,j,2) + fz*BCData(nn)%norm(i,j,3)
-
-                   fx = fx - fn*BCData(nn)%norm(i,j,1)
-                   fy = fy - fn*BCData(nn)%norm(i,j,2)
-                   fz = fz - fn*BCData(nn)%norm(i,j,3)
-
-                   ! Compute the local value of y+. Due to the usage
-                   ! of pointers there is on offset of -1 in dd2Wall..
+          fx = fx - fn*BCData(mm)%norm(i,j,1)
+          fy = fy - fn*BCData(mm)%norm(i,j,2)
+          fz = fz - fn*BCData(mm)%norm(i,j,3)
+          
+          ! Compute the local value of y+. Due to the usage
+          ! of pointers there is on offset of -1 in dd2Wall..
 #ifndef USE_TAPENADE
-                   if(equations == RANSEquations) then
-                      dwall = dd2Wall(i-1,j-1)
-                      rho   = half*(ww2(i,j,irho) + ww1(i,j,irho))
-                      mul   = half*(rlv2(i,j) + rlv1(i,j))
-                      yplus = sqrt(rho*sqrt(fx*fx + fy*fy + fz*fz))*dwall/mul
-
-                      ! Store this value if this value is larger than the
-                      ! currently stored value.
-
-                      yplusMax = max(yplusMax, yplus)
-                   end if
-#endif
-                enddo
-             else
-                ! If we had no viscous force, set the viscous component to zero
-                bcData(nn)%Fv = zero
-             end if visForce
-
-             call resetBCPointers(nn, .True.)
-
-          end if invForce
-       else
-          ! If it wasn't included, but still a wall...zero
-          if(BCType(nn) == EulerWall .or. &
-               BCType(nn) == NSWallAdiabatic .or. &
-               BCType(nn) == NSWallIsothermal) then
-             bcData(nn)%area = zero
-             bcData(nn)%Fp = zero
-             bcData(nn)%Fv = zero
+          if(equations == RANSEquations) then
+             dwall = dd2Wall(i-1,j-1)
+             rho   = half*(ww2(i,j,irho) + ww1(i,j,irho))
+             mul   = half*(rlv2(i,j) + rlv1(i,j))
+             yplus = sqrt(rho*sqrt(fx*fx + fy*fy + fz*fz))*dwall/mul
+             
+             ! Store this value if this value is larger than the
+             ! currently stored value.
+             
+             yplusMax = max(yplusMax, yplus)
           end if
-       end if famInclude
-    end do bocos
-
+#endif
+       enddo
+    else
+       ! If we had no viscous force, set the viscous component to zero
+       bcData(mm)%Fv = zero
+    end if visForce
+    
     ! Increment the local values array with the values we computed here.
     localValues(iFp:iFp+2) = localValues(iFp:iFp+2) + Fp
     localValues(iFv:iFv+2) = localValues(iFv:iFv+2) + Fv
@@ -466,7 +463,7 @@ contains
 #ifndef USE_TAPENADE
     localValues(iyPlus) = max(localValues(iyPlus), yplusMax)
 #endif
-  end subroutine forcesAndMoments
+  end subroutine forcesAndMomentsFace
 
   ! ----------------------------------------------------------------------
   !                                                                      |
@@ -508,9 +505,7 @@ contains
     localValues = zero
     domains: do nn=1,nDom
        call setPointers(nn,1_intType,sps)
-
-       call forcesAndMoments(localValues)
-       call flowProperties(localValues)
+       call integrateSurfaces(localValues)
 
     end do domains
 
