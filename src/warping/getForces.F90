@@ -1182,7 +1182,6 @@ subroutine getHeatFlux(hflux, npts, sps)
   ! else-where.
   call setFullFamilyList()
   
-  ii = 0
   do nn=1, nDom
      call setPointers(nn, 1_intType, sps)
      call heatFluxes()
@@ -1202,8 +1201,6 @@ subroutine getHeatFlux(hflux, npts, sps)
 
   call computeWeighting(fullExchange(sps))
 
-  ! ii is the running counter through the pointer array.
-  ii = 0
   do nn=1, nDom
      call setPointers(nn, 1_intType, sps)
      do mm=1, nBocos
