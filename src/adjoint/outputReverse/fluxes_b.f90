@@ -3583,9 +3583,9 @@ contains
     end if
   end subroutine invisciddissfluxmatrix
 !  differentiation of invisciddissfluxscalar in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *p *w *fw gammainf
-!   with respect to varying inputs: *p *w *radi *radj *radk gammainf
-!                rhoinf pinfcorr
+!   gradient     of useful results: *p *w *fw
+!   with respect to varying inputs: *p *w *radi *radj *radk rhoinf
+!                pinfcorr
 !   plus diff mem management of: p:in w:in fw:in radi:in radj:in
 !                radk:in
   subroutine invisciddissfluxscalar_b()
@@ -3599,8 +3599,8 @@ contains
     use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, &
 &   jb, kb, w, wd, p, pd, pori, porj, pork, fw, fwd, radi, radid, radj, &
 &   radjd, radk, radkd, gamma
-    use flowvarrefstate, only : gammainf, gammainfd, pinfcorr, &
-&   pinfcorrd, rhoinf, rhoinfd
+    use flowvarrefstate, only : gammainf, pinfcorr, pinfcorrd, rhoinf,&
+&   rhoinfd
     use inputdiscretization, only : vis2, vis4
     use inputphysics, only : equations
     use iteration, only : rfil
@@ -3642,8 +3642,8 @@ contains
     real(kind=realtype) :: temp27
     real(kind=realtype) :: tempd12
     real(kind=realtype) :: temp0
-    real(kind=realtype) :: tempd11
     real(kind=realtype) :: temp26
+    real(kind=realtype) :: tempd11
     real(kind=realtype) :: tempd10
     real(kind=realtype) :: temp25
     real(kind=realtype) :: temp24
@@ -3690,7 +3690,6 @@ contains
     real(kind=realtype) :: temp38
     real(kind=realtype) :: temp37
     real(kind=realtype) :: temp36
-    real(kind=realtype) :: tempd21
     real(kind=realtype) :: temp35
     real(kind=realtype) :: tempd20
     real(kind=realtype) :: temp34
@@ -3861,15 +3860,15 @@ contains
         ddw5 = w(i, j, k+1, irhoe) + p(i, j, k+1) - (w(i, j, k, irhoe)+p&
 &         (i, j, k))
         fsd = fwd(i, j, k+1, irhoe) - fwd(i, j, k, irhoe)
-        tempd17 = -(dis4*fsd)
+        tempd16 = -(dis4*fsd)
         dis2d = ddw5*fsd
-        ddw5d = dis2*fsd - three*tempd17
+        ddw5d = dis2*fsd - three*tempd16
         dis4d = -((w(i, j, k+2, irhoe)+p(i, j, k+2)-w(i, j, k-1, irhoe)-&
 &         p(i, j, k-1)-three*ddw5)*fsd)
-        wd(i, j, k+2, irhoe) = wd(i, j, k+2, irhoe) + tempd17
-        pd(i, j, k+2) = pd(i, j, k+2) + tempd17
-        wd(i, j, k-1, irhoe) = wd(i, j, k-1, irhoe) - tempd17
-        pd(i, j, k-1) = pd(i, j, k-1) - tempd17
+        wd(i, j, k+2, irhoe) = wd(i, j, k+2, irhoe) + tempd16
+        pd(i, j, k+2) = pd(i, j, k+2) + tempd16
+        wd(i, j, k-1, irhoe) = wd(i, j, k-1, irhoe) - tempd16
+        pd(i, j, k-1) = pd(i, j, k-1) - tempd16
         wd(i, j, k+1, irhoe) = wd(i, j, k+1, irhoe) + ddw5d
         pd(i, j, k+1) = pd(i, j, k+1) + ddw5d
         wd(i, j, k, irhoe) = wd(i, j, k, irhoe) - ddw5d
@@ -3879,14 +3878,14 @@ contains
         temp40 = w(i, j, k-1, ivz)
         temp39 = w(i, j, k+2, irho)
         temp38 = w(i, j, k+2, ivz)
-        tempd18 = -(dis4*fsd)
+        tempd17 = -(dis4*fsd)
         dis2d = dis2d + ddw4*fsd
-        ddw4d = dis2*fsd - three*tempd18
+        ddw4d = dis2*fsd - three*tempd17
         dis4d = dis4d - (temp38*temp39-temp40*temp41-three*ddw4)*fsd
-        wd(i, j, k+2, ivz) = wd(i, j, k+2, ivz) + temp39*tempd18
-        wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp38*tempd18
-        wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - temp41*tempd18
-        wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp40*tempd18
+        wd(i, j, k+2, ivz) = wd(i, j, k+2, ivz) + temp39*tempd17
+        wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp38*tempd17
+        wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - temp41*tempd17
+        wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp40*tempd17
         wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + w(i, j, k+1, irho)*&
 &         ddw4d
         wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + w(i, j, k+1, ivz)*&
@@ -3898,14 +3897,14 @@ contains
         temp36 = w(i, j, k-1, ivy)
         temp35 = w(i, j, k+2, irho)
         temp34 = w(i, j, k+2, ivy)
-        tempd19 = -(dis4*fsd)
+        tempd18 = -(dis4*fsd)
         dis2d = dis2d + ddw3*fsd
-        ddw3d = dis2*fsd - three*tempd19
+        ddw3d = dis2*fsd - three*tempd18
         dis4d = dis4d - (temp34*temp35-temp36*temp37-three*ddw3)*fsd
-        wd(i, j, k+2, ivy) = wd(i, j, k+2, ivy) + temp35*tempd19
-        wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp34*tempd19
-        wd(i, j, k-1, ivy) = wd(i, j, k-1, ivy) - temp37*tempd19
-        wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp36*tempd19
+        wd(i, j, k+2, ivy) = wd(i, j, k+2, ivy) + temp35*tempd18
+        wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp34*tempd18
+        wd(i, j, k-1, ivy) = wd(i, j, k-1, ivy) - temp37*tempd18
+        wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp36*tempd18
         wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + w(i, j, k+1, irho)*&
 &         ddw3d
         wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + w(i, j, k+1, ivy)*&
@@ -3917,14 +3916,14 @@ contains
         temp32 = w(i, j, k-1, ivx)
         temp31 = w(i, j, k+2, irho)
         temp30 = w(i, j, k+2, ivx)
-        tempd20 = -(dis4*fsd)
+        tempd19 = -(dis4*fsd)
         dis2d = dis2d + ddw2*fsd
-        ddw2d = dis2*fsd - three*tempd20
+        ddw2d = dis2*fsd - three*tempd19
         dis4d = dis4d - (temp30*temp31-temp32*temp33-three*ddw2)*fsd
-        wd(i, j, k+2, ivx) = wd(i, j, k+2, ivx) + temp31*tempd20
-        wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp30*tempd20
-        wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - temp33*tempd20
-        wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp32*tempd20
+        wd(i, j, k+2, ivx) = wd(i, j, k+2, ivx) + temp31*tempd19
+        wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp30*tempd19
+        wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - temp33*tempd19
+        wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp32*tempd19
         wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + w(i, j, k+1, irho)*&
 &         ddw2d
         wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + w(i, j, k+1, ivx)*&
@@ -3932,13 +3931,13 @@ contains
         wd(i, j, k, ivx) = wd(i, j, k, ivx) - w(i, j, k, irho)*ddw2d
         wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivx)*ddw2d
         fsd = fwd(i, j, k+1, irho) - fwd(i, j, k, irho)
-        tempd21 = -(dis4*fsd)
+        tempd20 = -(dis4*fsd)
         dis2d = dis2d + ddw1*fsd
-        ddw1d = dis2*fsd - three*tempd21
+        ddw1d = dis2*fsd - three*tempd20
         dis4d = dis4d - (w(i, j, k+2, irho)-w(i, j, k-1, irho)-three*&
 &         ddw1)*fsd
-        wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + tempd21
-        wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - tempd21
+        wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + tempd20
+        wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - tempd20
         wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + ddw1d
         wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
         arg1d = 0.0_8
@@ -4011,15 +4010,15 @@ contains
         ddw5 = w(i, j+1, k, irhoe) + p(i, j+1, k) - (w(i, j, k, irhoe)+p&
 &         (i, j, k))
         fsd = fwd(i, j+1, k, irhoe) - fwd(i, j, k, irhoe)
-        tempd12 = -(dis4*fsd)
+        tempd11 = -(dis4*fsd)
         dis2d = ddw5*fsd
-        ddw5d = dis2*fsd - three*tempd12
+        ddw5d = dis2*fsd - three*tempd11
         dis4d = -((w(i, j+2, k, irhoe)+p(i, j+2, k)-w(i, j-1, k, irhoe)-&
 &         p(i, j-1, k)-three*ddw5)*fsd)
-        wd(i, j+2, k, irhoe) = wd(i, j+2, k, irhoe) + tempd12
-        pd(i, j+2, k) = pd(i, j+2, k) + tempd12
-        wd(i, j-1, k, irhoe) = wd(i, j-1, k, irhoe) - tempd12
-        pd(i, j-1, k) = pd(i, j-1, k) - tempd12
+        wd(i, j+2, k, irhoe) = wd(i, j+2, k, irhoe) + tempd11
+        pd(i, j+2, k) = pd(i, j+2, k) + tempd11
+        wd(i, j-1, k, irhoe) = wd(i, j-1, k, irhoe) - tempd11
+        pd(i, j-1, k) = pd(i, j-1, k) - tempd11
         wd(i, j+1, k, irhoe) = wd(i, j+1, k, irhoe) + ddw5d
         pd(i, j+1, k) = pd(i, j+1, k) + ddw5d
         wd(i, j, k, irhoe) = wd(i, j, k, irhoe) - ddw5d
@@ -4029,14 +4028,14 @@ contains
         temp28 = w(i, j-1, k, ivz)
         temp27 = w(i, j+2, k, irho)
         temp26 = w(i, j+2, k, ivz)
-        tempd13 = -(dis4*fsd)
+        tempd12 = -(dis4*fsd)
         dis2d = dis2d + ddw4*fsd
-        ddw4d = dis2*fsd - three*tempd13
+        ddw4d = dis2*fsd - three*tempd12
         dis4d = dis4d - (temp26*temp27-temp28*temp29-three*ddw4)*fsd
-        wd(i, j+2, k, ivz) = wd(i, j+2, k, ivz) + temp27*tempd13
-        wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp26*tempd13
-        wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - temp29*tempd13
-        wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp28*tempd13
+        wd(i, j+2, k, ivz) = wd(i, j+2, k, ivz) + temp27*tempd12
+        wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp26*tempd12
+        wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - temp29*tempd12
+        wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp28*tempd12
         wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + w(i, j+1, k, irho)*&
 &         ddw4d
         wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + w(i, j+1, k, ivz)*&
@@ -4048,14 +4047,14 @@ contains
         temp24 = w(i, j-1, k, ivy)
         temp23 = w(i, j+2, k, irho)
         temp22 = w(i, j+2, k, ivy)
-        tempd14 = -(dis4*fsd)
+        tempd13 = -(dis4*fsd)
         dis2d = dis2d + ddw3*fsd
-        ddw3d = dis2*fsd - three*tempd14
+        ddw3d = dis2*fsd - three*tempd13
         dis4d = dis4d - (temp22*temp23-temp24*temp25-three*ddw3)*fsd
-        wd(i, j+2, k, ivy) = wd(i, j+2, k, ivy) + temp23*tempd14
-        wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp22*tempd14
-        wd(i, j-1, k, ivy) = wd(i, j-1, k, ivy) - temp25*tempd14
-        wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp24*tempd14
+        wd(i, j+2, k, ivy) = wd(i, j+2, k, ivy) + temp23*tempd13
+        wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp22*tempd13
+        wd(i, j-1, k, ivy) = wd(i, j-1, k, ivy) - temp25*tempd13
+        wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp24*tempd13
         wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + w(i, j+1, k, irho)*&
 &         ddw3d
         wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + w(i, j+1, k, ivy)*&
@@ -4067,14 +4066,14 @@ contains
         temp20 = w(i, j-1, k, ivx)
         temp19 = w(i, j+2, k, irho)
         temp18 = w(i, j+2, k, ivx)
-        tempd15 = -(dis4*fsd)
+        tempd14 = -(dis4*fsd)
         dis2d = dis2d + ddw2*fsd
-        ddw2d = dis2*fsd - three*tempd15
+        ddw2d = dis2*fsd - three*tempd14
         dis4d = dis4d - (temp18*temp19-temp20*temp21-three*ddw2)*fsd
-        wd(i, j+2, k, ivx) = wd(i, j+2, k, ivx) + temp19*tempd15
-        wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp18*tempd15
-        wd(i, j-1, k, ivx) = wd(i, j-1, k, ivx) - temp21*tempd15
-        wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp20*tempd15
+        wd(i, j+2, k, ivx) = wd(i, j+2, k, ivx) + temp19*tempd14
+        wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp18*tempd14
+        wd(i, j-1, k, ivx) = wd(i, j-1, k, ivx) - temp21*tempd14
+        wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp20*tempd14
         wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + w(i, j+1, k, irho)*&
 &         ddw2d
         wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + w(i, j+1, k, ivx)*&
@@ -4082,13 +4081,13 @@ contains
         wd(i, j, k, ivx) = wd(i, j, k, ivx) - w(i, j, k, irho)*ddw2d
         wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivx)*ddw2d
         fsd = fwd(i, j+1, k, irho) - fwd(i, j, k, irho)
-        tempd16 = -(dis4*fsd)
+        tempd15 = -(dis4*fsd)
         dis2d = dis2d + ddw1*fsd
-        ddw1d = dis2*fsd - three*tempd16
+        ddw1d = dis2*fsd - three*tempd15
         dis4d = dis4d - (w(i, j+2, k, irho)-w(i, j-1, k, irho)-three*&
 &         ddw1)*fsd
-        wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + tempd16
-        wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - tempd16
+        wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + tempd15
+        wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - tempd15
         wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + ddw1d
         wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
         arg1d = 0.0_8
@@ -4161,15 +4160,15 @@ contains
         ddw5 = w(i+1, j, k, irhoe) + p(i+1, j, k) - (w(i, j, k, irhoe)+p&
 &         (i, j, k))
         fsd = fwd(i+1, j, k, irhoe) - fwd(i, j, k, irhoe)
-        tempd7 = -(dis4*fsd)
+        tempd6 = -(dis4*fsd)
         dis2d = ddw5*fsd
-        ddw5d = dis2*fsd - three*tempd7
+        ddw5d = dis2*fsd - three*tempd6
         dis4d = -((w(i+2, j, k, irhoe)+p(i+2, j, k)-w(i-1, j, k, irhoe)-&
 &         p(i-1, j, k)-three*ddw5)*fsd)
-        wd(i+2, j, k, irhoe) = wd(i+2, j, k, irhoe) + tempd7
-        pd(i+2, j, k) = pd(i+2, j, k) + tempd7
-        wd(i-1, j, k, irhoe) = wd(i-1, j, k, irhoe) - tempd7
-        pd(i-1, j, k) = pd(i-1, j, k) - tempd7
+        wd(i+2, j, k, irhoe) = wd(i+2, j, k, irhoe) + tempd6
+        pd(i+2, j, k) = pd(i+2, j, k) + tempd6
+        wd(i-1, j, k, irhoe) = wd(i-1, j, k, irhoe) - tempd6
+        pd(i-1, j, k) = pd(i-1, j, k) - tempd6
         wd(i+1, j, k, irhoe) = wd(i+1, j, k, irhoe) + ddw5d
         pd(i+1, j, k) = pd(i+1, j, k) + ddw5d
         wd(i, j, k, irhoe) = wd(i, j, k, irhoe) - ddw5d
@@ -4179,14 +4178,14 @@ contains
         temp16 = w(i-1, j, k, ivz)
         temp15 = w(i+2, j, k, irho)
         temp14 = w(i+2, j, k, ivz)
-        tempd8 = -(dis4*fsd)
+        tempd7 = -(dis4*fsd)
         dis2d = dis2d + ddw4*fsd
-        ddw4d = dis2*fsd - three*tempd8
+        ddw4d = dis2*fsd - three*tempd7
         dis4d = dis4d - (temp14*temp15-temp16*temp17-three*ddw4)*fsd
-        wd(i+2, j, k, ivz) = wd(i+2, j, k, ivz) + temp15*tempd8
-        wd(i+2, j, k, irho) = wd(i+2, j, k, irho) + temp14*tempd8
-        wd(i-1, j, k, ivz) = wd(i-1, j, k, ivz) - temp17*tempd8
-        wd(i-1, j, k, irho) = wd(i-1, j, k, irho) - temp16*tempd8
+        wd(i+2, j, k, ivz) = wd(i+2, j, k, ivz) + temp15*tempd7
+        wd(i+2, j, k, irho) = wd(i+2, j, k, irho) + temp14*tempd7
+        wd(i-1, j, k, ivz) = wd(i-1, j, k, ivz) - temp17*tempd7
+        wd(i-1, j, k, irho) = wd(i-1, j, k, irho) - temp16*tempd7
         wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + w(i+1, j, k, irho)*&
 &         ddw4d
         wd(i+1, j, k, irho) = wd(i+1, j, k, irho) + w(i+1, j, k, ivz)*&
@@ -4198,14 +4197,14 @@ contains
         temp12 = w(i-1, j, k, ivy)
         temp11 = w(i+2, j, k, irho)
         temp10 = w(i+2, j, k, ivy)
-        tempd9 = -(dis4*fsd)
+        tempd8 = -(dis4*fsd)
         dis2d = dis2d + ddw3*fsd
-        ddw3d = dis2*fsd - three*tempd9
+        ddw3d = dis2*fsd - three*tempd8
         dis4d = dis4d - (temp10*temp11-temp12*temp13-three*ddw3)*fsd
-        wd(i+2, j, k, ivy) = wd(i+2, j, k, ivy) + temp11*tempd9
-        wd(i+2, j, k, irho) = wd(i+2, j, k, irho) + temp10*tempd9
-        wd(i-1, j, k, ivy) = wd(i-1, j, k, ivy) - temp13*tempd9
-        wd(i-1, j, k, irho) = wd(i-1, j, k, irho) - temp12*tempd9
+        wd(i+2, j, k, ivy) = wd(i+2, j, k, ivy) + temp11*tempd8
+        wd(i+2, j, k, irho) = wd(i+2, j, k, irho) + temp10*tempd8
+        wd(i-1, j, k, ivy) = wd(i-1, j, k, ivy) - temp13*tempd8
+        wd(i-1, j, k, irho) = wd(i-1, j, k, irho) - temp12*tempd8
         wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + w(i+1, j, k, irho)*&
 &         ddw3d
         wd(i+1, j, k, irho) = wd(i+1, j, k, irho) + w(i+1, j, k, ivy)*&
@@ -4217,14 +4216,14 @@ contains
         temp8 = w(i-1, j, k, ivx)
         temp7 = w(i+2, j, k, irho)
         temp6 = w(i+2, j, k, ivx)
-        tempd10 = -(dis4*fsd)
+        tempd9 = -(dis4*fsd)
         dis2d = dis2d + ddw2*fsd
-        ddw2d = dis2*fsd - three*tempd10
+        ddw2d = dis2*fsd - three*tempd9
         dis4d = dis4d - (temp6*temp7-temp8*temp9-three*ddw2)*fsd
-        wd(i+2, j, k, ivx) = wd(i+2, j, k, ivx) + temp7*tempd10
-        wd(i+2, j, k, irho) = wd(i+2, j, k, irho) + temp6*tempd10
-        wd(i-1, j, k, ivx) = wd(i-1, j, k, ivx) - temp9*tempd10
-        wd(i-1, j, k, irho) = wd(i-1, j, k, irho) - temp8*tempd10
+        wd(i+2, j, k, ivx) = wd(i+2, j, k, ivx) + temp7*tempd9
+        wd(i+2, j, k, irho) = wd(i+2, j, k, irho) + temp6*tempd9
+        wd(i-1, j, k, ivx) = wd(i-1, j, k, ivx) - temp9*tempd9
+        wd(i-1, j, k, irho) = wd(i-1, j, k, irho) - temp8*tempd9
         wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + w(i+1, j, k, irho)*&
 &         ddw2d
         wd(i+1, j, k, irho) = wd(i+1, j, k, irho) + w(i+1, j, k, ivx)*&
@@ -4232,13 +4231,13 @@ contains
         wd(i, j, k, ivx) = wd(i, j, k, ivx) - w(i, j, k, irho)*ddw2d
         wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivx)*ddw2d
         fsd = fwd(i+1, j, k, irho) - fwd(i, j, k, irho)
-        tempd11 = -(dis4*fsd)
+        tempd10 = -(dis4*fsd)
         dis2d = dis2d + ddw1*fsd
-        ddw1d = dis2*fsd - three*tempd11
+        ddw1d = dis2*fsd - three*tempd10
         dis4d = dis4d - (w(i+2, j, k, irho)-w(i-1, j, k, irho)-three*&
 &         ddw1)*fsd
-        wd(i+2, j, k, irho) = wd(i+2, j, k, irho) + tempd11
-        wd(i-1, j, k, irho) = wd(i-1, j, k, irho) - tempd11
+        wd(i+2, j, k, irho) = wd(i+2, j, k, irho) + tempd10
+        wd(i-1, j, k, irho) = wd(i-1, j, k, irho) - tempd10
         wd(i+1, j, k, irho) = wd(i+1, j, k, irho) + ddw1d
         wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
         arg1d = 0.0_8
@@ -4292,13 +4291,13 @@ contains
           dssd(i, j, k, 3) = 0.0_8
         end if
         temp5 = ss(i, j, k+1) + two*ss(i, j, k) + ss(i, j, k-1) + sslim
-        tempd5 = x3d/temp5
-        tempd6 = -((ss(i, j, k+1)-two*ss(i, j, k)+ss(i, j, k-1))*tempd5/&
+        tempd4 = x3d/temp5
+        tempd5 = -((ss(i, j, k+1)-two*ss(i, j, k)+ss(i, j, k-1))*tempd4/&
 &         temp5)
-        ssd(i, j, k+1) = ssd(i, j, k+1) + tempd6 + tempd5
-        ssd(i, j, k) = ssd(i, j, k) + two*tempd6 - two*tempd5
-        ssd(i, j, k-1) = ssd(i, j, k-1) + tempd6 + tempd5
-        sslimd = sslimd + tempd6
+        ssd(i, j, k+1) = ssd(i, j, k+1) + tempd5 + tempd4
+        ssd(i, j, k) = ssd(i, j, k) + two*tempd5 - two*tempd4
+        ssd(i, j, k-1) = ssd(i, j, k-1) + tempd5 + tempd4
+        sslimd = sslimd + tempd5
         call popcontrol1b(branch)
         if (branch .eq. 0) then
           x2d = dssd(i, j, k, 2)
@@ -4308,13 +4307,13 @@ contains
           dssd(i, j, k, 2) = 0.0_8
         end if
         temp4 = ss(i, j+1, k) + two*ss(i, j, k) + ss(i, j-1, k) + sslim
-        tempd3 = x2d/temp4
-        tempd4 = -((ss(i, j+1, k)-two*ss(i, j, k)+ss(i, j-1, k))*tempd3/&
+        tempd2 = x2d/temp4
+        tempd3 = -((ss(i, j+1, k)-two*ss(i, j, k)+ss(i, j-1, k))*tempd2/&
 &         temp4)
-        ssd(i, j+1, k) = ssd(i, j+1, k) + tempd4 + tempd3
-        ssd(i, j, k) = ssd(i, j, k) + two*tempd4 - two*tempd3
-        ssd(i, j-1, k) = ssd(i, j-1, k) + tempd4 + tempd3
-        sslimd = sslimd + tempd4
+        ssd(i, j+1, k) = ssd(i, j+1, k) + tempd3 + tempd2
+        ssd(i, j, k) = ssd(i, j, k) + two*tempd3 - two*tempd2
+        ssd(i, j-1, k) = ssd(i, j-1, k) + tempd3 + tempd2
+        sslimd = sslimd + tempd3
         call popcontrol1b(branch)
         if (branch .eq. 0) then
           x1d = dssd(i, j, k, 1)
@@ -4324,13 +4323,13 @@ contains
           dssd(i, j, k, 1) = 0.0_8
         end if
         temp3 = ss(i+1, j, k) + two*ss(i, j, k) + ss(i-1, j, k) + sslim
-        tempd1 = x1d/temp3
-        tempd2 = -((ss(i+1, j, k)-two*ss(i, j, k)+ss(i-1, j, k))*tempd1/&
+        tempd0 = x1d/temp3
+        tempd1 = -((ss(i+1, j, k)-two*ss(i, j, k)+ss(i-1, j, k))*tempd0/&
 &         temp3)
-        ssd(i+1, j, k) = ssd(i+1, j, k) + tempd2 + tempd1
-        ssd(i, j, k) = ssd(i, j, k) + two*tempd2 - two*tempd1
-        ssd(i-1, j, k) = ssd(i-1, j, k) + tempd2 + tempd1
-        sslimd = sslimd + tempd2
+        ssd(i+1, j, k) = ssd(i+1, j, k) + tempd1 + tempd0
+        ssd(i, j, k) = ssd(i, j, k) + two*tempd1 - two*tempd0
+        ssd(i-1, j, k) = ssd(i-1, j, k) + tempd1 + tempd0
+        sslimd = sslimd + tempd1
       end do
       call popinteger4(j)
       call popinteger4(i)
@@ -4351,16 +4350,13 @@ contains
         end do
         temp = rhoinf**gammainf
         tempd = 0.001_realtype*sslimd/temp
-        tempd0 = -(pinfcorr*tempd/temp)
         pinfcorrd = tempd
         if (rhoinf .le. 0.0_8 .and. (gammainf .eq. 0.0_8 .or. gammainf &
 &           .ne. int(gammainf))) then
           rhoinfd = 0.0
         else
-          rhoinfd = gammainf*rhoinf**(gammainf-1)*tempd0
+          rhoinfd = -(pinfcorr*gammainf*rhoinf**(gammainf-1)*tempd/temp)
         end if
-        if (.not.rhoinf .le. 0.0_8) gammainfd = gammainfd + temp*log(&
-&           rhoinf)*tempd0
       else if (branch .eq. 1) then
         pd = pd + ssd
         pinfcorrd = 0.001_realtype*sslimd
@@ -11725,9 +11721,9 @@ contains
     end do
   end subroutine viscousfluxapprox
 !  differentiation of invisciddissfluxscalarapprox in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *p *w *fw gammainf
-!   with respect to varying inputs: *p *w *radi *radj *radk gammainf
-!                rhoinf pinfcorr
+!   gradient     of useful results: *p *w *fw
+!   with respect to varying inputs: *p *w *radi *radj *radk rhoinf
+!                pinfcorr
 !   plus diff mem management of: p:in w:in fw:in radi:in radj:in
 !                radk:in
   subroutine invisciddissfluxscalarapprox_b()
@@ -11831,7 +11827,6 @@ contains
     real(kind=realtype) :: tmpd8
     real(kind=realtype) :: tmpd7
     real(kind=realtype) :: tmpd6
-    real(kind=realtype) :: tempd0
     real(kind=realtype) :: tmpd5
     real(kind=realtype) :: tmpd4
     real(kind=realtype) :: x1d
@@ -12897,16 +12892,13 @@ contains
       else
         temp = rhoinf**gammainf
         tempd = 0.001_realtype*sslimd/temp
-        tempd0 = -(pinfcorr*tempd/temp)
         pinfcorrd = tempd
         if (rhoinf .le. 0.0_8 .and. (gammainf .eq. 0.0_8 .or. gammainf &
 &           .ne. int(gammainf))) then
           rhoinfd = 0.0
         else
-          rhoinfd = gammainf*rhoinf**(gammainf-1)*tempd0
+          rhoinfd = -(pinfcorr*gammainf*rhoinf**(gammainf-1)*tempd/temp)
         end if
-        if (.not.rhoinf .le. 0.0_8) gammainfd = gammainfd + temp*log(&
-&           rhoinf)*tempd0
       end if
     end if
   end subroutine invisciddissfluxscalarapprox_b

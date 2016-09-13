@@ -12,10 +12,10 @@ module residuals_b
 contains
 !  differentiation of residual_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev *p *dw *w *rlv *x *si
-!                *sj *sk *(*viscsubface.tau) gammainf
+!                *sj *sk *(*viscsubface.tau)
 !   with respect to varying inputs: *rev *p *dw *w *rlv *x *vol
-!                *si *sj *sk *radi *radj *radk gammainf timeref
-!                rhoinf winf pinfcorr
+!                *si *sj *sk *radi *radj *radk timeref rhoinf winf
+!                pinfcorr
 !   plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
 !                p:in dw:in w:in rlv:in x:in qx:in qy:in qz:in
 !                ux:in vol:in uy:in uz:in si:in sj:in sk:in vx:in

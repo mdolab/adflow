@@ -24,7 +24,7 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   use stringops
   use inputOverset
   use adtapi
-  use utils, only : setPointers, EChk
+  use utils, only : setPointers, EChk, isWallType
   use adjointvars, only :nNodesLocal
   implicit none
 
@@ -42,7 +42,6 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   logical, dimension(:), allocatable :: oWallReady
   type(oversetWall), dimension(:), allocatable :: oWalls
   integer(kind=intType), dimension(:), allocatable :: intRecvBuf
-  logical :: isWallType
   type(oversetString) :: master, pocketMaster
   integer(kind=intType), dimension(:), allocatable :: nodeIndices
 

@@ -13,8 +13,8 @@ module initializeflow_d
 
 contains
 !  differentiation of referencestate in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: gammainf pinf timeref rhoinf
-!                muref tref winf pinfcorr rgas pref
+!   variations   of useful results: pinf timeref rhoinf muref tref
+!                winf pinfcorr rgas pref
 !   with respect to varying inputs: mach veldirfreestream machcoef
 !                tinfdim rhoinfdim pinfdim
   subroutine referencestate_d()
@@ -46,9 +46,8 @@ contains
 &   rhoinfdim, rhoinfdimd, muinfdim, muinfdimd, pref, prefd, rhoref, &
 &   rhorefd, tref, trefd, muref, murefd, timeref, timerefd, pinf, pinfd,&
 &   pinfcorr, pinfcorrd, rhoinf, rhoinfd, uinf, uinfd, rgas, rgasd, &
-&   muinf, muinfd, gammainf, gammainfd, winf, winfd, nw, nwf, kpresent, &
-&   winf, winfd
-    use flowutils_d, only : computegamma, computegamma_d, etot, etot_d
+&   muinf, muinfd, gammainf, winf, winfd, nw, nwf, kpresent, winf, winfd
+    use flowutils_d, only : computegamma, etot, etot_d
     use turbutils_d, only : sanuknowneddyratio, sanuknowneddyratio_d
     implicit none
     integer(kind=inttype) :: sps, nn, mm, ierr
@@ -56,7 +55,7 @@ contains
     real(kind=realtype) :: nuinf, ktmp, uinf2
     real(kind=realtype) :: nuinfd, ktmpd, uinf2d
     real(kind=realtype) :: vinf, zinf, tmp1(1), tmp2(1)
-    real(kind=realtype) :: vinfd, zinfd, tmp1d(1), tmp2d(1)
+    real(kind=realtype) :: vinfd, zinfd
     intrinsic sqrt
     real(kind=realtype) :: arg1
     real(kind=realtype) :: arg1d
@@ -121,11 +120,8 @@ contains
     rgas = rgasdim*rhoref*tref/pref
     muinfd = (muinfdimd*muref-muinfdim*murefd)/muref**2
     muinf = muinfdim/muref
-    tmp1d = 0.0_8
-    tmp1d(1) = tinfdimd
     tmp1(1) = tinfdim
-    call computegamma_d(tmp1, tmp1d, tmp2, tmp2d, 1)
-    gammainfd = tmp2d(1)
+    call computegamma(tmp1, tmp2, 1)
     gammainf = tmp2(1)
 ! ----------------------------------------
 !      compute the final winf
@@ -148,9 +144,9 @@ contains
 ! better indication of the 'speed' of the flow so the turubulence
 ! intensity ration is more meaningful especially for moving
 ! geometries. (not used in sa model)
-    uinf2d = (((machcoefd*machcoef+machcoef*machcoefd)*gammainf*pinf+&
-&     machcoef**2*(gammainfd*pinf+gammainf*pinfd))*rhoinf-machcoef**2*&
-&     gammainf*pinf*rhoinfd)/rhoinf**2
+    uinf2d = (gammainf*((machcoefd*machcoef+machcoef*machcoefd)*pinf+&
+&     machcoef**2*pinfd)*rhoinf-machcoef**2*gammainf*pinf*rhoinfd)/&
+&     rhoinf**2
     uinf2 = machcoef*machcoef*gammainf*pinf/rhoinf
 ! set the turbulent variables if transport variables are to be
 ! solved. we should be checking for rans equations here,

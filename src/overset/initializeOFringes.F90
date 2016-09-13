@@ -8,6 +8,7 @@ subroutine initializeOFringes(oFringe, nn)
   use overset
   use stencils
   use inputOverset
+  use utils
   implicit none
   
   ! Input Params
@@ -17,7 +18,7 @@ subroutine initializeOFringes(oFringe, nn)
   ! Working Params
   integer(kind=intTYpe) :: i, j, k, mm, iDim, ii, jj, kk, iii, jjj
   integer(kind=intTYpe) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
-  logical :: wallsPresent, isWallType
+  logical :: wallsPresent
   integer(kind=intType) :: i_stencil
   integer(kind=intType), dimension(:, :, :), allocatable :: tmp
   real(kind=realType) :: dist, frac, xp(3)

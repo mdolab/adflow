@@ -12,9 +12,8 @@ module solverutils_b
 contains
 !  differentiation of timestep_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *p *w *si *sj *sk *radi *radj
-!                *radk gammainf rhoinf pinfcorr
-!   with respect to varying inputs: *p *w *si *sj *sk gammainf
-!                rhoinf pinfcorr
+!                *radk rhoinf pinfcorr
+!   with respect to varying inputs: *p *w *si *sj *sk rhoinf pinfcorr
 !   plus diff mem management of: p:in w:in si:in sj:in sk:in radi:in
 !                radj:in radk:in
   subroutine timestep_block_b(onlyradii)
@@ -32,7 +31,7 @@ contains
 &   , sj, sjd, sk, skd, sfacei, sfacej, sfacek, dtl, gamma, vol, vold, &
 &   addgridvelocities, sectionid
     use flowvarrefstate, only : timeref, timerefd, eddymodel, gammainf&
-&   , gammainfd, pinfcorr, pinfcorrd, viscous, rhoinf, rhoinfd
+&   , pinfcorr, pinfcorrd, viscous, rhoinf, rhoinfd
     use inputdiscretization, only : adis, dirscaling, &
 &   radiineededcoarse, radiineededfine, precond
     use inputphysics, only : equationmode
@@ -380,10 +379,9 @@ contains
       case default
         clim2d = 0.0_8
       end select
-      tempd = 0.000001_realtype*clim2d/rhoinf
-      gammainfd = gammainfd + pinfcorr*tempd
-      pinfcorrd = pinfcorrd + gammainf*tempd
-      rhoinfd = rhoinfd - gammainf*pinfcorr*tempd/rhoinf
+      tempd = gammainf*0.000001_realtype*clim2d/rhoinf
+      pinfcorrd = pinfcorrd + tempd
+      rhoinfd = rhoinfd - pinfcorr*tempd/rhoinf
     end if
   end subroutine timestep_block_b
   subroutine timestep_block(onlyradii)

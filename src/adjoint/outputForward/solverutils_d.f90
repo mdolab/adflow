@@ -13,7 +13,7 @@ contains
 !  differentiation of timestep_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *radi *radj *radk
 !   with respect to varying inputs: *p *sfacei *sfacej *sfacek
-!                *w *si *sj *sk gammainf rhoinf pinfcorr
+!                *w *si *sj *sk rhoinf pinfcorr
 !   plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
 !                w:in si:in sj:in sk:in radi:in radj:in radk:in
   subroutine timestep_block_d(onlyradii)
@@ -31,7 +31,7 @@ contains
 &   , sj, sjd, sk, skd, sfacei, sfaceid, sfacej, sfacejd, sfacek, &
 &   sfacekd, dtl, gamma, vol, vold, addgridvelocities, sectionid
     use flowvarrefstate, only : timeref, timerefd, eddymodel, gammainf&
-&   , gammainfd, pinfcorr, pinfcorrd, viscous, rhoinf, rhoinfd
+&   , pinfcorr, pinfcorrd, viscous, rhoinf, rhoinfd
     use inputdiscretization, only : adis, dirscaling, &
 &   radiineededcoarse, radiineededfine, precond
     use inputphysics, only : equationmode
@@ -98,8 +98,8 @@ contains
 ! is used. idem for rlim; compute clim2 as well.
       plim = 0.001_realtype*pinfcorr
       rlim = 0.001_realtype*rhoinf
-      clim2d = (0.000001_realtype*(gammainfd*pinfcorr+gammainf*pinfcorrd&
-&       )*rhoinf-0.000001_realtype*gammainf*pinfcorr*rhoinfd)/rhoinf**2
+      clim2d = (0.000001_realtype*gammainf*pinfcorrd*rhoinf-&
+&       0.000001_realtype*gammainf*pinfcorr*rhoinfd)/rhoinf**2
       clim2 = 0.000001_realtype*gammainf*pinfcorr/rhoinf
       doscaling = dirscaling .and. currentlevel .le. groundlevel
 ! initialize sface to zero. this value will be used if the
@@ -543,7 +543,7 @@ contains
 !  differentiation of gridvelocitiesfinelevel_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *sfacei *sfacej *s *sfacek
 !   with respect to varying inputs: *x *si *sj *sk alpha veldirfreestream
-!                machgrid beta gammainf pinf timeref rhoinf
+!                machgrid beta pinf timeref rhoinf
 !   plus diff mem management of: sfacei:in sfacej:in s:in sfacek:in
 !                x:in si:in sj:in sk:in
   subroutine gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
@@ -615,8 +615,7 @@ contains
 ! compute the mesh velocity from the given mesh mach number.
 ! vel{x,y,z}grid0 is the actual velocity you want at the
 ! geometry. 
-    arg1d = ((gammainfd*pinf+gammainf*pinfd)*rhoinf-gammainf*pinf*&
-&     rhoinfd)/rhoinf**2
+    arg1d = (gammainf*pinfd*rhoinf-gammainf*pinf*rhoinfd)/rhoinf**2
     arg1 = gammainf*pinf/rhoinf
     if (arg1 .eq. 0.0_8) then
       ainfd = 0.0_8
@@ -1660,7 +1659,7 @@ loopdirection:do mm=1,3
 !  differentiation of slipvelocitiesfinelevel_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *(*bcdata.uslip)
 !   with respect to varying inputs: *x alpha veldirfreestream machgrid
-!                beta gammainf pinf timeref rhoinf
+!                beta pinf timeref rhoinf
 !   plus diff mem management of: x:in bcdata:in *bcdata.uslip:in
   subroutine slipvelocitiesfinelevel_block_d(useoldcoor, t, sps)
 !
@@ -1885,8 +1884,7 @@ bocoloop1:do mm=1,nviscbocos
 !  velxgrid = ainf*machgrid(1)
 !  velygrid = ainf*machgrid(2)
 !  velzgrid = ainf*machgrid(3)
-      arg1d = ((gammainfd*pinf+gammainf*pinfd)*rhoinf-gammainf*pinf*&
-&       rhoinfd)/rhoinf**2
+      arg1d = (gammainf*pinfd*rhoinf-gammainf*pinf*rhoinfd)/rhoinf**2
       arg1 = gammainf*pinf/rhoinf
       if (arg1 .eq. 0.0_8) then
         ainfd = 0.0_8

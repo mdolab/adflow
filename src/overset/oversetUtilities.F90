@@ -822,21 +822,6 @@ subroutine flagForcedReceivers(tmp)
   end do
 end subroutine flagForcedReceivers
 
-function isWallType(bType)
-
-  use constants
-  implicit none
-  integer(kind=intType) :: bType
-  logical :: isWallType
-
-  isWallType = .False.
-  if (bType == NSWallAdiabatic .or. &
-       bType == NSWallIsoThermal .or. &
-       bType == EulerWall) then 
-     isWallType = .True.
-  end if
-
-end function isWallType
 
 ! Utility function for unpacking/accessing the status variable
 

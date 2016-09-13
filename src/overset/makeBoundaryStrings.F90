@@ -8,7 +8,7 @@ subroutine makeGapBoundaryStrings(level, sps, master)
   use stringOps
   use kdtree2_module
   use inputOverset
-  use utils, only : setPointers, EChk, myNorm2
+  use utils, only : setPointers, EChk, myNorm2, isWallType
   implicit none
 
   ! Input Params
@@ -26,7 +26,6 @@ subroutine makeGapBoundaryStrings(level, sps, master)
   real(kind=realType), dimension(:, :, :), pointer :: xx
   real(kind=realType), dimension(3) :: s1, s2, s3, s4, v1, v2, v3, v4, x0
   real(kind=realType) ::  fact, timeA
-  logical :: isWallType
 
   real(kind=realType), dimension(:, :, :), allocatable :: patchNormals
   real(kind=realType), dimension(:, :), allocatable :: patchH

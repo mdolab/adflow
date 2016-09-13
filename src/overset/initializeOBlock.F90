@@ -11,7 +11,7 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
   use cgnsGrid
   use communication
   use stencils
-  use utils, only : mynorm2
+  use utils, only : mynorm2, isWallType
   implicit none 
 
   ! Input Params
@@ -23,7 +23,7 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
   integer(kind=intType) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
   real(kind=realType) :: factor, frac,  dist, xp(3)
   integer(kind=intType) :: i_stencil, ii, jj, iii
-  logical :: wallsPresent, isWallType
+  logical :: wallsPresent
   logical, allocatable, dimension(:, :, :)  :: nearWallTmp
 
   ! Set all the sizes for this block.
