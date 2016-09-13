@@ -25,13 +25,10 @@ gridFile = '../inputFiles/euler_conv_nozzle.cgns'
 options = copy.copy(sumbDefOpts)
 
 options = {
-    # Common Parameters
     'gridFile':gridFile,
-    # Physics Parameters
     'equationType':'euler',
     'smoother':'dadi',
     'liftIndex':2,
-    # Common Parameters
     'CFL':3.,
     'CFLCoarse':1.5,
     'MGCycle':'2w',
@@ -42,15 +39,13 @@ options = {
     'nsubiterturb':3,
     'useNKSolver':True,
     'NKSubSpaceSize':60,
-    # Convergence Parameters
     'L2Convergence':1e-12,
     'L2ConvergenceCoarse':1e-2,
-    #'miniterationnum':100,
     'NKSwitchTol':1e-2,
     'nkadpc': False, 
-    #artifical viscosity
     'vis4':0.006,
-    'vis2': 0.0
+    'vis2': 0.0, 
+    'blocksplitting': True
 }
 
 ap = AeroProblem(name='conv_nozzle', alpha=0.0,  mach=0.25, T=500, P=100000,
@@ -60,10 +55,6 @@ ap = AeroProblem(name='conv_nozzle', alpha=0.0,  mach=0.25, T=500, P=100000,
                             'mavgttot_up', 'mavgttot_down',
                             'mavgps_up', 'mavgps_down'])
 
-solve = True
-if 'solve' not in sys.argv:
-    options['restartfile'] = gridFile
-    solve = False
 # Creat the solver
 
 CFDSolver = SUMB(options=options, debug=False)
@@ -79,13 +70,26 @@ CFDSolver.addFunction('mavgttot', 'upstream', name="mavgttot_up")
 CFDSolver.addFunction('mavgps', 'downstream', name="mavgps_down")
 CFDSolver.addFunction('mavgps', 'upstream', name="mavgps_up")
 
-if solve:
-    # We are told that we must first solve the problem, most likely
-    # for a training run. 
-    CFDSolver(ap)
+CFDSolver(ap)
+
+# Check the residual
+res = CFDSolver.getResidual(ap)
+totalR0, totalRStart, totalRFinal = CFDSolver.getResNorms()
+res /= totalR0
+
+parPrint('Norm of residual')
+reg_par_write_norm(res, 1e-10, 1e-10)
+
+# Get and check the states
+parPrint('Norm of state vector')
+reg_par_write_norm(CFDSolver.getStates(), 1e-10, 1e-10)
+
 
 funcs = {}
 CFDSolver.evalFunctions(ap, funcs)
 if MPI.COMM_WORLD.rank == 0:
+    print 'Eval Functions:'
     reg_write_dict(funcs, 1e-10, 1e-10)
-    # print 'Functions Sens:', funcsSens
+
+
+
