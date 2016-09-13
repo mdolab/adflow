@@ -70,6 +70,10 @@ module block
      real(kind=realType), dimension(:,:), pointer :: area
      integer(kind=realType), dimension(:,:), pointer :: fIndex
 
+     ! Generic pointers for performing a globalized reduction. 
+     real(kind=realType), dimension(:, :), pointer :: nodeVal
+     real(kind=realType), dimension(:, :), pointer :: cellVal
+
      ! symNorm is the normal for (symmertry) boundary conditions.
      ! symNormSet is set to false until symNorm is computed at the
      ! beginning of a simulation. symNorm then remains constant for
@@ -105,12 +109,13 @@ module block
      !                 - Storage of rface for intermediate meshes.
      ! uSlipALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd,3)
      !                 - Storage of uSlip for intermediate meshes.
-     ! sHeatFlux(0:nALEsteps,iBeg:iEnd,jBeg:jEnd,3)
-     !                 - Surface heat flux.
+     ! cellHeatFlux(iBeg:iEnd,jBeg:jEnd,3)
+     !                 - Surface heat flux (cell based/node based).
      real(kind=realType), dimension(:,:,:,:), pointer :: normALE
      real(kind=realType), dimension(:,:,:),   pointer :: rFaceALE
      real(kind=realType), dimension(:,:,:,:), pointer :: uSlipALE
-     real(kind=realType), dimension(:,:),     pointer :: sHeatFlux
+     real(kind=realType), dimension(:,:),     pointer :: nodeHeatFlux
+     real(kind=realType), dimension(:,:),     pointer :: cellHeatFlux
 
      ! ptInlet(:,:):       Total pressure at subsonic inlets.
      ! ttInlet(:,:):       Total temperature at subsonic inlets.

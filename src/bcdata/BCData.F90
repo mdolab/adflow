@@ -1502,13 +1502,11 @@ contains
                 case (NSWallAdiabatic)
                    allocate(BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), &
                         BCData(mm)%uSlipALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd,3), &
-                        BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &                         
                         BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), & 
                         BCData(mm)%fIndex(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
-                        BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                         BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                         BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
                                 ! Note: iBlank/delta are cell based, but uses the
@@ -1535,11 +1533,12 @@ contains
                         BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), & 
                         BCData(mm)%fIndex(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
-                        BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
+                        BCData(mm)%cellHeatFlux(iBeg:iEnd,jBeg:jEnd), &
+                        BCData(mm)%nodeHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                         BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                         BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
-                                ! Note: iBlank/delta are cell based, but uses the
-                                ! node number to guarantee a halo exists. 
+                        ! Note: iBlank/delta are cell based, but uses the
+                        ! node number to guarantee a halo exists. 
                         BCData(mm)%iBlank(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
                         BCData(mm)%delta(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
                         BCData(mm)%deltaNode(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
@@ -1557,13 +1556,11 @@ contains
 
                    allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%rFaceALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd), &
-                        BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &                         
                         BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), & 
                         BCData(mm)%fIndex(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
-                        BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                         BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                         BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
                                 ! Note: iBlank/delta are cell based, but uses the
@@ -2518,7 +2515,8 @@ contains
                 nullify(BCData(j)%normALE)
                 nullify(BCData(j)%rfaceALE)
                 nullify(BCData(j)%uSlipALE)
-                nullify(BCData(j)%sHeatFlux)
+                nullify(BCData(j)%cellHeatFlux)
+                nullify(BCData(j)%nodeHeatFlux)
 
                 nullify(BCData(j)%ptInlet)
                 nullify(BCData(j)%ttInlet)

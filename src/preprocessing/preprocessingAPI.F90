@@ -1288,18 +1288,19 @@ contains
     use communication, only : myid, sumb_comm_world
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use surfaceFamilies, only : wallExchange, familyExchanges, famNames, &
-         famGroups, wallFamilies, famIsWall, totalFamilies, totalWallFamilies
+         famGroups, wallFamilies, famIsWall, totalFamilies, totalWallFamilies, &
+         zeroCellVal, zeroNodeVal, oneCellVal, fullExchange
     use utils, only : setPointers, EChk, pointReduce, terminate, convertToLowerCase
     use sorting, only : qsortStrings, bsearchStrings
     implicit none
 
     integer :: ierr
     integer(kind=intType) :: nLevels, level, nn, mm, nsMin, nsMax, i, j, k, nFam, famID, cgb, iFam
-    integer(kind=intType) :: sps, currentFamily, curFam(1)
+    integer(kind=intType) :: sps, currentFamily, curFam(1), isizemax, jsizemax
     character(maxCGNSNameLen), dimension(25) :: defaultFamName 
     character(maxCGNSNameLen) :: curStr, family
     character(maxCGNSNameLen), dimension(:), allocatable :: fulLFamList, uniqueFamList
-    integer(kind=intType), dimension(:), allocatable :: localFlag
+    integer(kind=intType), dimension(:), allocatable :: localFlag, temp
 
     ! Process out the family information. The goal here is to
     ! assign a unique integer to each family in each boundary
@@ -1485,10 +1486,33 @@ contains
        end do
     end do
 
-    allocate(wallExchange(nTimeIntervalsSpectral))
-    do sps=1, nTimeIntervalsSpectral
-       call createNodeScatterForFamilies(wallFamilies(sps), totalWallFamilies, wallExchange(sps), sps)
+    allocate(wallExchange(nTimeIntervalsSpectral), fullExchange(nTimeIntervalsSpectral))
+    allocate(temp(totalFamilies))
+    do i=1, totalFamilies
+       temp(i) =i
     end do
+    do sps=1, nTimeIntervalsSpectral
+       call createNodeScatterForFamilies(wallFamilies, totalWallFamilies, wallExchange(sps), sps)
+       call createNodeScatterForFamilies(temp, totalFamilies, fullExchange(sps), sps)
+    end do
+    deallocate(temp)
+    ! Allocate two arrays that have the maximum face size. These may
+    ! be slightly larger than necessary, but that's ok. We just need
+    ! somethwere to point the pointers. 
+    isizemax = 0
+    jsizemax = 0
+    do nn=1,nDom
+       isizemax = max(isizemax, flowDoms(nn, 1, 1)%ie)
+       isizemax = max(isizemax, flowDoms(nn, 1, 1)%je)
+
+       jsizemax = max(jsizemax, flowDoms(nn, 1, 1)%je)
+       jsizemax = max(jsizemax, flowDoms(nn, 1, 1)%ke)
+    end do
+
+    allocate(zeroCellVal(isizemax, jsizemax), zeroNodeVal(isizemax, jsizemax), oneCellVal(isizemax, jsizemax))
+    oneCellVal = one
+    zeroCellVal = zero
+    zeroNodeVal = zero
 
   end subroutine setSurfaceFamilyInfo
 

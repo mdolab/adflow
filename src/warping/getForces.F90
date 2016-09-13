@@ -1,13 +1,9 @@
 
 subroutine getForces(forces, npts, sps)
   use constants
-  use blockPointers
-  use flowVarRefState
-  use inputTimeSpectral
-  use communication
-  use inputPhysics
-  use surfaceFamilies
-  use costFunctions
+  use blockPointers, only : BCData, nDom, nBocos, BCType
+  use inputPhysics, only : forcesAsTractions
+  use costFunctions, only : nLocalValues
   use surfaceUtils, only : setFullFamilyList
   use utils, only : setPointers
   use sorting, only : bsearchIntegers
@@ -23,6 +19,7 @@ subroutine getForces(forces, npts, sps)
   real(kind=realType) :: sepSensorAvg(3)
   real(kind=realType) :: Fp(3), Fv(3), Mp(3), Mv(3), yplusmax, qf(3)
   real(kind=realType) :: localValues(nLocalValues)
+  real(kind=realType) :: timea,timeb,timec, timed
   ! Make sure *all* forces are computed. Sectioning will be done
   ! else-where.
   call setFullFamilyList()
@@ -64,30 +61,130 @@ subroutine getForces(forces, npts, sps)
   end do domains2
 end subroutine getForces
 
-subroutine computeNodalTractions(sps)
+subroutine surfaceCellCenterToNode(exch)
+
   use constants
-  use blockPointers
-  use flowVarRefState
-  use inputTimeSpectral
-  use communication
-  use inputPhysics
-  use surfaceFamilies, only: wallExchange, wallFamilies, totalWallFamilies
+  use blockPointers, only : BCData, nDom, nBocos, BCType
+  use surfaceFamilies, only : familyExchange
   use utils, only : setPointers, EChk
-  use sorting, only : bsearchIntegers
   implicit none
 
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscvec.h90"
+  type(familyExchange) :: exch
+  integer(kind=intType) ::  sps
+  integer(kind=intType) :: mm, nn, i, j, ii, jj, iDim, ierr
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ind(4), ni, nj
+  real(kind=realType) :: qv
+  real(kind=realType), dimension(:), pointer :: localPtr
 
-  integer(kind=intType), intent(in) ::  sps
+  ! We assume that normalization factor is already computed
+  sps = exch%sps
+  call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  localPtr = zero
+  
+  ! ii is the running counter through the pointer array.
+  ii = 0
+  do nn=1, nDom
+     call setPointers(nn, 1_intType, sps)
+     do mm=1, nBocos
+        iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
+        jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
+        ni = iEnd - iBeg + 1
+        nj = jEnd - jBeg + 1
+        do j=0,nj-2
+           do i=0,ni-2
+              qv = fourth * BCData(mm)%cellVal(i+iBeg+1, j+jBeg+1)
+              ind(1) = ii + (j  )*ni + i + 1
+              ind(2) = ii + (j  )*ni + i + 2 
+              ind(3) = ii + (j+1)*ni + i + 2 
+              ind(4) = ii + (j+1)*ni + i + 1
+              do jj=1,4
+                 localPtr(ind(jj)) = localPtr(ind(jj)) + qv
+              end do
+           end do
+        end do
+        ii = ii + ni*nj
+     end do
+  end do
+
+  call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
+  ! Globalize the current face based value
+  call vecSet(exch%nodeValGlobal, zero, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
+  call VecScatterBegin(exch%scatter, exch%nodeValLocal, &
+       exch%nodeValGlobal, ADD_VALUES, SCATTER_FORWARD, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
+  call VecScatterEnd(exch%scatter, exch%nodeValLocal, &
+       exch%nodeValGlobal, ADD_VALUES, SCATTER_FORWARD, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
+  ! Now divide by the weighting. We can do this with a vecpointwisemult
+  call vecPointwiseMult(exch%nodeValGlobal, exch%nodeValGlobal, &
+       exch%sumGlobal, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! Push back to the local values
+  call VecScatterBegin(exch%scatter, exch%nodeValGlobal, &
+       exch%nodeValLocal, INSERT_VALUES, SCATTER_REVERSE, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call VecScatterEnd(exch%scatter, exch%nodeValGlobal, &
+       exch%nodeValLocal, INSERT_VALUES, SCATTER_REVERSE, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
+  call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
+  ii = 0
+  do nn=1, nDom
+     call setPointers(nn, 1_intType, sps)
+     do mm=1, nBocos
+        iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
+        jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
+        do j=jBeg, jEnd
+           do i=iBeg, iEnd
+              ii = ii + 1
+              BCData(mm)%nodeVal(i, j) = localPtr(ii)
+           end do
+        end do
+     end do
+  end do
+
+  call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
+end subroutine surfaceCellCenterToNode
+
+subroutine computeWeighting(exch)
+
+  use constants
+  use blockPointers, only : BCData, nDom, nBocos, BCType
+  use surfaceFamilies, only : familyExchange
+  use utils, only : setPointers, EChk
+  implicit none
+
+#define PETSC_AVOID_MPIF_H
+#include "petsc/finclude/petscsys.h"
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscvec.h90"
+  type(familyExchange) :: exch
+  integer(kind=intType) ::  sps
   integer(kind=intType) :: mm, nn, i, j, ii, jj, iDim, ierr
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ind(4), ni, nj
   real(kind=realType) :: qf, qa
   real(kind=realType), dimension(:), pointer :: localPtr
 
-  call vecGetArrayF90(wallExchange(sps)%nodeValLocal, localPtr, ierr)
+  sps = exch%sps
+
+  call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   localPtr = zero
@@ -100,178 +197,122 @@ subroutine computeNodalTractions(sps)
         jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
         ni = iEnd - iBeg + 1
         nj = jEnd - jBeg + 1
-
-        if(BCType(mm) == EulerWall .or. &
-             BCType(mm) == NSWallAdiabatic .or. &
-             BCType(mm) == NSWallIsothermal) then
-           do j=0,nj-2
-              do i=0,ni-2
-                 
-                 ! Scatter a quarter of the area to each node:
-                 qa = fourth*BCData(mm)%area(i+iBeg+1, j+jBeg+1)
-                 ind(1) = ii + (j  )*ni + i + 1
-                 ind(2) = ii + (j  )*ni + i + 2 
-                 ind(3) = ii + (j+1)*ni + i + 2 
-                 ind(4) = ii + (j+1)*ni + i + 1
-                 do jj=1,4
-                    localPtr(ind(jj)) = localPtr(ind(jj)) + qa
-                 end do
+        do j=0,nj-2
+           do i=0,ni-2
+              
+              ! Scatter a quarter of the face value to each node:
+              qa = fourth*BCData(mm)%cellVal(i+iBeg+1, j+jBeg+1)
+              ind(1) = ii + (j  )*ni + i + 1
+              ind(2) = ii + (j  )*ni + i + 2 
+              ind(3) = ii + (j+1)*ni + i + 2 
+              ind(4) = ii + (j+1)*ni + i + 1
+              do jj=1,4
+                 localPtr(ind(jj)) = localPtr(ind(jj)) + qa
               end do
            end do
-           ii = ii + ni*nj
-        end if
+        end do
+        ii = ii + ni*nj
      end do
   end do
- 
-  call vecRestoreArrayF90(wallExchange(sps)%nodeValLocal, localPtr, ierr)
+   
+  call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  ! Globalize the area
-  call vecSet(wallExchange(sps)%sumGlobal, zero, ierr)
+  ! Globalize the face value
+  call vecSet(exch%sumGlobal, zero, ierr)
   call EChk(ierr,__FILE__,__LINE__)
   
-  call VecScatterBegin(wallExchange(sps)%scatter, wallExchange(sps)%nodeValLocal, &
-       wallExchange(sps)%sumGlobal, ADD_VALUES, SCATTER_FORWARD, ierr)
+  call VecScatterBegin(exch%scatter, exch%nodeValLocal, &
+       exch%sumGlobal, ADD_VALUES, SCATTER_FORWARD, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecScatterEnd(wallExchange(sps)%scatter, wallExchange(sps)%nodeValLocal, &
-       wallExchange(sps)%sumGlobal, ADD_VALUES, SCATTER_FORWARD, ierr)
+  call VecScatterEnd(exch%scatter, exch%nodeValLocal, &
+       exch%sumGlobal, ADD_VALUES, SCATTER_FORWARD, ierr)
   call EChk(ierr,__FILE__,__LINE__)
   
   ! Now compute the inverse of the weighting so that we can multiply
-  ! instead of dividing.
+  ! instead of dividing. Note that we check dividing by zero and just
+  ! set those to zero. 
 
-  call vecGetArrayF90(wallExchange(sps)%sumGlobal, localPtr, ierr)
+  call vecGetArrayF90(exch%sumGlobal, localPtr, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  do i=1, size(localPtr)
+     if (localPtr(i) == zero) then 
+        localPtr(i) = zero
+     else
+        localPtr(i) = one/localPtr(i)
+     end if
+  end do
+
+  call vecRestoreArrayF90(exch%sumGlobal, localPtr, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  localPtr = one/localPtr
-  call vecRestoreArrayF90(wallExchange(sps)%sumGlobal, localPtr, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+end subroutine computeWeighting
 
+subroutine computeNodalTractions(sps)
+  use constants
+  use blockPointers, only : BCData, nDom, nBocos, BCType
+  use surfaceFamilies, only : zeroCellVal, zeroNodeVal, fullExchange
+  use utils, only : setPointers, EChk
+  implicit none
 
-  ! Now do each of the three dimensions for the pressure and viscous forces
-  dimLoop: do iDim=1, 6
+  integer(kind=intType), intent(in) ::  sps
+  integer(kind=intType) :: mm, nn, i, j, ii, jj, iDim, ierr
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ind(4), ni, nj
+  real(kind=realType) :: qf, qa
+  real(kind=realType), dimension(:), pointer :: localPtr
+  logical ::isWallType
+  ! Set the weighting factors. In this case, area
 
-     call vecGetArrayF90(wallExchange(sps)%nodeValLocal, localPtr, ierr)
-
-     call EChk(ierr,__FILE__,__LINE__)
-     localPtr = zero
-     ! ii is the running counter through the pointer array.
-     ii = 0
-     do nn=1, nDom
-        call setPointers(nn, 1_intType, sps)
-        do mm=1, nBocos
-           iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
-           jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
-           ni = iEnd - iBeg + 1
-           nj = jEnd - jBeg + 1
-           if(BCType(mm) == EulerWall .or. &
-                BCType(mm) == NSWallAdiabatic .or. &
-                BCType(mm) == NSWallIsothermal) then
-              do j=0,nj-2
-                 do i=0,ni-2
-                    if (iDim <= 3) then 
-                       qf = fourth*BCData(mm)%Fp(i+iBeg+1, j+jBeg+1, iDim)
-                    else
-                       qf = fourth*BCData(mm)%Fv(i+iBeg+1, j+jBeg+1, iDim-3)
-                    end if
-
-                    ind(1) = ii + (j  )*ni + i + 1
-                    ind(2) = ii + (j  )*ni + i + 2 
-                    ind(3) = ii + (j+1)*ni + i + 2 
-                    ind(4) = ii + (j+1)*ni + i + 1
-                    do jj=1,4
-                       localPtr(ind(jj)) = localPtr(ind(jj)) + qf
-                    end do
-                 end do
-              end do
-              ii = ii + ni*nj
-           end if
-        end do
-     end do
-
-     call vecRestoreArrayF90(wallExchange(sps)%nodeValLocal, localPtr, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-
-     ! Globalize the current force
-     call vecSet(wallExchange(sps)%nodeValGlobal, zero, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-
-     call VecScatterBegin(wallExchange(sps)%scatter, wallExchange(sps)%nodeValLocal, &
-          wallExchange(sps)%nodeValGlobal, ADD_VALUES, SCATTER_FORWARD, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-
-     call VecScatterEnd(wallExchange(sps)%scatter, wallExchange(sps)%nodeValLocal, &
-          wallExchange(sps)%nodeValGlobal, ADD_VALUES, SCATTER_FORWARD, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-
-     ! Now divide by the dual area. We can do this with a vecpointwisemult
-     call vecPointwiseMult(wallExchange(sps)%nodeValGlobal, wallExchange(sps)%nodeValGlobal, &
-          wallExchange(sps)%sumGlobal, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-
-     ! Push back to the local values
-     call VecScatterBegin(wallExchange(sps)%scatter, wallExchange(sps)%nodeValGlobal, &
-          wallExchange(sps)%nodeValLocal, INSERT_VALUES, SCATTER_REVERSE, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-
-     call VecScatterEnd(wallExchange(sps)%scatter, wallExchange(sps)%nodeValGlobal, &
-          wallExchange(sps)%nodeValLocal, INSERT_VALUES, SCATTER_REVERSE, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-
-     call vecGetArrayF90(wallExchange(sps)%nodeValLocal, localPtr, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-
-     ii = 0
-     do nn=1, nDom
-        call setPointers(nn, 1_intType, sps)
-        do mm=1, nBocos
-           iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
-           jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
-
-           if(BCType(mm) == EulerWall .or. &
-              BCType(mm) == NSWallAdiabatic .or. &
-              BCType(mm) == NSWallIsothermal) then
-              do j=jBeg, jEnd
-                 do i=iBeg, iEnd
-                    ii = ii + 1
-                    if (iDim <= 3) then 
-                       bcData(mm)%Tp(i, j, iDim) = localPtr(ii) 
-                    else
-                       bcData(mm)%Tv(i, j, iDim-3) = localPtr(ii) 
-                    end if
-                 end do
-              end do
-           end if
-        end do
-     end do
-
-     call vecRestoreArrayF90(wallExchange(sps)%nodeValLocal, localPtr, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-
-  end do dimLoop
-
-  ! Finally sum the Tp and Tv together
+  ii = 0
   do nn=1, nDom
      call setPointers(nn, 1_intType, sps)
      do mm=1, nBocos
         iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
         jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
 
-        if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
-             BCType(mm) == NSWallIsothermal) then
-           do iDim=1,3
-              do j=jBeg, jEnd
-                 do i=iBeg, iEnd
-                    bcData(mm)%T(i, j, iDim) = bcData(mm)%Tp(i, j, iDim) + &
-                         bcData(mm)%Tv(i, j, iDim)
-                 end do
-              end do
-           end do
-        end if
+        bocoType1: if(isWallType(BCType(mm))) then 
+           BCData(mm)%cellVal => BCData(mm)%area(:, :)
+        else
+           BCData(mm)%cellVal => zeroCellVal
+           BCData(mm)%nodeVal => zeroNodeVal
+        end if bocoType1
      end do
   end do
 
+  call computeWeighting(fullExchange(sps))
+
+  FpFvLoop: do iDim=1, 6
+     ! ii is the running counter through the pointer array.
+     ii = 0
+     do nn=1, nDom
+        call setPointers(nn, 1_intType, sps)
+        do mm=1, nBocos
+           bocoType2: if(isWallType(BCType(mm))) then 
+              if (iDim <= 3) then 
+                 BCData(mm)%cellVal => BCData(mm)%Fp(:, :, iDim)
+                 BCData(mm)%nodeVal => BCData(mm)%Tp(:, :, iDim)
+              else
+                 BCData(mm)%cellVal => BCData(mm)%Fv(:, :, iDim-3)
+                 BCData(mm)%nodeVal => BCData(mm)%Tv(:, :, iDim-3)
+              end if
+           end if bocoType2
+        end do
+     end do
+
+     call surfaceCellCenterToNode(fullExchange(sps))
+     
+  end do FpFVLoop
+
+  ! Finally sum the Tp and Tv together
+  do nn=1, nDom
+     call setPointers(nn, 1_intType, sps)
+     do mm=1, nBocos
+        bocoType3: if(isWallType(BCType(mm))) then 
+           bcData(mm)%T = bcData(mm)%Tp + bcData(mm)%Tv
+        end if bocoType3
+     end do
+  end do
 end subroutine computeNodalTractions
 
 subroutine computeNodalForces(sps)
@@ -1121,6 +1162,193 @@ subroutine getForces_d(forces, forcesd, npts, sps)
 
 end subroutine getForces_d
 
+subroutine getHeatFlux(hflux, npts, sps)
+  use constants
+  use blockPointers, only : nDom, nBocos, BCType, BCData
+  use surfaceFamilies, only : zeroCellVal, zeroNodeVal, fullExchange
+  use surfaceUtils, only : setFullFamilyList
+  use utils, only : setPointers
+  implicit none
+  !
+  !      Local variables.
+  !
+  integer(kind=intType), intent(in) :: npts, sps
+  real(kind=realType), intent(out) :: hflux(npts)
 
+  integer(kind=intType) :: mm, nn, i, j, ii
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
 
+  ! Make sure *all* heat fluxes are computed. Sectioning will be done
+  ! else-where.
+  call setFullFamilyList()
+  
+  ii = 0
+  do nn=1, nDom
+     call setPointers(nn, 1_intType, sps)
+     call heatFluxes()
 
+     do mm=1, nBocos
+        iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
+        jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
+
+        bocoType1: if (BCType(mm) == NSWallIsoThermal) then 
+           BCData(mm)%cellVal => BCData(mm)%area(:, :)
+        else
+           BCData(mm)%cellVal => zeroCellVal
+           BCData(mm)%nodeVal => zeroNodeVal
+        end if bocoType1
+     end do
+  end do
+
+  call computeWeighting(fullExchange(sps))
+
+  ! ii is the running counter through the pointer array.
+  ii = 0
+  do nn=1, nDom
+     call setPointers(nn, 1_intType, sps)
+     do mm=1, nBocos
+        bocoType2: if (BCType(mm) == NSWallIsoThermal) then 
+           BCData(mm)%cellVal => BCData(mm)%cellHeatFlux(:, :)
+           BCData(mm)%nodeVal => BCData(mm)%nodeHeatFlux(:, :)
+        end if bocoType2
+     end do
+  end do
+
+  call surfaceCellCenterToNode(fullExchange(sps))
+
+  ! Now extract into the flat array:
+  ii = 0 
+  do nn=1,nDom
+     call setPointers(nn,1_intType,sps)
+     
+     ! Loop over the number of viscous boundary subfaces of this block.
+     ! According to preprocessing/viscSubfaceInfo, visc bocos are numbered
+     ! before other bocos. Therefore, mm_nViscBocos == mm_nBocos
+     do mm=1,nBocos
+        bocoType3: if (BCType(mm) == NSWallIsoThermal) then 
+           do j=BCData(mm)%jnBeg,BCData(mm)%jnEnd
+              do i=BCData(mm)%inBeg,BCData(mm)%inEnd
+                 ii = ii + 1
+                 hflux(ii) = BCData(mm)%nodeHeatFlux(i, j)
+              end do
+           end do
+           ! Simply put in zeros for the other wall BCs
+        else if (BCType(mm) == NSWallAdiabatic .or. BCType(mm) == EulerWall) then 
+           do j=BCData(mm)%jnBeg,BCData(mm)%jnEnd
+              do i=BCData(mm)%inBeg,BCData(mm)%inEnd
+                 ii = ii + 1
+                 hflux(ii) = zero
+              end do
+           end do
+        end if bocoType3
+     end do
+  end do
+end subroutine getHeatFlux
+
+subroutine heatFluxes
+  use constants
+  use blockPointers, only : BCData, nDom, nBocos, BCType, BCFaceID, viscSubFace
+  use BCPointers, only : ssi
+  use flowVarRefState, only : pRef, rhoRef
+  use utils, only : setPointers, setBCPointers
+  implicit none
+  !
+  !      Local variables.
+  !
+  integer(kind=intType) :: i, j, ii, mm
+  real(kind=realType) :: fact, scaleDim
+  real(kind=realType) :: qw, qA
+  logical :: heatedSubface
+
+  ! Set the actual scaling factor such that ACTUAL heat flux is computed
+  ! The factor is determined from stanton number
+  scaleDim = pRef*sqrt(pRef/rhoRef)
+
+  ! Loop over the boundary subfaces of this block.
+  bocos: do mm=1, nBocos
+
+     ! Only do this on isoThermalWalls
+     if (BCType(mm) == NSWallIsoThermal) then 
+
+        ! Set a bunch of pointers depending on the face id to make
+        ! a generic treatment possible. The routine setBcPointers
+        ! is not used, because quite a few other ones are needed.
+        call setBCPointers(mm, .True.)
+        
+        select case (BCFaceID(mm))
+        case (iMin, jMin, kMin)
+           fact = -one
+        case (iMax, jMax, kMax)
+           fact = one
+        end select
+        
+        ! Loop over the quadrilateral faces of the subface. Note that
+        ! the nodal range of BCData must be used and not the cell
+        ! range, because the latter may include the halo's in i and
+        ! j-direction. The offset +1 is there, because inBeg and jnBeg
+        ! refer to nodal ranges and not to cell ranges. 
+        !
+        do j=(BCData(mm)%jnBeg+1), BCData(mm)%jnEnd
+           do i=(BCData(mm)%inBeg+1), BCData(mm)%inEnd
+        
+              ! Compute the normal heat flux on the face. Inward positive.
+              BCData(mm)%cellHeatFlux(i,j) = -fact*scaleDim* &
+                   sqrt(ssi(i,j,1)**2 + ssi(i,j,2)**2 + ssi(i,j,3)**2) * &
+                   ( viscSubface(mm)%q(i,j,1)*BCData(mm)%norm(i,j,1) &
+                   + viscSubface(mm)%q(i,j,2)*BCData(mm)%norm(i,j,2) &
+                   + viscSubface(mm)%q(i,j,3)*BCData(mm)%norm(i,j,3))
+           enddo
+        end do
+     end if
+  enddo bocos
+end subroutine heatFluxes
+
+subroutine setTNSWall(tnsw, npts, sps)
+
+  use constants
+  use blockPointers, only : nDom, nBocos, BCData, BCType
+  use flowVarRefState, only : TRef
+  use surfaceFamilies, only : famGroups
+  use sorting, only : bsearchIntegers
+  use utils, only : setPointers
+  implicit none
+
+  ! Input Variables
+  integer(kind=intType), intent(in) :: npts
+  real(kind=realType), intent(in) :: tnsw(npts)
+
+  ! Local Variables
+  integer(kind=intType) :: mm, nn, i, j, ii, sps
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
+
+  ii = 0 
+  domains: do nn=1,nDom
+     call setPointers(nn, 1_intType, sps)
+
+     ! Loop over the number of viscous boundary subfaces of this block.
+     bocos: do mm=1,nBocos
+        famInclude: if (bsearchIntegers(BCdata(mm)%famID, &
+             famGroups, size(famGroups)) > 0) then
+           jBeg = BCdata(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
+           iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd
+
+           ! Only set if it is an *actual* isothermalw all
+           isoWall: if (BCType(mm) == NSWallIsoThermal) then 
+              do j=jBeg,jEnd
+                 do i=iBeg, iEnd
+                    ii = ii + 1
+                    BCData(mm)%TNS_Wall(i,j) = tnsw(ii)/TRef
+                 end do
+              end do
+           else
+              ! Included in the temp array, but not an actual
+              ! isothermalwall so just increment the counter.
+              ii =ii + (jEnd-jBeg+1)*(iEnd-iBeg+1)
+           end if isoWall
+        end if famInclude
+     end do bocos
+  end do domains
+
+  ! TODO: The temperature must be interpolated to the coarse meshes. 
+
+end subroutine setTNSWall

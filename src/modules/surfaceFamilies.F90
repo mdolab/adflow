@@ -37,12 +37,16 @@ module surfaceFamilies
   ! walls. This is used for the lift distribution/slice data to make
   ! sure all data is consistently reduced. 
   type(familyExchange), dimension(:), allocatable, target :: wallExchange
+  type(familyExchange), dimension(:), allocatable, target :: fullExchange
 
 #endif
   integer(kind=intType), dimension(:), allocatable :: famGroups
   character(len=maxCGNSNameLen), dimension(:), allocatable :: famNames
   integer(kind=intType), dimension(:), allocatable :: wallFamilies, famIsWall
   integer(kind=intType) :: totalFamilies, totalWallFamilies
+  real(kind=realType), dimension(:, :), allocatable, target :: zeroCellVal
+  real(kind=realType), dimension(:, :), allocatable, target :: oneCellVal
+  real(kind=realType), dimension(:, :), allocatable, target :: zeroNodeVal
 
 #ifndef USE_TAPENADE
   contains

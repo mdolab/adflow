@@ -1998,7 +1998,71 @@ class SUMB(AeroSolver):
         # Finally map the vector as required.
         return self.mapVector(forces, self.allWallsGroup, groupName)
 
+    def getHeatFluxes(self, groupName=None, TS=0):
+        """Return the heat fluxes for isothermal walls on the families
+        defined by group name on this processor.
+
+        Parameters
+        ----------
+        groupName : str
+            Group identifier to get only heat fluxes cooresponding to
+            the desired group. The group must be a family or a
+            user-supplied group of families. The default is None which
+            corresponds to all wall-type surfaces.
+
+        TS : int
+            Spectral instance for which to get the fluxes.
+
+        Returns
+        -------
+        heatFluxes : array (N)
+            HeatFluxes on this processor. Note that N may be 0, and an
+            empty array of shape (0) can be returned.
+
+        """
+
+        # Set the family to all walls group.
+        npts, ncell = self._getSurfaceSize(self.allWallsGroup)
+
+        fluxes = numpy.zeros(npts, self.dtype)
+        self.sumb.getheatfluxes(fluxes, TS+1)
+
+        # Map vector expects and Nx3 array. So we will do just that.
+        tmp = numpy.zeros((nPts, 3))
+        tmp[:, 0] = fluxes
+        tmp = self.mapVector(tmp, self.allWallsGroup, groupName)
+        fuxes = tmp[:, 0]
+        return fluxes
+
+    def setWallTemperature(self, temperature, groupName=None, TS=0):
+        """Set the temperature of the isothermal walls. 
+
+        Parameters
+        ----------
+        temperature : numpy array
+
+            Dimensional temperature to set for wall. This size must
+            correpsond to the size of the heat flux obtained using the
+            same groupName.
+
+        groupName : str
+
+            Group identifier to set only temperatures corresponding to
+            the desired group. The group must be a family or a
+            user-supplied group of families. The default is None which
+            corresponds to all wall-type surfaces.
+
+        TS : int
+            Time spectral instance to set. 
+        """
+        if groupName is None:
+            groupName = self.allWallsGroup
+        self._setFamilyList(groupName)
+            
+        self.sumb.settnswall(temperature, TS+1)
+        
     def getSurfacePoints(self, groupName=None, TS=0):
+
         """Return the coordinates for the surfaces defined by groupName.
 
         Parameters
