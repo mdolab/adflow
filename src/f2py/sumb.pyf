@@ -493,10 +493,22 @@ python module libsumb
        end subroutine writesol
 
        subroutine getforces(forces,npts,sps_in) ! in :test:getForces.F90
-            real(kind=realtype) dimension(3 * npts),intent(inout) :: forces
-            integer(kind=inttype), optional,intent(in),check((len(forces))/(3)>=npts),depend(forces) :: npts=(len(forces))/(3)
-            integer(kind=inttype) intent(in) :: sps_in
-        end subroutine getforces
+         real(kind=realtype) dimension(3 * npts),intent(inout) :: forces
+         integer(kind=inttype), optional,intent(in),check((len(forces))/(3)>=npts),depend(forces) :: npts=(len(forces))/(3)
+         integer(kind=inttype) intent(in) :: sps_in
+       end subroutine getforces
+
+       subroutine getheatflux(hflux,npts,sps) ! in :test:getHeatFlux.f90
+         real(kind=realtype) dimension(npts),intent(out),depend(npts) :: hflux
+         integer(kind=inttype) intent(in) :: npts
+         integer(kind=inttype) intent(in) :: sps
+       end subroutine getheatflux
+
+       subroutine settnswall(tnsw,npts,sps) ! in :test:setTNSWall.f90
+         real(kind=realtype) dimension(npts),intent(in) :: tnsw
+         integer(kind=inttype) optional,intent(in),check(len(tnsw)>=npts),depend(tnsw) :: npts=len(tnsw)
+         integer(kind=inttype) intent(in) :: sps_in
+       end subroutine settnswall
 
        subroutine getareas(areas,pts,npts,sps_in,axis) ! in :test:getAreas.f90
          real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: areas

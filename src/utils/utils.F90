@@ -4998,8 +4998,10 @@ module utils
        if( associated(BCData(i)%uSlipALE) ) &
             deallocate(BCData(i)%uSlipALE, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
-       if( associated(BCData(i)%sHeatFlux) ) &
-            deallocate(BCData(i)%sHeatFlux, stat=ierr)
+       if( associated(BCData(i)%cellHeatFlux) ) &
+            deallocate(BCData(i)%cellHeatFlux, stat=ierr)
+       if( associated(BCData(i)%nodeHeatFlux) ) &
+            deallocate(BCData(i)%nodeHeatFlux, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
        if( associated(BCData(i)%iBlank) ) &
@@ -5021,7 +5023,8 @@ module utils
        nullify(BCData(i)%normALE)
        nullify(BCData(i)%rfaceALE)
        nullify(BCData(i)%uSlipALE)
-       nullify(BCData(i)%sHeatFlux)
+       nullify(BCData(i)%cellHeatFlux)
+       nullify(BCData(i)%nodeHeatFlux)
 
        nullify(BCData(i)%ptInlet)
        nullify(BCData(i)%ttInlet)

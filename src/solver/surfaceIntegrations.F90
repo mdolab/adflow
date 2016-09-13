@@ -84,7 +84,7 @@ contains
 
                 vnm = vxm*ssi(i,j,1) + vym*ssi(i,j,2) + vzm*ssi(i,j,3)  - sF
 
-                massFlowRateLocal = rhom*vnm
+                massFlowRateLocal = rhom*vnm*fact
                 massFlowRate = massFlowRate + massFlowRateLocal
 
                 call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
@@ -95,12 +95,6 @@ contains
                 mass_Ps = mass_Ps + pm*massFlowRateLocal
 
              enddo
-
-             massFlowRate = massFlowRate*fact
-             mass_Ptot = mass_pTot*fact
-             mass_Ttot = mass_Ttot*fact
-             mass_Ps = mass_Ps*fact
-
           end if inflowOutFlowType
        end if famInclude
     end do bocos
