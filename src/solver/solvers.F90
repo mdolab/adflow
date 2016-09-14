@@ -1699,7 +1699,7 @@ contains
     use utils, only : setPointers, myisnan, returnFail, maxHDiffMach, maxEddyv, &
          sumResiduals, sumAllResiduals
     use surfaceIntegrations, only : integrateSurfaces, forcesAndMomentsZIpper
-    use costFunctions, only : nLocalValues, iFp, iFv, iMv, iMp
+    use costFunctions, only : nLocalValues, iFp, iFv, iMv, iMp, iyPlus
     implicit none
     !
     !      Local variables.
@@ -1762,7 +1762,7 @@ contains
           fact = fact/(lengthRef*Lref)
           cmp = fact*localValues(iMp:iMp+2)
           cmv = fact*localValues(iMv:iMv+2)
-
+          yplusmax = localValues(iYplus)
           ! Determine the maximum values of the monitoring variables
           ! of this block.
 
