@@ -164,7 +164,7 @@ class SUMB(AeroSolver):
         self.sumb.killsignals.frompython = True
 
         # Dictionary of design varibales and their index
-        self.aeroDVs = {}
+        self.aeroDVs = []
 
         # Default counters
         self.updateTime = 0.0
@@ -2195,7 +2195,7 @@ class SUMB(AeroSolver):
 
         if dv not in self.aeroDVs:
             # A new DV add it:
-            self.aeroDVs[dv] = len(self.aeroDVs)
+            self.aeroDVs.append(dv)
 
     def _setupAdjoint(self, reform=False):
         """
@@ -2294,9 +2294,9 @@ class SUMB(AeroSolver):
 
                 # Extract the derivatives wrt the independent
                 # parameters in SUmb
-                dIdP = dIda[self.aeroDVs['p']]
-                dIdT = dIda[self.aeroDVs['t']]
-                dIdrho = dIda[self.aeroDVs['rho']]
+                dIdP = dIda[self.possibleAeroDVs['p']]
+                dIdT = dIda[self.possibleAeroDVs['t']]
+                dIdrho = dIda[self.possibleAeroDVs['rho']]
 
                 # Chain-rule to get the final derivative:
                 funcsSens[self.curAP.DVNames[dv]] = (
@@ -2306,24 +2306,25 @@ class SUMB(AeroSolver):
             elif dv.lower() in ['mach']:
                 self.curAP.evalFunctionsSens(tmp, ['P', 'rho'])
                 # Simular story for Mach: It is technically possible
-                # to use a mach number for a fiexed RE simulation. For
+                # to use a mach number for a fixed RE simulation. For
                 # the RE to stay fixed and change the mach number, the
                 # 'P' and 'rho' must also change. We have to chain run
                 # this dependence back through to the final mach
                 # derivative. When Mach number is used with altitude
                 # or P and T, this calc is unnecessary, but won't do
                 # any harm.
-                dIdP = dIda[self.aeroDVs['p']]
-                dIdrho = dIda[self.aeroDVs['rho']]
-                
+                dIdP = dIda[self.possibleAeroDVs['p']]
+                dIdrho = dIda[self.possibleAeroDVs['rho']]
+
                 # Chain-rule to get the final derivative:
                 funcsSens[self.curAP.DVNames[dv]] = (
                     tmp[self.curAP['P']][self.curAP.DVNames[dv]]*dIdP +
                     tmp[self.curAP['rho']][self.curAP.DVNames[dv]]*dIdrho +
-                    dIda[self.aeroDVs[dv]])
+                    dIda[self.possibleAeroDVs['mach']])
 
             elif dvl in self.possibleAeroDVs:
-                funcsSens[self.curAP.DVNames[dv]] = dIda[self.aeroDVs[dvl]]
+                funcsSens[self.curAP.DVNames[dv]] = (
+                    dIda[self.possibleAeroDVs[dvl]])
                 if dvl == 'alpha':
                     funcsSens[self.curAP.DVNames[dv]] *= numpy.pi/180.0
 
@@ -2353,20 +2354,6 @@ class SUMB(AeroSolver):
             else:
                 raise Error("The design variable '%s' as specified in the"
                             " aeroProblem cannot be used with SUmb."% dv)
-
-        # Reset all:
-        for pdv in self.possibleAeroDVs:
-            execStr = 'self.sumb.' + self.possibleAeroDVs[pdv] + '=-1'
-            exec(execStr)
-
-        # Set the required paramters for the aero-Only design vars:
-        self.nDVAero = len(self.aeroDVs)
-        self.sumb.adjointvars.ndesignextra = self.nDVAero
-        for adv in self.aeroDVs:
-            execStr = 'self.sumb.' + self.possibleAeroDVs[adv] + \
-                      '= %d'% self.aeroDVs[adv]
-            # Leave this zero-based since we only need to use it in petsc
-            exec(execStr)
 
     def solveAdjointForRHS(self, inVec, relTol=None):
         """
@@ -2588,20 +2575,15 @@ class SUMB(AeroSolver):
 
         # Process the extra variable perturbation....this comes from
         # xDvDot
-        extradot = numpy.zeros(max(1, self.nDVAero))
+        extradot = numpy.zeros(self.sumb.adjointvars.ndesignextra)
         if xDvDot is not None:
             useSpatial = True
-
             for key in xDvDot:
-                lkey = key.lower()
-                execStr = 'mapping = self.sumb.%s'%self.possibleAeroDVs[lkey]
-                exec(execStr)
-
-                if lkey == 'alpha':
-                    extradot[mapping] = xDvDot[key]*(numpy.pi/180)
-                else:
-                    extradot[mapping] = xDvDot[key]
-
+                val = xDvDot[key]
+                if key.lower() == 'alpha':
+                    val *= numpy.pi/180
+                extradot[self.possibleAeroDVs[key.lower()]] = val
+                    
         # For the geometric xDvDot perturbation we accumulate into the
         # already existing (and possibly nonzero) xsdot and xvdot
         if xDvDot is not None or xSDot is not None:
@@ -2769,7 +2751,7 @@ class SUMB(AeroSolver):
         # Do actual Fortran call.
         xvbar, extrabar, wbar = self.sumb.adjointapi.computematrixfreeproductbwd(
             resBar, funcsBar, fBar.T, useSpatial, useState, self.getSpatialSize(),
-            max(1, self.nDVAero))
+            self.sumb.adjointvars.ndesignextra)
 
         # Assemble the possible returns the user has requested:
         returns = []
@@ -3798,25 +3780,27 @@ class SUMB(AeroSolver):
         return ignoreOptions, deprecatedOptions, specialOptions
 
     def _getObjectivesAndDVs(self):
+        iDV = {}
+        iDV['alpha'] = self.sumb.adjointvars.ialpha
+        iDV['beta'] = self.sumb.adjointvars.ibeta
+        iDV['mach'] = self.sumb.adjointvars.imach
+        iDV['machgrid'] = self.sumb.adjointvars.imachgrid
+        iDV['p'] = self.sumb.adjointvars.ipressure
+        iDV['rho'] = self.sumb.adjointvars.idensity
+        iDV['t'] = self.sumb.adjointvars.itemperature
+        iDV['rotx'] = self.sumb.adjointvars.irotx
+        iDV['roty'] = self.sumb.adjointvars.iroty
+        iDV['rotz'] = self.sumb.adjointvars.irotz
+        iDV['rotcenx'] = self.sumb.adjointvars.irotcenx
+        iDV['rotceny'] = self.sumb.adjointvars.irotceny
+        iDV['rotcenz'] = self.sumb.adjointvars.irotcenz
+        iDV['xref'] = self.sumb.adjointvars.ipointrefx
+        iDV['yref'] = self.sumb.adjointvars.ipointrefy
+        iDV['zref'] = self.sumb.adjointvars.ipointrefz
 
-        possibleAeroDVs = {
-            'alpha':'adjointvars.ndesignaoa',
-            'beta':'adjointvars.ndesignssa',
-            'mach':'adjointvars.ndesignmach',
-            'machgrid':'adjointvars.ndesignmachgrid',
-            'p':'adjointvars.ndesignpressure',
-            'rho':'adjointvars.ndesigndensity',
-            't':'adjointvars.ndesigntemperature',
-            'rotx':'adjointvars.ndesignrotx',
-            'roty':'adjointvars.ndesignroty',
-            'rotz':'adjointvars.ndesignrotz',
-            'rotcenx':'adjointvars.ndesignrotcenx',
-            'rotceny':'adjointvars.ndesignrotceny',
-            'rotcenz':'adjointvars.ndesignrotcenz',
-            'xref':'adjointvars.ndesignpointrefx',
-            'yref':'adjointvars.ndesignpointrefy',
-            'zref':'adjointvars.ndesignpointrefz',
-            }
+        # Convert to python indexing
+        for key in iDV:
+            iDV[key] = iDV[key] - 1 
 
         # This is SUmb's internal mapping for cost functions
         sumbCostFunctions = {
@@ -3864,7 +3848,7 @@ class SUMB(AeroSolver):
             'mavgps':self.sumb.costfunctions.costfuncmavgps
             }
 
-        return possibleAeroDVs, sumbCostFunctions
+        return iDV, sumbCostFunctions
 
     def _updateTurbResScale(self):
         # If turbresscale is None it has not been set by the user in script
