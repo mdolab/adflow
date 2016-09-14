@@ -3,31 +3,27 @@
 
       use constants, only : intType
       implicit none
-!
-      ! nDesignExtra Extra number of "extra" design variables (listed
-      !                below)
 
-      integer(kind=intType) :: nDesignAOA   
-      integer(kind=intType) :: nDesignSSA    
-      integer(kind=intType) :: nDesignMach    
-      integer(kind=intType) :: nDesignMachGrid
-      integer(kind=intType) :: nDesignRotX    
-      integer(kind=intType) :: nDesignRotY    
-      integer(kind=intType) :: nDesignRotZ    
-      integer(kind=intType) :: nDesignRotCenX 
-      integer(kind=intType) :: nDesignRotCenY  
-      integer(kind=intType) :: nDesignRotCenZ   
-      integer(kind=intType) :: nDesignPointRefX  
-      integer(kind=intType) :: nDesignPointRefY   
-      integer(kind=intType) :: nDesignPointRefZ   
-      integer(kind=intType) :: nDesignLengthRef
-      integer(kind=intType) :: nDesignSurfaceRef
-      integer(kind=intType) :: nDesignDissError
-      integer(kind=intType) :: nDesignPressure
-      integer(kind=intType) :: nDesignTemperature
-      integer(kind=intType) :: nDesignDensity
-      integer(kind=intType) :: nDesignExtra = 0
-      
+      ! Indices of the extra deisgn design variables.
+      integer(kind=intType), parameter :: iAlpha=1
+      integer(kind=intType), parameter :: iBeta=2
+      integer(kind=intType), parameter :: iMach=3
+      integer(kind=intType), parameter :: iMachGrid=4
+      integer(kind=intType), parameter :: iRotX=5
+      integer(kind=intType), parameter :: iRotY=6
+      integer(kind=intType), parameter :: iRotZ=7
+      integer(kind=intType), parameter :: iRotCenX=8
+      integer(kind=intType), parameter :: iRotCenY=9
+      integer(kind=intType), parameter :: iRotCenZ=10
+      integer(kind=intType), parameter :: iPointRefX=11
+      integer(kind=intType), parameter :: iPointRefY=12
+      integer(kind=intType), parameter :: iPointRefZ=13
+      integer(kind=intType), parameter :: iPressure=14
+      integer(kind=intType), parameter :: iTemperature=15
+      integer(kind=intType), parameter :: iDensity=16
+
+      integer(kind=intType), parameter :: nDesignExtra=16
+
       ! nNodesGlobal  Total number of nodes on each level
       ! nNodesLocal   Number of nodes owned by the processor on each level
       ! nOffsetLocal  Global node number offset per processor on each level
