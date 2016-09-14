@@ -6369,6 +6369,7 @@ contains
 !      local parameter.
 !
     real(kind=realtype), parameter :: twothird=two*third
+    real(kind=realtype), parameter :: xminn=1.e-14_realtype
 !
 !      local variables.
 !
@@ -6387,17 +6388,33 @@ contains
     real(kind=realtype) :: tauxxd, tauyyd, tauzzd
     real(kind=realtype) :: tauxy, tauxz, tauyz
     real(kind=realtype) :: tauxyd, tauxzd, tauyzd
+    real(kind=realtype) :: exx, eyy, ezz
+    real(kind=realtype) :: exxd, eyyd, ezzd
+    real(kind=realtype) :: exy, exz, eyz
+    real(kind=realtype) :: exyd, exzd, eyzd
+    real(kind=realtype) :: wxx, wyy, wzz
+    real(kind=realtype) :: wxy, wxz, wyz, wyx, wzx, wzy
+    real(kind=realtype) :: wxyd, wxzd, wyzd, wyxd, wzxd, wzyd
+    real(kind=realtype) :: den, ccr1, fact
+    real(kind=realtype) :: dend, factd
     real(kind=realtype) :: fmx, fmy, fmz, frhoe
     real(kind=realtype) :: fmxd, fmyd, fmzd, frhoed
     logical :: correctfork, storewalltensor
     intrinsic abs
     intrinsic sqrt
+    intrinsic max
     real(kind=realtype) :: arg1
     real(kind=realtype) :: arg1d
     real(kind=realtype) :: result1
     real(kind=realtype) :: result1d
     real(kind=realtype) :: abs0
     integer :: ii1
+! set qcr parameters
+    ccr1 = 0.3_realtype
+! the diagonals of the vorticity tensor components are always zero
+    wxx = zero
+    wyy = zero
+    wzz = zero
 ! set rfilv to rfil to indicate that this is the viscous part.
 ! if rfilv == 0 the viscous residuals need not to be computed
 ! and a return can be made.
@@ -6611,6 +6628,96 @@ contains
             q_y = heatcoef*q_y
             q_zd = heatcoefd*q_z + heatcoef*q_zd
             q_z = heatcoef*q_z
+! add qcr corrections if necessary
+            if (useqcr) then
+! in the qcr formulation, we add an extra term to the shear tensor:
+!
+! tau_ij,qcr = tau_ij - e_ij
+! 
+! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
+!
+! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
+!
+! we are computing o_ik as follows:
+!
+! o_ik = 2*w_ik/den
+! compute denominator
+              arg1d = u_xd*u_x + u_x*u_xd + u_yd*u_y + u_y*u_yd + u_zd*&
+&               u_z + u_z*u_zd + v_xd*v_x + v_x*v_xd + v_yd*v_y + v_y*&
+&               v_yd + v_zd*v_z + v_z*v_zd + w_xd*w_x + w_x*w_xd + w_yd*&
+&               w_y + w_y*w_yd + w_zd*w_z + w_z*w_zd
+              arg1 = u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
+&               v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z
+              if (arg1 .eq. 0.0_8) then
+                dend = 0.0_8
+              else
+                dend = arg1d/(2.0*sqrt(arg1))
+              end if
+              den = sqrt(arg1)
+              if (den .lt. xminn) then
+                den = xminn
+                dend = 0.0_8
+              else
+                den = den
+              end if
+! compute factor that will multiply all tensor components
+              factd = -(ccr1*dend/den**2)
+              fact = ccr1/den
+! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+              wxyd = u_yd - v_xd
+              wxy = u_y - v_x
+              wxzd = u_zd - w_xd
+              wxz = u_z - w_x
+              wyzd = u_yd - v_xd
+              wyz = u_y - v_x
+              wyxd = -wxyd
+              wyx = -wxy
+              wzxd = -wxzd
+              wzx = -wxz
+              wzyd = -wyzd
+              wzy = -wyz
+! compute the extra terms of the boussinesq relation
+              exxd = two*(factd*(wxx*tauxx+wxy*tauxy+wxz*tauxz)+fact*(&
+&               wxx*tauxxd+wxyd*tauxy+wxy*tauxyd+wxzd*tauxz+wxz*tauxzd))
+              exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
+              eyyd = two*(factd*(wyx*tauxy+wyy*tauyy+wyz*tauyz)+fact*(&
+&               wyxd*tauxy+wyx*tauxyd+wyy*tauyyd+wyzd*tauyz+wyz*tauyzd))
+              eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
+              ezzd = two*(factd*(wzx*tauxz+wzy*tauyz+wzz*tauzz)+fact*(&
+&               wzxd*tauxz+wzx*tauxzd+wzyd*tauyz+wzy*tauyzd+wzz*tauzzd))
+              ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
+              exyd = factd*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*&
+&               tauxy+wyz*tauxz) + fact*(wxx*tauxyd+wxyd*tauyy+wxy*&
+&               tauyyd+wxzd*tauyz+wxz*tauyzd+wyxd*tauxx+wyx*tauxxd+wyy*&
+&               tauxyd+wyzd*tauxz+wyz*tauxzd)
+              exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*&
+&               tauxy+wyz*tauxz)
+              exzd = factd*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*&
+&               tauxy+wzz*tauxz) + fact*(wxx*tauxzd+wxyd*tauyz+wxy*&
+&               tauyzd+wxzd*tauzz+wxz*tauzzd+wzxd*tauxx+wzx*tauxxd+wzyd*&
+&               tauxy+wzy*tauxyd+wzz*tauxzd)
+              exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*&
+&               tauxy+wzz*tauxz)
+              eyzd = factd*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*&
+&               tauyy+wzz*tauyz) + fact*(wyxd*tauxz+wyx*tauxzd+wyy*&
+&               tauyzd+wyzd*tauzz+wyz*tauzzd+wzxd*tauxy+wzx*tauxyd+wzyd*&
+&               tauyy+wzy*tauyyd+wzz*tauyzd)
+              eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*&
+&               tauyy+wzz*tauyz)
+! add extra terms
+              tauxxd = tauxxd - exxd
+              tauxx = tauxx - exx
+              tauyyd = tauyyd - eyyd
+              tauyy = tauyy - eyy
+              tauzzd = tauzzd - ezzd
+              tauzz = tauzz - ezz
+              tauxyd = tauxyd - exyd
+              tauxy = tauxy - exy
+              tauxzd = tauxzd - exzd
+              tauxz = tauxz - exz
+              tauyzd = tauyzd - eyzd
+              tauyz = tauyz - eyz
+            end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
             ubard = half*(wd(i, j, k, ivx)+wd(i, j, k+1, ivx))
@@ -6903,6 +7010,96 @@ contains
             q_y = heatcoef*q_y
             q_zd = heatcoefd*q_z + heatcoef*q_zd
             q_z = heatcoef*q_z
+! add qcr corrections if necessary
+            if (useqcr) then
+! in the qcr formulation, we add an extra term to the shear tensor:
+!
+! tau_ij,qcr = tau_ij - e_ij
+! 
+! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
+!
+! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
+!
+! we are computing o_ik as follows:
+!
+! o_ik = 2*w_ik/den
+! compute denominator
+              arg1d = u_xd*u_x + u_x*u_xd + u_yd*u_y + u_y*u_yd + u_zd*&
+&               u_z + u_z*u_zd + v_xd*v_x + v_x*v_xd + v_yd*v_y + v_y*&
+&               v_yd + v_zd*v_z + v_z*v_zd + w_xd*w_x + w_x*w_xd + w_yd*&
+&               w_y + w_y*w_yd + w_zd*w_z + w_z*w_zd
+              arg1 = u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
+&               v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z
+              if (arg1 .eq. 0.0_8) then
+                dend = 0.0_8
+              else
+                dend = arg1d/(2.0*sqrt(arg1))
+              end if
+              den = sqrt(arg1)
+              if (den .lt. xminn) then
+                den = xminn
+                dend = 0.0_8
+              else
+                den = den
+              end if
+! compute factor that will multiply all tensor components
+              factd = -(ccr1*dend/den**2)
+              fact = ccr1/den
+! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+              wxyd = u_yd - v_xd
+              wxy = u_y - v_x
+              wxzd = u_zd - w_xd
+              wxz = u_z - w_x
+              wyzd = u_yd - v_xd
+              wyz = u_y - v_x
+              wyxd = -wxyd
+              wyx = -wxy
+              wzxd = -wxzd
+              wzx = -wxz
+              wzyd = -wyzd
+              wzy = -wyz
+! compute the extra terms of the boussinesq relation
+              exxd = two*(factd*(wxx*tauxx+wxy*tauxy+wxz*tauxz)+fact*(&
+&               wxx*tauxxd+wxyd*tauxy+wxy*tauxyd+wxzd*tauxz+wxz*tauxzd))
+              exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
+              eyyd = two*(factd*(wyx*tauxy+wyy*tauyy+wyz*tauyz)+fact*(&
+&               wyxd*tauxy+wyx*tauxyd+wyy*tauyyd+wyzd*tauyz+wyz*tauyzd))
+              eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
+              ezzd = two*(factd*(wzx*tauxz+wzy*tauyz+wzz*tauzz)+fact*(&
+&               wzxd*tauxz+wzx*tauxzd+wzyd*tauyz+wzy*tauyzd+wzz*tauzzd))
+              ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
+              exyd = factd*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*&
+&               tauxy+wyz*tauxz) + fact*(wxx*tauxyd+wxyd*tauyy+wxy*&
+&               tauyyd+wxzd*tauyz+wxz*tauyzd+wyxd*tauxx+wyx*tauxxd+wyy*&
+&               tauxyd+wyzd*tauxz+wyz*tauxzd)
+              exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*&
+&               tauxy+wyz*tauxz)
+              exzd = factd*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*&
+&               tauxy+wzz*tauxz) + fact*(wxx*tauxzd+wxyd*tauyz+wxy*&
+&               tauyzd+wxzd*tauzz+wxz*tauzzd+wzxd*tauxx+wzx*tauxxd+wzyd*&
+&               tauxy+wzy*tauxyd+wzz*tauxzd)
+              exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*&
+&               tauxy+wzz*tauxz)
+              eyzd = factd*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*&
+&               tauyy+wzz*tauyz) + fact*(wyxd*tauxz+wyx*tauxzd+wyy*&
+&               tauyzd+wyzd*tauzz+wyz*tauzzd+wzxd*tauxy+wzx*tauxyd+wzyd*&
+&               tauyy+wzy*tauyyd+wzz*tauyzd)
+              eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*&
+&               tauyy+wzz*tauyz)
+! add extra terms
+              tauxxd = tauxxd - exxd
+              tauxx = tauxx - exx
+              tauyyd = tauyyd - eyyd
+              tauyy = tauyy - eyy
+              tauzzd = tauzzd - ezzd
+              tauzz = tauzz - ezz
+              tauxyd = tauxyd - exyd
+              tauxy = tauxy - exy
+              tauxzd = tauxzd - exzd
+              tauxz = tauxz - exz
+              tauyzd = tauyzd - eyzd
+              tauyz = tauyz - eyz
+            end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
             ubard = half*(wd(i, j, k, ivx)+wd(i, j+1, k, ivx))
@@ -7190,6 +7387,96 @@ contains
             q_y = heatcoef*q_y
             q_zd = heatcoefd*q_z + heatcoef*q_zd
             q_z = heatcoef*q_z
+! add qcr corrections if necessary
+            if (useqcr) then
+! in the qcr formulation, we add an extra term to the shear tensor:
+!
+! tau_ij,qcr = tau_ij - e_ij
+! 
+! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
+!
+! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
+!
+! we are computing o_ik as follows:
+!
+! o_ik = 2*w_ik/den
+! compute denominator
+              arg1d = u_xd*u_x + u_x*u_xd + u_yd*u_y + u_y*u_yd + u_zd*&
+&               u_z + u_z*u_zd + v_xd*v_x + v_x*v_xd + v_yd*v_y + v_y*&
+&               v_yd + v_zd*v_z + v_z*v_zd + w_xd*w_x + w_x*w_xd + w_yd*&
+&               w_y + w_y*w_yd + w_zd*w_z + w_z*w_zd
+              arg1 = u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
+&               v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z
+              if (arg1 .eq. 0.0_8) then
+                dend = 0.0_8
+              else
+                dend = arg1d/(2.0*sqrt(arg1))
+              end if
+              den = sqrt(arg1)
+              if (den .lt. xminn) then
+                den = xminn
+                dend = 0.0_8
+              else
+                den = den
+              end if
+! compute factor that will multiply all tensor components
+              factd = -(ccr1*dend/den**2)
+              fact = ccr1/den
+! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+              wxyd = u_yd - v_xd
+              wxy = u_y - v_x
+              wxzd = u_zd - w_xd
+              wxz = u_z - w_x
+              wyzd = u_yd - v_xd
+              wyz = u_y - v_x
+              wyxd = -wxyd
+              wyx = -wxy
+              wzxd = -wxzd
+              wzx = -wxz
+              wzyd = -wyzd
+              wzy = -wyz
+! compute the extra terms of the boussinesq relation
+              exxd = two*(factd*(wxx*tauxx+wxy*tauxy+wxz*tauxz)+fact*(&
+&               wxx*tauxxd+wxyd*tauxy+wxy*tauxyd+wxzd*tauxz+wxz*tauxzd))
+              exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
+              eyyd = two*(factd*(wyx*tauxy+wyy*tauyy+wyz*tauyz)+fact*(&
+&               wyxd*tauxy+wyx*tauxyd+wyy*tauyyd+wyzd*tauyz+wyz*tauyzd))
+              eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
+              ezzd = two*(factd*(wzx*tauxz+wzy*tauyz+wzz*tauzz)+fact*(&
+&               wzxd*tauxz+wzx*tauxzd+wzyd*tauyz+wzy*tauyzd+wzz*tauzzd))
+              ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
+              exyd = factd*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*&
+&               tauxy+wyz*tauxz) + fact*(wxx*tauxyd+wxyd*tauyy+wxy*&
+&               tauyyd+wxzd*tauyz+wxz*tauyzd+wyxd*tauxx+wyx*tauxxd+wyy*&
+&               tauxyd+wyzd*tauxz+wyz*tauxzd)
+              exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*&
+&               tauxy+wyz*tauxz)
+              exzd = factd*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*&
+&               tauxy+wzz*tauxz) + fact*(wxx*tauxzd+wxyd*tauyz+wxy*&
+&               tauyzd+wxzd*tauzz+wxz*tauzzd+wzxd*tauxx+wzx*tauxxd+wzyd*&
+&               tauxy+wzy*tauxyd+wzz*tauxzd)
+              exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*&
+&               tauxy+wzz*tauxz)
+              eyzd = factd*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*&
+&               tauyy+wzz*tauyz) + fact*(wyxd*tauxz+wyx*tauxzd+wyy*&
+&               tauyzd+wyzd*tauzz+wyz*tauzzd+wzxd*tauxy+wzx*tauxyd+wzyd*&
+&               tauyy+wzy*tauyyd+wzz*tauyzd)
+              eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*&
+&               tauyy+wzz*tauyz)
+! add extra terms
+              tauxxd = tauxxd - exxd
+              tauxx = tauxx - exx
+              tauyyd = tauyyd - eyyd
+              tauyy = tauyy - eyy
+              tauzzd = tauzzd - ezzd
+              tauzz = tauzz - ezz
+              tauxyd = tauxyd - exyd
+              tauxy = tauxy - exy
+              tauxzd = tauxzd - exzd
+              tauxz = tauxz - exz
+              tauyzd = tauyzd - eyzd
+              tauyz = tauyz - eyz
+            end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
             ubard = half*(wd(i, j, k, ivx)+wd(i+1, j, k, ivx))
@@ -7313,6 +7600,7 @@ contains
 !      local parameter.
 !
     real(kind=realtype), parameter :: twothird=two*third
+    real(kind=realtype), parameter :: xminn=1.e-14_realtype
 !
 !      local variables.
 !
@@ -7324,13 +7612,25 @@ contains
     real(kind=realtype) :: corr, ssx, ssy, ssz, ss, fracdiv
     real(kind=realtype) :: tauxx, tauyy, tauzz
     real(kind=realtype) :: tauxy, tauxz, tauyz
+    real(kind=realtype) :: exx, eyy, ezz
+    real(kind=realtype) :: exy, exz, eyz
+    real(kind=realtype) :: wxx, wyy, wzz
+    real(kind=realtype) :: wxy, wxz, wyz, wyx, wzx, wzy
+    real(kind=realtype) :: den, ccr1, fact
     real(kind=realtype) :: fmx, fmy, fmz, frhoe
     logical :: correctfork, storewalltensor
     intrinsic abs
     intrinsic sqrt
+    intrinsic max
     real(kind=realtype) :: arg1
     real(kind=realtype) :: result1
     real(kind=realtype) :: abs0
+! set qcr parameters
+    ccr1 = 0.3_realtype
+! the diagonals of the vorticity tensor components are always zero
+    wxx = zero
+    wyy = zero
+    wzz = zero
 ! set rfilv to rfil to indicate that this is the viscous part.
 ! if rfilv == 0 the viscous residuals need not to be computed
 ! and a return can be made.
@@ -7453,6 +7753,55 @@ contains
             q_x = heatcoef*q_x
             q_y = heatcoef*q_y
             q_z = heatcoef*q_z
+! add qcr corrections if necessary
+            if (useqcr) then
+! in the qcr formulation, we add an extra term to the shear tensor:
+!
+! tau_ij,qcr = tau_ij - e_ij
+! 
+! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
+!
+! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
+!
+! we are computing o_ik as follows:
+!
+! o_ik = 2*w_ik/den
+! compute denominator
+              arg1 = u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
+&               v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z
+              den = sqrt(arg1)
+              if (den .lt. xminn) then
+                den = xminn
+              else
+                den = den
+              end if
+! compute factor that will multiply all tensor components
+              fact = ccr1/den
+! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+              wxy = u_y - v_x
+              wxz = u_z - w_x
+              wyz = u_y - v_x
+              wyx = -wxy
+              wzx = -wxz
+              wzy = -wyz
+! compute the extra terms of the boussinesq relation
+              exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
+              eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
+              ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
+              exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*&
+&               tauxy+wyz*tauxz)
+              exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*&
+&               tauxy+wzz*tauxz)
+              eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*&
+&               tauyy+wzz*tauyz)
+! add extra terms
+              tauxx = tauxx - exx
+              tauyy = tauyy - eyy
+              tauzz = tauzz - ezz
+              tauxy = tauxy - exy
+              tauxz = tauxz - exz
+              tauyz = tauyz - eyz
+            end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
             ubar = half*(w(i, j, k, ivx)+w(i, j, k+1, ivx))
@@ -7617,6 +7966,55 @@ contains
             q_x = heatcoef*q_x
             q_y = heatcoef*q_y
             q_z = heatcoef*q_z
+! add qcr corrections if necessary
+            if (useqcr) then
+! in the qcr formulation, we add an extra term to the shear tensor:
+!
+! tau_ij,qcr = tau_ij - e_ij
+! 
+! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
+!
+! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
+!
+! we are computing o_ik as follows:
+!
+! o_ik = 2*w_ik/den
+! compute denominator
+              arg1 = u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
+&               v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z
+              den = sqrt(arg1)
+              if (den .lt. xminn) then
+                den = xminn
+              else
+                den = den
+              end if
+! compute factor that will multiply all tensor components
+              fact = ccr1/den
+! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+              wxy = u_y - v_x
+              wxz = u_z - w_x
+              wyz = u_y - v_x
+              wyx = -wxy
+              wzx = -wxz
+              wzy = -wyz
+! compute the extra terms of the boussinesq relation
+              exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
+              eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
+              ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
+              exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*&
+&               tauxy+wyz*tauxz)
+              exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*&
+&               tauxy+wzz*tauxz)
+              eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*&
+&               tauyy+wzz*tauyz)
+! add extra terms
+              tauxx = tauxx - exx
+              tauyy = tauyy - eyy
+              tauzz = tauzz - ezz
+              tauxy = tauxy - exy
+              tauxz = tauxz - exz
+              tauyz = tauyz - eyz
+            end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
             ubar = half*(w(i, j, k, ivx)+w(i, j+1, k, ivx))
@@ -7778,6 +8176,55 @@ contains
             q_x = heatcoef*q_x
             q_y = heatcoef*q_y
             q_z = heatcoef*q_z
+! add qcr corrections if necessary
+            if (useqcr) then
+! in the qcr formulation, we add an extra term to the shear tensor:
+!
+! tau_ij,qcr = tau_ij - e_ij
+! 
+! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
+!
+! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
+!
+! we are computing o_ik as follows:
+!
+! o_ik = 2*w_ik/den
+! compute denominator
+              arg1 = u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
+&               v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z
+              den = sqrt(arg1)
+              if (den .lt. xminn) then
+                den = xminn
+              else
+                den = den
+              end if
+! compute factor that will multiply all tensor components
+              fact = ccr1/den
+! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+              wxy = u_y - v_x
+              wxz = u_z - w_x
+              wyz = u_y - v_x
+              wyx = -wxy
+              wzx = -wxz
+              wzy = -wyz
+! compute the extra terms of the boussinesq relation
+              exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
+              eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
+              ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
+              exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*&
+&               tauxy+wyz*tauxz)
+              exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*&
+&               tauxy+wzz*tauxz)
+              eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*&
+&               tauyy+wzz*tauyz)
+! add extra terms
+              tauxx = tauxx - exx
+              tauyy = tauyy - eyy
+              tauzz = tauzz - ezz
+              tauxy = tauxy - exy
+              tauxz = tauxz - exz
+              tauyz = tauyz - eyz
+            end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
             ubar = half*(w(i, j, k, ivx)+w(i+1, j, k, ivx))

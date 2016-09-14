@@ -42,7 +42,7 @@ contains
 &   resetbcpointers_b, iswalltype
     use sorting, only : bsearchintegers
     use costfunctions, only : nlocalvalues
-! tapenade like to see these:
+! tapenade needs to see these modules that the callees use.
     use bcpointers_b
     use flowvarrefstate
     use inputphysics
@@ -172,7 +172,7 @@ bocos:do mm=1,nbocos
     use utils_b, only : setbcpointers, resetbcpointers, iswalltype
     use sorting, only : bsearchintegers
     use costfunctions, only : nlocalvalues
-! tapenade like to see these:
+! tapenade needs to see these modules that the callees use.
     use bcpointers_b
     use flowvarrefstate
     use inputphysics
