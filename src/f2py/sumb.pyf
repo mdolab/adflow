@@ -1022,29 +1022,26 @@ python module libsumb
        module adjointvars ! in :test:ADjointVars.F90
          use constants
          use costfunctions
-         integer(kind=inttype) :: ncellslocal(20)
-         integer(kind=inttype) :: nnodeslocal(20)
-         integer(kind=inttype) :: ndesignpointrefz
-         integer(kind=inttype) :: ndesignpointrefy
-         integer(kind=inttype) :: ndesignssa
-         integer(kind=inttype) :: ndesignextra
-         integer(kind=inttype) :: ndesignrotcenx
-         integer(kind=inttype) :: ndesignpointrefx
-         integer(kind=inttype) :: ndesignrotz
-         integer(kind=inttype) :: ndesignrotx
-         integer(kind=inttype) :: ndesignroty
-         integer(kind=inttype) :: ndesignrotcenz
-         integer(kind=inttype) :: ndesignaoa
-         integer(kind=inttype) :: ndesignrotceny
-         integer(kind=inttype) :: ndesignmachgrid
-         integer(kind=inttype) :: ndesignmach
-         integer(kind=inttype) :: ndesignlengthref
-         integer(kind=inttype) :: ndesignsurfaceref
-         integer(kind=inttype) :: ndesigndisserror
-         integer(kind=inttype) :: ndesignpressure
-         integer(kind=inttype) :: ndesigntemperature
-         integer(kind=inttype) :: ndesigndensity
-       end module adjointvars
+            integer(kind=inttype) dimension(20) :: ncellslocal
+            integer(kind=inttype) dimension(20) :: nnodeslocal
+            integer(kind=inttype), parameter,optional :: ialpha=1
+            integer(kind=inttype), parameter,optional :: ibeta=2
+            integer(kind=inttype), parameter,optional :: imach=3
+            integer(kind=inttype), parameter,optional :: imachgrid=4
+            integer(kind=inttype), parameter,optional :: irotx=5
+            integer(kind=inttype), parameter,optional :: iroty=6
+            integer(kind=inttype), parameter,optional :: irotz=7
+            integer(kind=inttype), parameter,optional :: irotcenx=8
+            integer(kind=inttype), parameter,optional :: irotceny=9
+            integer(kind=inttype), parameter,optional :: irotcenz=10
+            integer(kind=inttype), parameter,optional :: ipointrefx=11
+            integer(kind=inttype), parameter,optional :: ipointrefy=12
+            integer(kind=inttype), parameter,optional :: ipointrefz=13
+            integer(kind=inttype), parameter,optional :: ipressure=14
+            integer(kind=inttype), parameter,optional :: itemperature=15
+            integer(kind=inttype), parameter,optional :: idensity=16
+            integer(kind=inttype), parameter,optional :: ndesignextra=16
+          end module adjointvars
 
        module adjointpetsc
          real(kind=realtype) :: adjresinit, adjresstart, adjresfinal

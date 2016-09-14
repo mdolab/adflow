@@ -125,32 +125,20 @@ contains
        ! Now run the halo exchange for the nodes
        call exchangecoor_d(level)
 
-       ! And now do the extra ones
-       ! Set the seeds we have, this is zero-based:
-       if (nDesignAoA >= 0) &
-            alphad = extraDot(nDesignAoA+1)
-       if (nDesignSSA >= 0) &
-            betad = extraDot(nDesignSSA+1)
-       if (nDesignMach  >= 0) then
-          machd = extraDot(nDesignMach+1)
-          machCoefd = extraDot(nDesignMach+1)
-       end if
-       if (nDesignMachGrid >= 0) then
-          machGridd = extraDot(nDesignMachGrid+1)
-          machCoefd = extraDot(nDesignMachGrid+1)
-       end if
-       if (nDesignPressure >= 0) &
-            PinfDimd = extraDot(nDesignPressure+1)
-       if (nDesignDensity >= 0) &
-            rhoinfDimd = extraDot(nDesignDensity+1)
-       if (nDesignTemperature >= 0) &
-            tinfdimd = extraDot(nDesignTemperature+1)
-       if (nDesignPointRefX >= 0) &
-            pointrefd(1) = extraDot(nDesignPointRefX+1)
-       if (nDesignPointRefY >= 0) &
-            pointrefd(2) = extraDot(nDesignPointRefY+1)
-       if (nDesignPointRefZ >= 0) &
-            pointrefd(3) = extraDot(nDesignPointRefZ+1)
+       ! And now do the extra ones. Note that we are assuming the
+       ! machNumber used for the coefficients follows the Mach number,
+       ! not the grid mach number. 
+       alphad = extraDot(iAlpha)
+       betad = extraDot(iBeta)
+       machd = extraDot(iMach)
+       machCoefd = extraDot(iMach)
+       machGridd = extraDot(iMachGrid)
+       PinfDimd = extraDot(iPressure)
+       rhoinfDimd = extraDot(iDensity)
+       tinfdimd = extraDot(iTemperature)
+       pointrefd(1) = extraDot(iPointRefX)
+       pointrefd(2) = extraDot(iPointRefY)
+       pointrefd(3) = extraDot(iPointRefZ)
     end if
 
     ! Now set any STATE seeds
@@ -447,27 +435,17 @@ contains
                 ! We need to acculumate the contribution from this block into xSurfbSum
                 xSurfbSum(sps, :) = xSurfbSum(sps, :) + xSurfd
 
-                ! Also need the extra variables, those are zero-based:
-                if (nDesignAoA >= 0) &
-                     extraLocalBar(nDesignAoA+1) = extraLocalBar(nDesignAoA+1) + alphad
-                if (nDesignSSA >= 0) &
-                     extraLocalBar(nDesignSSA+1) = extraLocalBar(nDesignSSA+1) + alphad
-                if (nDesignMach  >= 0) &
-                     extraLocalBar(nDesignMach+1) = extraLocalBar(nDesignMach+1) + machd + machcoefd
-                if (nDesignMachGrid >= 0) &
-                     extraLocalBar(nDesignMachGrid+1) = extraLocalBar(nDesignMachGrid+1) + machgridd + machcoefd
-                if (nDesignPressure >= 0) &
-                     extraLocalBar(nDesignPressure+1) = extraLocalBar(nDesignPressure+1) + pinfdimd
-                if (nDesignTemperature >= 0) &
-                     extraLocalBar(nDesignTemperature+1) = extraLocalBar(nDesignTemperature+1) + tinfdimd
-                if (nDesignDensity >= 0) &
-                     extraLocalBar(nDesignDensity+1) = extraLocalBar(nDesignDensity+1) + rhoinfdimd
-                if (nDesignPointRefX >= 0) &
-                     extraLocalBar(nDesignPointRefX+1) = extraLocalBar(nDesignPointRefX+1) + pointrefd(1)
-                if (nDesignPointRefY >= 0) &
-                     extraLocalBar(nDesignPointRefY+1) = extraLocalBar(nDesignPointRefY+1) + pointrefd(2)
-                if (nDesignPointRefZ >= 0) &
-                     extraLocalBar(nDesignPointRefZ+1) = extraLocalBar(nDesignPointRefZ+1) + pointrefd(3)
+                ! Also need the extra variables
+                extraLocalBar(iAlpha) = extraLocalBar(iAlpha) + alphad
+                extraLocalBar(iBeta) = extraLocalBar(iBeta) + betad
+                extraLocalBar(iMach) = extraLocalBar(iMach) + machd + machcoefd
+                extraLocalBar(iMachGrid) = extraLocalBar(iMachGrid) + machgridd
+                extraLocalBar(iPressure) = extraLocalBar(iPressure) + pinfdimd
+                extraLocalBar(iTemperature) = extraLocalBar(iTemperature) + tinfdimd
+                extraLocalBar(iDensity) = extraLocalBar(iDensity) + rhoinfdimd
+                extraLocalBar(iPointRefX) = extraLocalBar(iPointRefX) + pointrefd(1)
+                extraLocalBar(iPointRefY) = extraLocalBar(iPointRefY) + pointrefd(2)
+                extraLocalBar(iPointRefZ) = extraLocalBar(iPointRefZ) + pointrefd(3)
              end if
 
              if (useState) then 
