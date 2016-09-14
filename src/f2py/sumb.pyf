@@ -771,6 +771,9 @@ python module libsumb
          integer(kind=inttype) :: turbprod
          integer(kind=inttype) :: rvfn
          logical :: rvfb
+         logical :: useqcr
+         logical :: userotationsa
+         logical :: useft2sa
          logical :: wallfunctions
          real(kind=realtype) :: mach
          real(kind=realtype) :: machcoef

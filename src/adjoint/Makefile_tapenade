@@ -170,9 +170,6 @@ ad_reverse_fast:
 	BCRoutines%bcEulerWall(ww1, ww2, pp1, pp2, pp3, rlv1, rlv2, rev1, rev2)>\
 			      (ww1, ww2, pp1, pp2, pp3, rlv1, rlv2, rev1, rev2) \
 	flowutils%computePressureSimple(w, p)>(w,p) \
-	turbutils%prodsmag2(w,scratch)>(w, scratch) \
-	turbutils%prodwmag2(w,scratch)>(w, scratch) \
-	turbutils%prodKatoLaunder(w,scratch)>(w, scratch) \
 	sa%saSource(scratch,w,rlv)>(scratch,w,rlv) \
 	sa%saViscous(scratch, w,rlv)>(scratch,w,rlv) \
 	sa%saResScale(scratch)>(dw) \

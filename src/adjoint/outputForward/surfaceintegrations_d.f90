@@ -14,9 +14,8 @@ contains
 !   variations   of useful results: *(*bcdata.fv) *(*bcdata.fp)
 !                *(*bcdata.area) localvalues
 !   with respect to varying inputs: *p *w *x *si *sj *sk *(*viscsubface.tau)
-!                *xx *pp1 *pp2 *ssi *ww2 (global)pinf (global)pref
-!                (global)veldirfreestream[1:3] (global)machcoef
-!                (global)pointref[1:3]
+!                veldirfreestream machcoef pointref pinf pref *xx
+!                *pp1 *pp2 *ssi *ww2
 !   plus diff mem management of: viscsubface:in *viscsubface.tau:in
 !                bcdata:in *bcdata.fv:in *bcdata.fp:in *bcdata.area:in
 !                xx:in-out rev0:out rev1:out rev2:out rev3:out
@@ -39,8 +38,10 @@ contains
 &   iswalltype
     use sorting, only : bsearchintegers
     use costfunctions, only : nlocalvalues
-! tapenade like to see these
+! tapenade needs to see these modules that the callees use.
     use bcpointers_d
+    use flowvarrefstate
+    use inputphysics
     use diffsizes
 !  hint: isize1ofdrfbcdata should be the size of dimension 1 of array *bcdata
     implicit none
@@ -102,8 +103,10 @@ bocos:do mm=1,nbocos
     use utils_d, only : setbcpointers, resetbcpointers, iswalltype
     use sorting, only : bsearchintegers
     use costfunctions, only : nlocalvalues
-! tapenade like to see these
+! tapenade needs to see these modules that the callees use.
     use bcpointers_d
+    use flowvarrefstate
+    use inputphysics
     implicit none
 ! do we actually need to zero the forces/area on a wall that wasn't inclded? maybe?
 !       ! if it wasn't included, but still a wall...zero
@@ -228,7 +231,6 @@ bocos:do mm=1,nbocos
     use constants
     use communication
     use blockpointers
-!, only : lref, machcoef, pointref
     use flowvarrefstate
     use inputphysics, only : machcoef, machcoefd, pointref, pointrefd,&
 &   veldirfreestream, veldirfreestreamd, equations
@@ -645,7 +647,6 @@ bocos:do mm=1,nbocos
     use constants
     use communication
     use blockpointers
-!, only : lref, machcoef, pointref
     use flowvarrefstate
     use inputphysics, only : machcoef, pointref, veldirfreestream, &
 &   equations

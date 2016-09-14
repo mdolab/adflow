@@ -713,17 +713,6 @@ contains
                 call terminate("matrixFreeRoutines", &
                      "Only SA turbulence adjoint implemented")
              end select
-
-             ! Do the production term
-             select case  (turbprod) 
-             case (strain) 
-                call prodsmag2_fast_b()
-             case (vorticity) 
-                call prodwmag2_fast_b()
-             case (katolaunder) 
-                call prodkatolaunder_fast_b()
-             end select
-
              ! And the turbulence BCs
              call applyallturbbcthisblock_b(.true.)
              call bcturbtreatment_b()

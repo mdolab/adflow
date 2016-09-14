@@ -23,8 +23,10 @@ contains
     use utils_fast_b, only : setbcpointers, resetbcpointers, iswalltype
     use sorting, only : bsearchintegers
     use costfunctions, only : nlocalvalues
-! tapenade like to see these
+! tapenade needs to see these modules that the callees use.
     use bcpointers_fast_b
+    use flowvarrefstate
+    use inputphysics
     implicit none
 ! do we actually need to zero the forces/area on a wall that wasn't inclded? maybe?
 !       ! if it wasn't included, but still a wall...zero
@@ -139,7 +141,6 @@ bocos:do mm=1,nbocos
     use constants
     use communication
     use blockpointers
-!, only : lref, machcoef, pointref
     use flowvarrefstate
     use inputphysics, only : machcoef, pointref, veldirfreestream, &
 &   equations
