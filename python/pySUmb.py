@@ -759,15 +759,14 @@ class SUMB(AeroSolver):
         """
         Advance one unit of timestep and physical time.
         """
-        self.sumb.solvers.stepcounter()
-        # self.sumb.monitor.timestepunsteady = self.sumb.monitor.timestepunsteady + 1
-        # self.sumb.monitor.timeunsteady     = self.sumb.monitor.timeunsteady     + \
-        #     self.sumb.inputunsteady.deltat
+        self.sumb.monitor.timestepunsteady = self.sumb.monitor.timestepunsteady + 1
+        self.sumb.monitor.timeunsteady     = self.sumb.monitor.timeunsteady     + \
+            self.sumb.inputunsteady.deltat
         return self.sumb.monitor.timeunsteady, self.sumb.monitor.timestepunsteady
         
     def solveTimeStep(self):
         """
-        Solve the current time step.
+        Solve the current time step, and write solutions if necessary
         """
         t1 = time.time()
         self.sumb.solvers.solverunsteadystep()
@@ -778,7 +777,8 @@ class SUMB(AeroSolver):
 
     def setDisplacement(self, disp, groupName=None):
         """
-        Set new coordinates of the surface group
+        Set new coordinates of the surface group, then
+        deform the mesh and update geometric data accordingly
 
         Parameters
         ----------
