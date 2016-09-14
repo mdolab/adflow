@@ -134,9 +134,9 @@ contains
     use ALEUtils, only : fillCoor, setLevelALE
     use constants
     use inputDiscretization, only : eulerWallBCTreatment
-    use killSignals, only : localSignal, noSignal
     use iteration, only : exchangePressureEarly, t0Solver
-    use monitor, only : timeUnsteady, timeStepUnsteady
+    use killSignals, only : localSignal, noSignal
+    use monitor, only : timeUnsteady, timeStepUnsteady, writeVolume, writeVolume, writeGrid
     use utils, only : eulerWallsPresent
     implicit none
 
@@ -190,11 +190,10 @@ contains
     use iteration
     use monitor
     use partitioning, only : updateCoorFineMesh
-    use preprocessingAPI, only : shiftCoorAndVolumes, &
+    use preprocessingAPI, only : shiftCoorAndVolumes, metric, &
          updateCoordinatesAllLevels, updateMetricsAllLevels, faceRotationMatrices
     use section
     use solverUtils
-    use utils
     use wallDistance, only : updateWallDistanceAllLevels
     implicit none
     !
@@ -263,7 +262,6 @@ contains
           call interpCoor(lale)
 
           ! Update s[I,J,K], norm
-          ! call metric(currentLevel)
           call metric(groundLevel)
 
           ! Update sFace[I,J,K]
