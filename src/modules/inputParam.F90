@@ -503,6 +503,10 @@ module inputPhysics
   ! rvfN:                Determines the version of v2f turbulence model.
   ! rvfB:                Whether or not to solve v2f with an
   !                      upper bound.
+  ! useQCR:              Determines if the QCR term is applied to the shear tensor computation
+  !                      when considering turbulence model effects
+  ! useRotationSA:       Determines if we will use rotation correction (SA model only)
+  ! useft2SA:            Determines if we will use the ft2 term (SA model only)
   ! wallFunctions:       Whether or not to use wall functions.
   ! wallDistanceNeeded:  Whether or not the wall distance is needed
   !                      for the turbulence model in a RANS problem.
@@ -546,6 +550,7 @@ module inputPhysics
   integer(kind=intType) :: turbModel, cpModel, turbProd
   integer(kind=intType) :: rvfN
   logical               :: rvfB
+  logical               :: useQCR, useRotationSA, useft2SA
 
   logical :: wallFunctions, wallDistanceNeeded
 

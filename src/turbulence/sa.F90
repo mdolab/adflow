@@ -50,18 +50,6 @@ contains
     cw36    = rsaCw3**6
     cb3Inv  = one/rsaCb3
 
-    ! Run the necessary code to setup and solve the SA transport
-    ! equation for nuTilde.
-    ! Production Terms
-    select case (turbProd)
-    case (strain)
-       call prodSmag2
-    case (vorticity)
-       call prodWmag2
-    case (katoLaunder)
-       call prodKatoLaunder
-    end select
-
     ! Alloc central jacobian memory
     allocate(qq(2:il,2:jl,2:kl))
 
@@ -113,7 +101,13 @@ contains
     use blockPointers
     use constants
     use paramTurb
+    use section
+    use inputPhysics
+    use flowVarRefState
     implicit none
+
+    ! Local parameters
+    real(kind=realType), parameter :: f23 = two*third
 
     ! Local variables.
     integer(kind=intType) :: i, j, k, nn, ii
@@ -121,7 +115,25 @@ contains
     real(kind=realType) :: ss, sst, nu, dist2Inv, chi, chi2, chi3
     real(kind=realType) :: rr, gg, gg6, termFw, fwSa, term1, term2
     real(kind=realType) :: dfv1, dfv2, dft2, drr, dgg, dfw
+    real(kind=realType) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
+    real(kind=realType) :: div2, fact, sxx, syy, szz, sxy, sxz, syz
+    real(kind=realType) :: vortx, vorty, vortz
+    real(kind=realType) :: omegax, omegay, omegaz
+    real(kind=realType) :: strainMag2, strainProd, vortProd
     real(kind=realType), parameter :: xminn = 1.e-10_realType
+
+    ! Determine the non-dimensional wheel speed of this block.
+
+    omegax = timeRef*sections(sectionID)%rotRate(1)
+    omegay = timeRef*sections(sectionID)%rotRate(2)
+    omegaz = timeRef*sections(sectionID)%rotRate(3)
+
+    ! Create switches to production term depending on the variable that
+    ! should be used
+    if (turbProd .eq. katoLaunder) then
+       print *,'katoLaunder production term not supported for SA'
+       stop
+    end if
 
 #ifdef TAPENADE_FAST
     !$AD II-LOOP
@@ -133,11 +145,96 @@ contains
        do k=2, kl
           do j=2, jl
              do i=2, il
-#endif         
-                ! First take the square root of the production term to
-                ! obtain the correct production term for spalart-allmaras.
+#endif
+                ! Compute the gradient of u in the cell center. Use is made
+                ! of the fact that the surrounding normals sum up to zero,
+                ! such that the cell i,j,k does not give a contribution.
+                ! The gradient is scaled by the factor 2*vol.
+                
+                uux = w(i+1,j,k,ivx)*si(i,j,k,1) - w(i-1,j,k,ivx)*si(i-1,j,k,1) &
+                     + w(i,j+1,k,ivx)*sj(i,j,k,1) - w(i,j-1,k,ivx)*sj(i,j-1,k,1) &
+                     + w(i,j,k+1,ivx)*sk(i,j,k,1) - w(i,j,k-1,ivx)*sk(i,j,k-1,1)
+                uuy = w(i+1,j,k,ivx)*si(i,j,k,2) - w(i-1,j,k,ivx)*si(i-1,j,k,2) &
+                     + w(i,j+1,k,ivx)*sj(i,j,k,2) - w(i,j-1,k,ivx)*sj(i,j-1,k,2) &
+                     + w(i,j,k+1,ivx)*sk(i,j,k,2) - w(i,j,k-1,ivx)*sk(i,j,k-1,2)
+                uuz = w(i+1,j,k,ivx)*si(i,j,k,3) - w(i-1,j,k,ivx)*si(i-1,j,k,3) &
+                     + w(i,j+1,k,ivx)*sj(i,j,k,3) - w(i,j-1,k,ivx)*sj(i,j-1,k,3) &
+                     + w(i,j,k+1,ivx)*sk(i,j,k,3) - w(i,j,k-1,ivx)*sk(i,j,k-1,3)
 
-                ss = sqrt(scratch(i,j,k,iprod))
+                ! Idem for the gradient of v.
+
+                vvx = w(i+1,j,k,ivy)*si(i,j,k,1) - w(i-1,j,k,ivy)*si(i-1,j,k,1) &
+                     + w(i,j+1,k,ivy)*sj(i,j,k,1) - w(i,j-1,k,ivy)*sj(i,j-1,k,1) &
+                     + w(i,j,k+1,ivy)*sk(i,j,k,1) - w(i,j,k-1,ivy)*sk(i,j,k-1,1)
+                vvy = w(i+1,j,k,ivy)*si(i,j,k,2) - w(i-1,j,k,ivy)*si(i-1,j,k,2) &
+                     + w(i,j+1,k,ivy)*sj(i,j,k,2) - w(i,j-1,k,ivy)*sj(i,j-1,k,2) &
+                     + w(i,j,k+1,ivy)*sk(i,j,k,2) - w(i,j,k-1,ivy)*sk(i,j,k-1,2)
+                vvz = w(i+1,j,k,ivy)*si(i,j,k,3) - w(i-1,j,k,ivy)*si(i-1,j,k,3) &
+                     + w(i,j+1,k,ivy)*sj(i,j,k,3) - w(i,j-1,k,ivy)*sj(i,j-1,k,3) &
+                     + w(i,j,k+1,ivy)*sk(i,j,k,3) - w(i,j,k-1,ivy)*sk(i,j,k-1,3)
+
+                ! And for the gradient of w.
+
+                wwx = w(i+1,j,k,ivz)*si(i,j,k,1) - w(i-1,j,k,ivz)*si(i-1,j,k,1) &
+                     + w(i,j+1,k,ivz)*sj(i,j,k,1) - w(i,j-1,k,ivz)*sj(i,j-1,k,1) &
+                     + w(i,j,k+1,ivz)*sk(i,j,k,1) - w(i,j,k-1,ivz)*sk(i,j,k-1,1)
+                wwy = w(i+1,j,k,ivz)*si(i,j,k,2) - w(i-1,j,k,ivz)*si(i-1,j,k,2) &
+                     + w(i,j+1,k,ivz)*sj(i,j,k,2) - w(i,j-1,k,ivz)*sj(i,j-1,k,2) &
+                     + w(i,j,k+1,ivz)*sk(i,j,k,2) - w(i,j,k-1,ivz)*sk(i,j,k-1,2)
+                wwz = w(i+1,j,k,ivz)*si(i,j,k,3) - w(i-1,j,k,ivz)*si(i-1,j,k,3) &
+                     + w(i,j+1,k,ivz)*sj(i,j,k,3) - w(i,j-1,k,ivz)*sj(i,j-1,k,3) &
+                     + w(i,j,k+1,ivz)*sk(i,j,k,3) - w(i,j,k-1,ivz)*sk(i,j,k-1,3)
+
+                ! Compute the components of the stress tensor.
+                ! The combination of the current scaling of the velocity
+                ! gradients (2*vol) and the definition of the stress tensor,
+                ! leads to the factor 1/(4*vol).
+
+                fact = fourth/vol(i,j,k)
+
+                if (turbProd .eq. strain) then
+
+                   sxx = two*fact*uux
+                   syy = two*fact*vvy
+                   szz = two*fact*wwz
+
+                   sxy = fact*(uuy + vvx)
+                   sxz = fact*(uuz + wwx)
+                   syz = fact*(vvz + wwy)
+
+                   ! Compute 2/3 * divergence of velocity squared
+                
+                   div2 = f23*(sxx+syy+szz)**2
+
+                   ! Compute strain production term
+
+                   strainMag2 = two*(sxy**2 + sxz**2 + syz**2) &
+                        +           sxx**2 + syy**2 + szz**2
+
+                   strainProd = two*strainMag2 - div2
+
+                   ss = sqrt(strainProd)
+
+                else if (turbProd .eq. vorticity) then
+
+                   ! Compute the three components of the vorticity vector.
+                   ! Substract the part coming from the rotating frame.
+
+                   vortx = two*fact*(wwy - vvz) - two*omegax
+                   vorty = two*fact*(uuz - wwx) - two*omegay
+                   vortz = two*fact*(vvx - uuy) - two*omegaz
+
+                   ! Compute the vorticity production term
+
+                   vortProd = vortx**2 + vorty**2 + vortz**2
+
+                   ! First take the square root of the production term to
+                   ! obtain the correct production term for spalart-allmaras.
+                   ! We do this to avoid if statements.
+
+                   ss = sqrt(vortProd)
+
+                end if
 
                 ! Compute the laminar kinematic viscosity, the inverse of
                 ! wall distance squared, the ratio chi (ratio of nuTilde
@@ -155,16 +252,28 @@ contains
                 ! The function ft2, which is designed to keep a laminar
                 ! solution laminar. When running in fully turbulent mode
                 ! this function should be set to 0.0.
-
-                ft2 = rsaCt3*exp(-rsaCt4*chi2)
-                ! ft2 = zero
+            
+                if (useft2SA) then
+                   ft2 = rsaCt3*exp(-rsaCt4*chi2)
+                else
+                   ft2 = zero
+                end if
 
                 ! Correct the production term to account for the influence
-                ! of the wall. Make sure that this term remains positive
+                ! of the wall.
+
+                sst = ss + w(i,j,k,itu1)*fv2*kar2Inv*dist2Inv
+
+                ! Add rotation term (useRotationSA defined in inputParams.F90)
+
+                if (useRotationSA) then
+                   sst = sst + rsaCrot*min(zero,sqrt(two*strainMag2))
+                end if
+
+                ! Make sure that this term remains positive
                 ! (the function fv2 is negative between chi = 1 and 18.4,
                 ! which can cause sst to go negative, which is undesirable).
 
-                sst = ss + w(i,j,k,itu1)*fv2*kar2Inv*dist2Inv
                 sst = max(sst,xminn)
 
                 ! Compute the function fw. The argument rr is cut off at 10
@@ -187,6 +296,7 @@ contains
 
                 scratch(i,j,k,idvt) = (term1 + term2*w(i,j,k,itu1))*w(i,j,k,itu1)
 
+#ifndef USE_TAPENADE
                 ! Compute some derivatives w.r.t. nuTilde. These will occur
                 ! in the left hand side, i.e. the matrix for the implicit
                 ! treatment.
@@ -207,7 +317,6 @@ contains
                 ! the stability. You may want to play around and try to
                 ! take this term into account in the jacobian.
                 ! Note that -dsource/dnu is stored.
-#ifndef USE_TAPENADE
                 qq(i,j,k) = -two*term2*w(i,j,k,itu1)                      &
                      -  dist2Inv*w(i,j,k,itu1)*w(i,j,k,itu1)         &
                      * (rsaCb1*kar2Inv*(dfv2-ft2*dfv2-fv2*dft2+dft2) &
