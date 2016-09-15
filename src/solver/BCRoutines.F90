@@ -508,8 +508,8 @@ end subroutine applyAllBC
     use constants
     use blockPointers, only : BCData
     use inputDiscretization , only : viscWallBCTreatment
-    use BCPointers, only : ww1, ww2, rlv1, rlv2, pp0, pp1, pp2, pp3, rev1, rev2, &
-         iStart, jStart, iSize, jSize
+    use BCPointers, only : ww0, ww1, ww2, rlv0, rlv1, rlv2, pp0, pp1, pp2, pp3, rev0, &
+         rev1, rev2,  iStart, jStart, iSize, jSize
     use flowVarRefState, only : viscous, eddyModel
     use iteration, only : currentLevel, groundLevel
     implicit none
@@ -599,8 +599,8 @@ end subroutine applyAllBC
     use constants
     use blockPointers, only : BCData
     use inputDiscretization , only : viscWallBCTreatment
-    use BCPointers, only : ww1, ww2, rlv1, rlv2, pp1, pp2, pp3, rev1, rev2, &
-         iStart, jStart, iSize, jSize
+    use BCPointers, only : ww0, ww1, ww2, rlv0, rlv1, rlv2, pp0, pp1, pp2, pp3, &
+         rev0, rev1, rev2, iStart, jStart, iSize, jSize
     use flowVarRefState, only : viscous, eddyModel, RGas
     use iteration, only : currentLevel, groundLevel
     implicit none
@@ -1066,8 +1066,9 @@ end subroutine applyAllBC
     use inputDiscretization, only : eulerWallBCTreatment
     use iteration, only : currentLevel, groundLevel
     use utils, only : myDim
-    use BCPointers, only : ww1, pp1, rlv1, rev1, ww2, pp2, rlv2, rev2, &
-         pp3, ss, ssi, ssj, ssk, iStart, iSize, jStart, jSize, iEnd, jEnd
+    use BCPointers, only : ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, &
+         rev0, rev1, rev2, ss, ssi, ssj, ssk, &
+         iStart, iSize, jStart, jSize, iEnd, jEnd
     implicit none
 
     ! Subroutine arguments.
