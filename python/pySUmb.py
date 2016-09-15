@@ -676,12 +676,12 @@ class SUMB(AeroSolver):
             # Otherwise, the problem is solved within this function
             else:
                 # Get the callback functions
-                surfaceCallback = kwargs.pop('surfaceMeshCallback', None)            
-                volumeCallback  = kwargs.pop('volumeMeshCallback', None)            
+                surfaceMeshCallback = kwargs.pop('surfaceMeshCallback', None)            
+                volumeMeshCallback  = kwargs.pop('volumeMeshCallback', None)            
                 
                 # Call solver wrapper for unsteady simulations
-                self._solverunsteady(surfaceCallback = surfaceCallback,
-                                     volumeCallback  = volumeCallback)
+                self._solverunsteady(surfaceMeshCallback = surfaceMeshCallback,
+                                     volumeMeshCallback  = volumeMeshCallback)
         else:
             raise Error("Mode {0} not supported".format(mode))
             
@@ -713,25 +713,25 @@ class SUMB(AeroSolver):
         if self.getOption('TSStability'):
             self.computeStabilityParameters()
 
-    def _solverunsteady(self, surfaceCallback=None, volumeCallback=None):
+    def _solverunsteady(self, surfaceMeshCallback=None, volumeMeshCallback=None):
         """
         This routine is intended for time accurate simulation, including
-        - Unsteady problem without mesh motion
+        - Unsteady problem with (possibly) prescribed mesh motion
         - Unsteady problem with warping mesh
         - Unsteady problem with rigidly translating/rotating mesh (N/A yet)
         The latter two require ALE.
 
         Parameters
         ----------
-        surfaceCallback : Python function handle
+        surfaceMeshCallback : Python function handle
             Computes new surface coordinates for mesh warping
         
-        volumeCallback : Python function handle
+        volumeMeshCallback : Python function handle
             Computes new volume coordinates for mesh moving
         """
         
         # Store initial surface coordinates
-        coords_ref = self.getSurfaceCoordinates(self.allFamilies)
+        coords_ref = self.getSurfaceCoordinates(self.allWallsGroup)
         # TODO: A function that retrieves the coordinates of initial mesh in SUmb
         grid_ref = None
         
@@ -740,20 +740,28 @@ class SUMB(AeroSolver):
         for tdx in xrange(1, nTimeStepsFine+1):
             # Increment counter
             curTime, curTimeStep = self.stepCounter()
-            
+
+            # Initialize to false for unsteady mode without moving mesh
+            # The value will be changed in the following if necessary
+            self._updateGeomInfo = False
             # Warp mesh if necessary
-            if surfaceCallback is not None:
-                coords_new = surfaceCallback(coords_ref, curTime, curTimeStep)
-                self.setSurfaceCoordinates(coords_new, self.allFamilies)
+            if surfaceMeshCallback is not None:
+                coords_new = surfaceMeshCallback(coords_ref, curTime, curTimeStep)
+                self.setSurfaceCoordinates(coords_new, self.allWallsGroup)
             # Rigidly move mesh if necessary
-            if volumeCallback is not None:
-                grid_new = volumeCallback(grid_ref, curTime, curTimeStep)
+            if volumeMeshCallback is not None:
+                grid_new = volumeMeshCallback(grid_ref, curTime, curTimeStep)
                 # TODO: A function that updates the mesh in SUmb
             # Update mesh-related quantities
-            self.updateGeometryInfo()
+            if self._updateGeomInfo:
+                self.updateGeometryInfo()
+            else:
+                self.sumb.preprocessingapi.shiftcoorandvolumes()
+                self.sumb.solvers.updategeometricdata()
             
             # Solve current step
             self.solveTimeStep()
+            self.writeSolution()
 
     def stepCounter(self):
         """
@@ -788,6 +796,9 @@ class SUMB(AeroSolver):
         groupName : string
             The name of surface group to update
         """
+        if groupName is None:
+            groupName = self.allWallsGroup
+        
         self.setSurfaceCoordinates(disp, groupName)
         self.updateGeometryInfo()
 
@@ -2467,36 +2478,34 @@ class SUMB(AeroSolver):
         """
 
         # The mesh is modified
-        if self._updateGeomInfo:
-            # In this case, a mesh object shall exist
-            if self.mesh is not None:
-                # If it is unsteady, and mesh is modified, then it has to be ALE
-                if self.getOption('equationMode').lower() == 'unsteady':
-                    self.sumb.shiftcoorandvolumes()
-                    self.sumb.shiftlevelale()
-                # Warp the mesh
-                timeA = time.time()
-                self.mesh.warpMesh()
-                newGrid = self.mesh.getSolverGrid()
-                self.sumb.killsignals.routinefailed = False
-                self.sumb.killsignals.fatalFail = False
-                self.updateTime = time.time()-timeA
-                if newGrid is not None:
-                    self.sumb.warping.setgrid(newGrid)
-                # Update geometric data, depending on the type of simulation
-                if self.getOption('equationMode').lower() == 'unsteady':
-                    self.sumb.solvers.updategeometricdata()
-                else:
-                    self.sumb.preprocessingapi.updatecoordinatesalllevels()
-                    self.sumb.walldistance.updatewalldistancealllevels()
-                    self.sumb.preprocessingapi.updatemetricsalllevels()
-                    self.sumb.preprocessingapi.updategridvelocitiesalllevels()
-                # Update flags
-                self._updateGeomInfo = False
-                self.sumb.killsignals.routinefailed = \
-                    self.comm.allreduce(
-                    bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
-                self.sumb.killsignals.fatalfail = self.sumb.killsignals.routinefailed
+        if self._updateGeomInfo and self.mesh is not None:
+            # If it is unsteady, and mesh is modified, then it has to be ALE
+            if self.getOption('equationMode').lower() == 'unsteady':
+                self.sumb.preprocessingapi.shiftcoorandvolumes()
+                self.sumb.aleutils.shiftlevelale()
+            # Warp the mesh
+            timeA = time.time()
+            self.mesh.warpMesh()
+            newGrid = self.mesh.getSolverGrid()
+            self.sumb.killsignals.routinefailed = False
+            self.sumb.killsignals.fatalFail = False
+            self.updateTime = time.time()-timeA
+            if newGrid is not None:
+                self.sumb.warping.setgrid(newGrid)
+            # Update geometric data, depending on the type of simulation
+            if self.getOption('equationMode').lower() == 'unsteady':
+                self.sumb.solvers.updategeometricdata()
+            else:
+                self.sumb.preprocessingapi.updatecoordinatesalllevels()
+                self.sumb.walldistance.updatewalldistancealllevels()
+                self.sumb.preprocessingapi.updatemetricsalllevels()
+                self.sumb.preprocessingapi.updategridvelocitiesalllevels()
+            # Update flags
+            self._updateGeomInfo = False
+            self.sumb.killsignals.routinefailed = \
+                self.comm.allreduce(
+                bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
+            self.sumb.killsignals.fatalfail = self.sumb.killsignals.routinefailed
 
     def getAdjointResNorms(self):
         '''

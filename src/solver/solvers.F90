@@ -380,7 +380,6 @@ contains
        call updateCoordinatesAllLevels
        if (changing_Grid .and. updateWallDistanceUnsteady) &
             call updateWallDistanceAllLevels
-
        call updateMetricsAllLevels
 
        ! Update the rotation matrices of the faces. Only needed
