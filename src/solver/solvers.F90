@@ -69,9 +69,6 @@ contains
           call solverSteady
        case (unsteady)
           select case (timeIntegrationScheme)
-          ! case (BDF)
-          !    call solverUnsteadyBDF
-
           case (explicitRK)
              call solverUnsteadyExplicitRK
           end select
@@ -122,6 +119,157 @@ contains
 
   end subroutine solver
 
+
+
+
+
+
+
+
+
+  subroutine solverUnsteadyBDF
+    !
+    !       solverUnsteadyBDF solves the unsteady equations using the BDF  
+    !       schemes for the multigrid level groundLevel.                   
+    !
+    use bcdata, only : setbcdataFineGrid, setBCDataCoarseGrid, &
+         nonDimBoundData, setInletFreeStreamTurb
+    use blockPointers
+    use communication
+    use inputIteration
+    use inputMotion
+    use inputUnsteady
+    use inputTimeSpectral
+    use iteration
+    use killSignals
+    use partitioning, onlY : updateCoorFineMesh
+    use preprocessingAPI, only : shiftCoorAndVolumes, &
+         updateCoordinatesAllLevels, updateMetricsAllLevels, faceRotationMatrices
+    use monitor
+    use section
+    use solverUtils, only : unsteadyHeader, gridVelocitiesFineLevel, slipVelocitiesFineLevel, &
+         shiftsolution, gridVelocitiesCoarseLevels, slipVelocitiesCoarseLevels, &
+         normalVelocitiesAllLevels
+    use utils, only : setPointers, setCoefTimeIntegrator
+    use wallDistance, only : updateWallDistanceAllLevels
+    implicit none
+    !
+    !      Local variables.
+    !
+    integer(kind=intType) :: iter, nTimeSteps
+    integer(kind=intType) :: i,j,k,nn,kk
+    real(kind=realType), dimension(nSections) :: tNewSec, deltaTSec
+
+
+    ! Write the unsteady header. Only done by processor 0
+    ! to avoid a messy output.
+    
+    ! if(myID == 0) call unsteadyHeader
+
+    ! If the grid is changing a whole lot of geometric
+    ! info must be adapted.
+
+    testChanging: if(changing_Grid .or. gridMotionSpecified) then
+
+       ! Set the new time for all sections; also store their
+       ! time step. They are the same for all sections, but all
+       ! of them should be updated because of consistency.
+
+       do nn=1,nSections
+          tNewSec(nn)   = timeUnsteady + timeUnsteadyRestart
+          deltaTSec(nn) = deltaT
+       enddo
+
+       call updateCoorFineMesh(deltaTSec, 1_intType)
+
+       ! Adapt the geometric info on all grid levels needed for the
+       ! current ground level and multigrid cycle.
+       ! The wall distance only needs to be recomputed when the
+       ! grid is changing; not when a rigid body motion is
+       ! specified. Furthermore, the user can choose not to update
+       ! the wall distance, because he may know a priori that the
+       ! changes in geometry happen quite far away from the boundary
+       ! layer. This is accomplished via updateWallDistanceUnsteady.
+
+       call updateCoordinatesAllLevels
+       if(changing_Grid .and. updateWallDistanceUnsteady) &
+            call updateWallDistanceAllLevels
+
+
+       call updateMetricsAllLevels
+
+       ! Update the rotation matrices of the faces. Only needed
+       ! on the finest grid level.
+
+       call faceRotationMatrices(currentLevel, .false.)
+
+       ! Determine the velocities of the cell centers and faces
+       ! for the current ground level. Note that the spectral mode
+       ! is always 1 for unsteady mode.
+
+       call gridVelocitiesFineLevel(deforming_Grid, tNewSec, 1_intType)
+
+       ! Determine the new slip velocities on the viscous walls.
+
+       call slipVelocitiesFineLevel(deforming_Grid, tNewSec, 1_intType)
+
+
+       ! Determine the velocities of the cell centers and faces and
+       ! the slip velocities on the coarse grid levels . Note that the
+       ! spectral mode is always 1 for unsteady mode.
+
+       call gridVelocitiesCoarseLevels(1_intType)
+       call slipVelocitiesCoarseLevels(1_intType)
+
+       ! Compute the normal velocities of the boundaries, if
+       ! needed for the corresponding boundary condition.
+
+       call normalVelocitiesAllLevels(1_intType)
+
+       ! Determine the prescribed boundary condition data for the
+       ! boundary subfaces. First for the (currently) finest grid
+       ! and then iteratively for the coarser grid levels.
+
+       call setBCDataFineGrid(.false.)
+       call setBCDataCoarseGrid
+
+       ! Non-dimensionalize the boundary data.
+
+       call nonDimBoundData
+
+       ! Set the turbulent quantities to the free stream values for
+       ! the inflow faces for which this data has not been
+       ! prescribed. As the free stream values are nonDimensional,
+       ! this call must be after the nonDimensionalization.
+
+       call setInletFreestreamTurb
+
+    endif testChanging
+
+  end subroutine solverUnsteadyBDF
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   ! ================================================
   ! Utilities for unsteady simulation
   ! ================================================
@@ -136,7 +284,7 @@ contains
     use inputDiscretization, only : eulerWallBCTreatment
     use iteration, only : exchangePressureEarly, t0Solver
     use killSignals, only : localSignal, noSignal
-    use monitor, only : timeUnsteady, timeStepUnsteady, writeVolume, writeVolume, writeGrid
+    use monitor, only : timeUnsteady, timeStepUnsteady, writeVolume, writeSurface, writeGrid
     use utils, only : eulerWallsPresent
     implicit none
 
@@ -165,7 +313,7 @@ contains
     writeSurface = .false.
     writeGrid    = .false.
 
-    ! Fill up old, xold and volold with current x and vol, respectively
+    ! Fill up old, xold and volold
     call fillCoor
 
     ! Set all ALE levels by initial configuration
@@ -208,133 +356,134 @@ contains
 
     if(myID == 0) call unsteadyHeader
 
-    ! testChanging: if(changing_Grid .or. gridMotionSpecified) then
-    
-    ! Set the new time for all sections
-    do nn=1,nSections
-       tNewSec(nn)   = timeUnsteady + timeUnsteadyRestart
-       deltaTSec(nn) = deltaT
-    enddo
+    testChanging: if(changing_Grid .or. gridMotionSpecified) then
+       
+       ! Set the new time for all sections
+       do nn=1,nSections
+          tNewSec(nn)   = timeUnsteady + timeUnsteadyRestart
+          deltaTSec(nn) = deltaT
+       enddo
 
-    ! For prescribed motion only
-    if (.not. useALE) &
-         call updateCoorFineMesh(deltaTSec, 1_intType)
+       ! For prescribed motion only
+       if (gridMotionSpecified) &
+            call updateCoorFineMesh(deltaTSec, 1_intType)
 
-    ! Adapt the geometric info on all grid levels needed for the
-    ! current ground level and multigrid cycle.
-    ! The wall distance only needs to be recomputed when the
-    ! grid is changing; not when a rigid body motion is
-    ! specified. Furthermore, the user can choose not to update
-    ! the wall distance, because he may know a priori that the
-    ! changes in geometry happen quite far away from the boundary
-    ! layer. This is accomplished via updateWallDistanceUnsteady.
+       ! Adapt the geometric info on all grid levels needed for the
+       ! current ground level and multigrid cycle.
+       ! The wall distance only needs to be recomputed when the
+       ! grid is changing; not when a rigid body motion is
+       ! specified. Furthermore, the user can choose not to update
+       ! the wall distance, because he may know a priori that the
+       ! changes in geometry happen quite far away from the boundary
+       ! layer. This is accomplished via updateWallDistanceUnsteady.
 
-    call updateCoordinatesAllLevels
-    if (changing_Grid .and. updateWallDistanceUnsteady) &
-         call updateWallDistanceAllLevels
+       call updateCoordinatesAllLevels
+       if (changing_Grid .and. updateWallDistanceUnsteady) &
+            call updateWallDistanceAllLevels
 
-    call updateMetricsAllLevels
+       call updateMetricsAllLevels
 
-    ! Update the rotation matrices of the faces. Only needed
-    ! on the finest grid level.
-    ! For prescribed motion only
+       ! Update the rotation matrices of the faces. Only needed
+       ! on the finest grid level.
+       ! For prescribed motion only
 
-    if (.not. deforming_grid) &
-         call faceRotationMatrices(currentLevel, .false.)
+       if (gridMotionSpecified) &
+            call faceRotationMatrices(currentLevel, .false.)
 
-    if (useALE) then
-       ! Update the velocities using ALE scheme if moving mesh is present
+       if (useALE) then
+          ! Update the velocities using ALE scheme if moving mesh is present
 
-       ! First update cell and surface velocity, both are vectors
-       ! Only quantities in blocks are updated, and they will not
-       ! be interpolated
+          ! First update cell and surface velocity, both are vectors
+          ! Only quantities in blocks are updated, and they will not
+          ! be interpolated
 
-       call gridVelocitiesFineLevelPart1(deforming_Grid, tNewSec, 1_intType)
+          call gridVelocitiesFineLevelPart1(deforming_Grid, tNewSec, 1_intType)
 
-       ! Secondly store x to a temporary variable xALE
+          ! Secondly store x to a temporary variable xALE
 
-       call storeCoor
+          call storeCoor
 
-       ! Thirdly update surface normal and normal velocity
+          ! Thirdly update surface normal and normal velocity
 
-       ALEloop : do lale = 1, nALEMeshes
-          ! Interpolate mesh over latest time step for all ALE Meshes
-          call interpCoor(lale)
+          ALEloop : do lale = 1, nALEMeshes
+             ! Interpolate mesh over latest time step for all ALE Meshes
+             call interpCoor(lale)
 
-          ! Update s[I,J,K], norm
+             ! Update s[I,J,K], norm
+             call metric(groundLevel)
+
+             ! Update sFace[I,J,K]
+             call gridVelocitiesFineLevelPart2(deforming_Grid, tNewSec, 1_intType)
+
+             ! Update uSlip
+             call slipVelocitiesFineLevel_ALE(deforming_Grid, tNewSec, 1_intType)
+
+             ! Update coarse level quantities to make sure multigrid is working
+             call gridVelocitiesCoarseLevels(1_intType)
+             call slipVelocitiesCoarseLevels(1_intType)
+
+             ! Update rFace
+             call normalVelocitiesAllLevels(1_intType)
+
+             ! Store data to *lale* ALE level
+             call setLevelALE(lale)
+          enddo ALEloop
+
+          ! Lastly recover x from temporary variable
+          ! Then compute data for current level
+
+          call recoverCoor
+
+          ! Finish the rest of the update
           call metric(groundLevel)
-
-          ! Update sFace[I,J,K]
           call gridVelocitiesFineLevelPart2(deforming_Grid, tNewSec, 1_intType)
-
-          ! Update uSlip
           call slipVelocitiesFineLevel_ALE(deforming_Grid, tNewSec, 1_intType)
 
-          ! Update coarse level quantities to make sure multigrid is working
-          call gridVelocitiesCoarseLevels(1_intType)
-          call slipVelocitiesCoarseLevels(1_intType)
+       else
+          ! Otherwise update the velocities naively
 
-          ! Update rFace
-          call normalVelocitiesAllLevels(1_intType)
+          ! Determine the velocities of the cell centers and faces
+          ! for the current ground level. Note that the spectral mode
+          ! is always 1 for unsteady mode.
 
-          ! Store data to *lale* ALE level
-          call setLevelALE(lale)
-       enddo ALEloop
+          call gridVelocitiesFineLevel(deforming_Grid, tNewSec, 1_intType)
 
-       ! Lastly recover x from temporary variable
-       ! Then compute data for current level
+          ! Determine the new slip velocities on the viscous walls.
 
-       call recoverCoor
+          call slipVelocitiesFineLevel(deforming_Grid, tNewSec, 1_intType)
+       endif
 
-       ! Finish the rest of the update
-       call metric(groundLevel)
-       call gridVelocitiesFineLevelPart2(deforming_Grid, tNewSec, 1_intType)
-       call slipVelocitiesFineLevel_ALE(deforming_Grid, tNewSec, 1_intType)
+       ! After velocity computations on finest level are done,
+       ! Update those on coarser levels
 
-    else
-       ! Otherwise update the velocities naively
+       call gridVelocitiesCoarseLevels(1_intType)
+       call slipVelocitiesCoarseLevels(1_intType)
 
-       ! Determine the velocities of the cell centers and faces
-       ! for the current ground level. Note that the spectral mode
-       ! is always 1 for unsteady mode.
-       
-       call gridVelocitiesFineLevel(deforming_Grid, tNewSec, 1_intType)
+       ! Compute the normal velocities of the boundaries, if
+       ! needed for the corresponding boundary condition.
 
-       ! Determine the new slip velocities on the viscous walls.
+       call normalVelocitiesAllLevels(1_intType)
 
-       call slipVelocitiesFineLevel(deforming_Grid, tNewSec, 1_intType)
-    endif
+       ! Determine the prescribed boundary condition data for the
+       ! boundary subfaces. First for the (currently) finest grid
+       ! and then iteratively for the coarser grid levels.
 
-    ! After velocity computations on finest level are done,
-    ! Update those on coarser levels
+       call setBCDataFineGrid(.false.)
+       call setBCDataCoarseGrid
 
-    call gridVelocitiesCoarseLevels(1_intType)
-    call slipVelocitiesCoarseLevels(1_intType)
+       ! Non-dimensionalize the boundary data.
 
-    ! Compute the normal velocities of the boundaries, if
-    ! needed for the corresponding boundary condition.
+       call nonDimBoundData
 
-    call normalVelocitiesAllLevels(1_intType)
+       ! Set the turbulent quantities to the free stream values for
+       ! the inflow faces for which this data has not been
+       ! prescribed. As the free stream values are nonDimensional,
+       ! this call must be after the nonDimensionalization.
 
-    ! Determine the prescribed boundary condition data for the
-    ! boundary subfaces. First for the (currently) finest grid
-    ! and then iteratively for the coarser grid levels.
+       call setInletFreestreamTurb
 
-    call setBCDataFineGrid(.false.)
-    call setBCDataCoarseGrid
+    endif testChanging
 
-    ! Non-dimensionalize the boundary data.
-
-    call nonDimBoundData
-
-    ! Set the turbulent quantities to the free stream values for
-    ! the inflow faces for which this data has not been
-    ! prescribed. As the free stream values are nonDimensional,
-    ! this call must be after the nonDimensionalization.
-
-    call setInletFreestreamTurb
-
-    ! endif testChanging
   end subroutine updateGeometricData
 
   subroutine solverUnsteadyStep
