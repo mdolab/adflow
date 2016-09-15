@@ -25,7 +25,7 @@ contains
     use adjointPETSc, only : x_like
     use surfaceFamilies, only: wallFamilies, totalWallFamilies
     use utils, only : setPointers, EChk, getDirAngle, setPointers_d
-    use haloExchange, only : whalo2_d, exchangeCoor_d
+    use haloExchange, only : whalo2_d, exchangeCoor_d, exchangeCoor
     use adjointextra_d, only : xhalo_block_d, block_res_d
     use adjointUtils, only : allocDerivativeValues, zeroADSeeds
     implicit none
@@ -122,7 +122,12 @@ contains
           end do spectalLoop1
        end do domainLoop1
 
-       ! Now run the halo exchange for the nodes
+       ! Now run the halo exchange for the nodes. Note that the
+       ! original exchangeCoor must be done as well becuase
+       ! xhalo_block_d *also* updates the x-coordinates and
+       ! exchangeCoor is necessary to return the halo nodes back to
+       ! their original positions.
+       call exchangecoor(level)
        call exchangecoor_d(level)
 
        ! And now do the extra ones. Note that we are assuming the
@@ -312,6 +317,7 @@ contains
     logical :: resetToRans
     real(kind=realType), dimension(extraSize) :: extraLocalBar
     real(kind=realType), dimension(:, :), allocatable :: xSurfbSum
+    real(kind=realType), dimension(3, fSize) :: forces
 
     ! Setup number of state variable based on turbulence assumption
     if ( frozenTurbulence ) then
@@ -377,7 +383,7 @@ contains
     ! spectral instance. This set the bcDatad%F and bcData%area
     ! seeds.
     do sps=1, nTimeIntervalsSpectral
-       call getForces_b(fBar(:, :, sps), fSize, sps)
+       call getForces_b(forces(:, :), fBar(:, :, sps), fSize, sps)
     end do
 
     domainLoopAD: do nn=1,nDom

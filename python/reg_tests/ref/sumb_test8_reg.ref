@@ -148,13 +148,17 @@
  'turbresscale': 10000.0,
  'turbulencemodel': 'sa',
  'turbulenceorder': 'first order',
+ 'turbulenceproduction': 'strain',
  'useale': True,
  'useanksolver': False,
  'useapproxwalldistance': True,
  'usediagtspc': True,
+ 'useft2sa': True,
  'usegridmotion': False,
  'usematrixfreedrdw': True,
  'usenksolver': True,
+ 'useqcr': False,
+ 'userotationsa': False,
  'usewallfunctions': False,
  'verifyextra': True,
  'verifyspatial': True,
@@ -304,7 +308,7 @@ Dictionary Key: sepsensoravgz
 @value  1.7731901935275e+05 1e-10 1e-10
 -> Derivatives with respect to nodes
 ||dR/dXv * xVDot||
-@value  2.0129750625928e+04 1e-10 1e-10
+@value  2.0132988681373e+04 1e-10 1e-10
 dFuncs/dXv * xVDot
 Dictionary Key: cd
 @value  2.9230378804488e-01 1e-09 1e-09
@@ -722,12 +726,12 @@ Dictionary Key: sepsensoravgz
 # ---------------------------------------------------#
 -> Res bar Seed
 ||dwBar^T * dR/dw||
-@value  4.6374169391001e+03 1e-10 1e-10
+@value  4.6485614597942e+03 1e-10 1e-10
 ||dwBar^T * dR/dXv||
-@value  5.5526645858703e+04 1e-10 1e-10
+@value  5.5513733823216e+04 1e-10 1e-10
 ||dwBar^T * dR/xDv||
 Dictionary Key: P_CRM
-@value -1.8755435855684e-20 1e-10 1e-10
+@value  2.1071030560622e-19 1e-10 1e-10
 Dictionary Key: T_CRM
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_CRM
@@ -1209,11 +1213,11 @@ Dictionary Key: zRef_CRM
 #                 Dot product Tests                  #
 # ---------------------------------------------------#
 Dot product test for w -> R
-@value  6.5495211809677e+04 1e-10 1e-10
-@value  6.5495211809676e+04 1e-10 1e-10
+@value  6.6394400980773e+04 1e-10 1e-10
+@value  6.6394400980774e+04 1e-10 1e-10
 Dot product test for Xv -> R
-@value -3.7147695180375e+03 1e-09 1e-09
-@value -3.7147695180377e+03 1e-09 1e-09
+@value -3.7627418808660e+03 1e-09 1e-09
+@value -3.7627418808662e+03 1e-09 1e-09
 Dot product test for w -> F
 @value  3.9553917231397e+05 1e-10 1e-10
 @value  3.9553917231397e+05 1e-10 1e-10
@@ -1221,5 +1225,5 @@ Dot product test for xV -> F
 @value -1.9099487358431e+05 1e-10 1e-10
 @value -1.9099487358431e+05 1e-10 1e-10
 Dot product test for (w, xV) -> (dw, F)
-@value  2.6632474102130e+05 1e-10 1e-10
-@value  2.6632474102131e+05 1e-10 1e-10
+@value  2.6717595782957e+05 1e-10 1e-10
+@value  2.6717595782956e+05 1e-10 1e-10

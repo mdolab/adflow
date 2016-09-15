@@ -148,13 +148,17 @@
  'turbresscale': 10000.0,
  'turbulencemodel': 'sa',
  'turbulenceorder': 'first order',
+ 'turbulenceproduction': 'strain',
  'useale': True,
  'useanksolver': False,
  'useapproxwalldistance': True,
  'usediagtspc': True,
+ 'useft2sa': True,
  'usegridmotion': False,
  'usematrixfreedrdw': True,
  'usenksolver': True,
+ 'useqcr': False,
+ 'userotationsa': False,
  'usewallfunctions': False,
  'verifyextra': True,
  'verifyspatial': True,
@@ -307,7 +311,7 @@ Dictionary Key: sepsensoravgz
 @value  1.2745466554515e+05 1e-10 1e-10
 -> Derivatives with respect to nodes
 ||dR/dXv * xVDot||
-@value  8.7492070537030e+03 1e-10 1e-10
+@value  8.7493999690924e+03 1e-10 1e-10
 dFuncs/dXv * xVDot
 Dictionary Key: cd
 @value -8.2108720860969e-02 1e-09 1e-09
@@ -725,12 +729,12 @@ Dictionary Key: sepsensoravgz
 # ---------------------------------------------------#
 -> Res bar Seed
 ||dwBar^T * dR/dw||
-@value  1.8675805775988e+03 1e-10 1e-10
+@value  1.8673313108163e+03 1e-10 1e-10
 ||dwBar^T * dR/dXv||
-@value  1.6601052539520e+04 1e-10 1e-10
+@value  1.6601503989429e+04 1e-10 1e-10
 ||dwBar^T * dR/xDv||
 Dictionary Key: P_mdo_tutorial
-@value  9.5291206566109e-21 1e-10 1e-10
+@value  5.5057141571530e-21 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
@@ -1212,11 +1216,11 @@ Dictionary Key: zRef_mdo_tutorial
 #                 Dot product Tests                  #
 # ---------------------------------------------------#
 Dot product test for w -> R
-@value  2.0379588280540e+04 1e-10 1e-10
-@value  2.0379588280540e+04 1e-10 1e-10
+@value  2.0370531911332e+04 1e-10 1e-10
+@value  2.0370531911332e+04 1e-10 1e-10
 Dot product test for Xv -> R
-@value  1.1403427837508e+04 1e-09 1e-09
-@value  1.1403427837509e+04 1e-09 1e-09
+@value  1.1393765184866e+04 1e-09 1e-09
+@value  1.1393765184866e+04 1e-09 1e-09
 Dot product test for w -> F
 @value  8.1291893802142e+04 1e-10 1e-10
 @value  8.1291893802146e+04 1e-10 1e-10
@@ -1224,5 +1228,5 @@ Dot product test for xV -> F
 @value -1.2878552092910e+06 1e-10 1e-10
 @value -1.2878552092910e+06 1e-10 1e-10
 Dot product test for (w, xV) -> (dw, F)
-@value -1.1747802993708e+06 1e-10 1e-10
-@value -1.1747802993708e+06 1e-10 1e-10
+@value -1.1747990183926e+06 1e-10 1e-10
+@value -1.1747990183926e+06 1e-10 1e-10

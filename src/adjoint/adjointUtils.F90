@@ -600,7 +600,6 @@ contains
     end subroutine setBlock
   end subroutine setupStateResidualMatrix
 
- 
 
   subroutine allocDerivativeValues(level)
 
@@ -812,6 +811,7 @@ contains
     use blockPointers
     use inputTimeSpectral
     use flowVarRefState
+    use inputPhysics
     use BCPointers_b
 
     implicit none
@@ -876,7 +876,7 @@ contains
     flowDomsd(nn, level, sps)%bvtk1 = zero
     flowDomsd(nn, level, sps)%bvtk2 = zero
 
-    bocoLoop: do mm=1, flowDomsd(nn, level, sps)%nBocos
+    bocoLoop: do mm=1, flowDoms(nn, level, sps)%nBocos
        flowDomsd(nn, level, sps)%BCData(mm)%norm= zero
        flowDomsd(nn, level, sps)%bcData(mm)%rface = zero
        flowDomsd(nn, level, sps)%bcData(mm)%Fv = zero
@@ -886,10 +886,38 @@ contains
        flowDomsd(nn, level, sps)%BCData(mm)%TNS_Wall = zero
     end do bocoLoop
 
+
     viscbocoLoop: do mm=1,flowDoms(nn, level, sps)%nViscBocos
        flowDomsd(nn, level, sps)%viscSubface(mm)%tau = zero 
        flowDomsd(nn, level, sps)%viscSubface(mm)%q = zero
     end do viscbocoLoop
+
+    alphad = zero
+    betad = zero
+    machd = zero
+    machGridd = zero
+    machCoefd = zero
+    pinfdimd = zero
+    tinfdimd = zero
+    rhoinfdimd = zero
+    rgasdimd = zero
+    pointrefd = zero
+    prefd = zero
+    rhoRefd = zero
+    Trefd = zero
+    murefd = zero
+    timerefd = zero
+    pinfd = zero
+    pinfCorrd = zero
+    rhoinfd = zero
+    uinfd = zero
+    rgasd = zero
+    muinfd = zero
+    gammainfd = zero
+    winfd = zero
+    veldirfreestreamd = zero
+    liftdirectiond = zero
+    dragdirectiond = zero
 
 #ifndef USE_COMPLEX
     ! Now zero these
