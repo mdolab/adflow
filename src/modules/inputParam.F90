@@ -703,9 +703,10 @@ module inputUnsteady
 
   integer(kind=intType) :: nOldGridRead
 
-
   ! useALE: Use the deforming mesh ale formuation. 
+  ! coupledSolution: Trigger coupled analysis with other solvers
   logical :: useALE
+  logical :: coupledSolution
 
   ! updateWallDistanceUnsteady: Whether or not to update the wall
   !                             distance in unsteady mode. For a

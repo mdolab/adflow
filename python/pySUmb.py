@@ -753,7 +753,7 @@ class SUMB(AeroSolver):
             self.updateGeometryInfo()
             
             # Solve current step
-            self.solveTimeStep() 
+            self.solveTimeStep()
 
     def stepCounter(self):
         """
@@ -2466,16 +2466,12 @@ class SUMB(AeroSolver):
         Update the SUmb internal geometry info.
         """
 
-        isUns = self.getOption('equationMode').lower() == 'unsteady'
-
         # The mesh is modified
         if self._updateGeomInfo:
             # In this case, a mesh object shall exist
-            if self.mesh is None:
-                raise Error("Modifying mesh, but an appropriate mesh object is undefined!")
-            else:
+            if self.mesh is not None:
                 # If it is unsteady, and mesh is modified, then it has to be ALE
-                if isUns:
+                if self.getOption('equationMode').lower() == 'unsteady':
                     self.sumb.shiftcoorandvolumes()
                     self.sumb.shiftlevelale()
                 # Warp the mesh
@@ -2488,8 +2484,8 @@ class SUMB(AeroSolver):
                 if newGrid is not None:
                     self.sumb.warping.setgrid(newGrid)
                 # Update geometric data, depending on the type of simulation
-                if isUns:
-                    self.sumb.solvers.updategeometricdata(self._updateGeomInfo)
+                if self.getOption('equationMode').lower() == 'unsteady':
+                    self.sumb.solvers.updategeometricdata()
                 else:
                     self.sumb.preprocessingapi.updatecoordinatesalllevels()
                     self.sumb.walldistance.updatewalldistancealllevels()
@@ -2501,18 +2497,6 @@ class SUMB(AeroSolver):
                     self.comm.allreduce(
                     bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
                 self.sumb.killsignals.fatalfail = self.sumb.killsignals.routinefailed
-
-        # The mesh is unmodified
-        else:
-            # Unsteady mode, otherwise do nothing
-            # This is necessary when, for example, rotation rate is prescribed
-            if isUns:
-                self.sumb.shiftcoorandvolumes()
-                self.sumb.solvers.updategeometricdata(self._updateGeomInfo)
-                # self.sumb.preprocessingapi.updatecoordinatesalllevels()
-                # self.sumb.walldistance.updatewalldistancealllevels()
-                # self.sumb.preprocessingapi.updatemetricsalllevels()
-                # self.sumb.preprocessingapi.updategridvelocitiesalllevels()
 
     def getAdjointResNorms(self):
         '''
@@ -3426,6 +3410,7 @@ class SUMB(AeroSolver):
             'deltat':[float, .010],
             'useale':[bool, True],
             'usegridmotion':[bool, False],
+            'coupledsolution':[bool, False],
 
             # Time Spectral Paramters
             'timeintervals': [int, 1],
@@ -3547,7 +3532,7 @@ class SUMB(AeroSolver):
         return ('gridfile', 'equationtype', 'equationmode', 'flowtype',
                 'useapproxwalldistance', 'liftindex', 'mgcycle',
                 'mgstartlevel', 'timeintegrationscheme', 'timeaccuracy',
-                'useale', 'timeintervals', 'blocksplitting',
+                'useale', 'coupledsolution', 'timeintervals', 'blocksplitting',
                 'loadimbalance', 'loadbalanceiter', 'partitiononly',
                 'meshSurfaceFamily', 'designSurfaceFamily')
 
@@ -3692,6 +3677,7 @@ class SUMB(AeroSolver):
             'ntimestepsfine':['unsteady', 'ntimestepsfine'],
             'deltat':['unsteady', 'deltat'],
             'useale':['unsteady', 'useale'],
+            'coupledsolution':['unsteady', 'coupledsolution'],
 
             # Grid motion Params
             'usegridmotion':['motion', 'gridmotionspecified'],
