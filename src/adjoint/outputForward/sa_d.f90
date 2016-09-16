@@ -1222,8 +1222,8 @@ contains
   end subroutine saviscous
 !  differentiation of saresscale in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *dw
-!   with respect to varying inputs: *scratch *vol
-!   plus diff mem management of: dw:in scratch:in vol:in
+!   with respect to varying inputs: *scratch
+!   plus diff mem management of: dw:in scratch:in
   subroutine saresscale_d()
 !
 !  multiply the residual by the volume and store this in dw; this 
@@ -1250,9 +1250,9 @@ contains
           else
             rblank = x1
           end if
-          dwd(i, j, k, itu1) = -(rblank*(vold(i, j, k)*scratch(i, j, k, &
-&           idvt)+vol(i, j, k)*scratchd(i, j, k, idvt)))
-          dw(i, j, k, itu1) = -(vol(i, j, k)*scratch(i, j, k, idvt)*&
+          dwd(i, j, k, itu1) = -(volref(i, j, k)*rblank*scratchd(i, j, k&
+&           , idvt))
+          dw(i, j, k, itu1) = -(volref(i, j, k)*scratch(i, j, k, idvt)*&
 &           rblank)
         end do
       end do
@@ -1283,7 +1283,7 @@ contains
           else
             rblank = x1
           end if
-          dw(i, j, k, itu1) = -(vol(i, j, k)*scratch(i, j, k, idvt)*&
+          dw(i, j, k, itu1) = -(volref(i, j, k)*scratch(i, j, k, idvt)*&
 &           rblank)
         end do
       end do
