@@ -923,9 +923,10 @@ contains
     use constants
     use blockpointers, only : bcdata, bcdatad
     use inputdiscretization, only : viscwallbctreatment
-    use bcpointers_d, only : ww1, ww1d, ww2, ww2d, rlv1, rlv1d, rlv2, &
-&   rlv2d, pp0, pp0d, pp1, pp1d, pp2, pp2d, pp3, pp3d, rev1, rev1d, rev2&
-&   , rev2d, istart, jstart, isize, jsize
+    use bcpointers_d, only : ww0, ww0d, ww1, ww1d, ww2, ww2d, rlv0, &
+&   rlv0d, rlv1, rlv1d, rlv2, rlv2d, pp0, pp0d, pp1, pp1d, pp2, pp2d, &
+&   pp3, pp3d, rev0, rev0d, rev1, rev1d, rev2, rev2d, istart, jstart, &
+&   isize, jsize
     use flowvarrefstate, only : viscous, eddymodel
     use iteration, only : currentlevel, groundlevel
     implicit none
@@ -1007,8 +1008,8 @@ contains
     use constants
     use blockpointers, only : bcdata
     use inputdiscretization, only : viscwallbctreatment
-    use bcpointers_d, only : ww1, ww2, rlv1, rlv2, pp0, pp1, pp2, pp3, &
-&   rev1, rev2, istart, jstart, isize, jsize
+    use bcpointers_d, only : ww0, ww1, ww2, rlv0, rlv1, rlv2, pp0, pp1, &
+&   pp2, pp3, rev0, rev1, rev2, istart, jstart, isize, jsize
     use flowvarrefstate, only : viscous, eddymodel
     use iteration, only : currentlevel, groundlevel
     implicit none
@@ -1081,9 +1082,10 @@ contains
     use constants
     use blockpointers, only : bcdata, bcdatad
     use inputdiscretization, only : viscwallbctreatment
-    use bcpointers_d, only : ww1, ww1d, ww2, ww2d, rlv1, rlv1d, rlv2, &
-&   rlv2d, pp1, pp1d, pp2, pp2d, pp3, pp3d, rev1, rev1d, rev2, rev2d, &
-&   istart, jstart, isize, jsize
+    use bcpointers_d, only : ww0, ww0d, ww1, ww1d, ww2, ww2d, rlv0, &
+&   rlv0d, rlv1, rlv1d, rlv2, rlv2d, pp0, pp0d, pp1, pp1d, pp2, pp2d, &
+&   pp3, pp3d, rev0, rev0d, rev1, rev1d, rev2, rev2d, istart, jstart, &
+&   isize, jsize
     use flowvarrefstate, only : viscous, eddymodel, rgas, rgasd
     use iteration, only : currentlevel, groundlevel
     implicit none
@@ -1194,8 +1196,8 @@ contains
     use constants
     use blockpointers, only : bcdata
     use inputdiscretization, only : viscwallbctreatment
-    use bcpointers_d, only : ww1, ww2, rlv1, rlv2, pp1, pp2, pp3, rev1, &
-&   rev2, istart, jstart, isize, jsize
+    use bcpointers_d, only : ww0, ww1, ww2, rlv0, rlv1, rlv2, pp0, pp1, &
+&   pp2, pp3, rev0, rev1, rev2, istart, jstart, isize, jsize
     use flowvarrefstate, only : viscous, eddymodel, rgas
     use iteration, only : currentlevel, groundlevel
     implicit none
@@ -2036,10 +2038,10 @@ contains
     use inputdiscretization, only : eulerwallbctreatment
     use iteration, only : currentlevel, groundlevel
     use utils_d, only : mydim, mydim_d
-    use bcpointers_d, only : ww1, ww1d, pp1, pp1d, rlv1, rlv1d, rev1, &
-&   rev1d, ww2, ww2d, pp2, pp2d, rlv2, rlv2d, rev2, rev2d, pp3, pp3d, ss&
-&   , ssd, ssi, ssid, ssj, ssjd, ssk, sskd, istart, isize, jstart, jsize&
-&   , iend, jend
+    use bcpointers_d, only : ww0, ww0d, ww1, ww1d, ww2, ww2d, pp0, pp0d,&
+&   pp1, pp1d, pp2, pp2d, pp3, pp3d, rlv0, rlv0d, rlv1, rlv1d, rlv2, &
+&   rlv2d, rev0, rev0d, rev1, rev1d, rev2, rev2d, ss, ssd, ssi, ssid, &
+&   ssj, ssjd, ssk, sskd, istart, isize, jstart, jsize, iend, jend
     implicit none
 ! subroutine arguments.
     logical, intent(in) :: secondhalo, correctfork
@@ -2315,8 +2317,9 @@ contains
     use inputdiscretization, only : eulerwallbctreatment
     use iteration, only : currentlevel, groundlevel
     use utils_d, only : mydim
-    use bcpointers_d, only : ww1, pp1, rlv1, rev1, ww2, pp2, rlv2, rev2,&
-&   pp3, ss, ssi, ssj, ssk, istart, isize, jstart, jsize, iend, jend
+    use bcpointers_d, only : ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, &
+&   rlv1, rlv2, rev0, rev1, rev2, ss, ssi, ssj, ssk, istart, isize, &
+&   jstart, jsize, iend, jend
     implicit none
 ! subroutine arguments.
     logical, intent(in) :: secondhalo, correctfork

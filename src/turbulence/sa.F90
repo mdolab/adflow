@@ -44,12 +44,6 @@ contains
     ! Set the arrays for the boundary condition treatment.
     call bcTurbTreatment
 
-    ! Set model constants
-    cv13    = rsaCv1**3
-    kar2Inv = one/(rsaK**2)
-    cw36    = rsaCw3**6
-    cb3Inv  = one/rsaCb3
-
     ! Alloc central jacobian memory
     allocate(qq(2:il,2:jl,2:kl))
 
@@ -121,6 +115,12 @@ contains
     real(kind=realType) :: omegax, omegay, omegaz
     real(kind=realType) :: strainMag2, strainProd, vortProd
     real(kind=realType), parameter :: xminn = 1.e-10_realType
+
+    ! Set model constants
+    cv13    = rsaCv1**3
+    kar2Inv = one/(rsaK**2)
+    cw36    = rsaCw3**6
+    cb3Inv  = one/rsaCb3
 
     ! Determine the non-dimensional wheel speed of this block.
 
@@ -353,6 +353,13 @@ contains
     real(kind=realType) :: xa, ya, za, ttm, ttp, cnud, cam, cap
     real(kind=realType) :: nutm, nutp, num, nup, cdm, cdp
     real(kind=realType) :: c1m, c1p, c10, b1, c1, d1, qs
+
+    ! Set model constants
+    cv13    = rsaCv1**3
+    kar2Inv = one/(rsaK**2)
+    cw36    = rsaCw3**6
+    cb3Inv  = one/rsaCb3
+
     !
     !       Viscous terms in k-direction.                                  
     !

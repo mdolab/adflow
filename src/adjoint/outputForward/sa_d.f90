@@ -50,11 +50,6 @@ contains
     integer(kind=inttype) :: nn, sps
 ! set the arrays for the boundary condition treatment.
     call bcturbtreatment()
-! set model constants
-    cv13 = rsacv1**3
-    kar2inv = one/rsak**2
-    cw36 = rsacw3**6
-    cb3inv = one/rsacb3
 ! alloc central jacobian memory
     allocate(qq(2:il, 2:jl, 2:kl))
 ! source terms
@@ -100,11 +95,6 @@ contains
     integer(kind=inttype) :: nn, sps
 ! set the arrays for the boundary condition treatment.
     call bcturbtreatment()
-! set model constants
-    cv13 = rsacv1**3
-    kar2inv = one/rsak**2
-    cw36 = rsacw3**6
-    cb3inv = one/rsacb3
 ! alloc central jacobian memory
     allocate(qq(2:il, 2:jl, 2:kl))
 ! source terms
@@ -175,6 +165,11 @@ contains
     real(kind=realtype) :: min1d
     real(kind=realtype) :: y1
     real(kind=realtype) :: y1d
+! set model constants
+    cv13 = rsacv1**3
+    kar2inv = one/rsak**2
+    cw36 = rsacw3**6
+    cb3inv = one/rsacb3
 ! determine the non-dimensional wheel speed of this block.
     omegaxd = sections(sectionid)%rotrate(1)*timerefd
     omegax = timeref*sections(sectionid)%rotrate(1)
@@ -511,6 +506,11 @@ contains
     real(kind=realtype) :: pwx1
     real(kind=realtype) :: min1
     real(kind=realtype) :: y1
+! set model constants
+    cv13 = rsacv1**3
+    kar2inv = one/rsak**2
+    cw36 = rsacw3**6
+    cb3inv = one/rsacb3
 ! determine the non-dimensional wheel speed of this block.
     omegax = timeref*sections(sectionid)%rotrate(1)
     omegay = timeref*sections(sectionid)%rotrate(2)
@@ -690,6 +690,11 @@ contains
     real(kind=realtype) :: c1m, c1p, c10, b1, c1, d1, qs
     real(kind=realtype) :: c1md, c1pd, c10d
     intrinsic max
+! set model constants
+    cv13 = rsacv1**3
+    kar2inv = one/rsak**2
+    cw36 = rsacw3**6
+    cb3inv = one/rsacb3
 !
 !       viscous terms in k-direction.                                  
 !
@@ -1023,6 +1028,11 @@ contains
     real(kind=realtype) :: nutm, nutp, num, nup, cdm, cdp
     real(kind=realtype) :: c1m, c1p, c10, b1, c1, d1, qs
     intrinsic max
+! set model constants
+    cv13 = rsacv1**3
+    kar2inv = one/rsak**2
+    cw36 = rsacw3**6
+    cb3inv = one/rsacb3
 !
 !       viscous terms in k-direction.                                  
 !

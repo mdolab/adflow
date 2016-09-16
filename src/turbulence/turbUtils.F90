@@ -967,7 +967,7 @@ contains
                       ! the equation as the source and viscous terms.
 
                       scratch(i,j,k,idvt+ii-1) = scratch(i,j,k,idvt+ii-1) - uu*dwtk
-
+#ifndef USE_TAPENADE
                       ! Update the central jacobian. First the term which is
                       ! always present, i.e. uu.
 
@@ -991,6 +991,7 @@ contains
                             qq(i,j,k,ii,kk) = qq(i,j,k,ii,kk) + uu*impl(kk)
                          enddo
                       endif
+#endif
 
                    enddo
 
@@ -1056,7 +1057,7 @@ contains
 
                       ! Update the central jacobian. First the term which is
                       ! always present, i.e. -uu.
-
+#ifndef USE_TAPENADE
                       qq(i,j,k,ii,ii) = qq(i,j,k,ii,ii) - uu
 
                       ! For boundary cells k == kl, the implicit treatment must
@@ -1077,7 +1078,7 @@ contains
                             qq(i,j,k,ii,kk) = qq(i,j,k,ii,kk) - uu*impl(kk)
                          enddo
                       endif
-
+#endif
                    enddo
 
                 endif velKdir
@@ -1193,7 +1194,7 @@ contains
 
                       ! Update the central jacobian. First the term which is
                       ! always present, i.e. uu.
-
+#ifndef USE_TAPENADE
                       qq(i,j,k,ii,ii) = qq(i,j,k,ii,ii) + uu
 
                       ! For boundary cells j == 2, the implicit treatment must
@@ -1214,7 +1215,7 @@ contains
                             qq(i,j,k,ii,kk) = qq(i,j,k,ii,kk) + uu*impl(kk)
                          enddo
                       endif
-
+#endif
                    enddo
 
                 else velJdir
@@ -1279,7 +1280,7 @@ contains
 
                       ! Update the central jacobian. First the term which is
                       ! always present, i.e. -uu.
-
+#ifndef USE_TAPENADE
                       qq(i,j,k,ii,ii) = qq(i,j,k,ii,ii) - uu
 
                       ! For boundary cells j == jl, the implicit treatment must
@@ -1300,7 +1301,7 @@ contains
                             qq(i,j,k,ii,kk) = qq(i,j,k,ii,kk) - uu*impl(kk)
                          enddo
                       endif
-
+#endif
                    enddo
 
                 endif velJdir
@@ -1417,7 +1418,7 @@ contains
 
                       ! Update the central jacobian. First the term which is
                       ! always present, i.e. uu.
-
+#ifndef USE_TAPENADE
                       qq(i,j,k,ii,ii) = qq(i,j,k,ii,ii) + uu
 
                       ! For boundary cells i == 2, the implicit treatment must
@@ -1438,7 +1439,7 @@ contains
                             qq(i,j,k,ii,kk) = qq(i,j,k,ii,kk) + uu*impl(kk)
                          enddo
                       endif
-
+#endif
                    enddo
 
                 else velIdir
@@ -1503,7 +1504,7 @@ contains
 
                       ! Update the central jacobian. First the term which is
                       ! always present, i.e. -uu.
-
+#ifndef USE_TAPENADE
                       qq(i,j,k,ii,ii) = qq(i,j,k,ii,ii) - uu
 
                       ! For boundary cells i == il, the implicit treatment must
@@ -1524,7 +1525,7 @@ contains
                             qq(i,j,k,ii,kk) = qq(i,j,k,ii,kk) - uu*impl(kk)
                          enddo
                       endif
-
+#endif
                    enddo
 
                 endif velIdir

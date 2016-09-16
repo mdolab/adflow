@@ -49,24 +49,6 @@ contains
 !
     integer(kind=inttype) :: nn, sps
 ! set the arrays for the boundary condition treatment.
-    call pushreal8array(bmtj2, size(bmtj2, 1)*size(bmtj2, 2)*size(bmtj2&
-&                 , 3)*size(bmtj2, 4))
-    call pushreal8array(bmtj1, size(bmtj1, 1)*size(bmtj1, 2)*size(bmtj1&
-&                 , 3)*size(bmtj1, 4))
-    call pushreal8array(bmti2, size(bmti2, 1)*size(bmti2, 2)*size(bmti2&
-&                 , 3)*size(bmti2, 4))
-    call pushreal8array(bmti1, size(bmti1, 1)*size(bmti1, 2)*size(bmti1&
-&                 , 3)*size(bmti1, 4))
-    call pushreal8array(bmtk2, size(bmtk2, 1)*size(bmtk2, 2)*size(bmtk2&
-&                 , 3)*size(bmtk2, 4))
-    call pushreal8array(bmtk1, size(bmtk1, 1)*size(bmtk1, 2)*size(bmtk1&
-&                 , 3)*size(bmtk1, 4))
-    call bcturbtreatment()
-! set model constants
-    cv13 = rsacv1**3
-    kar2inv = one/rsak**2
-    cw36 = rsacw3**6
-    cb3inv = one/rsacb3
 ! alloc central jacobian memory
     allocate(qq(2:il, 2:jl, 2:kl))
 ! source terms
@@ -86,18 +68,6 @@ contains
     call unsteadyturbterm_b(1_inttype, 1_inttype, nn, qq)
     call turbadvection_b(1_inttype, 1_inttype, nn, qq)
     call sasource_b()
-    call popreal8array(bmtk1, size(bmtk1, 1)*size(bmtk1, 2)*size(bmtk1, &
-&                3)*size(bmtk1, 4))
-    call popreal8array(bmtk2, size(bmtk2, 1)*size(bmtk2, 2)*size(bmtk2, &
-&                3)*size(bmtk2, 4))
-    call popreal8array(bmti1, size(bmti1, 1)*size(bmti1, 2)*size(bmti1, &
-&                3)*size(bmti1, 4))
-    call popreal8array(bmti2, size(bmti2, 1)*size(bmti2, 2)*size(bmti2, &
-&                3)*size(bmti2, 4))
-    call popreal8array(bmtj1, size(bmtj1, 1)*size(bmtj1, 2)*size(bmtj1, &
-&                3)*size(bmtj1, 4))
-    call popreal8array(bmtj2, size(bmtj2, 1)*size(bmtj2, 2)*size(bmtj2, &
-&                3)*size(bmtj2, 4))
   deallocate(qq)
 end subroutine sa_block_b
   subroutine sa_block(resonly)
@@ -128,11 +98,6 @@ end subroutine sa_block_b
     integer(kind=inttype) :: nn, sps
 ! set the arrays for the boundary condition treatment.
     call bcturbtreatment()
-! set model constants
-    cv13 = rsacv1**3
-    kar2inv = one/rsak**2
-    cw36 = rsacw3**6
-    cb3inv = one/rsacb3
 ! alloc central jacobian memory
     allocate(qq(2:il, 2:jl, 2:kl))
 ! source terms
@@ -220,6 +185,10 @@ end subroutine sa_block_b
     real(kind=realtype) :: temp
     real(kind=realtype) :: y1
     real(kind=realtype) :: y1d
+! set model constants
+    cv13 = rsacv1**3
+    kar2inv = one/rsak**2
+    cw36 = rsacw3**6
 ! determine the non-dimensional wheel speed of this block.
     omegax = timeref*sections(sectionid)%rotrate(1)
     omegay = timeref*sections(sectionid)%rotrate(2)
@@ -669,6 +638,11 @@ end subroutine sa_block_b
     intrinsic max
     real(kind=realtype) :: min1
     real(kind=realtype) :: y1
+! set model constants
+    cv13 = rsacv1**3
+    kar2inv = one/rsak**2
+    cw36 = rsacw3**6
+    cb3inv = one/rsacb3
 ! determine the non-dimensional wheel speed of this block.
     omegax = timeref*sections(sectionid)%rotrate(1)
     omegay = timeref*sections(sectionid)%rotrate(2)
@@ -891,6 +865,8 @@ end subroutine sa_block_b
     real(kind=realtype) :: tempd16
     real(kind=realtype) :: temp4
     real(kind=realtype) :: tempd15
+! set model constants
+    cb3inv = one/rsacb3
     call pushinteger4(i)
     call pushreal8(c10)
     call pushinteger4(j)
@@ -1475,6 +1451,11 @@ end subroutine sa_block_b
     real(kind=realtype) :: c1m, c1p, c10, b1, c1, d1, qs
     intrinsic mod
     intrinsic max
+! set model constants
+    cv13 = rsacv1**3
+    kar2inv = one/rsak**2
+    cw36 = rsacw3**6
+    cb3inv = one/rsacb3
 !
 !       viscous terms in k-direction.                                  
 !

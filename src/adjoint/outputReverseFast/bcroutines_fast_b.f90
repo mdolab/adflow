@@ -531,13 +531,13 @@ branch = myIntStack(myIntPtr)
     end do
   end subroutine bcsymmpolar2ndhalo
 !  differentiation of bcnswalladiabatic in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *rev1 *rev2 *pp0 *pp1 *pp2
-!                *rlv1 *rlv2 *ww1 *ww2
-!   with respect to varying inputs: *rev1 *rev2 *pp0 *pp1 *pp2
-!                *rlv1 *rlv2 *ww1 *ww2
-!   rw status of diff variables: *rev0:(loc) *rev1:in-out *rev2:incr
+!   gradient     of useful results: *rev0 *rev1 *rev2 *pp0 *pp1
+!                *pp2 *rlv1 *rlv2 *ww0 *ww1 *ww2
+!   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
+!                *pp2 *rlv1 *rlv2 *ww0 *ww1 *ww2
+!   rw status of diff variables: *rev0:in-out *rev1:in-out *rev2:incr
 !                *pp0:in-out *pp1:in-out *pp2:incr *rlv0:(loc)
-!                *rlv1:in-out *rlv2:incr *ww0:(loc) *ww1:in-out
+!                *rlv1:in-out *rlv2:incr *ww0:in-out *ww1:in-out
 !                *ww2:incr
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
@@ -548,9 +548,10 @@ branch = myIntStack(myIntPtr)
     use constants
     use blockpointers, only : bcdata
     use inputdiscretization, only : viscwallbctreatment
-    use bcpointers_fast_b, only : ww1, ww1d, ww2, ww2d, rlv1, rlv1d, rlv2, &
-&   rlv2d, pp0, pp0d, pp1, pp1d, pp2, pp2d, pp3, pp3d, rev1, rev1d, rev2&
-&   , rev2d, istart, jstart, isize, jsize
+    use bcpointers_fast_b, only : ww0, ww0d, ww1, ww1d, ww2, ww2d, rlv0, &
+&   rlv0d, rlv1, rlv1d, rlv2, rlv2d, pp0, pp0d, pp1, pp1d, pp2, pp2d, &
+&   pp3, pp3d, rev0, rev0d, rev1, rev1d, rev2, rev2d, istart, jstart, &
+&   isize, jsize
     use flowvarrefstate, only : viscous, eddymodel
     use iteration, only : currentlevel, groundlevel
     implicit none
@@ -607,7 +608,10 @@ branch = myIntStack(myIntPtr)
     call computeetot(ww1, pp1, correctfork)
 ! extrapolate the state vectors in case a second halo
 ! is needed.
-    if (secondhalo) call extrapolate2ndhalo_fast_b(correctfork)
+    if (secondhalo) then
+      rlv0d = 0.0_8
+      call extrapolate2ndhalo_fast_b(correctfork)
+    end if
     call computeetot_fast_b(ww1, ww1d, pp1, pp1d, correctfork)
     rhokd = 0.0_8
     do ii=0,isize*jsize-1
@@ -689,8 +693,8 @@ branch = myIntStack(myIntPtr)
     use constants
     use blockpointers, only : bcdata
     use inputdiscretization, only : viscwallbctreatment
-    use bcpointers_fast_b, only : ww1, ww2, rlv1, rlv2, pp0, pp1, pp2, pp3, &
-&   rev1, rev2, istart, jstart, isize, jsize
+    use bcpointers_fast_b, only : ww0, ww1, ww2, rlv0, rlv1, rlv2, pp0, pp1, &
+&   pp2, pp3, rev0, rev1, rev2, istart, jstart, isize, jsize
     use flowvarrefstate, only : viscous, eddymodel
     use iteration, only : currentlevel, groundlevel
     implicit none
@@ -765,9 +769,10 @@ branch = myIntStack(myIntPtr)
     use constants
     use blockpointers, only : bcdata
     use inputdiscretization, only : viscwallbctreatment
-    use bcpointers_fast_b, only : ww1, ww1d, ww2, ww2d, rlv1, rlv1d, rlv2, &
-&   rlv2d, pp1, pp1d, pp2, pp2d, pp3, pp3d, rev1, rev1d, rev2, rev2d, &
-&   istart, jstart, isize, jsize
+    use bcpointers_fast_b, only : ww0, ww0d, ww1, ww1d, ww2, ww2d, rlv0, &
+&   rlv0d, rlv1, rlv1d, rlv2, rlv2d, pp0, pp0d, pp1, pp1d, pp2, pp2d, &
+&   pp3, pp3d, rev0, rev0d, rev1, rev1d, rev2, rev2d, istart, jstart, &
+&   isize, jsize
     use flowvarrefstate, only : viscous, eddymodel, rgas
     use iteration, only : currentlevel, groundlevel
     implicit none
@@ -970,8 +975,8 @@ branch = myIntStack(myIntPtr)
     use constants
     use blockpointers, only : bcdata
     use inputdiscretization, only : viscwallbctreatment
-    use bcpointers_fast_b, only : ww1, ww2, rlv1, rlv2, pp1, pp2, pp3, rev1, &
-&   rev2, istart, jstart, isize, jsize
+    use bcpointers_fast_b, only : ww0, ww1, ww2, rlv0, rlv1, rlv2, pp0, pp1, &
+&   pp2, pp3, rev0, rev1, rev2, istart, jstart, isize, jsize
     use flowvarrefstate, only : viscous, eddymodel, rgas
     use iteration, only : currentlevel, groundlevel
     implicit none
@@ -1340,9 +1345,10 @@ branch = myIntStack(myIntPtr)
     use inputdiscretization, only : eulerwallbctreatment
     use iteration, only : currentlevel, groundlevel
     use utils_fast_b, only : mydim, mydim_fast_b
-    use bcpointers_fast_b, only : ww1, ww1d, pp1, pp1d, rlv1, rlv1d, rev1, &
-&   rev1d, ww2, ww2d, pp2, pp2d, rlv2, rlv2d, rev2, rev2d, pp3, pp3d, ss&
-&   , ssi, ssj, ssk, istart, isize, jstart, jsize, iend, jend
+    use bcpointers_fast_b, only : ww0, ww0d, ww1, ww1d, ww2, ww2d, pp0, pp0d,&
+&   pp1, pp1d, pp2, pp2d, pp3, pp3d, rlv0, rlv0d, rlv1, rlv1d, rlv2, &
+&   rlv2d, rev0, rev0d, rev1, rev1d, rev2, rev2d, ss, ssi, ssj, ssk, &
+&   istart, isize, jstart, jsize, iend, jend
     implicit none
 ! subroutine arguments.
     logical, intent(in) :: secondhalo, correctfork
@@ -1483,8 +1489,9 @@ branch = myIntStack(myIntPtr)
     use inputdiscretization, only : eulerwallbctreatment
     use iteration, only : currentlevel, groundlevel
     use utils_fast_b, only : mydim
-    use bcpointers_fast_b, only : ww1, pp1, rlv1, rev1, ww2, pp2, rlv2, rev2,&
-&   pp3, ss, ssi, ssj, ssk, istart, isize, jstart, jsize, iend, jend
+    use bcpointers_fast_b, only : ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, &
+&   rlv1, rlv2, rev0, rev1, rev2, ss, ssi, ssj, ssk, istart, isize, &
+&   jstart, jsize, iend, jend
     implicit none
 ! subroutine arguments.
     logical, intent(in) :: secondhalo, correctfork

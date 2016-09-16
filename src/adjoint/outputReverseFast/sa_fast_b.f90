@@ -42,11 +42,6 @@ contains
     integer(kind=inttype) :: nn, sps
 ! set the arrays for the boundary condition treatment.
     call bcturbtreatment()
-! set model constants
-    cv13 = rsacv1**3
-    kar2inv = one/rsak**2
-    cw36 = rsacw3**6
-    cb3inv = one/rsacb3
 ! alloc central jacobian memory
     allocate(qq(2:il, 2:jl, 2:kl))
 ! source terms
@@ -129,6 +124,10 @@ contains
     real(kind=realtype) :: temp
     real(kind=realtype) :: y1
     real(kind=realtype) :: y1d
+! set model constants
+    cv13 = rsacv1**3
+    kar2inv = one/rsak**2
+    cw36 = rsacw3**6
 ! determine the non-dimensional wheel speed of this block.
     omegax = timeref*sections(sectionid)%rotrate(1)
     omegay = timeref*sections(sectionid)%rotrate(2)
@@ -516,6 +515,11 @@ branch = myIntStack(myIntPtr)
     intrinsic max
     real(kind=realtype) :: min1
     real(kind=realtype) :: y1
+! set model constants
+    cv13 = rsacv1**3
+    kar2inv = one/rsak**2
+    cw36 = rsacw3**6
+    cb3inv = one/rsacb3
 ! determine the non-dimensional wheel speed of this block.
     omegax = timeref*sections(sectionid)%rotrate(1)
     omegay = timeref*sections(sectionid)%rotrate(2)
@@ -713,6 +717,8 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: temp6
     real(kind=realtype) :: temp5
     real(kind=realtype) :: temp4
+! set model constants
+    cb3inv = one/rsacb3
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, ny) + 2
@@ -1089,6 +1095,11 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: c1m, c1p, c10, b1, c1, d1, qs
     intrinsic mod
     intrinsic max
+! set model constants
+    cv13 = rsacv1**3
+    kar2inv = one/rsak**2
+    cw36 = rsacw3**6
+    cb3inv = one/rsacb3
 !
 !       viscous terms in k-direction.                                  
 !

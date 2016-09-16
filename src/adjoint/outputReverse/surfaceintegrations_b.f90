@@ -350,7 +350,7 @@ bocos:do mm=1,nbocos
     real(kind=realtype) :: temp2
     real(kind=realtype) :: tempd13
     real(kind=realtype) :: temp1
-    real(kind=realtype) :: tempd12(3)
+    real(kind=realtype) :: tempd12
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tempd11
     real(kind=realtype) :: tempd10
@@ -358,7 +358,7 @@ bocos:do mm=1,nbocos
     real(kind=realtype) :: tempd
     real(kind=realtype) :: tempd8
     real(kind=realtype) :: tempd7
-    real(kind=realtype) :: tempd6
+    real(kind=realtype) :: tempd6(3)
     real(kind=realtype) :: tempd5
     real(kind=realtype) :: tempd4
     real(kind=realtype) :: tempd3
@@ -388,69 +388,15 @@ bocos:do mm=1,nbocos
 !
     if (bctype(mm) .eq. nswalladiabatic .or. bctype(mm) .eq. &
 &       nswallisothermal) then
-! loop over the quadrilateral faces of the subface and
-! compute the viscous contribution to the force and
-! moment and update the maximum value of y+.
-      do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-&
-&         bcdata(mm)%inbeg)-1
-        call pushinteger4(i)
-        i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&
-&         inbeg + 1
-        call pushinteger4(j)
-        j = ii/(bcdata(mm)%inend-bcdata(mm)%inbeg) + bcdata(mm)%jnbeg + &
-&         1
-        if (bcdata(mm)%iblank(i, j) .lt. 0) then
-          call pushinteger4(blk)
-          blk = 0
-          call pushcontrol1b(0)
-        else
-          call pushinteger4(blk)
-          blk = bcdata(mm)%iblank(i, j)
-          call pushcontrol1b(1)
-        end if
-        tauxx = viscsubface(mm)%tau(i, j, 1)
-        tauyy = viscsubface(mm)%tau(i, j, 2)
-        tauzz = viscsubface(mm)%tau(i, j, 3)
-        tauxy = viscsubface(mm)%tau(i, j, 4)
-        tauxz = viscsubface(mm)%tau(i, j, 5)
-        tauyz = viscsubface(mm)%tau(i, j, 6)
-! compute the viscous force on the face. a minus sign
-! is now present, due to the definition of this force.
-        call pushreal8(fx)
-        fx = -(fact*(tauxx*ssi(i, j, 1)+tauxy*ssi(i, j, 2)+tauxz*ssi(i, &
-&         j, 3))*pref)
-        call pushreal8(fy)
-        fy = -(fact*(tauxy*ssi(i, j, 1)+tauyy*ssi(i, j, 2)+tauyz*ssi(i, &
-&         j, 3))*pref)
-        call pushreal8(fz)
-        fz = -(fact*(tauxz*ssi(i, j, 1)+tauyz*ssi(i, j, 2)+tauzz*ssi(i, &
-&         j, 3))*pref)
-! iblank forces after saving for zipper mesh
-        fx = fx*blk
-        fy = fy*blk
-        fz = fz*blk
-! compute the coordinates of the centroid of the face
-! relative from the moment reference point. due to the
-! usage of pointers for xx and offset of 1 is present,
-! because x originally starts at 0.
-        call pushreal8(xc)
-        xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1&
-&         , 1)) - refpoint(1)
-        call pushreal8(yc)
-        yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1&
-&         , 2)) - refpoint(2)
-        call pushreal8(zc)
-        zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
-&         , 3)) - refpoint(3)
-! update the viscous force and moment coefficients.
-! save the face based forces for the slice operations
-! compute the tangential component of the stress tensor,
-! which is needed to monitor y+. the result is stored
-! in fx, fy, fz, although it is not really a force.
-! as later on only the magnitude of the tangential
-! component is important, there is no need to take the
-! sign into account (it should be a minus sign).
-      end do
+      call pushinteger4(i)
+      call pushinteger4(j)
+      call pushreal8(xc)
+      call pushinteger4(blk)
+      call pushreal8(yc)
+      call pushreal8(zc)
+      call pushreal8(fx)
+      call pushreal8(fy)
+      call pushreal8(fz)
       call pushcontrol1b(0)
     else
       call pushcontrol1b(1)
@@ -470,13 +416,56 @@ bocos:do mm=1,nbocos
     call popcontrol1b(branch)
     if (branch .eq. 0) then
       refpointd = 0.0_8
-      do ii=(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
-&         (mm)%inbeg)-1,0,-1
+      do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-&
+&         bcdata(mm)%inbeg)-1
+        i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&
+&         inbeg + 1
+        j = ii/(bcdata(mm)%inend-bcdata(mm)%inbeg) + bcdata(mm)%jnbeg + &
+&         1
+        if (bcdata(mm)%iblank(i, j) .lt. 0) then
+          blk = 0
+        else
+          blk = bcdata(mm)%iblank(i, j)
+        end if
+        tauxx = viscsubface(mm)%tau(i, j, 1)
+        tauyy = viscsubface(mm)%tau(i, j, 2)
+        tauzz = viscsubface(mm)%tau(i, j, 3)
+        tauxy = viscsubface(mm)%tau(i, j, 4)
+        tauxz = viscsubface(mm)%tau(i, j, 5)
+        tauyz = viscsubface(mm)%tau(i, j, 6)
+! compute the viscous force on the face. a minus sign
+! is now present, due to the definition of this force.
+        fx = -(fact*(tauxx*ssi(i, j, 1)+tauxy*ssi(i, j, 2)+tauxz*ssi(i, &
+&         j, 3))*pref)
+        fy = -(fact*(tauxy*ssi(i, j, 1)+tauyy*ssi(i, j, 2)+tauyz*ssi(i, &
+&         j, 3))*pref)
+        fz = -(fact*(tauxz*ssi(i, j, 1)+tauyz*ssi(i, j, 2)+tauzz*ssi(i, &
+&         j, 3))*pref)
+! iblank forces after saving for zipper mesh
+        fx = fx*blk
+        fy = fy*blk
+        fz = fz*blk
+! compute the coordinates of the centroid of the face
+! relative from the moment reference point. due to the
+! usage of pointers for xx and offset of 1 is present,
+! because x originally starts at 0.
+        xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1&
+&         , 1)) - refpoint(1)
+        yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1&
+&         , 2)) - refpoint(2)
+        zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
+&         , 3)) - refpoint(3)
+! update the viscous force and moment coefficients.
+! save the face based forces for the slice operations
+! compute the tangential component of the stress tensor,
+! which is needed to monitor y+. the result is stored
+! in fx, fy, fz, although it is not really a force.
+! as later on only the magnitude of the tangential
+! component is important, there is no need to take the
+! sign into account (it should be a minus sign).
         mxd = mvd(1)
         myd = mvd(2)
         mzd = mvd(3)
-        j = ii/(bcdata(mm)%inend-bcdata(mm)%inbeg) + bcdata(mm)%jnbeg + &
-&         1
         fzd = fvd(3) - xc*myd + yc*mxd + bcdatad(mm)%fv(i, j, 3)
         bcdatad(mm)%fv(i, j, 3) = 0.0_8
         fyd = xc*mzd + fvd(2) - zc*mxd + bcdatad(mm)%fv(i, j, 2)
@@ -486,61 +475,49 @@ bocos:do mm=1,nbocos
         xcd = fy*mzd - fz*myd
         ycd = fz*mxd - fx*mzd
         zcd = fx*myd - fy*mxd
-        call popreal8(zc)
-        tempd = fourth*zcd
-        xxd(i, j, 3) = xxd(i, j, 3) + tempd
-        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd
-        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd
-        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd
+        tempd9 = fourth*zcd
+        xxd(i, j, 3) = xxd(i, j, 3) + tempd9
+        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd9
+        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd9
+        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd9
         refpointd(3) = refpointd(3) - zcd
-        call popreal8(yc)
-        tempd0 = fourth*ycd
-        xxd(i, j, 2) = xxd(i, j, 2) + tempd0
-        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd0
-        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd0
-        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd0
+        tempd10 = fourth*ycd
+        xxd(i, j, 2) = xxd(i, j, 2) + tempd10
+        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd10
+        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd10
+        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd10
         refpointd(2) = refpointd(2) - ycd
-        call popreal8(xc)
-        tempd1 = fourth*xcd
-        xxd(i, j, 1) = xxd(i, j, 1) + tempd1
-        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd1
-        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd1
-        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd1
+        tempd11 = fourth*xcd
+        xxd(i, j, 1) = xxd(i, j, 1) + tempd11
+        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd11
+        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd11
+        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd11
         refpointd(1) = refpointd(1) - xcd
         fzd = blk*fzd
         fyd = blk*fyd
         fxd = blk*fxd
-        tauzz = viscsubface(mm)%tau(i, j, 3)
-        tauxz = viscsubface(mm)%tau(i, j, 5)
-        tauyz = viscsubface(mm)%tau(i, j, 6)
-        call popreal8(fz)
-        tempd2 = -(fact*pref*fzd)
-        ssid(i, j, 1) = ssid(i, j, 1) + tauxz*tempd2
-        ssid(i, j, 2) = ssid(i, j, 2) + tauyz*tempd2
-        tauzzd = ssi(i, j, 3)*tempd2
-        ssid(i, j, 3) = ssid(i, j, 3) + tauzz*tempd2
-        tauxy = viscsubface(mm)%tau(i, j, 4)
-        tauyy = viscsubface(mm)%tau(i, j, 2)
-        call popreal8(fy)
-        tempd4 = -(fact*pref*fyd)
-        tauyzd = ssi(i, j, 3)*tempd4 + ssi(i, j, 2)*tempd2
-        ssid(i, j, 1) = ssid(i, j, 1) + tauxy*tempd4
-        tauyyd = ssi(i, j, 2)*tempd4
-        ssid(i, j, 2) = ssid(i, j, 2) + tauyy*tempd4
-        ssid(i, j, 3) = ssid(i, j, 3) + tauyz*tempd4
-        tauxx = viscsubface(mm)%tau(i, j, 1)
+        tempd12 = -(fact*pref*fzd)
+        ssid(i, j, 1) = ssid(i, j, 1) + tauxz*tempd12
+        ssid(i, j, 2) = ssid(i, j, 2) + tauyz*tempd12
+        tauzzd = ssi(i, j, 3)*tempd12
+        ssid(i, j, 3) = ssid(i, j, 3) + tauzz*tempd12
         prefd = prefd - fact*(tauxy*ssi(i, j, 1)+tauyy*ssi(i, j, 2)+&
 &         tauyz*ssi(i, j, 3))*fyd - fact*(tauxx*ssi(i, j, 1)+tauxy*ssi(i&
 &         , j, 2)+tauxz*ssi(i, j, 3))*fxd - fact*(tauxz*ssi(i, j, 1)+&
 &         tauyz*ssi(i, j, 2)+tauzz*ssi(i, j, 3))*fzd
-        call popreal8(fx)
-        tempd3 = -(fact*pref*fxd)
-        tauxzd = ssi(i, j, 3)*tempd3 + ssi(i, j, 1)*tempd2
-        tauxyd = ssi(i, j, 2)*tempd3 + ssi(i, j, 1)*tempd4
-        tauxxd = ssi(i, j, 1)*tempd3
-        ssid(i, j, 1) = ssid(i, j, 1) + tauxx*tempd3
-        ssid(i, j, 2) = ssid(i, j, 2) + tauxy*tempd3
-        ssid(i, j, 3) = ssid(i, j, 3) + tauxz*tempd3
+        tempd14 = -(fact*pref*fyd)
+        tauyzd = ssi(i, j, 3)*tempd14 + ssi(i, j, 2)*tempd12
+        ssid(i, j, 1) = ssid(i, j, 1) + tauxy*tempd14
+        tauyyd = ssi(i, j, 2)*tempd14
+        ssid(i, j, 2) = ssid(i, j, 2) + tauyy*tempd14
+        ssid(i, j, 3) = ssid(i, j, 3) + tauyz*tempd14
+        tempd13 = -(fact*pref*fxd)
+        tauxzd = ssi(i, j, 3)*tempd13 + ssi(i, j, 1)*tempd12
+        tauxyd = ssi(i, j, 2)*tempd13 + ssi(i, j, 1)*tempd14
+        tauxxd = ssi(i, j, 1)*tempd13
+        ssid(i, j, 1) = ssid(i, j, 1) + tauxx*tempd13
+        ssid(i, j, 2) = ssid(i, j, 2) + tauxy*tempd13
+        ssid(i, j, 3) = ssid(i, j, 3) + tauxz*tempd13
         viscsubfaced(mm)%tau(i, j, 6) = viscsubfaced(mm)%tau(i, j, 6) + &
 &         tauyzd
         viscsubfaced(mm)%tau(i, j, 5) = viscsubfaced(mm)%tau(i, j, 5) + &
@@ -553,15 +530,16 @@ bocos:do mm=1,nbocos
 &         tauyyd
         viscsubfaced(mm)%tau(i, j, 1) = viscsubfaced(mm)%tau(i, j, 1) + &
 &         tauxxd
-        call popcontrol1b(branch)
-        if (branch .eq. 0) then
-          call popinteger4(blk)
-        else
-          call popinteger4(blk)
-        end if
-        call popinteger4(j)
-        call popinteger4(i)
       end do
+      call popreal8(fz)
+      call popreal8(fy)
+      call popreal8(fx)
+      call popreal8(zc)
+      call popreal8(yc)
+      call popinteger4(blk)
+      call popreal8(xc)
+      call popinteger4(j)
+      call popinteger4(i)
     else
       bcdatad(mm)%fv = 0.0_8
       refpointd = 0.0_8
@@ -659,23 +637,23 @@ bocos:do mm=1,nbocos
       ycd = sensor*sepsensoravgd(2)
       xcd = sensor*sepsensoravgd(1)
       call popreal8(zc)
-      tempd9 = fourth*zcd
-      xxd(i, j, 3) = xxd(i, j, 3) + tempd9
-      xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd9
-      xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd9
-      xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd9
+      tempd3 = fourth*zcd
+      xxd(i, j, 3) = xxd(i, j, 3) + tempd3
+      xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd3
+      xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd3
+      xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd3
       call popreal8(yc)
-      tempd10 = fourth*ycd
-      xxd(i, j, 2) = xxd(i, j, 2) + tempd10
-      xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd10
-      xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd10
-      xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd10
+      tempd4 = fourth*ycd
+      xxd(i, j, 2) = xxd(i, j, 2) + tempd4
+      xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd4
+      xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd4
+      xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd4
       call popreal8(xc)
-      tempd11 = fourth*xcd
-      xxd(i, j, 1) = xxd(i, j, 1) + tempd11
-      xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd11
-      xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd11
-      xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd11
+      tempd5 = fourth*xcd
+      xxd(i, j, 1) = xxd(i, j, 1) + tempd5
+      xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd5
+      xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd5
+      xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd5
       call popreal8(sensor)
       cellaread = cellaread + sensor*sensord
       sensord = cellarea*sensord
@@ -693,16 +671,16 @@ bocos:do mm=1,nbocos
       tmpd0 = vd
       temp = v(1)**2 + v(2)**2 + v(3)**2
       temp0 = sqrt(temp)
-      tempd12 = tmpd0/(temp0+1e-16)
-      vd = tempd12
+      tempd6 = tmpd0/(temp0+1e-16)
+      vd = tempd6
       if (temp .eq. 0.0_8) then
-        tempd13 = 0.0
+        tempd7 = 0.0
       else
-        tempd13 = sum(-(v*tempd12/(temp0+1e-16)))/(2.0*temp0)
+        tempd7 = sum(-(v*tempd6/(temp0+1e-16)))/(2.0*temp0)
       end if
-      vd(1) = vd(1) + 2*v(1)*tempd13
-      vd(2) = vd(2) + 2*v(2)*tempd13
-      vd(3) = vd(3) + 2*v(3)*tempd13
+      vd(1) = vd(1) + 2*v(1)*tempd7
+      vd(2) = vd(2) + 2*v(2)*tempd7
+      vd(3) = vd(3) + 2*v(3)*tempd7
       ww2d(i, j, ivz) = ww2d(i, j, ivz) + vd(3)
       vd(3) = 0.0_8
       ww2d(i, j, ivy) = ww2d(i, j, ivy) + vd(2)
@@ -713,14 +691,14 @@ bocos:do mm=1,nbocos
       bcdatad(mm)%area(i, j) = 0.0_8
       if (ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**2 .eq. 0.0_8&
 &     ) then
-        tempd14 = 0.0
+        tempd8 = 0.0
       else
-        tempd14 = cellaread/(2.0*sqrt(ssi(i, j, 1)**2+ssi(i, j, 2)**2+&
-&         ssi(i, j, 3)**2))
+        tempd8 = cellaread/(2.0*sqrt(ssi(i, j, 1)**2+ssi(i, j, 2)**2+ssi&
+&         (i, j, 3)**2))
       end if
-      ssid(i, j, 1) = ssid(i, j, 1) + 2*ssi(i, j, 1)*tempd14
-      ssid(i, j, 2) = ssid(i, j, 2) + 2*ssi(i, j, 2)*tempd14
-      ssid(i, j, 3) = ssid(i, j, 3) + 2*ssi(i, j, 3)*tempd14
+      ssid(i, j, 1) = ssid(i, j, 1) + 2*ssi(i, j, 1)*tempd8
+      ssid(i, j, 2) = ssid(i, j, 2) + 2*ssi(i, j, 2)*tempd8
+      ssid(i, j, 3) = ssid(i, j, 3) + 2*ssi(i, j, 3)*tempd8
       fzd = fpd(3) - xc*myd + yc*mxd + bcdatad(mm)%fp(i, j, 3)
       bcdatad(mm)%fp(i, j, 3) = 0.0_8
       fyd = xc*mzd + fpd(2) - zc*mxd + bcdatad(mm)%fp(i, j, 2)
@@ -737,28 +715,28 @@ bocos:do mm=1,nbocos
       ssid(i, j, 3) = ssid(i, j, 3) + pm1*fzd
       ssid(i, j, 2) = ssid(i, j, 2) + pm1*fyd
       ssid(i, j, 1) = ssid(i, j, 1) + pm1*fxd
-      tempd5 = fourth*zcd
-      xxd(i, j, 3) = xxd(i, j, 3) + tempd5
-      xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd5
-      xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd5
-      xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd5
+      tempd = fourth*zcd
+      xxd(i, j, 3) = xxd(i, j, 3) + tempd
+      xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd
+      xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd
+      xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd
       refpointd(3) = refpointd(3) - zcd
-      tempd6 = fourth*ycd
-      xxd(i, j, 2) = xxd(i, j, 2) + tempd6
-      xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd6
-      xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd6
-      xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd6
+      tempd0 = fourth*ycd
+      xxd(i, j, 2) = xxd(i, j, 2) + tempd0
+      xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd0
+      xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd0
+      xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd0
       refpointd(2) = refpointd(2) - ycd
-      tempd7 = fourth*xcd
-      xxd(i, j, 1) = xxd(i, j, 1) + tempd7
-      xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd7
-      xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd7
-      xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd7
+      tempd1 = fourth*xcd
+      xxd(i, j, 1) = xxd(i, j, 1) + tempd1
+      xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd1
+      xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd1
+      xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd1
       refpointd(1) = refpointd(1) - xcd
-      tempd8 = fact*pref*pm1d
-      pp2d(i, j) = pp2d(i, j) + half*tempd8
-      pp1d(i, j) = pp1d(i, j) + half*tempd8
-      pinfd = pinfd - tempd8
+      tempd2 = fact*pref*pm1d
+      pp2d(i, j) = pp2d(i, j) + half*tempd2
+      pp1d(i, j) = pp1d(i, j) + half*tempd2
+      pinfd = pinfd - tempd2
       prefd = prefd + fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*pm1d
     end do
     pointrefd(3) = pointrefd(3) + lref*refpointd(3)

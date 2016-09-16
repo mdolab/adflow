@@ -34,7 +34,16 @@ python module libsumb
          subroutine alloctimearrays(nitertot) 
            integer(kind=inttype) :: ntimetot
          end subroutine alloctimearrays
-         
+
+         subroutine pointreduce(pts,n,tol,uniquepts,link,nunique) ! in :test:utils.F90:utils
+           real(kind=realtype) dimension(3,n),intent(in) :: pts
+           integer(kind=inttype), optional,intent(in),check(shape(pts,1)==n),depend(pts) :: n=shape(pts,1)
+           real(kind=realtype) intent(in) :: tol
+           real(kind=realtype) dimension(3,n),intent(out),depend(n) :: uniquepts
+           integer(kind=inttype) dimension(n),intent(out),depend(n) :: link
+           integer(kind=inttype) intent(out) :: nunique
+         end subroutine pointreduce
+
        end module utils
 
        module walldistance

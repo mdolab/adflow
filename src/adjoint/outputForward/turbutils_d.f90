@@ -1023,7 +1023,6 @@ nadvloopspectral:do ii=1,nadv
 &   dwtkd
     real(kind=realtype), dimension(madv) :: impl
     intrinsic abs
-    intrinsic max
     real(kind=realtype) :: abs23
     real(kind=realtype) :: abs22
     real(kind=realtype) :: abs21
@@ -1162,29 +1161,6 @@ nadvloopspectral:do ii=1,nadv
 &               ) - uud*dwtk - uu*dwtkd
               scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) &
 &               - uu*dwtk
-! update the central jacobian. first the term which is
-! always present, i.e. uu.
-              qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) + uu
-! for boundary cells k == 2, the implicit treatment must
-! be taken into account. note that the implicit part
-! is only based on the 1st order discretization.
-! to improve stability the diagonal term is only taken
-! into account when it improves stability, i.e. when
-! it is positive.
-              if (k .eq. 2) then
-                do kk=1,madv
-                  impl(kk) = bmtk1(i, j, jj, kk+offset)
-                end do
-                if (impl(ii) .lt. zero) then
-                  impl(ii) = zero
-                else
-                  impl(ii) = impl(ii)
-                end if
-                do kk=1,madv
-                  qq(i, j, k, ii, kk) = qq(i, j, k, ii, kk) + uu*impl(kk&
-&                   )
-                end do
-              end if
             end do
           else
 ! velocity has a component in negative k-direction.
@@ -1259,34 +1235,13 @@ nadvloopspectral:do ii=1,nadv
 &               ) - uud*dwtk - uu*dwtkd
               scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) &
 &               - uu*dwtk
-! update the central jacobian. first the term which is
-! always present, i.e. -uu.
-              qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) - uu
-! for boundary cells k == kl, the implicit treatment must
-! be taken into account. note that the implicit part
-! is only based on the 1st order discretization.
-! to improve stability the diagonal term is only taken
-! into account when it improves stability, i.e. when
-! it is positive.
-              if (k .eq. kl) then
-                do kk=1,madv
-                  impl(kk) = bmtk2(i, j, jj, kk+offset)
-                end do
-                if (impl(ii) .lt. zero) then
-                  impl(ii) = zero
-                else
-                  impl(ii) = impl(ii)
-                end if
-                do kk=1,madv
-                  qq(i, j, k, ii, kk) = qq(i, j, k, ii, kk) - uu*impl(kk&
-&                   )
-                end do
-              end if
             end do
           end if
         end do
       end do
     end do
+! update the central jacobian. first the term which is
+! always present, i.e. -uu.
 !
 !       upwind discretization of the convective term in j (eta)        
 !       direction. either the 1st order upwind or the second order     
@@ -1399,31 +1354,10 @@ nadvloopspectral:do ii=1,nadv
 &               ) - uud*dwtj - uu*dwtjd
               scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) &
 &               - uu*dwtj
-! update the central jacobian. first the term which is
-! always present, i.e. uu.
-              qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) + uu
-! for boundary cells j == 2, the implicit treatment must
-! be taken into account. note that the implicit part
-! is only based on the 1st order discretization.
-! to improve stability the diagonal term is only taken
-! into account when it improves stability, i.e. when
-! it is positive.
-              if (j .eq. 2) then
-                do kk=1,madv
-                  impl(kk) = bmtj1(i, k, jj, kk+offset)
-                end do
-                if (impl(ii) .lt. zero) then
-                  impl(ii) = zero
-                else
-                  impl(ii) = impl(ii)
-                end if
-                do kk=1,madv
-                  qq(i, j, k, ii, kk) = qq(i, j, k, ii, kk) + uu*impl(kk&
-&                   )
-                end do
-              end if
             end do
           else
+! update the central jacobian. first the term which is
+! always present, i.e. uu.
 ! velocity has a component in negative j-direction.
 ! loop over the number of advection equations.
             do ii=1,nadv
@@ -1496,34 +1430,13 @@ nadvloopspectral:do ii=1,nadv
 &               ) - uud*dwtj - uu*dwtjd
               scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) &
 &               - uu*dwtj
-! update the central jacobian. first the term which is
-! always present, i.e. -uu.
-              qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) - uu
-! for boundary cells j == jl, the implicit treatment must
-! be taken into account. note that the implicit part
-! is only based on the 1st order discretization.
-! to improve stability the diagonal term is only taken
-! into account when it improves stability, i.e. when
-! it is positive.
-              if (j .eq. jl) then
-                do kk=1,madv
-                  impl(kk) = bmtj2(i, k, jj, kk+offset)
-                end do
-                if (impl(ii) .lt. zero) then
-                  impl(ii) = zero
-                else
-                  impl(ii) = impl(ii)
-                end if
-                do kk=1,madv
-                  qq(i, j, k, ii, kk) = qq(i, j, k, ii, kk) - uu*impl(kk&
-&                   )
-                end do
-              end if
             end do
           end if
         end do
       end do
     end do
+! update the central jacobian. first the term which is
+! always present, i.e. -uu.
 !
 !       upwind discretization of the convective term in i (xi)         
 !       direction. either the 1st order upwind or the second order     
@@ -1636,31 +1549,10 @@ nadvloopspectral:do ii=1,nadv
 &               ) - uud*dwti - uu*dwtid
               scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) &
 &               - uu*dwti
-! update the central jacobian. first the term which is
-! always present, i.e. uu.
-              qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) + uu
-! for boundary cells i == 2, the implicit treatment must
-! be taken into account. note that the implicit part
-! is only based on the 1st order discretization.
-! to improve stability the diagonal term is only taken
-! into account when it improves stability, i.e. when
-! it is positive.
-              if (i .eq. 2) then
-                do kk=1,madv
-                  impl(kk) = bmti1(j, k, jj, kk+offset)
-                end do
-                if (impl(ii) .lt. zero) then
-                  impl(ii) = zero
-                else
-                  impl(ii) = impl(ii)
-                end if
-                do kk=1,madv
-                  qq(i, j, k, ii, kk) = qq(i, j, k, ii, kk) + uu*impl(kk&
-&                   )
-                end do
-              end if
             end do
           else
+! update the central jacobian. first the term which is
+! always present, i.e. uu.
 ! velocity has a component in negative i-direction.
 ! loop over the number of advection equations.
             do ii=1,nadv
@@ -1733,34 +1625,14 @@ nadvloopspectral:do ii=1,nadv
 &               ) - uud*dwti - uu*dwtid
               scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) &
 &               - uu*dwti
-! update the central jacobian. first the term which is
-! always present, i.e. -uu.
-              qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) - uu
-! for boundary cells i == il, the implicit treatment must
-! be taken into account. note that the implicit part
-! is only based on the 1st order discretization.
-! to improve stability the diagonal term is only taken
-! into account when it improves stability, i.e. when
-! it is positive.
-              if (i .eq. il) then
-                do kk=1,madv
-                  impl(kk) = bmti2(j, k, jj, kk+offset)
-                end do
-                if (impl(ii) .lt. zero) then
-                  impl(ii) = zero
-                else
-                  impl(ii) = impl(ii)
-                end if
-                do kk=1,madv
-                  qq(i, j, k, ii, kk) = qq(i, j, k, ii, kk) - uu*impl(kk&
-&                   )
-                end do
-              end if
             end do
           end if
         end do
       end do
     end do
+! update the central jacobian. first the term which is
+! always present, i.e. -uu.
+    continue
   end subroutine turbadvection_d
   subroutine turbadvection(madv, nadv, offset, qq)
 !
@@ -1802,7 +1674,6 @@ nadvloopspectral:do ii=1,nadv
     real(kind=realtype) :: uu, dwt, dwtm1, dwtp1, dwti, dwtj, dwtk
     real(kind=realtype), dimension(madv) :: impl
     intrinsic abs
-    intrinsic max
     real(kind=realtype) :: abs23
     real(kind=realtype) :: abs22
     real(kind=realtype) :: abs21
@@ -1916,29 +1787,6 @@ nadvloopspectral:do ii=1,nadv
 ! the equation as the source and viscous terms.
               scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) &
 &               - uu*dwtk
-! update the central jacobian. first the term which is
-! always present, i.e. uu.
-              qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) + uu
-! for boundary cells k == 2, the implicit treatment must
-! be taken into account. note that the implicit part
-! is only based on the 1st order discretization.
-! to improve stability the diagonal term is only taken
-! into account when it improves stability, i.e. when
-! it is positive.
-              if (k .eq. 2) then
-                do kk=1,madv
-                  impl(kk) = bmtk1(i, j, jj, kk+offset)
-                end do
-                if (impl(ii) .lt. zero) then
-                  impl(ii) = zero
-                else
-                  impl(ii) = impl(ii)
-                end if
-                do kk=1,madv
-                  qq(i, j, k, ii, kk) = qq(i, j, k, ii, kk) + uu*impl(kk&
-&                   )
-                end do
-              end if
             end do
           else
 ! velocity has a component in negative k-direction.
@@ -2002,34 +1850,13 @@ nadvloopspectral:do ii=1,nadv
 ! of the equation as the source and viscous terms.
               scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) &
 &               - uu*dwtk
-! update the central jacobian. first the term which is
-! always present, i.e. -uu.
-              qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) - uu
-! for boundary cells k == kl, the implicit treatment must
-! be taken into account. note that the implicit part
-! is only based on the 1st order discretization.
-! to improve stability the diagonal term is only taken
-! into account when it improves stability, i.e. when
-! it is positive.
-              if (k .eq. kl) then
-                do kk=1,madv
-                  impl(kk) = bmtk2(i, j, jj, kk+offset)
-                end do
-                if (impl(ii) .lt. zero) then
-                  impl(ii) = zero
-                else
-                  impl(ii) = impl(ii)
-                end if
-                do kk=1,madv
-                  qq(i, j, k, ii, kk) = qq(i, j, k, ii, kk) - uu*impl(kk&
-&                   )
-                end do
-              end if
             end do
           end if
         end do
       end do
     end do
+! update the central jacobian. first the term which is
+! always present, i.e. -uu.
 !
 !       upwind discretization of the convective term in j (eta)        
 !       direction. either the 1st order upwind or the second order     
@@ -2118,31 +1945,10 @@ nadvloopspectral:do ii=1,nadv
 ! the equation as the source and viscous terms.
               scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) &
 &               - uu*dwtj
-! update the central jacobian. first the term which is
-! always present, i.e. uu.
-              qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) + uu
-! for boundary cells j == 2, the implicit treatment must
-! be taken into account. note that the implicit part
-! is only based on the 1st order discretization.
-! to improve stability the diagonal term is only taken
-! into account when it improves stability, i.e. when
-! it is positive.
-              if (j .eq. 2) then
-                do kk=1,madv
-                  impl(kk) = bmtj1(i, k, jj, kk+offset)
-                end do
-                if (impl(ii) .lt. zero) then
-                  impl(ii) = zero
-                else
-                  impl(ii) = impl(ii)
-                end if
-                do kk=1,madv
-                  qq(i, j, k, ii, kk) = qq(i, j, k, ii, kk) + uu*impl(kk&
-&                   )
-                end do
-              end if
             end do
           else
+! update the central jacobian. first the term which is
+! always present, i.e. uu.
 ! velocity has a component in negative j-direction.
 ! loop over the number of advection equations.
             do ii=1,nadv
@@ -2204,34 +2010,13 @@ nadvloopspectral:do ii=1,nadv
 ! of the equation as the source and viscous terms.
               scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) &
 &               - uu*dwtj
-! update the central jacobian. first the term which is
-! always present, i.e. -uu.
-              qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) - uu
-! for boundary cells j == jl, the implicit treatment must
-! be taken into account. note that the implicit part
-! is only based on the 1st order discretization.
-! to improve stability the diagonal term is only taken
-! into account when it improves stability, i.e. when
-! it is positive.
-              if (j .eq. jl) then
-                do kk=1,madv
-                  impl(kk) = bmtj2(i, k, jj, kk+offset)
-                end do
-                if (impl(ii) .lt. zero) then
-                  impl(ii) = zero
-                else
-                  impl(ii) = impl(ii)
-                end if
-                do kk=1,madv
-                  qq(i, j, k, ii, kk) = qq(i, j, k, ii, kk) - uu*impl(kk&
-&                   )
-                end do
-              end if
             end do
           end if
         end do
       end do
     end do
+! update the central jacobian. first the term which is
+! always present, i.e. -uu.
 !
 !       upwind discretization of the convective term in i (xi)         
 !       direction. either the 1st order upwind or the second order     
@@ -2320,31 +2105,10 @@ nadvloopspectral:do ii=1,nadv
 ! the equation as the source and viscous terms.
               scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) &
 &               - uu*dwti
-! update the central jacobian. first the term which is
-! always present, i.e. uu.
-              qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) + uu
-! for boundary cells i == 2, the implicit treatment must
-! be taken into account. note that the implicit part
-! is only based on the 1st order discretization.
-! to improve stability the diagonal term is only taken
-! into account when it improves stability, i.e. when
-! it is positive.
-              if (i .eq. 2) then
-                do kk=1,madv
-                  impl(kk) = bmti1(j, k, jj, kk+offset)
-                end do
-                if (impl(ii) .lt. zero) then
-                  impl(ii) = zero
-                else
-                  impl(ii) = impl(ii)
-                end if
-                do kk=1,madv
-                  qq(i, j, k, ii, kk) = qq(i, j, k, ii, kk) + uu*impl(kk&
-&                   )
-                end do
-              end if
             end do
           else
+! update the central jacobian. first the term which is
+! always present, i.e. uu.
 ! velocity has a component in negative i-direction.
 ! loop over the number of advection equations.
             do ii=1,nadv
@@ -2406,33 +2170,13 @@ nadvloopspectral:do ii=1,nadv
 ! of the equation as the source and viscous terms.
               scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) &
 &               - uu*dwti
-! update the central jacobian. first the term which is
-! always present, i.e. -uu.
-              qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) - uu
-! for boundary cells i == il, the implicit treatment must
-! be taken into account. note that the implicit part
-! is only based on the 1st order discretization.
-! to improve stability the diagonal term is only taken
-! into account when it improves stability, i.e. when
-! it is positive.
-              if (i .eq. il) then
-                do kk=1,madv
-                  impl(kk) = bmti2(j, k, jj, kk+offset)
-                end do
-                if (impl(ii) .lt. zero) then
-                  impl(ii) = zero
-                else
-                  impl(ii) = impl(ii)
-                end if
-                do kk=1,madv
-                  qq(i, j, k, ii, kk) = qq(i, j, k, ii, kk) - uu*impl(kk&
-&                   )
-                end do
-              end if
             end do
           end if
         end do
       end do
     end do
+! update the central jacobian. first the term which is
+! always present, i.e. -uu.
+    continue
   end subroutine turbadvection
 end module turbutils_d
