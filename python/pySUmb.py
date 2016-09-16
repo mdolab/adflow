@@ -2990,17 +2990,52 @@ class SUMB(AeroSolver):
             Seed to use for random number. Only significant on root processor
         """
 
-        # Get the total number of spatial DOF
-        totalDOF = self.comm.reduce(self.getStateSize())
+        # This routine is *NOT SCALABLE*. It requires storing the full
+        # mesh on each processor. It should only be used for
+        # verification purposes. 
+
+        # Get all CGNS Mesh indices to all Proc. 
+        localIndices = self.sumb.warping.getcgnsmeshindices(self.getSpatialSize())
+        cgnsIndices = numpy.hstack(self.comm.allgather(localIndices)) 
+
+        # Gather all nodes to all procs. 
+        pts = self.sumb.warping.getgrid(self.getSpatialSize())
+        allPts = numpy.hstack(self.comm.allgather(pts))
+
+        # Also need the point offset.s.
+        ptSizes = self.comm.allgather(len(pts))
+        offsets = numpy.zeros(len(ptSizes), 'intc')
+        offsets[1:] = numpy.cumsum(ptSizes)[:-1]
+        
+        # Now Re-assemble the global CGNS vector. 
+        nDOFCGNS = numpy.max(cgnsIndices) +1 
+        CGNSVec = numpy.zeros(nDOFCGNS)
+        CGNSVec[cgnsIndices] = allPts
+        CGNSVec = CGNSVec.reshape((len(CGNSVec)/3, 3))
+        
+        # Run the pointReduce on the CGNS nodes
+        uniquePts, linkTmp, nUnique = self.sumb.utils.pointreduce(CGNSVec.T, 1e-12)
+        
+        # Expand link out to the 3x the size and convert to 1 based ordering
+        linkTmp -= 1
+        link = numpy.zeros(len(linkTmp)*3, 'intc')
+        link[0::3] = 3*linkTmp
+        link[1::3] = 3*linkTmp+1
+        link[2::3] = 3*linkTmp+2
+
+        # Set the seed and everyone produces the random vector for
+        # nUnique pts.
         numpy.random.seed(seed)
-        randVec = None
-        if self.comm.rank == 0:
-            randVec = numpy.random.random(totalDOF)
+        randVec = numpy.random.random(nUnique*3)
 
-        randVec = self.comm.bcast(randVec)
+        # Finally just extract out our own part:
+        iStart = offsets[self.comm.rank]
+        iEnd   = iStart + self.getSpatialSize()
+        indices = numpy.arange(iStart, iEnd)
+        spatialPerturb = randVec[link[cgnsIndices[indices]]]
 
-        return self.sumb.warping.getspatialperturbation(
-            randVec, self.getSpatialSize())
+        return spatialPerturb
+
 
     def _getInfo(self):
 

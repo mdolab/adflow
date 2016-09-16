@@ -320,50 +320,50 @@ Dictionary Key: sepsensoravgz
 @value  1.4991516133309e+05 1e-10 1e-10
 -> Derivatives with respect to nodes
 ||dR/dXv * xVDot||
-@value  2.6737254152122e+07 1e-10 1e-10
+@value  2.7508112000970e+07 1e-10 1e-10
 dFuncs/dXv * xVDot
 Dictionary Key: cd
-@value  7.0172292232659e-01 1e-09 1e-09
+@value  8.3750909090888e-01 1e-09 1e-09
 Dictionary Key: cfx
-@value  6.8075925358352e-01 1e-09 1e-09
+@value  8.6310557907292e-01 1e-09 1e-09
 Dictionary Key: cfy
-@value  6.7809830024169e-01 1e-09 1e-09
+@value -8.0133681583918e-01 1e-09 1e-09
 Dictionary Key: cfz
-@value -8.9907174456214e-02 1e-09 1e-09
+@value -1.8042300074123e-01 1e-09 1e-09
 Dictionary Key: cl
-@value  6.5638053475990e-01 1e-09 1e-09
+@value -8.2805220589709e-01 1e-09 1e-09
 Dictionary Key: cmx
-@value -5.6605540126818e-01 1e-09 1e-09
+@value  2.5655564951842e+00 1e-09 1e-09
 Dictionary Key: cmy
-@value -9.7849629989389e+00 1e-09 1e-09
+@value -1.2398030577667e+01 1e-09 1e-09
 Dictionary Key: cmz
-@value  1.2923195656034e+00 1e-09 1e-09
+@value -5.5626829320780e-01 1e-09 1e-09
 Dictionary Key: drag
-@value  2.8607840097410e+05 1e-09 1e-09
+@value  3.4143570618173e+05 1e-09 1e-09
 Dictionary Key: fx
-@value  2.7753193250093e+05 1e-09 1e-09
+@value  3.5187088247645e+05 1e-09 1e-09
 Dictionary Key: fy
-@value  2.7644711504253e+05 1e-09 1e-09
+@value -3.2668899308132e+05 1e-09 1e-09
 Dictionary Key: fz
-@value -3.6653356882309e+04 1e-09 1e-09
+@value -7.3554848942186e+04 1e-09 1e-09
 Dictionary Key: lift
-@value  2.6759321641092e+05 1e-09 1e-09
+@value -3.3758032330013e+05 1e-09 1e-09
 Dictionary Key: mx
-@value -7.5000076446429e+05 1e-09 1e-09
+@value  3.3992597338592e+06 1e-09 1e-09
 Dictionary Key: my
-@value -1.2964684575074e+07 1e-09 1e-09
+@value -1.6426894594186e+07 1e-09 1e-09
 Dictionary Key: mz
-@value  1.7122717316419e+06 1e-09 1e-09
+@value -7.3703323776860e+05 1e-09 1e-09
 Dictionary Key: sepsensor
-@value -6.8903219473797e-02 1e-09 1e-09
+@value -3.1840784654516e-01 1e-09 1e-09
 Dictionary Key: sepsensoravgx
-@value -6.2476818635639e-01 1e-09 1e-09
+@value -2.3395654246251e+00 1e-09 1e-09
 Dictionary Key: sepsensoravgy
-@value  1.7857436217733e-03 1e-09 1e-09
+@value  1.4758486032845e-03 1e-09 1e-09
 Dictionary Key: sepsensoravgz
-@value -9.8124699460984e-01 1e-09 1e-09
+@value -2.6223434768820e+00 1e-09 1e-09
 ||dF/dXv * xVDot||
-@value  5.8355406728950e+06 1e-10 1e-10
+@value  7.6790783780381e+06 1e-10 1e-10
 -> Derivatives with respect to extra variables
   -> alpha
 ||dR/dalpha||
@@ -760,14 +760,14 @@ Dictionary Key: zRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 -> F Bar Seed
 ||FBar^T * dF/dw||
-@value  1.9291152172732e+05 1e-10 1e-10
+@value  1.9263235423095e+05 1e-10 1e-10
 ||FBar^T * dF/dXv||
-@value  3.9099834254786e+07 1e-10 1e-10
+@value  3.9273502558264e+07 1e-10 1e-10
 ||FBar^T * dF/xDv||
 Dictionary Key: P_mdo_tutorial
-@value  7.1117688145367e+01 1e-10 1e-10
+@value  7.2675179790414e+01 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
-@value  1.7506829319558e-14 1e-10 1e-10
+@value -5.1694759584109e-15 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
@@ -1228,14 +1228,14 @@ Dot product test for w -> R
 @value  7.5355684720664e+10 1e-10 1e-10
 @value  7.5355684720662e+10 1e-10 1e-10
 Dot product test for Xv -> R
-@value -9.7560483027181e+06 1e-09 1e-09
-@value -9.7560483027187e+06 1e-09 1e-09
+@value -8.5924712230226e+07 1e-09 1e-09
+@value -8.5924712230224e+07 1e-09 1e-09
 Dot product test for w -> F
-@value  8.4248148590064e+04 1e-10 1e-10
-@value  8.4248148590064e+04 1e-10 1e-10
+@value  4.8950443803882e+04 1e-10 1e-10
+@value  4.8950443803882e+04 1e-10 1e-10
 Dot product test for xV -> F
-@value -8.1841337220342e+06 1e-10 1e-10
-@value -8.1841337220342e+06 1e-10 1e-10
+@value -3.1366493919307e+07 1e-10 1e-10
+@value -3.1366493919307e+07 1e-10 1e-10
 Dot product test for (w, xV) -> (dw, F)
-@value  7.5337828786787e+10 1e-10 1e-10
-@value  7.5337828786786e+10 1e-10 1e-10
+@value  7.5238442464956e+10 1e-10 1e-10
+@value  7.5238442464956e+10 1e-10 1e-10

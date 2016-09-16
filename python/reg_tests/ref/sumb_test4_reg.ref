@@ -311,50 +311,50 @@ Dictionary Key: sepsensoravgz
 @value  1.2745466554515e+05 1e-10 1e-10
 -> Derivatives with respect to nodes
 ||dR/dXv * xVDot||
-@value  8.7493999690924e+03 1e-10 1e-10
+@value  8.4001470609385e+03 1e-10 1e-10
 dFuncs/dXv * xVDot
 Dictionary Key: cd
-@value -8.2108720860969e-02 1e-09 1e-09
+@value  5.2595569762535e-03 1e-09 1e-09
 Dictionary Key: cfx
-@value -8.0913626380845e-02 1e-09 1e-09
+@value  5.5273180229871e-03 1e-09 1e-09
 Dictionary Key: cfy
-@value -3.9318389831362e-02 1e-09 1e-09
+@value -8.4376709359548e-03 1e-09 1e-09
 Dictionary Key: cfz
-@value  2.8622144981986e-02 1e-09 1e-09
+@value  4.6908772227583e-03 1e-09 1e-09
 Dictionary Key: cl
-@value -3.6757430155077e-02 1e-09 1e-09
+@value -8.6071247094623e-03 1e-09 1e-09
 Dictionary Key: cmx
-@value -1.3977985900294e-02 1e-09 1e-09
+@value -6.9020118241421e-02 1e-09 1e-09
 Dictionary Key: cmy
-@value -2.0312010650612e-01 1e-09 1e-09
+@value  5.9148757675651e-02 1e-09 1e-09
 Dictionary Key: cmz
-@value  8.5924142013512e-03 1e-09 1e-09
+@value  8.6814869989526e-02 1e-09 1e-09
 Dictionary Key: drag
-@value -3.3474083320600e+04 1e-09 1e-09
+@value  2.1442161880790e+03 1e-09 1e-09
 Dictionary Key: fx
-@value -3.2986867202943e+04 1e-09 1e-09
+@value  2.2533770116114e+03 1e-09 1e-09
 Dictionary Key: fy
-@value -1.6029321166449e+04 1e-09 1e-09
+@value -3.4398696871700e+03 1e-09 1e-09
 Dictionary Key: fz
-@value  1.1668676066256e+04 1e-09 1e-09
+@value  1.9123768261741e+03 1e-09 1e-09
 Dictionary Key: lift
-@value -1.4985269125622e+04 1e-09 1e-09
+@value -3.5089526015536e+03 1e-09 1e-09
 Dictionary Key: mx
-@value -1.8520272198454e+04 1e-09 1e-09
+@value -9.1448895865153e+04 1e-09 1e-09
 Dictionary Key: my
-@value -2.6912601631634e+05 1e-09 1e-09
+@value  7.8369737969930e+04 1e-09 1e-09
 Dictionary Key: mz
-@value  1.1384605120222e+04 1e-09 1e-09
+@value  1.1502623014132e+05 1e-09 1e-09
 Dictionary Key: sepsensor
-@value -4.4571374981693e-08 1e-09 1e-09
+@value -2.7376283897928e-08 1e-09 1e-09
 Dictionary Key: sepsensoravgx
-@value  1.6899147195192e-07 1e-09 1e-09
+@value  1.7908434095077e-08 1e-09 1e-09
 Dictionary Key: sepsensoravgy
-@value  1.5662566623287e-07 1e-09 1e-09
+@value  1.6363519495295e-07 1e-09 1e-09
 Dictionary Key: sepsensoravgz
-@value  1.7349573754929e-07 1e-09 1e-09
+@value -2.0823576319614e-07 1e-09 1e-09
 ||dF/dXv * xVDot||
-@value  1.1059253465252e+06 1e-10 1e-10
+@value  9.7814258084362e+05 1e-10 1e-10
 -> Derivatives with respect to extra variables
   -> alpha
 ||dR/dalpha||
@@ -751,12 +751,12 @@ Dictionary Key: zRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 -> F Bar Seed
 ||FBar^T * dF/dw||
-@value  4.4279771915922e+05 1e-10 1e-10
+@value  4.3552553439101e+05 1e-10 1e-10
 ||FBar^T * dF/dXv||
-@value  4.0727887378317e+06 1e-10 1e-10
+@value  3.9323900651034e+06 1e-10 1e-10
 ||FBar^T * dF/xDv||
 Dictionary Key: P_mdo_tutorial
-@value  7.9430392159339e+01 1e-10 1e-10
+@value  7.6909390965924e+01 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
@@ -1219,14 +1219,14 @@ Dot product test for w -> R
 @value  2.0370531911332e+04 1e-10 1e-10
 @value  2.0370531911332e+04 1e-10 1e-10
 Dot product test for Xv -> R
-@value  1.1393765184866e+04 1e-09 1e-09
-@value  1.1393765184866e+04 1e-09 1e-09
+@value -8.9987477090542e+02 1e-09 1e-09
+@value -8.9987477090544e+02 1e-09 1e-09
 Dot product test for w -> F
-@value  8.1291893802142e+04 1e-10 1e-10
-@value  8.1291893802146e+04 1e-10 1e-10
+@value  3.0224852539867e+04 1e-10 1e-10
+@value  3.0224852539867e+04 1e-10 1e-10
 Dot product test for xV -> F
-@value -1.2878552092910e+06 1e-10 1e-10
-@value -1.2878552092910e+06 1e-10 1e-10
+@value  9.6826864272850e+05 1e-10 1e-10
+@value  9.6826864272850e+05 1e-10 1e-10
 Dot product test for (w, xV) -> (dw, F)
-@value -1.1747990183926e+06 1e-10 1e-10
-@value -1.1747990183926e+06 1e-10 1e-10
+@value  1.0179641524088e+06 1e-10 1e-10
+@value  1.0179641524088e+06 1e-10 1e-10
