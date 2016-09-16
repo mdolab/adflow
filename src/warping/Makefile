@@ -37,9 +37,7 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 
 FILES_TO_COMPLEXIFY = 	getForces.F90\
-	        getHeatFlux.f90\
 	        getAreas.f90\
-	        setTNSWall.f90\
 
 FILES_TO_COPY = 
 
