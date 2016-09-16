@@ -26,26 +26,3 @@ doc/*
 syntax: glob
 src/python/f2py/sumb.old.pyf
 bin/SUmb_linux_gfortran_openmpi
-python/reg_tests/sumb_test9_reg
-src/build/libsumb-f2pywrappers2.f90
-src/build/libsumbmodule.c
-src/build/sumb_project.dep
-python/reg_tests/sumb_test8_reg
-python/inputFiles/split_file
-python/inputFiles/tecplot.phy
-python/reg_tests/forces.txt
-python/reg_tests/sumb_reg
-python/reg_tests/sumb_reg.ref
-python/reg_tests/sumb_test10_reg
-python/reg_tests/sumb_test11_reg
-python/reg_tests/sumb_test12_reg
-python/reg_tests/sumb_test13_reg
-python/reg_tests/sumb_test14_reg
-python/reg_tests/sumb_test15_reg
-python/reg_tests/sumb_test1_reg
-python/reg_tests/sumb_test2_reg
-python/reg_tests/sumb_test3_reg
-python/reg_tests/sumb_test4_reg
-python/reg_tests/sumb_test5_reg
-python/reg_tests/sumb_test6_reg
-python/reg_tests/sumb_test7_reg
