@@ -1317,8 +1317,8 @@ branch = myIntStack(myIntPtr)
       else
         rblank = x1
       end if
-      scratchd(i, j, k, idvt) = scratchd(i, j, k, idvt) - vol(i, j, k)*&
-&       rblank*dwd(i, j, k, itu1)
+      scratchd(i, j, k, idvt) = scratchd(i, j, k, idvt) - volref(i, j, k&
+&       )*rblank*dwd(i, j, k, itu1)
       dwd(i, j, k, itu1) = 0.0_8
     end do
   end subroutine saresscale_fast_b
@@ -1349,7 +1349,8 @@ branch = myIntStack(myIntPtr)
       else
         rblank = x1
       end if
-      dw(i, j, k, itu1) = -(vol(i, j, k)*scratch(i, j, k, idvt)*rblank)
+      dw(i, j, k, itu1) = -(volref(i, j, k)*scratch(i, j, k, idvt)*&
+&       rblank)
     end do
   end subroutine saresscale
 end module sa_fast_b

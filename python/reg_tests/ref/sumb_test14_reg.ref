@@ -155,13 +155,17 @@
  'turbresscale': 10000.0,
  'turbulencemodel': 'sa',
  'turbulenceorder': 'first order',
+ 'turbulenceproduction': 'strain',
  'useale': True,
  'useanksolver': False,
  'useapproxwalldistance': True,
  'usediagtspc': True,
+ 'useft2sa': True,
  'usegridmotion': False,
  'usematrixfreedrdw': True,
  'usenksolver': True,
+ 'useqcr': False,
+ 'userotationsa': False,
  'usewallfunctions': False,
  'verifyextra': True,
  'verifyspatial': True,
@@ -240,27 +244,27 @@
 #
 Norm of residual
 -> Alpha... 1.800000 
-@value  4.8272906262143e-12 1e-10 1e-10
+@value  4.8272906262140e-12 1e-10 1e-10
 -> Alpha... 1.800000 
 Solving adjoint: fx
 -> Alpha... 1.800000 
 Solving ADjoint Transpose with PETSc...
    0 KSP Residual norm 0.5740327650E+04
   10 KSP Residual norm 0.5258820262E+04
-  20 KSP Residual norm 0.6012894407E+03
-  30 KSP Residual norm 0.3146317747E+02
-  40 KSP Residual norm 0.1214360198E+01
-  50 KSP Residual norm 0.5171281967E-01
+  20 KSP Residual norm 0.6012894406E+03
+  30 KSP Residual norm 0.3146317746E+02
+  40 KSP Residual norm 0.1214360195E+01
+  50 KSP Residual norm 0.5171281981E-01
   60 KSP Residual norm 0.2923235192E-02
-  70 KSP Residual norm 0.1518871430E-03
+  70 KSP Residual norm 0.1518871429E-03
   80 KSP Residual norm 0.1030041046E-04
   90 KSP Residual norm 0.6323606162E-06
- 100 KSP Residual norm 0.4538485631E-07
- 110 KSP Residual norm 0.6835097474E-08
- 120 KSP Residual norm 0.1016513934E-08
- 130 KSP Residual norm 0.7369177246E-10
-Solving ADjoint Transpose with PETSc time (s) =    28.72
- Norm of error = 0.1633E-07    Iterations =  131
+ 100 KSP Residual norm 0.4384990377E-07
+ 110 KSP Residual norm 0.6798073003E-08
+ 120 KSP Residual norm 0.1007968564E-08
+ 130 KSP Residual norm 0.7314037991E-10
+Solving ADjoint Transpose with PETSc time (s) =    28.71
+ Norm of error = 0.1880E-07    Iterations =  131
  ------------------------------------------------
  PETSc solver converged after   131 iterations.
  ------------------------------------------------
@@ -269,20 +273,20 @@ Solving adjoint: mz
 Solving ADjoint Transpose with PETSc...
    0 KSP Residual norm 0.2252758030E+06
   10 KSP Residual norm 0.2189125219E+06
-  20 KSP Residual norm 0.5590262408E+05
+  20 KSP Residual norm 0.5590262410E+05
   30 KSP Residual norm 0.2157482042E+04
-  40 KSP Residual norm 0.9262002547E+02
-  50 KSP Residual norm 0.4217940190E+01
+  40 KSP Residual norm 0.9262002543E+02
+  50 KSP Residual norm 0.4217940203E+01
   60 KSP Residual norm 0.2977978201E+00
-  70 KSP Residual norm 0.2203430308E-01
-  80 KSP Residual norm 0.1287364056E-02
-  90 KSP Residual norm 0.8526626136E-04
- 100 KSP Residual norm 0.5312675969E-05
- 110 KSP Residual norm 0.7868625116E-06
- 120 KSP Residual norm 0.1177418966E-06
- 130 KSP Residual norm 0.1031934225E-07
-Solving ADjoint Transpose with PETSc time (s) =    29.92
- Norm of error = 0.1272E-05    Iterations =  137
+  70 KSP Residual norm 0.2203430304E-01
+  80 KSP Residual norm 0.1287364055E-02
+  90 KSP Residual norm 0.8526626115E-04
+ 100 KSP Residual norm 0.5325681494E-05
+ 110 KSP Residual norm 0.7866275815E-06
+ 120 KSP Residual norm 0.1174150831E-06
+ 130 KSP Residual norm 0.1029827088E-07
+Solving ADjoint Transpose with PETSc time (s) =    29.56
+ Norm of error = 0.1122E-05    Iterations =  137
  ------------------------------------------------
  PETSc solver converged after   137 iterations.
  ------------------------------------------------
@@ -291,7 +295,7 @@ Dictionary Key: mdo_tutorial_fx
 Dictionary Key: P_mdo_tutorial
 @value  2.0247478149360e-01 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
-@value  2.5377610019092e-02 1e-10 1e-10
+@value  2.5377610019089e-02 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
 @value -2.4069241397630e+03 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
@@ -299,82 +303,82 @@ Dictionary Key: beta_mdo_tutorial
 Dictionary Key: mach_mdo_tutorial
 @value  4.4171117055264e+04 1e-10 1e-10
 Dictionary Key: shape
-@value  6.0071478857774e+02 1e-10 1e-10
-@value  5.1166541228188e+01 1e-10 1e-10
+@value  6.0071478857742e+02 1e-10 1e-10
+@value  5.1166541228429e+01 1e-10 1e-10
 @value -1.8537083538179e+03 1e-10 1e-10
 @value -1.9571406244858e+03 1e-10 1e-10
-@value  4.0426294238685e+02 1e-10 1e-10
-@value  5.3833474899394e+02 1e-10 1e-10
+@value  4.0426294238643e+02 1e-10 1e-10
+@value  5.3833474899412e+02 1e-10 1e-10
 @value -2.9011010020151e+03 1e-10 1e-10
 @value -2.3089065473372e+03 1e-10 1e-10
-@value  1.2374059752208e+02 1e-10 1e-10
+@value  1.2374059752215e+02 1e-10 1e-10
 @value -2.0808575050337e+03 1e-10 1e-10
-@value -1.2617466487585e+02 1e-10 1e-10
-@value  8.1564412762213e+02 1e-10 1e-10
-@value -1.7920016951307e+03 1e-10 1e-10
-@value  1.7541101859835e+03 1e-10 1e-10
-@value  3.5161619958110e+03 1e-10 1e-10
-@value  9.0513525614277e+02 1e-10 1e-10
-@value -7.0421802224272e+01 1e-10 1e-10
+@value -1.2617466487583e+02 1e-10 1e-10
+@value  8.1564412762212e+02 1e-10 1e-10
+@value -1.7920016951306e+03 1e-10 1e-10
+@value  1.7541101859837e+03 1e-10 1e-10
+@value  3.5161619958112e+03 1e-10 1e-10
+@value  9.0513525614276e+02 1e-10 1e-10
+@value -7.0421802224178e+01 1e-10 1e-10
 @value -1.1390951593630e+03 1e-10 1e-10
-@value  3.9845518230029e+02 1e-10 1e-10
+@value  3.9845518230030e+02 1e-10 1e-10
 @value  1.1847587364534e+03 1e-10 1e-10
 @value  1.6606095094638e+03 1e-10 1e-10
-@value  1.1611535859482e+03 1e-10 1e-10
-@value  4.7741429545561e+02 1e-10 1e-10
-@value  7.5630625156970e+02 1e-10 1e-10
-@value  7.4889050950212e+02 1e-10 1e-10
-@value  7.1191529199881e+02 1e-10 1e-10
-@value  5.8753200405061e+02 1e-10 1e-10
-@value  4.1941781905841e+02 1e-10 1e-10
+@value  1.1611535859481e+03 1e-10 1e-10
+@value  4.7741429545559e+02 1e-10 1e-10
+@value  7.5630625156969e+02 1e-10 1e-10
+@value  7.4889050950118e+02 1e-10 1e-10
+@value  7.1191529199714e+02 1e-10 1e-10
+@value  5.8753200404948e+02 1e-10 1e-10
+@value  4.1941781905796e+02 1e-10 1e-10
 @value -2.5141729417933e+03 1e-10 1e-10
 @value -2.9306400213320e+03 1e-10 1e-10
 @value -3.2781658427681e+03 1e-10 1e-10
-@value -3.4876662068718e+03 1e-10 1e-10
-@value -3.2467566228041e+02 1e-10 1e-10
-@value -6.3042738948315e+02 1e-10 1e-10
-@value -8.2958266224245e+02 1e-10 1e-10
-@value -5.3386199316420e+02 1e-10 1e-10
+@value -3.4876662068717e+03 1e-10 1e-10
+@value -3.2467566227978e+02 1e-10 1e-10
+@value -6.3042738948208e+02 1e-10 1e-10
+@value -8.2958266224176e+02 1e-10 1e-10
+@value -5.3386199316389e+02 1e-10 1e-10
 @value -2.5956859163440e+03 1e-10 1e-10
 @value -2.8619558370196e+03 1e-10 1e-10
-@value -3.0386356799309e+03 1e-10 1e-10
+@value -3.0386356799308e+03 1e-10 1e-10
 @value -3.0226541238598e+03 1e-10 1e-10
-@value -3.7947935613585e+02 1e-10 1e-10
-@value -5.4444619384492e+02 1e-10 1e-10
-@value -4.7494493588871e+02 1e-10 1e-10
-@value -2.1393682057845e+02 1e-10 1e-10
-@value -2.6237181169284e+03 1e-10 1e-10
+@value -3.7947935613566e+02 1e-10 1e-10
+@value -5.4444619384463e+02 1e-10 1e-10
+@value -4.7494493588856e+02 1e-10 1e-10
+@value -2.1393682057839e+02 1e-10 1e-10
+@value -2.6237181169283e+03 1e-10 1e-10
 @value -2.4776135572625e+03 1e-10 1e-10
 @value -2.1360863949055e+03 1e-10 1e-10
 @value -1.7252632332158e+03 1e-10 1e-10
-@value  9.5116673850425e+01 1e-10 1e-10
-@value  1.6673788209039e+02 1e-10 1e-10
-@value  1.7761497678509e+02 1e-10 1e-10
-@value  2.4684242939232e+02 1e-10 1e-10
-@value  9.5699275342302e+02 1e-10 1e-10
-@value  9.8984392330348e+02 1e-10 1e-10
+@value  9.5116673850402e+01 1e-10 1e-10
+@value  1.6673788209035e+02 1e-10 1e-10
+@value  1.7761497678505e+02 1e-10 1e-10
+@value  2.4684242939229e+02 1e-10 1e-10
+@value  9.5699275342300e+02 1e-10 1e-10
+@value  9.8984392330347e+02 1e-10 1e-10
 @value  1.0222065232733e+03 1e-10 1e-10
 @value  1.1523274714867e+03 1e-10 1e-10
-@value -1.3541468766277e+03 1e-10 1e-10
-@value -1.8053049117464e+02 1e-10 1e-10
-@value  1.1465192626992e+03 1e-10 1e-10
-@value  2.3455994187189e+03 1e-10 1e-10
+@value -1.3541468766276e+03 1e-10 1e-10
+@value -1.8053049117436e+02 1e-10 1e-10
+@value  1.1465192626994e+03 1e-10 1e-10
+@value  2.3455994187190e+03 1e-10 1e-10
 @value  3.7466839630404e+03 1e-10 1e-10
-@value  4.7829781571855e+03 1e-10 1e-10
+@value  4.7829781571854e+03 1e-10 1e-10
 @value  4.9938568936916e+03 1e-10 1e-10
-@value  3.8668035455623e+03 1e-10 1e-10
+@value  3.8668035455622e+03 1e-10 1e-10
 @value  4.0365104899836e+03 1e-10 1e-10
 @value  3.3315211984200e+03 1e-10 1e-10
 @value  2.3507641351251e+03 1e-10 1e-10
 @value  1.1038438548584e+03 1e-10 1e-10
 @value  1.6595330753860e+02 1e-10 1e-10
-@value -3.7063825417060e+02 1e-10 1e-10
-@value -5.4509131406915e+02 1e-10 1e-10
-@value -1.9101405432330e+02 1e-10 1e-10
+@value -3.7063825417058e+02 1e-10 1e-10
+@value -5.4509131406916e+02 1e-10 1e-10
+@value -1.9101405432332e+02 1e-10 1e-10
 Dictionary Key: twist
-@value -7.5720887768722e+01 1e-10 1e-10
+@value -7.5720887768715e+01 1e-10 1e-10
 @value -1.2240378757903e+02 1e-10 1e-10
-@value -1.5225363195357e+02 1e-10 1e-10
+@value -1.5225363195356e+02 1e-10 1e-10
 @value -1.5887851014037e+02 1e-10 1e-10
 @value -1.4014600361224e+02 1e-10 1e-10
 @value -7.7305222661487e+01 1e-10 1e-10
@@ -388,7 +392,7 @@ Dictionary Key: mdo_tutorial_mz
 Dictionary Key: P_mdo_tutorial
 @value  4.3984263970866e+01 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
-@value -1.8780162723125e-01 1e-10 1e-10
+@value -1.8780162723120e-01 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
 @value  2.1393482269230e+05 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
@@ -396,54 +400,54 @@ Dictionary Key: beta_mdo_tutorial
 Dictionary Key: mach_mdo_tutorial
 @value  3.7933315694769e+06 1e-10 1e-10
 Dictionary Key: shape
-@value -4.0584490634001e+04 1e-10 1e-10
-@value -6.7539594119300e+04 1e-10 1e-10
-@value -7.1499274175056e+05 1e-10 1e-10
+@value -4.0584490633982e+04 1e-10 1e-10
+@value -6.7539594119314e+04 1e-10 1e-10
+@value -7.1499274175055e+05 1e-10 1e-10
 @value -5.6794823534851e+05 1e-10 1e-10
-@value  8.8781469395040e+03 1e-10 1e-10
-@value  3.4629859194765e+04 1e-10 1e-10
+@value  8.8781469395293e+03 1e-10 1e-10
+@value  3.4629859194750e+04 1e-10 1e-10
 @value -6.4148176807909e+05 1e-10 1e-10
 @value -5.2824360085222e+05 1e-10 1e-10
-@value  2.3729401022202e+04 1e-10 1e-10
+@value  2.3729401022200e+04 1e-10 1e-10
 @value  1.1432386324486e+05 1e-10 1e-10
 @value  1.7910245125463e+05 1e-10 1e-10
 @value  3.3943240365694e+05 1e-10 1e-10
-@value  8.5096776494833e+04 1e-10 1e-10
+@value  8.5096776494836e+04 1e-10 1e-10
 @value  1.0344952593653e+05 1e-10 1e-10
-@value  1.3780937096841e+05 1e-10 1e-10
-@value  3.9575645160152e+05 1e-10 1e-10
-@value  6.6377065818720e+04 1e-10 1e-10
-@value  9.6281848254086e+04 1e-10 1e-10
+@value  1.3780937096839e+05 1e-10 1e-10
+@value  3.9575645160153e+05 1e-10 1e-10
+@value  6.6377065818716e+04 1e-10 1e-10
+@value  9.6281848254085e+04 1e-10 1e-10
 @value  1.3470689948406e+05 1e-10 1e-10
 @value  2.1457412944958e+05 1e-10 1e-10
-@value  7.6682868928727e+04 1e-10 1e-10
-@value  8.3255952571413e+04 1e-10 1e-10
+@value  7.6682868928720e+04 1e-10 1e-10
+@value  8.3255952571410e+04 1e-10 1e-10
 @value  1.7643300222816e+05 1e-10 1e-10
 @value  2.9333170776509e+05 1e-10 1e-10
-@value -5.2426560057148e+04 1e-10 1e-10
-@value -4.5933243922505e+04 1e-10 1e-10
-@value -3.2161762711957e+04 1e-10 1e-10
-@value -1.0436659454310e+04 1e-10 1e-10
+@value -5.2426560057088e+04 1e-10 1e-10
+@value -4.5933243922389e+04 1e-10 1e-10
+@value -3.2161762711872e+04 1e-10 1e-10
+@value -1.0436659454275e+04 1e-10 1e-10
 @value -9.5155021848847e+05 1e-10 1e-10
 @value -1.1020677797530e+06 1e-10 1e-10
-@value -1.1799229497721e+06 1e-10 1e-10
+@value -1.1799229497722e+06 1e-10 1e-10
 @value -1.0914785935346e+06 1e-10 1e-10
-@value -6.6450128586226e+04 1e-10 1e-10
-@value -2.8565726189215e+04 1e-10 1e-10
-@value  1.9765145233543e+04 1e-10 1e-10
-@value  5.4967293039678e+04 1e-10 1e-10
-@value -7.7594004639431e+05 1e-10 1e-10
+@value -6.6450128586265e+04 1e-10 1e-10
+@value -2.8565726189286e+04 1e-10 1e-10
+@value  1.9765145233494e+04 1e-10 1e-10
+@value  5.4967293039655e+04 1e-10 1e-10
+@value -7.7594004639430e+05 1e-10 1e-10
 @value -9.1087954976620e+05 1e-10 1e-10
-@value -9.8110227589314e+05 1e-10 1e-10
-@value -9.0723414751654e+05 1e-10 1e-10
-@value  7.1972089789388e+04 1e-10 1e-10
-@value  1.0998774858395e+05 1e-10 1e-10
-@value  1.3210343569819e+05 1e-10 1e-10
+@value -9.8110227589315e+05 1e-10 1e-10
+@value -9.0723414751653e+05 1e-10 1e-10
+@value  7.1972089789378e+04 1e-10 1e-10
+@value  1.0998774858394e+05 1e-10 1e-10
+@value  1.3210343569818e+05 1e-10 1e-10
 @value  1.2538464901171e+05 1e-10 1e-10
 @value  1.6587753472242e+05 1e-10 1e-10
 @value  1.8566098965564e+05 1e-10 1e-10
 @value  1.9172209776836e+05 1e-10 1e-10
-@value  1.7177050724112e+05 1e-10 1e-10
+@value  1.7177050724111e+05 1e-10 1e-10
 @value  2.3456067958673e+05 1e-10 1e-10
 @value  2.6046930444017e+05 1e-10 1e-10
 @value  2.7173515486334e+05 1e-10 1e-10
@@ -452,27 +456,27 @@ Dictionary Key: shape
 @value  4.4956103072875e+05 1e-10 1e-10
 @value  4.5773688979611e+05 1e-10 1e-10
 @value  3.9742934841140e+05 1e-10 1e-10
-@value  1.6684248426286e+05 1e-10 1e-10
-@value  2.1573020034321e+05 1e-10 1e-10
-@value  2.2325589400928e+05 1e-10 1e-10
-@value  1.7184538603008e+05 1e-10 1e-10
+@value  1.6684248426285e+05 1e-10 1e-10
+@value  2.1573020034319e+05 1e-10 1e-10
+@value  2.2325589400927e+05 1e-10 1e-10
+@value  1.7184538603007e+05 1e-10 1e-10
 @value  1.2050160105727e+05 1e-10 1e-10
-@value  1.0117686759417e+05 1e-10 1e-10
-@value  7.9711442828982e+04 1e-10 1e-10
-@value  7.4945682293331e+04 1e-10 1e-10
+@value  1.0117686759418e+05 1e-10 1e-10
+@value  7.9711442828986e+04 1e-10 1e-10
+@value  7.4945682293328e+04 1e-10 1e-10
 @value  1.7667724792246e+05 1e-10 1e-10
 @value  2.0352645116071e+05 1e-10 1e-10
 @value  2.3100181589050e+05 1e-10 1e-10
 @value  2.4498164055789e+05 1e-10 1e-10
-@value  4.9950117687644e+05 1e-10 1e-10
+@value  4.9950117687645e+05 1e-10 1e-10
 @value  5.6138066619627e+05 1e-10 1e-10
-@value  5.8358144073151e+05 1e-10 1e-10
+@value  5.8358144073152e+05 1e-10 1e-10
 @value  5.1809722056243e+05 1e-10 1e-10
 Dictionary Key: twist
-@value -3.4452729107415e+04 1e-10 1e-10
-@value -4.4300953282530e+04 1e-10 1e-10
+@value -3.4452729107414e+04 1e-10 1e-10
+@value -4.4300953282529e+04 1e-10 1e-10
 @value -4.6809187264218e+04 1e-10 1e-10
-@value -4.2785336478472e+04 1e-10 1e-10
+@value -4.2785336478473e+04 1e-10 1e-10
 @value -3.1327005860211e+04 1e-10 1e-10
 @value -1.3129281899537e+04 1e-10 1e-10
 Dictionary Key: xRef_mdo_tutorial
