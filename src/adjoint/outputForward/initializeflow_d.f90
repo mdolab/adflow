@@ -14,9 +14,14 @@ module initializeflow_d
 contains
 !  differentiation of referencestate in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: pinf timeref rhoinf muref tref
-!                winf pinfcorr rgas pref
-!   with respect to varying inputs: mach veldirfreestream machcoef
-!                tinfdim rhoinfdim pinfdim
+!                winf muinf uinf pinfcorr rgas pref rhoref
+!   with respect to varying inputs: mach veldirfreestream rgasdim
+!                machcoef tinfdim rhoinfdim pinfdim
+!   rw status of diff variables: mach:in veldirfreestream:in rgasdim:in
+!                machcoef:in tinfdim:in pinf:out timeref:out rhoinf:out
+!                muref:out rhoinfdim:in tref:out winf:out muinf:out
+!                uinf:out pinfcorr:out rgas:out muinfdim:(loc)
+!                pinfdim:in pref:out rhoref:out
   subroutine referencestate_d()
 !
 !       the original version has been nuked since the computations are
@@ -41,7 +46,8 @@ contains
     use paramturb
     use inputphysics, only : equations, mach, machd, machcoef, &
 &   machcoefd, musuthdim, tsuthdim, veldirfreestream, veldirfreestreamd,&
-&   rgasdim, ssuthdim, eddyvisinfratio, turbmodel, turbintensityinf
+&   rgasdim, rgasdimd, ssuthdim, eddyvisinfratio, turbmodel, &
+&   turbintensityinf
     use flowvarrefstate, only : pinfdim, pinfdimd, tinfdim, tinfdimd, &
 &   rhoinfdim, rhoinfdimd, muinfdim, muinfdimd, pref, prefd, rhoref, &
 &   rhorefd, tref, trefd, muref, murefd, timeref, timerefd, pinf, pinfd,&
@@ -115,8 +121,8 @@ contains
     result1 = sqrt(arg1)
     uinfd = machd*result1 + mach*result1d
     uinf = mach*result1
-    rgasd = (rgasdim*(rhorefd*tref+rhoref*trefd)*pref-rgasdim*rhoref*&
-&     tref*prefd)/pref**2
+    rgasd = (((rgasdimd*rhoref+rgasdim*rhorefd)*tref+rgasdim*rhoref*&
+&     trefd)*pref-rgasdim*rhoref*tref*prefd)/pref**2
     rgas = rgasdim*rhoref*tref/pref
     muinfd = (muinfdimd*muref-muinfdim*murefd)/muref**2
     muinf = muinfdim/muref

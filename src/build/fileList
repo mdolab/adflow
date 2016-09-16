@@ -168,6 +168,7 @@ fortranFiles=	ADT/adtUtils.F90\
 		adjoint/outputForward/walldistance_d.f90\
 		adjoint/outputForward/initializeflow_d.f90\
 		adjoint/outputForward/adjointextra_d.f90\
+		adjoint/outputForward/BCExtra_d.F90\
 		\
 		adjoint/outputReverse/adjointextra_b.f90\
 		adjoint/outputReverseFast/BCExtra.F90\

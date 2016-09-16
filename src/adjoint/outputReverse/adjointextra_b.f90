@@ -3,6 +3,11 @@
 !
 module adjointextra_b
   implicit none
+! ----------------------------------------------------------------------
+!                                                                      |
+!                    no tapenade routine below this line               |
+!                                                                      |
+! ----------------------------------------------------------------------
 
 contains
 !  differentiation of block_res in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
@@ -1257,30 +1262,6 @@ varloopfine:do l=1,nwf
     call getcostfunction(force, moment, sepsensor, sepsensoravg, &
 &                  cavitation)
   end subroutine block_res
-  subroutine resscale()
-    use blockpointers
-    use flowvarrefstate
-    use inputiteration
-    implicit none
-! local variables
-    integer(kind=inttype) :: i, j, k, l
-    real(kind=realtype) :: ovol
-! divide through by the reference volume
-    do k=2,kl
-      do j=2,jl
-        do i=2,il
-          ovol = one/volref(i, j, k)
-          do l=1,nwf
-            dw(i, j, k, l) = (dw(i, j, k, l)+fw(i, j, k, l))*ovol
-          end do
-          do l=nt1,nt2
-            dw(i, j, k, l) = (dw(i, j, k, l)+fw(i, j, k, l))*ovol*&
-&             turbresscale(l-nt1+1)
-          end do
-        end do
-      end do
-    end do
-  end subroutine resscale
 !  differentiation of getcostfunction in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: funcvalues
 !   with respect to varying inputs: machgrid lengthref machcoef
@@ -3689,4 +3670,150 @@ loopbocos:do mm=1,nbocos
       end if
     end do loopbocos
   end subroutine xhalo_block
+  subroutine resscale()
+    use constants
+    use blockpointers, only : il, jl, kl, nx, ny, nz, volref, dw
+    use flowvarrefstate, only : nwf, nt1, nt2
+    use inputiteration, only : turbresscale
+    implicit none
+! local variables
+    integer(kind=inttype) :: i, j, k, ii, nturb
+    real(kind=realtype) :: ovol
+    intrinsic mod
+! divide through by the reference volume
+    nturb = nt2 - nt1 + 1
+    do ii=0,nx*ny*nz-1
+      i = mod(ii, nx) + 2
+      j = mod(ii/nx, ny) + 2
+      k = ii/(nx*ny) + 2
+      ovol = one/volref(i, j, k)
+      dw(i, j, k, 1:nwf) = dw(i, j, k, 1:nwf)*ovol
+      dw(i, j, k, nt1:nt2) = dw(i, j, k, nt1:nt2)*ovol*turbresscale(1:&
+&       nturb)
+    end do
+  end subroutine resscale
+  subroutine sumdwandfw()
+    use constants
+    use blockpointers, only : il, jl, kl, dw, fw, iblank
+    use flowvarrefstate, only : nwf
+    implicit none
+! local variables
+    integer(kind=inttype) :: i, j, k, l
+    intrinsic real
+    do l=1,nwf
+      do k=2,kl
+        do j=2,jl
+          do i=2,il
+            dw(i, j, k, l) = (dw(i, j, k, l)+fw(i, j, k, l))*real(iblank&
+&             (i, j, k), realtype)
+          end do
+        end do
+      end do
+    end do
+  end subroutine sumdwandfw
+  subroutine getcostfunctions(globalvals)
+    use constants
+    use costfunctions
+    use inputtimespectral, only : ntimeintervalsspectral
+    use flowvarrefstate, only : pref, rhoref, tref, lref, gammainf
+    use inputphysics, only : liftdirection, dragdirection, surfaceref,&
+&   machcoef, lengthref
+    use inputtsstabderiv, only : tsstability
+    implicit none
+! input 
+    real(kind=realtype), dimension(nlocalvalues, ntimeintervalsspectral)&
+&   , intent(in) :: globalvals
+! working
+    real(kind=realtype) :: fact, factmoment, ovrnts
+    real(kind=realtype), dimension(3, ntimeintervalsspectral) :: force, &
+&   moment, cforce, cmoment
+    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow
+    integer(kind=inttype) :: sps
+    intrinsic sqrt
+! factor used for time-averaged quantities.
+    ovrnts = one/ntimeintervalsspectral
+! sum pressure and viscous contributions
+    force = globalvals(ifp:ifp+2, :) + globalvals(ifv:ifv+2, :)
+    moment = globalvals(imp:imp+2, :) + globalvals(imv:imv+2, :)
+    fact = two/(gammainf*machcoef*machcoef*surfaceref*lref*lref*pref)
+    cforce = fact*force
+! moment factor has an extra lengthref
+    fact = fact/(lengthref*lref)
+    cmoment = fact*moment
+! zero values since we are summing.
+    funcvalues = zero
+! here we finally assign the final function values
+    do sps=1,ntimeintervalsspectral
+      funcvalues(costfuncforcex) = funcvalues(costfuncforcex) + ovrnts*&
+&       force(1, sps)
+      funcvalues(costfuncforcey) = funcvalues(costfuncforcey) + ovrnts*&
+&       force(2, sps)
+      funcvalues(costfuncforcez) = funcvalues(costfuncforcez) + ovrnts*&
+&       force(3, sps)
+      funcvalues(costfuncforcexcoef) = funcvalues(costfuncforcexcoef) + &
+&       ovrnts*cforce(1, sps)
+      funcvalues(costfuncforceycoef) = funcvalues(costfuncforceycoef) + &
+&       ovrnts*cforce(2, sps)
+      funcvalues(costfuncforcezcoef) = funcvalues(costfuncforcezcoef) + &
+&       ovrnts*cforce(3, sps)
+      funcvalues(costfuncmomx) = funcvalues(costfuncmomx) + ovrnts*&
+&       moment(1, sps)
+      funcvalues(costfuncmomy) = funcvalues(costfuncmomy) + ovrnts*&
+&       moment(2, sps)
+      funcvalues(costfuncmomz) = funcvalues(costfuncmomz) + ovrnts*&
+&       moment(3, sps)
+      funcvalues(costfuncmomxcoef) = funcvalues(costfuncmomxcoef) + &
+&       ovrnts*cmoment(1, sps)
+      funcvalues(costfuncmomycoef) = funcvalues(costfuncmomycoef) + &
+&       ovrnts*cmoment(2, sps)
+      funcvalues(costfuncmomzcoef) = funcvalues(costfuncmomzcoef) + &
+&       ovrnts*cmoment(3, sps)
+      funcvalues(costfuncsepsensor) = funcvalues(costfuncsepsensor) + &
+&       ovrnts*globalvals(isepsensor, sps)
+      funcvalues(costfunccavitation) = funcvalues(costfunccavitation) + &
+&       ovrnts*globalvals(icavitation, sps)
+      funcvalues(costfuncsepsensoravgx) = funcvalues(&
+&       costfuncsepsensoravgx) + ovrnts*globalvals(isepavg, sps)
+      funcvalues(costfuncsepsensoravgy) = funcvalues(&
+&       costfuncsepsensoravgy) + ovrnts*globalvals(isepavg+1, sps)
+      funcvalues(costfuncsepsensoravgz) = funcvalues(&
+&       costfuncsepsensoravgz) + ovrnts*globalvals(isepavg+2, sps)
+! mass flow like objective
+      mflow = globalvals(imassflow, sps)
+      mavgptot = globalvals(imassptot, sps)/mflow*pref
+      mavgttot = globalvals(imassttot, sps)/mflow*tref
+      mavgps = globalvals(imassps, sps)/mflow*pref
+      mflow = globalvals(imassflow, sps)*sqrt(pref/rhoref)
+      funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
+      funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &
+&       ovrnts*mavgptot
+      funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgttot) + &
+&       ovrnts*mavgttot
+      funcvalues(costfuncmavgps) = funcvalues(costfuncmavgps) + ovrnts*&
+&       mavgps
+    end do
+! bending moment calc - also broken. 
+! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
+! funcvalues(costfuncbendingcoef) = funcvalues(costfuncbendingcoef) + ovrnts*bendingmoment
+! lift and drag (coefficients): dot product with the lift/drag direction.
+    funcvalues(costfunclift) = funcvalues(costfuncforcex)*liftdirection(&
+&     1) + funcvalues(costfuncforcey)*liftdirection(2) + funcvalues(&
+&     costfuncforcez)*liftdirection(3)
+    funcvalues(costfuncdrag) = funcvalues(costfuncforcex)*dragdirection(&
+&     1) + funcvalues(costfuncforcey)*dragdirection(2) + funcvalues(&
+&     costfuncforcez)*dragdirection(3)
+    funcvalues(costfuncliftcoef) = funcvalues(costfuncforcexcoef)*&
+&     liftdirection(1) + funcvalues(costfuncforceycoef)*liftdirection(2)&
+&     + funcvalues(costfuncforcezcoef)*liftdirection(3)
+    funcvalues(costfuncdragcoef) = funcvalues(costfuncforcexcoef)*&
+&     dragdirection(1) + funcvalues(costfuncforceycoef)*dragdirection(2)&
+&     + funcvalues(costfuncforcezcoef)*dragdirection(3)
+! -------------------- time spectral objectives ------------------
+    if (tsstability) then
+      print*, &
+&     'error: tsstabilityderivatives are *broken*. they need to be ', &
+&     'completely verifed from scratch'
+      stop
+    end if
+  end subroutine getcostfunctions
 end module adjointextra_b

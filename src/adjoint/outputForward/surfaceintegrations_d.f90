@@ -10,86 +10,6 @@ module surfaceintegrations_d
 ! ----------------------------------------------------------------------
 
 contains
-!  differentiation of integratesurfaces in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *(*bcdata.fv) *(*bcdata.fp)
-!                *(*bcdata.area) localvalues
-!   with respect to varying inputs: *p *w *x *si *sj *sk *(*viscsubface.tau)
-!                veldirfreestream machcoef pointref pinf pref *xx
-!                *pp1 *pp2 *ssi *ww2
-!   plus diff mem management of: viscsubface:in *viscsubface.tau:in
-!                bcdata:in *bcdata.fv:in *bcdata.fp:in *bcdata.area:in
-!                xx:in-out rev0:out rev1:out rev2:out rev3:out
-!                pp0:out pp1:in-out pp2:in-out pp3:out rlv0:out
-!                rlv1:out rlv2:out rlv3:out ss:out ssi:in-out ssj:out
-!                ssk:out ww0:out ww1:out ww2:in-out ww3:out
-  subroutine integratesurfaces_d(localvalues, localvaluesd)
-! this is a shell routine that calls the specific surface
-! integration routines. currently we have have the forceandmoment
-! routine as well as the flow properties routine. this routine
-! takes care of setting pointers, while the actual computational
-! routine just acts on a specific fast pointed to by pointers. 
-    use constants
-    use blockpointers, only : nbocos, bcdata, bcdatad, bctype, sk, skd&
-&   , sj, sjd, si, sid, x, xd, rlv, rlvd, sfacei, sfaceid, sfacej, &
-&   sfacejd, sfacek, sfacekd, gamma, rev, revd, p, pd, viscsubface, &
-&   viscsubfaced
-    use surfacefamilies, only : famgroups
-    use utils_d, only : setbcpointers, setbcpointers_d, resetbcpointers,&
-&   iswalltype
-    use sorting, only : bsearchintegers
-    use costfunctions, only : nlocalvalues
-! tapenade needs to see these modules that the callees use.
-    use bcpointers_d
-    use flowvarrefstate
-    use inputphysics
-    use diffsizes
-!  hint: isize1ofdrfbcdata should be the size of dimension 1 of array *bcdata
-    implicit none
-! do we actually need to zero the forces/area on a wall that wasn't inclded? maybe?
-!       ! if it wasn't included, but still a wall...zero
-!       if(bctype(mm) == eulerwall .or. &
-!            bctype(mm) == nswalladiabatic .or. &
-!            bctype(mm) == nswallisothermal) then
-!          bcdata(mm)%area = zero
-!          bcdata(mm)%fp = zero
-!          bcdata(mm)%fv = zero
-! input/output variables
-    real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
-&   localvalues
-    real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
-&   localvaluesd
-! working variables
-    integer(kind=inttype) :: mm
-    intrinsic size
-    integer :: ii1
-    do ii1=1,isize1ofdrfbcdata
-      bcdatad(ii1)%fv = 0.0_8
-    end do
-    do ii1=1,isize1ofdrfbcdata
-      bcdatad(ii1)%fp = 0.0_8
-    end do
-    do ii1=1,isize1ofdrfbcdata
-      bcdatad(ii1)%area = 0.0_8
-    end do
-    localvaluesd = 0.0_8
-! loop over all possible boundary conditions
-bocos:do mm=1,nbocos
-! determine if this boundary condition is to be incldued in the
-! currently active group
-      if (bsearchintegers(bcdata(mm)%famid, famgroups, size(famgroups)) &
-&         .gt. 0) then
-! set a bunch of pointers depending on the face id to make
-! a generic treatment possible. 
-        call setbcpointers_d(mm, .true.)
-        if (iswalltype(bctype(mm))) call forcesandmomentsface_d(&
-&                                                         localvalues, &
-&                                                         localvaluesd, &
-&                                                         mm)
-! reset the pointers
-        call resetbcpointers(mm, .true.)
-      end if
-    end do bocos
-  end subroutine integratesurfaces_d
   subroutine integratesurfaces(localvalues)
 ! this is a shell routine that calls the specific surface
 ! integration routines. currently we have have the forceandmoment
@@ -214,6 +134,10 @@ bocos:do mm=1,nbocos
 !                *(*bcdata.fp) *(*bcdata.area) veldirfreestream
 !                machcoef pointref pinf pref *xx *pp1 *pp2 *ssi
 !                *ww2 localvalues
+!   rw status of diff variables: *(*viscsubface.tau):in *(*bcdata.fv):in-out
+!                *(*bcdata.fp):in-out *(*bcdata.area):in-out veldirfreestream:in
+!                machcoef:in pointref:in pinf:in pref:in *xx:in
+!                *pp1:in *pp2:in *ssi:in *ww2:in localvalues:in-out
 !   plus diff mem management of: viscsubface:in *viscsubface.tau:in
 !                bcdata:in *bcdata.fv:in *bcdata.fp:in *bcdata.area:in
 !                xx:in pp1:in pp2:in ssi:in ww2:in
