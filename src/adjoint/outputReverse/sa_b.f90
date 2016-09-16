@@ -52,14 +52,10 @@ contains
 ! alloc central jacobian memory
     allocate(qq(2:il, 2:jl, 2:kl))
 ! source terms
-    call sasource()
 ! advection term
     nn = itu1 - 1
-    call turbadvection(1_inttype, 1_inttype, nn, qq)
 ! unsteady term
-    call unsteadyturbterm(1_inttype, 1_inttype, nn, qq)
 ! viscous terms
-    call saviscous()
 ! perform the residual scaling
 ! we need to do an acutal solve. solve and update the eddy
 ! viscosity and the boundary conditions
@@ -1641,9 +1637,9 @@ end subroutine sa_block_b
     end do
   end subroutine saviscous
 !  differentiation of saresscale in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *dw *vol
-!   with respect to varying inputs: *dw *scratch *vol
-!   plus diff mem management of: dw:in scratch:in vol:in
+!   gradient     of useful results: *dw
+!   with respect to varying inputs: *dw *scratch
+!   plus diff mem management of: dw:in scratch:in
   subroutine saresscale_b()
 !
 !  multiply the residual by the volume and store this in dw; this 
@@ -1672,10 +1668,8 @@ end subroutine sa_block_b
       else
         rblank = x1
       end if
-      vold(i, j, k) = vold(i, j, k) - rblank*scratch(i, j, k, idvt)*dwd(&
-&       i, j, k, itu1)
-      scratchd(i, j, k, idvt) = scratchd(i, j, k, idvt) - rblank*vol(i, &
-&       j, k)*dwd(i, j, k, itu1)
+      scratchd(i, j, k, idvt) = scratchd(i, j, k, idvt) - volref(i, j, k&
+&       )*rblank*dwd(i, j, k, itu1)
       dwd(i, j, k, itu1) = 0.0_8
     end do
   end subroutine saresscale_b
@@ -1706,7 +1700,8 @@ end subroutine sa_block_b
       else
         rblank = x1
       end if
-      dw(i, j, k, itu1) = -(vol(i, j, k)*scratch(i, j, k, idvt)*rblank)
+      dw(i, j, k, itu1) = -(volref(i, j, k)*scratch(i, j, k, idvt)*&
+&       rblank)
     end do
   end subroutine saresscale
 end module sa_b

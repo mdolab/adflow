@@ -687,7 +687,7 @@ contains
              do i=2, il
 #endif 
                 rblank = max(real(iblank(i,j,k), realType), zero)
-                dw(i,j,k,itu1) = -vol(i,j,k)*scratch(i,j,k,idvt)*rblank
+                dw(i,j,k,itu1) = -volRef(i,j,k)*scratch(i,j,k,idvt)*rblank
 #ifdef TAPENADE_FAST
              end do
 #else

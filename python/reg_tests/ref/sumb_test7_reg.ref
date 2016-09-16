@@ -320,7 +320,7 @@ Dictionary Key: sepsensoravgz
 @value  1.4991516133309e+05 1e-10 1e-10
 -> Derivatives with respect to nodes
 ||dR/dXv * xVDot||
-@value  2.7508112000970e+07 1e-10 1e-10
+@value  2.7508112000969e+07 1e-10 1e-10
 dFuncs/dXv * xVDot
 Dictionary Key: cd
 @value  8.3750909090888e-01 1e-09 1e-09
@@ -740,7 +740,7 @@ Dictionary Key: sepsensoravgz
 ||dwBar^T * dR/dw||
 @value  3.7035209195501e+09 1e-10 1e-10
 ||dwBar^T * dR/dXv||
-@value  1.0909211718650e+08 1e-10 1e-10
+@value  1.0909211718630e+08 1e-10 1e-10
 ||dwBar^T * dR/xDv||
 Dictionary Key: P_mdo_tutorial
 @value  4.0863453815332e-01 1e-10 1e-10
@@ -1228,8 +1228,8 @@ Dot product test for w -> R
 @value  7.5355684720664e+10 1e-10 1e-10
 @value  7.5355684720662e+10 1e-10 1e-10
 Dot product test for Xv -> R
-@value -8.5924712230226e+07 1e-09 1e-09
-@value -8.5924712230224e+07 1e-09 1e-09
+@value -8.5924712231087e+07 1e-09 1e-09
+@value -8.5924712231084e+07 1e-09 1e-09
 Dot product test for w -> F
 @value  4.8950443803882e+04 1e-10 1e-10
 @value  4.8950443803882e+04 1e-10 1e-10
@@ -1237,5 +1237,5 @@ Dot product test for xV -> F
 @value -3.1366493919307e+07 1e-10 1e-10
 @value -3.1366493919307e+07 1e-10 1e-10
 Dot product test for (w, xV) -> (dw, F)
-@value  7.5238442464956e+10 1e-10 1e-10
+@value  7.5238442464955e+10 1e-10 1e-10
 @value  7.5238442464956e+10 1e-10 1e-10

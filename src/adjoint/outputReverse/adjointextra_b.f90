@@ -281,23 +281,10 @@ spectralloop0:do sps2=1,ntimeintervalsspectral
 &                     bmti2, 3)*size(bmti2, 4))
         call pushreal8array(bmti1, size(bmti1, 1)*size(bmti1, 2)*size(&
 &                     bmti1, 3)*size(bmti1, 4))
-        call pushreal8array(scratch, size(scratch, 1)*size(scratch, 2)*&
-&                     size(scratch, 3)*size(scratch, 4))
         call pushreal8array(bmtk2, size(bmtk2, 1)*size(bmtk2, 2)*size(&
 &                     bmtk2, 3)*size(bmtk2, 4))
         call pushreal8array(bmtk1, size(bmtk1, 1)*size(bmtk1, 2)*size(&
 &                     bmtk1, 3)*size(bmtk1, 4))
-        do ii1=1,ntimeintervalsspectral
-          do ii2=1,1
-            do ii3=nn,nn
-              call pushreal8array(flowdoms(ii3, ii2, ii1)%dw, size(&
-&                           flowdoms(ii3, ii2, ii1)%dw, 1)*size(flowdoms&
-&                           (ii3, ii2, ii1)%dw, 2)*size(flowdoms(ii3, &
-&                           ii2, ii1)%dw, 3)*size(flowdoms(ii3, ii2, ii1&
-&                           )%dw, 4))
-            end do
-          end do
-        end do
         call sa_block(.true.)
         call pushcontrol2b(0)
       case default
@@ -837,22 +824,10 @@ varloopfine:do l=1,nwf
     end if
     call popcontrol2b(branch)
     if (branch .eq. 0) then
-      do ii1=ntimeintervalsspectral,1,-1
-        do ii2=1,1,-1
-          do ii3=nn,nn,-1
-            call popreal8array(flowdoms(ii3, ii2, ii1)%dw, size(flowdoms&
-&                        (ii3, ii2, ii1)%dw, 1)*size(flowdoms(ii3, ii2, &
-&                        ii1)%dw, 2)*size(flowdoms(ii3, ii2, ii1)%dw, 3)&
-&                        *size(flowdoms(ii3, ii2, ii1)%dw, 4))
-          end do
-        end do
-      end do
       call popreal8array(bmtk1, size(bmtk1, 1)*size(bmtk1, 2)*size(bmtk1&
 &                  , 3)*size(bmtk1, 4))
       call popreal8array(bmtk2, size(bmtk2, 1)*size(bmtk2, 2)*size(bmtk2&
 &                  , 3)*size(bmtk2, 4))
-      call popreal8array(scratch, size(scratch, 1)*size(scratch, 2)*size&
-&                  (scratch, 3)*size(scratch, 4))
       call popreal8array(bmti1, size(bmti1, 1)*size(bmti1, 2)*size(bmti1&
 &                  , 3)*size(bmti1, 4))
       call popreal8array(bmti2, size(bmti2, 1)*size(bmti2, 2)*size(bmti2&
