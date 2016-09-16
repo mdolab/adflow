@@ -16,6 +16,7 @@ contains
 !  differentiation of updatewalldistancesquickly in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *d2wall
 !   with respect to varying inputs: *x *xsurf
+!   rw status of diff variables: *x:in *d2wall:out *xsurf:in
 !   plus diff mem management of: x:in d2wall:in xsurf:in
   subroutine updatewalldistancesquickly_d(nn, level, sps)
 ! this is the actual update routine that uses xsurf. it is done on
@@ -26,7 +27,7 @@ contains
 ! pointers are already set. 
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, x, xd, flowdoms,&
-&   flowdomsd, d2wall, d2walld
+&   d2wall, d2walld
     implicit none
 ! subroutine arguments
     integer(kind=inttype) :: nn, level, sps

@@ -352,137 +352,6 @@ contains
     end if
  100 continue
   end function sanuknowneddyratio
-!  differentiation of unsteadyturbterm in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *scratch
-!   with respect to varying inputs: *w *scratch timeref
-!   plus diff mem management of: dw:in w:in scratch:in
-  subroutine unsteadyturbterm_d(madv, nadv, offset, qq)
-!
-!       unsteadyturbterm discretizes the time derivative of the        
-!       turbulence transport equations and add it to the residual.     
-!       as the time derivative is the same for all turbulence models,  
-!       this generic routine can be used; both the discretization of   
-!       the time derivative and its contribution to the central        
-!       jacobian are computed by this routine.                         
-!       only nadv equations are treated, while the actual system has   
-!       size madv. the reason is that some equations for some          
-!       turbulence equations do not have a time derivative, e.g. the   
-!       f equation in the v2-f model. the argument offset indicates    
-!       the offset in the w vector where this subsystem starts. as a   
-!       consequence it is assumed that the indices of the current      
-!       subsystem are contiguous, e.g. if a 2*2 system is solved the   
-!       last index in w is offset+1 and offset+2 respectively.         
-!
-    use blockpointers
-    use flowvarrefstate
-    use inputphysics
-    use inputtimespectral
-    use inputunsteady
-    use iteration
-    use section
-    use turbmod
-    implicit none
-!
-!      subroutine arguments.
-!
-    integer(kind=inttype), intent(in) :: madv, nadv, offset
-    real(kind=realtype), dimension(2:il, 2:jl, 2:kl, madv, madv), &
-&   intent(inout) :: qq
-!
-!      local variables.
-!
-    integer(kind=inttype) :: i, j, k, ii, jj, nn
-    real(kind=realtype) :: oneoverdt, tmp
-    real(kind=realtype) :: oneoverdtd, tmpd
-! determine the equation mode.
-    select case  (equationmode) 
-    case (steady) 
-! steady computation. no time derivative present.
-      return
-    case (unsteady) 
-!===============================================================
-! the time deritvative term depends on the integration
-! scheme used.
-      select case  (timeintegrationscheme) 
-      case (bdf) 
-! backward difference formula is used as time
-! integration scheme.
-! store the inverse of the physical nondimensional
-! time step a bit easier.
-        oneoverdtd = timerefd/deltat
-        oneoverdt = timeref/deltat
-! loop over the number of turbulent transport equations.
-nadvloopunsteady:do ii=1,nadv
-! store the index of the current turbulent variable in jj.
-          jj = ii + offset
-! loop over the owned cells of this block to compute the
-! time derivative.
-          do k=2,kl
-            do j=2,jl
-              do i=2,il
-! initialize tmp to the value of the current
-! level multiplied by the corresponding coefficient
-! in the time integration scheme.
-                tmpd = coeftime(0)*wd(i, j, k, jj)
-                tmp = coeftime(0)*w(i, j, k, jj)
-! loop over the old time levels and add the
-! corresponding contribution to tmp.
-                do nn=1,noldlevels
-                  tmp = tmp + coeftime(nn)*wold(nn, i, j, k, jj)
-                end do
-! update the residual. note that in the turbulent
-! routines the residual is defined with an opposite
-! sign compared to the residual of the flow equations.
-! therefore the time derivative must be substracted
-! from dvt.
-                scratchd(i, j, k, idvt+ii-1) = scratchd(i, j, k, idvt+ii&
-&                 -1) - oneoverdtd*tmp - oneoverdt*tmpd
-                scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1&
-&                 ) - oneoverdt*tmp
-! update the central jacobian.
-                qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) + coeftime(0)*&
-&                 oneoverdt
-              end do
-            end do
-          end do
-        end do nadvloopunsteady
-      case (explicitrk) 
-!===========================================================
-! explicit time integration scheme. the time derivative
-! is handled differently.
-        return
-      end select
-    case (timespectral) 
-!===============================================================
-! time spectral method.
-! loop over the number of turbulent transport equations.
-nadvloopspectral:do ii=1,nadv
-! store the index of the current turbulent variable in jj.
-        jj = ii + offset
-! the time derivative has been computed earlier in
-! unsteadyturbspectral and stored in entry jj of scratch.
-! substract this value for all owned cells. it must be
-! substracted, because in the turbulent routines the
-! residual is defined with an opposite sign compared to
-! the residual of the flow equations.
-! also add a term to the diagonal matrix, which corresponds
-! to to the contribution of the highest frequency. this is
-! equivalent to an explicit treatment of the time derivative
-! and may need to be changed.
-        tmp = ntimeintervalsspectral*pi*timeref/sections(sectionid)%&
-&         timeperiod
-        do k=2,kl
-          do j=2,jl
-            do i=2,il
-              scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) &
-&               - dw(i, j, k, jj)
-              qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) + tmp
-            end do
-          end do
-        end do
-      end do nadvloopspectral
-    end select
-  end subroutine unsteadyturbterm_d
   subroutine unsteadyturbterm(madv, nadv, offset, qq)
 !
 !       unsteadyturbterm discretizes the time derivative of the        
@@ -608,6 +477,7 @@ nadvloopspectral:do ii=1,nadv
 !  differentiation of computeeddyviscosity in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev
 !   with respect to varying inputs: *w *rlv
+!   rw status of diff variables: *rev:out *w:in *rlv:in
 !   plus diff mem management of: rev:in w:in rlv:in
   subroutine computeeddyviscosity_d(includehalos)
 !
@@ -975,10 +845,11 @@ nadvloopspectral:do ii=1,nadv
   end subroutine prodwmag2
 !  differentiation of turbadvection in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *scratch
-!   with respect to varying inputs: *sfacei *sfacej *sfacek *w
-!                *scratch *vol *si *sj *sk
-!   plus diff mem management of: sfacei:in sfacej:in sfacek:in
-!                w:in scratch:in vol:in si:in sj:in sk:in
+!   with respect to varying inputs: *w *scratch *vol *si *sj *sk
+!   rw status of diff variables: *w:in *scratch:in-out *vol:in
+!                *si:in *sj:in *sk:in
+!   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
+!                sk:in
   subroutine turbadvection_d(madv, nadv, offset, qq)
 !
 !       turbadvection discretizes the advection part of the turbulent  
@@ -1001,9 +872,9 @@ nadvloopspectral:do ii=1,nadv
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, vol, vold, &
-&   sfacei, sfaceid, sfacej, sfacejd, sfacek, sfacekd, w, wd, si, sid, &
-&   sj, sjd, sk, skd, addgridvelocities, bmti1, bmti2, bmtj1, bmtj2, &
-&   bmtk1, bmtk2, scratch, scratchd
+&   sfacei, sfacej, sfacek, w, wd, si, sid, sj, sjd, sk, skd, &
+&   addgridvelocities, bmti1, bmti2, bmtj1, bmtj2, bmtk1, bmtk2, scratch&
+&   , scratchd
     use turbmod, only : secondord
     implicit none
 !
@@ -1066,8 +937,7 @@ nadvloopspectral:do ii=1,nadv
           volid = -(half*vold(i, j, k)/vol(i, j, k)**2)
           voli = half/vol(i, j, k)
           if (addgridvelocities) then
-            qsd = (sfacekd(i, j, k)+sfacekd(i, j, k-1))*voli + (sfacek(i&
-&             , j, k)+sfacek(i, j, k-1))*volid
+            qsd = (sfacek(i, j, k)+sfacek(i, j, k-1))*volid
             qs = (sfacek(i, j, k)+sfacek(i, j, k-1))*voli
           end if
 ! compute the normal velocity, where the normal direction
@@ -1259,8 +1129,7 @@ nadvloopspectral:do ii=1,nadv
           volid = -(half*vold(i, j, k)/vol(i, j, k)**2)
           voli = half/vol(i, j, k)
           if (addgridvelocities) then
-            qsd = (sfacejd(i, j, k)+sfacejd(i, j-1, k))*voli + (sfacej(i&
-&             , j, k)+sfacej(i, j-1, k))*volid
+            qsd = (sfacej(i, j, k)+sfacej(i, j-1, k))*volid
             qs = (sfacej(i, j, k)+sfacej(i, j-1, k))*voli
           end if
 ! compute the normal velocity, where the normal direction
@@ -1454,8 +1323,7 @@ nadvloopspectral:do ii=1,nadv
           volid = -(half*vold(i, j, k)/vol(i, j, k)**2)
           voli = half/vol(i, j, k)
           if (addgridvelocities) then
-            qsd = (sfaceid(i, j, k)+sfaceid(i-1, j, k))*voli + (sfacei(i&
-&             , j, k)+sfacei(i-1, j, k))*volid
+            qsd = (sfacei(i, j, k)+sfacei(i-1, j, k))*volid
             qs = (sfacei(i, j, k)+sfacei(i-1, j, k))*voli
           end if
 ! compute the normal velocity, where the normal direction

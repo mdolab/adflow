@@ -83,10 +83,10 @@ module fortranPC
     use turbMod
     use utils, only : setPointers, EChk, getDirAngle, setPointers_d
     use haloExchange, only : whalo2
-    use adjointExtra, only : block_res
+    use adjointExtra, only : block_res_state
     use adjointUtils, only : zeroADSeeds
 #ifndef USE_COMPLEX
-    use adjointExtra_d, only : block_res_d
+    use adjointExtra, only : block_res_state_d
 #endif
     implicit none
 
@@ -306,13 +306,13 @@ module fortranPC
                 ! Run Block-based residual 
                 if (useAD) then
 #ifndef USE_COMPLEX
-                   call block_res_d(nn, sps, .False., frozenTurb)
+                   call block_res_state_d(nn, sps)
 #else
                    print *, 'Forward AD routines are not complexified'
                    stop
 #endif
                 else
-                   call block_res(nn, sps, .False., frozenTurb)
+                   call block_res(nn, sps)
                 end if
 
                 ! Set the computed residual in dw_deriv. If using FD, 
