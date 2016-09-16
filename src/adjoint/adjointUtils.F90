@@ -36,9 +36,9 @@ contains
     use turbMod
     use utils, only : EChk, setPointers, getDirAngle, setPointers_d
     use haloExchange, only : whalo2
-    use adjointExtra, only : block_res
+    use adjointExtra, only : block_res_state, block_res
 #ifndef USE_COMPLEX
-    use adjointExtra_d, only : block_res_d
+    use adjointExtra, only : block_res_state_d
 #endif
     implicit none
 #define PETSC_AVOID_MPIF_H
@@ -325,13 +325,14 @@ contains
                 ! Run Block-based residual 
                 if (useAD) then
 #ifndef USE_COMPLEX
-                   call block_res_d(nn, sps, .False., frozenTurb)
+                   call block_res_state_d(nn, sps)
 #else
                    print *, 'Forward AD routines are not complexified'
                    stop
 #endif
                 else
-                   call block_res(nn, sps, .False.,  frozenTurb)
+                   call block_res_state(nn, sps)
+                   !call block_res(nn, sps, .False., frozenTurb)
                 end if
 
                 ! Set the computed residual in dw_deriv. If using FD, 
@@ -1631,7 +1632,7 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use utils, only : EChk, setPointers, getDirAngle
     use residuals, only : initRes_block
-    use adjointExtra, only : block_res
+    use adjointExtra, only : block_res_state, block_res
 
     implicit none
 
@@ -1646,8 +1647,8 @@ contains
 
           call setPointers(nn, level, sps)
           shockSensor => flowDoms(nn,level,sps)%shockSensor
-          call block_res(nn, sps, .False., .False.)
-
+          call block_res_state(nn, sps)
+          !call block_res(nn, sps, .False., .False.)
           ! Set the values
           do l=1, nw
              do k=0, kb 
@@ -1663,7 +1664,7 @@ contains
           call initRes_block(1, nwf, nn, sps)
 
           ! Note: we have to divide by the volume for dwtmp2 since
-          ! normally, dw would have been mulitpiled by 1/Vol in block_res 
+          ! normally, dw would have been mulitpiled by 1/Vol in block_res_state
 
           do l=1, nw
              do k=0, kb 

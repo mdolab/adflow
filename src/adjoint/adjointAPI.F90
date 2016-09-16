@@ -1,38 +1,27 @@
 module adjointAPI
 
 contains
-
 #ifndef USE_COMPLEX
   subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useState, dwdot, funcsDot, &
        fDot, spatialSize, extraSize, stateSize, costSize, fSize, nTime)
 
     ! This is the main matrix-free forward mode computation
     use constants
-    use block, only : flowDomsd
-    use communication, only : sumb_comm_world, myid
-    use costfunctions
-    use blockPointers
-    use inputDiscretization 
-    use inputTimeSpectral 
-    use inputPhysics
-    use iteration         
-    use flowVarRefState     
-    use inputAdjoint 
     use adjointvars
-    use stencils
-    use diffSizes
-    use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
+    use blockPointers, only : nDom
+    use communication, only : sumb_comm_world, myid
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use inputAdjoint, only : frozenTurbulence
+    use inputPhysics, only :pointRefd, alphad, betad, equations, machCoefd, &
+         machd, machGridd, rgasdimd
+    use iteration, only : currentLevel, groundLevel
+    use flowVarRefState, only : pInfDimd, rhoInfDimd, TinfDimd
     use adjointPETSc, only : x_like
-    use surfaceFamilies, only: wallFamilies, totalWallFamilies
-    use utils, only : setPointers, EChk, getDirAngle, setPointers_d
-    use haloExchange, only : whalo2_d, exchangeCoor_d, exchangeCoor
-    use adjointextra_d, only : xhalo_block_d, block_res_d
+    use utils, only : setPointers, EChk, setPointers_d
     use adjointUtils, only : allocDerivativeValues, zeroADSeeds
+    use costfunctions, onlY : funcValuesd
+    use adjointextra, only : master_d
     implicit none
-
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
 
     ! Input Variables
     integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize, fSize, nTime
@@ -47,11 +36,11 @@ contains
     real(kind=realType), dimension(3, fSize, nTime), intent(out) :: fDot
 
     ! Working Variables
-    real(kind=realType), dimension(3, fSize) :: forces
-    integer(kind=intType) :: ierr,nn,mm,sps,i,j,k,l,ii,jj,idim,sps2
+    integer(kind=intType) :: ierr,nn,mm,sps,i,j,k,l,ii,jj,idim,sps2, ii1
     integer(kind=intType) ::  level, irow
     real(kind=realType), dimension(costSize) :: funcsLocalDot
     logical :: resetToRans
+
 
     ! Determine if we want to use frozenTurbulent Adjoint
     resetToRANS = .False. 
@@ -60,9 +49,6 @@ contains
        resetToRANS = .True.
     end if
 
-    call VecPlaceArray(x_like, xvdot, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-    
     ! Need to trick the residual evalution to use coupled (mean flow and
     ! turbulent) together.
     level = 1
@@ -81,193 +67,38 @@ contains
           call zeroADSeeds(nn,level, sps)
        end do
     end do
-
-    ! All arrays are zeroed in alloc_deriv_values, but we still need to
-    ! zero the extra variables here
-    alphad = zero
-    betad  = zero
-    machd  = zero
-    machGridd = zero
-    machcoefd = zero
-    pointRefd  = zero
-    lengthRefd = zero
-    pinfdimd = zero
-    tinfdimd = zero
-    rhoinfdimd = zero
+    
+    ! Set the extra seeds now do the extra ones. Note that we are assuming the
+    ! machNumber used for the coefficients follows the Mach number,
+    ! not the grid mach number. 
+    alphad = extraDot(iAlpha)
+    betad = extraDot(iBeta)
+    machd = extraDot(iMach)
+    machCoefd = extraDot(iMach)
+    machGridd = extraDot(iMachGrid)
+    PinfDimd = extraDot(iPressure)
+    rhoinfDimd = extraDot(iDensity)
+    tinfdimd = extraDot(iTemperature)
+    pointrefd(1) = extraDot(iPointRefX)
+    pointrefd(2) = extraDot(iPointRefY)
+    pointrefd(3) = extraDot(iPointRefZ)
     rgasdimd = zero
 
-    if (useSpatial) then 
-       ! Here we set the spatial and extra seeds if necessary.
-       ii = 0
-       domainLoop1: do nn=1,nDom
+    ! Run the super-dee-duper master forward rotuine
+    call master_d(wDot, xVDot, fDot, dwDot)
 
-          ! Just to get sizes
-          call setPointers_d(nn, level, 1)
-
-          spectalLoop1: do sps=1,nTimeIntervalsSpectral
-             do k=1, kl
-                do j=1,jl
-                   do i=1,il
-                      do l=1,3
-                         ii = ii + 1
-                         flowdomsd(nn,level,sps)%x(i, j, k, l) = xvdot(ii)
-                      end do
-                   end do
-                end do
-             end do
-
-             ! Do the xhalo stuff that has to be done before the main call to block_res
-             call xhalo_block_d()
-
-          end do spectalLoop1
-       end do domainLoop1
-
-       ! Now run the halo exchange for the nodes. Note that the
-       ! original exchangeCoor must be done as well becuase
-       ! xhalo_block_d *also* updates the x-coordinates and
-       ! exchangeCoor is necessary to return the halo nodes back to
-       ! their original positions.
-       call exchangecoor(level)
-       call exchangecoor_d(level)
-
-       ! And now do the extra ones. Note that we are assuming the
-       ! machNumber used for the coefficients follows the Mach number,
-       ! not the grid mach number. 
-       alphad = extraDot(iAlpha)
-       betad = extraDot(iBeta)
-       machd = extraDot(iMach)
-       machCoefd = extraDot(iMach)
-       machGridd = extraDot(iMachGrid)
-       PinfDimd = extraDot(iPressure)
-       rhoinfDimd = extraDot(iDensity)
-       tinfdimd = extraDot(iTemperature)
-       pointrefd(1) = extraDot(iPointRefX)
-       pointrefd(2) = extraDot(iPointRefY)
-       pointrefd(3) = extraDot(iPointRefZ)
-    end if
-
-    ! Now set any STATE seeds
-    if (useState) then 
-
-       ! Now we have to set all the seeds
-       ii = 0
-       domainLoop2: do nn=1,nDom
-
-          ! Just to get sizes
-          call setPointers_d(nn, level, 1)
-
-          spectalLoop2: do sps=1,nTimeIntervalsSpectral
-             do k=2, kl
-                do j=2,jl
-                   do i=2,il
-                      do l = 1, nw
-                         ii = ii + 1
-                         flowdomsd(nn,level,sps)%w(i, j, k, l) = wDot(ii)
-                      end do
-                   end do
-                end do
-             end do
-          end do spectalLoop2
-       end do domainLoop2
-
-       ! Now run the derivatie halo exchange:
-       call whalo2_d(level, 1, nw, .False., .False., .False.)
-    end if
-
-    ! Now set the xsurfd contribution from the full x perturbation.
-    ! scatter from the global seed (in x_like) to xSurfVecd...but only
-    ! if wallDistances were used
-    if (wallDistanceNeeded .and. useApproxWallDistance) then 
-       do sps=1, nTimeIntervalsSpectral
-          call VecScatterBegin(wallScatter(1, sps), x_like, xSurfVecd(sps), INSERT_VALUES, SCATTER_FORWARD, ierr)
-          call EChk(ierr,__FILE__,__LINE__)
-          
-          call VecScatterEnd(wallScatter(1, sps), x_like, xSurfVecd(sps),  INSERT_VALUES, SCATTER_FORWARD, ierr)
-          call EChk(ierr,__FILE__,__LINE__)
-       end do
-    end if
-
-    funcsLocalDot = zero
-
-    ! Now we are ready to call block_res_d with all the correct seeds
-    ii = 0
-    jj = 0
-    domainLoopAD: do nn=1,nDom
-
-       ! Set pointers to the first timeInstance...just to getSizes
-       call setPointers(nn, level, 1)
-       ! Set unknown sizes in diffSizes for AD routine
-       ISIZE1OFDrfbcdata = nBocos
-       ISIZE1OFDrfviscsubface = nViscBocos
-
-       spectalLoopAD: do sps=1,nTimeIntervalsSpectral
-          ! Set pointers and derivative pointers
-          call setPointers_d(nn, level, sps)
-
-          ! Get the pointers from the petsc vector for the surface
-          ! perturbation for wall distance. 
-          call VecGetArrayF90(xSurfVec(level, sps), xSurf, ierr)
-          call EChk(ierr,__FILE__,__LINE__)
-
-          ! And it's derivative
-          call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
-          call EChk(ierr,__FILE__,__LINE__)
-
-          call BLOCK_RES_D(nn, level, useSpatial, frozenTurbulence)
-
-          ! Now extract dw
-          do sps2=1,nTimeIntervalsSpectral
-             do k=2, kl
-                do j=2, jl
-                   do i=2, il
-                      do l=1, nw
-                         ii = ii + 1
-                         dwDot(ii) = flowdomsd(nn, level, sps2)%dw(i, j, k, l)
-                      end do
-                   end do
-                end do
-             end do
-          end do
-
-          ! We need to SUM the funcs into the local array
-          funcsLocalDot = funcsLocalDot + funcValuesd
-
-          ! These arrays need to be restored before we can move to the next spectral instance. 
-          call VecRestoreArrayF90(xSurfVec(level, sps), xSurf, ierr)
-          call EChk(ierr,__FILE__,__LINE__)
-
-          ! And it's derivative
-          call VecRestoreArrayF90(xSurfVecd(sps), xSurfd, ierr)
-          call EChk(ierr,__FILE__,__LINE__)
-
-       end do spectalLoopAD
-    end do domainLoopAD
-
-    ! This only works currently with 1 spectral instance
-    sps = 1
-    call getForces_d(forces, fDot(:, :, sps), fSize, sps)
-
-    ! We need to allreduce the function values to all processors
-    call mpi_allreduce(funcsLocalDot, funcsDot, costSize, sumb_real, mpi_sum, SUmb_comm_world, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-
+    ! Copy over the derivative of the function values
+    funcsDot = funcValuesd
+           
     ! Reset the correct equation parameters if we were useing the frozen
     ! Turbulent 
     if (resetToRANS) then
        equations = RANSEquations
     end if
-
-    call VecResetArray(x_like, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-
-    ! Just to be sure, we'll zero everything when we're done.
-    do nn=1,nDom
-       do sps=1,nTimeIntervalsSpectral
-          call setPointers(nn, level, sps)
-          call zeroADSeeds(nn,level, sps)
-       end do
-    end do
+      
   end subroutine computeMatrixFreeProductFwd
+
+
 
   subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useState, xvbar, &
        extrabar, wbar, spatialSize, extraSize, stateSize, costSize, fSize, nTime)
