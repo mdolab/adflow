@@ -684,7 +684,7 @@ class SUMB(AeroSolver):
                                      volumeMeshCallback  = volumeMeshCallback)
         else:
             raise Error("Mode {0} not supported".format(mode))
-            
+        
         # Save the states into the aeroProblem
         self.curAP.sumbData.stateInfo = self._getInfo()
 
@@ -736,7 +736,7 @@ class SUMB(AeroSolver):
         else:
             refCoor = None
         if volumeMeshCallback is not None:
-            refGrid = self.mesh.getSolverGrid()
+            refGrid = self.mesh.getSolverGrid().reshape(-1, 3)
         else:
             refGrid = None
         
@@ -767,13 +767,14 @@ class SUMB(AeroSolver):
 
             # Warp mesh if necessary
             if surfaceMeshCallback is not None:
-                newCoords = surfaceMeshCallback(refCoords, curTime, curTimeStep)
-                self.setSurfaceCoordinates(newCoords, self.designFamilyGroup)
+                newCoor = surfaceMeshCallback(refCoor, curTime, curTimeStep)
+                self.setSurfaceCoordinates(newCoor, self.designFamilyGroup)
                 self.updateGeometryInfo()
             # Rigidly move mesh if necessary
             elif volumeMeshCallback is not None:
-                newGrid = volumeMeshCallback(refGrid, curTime, curTimeStep)
+                newGrid = volumeMeshCallback(refGrid, curTime, curTimeStep).reshape(-1)
                 self.sumb.warping.setgrid(newGrid)
+                self._updateGeomInfo = True
                 self.updateGeometryInfo(warpMesh=False)
             # Otherwise do naive unsteady simulation
             else:
@@ -792,7 +793,7 @@ class SUMB(AeroSolver):
         self.sumb.monitor.timeunsteady     = self.sumb.monitor.timeunsteady     + \
             self.sumb.inputunsteady.deltat
 
-        if self.myid:
+        if self.myid == 0:
             self.sumb.utils.unsteadyheader()
         
         return self.sumb.monitor.timeunsteady, self.sumb.monitor.timestepunsteady
@@ -3489,6 +3490,7 @@ class SUMB(AeroSolver):
             'deltat':[float, .010],
             'useale':[bool, True],
             'usegridmotion':[bool, False],
+            'coupledsolution':[bool, False],
 
             # Time Spectral Paramters
             'timeintervals': [int, 1],
