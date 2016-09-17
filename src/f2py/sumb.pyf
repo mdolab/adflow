@@ -26,6 +26,9 @@ python module libsumb
            integer(kind=inttype) :: ntimetot
          end subroutine alloctimearrays
          
+         subroutine unsteadyheader 
+         end subroutine unsteadyheader
+
        end module utils
 
        module walldistance
@@ -345,15 +348,12 @@ python module libsumb
 
          subroutine solver 
          end subroutine solver
-
-         subroutine solverunsteadybdf
-         end subroutine solverunsteadybdf
          
          subroutine solverunsteadyinit
          end subroutine solverunsteadyinit
          
-         subroutine updategeometricdata
-         end subroutine updategeometricdata
+         subroutine updateunsteadygeometry
+         end subroutine updateunsteadygeometry
          
          subroutine solverunsteadystep
          end subroutine solverunsteadystep
