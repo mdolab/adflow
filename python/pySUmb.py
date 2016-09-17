@@ -746,25 +746,6 @@ class SUMB(AeroSolver):
             # Increment counter
             curTime, curTimeStep = self.advanceTimeStepCounter()
 
-            # # Initialize to false for unsteady mode without moving mesh
-            # # The value will be changed in the following if necessary
-            # self._updateGeomInfo = False
-            # # Warp mesh if necessary
-            # if surfaceMeshCallback is not None:
-            #     newCoords = surfaceMeshCallback(refCoords, curTime, curTimeStep)
-            #     self.setSurfaceCoordinates(newCoords, self.designFamilyGroup)
-            # # Rigidly move mesh if necessary
-            # if volumeMeshCallback is not None:
-            #     newGrid = volumeMeshCallback(refGrid, curTime, curTimeStep)
-            #     self.sumb.warping.setgrid(newGrid)
-            #     self._updateGeomInfo = True
-            # # Update mesh-related quantities
-            # if self._updateGeomInfo:
-            #     self.updateGeometryInfo()
-            # else:
-            #     self.sumb.preprocessingapi.shiftcoorandvolumes()
-            #     self.sumb.solvers.updategeometricdata()
-
             # Warp mesh if necessary
             if surfaceMeshCallback is not None:
                 newCoor = surfaceMeshCallback(refCoor, curTime, curTimeStep)
