@@ -729,47 +729,72 @@ class SUMB(AeroSolver):
         volumeMeshCallback : Python function handle
             Computes new volume coordinates for mesh moving
         """
-        
-        # Store initial surface coordinates
-        coords_ref = self.getSurfaceCoordinates(self.allWallsGroup)
-        # TODO: A function that retrieves the coordinates of initial mesh in SUmb
-        grid_ref = None
+
+        # Store initial data if necessary
+        if surfaceMeshCallback is not None:
+            refCoor = self.getSurfaceCoordinates(self.designFamilyGroup)
+        else:
+            refCoor = None
+        if volumeMeshCallback is not None:
+            refGrid = self.mesh.getSolverGrid()
+        else:
+            refGrid = None
         
         # Time advancing
         nTimeStepsFine = self.getOption('ntimestepsfine')
         for tdx in xrange(1, nTimeStepsFine+1):
             # Increment counter
-            curTime, curTimeStep = self.stepCounter()
+            curTime, curTimeStep = self.advanceTimeStepCounter()
 
-            # Initialize to false for unsteady mode without moving mesh
-            # The value will be changed in the following if necessary
-            self._updateGeomInfo = False
+            # # Initialize to false for unsteady mode without moving mesh
+            # # The value will be changed in the following if necessary
+            # self._updateGeomInfo = False
+            # # Warp mesh if necessary
+            # if surfaceMeshCallback is not None:
+            #     newCoords = surfaceMeshCallback(refCoords, curTime, curTimeStep)
+            #     self.setSurfaceCoordinates(newCoords, self.designFamilyGroup)
+            # # Rigidly move mesh if necessary
+            # if volumeMeshCallback is not None:
+            #     newGrid = volumeMeshCallback(refGrid, curTime, curTimeStep)
+            #     self.sumb.warping.setgrid(newGrid)
+            #     self._updateGeomInfo = True
+            # # Update mesh-related quantities
+            # if self._updateGeomInfo:
+            #     self.updateGeometryInfo()
+            # else:
+            #     self.sumb.preprocessingapi.shiftcoorandvolumes()
+            #     self.sumb.solvers.updategeometricdata()
+
             # Warp mesh if necessary
             if surfaceMeshCallback is not None:
-                coords_new = surfaceMeshCallback(coords_ref, curTime, curTimeStep)
-                self.setSurfaceCoordinates(coords_new, self.allWallsGroup)
-            # Rigidly move mesh if necessary
-            if volumeMeshCallback is not None:
-                grid_new = volumeMeshCallback(grid_ref, curTime, curTimeStep)
-                # TODO: A function that updates the mesh in SUmb
-            # Update mesh-related quantities
-            if self._updateGeomInfo:
+                newCoords = surfaceMeshCallback(refCoords, curTime, curTimeStep)
+                self.setSurfaceCoordinates(newCoords, self.designFamilyGroup)
                 self.updateGeometryInfo()
+            # Rigidly move mesh if necessary
+            elif volumeMeshCallback is not None:
+                newGrid = volumeMeshCallback(refGrid, curTime, curTimeStep)
+                self.sumb.warping.setgrid(newGrid)
+                self.updateGeometryInfo(warpMesh=False)
+            # Otherwise do naive unsteady simulation
             else:
                 self.sumb.preprocessingapi.shiftcoorandvolumes()
-                self.sumb.solvers.updategeometricdata()
+                self.sumb.solvers.updateunsteadygeometry()
             
             # Solve current step
             self.solveTimeStep()
             self.writeSolution()
 
-    def stepCounter(self):
+    def advanceTimeStepCounter(self):
         """
         Advance one unit of timestep and physical time.
         """
         self.sumb.monitor.timestepunsteady = self.sumb.monitor.timestepunsteady + 1
         self.sumb.monitor.timeunsteady     = self.sumb.monitor.timeunsteady     + \
             self.sumb.inputunsteady.deltat
+
+        if self.myid:
+            self.sumb.utils.unsteadyheader()
+        
         return self.sumb.monitor.timeunsteady, self.sumb.monitor.timestepunsteady
         
     def solveTimeStep(self):
@@ -779,28 +804,8 @@ class SUMB(AeroSolver):
         t1 = time.time()
         self.sumb.solvers.solverunsteadystep()
         t2 = time.time()
-        self.writeSolution()
         if self.getOption('printTiming') and self.comm.rank == 0:
             print('Timestep solution time: {0:10.3f} sec'.format(t2-t1))
-
-    def setDisplacement(self, disp, groupName=None):
-        """
-        Set new coordinates of the surface group, then
-        deform the mesh and update geometric data accordingly
-
-        Parameters
-        ----------
-        disp : Numpy array [n_node, 3]
-            New coordinates
-        
-        groupName : string
-            The name of surface group to update
-        """
-        if groupName is None:
-            groupName = self.allWallsGroup
-        
-        self.setSurfaceCoordinates(disp, groupName)
-        self.updateGeometryInfo()
 
     def evalFunctions(self, aeroProblem, funcs, evalFuncs=None, 
                       ignoreMissing=False):
@@ -2536,7 +2541,7 @@ class SUMB(AeroSolver):
         """
         self.sumb.utils.stabilityderivativedriver()
 
-    def updateGeometryInfo(self):
+    def updateGeometryInfo(self, warpMesh=True):
         """
         Update the SUmb internal geometry info.
         """
@@ -2547,18 +2552,19 @@ class SUMB(AeroSolver):
             if self.getOption('equationMode').lower() == 'unsteady':
                 self.sumb.preprocessingapi.shiftcoorandvolumes()
                 self.sumb.aleutils.shiftlevelale()
-            # Warp the mesh
-            timeA = time.time()
-            self.mesh.warpMesh()
-            newGrid = self.mesh.getSolverGrid()
-            self.sumb.killsignals.routinefailed = False
-            self.sumb.killsignals.fatalFail = False
-            self.updateTime = time.time()-timeA
-            if newGrid is not None:
-                self.sumb.warping.setgrid(newGrid)
+            # Warp the mesh if surface coordinates are modified
+            if warpMesh:
+                timeA = time.time()
+                self.mesh.warpMesh()
+                newGrid = self.mesh.getSolverGrid()
+                self.sumb.killsignals.routinefailed = False
+                self.sumb.killsignals.fatalFail = False
+                self.updateTime = time.time()-timeA
+                if newGrid is not None:
+                    self.sumb.warping.setgrid(newGrid)
             # Update geometric data, depending on the type of simulation
             if self.getOption('equationMode').lower() == 'unsteady':
-                self.sumb.solvers.updategeometricdata()
+                self.sumb.solvers.updateunsteadygeometry()
             else:
                 self.sumb.preprocessingapi.updatecoordinatesalllevels()
                 self.sumb.walldistance.updatewalldistancealllevels()
@@ -3483,7 +3489,6 @@ class SUMB(AeroSolver):
             'deltat':[float, .010],
             'useale':[bool, True],
             'usegridmotion':[bool, False],
-            'coupledsolution':[bool, False],
 
             # Time Spectral Paramters
             'timeintervals': [int, 1],
@@ -3605,7 +3610,7 @@ class SUMB(AeroSolver):
         return ('gridfile', 'equationtype', 'equationmode', 'flowtype',
                 'useapproxwalldistance', 'liftindex', 'mgcycle',
                 'mgstartlevel', 'timeintegrationscheme', 'timeaccuracy',
-                'useale', 'coupledsolution', 'timeintervals', 'blocksplitting',
+                'useale', 'timeintervals', 'blocksplitting',
                 'loadimbalance', 'loadbalanceiter', 'partitiononly',
                 'meshSurfaceFamily', 'designSurfaceFamily')
 
@@ -3750,7 +3755,6 @@ class SUMB(AeroSolver):
             'ntimestepsfine':['unsteady', 'ntimestepsfine'],
             'deltat':['unsteady', 'deltat'],
             'useale':['unsteady', 'useale'],
-            'coupledsolution':['unsteady', 'coupledsolution'],
 
             # Grid motion Params
             'usegridmotion':['motion', 'gridmotionspecified'],
@@ -3888,6 +3892,7 @@ class SUMB(AeroSolver):
                              'writesurfacesolution',
                              'writevolumesolution',
                              'writetecplotsurfacesolution',
+                             'coupledsolution',
                              'autosolveretry',
                              'autoadjointretry',
                              'partitiononly',

@@ -66,7 +66,7 @@ contains
        ! a special kind of steady mode.
        select case (equationMode)
        case (steady, timeSpectral)
-          call solverSteady
+          call solveState
        case (unsteady)
           select case (timeIntegrationScheme)
           case (explicitRK)
@@ -119,157 +119,6 @@ contains
 
   end subroutine solver
 
-
-
-
-
-
-
-
-
-  subroutine solverUnsteadyBDF
-    !
-    !       solverUnsteadyBDF solves the unsteady equations using the BDF  
-    !       schemes for the multigrid level groundLevel.                   
-    !
-    use bcdata, only : setbcdataFineGrid, setBCDataCoarseGrid, &
-         nonDimBoundData, setInletFreeStreamTurb
-    use blockPointers
-    use communication
-    use inputIteration
-    use inputMotion
-    use inputUnsteady
-    use inputTimeSpectral
-    use iteration
-    use killSignals
-    use partitioning, onlY : updateCoorFineMesh
-    use preprocessingAPI, only : shiftCoorAndVolumes, &
-         updateCoordinatesAllLevels, updateMetricsAllLevels, faceRotationMatrices
-    use monitor
-    use section
-    use solverUtils, only : unsteadyHeader, gridVelocitiesFineLevel, slipVelocitiesFineLevel, &
-         shiftsolution, gridVelocitiesCoarseLevels, slipVelocitiesCoarseLevels, &
-         normalVelocitiesAllLevels
-    use utils, only : setPointers, setCoefTimeIntegrator
-    use wallDistance, only : updateWallDistanceAllLevels
-    implicit none
-    !
-    !      Local variables.
-    !
-    integer(kind=intType) :: iter, nTimeSteps
-    integer(kind=intType) :: i,j,k,nn,kk
-    real(kind=realType), dimension(nSections) :: tNewSec, deltaTSec
-
-
-    ! Write the unsteady header. Only done by processor 0
-    ! to avoid a messy output.
-    
-    ! if(myID == 0) call unsteadyHeader
-
-    ! If the grid is changing a whole lot of geometric
-    ! info must be adapted.
-
-    testChanging: if(changing_Grid .or. gridMotionSpecified) then
-
-       ! Set the new time for all sections; also store their
-       ! time step. They are the same for all sections, but all
-       ! of them should be updated because of consistency.
-
-       do nn=1,nSections
-          tNewSec(nn)   = timeUnsteady + timeUnsteadyRestart
-          deltaTSec(nn) = deltaT
-       enddo
-
-       call updateCoorFineMesh(deltaTSec, 1_intType)
-
-       ! Adapt the geometric info on all grid levels needed for the
-       ! current ground level and multigrid cycle.
-       ! The wall distance only needs to be recomputed when the
-       ! grid is changing; not when a rigid body motion is
-       ! specified. Furthermore, the user can choose not to update
-       ! the wall distance, because he may know a priori that the
-       ! changes in geometry happen quite far away from the boundary
-       ! layer. This is accomplished via updateWallDistanceUnsteady.
-
-       call updateCoordinatesAllLevels
-       if(changing_Grid .and. updateWallDistanceUnsteady) &
-            call updateWallDistanceAllLevels
-
-
-       call updateMetricsAllLevels
-
-       ! Update the rotation matrices of the faces. Only needed
-       ! on the finest grid level.
-
-       call faceRotationMatrices(currentLevel, .false.)
-
-       ! Determine the velocities of the cell centers and faces
-       ! for the current ground level. Note that the spectral mode
-       ! is always 1 for unsteady mode.
-
-       call gridVelocitiesFineLevel(deforming_Grid, tNewSec, 1_intType)
-
-       ! Determine the new slip velocities on the viscous walls.
-
-       call slipVelocitiesFineLevel(deforming_Grid, tNewSec, 1_intType)
-
-
-       ! Determine the velocities of the cell centers and faces and
-       ! the slip velocities on the coarse grid levels . Note that the
-       ! spectral mode is always 1 for unsteady mode.
-
-       call gridVelocitiesCoarseLevels(1_intType)
-       call slipVelocitiesCoarseLevels(1_intType)
-
-       ! Compute the normal velocities of the boundaries, if
-       ! needed for the corresponding boundary condition.
-
-       call normalVelocitiesAllLevels(1_intType)
-
-       ! Determine the prescribed boundary condition data for the
-       ! boundary subfaces. First for the (currently) finest grid
-       ! and then iteratively for the coarser grid levels.
-
-       call setBCDataFineGrid(.false.)
-       call setBCDataCoarseGrid
-
-       ! Non-dimensionalize the boundary data.
-
-       call nonDimBoundData
-
-       ! Set the turbulent quantities to the free stream values for
-       ! the inflow faces for which this data has not been
-       ! prescribed. As the free stream values are nonDimensional,
-       ! this call must be after the nonDimensionalization.
-
-       call setInletFreestreamTurb
-
-    endif testChanging
-
-  end subroutine solverUnsteadyBDF
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   ! ================================================
   ! Utilities for unsteady simulation
   ! ================================================
@@ -308,11 +157,6 @@ contains
     timeUnsteady = zero
     timeStepUnsteady = 0
 
-    ! Flags for writing
-    writeVolume  = .false.
-    writeSurface = .false.
-    writeGrid    = .false.
-
     ! Fill up old, xold and volold
     call fillCoor
 
@@ -320,7 +164,7 @@ contains
     call setLevelALE(-1_intType)
   end subroutine solverUnsteadyInit
 
-  subroutine updateGeometricData
+  subroutine updateUnsteadyGeometry
     !
     !       Update quantities related to geometry due to modification of mesh
     !       That could happen when
@@ -329,19 +173,22 @@ contains
     !       - Unsteady mode with warping and/or rigidly moving mesh
     !       - Unsteady mode coupled with an external solver
     !
-    use ALEUtils
+    use ALEUtils, only : storeCoor, interpCoor, recoverCoor, setLevelALE, &
+         slipVelocitiesFineLevel_ALE
     use bcdata, only : setbcdataFineGrid, setBCDataCoarseGrid, &
          nonDimBoundData, setInletFreeStreamTurb
-    use communication
-    use inputMotion
-    use inputUnsteady
-    use iteration
-    use monitor
+    use constants
+    use inputMotion, only : gridMotionSpecified
+    use inputUnsteady, only : deltaT, updateWallDistanceUnsteady, useALE
+    use iteration, only : changing_grid, deforming_grid, currentLevel, groundLevel, nALEMeshes
+    use monitor, only : timeUnsteady, timeUnsteadyRestart
     use partitioning, only : updateCoorFineMesh
     use preprocessingAPI, only : shiftCoorAndVolumes, metric, &
          updateCoordinatesAllLevels, updateMetricsAllLevels, faceRotationMatrices
-    use section
-    use solverUtils
+    use section, only : nSections
+    use solverUtils, only : gridVelocitiesFineLevel, gridVelocitiesCoarseLevels, &
+         gridvelocitiesfinelevelpart1, gridvelocitiesfinelevelpart2, &
+         normalVelocitiesAllLevels, slipVelocitiesFineLevel, slipVelocitiesCoarseLevels
     use wallDistance, only : updateWallDistanceAllLevels
     implicit none
     !
@@ -350,11 +197,6 @@ contains
     integer(kind=intType) :: nn
     real(kind=realType), dimension(nSections) :: tNewSec, deltaTSec
     integer(kind=intType) :: lale
-
-    ! Write the unsteady header. Only done by processor 0
-    ! to avoid a messy output.
-
-    if(myID == 0) call unsteadyHeader
 
     testChanging: if(changing_Grid .or. gridMotionSpecified) then
        
@@ -483,7 +325,7 @@ contains
 
     endif testChanging
 
-  end subroutine updateGeometricData
+  end subroutine updateUnsteadyGeometry
 
   subroutine solverUnsteadyStep
     !
@@ -520,13 +362,15 @@ contains
     !       checkWriteUnsteadyInLoop checks if a solution must be          
     !       written inside the time loop and if so write it.               
     !
-    use communication
-    use inputIteration
-    use inputMotion
-    use iteration
-    use killSignals
-    use monitor
-    use inputIO
+    use communication, only : SUmb_comm_world
+    use constants
+    use inputIO, only : liftDistributionFile, sliceSolFile
+    use inputIteration, only : nSaveSurface, nSaveVolume
+    use inputMotion, only : gridMotionSpecified
+    use iteration, only : changing_grid, groundLevel, nOldLevels, oldSolWritten
+    use killSignals, only : localSignal, globalSignal, signalWrite, signalWriteQuit
+    use monitor, only : nTimeStepsRestart, timeStepUnsteady, timeUnsteadyRestart, &
+         writeVolume, writeSurface, writeGrid
     use tecplotIO, only : writeLiftDistributionFile, writeSlicesFile
     implicit none
     !
@@ -602,9 +446,11 @@ contains
     !       checkWriteUnsteadyEndLoop checks if a solution must be         
     !       written at the end of the time loop and if so write it.        
     !
-    use inputMotion
-    use iteration
-    use monitor
+    use constants
+    use inputMotion, only : gridMotionSpecified
+    use iteration, only : changing_grid, groundLevel, nOldLevels, &
+         oldSolWritten, standAloneMode
+    use monitor, only : writeVolume, writeSurface, writeGrid
     implicit none
     !
     !      Local variables.
@@ -644,20 +490,6 @@ contains
     endif
 
   end subroutine checkWriteUnsteadyEndLoop
-
-  ! ================================================
-  ! The steady solver
-  ! ================================================
-
-  subroutine solverSteady
-    !
-    !       solverSteady solves the steady equations for the multigrid     
-    !       level groundLevel, which can be found in the module            
-    !       iteration.                                                     
-
-    call solveState
-
-  end subroutine solverSteady
 
   ! ================================================
   ! Utilities for explicit RK solver
