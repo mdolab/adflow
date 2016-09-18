@@ -36,9 +36,10 @@ contains
     use turbMod
     use utils, only : EChk, setPointers, getDirAngle, setPointers_d
     use haloExchange, only : whalo2
-    use adjointExtra, only : block_res_state, block_res
+    use adjointExtra, only : block_res
+    use masterRoutines, only : block_res_state
 #ifndef USE_COMPLEX
-    use adjointExtra, only : block_res_state_d
+    use masterRoutines, only : block_res_state_d
 #endif
     implicit none
 #define PETSC_AVOID_MPIF_H
@@ -1632,7 +1633,8 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use utils, only : EChk, setPointers, getDirAngle
     use residuals, only : initRes_block
-    use adjointExtra, only : block_res_state, block_res
+    use masterRoutines, only : block_res_state
+    use adjointExtra, only : block_res
 
     implicit none
 

@@ -20,7 +20,7 @@ contains
     use utils, only : setPointers, EChk, setPointers_d
     use adjointUtils, only : allocDerivativeValues, zeroADSeeds
     use costfunctions, onlY : funcValuesd
-    use adjointextra, only : master_d
+    use masterRoutines, only : master_d
     implicit none
 
     ! Input Variables

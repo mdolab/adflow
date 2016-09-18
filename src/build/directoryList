@@ -1,5 +1,4 @@
 dirs:=	adjoint\
-	adjoint/residualInput\
 	adjoint/outputForward\
 	adjoint/outputReverse\
 	adjoint/outputReverseFast\

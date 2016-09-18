@@ -4,12 +4,11 @@ fortranFiles=	ADT/adtUtils.F90\
 		ADT/adtSearch.F90\
 		ADT/adtAPI.F90\
 		\
-		\
-		adjoint/residualInput/adjointExtra.F90\
-		\
 		adjoint/adjointUtils.F90\
 		adjoint/adjointAPI.F90\
 		adjoint/fortranPC.F90\
+		adjoint/masterRoutines.F90\
+		adjoint/adjointExtra.F90\
 		\
 		bcdata/BCData.F90\
 		\
