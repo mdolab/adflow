@@ -83,10 +83,10 @@ module fortranPC
     use turbMod
     use utils, only : setPointers, EChk, getDirAngle, setPointers_d
     use haloExchange, only : whalo2
-    use adjointExtra, only : block_res_state
+    use masterRoutines, only : block_res_state
     use adjointUtils, only : zeroADSeeds
 #ifndef USE_COMPLEX
-    use adjointExtra, only : block_res_state_d
+    use masterRoutines, only : block_res_state_d
 #endif
     implicit none
 

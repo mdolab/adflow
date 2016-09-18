@@ -27,7 +27,7 @@ SRC = ..
 # Integer, double and real precision (bytes)
 TAPENADE_PRECISION = -i4 -dr8 -r8
 
-ALL_RES_FILES =	$(SRC)/adjoint/residualInput/adjointExtra.F90\
+ALL_RES_FILES =	$(SRC)/adjoint/adjointExtra.F90\
 		$(SRC)/modules/surfaceFamilies.F90\
 		$(SRC)/modules/monitor.f90\
 		$(SRC)/modules/diffSizes.f90\
