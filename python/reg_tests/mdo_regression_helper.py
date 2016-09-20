@@ -36,6 +36,11 @@ def reg_par_write(values, rel_tol=1e-12, abs_tol=1e-12):
             print ('Value(s) on processor: %d'%i)
             reg_write(values[i], rel_tol, abs_tol)
 
+def reg_root_write(values, rel_tol=1e-12, abs_tol=1e-12):
+    """Write values but only on the root proc"""
+    if MPI.COMM_WORLD.rank == 0:
+        reg_write(values, rel_tol, abs_tol)
+
 def reg_par_write_sum(values, rel_tol=1e-12, abs_tol=1e-12):
     """Write the sum of sum of the values from all processors."""
     reducedSum = MPI.COMM_WORLD.reduce(numpy.sum(values))
@@ -48,7 +53,6 @@ def reg_par_write_norm(values, rel_tol=1e-12, abs_tol=1e-12):
     if MPI.COMM_WORLD.rank == 0:
         reg_write(numpy.sqrt(reducedSum), rel_tol, abs_tol)
 
-
 def reg_write_dict(d, rel_tol=1e-12, abs_tol=1e-12):
     """Write all values in a dictionary in sorted key order"""
     for key in sorted(d.keys()):
@@ -59,6 +63,11 @@ def reg_write_dict(d, rel_tol=1e-12, abs_tol=1e-12):
             reg_write(int(d[key]), rel_tol, abs_tol)
         else:
             reg_write(d[key], rel_tol, abs_tol)
+
+def reg_root_write_dict(d, rel_tol=1e-12, abs_tol=1e-12):
+    """Only write from the root proc"""
+    if MPI.COMM_WORLD.rank == 0:
+        reg_write_dict(d, rel_tol, abs_tol)
 
 def _reg_str_comp(str1, str2):
     '''Compare the float values in str1 and str2 and determine if they

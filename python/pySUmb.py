@@ -3036,6 +3036,47 @@ class SUMB(AeroSolver):
 
         return spatialPerturb
 
+    def getUniqueSpatialPerturbationNorm(self, dXv):
+        """This is is a debugging routine only. It is used only in regression
+        tests when it is necessary to compute the norm of a spatial
+        perturbuation on meshes that are split. This will unique-ify
+        the nodes and accumulate onto the unique nodes thus giving the
+        same norm independent of the block splits. Again, this routine
+        is not memory scalable and should only be used for debugging
+        purposes.
+
+        Parameters
+        ----------
+        dXv : numpy vector
+            Spatial perturbation of size getSpatialSize()
+        """
+
+        # Gather all nodes to the root proc:
+        pts = self.sumb.warping.getgrid(self.getSpatialSize())
+        allPts = numpy.hstack(self.comm.allgather(pts))
+        dXv    = numpy.hstack(self.comm.allgather(dXv))
+        norm = None
+        if self.myid == 0:
+            allPts = allPts.reshape((len(allPts)/3, 3))
+            dXv = dXv.reshape((len(dXv)/3,3))
+            # Run the pointReduce on all nodes
+            uniquePts, link, nUnique = self.sumb.utils.pointreduce(allPts.T, 1e-12)
+            uniquePtsBar = numpy.zeros((nUnique,3))
+            link = link -1 # Convert to zero-based for python:
+            
+            for i in range(len(link)):
+                uniquePtsBar[link[i]] += dXv[i]
+
+            # You might be tempted to vectorize the loop above as:
+            # uniquePtsBar[link] += dXv
+            # But you would be wrong. It does not work when link 
+            # references multiple indices more than once. 
+
+            # Now just take the norm of uniquePtsBar. The flatten
+            # isn't strictly necessary. 
+            norm = numpy.linalg.norm(uniquePtsBar.flatten())
+
+        return self.comm.bcast(norm)
 
     def _getInfo(self):
 
