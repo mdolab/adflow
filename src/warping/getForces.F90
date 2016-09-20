@@ -1311,17 +1311,16 @@ subroutine setTNSWall(tnsw, npts, sps)
   implicit none
 
   ! Input Variables
-  integer(kind=intType), intent(in) :: npts
+  integer(kind=intType), intent(in) :: npts, sps
   real(kind=realType), intent(in) :: tnsw(npts)
 
   ! Local Variables
-  integer(kind=intType) :: mm, nn, i, j, ii, sps
+  integer(kind=intType) :: mm, nn, i, j, ii
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
 
   ii = 0 
   domains: do nn=1,nDom
      call setPointers(nn, 1_intType, sps)
-
      ! Loop over the number of viscous boundary subfaces of this block.
      bocos: do mm=1,nBocos
         famInclude: if (bsearchIntegers(BCdata(mm)%famID, &
@@ -1329,7 +1328,7 @@ subroutine setTNSWall(tnsw, npts, sps)
            jBeg = BCdata(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
            iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd
 
-           ! Only set if it is an *actual* isothermalw all
+           ! Only set if it is an *actual* isothermal wall
            isoWall: if (BCType(mm) == NSWallIsoThermal) then 
               do j=jBeg,jEnd
                  do i=iBeg, iEnd
