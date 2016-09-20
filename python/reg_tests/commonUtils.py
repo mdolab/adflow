@@ -234,9 +234,8 @@ def solutionTest(CFDSolver, ap):
     
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs, defaultFuncList)
-    if MPI.COMM_WORLD.rank == 0:
-        print 'Eval Functions:'
-        reg_write_dict(funcs, 1e-10, 1e-10)
+    parPrint('Eval Functions:')
+    reg_root_write_dict(funcs, 1e-10, 1e-10)
 
     # Get and check the states
     parPrint('Norm of state vector')
@@ -259,9 +258,8 @@ def adjointTest(CFDSolver, ap):
     
     funcsSens = {}
     CFDSolver.evalFunctionsSens(ap, funcsSens)
-    if MPI.COMM_WORLD.rank == 0:
-        print 'Eval Functions Sens:'
-        reg_write_dict(funcsSens, 1e-10, 1e-10)
+    parPrint('Eval Functions Sens:')
+    reg_root_write_dict(funcsSens, 1e-10, 1e-10)
 
 def standardTest(CFDSolver, ap, solve):
     # Run a standard set of tests which can be run an any steady grid
@@ -297,9 +295,8 @@ def standardTest(CFDSolver, ap, solve):
     
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs, defaultFuncList)
-    if MPI.COMM_WORLD.rank == 0:
-        print 'Eval Functions:'
-        reg_write_dict(funcs, 1e-10, 1e-10)
+    parPrint('Eval Functions:')
+    reg_root_write_dict(funcs, 1e-10, 1e-10)
 
     # Check the tractions/forces
     forces = CFDSolver.getForces()
@@ -368,8 +365,7 @@ def standardTest(CFDSolver, ap, solve):
     reg_par_write_norm(resDot, 1e-10, 1e-10)
 
     parPrint('dFuncs/dw * wDot')
-    if MPI.COMM_WORLD.rank == 0:
-        reg_write_dict(funcsDot, 1e-10, 1e-10)
+    reg_root_write_dict(funcsDot, 1e-10, 1e-10)
 
     parPrint('||dF/dw * wDot||')
     reg_par_write_norm(fDot, 1e-10, 1e-10)
@@ -385,8 +381,7 @@ def standardTest(CFDSolver, ap, solve):
 
     # These can be finiky sometimes so a bigger tolerance.
     parPrint('dFuncs/dXv * xVDot')
-    if MPI.COMM_WORLD.rank == 0:
-        reg_write_dict(funcsDot, 1e-9, 1e-9)
+    reg_root_write_dict(funcsDot, 1e-9, 1e-9)
 
     parPrint('||dF/dXv * xVDot||')
     reg_par_write_norm(fDot, 1e-10, 1e-10)
@@ -403,8 +398,7 @@ def standardTest(CFDSolver, ap, solve):
         reg_par_write_norm(resDot, 1e-10, 1e-10)
 
         parPrint('dFuncs/d%s'%key)
-        if MPI.COMM_WORLD.rank == 0:
-            reg_write_dict(funcsDot, 1e-10, 1e-10)
+        reg_root_write_dict(funcsDot, 1e-10, 1e-10)
 
         parPrint('||dF/d%s||'%key)
         reg_par_write_norm(fDot, 1e-10, 1e-10)
@@ -423,11 +417,11 @@ def standardTest(CFDSolver, ap, solve):
     reg_par_write_norm(wBar, 1e-10, 1e-10)
 
     parPrint('||dwBar^T * dR/dXv||')
-    reg_par_write_norm(xVBar, 1e-10, 1e-10)
+    norm = CFDSolver.getUniqueSpatialPerturbationNorm(xVBar)
+    reg_root_write(norm, 1e-10, 1e-10)
 
     parPrint('||dwBar^T * dR/xDv||')
-    if MPI.COMM_WORLD.rank == 0:
-        reg_write_dict(xDvBar, 1e-10, 1e-10)
+    reg_root_write_dict(xDvBar, 1e-10, 1e-10)
         
     parPrint('-> F Bar Seed')
     fBar = CFDSolver.getSurfacePerturbation(314)
@@ -439,11 +433,11 @@ def standardTest(CFDSolver, ap, solve):
     reg_par_write_norm(wBar, 1e-10, 1e-10)
 
     parPrint('||FBar^T * dF/dXv||')
-    reg_par_write_norm(xVBar, 1e-10, 1e-10)
+    norm = CFDSolver.getUniqueSpatialPerturbationNorm(xVBar)
+    reg_root_write(norm, 1e-10, 1e-10)
 
     parPrint('||FBar^T * dF/xDv||')
-    if MPI.COMM_WORLD.rank == 0:
-        reg_write_dict(xDvBar, 1e-10, 1e-10)
+    reg_root_write_dict(xDvBar, 1e-10, 1e-10)
 
     parPrint(' -> Objective Seeds')
 
@@ -458,11 +452,11 @@ def standardTest(CFDSolver, ap, solve):
         reg_par_write_norm(wBar, 1e-10, 1e-10)
 
         parPrint('||d%s/dXv||'%key)
-        reg_par_write_norm(xVBar, 1e-10, 1e-10)
+        norm = CFDSolver.getUniqueSpatialPerturbationNorm(xVBar)
+        reg_root_write(norm, 1e-10, 1e-10)
 
         parPrint('||d%s/dXdv||'%key)
-        if MPI.COMM_WORLD.rank == 0:
-            reg_write_dict(xDvBar, 1e-10, 1e-10)
+        reg_root_write_dict(xDvBar, 1e-10, 1e-10)
 
     parPrint('# ---------------------------------------------------#')
     parPrint('#                 Dot product Tests                  #')
