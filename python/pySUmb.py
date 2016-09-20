@@ -2115,13 +2115,15 @@ class SUMB(AeroSolver):
         npts, ncell = self._getSurfaceSize(self.allWallsGroup)
 
         fluxes = numpy.zeros(npts, self.dtype)
-        self.sumb.getheatfluxes(fluxes, TS+1)
+        self.sumb.getheatflux(fluxes, TS+1)
+        if groupName is None:
+            groupName = self.allWallsGroup
 
         # Map vector expects and Nx3 array. So we will do just that.
-        tmp = numpy.zeros((nPts, 3))
+        tmp = numpy.zeros((npts, 3))
         tmp[:, 0] = fluxes
         tmp = self.mapVector(tmp, self.allWallsGroup, groupName)
-        fuxes = tmp[:, 0]
+        fluxes = tmp[:, 0]
         return fluxes
 
     def setWallTemperature(self, temperature, groupName=None, TS=0):

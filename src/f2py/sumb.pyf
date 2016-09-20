@@ -503,13 +503,13 @@ python module libsumb
          integer(kind=inttype) intent(in) :: sps_in
        end subroutine getforces
 
-       subroutine getheatflux(hflux,npts,sps) ! in :test:getForces.F90
+       subroutine getheatflux(hflux,npts,sps_in) ! in :test:getForces.F90
          real(kind=realtype) dimension(npts),intent(inout) :: hflux
          integer(kind=inttype), optional,intent(in),depend(hflux) :: npts=len(hflux)
-         integer(kind=inttype) intent(in) :: sps
+         integer(kind=inttype) intent(in) :: sps_in
        end subroutine getheatflux
 
-       subroutine settnswall(tnsw,npts,sps) ! in :test:getForces.F90
+       subroutine settnswall(tnsw,npts,sps_in) ! in :test:getForces.F90
          real(kind=realtype) dimension(npts),intent(in) :: tnsw
          integer(kind=inttype) optional,intent(in),check(len(tnsw)>=npts),depend(tnsw) :: npts=len(tnsw)
          integer(kind=inttype) intent(in) :: sps_in
