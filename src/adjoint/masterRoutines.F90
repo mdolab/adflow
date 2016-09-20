@@ -154,8 +154,6 @@ contains
           ! Now compute the forces and moments for this block. 
           call integrateSurfaces(localval(:, sps))
 
-          ! Also comptue mass flows
-          !call massFlux(localVal)
        end do
 
        ! Now we can retrieve the forces/tractions for this spectral instance
@@ -235,7 +233,7 @@ contains
 
     call VecPlaceArray(x_like, xdot, ierr)
     call EChk(ierr, __FILE__, __LINE__)
-    
+
     ! Set the provided w and x seeds:
     ii = 0
     jj = 0
@@ -264,7 +262,7 @@ contains
           end do
        end do spectalLoop1
     end do domainLoop1
-    
+
     localVal = zero
     localVald = zero
 
@@ -296,7 +294,7 @@ contains
 
     call adjustInflowAngle_d
     call referenceState_d
-    
+
     do sps=1,nTimeIntervalsSpectral
        do nn=1,nDom
 
@@ -308,7 +306,7 @@ contains
           ! perturbation for wall distance. 
           call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
           call EChk(ierr,__FILE__,__LINE__)
-          
+
           ! And it's derivative
           call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
           call EChk(ierr,__FILE__,__LINE__)
@@ -336,7 +334,7 @@ contains
           ! These arrays need to be restored before we can move to the next spectral instance. 
           call VecRestoreArrayF90(xSurfVec(1, sps), xSurf, ierr)
           call EChk(ierr,__FILE__,__LINE__)
-          
+
           ! And it's derivative
           call VecRestoreArrayF90(xSurfVecd(sps), xSurfd, ierr)
           call EChk(ierr,__FILE__,__LINE__)
@@ -402,24 +400,24 @@ contains
                 call viscousFluxApprox_d
              end if
           end if
-          
+
           ! if (lowSpeedPreconditioner) then 
           !    call applyLowSpeedPreconditioner_d
           ! end if
           call sumDwAndFw_d
           call resscale_d
-                          
+
           ! Now compute the forces and moments for this block. 
           do mm=1, nBocos
              ! Determine if this boundary condition is to be incldued in the
              ! currently active group
              famInclude: if (bsearchIntegers(BCdata(mm)%famID, &
                   famGroups, size(famGroups)) > 0) then
-                
+
                 ! Set a bunch of pointers depending on the face id to make
                 ! a generic treatment possible. 
                 call setBCPointers_d(mm, .True.)
-                
+
                 isWall: if( isWallType(BCType(mm))) then 
                    call forcesAndMomentsFace_d(localVal, localVald, mm)
                 end if isWall
@@ -465,8 +463,365 @@ contains
     deallocate(forces)
   end subroutine master_d
 
-  subroutine block_res_state(nn, sps)
+  subroutine master_b(wbar, xbar, extraBar, forcesBar, dwBar, nState)
+
+    ! This is the main reverse mode differentiaion of master. It
+    ! compute the reverse mode sensitivity of *all* outputs with
+    ! respect to *all* inputs. Anything that needs to be
+    ! differentiated for the adjoint method should be included in this
+    ! function. This routine is written by had, assembling the various
+    ! individually differentiated tapenade routines. 
+
+    use constants
+    use costFunctions
+    use adjointVars, only : iAlpha, iBeta, iMach, iMachGrid, iTemperature, iDensity, &
+         iPointrefX, iPointRefY, iPointRefZ, iPressure
+    use communication, only : sumb_comm_world, myid
+    use iteration, only : currentLevel
+    use inputAdjoint,  only : viscPC
+    use fluxes, only : viscousFlux
+    use flowVarRefState, only : nw, nwf, viscous,pInfDimd, rhoInfDimd, TinfDimd
+    use blockPointers, only : nDom, il, jl, kl, wd, xd, dw, dwd, nBocos, BCType, nViscBocos, BCData
+    use inputPhysics, only :pointRefd, alphad, betad, equations, machCoefd, &
+         machd, machGridd, rgasdimd, equationMode, turbModel, wallDistanceNeeded
+    use inputDiscretization, only : lowSpeedPreconditioner, lumpedDiss, spaceDiscr, useAPproxWallDistance
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use inputAdjoint, only : frozenTurbulence
+    use utils, only : isWallType, setPointers_d, EChk, setBCPointers_d
+    use adjointPETSc, only : x_like
+    use haloExchange, only : whalo2_b, exchangeCoor_b, exchangeCoor, whalo2
+    use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
+    use surfaceIntegrations, only : integrateSurfaces
+    use surfaceFamilies, only : famGroups
+    use sorting, only : bsearchIntegers
+    use adjointExtra, only : getCostFunctions
+    use flowUtils, only : fixAllNodalGradientsFromAD
+    use adjointextra_b, only : getcostfunctions_B, resscale_B, sumdwandfw_b
+    use adjointExtra_b, only : xhalo_block_b, volume_block_b, metric_block_b, boundarynormals_b
+    use flowutils_b, only : computePressureSimple_b, computeLamViscosity_b, &
+         computeSpeedOfSoundSquared_b, allNodalGradients_b, adjustInflowAngle_b
+    use solverutils_b, only : timeStep_Block_b
+    use turbbcroutines_b, only : applyAllTurbBCthisblock_b,  bcTurbTreatment_b
+    use initializeflow_b, only : referenceState_b
+    use surfaceIntegrations_b, only : forcesAndMomentsFace_b
+    use wallDistance_b, only : updateWallDistancesQuickly_b
+    use sa_b, only : saSource_b, saViscous_b, saResScale_b, qq
+    use turbutils_b, only : turbAdvection_b, computeEddyViscosity_b
+    use fluxes_b, only :inviscidUpwindFlux_b, inviscidDissFluxScalar_b, &
+         inviscidDissFluxMatrix_b, viscousFlux_b, inviscidCentralFlux_b
+    use BCExtra_b, only : applyAllBC_Block_b
+
+    implicit none
+#define PETSC_AVOID_MPIF_H
+#include "petsc/finclude/petsc.h"
+#include "petsc/finclude/petscvec.h90"
+
+    ! Input variables:
+    real(kind=realType), intent(in), dimension(:) :: dwBar
+    real(kind=realType), intent(in), dimension(:, :, :) :: forcesBar
+    integer(kind=intType), intent(in) :: nState
+
+    ! Input Arguments:
+    real(kind=realType), intent(out), dimension(:) :: wBar, xBar, extraBar
+
+    ! Working Variables
+    real(kind=realType), dimension(:, :, :), allocatable :: forces
+    integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj,  level
+    real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVal, globalVal
+    real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVald, globalVald, tmp
+    real(kind=realType), dimension(:), allocatable :: extraLocalBar
+    logical ::resetToRans
+
+    real(kind=realType) ::machDeriv
+
+    ! extraLocalBar accumulates the seeds onto the extra variables
+    allocate(extraLocalBar(size(extrabar)))
+    extraLocalBar = zero
+
+    ! Place the output spatial seed into the temporary petsc x-like
+    ! vector.
+    xBar = zero
+    call VecPlaceArray(x_like, xBar, ierr) 
+    call EChk(ierr, __FILE__, __LINE__)
+
+    ! Set the residual seeds. 
+    ii = 0
+    do nn=1,nDom
+       do sps=1,nTimeIntervalsSpectral
+
+          ! Set pointers and derivative pointers
+          call setPointers_d(nn, 1, sps)
+
+          ! Set the dw seeds
+          do k=2, kl
+             do j=2, jl
+                do i=2, il
+                   do l=1, nState
+                      ii = ii + 1
+                      dwd(i, j, k, l) = dwbar(ii)
+                   end do
+                end do
+             end do
+          end do
+       end do
+    end do
+
+    ! Call the final integration routine that will comptue all of our
+    ! functions of interest. We need to recompute globalVal for the
+    ! linearization, so just call the required part of the forward-mode
+    ! code.
+    localVal = zero
+    do nn=1, nDom
+       do sps=1, nTimeIntervalsSpectral
+          call setPointers_d(nn, 1, sps)
+          call integrateSurfaces(localval(:, sps))
+       end do
+    end do
+    call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, sumb_real, &
+         MPI_SUM, sumb_comm_world, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+    call getCostFunctions(globalVal)
+
+    ! ============================================
+    !  reverse the order of calls from master
+    ! ============================================
+
+    ! Now start doing the reverse chain. We *must* only need to run on
+    ! this on the root processor. The reason is that the explict
+    ! sensitivities like liftDirection, Pref, etc, must be only
+    ! accounted for once, and not nProc times.
+
+    if (myid == 0) then 
+       call getCostFunctions_b(globalVal, globalVald)
+       localVald = globalVald
+    end if
+
+    ! Now we need to bast out the localValues to all procs. 
+    call mpi_bcast(localVald, nLocalValues*nTimeIntervalsSpectral, &
+         sumb_real, 0, sumb_comm_world, ierr)
+    call EChk(ierr, __FILE__, __LINE__) 
+    spsLoop1: do sps=1, nTimeIntervalsSpectral
+
+       ! First set the force seeds using the custom getForces_b() for
+       ! each time instance. This set the bcDatad%Fp, bcDatad%Fv and
+       ! bcData%area seeds.
+
+       fSize = size(forcesBar, 2)
+       allocate(forces(3, fSize, nTimeIntervalsSpectral))
+       call getForces_b(forces(:, :, sps), forcesBar(:, :, sps), fSize, sps)
+       deallocate(forces)
+
+       domainLoop1: do nn=1, nDom
+          call setPointers_d(nn, 1, sps)
+
+          ! Call the individual integration routines. 
+          do mm=1, nBocos
+             ! Determine if this boundary condition is to be incldued in the
+             ! currently active group
+             famInclude: if (bsearchIntegers(BCdata(mm)%famID, &
+                  famGroups, size(famGroups)) > 0) then
+
+                ! Set a bunch of pointers depending on the face id to make
+                ! a generic treatment possible. 
+                call setBCPointers_d(mm, .True.)
+                isWall: if( isWallType(BCType(mm))) then 
+                   call forcesAndMomentsFace_b(localVal, localVald, mm)
+                end if isWall
+             end if famInclude
+          end do
+
+          ! Now we start running back through the main residual code:
+          call resScale_b
+          call sumDwAndFw_b
+
+          ! if (lowSpeedPreconditioner) then 
+          !    call applyLowSpeedPreconditioner_b
+          ! end if
+
+          ! Note that master_b does not include the approximation codes
+          ! as those are never needed in reverse. 
+          if (viscous) then 
+             call viscousFlux_b
+             call allNodalGradients_b
+             call computeSpeedOfSoundSquared_b
+          end if
+
+          ! So the all nodal gradients doesnt' perform the final
+          ! scaling by the volume since it isn't necessary for the
+          ! derivative. We have a special routine to fix that.
+          call fixAllNodalGradientsFromAD()
+          call viscousFlux
+
+          select case (spaceDiscr)
+          case (dissScalar)
+             call inviscidDissFluxScalar_b
+          case (dissMatrix)
+             call inviscidDissFluxMatrix_b
+          case (upwind) 
+             call inviscidUpwindFlux_b(.True.)
+          end select
+
+          call inviscidCentralFlux_b
+          call timeStep_block_b(.false.)
+          ! Compute turbulence residual for RANS equations
+          if( equations == RANSEquations) then
+             select case (turbModel)
+             case (spalartAllmaras)
+                call saResScale_b
+                call saViscous_b
+                !call unsteadyTurbTerm_b(1_intType, 1_intType, itu1-1, qq)    
+                call turbAdvection_b(1_intType, 1_intType, itu1-1, qq)
+                call saSource_b
+             end select
+
+             !call unsteadyTurbSpectral_block_b(itu1, itu1, nn, sps)
+          end if
+
+          ! Initres_b should be called here. For steady just zero:
+          dwd = zero
+       end do domainLoop1
+    end do spsLoop1
     
+    ! Exchange the adjoint values.
+    call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True.)
+    machDeriv = Zero
+    spsLoop2: do sps=1,nTimeIntervalsSpectral
+
+       ! Get the pointers from the petsc vector for the wall
+       ! surface and it's accumulation. Only necessary for wall
+       ! distance. 
+       call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+       
+       ! And it's derivative
+       call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       !Zero the accumulation vector on a per-time-spectral instance basis
+       xSurfd = zero
+       
+       domainLoop2: do nn=1,nDom
+          call setPointers_d(nn, 1, sps)
+          
+         call applyAllBC_block_b(.True.)
+         ! call applyALLBC_Block_b(.True.)
+
+          if (equations == RANSequations) then 
+             call applyAllTurbBCThisBlock_b(.True.)
+             call bcTurbTreatment_b
+          end if
+          call computeEddyViscosity_b(.false.)
+          call computeLamViscosity_b(.false.)
+          call computePressureSimple_b(.false.)
+             
+          if (equations == RANSEquations .and. useApproxWallDistance) then 
+             call updateWallDistancesQuickly_b(nn, 1, sps)
+          end if
+          
+          call boundaryNormals_b
+          call metric_block_b
+          call volume_block_b
+
+       end do domainLoop2
+
+       ! Restore the petsc pointers. 
+       call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+       
+       ! And it's derivative
+       call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! Now accumulate the xsurfd accumulation by using the wall scatter
+       ! in reverse.
+       if (wallDistanceNeeded .and. useApproxWallDistance) then 
+
+          call VecScatterBegin(wallScatter(1, sps), xSurfVecd(sps), x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+
+          call VecScatterEnd(wallScatter(1, sps), xSurfVecd(sps), x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+       end if
+    end do spsLoop2
+    
+    call referenceState_b
+    call adjustInflowAngle_b
+
+    ! Now the adjoint of the coordinate exhcange
+    call exchangecoor_b(1)
+    do nn=1,nDom
+       do sps=1,nTimeIntervalsSpectral
+          call setPointers_d(nn, 1, sps)
+          call xhalo_block_b()
+       end do
+    end do
+
+    call VecResetArray(x_like, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+          
+    ! =========================================
+    !            End of reverse pass
+    ! =========================================
+
+    ! Store the extra derivatives
+    extraLocalBar(iAlpha) = alphad
+    extraLocalBar(iBeta) =  betad
+    extraLocalBar(iMach) =  machd + machcoefd
+    extraLocalBar(iMachGrid) = machgridd
+    extraLocalBar(iPressure) =  pinfdimd
+    extraLocalBar(iTemperature) = tinfdimd
+    extraLocalBar(iDensity) =  rhoinfdimd
+    extraLocalBar(iPointRefX) = pointrefd(1)
+    extraLocalBar(iPointRefY) = pointrefd(2)
+    extraLocalBar(iPointRefZ) = pointrefd(3)
+    
+    ! Finally put the output seeds into the provided vectors.
+    ii = 0
+    jj = 0
+    do nn=1,nDom
+       do sps=1,nTimeIntervalsSpectral
+
+          ! Set pointers and derivative pointers
+          call setPointers_d(nn, 1, sps)
+          ! Set the wbar accumulation
+          do k=2, kl
+             do j=2, jl
+                do i=2, il
+                   do l=1, nState
+                      ii = ii + 1
+                      wbar(ii) = wd(i, j, k, l)
+                   end do
+                end do
+             end do
+          end do
+
+          ! Set the xvbar accumulation. Note that this must be a sum,
+          ! becuase we may already have wall distance accumulation
+          ! from the wallScatter directly into xbar (through x_like). 
+          do k=1, kl
+             do j=1, jl
+                do i=1, il
+                   do l=1, 3
+                      jj = jj + 1
+                      xbar(jj) = xbar(jj) + xd(i, j, k, l)
+                   end do
+                end do
+             end do
+          end do
+       end do
+    end do
+
+    ! Finally get the full contribution of the extra variables by
+    ! summing all local contributions. 
+    extraBar = zero
+    call mpi_allreduce(extraLocalBar, extraBar, size(extraBar), sumb_real, &
+         mpi_sum, SUmb_comm_world, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+  end subroutine master_b
+
+  subroutine block_res_state(nn, sps)
+
     ! This is a special state-only routine used only for finite
     ! differce computations of the jacobian
     use constants
@@ -495,7 +850,7 @@ contains
 
     ! Working Variables
     integer(kind=intType) :: ierr, mm,i,j,k, l, fSize, ii, jj
-  
+
     call computePressureSimple(.True.)
     call computeLamViscosity(.True.)
     call computeEddyViscosity(.True.)
@@ -514,7 +869,7 @@ contains
     !Compute turbulence residual for RANS equations
     if( equations == RANSEquations) then
        !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
-       
+
        select case (turbModel)
        case (spalartAllmaras)
           call sa_block(.True.)
@@ -551,7 +906,7 @@ contains
           call inviscidUpwindFlux(.True.)
        end select
     end if
-    
+
     if (viscous) then 
        call computeSpeedOfSoundSquared
        if (.not. lumpedDiss .or. viscPC) then 
@@ -561,7 +916,7 @@ contains
           call viscousFluxApprox
        end if
     end if
-    
+
     ! if (lowSpeedPreconditioner) then 
     !    call applyLowSpeedPreconditioner_d
     ! end if
@@ -621,7 +976,7 @@ contains
     !Compute turbulence residual for RANS equations
     if( equations == RANSEquations) then
        !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
-       
+
        select case (turbModel)
        case (spalartAllmaras)
           call saSource_d
@@ -631,7 +986,7 @@ contains
           call saResScale_d
        end select
     end if
-    
+
     ! compute the mean flow residual
     call inviscidCentralFlux_d
 
@@ -654,7 +1009,7 @@ contains
           call inviscidUpwindFlux_d(.True.)
        end select
     end if
-    
+
     if (viscous) then 
        call computeSpeedOfSoundSquared_d
        if (.not. lumpedDiss .or. viscPC) then 
@@ -664,7 +1019,7 @@ contains
           call viscousFluxApprox_d
        end if
     end if
-    
+
     ! if (lowSpeedPreconditioner) then 
     !    call applyLowSpeedPreconditioner_d
     ! end if

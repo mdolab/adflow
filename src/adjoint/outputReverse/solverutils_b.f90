@@ -13,7 +13,11 @@ contains
 !  differentiation of timestep_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *p *w *si *sj *sk *radi *radj
 !                *radk rhoinf pinfcorr
-!   with respect to varying inputs: *p *w *si *sj *sk rhoinf pinfcorr
+!   with respect to varying inputs: *p *w *si *sj *sk *radi *radj
+!                *radk rhoinf pinfcorr
+!   rw status of diff variables: *p:incr *w:incr *si:incr *sj:incr
+!                *sk:incr *radi:in-out *radj:in-out *radk:in-out
+!                rhoinf:incr pinfcorr:incr
 !   plus diff mem management of: p:in w:in si:in sj:in sk:in radi:in
 !                radj:in radk:in
   subroutine timestep_block_b(onlyradii)

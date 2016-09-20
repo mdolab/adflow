@@ -14,8 +14,9 @@ module walldistance_b
 
 contains
 !  differentiation of updatewalldistancesquickly in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *x *d2wall
-!   with respect to varying inputs: *x *xsurf
+!   gradient     of useful results: *x *d2wall *xsurf
+!   with respect to varying inputs: *x *d2wall *xsurf
+!   rw status of diff variables: *x:incr *d2wall:in-out *xsurf:incr
 !   plus diff mem management of: x:in d2wall:in xsurf:in
   subroutine updatewalldistancesquickly_b(nn, level, sps)
 ! this is the actual update routine that uses xsurf. it is done on
@@ -26,7 +27,7 @@ contains
 ! pointers are already set. 
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, x, xd, flowdoms,&
-&   flowdomsd, d2wall, d2walld
+&   d2wall, d2walld
     implicit none
 ! subroutine arguments
     integer(kind=inttype) :: nn, level, sps
@@ -43,7 +44,6 @@ contains
     real(kind=realtype) :: tempd2
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
-    xsurfd = 0.0_8
     xcd = 0.0_8
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2

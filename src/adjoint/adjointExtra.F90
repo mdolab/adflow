@@ -1218,10 +1218,16 @@ contains
 
        ! Mass flow like objective
        mFlow = globalVals(iMassFlow, sps)
-       mAvgPtot = globalVals(iMassPtot, sps)/mFlow*pRef
-       mAvgTtot = globalVals(iMassTtot, sps)/mFlow*tRef
-       mAvgPs   = globalVals(iMassPs, sps)/mFlow*pRef
-       mFlow = globalVals(iMassFlow, sps)*sqrt(Pref/rhoRef)
+       if (mFlow /= zero) then 
+          mAvgPtot = globalVals(iMassPtot, sps)/mFlow*pRef
+          mAvgTtot = globalVals(iMassTtot, sps)/mFlow*tRef
+          mAvgPs   = globalVals(iMassPs, sps)/mFlow*pRef
+          mFlow = globalVals(iMassFlow, sps)*sqrt(Pref/rhoRef)
+       else
+          mAvgPtot = zero
+          mAvgTtot = zero
+          mAvgPs = zero
+       end if
 
        funcValues(costFuncMdot)      = funcValues(costFuncMdot) + ovrNTS*mFlow
        funcValues(costFuncMavgPtot ) = funcValues(costFuncMavgPtot) + ovrNTS*mAvgPtot
