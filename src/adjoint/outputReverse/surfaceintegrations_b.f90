@@ -10,155 +10,6 @@ module surfaceintegrations_b
 ! ----------------------------------------------------------------------
 
 contains
-!  differentiation of integratesurfaces in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *w *x *(*bcdata.fv) *(*bcdata.fp)
-!                *(*bcdata.area) machcoef pointref pinf pref *xx
-!                *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0
-!                *rlv1 *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 *ww3 localvalues
-!   with respect to varying inputs: *rev *p *w *rlv *x *si *sj
-!                *sk *(*viscsubface.tau) *(*bcdata.fv) *(*bcdata.fp)
-!                *(*bcdata.area) veldirfreestream machcoef pointref
-!                pinf pref *xx *rev0 *rev1 *rev2 *rev3 *pp0 *pp1
-!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi *ww0 *ww1
-!                *ww2 *ww3
-!   plus diff mem management of: rev:in p:in w:in rlv:in x:in si:in
-!                sj:in sk:in viscsubface:in *viscsubface.tau:in
-!                bcdata:in *bcdata.fv:in *bcdata.fp:in *bcdata.area:in
-!                xx:in rev0:in rev1:in rev2:in rev3:in pp0:in pp1:in
-!                pp2:in pp3:in rlv0:in rlv1:in rlv2:in rlv3:in
-!                ssi:in ww0:in ww1:in ww2:in ww3:in
-  subroutine integratesurfaces_b(localvalues, localvaluesd)
-! this is a shell routine that calls the specific surface
-! integration routines. currently we have have the forceandmoment
-! routine as well as the flow properties routine. this routine
-! takes care of setting pointers, while the actual computational
-! routine just acts on a specific fast pointed to by pointers. 
-    use constants
-    use blockpointers, only : nbocos, bcdata, bcdatad, bctype, sk, skd&
-&   , sj, sjd, si, sid, x, xd, rlv, rlvd, sfacei, sfacej, sfacek, gamma,&
-&   rev, revd, p, pd, viscsubface, viscsubfaced
-    use surfacefamilies, only : famgroups
-    use utils_b, only : setbcpointers, setbcpointers_b, resetbcpointers,&
-&   resetbcpointers_b, iswalltype
-    use sorting, only : bsearchintegers
-    use costfunctions, only : nlocalvalues
-! tapenade needs to see these modules that the callees use.
-    use bcpointers_b
-    use flowvarrefstate
-    use inputphysics
-    implicit none
-! do we actually need to zero the forces/area on a wall that wasn't inclded? maybe?
-!       ! if it wasn't included, but still a wall...zero
-!       if(bctype(mm) == eulerwall .or. &
-!            bctype(mm) == nswalladiabatic .or. &
-!            bctype(mm) == nswallisothermal) then
-!          bcdata(mm)%area = zero
-!          bcdata(mm)%fp = zero
-!          bcdata(mm)%fv = zero
-! input/output variables
-    real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
-&   localvalues
-    real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
-&   localvaluesd
-! working variables
-    integer(kind=inttype) :: mm
-    intrinsic size
-    integer(kind=inttype) :: res
-    logical :: res0
-    integer :: branch
-    integer :: ii1
-! loop over all possible boundary conditions
-bocos:do mm=1,nbocos
-! determine if this boundary condition is to be incldued in the
-! currently active group
-      res = bsearchintegers(bcdata(mm)%famid, famgroups, size(famgroups)&
-&       )
-      if (res .gt. 0) then
-! set a bunch of pointers depending on the face id to make
-! a generic treatment possible. 
-        call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
-        call pushreal8array(ssi, size(ssi, 1)*size(ssi, 2)*size(ssi, 3))
-        call pushreal8array(pp2, size(pp2, 1)*size(pp2, 2))
-        call pushreal8array(pp1, size(pp1, 1)*size(pp1, 2))
-        call pushreal8array(xx, size(xx, 1)*size(xx, 2)*size(xx, 3))
-        call setbcpointers(mm, .true.)
-        res0 = iswalltype(bctype(mm))
-        if (res0) then
-          call pushcontrol1b(0)
-        else
-          call pushcontrol1b(1)
-        end if
-! reset the pointers
-        call pushreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size&
-&                     (sk, 4))
-        call pushreal8array(sj, size(sj, 1)*size(sj, 2)*size(sj, 3)*size&
-&                     (sj, 4))
-        call pushreal8array(si, size(si, 1)*size(si, 2)*size(si, 3)*size&
-&                     (si, 4))
-        call pushreal8array(x, size(x, 1)*size(x, 2)*size(x, 3)*size(x, &
-&                     4))
-        call pushreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
-        call pushreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size&
-&                     (sfacek, 3))
-        call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(&
-&                     gamma, 3))
-        call pushreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size&
-&                     (sfacej, 3))
-        call pushreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size&
-&                     (sfacei, 3))
-        call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
-        call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
-        call resetbcpointers(mm, .true.)
-        call pushcontrol1b(1)
-      else
-        call pushcontrol1b(0)
-      end if
-    end do bocos
-    revd = 0.0_8
-    pd = 0.0_8
-    rlvd = 0.0_8
-    sid = 0.0_8
-    sjd = 0.0_8
-    skd = 0.0_8
-    do ii1=1,size(viscsubfaced)
-      viscsubfaced(ii1)%tau = 0.0_8
-    end do
-    veldirfreestreamd = 0.0_8
-    do mm=nbocos,1,-1
-      call popcontrol1b(branch)
-      if (branch .ne. 0) then
-        call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
-        call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
-        call popreal8array(sfacei, size(sfacei, 1)*size(sfacei, 2)*size(&
-&                    sfacei, 3))
-        call popreal8array(sfacej, size(sfacej, 1)*size(sfacej, 2)*size(&
-&                    sfacej, 3))
-        call popreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(&
-&                    gamma, 3))
-        call popreal8array(sfacek, size(sfacek, 1)*size(sfacek, 2)*size(&
-&                    sfacek, 3))
-        call popreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
-        call popreal8array(x, size(x, 1)*size(x, 2)*size(x, 3)*size(x, 4&
-&                    ))
-        call popreal8array(si, size(si, 1)*size(si, 2)*size(si, 3)*size(&
-&                    si, 4))
-        call popreal8array(sj, size(sj, 1)*size(sj, 2)*size(sj, 3)*size(&
-&                    sj, 4))
-        call popreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(&
-&                    sk, 4))
-        call resetbcpointers_b(mm, .true.)
-        call popcontrol1b(branch)
-        if (branch .eq. 0) call forcesandmomentsface_b(localvalues, &
-&                                                localvaluesd, mm)
-        call popreal8array(xx, size(xx, 1)*size(xx, 2)*size(xx, 3))
-        call popreal8array(pp1, size(pp1, 1)*size(pp1, 2))
-        call popreal8array(pp2, size(pp2, 1)*size(pp2, 2))
-        call popreal8array(ssi, size(ssi, 1)*size(ssi, 2)*size(ssi, 3))
-        call popreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
-        call setbcpointers_b(mm, .true.)
-      end if
-    end do
-  end subroutine integratesurfaces_b
   subroutine integratesurfaces(localvalues)
 ! this is a shell routine that calls the specific surface
 ! integration routines. currently we have have the forceandmoment
@@ -285,6 +136,11 @@ bocos:do mm=1,nbocos
 !                *(*bcdata.fp) *(*bcdata.area) veldirfreestream
 !                machcoef pointref pinf pref *xx *pp1 *pp2 *ssi
 !                *ww2 localvalues
+!   rw status of diff variables: *(*viscsubface.tau):incr *(*bcdata.fv):in-out
+!                *(*bcdata.fp):in-out *(*bcdata.area):in-out veldirfreestream:incr
+!                machcoef:incr pointref:incr pinf:incr pref:incr
+!                *xx:incr *pp1:incr *pp2:incr *ssi:incr *ww2:incr
+!                localvalues:in-out
 !   plus diff mem management of: viscsubface:in *viscsubface.tau:in
 !                bcdata:in *bcdata.fv:in *bcdata.fp:in *bcdata.area:in
 !                xx:in pp1:in pp2:in ssi:in ww2:in

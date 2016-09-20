@@ -731,7 +731,7 @@ Dictionary Key: sepsensoravgz
 @value  3.6504154957055e+04 1e-10 1e-10
 ||dwBar^T * dR/xDv||
 Dictionary Key: P_CRM
-@value  2.1071030560622e-19 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: T_CRM
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_CRM
@@ -820,7 +820,7 @@ Dictionary Key: zRef_CRM
 @value  2.3553115270989e-01 1e-10 1e-10
 ||dcl/dXdv||
 Dictionary Key: P_CRM
-@value -3.0704944337968e-21 1e-10 1e-10
+@value -2.8686623643339e-21 1e-10 1e-10
 Dictionary Key: T_CRM
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_CRM
@@ -842,7 +842,7 @@ Dictionary Key: zRef_CRM
 @value  1.8806296431622e-01 1e-10 1e-10
 ||dcd/dXdv||
 Dictionary Key: P_CRM
-@value -4.8174998875088e-21 1e-10 1e-10
+@value  1.5844903127395e-20 1e-10 1e-10
 Dictionary Key: T_CRM
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_CRM
@@ -930,7 +930,7 @@ Dictionary Key: zRef_CRM
 @value  1.8847370229508e-01 1e-10 1e-10
 ||dcfx/dXdv||
 Dictionary Key: P_CRM
-@value -2.7629415734662e-21 1e-10 1e-10
+@value  2.2340597381409e-21 1e-10 1e-10
 Dictionary Key: T_CRM
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_CRM
@@ -952,7 +952,7 @@ Dictionary Key: zRef_CRM
 @value  1.4814652471266e-01 1e-10 1e-10
 ||dcfy/dXdv||
 Dictionary Key: P_CRM
-@value  1.2599201500101e-20 1e-10 1e-10
+@value  1.0842021724855e-19 1e-10 1e-10
 Dictionary Key: T_CRM
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_CRM
@@ -974,7 +974,7 @@ Dictionary Key: zRef_CRM
 @value  2.3520260625138e-01 1e-10 1e-10
 ||dcfz/dXdv||
 Dictionary Key: P_CRM
-@value -3.3993814453479e-20 1e-10 1e-10
+@value  4.8104688523021e-21 1e-10 1e-10
 Dictionary Key: T_CRM
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_CRM
@@ -1062,7 +1062,7 @@ Dictionary Key: zRef_CRM
 @value  1.1557967406285e+00 1e-10 1e-10
 ||dcmx/dXdv||
 Dictionary Key: P_CRM
-@value -2.5199230180815e-19 1e-10 1e-10
+@value -6.5052130349130e-19 1e-10 1e-10
 Dictionary Key: T_CRM
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_CRM
@@ -1084,7 +1084,7 @@ Dictionary Key: zRef_CRM
 @value  3.2692150549584e+00 1e-10 1e-10
 ||dcmy/dXdv||
 Dictionary Key: P_CRM
-@value -4.6441228311177e-19 1e-10 1e-10
+@value  1.3013867141174e-19 1e-10 1e-10
 Dictionary Key: T_CRM
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_CRM
@@ -1106,7 +1106,7 @@ Dictionary Key: zRef_CRM
 @value  2.7580178981195e+00 1e-10 1e-10
 ||dcmz/dXdv||
 Dictionary Key: P_CRM
-@value -1.1497810514487e-19 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: T_CRM
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_CRM

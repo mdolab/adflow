@@ -14,58 +14,6 @@ module sa_b
   real(kind=realtype), dimension(:, :), pointer :: dd2wall
 
 contains
-!  differentiation of sa_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *dw *w *rlv *vol *si *sj *sk
-!                (global)timeref
-!   with respect to varying inputs: *dw *w *rlv *vol *d2wall *si
-!                *sj *sk (global)timeref
-!   plus diff mem management of: bvtj1:in bvtj2:in dw:in w:in rlv:in
-!                scratch:in bvtk1:in bvtk2:in vol:in d2wall:in
-!                si:in sj:in sk:in bvti1:in bvti2:in bcdata:in
-  subroutine sa_block_b(resonly)
-!
-!       sa solves the transport equation for the spalart-allmaras
-!       turbulence model in a segregated manner using a diagonal
-!       dominant adi-scheme. note that the scratch and boundary
-!       matrix values are not strictly, but tapande would like to
-!       see them becuase it must save them.
-!
-    use constants
-    use blockpointers, only : ndom, il, jl, kl, scratch, scratchd, &
-&   bmtj1, bmtj2, bmti1, bmti2, bmtk1, bmtk2
-    use inputtimespectral, only : ntimeintervalsspectral
-    use iteration, only : currentlevel
-    use inputphysics, only : turbprod
-    use paramturb
-    use turbutils_b
-    use turbbcroutines_b
-    implicit none
-!
-!      subroutine argument.
-!
-    logical, intent(in) :: resonly
-!
-!      local variables.
-!
-    integer(kind=inttype) :: nn, sps
-! set the arrays for the boundary condition treatment.
-! alloc central jacobian memory
-    allocate(qq(2:il, 2:jl, 2:kl))
-! source terms
-! advection term
-    nn = itu1 - 1
-! unsteady term
-! viscous terms
-! perform the residual scaling
-! we need to do an acutal solve. solve and update the eddy
-! viscosity and the boundary conditions
-    call saresscale_b()
-    call saviscous_b()
-    call unsteadyturbterm_b(1_inttype, 1_inttype, nn, qq)
-    call turbadvection_b(1_inttype, 1_inttype, nn, qq)
-    call sasource_b()
-  deallocate(qq)
-end subroutine sa_block_b
   subroutine sa_block(resonly)
 !
 !       sa solves the transport equation for the spalart-allmaras
@@ -114,8 +62,11 @@ end subroutine sa_block_b
 !  differentiation of sasource in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *w *rlv *scratch *vol *si *sj
 !                *sk timeref
-!   with respect to varying inputs: *w *rlv *vol *d2wall *si *sj
-!                *sk timeref
+!   with respect to varying inputs: *w *rlv *scratch *vol *d2wall
+!                *si *sj *sk timeref
+!   rw status of diff variables: *w:incr *rlv:incr *scratch:in-out
+!                *vol:incr *d2wall:out *si:incr *sj:incr *sk:incr
+!                timeref:incr
 !   plus diff mem management of: w:in rlv:in scratch:in vol:in
 !                d2wall:in si:in sj:in sk:in
   subroutine sasource_b()
@@ -792,6 +743,8 @@ end subroutine sa_block_b
 !                *sk
 !   with respect to varying inputs: *w *rlv *scratch *vol *si *sj
 !                *sk
+!   rw status of diff variables: *w:incr *rlv:incr *scratch:in-out
+!                *vol:incr *si:incr *sj:incr *sk:incr
 !   plus diff mem management of: w:in rlv:in scratch:in vol:in
 !                si:in sj:in sk:in
   subroutine saviscous_b()
@@ -1639,6 +1592,7 @@ end subroutine sa_block_b
 !  differentiation of saresscale in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *dw
 !   with respect to varying inputs: *dw *scratch
+!   rw status of diff variables: *dw:in-out *scratch:out
 !   plus diff mem management of: dw:in scratch:in
   subroutine saresscale_b()
 !

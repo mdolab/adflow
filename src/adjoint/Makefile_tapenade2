@@ -70,8 +70,8 @@ I_RES_FILES := $(ALL_RES_FILES:%=%.f90)
 fullRoutines = "\
 flowUtils%adjustInflowAngle(alpha, beta)>(veldirfreestream, dragdirection, liftdirection) \
 \
-initializeFlow%referenceState(mach, machcoef, pInfDim, TinfDim, rhoInfDim, rGasDim, velDirFreestream) > \
-              (mach, machcoef, pInfDim, TinfDim, rhoInfDim, rGasDim, velDirFreeStream, \
+initializeFlow%referenceState(mach, machcoef, pInfDim, TinfDim, rhoInfDim, velDirFreestream) > \
+              (mach, machcoef, pInfDim, TinfDim, rhoInfDim, velDirFreeStream, \
                pRef, rhoRef, Tref, muRef, timeRef, pInf, pinfCorr, rhoInf, uInf, rGas, muInf,  winf) \
 \
 adjointExtra%xhalo_block(x) > \
@@ -83,7 +83,7 @@ adjointExtra%volume_block(x) > \
 adjointExtra%metric_block(x) > \
                          (x, si, sj, sk) \
 wallDistance%updateWallDistancesQuickly(x, xSurf) > \
-	                              (x, d2wall) \
+	                               (x, xSurf, d2wall) \
 \
 adjointExtra%boundaryNormals(si, sj, sk) > \
                             (si, sj, sk, bcdata%norm) \
@@ -162,7 +162,7 @@ flowUtils%allNodalGradients(w, vol, si, sj, sk, aa) > \
 fluxes%viscousFlux(w, x, si, sj, sk, rlv, rev, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz, fw) > \
                   (w, x, si, sj, sk, fw, viscsubface%tau) \
 \
-fluxes%viscousFluxApprox(w, x, rlv, rev, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz, fw) > \
+fluxes%viscousFluxApprox(w, x, rlv, rev, aa, fw) > \
                         (w, x, fw) \
 \
 adjointExtra%sumDwandFw(fw, dw) > (dw) \
@@ -255,28 +255,29 @@ ad_forward:
 
 ad_reverse:
 # First delete the holding directory if it exists
-	rm -fr temp_reverse2
+	rm -fr temp_reverse
 
 # Next create the holidng directory:
-	mkdir -p temp_reverse2
+	mkdir -p temp_reverse
 
 # Run preprocessor on all input files
 	make -f Makefile_tapenade2 preprocess_reverse
 
 # The following is the single Tapenade command to run:
-	$(TAPENADE_HOME)/bin/tapenade 
+	$(TAPENADE_HOME)/bin/tapenade \
 	-html \
 	-head $(fullRoutines) \
 	-adjvarname %d \
+	-adjfuncname %_b \
 	-reverse \
 	-msglevel 30 \
 	$(TAPENADE_PRECISION) \
 	-noisize \
-	-O temp_reverse2  \
+	-O temp_reverse  \
 	$(I_RES_FILES)
 
 # Run the auto-edit file:
-	python autoEdit/autoEditReverse2.py temp_reverse2 outputReverse2
+	python autoEdit/autoEditReverse2.py temp_reverse outputReverse
 
 # Remove preprocessor files
 	make -f Makefile_tapenade2 cleanpreprocess_res
@@ -319,7 +320,7 @@ preprocess_reverse:
 	@echo "Preprocessing all input files for reverse mode AD..."
 	@for file in $(ALL_RES_FILES); do \
 		echo Preprocessing $$file; \
-		cpp -DUSE_TAPENADE -DTAPENADE_REVERSE -traditional -P $$file $$file.f90; \
+		cpp -DUSE_TAPENADE -DTAPENADE_REVERSE -DTAPENADE_FAST -traditional -P $$file $$file.f90; \
 	done
 
 preprocess_reverse_fast:

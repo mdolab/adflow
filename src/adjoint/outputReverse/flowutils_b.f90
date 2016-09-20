@@ -115,7 +115,8 @@ contains
   end subroutine computeptot
 !  differentiation of computespeedofsoundsquared in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *aa *p *w
-!   with respect to varying inputs: *p *w
+!   with respect to varying inputs: *aa *p *w
+!   rw status of diff variables: *aa:in-out *p:incr *w:incr
 !   plus diff mem management of: aa:in p:in w:in
   subroutine computespeedofsoundsquared_b()
 !
@@ -436,7 +437,8 @@ contains
   end subroutine eint
 !  differentiation of computepressuresimple in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *p *w pinfcorr
-!   with respect to varying inputs: *w pinfcorr
+!   with respect to varying inputs: *p *w pinfcorr
+!   rw status of diff variables: *p:in-out *w:incr pinfcorr:incr
 !   plus diff mem management of: p:in w:in
   subroutine computepressuresimple_b(includehalos)
 ! compute the pressure on a block with the pointers already set. this
@@ -758,8 +760,10 @@ contains
     end select
   end subroutine computepressure
 !  differentiation of computelamviscosity in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *p *w *rlv rgas
-!   with respect to varying inputs: *p *w muref tref rgas
+!   gradient     of useful results: *p *w *rlv muref tref rgas
+!   with respect to varying inputs: *p *w *rlv muref tref rgas
+!   rw status of diff variables: *p:incr *w:incr *rlv:in-out muref:incr
+!                tref:incr rgas:incr
 !   plus diff mem management of: p:in w:in rlv:in
   subroutine computelamviscosity_b(includehalos)
 !
@@ -808,10 +812,7 @@ contains
     real(kind=realtype) :: temp5
     real(kind=realtype) :: temp4
 ! return immediately if no laminar viscosity needs to be computed.
-    if (.not.viscous) then
-      murefd = 0.0_8
-      trefd = 0.0_8
-    else
+    if (viscous) then
 ! determine whether or not the pressure must be corrected
 ! for the presence of the turbulent kinetic energy.
       correctfork = getcorrectfork()
@@ -905,8 +906,8 @@ contains
           wd(i, j, k, irho) = wd(i, j, k, irho) + rgas*tempd6
         end do
       end if
-      trefd = -(tsuthdim*tsuthd/tref**2) - ssuthdim*ssuthd/tref**2
-      murefd = -(musuthdim*musuthd/muref**2)
+      trefd = trefd - tsuthdim*tsuthd/tref**2 - ssuthdim*ssuthd/tref**2
+      murefd = murefd - musuthdim*musuthd/muref**2
     end if
   end subroutine computelamviscosity_b
   subroutine computelamviscosity(includehalos)
@@ -1001,7 +1002,10 @@ contains
 !  differentiation of adjustinflowangle in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: veldirfreestream dragdirection
 !                liftdirection
-!   with respect to varying inputs: alpha beta
+!   with respect to varying inputs: alpha veldirfreestream beta
+!                dragdirection liftdirection
+!   rw status of diff variables: alpha:out veldirfreestream:in-out
+!                beta:out dragdirection:in-out liftdirection:in-out
   subroutine adjustinflowangle_b()
     use constants
     use inputphysics, only : alpha, alphad, beta, betad, liftindex, &
@@ -1183,7 +1187,7 @@ contains
   end subroutine derivativerotmatrixrigid
 !  differentiation of getdirvector in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: alpha beta winddirection
-!   with respect to varying inputs: alpha beta
+!   with respect to varying inputs: alpha beta winddirection
   subroutine getdirvector_b(refdirection, alpha, alphad, beta, betad, &
 &   winddirection, winddirectiond, liftindex)
 !(xb,yb,zb,alpha,beta,xw,yw,zw)
@@ -1269,6 +1273,7 @@ contains
     ywd = winddirectiond(2)
     winddirectiond(2) = 0.0_8
     xwd = winddirectiond(1)
+    winddirectiond(1) = 0.0_8
     call popcontrol2b(branch)
     if (branch .eq. 0) then
       tmpd = 0.0_8
@@ -1461,8 +1466,14 @@ contains
   end subroutine vectorrotation
 !  differentiation of allnodalgradients in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *aa *wx *wy *wz *w *qx *qy
-!                *qz *ux *uy *uz *si *sj *sk *vx *vy *vz
-!   with respect to varying inputs: *aa *w *vol *si *sj *sk
+!                *qz *ux *vol *uy *uz *si *sj *sk *vx *vy *vz
+!   with respect to varying inputs: *aa *wx *wy *wz *w *qx *qy
+!                *qz *ux *vol *uy *uz *si *sj *sk *vx *vy *vz
+!   rw status of diff variables: *aa:incr *wx:in-zero *wy:in-zero
+!                *wz:in-zero *w:incr *qx:in-zero *qy:in-zero *qz:in-zero
+!                *ux:in-zero *vol:incr *uy:in-zero *uz:in-zero
+!                *si:incr *sj:incr *sk:incr *vx:in-zero *vy:in-zero
+!                *vz:in-zero
 !   plus diff mem management of: aa:in wx:in wy:in wz:in w:in qx:in
 !                qy:in qz:in ux:in vol:in uy:in uz:in si:in sj:in
 !                sk:in vx:in vy:in vz:in
@@ -1727,7 +1738,6 @@ contains
     call pushinteger4(i)
     call pushinteger4(j)
     call pushinteger4(k)
-    vold = 0.0_8
     do ii=0,il*jl*kl-1
       i = mod(ii, il) + 1
       j = mod(ii/il, jl) + 1
@@ -2152,6 +2162,18 @@ contains
       skd(i, j+1, k, 1) = skd(i, j+1, k, 1) + sxd
       skd(i+1, j+1, k, 1) = skd(i+1, j+1, k, 1) + sxd
     end do
+    wxd = 0.0_8
+    wyd = 0.0_8
+    wzd = 0.0_8
+    qxd = 0.0_8
+    qyd = 0.0_8
+    qzd = 0.0_8
+    uxd = 0.0_8
+    uyd = 0.0_8
+    uzd = 0.0_8
+    vxd = 0.0_8
+    vyd = 0.0_8
+    vzd = 0.0_8
   end subroutine allnodalgradients_b
   subroutine allnodalgradients()
 !

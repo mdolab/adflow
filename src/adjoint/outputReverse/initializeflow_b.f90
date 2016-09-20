@@ -13,11 +13,18 @@ module initializeflow_b
 
 contains
 !  differentiation of referencestate in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: veldirfreestream machcoef pinf
-!                timeref rhoinf muref rhoinfdim tref winf pinfcorr
-!                rgas pinfdim pref
+!   gradient     of useful results: mach veldirfreestream machcoef
+!                tinfdim pinf timeref rhoinf muref rhoinfdim tref
+!                winf muinf uinf pinfcorr rgas pinfdim pref rhoref
 !   with respect to varying inputs: mach veldirfreestream machcoef
-!                tinfdim rhoinfdim pinfdim
+!                tinfdim pinf timeref rhoinf muref rhoinfdim tref
+!                winf muinf uinf pinfcorr rgas pinfdim pref rhoref
+!   rw status of diff variables: mach:incr veldirfreestream:incr
+!                machcoef:incr tinfdim:incr pinf:in-zero timeref:in-zero
+!                rhoinf:in-zero muref:in-zero rhoinfdim:incr tref:in-zero
+!                winf:in-zero muinf:in-zero uinf:in-zero pinfcorr:in-zero
+!                rgas:in-zero muinfdim:(loc) pinfdim:incr pref:in-zero
+!                rhoref:in-zero
   subroutine referencestate_b()
 !
 !       the original version has been nuked since the computations are
@@ -190,7 +197,6 @@ contains
     end if
     vinf = zero
     zinf = zero
-    uinfd = 0.0_8
     vinfd = 0.0_8
     zinfd = 0.0_8
     ktmpd = 0.0_8
@@ -253,11 +259,10 @@ contains
       uinf2d = turbintensityinf**2*1.5_realtype*winfd(itu1)
       winfd(itu1) = 0.0_8
     else
-      muinfd = 0.0_8
       uinf2d = 0.0_8
       goto 100
     end if
-    muinfd = nuinfd/rhoinf
+    muinfd = muinfd + nuinfd/rhoinf
     rhoinfd = rhoinfd - muinf*nuinfd/rhoinf**2
  100 tempd = machcoef**2*gammainf*uinf2d/rhoinf
     machcoefd = machcoefd + pinf*gammainf*2*machcoef*uinf2d/rhoinf
@@ -285,7 +290,7 @@ contains
     pinfd = pinfd + tempd0 + tempd
     rhoinfd = rhoinfd + winfd(irho) - pinf*tempd0/rhoinf - pinf*tempd/&
 &     rhoinf
-    machd = temp*uinfd
+    machd = machd + temp*uinfd
     if (rhoref/pref .eq. 0.0_8) then
       tempd3 = 0.0
     else
@@ -296,15 +301,28 @@ contains
     else
       tempd2 = murefd/(2.0*sqrt(pref*rhoref))
     end if
-    rhorefd = pref*tempd2 - rhoinfdim*rhoinfd/rhoref**2 + tempd3 + tref*&
-&     tempd1
+    rhorefd = rhorefd + pref*tempd2 - rhoinfdim*rhoinfd/rhoref**2 + &
+&     tempd3 + tref*tempd1
     prefd = prefd + rhoref*tempd2 - pinfdim*pinfd/pref**2 - rhoref*&
 &     tempd3/pref - rhoref*tref*tempd1/pref
     rhoinfdimd = rhoinfdimd + rhorefd + rhoinfd/rhoref
     pinfdimd = pinfdimd + prefd + pinfd/pref
     tempd4 = musuthdim*(tsuthdim+ssuthdim)*muinfdimd/(ssuthdim+tinfdim)
-    tinfdimd = (1.5_realtype*(tinfdim/tsuthdim)**0.5/tsuthdim-(tinfdim/&
-&     tsuthdim)**1.5_realtype/(ssuthdim+tinfdim))*tempd4 + trefd
+    tinfdimd = tinfdimd + (1.5_realtype*(tinfdim/tsuthdim)**0.5/tsuthdim&
+&     -(tinfdim/tsuthdim)**1.5_realtype/(ssuthdim+tinfdim))*tempd4 + &
+&     trefd
+    pinfd = 0.0_8
+    timerefd = 0.0_8
+    rhoinfd = 0.0_8
+    murefd = 0.0_8
+    trefd = 0.0_8
+    winfd = 0.0_8
+    muinfd = 0.0_8
+    uinfd = 0.0_8
+    pinfcorrd = 0.0_8
+    rgasd = 0.0_8
+    prefd = 0.0_8
+    rhorefd = 0.0_8
   end subroutine referencestate_b
   subroutine referencestate()
 !

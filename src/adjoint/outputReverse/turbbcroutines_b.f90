@@ -9,8 +9,10 @@ contains
 !   gradient     of useful results: *rev *w
 !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *w *bvtk1
 !                *bvtk2 *bvti1 *bvti2
+!   rw status of diff variables: *rev:in-out *bvtj1:out *bvtj2:out
+!                *w:in-out *bvtk1:out *bvtk2:out *bvti1:out *bvti2:out
 !   plus diff mem management of: rev:in bvtj1:in bvtj2:in w:in
-!                bvtk1:in bvtk2:in bvti1:in bvti2:in bcdata:in
+!                bvtk1:in bvtk2:in bvti1:in bvti2:in
 !      ==================================================================
   subroutine applyallturbbcthisblock_b(secondhalo)
 !
@@ -421,7 +423,7 @@ bocos:do nn=1,nbocos
 !  differentiation of bceddynowall in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev
 !   with respect to varying inputs: *rev
-!   plus diff mem management of: rev:in bcdata:in
+!   plus diff mem management of: rev:in
   subroutine bceddynowall_b(nn)
 !
 !       bceddynowall sets the eddy viscosity in the halo cells of      
@@ -558,7 +560,7 @@ bocos:do nn=1,nbocos
 !  differentiation of bceddywall in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev
 !   with respect to varying inputs: *rev
-!   plus diff mem management of: rev:in bcdata:in
+!   plus diff mem management of: rev:in
   subroutine bceddywall_b(nn)
 !
 !       bceddywall sets the eddy viscosity in the halo cells of        
@@ -796,10 +798,13 @@ bocos:do nn=1,nbocos
 !  differentiation of bcturbtreatment in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *bvtj1 *bvtj2 *w *rlv *bvtk1
 !                *bvtk2 *d2wall *bvti1 *bvti2 winf
-!   with respect to varying inputs: *w *rlv *d2wall winf
+!   with respect to varying inputs: *bvtj1 *bvtj2 *w *rlv *bvtk1
+!                *bvtk2 *d2wall *bvti1 *bvti2 winf
+!   rw status of diff variables: *bvtj1:in-out *bvtj2:in-out *w:incr
+!                *rlv:incr *bvtk1:in-out *bvtk2:in-out *d2wall:incr
+!                *bvti1:in-out *bvti2:in-out winf:incr
 !   plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
 !                bvtk1:in bvtk2:in d2wall:in bvti1:in bvti2:in
-!                bcdata:in
   subroutine bcturbtreatment_b()
 !
 !       bcturbtreatment sets the arrays bmti1, bvti1, etc, such that   
@@ -852,6 +857,30 @@ bocos:do nn=1,nbocos
         call bcturbwall_b(nn)
       end if
     end do
+    do j=je,1,-1
+      do i=ie,1,-1
+        do l=nt2,nt1,-1
+          bvtk2d(i, j, l) = 0.0_8
+          bvtk1d(i, j, l) = 0.0_8
+        end do
+      end do
+    end do
+    do k=ke,1,-1
+      do i=ie,1,-1
+        do l=nt2,nt1,-1
+          bvtj2d(i, k, l) = 0.0_8
+          bvtj1d(i, k, l) = 0.0_8
+        end do
+      end do
+    end do
+    do k=ke,1,-1
+      do j=je,1,-1
+        do l=nt2,nt1,-1
+          bvti2d(j, k, l) = 0.0_8
+          bvti1d(j, k, l) = 0.0_8
+        end do
+      end do
+    end do
   end subroutine bcturbtreatment_b
 !  differentiation of bcturbfarfield in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *bvtj1 *bvtj2 *bvtk1 *bvtk2
@@ -859,7 +888,7 @@ bocos:do nn=1,nbocos
 !   with respect to varying inputs: *bvtj1 *bvtj2 *bvtk1 *bvtk2
 !                *bvti1 *bvti2 winf
 !   plus diff mem management of: bvtj1:in bvtj2:in bvtk1:in bvtk2:in
-!                bvti1:in bvti2:in bcdata:in
+!                bvti1:in bvti2:in
   subroutine bcturbfarfield_b(nn)
 !
 !       bcturbfarfield applies the implicit treatment of the           
@@ -961,7 +990,7 @@ bocos:do nn=1,nbocos
 !   with respect to varying inputs: *bvtj1 *bvtj2 *w *bvtk1 *bvtk2
 !                *bvti1 *bvti2
 !   plus diff mem management of: bvtj1:in bvtj2:in w:in bvtk1:in
-!                bvtk2:in bvti1:in bvti2:in bcdata:in
+!                bvtk2:in bvti1:in bvti2:in
   subroutine bcturbinterface_b(nn)
 !
 !       bcturbinterface applies the halo treatment for interface halo  
@@ -1301,7 +1330,6 @@ bocos:do nn=1,nbocos
 !                *bvtk2 *d2wall *bvti1 *bvti2
 !   plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
 !                bvtk1:in bvtk2:in d2wall:in bvti1:in bvti2:in
-!                bcdata:in
   subroutine bcturbwall_b(nn)
 !
 !       bcturbwall applies the implicit treatment of the viscous       
@@ -1772,7 +1800,7 @@ bocos:do nn=1,nbocos
 !  differentiation of turb2ndhalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev *w
 !   with respect to varying inputs: *rev *w
-!   plus diff mem management of: rev:in w:in bcdata:in
+!   plus diff mem management of: rev:in w:in
   subroutine turb2ndhalo_b(nn)
 !
 !       turb2ndhalo sets the turbulent variables in the second halo    
