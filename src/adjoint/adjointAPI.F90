@@ -116,6 +116,7 @@ contains
     use ADjointPETSc, only : x_like, psi_like3
     use adjointvars
     use costfunctions
+    use BCRoutines, only : applyAllBC_block
     use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
     use utils, only : setPointers, EChk, getDirAngle, setPointers_d
     use solverUtils, only : timeStep_block
@@ -258,7 +259,7 @@ contains
           ! Currently these tapenade has decided the output values from
           ! these routines do not matter, these need to be recomputed to
           ! consistent.
-
+          call applyAllBC_block(.True.)
           call timestep_block(.false.)
           if (viscous) then 
              call allNodalGradients

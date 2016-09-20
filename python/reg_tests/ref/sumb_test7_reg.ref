@@ -762,7 +762,7 @@ Dictionary Key: zRef_mdo_tutorial
 ||FBar^T * dF/dw||
 @value  1.9263235423095e+05 1e-10 1e-10
 ||FBar^T * dF/dXv||
-@value  4.5811855240776e+07 1e-10 1e-10
+@value  4.5811911563246e+07 1e-10 1e-10
 ||FBar^T * dF/xDv||
 Dictionary Key: P_mdo_tutorial
 @value  7.2675179790414e+01 1e-10 1e-10
