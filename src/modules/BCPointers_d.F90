@@ -33,3 +33,7 @@ module BCPointers_d
 
 end module BCPointers_d
 
+
+module BCPointers_b
+use BCPointers_d
+end module BCPointers_b

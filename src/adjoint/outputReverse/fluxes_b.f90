@@ -12,8 +12,11 @@ module fluxes_b
 contains
 !  differentiation of inviscidcentralflux in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *p *dw *w *vol *si *sj *sk
+!                timeref
 !   with respect to varying inputs: *p *dw *w *vol *si *sj *sk
 !                timeref
+!   rw status of diff variables: *p:incr *dw:in-out *w:incr *vol:incr
+!                *si:incr *sj:incr *sk:incr timeref:incr
 !   plus diff mem management of: p:in dw:in w:in vol:in si:in sj:in
 !                sk:in
   subroutine inviscidcentralflux_b()
@@ -75,7 +78,6 @@ contains
     call pushreal8(qsp)
     call pushinteger4(i)
     call pushinteger4(j)
-    timerefd = 0.0_8
     if (blockismoving .and. equationmode .eq. steady) then
 ! compute the three nondimensional angular velocities.
       wwx = timeref*cgnsdoms(nbkglobal)%rotrate(1)
@@ -113,10 +115,9 @@ contains
         wd(i, j, k, irho) = wd(i, j, k, irho) + vol(i, j, k)*rvold
         vold(i, j, k) = vold(i, j, k) + w(i, j, k, irho)*rvold
       end do
-      timerefd = cgnsdoms(nbkglobal)%rotrate(2)*wwyd + cgnsdoms(&
-&       nbkglobal)%rotrate(1)*wwxd + cgnsdoms(nbkglobal)%rotrate(3)*wwzd
-    else
-      timerefd = 0.0_8
+      timerefd = timerefd + cgnsdoms(nbkglobal)%rotrate(2)*wwyd + &
+&       cgnsdoms(nbkglobal)%rotrate(1)*wwxd + cgnsdoms(nbkglobal)%&
+&       rotrate(3)*wwzd
     end if
     call popinteger4(j)
     call popinteger4(i)
@@ -718,8 +719,10 @@ contains
     end if
   end subroutine inviscidcentralflux
 !  differentiation of invisciddissfluxmatrix in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *p *w *si *sj *sk *fw
-!   with respect to varying inputs: *p *w *si *sj *sk pinfcorr
+!   gradient     of useful results: *p *w *si *sj *sk *fw pinfcorr
+!   with respect to varying inputs: *p *w *si *sj *sk *fw pinfcorr
+!   rw status of diff variables: *p:incr *w:incr *si:incr *sj:incr
+!                *sk:incr *fw:in-out pinfcorr:incr
 !   plus diff mem management of: p:in w:in si:in sj:in sk:in fw:in
   subroutine invisciddissfluxmatrix_b()
 !
@@ -958,9 +961,7 @@ contains
     end if
 ! check if rfil == 0. if so, the dissipative flux needs not to
 ! be computed.
-    if (abs0 .lt. thresholdreal) then
-      pinfcorrd = 0.0_8
-    else
+    if (abs0 .ge. thresholdreal) then
 ! set the value of plim. to be fully consistent this must have
 ! the dimension of a pressure. therefore a fraction of pinfcorr
 ! is used.
@@ -974,6 +975,7 @@ contains
 ! set a couple of constants for the scheme.
       fis2 = rfil*vis2
       fis4 = rfil*vis4
+      sfil = one - rfil
 ! initialize the dissipative residual to a certain times,
 ! possibly zero, the previously stored value. 
 ! compute the pressure sensor for each cell, in each direction:
@@ -2939,7 +2941,8 @@ contains
           pd(i, j, k) = pd(i, j, k) - abs1d
         end if
       end do
-      pinfcorrd = 0.001_realtype*plimd
+      fwd = sfil*fwd
+      pinfcorrd = pinfcorrd + 0.001_realtype*plimd
     end if
   end subroutine invisciddissfluxmatrix_b
   subroutine invisciddissfluxmatrix()
@@ -3583,9 +3586,11 @@ contains
     end if
   end subroutine invisciddissfluxmatrix
 !  differentiation of invisciddissfluxscalar in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *p *w *fw
-!   with respect to varying inputs: *p *w *radi *radj *radk rhoinf
-!                pinfcorr
+!   gradient     of useful results: *p *w *fw rhoinf pinfcorr
+!   with respect to varying inputs: *p *w *fw *radi *radj *radk
+!                rhoinf pinfcorr
+!   rw status of diff variables: *p:incr *w:incr *fw:in-out *radi:out
+!                *radj:out *radk:out rhoinf:incr pinfcorr:incr
 !   plus diff mem management of: p:in w:in fw:in radi:in radj:in
 !                radk:in
   subroutine invisciddissfluxscalar_b()
@@ -3727,8 +3732,6 @@ contains
       radid = 0.0_8
       radjd = 0.0_8
       radkd = 0.0_8
-      rhoinfd = 0.0_8
-      pinfcorrd = 0.0_8
     else
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
@@ -3795,6 +3798,7 @@ contains
 ! set a couple of constants for the scheme.
       fis2 = rfil*vis2
       fis4 = rfil*vis4
+      sfil = one - rfil
 ! initialize the dissipative residual to a certain times,
 ! possibly zero, the previously stored value. owned cells
 ! only, because the halo values do not matter.
@@ -4261,6 +4265,7 @@ contains
       end do
       call popinteger4(j)
       call popinteger4(i)
+      fwd = sfil*fwd
       sslimd = 0.0_8
       ssd = 0.0_8
       do ii=0,ie*je*ke-1
@@ -4350,20 +4355,13 @@ contains
         end do
         temp = rhoinf**gammainf
         tempd = 0.001_realtype*sslimd/temp
-        pinfcorrd = tempd
-        if (rhoinf .le. 0.0_8 .and. (gammainf .eq. 0.0_8 .or. gammainf &
-&           .ne. int(gammainf))) then
-          rhoinfd = 0.0
-        else
-          rhoinfd = -(pinfcorr*gammainf*rhoinf**(gammainf-1)*tempd/temp)
-        end if
+        pinfcorrd = pinfcorrd + tempd
+        if (.not.(rhoinf .le. 0.0_8 .and. (gammainf .eq. 0.0_8 .or. &
+&           gammainf .ne. int(gammainf)))) rhoinfd = rhoinfd - pinfcorr*&
+&           gammainf*rhoinf**(gammainf-1)*tempd/temp
       else if (branch .eq. 1) then
         pd = pd + ssd
-        pinfcorrd = 0.001_realtype*sslimd
-        rhoinfd = 0.0_8
-      else
-        rhoinfd = 0.0_8
-        pinfcorrd = 0.0_8
+        pinfcorrd = pinfcorrd + 0.001_realtype*sslimd
       end if
     end if
   end subroutine invisciddissfluxscalar_b
@@ -5652,7 +5650,9 @@ contains
   end subroutine inviscidupwindflux
 !  differentiation of inviscidupwindflux in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *p *w *si *sj *sk *fw
-!   with respect to varying inputs: *p *w *si *sj *sk
+!   with respect to varying inputs: *p *w *si *sj *sk *fw
+!   rw status of diff variables: *p:incr *w:incr *si:incr *sj:incr
+!                *sk:incr *fw:in-out
 !   plus diff mem management of: p:in w:in si:in sj:in sk:in fw:in
   subroutine inviscidupwindflux_b(finegrid)
 !
@@ -5725,6 +5725,10 @@ contains
       else
         rotationalperiodic = .false.
       end if
+! initialize the dissipative residual to a certain times,
+! possibly zero, the previously stored value. owned cells
+! only, because the halo values do not matter.
+      sfil = one - rfil
 ! determine whether or not the total energy must be corrected
 ! for the presence of the turbulent kinetic energy.
       correctfork = getcorrectfork()
@@ -6736,6 +6740,17 @@ contains
           end do
         end do
       end if
+      do k=kl,2,-1
+        do j=jl,2,-1
+          do i=il,2,-1
+            fwd(i, j, k, irhoe) = sfil*fwd(i, j, k, irhoe)
+            fwd(i, j, k, imz) = sfil*fwd(i, j, k, imz)
+            fwd(i, j, k, imy) = sfil*fwd(i, j, k, imy)
+            fwd(i, j, k, imx) = sfil*fwd(i, j, k, imx)
+            fwd(i, j, k, irho) = sfil*fwd(i, j, k, irho)
+          end do
+        end do
+      end do
     end if
 
   contains
@@ -8479,11 +8494,14 @@ contains
     end subroutine riemannflux
   end subroutine inviscidupwindflux_b
 !  differentiation of viscousflux in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *rev *w *rlv *x *si *sj *sk
-!                *fw *(*viscsubface.tau)
+!   gradient     of useful results: *w *x *si *sj *sk *fw *(*viscsubface.tau)
 !   with respect to varying inputs: *rev *aa *wx *wy *wz *w *rlv
 !                *x *qx *qy *qz *ux *uy *uz *si *sj *sk *vx *vy
-!                *vz *fw
+!                *vz *fw *(*viscsubface.tau)
+!   rw status of diff variables: *rev:out *aa:out *wx:out *wy:out
+!                *wz:out *w:incr *rlv:out *x:incr *qx:out *qy:out
+!                *qz:out *ux:out *uy:out *uz:out *si:incr *sj:incr
+!                *sk:incr *vx:out *vy:out *vz:out *fw:in-out *(*viscsubface.tau):in-out
 !   plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
 !                w:in rlv:in x:in qx:in qy:in qz:in ux:in uy:in
 !                uz:in si:in sj:in sk:in vx:in vy:in vz:in fw:in
@@ -8647,10 +8665,12 @@ contains
       abs0 = -rfilv
     end if
     if (abs0 .lt. thresholdreal) then
+      revd = 0.0_8
       aad = 0.0_8
       wxd = 0.0_8
       wyd = 0.0_8
       wzd = 0.0_8
+      rlvd = 0.0_8
       qxd = 0.0_8
       qyd = 0.0_8
       qzd = 0.0_8
@@ -8731,10 +8751,12 @@ contains
       call pushreal8(fracdiv)
       call pushreal8(por)
       call pushreal8(mut)
+      revd = 0.0_8
       aad = 0.0_8
       wxd = 0.0_8
       wyd = 0.0_8
       wzd = 0.0_8
+      rlvd = 0.0_8
       qxd = 0.0_8
       qyd = 0.0_8
       qzd = 0.0_8
@@ -8746,10 +8768,12 @@ contains
       vzd = 0.0_8
       mued = 0.0_8
       mue = zero
+      revd = 0.0_8
       aad = 0.0_8
       wxd = 0.0_8
       wyd = 0.0_8
       wzd = 0.0_8
+      rlvd = 0.0_8
       qxd = 0.0_8
       qyd = 0.0_8
       qzd = 0.0_8
@@ -11174,12 +11198,12 @@ contains
     end if
   end subroutine viscousflux
 !  differentiation of viscousfluxapprox in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *rev *w *rlv *x *si *sj *sk
-!                *fw
-!   with respect to varying inputs: *rev *aa *w *rlv *x *si *sj
-!                *sk *fw
+!   gradient     of useful results: *w *x *fw
+!   with respect to varying inputs: *rev *aa *w *rlv *x *fw
+!   rw status of diff variables: *rev:out *aa:out *w:incr *rlv:out
+!                *x:incr *fw:in-out
 !   plus diff mem management of: rev:in aa:in w:in rlv:in x:in
-!                si:in sj:in sk:in fw:in
+!                fw:in
   subroutine viscousfluxapprox_b()
     use constants
     use blockpointers
@@ -11324,12 +11348,6 @@ contains
 ! compute the stress tensor and the heat flux vector.
           call pushreal8(fracdiv)
           fracdiv = twothird*(u_x+v_y+w_z)
-          call pushreal8(q_x)
-          q_x = heatcoef*q_x
-          call pushreal8(q_y)
-          q_y = heatcoef*q_y
-          call pushreal8(q_z)
-          q_z = heatcoef*q_z
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
 ! compute the viscous fluxes for this i-face.
@@ -11416,12 +11434,6 @@ contains
 ! compute the stress tensor and the heat flux vector.
           call pushreal8(fracdiv)
           fracdiv = twothird*(u_x+v_y+w_z)
-          call pushreal8(q_x)
-          q_x = heatcoef*q_x
-          call pushreal8(q_y)
-          q_y = heatcoef*q_y
-          call pushreal8(q_z)
-          q_z = heatcoef*q_z
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
 ! compute the viscous fluxes for this j-face.
@@ -11508,12 +11520,6 @@ contains
 ! compute the stress tensor and the heat flux vector.
           call pushreal8(fracdiv)
           fracdiv = twothird*(u_x+v_y+w_z)
-          call pushreal8(q_x)
-          q_x = heatcoef*q_x
-          call pushreal8(q_y)
-          q_y = heatcoef*q_y
-          call pushreal8(q_z)
-          q_z = heatcoef*q_z
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
 ! compute the viscous fluxes for this j-face.
@@ -11521,7 +11527,9 @@ contains
         end do
       end do
     end do
+    revd = 0.0_8
     aad = 0.0_8
+    rlvd = 0.0_8
     mued = 0.0_8
     do k=kl,1,-1
       do j=jl,2,-1
@@ -11550,28 +11558,13 @@ contains
           wbard = tauzz*tempd21 + tauyz*tempd20 + tauxz*tempd19
           tauxzd = sk(i, j, k, 1)*fmzd + sk(i, j, k, 3)*fmxd + ubar*&
 &           tempd21 + wbar*tempd19
-          skd(i, j, k, 1) = skd(i, j, k, 1) + (ubar*tauxx-q_x+vbar*tauxy&
-&           +wbar*tauxz)*frhoed
           tauyyd = sk(i, j, k, 2)*fmyd + vbar*tempd20
           tauyzd = sk(i, j, k, 2)*fmzd + sk(i, j, k, 3)*fmyd + vbar*&
 &           tempd21 + wbar*tempd20
-          skd(i, j, k, 2) = skd(i, j, k, 2) + (ubar*tauxy-q_y+vbar*tauyy&
-&           +wbar*tauyz)*frhoed
           tauzzd = sk(i, j, k, 3)*fmzd + wbar*tempd21
-          skd(i, j, k, 3) = skd(i, j, k, 3) + (ubar*tauxz-q_z+vbar*tauyz&
-&           +wbar*tauzz)*frhoed
           q_xd = -(sk(i, j, k, 1)*frhoed)
           q_yd = -(sk(i, j, k, 2)*frhoed)
           q_zd = -(sk(i, j, k, 3)*frhoed)
-          skd(i, j, k, 1) = skd(i, j, k, 1) + tauxz*fmzd
-          skd(i, j, k, 2) = skd(i, j, k, 2) + tauyz*fmzd
-          skd(i, j, k, 3) = skd(i, j, k, 3) + tauzz*fmzd
-          skd(i, j, k, 1) = skd(i, j, k, 1) + tauxy*fmyd
-          skd(i, j, k, 2) = skd(i, j, k, 2) + tauyy*fmyd
-          skd(i, j, k, 3) = skd(i, j, k, 3) + tauyz*fmyd
-          skd(i, j, k, 1) = skd(i, j, k, 1) + tauxx*fmxd
-          skd(i, j, k, 2) = skd(i, j, k, 2) + tauxy*fmxd
-          skd(i, j, k, 3) = skd(i, j, k, 3) + tauxz*fmxd
           wd(i, j, k, ivz) = wd(i, j, k, ivz) + half*wbard
           wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + half*wbard
           wd(i, j, k, ivy) = wd(i, j, k, ivy) + half*vbard
@@ -11579,9 +11572,6 @@ contains
           wd(i, j, k, ivx) = wd(i, j, k, ivx) + half*ubard
           wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + half*ubard
           dd = aa(i, j, k+1) - aa(i, j, k)
-          call popreal8(q_z)
-          call popreal8(q_y)
-          call popreal8(q_x)
           heatcoefd = q_y*q_yd + q_x*q_xd + q_z*q_zd
           q_zd = heatcoef*q_zd
           q_yd = heatcoef*q_yd
@@ -11726,28 +11716,13 @@ contains
           wbard = tauzz*tempd13 + tauyz*tempd12 + tauxz*tempd11
           tauxzd = sj(i, j, k, 1)*fmzd + sj(i, j, k, 3)*fmxd + ubar*&
 &           tempd13 + wbar*tempd11
-          sjd(i, j, k, 1) = sjd(i, j, k, 1) + (ubar*tauxx-q_x+vbar*tauxy&
-&           +wbar*tauxz)*frhoed
           tauyyd = sj(i, j, k, 2)*fmyd + vbar*tempd12
           tauyzd = sj(i, j, k, 2)*fmzd + sj(i, j, k, 3)*fmyd + vbar*&
 &           tempd13 + wbar*tempd12
-          sjd(i, j, k, 2) = sjd(i, j, k, 2) + (ubar*tauxy-q_y+vbar*tauyy&
-&           +wbar*tauyz)*frhoed
           tauzzd = sj(i, j, k, 3)*fmzd + wbar*tempd13
-          sjd(i, j, k, 3) = sjd(i, j, k, 3) + (ubar*tauxz-q_z+vbar*tauyz&
-&           +wbar*tauzz)*frhoed
           q_xd = -(sj(i, j, k, 1)*frhoed)
           q_yd = -(sj(i, j, k, 2)*frhoed)
           q_zd = -(sj(i, j, k, 3)*frhoed)
-          sjd(i, j, k, 1) = sjd(i, j, k, 1) + tauxz*fmzd
-          sjd(i, j, k, 2) = sjd(i, j, k, 2) + tauyz*fmzd
-          sjd(i, j, k, 3) = sjd(i, j, k, 3) + tauzz*fmzd
-          sjd(i, j, k, 1) = sjd(i, j, k, 1) + tauxy*fmyd
-          sjd(i, j, k, 2) = sjd(i, j, k, 2) + tauyy*fmyd
-          sjd(i, j, k, 3) = sjd(i, j, k, 3) + tauyz*fmyd
-          sjd(i, j, k, 1) = sjd(i, j, k, 1) + tauxx*fmxd
-          sjd(i, j, k, 2) = sjd(i, j, k, 2) + tauxy*fmxd
-          sjd(i, j, k, 3) = sjd(i, j, k, 3) + tauxz*fmxd
           wd(i, j, k, ivz) = wd(i, j, k, ivz) + half*wbard
           wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + half*wbard
           wd(i, j, k, ivy) = wd(i, j, k, ivy) + half*vbard
@@ -11755,9 +11730,6 @@ contains
           wd(i, j, k, ivx) = wd(i, j, k, ivx) + half*ubard
           wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + half*ubard
           dd = aa(i, j+1, k) - aa(i, j, k)
-          call popreal8(q_z)
-          call popreal8(q_y)
-          call popreal8(q_x)
           heatcoefd = q_y*q_yd + q_x*q_xd + q_z*q_zd
           q_zd = heatcoef*q_zd
           q_yd = heatcoef*q_yd
@@ -11902,28 +11874,13 @@ contains
           wbard = tauzz*tempd5 + tauyz*tempd4 + tauxz*tempd3
           tauxzd = si(i, j, k, 1)*fmzd + si(i, j, k, 3)*fmxd + ubar*&
 &           tempd5 + wbar*tempd3
-          sid(i, j, k, 1) = sid(i, j, k, 1) + (ubar*tauxx-q_x+vbar*tauxy&
-&           +wbar*tauxz)*frhoed
           tauyyd = si(i, j, k, 2)*fmyd + vbar*tempd4
           tauyzd = si(i, j, k, 2)*fmzd + si(i, j, k, 3)*fmyd + vbar*&
 &           tempd5 + wbar*tempd4
-          sid(i, j, k, 2) = sid(i, j, k, 2) + (ubar*tauxy-q_y+vbar*tauyy&
-&           +wbar*tauyz)*frhoed
           tauzzd = si(i, j, k, 3)*fmzd + wbar*tempd5
-          sid(i, j, k, 3) = sid(i, j, k, 3) + (ubar*tauxz-q_z+vbar*tauyz&
-&           +wbar*tauzz)*frhoed
           q_xd = -(si(i, j, k, 1)*frhoed)
           q_yd = -(si(i, j, k, 2)*frhoed)
           q_zd = -(si(i, j, k, 3)*frhoed)
-          sid(i, j, k, 1) = sid(i, j, k, 1) + tauxz*fmzd
-          sid(i, j, k, 2) = sid(i, j, k, 2) + tauyz*fmzd
-          sid(i, j, k, 3) = sid(i, j, k, 3) + tauzz*fmzd
-          sid(i, j, k, 1) = sid(i, j, k, 1) + tauxy*fmyd
-          sid(i, j, k, 2) = sid(i, j, k, 2) + tauyy*fmyd
-          sid(i, j, k, 3) = sid(i, j, k, 3) + tauyz*fmyd
-          sid(i, j, k, 1) = sid(i, j, k, 1) + tauxx*fmxd
-          sid(i, j, k, 2) = sid(i, j, k, 2) + tauxy*fmxd
-          sid(i, j, k, 3) = sid(i, j, k, 3) + tauxz*fmxd
           wd(i, j, k, ivz) = wd(i, j, k, ivz) + half*wbard
           wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + half*wbard
           wd(i, j, k, ivy) = wd(i, j, k, ivy) + half*vbard
@@ -11931,9 +11888,6 @@ contains
           wd(i, j, k, ivx) = wd(i, j, k, ivx) + half*ubard
           wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + half*ubard
           dd = aa(i+1, j, k) - aa(i, j, k)
-          call popreal8(q_z)
-          call popreal8(q_y)
-          call popreal8(q_x)
           heatcoefd = q_y*q_yd + q_x*q_xd + q_z*q_zd
           q_zd = heatcoef*q_zd
           q_yd = heatcoef*q_yd
@@ -12347,8 +12301,9 @@ contains
   end subroutine viscousfluxapprox
 !  differentiation of invisciddissfluxscalarapprox in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *p *w *fw
-!   with respect to varying inputs: *p *w *radi *radj *radk rhoinf
-!                pinfcorr
+!   with respect to varying inputs: *p *w *fw *radi *radj *radk
+!   rw status of diff variables: *p:incr *w:in-out *fw:in-out *radi:out
+!                *radj:out *radk:out
 !   plus diff mem management of: p:in w:in fw:in radi:in radj:in
 !                radk:in
   subroutine invisciddissfluxscalarapprox_b()
@@ -12375,12 +12330,12 @@ contains
 !
     integer(kind=inttype) :: i, j, k, ind
     real(kind=realtype) :: sslim, rhoi
-    real(kind=realtype) :: sslimd, rhoid
+    real(kind=realtype) :: rhoid
     real(kind=realtype) :: sfil, fis2, fis4
     real(kind=realtype) :: ppor, rrad, dis2
     real(kind=realtype) :: rradd, dis2d
     real(kind=realtype) :: dss1, dss2, ddw, fs
-    real(kind=realtype) :: dss1d, dss2d, ddwd, fsd
+    real(kind=realtype) :: ddwd, fsd
     intrinsic abs
     intrinsic max
     intrinsic min
@@ -12417,7 +12372,6 @@ contains
     real(kind=realtype) :: temp2
     real(kind=realtype) :: temp1
     real(kind=realtype) :: temp0
-    real(kind=realtype) :: x6d
     real(kind=realtype) :: min3
     real(kind=realtype) :: min2
     real(kind=realtype) :: min1
@@ -12429,45 +12383,28 @@ contains
     real(kind=realtype) :: tmpd16
     real(kind=realtype) :: x5
     real(kind=realtype) :: tmpd15
-    real(kind=realtype) :: min1d
     real(kind=realtype) :: x4
     real(kind=realtype) :: tmpd14
     real(kind=realtype) :: x3
     real(kind=realtype) :: tmpd13
     real(kind=realtype) :: x2
     real(kind=realtype) :: tmpd12
-    real(kind=realtype) :: x2d
     real(kind=realtype) :: x1
     real(kind=realtype) :: tmpd11
     real(kind=realtype) :: tmpd10
-    real(kind=realtype) :: x5d
-    real(kind=realtype) :: temp14
-    real(kind=realtype) :: y3d
-    real(kind=realtype) :: temp13
-    real(kind=realtype) :: temp12
-    real(kind=realtype) :: temp11
-    real(kind=realtype) :: temp10
-    real(kind=realtype) :: tempd
     real(kind=realtype) :: tmpd9
     real(kind=realtype) :: tmpd8
     real(kind=realtype) :: tmpd7
     real(kind=realtype) :: tmpd6
     real(kind=realtype) :: tmpd5
     real(kind=realtype) :: tmpd4
-    real(kind=realtype) :: x1d
     real(kind=realtype) :: tmpd3
     real(kind=realtype) :: tmpd2
     real(kind=realtype) :: tmpd1
     real(kind=realtype) :: tmpd0
-    real(kind=realtype) :: min3d
-    real(kind=realtype) :: x4d
-    real(kind=realtype) :: y2d
     real(kind=realtype) :: abs0
     real(kind=realtype) :: temp
-    real(kind=realtype) :: temp9
     real(kind=realtype) :: tmpd25
-    real(kind=realtype) :: min2d
-    real(kind=realtype) :: temp8
     real(kind=realtype) :: tmpd24
     real(kind=realtype) :: temp7
     real(kind=realtype) :: y3
@@ -12475,11 +12412,9 @@ contains
     real(kind=realtype) :: temp6
     real(kind=realtype) :: y2
     real(kind=realtype) :: tmpd22
-    real(kind=realtype) :: x3d
     real(kind=realtype) :: temp5
     real(kind=realtype) :: y1
     real(kind=realtype) :: tmpd21
-    real(kind=realtype) :: y1d
     real(kind=realtype) :: temp4
     if (rfil .ge. 0.) then
       abs0 = rfil
@@ -12492,8 +12427,6 @@ contains
       radid = 0.0_8
       radjd = 0.0_8
       radkd = 0.0_8
-      rhoinfd = 0.0_8
-      pinfcorrd = 0.0_8
     else
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
@@ -12505,7 +12438,6 @@ contains
 ! must have the dimension of pressure and it is therefore
 ! set to a fraction of the free stream value.
         sslim = 0.001_realtype*pinfcorr
-        call pushcontrol2b(1)
       case (nsequations, ransequations) 
 !===============================================================
 ! viscous case. pressure switch is based on the entropy.
@@ -12513,13 +12445,11 @@ contains
 ! must have the dimension of entropy and it is therefore
 ! set to a fraction of the free stream value.
         sslim = 0.001_realtype*pinfcorr/rhoinf**gammainf
-        call pushcontrol2b(2)
-      case default
-        call pushcontrol2b(0)
       end select
 ! set a couple of constants for the scheme.
       fis2 = rfil*vis2
       fis4 = rfil*vis4
+      sfil = one - rfil
 ! replace the total energy by rho times the total enthalpy.
 ! in this way the numerical solution is total enthalpy preserving
 ! for the steady euler equations. also replace the velocities by
@@ -12648,10 +12578,8 @@ contains
 &           1, j, k)+shocksensor(0, j, k)+sslim)
           if (x1 .ge. 0.) then
             dss1 = x1
-            call pushcontrol1b(0)
           else
             dss1 = -x1
-            call pushcontrol1b(1)
           end if
 ! loop in i-direction.
           do i=1,il
@@ -12660,10 +12588,8 @@ contains
 &             shocksensor(i+1, j, k)+shocksensor(i, j, k)+sslim)
             if (x2 .ge. 0.) then
               dss2 = x2
-              call pushcontrol1b(0)
             else
               dss2 = -x2
-              call pushcontrol1b(1)
             end if
 ! compute the dissipation coefficients for this face.
             call pushreal8(ppor)
@@ -12671,10 +12597,8 @@ contains
             if (pori(i, j, k) .eq. normalflux) ppor = half
             if (dss1 .lt. dss2) then
               y1 = dss2
-              call pushcontrol1b(0)
             else
               y1 = dss1
-              call pushcontrol1b(1)
             end if
             if (dssmax .gt. y1) then
               call pushreal8(min1)
@@ -12712,10 +12636,8 @@ contains
 &           i, 1, k)+shocksensor(i, 0, k)+sslim)
           if (x3 .ge. 0.) then
             dss1 = x3
-            call pushcontrol1b(0)
           else
             dss1 = -x3
-            call pushcontrol1b(1)
           end if
 ! loop in j-direction.
           do j=1,jl
@@ -12724,10 +12646,8 @@ contains
 &             shocksensor(i, j+1, k)+shocksensor(i, j, k)+sslim)
             if (x4 .ge. 0.) then
               dss2 = x4
-              call pushcontrol1b(0)
             else
               dss2 = -x4
-              call pushcontrol1b(1)
             end if
 ! compute the dissipation coefficients for this face.
             call pushreal8(ppor)
@@ -12735,10 +12655,8 @@ contains
             if (porj(i, j, k) .eq. normalflux) ppor = half
             if (dss1 .lt. dss2) then
               y2 = dss2
-              call pushcontrol1b(0)
             else
               y2 = dss1
-              call pushcontrol1b(1)
             end if
             if (dssmax .gt. y2) then
               call pushreal8(min2)
@@ -12772,10 +12690,8 @@ contains
 &           i, j, 1)+shocksensor(i, j, 0)+sslim)
           if (x5 .ge. 0.) then
             dss1 = x5
-            call pushcontrol1b(0)
           else
             dss1 = -x5
-            call pushcontrol1b(1)
           end if
 ! loop in k-direction.
           do k=1,kl
@@ -12784,10 +12700,8 @@ contains
 &             shocksensor(i, j, k+1)+shocksensor(i, j, k)+sslim)
             if (x6 .ge. 0.) then
               dss2 = x6
-              call pushcontrol1b(0)
             else
               dss2 = -x6
-              call pushcontrol1b(1)
             end if
 ! compute the dissipation coefficients for this face.
             call pushreal8(ppor)
@@ -12795,10 +12709,8 @@ contains
             if (pork(i, j, k) .eq. normalflux) ppor = half
             if (dss1 .lt. dss2) then
               y3 = dss2
-              call pushcontrol1b(0)
             else
               y3 = dss1
-              call pushcontrol1b(1)
             end if
             if (dssmax .gt. y3) then
               call pushreal8(min3)
@@ -12944,8 +12856,8 @@ contains
           rhoid = rhoid + w(i, jb, k, ivx)*wd(i, jb, k, ivx)
           wd(i, jb, k, ivx) = rhoi*wd(i, jb, k, ivx)
           call popreal8(rhoi)
-          temp14 = w(i, jb, k, irho)
-          wd(i, jb, k, irho) = wd(i, jb, k, irho) - one*rhoid/temp14**2
+          temp7 = w(i, jb, k, irho)
+          wd(i, jb, k, irho) = wd(i, jb, k, irho) - one*rhoid/temp7**2
           call popreal8(w(i, je, k, irhoe))
           pd(i, je, k) = pd(i, je, k) - wd(i, je, k, irhoe)
           call popreal8(w(i, je, k, ivz))
@@ -12958,8 +12870,8 @@ contains
           rhoid = rhoid + w(i, je, k, ivx)*wd(i, je, k, ivx)
           wd(i, je, k, ivx) = rhoi*wd(i, je, k, ivx)
           call popreal8(rhoi)
-          temp13 = w(i, je, k, irho)
-          wd(i, je, k, irho) = wd(i, je, k, irho) - one*rhoid/temp13**2
+          temp6 = w(i, je, k, irho)
+          wd(i, je, k, irho) = wd(i, je, k, irho) - one*rhoid/temp6**2
           call popreal8(w(i, 1, k, irhoe))
           pd(i, 1, k) = pd(i, 1, k) - wd(i, 1, k, irhoe)
           call popreal8(w(i, 1, k, ivz))
@@ -12972,8 +12884,8 @@ contains
           rhoid = rhoid + w(i, 1, k, ivx)*wd(i, 1, k, ivx)
           wd(i, 1, k, ivx) = rhoi*wd(i, 1, k, ivx)
           call popreal8(rhoi)
-          temp12 = w(i, 1, k, irho)
-          wd(i, 1, k, irho) = wd(i, 1, k, irho) - one*rhoid/temp12**2
+          temp5 = w(i, 1, k, irho)
+          wd(i, 1, k, irho) = wd(i, 1, k, irho) - one*rhoid/temp5**2
           call popreal8(w(i, 0, k, irhoe))
           pd(i, 0, k) = pd(i, 0, k) - wd(i, 0, k, irhoe)
           call popreal8(w(i, 0, k, ivz))
@@ -12986,8 +12898,8 @@ contains
           rhoid = rhoid + w(i, 0, k, ivx)*wd(i, 0, k, ivx)
           wd(i, 0, k, ivx) = rhoi*wd(i, 0, k, ivx)
           call popreal8(rhoi)
-          temp11 = w(i, 0, k, irho)
-          wd(i, 0, k, irho) = wd(i, 0, k, irho) - one*rhoid/temp11**2
+          temp4 = w(i, 0, k, irho)
+          wd(i, 0, k, irho) = wd(i, 0, k, irho) - one*rhoid/temp4**2
         end do
       end do
       do k=kl,2,-1
@@ -13004,8 +12916,8 @@ contains
           rhoid = rhoid + w(ib, j, k, ivx)*wd(ib, j, k, ivx)
           wd(ib, j, k, ivx) = rhoi*wd(ib, j, k, ivx)
           call popreal8(rhoi)
-          temp10 = w(ib, j, k, irho)
-          wd(ib, j, k, irho) = wd(ib, j, k, irho) - one*rhoid/temp10**2
+          temp3 = w(ib, j, k, irho)
+          wd(ib, j, k, irho) = wd(ib, j, k, irho) - one*rhoid/temp3**2
           call popreal8(w(ie, j, k, irhoe))
           pd(ie, j, k) = pd(ie, j, k) - wd(ie, j, k, irhoe)
           call popreal8(w(ie, j, k, ivz))
@@ -13018,8 +12930,8 @@ contains
           rhoid = rhoid + w(ie, j, k, ivx)*wd(ie, j, k, ivx)
           wd(ie, j, k, ivx) = rhoi*wd(ie, j, k, ivx)
           call popreal8(rhoi)
-          temp9 = w(ie, j, k, irho)
-          wd(ie, j, k, irho) = wd(ie, j, k, irho) - one*rhoid/temp9**2
+          temp2 = w(ie, j, k, irho)
+          wd(ie, j, k, irho) = wd(ie, j, k, irho) - one*rhoid/temp2**2
           call popreal8(w(1, j, k, irhoe))
           pd(1, j, k) = pd(1, j, k) - wd(1, j, k, irhoe)
           call popreal8(w(1, j, k, ivz))
@@ -13032,8 +12944,8 @@ contains
           rhoid = rhoid + w(1, j, k, ivx)*wd(1, j, k, ivx)
           wd(1, j, k, ivx) = rhoi*wd(1, j, k, ivx)
           call popreal8(rhoi)
-          temp8 = w(1, j, k, irho)
-          wd(1, j, k, irho) = wd(1, j, k, irho) - one*rhoid/temp8**2
+          temp1 = w(1, j, k, irho)
+          wd(1, j, k, irho) = wd(1, j, k, irho) - one*rhoid/temp1**2
           call popreal8(w(0, j, k, irhoe))
           pd(0, j, k) = pd(0, j, k) - wd(0, j, k, irhoe)
           call popreal8(w(0, j, k, ivz))
@@ -13046,8 +12958,8 @@ contains
           rhoid = rhoid + w(0, j, k, ivx)*wd(0, j, k, ivx)
           wd(0, j, k, ivx) = rhoi*wd(0, j, k, ivx)
           call popreal8(rhoi)
-          temp7 = w(0, j, k, irho)
-          wd(0, j, k, irho) = wd(0, j, k, irho) - one*rhoid/temp7**2
+          temp0 = w(0, j, k, irho)
+          wd(0, j, k, irho) = wd(0, j, k, irho) - one*rhoid/temp0**2
         end do
       end do
       do k=kb,0,-1
@@ -13065,18 +12977,15 @@ contains
             rhoid = rhoid + w(i, j, k, ivx)*wd(i, j, k, ivx)
             wd(i, j, k, ivx) = rhoi*wd(i, j, k, ivx)
             call popreal8(rhoi)
-            temp6 = w(i, j, k, irho)
-            wd(i, j, k, irho) = wd(i, j, k, irho) - one*rhoid/temp6**2
+            temp = w(i, j, k, irho)
+            wd(i, j, k, irho) = wd(i, j, k, irho) - one*rhoid/temp**2
           end do
         end do
       end do
       radkd = 0.0_8
-      sslimd = 0.0_8
       do j=jl,2,-1
         do i=il,2,-1
-          dss1d = 0.0_8
           do k=kl,1,-1
-            dss2d = dss1d
             fsd = fwd(i, j, k+1, irhoe) - fwd(i, j, k, irhoe)
             ddw = w(i, j, k+1, irhoe) - w(i, j, k, irhoe)
             rrad = ppor*(radk(i, j, k)+radk(i, j, k+1))
@@ -13110,54 +13019,22 @@ contains
             wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + ddwd
             wd(i, j, k, irho) = wd(i, j, k, irho) - ddwd
             rradd = (sigma*fis4+fis2*min3)*dis2d
-            min3d = fis2*rrad*dis2d
             call popcontrol1b(branch)
             if (branch .eq. 0) then
               call popreal8(min3)
-              y3d = min3d
             else
               call popreal8(min3)
-              y3d = 0.0_8
-            end if
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              dss2d = dss2d + y3d
-              dss1d = 0.0_8
-            else
-              dss1d = y3d
             end if
             radkd(i, j, k) = radkd(i, j, k) + ppor*rradd
             radkd(i, j, k+1) = radkd(i, j, k+1) + ppor*rradd
             call popreal8(ppor)
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              x6d = dss2d
-            else
-              x6d = -dss2d
-            end if
-            temp5 = shocksensor(i, j, k+2) + two*shocksensor(i, j, k+1) &
-&             + shocksensor(i, j, k) + sslim
-            sslimd = sslimd - (shocksensor(i, j, k+2)-two*shocksensor(i&
-&             , j, k+1)+shocksensor(i, j, k))*x6d/temp5**2
           end do
-          call popcontrol1b(branch)
-          if (branch .eq. 0) then
-            x5d = dss1d
-          else
-            x5d = -dss1d
-          end if
-          temp4 = shocksensor(i, j, 2) + two*shocksensor(i, j, 1) + &
-&           shocksensor(i, j, 0) + sslim
-          sslimd = sslimd - (shocksensor(i, j, 2)-two*shocksensor(i, j, &
-&           1)+shocksensor(i, j, 0))*x5d/temp4**2
         end do
       end do
       radjd = 0.0_8
       do k=kl,2,-1
         do i=il,2,-1
-          dss1d = 0.0_8
           do j=jl,1,-1
-            dss2d = dss1d
             fsd = fwd(i, j+1, k, irhoe) - fwd(i, j, k, irhoe)
             ddw = w(i, j+1, k, irhoe) - w(i, j, k, irhoe)
             rrad = ppor*(radj(i, j, k)+radj(i, j+1, k))
@@ -13191,54 +13068,22 @@ contains
             wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + ddwd
             wd(i, j, k, irho) = wd(i, j, k, irho) - ddwd
             rradd = (sigma*fis4+fis2*min2)*dis2d
-            min2d = fis2*rrad*dis2d
             call popcontrol1b(branch)
             if (branch .eq. 0) then
               call popreal8(min2)
-              y2d = min2d
             else
               call popreal8(min2)
-              y2d = 0.0_8
-            end if
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              dss2d = dss2d + y2d
-              dss1d = 0.0_8
-            else
-              dss1d = y2d
             end if
             radjd(i, j, k) = radjd(i, j, k) + ppor*rradd
             radjd(i, j+1, k) = radjd(i, j+1, k) + ppor*rradd
             call popreal8(ppor)
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              x4d = dss2d
-            else
-              x4d = -dss2d
-            end if
-            temp3 = shocksensor(i, j+2, k) + two*shocksensor(i, j+1, k) &
-&             + shocksensor(i, j, k) + sslim
-            sslimd = sslimd - (shocksensor(i, j+2, k)-two*shocksensor(i&
-&             , j+1, k)+shocksensor(i, j, k))*x4d/temp3**2
           end do
-          call popcontrol1b(branch)
-          if (branch .eq. 0) then
-            x3d = dss1d
-          else
-            x3d = -dss1d
-          end if
-          temp2 = shocksensor(i, 2, k) + two*shocksensor(i, 1, k) + &
-&           shocksensor(i, 0, k) + sslim
-          sslimd = sslimd - (shocksensor(i, 2, k)-two*shocksensor(i, 1, &
-&           k)+shocksensor(i, 0, k))*x3d/temp2**2
         end do
       end do
       radid = 0.0_8
       do k=kl,2,-1
         do j=jl,2,-1
-          dss1d = 0.0_8
           do i=il,1,-1
-            dss2d = dss1d
             fsd = fwd(i+1, j, k, irhoe) - fwd(i, j, k, irhoe)
             ddw = w(i+1, j, k, irhoe) - w(i, j, k, irhoe)
             rrad = ppor*(radi(i, j, k)+radi(i+1, j, k))
@@ -13272,46 +13117,27 @@ contains
             wd(i+1, j, k, irho) = wd(i+1, j, k, irho) + ddwd
             wd(i, j, k, irho) = wd(i, j, k, irho) - ddwd
             rradd = (sigma*fis4+fis2*min1)*dis2d
-            min1d = fis2*rrad*dis2d
             call popcontrol1b(branch)
             if (branch .eq. 0) then
               call popreal8(min1)
-              y1d = min1d
             else
               call popreal8(min1)
-              y1d = 0.0_8
-            end if
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              dss2d = dss2d + y1d
-              dss1d = 0.0_8
-            else
-              dss1d = y1d
             end if
             radid(i, j, k) = radid(i, j, k) + ppor*rradd
             radid(i+1, j, k) = radid(i+1, j, k) + ppor*rradd
             call popreal8(ppor)
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              x2d = dss2d
-            else
-              x2d = -dss2d
-            end if
-            temp1 = shocksensor(i+2, j, k) + two*shocksensor(i+1, j, k) &
-&             + shocksensor(i, j, k) + sslim
-            sslimd = sslimd - (shocksensor(i+2, j, k)-two*shocksensor(i+&
-&             1, j, k)+shocksensor(i, j, k))*x2d/temp1**2
           end do
-          call popcontrol1b(branch)
-          if (branch .eq. 0) then
-            x1d = dss1d
-          else
-            x1d = -dss1d
-          end if
-          temp0 = shocksensor(2, j, k) + two*shocksensor(1, j, k) + &
-&           shocksensor(0, j, k) + sslim
-          sslimd = sslimd - (shocksensor(2, j, k)-two*shocksensor(1, j, &
-&           k)+shocksensor(0, j, k))*x1d/temp0**2
+        end do
+      end do
+      do k=kl,2,-1
+        do j=jl,2,-1
+          do i=il,2,-1
+            fwd(i, j, k, irhoe) = sfil*fwd(i, j, k, irhoe)
+            fwd(i, j, k, imz) = sfil*fwd(i, j, k, imz)
+            fwd(i, j, k, imy) = sfil*fwd(i, j, k, imy)
+            fwd(i, j, k, imx) = sfil*fwd(i, j, k, imx)
+            fwd(i, j, k, irho) = sfil*fwd(i, j, k, irho)
+          end do
         end do
       end do
       do k=kl,2,-1
@@ -13507,24 +13333,6 @@ contains
           end do
         end do
       end do
-      call popcontrol2b(branch)
-      if (branch .eq. 0) then
-        rhoinfd = 0.0_8
-        pinfcorrd = 0.0_8
-      else if (branch .eq. 1) then
-        pinfcorrd = 0.001_realtype*sslimd
-        rhoinfd = 0.0_8
-      else
-        temp = rhoinf**gammainf
-        tempd = 0.001_realtype*sslimd/temp
-        pinfcorrd = tempd
-        if (rhoinf .le. 0.0_8 .and. (gammainf .eq. 0.0_8 .or. gammainf &
-&           .ne. int(gammainf))) then
-          rhoinfd = 0.0
-        else
-          rhoinfd = -(pinfcorr*gammainf*rhoinf**(gammainf-1)*tempd/temp)
-        end if
-      end if
     end if
   end subroutine invisciddissfluxscalarapprox_b
   subroutine invisciddissfluxscalarapprox()
@@ -13954,9 +13762,10 @@ contains
     end if
   end subroutine invisciddissfluxscalarapprox
 !  differentiation of invisciddissfluxmatrixapprox in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *p *w *si *sj *sk *fw
-!   with respect to varying inputs: *p *w *si *sj *sk pinfcorr
-!   plus diff mem management of: p:in w:in si:in sj:in sk:in fw:in
+!   gradient     of useful results: *p *w *fw
+!   with respect to varying inputs: *p *w *fw
+!   rw status of diff variables: *p:incr *w:incr *fw:in-out
+!   plus diff mem management of: p:in w:in fw:in
   subroutine invisciddissfluxmatrixapprox_b()
 !
 !       invisciddissfluxmatrix computes the matrix artificial          
@@ -13988,22 +13797,20 @@ contains
 !
     integer(kind=inttype) :: i, j, k, ind
     real(kind=realtype) :: plim, sface
-    real(kind=realtype) :: plimd, sfaced
     real(kind=realtype) :: sfil, fis2, fis4
     real(kind=realtype) :: gammaavg, gm1, ovgm1, gm53
     real(kind=realtype) :: ppor, rrad, dis2
-    real(kind=realtype) :: rradd, dis2d
+    real(kind=realtype) :: rradd
     real(kind=realtype) :: dp1, dp2, ddw, tmp, fs
-    real(kind=realtype) :: dp1d, dp2d, ddwd, tmpd, fsd
+    real(kind=realtype) :: ddwd, fsd
     real(kind=realtype) :: dr, dru, drv, drw, dre, drk, sx, sy, sz
-    real(kind=realtype) :: drd, drud, drvd, drwd, dred, drkd, sxd, syd, &
-&   szd
+    real(kind=realtype) :: drd, drud, drvd, drwd, dred, drkd
     real(kind=realtype) :: uavg, vavg, wavg, a2avg, aavg, havg
     real(kind=realtype) :: uavgd, vavgd, wavgd, a2avgd, aavgd, havgd
     real(kind=realtype) :: alphaavg, unavg, ovaavg, ova2avg
     real(kind=realtype) :: alphaavgd, unavgd, ovaavgd, ova2avgd
     real(kind=realtype) :: kavg, lam1, lam2, lam3, area
-    real(kind=realtype) :: kavgd, lam1d, lam2d, lam3d, aread
+    real(kind=realtype) :: kavgd, lam1d, lam2d, lam3d
     real(kind=realtype) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
     real(kind=realtype) :: abv1d, abv2d, abv3d, abv4d, abv5d, abv6d, &
 &   abv7d
@@ -14015,29 +13822,18 @@ contains
     integer :: branch
     real(kind=realtype) :: temp3
     real(kind=realtype) :: temp2
-    real(kind=realtype) :: tempd13
     real(kind=realtype) :: temp1
-    real(kind=realtype) :: tempd12
     real(kind=realtype) :: temp0
-    real(kind=realtype) :: tempd11
     real(kind=realtype) :: tempd10
-    real(kind=realtype) :: x6d
-    real(kind=realtype) :: max2d
     real(kind=realtype) :: min3
     real(kind=realtype) :: min2
     real(kind=realtype) :: min1
     real(kind=realtype) :: x6
     real(kind=realtype) :: x5
-    real(kind=realtype) :: min1d
     real(kind=realtype) :: x4
     real(kind=realtype) :: x3
     real(kind=realtype) :: x2
-    real(kind=realtype) :: x2d
     real(kind=realtype) :: x1
-    real(kind=realtype) :: x5d
-    real(kind=realtype) :: y3d
-    real(kind=realtype) :: temp10
-    real(kind=realtype) :: max1d
     real(kind=realtype) :: tempd9
     real(kind=realtype) :: tempd
     real(kind=realtype) :: tempd8
@@ -14050,12 +13846,8 @@ contains
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: abs12
-    real(kind=realtype) :: x1d
     real(kind=realtype) :: abs11
     real(kind=realtype) :: abs10
-    real(kind=realtype) :: min3d
-    real(kind=realtype) :: x4d
-    real(kind=realtype) :: y2d
     real(kind=realtype) :: abs9
     real(kind=realtype) :: abs8
     real(kind=realtype) :: abs7
@@ -14066,22 +13858,13 @@ contains
     real(kind=realtype) :: abs2
     real(kind=realtype) :: abs1
     real(kind=realtype) :: abs0
-    real(kind=realtype) :: max3d
     real(kind=realtype) :: temp
     real(kind=realtype) :: max3
     real(kind=realtype) :: max2
     real(kind=realtype) :: max1
-    real(kind=realtype) :: temp9
-    real(kind=realtype) :: min2d
-    real(kind=realtype) :: temp8
-    real(kind=realtype) :: temp7
     real(kind=realtype) :: y3
-    real(kind=realtype) :: temp6
     real(kind=realtype) :: y2
-    real(kind=realtype) :: x3d
-    real(kind=realtype) :: temp5
     real(kind=realtype) :: y1
-    real(kind=realtype) :: y1d
     real(kind=realtype) :: temp4
     if (rfil .ge. 0.) then
       abs0 = rfil
@@ -14090,9 +13873,7 @@ contains
     end if
 ! check if rfil == 0. if so, the dissipative flux needs not to
 ! be computed.
-    if (abs0 .lt. thresholdreal) then
-      pinfcorrd = 0.0_8
-    else
+    if (abs0 .ge. thresholdreal) then
 ! set the value of plim. to be fully consistent this must have
 ! the dimension of a pressure. therefore a fraction of pinfcorr
 ! is used.
@@ -14106,28 +13887,21 @@ contains
 ! set a couple of constants for the scheme.
       fis2 = rfil*vis2
       fis4 = rfil*vis4
+      sfil = one - rfil
 !
 !       dissipative fluxes in the i-direction.                         
 !
       do k=2,kl
         do j=2,jl
           if (shocksensor(2, j, k) - shocksensor(1, j, k) .ge. 0.) then
-            call pushreal8(abs1)
             abs1 = shocksensor(2, j, k) - shocksensor(1, j, k)
-            call pushcontrol1b(1)
           else
-            call pushreal8(abs1)
             abs1 = -(shocksensor(2, j, k)-shocksensor(1, j, k))
-            call pushcontrol1b(0)
           end if
           if (shocksensor(1, j, k) - shocksensor(0, j, k) .ge. 0.) then
-            call pushreal8(abs7)
             abs7 = shocksensor(1, j, k) - shocksensor(0, j, k)
-            call pushcontrol1b(0)
           else
-            call pushreal8(abs7)
             abs7 = -(shocksensor(1, j, k)-shocksensor(0, j, k))
-            call pushcontrol1b(1)
           end if
           x1 = (shocksensor(2, j, k)-two*shocksensor(1, j, k)+&
 &           shocksensor(0, j, k))/(omega*(shocksensor(2, j, k)+two*&
@@ -14135,32 +13909,22 @@ contains
 &           +abs7)+plim)
           if (x1 .ge. 0.) then
             dp1 = x1
-            call pushcontrol1b(0)
           else
             dp1 = -x1
-            call pushcontrol1b(1)
           end if
 ! loop in i-direction.
           do i=1,il
             if (shocksensor(i+2, j, k) - shocksensor(i+1, j, k) .ge. 0.&
 &           ) then
-              call pushreal8(abs2)
               abs2 = shocksensor(i+2, j, k) - shocksensor(i+1, j, k)
-              call pushcontrol1b(1)
             else
-              call pushreal8(abs2)
               abs2 = -(shocksensor(i+2, j, k)-shocksensor(i+1, j, k))
-              call pushcontrol1b(0)
             end if
             if (shocksensor(i+1, j, k) - shocksensor(i, j, k) .ge. 0.) &
 &           then
-              call pushreal8(abs8)
               abs8 = shocksensor(i+1, j, k) - shocksensor(i, j, k)
-              call pushcontrol1b(0)
             else
-              call pushreal8(abs8)
               abs8 = -(shocksensor(i+1, j, k)-shocksensor(i, j, k))
-              call pushcontrol1b(1)
             end if
             x2 = (shocksensor(i+2, j, k)-two*shocksensor(i+1, j, k)+&
 &             shocksensor(i, j, k))/(omega*(shocksensor(i+2, j, k)+two*&
@@ -14168,34 +13932,26 @@ contains
 &             abs2+abs8)+plim)
             if (x2 .ge. 0.) then
               dp2 = x2
-              call pushcontrol1b(0)
             else
               dp2 = -x2
-              call pushcontrol1b(1)
             end if
 ! compute the dissipation coefficients for this face.
-            call pushreal8(ppor)
             ppor = zero
             if (pori(i, j, k) .eq. normalflux) ppor = one
             if (dp1 .lt. dp2) then
               y1 = dp2
-              call pushcontrol1b(0)
             else
               y1 = dp1
-              call pushcontrol1b(1)
             end if
             if (dpmax .gt. y1) then
               min1 = y1
-              call pushcontrol1b(0)
             else
               min1 = dpmax
-              call pushcontrol1b(1)
             end if
             call pushreal8(dis2)
             dis2 = fis2*ppor*min1 + sigma*fis4*ppor
 ! construct the vector of the first and third differences
 ! multiplied by the appropriate constants.
-            call pushreal8(ddw)
             ddw = w(i+1, j, k, irho) - w(i, j, k, irho)
             call pushreal8(dr)
             dr = dis2*ddw
@@ -14203,17 +13959,14 @@ contains
 &             )*w(i, j, k, ivx)
             call pushreal8(dru)
             dru = dis2*ddw
-            call pushreal8(ddw)
             ddw = w(i+1, j, k, irho)*w(i+1, j, k, ivy) - w(i, j, k, irho&
 &             )*w(i, j, k, ivy)
             call pushreal8(drv)
             drv = dis2*ddw
-            call pushreal8(ddw)
             ddw = w(i+1, j, k, irho)*w(i+1, j, k, ivz) - w(i, j, k, irho&
 &             )*w(i, j, k, ivz)
             call pushreal8(drw)
             drw = dis2*ddw
-            call pushreal8(ddw)
             ddw = w(i+1, j, k, irhoe) - w(i, j, k, irhoe)
             call pushreal8(dre)
             dre = dis2*ddw
@@ -14228,9 +13981,9 @@ contains
               kavg = half*(w(i, j, k, itu1)+w(i+1, j, k, itu1))
               call pushcontrol1b(1)
             else
+              call pushcontrol1b(0)
               drk = zero
               kavg = zero
-              call pushcontrol1b(0)
             end if
 ! compute the average value of gamma and compute some
 ! expressions in which it occurs.
@@ -14254,20 +14007,13 @@ contains
             call pushreal8(area)
             area = sqrt(sx**2 + sy**2 + sz**2)
             if (1.e-25_realtype .lt. area) then
-              call pushreal8(max1)
               max1 = area
-              call pushcontrol1b(0)
             else
-              call pushreal8(max1)
               max1 = 1.e-25_realtype
-              call pushcontrol1b(1)
             end if
             tmp = one/max1
-            call pushreal8(sx)
             sx = sx*tmp
-            call pushreal8(sy)
             sy = sy*tmp
-            call pushreal8(sz)
             sz = sz*tmp
             alphaavg = half*(uavg**2+vavg**2+wavg**2)
             call pushreal8(havg)
@@ -14277,12 +14023,7 @@ contains
             unavg = uavg*sx + vavg*sy + wavg*sz
 ! the mesh velocity if the face is moving. it must be
 ! divided by the area to obtain a true velocity.
-            if (addgridvelocities) then
-              sface = sfacei(i, j, k)*tmp
-              call pushcontrol1b(1)
-            else
-              call pushcontrol1b(0)
-            end if
+            if (addgridvelocities) sface = sfacei(i, j, k)*tmp
             if (unavg - sface + aavg .ge. 0.) then
               lam1 = unavg - sface + aavg
               call pushcontrol1b(0)
@@ -14330,11 +14071,8 @@ contains
             end if
 ! multiply the eigenvalues by the area to obtain
 ! the correct values for the dissipation term.
-            call pushreal8(lam1)
             lam1 = lam1*area
-            call pushreal8(lam2)
             lam2 = lam2*area
-            call pushreal8(lam3)
             lam3 = lam3*area
 ! some abbreviations, which occur quite often in the
 ! dissipation terms.
@@ -14363,22 +14101,14 @@ contains
       do k=2,kl
         do i=2,il
           if (shocksensor(i, 2, k) - shocksensor(i, 1, k) .ge. 0.) then
-            call pushreal8(abs3)
             abs3 = shocksensor(i, 2, k) - shocksensor(i, 1, k)
-            call pushcontrol1b(1)
           else
-            call pushreal8(abs3)
             abs3 = -(shocksensor(i, 2, k)-shocksensor(i, 1, k))
-            call pushcontrol1b(0)
           end if
           if (shocksensor(i, 1, k) - shocksensor(i, 0, k) .ge. 0.) then
-            call pushreal8(abs9)
             abs9 = shocksensor(i, 1, k) - shocksensor(i, 0, k)
-            call pushcontrol1b(0)
           else
-            call pushreal8(abs9)
             abs9 = -(shocksensor(i, 1, k)-shocksensor(i, 0, k))
-            call pushcontrol1b(1)
           end if
           x3 = (shocksensor(i, 2, k)-two*shocksensor(i, 1, k)+&
 &           shocksensor(i, 0, k))/(omega*(shocksensor(i, 2, k)+two*&
@@ -14386,32 +14116,22 @@ contains
 &           +abs9)+plim)
           if (x3 .ge. 0.) then
             dp1 = x3
-            call pushcontrol1b(0)
           else
             dp1 = -x3
-            call pushcontrol1b(1)
           end if
 ! loop in j-direction.
           do j=1,jl
             if (shocksensor(i, j+2, k) - shocksensor(i, j+1, k) .ge. 0.&
 &           ) then
-              call pushreal8(abs4)
               abs4 = shocksensor(i, j+2, k) - shocksensor(i, j+1, k)
-              call pushcontrol1b(1)
             else
-              call pushreal8(abs4)
               abs4 = -(shocksensor(i, j+2, k)-shocksensor(i, j+1, k))
-              call pushcontrol1b(0)
             end if
             if (shocksensor(i, j+1, k) - shocksensor(i, j, k) .ge. 0.) &
 &           then
-              call pushreal8(abs10)
               abs10 = shocksensor(i, j+1, k) - shocksensor(i, j, k)
-              call pushcontrol1b(0)
             else
-              call pushreal8(abs10)
               abs10 = -(shocksensor(i, j+1, k)-shocksensor(i, j, k))
-              call pushcontrol1b(1)
             end if
             x4 = (shocksensor(i, j+2, k)-two*shocksensor(i, j+1, k)+&
 &             shocksensor(i, j, k))/(omega*(shocksensor(i, j+2, k)+two*&
@@ -14419,34 +14139,26 @@ contains
 &             abs4+abs10)+plim)
             if (x4 .ge. 0.) then
               dp2 = x4
-              call pushcontrol1b(0)
             else
               dp2 = -x4
-              call pushcontrol1b(1)
             end if
 ! compute the dissipation coefficients for this face.
-            call pushreal8(ppor)
             ppor = zero
             if (porj(i, j, k) .eq. normalflux) ppor = one
             if (dp1 .lt. dp2) then
               y2 = dp2
-              call pushcontrol1b(0)
             else
               y2 = dp1
-              call pushcontrol1b(1)
             end if
             if (dpmax .gt. y2) then
               min2 = y2
-              call pushcontrol1b(0)
             else
               min2 = dpmax
-              call pushcontrol1b(1)
             end if
             call pushreal8(dis2)
             dis2 = fis2*ppor*min2 + sigma*fis4*ppor
 ! construct the vector of the first and third differences
 ! multiplied by the appropriate constants.
-            call pushreal8(ddw)
             ddw = w(i, j+1, k, irho) - w(i, j, k, irho)
             call pushreal8(dr)
             dr = dis2*ddw
@@ -14454,17 +14166,14 @@ contains
 &             )*w(i, j, k, ivx)
             call pushreal8(dru)
             dru = dis2*ddw
-            call pushreal8(ddw)
             ddw = w(i, j+1, k, irho)*w(i, j+1, k, ivy) - w(i, j, k, irho&
 &             )*w(i, j, k, ivy)
             call pushreal8(drv)
             drv = dis2*ddw
-            call pushreal8(ddw)
             ddw = w(i, j+1, k, irho)*w(i, j+1, k, ivz) - w(i, j, k, irho&
 &             )*w(i, j, k, ivz)
             call pushreal8(drw)
             drw = dis2*ddw
-            call pushreal8(ddw)
             ddw = w(i, j+1, k, irhoe) - w(i, j, k, irhoe)
             call pushreal8(dre)
             dre = dis2*ddw
@@ -14479,9 +14188,9 @@ contains
               kavg = half*(w(i, j, k, itu1)+w(i, j+1, k, itu1))
               call pushcontrol1b(1)
             else
+              call pushcontrol1b(0)
               drk = zero
               kavg = zero
-              call pushcontrol1b(0)
             end if
 ! compute the average value of gamma and compute some
 ! expressions in which it occurs.
@@ -14505,20 +14214,13 @@ contains
             call pushreal8(area)
             area = sqrt(sx**2 + sy**2 + sz**2)
             if (1.e-25_realtype .lt. area) then
-              call pushreal8(max2)
               max2 = area
-              call pushcontrol1b(0)
             else
-              call pushreal8(max2)
               max2 = 1.e-25_realtype
-              call pushcontrol1b(1)
             end if
             tmp = one/max2
-            call pushreal8(sx)
             sx = sx*tmp
-            call pushreal8(sy)
             sy = sy*tmp
-            call pushreal8(sz)
             sz = sz*tmp
             alphaavg = half*(uavg**2+vavg**2+wavg**2)
             call pushreal8(havg)
@@ -14528,12 +14230,7 @@ contains
             unavg = uavg*sx + vavg*sy + wavg*sz
 ! the mesh velocity if the face is moving. it must be
 ! divided by the area to obtain a true velocity.
-            if (addgridvelocities) then
-              sface = sfacej(i, j, k)*tmp
-              call pushcontrol1b(1)
-            else
-              call pushcontrol1b(0)
-            end if
+            if (addgridvelocities) sface = sfacej(i, j, k)*tmp
             if (unavg - sface + aavg .ge. 0.) then
               lam1 = unavg - sface + aavg
               call pushcontrol1b(0)
@@ -14581,11 +14278,8 @@ contains
             end if
 ! multiply the eigenvalues by the area to obtain
 ! the correct values for the dissipation term.
-            call pushreal8(lam1)
             lam1 = lam1*area
-            call pushreal8(lam2)
             lam2 = lam2*area
-            call pushreal8(lam3)
             lam3 = lam3*area
 ! some abbreviations, which occur quite often in the
 ! dissipation terms.
@@ -14614,22 +14308,14 @@ contains
       do j=2,jl
         do i=2,il
           if (shocksensor(i, j, 2) - shocksensor(i, j, 1) .ge. 0.) then
-            call pushreal8(abs5)
             abs5 = shocksensor(i, j, 2) - shocksensor(i, j, 1)
-            call pushcontrol1b(1)
           else
-            call pushreal8(abs5)
             abs5 = -(shocksensor(i, j, 2)-shocksensor(i, j, 1))
-            call pushcontrol1b(0)
           end if
           if (shocksensor(i, j, 1) - shocksensor(i, j, 0) .ge. 0.) then
-            call pushreal8(abs11)
             abs11 = shocksensor(i, j, 1) - shocksensor(i, j, 0)
-            call pushcontrol1b(0)
           else
-            call pushreal8(abs11)
             abs11 = -(shocksensor(i, j, 1)-shocksensor(i, j, 0))
-            call pushcontrol1b(1)
           end if
           x5 = (shocksensor(i, j, 2)-two*shocksensor(i, j, 1)+&
 &           shocksensor(i, j, 0))/(omega*(shocksensor(i, j, 2)+two*&
@@ -14637,32 +14323,22 @@ contains
 &           +abs11)+plim)
           if (x5 .ge. 0.) then
             dp1 = x5
-            call pushcontrol1b(0)
           else
             dp1 = -x5
-            call pushcontrol1b(1)
           end if
 ! loop in k-direction.
           do k=1,kl
             if (shocksensor(i, j, k+2) - shocksensor(i, j, k+1) .ge. 0.&
 &           ) then
-              call pushreal8(abs6)
               abs6 = shocksensor(i, j, k+2) - shocksensor(i, j, k+1)
-              call pushcontrol1b(1)
             else
-              call pushreal8(abs6)
               abs6 = -(shocksensor(i, j, k+2)-shocksensor(i, j, k+1))
-              call pushcontrol1b(0)
             end if
             if (shocksensor(i, j, k+1) - shocksensor(i, j, k) .ge. 0.) &
 &           then
-              call pushreal8(abs12)
               abs12 = shocksensor(i, j, k+1) - shocksensor(i, j, k)
-              call pushcontrol1b(0)
             else
-              call pushreal8(abs12)
               abs12 = -(shocksensor(i, j, k+1)-shocksensor(i, j, k))
-              call pushcontrol1b(1)
             end if
             x6 = (shocksensor(i, j, k+2)-two*shocksensor(i, j, k+1)+&
 &             shocksensor(i, j, k))/(omega*(shocksensor(i, j, k+2)+two*&
@@ -14670,34 +14346,26 @@ contains
 &             abs6+abs12)+plim)
             if (x6 .ge. 0.) then
               dp2 = x6
-              call pushcontrol1b(0)
             else
               dp2 = -x6
-              call pushcontrol1b(1)
             end if
 ! compute the dissipation coefficients for this face.
-            call pushreal8(ppor)
             ppor = zero
             if (pork(i, j, k) .eq. normalflux) ppor = one
             if (dp1 .lt. dp2) then
               y3 = dp2
-              call pushcontrol1b(0)
             else
               y3 = dp1
-              call pushcontrol1b(1)
             end if
             if (dpmax .gt. y3) then
               min3 = y3
-              call pushcontrol1b(0)
             else
               min3 = dpmax
-              call pushcontrol1b(1)
             end if
             call pushreal8(dis2)
             dis2 = fis2*ppor*min3 + sigma*fis4*ppor
 ! construct the vector of the first and third differences
 ! multiplied by the appropriate constants.
-            call pushreal8(ddw)
             ddw = w(i, j, k+1, irho) - w(i, j, k, irho)
             call pushreal8(dr)
             dr = dis2*ddw
@@ -14705,17 +14373,14 @@ contains
 &             )*w(i, j, k, ivx)
             call pushreal8(dru)
             dru = dis2*ddw
-            call pushreal8(ddw)
             ddw = w(i, j, k+1, irho)*w(i, j, k+1, ivy) - w(i, j, k, irho&
 &             )*w(i, j, k, ivy)
             call pushreal8(drv)
             drv = dis2*ddw
-            call pushreal8(ddw)
             ddw = w(i, j, k+1, irho)*w(i, j, k+1, ivz) - w(i, j, k, irho&
 &             )*w(i, j, k, ivz)
             call pushreal8(drw)
             drw = dis2*ddw
-            call pushreal8(ddw)
             ddw = w(i, j, k+1, irhoe) - w(i, j, k, irhoe)
             call pushreal8(dre)
             dre = dis2*ddw
@@ -14730,9 +14395,9 @@ contains
               kavg = half*(w(i, j, k+1, itu1)+w(i, j, k, itu1))
               call pushcontrol1b(1)
             else
+              call pushcontrol1b(0)
               drk = zero
               kavg = zero
-              call pushcontrol1b(0)
             end if
 ! compute the average value of gamma and compute some
 ! expressions in which it occurs.
@@ -14756,20 +14421,13 @@ contains
             call pushreal8(area)
             area = sqrt(sx**2 + sy**2 + sz**2)
             if (1.e-25_realtype .lt. area) then
-              call pushreal8(max3)
               max3 = area
-              call pushcontrol1b(0)
             else
-              call pushreal8(max3)
               max3 = 1.e-25_realtype
-              call pushcontrol1b(1)
             end if
             tmp = one/max3
-            call pushreal8(sx)
             sx = sx*tmp
-            call pushreal8(sy)
             sy = sy*tmp
-            call pushreal8(sz)
             sz = sz*tmp
             alphaavg = half*(uavg**2+vavg**2+wavg**2)
             call pushreal8(havg)
@@ -14779,12 +14437,7 @@ contains
             unavg = uavg*sx + vavg*sy + wavg*sz
 ! the mesh velocity if the face is moving. it must be
 ! divided by the area to obtain a true velocity.
-            if (addgridvelocities) then
-              sface = sfacek(i, j, k)*tmp
-              call pushcontrol1b(1)
-            else
-              call pushcontrol1b(0)
-            end if
+            if (addgridvelocities) sface = sfacek(i, j, k)*tmp
             if (unavg - sface + aavg .ge. 0.) then
               lam1 = unavg - sface + aavg
               call pushcontrol1b(0)
@@ -14832,11 +14485,8 @@ contains
             end if
 ! multiply the eigenvalues by the area to obtain
 ! the correct values for the dissipation term.
-            call pushreal8(lam1)
             lam1 = lam1*area
-            call pushreal8(lam2)
             lam2 = lam2*area
-            call pushreal8(lam3)
             lam3 = lam3*area
 ! some abbreviations, which occur quite often in the
 ! dissipation terms.
@@ -14859,13 +14509,9 @@ contains
           end do
         end do
       end do
-      plimd = 0.0_8
-      sfaced = 0.0_8
       do j=jl,2,-1
         do i=il,2,-1
-          dp1d = 0.0_8
           do k=kl,1,-1
-            dp2d = dp1d
             fsd = fwd(i, j, k+1, irhoe) - fwd(i, j, k, irhoe)
             wavg = half*(w(i, j, k+1, ivz)+w(i, j, k, ivz))
             vavg = half*(w(i, j, k+1, ivy)+w(i, j, k, ivy))
@@ -14887,21 +14533,18 @@ contains
             drwd = lam3*fsd
             wavgd = abv6*fsd
             abv6d = abv6d + wavg*fsd
-            szd = abv7*fsd
             abv7d = abv7d + sz*fsd
             fsd = fwd(i, j, k+1, imy) - fwd(i, j, k, imy)
             lam3d = lam3d + drv*fsd
             drvd = lam3*fsd
             vavgd = abv6*fsd
             abv6d = abv6d + vavg*fsd
-            syd = abv7*fsd
             abv7d = abv7d + sy*fsd
             fsd = fwd(i, j, k+1, imx) - fwd(i, j, k, imx)
             lam3d = lam3d + dru*fsd
             drud = lam3*fsd
             uavgd = abv6*fsd
             abv6d = abv6d + uavg*fsd
-            sxd = abv7*fsd
             abv7d = abv7d + sx*fsd
             fsd = fwd(i, j, k+1, irho) - fwd(i, j, k, irho)
             abv6d = abv6d + fsd
@@ -14912,35 +14555,28 @@ contains
             lam3d = lam3d + dr*fsd - abv3d
             abv5d = ovaavg*abv2*abv6d + abv3*abv7d
             ova2avgd = abv3*abv4*abv6d
-            sxd = sxd + dru*abv5d
-            syd = syd + drv*abv5d
-            szd = szd + drw*abv5d
             unavgd = unavgd - dr*abv5d
             gammaavg = half*(gamma(i, j, k+1)+gamma(i, j, k))
             gm1 = gammaavg - one
             gm53 = gammaavg - five*third
             alphaavg = half*(uavg**2+vavg**2+wavg**2)
             call popreal8(abv4)
-            tempd13 = gm1*abv4d
-            drd = alphaavg*tempd13 - unavg*abv5d + lam3*fsd
-            drud = drud + sx*abv5d - uavg*tempd13
-            drvd = drvd + sy*abv5d - vavg*tempd13
-            drwd = drwd + sz*abv5d - wavg*tempd13
-            alphaavgd = dr*tempd13
-            uavgd = uavgd - dru*tempd13
-            vavgd = vavgd - drv*tempd13
-            dred = dred + tempd13
-            wavgd = wavgd - drw*tempd13
+            tempd10 = gm1*abv4d
+            drd = alphaavg*tempd10 - unavg*abv5d + lam3*fsd
+            drud = drud + sx*abv5d - uavg*tempd10
+            drvd = drvd + sy*abv5d - vavg*tempd10
+            drwd = drwd + sz*abv5d - wavg*tempd10
+            alphaavgd = dr*tempd10
+            uavgd = uavgd - dru*tempd10
+            vavgd = vavgd - drv*tempd10
+            dred = dred + tempd10
+            wavgd = wavgd - drw*tempd10
             drkd = -(gm53*abv4d)
             call popreal8(abv3)
             abv1d = abv3d
             call popreal8(abv2)
             lam1d = half*abv1d + half*abv2d
             lam2d = half*abv1d - half*abv2d
-            call popreal8(lam3)
-            call popreal8(lam2)
-            call popreal8(lam1)
-            aread = lam2*lam2d + lam1*lam1d + lam3*lam3d
             lam3d = area*lam3d
             lam2d = area*lam2d
             lam1d = area*lam1d
@@ -14967,42 +14603,28 @@ contains
             if (branch .eq. 0) then
               call popreal8(lam3)
               unavgd = unavgd + lam3d
-              sfaced = sfaced - lam3d
             else
               call popreal8(lam3)
-              sfaced = sfaced + lam3d
               unavgd = unavgd - lam3d
             end if
             call popcontrol1b(branch)
             if (branch .eq. 0) then
               unavgd = unavgd + lam2d
-              sfaced = sfaced - lam2d
               aavgd = aavgd - lam2d
             else
-              sfaced = sfaced + lam2d
-              unavgd = unavgd - lam2d
               aavgd = aavgd + lam2d
+              unavgd = unavgd - lam2d
             end if
             call popcontrol1b(branch)
             if (branch .eq. 0) then
               unavgd = unavgd + lam1d
-              sfaced = sfaced - lam1d
               aavgd = aavgd + lam1d
             else
-              sfaced = sfaced + lam1d
               unavgd = unavgd - lam1d
               aavgd = aavgd - lam1d
             end if
-            tmp = one/max3
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              tmpd = 0.0_8
-            else
-              tmpd = sfacek(i, j, k)*sfaced
-              sfaced = 0.0_8
-            end if
             alphaavgd = alphaavgd + havgd
-            tempd12 = half*alphaavgd
+            tempd9 = half*alphaavgd
             ovgm1 = one/gm1
             aavgd = aavgd - one*ovaavgd/aavg**2
             if (a2avg .eq. 0.0_8) then
@@ -15011,56 +14633,27 @@ contains
               a2avgd = aavgd/(2.0*sqrt(a2avg)) + ovgm1*havgd - one*&
 &               ova2avgd/a2avg**2
             end if
-            uavgd = uavgd + 2*uavg*tempd12 + sx*unavgd
-            sxd = sxd + uavg*unavgd
-            vavgd = vavgd + 2*vavg*tempd12 + sy*unavgd
-            syd = syd + vavg*unavgd
-            wavgd = wavgd + 2*wavg*tempd12 + sz*unavgd
-            szd = szd + wavg*unavgd
+            uavgd = uavgd + 2*uavg*tempd9 + sx*unavgd
+            vavgd = vavgd + 2*vavg*tempd9 + sy*unavgd
+            wavgd = wavgd + 2*wavg*tempd9 + sz*unavgd
             call popreal8(aavg)
             call popreal8(havg)
             kavgd = -(ovgm1*gm53*havgd)
-            call popreal8(sz)
-            call popreal8(sy)
-            call popreal8(sx)
-            tmpd = tmpd + sy*syd + sx*sxd + sz*szd
-            szd = tmp*szd
-            syd = tmp*syd
-            sxd = tmp*sxd
-            max3d = -(one*tmpd/max3**2)
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              call popreal8(max3)
-              aread = aread + max3d
-            else
-              call popreal8(max3)
-            end if
             call popreal8(area)
-            if (sx**2 + sy**2 + sz**2 .eq. 0.0_8) then
-              tempd9 = 0.0
-            else
-              tempd9 = aread/(2.0*sqrt(sx**2+sy**2+sz**2))
-            end if
-            sxd = sxd + 2*sx*tempd9
-            syd = syd + 2*sy*tempd9
-            szd = szd + 2*sz*tempd9
             call popreal8(sz)
-            skd(i, j, k, 3) = skd(i, j, k, 3) + szd
             call popreal8(sy)
-            skd(i, j, k, 2) = skd(i, j, k, 2) + syd
             call popreal8(sx)
-            skd(i, j, k, 1) = skd(i, j, k, 1) + sxd
             call popreal8(a2avg)
-            temp10 = w(i, j, k, irho)
-            temp9 = w(i, j, k+1, irho)
-            tempd10 = gamma(i, j, k+1)*half*a2avgd/temp9
-            tempd11 = gamma(i, j, k)*half*a2avgd/temp10
-            pd(i, j, k+1) = pd(i, j, k+1) + tempd10
+            temp4 = w(i, j, k, irho)
+            temp3 = w(i, j, k+1, irho)
+            tempd7 = gamma(i, j, k+1)*half*a2avgd/temp3
+            tempd8 = gamma(i, j, k)*half*a2avgd/temp4
+            pd(i, j, k+1) = pd(i, j, k+1) + tempd7
             wd(i, j, k+1, irho) = wd(i, j, k+1, irho) - p(i, j, k+1)*&
-&             tempd10/temp9
-            pd(i, j, k) = pd(i, j, k) + tempd11
-            wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd11/&
-&             temp10
+&             tempd7/temp3
+            pd(i, j, k) = pd(i, j, k) + tempd8
+            wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd8/&
+&             temp4
             wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + half*wavgd
             wd(i, j, k, ivz) = wd(i, j, k, ivz) + half*wavgd
             wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + half*vavgd
@@ -15068,12 +14661,9 @@ contains
             wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + half*uavgd
             wd(i, j, k, ivx) = wd(i, j, k, ivx) + half*uavgd
             call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              dis2d = 0.0_8
-            else
+            if (branch .ne. 0) then
               wd(i, j, k+1, itu1) = wd(i, j, k+1, itu1) + half*kavgd
               wd(i, j, k, itu1) = wd(i, j, k, itu1) + half*kavgd
-              dis2d = ddw*drkd
               ddwd = dis2*drkd
               wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + w(i, j, k+1, &
 &               itu1)*ddwd
@@ -15083,18 +14673,13 @@ contains
 &               ddwd
               wd(i, j, k, itu1) = wd(i, j, k, itu1) - w(i, j, k, irho)*&
 &               ddwd
-              ddw = w(i, j, k+1, irhoe) - w(i, j, k, irhoe)
             end if
             call popreal8(dre)
-            dis2d = dis2d + ddw*dred
             ddwd = dis2*dred
-            call popreal8(ddw)
             wd(i, j, k+1, irhoe) = wd(i, j, k+1, irhoe) + ddwd
             wd(i, j, k, irhoe) = wd(i, j, k, irhoe) - ddwd
             call popreal8(drw)
-            dis2d = dis2d + ddw*drwd
             ddwd = dis2*drwd
-            call popreal8(ddw)
             wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + w(i, j, k+1, ivz&
 &             )*ddwd
             wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + w(i, j, k+1, irho)&
@@ -15102,9 +14687,7 @@ contains
             wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivz)*ddwd
             wd(i, j, k, ivz) = wd(i, j, k, ivz) - w(i, j, k, irho)*ddwd
             call popreal8(drv)
-            dis2d = dis2d + ddw*drvd
             ddwd = dis2*drvd
-            call popreal8(ddw)
             wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + w(i, j, k+1, ivy&
 &             )*ddwd
             wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + w(i, j, k+1, irho)&
@@ -15112,7 +14695,6 @@ contains
             wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivy)*ddwd
             wd(i, j, k, ivy) = wd(i, j, k, ivy) - w(i, j, k, irho)*ddwd
             call popreal8(dru)
-            dis2d = dis2d + ddw*drud
             ddwd = dis2*drud
             wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + w(i, j, k+1, ivx&
 &             )*ddwd
@@ -15120,82 +14702,17 @@ contains
 &             *ddwd
             wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivx)*ddwd
             wd(i, j, k, ivx) = wd(i, j, k, ivx) - w(i, j, k, irho)*ddwd
-            ddw = w(i, j, k+1, irho) - w(i, j, k, irho)
             call popreal8(dr)
-            dis2d = dis2d + ddw*drd
             ddwd = dis2*drd
-            call popreal8(ddw)
             wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + ddwd
             wd(i, j, k, irho) = wd(i, j, k, irho) - ddwd
             call popreal8(dis2)
-            min3d = fis2*ppor*dis2d
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              y3d = min3d
-            else
-              y3d = 0.0_8
-            end if
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              dp2d = dp2d + y3d
-              dp1d = 0.0_8
-            else
-              dp1d = y3d
-            end if
-            call popreal8(ppor)
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              x6d = dp2d
-            else
-              x6d = -dp2d
-            end if
-            temp8 = omega*(shocksensor(i, j, k+2)+two*shocksensor(i, j, &
-&             k+1)+shocksensor(i, j, k)) + oneminomega*(abs6+abs12) + &
-&             plim
-            plimd = plimd - (shocksensor(i, j, k+2)-two*shocksensor(i, j&
-&             , k+1)+shocksensor(i, j, k))*x6d/temp8**2
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              call popreal8(abs12)
-            else
-              call popreal8(abs12)
-            end if
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              call popreal8(abs6)
-            else
-              call popreal8(abs6)
-            end if
           end do
-          call popcontrol1b(branch)
-          if (branch .eq. 0) then
-            x5d = dp1d
-          else
-            x5d = -dp1d
-          end if
-          temp7 = omega*(shocksensor(i, j, 2)+two*shocksensor(i, j, 1)+&
-&           shocksensor(i, j, 0)) + oneminomega*(abs5+abs11) + plim
-          plimd = plimd - (shocksensor(i, j, 2)-two*shocksensor(i, j, 1)&
-&           +shocksensor(i, j, 0))*x5d/temp7**2
-          call popcontrol1b(branch)
-          if (branch .eq. 0) then
-            call popreal8(abs11)
-          else
-            call popreal8(abs11)
-          end if
-          call popcontrol1b(branch)
-          if (branch .eq. 0) then
-            call popreal8(abs5)
-          else
-            call popreal8(abs5)
-          end if
         end do
       end do
       do k=kl,2,-1
         do i=il,2,-1
-          dp1d = 0.0_8
           do j=jl,1,-1
-            dp2d = dp1d
             fsd = fwd(i, j+1, k, irhoe) - fwd(i, j, k, irhoe)
             wavg = half*(w(i, j+1, k, ivz)+w(i, j, k, ivz))
             vavg = half*(w(i, j+1, k, ivy)+w(i, j, k, ivy))
@@ -15217,21 +14734,18 @@ contains
             drwd = lam3*fsd
             wavgd = abv6*fsd
             abv6d = abv6d + wavg*fsd
-            szd = abv7*fsd
             abv7d = abv7d + sz*fsd
             fsd = fwd(i, j+1, k, imy) - fwd(i, j, k, imy)
             lam3d = lam3d + drv*fsd
             drvd = lam3*fsd
             vavgd = abv6*fsd
             abv6d = abv6d + vavg*fsd
-            syd = abv7*fsd
             abv7d = abv7d + sy*fsd
             fsd = fwd(i, j+1, k, imx) - fwd(i, j, k, imx)
             lam3d = lam3d + dru*fsd
             drud = lam3*fsd
             uavgd = abv6*fsd
             abv6d = abv6d + uavg*fsd
-            sxd = abv7*fsd
             abv7d = abv7d + sx*fsd
             fsd = fwd(i, j+1, k, irho) - fwd(i, j, k, irho)
             abv6d = abv6d + fsd
@@ -15242,35 +14756,28 @@ contains
             lam3d = lam3d + dr*fsd - abv3d
             abv5d = ovaavg*abv2*abv6d + abv3*abv7d
             ova2avgd = abv3*abv4*abv6d
-            sxd = sxd + dru*abv5d
-            syd = syd + drv*abv5d
-            szd = szd + drw*abv5d
             unavgd = unavgd - dr*abv5d
             gammaavg = half*(gamma(i, j+1, k)+gamma(i, j, k))
             gm1 = gammaavg - one
             gm53 = gammaavg - five*third
             alphaavg = half*(uavg**2+vavg**2+wavg**2)
             call popreal8(abv4)
-            tempd8 = gm1*abv4d
-            drd = alphaavg*tempd8 - unavg*abv5d + lam3*fsd
-            drud = drud + sx*abv5d - uavg*tempd8
-            drvd = drvd + sy*abv5d - vavg*tempd8
-            drwd = drwd + sz*abv5d - wavg*tempd8
-            alphaavgd = dr*tempd8
-            uavgd = uavgd - dru*tempd8
-            vavgd = vavgd - drv*tempd8
-            dred = dred + tempd8
-            wavgd = wavgd - drw*tempd8
+            tempd6 = gm1*abv4d
+            drd = alphaavg*tempd6 - unavg*abv5d + lam3*fsd
+            drud = drud + sx*abv5d - uavg*tempd6
+            drvd = drvd + sy*abv5d - vavg*tempd6
+            drwd = drwd + sz*abv5d - wavg*tempd6
+            alphaavgd = dr*tempd6
+            uavgd = uavgd - dru*tempd6
+            vavgd = vavgd - drv*tempd6
+            dred = dred + tempd6
+            wavgd = wavgd - drw*tempd6
             drkd = -(gm53*abv4d)
             call popreal8(abv3)
             abv1d = abv3d
             call popreal8(abv2)
             lam1d = half*abv1d + half*abv2d
             lam2d = half*abv1d - half*abv2d
-            call popreal8(lam3)
-            call popreal8(lam2)
-            call popreal8(lam1)
-            aread = lam2*lam2d + lam1*lam1d + lam3*lam3d
             lam3d = area*lam3d
             lam2d = area*lam2d
             lam1d = area*lam1d
@@ -15297,42 +14804,28 @@ contains
             if (branch .eq. 0) then
               call popreal8(lam3)
               unavgd = unavgd + lam3d
-              sfaced = sfaced - lam3d
             else
               call popreal8(lam3)
-              sfaced = sfaced + lam3d
               unavgd = unavgd - lam3d
             end if
             call popcontrol1b(branch)
             if (branch .eq. 0) then
               unavgd = unavgd + lam2d
-              sfaced = sfaced - lam2d
               aavgd = aavgd - lam2d
             else
-              sfaced = sfaced + lam2d
-              unavgd = unavgd - lam2d
               aavgd = aavgd + lam2d
+              unavgd = unavgd - lam2d
             end if
             call popcontrol1b(branch)
             if (branch .eq. 0) then
               unavgd = unavgd + lam1d
-              sfaced = sfaced - lam1d
               aavgd = aavgd + lam1d
             else
-              sfaced = sfaced + lam1d
               unavgd = unavgd - lam1d
               aavgd = aavgd - lam1d
             end if
-            tmp = one/max2
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              tmpd = 0.0_8
-            else
-              tmpd = sfacej(i, j, k)*sfaced
-              sfaced = 0.0_8
-            end if
             alphaavgd = alphaavgd + havgd
-            tempd7 = half*alphaavgd
+            tempd5 = half*alphaavgd
             ovgm1 = one/gm1
             aavgd = aavgd - one*ovaavgd/aavg**2
             if (a2avg .eq. 0.0_8) then
@@ -15341,56 +14834,27 @@ contains
               a2avgd = aavgd/(2.0*sqrt(a2avg)) + ovgm1*havgd - one*&
 &               ova2avgd/a2avg**2
             end if
-            uavgd = uavgd + 2*uavg*tempd7 + sx*unavgd
-            sxd = sxd + uavg*unavgd
-            vavgd = vavgd + 2*vavg*tempd7 + sy*unavgd
-            syd = syd + vavg*unavgd
-            wavgd = wavgd + 2*wavg*tempd7 + sz*unavgd
-            szd = szd + wavg*unavgd
+            uavgd = uavgd + 2*uavg*tempd5 + sx*unavgd
+            vavgd = vavgd + 2*vavg*tempd5 + sy*unavgd
+            wavgd = wavgd + 2*wavg*tempd5 + sz*unavgd
             call popreal8(aavg)
             call popreal8(havg)
             kavgd = -(ovgm1*gm53*havgd)
-            call popreal8(sz)
-            call popreal8(sy)
-            call popreal8(sx)
-            tmpd = tmpd + sy*syd + sx*sxd + sz*szd
-            szd = tmp*szd
-            syd = tmp*syd
-            sxd = tmp*sxd
-            max2d = -(one*tmpd/max2**2)
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              call popreal8(max2)
-              aread = aread + max2d
-            else
-              call popreal8(max2)
-            end if
             call popreal8(area)
-            if (sx**2 + sy**2 + sz**2 .eq. 0.0_8) then
-              tempd4 = 0.0
-            else
-              tempd4 = aread/(2.0*sqrt(sx**2+sy**2+sz**2))
-            end if
-            sxd = sxd + 2*sx*tempd4
-            syd = syd + 2*sy*tempd4
-            szd = szd + 2*sz*tempd4
             call popreal8(sz)
-            sjd(i, j, k, 3) = sjd(i, j, k, 3) + szd
             call popreal8(sy)
-            sjd(i, j, k, 2) = sjd(i, j, k, 2) + syd
             call popreal8(sx)
-            sjd(i, j, k, 1) = sjd(i, j, k, 1) + sxd
             call popreal8(a2avg)
-            temp6 = w(i, j, k, irho)
-            temp5 = w(i, j+1, k, irho)
-            tempd5 = gamma(i, j+1, k)*half*a2avgd/temp5
-            tempd6 = gamma(i, j, k)*half*a2avgd/temp6
-            pd(i, j+1, k) = pd(i, j+1, k) + tempd5
+            temp2 = w(i, j, k, irho)
+            temp1 = w(i, j+1, k, irho)
+            tempd3 = gamma(i, j+1, k)*half*a2avgd/temp1
+            tempd4 = gamma(i, j, k)*half*a2avgd/temp2
+            pd(i, j+1, k) = pd(i, j+1, k) + tempd3
             wd(i, j+1, k, irho) = wd(i, j+1, k, irho) - p(i, j+1, k)*&
-&             tempd5/temp5
-            pd(i, j, k) = pd(i, j, k) + tempd6
-            wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd6/&
-&             temp6
+&             tempd3/temp1
+            pd(i, j, k) = pd(i, j, k) + tempd4
+            wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd4/&
+&             temp2
             wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + half*wavgd
             wd(i, j, k, ivz) = wd(i, j, k, ivz) + half*wavgd
             wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + half*vavgd
@@ -15398,12 +14862,9 @@ contains
             wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + half*uavgd
             wd(i, j, k, ivx) = wd(i, j, k, ivx) + half*uavgd
             call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              dis2d = 0.0_8
-            else
+            if (branch .ne. 0) then
               wd(i, j, k, itu1) = wd(i, j, k, itu1) + half*kavgd
               wd(i, j+1, k, itu1) = wd(i, j+1, k, itu1) + half*kavgd
-              dis2d = ddw*drkd
               ddwd = dis2*drkd
               wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + w(i, j+1, k, &
 &               itu1)*ddwd
@@ -15413,18 +14874,13 @@ contains
 &               ddwd
               wd(i, j, k, itu1) = wd(i, j, k, itu1) - w(i, j, k, irho)*&
 &               ddwd
-              ddw = w(i, j+1, k, irhoe) - w(i, j, k, irhoe)
             end if
             call popreal8(dre)
-            dis2d = dis2d + ddw*dred
             ddwd = dis2*dred
-            call popreal8(ddw)
             wd(i, j+1, k, irhoe) = wd(i, j+1, k, irhoe) + ddwd
             wd(i, j, k, irhoe) = wd(i, j, k, irhoe) - ddwd
             call popreal8(drw)
-            dis2d = dis2d + ddw*drwd
             ddwd = dis2*drwd
-            call popreal8(ddw)
             wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + w(i, j+1, k, ivz&
 &             )*ddwd
             wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + w(i, j+1, k, irho)&
@@ -15432,9 +14888,7 @@ contains
             wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivz)*ddwd
             wd(i, j, k, ivz) = wd(i, j, k, ivz) - w(i, j, k, irho)*ddwd
             call popreal8(drv)
-            dis2d = dis2d + ddw*drvd
             ddwd = dis2*drvd
-            call popreal8(ddw)
             wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + w(i, j+1, k, ivy&
 &             )*ddwd
             wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + w(i, j+1, k, irho)&
@@ -15442,7 +14896,6 @@ contains
             wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivy)*ddwd
             wd(i, j, k, ivy) = wd(i, j, k, ivy) - w(i, j, k, irho)*ddwd
             call popreal8(dru)
-            dis2d = dis2d + ddw*drud
             ddwd = dis2*drud
             wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + w(i, j+1, k, ivx&
 &             )*ddwd
@@ -15450,82 +14903,17 @@ contains
 &             *ddwd
             wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivx)*ddwd
             wd(i, j, k, ivx) = wd(i, j, k, ivx) - w(i, j, k, irho)*ddwd
-            ddw = w(i, j+1, k, irho) - w(i, j, k, irho)
             call popreal8(dr)
-            dis2d = dis2d + ddw*drd
             ddwd = dis2*drd
-            call popreal8(ddw)
             wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + ddwd
             wd(i, j, k, irho) = wd(i, j, k, irho) - ddwd
             call popreal8(dis2)
-            min2d = fis2*ppor*dis2d
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              y2d = min2d
-            else
-              y2d = 0.0_8
-            end if
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              dp2d = dp2d + y2d
-              dp1d = 0.0_8
-            else
-              dp1d = y2d
-            end if
-            call popreal8(ppor)
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              x4d = dp2d
-            else
-              x4d = -dp2d
-            end if
-            temp4 = omega*(shocksensor(i, j+2, k)+two*shocksensor(i, j+1&
-&             , k)+shocksensor(i, j, k)) + oneminomega*(abs4+abs10) + &
-&             plim
-            plimd = plimd - (shocksensor(i, j+2, k)-two*shocksensor(i, j&
-&             +1, k)+shocksensor(i, j, k))*x4d/temp4**2
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              call popreal8(abs10)
-            else
-              call popreal8(abs10)
-            end if
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              call popreal8(abs4)
-            else
-              call popreal8(abs4)
-            end if
           end do
-          call popcontrol1b(branch)
-          if (branch .eq. 0) then
-            x3d = dp1d
-          else
-            x3d = -dp1d
-          end if
-          temp3 = omega*(shocksensor(i, 2, k)+two*shocksensor(i, 1, k)+&
-&           shocksensor(i, 0, k)) + oneminomega*(abs3+abs9) + plim
-          plimd = plimd - (shocksensor(i, 2, k)-two*shocksensor(i, 1, k)&
-&           +shocksensor(i, 0, k))*x3d/temp3**2
-          call popcontrol1b(branch)
-          if (branch .eq. 0) then
-            call popreal8(abs9)
-          else
-            call popreal8(abs9)
-          end if
-          call popcontrol1b(branch)
-          if (branch .eq. 0) then
-            call popreal8(abs3)
-          else
-            call popreal8(abs3)
-          end if
         end do
       end do
       do k=kl,2,-1
         do j=jl,2,-1
-          dp1d = 0.0_8
           do i=il,1,-1
-            dp2d = dp1d
             fsd = fwd(i+1, j, k, irhoe) - fwd(i, j, k, irhoe)
             wavg = half*(w(i+1, j, k, ivz)+w(i, j, k, ivz))
             vavg = half*(w(i+1, j, k, ivy)+w(i, j, k, ivy))
@@ -15547,21 +14935,18 @@ contains
             drwd = lam3*fsd
             wavgd = abv6*fsd
             abv6d = abv6d + wavg*fsd
-            szd = abv7*fsd
             abv7d = abv7d + sz*fsd
             fsd = fwd(i+1, j, k, imy) - fwd(i, j, k, imy)
             lam3d = lam3d + drv*fsd
             drvd = lam3*fsd
             vavgd = abv6*fsd
             abv6d = abv6d + vavg*fsd
-            syd = abv7*fsd
             abv7d = abv7d + sy*fsd
             fsd = fwd(i+1, j, k, imx) - fwd(i, j, k, imx)
             lam3d = lam3d + dru*fsd
             drud = lam3*fsd
             uavgd = abv6*fsd
             abv6d = abv6d + uavg*fsd
-            sxd = abv7*fsd
             abv7d = abv7d + sx*fsd
             fsd = fwd(i+1, j, k, irho) - fwd(i, j, k, irho)
             abv6d = abv6d + fsd
@@ -15572,35 +14957,28 @@ contains
             lam3d = lam3d + dr*fsd - abv3d
             abv5d = ovaavg*abv2*abv6d + abv3*abv7d
             ova2avgd = abv3*abv4*abv6d
-            sxd = sxd + dru*abv5d
-            syd = syd + drv*abv5d
-            szd = szd + drw*abv5d
             unavgd = unavgd - dr*abv5d
             gammaavg = half*(gamma(i+1, j, k)+gamma(i, j, k))
             gm1 = gammaavg - one
             gm53 = gammaavg - five*third
             alphaavg = half*(uavg**2+vavg**2+wavg**2)
             call popreal8(abv4)
-            tempd3 = gm1*abv4d
-            drd = alphaavg*tempd3 - unavg*abv5d + lam3*fsd
-            drud = drud + sx*abv5d - uavg*tempd3
-            drvd = drvd + sy*abv5d - vavg*tempd3
-            drwd = drwd + sz*abv5d - wavg*tempd3
-            alphaavgd = dr*tempd3
-            uavgd = uavgd - dru*tempd3
-            vavgd = vavgd - drv*tempd3
-            dred = dred + tempd3
-            wavgd = wavgd - drw*tempd3
+            tempd2 = gm1*abv4d
+            drd = alphaavg*tempd2 - unavg*abv5d + lam3*fsd
+            drud = drud + sx*abv5d - uavg*tempd2
+            drvd = drvd + sy*abv5d - vavg*tempd2
+            drwd = drwd + sz*abv5d - wavg*tempd2
+            alphaavgd = dr*tempd2
+            uavgd = uavgd - dru*tempd2
+            vavgd = vavgd - drv*tempd2
+            dred = dred + tempd2
+            wavgd = wavgd - drw*tempd2
             drkd = -(gm53*abv4d)
             call popreal8(abv3)
             abv1d = abv3d
             call popreal8(abv2)
             lam1d = half*abv1d + half*abv2d
             lam2d = half*abv1d - half*abv2d
-            call popreal8(lam3)
-            call popreal8(lam2)
-            call popreal8(lam1)
-            aread = lam2*lam2d + lam1*lam1d + lam3*lam3d
             lam3d = area*lam3d
             lam2d = area*lam2d
             lam1d = area*lam1d
@@ -15627,42 +15005,28 @@ contains
             if (branch .eq. 0) then
               call popreal8(lam3)
               unavgd = unavgd + lam3d
-              sfaced = sfaced - lam3d
             else
               call popreal8(lam3)
-              sfaced = sfaced + lam3d
               unavgd = unavgd - lam3d
             end if
             call popcontrol1b(branch)
             if (branch .eq. 0) then
               unavgd = unavgd + lam2d
-              sfaced = sfaced - lam2d
               aavgd = aavgd - lam2d
             else
-              sfaced = sfaced + lam2d
-              unavgd = unavgd - lam2d
               aavgd = aavgd + lam2d
+              unavgd = unavgd - lam2d
             end if
             call popcontrol1b(branch)
             if (branch .eq. 0) then
               unavgd = unavgd + lam1d
-              sfaced = sfaced - lam1d
               aavgd = aavgd + lam1d
             else
-              sfaced = sfaced + lam1d
               unavgd = unavgd - lam1d
               aavgd = aavgd - lam1d
             end if
-            tmp = one/max1
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              tmpd = 0.0_8
-            else
-              tmpd = sfacei(i, j, k)*sfaced
-              sfaced = 0.0_8
-            end if
             alphaavgd = alphaavgd + havgd
-            tempd2 = half*alphaavgd
+            tempd1 = half*alphaavgd
             ovgm1 = one/gm1
             aavgd = aavgd - one*ovaavgd/aavg**2
             if (a2avg .eq. 0.0_8) then
@@ -15671,56 +15035,27 @@ contains
               a2avgd = aavgd/(2.0*sqrt(a2avg)) + ovgm1*havgd - one*&
 &               ova2avgd/a2avg**2
             end if
-            uavgd = uavgd + 2*uavg*tempd2 + sx*unavgd
-            sxd = sxd + uavg*unavgd
-            vavgd = vavgd + 2*vavg*tempd2 + sy*unavgd
-            syd = syd + vavg*unavgd
-            wavgd = wavgd + 2*wavg*tempd2 + sz*unavgd
-            szd = szd + wavg*unavgd
+            uavgd = uavgd + 2*uavg*tempd1 + sx*unavgd
+            vavgd = vavgd + 2*vavg*tempd1 + sy*unavgd
+            wavgd = wavgd + 2*wavg*tempd1 + sz*unavgd
             call popreal8(aavg)
             call popreal8(havg)
             kavgd = -(ovgm1*gm53*havgd)
-            call popreal8(sz)
-            call popreal8(sy)
-            call popreal8(sx)
-            tmpd = tmpd + sy*syd + sx*sxd + sz*szd
-            szd = tmp*szd
-            syd = tmp*syd
-            sxd = tmp*sxd
-            max1d = -(one*tmpd/max1**2)
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              call popreal8(max1)
-              aread = aread + max1d
-            else
-              call popreal8(max1)
-            end if
             call popreal8(area)
-            if (sx**2 + sy**2 + sz**2 .eq. 0.0_8) then
-              tempd = 0.0
-            else
-              tempd = aread/(2.0*sqrt(sx**2+sy**2+sz**2))
-            end if
-            sxd = sxd + 2*sx*tempd
-            syd = syd + 2*sy*tempd
-            szd = szd + 2*sz*tempd
             call popreal8(sz)
-            sid(i, j, k, 3) = sid(i, j, k, 3) + szd
             call popreal8(sy)
-            sid(i, j, k, 2) = sid(i, j, k, 2) + syd
             call popreal8(sx)
-            sid(i, j, k, 1) = sid(i, j, k, 1) + sxd
             call popreal8(a2avg)
-            temp2 = w(i, j, k, irho)
-            temp1 = w(i+1, j, k, irho)
-            tempd0 = gamma(i+1, j, k)*half*a2avgd/temp1
-            tempd1 = gamma(i, j, k)*half*a2avgd/temp2
-            pd(i+1, j, k) = pd(i+1, j, k) + tempd0
+            temp0 = w(i, j, k, irho)
+            temp = w(i+1, j, k, irho)
+            tempd = gamma(i+1, j, k)*half*a2avgd/temp
+            tempd0 = gamma(i, j, k)*half*a2avgd/temp0
+            pd(i+1, j, k) = pd(i+1, j, k) + tempd
             wd(i+1, j, k, irho) = wd(i+1, j, k, irho) - p(i+1, j, k)*&
-&             tempd0/temp1
-            pd(i, j, k) = pd(i, j, k) + tempd1
-            wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd1/&
-&             temp2
+&             tempd/temp
+            pd(i, j, k) = pd(i, j, k) + tempd0
+            wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd0/&
+&             temp0
             wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + half*wavgd
             wd(i, j, k, ivz) = wd(i, j, k, ivz) + half*wavgd
             wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + half*vavgd
@@ -15728,12 +15063,9 @@ contains
             wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + half*uavgd
             wd(i, j, k, ivx) = wd(i, j, k, ivx) + half*uavgd
             call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              dis2d = 0.0_8
-            else
+            if (branch .ne. 0) then
               wd(i, j, k, itu1) = wd(i, j, k, itu1) + half*kavgd
               wd(i+1, j, k, itu1) = wd(i+1, j, k, itu1) + half*kavgd
-              dis2d = ddw*drkd
               ddwd = dis2*drkd
               wd(i+1, j, k, irho) = wd(i+1, j, k, irho) + w(i+1, j, k, &
 &               itu1)*ddwd
@@ -15743,18 +15075,13 @@ contains
 &               ddwd
               wd(i, j, k, itu1) = wd(i, j, k, itu1) - w(i, j, k, irho)*&
 &               ddwd
-              ddw = w(i+1, j, k, irhoe) - w(i, j, k, irhoe)
             end if
             call popreal8(dre)
-            dis2d = dis2d + ddw*dred
             ddwd = dis2*dred
-            call popreal8(ddw)
             wd(i+1, j, k, irhoe) = wd(i+1, j, k, irhoe) + ddwd
             wd(i, j, k, irhoe) = wd(i, j, k, irhoe) - ddwd
             call popreal8(drw)
-            dis2d = dis2d + ddw*drwd
             ddwd = dis2*drwd
-            call popreal8(ddw)
             wd(i+1, j, k, irho) = wd(i+1, j, k, irho) + w(i+1, j, k, ivz&
 &             )*ddwd
             wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + w(i+1, j, k, irho)&
@@ -15762,9 +15089,7 @@ contains
             wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivz)*ddwd
             wd(i, j, k, ivz) = wd(i, j, k, ivz) - w(i, j, k, irho)*ddwd
             call popreal8(drv)
-            dis2d = dis2d + ddw*drvd
             ddwd = dis2*drvd
-            call popreal8(ddw)
             wd(i+1, j, k, irho) = wd(i+1, j, k, irho) + w(i+1, j, k, ivy&
 &             )*ddwd
             wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + w(i+1, j, k, irho)&
@@ -15772,7 +15097,6 @@ contains
             wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivy)*ddwd
             wd(i, j, k, ivy) = wd(i, j, k, ivy) - w(i, j, k, irho)*ddwd
             call popreal8(dru)
-            dis2d = dis2d + ddw*drud
             ddwd = dis2*drud
             wd(i+1, j, k, irho) = wd(i+1, j, k, irho) + w(i+1, j, k, ivx&
 &             )*ddwd
@@ -15780,78 +15104,25 @@ contains
 &             *ddwd
             wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivx)*ddwd
             wd(i, j, k, ivx) = wd(i, j, k, ivx) - w(i, j, k, irho)*ddwd
-            ddw = w(i+1, j, k, irho) - w(i, j, k, irho)
             call popreal8(dr)
-            dis2d = dis2d + ddw*drd
             ddwd = dis2*drd
-            call popreal8(ddw)
             wd(i+1, j, k, irho) = wd(i+1, j, k, irho) + ddwd
             wd(i, j, k, irho) = wd(i, j, k, irho) - ddwd
             call popreal8(dis2)
-            min1d = fis2*ppor*dis2d
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              y1d = min1d
-            else
-              y1d = 0.0_8
-            end if
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              dp2d = dp2d + y1d
-              dp1d = 0.0_8
-            else
-              dp1d = y1d
-            end if
-            call popreal8(ppor)
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              x2d = dp2d
-            else
-              x2d = -dp2d
-            end if
-            temp0 = omega*(shocksensor(i+2, j, k)+two*shocksensor(i+1, j&
-&             , k)+shocksensor(i, j, k)) + oneminomega*(abs2+abs8) + &
-&             plim
-            plimd = plimd - (shocksensor(i+2, j, k)-two*shocksensor(i+1&
-&             , j, k)+shocksensor(i, j, k))*x2d/temp0**2
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              call popreal8(abs8)
-            else
-              call popreal8(abs8)
-            end if
-            call popcontrol1b(branch)
-            if (branch .eq. 0) then
-              call popreal8(abs2)
-            else
-              call popreal8(abs2)
-            end if
           end do
-          call popcontrol1b(branch)
-          if (branch .eq. 0) then
-            x1d = dp1d
-          else
-            x1d = -dp1d
-          end if
-          temp = omega*(shocksensor(2, j, k)+two*shocksensor(1, j, k)+&
-&           shocksensor(0, j, k)) + oneminomega*(abs1+abs7) + plim
-          plimd = plimd - (shocksensor(2, j, k)-two*shocksensor(1, j, k)&
-&           +shocksensor(0, j, k))*x1d/temp**2
-          call popcontrol1b(branch)
-          if (branch .eq. 0) then
-            call popreal8(abs7)
-          else
-            call popreal8(abs7)
-          end if
-          call popcontrol1b(branch)
-          if (branch .eq. 0) then
-            call popreal8(abs1)
-          else
-            call popreal8(abs1)
-          end if
         end do
       end do
-      pinfcorrd = 0.001_realtype*plimd
+      do k=kl,2,-1
+        do j=jl,2,-1
+          do i=il,2,-1
+            fwd(i, j, k, irhoe) = sfil*fwd(i, j, k, irhoe)
+            fwd(i, j, k, imz) = sfil*fwd(i, j, k, imz)
+            fwd(i, j, k, imy) = sfil*fwd(i, j, k, imy)
+            fwd(i, j, k, imx) = sfil*fwd(i, j, k, imx)
+            fwd(i, j, k, irho) = sfil*fwd(i, j, k, irho)
+          end do
+        end do
+      end do
     end if
   end subroutine invisciddissfluxmatrixapprox_b
   subroutine invisciddissfluxmatrixapprox()

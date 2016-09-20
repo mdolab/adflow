@@ -1113,7 +1113,7 @@ end subroutine applyAllBC
           k = ii/isize + jStart
           grad(j,k) = pp3(j,k) - pp2(j,k)
        end do
-#ifndef TAPENADE_REVERSE
+
     case (normalMomentum)
 
        ! Pressure gradient is computed using the normal momentum
@@ -1228,7 +1228,6 @@ end subroutine applyAllBC
                +   qk*(uux*rxk + uuy*ryk + uuz*rzk))     &
                *  ww2(j,k,irho) - rj*dpj - rk*dpk)/ri
        enddo
-#endif
     end select BCTreatment
 
     ! Determine the state in the halo cell. Again loop over

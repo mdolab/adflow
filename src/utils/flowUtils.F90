@@ -2014,6 +2014,56 @@ end subroutine allNodalGradients
 
 #ifndef  USE_TAPENADE
 
+  subroutine fixAllNodalGradientsFromAD
+
+    use constants
+    use blockPointers, only : il, jl, kl, vol, ux, uy, uz, vx, vy, vz, &
+         wx, wy, wz, qx, qy, qz, vol
+    implicit none
+
+    ! WorkingVariables
+    integer(kind=intType) :: i, j, k
+    real(kind=realType) :: oneOverV
+
+    ! So the all nodal gradients doesnt' perform the final
+    ! scalaing by the volume since it isn't necessary for the
+    ! derivative. We need to fix that here:
+
+    ! Divide by 8 times the volume to obtain the correct gradients.
+    do k=1,kl
+       do j=1,jl
+          do i=1,il
+
+             ! Compute the inverse of 8 times the volume for this node.
+
+             oneOverV = one/(vol(i,  j,  k) + vol(i,  j,  k+1) &
+                  +      vol(i+1,j,  k) + vol(i+1,j,  k+1) &
+                  +      vol(i,  j+1,k) + vol(i,  j+1,k+1) &
+                  +      vol(i+1,j+1,k) + vol(i+1,j+1,k+1))
+
+             ! Compute the correct velocity gradients and "unit" heat
+             ! fluxes. The velocity gradients are stored in ux, etc.
+
+             ux(i,j,k) = ux(i,j,k)*oneOverV
+             uy(i,j,k) = uy(i,j,k)*oneOverV
+             uz(i,j,k) = uz(i,j,k)*oneOverV
+
+             vx(i,j,k) = vx(i,j,k)*oneOverV
+             vy(i,j,k) = vy(i,j,k)*oneOverV
+             vz(i,j,k) = vz(i,j,k)*oneOverV
+
+             wx(i,j,k) = wx(i,j,k)*oneOverV
+             wy(i,j,k) = wy(i,j,k)*oneOverV
+             wz(i,j,k) = wz(i,j,k)*oneOverV
+
+             qx(i,j,k) = qx(i,j,k)*oneOverV
+             qy(i,j,k) = qy(i,j,k)*oneOverV
+             qz(i,j,k) = qz(i,j,k)*oneOverV
+          enddo
+       enddo
+    enddo
+  end subroutine fixAllNodalGradientsFromAD
+
 
   subroutine computeEtotCellCpfit(i, j, k, scale, correctForK)
     !
