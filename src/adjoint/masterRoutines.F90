@@ -180,7 +180,7 @@ contains
     call getCostFunctions(globalVal)
 
   end subroutine master
-
+#ifndef USE_COMPLEX
   subroutine master_d(wdot, xdot, forcesDot, dwDot)
     use constants
     use costFunctions
@@ -830,6 +830,168 @@ contains
 
   end subroutine master_b
 
+  subroutine master_state_b(wbar, dwBar, nState)
+
+    ! This is specialized form of master that *ONLY* computes drdw
+    ! products. It uses a few specialzed routines that are
+    ! differentiated without including spatial dependencies. This
+    ! results in slightly faster code. This specialization is
+    ! justififed since this routine is needed for the transpose
+    ! matrix-vector products in solving the adjoint system and thus
+    ! this routine is called several orders of magniutde more than
+    ! master_b. This routine has to be fast!
+
+    use constants
+    use costFunctions
+    use iteration, only : currentLevel
+    use flowVarRefState, only : nw, viscous
+    use blockPointers, only : nDom, il, jl, kl, wd, dwd, radi, radj, radk
+    use inputPhysics, only : equationMode, turbModel, equations
+    use inputDiscretization, only : lowSpeedPreconditioner, spaceDiscr
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use utils, only : setPointers_d
+    use haloExchange, only : whalo2_b
+    use flowUtils, only : fixAllNodalGradientsFromAD
+    use adjointextra_b, only : resscale_B, sumdwandfw_b
+    use flowutils_b, only : computePressureSimple_b, computeLamViscosity_b, &
+         computeSpeedOfSoundSquared_b
+    use turbbcroutines_b, only : applyAllTurbBCthisblock_b,  bcTurbTreatment_b
+    use turbUtils_b, only : computeEddyViscosity_b
+    use BCExtra_b, only : applyAllBC_Block_b
+
+    use sa_fast_b, only : saresscale_fast_b, saviscous_fast_b, &
+         sasource_fast_b, qq
+    use turbutils_fast_b, only : turbAdvection_fast_b
+    use fluxes_fast_b, only :inviscidUpwindFlux_fast_b, inviscidDissFluxScalar_fast_b, &
+         inviscidDissFluxMatrix_fast_b, viscousFlux_fast_b, inviscidCentralFlux_fast_b
+    use solverutils_fast_b, only : timeStep_block_fast_b
+    use flowutils_fast_b, only : allnodalgradients_fast_b
+
+    implicit none
+
+    ! Input variables:
+    real(kind=realType), intent(in), dimension(:) :: dwBar
+    integer(kind=intType), intent(in) :: nState
+
+    ! Input Arguments:
+    real(kind=realType), intent(out), dimension(:) :: wBar
+
+    ! Working Variables
+    integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj,  level
+
+    ! Set the residual seeds. 
+    ii = 0
+    do nn=1,nDom
+       do sps=1,nTimeIntervalsSpectral
+          call setPointers_d(nn, 1, sps)
+          do k=2, kl
+             do j=2, jl
+                do i=2, il
+                   do l=1, nState
+                      ii = ii + 1
+                      dwd(i, j, k, l) = dwbar(ii)
+                   end do
+                end do
+             end do
+          end do
+       end do
+    end do
+
+    ! ============================================
+    !  reverse the order of calls from master
+    ! ============================================
+
+    spsLoop1: do sps=1, nTimeIntervalsSpectral
+       domainLoop1: do nn=1, nDom
+          call setPointers_d(nn, 1, sps)
+
+          ! Now we start running back through the main residual code:
+          call resScale_b
+          call sumDwAndFw_b
+
+          ! if (lowSpeedPreconditioner) then 
+          !    call applyLowSpeedPreconditioner_b
+          ! end if
+
+          ! Note that master_b does not include the approximation codes
+          ! as those are never needed in reverse. 
+          if (viscous) then 
+             call viscousFlux_fast_b
+             call allNodalGradients_fast_b
+             call computeSpeedOfSoundSquared_b
+          end if
+
+          select case (spaceDiscr)
+          case (dissScalar)
+             call inviscidDissFluxScalar_fast_b
+          case (dissMatrix)
+             call inviscidDissFluxMatrix_fast_b
+          case (upwind) 
+             call inviscidUpwindFlux_fast_b(.True.)
+          end select
+
+          call inviscidCentralFlux_fast_b
+
+          ! Compute turbulence residual for RANS equations
+          if( equations == RANSEquations) then
+             select case (turbModel)
+             case (spalartAllmaras)
+                call saResScale_fast_b
+                call saViscous_fast_b
+                !call unsteadyTurbTerm_b(1_intType, 1_intType, itu1-1, qq)    
+                call turbAdvection_fast_b(1_intType, 1_intType, itu1-1, qq)
+                call saSource_fast_b
+             end select
+
+             !call unsteadyTurbSpectral_block_b(itu1, itu1, nn, sps)
+          end if
+
+          call timeStep_block_fast_b(.false.)
+        
+          ! Initres_b should be called here. For steady just zero:
+          dwd = zero
+       end do domainLoop1
+    end do spsLoop1
+
+    ! Exchange the adjoint values.
+    call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True.)
+
+    spsLoop2: do sps=1,nTimeIntervalsSpectral
+       domainLoop2: do nn=1,nDom
+          call setPointers_d(nn, 1, sps)
+
+          call applyAllBC_block_b(.True.)
+          if (equations == RANSequations) then 
+             call applyAllTurbBCThisBlock_b(.True.)
+             call bcTurbTreatment_b
+          end if
+          
+          call computeEddyViscosity_b(.false.)
+          call computeLamViscosity_b(.false.)
+          call computePressureSimple_b(.false.)
+
+       end do domainLoop2
+    end do spsLoop2
+
+    ! Finally put the output seeds into wbar
+    ii = 0
+    do nn=1,nDom
+       do sps=1,nTimeIntervalsSpectral
+          call setPointers_d(nn, 1, sps)
+          do k=2, kl
+             do j=2, jl
+                do i=2, il
+                   do l=1, nState
+                      ii = ii + 1
+                      wbar(ii) = wd(i, j, k, l)
+                   end do
+                end do
+             end do
+          end do
+       end do
+    end do
+  end subroutine master_state_b
+#endif
   subroutine block_res_state(nn, sps)
 
     ! This is a special state-only routine used only for finite

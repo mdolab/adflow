@@ -156,357 +156,208 @@ contains
     end if
 
   end subroutine computeMatrixFreeProductBwd
-  
-!    subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useState, xvbar, &
-!        extrabar, wbar, spatialSize, extraSize, stateSize, costSize, fSize, nTime)
-!     use constants
-!     use block, only : flowDomsd
-!     use communication, only : sumb_comm_world
-!     use blockPointers
-!     use inputDiscretization 
-!     use inputTimeSpectral 
-!     use inputPhysics
-!     use iteration         
-!     use flowVarRefState     
-!     use inputAdjoint       
-!     use diffSizes
-!     use ADjointPETSc, only : x_like, psi_like3
-!     use adjointvars
-!     use costfunctions
-!     use BCRoutines, only : applyAllBC_block
-!     use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
-!     use utils, only : setPointers, EChk, getDirAngle, setPointers_d
-!     use solverUtils, only : timeStep_block
-!     use flowUtils, only : allNodalGradients
-!     use fluxes, only : viscousFlux
-!     use haloExchange, only : exchangeCoor_b
-!     use adjointextra_b, only : block_res_b, xhalo_block_b
-!     use adjointUtils, only : allocDerivativeValues, zeroADSeeds, setDiffSizes
-!     implicit none
+ 
+  ! subroutine computeMatrixFreeProductBwdFast2(dwbar, wbar, stateSize)
+  !   ! This is the "Fast" ie. State variable only version of the reverse
+  !   ! mode computation. It is intended to compute dRdw^T product
+  !   ! ONLY. The main purpose is for fast matrix-vector products for the
+  !   ! actual adjoint solve. 
+  !   use block, only : flowDomsd
+  !   use blockPointers
+  !   use inputDiscretization
+  !   use inputTimeSpectral 
+  !   use inputPhysics
+  !   use flowVarRefState
+  !   use inputAdjoint       
+  !   use iteration
+  !   use inputIteration
+  !   use sa_fast_b, only : saresscale_fast_b, saviscous_fast_b, &
+  !        sasource_fast_b, cb3Inv, cv13, cw36, kar2inv, qq
+  !   use adjointvars
+  !   use communication, only : sumb_comm_world
+  !   use paramTurb
+  !   use utils, only : terminate, setPointers_d
+  !   use haloExchange, only : whalo2_b
+  !   use flowutils_fast_b
+  !   use turbutils_fast_b
+  !   use turbbcroutines_b
+  !   use turbutils_b, only : saeddyviscosity_b
+  !   use fluxes_fast_b
+  !   use solverutils_fast_b
+  !   use flowutils_fast_b, only : computelamviscosity_fast_b, allnodalgradients_fast_b
+  !   implicit none
 
-! #define PETSC_AVOID_MPIF_H
-! #include "petsc/finclude/petsc.h"
-! #include "petsc/finclude/petscvec.h90"
+  !   ! Input Variables
+  !   integer(kind=intType), intent(in) :: stateSize
+  !   real(kind=realType), dimension(stateSize), intent(in) :: dwbar
 
-!     ! Input Variables
-!     integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize, fSize, nTime
-!     real(kind=realType), dimension(stateSize), intent(in) :: dwbar
-!     real(kind=realType), dimension(costSize), intent(in) :: funcsbar
-!     real(kind=realType), dimension(3, fSize, nTime), intent(in) :: fBar
-!     logical, intent(in) :: useSpatial, useState
+  !   ! Ouput Variables
+  !   real(kind=realType), dimension(stateSize), intent(out) :: wbar
 
-!     ! Ouput Variables
-!     real(kind=realType), dimension(stateSize), intent(out) :: wbar
-!     real(kind=realType), dimension(extraSize), intent(out) :: extrabar
-!     real(kind=realType), dimension(spatialSize), intent(out) :: xvbar
+  !   ! Working variables
+  !   integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
+  !   integer(kind=intType) :: nState, level
+  !   logical :: resetToRans
+  !   real(kind=realType) :: ovol, timea, timeb, totaltime
 
-!     ! Working variables
-!     integer(kind=intType) :: ierr,nn,mm,sps,i,j,k,l,ii,jj,sps2, idim
-!     integer(kind=intType) ::  level, irow, nState
-!     logical :: resetToRans
-!     real(kind=realType), dimension(extraSize) :: extraLocalBar
-!     real(kind=realType), dimension(:, :), allocatable :: xSurfbSum
-!     real(kind=realType), dimension(3, fSize) :: forces
+  !   ! Setup number of state variable based on turbulence assumption
+  !   if ( frozenTurbulence ) then
+  !      nState = nwf
+  !   else
+  !      nState = nw
+  !   endif
+  !   ! Assembling matrix on coarser levels is not entirely implemented yet. 
+  !   level = 1
+  !   currentLevel = level
+  !   groundLevel = level
 
-!     ! Setup number of state variable based on turbulence assumption
-!     if ( frozenTurbulence ) then
-!        nState = nwf
-!     else
-!        nState = nw
-!     endif
+  !   ! Determine if we want to use frozenTurbulent Adjoint
+  !   resetToRANS = .False. 
+  !   if (frozenTurbulence .and. equations == RANSEquations) then
+  !      equations = NSEquations 
+  !      resetToRANS = .True.
+  !   end if
 
-!     ! Place output arrays in psi_like and x_like vectors if necessary
-!     wbar = zero
-!     if (useState) then 
-!        call VecPlaceArray(psi_like3, wbar, ierr)
-!        call EChk(ierr,__FILE__,__LINE__)
-!     end if
+  !   ! Note: The calling routine is responsible for ensuring that the
+  !   ! derivative values are allocated AND ZEROED! This routine makes use
+  !   ! of the fact that only wbar needs to be zeroed since all other
+  !   ! required seeds are zeroed in the individual fast routines. This is
+  !   ! slightly unsafe, but it necessary for speed. 
+  !   do nn=1,nDom
+  !      do sps=1,nTimeIntervalsSpectral
+  !         flowDomsd(nn, level, sps)%w = zero
+  !      end do
+  !   end do
 
-!     ! Place adjoint in Vector
-!     xvbar = zero
-!     if (useSpatial) then 
-!        call VecPlaceArray(x_like, xvbar, ierr)
-!        call EChk(ierr, __FILE__, __LINE__)
-!     end if
+  !   ii = 0
 
-!     ! Need to trick the residual evalution to use coupled (mean flow and
-!     ! turbulent) together.
-!     level = 1
-!     currentLevel = level
-!     groundLevel = level
+  !   do nn=1,nDom
+  !      do sps=1,nTimeIntervalsSpectral
+  !         ! Set pointers and derivative pointers
+  !         call setPointers_d(nn, level, sps)
+  !         do k=2,kl
+  !            do j=2,jl
+  !               do i=2,il
+  !                  ovol = one/vol(i,j,k)
+  !                  do l=1,nwf
+  !                     dwd(i,j,k,l) = dwbar(ii+ l)*ovol
+  !                     fwd(i,j,k,l) = dwd(i,j,k,l)
+  !                  end do
+  !                  do l=nt1,nState
+  !                     dwd(i,j,k,l) = dwbar(ii+ l)*ovol*turbresscale(l-nt1+1)
+  !                     fwd(i,j,k,l) = dwd(i,j,k,l)
+  !                  end do
+  !                  ii = ii + nState
+  !               end do
+  !            end do
+  !         end do
 
-!     ! Determine if we want to use frozenTurbulent Adjoint
-!     resetToRANS = .False. 
-!     if (frozenTurbulence .and. equations == RANSEquations) then
-!        equations = NSEquations 
-!        resetToRANS = .True.
-!     end if
+  !         call pushreal8array(radk, size(radk, 1)*size(radk, 2)*size(radk, 3))
+  !         call pushreal8array(radj, size(radj, 1)*size(radj, 2)*size(radj, 3))
+  !         call pushreal8array(radi, size(radi, 1)*size(radi, 2)*size(radi, 3))
 
-!     ! Allocate the memory for reverse
-!     if (.not. derivVarsAllocated) then 
-!        call allocDerivativeValues(level)
-!     end if
-!     do nn=1,nDom
-!        do sps=1,nTimeIntervalsSpectral
-!           call setPointers(nn, level, sps)
-!           call zeroADSeeds(nn,level, sps)
-!        end do
-!     end do
+  !         if (viscous) then 
+  !            call viscousFlux_fast_b
+  !            call allnodalgradients_fast_b
+  !            call computespeedofsoundsquared_fast_b
+  !         end if
 
-!     ! Zero the function seeds
-!     funcValuesd= zero
+  !         select case (spaceDiscr)
+  !         case(dissScalar) 
+  !            call inviscidDissFluxScalar_fast_b
+  !         case(dissMatrix)
+  !            call inviscidDissFluxMatrix_fast_b
+  !         end select
 
-!     call VecGetLocalSize(xSurfVec(1, 1), i, ierr)
-!     call EChk(ierr,__FILE__,__LINE__)
+  !         call inviscidcentralflux_fast_b
 
-!     allocate(xSurfbSum(nTimeIntervalsSpectral, i))
-!     xSurfbSum = zero
+  !         if (equations == RANSEquations) then 
+  !            select case(turbModel)
+  !            case (spalartAllmaras)
+  !               cv13    = rsaCv1**3
+  !               kar2Inv = one/(rsaK**2)
+  !               cw36    = rsaCw3**6
+  !               cb3Inv  = one/rsaCb3
+  !               call saresscale_fast_b()
+  !               call saviscous_fast_b()
+  !               call turbadvection_fast_b(1_inttype, 1_inttype, itu1-1, qq)
+  !               call sasource_fast_b()
+  !            case default
+  !               call terminate("matrixFreeRoutines", &
+  !                    "Only SA turbulence adjoint implemented")
+  !            end select
+  !            ! And the turbulence BCs
+  !            call applyallturbbcthisblock_b(.true.)
+  !            call bcturbtreatment_b()
+  !         end if
 
-!     ! Zero out extraLocal
-!     extraLocalBar = zero
+  !         call timestep_block_fast_b(.False.)
+  !         call applyAllBC_block_fast_b(.True.)
 
-!     ii = 0 ! Residual bar counter
-!     jj = 0 ! Force bar counter
+  !         call popreal8array(radi, size(radi, 1)*size(radi, 2)*size(radi, 3))
+  !         call popreal8array(radj, size(radj, 1)*size(radj, 2)*size(radj, 3))
+  !         call popreal8array(radk, size(radk, 1)*size(radk, 2)*size(radk, 3))
 
-!     ! Before we start, perform the reverse of getForces() for each
-!     ! spectral instance. This set the bcDatad%F and bcData%area
-!     ! seeds.
-!     do sps=1, nTimeIntervalsSpectral
-!        call getForces_b(forces(:, :), fBar(:, :, sps), fSize, sps)
-!     end do
+  !      end do
+  !   end do
 
-!     domainLoopAD: do nn=1,nDom
+  !   ! Communicate all the derivative values in reverse
+  !   call whalo2_b(1, 1, nw, .True., .True., .True.)
 
-!        ! Just to get sizes
-!        call setPointers(nn,1_intType,1)
-!        call setDiffSizes
+  !   ii = 0
+  !   do nn=1,nDom
+  !      do sps=1,nTimeIntervalsSpectral
+  !         call setPointers_d(nn, level, sps)
 
-!        do sps=1,nTimeIntervalsSpectral
-!           ! Set pointers and derivative pointers
-!           call setPointers_d(nn, level, sps)
+  !         if (equations == RANSEquations) then 
+  !            select case(turbModel)
+  !            case (spalartAllmaras)
+  !               call saeddyviscosity_b(0, ib, 0, jb, 0, kb)
+  !            end select
+  !         end if
 
-!           ! Get the pointers from the petsc vectors
-!           call VecGetArrayF90(xSurfVec(level, sps), xSurf, ierr)
-!           call EChk(ierr,__FILE__,__LINE__)
+  !         if (viscous) then 
+  !            call computelamviscosity_fast_b(.True.)
+  !         end if
 
-!           ! And it's derivative
-!           call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
-!           call EChk(ierr,__FILE__,__LINE__)
+  !         call computepressuresimple_fast_b(.true.)
 
-!           ! Set the dw seeds
-!           do k=2, kl
-!              do j=2,jl
-!                 do i=2,il
-!                    do l=1,nState
-!                       ii = ii + 1
-!                       flowdomsd(nn, level, sps)%dw(i, j, k, l) = dwbar(ii)
-!                    end do
-!                 end do
-!              end do
-!           end do
+  !         ! We can put stuff directly into wbar with no assembly; the
+  !         ! whalo_b already takes care of it. 
+  !         do k=2, kl
+  !            do j=2,jl
+  !               do i=2,il
+  !                  do l=1,nState
+  !                     ii =ii + 1
+  !                     wbar(ii) = flowdomsd(nn, level, sps)%w(i,j,k,l)
+  !                  end do
+  !               end do
+  !            end do
+  !         end do
+  !      end do
+  !   end do
 
-!           ! And the function value seeds
-!           funcValuesd = funcsBar
+  !   ! Reset the correct equation parameters if we are using the frozen
+  !   ! Turbulent
+  !   if (resetToRANS) then
+  !      equations = RANSEquations
+  !   end if
+  ! end subroutine computeMatrixFreeProductBwdFast2
 
-!           ! For some reason tapenade forget to zero rgasd when it
-!           ! should, therefore we must manually zero here before calling the code. 
-!           rgasd = zero
-!           call BLOCK_RES_B(nn, sps, useSpatial, frozenTurbulence)
-
-!           ! Currently these tapenade has decided the output values from
-!           ! these routines do not matter, these need to be recomputed to
-!           ! consistent.
-!           call applyAllBC_block(.True.)
-!           call timestep_block(.false.)
-!           if (viscous) then 
-!              call allNodalGradients
-!              call viscousflux
-!           end if
-
-!           ! Assmeble the vectors requested:
-!           do sps2=1,nTimeIntervalsSpectral
-
-!              if (useSpatial) then 
-!                 ! We need to acculumate the contribution from this block into xSurfbSum
-!                 xSurfbSum(sps, :) = xSurfbSum(sps, :) + xSurfd
-
-!                 ! Also need the extra variables
-!                 extraLocalBar(iAlpha) = extraLocalBar(iAlpha) + alphad
-!                 extraLocalBar(iBeta) = extraLocalBar(iBeta) + betad
-!                 extraLocalBar(iMach) = extraLocalBar(iMach) + machd + machcoefd
-!                 extraLocalBar(iMachGrid) = extraLocalBar(iMachGrid) + machgridd
-!                 extraLocalBar(iPressure) = extraLocalBar(iPressure) + pinfdimd
-!                 extraLocalBar(iTemperature) = extraLocalBar(iTemperature) + tinfdimd
-!                 extraLocalBar(iDensity) = extraLocalBar(iDensity) + rhoinfdimd
-!                 extraLocalBar(iPointRefX) = extraLocalBar(iPointRefX) + pointrefd(1)
-!                 extraLocalBar(iPointRefY) = extraLocalBar(iPointRefY) + pointrefd(2)
-!                 extraLocalBar(iPointRefZ) = extraLocalBar(iPointRefZ) + pointrefd(3)
-!              end if
-
-!              if (useState) then 
-!                 do k=0, kb
-!                    do j=0,jb
-!                       do i=0,ib
-!                          do l=1,nState
-!                             irow = flowDoms(nn, 1, sps2)%globalCell(i,j,k)*nState + l -1
-!                             if (irow >= 0) then 
-!                                call VecSetValues(psi_like3, 1, (/irow/), &
-!                                     (/flowdomsd(nn, level, sps)%w(i, j, k, l)/), ADD_VALUES, ierr)
-!                                call EChk(ierr,__FILE__,__LINE__)
-!                             end if
-!                          end do
-!                       end do
-!                    end do
-!                 end do
-!              end if
-
-!           end do
-
-!           ! These arrays need to be restored before we can move to the next spectral instance. 
-!           call VecRestoreArrayF90(xSurfVec(level, sps), xSurf, ierr)
-!           call EChk(ierr,__FILE__,__LINE__)
-
-!           ! And it's derivative
-!           call VecRestoreArrayF90(xSurfVecd(sps), xSurfd, ierr)
-!           call EChk(ierr,__FILE__,__LINE__)
-
-!        end do
-!     end do domainLoopAD
-
-!     if (useSpatial) then
-
-!        ! We are not done with the spatial code just yet, we need to run
-!        ! the backwards exchange coor and then run xhalo_block_b
-
-!        call exchangeCoor_b(level)
-
-!        do nn=1,nDom
-!           do sps=1,nTimeIntervalsSpectral
-!              call setPointers_d(nn, level, sps)
-
-!              ! Complete the xhalo dependance
-!              call xhalo_block_b
-
-!              ! We can now just need to loop over the owned nodes...no halos now
-!              do k=1,kl
-!                 do j=1,jl
-!                    do i=1,il
-
-!                       do l=1,3
-!                          irow = flowDoms(nn, 1, sps)%globalNode(i,j,k)*3 + l -1
-!                           call VecSetValues(x_like, 1, (/irow/), &
-!                                (/flowdomsd(nn, level, sps)%x(i, j, k, l)/), INSERT_VALUES, ierr)
-!                          call EChk(ierr,__FILE__,__LINE__)
-!                       end do
-!                    end do
-!                 end do
-!              end do
-!           end do
-!        end do
-
-!        ! Finally we have to do an mpi all reduce on the local parts:
-
-!        extraBar = zero
-!        call mpi_allreduce(extraLocalBar, extraBar, extraSize, sumb_real, mpi_sum, SUmb_comm_world, ierr)
-!        call EChk(ierr,__FILE__,__LINE__)
-!     end if
-
-!     ! Copy the Sum value back to xSurfb which is actually the PETSc
-!     ! array. And now we are done with the xSurfBSum value
-
-!     do sps=1,nTimeIntervalsSpectral
-
-!        ! And it's derivative
-!        call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
-!        call EChk(ierr,__FILE__,__LINE__)
-
-!        xSurfd = xSurfbSum(sps, :)
-!        call VecRestoreArrayF90(xSurfVecd(sps), xSurfd, ierr)
-!        call EChk(ierr,__FILE__,__LINE__)
-
-!     end do
-
-!     deallocate(xsurfbSum)
-
-!     ! And perform assembly on the w vectors if 
-!     if (useState) then 
-!        call VecAssemblyBegin(psi_like3, ierr)
-!        call EChk(ierr,__FILE__,__LINE__)
-
-!        call VecAssemblyEnd(psi_like3, ierr)
-!        call EChk(ierr,__FILE__,__LINE__)
-
-!        call VecResetArray(psi_like3, ierr)
-!        call EChk(ierr,__FILE__,__LINE__)
-!     end if
-
-!     if (useSpatial) then 
-!        ! And perform assembly on the x vectors
-!        call VecAssemblyBegin(x_like, ierr)
-!        call EChk(ierr,__FILE__,__LINE__)
-
-!        call VecAssemblyEnd(x_like, ierr)
-!        call EChk(ierr,__FILE__,__LINE__)
-
-!        ! Now scatter the xsurb contribution back into x_like Perform the
-!        ! scatter from the global x vector to xSurf...but only if
-!        ! wallDistances were used
-!        if (wallDistanceNeeded .and. useApproxWallDistance) then 
-!           do sps=1, nTimeIntervalsSpectral
-!              call VecScatterBegin(wallScatter(1, sps), xSurfVecd(sps), x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
-!              call EChk(ierr,__FILE__,__LINE__)
-
-!              call VecScatterEnd(wallScatter(1, sps), xSurfVecd(sps), x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
-!              call EChk(ierr,__FILE__,__LINE__)
-!           end do
-!        end if
-!        call VecResetArray(x_like, ierr)
-!        call EChk(ierr,__FILE__,__LINE__)
-!     end if
-
-!     ! Reset the correct equation parameters if we were useing the frozen
-!     ! Turbulent 
-!     if (resetToRANS) then
-!        equations = RANSEquations
-!     end if
-
-!     ! Just to be sure, we'll zero everything when we're done.
-!     do nn=1,nDom
-!        do sps=1,nTimeIntervalsSpectral
-!           call setPointers(nn, level, sps)
-!           call zeroADSeeds(nn,level, sps)
-!        end do
-!     end do
-!   end subroutine computeMatrixFreeProductBwd
-
-  subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
+subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
     ! This is the "Fast" ie. State variable only version of the reverse
     ! mode computation. It is intended to compute dRdw^T product
     ! ONLY. The main purpose is for fast matrix-vector products for the
     ! actual adjoint solve. 
-    use block, only : flowDomsd
-    use blockPointers
-    use inputDiscretization
-    use inputTimeSpectral 
-    use inputPhysics
-    use flowVarRefState
-    use inputAdjoint       
-    use iteration
-    use inputIteration
-    use sa_fast_b, only : saresscale_fast_b, saviscous_fast_b, &
-         sasource_fast_b, cb3Inv, cv13, cw36, kar2inv, qq
-    use adjointvars
-    use communication, only : sumb_comm_world
-    use paramTurb
-    use utils, only : terminate, setPointers_d
-    use haloExchange, only : whalo2_b
-    use flowutils_fast_b
-    use turbutils_fast_b
-    use turbbcroutines_b
-    use turbutils_b, only : saeddyviscosity_b
-    use fluxes_fast_b
-    use solverutils_fast_b
-    use flowutils_fast_b, only : computelamviscosity_fast_b, allnodalgradients_fast_b
+    use constants
+    use inputPhysics, only : equations
+    use inputAdjoint, only : frozenTurbulence
+    use flowVarRefState, only : nw, nwf
+    use iteration, only : currentLevel, groundLevel
+    use masterRoutines, only : master_state_b, master_b
+    use blockpointers
+    use inputtimespectral
+    use adjointutils
     implicit none
 
     ! Input Variables
@@ -516,11 +367,15 @@ contains
     ! Ouput Variables
     real(kind=realType), dimension(stateSize), intent(out) :: wbar
 
+    
+    real(kind=realType), dimension(:), allocatable :: extrabar
+    real(kind=realType), dimension(:), allocatable :: xvbar
+    real(kind=realType), dimension(:, :, :), allocatable :: fBar
+
+
     ! Working variables
-    integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
-    integer(kind=intType) :: nState, level
+    integer(kind=intType) :: nState, level, nn, sps
     logical :: resetToRans
-    real(kind=realType) :: ovol, timea, timeb, totaltime
 
     ! Setup number of state variable based on turbulence assumption
     if ( frozenTurbulence ) then
@@ -528,6 +383,7 @@ contains
     else
        nState = nw
     endif
+
     ! Assembling matrix on coarser levels is not entirely implemented yet. 
     level = 1
     currentLevel = level
@@ -545,119 +401,17 @@ contains
     ! of the fact that only wbar needs to be zeroed since all other
     ! required seeds are zeroed in the individual fast routines. This is
     ! slightly unsafe, but it necessary for speed. 
-    do nn=1,nDom
+     do nn=1,nDom
        do sps=1,nTimeIntervalsSpectral
-          flowDomsd(nn, level, sps)%w = zero
+          call zeroADSeeds(nn,level, sps)
        end do
     end do
-
-    ii = 0
-
-    do nn=1,nDom
-       do sps=1,nTimeIntervalsSpectral
-          ! Set pointers and derivative pointers
-          call setPointers_d(nn, level, sps)
-          do k=2,kl
-             do j=2,jl
-                do i=2,il
-                   ovol = one/vol(i,j,k)
-                   do l=1,nwf
-                      dwd(i,j,k,l) = dwbar(ii+ l)*ovol
-                      fwd(i,j,k,l) = dwd(i,j,k,l)
-                   end do
-                   do l=nt1,nState
-                      dwd(i,j,k,l) = dwbar(ii+ l)*ovol*turbresscale(l-nt1+1)
-                      fwd(i,j,k,l) = dwd(i,j,k,l)
-                   end do
-                   ii = ii + nState
-                end do
-             end do
-          end do
-
-          call pushreal8array(radk, size(radk, 1)*size(radk, 2)*size(radk, 3))
-          call pushreal8array(radj, size(radj, 1)*size(radj, 2)*size(radj, 3))
-          call pushreal8array(radi, size(radi, 1)*size(radi, 2)*size(radi, 3))
-
-          if (viscous) then 
-             call viscousFlux_fast_b
-             call allnodalgradients_fast_b
-             call computespeedofsoundsquared_fast_b
-          end if
-
-          select case (spaceDiscr)
-          case(dissScalar) 
-             call inviscidDissFluxScalar_fast_b
-          case(dissMatrix)
-             call inviscidDissFluxMatrix_fast_b
-          end select
-
-          call inviscidcentralflux_fast_b
-
-          if (equations == RANSEquations) then 
-             select case(turbModel)
-             case (spalartAllmaras)
-                cv13    = rsaCv1**3
-                kar2Inv = one/(rsaK**2)
-                cw36    = rsaCw3**6
-                cb3Inv  = one/rsaCb3
-                call saresscale_fast_b()
-                call saviscous_fast_b()
-                call turbadvection_fast_b(1_inttype, 1_inttype, itu1-1, qq)
-                call sasource_fast_b()
-             case default
-                call terminate("matrixFreeRoutines", &
-                     "Only SA turbulence adjoint implemented")
-             end select
-             ! And the turbulence BCs
-             call applyallturbbcthisblock_b(.true.)
-             call bcturbtreatment_b()
-          end if
-
-          call timestep_block_fast_b(.False.)
-          call applyAllBC_block_fast_b(.True.)
-
-          call popreal8array(radi, size(radi, 1)*size(radi, 2)*size(radi, 3))
-          call popreal8array(radj, size(radj, 1)*size(radj, 2)*size(radj, 3))
-          call popreal8array(radk, size(radk, 1)*size(radk, 2)*size(radk, 3))
-
-       end do
-    end do
-
-    ! Communicate all the derivative values in reverse
-    call whalo2_b(1, 1, nw, .True., .True., .True.)
-
-    ii = 0
-    do nn=1,nDom
-       do sps=1,nTimeIntervalsSpectral
-          call setPointers_d(nn, level, sps)
-
-          if (equations == RANSEquations) then 
-             select case(turbModel)
-             case (spalartAllmaras)
-                call saeddyviscosity_b(0, ib, 0, jb, 0, kb)
-             end select
-          end if
-
-          if (viscous) then 
-             call computelamviscosity_fast_b(.True.)
-          end if
-
-          call computepressuresimple_fast_b(.true.)
-
-          ! We can put stuff directly into wbar with no assembly; the
-          ! whalo_b already takes care of it. 
-          do k=2, kl
-             do j=2,jl
-                do i=2,il
-                   do l=1,nState
-                      ii =ii + 1
-                      wbar(ii) = flowdomsd(nn, level, sps)%w(i,j,k,l)
-                   end do
-                end do
-             end do
-          end do
-       end do
-    end do
+    ! allocate(xvbar(1000000), extraBar(100), fBar(3, 1466, 1))
+    ! extraBar = zero
+    ! xvbar = zero
+    ! fbar = zero
+    call master_state_b(wBar, dwBar, nState)
+    !call master_b(wbar, xvbar, extraBar, fBar, dwBar, nstate)
 
     ! Reset the correct equation parameters if we are using the frozen
     ! Turbulent
@@ -665,6 +419,8 @@ contains
        equations = RANSEquations
     end if
   end subroutine computeMatrixFreeProductBwdFast
+
+
 #endif 
   ! if def for complex
 

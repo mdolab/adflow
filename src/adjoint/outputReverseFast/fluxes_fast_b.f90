@@ -1649,7 +1649,6 @@ branch = myIntStack(myIntPtr)
         wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - tempd32
         wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + ddw1d
         wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
-        arg1d = 0.0_8
         call mydim_fast_b(arg1, arg1d, dis2, dis2d, dis4d)
         min3d = ppor*fis2*dis2d
 branch = myIntStack(myIntPtr)
@@ -2068,7 +2067,6 @@ branch = myIntStack(myIntPtr)
         wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - tempd22
         wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + ddw1d
         wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
-        arg1d = 0.0_8
         call mydim_fast_b(arg1, arg1d, dis2, dis2d, dis4d)
         min2d = ppor*fis2*dis2d
 branch = myIntStack(myIntPtr)
@@ -2487,7 +2485,6 @@ branch = myIntStack(myIntPtr)
         wd(i-1, j, k, irho) = wd(i-1, j, k, irho) - tempd12
         wd(i+1, j, k, irho) = wd(i+1, j, k, irho) + ddw1d
         wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
-        arg1d = 0.0_8
         call mydim_fast_b(arg1, arg1d, dis2, dis2d, dis4d)
         min1d = ppor*fis2*dis2d
 branch = myIntStack(myIntPtr)
@@ -3680,7 +3677,6 @@ myIntPtr = myIntPtr + 1
         wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - tempd19
         wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + ddw1d
         wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
-        arg1d = 0.0_8
         call mydim_fast_b(arg1, arg1d, dis2, dis2d, dis4d)
         rradd = fis2*min3*dis2d + fis4*arg1d
         min3d = fis2*rrad*dis2d
@@ -3828,7 +3824,6 @@ myIntPtr = myIntPtr + 1
         wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - tempd14
         wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + ddw1d
         wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
-        arg1d = 0.0_8
         call mydim_fast_b(arg1, arg1d, dis2, dis2d, dis4d)
         rradd = fis2*min2*dis2d + fis4*arg1d
         min2d = fis2*rrad*dis2d
@@ -3976,7 +3971,6 @@ myIntPtr = myIntPtr + 1
         wd(i-1, j, k, irho) = wd(i-1, j, k, irho) - tempd9
         wd(i+1, j, k, irho) = wd(i+1, j, k, irho) + ddw1d
         wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
-        arg1d = 0.0_8
         call mydim_fast_b(arg1, arg1d, dis2, dis2d, dis4d)
         rradd = fis2*min1*dis2d + fis4*arg1d
         min1d = fis2*rrad*dis2d
@@ -5373,12 +5367,2707 @@ branch = myIntStack(myIntPtr)
       end select
     end subroutine riemannflux
   end subroutine inviscidupwindflux
+!  differentiation of inviscidupwindflux in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: *p *w *fw
+!   with respect to varying inputs: *p *w *fw
+!   rw status of diff variables: *p:incr *w:incr *fw:in-out
+!   plus diff mem management of: p:in w:in fw:in
+  subroutine inviscidupwindflux_fast_b(finegrid)
+!
+!       inviscidupwindflux computes the artificial dissipation part of 
+!       the euler fluxes by means of an approximate solution of the 1d 
+!       riemann problem on the face. for first order schemes,          
+!       finegrid == .false., the states in the cells are assumed to    
+!       be constant; for the second order schemes on the fine grid a   
+!       nonlinear reconstruction of the left and right state is done   
+!       for which several options exist.                               
+!       it is assumed that the pointers in blockpointers already       
+!       point to the correct block.                                    
+!
+    use constants
+    use blockpointers, only : il, jl, kl, ie, je, ke, ib, jb, kb, w, &
+&   wd, p, pd, pori, porj, pork, fw, fwd, gamma, si, sj, sk, indfamilyi,&
+&   indfamilyj, indfamilyk, spectralsol, addgridvelocities, sfacei, &
+&   sfacej, sfacek, rotmatrixi, rotmatrixj, rotmatrixk, factfamilyi, &
+&   factfamilyj, factfamilyk
+    use flowvarrefstate, only : kpresent, nw, nwf, rgas, tref
+    use inputdiscretization, only : limiter, lumpeddiss, precond, &
+&   riemann, riemanncoarse, orderturb, kappacoef
+    use inputphysics, only : equations
+    use iteration, only : rfil, currentlevel, groundlevel
+    use cgnsgrid, only : massflowfamilydiss
+    use utils_fast_b, only : getcorrectfork, terminate
+    use flowutils_fast_b, only : etot, etot_fast_b
+    implicit none
+!
+!      subroutine arguments.
+!
+    logical, intent(in) :: finegrid
+!
+!      local variables.
+!
+    integer(kind=portype) :: por
+    integer(kind=inttype) :: nwint
+    integer(kind=inttype) :: i, j, k, ind
+    integer(kind=inttype) :: limused, riemannused
+    real(kind=realtype) :: sx, sy, sz, omk, opk, sfil, gammaface
+    real(kind=realtype) :: factminmod, sface
+    real(kind=realtype), dimension(nw) :: left, right
+    real(kind=realtype), dimension(nw) :: leftd, rightd
+    real(kind=realtype), dimension(nw) :: du1, du2, du3
+    real(kind=realtype), dimension(nw) :: du1d, du2d, du3d
+    real(kind=realtype), dimension(nwf) :: flux
+    real(kind=realtype), dimension(nwf) :: fluxd
+    logical :: firstorderk, correctfork, rotationalperiodic
+    intrinsic abs
+    intrinsic associated
+    intrinsic max
+    integer :: branch
+    real(kind=realtype) :: abs0
+    real(kind=realtype) :: max1
+    if (rfil .ge. 0.) then
+      abs0 = rfil
+    else
+      abs0 = -rfil
+    end if
+!
+! check if rfil == 0. if so, the dissipative flux needs not to
+! be computed.
+    if (abs0 .ge. thresholdreal) then
+! check if the formulation for rotational periodic problems
+! must be used.
+      if (associated(rotmatrixi)) then
+        rotationalperiodic = .true.
+      else
+        rotationalperiodic = .false.
+      end if
+! initialize the dissipative residual to a certain times,
+! possibly zero, the previously stored value. owned cells
+! only, because the halo values do not matter.
+      sfil = one - rfil
+! determine whether or not the total energy must be corrected
+! for the presence of the turbulent kinetic energy.
+      correctfork = getcorrectfork()
+      if (1.e-10_realtype .lt. one - kappacoef) then
+        max1 = one - kappacoef
+      else
+        max1 = 1.e-10_realtype
+      end if
+! compute the factor used in the minmod limiter.
+      factminmod = (three-kappacoef)/max1
+! determine the limiter scheme to be used. on the fine grid the
+! user specified scheme is used; on the coarse grid a first order
+! scheme is computed.
+      limused = firstorder
+      if (finegrid) limused = limiter
+! lumped diss is true for doing approx pc
+      if (lumpeddiss) limused = firstorder
+! determine the riemann solver which must be used.
+      riemannused = riemanncoarse
+      if (finegrid) riemannused = riemann
+! store 1-kappa and 1+kappa a bit easier and multiply it by 0.25.
+      omk = fourth*(one-kappacoef)
+      opk = fourth*(one+kappacoef)
+! initialize sface to zero. this value will be used if the
+! block is not moving.
+      sface = zero
+! set the number of variables to be interpolated depending
+! whether or not a k-equation is present. if a k-equation is
+! present also set the logical firstorderk. this indicates
+! whether or not only a first order approximation is to be used
+! for the turbulent kinetic energy.
+      if (correctfork) then
+        if (orderturb .eq. firstorder) then
+          nwint = nwf
+          firstorderk = .true.
+        else
+          nwint = itu1
+          firstorderk = .false.
+        end if
+      else
+        nwint = nwf
+        firstorderk = .false.
+      end if
+!
+!       flux computation. a distinction is made between first and      
+!       second order schemes to avoid the overhead for the first order 
+!       scheme.                                                        
+!
+      if (limused .eq. firstorder) then
+!
+!         first order reconstruction. the states in the cells are      
+!         constant. the left and right states are constructed easily.  
+!
+! fluxes in the i-direction.
+        do k=2,kl
+          do j=2,jl
+            do i=1,il
+! store the normal vector, the porosity and the
+! mesh velocity if present.
+              sx = si(i, j, k, 1)
+              sy = si(i, j, k, 2)
+              sz = si(i, j, k, 3)
+              if (addgridvelocities) then
+                sface = sfacei(i, j, k)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+              else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+              end if
+! determine the left and right state.
+              left(irho) = w(i, j, k, irho)
+              left(ivx) = w(i, j, k, ivx)
+              left(ivy) = w(i, j, k, ivy)
+              left(ivz) = w(i, j, k, ivz)
+              left(irhoe) = p(i, j, k)
+              if (correctfork) then
+                left(itu1) = w(i, j, k, itu1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+              else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+              end if
+              right(irho) = w(i+1, j, k, irho)
+              right(ivx) = w(i+1, j, k, ivx)
+              right(ivy) = w(i+1, j, k, ivy)
+              right(ivz) = w(i+1, j, k, ivz)
+              right(irhoe) = p(i+1, j, k)
+              if (correctfork) then
+                right(itu1) = w(i+1, j, k, itu1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+              else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+              end if
+            end do
+          end do
+        end do
+! store the density flux in the mass flow of the
+! appropriate sliding mesh interface.
+! fluxes in j-direction.
+        do k=2,kl
+          do j=1,jl
+            do i=2,il
+! store the normal vector, the porosity and the
+! mesh velocity if present.
+              sx = sj(i, j, k, 1)
+              sy = sj(i, j, k, 2)
+              sz = sj(i, j, k, 3)
+              if (addgridvelocities) then
+                sface = sfacej(i, j, k)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+              else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+              end if
+! determine the left and right state.
+              left(irho) = w(i, j, k, irho)
+              left(ivx) = w(i, j, k, ivx)
+              left(ivy) = w(i, j, k, ivy)
+              left(ivz) = w(i, j, k, ivz)
+              left(irhoe) = p(i, j, k)
+              if (correctfork) then
+                left(itu1) = w(i, j, k, itu1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+              else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+              end if
+              right(irho) = w(i, j+1, k, irho)
+              right(ivx) = w(i, j+1, k, ivx)
+              right(ivy) = w(i, j+1, k, ivy)
+              right(ivz) = w(i, j+1, k, ivz)
+              right(irhoe) = p(i, j+1, k)
+              if (correctfork) then
+                right(itu1) = w(i, j+1, k, itu1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+              else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+              end if
+            end do
+          end do
+        end do
+! store the density flux in the mass flow of the
+! appropriate sliding mesh interface.
+! fluxes in k-direction.
+        do k=1,kl
+          do j=2,jl
+            do i=2,il
+! store the normal vector, the porosity and the
+! mesh velocity if present.
+              sx = sk(i, j, k, 1)
+              sy = sk(i, j, k, 2)
+              sz = sk(i, j, k, 3)
+              if (addgridvelocities) then
+                sface = sfacek(i, j, k)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+              else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+              end if
+! determine the left and right state.
+              left(irho) = w(i, j, k, irho)
+              left(ivx) = w(i, j, k, ivx)
+              left(ivy) = w(i, j, k, ivy)
+              left(ivz) = w(i, j, k, ivz)
+              left(irhoe) = p(i, j, k)
+              if (correctfork) then
+                left(itu1) = w(i, j, k, itu1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+              else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+              end if
+              right(irho) = w(i, j, k+1, irho)
+              right(ivx) = w(i, j, k+1, ivx)
+              right(ivy) = w(i, j, k+1, ivy)
+              right(ivz) = w(i, j, k+1, ivz)
+              right(irhoe) = p(i, j, k+1)
+              if (correctfork) then
+                right(itu1) = w(i, j, k+1, itu1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+              else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+              end if
+            end do
+          end do
+        end do
+        fluxd = 0.0_8
+        leftd = 0.0_8
+        rightd = 0.0_8
+        do k=kl,1,-1
+          do j=jl,2,-1
+            do i=il,2,-1
+              fluxd(irhoe) = fluxd(irhoe) - fwd(i, j, k+1, irhoe)
+              fluxd(imz) = fluxd(imz) - fwd(i, j, k+1, imz)
+              fluxd(imy) = fluxd(imy) - fwd(i, j, k+1, imy)
+              fluxd(imx) = fluxd(imx) - fwd(i, j, k+1, imx)
+              fluxd(irho) = fluxd(irho) - fwd(i, j, k+1, irho)
+              fluxd(irhoe) = fluxd(irhoe) + fwd(i, j, k, irhoe)
+              fluxd(imz) = fluxd(imz) + fwd(i, j, k, imz)
+              fluxd(imy) = fluxd(imy) + fwd(i, j, k, imy)
+              fluxd(imx) = fluxd(imx) + fwd(i, j, k, imx)
+              fluxd(irho) = fluxd(irho) + fwd(i, j, k, irho)
+              gammaface = half*(gamma(i, j, k)+gamma(i, j, k+1))
+              por = pork(i, j, k)
+              call riemannflux_fast_b(left, leftd, right, rightd, flux, &
+&                               fluxd)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+              if (branch .eq. 0) then
+                wd(i, j, k+1, itu1) = wd(i, j, k+1, itu1) + rightd(itu1)
+                rightd(itu1) = 0.0_8
+              end if
+              pd(i, j, k+1) = pd(i, j, k+1) + rightd(irhoe)
+              rightd(irhoe) = 0.0_8
+              wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + rightd(ivz)
+              rightd(ivz) = 0.0_8
+              wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + rightd(ivy)
+              rightd(ivy) = 0.0_8
+              wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + rightd(ivx)
+              rightd(ivx) = 0.0_8
+              wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + rightd(irho)
+              rightd(irho) = 0.0_8
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+              if (branch .eq. 0) then
+                wd(i, j, k, itu1) = wd(i, j, k, itu1) + leftd(itu1)
+                leftd(itu1) = 0.0_8
+              end if
+              pd(i, j, k) = pd(i, j, k) + leftd(irhoe)
+              leftd(irhoe) = 0.0_8
+              wd(i, j, k, ivz) = wd(i, j, k, ivz) + leftd(ivz)
+              leftd(ivz) = 0.0_8
+              wd(i, j, k, ivy) = wd(i, j, k, ivy) + leftd(ivy)
+              leftd(ivy) = 0.0_8
+              wd(i, j, k, ivx) = wd(i, j, k, ivx) + leftd(ivx)
+              leftd(ivx) = 0.0_8
+              wd(i, j, k, irho) = wd(i, j, k, irho) + leftd(irho)
+              leftd(irho) = 0.0_8
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+              if (branch .eq. 0) call popreal8(sface)
+            end do
+          end do
+        end do
+        do k=kl,2,-1
+          do j=jl,1,-1
+            do i=il,2,-1
+              fluxd(irhoe) = fluxd(irhoe) - fwd(i, j+1, k, irhoe)
+              fluxd(imz) = fluxd(imz) - fwd(i, j+1, k, imz)
+              fluxd(imy) = fluxd(imy) - fwd(i, j+1, k, imy)
+              fluxd(imx) = fluxd(imx) - fwd(i, j+1, k, imx)
+              fluxd(irho) = fluxd(irho) - fwd(i, j+1, k, irho)
+              fluxd(irhoe) = fluxd(irhoe) + fwd(i, j, k, irhoe)
+              fluxd(imz) = fluxd(imz) + fwd(i, j, k, imz)
+              fluxd(imy) = fluxd(imy) + fwd(i, j, k, imy)
+              fluxd(imx) = fluxd(imx) + fwd(i, j, k, imx)
+              fluxd(irho) = fluxd(irho) + fwd(i, j, k, irho)
+              gammaface = half*(gamma(i, j, k)+gamma(i, j+1, k))
+              por = porj(i, j, k)
+              call riemannflux_fast_b(left, leftd, right, rightd, flux, &
+&                               fluxd)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+              if (branch .eq. 0) then
+                wd(i, j+1, k, itu1) = wd(i, j+1, k, itu1) + rightd(itu1)
+                rightd(itu1) = 0.0_8
+              end if
+              pd(i, j+1, k) = pd(i, j+1, k) + rightd(irhoe)
+              rightd(irhoe) = 0.0_8
+              wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + rightd(ivz)
+              rightd(ivz) = 0.0_8
+              wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + rightd(ivy)
+              rightd(ivy) = 0.0_8
+              wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + rightd(ivx)
+              rightd(ivx) = 0.0_8
+              wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + rightd(irho)
+              rightd(irho) = 0.0_8
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+              if (branch .eq. 0) then
+                wd(i, j, k, itu1) = wd(i, j, k, itu1) + leftd(itu1)
+                leftd(itu1) = 0.0_8
+              end if
+              pd(i, j, k) = pd(i, j, k) + leftd(irhoe)
+              leftd(irhoe) = 0.0_8
+              wd(i, j, k, ivz) = wd(i, j, k, ivz) + leftd(ivz)
+              leftd(ivz) = 0.0_8
+              wd(i, j, k, ivy) = wd(i, j, k, ivy) + leftd(ivy)
+              leftd(ivy) = 0.0_8
+              wd(i, j, k, ivx) = wd(i, j, k, ivx) + leftd(ivx)
+              leftd(ivx) = 0.0_8
+              wd(i, j, k, irho) = wd(i, j, k, irho) + leftd(irho)
+              leftd(irho) = 0.0_8
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+              if (branch .eq. 0) call popreal8(sface)
+            end do
+          end do
+        end do
+        do k=kl,2,-1
+          do j=jl,2,-1
+            do i=il,1,-1
+              fluxd(irhoe) = fluxd(irhoe) - fwd(i+1, j, k, irhoe)
+              fluxd(imz) = fluxd(imz) - fwd(i+1, j, k, imz)
+              fluxd(imy) = fluxd(imy) - fwd(i+1, j, k, imy)
+              fluxd(imx) = fluxd(imx) - fwd(i+1, j, k, imx)
+              fluxd(irho) = fluxd(irho) - fwd(i+1, j, k, irho)
+              fluxd(irhoe) = fluxd(irhoe) + fwd(i, j, k, irhoe)
+              fluxd(imz) = fluxd(imz) + fwd(i, j, k, imz)
+              fluxd(imy) = fluxd(imy) + fwd(i, j, k, imy)
+              fluxd(imx) = fluxd(imx) + fwd(i, j, k, imx)
+              fluxd(irho) = fluxd(irho) + fwd(i, j, k, irho)
+              gammaface = half*(gamma(i, j, k)+gamma(i+1, j, k))
+              por = pori(i, j, k)
+              call riemannflux_fast_b(left, leftd, right, rightd, flux, &
+&                               fluxd)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+              if (branch .eq. 0) then
+                wd(i+1, j, k, itu1) = wd(i+1, j, k, itu1) + rightd(itu1)
+                rightd(itu1) = 0.0_8
+              end if
+              pd(i+1, j, k) = pd(i+1, j, k) + rightd(irhoe)
+              rightd(irhoe) = 0.0_8
+              wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + rightd(ivz)
+              rightd(ivz) = 0.0_8
+              wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + rightd(ivy)
+              rightd(ivy) = 0.0_8
+              wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + rightd(ivx)
+              rightd(ivx) = 0.0_8
+              wd(i+1, j, k, irho) = wd(i+1, j, k, irho) + rightd(irho)
+              rightd(irho) = 0.0_8
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+              if (branch .eq. 0) then
+                wd(i, j, k, itu1) = wd(i, j, k, itu1) + leftd(itu1)
+                leftd(itu1) = 0.0_8
+              end if
+              pd(i, j, k) = pd(i, j, k) + leftd(irhoe)
+              leftd(irhoe) = 0.0_8
+              wd(i, j, k, ivz) = wd(i, j, k, ivz) + leftd(ivz)
+              leftd(ivz) = 0.0_8
+              wd(i, j, k, ivy) = wd(i, j, k, ivy) + leftd(ivy)
+              leftd(ivy) = 0.0_8
+              wd(i, j, k, ivx) = wd(i, j, k, ivx) + leftd(ivx)
+              leftd(ivx) = 0.0_8
+              wd(i, j, k, irho) = wd(i, j, k, irho) + leftd(irho)
+              leftd(irho) = 0.0_8
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+              if (branch .eq. 0) call popreal8(sface)
+            end do
+          end do
+        end do
+      else
+! store the density flux in the mass flow of the
+! appropriate sliding mesh interface.
+!      ==================================================================
+!      ==================================================================
+!
+!         second order reconstruction of the left and right state.     
+!         the three differences used in the, possibly nonlinear,       
+!         interpolation are constructed here; the actual left and      
+!         right states, or at least the differences from the first     
+!         order interpolation, are computed in the subroutine          
+!         leftrightstate.                                              
+!
+! fluxes in the i-direction.
+        do k=2,kl
+          do j=2,jl
+            do i=1,il
+! store the three differences used in the interpolation
+! in du1, du2, du3.
+              du1(irho) = w(i, j, k, irho) - w(i-1, j, k, irho)
+              du2(irho) = w(i+1, j, k, irho) - w(i, j, k, irho)
+              du3(irho) = w(i+2, j, k, irho) - w(i+1, j, k, irho)
+              du1(ivx) = w(i, j, k, ivx) - w(i-1, j, k, ivx)
+              du2(ivx) = w(i+1, j, k, ivx) - w(i, j, k, ivx)
+              du3(ivx) = w(i+2, j, k, ivx) - w(i+1, j, k, ivx)
+              du1(ivy) = w(i, j, k, ivy) - w(i-1, j, k, ivy)
+              du2(ivy) = w(i+1, j, k, ivy) - w(i, j, k, ivy)
+              du3(ivy) = w(i+2, j, k, ivy) - w(i+1, j, k, ivy)
+              du1(ivz) = w(i, j, k, ivz) - w(i-1, j, k, ivz)
+              du2(ivz) = w(i+1, j, k, ivz) - w(i, j, k, ivz)
+              du3(ivz) = w(i+2, j, k, ivz) - w(i+1, j, k, ivz)
+              du1(irhoe) = p(i, j, k) - p(i-1, j, k)
+              du2(irhoe) = p(i+1, j, k) - p(i, j, k)
+              du3(irhoe) = p(i+2, j, k) - p(i+1, j, k)
+              if (correctfork) then
+                du1(itu1) = w(i, j, k, itu1) - w(i-1, j, k, itu1)
+                du2(itu1) = w(i+1, j, k, itu1) - w(i, j, k, itu1)
+                du3(itu1) = w(i+2, j, k, itu1) - w(i+1, j, k, itu1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+              else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+              end if
+! compute the differences from the first order scheme.
+              call leftrightstate(du1, du2, du3, rotmatrixi, left, right&
+&                          )
+! add the first order part to the currently stored
+! differences, such that the correct state vector
+! is stored.
+              left(irho) = left(irho) + w(i, j, k, irho)
+              left(ivx) = left(ivx) + w(i, j, k, ivx)
+              left(ivy) = left(ivy) + w(i, j, k, ivy)
+              left(ivz) = left(ivz) + w(i, j, k, ivz)
+              left(irhoe) = left(irhoe) + p(i, j, k)
+              right(irho) = right(irho) + w(i+1, j, k, irho)
+              right(ivx) = right(ivx) + w(i+1, j, k, ivx)
+              right(ivy) = right(ivy) + w(i+1, j, k, ivy)
+              right(ivz) = right(ivz) + w(i+1, j, k, ivz)
+              right(irhoe) = right(irhoe) + p(i+1, j, k)
+              if (correctfork) then
+                left(itu1) = left(itu1) + w(i, j, k, itu1)
+                right(itu1) = right(itu1) + w(i+1, j, k, itu1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+              else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+              end if
+! store the normal vector, the porosity and the
+! mesh velocity if present.
+              sx = si(i, j, k, 1)
+              sy = si(i, j, k, 2)
+              sz = si(i, j, k, 3)
+              if (addgridvelocities) then
+                sface = sfacei(i, j, k)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+              else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+              end if
+            end do
+          end do
+        end do
+! store the density flux in the mass flow of the
+! appropriate sliding mesh interface.
+! fluxes in the j-direction.
+        do k=2,kl
+          do j=1,jl
+            do i=2,il
+! store the three differences used in the interpolation
+! in du1, du2, du3.
+              du1(irho) = w(i, j, k, irho) - w(i, j-1, k, irho)
+              du2(irho) = w(i, j+1, k, irho) - w(i, j, k, irho)
+              du3(irho) = w(i, j+2, k, irho) - w(i, j+1, k, irho)
+              du1(ivx) = w(i, j, k, ivx) - w(i, j-1, k, ivx)
+              du2(ivx) = w(i, j+1, k, ivx) - w(i, j, k, ivx)
+              du3(ivx) = w(i, j+2, k, ivx) - w(i, j+1, k, ivx)
+              du1(ivy) = w(i, j, k, ivy) - w(i, j-1, k, ivy)
+              du2(ivy) = w(i, j+1, k, ivy) - w(i, j, k, ivy)
+              du3(ivy) = w(i, j+2, k, ivy) - w(i, j+1, k, ivy)
+              du1(ivz) = w(i, j, k, ivz) - w(i, j-1, k, ivz)
+              du2(ivz) = w(i, j+1, k, ivz) - w(i, j, k, ivz)
+              du3(ivz) = w(i, j+2, k, ivz) - w(i, j+1, k, ivz)
+              du1(irhoe) = p(i, j, k) - p(i, j-1, k)
+              du2(irhoe) = p(i, j+1, k) - p(i, j, k)
+              du3(irhoe) = p(i, j+2, k) - p(i, j+1, k)
+              if (correctfork) then
+                du1(itu1) = w(i, j, k, itu1) - w(i, j-1, k, itu1)
+                du2(itu1) = w(i, j+1, k, itu1) - w(i, j, k, itu1)
+                du3(itu1) = w(i, j+2, k, itu1) - w(i, j+1, k, itu1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+              else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+              end if
+! compute the differences from the first order scheme.
+              call leftrightstate(du1, du2, du3, rotmatrixj, left, right&
+&                          )
+! add the first order part to the currently stored
+! differences, such that the correct state vector
+! is stored.
+              left(irho) = left(irho) + w(i, j, k, irho)
+              left(ivx) = left(ivx) + w(i, j, k, ivx)
+              left(ivy) = left(ivy) + w(i, j, k, ivy)
+              left(ivz) = left(ivz) + w(i, j, k, ivz)
+              left(irhoe) = left(irhoe) + p(i, j, k)
+              right(irho) = right(irho) + w(i, j+1, k, irho)
+              right(ivx) = right(ivx) + w(i, j+1, k, ivx)
+              right(ivy) = right(ivy) + w(i, j+1, k, ivy)
+              right(ivz) = right(ivz) + w(i, j+1, k, ivz)
+              right(irhoe) = right(irhoe) + p(i, j+1, k)
+              if (correctfork) then
+                left(itu1) = left(itu1) + w(i, j, k, itu1)
+                right(itu1) = right(itu1) + w(i, j+1, k, itu1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+              else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+              end if
+! store the normal vector, the porosity and the
+! mesh velocity if present.
+              sx = sj(i, j, k, 1)
+              sy = sj(i, j, k, 2)
+              sz = sj(i, j, k, 3)
+              if (addgridvelocities) then
+                sface = sfacej(i, j, k)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+              else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+              end if
+            end do
+          end do
+        end do
+! store the density flux in the mass flow of the
+! appropriate sliding mesh interface.
+! fluxes in the k-direction.
+        do k=1,kl
+          do j=2,jl
+            do i=2,il
+! store the three differences used in the interpolation
+! in du1, du2, du3.
+              du1(irho) = w(i, j, k, irho) - w(i, j, k-1, irho)
+              du2(irho) = w(i, j, k+1, irho) - w(i, j, k, irho)
+              du3(irho) = w(i, j, k+2, irho) - w(i, j, k+1, irho)
+              du1(ivx) = w(i, j, k, ivx) - w(i, j, k-1, ivx)
+              du2(ivx) = w(i, j, k+1, ivx) - w(i, j, k, ivx)
+              du3(ivx) = w(i, j, k+2, ivx) - w(i, j, k+1, ivx)
+              du1(ivy) = w(i, j, k, ivy) - w(i, j, k-1, ivy)
+              du2(ivy) = w(i, j, k+1, ivy) - w(i, j, k, ivy)
+              du3(ivy) = w(i, j, k+2, ivy) - w(i, j, k+1, ivy)
+              du1(ivz) = w(i, j, k, ivz) - w(i, j, k-1, ivz)
+              du2(ivz) = w(i, j, k+1, ivz) - w(i, j, k, ivz)
+              du3(ivz) = w(i, j, k+2, ivz) - w(i, j, k+1, ivz)
+              du1(irhoe) = p(i, j, k) - p(i, j, k-1)
+              du2(irhoe) = p(i, j, k+1) - p(i, j, k)
+              du3(irhoe) = p(i, j, k+2) - p(i, j, k+1)
+              if (correctfork) then
+                du1(itu1) = w(i, j, k, itu1) - w(i, j, k-1, itu1)
+                du2(itu1) = w(i, j, k+1, itu1) - w(i, j, k, itu1)
+                du3(itu1) = w(i, j, k+2, itu1) - w(i, j, k+1, itu1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+              else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+              end if
+! compute the differences from the first order scheme.
+              call leftrightstate(du1, du2, du3, rotmatrixk, left, right&
+&                          )
+! add the first order part to the currently stored
+! differences, such that the correct state vector
+! is stored.
+              left(irho) = left(irho) + w(i, j, k, irho)
+              left(ivx) = left(ivx) + w(i, j, k, ivx)
+              left(ivy) = left(ivy) + w(i, j, k, ivy)
+              left(ivz) = left(ivz) + w(i, j, k, ivz)
+              left(irhoe) = left(irhoe) + p(i, j, k)
+              right(irho) = right(irho) + w(i, j, k+1, irho)
+              right(ivx) = right(ivx) + w(i, j, k+1, ivx)
+              right(ivy) = right(ivy) + w(i, j, k+1, ivy)
+              right(ivz) = right(ivz) + w(i, j, k+1, ivz)
+              right(irhoe) = right(irhoe) + p(i, j, k+1)
+              if (correctfork) then
+                left(itu1) = left(itu1) + w(i, j, k, itu1)
+                right(itu1) = right(itu1) + w(i, j, k+1, itu1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+              else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+              end if
+! store the normal vector, the porosity and the
+! mesh velocity if present.
+              sx = sk(i, j, k, 1)
+              sy = sk(i, j, k, 2)
+              sz = sk(i, j, k, 3)
+              if (addgridvelocities) then
+                sface = sfacek(i, j, k)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+              else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+              end if
+            end do
+          end do
+        end do
+        fluxd = 0.0_8
+        leftd = 0.0_8
+        rightd = 0.0_8
+        du1d = 0.0_8
+        du2d = 0.0_8
+        du3d = 0.0_8
+        do k=kl,1,-1
+          do j=jl,2,-1
+            do i=il,2,-1
+              fluxd(irhoe) = fluxd(irhoe) - fwd(i, j, k+1, irhoe)
+              fluxd(imz) = fluxd(imz) - fwd(i, j, k+1, imz)
+              fluxd(imy) = fluxd(imy) - fwd(i, j, k+1, imy)
+              fluxd(imx) = fluxd(imx) - fwd(i, j, k+1, imx)
+              fluxd(irho) = fluxd(irho) - fwd(i, j, k+1, irho)
+              fluxd(irhoe) = fluxd(irhoe) + fwd(i, j, k, irhoe)
+              fluxd(imz) = fluxd(imz) + fwd(i, j, k, imz)
+              fluxd(imy) = fluxd(imy) + fwd(i, j, k, imy)
+              fluxd(imx) = fluxd(imx) + fwd(i, j, k, imx)
+              fluxd(irho) = fluxd(irho) + fwd(i, j, k, irho)
+              gammaface = half*(gamma(i, j, k)+gamma(i, j, k+1))
+              por = pork(i, j, k)
+              call riemannflux_fast_b(left, leftd, right, rightd, flux, &
+&                               fluxd)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+              if (branch .eq. 0) call popreal8(sface)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+              if (branch .eq. 0) then
+                wd(i, j, k+1, itu1) = wd(i, j, k+1, itu1) + rightd(itu1)
+                wd(i, j, k, itu1) = wd(i, j, k, itu1) + leftd(itu1)
+              end if
+              pd(i, j, k+1) = pd(i, j, k+1) + rightd(irhoe)
+              wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + rightd(ivz)
+              wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + rightd(ivy)
+              wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + rightd(ivx)
+              wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + rightd(irho)
+              pd(i, j, k) = pd(i, j, k) + leftd(irhoe)
+              wd(i, j, k, ivz) = wd(i, j, k, ivz) + leftd(ivz)
+              wd(i, j, k, ivy) = wd(i, j, k, ivy) + leftd(ivy)
+              wd(i, j, k, ivx) = wd(i, j, k, ivx) + leftd(ivx)
+              wd(i, j, k, irho) = wd(i, j, k, irho) + leftd(irho)
+              call leftrightstate_fast_b(du1, du1d, du2, du2d, du3, du3d&
+&                                  , rotmatrixk, left, leftd, right, &
+&                                  rightd)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+              if (branch .eq. 0) then
+                wd(i, j, k+2, itu1) = wd(i, j, k+2, itu1) + du3d(itu1)
+                wd(i, j, k+1, itu1) = wd(i, j, k+1, itu1) - du3d(itu1)
+                du3d(itu1) = 0.0_8
+                wd(i, j, k+1, itu1) = wd(i, j, k+1, itu1) + du2d(itu1)
+                wd(i, j, k, itu1) = wd(i, j, k, itu1) - du2d(itu1)
+                du2d(itu1) = 0.0_8
+                wd(i, j, k, itu1) = wd(i, j, k, itu1) + du1d(itu1)
+                wd(i, j, k-1, itu1) = wd(i, j, k-1, itu1) - du1d(itu1)
+                du1d(itu1) = 0.0_8
+              end if
+              pd(i, j, k+2) = pd(i, j, k+2) + du3d(irhoe)
+              pd(i, j, k+1) = pd(i, j, k+1) - du3d(irhoe)
+              du3d(irhoe) = 0.0_8
+              pd(i, j, k+1) = pd(i, j, k+1) + du2d(irhoe)
+              pd(i, j, k) = pd(i, j, k) - du2d(irhoe)
+              du2d(irhoe) = 0.0_8
+              pd(i, j, k) = pd(i, j, k) + du1d(irhoe)
+              pd(i, j, k-1) = pd(i, j, k-1) - du1d(irhoe)
+              du1d(irhoe) = 0.0_8
+              wd(i, j, k+2, ivz) = wd(i, j, k+2, ivz) + du3d(ivz)
+              wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) - du3d(ivz)
+              du3d(ivz) = 0.0_8
+              wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + du2d(ivz)
+              wd(i, j, k, ivz) = wd(i, j, k, ivz) - du2d(ivz)
+              du2d(ivz) = 0.0_8
+              wd(i, j, k, ivz) = wd(i, j, k, ivz) + du1d(ivz)
+              wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - du1d(ivz)
+              du1d(ivz) = 0.0_8
+              wd(i, j, k+2, ivy) = wd(i, j, k+2, ivy) + du3d(ivy)
+              wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) - du3d(ivy)
+              du3d(ivy) = 0.0_8
+              wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + du2d(ivy)
+              wd(i, j, k, ivy) = wd(i, j, k, ivy) - du2d(ivy)
+              du2d(ivy) = 0.0_8
+              wd(i, j, k, ivy) = wd(i, j, k, ivy) + du1d(ivy)
+              wd(i, j, k-1, ivy) = wd(i, j, k-1, ivy) - du1d(ivy)
+              du1d(ivy) = 0.0_8
+              wd(i, j, k+2, ivx) = wd(i, j, k+2, ivx) + du3d(ivx)
+              wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) - du3d(ivx)
+              du3d(ivx) = 0.0_8
+              wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + du2d(ivx)
+              wd(i, j, k, ivx) = wd(i, j, k, ivx) - du2d(ivx)
+              du2d(ivx) = 0.0_8
+              wd(i, j, k, ivx) = wd(i, j, k, ivx) + du1d(ivx)
+              wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - du1d(ivx)
+              du1d(ivx) = 0.0_8
+              wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + du3d(irho)
+              wd(i, j, k+1, irho) = wd(i, j, k+1, irho) - du3d(irho)
+              du3d(irho) = 0.0_8
+              wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + du2d(irho)
+              wd(i, j, k, irho) = wd(i, j, k, irho) - du2d(irho)
+              du2d(irho) = 0.0_8
+              wd(i, j, k, irho) = wd(i, j, k, irho) + du1d(irho)
+              wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - du1d(irho)
+              du1d(irho) = 0.0_8
+            end do
+          end do
+        end do
+        do k=kl,2,-1
+          do j=jl,1,-1
+            do i=il,2,-1
+              fluxd(irhoe) = fluxd(irhoe) - fwd(i, j+1, k, irhoe)
+              fluxd(imz) = fluxd(imz) - fwd(i, j+1, k, imz)
+              fluxd(imy) = fluxd(imy) - fwd(i, j+1, k, imy)
+              fluxd(imx) = fluxd(imx) - fwd(i, j+1, k, imx)
+              fluxd(irho) = fluxd(irho) - fwd(i, j+1, k, irho)
+              fluxd(irhoe) = fluxd(irhoe) + fwd(i, j, k, irhoe)
+              fluxd(imz) = fluxd(imz) + fwd(i, j, k, imz)
+              fluxd(imy) = fluxd(imy) + fwd(i, j, k, imy)
+              fluxd(imx) = fluxd(imx) + fwd(i, j, k, imx)
+              fluxd(irho) = fluxd(irho) + fwd(i, j, k, irho)
+              gammaface = half*(gamma(i, j, k)+gamma(i, j+1, k))
+              por = porj(i, j, k)
+              call riemannflux_fast_b(left, leftd, right, rightd, flux, &
+&                               fluxd)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+              if (branch .eq. 0) call popreal8(sface)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+              if (branch .eq. 0) then
+                wd(i, j+1, k, itu1) = wd(i, j+1, k, itu1) + rightd(itu1)
+                wd(i, j, k, itu1) = wd(i, j, k, itu1) + leftd(itu1)
+              end if
+              pd(i, j+1, k) = pd(i, j+1, k) + rightd(irhoe)
+              wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + rightd(ivz)
+              wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + rightd(ivy)
+              wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + rightd(ivx)
+              wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + rightd(irho)
+              pd(i, j, k) = pd(i, j, k) + leftd(irhoe)
+              wd(i, j, k, ivz) = wd(i, j, k, ivz) + leftd(ivz)
+              wd(i, j, k, ivy) = wd(i, j, k, ivy) + leftd(ivy)
+              wd(i, j, k, ivx) = wd(i, j, k, ivx) + leftd(ivx)
+              wd(i, j, k, irho) = wd(i, j, k, irho) + leftd(irho)
+              call leftrightstate_fast_b(du1, du1d, du2, du2d, du3, du3d&
+&                                  , rotmatrixj, left, leftd, right, &
+&                                  rightd)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+              if (branch .eq. 0) then
+                wd(i, j+2, k, itu1) = wd(i, j+2, k, itu1) + du3d(itu1)
+                wd(i, j+1, k, itu1) = wd(i, j+1, k, itu1) - du3d(itu1)
+                du3d(itu1) = 0.0_8
+                wd(i, j+1, k, itu1) = wd(i, j+1, k, itu1) + du2d(itu1)
+                wd(i, j, k, itu1) = wd(i, j, k, itu1) - du2d(itu1)
+                du2d(itu1) = 0.0_8
+                wd(i, j, k, itu1) = wd(i, j, k, itu1) + du1d(itu1)
+                wd(i, j-1, k, itu1) = wd(i, j-1, k, itu1) - du1d(itu1)
+                du1d(itu1) = 0.0_8
+              end if
+              pd(i, j+2, k) = pd(i, j+2, k) + du3d(irhoe)
+              pd(i, j+1, k) = pd(i, j+1, k) - du3d(irhoe)
+              du3d(irhoe) = 0.0_8
+              pd(i, j+1, k) = pd(i, j+1, k) + du2d(irhoe)
+              pd(i, j, k) = pd(i, j, k) - du2d(irhoe)
+              du2d(irhoe) = 0.0_8
+              pd(i, j, k) = pd(i, j, k) + du1d(irhoe)
+              pd(i, j-1, k) = pd(i, j-1, k) - du1d(irhoe)
+              du1d(irhoe) = 0.0_8
+              wd(i, j+2, k, ivz) = wd(i, j+2, k, ivz) + du3d(ivz)
+              wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) - du3d(ivz)
+              du3d(ivz) = 0.0_8
+              wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + du2d(ivz)
+              wd(i, j, k, ivz) = wd(i, j, k, ivz) - du2d(ivz)
+              du2d(ivz) = 0.0_8
+              wd(i, j, k, ivz) = wd(i, j, k, ivz) + du1d(ivz)
+              wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - du1d(ivz)
+              du1d(ivz) = 0.0_8
+              wd(i, j+2, k, ivy) = wd(i, j+2, k, ivy) + du3d(ivy)
+              wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) - du3d(ivy)
+              du3d(ivy) = 0.0_8
+              wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + du2d(ivy)
+              wd(i, j, k, ivy) = wd(i, j, k, ivy) - du2d(ivy)
+              du2d(ivy) = 0.0_8
+              wd(i, j, k, ivy) = wd(i, j, k, ivy) + du1d(ivy)
+              wd(i, j-1, k, ivy) = wd(i, j-1, k, ivy) - du1d(ivy)
+              du1d(ivy) = 0.0_8
+              wd(i, j+2, k, ivx) = wd(i, j+2, k, ivx) + du3d(ivx)
+              wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) - du3d(ivx)
+              du3d(ivx) = 0.0_8
+              wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + du2d(ivx)
+              wd(i, j, k, ivx) = wd(i, j, k, ivx) - du2d(ivx)
+              du2d(ivx) = 0.0_8
+              wd(i, j, k, ivx) = wd(i, j, k, ivx) + du1d(ivx)
+              wd(i, j-1, k, ivx) = wd(i, j-1, k, ivx) - du1d(ivx)
+              du1d(ivx) = 0.0_8
+              wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + du3d(irho)
+              wd(i, j+1, k, irho) = wd(i, j+1, k, irho) - du3d(irho)
+              du3d(irho) = 0.0_8
+              wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + du2d(irho)
+              wd(i, j, k, irho) = wd(i, j, k, irho) - du2d(irho)
+              du2d(irho) = 0.0_8
+              wd(i, j, k, irho) = wd(i, j, k, irho) + du1d(irho)
+              wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - du1d(irho)
+              du1d(irho) = 0.0_8
+            end do
+          end do
+        end do
+        do k=kl,2,-1
+          do j=jl,2,-1
+            do i=il,1,-1
+              fluxd(irhoe) = fluxd(irhoe) - fwd(i+1, j, k, irhoe)
+              fluxd(imz) = fluxd(imz) - fwd(i+1, j, k, imz)
+              fluxd(imy) = fluxd(imy) - fwd(i+1, j, k, imy)
+              fluxd(imx) = fluxd(imx) - fwd(i+1, j, k, imx)
+              fluxd(irho) = fluxd(irho) - fwd(i+1, j, k, irho)
+              fluxd(irhoe) = fluxd(irhoe) + fwd(i, j, k, irhoe)
+              fluxd(imz) = fluxd(imz) + fwd(i, j, k, imz)
+              fluxd(imy) = fluxd(imy) + fwd(i, j, k, imy)
+              fluxd(imx) = fluxd(imx) + fwd(i, j, k, imx)
+              fluxd(irho) = fluxd(irho) + fwd(i, j, k, irho)
+              gammaface = half*(gamma(i, j, k)+gamma(i+1, j, k))
+              por = pori(i, j, k)
+              call riemannflux_fast_b(left, leftd, right, rightd, flux, &
+&                               fluxd)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+              if (branch .eq. 0) call popreal8(sface)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+              if (branch .eq. 0) then
+                wd(i+1, j, k, itu1) = wd(i+1, j, k, itu1) + rightd(itu1)
+                wd(i, j, k, itu1) = wd(i, j, k, itu1) + leftd(itu1)
+              end if
+              pd(i+1, j, k) = pd(i+1, j, k) + rightd(irhoe)
+              wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + rightd(ivz)
+              wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + rightd(ivy)
+              wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + rightd(ivx)
+              wd(i+1, j, k, irho) = wd(i+1, j, k, irho) + rightd(irho)
+              pd(i, j, k) = pd(i, j, k) + leftd(irhoe)
+              wd(i, j, k, ivz) = wd(i, j, k, ivz) + leftd(ivz)
+              wd(i, j, k, ivy) = wd(i, j, k, ivy) + leftd(ivy)
+              wd(i, j, k, ivx) = wd(i, j, k, ivx) + leftd(ivx)
+              wd(i, j, k, irho) = wd(i, j, k, irho) + leftd(irho)
+              call leftrightstate_fast_b(du1, du1d, du2, du2d, du3, du3d&
+&                                  , rotmatrixi, left, leftd, right, &
+&                                  rightd)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+              if (branch .eq. 0) then
+                wd(i+2, j, k, itu1) = wd(i+2, j, k, itu1) + du3d(itu1)
+                wd(i+1, j, k, itu1) = wd(i+1, j, k, itu1) - du3d(itu1)
+                du3d(itu1) = 0.0_8
+                wd(i+1, j, k, itu1) = wd(i+1, j, k, itu1) + du2d(itu1)
+                wd(i, j, k, itu1) = wd(i, j, k, itu1) - du2d(itu1)
+                du2d(itu1) = 0.0_8
+                wd(i, j, k, itu1) = wd(i, j, k, itu1) + du1d(itu1)
+                wd(i-1, j, k, itu1) = wd(i-1, j, k, itu1) - du1d(itu1)
+                du1d(itu1) = 0.0_8
+              end if
+              pd(i+2, j, k) = pd(i+2, j, k) + du3d(irhoe)
+              pd(i+1, j, k) = pd(i+1, j, k) - du3d(irhoe)
+              du3d(irhoe) = 0.0_8
+              pd(i+1, j, k) = pd(i+1, j, k) + du2d(irhoe)
+              pd(i, j, k) = pd(i, j, k) - du2d(irhoe)
+              du2d(irhoe) = 0.0_8
+              pd(i, j, k) = pd(i, j, k) + du1d(irhoe)
+              pd(i-1, j, k) = pd(i-1, j, k) - du1d(irhoe)
+              du1d(irhoe) = 0.0_8
+              wd(i+2, j, k, ivz) = wd(i+2, j, k, ivz) + du3d(ivz)
+              wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) - du3d(ivz)
+              du3d(ivz) = 0.0_8
+              wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + du2d(ivz)
+              wd(i, j, k, ivz) = wd(i, j, k, ivz) - du2d(ivz)
+              du2d(ivz) = 0.0_8
+              wd(i, j, k, ivz) = wd(i, j, k, ivz) + du1d(ivz)
+              wd(i-1, j, k, ivz) = wd(i-1, j, k, ivz) - du1d(ivz)
+              du1d(ivz) = 0.0_8
+              wd(i+2, j, k, ivy) = wd(i+2, j, k, ivy) + du3d(ivy)
+              wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) - du3d(ivy)
+              du3d(ivy) = 0.0_8
+              wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + du2d(ivy)
+              wd(i, j, k, ivy) = wd(i, j, k, ivy) - du2d(ivy)
+              du2d(ivy) = 0.0_8
+              wd(i, j, k, ivy) = wd(i, j, k, ivy) + du1d(ivy)
+              wd(i-1, j, k, ivy) = wd(i-1, j, k, ivy) - du1d(ivy)
+              du1d(ivy) = 0.0_8
+              wd(i+2, j, k, ivx) = wd(i+2, j, k, ivx) + du3d(ivx)
+              wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) - du3d(ivx)
+              du3d(ivx) = 0.0_8
+              wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + du2d(ivx)
+              wd(i, j, k, ivx) = wd(i, j, k, ivx) - du2d(ivx)
+              du2d(ivx) = 0.0_8
+              wd(i, j, k, ivx) = wd(i, j, k, ivx) + du1d(ivx)
+              wd(i-1, j, k, ivx) = wd(i-1, j, k, ivx) - du1d(ivx)
+              du1d(ivx) = 0.0_8
+              wd(i+2, j, k, irho) = wd(i+2, j, k, irho) + du3d(irho)
+              wd(i+1, j, k, irho) = wd(i+1, j, k, irho) - du3d(irho)
+              du3d(irho) = 0.0_8
+              wd(i+1, j, k, irho) = wd(i+1, j, k, irho) + du2d(irho)
+              wd(i, j, k, irho) = wd(i, j, k, irho) - du2d(irho)
+              du2d(irho) = 0.0_8
+              wd(i, j, k, irho) = wd(i, j, k, irho) + du1d(irho)
+              wd(i-1, j, k, irho) = wd(i-1, j, k, irho) - du1d(irho)
+              du1d(irho) = 0.0_8
+            end do
+          end do
+        end do
+      end if
+      do k=kl,2,-1
+        do j=jl,2,-1
+          do i=il,2,-1
+            fwd(i, j, k, irhoe) = sfil*fwd(i, j, k, irhoe)
+            fwd(i, j, k, imz) = sfil*fwd(i, j, k, imz)
+            fwd(i, j, k, imy) = sfil*fwd(i, j, k, imy)
+            fwd(i, j, k, imx) = sfil*fwd(i, j, k, imx)
+            fwd(i, j, k, irho) = sfil*fwd(i, j, k, irho)
+          end do
+        end do
+      end do
+    end if
+
+  contains
+!  differentiation of leftrightstate in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: left right du1 du2 du3
+!   with respect to varying inputs: left right du1 du2 du3
+! store the density flux in the mass flow of the
+! appropriate sliding mesh interface.
+!      ==================================================================
+    subroutine leftrightstate_fast_b(du1, du1d, du2, du2d, du3, du3d, &
+&     rotmatrix, left, leftd, right, rightd)
+      implicit none
+!
+!        local parameter.
+!
+      real(kind=realtype), parameter :: epslim=1.e-10_realtype
+!
+!        subroutine arguments.
+!
+      real(kind=realtype), dimension(:), intent(inout) :: du1, du2, du3
+      real(kind=realtype), dimension(:), intent(inout) :: du1d
+      real(kind=realtype), dimension(:) :: left, right
+      real(kind=realtype), dimension(:) :: leftd, rightd
+      real(kind=realtype), dimension(:, :, :, :, :), pointer :: &
+&     rotmatrix
+!
+!        local variables.
+!
+      integer(kind=inttype) :: l
+      real(kind=realtype) :: rl1, rl2, rr1, rr2, tmp, dvx, dvy, dvz
+      real(kind=realtype) :: rl1d, rl2d, rr1d, rr2d, tmpd, dvxd, dvyd, &
+&     dvzd
+      real(kind=realtype), dimension(3, 3) :: rot
+      intrinsic abs
+      intrinsic max
+      intrinsic sign
+      intrinsic min
+      integer :: branch
+      real(kind=realtype), dimension(:), intent(inout) :: du3d
+      real(kind=realtype), dimension(:), intent(inout) :: du2d
+      real(kind=realtype) :: temp3
+      real(kind=realtype) :: temp2
+      real(kind=realtype) :: temp1
+      real(kind=realtype) :: temp0
+      real(kind=realtype) :: x6d
+      real(kind=realtype) :: y4d
+      real(kind=realtype) :: max2d
+      real(kind=realtype) :: max5d
+      real(kind=realtype) :: x6
+      real(kind=realtype) :: x5
+      real(kind=realtype) :: x4
+      real(kind=realtype) :: x3
+      real(kind=realtype) :: x2
+      real(kind=realtype) :: x2d
+      real(kind=realtype) :: x1
+      real(kind=realtype) :: x5d
+      real(kind=realtype) :: y3d
+      real(kind=realtype) :: tempd
+      real(kind=realtype) :: max4d
+      real(kind=realtype) :: tempd8
+      real(kind=realtype) :: tempd7
+      real(kind=realtype) :: tempd6
+      real(kind=realtype) :: tempd5
+      real(kind=realtype) :: tempd4
+      real(kind=realtype) :: tempd3
+      real(kind=realtype) :: tempd2
+      real(kind=realtype) :: tempd1
+      real(kind=realtype) :: max7d
+      real(kind=realtype) :: tempd0
+      real(kind=realtype) :: x1d
+      real(kind=realtype) :: x4d
+      real(kind=realtype) :: y2d
+      real(kind=realtype) :: max3d
+      real(kind=realtype) :: max7
+      real(kind=realtype) :: max6
+      real(kind=realtype) :: max6d
+      real(kind=realtype) :: max5
+      real(kind=realtype) :: max4
+      real(kind=realtype) :: temp
+      real(kind=realtype) :: max3
+      real(kind=realtype) :: max2
+      real(kind=realtype) :: y4
+      real(kind=realtype) :: y3
+      real(kind=realtype) :: y2
+      real(kind=realtype) :: x3d
+      real(kind=realtype) :: y1
+      real(kind=realtype) :: y1d
+      real(kind=realtype) :: temp4
+! check if the velocity components should be transformed to
+! the cylindrical frame.
+      if (rotationalperiodic) then
+! store the rotation matrix a bit easier. note that the i,j,k
+! come from the main subroutine.
+        rot(1, 1) = rotmatrix(i, j, k, 1, 1)
+        rot(1, 2) = rotmatrix(i, j, k, 1, 2)
+        rot(1, 3) = rotmatrix(i, j, k, 1, 3)
+        rot(2, 1) = rotmatrix(i, j, k, 2, 1)
+        rot(2, 2) = rotmatrix(i, j, k, 2, 2)
+        rot(2, 3) = rotmatrix(i, j, k, 2, 3)
+        rot(3, 1) = rotmatrix(i, j, k, 3, 1)
+        rot(3, 2) = rotmatrix(i, j, k, 3, 2)
+        rot(3, 3) = rotmatrix(i, j, k, 3, 3)
+! apply the transformation to the velocity components
+! of du1, du2 and du3.
+        dvx = du1(ivx)
+        dvy = du1(ivy)
+        dvz = du1(ivz)
+        du1(ivx) = rot(1, 1)*dvx + rot(1, 2)*dvy + rot(1, 3)*dvz
+        du1(ivy) = rot(2, 1)*dvx + rot(2, 2)*dvy + rot(2, 3)*dvz
+        du1(ivz) = rot(3, 1)*dvx + rot(3, 2)*dvy + rot(3, 3)*dvz
+        dvx = du2(ivx)
+        dvy = du2(ivy)
+        dvz = du2(ivz)
+        du2(ivx) = rot(1, 1)*dvx + rot(1, 2)*dvy + rot(1, 3)*dvz
+        du2(ivy) = rot(2, 1)*dvx + rot(2, 2)*dvy + rot(2, 3)*dvz
+        du2(ivz) = rot(3, 1)*dvx + rot(3, 2)*dvy + rot(3, 3)*dvz
+        dvx = du3(ivx)
+        dvy = du3(ivy)
+        dvz = du3(ivz)
+        du3(ivx) = rot(1, 1)*dvx + rot(1, 2)*dvy + rot(1, 3)*dvz
+        du3(ivy) = rot(2, 1)*dvx + rot(2, 2)*dvy + rot(2, 3)*dvz
+        du3(ivz) = rot(3, 1)*dvx + rot(3, 2)*dvy + rot(3, 3)*dvz
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+      else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+      end if
+! determine the limiter used.
+      select case  (limused) 
+      case (nolimiter) 
+        call pushcontrol2b(1)
+      case (vanalbeda) 
+!          ==============================================================
+! nonlinear interpolation using the van albeda limiter.
+! loop over the number of variables to be interpolated.
+        do l=1,nwint
+          if (du2(l) .ge. 0.) then
+            x1 = du2(l)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            x1 = -du2(l)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          if (x1 .lt. epslim) then
+            max2 = epslim
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            max2 = x1
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+! compute the limiter argument rl1, rl2, rr1 and rr2.
+! note the cut off to 0.0.
+          tmp = one/sign(max2, du2(l))
+          if (du1(l) .ge. 0.) then
+            x3 = du1(l)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            x3 = -du1(l)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          if (x3 .lt. epslim) then
+            max4 = epslim
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            max4 = x3
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          y1 = du2(l)/sign(max4, du1(l))
+          if (zero .lt. y1) then
+            rl1 = y1
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            rl1 = zero
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          if (zero .lt. du1(l)*tmp) then
+            rl2 = du1(l)*tmp
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            rl2 = zero
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          if (zero .lt. du3(l)*tmp) then
+            rr1 = du3(l)*tmp
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            rr1 = zero
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          if (du3(l) .ge. 0.) then
+            x4 = du3(l)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            x4 = -du3(l)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          if (x4 .lt. epslim) then
+            max5 = epslim
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            max5 = x4
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          y2 = du2(l)/sign(max5, du3(l))
+          if (zero .lt. y2) then
+            rr2 = y2
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            rr2 = zero
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+! compute the corresponding limiter values.
+          rl1 = rl1*(rl1+one)/(rl1*rl1+one)
+          rl2 = rl2*(rl2+one)/(rl2*rl2+one)
+          rr1 = rr1*(rr1+one)/(rr1*rr1+one)
+          rr2 = rr2*(rr2+one)/(rr2*rr2+one)
+! compute the nonlinear corrections to the first order
+! scheme.
+        end do
+        call pushcontrol2b(2)
+      case (minmod) 
+!          ==============================================================
+! nonlinear interpolation using the minmod limiter.
+! loop over the number of variables to be interpolated.
+        do l=1,nwint
+          if (du2(l) .ge. 0.) then
+            x2 = du2(l)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            x2 = -du2(l)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          if (x2 .lt. epslim) then
+            max3 = epslim
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            max3 = x2
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+! compute the limiter argument rl1, rl2, rr1 and rr2.
+! note the cut off to 0.0.
+          tmp = one/sign(max3, du2(l))
+          if (du1(l) .ge. 0.) then
+            x5 = du1(l)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            x5 = -du1(l)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          if (x5 .lt. epslim) then
+            max6 = epslim
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            max6 = x5
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          y3 = du2(l)/sign(max6, du1(l))
+          if (zero .lt. y3) then
+            rl1 = y3
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            rl1 = zero
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          if (zero .lt. du1(l)*tmp) then
+            rl2 = du1(l)*tmp
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            rl2 = zero
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          if (zero .lt. du3(l)*tmp) then
+            rr1 = du3(l)*tmp
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            rr1 = zero
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          if (du3(l) .ge. 0.) then
+            x6 = du3(l)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            x6 = -du3(l)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          if (x6 .lt. epslim) then
+            max7 = epslim
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            max7 = x6
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          y4 = du2(l)/sign(max7, du3(l))
+          if (zero .lt. y4) then
+            rr2 = y4
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            rr2 = zero
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          if (one .gt. factminmod*rl1) then
+            rl1 = factminmod*rl1
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            rl1 = one
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          if (one .gt. factminmod*rl2) then
+            rl2 = factminmod*rl2
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            rl2 = one
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          if (one .gt. factminmod*rr1) then
+            rr1 = factminmod*rr1
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            rr1 = one
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          if (one .gt. factminmod*rr2) then
+            rr2 = factminmod*rr2
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            rr2 = one
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+        end do
+        call pushcontrol2b(3)
+      case default
+        call pushcontrol2b(0)
+      end select
+! in case only a first order scheme must be used for the
+! turbulent transport equations, set the correction for the
+! turbulent kinetic energy to 0.
+      if (firstorderk) then
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+      else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+      end if
+! for rotational periodic problems transform the velocity
+! differences back to cartesian again. note that now the
+! transpose of the rotation matrix must be used.
+      if (rotationalperiodic) then
+        dvxd = rot(1, 3)*rightd(ivz)
+        dvyd = rot(2, 3)*rightd(ivz)
+        dvzd = rot(3, 3)*rightd(ivz)
+        rightd(ivz) = 0.0_8
+        dvxd = dvxd + rot(1, 2)*rightd(ivy)
+        dvyd = dvyd + rot(2, 2)*rightd(ivy)
+        dvzd = dvzd + rot(3, 2)*rightd(ivy)
+        rightd(ivy) = 0.0_8
+        dvxd = dvxd + rot(1, 1)*rightd(ivx)
+        dvyd = dvyd + rot(2, 1)*rightd(ivx)
+        dvzd = dvzd + rot(3, 1)*rightd(ivx)
+        rightd(ivx) = 0.0_8
+        rightd(ivz) = rightd(ivz) + dvzd
+        rightd(ivy) = rightd(ivy) + dvyd
+        rightd(ivx) = rightd(ivx) + dvxd
+        dvxd = rot(1, 3)*leftd(ivz)
+        dvyd = rot(2, 3)*leftd(ivz)
+        dvzd = rot(3, 3)*leftd(ivz)
+        leftd(ivz) = 0.0_8
+        dvxd = dvxd + rot(1, 2)*leftd(ivy)
+        dvyd = dvyd + rot(2, 2)*leftd(ivy)
+        dvzd = dvzd + rot(3, 2)*leftd(ivy)
+        leftd(ivy) = 0.0_8
+        dvxd = dvxd + rot(1, 1)*leftd(ivx)
+        dvyd = dvyd + rot(2, 1)*leftd(ivx)
+        dvzd = dvzd + rot(3, 1)*leftd(ivx)
+        leftd(ivx) = 0.0_8
+        leftd(ivz) = leftd(ivz) + dvzd
+        leftd(ivy) = leftd(ivy) + dvyd
+        leftd(ivx) = leftd(ivx) + dvxd
+      end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+      if (branch .eq. 0) then
+        rightd(itu1) = 0.0_8
+        leftd(itu1) = 0.0_8
+      end if
+      call popcontrol2b(branch)
+      if (branch .lt. 2) then
+        if (branch .ne. 0) then
+          do l=nwint,1,-1
+            du3d(l) = du3d(l) - omk*rightd(l)
+            du2d(l) = du2d(l) + opk*leftd(l) - opk*rightd(l)
+            rightd(l) = 0.0_8
+            du1d(l) = du1d(l) + omk*leftd(l)
+            leftd(l) = 0.0_8
+          end do
+        end if
+      else if (branch .eq. 2) then
+        do l=nwint,1,-1
+          rr1d = -(opk*du2(l)*rightd(l))
+          du2d(l) = du2d(l) + opk*rl2*leftd(l) - opk*rr1*rightd(l)
+          rr2d = -(omk*du3(l)*rightd(l))
+          du3d(l) = du3d(l) - omk*rr2*rightd(l)
+          rightd(l) = 0.0_8
+          rl1d = omk*du1(l)*leftd(l)
+          du1d(l) = du1d(l) + omk*rl1*leftd(l)
+          rl2d = opk*du2(l)*leftd(l)
+          leftd(l) = 0.0_8
+          tempd2 = rr2d/(one+rr2**2)
+          rr2d = (2*rr2-rr2**2*(one+rr2)*2/(one+rr2**2)+one)*tempd2
+          tempd3 = rr1d/(one+rr1**2)
+          rr1d = (2*rr1-rr1**2*(one+rr1)*2/(one+rr1**2)+one)*tempd3
+          tempd4 = rl2d/(one+rl2**2)
+          rl2d = (2*rl2-rl2**2*(one+rl2)*2/(one+rl2**2)+one)*tempd4
+          tempd5 = rl1d/(one+rl1**2)
+          rl1d = (2*rl1-rl1**2*(one+rl1)*2/(one+rl1**2)+one)*tempd5
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            y2d = rr2d
+          else
+            y2d = 0.0_8
+          end if
+          temp1 = sign(max5, du3(l))
+          tempd1 = -(du2(l)*y2d/temp1**2)
+          du2d(l) = du2d(l) + y2d/temp1
+          max5d = sign(1.d0, max5*du3(l))*tempd1
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            x4d = 0.0_8
+          else
+            x4d = max5d
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            du3d(l) = du3d(l) + x4d
+          else
+            du3d(l) = du3d(l) - x4d
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            du3d(l) = du3d(l) + tmp*rr1d
+            tmpd = du3(l)*rr1d
+          else
+            tmpd = 0.0_8
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            du1d(l) = du1d(l) + tmp*rl2d
+            tmpd = tmpd + du1(l)*rl2d
+          else
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            y1d = rl1d
+          else
+            y1d = 0.0_8
+          end if
+          temp0 = sign(max4, du1(l))
+          tempd0 = -(du2(l)*y1d/temp0**2)
+          du2d(l) = du2d(l) + y1d/temp0
+          max4d = sign(1.d0, max4*du1(l))*tempd0
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            x3d = 0.0_8
+          else
+            x3d = max4d
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            du1d(l) = du1d(l) + x3d
+          else
+            du1d(l) = du1d(l) - x3d
+          end if
+          temp = sign(max2, du2(l))
+          tempd = -(one*tmpd/temp**2)
+          max2d = sign(1.d0, max2*du2(l))*tempd
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            x1d = 0.0_8
+          else
+            x1d = max2d
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            du2d(l) = du2d(l) + x1d
+          else
+            du2d(l) = du2d(l) - x1d
+          end if
+        end do
+      else
+        do l=nwint,1,-1
+          rr1d = -(opk*du2(l)*rightd(l))
+          du2d(l) = du2d(l) + opk*rl2*leftd(l) - opk*rr1*rightd(l)
+          rr2d = -(omk*du3(l)*rightd(l))
+          du3d(l) = du3d(l) - omk*rr2*rightd(l)
+          rightd(l) = 0.0_8
+          rl1d = omk*du1(l)*leftd(l)
+          du1d(l) = du1d(l) + omk*rl1*leftd(l)
+          rl2d = opk*du2(l)*leftd(l)
+          leftd(l) = 0.0_8
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            rr2d = factminmod*rr2d
+          else
+            rr2d = 0.0_8
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            rr1d = factminmod*rr1d
+          else
+            rr1d = 0.0_8
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            rl2d = factminmod*rl2d
+          else
+            rl2d = 0.0_8
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            rl1d = factminmod*rl1d
+          else
+            rl1d = 0.0_8
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            y4d = rr2d
+          else
+            y4d = 0.0_8
+          end if
+          temp4 = sign(max7, du3(l))
+          tempd8 = -(du2(l)*y4d/temp4**2)
+          du2d(l) = du2d(l) + y4d/temp4
+          max7d = sign(1.d0, max7*du3(l))*tempd8
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            x6d = 0.0_8
+          else
+            x6d = max7d
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            du3d(l) = du3d(l) + x6d
+          else
+            du3d(l) = du3d(l) - x6d
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            du3d(l) = du3d(l) + tmp*rr1d
+            tmpd = du3(l)*rr1d
+          else
+            tmpd = 0.0_8
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            du1d(l) = du1d(l) + tmp*rl2d
+            tmpd = tmpd + du1(l)*rl2d
+          else
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            y3d = rl1d
+          else
+            y3d = 0.0_8
+          end if
+          temp3 = sign(max6, du1(l))
+          tempd7 = -(du2(l)*y3d/temp3**2)
+          du2d(l) = du2d(l) + y3d/temp3
+          max6d = sign(1.d0, max6*du1(l))*tempd7
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            x5d = 0.0_8
+          else
+            x5d = max6d
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            du1d(l) = du1d(l) + x5d
+          else
+            du1d(l) = du1d(l) - x5d
+          end if
+          temp2 = sign(max3, du2(l))
+          tempd6 = -(one*tmpd/temp2**2)
+          max3d = sign(1.d0, max3*du2(l))*tempd6
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            x2d = 0.0_8
+          else
+            x2d = max3d
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            du2d(l) = du2d(l) + x2d
+          else
+            du2d(l) = du2d(l) - x2d
+          end if
+        end do
+      end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+      if (branch .eq. 0) then
+        dvxd = rot(3, 1)*du3d(ivz)
+        dvyd = rot(3, 2)*du3d(ivz)
+        dvzd = rot(3, 3)*du3d(ivz)
+        du3d(ivz) = 0.0_8
+        dvxd = dvxd + rot(2, 1)*du3d(ivy)
+        dvyd = dvyd + rot(2, 2)*du3d(ivy)
+        dvzd = dvzd + rot(2, 3)*du3d(ivy)
+        du3d(ivy) = 0.0_8
+        dvxd = dvxd + rot(1, 1)*du3d(ivx)
+        dvyd = dvyd + rot(1, 2)*du3d(ivx)
+        dvzd = dvzd + rot(1, 3)*du3d(ivx)
+        du3d(ivx) = 0.0_8
+        du3d(ivz) = du3d(ivz) + dvzd
+        du3d(ivy) = du3d(ivy) + dvyd
+        du3d(ivx) = du3d(ivx) + dvxd
+        dvxd = rot(3, 1)*du2d(ivz)
+        dvyd = rot(3, 2)*du2d(ivz)
+        dvzd = rot(3, 3)*du2d(ivz)
+        du2d(ivz) = 0.0_8
+        dvxd = dvxd + rot(2, 1)*du2d(ivy)
+        dvyd = dvyd + rot(2, 2)*du2d(ivy)
+        dvzd = dvzd + rot(2, 3)*du2d(ivy)
+        du2d(ivy) = 0.0_8
+        dvxd = dvxd + rot(1, 1)*du2d(ivx)
+        dvyd = dvyd + rot(1, 2)*du2d(ivx)
+        dvzd = dvzd + rot(1, 3)*du2d(ivx)
+        du2d(ivx) = 0.0_8
+        du2d(ivz) = du2d(ivz) + dvzd
+        du2d(ivy) = du2d(ivy) + dvyd
+        du2d(ivx) = du2d(ivx) + dvxd
+        dvxd = rot(3, 1)*du1d(ivz)
+        dvyd = rot(3, 2)*du1d(ivz)
+        dvzd = rot(3, 3)*du1d(ivz)
+        du1d(ivz) = 0.0_8
+        dvxd = dvxd + rot(2, 1)*du1d(ivy)
+        dvyd = dvyd + rot(2, 2)*du1d(ivy)
+        dvzd = dvzd + rot(2, 3)*du1d(ivy)
+        du1d(ivy) = 0.0_8
+        dvxd = dvxd + rot(1, 1)*du1d(ivx)
+        dvyd = dvyd + rot(1, 2)*du1d(ivx)
+        dvzd = dvzd + rot(1, 3)*du1d(ivx)
+        du1d(ivx) = 0.0_8
+        du1d(ivz) = du1d(ivz) + dvzd
+        du1d(ivy) = du1d(ivy) + dvyd
+        du1d(ivx) = du1d(ivx) + dvxd
+      end if
+    end subroutine leftrightstate_fast_b
+! store the density flux in the mass flow of the
+! appropriate sliding mesh interface.
+!      ==================================================================
+    subroutine leftrightstate(du1, du2, du3, rotmatrix, left, right)
+      implicit none
+!
+!        local parameter.
+!
+      real(kind=realtype), parameter :: epslim=1.e-10_realtype
+!
+!        subroutine arguments.
+!
+      real(kind=realtype), dimension(:), intent(inout) :: du1, du2, du3
+      real(kind=realtype), dimension(:), intent(out) :: left, right
+      real(kind=realtype), dimension(:, :, :, :, :), pointer :: &
+&     rotmatrix
+!
+!        local variables.
+!
+      integer(kind=inttype) :: l
+      real(kind=realtype) :: rl1, rl2, rr1, rr2, tmp, dvx, dvy, dvz
+      real(kind=realtype), dimension(3, 3) :: rot
+      intrinsic abs
+      intrinsic max
+      intrinsic sign
+      intrinsic min
+      real(kind=realtype) :: x6
+      real(kind=realtype) :: x5
+      real(kind=realtype) :: x4
+      real(kind=realtype) :: x3
+      real(kind=realtype) :: x2
+      real(kind=realtype) :: x1
+      real(kind=realtype) :: max7
+      real(kind=realtype) :: max6
+      real(kind=realtype) :: max5
+      real(kind=realtype) :: max4
+      real(kind=realtype) :: max3
+      real(kind=realtype) :: max2
+      real(kind=realtype) :: y4
+      real(kind=realtype) :: y3
+      real(kind=realtype) :: y2
+      real(kind=realtype) :: y1
+! check if the velocity components should be transformed to
+! the cylindrical frame.
+      if (rotationalperiodic) then
+! store the rotation matrix a bit easier. note that the i,j,k
+! come from the main subroutine.
+        rot(1, 1) = rotmatrix(i, j, k, 1, 1)
+        rot(1, 2) = rotmatrix(i, j, k, 1, 2)
+        rot(1, 3) = rotmatrix(i, j, k, 1, 3)
+        rot(2, 1) = rotmatrix(i, j, k, 2, 1)
+        rot(2, 2) = rotmatrix(i, j, k, 2, 2)
+        rot(2, 3) = rotmatrix(i, j, k, 2, 3)
+        rot(3, 1) = rotmatrix(i, j, k, 3, 1)
+        rot(3, 2) = rotmatrix(i, j, k, 3, 2)
+        rot(3, 3) = rotmatrix(i, j, k, 3, 3)
+! apply the transformation to the velocity components
+! of du1, du2 and du3.
+        dvx = du1(ivx)
+        dvy = du1(ivy)
+        dvz = du1(ivz)
+        du1(ivx) = rot(1, 1)*dvx + rot(1, 2)*dvy + rot(1, 3)*dvz
+        du1(ivy) = rot(2, 1)*dvx + rot(2, 2)*dvy + rot(2, 3)*dvz
+        du1(ivz) = rot(3, 1)*dvx + rot(3, 2)*dvy + rot(3, 3)*dvz
+        dvx = du2(ivx)
+        dvy = du2(ivy)
+        dvz = du2(ivz)
+        du2(ivx) = rot(1, 1)*dvx + rot(1, 2)*dvy + rot(1, 3)*dvz
+        du2(ivy) = rot(2, 1)*dvx + rot(2, 2)*dvy + rot(2, 3)*dvz
+        du2(ivz) = rot(3, 1)*dvx + rot(3, 2)*dvy + rot(3, 3)*dvz
+        dvx = du3(ivx)
+        dvy = du3(ivy)
+        dvz = du3(ivz)
+        du3(ivx) = rot(1, 1)*dvx + rot(1, 2)*dvy + rot(1, 3)*dvz
+        du3(ivy) = rot(2, 1)*dvx + rot(2, 2)*dvy + rot(2, 3)*dvz
+        du3(ivz) = rot(3, 1)*dvx + rot(3, 2)*dvy + rot(3, 3)*dvz
+      end if
+! determine the limiter used.
+      select case  (limused) 
+      case (nolimiter) 
+! linear interpolation; no limiter.
+! loop over the number of variables to be interpolated.
+        do l=1,nwint
+          left(l) = omk*du1(l) + opk*du2(l)
+          right(l) = -(omk*du3(l)) - opk*du2(l)
+        end do
+      case (vanalbeda) 
+!          ==============================================================
+! nonlinear interpolation using the van albeda limiter.
+! loop over the number of variables to be interpolated.
+        do l=1,nwint
+          if (du2(l) .ge. 0.) then
+            x1 = du2(l)
+          else
+            x1 = -du2(l)
+          end if
+          if (x1 .lt. epslim) then
+            max2 = epslim
+          else
+            max2 = x1
+          end if
+! compute the limiter argument rl1, rl2, rr1 and rr2.
+! note the cut off to 0.0.
+          tmp = one/sign(max2, du2(l))
+          if (du1(l) .ge. 0.) then
+            x3 = du1(l)
+          else
+            x3 = -du1(l)
+          end if
+          if (x3 .lt. epslim) then
+            max4 = epslim
+          else
+            max4 = x3
+          end if
+          y1 = du2(l)/sign(max4, du1(l))
+          if (zero .lt. y1) then
+            rl1 = y1
+          else
+            rl1 = zero
+          end if
+          if (zero .lt. du1(l)*tmp) then
+            rl2 = du1(l)*tmp
+          else
+            rl2 = zero
+          end if
+          if (zero .lt. du3(l)*tmp) then
+            rr1 = du3(l)*tmp
+          else
+            rr1 = zero
+          end if
+          if (du3(l) .ge. 0.) then
+            x4 = du3(l)
+          else
+            x4 = -du3(l)
+          end if
+          if (x4 .lt. epslim) then
+            max5 = epslim
+          else
+            max5 = x4
+          end if
+          y2 = du2(l)/sign(max5, du3(l))
+          if (zero .lt. y2) then
+            rr2 = y2
+          else
+            rr2 = zero
+          end if
+! compute the corresponding limiter values.
+          rl1 = rl1*(rl1+one)/(rl1*rl1+one)
+          rl2 = rl2*(rl2+one)/(rl2*rl2+one)
+          rr1 = rr1*(rr1+one)/(rr1*rr1+one)
+          rr2 = rr2*(rr2+one)/(rr2*rr2+one)
+! compute the nonlinear corrections to the first order
+! scheme.
+          left(l) = omk*rl1*du1(l) + opk*rl2*du2(l)
+          right(l) = -(opk*rr1*du2(l)) - omk*rr2*du3(l)
+        end do
+      case (minmod) 
+!          ==============================================================
+! nonlinear interpolation using the minmod limiter.
+! loop over the number of variables to be interpolated.
+        do l=1,nwint
+          if (du2(l) .ge. 0.) then
+            x2 = du2(l)
+          else
+            x2 = -du2(l)
+          end if
+          if (x2 .lt. epslim) then
+            max3 = epslim
+          else
+            max3 = x2
+          end if
+! compute the limiter argument rl1, rl2, rr1 and rr2.
+! note the cut off to 0.0.
+          tmp = one/sign(max3, du2(l))
+          if (du1(l) .ge. 0.) then
+            x5 = du1(l)
+          else
+            x5 = -du1(l)
+          end if
+          if (x5 .lt. epslim) then
+            max6 = epslim
+          else
+            max6 = x5
+          end if
+          y3 = du2(l)/sign(max6, du1(l))
+          if (zero .lt. y3) then
+            rl1 = y3
+          else
+            rl1 = zero
+          end if
+          if (zero .lt. du1(l)*tmp) then
+            rl2 = du1(l)*tmp
+          else
+            rl2 = zero
+          end if
+          if (zero .lt. du3(l)*tmp) then
+            rr1 = du3(l)*tmp
+          else
+            rr1 = zero
+          end if
+          if (du3(l) .ge. 0.) then
+            x6 = du3(l)
+          else
+            x6 = -du3(l)
+          end if
+          if (x6 .lt. epslim) then
+            max7 = epslim
+          else
+            max7 = x6
+          end if
+          y4 = du2(l)/sign(max7, du3(l))
+          if (zero .lt. y4) then
+            rr2 = y4
+          else
+            rr2 = zero
+          end if
+          if (one .gt. factminmod*rl1) then
+            rl1 = factminmod*rl1
+          else
+            rl1 = one
+          end if
+          if (one .gt. factminmod*rl2) then
+            rl2 = factminmod*rl2
+          else
+            rl2 = one
+          end if
+          if (one .gt. factminmod*rr1) then
+            rr1 = factminmod*rr1
+          else
+            rr1 = one
+          end if
+          if (one .gt. factminmod*rr2) then
+            rr2 = factminmod*rr2
+          else
+            rr2 = one
+          end if
+! compute the nonlinear corrections to the first order
+! scheme.
+          left(l) = omk*rl1*du1(l) + opk*rl2*du2(l)
+          right(l) = -(opk*rr1*du2(l)) - omk*rr2*du3(l)
+        end do
+      end select
+! in case only a first order scheme must be used for the
+! turbulent transport equations, set the correction for the
+! turbulent kinetic energy to 0.
+      if (firstorderk) then
+        left(itu1) = zero
+        right(itu1) = zero
+      end if
+! for rotational periodic problems transform the velocity
+! differences back to cartesian again. note that now the
+! transpose of the rotation matrix must be used.
+      if (rotationalperiodic) then
+! left state.
+        dvx = left(ivx)
+        dvy = left(ivy)
+        dvz = left(ivz)
+        left(ivx) = rot(1, 1)*dvx + rot(2, 1)*dvy + rot(3, 1)*dvz
+        left(ivy) = rot(1, 2)*dvx + rot(2, 2)*dvy + rot(3, 2)*dvz
+        left(ivz) = rot(1, 3)*dvx + rot(2, 3)*dvy + rot(3, 3)*dvz
+! right state.
+        dvx = right(ivx)
+        dvy = right(ivy)
+        dvz = right(ivz)
+        right(ivx) = rot(1, 1)*dvx + rot(2, 1)*dvy + rot(3, 1)*dvz
+        right(ivy) = rot(1, 2)*dvx + rot(2, 2)*dvy + rot(3, 2)*dvz
+        right(ivz) = rot(1, 3)*dvx + rot(2, 3)*dvy + rot(3, 3)*dvz
+      end if
+    end subroutine leftrightstate
+!  differentiation of riemannflux in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: flux left right
+!   with respect to varying inputs: flux left right
+!        ================================================================
+    subroutine riemannflux_fast_b(left, leftd, right, rightd, flux, &
+&     fluxd)
+      implicit none
+!
+!        subroutine arguments.
+!
+      real(kind=realtype), dimension(*), intent(in) :: left, right
+      real(kind=realtype), dimension(*) :: leftd, rightd
+      real(kind=realtype), dimension(*) :: flux
+      real(kind=realtype), dimension(*) :: fluxd
+!
+!        local variables.
+!
+      real(kind=realtype) :: porflux, rface
+      real(kind=realtype) :: etl, etr, z1l, z1r, tmp
+      real(kind=realtype) :: etld, etrd, z1ld, z1rd, tmpd
+      real(kind=realtype) :: dr, dru, drv, drw, dre, drk
+      real(kind=realtype) :: drd, drud, drvd, drwd, dred, drkd
+      real(kind=realtype) :: ravg, uavg, vavg, wavg, havg, kavg
+      real(kind=realtype) :: uavgd, vavgd, wavgd, havgd, kavgd
+      real(kind=realtype) :: alphaavg, a2avg, aavg, unavg
+      real(kind=realtype) :: alphaavgd, a2avgd, aavgd, unavgd
+      real(kind=realtype) :: ovaavg, ova2avg, area, eta
+      real(kind=realtype) :: ovaavgd, ova2avgd, etad
+      real(kind=realtype) :: gm1, gm53
+      real(kind=realtype) :: lam1, lam2, lam3
+      real(kind=realtype) :: lam1d, lam2d, lam3d
+      real(kind=realtype) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
+      real(kind=realtype) :: abv1d, abv2d, abv3d, abv4d, abv5d, abv6d, &
+&     abv7d
+      real(kind=realtype), dimension(2) :: ktmp
+      real(kind=realtype), dimension(2) :: ktmpd
+      intrinsic sqrt
+      intrinsic max
+      intrinsic abs
+      integer :: branch
+      real(kind=realtype) :: tempd14
+      real(kind=realtype) :: temp2
+      real(kind=realtype) :: tempd13
+      real(kind=realtype) :: temp1
+      real(kind=realtype) :: tempd12
+      real(kind=realtype) :: temp0
+      real(kind=realtype) :: tempd11
+      real(kind=realtype) :: tempd10
+      real(kind=realtype) :: abs1d
+      real(kind=realtype) :: x2
+      real(kind=realtype) :: x2d
+      real(kind=realtype) :: x1
+      real(kind=realtype) :: tempd9
+      real(kind=realtype) :: tempd
+      real(kind=realtype) :: tempd8
+      real(kind=realtype) :: tempd7
+      real(kind=realtype) :: tempd6
+      real(kind=realtype) :: tempd5
+      real(kind=realtype) :: tempd4
+      real(kind=realtype) :: tempd3
+      real(kind=realtype) :: tempd2
+      real(kind=realtype) :: tempd1
+      real(kind=realtype) :: tempd0
+      real(kind=realtype) :: x1d
+      real(kind=realtype) :: abs2
+      real(kind=realtype) :: abs2d
+      real(kind=realtype) :: abs1
+      real(kind=realtype) :: temp
+      real(kind=realtype) :: max2
+      real(kind=realtype) :: tempd18
+      real(kind=realtype) :: tempd17
+      real(kind=realtype) :: tempd16
+      real(kind=realtype) :: tempd15
+! set the porosity for the flux. the default value, 0.5*rfil, is
+! a scaling factor where an rfil != 1 is taken into account.
+      porflux = half*rfil
+      if (por .eq. noflux .or. por .eq. boundflux) porflux = zero
+! abbreviate some expressions in which gamma occurs.
+      gm1 = gammaface - one
+      gm53 = gammaface - five*third
+! determine which riemann solver must be solved.
+      select case  (riemannused) 
+      case (roe) 
+! determine the preconditioner used.
+        select case  (precond) 
+        case (noprecond) 
+! no preconditioner used. use the roe scheme of the
+! standard equations.
+! compute the square root of the left and right densities
+! and the inverse of the sum.
+          z1l = sqrt(left(irho))
+          z1r = sqrt(right(irho))
+          tmp = one/(z1l+z1r)
+! compute some variables depending whether or not a
+! k-equation is present.
+          if (correctfork) then
+! store the left and right kinetic energy in ktmp,
+! which is needed to compute the total energy.
+            ktmp(1) = left(itu1)
+            ktmp(2) = right(itu1)
+! store the difference of the turbulent kinetic energy
+! per unit volume, i.e. the conserved variable.
+            drk = right(irho)*right(itu1) - left(irho)*left(itu1)
+! compute the average turbulent energy per unit mass
+! using roe averages.
+            kavg = tmp*(z1l*left(itu1)+z1r*right(itu1))
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+! set the difference of the turbulent kinetic energy
+! per unit volume and the averaged kinetic energy per
+! unit mass to zero.
+            drk = 0.0
+            kavg = 0.0
+          end if
+! compute the total energy of the left and right state.
+          call etot(left(irho), left(ivx), left(ivy), left(ivz), left(&
+&             irhoe), ktmp(1), etl, correctfork)
+          call etot(right(irho), right(ivx), right(ivy), right(ivz), &
+&             right(irhoe), ktmp(2), etr, correctfork)
+! compute the difference of the conservative mean
+! flow variables.
+          dr = right(irho) - left(irho)
+          dru = right(irho)*right(ivx) - left(irho)*left(ivx)
+          drv = right(irho)*right(ivy) - left(irho)*left(ivy)
+          drw = right(irho)*right(ivz) - left(irho)*left(ivz)
+          dre = etr - etl
+! compute the roe average variables, which can be
+! computed directly from the average roe vector.
+          uavg = tmp*(z1l*left(ivx)+z1r*right(ivx))
+          vavg = tmp*(z1l*left(ivy)+z1r*right(ivy))
+          wavg = tmp*(z1l*left(ivz)+z1r*right(ivz))
+          havg = tmp*((etl+left(irhoe))/z1l+(etr+right(irhoe))/z1r)
+! compute the unit vector and store the area of the
+! normal. also compute the unit normal velocity of the face.
+          area = sqrt(sx**2 + sy**2 + sz**2)
+          if (1.e-25_realtype .lt. area) then
+            max2 = area
+          else
+            max2 = 1.e-25_realtype
+          end if
+          tmp = one/max2
+          sx = sx*tmp
+          sy = sy*tmp
+          sz = sz*tmp
+          rface = sface*tmp
+! compute some dependent variables at the roe
+! average state.
+          alphaavg = half*(uavg**2+vavg**2+wavg**2)
+          if (gm1*(havg-alphaavg) - gm53*kavg .ge. 0.) then
+            a2avg = gm1*(havg-alphaavg) - gm53*kavg
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            a2avg = -(gm1*(havg-alphaavg)-gm53*kavg)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          aavg = sqrt(a2avg)
+          unavg = uavg*sx + vavg*sy + wavg*sz
+          ovaavg = one/aavg
+          ova2avg = one/a2avg
+! set for a boundary the normal velocity to rface, the
+! normal velocity of the boundary.
+          if (por .eq. boundflux) then
+            unavg = rface
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          end if
+          x1 = (left(ivx)-right(ivx))*sx + (left(ivy)-right(ivy))*sy + (&
+&           left(ivz)-right(ivz))*sz
+          if (x1 .ge. 0.) then
+            abs1 = x1
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          else
+            abs1 = -x1
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          end if
+          x2 = sqrt(gammaface*left(irhoe)/left(irho)) - sqrt(gammaface*&
+&           right(irhoe)/right(irho))
+          if (x2 .ge. 0.) then
+            abs2 = x2
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            abs2 = -x2
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+! compute the coefficient eta for the entropy correction.
+! at the moment a 1d entropy correction is used, which
+! removes expansion shocks. although it also reduces the
+! carbuncle phenomenon, it does not remove it completely.
+! in other to do that a multi-dimensional entropy fix is
+! needed, see sanders et. al, jcp, vol. 145, 1998,
+! pp. 511 - 537. although relatively easy to implement,
+! an efficient implementation requires the storage of
+! all the left and right states, which is rather
+! expensive in terms of memory.
+          eta = half*(abs1+abs2)
+          if (unavg - rface + aavg .ge. 0.) then
+            lam1 = unavg - rface + aavg
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            lam1 = -(unavg-rface+aavg)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          if (unavg - rface - aavg .ge. 0.) then
+            lam2 = unavg - rface - aavg
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            lam2 = -(unavg-rface-aavg)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          if (unavg - rface .ge. 0.) then
+            lam3 = unavg - rface
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+            lam3 = -(unavg-rface)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+! apply the entropy correction to the eigenvalues.
+          tmp = two*eta
+          if (lam1 .lt. tmp) then
+            lam1 = eta + fourth*lam1*lam1/eta
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          if (lam2 .lt. tmp) then
+            lam2 = eta + fourth*lam2*lam2/eta
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+          if (lam3 .lt. tmp) then
+            lam3 = eta + fourth*lam3*lam3/eta
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          end if
+! multiply the eigenvalues by the area to obtain
+! the correct values for the dissipation term.
+          lam1 = lam1*area
+          lam2 = lam2*area
+          lam3 = lam3*area
+! some abbreviations, which occur quite often in the
+! dissipation terms.
+          abv1 = half*(lam1+lam2)
+          abv2 = half*(lam1-lam2)
+          abv3 = abv1 - lam3
+          abv4 = gm1*(alphaavg*dr-uavg*dru-vavg*drv-wavg*drw+dre) - gm53&
+&           *drk
+          abv5 = sx*dru + sy*drv + sz*drw - unavg*dr
+          abv6 = abv3*abv4*ova2avg + abv2*abv5*ovaavg
+          abv7 = abv2*abv4*ovaavg + abv3*abv5
+! compute the dissipation term, -|a| (wr - wl), which is
+! multiplied by porflux. note that porflux is either
+! 0.0 or 0.5*rfil.
+          tempd13 = -(porflux*fluxd(irhoe))
+          havgd = abv6*tempd13
+          fluxd(irhoe) = 0.0_8
+          tempd14 = -(porflux*fluxd(imz))
+          fluxd(imz) = 0.0_8
+          tempd17 = -(porflux*fluxd(imy))
+          fluxd(imy) = 0.0_8
+          tempd15 = -(porflux*fluxd(imx))
+          abv7d = sz*tempd14 + sx*tempd15 + sy*tempd17 + unavg*tempd13
+          fluxd(imx) = 0.0_8
+          tempd16 = -(porflux*fluxd(irho))
+          abv6d = wavg*tempd14 + uavg*tempd15 + tempd16 + vavg*tempd17 +&
+&           havg*tempd13
+          fluxd(irho) = 0.0_8
+          abv2d = ovaavg*abv5*abv6d + ovaavg*abv4*abv7d
+          abv4d = ova2avg*abv3*abv6d + ovaavg*abv2*abv7d
+          ovaavgd = abv2*abv5*abv6d + abv2*abv4*abv7d
+          abv3d = ova2avg*abv4*abv6d + abv5*abv7d
+          lam3d = drw*tempd14 + dru*tempd15 - abv3d + dr*tempd16 + drv*&
+&           tempd17 + dre*tempd13
+          abv5d = ovaavg*abv2*abv6d + abv3*abv7d
+          unavgd = abv7*tempd13 - dr*abv5d
+          ova2avgd = abv3*abv4*abv6d
+          tempd18 = gm1*abv4d
+          dred = tempd18 + lam3*tempd13
+          drwd = sz*abv5d - wavg*tempd18 + lam3*tempd14
+          wavgd = abv6*tempd14 - drw*tempd18
+          drvd = sy*abv5d - vavg*tempd18 + lam3*tempd17
+          vavgd = abv6*tempd17 - drv*tempd18
+          drud = sx*abv5d - uavg*tempd18 + lam3*tempd15
+          uavgd = abv6*tempd15 - dru*tempd18
+          drd = alphaavg*tempd18 - unavg*abv5d + lam3*tempd16
+          alphaavgd = dr*tempd18
+          drkd = -(gm53*abv4d)
+          abv1d = abv3d
+          lam1d = half*abv1d + half*abv2d
+          lam2d = half*abv1d - half*abv2d
+          lam3d = area*lam3d
+          lam2d = area*lam2d
+          lam1d = area*lam1d
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            tempd12 = fourth*lam3d/eta
+            etad = lam3d - lam3**2*tempd12/eta
+            lam3d = 2*lam3*tempd12
+          else
+            etad = 0.0_8
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            tempd11 = fourth*lam2d/eta
+            etad = etad + lam2d - lam2**2*tempd11/eta
+            lam2d = 2*lam2*tempd11
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            tempd10 = fourth*lam1d/eta
+            etad = etad + lam1d - lam1**2*tempd10/eta
+            lam1d = 2*lam1*tempd10
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            unavgd = unavgd + lam3d
+          else
+            unavgd = unavgd - lam3d
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            unavgd = unavgd + lam2d
+            aavgd = -lam2d
+          else
+            aavgd = lam2d
+            unavgd = unavgd - lam2d
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            unavgd = unavgd + lam1d
+            aavgd = aavgd + lam1d
+          else
+            unavgd = unavgd - lam1d
+            aavgd = aavgd - lam1d
+          end if
+          abs1d = half*etad
+          abs2d = half*etad
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            x2d = abs2d
+          else
+            x2d = -abs2d
+          end if
+          temp1 = left(irhoe)/left(irho)
+          if (gammaface*temp1 .eq. 0.0_8) then
+            tempd8 = 0.0
+          else
+            tempd8 = gammaface*x2d/(2.0*sqrt(gammaface*temp1)*left(irho)&
+&             )
+          end if
+          temp2 = right(irhoe)/right(irho)
+          if (gammaface*temp2 .eq. 0.0_8) then
+            tempd9 = 0.0
+          else
+            tempd9 = -(gammaface*x2d/(2.0*sqrt(gammaface*temp2)*right(&
+&             irho)))
+          end if
+          leftd(irhoe) = leftd(irhoe) + tempd8
+          leftd(irho) = leftd(irho) - temp1*tempd8
+          rightd(irhoe) = rightd(irhoe) + tempd9
+          rightd(irho) = rightd(irho) - temp2*tempd9
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            x1d = -abs1d
+          else
+            x1d = abs1d
+          end if
+          leftd(ivx) = leftd(ivx) + sx*x1d
+          rightd(ivx) = rightd(ivx) - sx*x1d
+          leftd(ivy) = leftd(ivy) + sy*x1d
+          rightd(ivy) = rightd(ivy) - sy*x1d
+          leftd(ivz) = leftd(ivz) + sz*x1d
+          rightd(ivz) = rightd(ivz) - sz*x1d
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .ne. 0) unavgd = 0.0_8
+          aavgd = aavgd - one*ovaavgd/aavg**2
+          if (a2avg .eq. 0.0_8) then
+            a2avgd = -(one*ova2avgd/a2avg**2)
+          else
+            a2avgd = aavgd/(2.0*sqrt(a2avg)) - one*ova2avgd/a2avg**2
+          end if
+          uavgd = uavgd + sx*unavgd
+          vavgd = vavgd + sy*unavgd
+          wavgd = wavgd + sz*unavgd
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            havgd = havgd + gm1*a2avgd
+            alphaavgd = alphaavgd - gm1*a2avgd
+            kavgd = -(gm53*a2avgd)
+          else
+            kavgd = gm53*a2avgd
+            havgd = havgd - gm1*a2avgd
+            alphaavgd = alphaavgd + gm1*a2avgd
+          end if
+          tempd7 = half*alphaavgd
+          uavgd = uavgd + 2*uavg*tempd7
+          vavgd = vavgd + 2*vavg*tempd7
+          wavgd = wavgd + 2*wavg*tempd7
+          tmp = one/(z1l+z1r)
+          tempd5 = tmp*uavgd
+          tempd6 = tmp*vavgd
+          tempd4 = tmp*wavgd
+          temp0 = (etr+right(irhoe))/z1r
+          temp = (etl+left(irhoe))/z1l
+          tempd1 = tmp*havgd
+          tempd2 = tempd1/z1l
+          tempd3 = tempd1/z1r
+          tmpd = (z1l*left(ivz)+z1r*right(ivz))*wavgd + (z1l*left(ivx)+&
+&           z1r*right(ivx))*uavgd + (z1l*left(ivy)+z1r*right(ivy))*vavgd&
+&           + (temp+temp0)*havgd
+          etld = tempd2 - dred
+          leftd(irhoe) = leftd(irhoe) + tempd2
+          z1ld = left(ivz)*tempd4 + left(ivx)*tempd5 + left(ivy)*tempd6 &
+&           - temp*tempd2
+          etrd = dred + tempd3
+          rightd(irhoe) = rightd(irhoe) + tempd3
+          z1rd = right(ivz)*tempd4 + right(ivx)*tempd5 + right(ivy)*&
+&           tempd6 - temp0*tempd3
+          leftd(ivz) = leftd(ivz) + z1l*tempd4
+          rightd(ivz) = rightd(ivz) + z1r*tempd4
+          leftd(ivy) = leftd(ivy) + z1l*tempd6
+          rightd(ivy) = rightd(ivy) + z1r*tempd6
+          leftd(ivx) = leftd(ivx) + z1l*tempd5
+          rightd(ivx) = rightd(ivx) + z1r*tempd5
+          rightd(irho) = rightd(irho) + right(ivz)*drwd
+          rightd(ivz) = rightd(ivz) + right(irho)*drwd
+          leftd(irho) = leftd(irho) - left(ivz)*drwd
+          leftd(ivz) = leftd(ivz) - left(irho)*drwd
+          rightd(irho) = rightd(irho) + right(ivy)*drvd
+          rightd(ivy) = rightd(ivy) + right(irho)*drvd
+          leftd(irho) = leftd(irho) - left(ivy)*drvd
+          leftd(ivy) = leftd(ivy) - left(irho)*drvd
+          rightd(irho) = rightd(irho) + right(ivx)*drud
+          rightd(ivx) = rightd(ivx) + right(irho)*drud
+          leftd(irho) = leftd(irho) - left(ivx)*drud
+          leftd(ivx) = leftd(ivx) - left(irho)*drud
+          rightd(irho) = rightd(irho) + drd
+          leftd(irho) = leftd(irho) - drd
+          ktmpd = 0.0_8
+          call etot_fast_b(right(irho), rightd(irho), right(ivx), rightd&
+&                    (ivx), right(ivy), rightd(ivy), right(ivz), rightd(&
+&                    ivz), right(irhoe), rightd(irhoe), ktmp(2), ktmpd(2&
+&                    ), etr, etrd, correctfork)
+          call etot_fast_b(left(irho), leftd(irho), left(ivx), leftd(ivx&
+&                    ), left(ivy), leftd(ivy), left(ivz), leftd(ivz), &
+&                    left(irhoe), leftd(irhoe), ktmp(1), ktmpd(1), etl, &
+&                    etld, correctfork)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .ne. 0) then
+            tempd0 = tmp*kavgd
+            tmpd = tmpd + (z1l*left(itu1)+z1r*right(itu1))*kavgd
+            z1ld = z1ld + left(itu1)*tempd0
+            leftd(itu1) = leftd(itu1) + z1l*tempd0
+            z1rd = z1rd + right(itu1)*tempd0
+            rightd(itu1) = rightd(itu1) + z1r*tempd0
+            rightd(irho) = rightd(irho) + right(itu1)*drkd
+            rightd(itu1) = rightd(itu1) + ktmpd(2) + right(irho)*drkd
+            leftd(irho) = leftd(irho) - left(itu1)*drkd
+            ktmpd(2) = 0.0_8
+            leftd(itu1) = leftd(itu1) + ktmpd(1) - left(irho)*drkd
+          end if
+          tempd = -(one*tmpd/(z1l+z1r)**2)
+          z1ld = z1ld + tempd
+          z1rd = z1rd + tempd
+          if (.not.right(irho) .eq. 0.0_8) rightd(irho) = rightd(irho) +&
+&             z1rd/(2.0*sqrt(right(irho)))
+          if (.not.left(irho) .eq. 0.0_8) leftd(irho) = leftd(irho) + &
+&             z1ld/(2.0*sqrt(left(irho)))
+        end select
+      end select
+    end subroutine riemannflux_fast_b
+!        ================================================================
+    subroutine riemannflux(left, right, flux)
+      implicit none
+!
+!        subroutine arguments.
+!
+      real(kind=realtype), dimension(*), intent(in) :: left, right
+      real(kind=realtype), dimension(*), intent(out) :: flux
+!
+!        local variables.
+!
+      real(kind=realtype) :: porflux, rface
+      real(kind=realtype) :: etl, etr, z1l, z1r, tmp
+      real(kind=realtype) :: dr, dru, drv, drw, dre, drk
+      real(kind=realtype) :: ravg, uavg, vavg, wavg, havg, kavg
+      real(kind=realtype) :: alphaavg, a2avg, aavg, unavg
+      real(kind=realtype) :: ovaavg, ova2avg, area, eta
+      real(kind=realtype) :: gm1, gm53
+      real(kind=realtype) :: lam1, lam2, lam3
+      real(kind=realtype) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
+      real(kind=realtype), dimension(2) :: ktmp
+      intrinsic sqrt
+      intrinsic max
+      intrinsic abs
+      real(kind=realtype) :: x2
+      real(kind=realtype) :: x1
+      real(kind=realtype) :: abs2
+      real(kind=realtype) :: abs1
+      real(kind=realtype) :: max2
+! set the porosity for the flux. the default value, 0.5*rfil, is
+! a scaling factor where an rfil != 1 is taken into account.
+      porflux = half*rfil
+      if (por .eq. noflux .or. por .eq. boundflux) porflux = zero
+! abbreviate some expressions in which gamma occurs.
+      gm1 = gammaface - one
+      gm53 = gammaface - five*third
+! determine which riemann solver must be solved.
+      select case  (riemannused) 
+      case (roe) 
+! determine the preconditioner used.
+        select case  (precond) 
+        case (noprecond) 
+! no preconditioner used. use the roe scheme of the
+! standard equations.
+! compute the square root of the left and right densities
+! and the inverse of the sum.
+          z1l = sqrt(left(irho))
+          z1r = sqrt(right(irho))
+          tmp = one/(z1l+z1r)
+! compute some variables depending whether or not a
+! k-equation is present.
+          if (correctfork) then
+! store the left and right kinetic energy in ktmp,
+! which is needed to compute the total energy.
+            ktmp(1) = left(itu1)
+            ktmp(2) = right(itu1)
+! store the difference of the turbulent kinetic energy
+! per unit volume, i.e. the conserved variable.
+            drk = right(irho)*right(itu1) - left(irho)*left(itu1)
+! compute the average turbulent energy per unit mass
+! using roe averages.
+            kavg = tmp*(z1l*left(itu1)+z1r*right(itu1))
+          else
+! set the difference of the turbulent kinetic energy
+! per unit volume and the averaged kinetic energy per
+! unit mass to zero.
+            drk = 0.0
+            kavg = 0.0
+          end if
+! compute the total energy of the left and right state.
+          call etot(left(irho), left(ivx), left(ivy), left(ivz), left(&
+&             irhoe), ktmp(1), etl, correctfork)
+          call etot(right(irho), right(ivx), right(ivy), right(ivz), &
+&             right(irhoe), ktmp(2), etr, correctfork)
+! compute the difference of the conservative mean
+! flow variables.
+          dr = right(irho) - left(irho)
+          dru = right(irho)*right(ivx) - left(irho)*left(ivx)
+          drv = right(irho)*right(ivy) - left(irho)*left(ivy)
+          drw = right(irho)*right(ivz) - left(irho)*left(ivz)
+          dre = etr - etl
+! compute the roe average variables, which can be
+! computed directly from the average roe vector.
+          ravg = fourth*(z1r+z1l)**2
+          uavg = tmp*(z1l*left(ivx)+z1r*right(ivx))
+          vavg = tmp*(z1l*left(ivy)+z1r*right(ivy))
+          wavg = tmp*(z1l*left(ivz)+z1r*right(ivz))
+          havg = tmp*((etl+left(irhoe))/z1l+(etr+right(irhoe))/z1r)
+! compute the unit vector and store the area of the
+! normal. also compute the unit normal velocity of the face.
+          area = sqrt(sx**2 + sy**2 + sz**2)
+          if (1.e-25_realtype .lt. area) then
+            max2 = area
+          else
+            max2 = 1.e-25_realtype
+          end if
+          tmp = one/max2
+          sx = sx*tmp
+          sy = sy*tmp
+          sz = sz*tmp
+          rface = sface*tmp
+! compute some dependent variables at the roe
+! average state.
+          alphaavg = half*(uavg**2+vavg**2+wavg**2)
+          if (gm1*(havg-alphaavg) - gm53*kavg .ge. 0.) then
+            a2avg = gm1*(havg-alphaavg) - gm53*kavg
+          else
+            a2avg = -(gm1*(havg-alphaavg)-gm53*kavg)
+          end if
+          aavg = sqrt(a2avg)
+          unavg = uavg*sx + vavg*sy + wavg*sz
+          ovaavg = one/aavg
+          ova2avg = one/a2avg
+! set for a boundary the normal velocity to rface, the
+! normal velocity of the boundary.
+          if (por .eq. boundflux) unavg = rface
+          x1 = (left(ivx)-right(ivx))*sx + (left(ivy)-right(ivy))*sy + (&
+&           left(ivz)-right(ivz))*sz
+          if (x1 .ge. 0.) then
+            abs1 = x1
+          else
+            abs1 = -x1
+          end if
+          x2 = sqrt(gammaface*left(irhoe)/left(irho)) - sqrt(gammaface*&
+&           right(irhoe)/right(irho))
+          if (x2 .ge. 0.) then
+            abs2 = x2
+          else
+            abs2 = -x2
+          end if
+! compute the coefficient eta for the entropy correction.
+! at the moment a 1d entropy correction is used, which
+! removes expansion shocks. although it also reduces the
+! carbuncle phenomenon, it does not remove it completely.
+! in other to do that a multi-dimensional entropy fix is
+! needed, see sanders et. al, jcp, vol. 145, 1998,
+! pp. 511 - 537. although relatively easy to implement,
+! an efficient implementation requires the storage of
+! all the left and right states, which is rather
+! expensive in terms of memory.
+          eta = half*(abs1+abs2)
+          if (unavg - rface + aavg .ge. 0.) then
+            lam1 = unavg - rface + aavg
+          else
+            lam1 = -(unavg-rface+aavg)
+          end if
+          if (unavg - rface - aavg .ge. 0.) then
+            lam2 = unavg - rface - aavg
+          else
+            lam2 = -(unavg-rface-aavg)
+          end if
+          if (unavg - rface .ge. 0.) then
+            lam3 = unavg - rface
+          else
+            lam3 = -(unavg-rface)
+          end if
+! apply the entropy correction to the eigenvalues.
+          tmp = two*eta
+          if (lam1 .lt. tmp) lam1 = eta + fourth*lam1*lam1/eta
+          if (lam2 .lt. tmp) lam2 = eta + fourth*lam2*lam2/eta
+          if (lam3 .lt. tmp) lam3 = eta + fourth*lam3*lam3/eta
+! multiply the eigenvalues by the area to obtain
+! the correct values for the dissipation term.
+          lam1 = lam1*area
+          lam2 = lam2*area
+          lam3 = lam3*area
+! some abbreviations, which occur quite often in the
+! dissipation terms.
+          abv1 = half*(lam1+lam2)
+          abv2 = half*(lam1-lam2)
+          abv3 = abv1 - lam3
+          abv4 = gm1*(alphaavg*dr-uavg*dru-vavg*drv-wavg*drw+dre) - gm53&
+&           *drk
+          abv5 = sx*dru + sy*drv + sz*drw - unavg*dr
+          abv6 = abv3*abv4*ova2avg + abv2*abv5*ovaavg
+          abv7 = abv2*abv4*ovaavg + abv3*abv5
+! compute the dissipation term, -|a| (wr - wl), which is
+! multiplied by porflux. note that porflux is either
+! 0.0 or 0.5*rfil.
+          flux(irho) = -(porflux*(lam3*dr+abv6))
+          flux(imx) = -(porflux*(lam3*dru+uavg*abv6+sx*abv7))
+          flux(imy) = -(porflux*(lam3*drv+vavg*abv6+sy*abv7))
+          flux(imz) = -(porflux*(lam3*drw+wavg*abv6+sz*abv7))
+          flux(irhoe) = -(porflux*(lam3*dre+havg*abv6+unavg*abv7))
+        case (turkel) 
+!          tmp = max(lam1,lam2,lam3)
+!          flux(irho)  = -porflux*(tmp*dr)
+!          flux(imx)   = -porflux*(tmp*dru)
+!          flux(imy)   = -porflux*(tmp*drv)
+!          flux(imz)   = -porflux*(tmp*drw)
+!          flux(irhoe) = -porflux*(tmp*dre)
+          call terminate('riemannflux', &
+&                  'turkel preconditioner not implemented yet')
+        case (choimerkle) 
+          call terminate('riemannflux', &
+&                  'choi merkle preconditioner not implemented yet')
+        end select
+      case (vanleer) 
+        call terminate('riemannflux', 'van leer fvs not implemented yet'&
+&               )
+      case (ausmdv) 
+        call terminate('riemannflux', 'ausmdv fvs not implemented yet')
+      end select
+    end subroutine riemannflux
+  end subroutine inviscidupwindflux_fast_b
 !  differentiation of viscousflux in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *rev *aa *w *rlv *fw
+!   gradient     of useful results: *aa *w *fw
 !   with respect to varying inputs: *rev *aa *wx *wy *wz *w *rlv
 !                *qx *qy *qz *ux *uy *uz *vx *vy *vz *fw
-!   rw status of diff variables: *rev:incr *aa:incr *wx:out *wy:out
-!                *wz:out *w:incr *rlv:incr *qx:out *qy:out *qz:out
+!   rw status of diff variables: *rev:out *aa:incr *wx:out *wy:out
+!                *wz:out *w:incr *rlv:out *qx:out *qy:out *qz:out
 !                *ux:out *uy:out *uz:out *vx:out *vy:out *vz:out
 !                *fw:in-out
 !   plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
@@ -5525,9 +8214,11 @@ branch = myIntStack(myIntPtr)
       abs0 = -rfilv
     end if
     if (abs0 .lt. thresholdreal) then
+      revd = 0.0_8
       wxd = 0.0_8
       wyd = 0.0_8
       wzd = 0.0_8
+      rlvd = 0.0_8
       qxd = 0.0_8
       qyd = 0.0_8
       qzd = 0.0_8
@@ -5538,9 +8229,11 @@ branch = myIntStack(myIntPtr)
       vyd = 0.0_8
       vzd = 0.0_8
     else
+      revd = 0.0_8
       wxd = 0.0_8
       wyd = 0.0_8
       wzd = 0.0_8
+      rlvd = 0.0_8
       qxd = 0.0_8
       qyd = 0.0_8
       qzd = 0.0_8
@@ -5552,9 +8245,11 @@ branch = myIntStack(myIntPtr)
       vzd = 0.0_8
       mued = 0.0_8
       mue = zero
+      revd = 0.0_8
       wxd = 0.0_8
       wyd = 0.0_8
       wzd = 0.0_8
+      rlvd = 0.0_8
       qxd = 0.0_8
       qyd = 0.0_8
       qzd = 0.0_8
