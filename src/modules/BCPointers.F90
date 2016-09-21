@@ -6,7 +6,7 @@ module BCPointers
   use constants, only : intType, realType
   implicit none
   save
-#if !defined USE_TAPENADE || defined TAPENADE_POINTERS || defined TAPENADE_FORWARD
+
   real(kind=realType), dimension(:,:,:), pointer :: ww0, ww1, ww2, ww3
   real(kind=realType), dimension(:,:),   pointer :: pp0, pp1, pp2, pp3
   real(kind=realType), dimension(:,:),   pointer :: rlv0, rlv1, rlv2, rlv3
@@ -16,17 +16,33 @@ module BCPointers
   real(kind=realType), dimension(:,:,:), pointer :: ss, xx
   real(kind=realType), dimension(:,:),   pointer :: dd2wall, sFace
   integer(kind=intType), dimension(:,:), pointer :: gcp
-#else
-  real(kind=realType), dimension(:,:,:), allocatable :: ww0, ww1, ww2, ww3
-  real(kind=realType), dimension(:,:)  , allocatable :: pp0, pp1, pp2, pp3
-  real(kind=realType), dimension(:,:)  , allocatable :: rlv0, rlv1, rlv2, rlv3
-  real(kind=realType), dimension(:,:)  , allocatable :: rev0, rev1, rev2, rev3
-  real(kind=realType), dimension(:,:  ), allocatable :: gamma0, gamma1, gamma2, gamma3
-  real(kind=realType), dimension(:,:,:), allocatable :: ssi, ssj, ssk, ss, xx
-  real(kind=realType), dimension(:,:),   allocatable :: sFace
-  integer(kind=intType), dimension(:,:), allocatable :: gcp
-#endif
+
   integer(kind=intType) :: iStart, iEnd, iSize
   integer(kind=intType) :: jStart, jEnd, jSize
 
+#ifndef USE_TAPENADE
+  real(kind=realType), dimension(:,:,:), pointer :: ww0d, ww1d, ww2d, ww3d
+  real(kind=realType), dimension(:,:),   pointer :: pp0d, pp1d, pp2d, pp3d
+  real(kind=realType), dimension(:,:),   pointer :: rlv0d, rlv1d, rlv2d, rlv3d
+  real(kind=realType), dimension(:,:),   pointer :: rev0d, rev1d, rev2d, rev3d
+  real(kind=realType), dimension(:,:),   pointer :: gamma0d, gamma1d, gamma2d, gamma3d
+  real(kind=realType), dimension(:,:,:), pointer :: ssid, ssjd, sskd, xxd
+  real(kind=realType), dimension(:,:,:), pointer :: ssd
+  real(kind=realType), dimension(:,:),   pointer :: dd2walld, sFaced
+#endif
+
 end module BCPointers
+
+#ifndef USE_TAPENADE
+module BCPointers_d
+  use BCPointers
+end module BCPointers_d
+
+module BCPointers_b
+  use BCPointers
+end module BCPointers_b
+
+module BCPointers_fast_b
+  use BCPointers
+end module BCPointers_fast_b
+#endif
