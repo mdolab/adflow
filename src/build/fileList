@@ -167,7 +167,6 @@ fortranFiles=	ADT/adtUtils.F90\
 		adjoint/outputForward/BCExtra_d.F90\
 		\
 		adjoint/outputReverse/adjointextra_b.f90\
-		adjoint/outputReverseFast/BCExtra.F90\
 		adjoint/outputReverse/utils_b.f90\
 		adjoint/outputReverse/flowutils_b.f90\
 		adjoint/outputReverse/bcroutines_b.f90\
@@ -189,18 +188,11 @@ fortranFiles=	ADT/adtUtils.F90\
 		\
 		adjoint/outputReverseFast/utils_fast_b.f90\
 		adjoint/outputReverseFast/flowutils_fast_b.f90\
-		adjoint/outputReverseFast/bcroutines_fast_b.f90\
-		adjoint/outputReverseFast/turbutils_fast_b.f90\
-		adjoint/outputReverseFast/solverutils_fast_b.f90\
-		adjoint/outputReverseFast/aleutils_fast_b.f90\
-		adjoint/outputReverseFast/flowutils_fast_b.f90\
-		adjoint/outputReverseFast/bcroutines_fast_b.f90\
 		adjoint/outputReverseFast/turbutils_fast_b.f90\
 		adjoint/outputReverseFast/solverutils_fast_b.f90\
 		adjoint/outputReverseFast/fluxes_fast_b.f90\
 		adjoint/outputReverseFast/turbbcroutines_fast_b.f90\
 		adjoint/outputReverseFast/sa_fast_b.f90\
-		adjoint/outputReverseFast/BCExtra.F90\
 
 
 cFiles = 	metis-4.0/metis.c\

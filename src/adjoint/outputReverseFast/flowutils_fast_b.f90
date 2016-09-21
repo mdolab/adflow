@@ -113,64 +113,6 @@ contains
       ptot = p*(one+rho*kin/(govgm1*p))**govgm1
     end select
   end subroutine computeptot
-!  differentiation of computespeedofsoundsquared in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *aa *p *w
-!   with respect to varying inputs: *aa *p *w
-!   rw status of diff variables: *aa:in-out *p:incr *w:incr
-!   plus diff mem management of: aa:in p:in w:in
-  subroutine computespeedofsoundsquared_fast_b()
-!
-!       computespeedofsoundsquared does what it says.                  
-!
-    use constants
-    use blockpointers, only : ie, je, ke, w, wd, p, pd, aa, aad, gamma
-    use utils_fast_b, only : getcorrectfork
-    implicit none
-!
-!      local variables.
-!
-    real(kind=realtype), parameter :: twothird=two*third
-    integer(kind=inttype) :: i, j, k, ii
-    real(kind=realtype) :: pp
-    real(kind=realtype) :: ppd
-    logical :: correctfork
-    intrinsic mod
-    real(kind=realtype) :: temp0
-    real(kind=realtype) :: tempd
-    real(kind=realtype) :: tempd0
-    real(kind=realtype) :: temp
-! determine if we need to correct for k
-    correctfork = getcorrectfork()
-    if (correctfork) then
-      do ii=0,ie*je*ke-1
-        i = mod(ii, ie) + 1
-        j = mod(ii/ie, je) + 1
-        k = ii/(ie*je) + 1
-        pp = p(i, j, k) - twothird*w(i, j, k, irho)*w(i, j, k, itu1)
-        temp = w(i, j, k, irho)
-        tempd = gamma(i, j, k)*aad(i, j, k)/temp
-        ppd = tempd
-        wd(i, j, k, irho) = wd(i, j, k, irho) - pp*tempd/temp
-        aad(i, j, k) = 0.0_8
-        pd(i, j, k) = pd(i, j, k) + ppd
-        wd(i, j, k, irho) = wd(i, j, k, irho) - twothird*w(i, j, k, itu1&
-&         )*ppd
-        wd(i, j, k, itu1) = wd(i, j, k, itu1) - twothird*w(i, j, k, irho&
-&         )*ppd
-      end do
-    else
-      do ii=0,ie*je*ke-1
-        i = mod(ii, ie) + 1
-        j = mod(ii/ie, je) + 1
-        k = ii/(ie*je) + 1
-        temp0 = w(i, j, k, irho)
-        tempd0 = gamma(i, j, k)*aad(i, j, k)/temp0
-        pd(i, j, k) = pd(i, j, k) + tempd0
-        wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd0/temp0
-        aad(i, j, k) = 0.0_8
-      end do
-    end if
-  end subroutine computespeedofsoundsquared_fast_b
   subroutine computespeedofsoundsquared()
 !
 !       computespeedofsoundsquared does what it says.                  
@@ -267,6 +209,46 @@ contains
 !
  40 format(1x,i4,i4,i4,e20.6)
   end subroutine computeetotblock
+!  differentiation of etot in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: k p u v w etotal rho
+!   with respect to varying inputs: k p u v w rho
+  subroutine etot_fast_b(rho, rhod, u, ud, v, vd, w, wd, p, pd, k, kd, &
+&   etotal, etotald, correctfork)
+!
+!       etotarray computes the total energy from the given density,    
+!       velocity and presssure.                                        
+!       first the internal energy per unit mass is computed and after  
+!       that the kinetic energy is added as well the conversion to     
+!       energy per unit volume.                                        
+!
+    use constants
+    implicit none
+!
+!      subroutine arguments.
+!
+    real(kind=realtype), intent(in) :: rho, p, k
+    real(kind=realtype) :: rhod, pd, kd
+    real(kind=realtype), intent(in) :: u, v, w
+    real(kind=realtype) :: ud, vd, wd
+    real(kind=realtype) :: etotal
+    real(kind=realtype) :: etotald
+    logical, intent(in) :: correctfork
+!
+!      local variables.
+!
+    integer(kind=inttype) :: i
+    real(kind=realtype) :: tempd
+! compute the internal energy for unit mass.
+    call eint(rho, p, k, etotal, correctfork)
+    tempd = rho*half*etotald
+    rhod = rhod + (etotal+half*(u**2+v**2+w**2))*etotald
+    ud = ud + 2*u*tempd
+    vd = vd + 2*v*tempd
+    wd = wd + 2*w*tempd
+    etotald = rho*etotald
+    call eint_fast_b(rho, rhod, p, pd, k, kd, etotal, etotald, &
+&              correctfork)
+  end subroutine etot_fast_b
   subroutine etot(rho, u, v, w, p, k, etotal, correctfork)
 !
 !       etotarray computes the total energy from the given density,    
@@ -292,6 +274,61 @@ contains
     call eint(rho, p, k, etotal, correctfork)
     etotal = rho*(etotal+half*(u*u+v*v+w*w))
   end subroutine etot
+!  differentiation of eint in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: k p einternal rho
+!   with respect to varying inputs: k p rho
+!      ==================================================================
+  subroutine eint_fast_b(rho, rhod, p, pd, k, kd, einternal, einternald&
+&   , correctfork)
+!
+!       eintarray computes the internal energy per unit mass from the  
+!       given density and pressure (and possibly turbulent energy)     
+!       for a calorically and thermally perfect gas the well-known     
+!       expression is used; for only a thermally perfect gas, cp is a  
+!       function of temperature, curve fits are used and a more        
+!       complex expression is obtained.                                
+!
+    use constants
+    use cpcurvefits
+    use flowvarrefstate, only : rgas, tref
+    use inputphysics, only : cpmodel, gammaconstant
+    implicit none
+!
+!      subroutine arguments.
+!
+    real(kind=realtype), intent(in) :: rho, p, k
+    real(kind=realtype) :: rhod, pd, kd
+    real(kind=realtype) :: einternal
+    real(kind=realtype) :: einternald
+    logical, intent(in) :: correctfork
+!
+!      local parameter.
+!
+    real(kind=realtype), parameter :: twothird=two*third
+!
+!      local variables.
+!
+    integer(kind=inttype) :: i, nn, mm, ii, start
+    real(kind=realtype) :: ovgm1, factk, pp, t, t2, scale
+    real(kind=realtype) :: tempd
+! determine the cp model used in the computation.
+    select case  (cpmodel) 
+    case (cpconstant) 
+! abbreviate 1/(gamma -1) a bit easier.
+      ovgm1 = one/(gammaconstant-one)
+! loop over the number of elements of the array and compute
+! the total energy.
+! second step. correct the energy in case a turbulent kinetic
+! energy is present.
+      if (correctfork) then
+        factk = ovgm1*(five*third-gammaconstant)
+        kd = kd - factk*einternald
+      end if
+      tempd = ovgm1*einternald/rho
+      pd = pd + tempd
+      rhod = rhod - p*tempd/rho
+    end select
+  end subroutine eint_fast_b
 !      ==================================================================
   subroutine eint(rho, p, k, einternal, correctfork)
 !
@@ -338,67 +375,6 @@ contains
       end if
     end select
   end subroutine eint
-!  differentiation of computepressuresimple in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *p *w
-!   with respect to varying inputs: *p *w
-!   rw status of diff variables: *p:in-out *w:incr
-!   plus diff mem management of: p:in w:in
-  subroutine computepressuresimple_fast_b(includehalos)
-! compute the pressure on a block with the pointers already set. this
-! routine is used by the forward mode ad code only. 
-    use constants
-    use blockpointers
-    use flowvarrefstate
-    use inputphysics
-    implicit none
-! input parameter
-    logical, intent(in) :: includehalos
-! local variables
-    integer(kind=inttype) :: i, j, k, ii
-    real(kind=realtype) :: gm1, v2
-    real(kind=realtype) :: v2d
-    integer(kind=inttype) :: ibeg, iend, isize, jbeg, jend, jsize, kbeg&
-&   , kend, ksize
-    intrinsic mod
-    intrinsic max
-    real(kind=realtype) :: tempd
-! compute the pressures
-    gm1 = gammaconstant - one
-    if (includehalos) then
-      ibeg = 0
-      jbeg = 0
-      kbeg = 0
-      iend = ib
-      jend = jb
-      kend = kb
-    else
-      ibeg = 2
-      jbeg = 2
-      kbeg = 2
-      iend = il
-      jend = jl
-      kend = kl
-    end if
-    isize = iend - ibeg + 1
-    jsize = jend - jbeg + 1
-    ksize = kend - kbeg + 1
-    do ii=0,isize*jsize*ksize-1
-      i = mod(ii, isize) + ibeg
-      j = mod(ii/isize, jsize) + jbeg
-      k = ii/(isize*jsize) + kbeg
-      v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)**2
-      p(i, j, k) = gm1*(w(i, j, k, irhoe)-half*w(i, j, k, irho)*v2)
-      if (p(i, j, k) .lt. 1.e-4_realtype*pinfcorr) pd(i, j, k) = 0.0_8
-      tempd = gm1*pd(i, j, k)
-      wd(i, j, k, irhoe) = wd(i, j, k, irhoe) + tempd
-      wd(i, j, k, irho) = wd(i, j, k, irho) - half*v2*tempd
-      v2d = -(half*w(i, j, k, irho)*tempd)
-      pd(i, j, k) = 0.0_8
-      wd(i, j, k, ivx) = wd(i, j, k, ivx) + 2*w(i, j, k, ivx)*v2d
-      wd(i, j, k, ivy) = wd(i, j, k, ivy) + 2*w(i, j, k, ivy)*v2d
-      wd(i, j, k, ivz) = wd(i, j, k, ivz) + 2*w(i, j, k, ivz)*v2d
-    end do
-  end subroutine computepressuresimple_fast_b
   subroutine computepressuresimple(includehalos)
 ! compute the pressure on a block with the pointers already set. this
 ! routine is used by the forward mode ad code only. 
@@ -659,119 +635,6 @@ contains
       end do
     end select
   end subroutine computepressure
-!  differentiation of computelamviscosity in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *p *w *rlv
-!   with respect to varying inputs: *p *w *rlv
-!   rw status of diff variables: *p:incr *w:incr *rlv:in-out
-!   plus diff mem management of: p:in w:in rlv:in
-  subroutine computelamviscosity_fast_b(includehalos)
-!
-!       computelamviscosity computes the laminar viscosity ratio in    
-!       the owned cell centers of the given block. sutherland's law is 
-!       used. it is assumed that the pointes already point to the      
-!       correct block before entering this subroutine.                 
-!
-    use blockpointers
-    use constants
-    use flowvarrefstate
-    use inputphysics
-    use iteration
-    use utils_fast_b, only : getcorrectfork
-    implicit none
-! input variables
-    logical, intent(in) :: includehalos
-!
-!      local parameter.
-!
-    real(kind=realtype), parameter :: twothird=two*third
-!
-!      local variables.
-!
-    integer(kind=inttype) :: i, j, k, ii
-    real(kind=realtype) :: musuth, tsuth, ssuth, t, pp
-    real(kind=realtype) :: td, ppd
-    logical :: correctfork
-    integer(kind=inttype) :: ibeg, iend, isize, jbeg, jend, jsize, kbeg&
-&   , kend, ksize
-    intrinsic mod
-    real(kind=realtype) :: temp0
-    real(kind=realtype) :: tempd
-    real(kind=realtype) :: tempd0
-    real(kind=realtype) :: temp
-! return immediately if no laminar viscosity needs to be computed.
-    if (viscous) then
-! determine whether or not the pressure must be corrected
-! for the presence of the turbulent kinetic energy.
-      correctfork = getcorrectfork()
-! compute the nondimensional constants in sutherland's law.
-      musuth = musuthdim/muref
-      tsuth = tsuthdim/tref
-      ssuth = ssuthdim/tref
-      if (includehalos) then
-        ibeg = 1
-        jbeg = 1
-        kbeg = 1
-        iend = ie
-        jend = je
-        kend = ke
-      else
-        ibeg = 2
-        jbeg = 2
-        kbeg = 2
-        iend = il
-        jend = jl
-        kend = kl
-      end if
-! substract 2/3 rho k, which is a part of the normal turbulent
-! stresses, in case the pressure must be corrected.
-      if (correctfork) then
-        isize = iend - ibeg + 1
-        jsize = jend - jbeg + 1
-        ksize = kend - kbeg + 1
-        do ii=0,isize*jsize*ksize-1
-          i = mod(ii, isize) + ibeg
-          j = mod(ii/isize, jsize) + jbeg
-          k = ii/(isize*jsize) + kbeg
-          pp = p(i, j, k) - twothird*w(i, j, k, irho)*w(i, j, k, itu1)
-          t = pp/(rgas*w(i, j, k, irho))
-          tempd = musuth*(tsuth+ssuth)*rlvd(i, j, k)/(ssuth+t)
-          td = (1.5_realtype*(t/tsuth)**0.5/tsuth-(t/tsuth)**&
-&           1.5_realtype/(ssuth+t))*tempd
-          rlvd(i, j, k) = 0.0_8
-          temp = rgas*w(i, j, k, irho)
-          ppd = td/temp
-          wd(i, j, k, irho) = wd(i, j, k, irho) - pp*rgas*td/temp**2
-          pd(i, j, k) = pd(i, j, k) + ppd
-          wd(i, j, k, irho) = wd(i, j, k, irho) - twothird*w(i, j, k, &
-&           itu1)*ppd
-          wd(i, j, k, itu1) = wd(i, j, k, itu1) - twothird*w(i, j, k, &
-&           irho)*ppd
-        end do
-      else
-! loop over the owned cells *and* first level halos of this
-! block and compute the laminar viscosity ratio.
-        isize = iend - ibeg + 1
-        jsize = jend - jbeg + 1
-        ksize = kend - kbeg + 1
-        do ii=0,isize*jsize*ksize-1
-          i = mod(ii, isize) + ibeg
-          j = mod(ii/isize, jsize) + jbeg
-          k = ii/(isize*jsize) + kbeg
-! compute the nondimensional temperature and the
-! nondimensional laminar viscosity.
-          t = p(i, j, k)/(rgas*w(i, j, k, irho))
-          tempd0 = musuth*(tsuth+ssuth)*rlvd(i, j, k)/(ssuth+t)
-          td = (1.5_realtype*(t/tsuth)**0.5/tsuth-(t/tsuth)**&
-&           1.5_realtype/(ssuth+t))*tempd0
-          rlvd(i, j, k) = 0.0_8
-          temp0 = rgas*w(i, j, k, irho)
-          pd(i, j, k) = pd(i, j, k) + td/temp0
-          wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*rgas*td/&
-&           temp0**2
-        end do
-      end if
-    end if
-  end subroutine computelamviscosity_fast_b
   subroutine computelamviscosity(includehalos)
 !
 !       computelamviscosity computes the laminar viscosity ratio in    

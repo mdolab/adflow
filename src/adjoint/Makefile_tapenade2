@@ -180,7 +180,6 @@ adjointExtra%getCostFunctions(globalVals, liftDirection, dragDirection, pRef, rh
 #applyLowSpeedPreconditioner(w, P, dw) > (w, dw, P) \
 
 #================================================================
-
 # ====================== State-only reverse routines ============ 
 
 # Note that is is only a subset of the the full set because we don't
@@ -188,41 +187,39 @@ adjointExtra%getCostFunctions(globalVals, liftDirection, dragDirection, pRef, rh
 # anyway.
 
 stateOnlyRoutines = "\
+fluxes%inviscidCentralFlux(w, p, dw) > \
+                          (w, p, dw) \
 \
-solverUtils%timeStep_block(w, p) > \
+fluxes%inviscidDissFluxScalar(p, w, radi, radj, radk, fw) > \
+                             (p, w, fw) \
+\
+fluxes%inviscidDissFluxMatrix(p, w, fw) > \
+                             (p, w, fw) \
+\
+fluxes%inviscidUpwindFlux(w, p, fw) > \
+                         (w, p, fw) \
+\
+solverutils%timeStep_block(w, p) > \
                           (w, p, radi, radj, radk) \
+\
+fluxes%viscousFlux(w, aa, rlv, rev, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz, fw) > \
+                  (w, aa, fw) \
+\
+flowutils%allNodalGradients(aa, w) > \
+                           (aa, w, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz) \
 \
 sa%saSource(w, rlv) > \
            (w, rlv, scratch) \
 \
-turbUtils%turbAdvection(w, scratch) > \
-                       (w, scratch) \
-\
 sa%saViscous(w, rlv, scratch) > \
             (w, rlv, scratch) \
 \
-sa%saResScale(scratch) > \
-	     (dw) \
+sa%saResScale(scratch) > (dw) \
 \
-fluxes%inviscidCentralFlux(w, p, dw) > \
-                          (w, p, dw) \
+turbutils%saEddyViscosity(w,rlv) > (w,rlv,rev) \
 \
-fluxes%inviscidDissFluxScalar(w, p, radi, radj, radk, fw) > \
-                             (w, p, fw) \
-\
-fluxes%inviscidDissFluxMatrix(w, p, fw) > \
-                             (w, p, fw) \
-\
-inviscidUpwindFlux(w, p, fw) > \
-                  (w, p, fw) \
-\
-allNodalGradients(w, aa) > \
-                 (w, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz) \
-\
-viscousFlux(w, rlv, rev, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz, fw) > \
-	   (w, fw, viscsubface%tau) \
-\
-"
+turbutils%turbAdvection(w,scratch)>(w,scratch)" 
+
 #================================================================
 
 default: ad_forward
@@ -284,13 +281,13 @@ ad_reverse:
 
 ad_reverse_fast:
 # First delete the holding directory if it exists
-	rm -fr temp_reverse_fast2
+	rm -fr temp_reverse_fast
 
 # Next create the holidng directory:
-	mkdir -p temp_reverse_fast2
+	mkdir -p temp_reverse_fast
 
 # Run preprocessor on all input files
-	make -f Makefile_tapenade2 preprocess_reverse2
+	make -f Makefile_tapenade2 preprocess_reverse
 
 # The following is the single Tapenade command to run:
 	$(TAPENADE_HOME)/bin/tapenade \
@@ -304,7 +301,7 @@ ad_reverse_fast:
 	$(I_RES_FILES)
 
 # Run the auto-edit file:
-	python autoEdit/autoEditReverse.py temp_reverse_fast outputReverseFast
+	python autoEdit/autoEditReverseFast.py temp_reverse_fast outputReverseFast
 
 # Remove preprocessor files
 	make -f Makefile_tapenade cleanpreprocess_res
