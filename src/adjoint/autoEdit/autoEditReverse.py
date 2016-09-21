@@ -18,8 +18,11 @@ DIR_MOD = sys.argv[2]
 # Specifiy the list of LINE ID's to find, what to replace and with what
 patt_modules = re.compile(r'(\s*use\s*\w*)(_b)\s*')
 patt_module = re.compile(r'\s*module\s\w*')
+patt_module_start = re.compile('(\s*module\s)(\w*)(_b)\s*')
+patt_module_end   = re.compile('(\s*end module\s)(\w*)(_b)\s*')
 patt_subroutine = re.compile(r'\s*subroutine\s\w*')
 patt_comment = re.compile(r'\s*!.*')
+
 print "Directory of input source files  :", DIR_ORI
 print "Directory of output source files :", DIR_MOD
 
@@ -55,6 +58,8 @@ for f in os.listdir(DIR_ORI):
         if isModule and not hasSubroutine:
             file_object_ori.close()
             continue
+        elif isModule and hasSubroutine:
+            f = f.replace('_b', '_b')
 
         # open modified file in write mode
         file_object_mod = open(os.path.join(DIR_MOD,f), 'w')
@@ -77,9 +82,21 @@ for f in os.listdir(DIR_ORI):
                 for m in useful_modules:
                     if m in line:
                         found = True
-                if not found:
+                if found:
+                    line = line.replace('_b', '_b', 1)
+                else:
                     line = line.replace('_b', '')
-            
+        
+            # # See if we need to modify the line with changing the
+            # # module names
+            # m = patt_module_start.match(line)
+            # if m:
+            #     line = 'module %s_b2\n'%m.group(2)
+
+            # m = patt_module_end.match(line)
+            # if m:
+            #     line = 'end module %s_b2\n'%m.group(2)
+
             # write the modified line to new file
             file_object_mod.write(line)
 

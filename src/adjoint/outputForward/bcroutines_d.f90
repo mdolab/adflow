@@ -3,8 +3,8 @@
 !
 ! this module contains routines used for applying *all* boundary
 ! conditions for navier stokes part of the code. boundary conditions
-! pointers from the bcpointers modules are used. the utilty routines
-! setbcpointers (and resetbcpointers) are employed.
+! pointers from the bcpointers modules are used. the utilty routine
+! setbcpointers are employed.
 module bcroutines_d
   implicit none
   save 
