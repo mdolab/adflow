@@ -1698,7 +1698,7 @@ contains
     use overset, only: oversetPresent
     use utils, only : setPointers, myisnan, returnFail, maxHDiffMach, maxEddyv, &
          sumResiduals, sumAllResiduals
-    use surfaceIntegrations, only : forcesAndMoments, forcesAndMomentsZIpper
+    use surfaceIntegrations, only : wallIntegrations, wallIntegrationsZipper
     use costFunctions, only : nLocalValues, iFp, iFv, iMv, iMp
     implicit none
     !
@@ -1752,7 +1752,7 @@ contains
           ! we zero localValues before each call becuase we are
           ! summing into momLocal. 
           localvalues = zero
-          call forcesAndMoments(localValues)
+          call wallIntegrations(localValues)
 
           ! Conver to coefficinets for monitoring:
           fact = two/(gammaInf*MachCoef*MachCoef &
@@ -1882,7 +1882,7 @@ contains
        ! Add the corrections from zipper meshes from proc 0
        if (oversetPresent) then 
           localValues = zero
-          call forcesAndMomentsZipper(localValues, sps)
+          call wallIntegrationsZipper(localValues, sps)
 
           fact = two/(gammaInf*MachCoef*MachCoef &
                *surfaceRef*LRef*LRef*pRef)
