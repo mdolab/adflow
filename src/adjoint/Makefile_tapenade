@@ -11,13 +11,12 @@
 #     * jacobian. There are three main commands:                       *
 #     *                                                                *
 #     * ad_forward: Run in forward mode. Preprocessed output is in     *
-#     *             'outputFoward' directory                           *
+#     *             'foward' directory                                 *
 #     *                                                                *
 #     * ad_reverse: Run in reverse mode. Preprocessed output is in the *
-#     *             'outputReverse' directory                          *
+#     *             'reverse' directory                                *
 #     *                                                                *
-#     * ad_reverse_fast : Run the state-only reverse mode.             *
-#     * Preprocessed output is in the 'outputReverseFast' directory    *
+#     * ad_reverse_fast: Run in reverse mode for the state-only code   *
 #     *                                                                *
 #     ******************************************************************
 
@@ -64,15 +63,166 @@ ALL_RES_FILES =	$(SRC)/adjoint/adjointExtra.F90\
 
 # intermediate preprocessed files.
 I_RES_FILES := $(ALL_RES_FILES:%=%.f90)
+
 # ---------------------------------------------------------------------
 
-#     ******************************************************************
-#     *                                                                *
-#     * General targets.                                               *
-#     *                                                                *
-#     ******************************************************************
+# ====================== Full List of Routines ==================
+fullRoutines = "\
+flowUtils%adjustInflowAngle(alpha, beta)>(veldirfreestream, dragdirection, liftdirection) \
+\
+initializeFlow%referenceState(mach, machcoef, pInfDim, TinfDim, rhoInfDim, velDirFreestream) > \
+              (mach, machcoef, pInfDim, TinfDim, rhoInfDim, velDirFreeStream, \
+               pRef, rhoRef, Tref, muRef, timeRef, pInf, pinfCorr, rhoInf, uInf, rGas, muInf,  winf) \
+\
+adjointExtra%xhalo_block(x) > \
+                        (x) \
+\
+adjointExtra%volume_block(x) > \
+                         (x, vol) \
+\
+adjointExtra%metric_block(x) > \
+                         (x, si, sj, sk) \
+wallDistance%updateWallDistancesQuickly(x, xSurf) > \
+	                               (x, xSurf, d2wall) \
+\
+adjointExtra%boundaryNormals(si, sj, sk) > \
+                            (si, sj, sk, bcdata%norm) \
+\
+flowUtils%computePressureSimple(w, pInfCorr) > \
+                               (w, pInfCorr, p) \
+\
+flowUtils%computeLamViscosity(w, p, Tref, muRef, rGas) > \
+                             (w, p, Tref, muRef, rGas, rlv) \
+\
+turbUtils%computeEddyViscosity(w,rlv)>(w,rlv,rev) \
+\
+BCRoutines%bcSymm1stHalo(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2, bcData%norm) > \
+                        (ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2, bcData%norm) \
+\
+BCRoutines%bcSymm2ndHalo(ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3, bcData%norm) > \
+                        (ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3, bcData%norm) \
+\
+BCRoutines%bcNSWallAdiabatic(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) > \
+                            (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
+\
+BCRoutines%bcNSWallIsothermal(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, rgas) > \
+                             (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, rgas) \
+\
+BCRoutines%bcFarField(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, pInfCorr, wInf, bcData%norm) > \
+                     (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, pInfCorr, wInf, bcData%norm) \
+\
+BCRoutines%bcEulerWall(ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, ssi, ssj, ssk, ss) > \
+                      (ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, ssi, ssj, ssk, ss) \
+\
+turbBCRoutines%applyAllTurbBCThisBlock(rev, w, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2) > \
+                                      (rev, w) \
+\
+turbBCRoutines%bcTurbTreatment(w, rlv, d2wall, winf) > \
+                              (w, rlv, d2wall, winf, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2) \
+\
+solverUtils%timeStep_block(w, pInfCorr, rhoInf, si, sj, sk, p) > \
+              (w, pInfCorr, rhoInf, si, sj, sk, p, radi, radj, radk) \
+\
+sa%saSource(w, rlv, vol, si, sj, sk, timeRef, d2wall) > \
+           (w, rlv, vol, si, sj, sk, timeREf, scratch) \
+\
+turbutils%turbAdvection(w, vol, si, sj, sk, scratch) > \
+                       (w, vol, si, sj, sk, scratch) \
+\
+sa%saViscous(w, vol, si, sj, sk, rlv, scratch) > \
+            (w, vol, si, sj, sk, rlv, scratch) \
+\
+sa%saResScale(scratch, vol, dw) > \
+             (dw, vol) \
+\
+fluxes%inviscidCentralFlux(w, timeRef, vol, si, sj, sk, p, dw) > \
+                          (w, timeRef, vol, si, sj, sk, p, dw) \
+\
+fluxes%inviscidDissFluxScalar(w, pInfCorr, rhoInf, p, radi, radj, radk, fw) > \
+                             (w, pInfCOrr, rhoInf, p, fw) \
+\
+fluxes%inviscidDissFluxMatrix(w, pInfCorr, si, sj, sk, p, fw) > \
+                             (w, pInfCorr, si, sj, sk, p, fw) \
+\
+fluxes%inviscidDissFluxScalarApprox(w, p, radi, radj, radk, fw) > \
+                                   (w, p, fw) \
+\
+fluxes%inviscidDissFluxMatrixApprox(w, p, fw) > \
+                                   (w, p, fw) \
+\
+fluxes%inviscidUpwindFlux(w, si, sj, sk, p, fw) > \
+                         (w, si, sj, sk, p, fw) \
+\
+flowUtils%computeSpeedOfSoundSquared(w, p) > \
+                                    (w, p, aa) \
+\
+flowUtils%allNodalGradients(w, vol, si, sj, sk, aa) > \
+                           (w, vol, si, sj, sk, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz) \
+\
+fluxes%viscousFlux(w, x, si, sj, sk, rlv, rev, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz, fw) > \
+                  (w, x, si, sj, sk, fw, viscsubface%tau) \
+\
+fluxes%viscousFluxApprox(w, x, rlv, rev, aa, fw) > \
+                        (w, x, fw) \
+\
+adjointExtra%sumDwandFw(fw, dw) > (dw) \
+\
+adjointExtra%resScale(dw) > (dw) \
+\
+surfaceIntegrations%forcesAndMomentsFace(Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues BCData%Fp bcData%Fv BCData%area) > \
+                                        (Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues BCdata%Fp bcData%Fv BCData%area localValues)\
+\
+adjointExtra%getCostFunctions(globalVals, liftDirection, dragDirection, pRef, rhoRef, tRef, machCoef) > \
+	                     (funcValues) \
+\
+"
 
-default: ad_forward
+#applyLowSpeedPreconditioner(w, P, dw) > (w, dw, P) \
+
+#================================================================
+# ====================== State-only reverse routines ============ 
+
+# Note that is is only a subset of the the full set because we don't
+# don't have to redo the ones that don't have a spatial dependence
+# anyway.
+
+stateOnlyRoutines = "\
+fluxes%inviscidCentralFlux(w, p, dw) > \
+                          (w, p, dw) \
+\
+fluxes%inviscidDissFluxScalar(p, w, radi, radj, radk, fw) > \
+                             (p, w, fw) \
+\
+fluxes%inviscidDissFluxMatrix(p, w, fw) > \
+                             (p, w, fw) \
+\
+fluxes%inviscidUpwindFlux(w, p, fw) > \
+                         (w, p, fw) \
+\
+solverutils%timeStep_block(w, p) > \
+                          (w, p, radi, radj, radk) \
+\
+fluxes%viscousFlux(w, aa, rlv, rev, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz, fw) > \
+                  (w, aa, fw) \
+\
+flowutils%allNodalGradients(aa, w) > \
+                           (aa, w, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz) \
+\
+sa%saSource(w, rlv) > \
+           (w, rlv, scratch) \
+\
+sa%saViscous(w, rlv, scratch) > \
+            (w, rlv, scratch) \
+\
+sa%saResScale(scratch) > (dw) \
+\
+turbutils%saEddyViscosity(w,rlv) > (w,rlv,rev) \
+\
+turbutils%turbAdvection(w,scratch)>(w,scratch)" 
+
+#================================================================
+
+default: ad_forward ad_reverse ad_reverse_fast
 
 ad_forward:
 # First delete the holding directory if it exists
@@ -85,14 +235,14 @@ ad_forward:
 	make -f Makefile_tapenade preprocess_forward
 
 # The following is the single Tapenade command to run:
-	$(TAPENADE_HOME)/bin/tapenade -html \
-	-head "adjointExtra%block_res(flowdoms%w flowdoms%x xsurf alpha beta mach \
-	machgrid machcoef pointref lengthRef PinfDim TinfDim rhoInfDim ww0 ww1 ww2 ww3 pp0 pp1 pp2 \
-	pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 ssi ssj ssk ss xx) > \
-(flowdoms%dw  bcData%Fv bcData%Fp bcData%area flowdoms%w flowdoms%x funcValues) \
-adjointExtra%xhalo_block(x)>(x)" \
-	-forward $(TAPENADE_PRECISION) \
-	-O temp_forward $(I_RES_FILES)
+	$(TAPENADE_HOME)/bin/tapenade \
+	-html \
+	-head $(fullRoutines) \
+	-forward \
+	$(TAPENADE_PRECISION) \
+	-tgtfuncname %_d \
+	-O temp_forward \
+	$(I_RES_FILES)
 
 # Run the auto-edit file:
 	python autoEdit/autoEditForward.py temp_forward outputForward
@@ -111,29 +261,23 @@ ad_reverse:
 	make -f Makefile_tapenade preprocess_reverse
 
 # The following is the single Tapenade command to run:
-	$(TAPENADE_HOME)/bin/tapenade -html \
-	-head "adjointExtra%block_res(flowdoms%w flowdoms%x xsurf alpha beta mach \
-	machgrid machcoef pointref lengthRef PinfDim TinfDim rhoInfDim ww0 ww1 ww2 ww3 pp0 pp1 pp2 \
-	pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 xx ssi) > \
-(flowdoms%dw  bcData%Fp bcData%Fv bcData%area flowdoms%w flowdoms%x funcValues ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 xx ssi) \
-adjointExtra%xhalo_block(x)>(x)" \
+	$(TAPENADE_HOME)/bin/tapenade \
+	-html \
+	-head $(fullRoutines) \
 	-adjvarname %d \
-	-reverse -msglevel 30 $(TAPENADE_PRECISION) \
+	-adjfuncname %_b \
+	-reverse \
+	-msglevel 30 \
+	$(TAPENADE_PRECISION) \
 	-noisize \
-	-O temp_reverse $(I_RES_FILES)
+	-O temp_reverse  \
+	$(I_RES_FILES)
 
 # Run the auto-edit file:
 	python autoEdit/autoEditReverse.py temp_reverse outputReverse
 
 # Remove preprocessor files
 	make -f Makefile_tapenade cleanpreprocess_res
-
-# Fix the AD bugs
-	sed -i 's/do ii1=1,size(viscsubfaced(ii1)%tau, 1)/do ii1=1,size(viscsubfaced)/' outputReverse/surfaceintegrations_b.f90
-	sed -i 's/do ii1=1,size(bcdata(ii1)%f, 1)/do ii1=1,size(bcdata)/' outputReverse/adjointextra_b.f90
-	sed -i 's/do ii1=size(bcdata(ii1)%f, 1),1,-1/do ii1=size(bcdata),1,-1/' outputReverse/adjointextra_b.f90
-	sed -i 's/do ii1=1,size(bcdatad(ii1)%norm, 1)/do ii1=1,size(bcdatad)/' outputReverse/bcroutines_b.f90
-	sed -i 's/end subroutine sa_block_b/deallocate(qq)\nend subroutine sa_block_b/' outputReverse/sa_b.f90
 
 ad_reverse_fast:
 # First delete the holding directory if it exists
@@ -143,43 +287,18 @@ ad_reverse_fast:
 	mkdir -p temp_reverse_fast
 
 # Run preprocessor on all input files
-	make -f Makefile_tapenade preprocess_reverse_fast
+	make -f Makefile_tapenade preprocess_reverse
 
 # The following is the single Tapenade command to run:
-	$(TAPENADE_HOME)/bin/tapenade -html \
-	-head "\
-	fluxes%inviscidCentralFlux(w, p, dw)>(w, p, dw) \
-	fluxes%inviscidDissFluxScalar(p, w, radi, radj, radk, fw)>(fw, w, p) \
-	fluxes%inviscidDissFluxMatrix(p, w, fw)>(fw, w, p) \
-	solverutils%timeStep_block(w, p, radi, radj, radk)>(p, w, radi, radj, radk) \
-	fluxes%viscousFlux(w, aa, rlv, rev, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz, fw)>(fw, w, rlv, rev, aa) \
-	flowutils%allNodalGradients(aa, w, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz)>\
-	         (aa, w, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz) \
-	flowutils%computeSpeedOfSoundSquared(w, p, aa)>(w, p, aa) \
-	flowutils%computeLamViscosity(w, p, rlv)>(w, p, rlv) \
-	BCRoutines%bcNSWallAdiabatic(ww0, ww1, ww2, pp0, pp1, pp2, rlv1, rlv2, rev0, rev1, rev2)>\
-	                            (ww0, ww1, ww2, pp0, pp1, pp2, rlv1, rlv2, rev0, rev1, rev2) \
-	BCRoutines%bcNSWallIsothermal(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)>\
-	                             (ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2) \
-	BCRoutines%bcFarField(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2)>\
-			     (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
-	BCRoutines%bcSymm1stHalo(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)>\
-			        (ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2) \
-	BCRoutines%bcSymm2ndHalo(ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3)>\
-			 (ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3) \
-	BCRoutines%bcEulerWall(ww1, ww2, pp1, pp2, pp3, rlv1, rlv2, rev1, rev2)>\
-			      (ww1, ww2, pp1, pp2, pp3, rlv1, rlv2, rev1, rev2) \
-	flowutils%computePressureSimple(w, p)>(w,p) \
-	sa%saSource(scratch,w,rlv)>(scratch,w,rlv) \
-	sa%saViscous(scratch, w,rlv)>(scratch,w,rlv) \
-	sa%saResScale(scratch)>(dw) \
-	turbutils%saEddyViscosity(w,rlv)>(w,rlv,rev) \
-	turbutils%turbAdvection(w,scratch)>(w,scratch)" \
+	$(TAPENADE_HOME)/bin/tapenade \
+	-html \
+	-head $(stateOnlyRoutines) \
 	-adjvarname %d \
 	-adjfuncname %_fast_b \
 	-reverse $(TAPENADE_PRECISION) \
 	-noisize \
-	-O temp_reverse_fast $(I_RES_FILES)
+	-O temp_reverse_fast \
+	$(I_RES_FILES)
 
 # Run the auto-edit file:
 	python autoEdit/autoEditReverseFast.py temp_reverse_fast outputReverseFast
@@ -198,14 +317,7 @@ preprocess_reverse:
 	@echo "Preprocessing all input files for reverse mode AD..."
 	@for file in $(ALL_RES_FILES); do \
 		echo Preprocessing $$file; \
-		cpp -DUSE_TAPENADE -DTAPENADE_REVERSE -traditional -P $(FF90_ALL_FLAGS) $$file $$file.f90; \
-	done
-
-preprocess_reverse_fast:
-	@echo "Preprocessing all input files for reverse mode AD..."
-	@for file in $(ALL_RES_FILES); do \
-		echo Preprocessing $$file; \
-		cpp -DUSE_TAPENADE -DTAPENADE_REVERSE  -DTAPENADE_POINTERS -traditional -P $(FF90_ALL_FLAGS) $$file $$file.f90; \
+		cpp -DUSE_TAPENADE -DTAPENADE_REVERSE -traditional -P $$file $$file.f90; \
 	done
 
 cleanpreprocess_res:
@@ -215,3 +327,4 @@ cleanpreprocess_res:
 	done
 
 all:	 default
+
