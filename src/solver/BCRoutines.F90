@@ -1,8 +1,8 @@
 
 ! This module contains routines used for applying *all* boundary
 ! conditions for Navier Stokes part of the code. Boundary conditions
-! pointers from the BCPointers modules are used. The utilty routines
-! setBCPointers (and resetBCPointers) are employed.
+! pointers from the BCPointers modules are used. The utilty routine
+! setBCPointers are employed.
 
 module BCRoutines
 
@@ -65,7 +65,7 @@ end subroutine applyAllBC
        si, sj, sk, sfacei, sfacej, sfacek, rlv, gamma, p, rev, &
        bmtj1, bmtj2, scratch, bmtk2, bmtk1, &
        fw, aa, d2wall, bmti1, bmti2, s
-    use utils, only : setBCPointers, resetBCPointers, getCorrectForK
+    use utils, only : setBCPointers, getCorrectForK
     use BCPointers
     implicit none
 
@@ -91,7 +91,6 @@ end subroutine applyAllBC
        if (BCType(nn) == symm) then
           call setBCPointers(nn, .False.)
           call bcSymm1stHalo(nn)
-          call resetBCPointers(nn, .False.)
        end if
     end do
 
@@ -101,7 +100,6 @@ end subroutine applyAllBC
           if (BCType(nn) == symm) then
              call setBCPointers(nn, .False.)
              call bcSymm2ndHalo(nn)
-             call resetBCPointers(nn, .False.)
           end if
        end do
     end if
@@ -114,7 +112,6 @@ end subroutine applyAllBC
        if (BCType(nn) == symmPolar) then
           call setBCPointers(nn, .True.)
           call bcSymmPolar1stHalo(nn)
-          call resetBCPointers(nn, .True.)
        end if
     end do
 
@@ -124,7 +121,6 @@ end subroutine applyAllBC
           if (BCType(nn) == symmPolar) then
              call setBCPointers(nn, .True.)
              call bcSymmPolar2ndHalo(nn)
-             call resetBCPointers(nn, .True.)
           end if
        end do
     end if
@@ -137,7 +133,6 @@ end subroutine applyAllBC
        if (BCType(nn) == NSWallAdiabatic) then
           call setBCPointers(nn, .False.)
           call bcNSWallAdiabatic(nn, secondHalo, correctForK)
-          call resetBCPointers(nn, .False.)
        end if
     end do
 
@@ -149,7 +144,6 @@ end subroutine applyAllBC
        if (BCType(nn) == NSWallIsoThermal) then
           call setBCPointers(nn, .False.)
           call bcNSWallIsothermal(nn, secondHalo, correctForK)
-          call resetBCPointers(nn, .False.)
        end if
     end do
 
@@ -161,7 +155,6 @@ end subroutine applyAllBC
        if (BCType(nn) == farField) then
           call setBCPointers(nn, .False.)
           call bcFarField(nn, secondHalo, correctForK)
-          call resetBCPointers(nn, .False.)
        end if
     end do
 
@@ -173,7 +166,6 @@ end subroutine applyAllBC
             BCType(nn) == MassBleedOutflow) then
           call setBCPointers(nn, .False.)
           call bcSubSonicOutFlow(nn, secondHalo, correctForK)
-          call resetBCPointers(nn, .False.)
        end if
     end do
 
@@ -184,7 +176,6 @@ end subroutine applyAllBC
        if (BCType(nn) == subSonicInFlow) then
           call setBCPointers(nn, .False.)
           call bcSubSonicInflow(nn, secondHalo, correctForK)
-          call resetBCPointers(nn, .False.)
        end if
     end do
 
@@ -202,7 +193,6 @@ end subroutine applyAllBC
             BCType(nn) == SupersonicOutFlow) then
           call setBCPointers(nn, .False.)
           call bcExtrap(nn, secondHalo, correctForK)
-          call resetBCPointers(nn, .False.)
        end if
     end do
 
@@ -214,7 +204,6 @@ end subroutine applyAllBC
        if (BCType(nn) == EulerWall) then
           call setBCPointers(nn, .True.)
           call bcEulerWall(nn, secondHalo, correctForK)
-          call resetBCPointers(nn, .True.)
        end if
     end do
 
@@ -225,7 +214,6 @@ end subroutine applyAllBC
        if (BCType(nn) == SupersonicInflow) then
           call setBCPointers(nn, .False.)
           call bcSupersonicInflow(nn, secondHalo, correctForK)
-          call resetBCPointers(nn, .False.)
        end if
     end do
 
