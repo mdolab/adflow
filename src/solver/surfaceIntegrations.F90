@@ -153,7 +153,6 @@ contains
                 fx = massFluxRateLocal*BCData(nn)%norm(i,j,1)*vxm
                 fy = massFluxRateLocal*BCData(nn)%norm(i,j,2)*vym
                 fz = massFluxRateLocal*BCData(nn)%norm(i,j,3)*vzm
-                ! print *, nn, fx, fy, fz
 
                 ! fx = fx*blk
                 ! fy = fy*blk
@@ -183,9 +182,9 @@ contains
     ! Increment the local values array with what we computed here
     
     localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate*mReDim
-    localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot*Pref
-    localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot*tref
-    localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps*Pref
+    localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot*Pref*mReDim
+    localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot*Tref*mReDim
+    localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps*Pref*mReDim
     localValues(iFlowFp:iFlowFp+2)   = localValues(iFlowFp:iFlowFp+2)   + Fp*pref
     localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2)   + Fm*pref
     localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2)   + Mp*pref
@@ -610,10 +609,6 @@ contains
     Moment = localValues(iMp:iMp+2) + localValues(iMv:iMv+2) + &
              localValues(iFlowMp:iFlowMp+2) + localValues(iFlowMm:iFlowMm+2)
 
-    print *, "iFp",  localValues(iFp:iFp+2) 
-    print *, "iFv",  localValues(iFp:iFp+2) 
-    print *, "iFFp",  localValues(iFlowFp:iFlowFp+2) 
-    print *, "iFFm",  localValues(iFlowFm:iFlowFm+2) 
     fact = two/(gammaInf*MachCoef*MachCoef &
          *surfaceRef*LRef*LRef*pRef)
     cForce = fact*force
@@ -668,8 +663,6 @@ contains
     ! Now we will mpi_allReduce them into globalCFVals
     call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, sumb_real, &
          mpi_sum, SUmb_comm_world, ierr)
-
-    print *, globalCFVals(costFuncDrag)
 
     globalCFVals(costFuncMavgPtot) = globalCFVals(costFuncMavgPtot)/globalCFVals(costFuncMdot)
     globalCFVals(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)/globalCFVals(costFuncMdot)
