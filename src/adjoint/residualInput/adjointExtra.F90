@@ -47,7 +47,7 @@ contains
     use solverUtils, only : gridVelocitiesFineLevel_Block, normalVelocities_block, &
          slipVelocitiesFineLevel_block, timeStep_block
     use residuals, only: residual_block
-    use surfaceIntegrations, only : forcesAndMoments
+    use surfaceIntegrations, only : wallIntegrations
 
     implicit none
 
@@ -362,12 +362,12 @@ contains
     end do
 
     localValues = zero
-    call forcesAndMoments(localValues)
+    call wallIntegrations(localValues)
 
     ! Convert back to actual forces. Note that even though we use
     ! MachCoef, Lref, and surfaceRef here, they are NOT differented,
     ! since F doesn't actually depend on them. Ideally we would just get
-    ! the raw forces and moment form forcesAndMoments. 
+    ! the raw forces and moment from wallIntegrations. 
     force = zero
     moment = zero
 

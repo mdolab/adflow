@@ -1359,7 +1359,7 @@ module utils
     end select
 
     ! These spatial pointers are only required for
-    ! forcesAndMoments. Eulerwall normal moment is is reverse AD'ed.
+    ! wallIntegrations. Eulerwall normal moment is is reverse AD'ed.
     if (spatialPointers) then 
        select case (BCFaceID(nn))
        case (iMin)
@@ -1602,7 +1602,7 @@ module utils
     end select
 
     ! These spatial pointers are only required for
-    ! forcesAndMoments. Eulerwall normal moment is is reverse AD'ed.
+    ! wallIntegrations. Eulerwall normal moment is is reverse AD'ed.
     if (spatialPointers) then 
        select case (BCFaceID(nn))
        case (iMin)

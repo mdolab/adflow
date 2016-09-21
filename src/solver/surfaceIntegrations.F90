@@ -3,7 +3,9 @@ module surfaceIntegrations
 contains
 
 
-  subroutine flowProperties(localValues)
+  subroutine flowIntegrations(localValues)
+
+    ! computes integrated properties across inflow/outflow BCs
 
     use constants
     use blockPointers
@@ -25,16 +27,30 @@ contains
 
     ! Local variables
     real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps
-    integer(kind=intType) :: nn, i, j, ii
-    real(kind=realType) :: fact
+    integer(kind=intType) :: nn, i, j, ii, blk
+    real(kind=realType) :: fact, mReDim, cellArea
     real(kind=realType) :: sF, vnm, vxm, vym, vzm
-    real(kind=realType) :: pm, Ptot, Ttot, rhom, massFlowRateLocal, tmp
+    real(kind=realType) :: pm, Ptot, Ttot, rhom, massFlowRateLocal, massFluxRateLocal
+    real(kind=realType) :: fx, fy, fz, mx, my, mz, xc, yc, zc
+    real(kind=realType), dimension(3)  :: Fp, Fm, Mp, Mm, refPoint, FFp, FFm
+
+
+    ! Determine the reference point for the moment computation in
+    ! meters.
+
+    refPoint(1) = LRef*pointRef(1)
+    refPoint(2) = LRef*pointRef(2)
+    refPoint(3) = LRef*pointRef(3)
 
     massFlowRate = zero
     mass_Ptot = zero
     mass_Ttot = zero
     mass_Ps = zero
     sF = zero
+    Fp = zero; Fm = zero;
+    Mp = zero; Mm = zero;
+
+    mReDim = sqrt(pRef*rhoRef)
 
     bocos: do nn=1,nBocos
        famInclude: if (bsearchIntegers(BCdata(nn)%famID, famGroups, size(famGroups)) > 0) then
@@ -59,6 +75,8 @@ contains
              case (kMax)
                 fact = one
              end select
+
+            FFp = zero; FFm = zero;
 
              ! Loop over the quadrilateral faces of the subface. Note that
              ! the nodal range of BCData must be used and not the cell
@@ -94,22 +112,90 @@ contains
                 mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal
                 mass_Ps = mass_Ps + pm*massFlowRateLocal
 
+                xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+                     +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
+                yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+                     +         xx(i,j+1,2) + xx(i+1,j+1,2)) - refPoint(2)
+                zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+                     +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
+
+                ! Compute the force components.
+                ! blk = max(BCData(nn)%iblank(i,j), 0) ! iBlank forces for overset stuff
+
+                fx = pm*ssi(i,j,1)
+                fy = pm*ssi(i,j,2)
+                fz = pm*ssi(i,j,3)
+
+                ! Pressure forces
+                ! fx = fx*blk
+                ! fy = fy*blk
+                ! fz = fz*blk
+
+                ! Update the pressure force and moment coefficients.
+                Fp(1) = Fp(1) + fx*fact
+                Fp(2) = Fp(2) + fy*fact
+                Fp(3) = Fp(3) + fz*fact
+
+                FFp(1) = FFp(1) + fx
+
+                mx = yc*fz - zc*fy
+                my = zc*fx - xc*fz
+                mz = xc*fy - yc*fx
+
+                Mp(1) = Mp(1) + mx
+                Mp(2) = Mp(2) + my
+                Mp(3) = Mp(3) + mz
+
+                ! Momentum forces
+                massFluxRateLocal = massFlowRateLocal !total momenutm flux 
+                cellArea = sqrt(ssi(i,j,1)**2 + ssi(i,j,2)**2 + ssi(i,j,3)**2)
+
+                fx = massFluxRateLocal*BCData(nn)%norm(i,j,1)*vxm
+                fy = massFluxRateLocal*BCData(nn)%norm(i,j,2)*vym
+                fz = massFluxRateLocal*BCData(nn)%norm(i,j,3)*vzm
+                ! print *, nn, fx, fy, fz
+
+                ! fx = fx*blk
+                ! fy = fy*blk
+                ! fz = fz*block
+
+                ! Note: momentum forces have opposite sign to pressure forces
+                Fm(1) = Fm(1) + fx*-fact
+                Fm(2) = Fm(2) + fy*-fact
+                Fm(3) = Fm(3) + fz*-fact
+
+                FFm(1) = FFm(1) + fx
+
+
+                mx = yc*fz - zc*fy
+                my = zc*fx - xc*fz
+                mz = xc*fy - yc*fx
+
+                Mm(1) = Mm(1) + mx
+                Mm(2) = Mm(2) + my
+                Mm(3) = Mm(3) + mz
+
              enddo
           end if inflowOutFlowType
        end if famInclude
     end do bocos
 
     ! Increment the local values array with what we computed here
-    localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate
-    localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
-    localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
-    localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
+    
+    localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate*mReDim
+    localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot*Pref
+    localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot*tref
+    localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps*Pref
+    localValues(iFlowFp:iFlowFp+2)   = localValues(iFlowFp:iFlowFp+2)   + Fp*pref
+    localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2)   + Fm*pref
+    localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2)   + Mp*pref
+    localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2)   + Mm*pref
 
-  end subroutine flowProperties
+  end subroutine flowIntegrations
 
-  subroutine forcesAndMoments(localValues) 
+  subroutine wallIntegrations(localValues) 
     !
-    !       forcesAndMoments computes the contribution of the block
+    !       wallIntegrations computes the contribution of the block
     !       given by the pointers in blockPointers to the force and
     !       moment of the geometry. A distinction is made
     !       between the inviscid and viscous parts. In case the maximum
@@ -466,7 +552,7 @@ contains
 #ifndef USE_TAPENADE
     localValues(iyPlus) = max(localValues(iyPlus), yplusMax)
 #endif
-  end subroutine forcesAndMoments
+  end subroutine WallIntegrations
 
   ! ----------------------------------------------------------------------
   !                                                                      |
@@ -509,19 +595,25 @@ contains
     domains: do nn=1,nDom
        call setPointers(nn,1_intType,sps)
 
-       call forcesAndMoments(localValues)
-       call flowProperties(localValues)
+       call WallIntegrations(localValues)
+       call FlowIntegrations(localValues)
 
     end do domains
 
     if (oversetPresent) then
-       call forcesAndMomentsZipper(localValues, sps)
+       call wallIntegrationsZipper(localValues, sps)
     end if
 
     ! Sum pressure and viscous contributions
-    Force = localValues(iFp:iFp+2) + localValues(iFv:iFv+2)
-    Moment = localValues(iMp:iMp+2) + localValues(iMv:iMv+2)
+    Force = localValues(iFp:iFp+2) + localValues(iFv:iFv+2) + &
+            localValues(iFlowFp:iFlowFp+2) + localValues(iFlowFm:iFlowFm+2)
+    Moment = localValues(iMp:iMp+2) + localValues(iMv:iMv+2) + &
+             localValues(iFlowMp:iFlowMp+2) + localValues(iFlowMm:iFlowMm+2)
 
+    print *, "iFp",  localValues(iFp:iFp+2) 
+    print *, "iFv",  localValues(iFp:iFp+2) 
+    print *, "iFFp",  localValues(iFlowFp:iFlowFp+2) 
+    print *, "iFFm",  localValues(iFlowFm:iFlowFm+2) 
     fact = two/(gammaInf*MachCoef*MachCoef &
          *surfaceRef*LRef*LRef*pRef)
     cForce = fact*force
@@ -543,7 +635,7 @@ contains
          + Force(2)*dragDirection(2) &
          + Force(3)*dragDirection(3)
 
-    Lift=  Force(1)*liftDirection(1) &
+    Lift=  Force(1)*liftDirection(1) &  
          + Force(2)*liftDirection(2) &
          + Force(3)*liftDirection(3)
 
@@ -577,10 +669,12 @@ contains
     call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, sumb_real, &
          mpi_sum, SUmb_comm_world, ierr)
 
-    globalCFVals(costFuncMavgPtot) = globalCFVals(costFuncMavgPtot)/globalCFVals(costFuncMdot)*pRef
-    globalCFVals(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)/globalCFVals(costFuncMdot)*tRef
-    globalCFVals(costFuncMavgPs) = globalCFVals(costFuncMavgPs)/globalCFVals(costFuncMdot)*pRef
-    globalCFVals(costFuncMdot) = globalCFVals(costFuncMdot)*sqrt(pRef*rhoRef)
+    print *, globalCFVals(costFuncDrag)
+
+    globalCFVals(costFuncMavgPtot) = globalCFVals(costFuncMavgPtot)/globalCFVals(costFuncMdot)
+    globalCFVals(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)/globalCFVals(costFuncMdot)
+    globalCFVals(costFuncMavgPs) = globalCFVals(costFuncMavgPs)/globalCFVals(costFuncMdot)
+    globalCFVals(costFuncMdot) = globalCFVals(costFuncMdot)
 
   end subroutine computeAeroCoef
 
@@ -694,7 +788,7 @@ contains
     end if
   end subroutine getSolution
 
-  subroutine forcesAndMomentsZipper(localValues, sps)
+  subroutine wallIntegrationsZipper(localValues, sps)
 
     use communication
     use blockPointers
@@ -912,6 +1006,6 @@ contains
 
     end if
 
-  end subroutine forcesAndMomentsZipper
+  end subroutine wallIntegrationsZipper
 #endif
 end module surfaceIntegrations
