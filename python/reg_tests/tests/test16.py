@@ -54,7 +54,7 @@ ap = AeroProblem(name='conv_nozzle', alpha=0.0,  mach=0.25, T=500, P=100000,
                  evalFuncs=['mdot', 'mdot_up', 'mdot_down',
                             'mavgptot_up', 'mavgptot_down',
                             'mavgttot_up', 'mavgttot_down',
-                            'mavgps_up', 'mavgps_down'])
+                            'mavgps_up', 'mavgps_down', 'thrust'])
 
 # Creat the solver
 
@@ -62,6 +62,7 @@ CFDSolver = SUMB(options=options, debug=False)
 
 CFDSolver.addFamilyGroup('upstream',['INFLOW'])
 CFDSolver.addFamilyGroup('downstream',['OUTFLOW'])
+CFDSolver.addFamilyGroup('all_flow',['INFLOW', 'OUTFLOW'])
 CFDSolver.addFunction('mdot', 'upstream', name="mdot_up")
 CFDSolver.addFunction('mdot', 'downstream', name="mdot_down")
 CFDSolver.addFunction('mavgptot', 'downstream', name="mavgptot_down")
@@ -70,6 +71,7 @@ CFDSolver.addFunction('mavgttot', 'downstream', name="mavgttot_down")
 CFDSolver.addFunction('mavgttot', 'upstream', name="mavgttot_up")
 CFDSolver.addFunction('mavgps', 'downstream', name="mavgps_down")
 CFDSolver.addFunction('mavgps', 'upstream', name="mavgps_up")
+CFDSolver.addFunction('drag', 'all_flow', name="thrust") # this naming makes it seem like wishful thinking
 
 CFDSolver(ap)
 
