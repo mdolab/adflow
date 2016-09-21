@@ -14,51 +14,6 @@ module sa_b
   real(kind=realtype), dimension(:, :), pointer :: dd2wall
 
 contains
-  subroutine sa_block(resonly)
-!
-!       sa solves the transport equation for the spalart-allmaras
-!       turbulence model in a segregated manner using a diagonal
-!       dominant adi-scheme. note that the scratch and boundary
-!       matrix values are not strictly, but tapande would like to
-!       see them becuase it must save them.
-!
-    use constants
-    use blockpointers, only : ndom, il, jl, kl, scratch, bmtj1, bmtj2,&
-&   bmti1, bmti2, bmtk1, bmtk2
-    use inputtimespectral, only : ntimeintervalsspectral
-    use iteration, only : currentlevel
-    use inputphysics, only : turbprod
-    use paramturb
-    use turbutils_b
-    use turbbcroutines_b
-    implicit none
-!
-!      subroutine argument.
-!
-    logical, intent(in) :: resonly
-!
-!      local variables.
-!
-    integer(kind=inttype) :: nn, sps
-! set the arrays for the boundary condition treatment.
-    call bcturbtreatment()
-! alloc central jacobian memory
-    allocate(qq(2:il, 2:jl, 2:kl))
-! source terms
-    call sasource()
-! advection term
-    nn = itu1 - 1
-    call turbadvection(1_inttype, 1_inttype, nn, qq)
-! unsteady term
-    call unsteadyturbterm(1_inttype, 1_inttype, nn, qq)
-! viscous terms
-    call saviscous()
-! perform the residual scaling
-    call saresscale()
-! we need to do an acutal solve. solve and update the eddy
-! viscosity and the boundary conditions
-    deallocate(qq)
-  end subroutine sa_block
 !  differentiation of sasource in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *w *rlv *scratch *vol *si *sj
 !                *sk timeref

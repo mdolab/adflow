@@ -1361,13 +1361,24 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: skxa, skya, skza, a1, b1
     real(kind=realtype) :: rxj, ryj, rzj, rxk, ryk, rzk
     real(kind=realtype) :: dpj, dpk, ri, rj, rk, qj, qk, vn
-    real(kind=realtype) :: vnd
+    real(kind=realtype) :: dpjd, dpkd, qjd, qkd, vnd
     real(kind=realtype) :: uux, uuy, uuz
+    real(kind=realtype) :: uuxd, uuyd, uuzd
     real(kind=realtype), dimension(istart:iend, jstart:jend) :: grad
     real(kind=realtype), dimension(istart:iend, jstart:jend) :: gradd
     intrinsic mod
+    intrinsic max
+    intrinsic min
     integer :: branch
+    real(kind=realtype) :: temp0
     real(kind=realtype) :: tempd
+    real(kind=realtype) :: tempd3
+    real(kind=realtype) :: tempd2
+    real(kind=realtype) :: tempd1
+    real(kind=realtype) :: tempd0
+    real(kind=realtype) :: temp
+    integer(kind=inttype) :: max2
+    integer(kind=inttype) :: max1
 ! make sure that on the coarser grids the constant pressure
 ! boundary condition is used.
     walltreatment = eulerwallbctreatment
@@ -1378,8 +1389,7 @@ branch = myIntStack(myIntPtr)
 !
     select case  (walltreatment) 
     case (constantpressure) 
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 1
+      call pushcontrol2b(2)
 ! constant pressure. set the gradient to zero.
       grad = zero
     case (linextrapolpressure) 
@@ -1389,11 +1399,126 @@ myIntPtr = myIntPtr + 1
         k = ii/isize + jstart
         grad(j, k) = pp3(j, k) - pp2(j, k)
       end do
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 0
+      call pushcontrol2b(1)
+    case (normalmomentum) 
+! pressure gradient is computed using the normal momentum
+! equation. first set a couple of additional variables for
+! the normals, depending on the block face. note that the
+! construction 1: should not be used in these pointers,
+! because element 0 is needed. consequently there will be
+! an offset of 1 for these normals. this is commented in
+! the code. for moving faces also the grid velocity of
+! the 1st cell center from the wall is needed.
+      do ii=0,isize*jsize-1
+        j = mod(ii, isize) + istart
+        k = ii/isize + jstart
+! store the indices k+1, k-1 a bit easier and make
+! sure that they do not exceed the range of the arrays.
+        km1 = k - 1
+        if (jstart .lt. km1) then
+          km1 = km1
+        else
+          km1 = jstart
+        end if
+        kp1 = k + 1
+        if (jend .gt. kp1) then
+          kp1 = kp1
+        else
+          kp1 = jend
+        end if
+        if (1_inttype .lt. kp1 - km1) then
+          max1 = kp1 - km1
+        else
+          max1 = 1_inttype
+        end if
+! compute the scaling factor for the central difference
+! in the k-direction.
+        b1 = one/max1
+! the indices j+1 and j-1. make sure that they
+! do not exceed the range of the arrays.
+        jm1 = j - 1
+        if (istart .lt. jm1) then
+          jm1 = jm1
+        else
+          jm1 = istart
+        end if
+        jp1 = j + 1
+        if (iend .gt. jp1) then
+          jp1 = jp1
+        else
+          jp1 = iend
+        end if
+        if (1_inttype .lt. jp1 - jm1) then
+          max2 = jp1 - jm1
+        else
+          max2 = 1_inttype
+        end if
+! compute the scaling factor for the central
+! difference in the j-direction.
+        a1 = one/max2
+! compute (twice) the average normal in the generic i,
+! j and k-direction. note that in j and k-direction
+! the average in the original indices should be taken
+! using j-1 and j (and k-1 and k). however due to the
+! usage of pointers ssj and ssk there is an offset in
+! the indices of 1 and therefore now the correct
+! average is obtained with the indices j and j+1
+! (k and k+1).
+        sixa = two*ssi(j, k, 1)
+        siya = two*ssi(j, k, 2)
+        siza = two*ssi(j, k, 3)
+        sjxa = ssj(j, k, 1) + ssj(j+1, k, 1)
+        sjya = ssj(j, k, 2) + ssj(j+1, k, 2)
+        sjza = ssj(j, k, 3) + ssj(j+1, k, 3)
+        skxa = ssk(j, k, 1) + ssk(j, k+1, 1)
+        skya = ssk(j, k, 2) + ssk(j, k+1, 2)
+        skza = ssk(j, k, 3) + ssk(j, k+1, 3)
+! compute the difference of the normal vector and
+! pressure in j and k-direction. as the indices are
+! restricted to the 1st halo-layer, the computation
+! of the internal halo values is not consistent;
+! however this is not really a problem, because these
+! values are overwritten in the communication pattern.
+        rxj = a1*(bcdata(nn)%norm(jp1, k, 1)-bcdata(nn)%norm(jm1, k, 1))
+        ryj = a1*(bcdata(nn)%norm(jp1, k, 2)-bcdata(nn)%norm(jm1, k, 2))
+        rzj = a1*(bcdata(nn)%norm(jp1, k, 3)-bcdata(nn)%norm(jm1, k, 3))
+        dpj = a1*(pp2(jp1, k)-pp2(jm1, k))
+        rxk = b1*(bcdata(nn)%norm(j, kp1, 1)-bcdata(nn)%norm(j, km1, 1))
+        ryk = b1*(bcdata(nn)%norm(j, kp1, 2)-bcdata(nn)%norm(j, km1, 2))
+        rzk = b1*(bcdata(nn)%norm(j, kp1, 3)-bcdata(nn)%norm(j, km1, 3))
+        dpk = b1*(pp2(j, kp1)-pp2(j, km1))
+! compute the dot product between the unit vector
+! and the normal vectors in i, j and k-direction.
+        ri = bcdata(nn)%norm(j, k, 1)*sixa + bcdata(nn)%norm(j, k, 2)*&
+&         siya + bcdata(nn)%norm(j, k, 3)*siza
+        rj = bcdata(nn)%norm(j, k, 1)*sjxa + bcdata(nn)%norm(j, k, 2)*&
+&         sjya + bcdata(nn)%norm(j, k, 3)*sjza
+        rk = bcdata(nn)%norm(j, k, 1)*skxa + bcdata(nn)%norm(j, k, 2)*&
+&         skya + bcdata(nn)%norm(j, k, 3)*skza
+! store the velocity components in uux, uuy and uuz and
+! subtract the mesh velocity if the face is moving.
+        uux = ww2(j, k, ivx)
+        uuy = ww2(j, k, ivy)
+        uuz = ww2(j, k, ivz)
+        if (addgridvelocities) then
+          uux = uux - ss(j, k, 1)
+          uuy = uuy - ss(j, k, 2)
+          uuz = uuz - ss(j, k, 3)
+        end if
+! compute the velocity components in j and
+! k-direction.
+        qj = uux*sjxa + uuy*sjya + uuz*sjza
+        qk = uux*skxa + uuy*skya + uuz*skza
+! compute the pressure gradient, which is stored
+! in pp1. i'm not entirely sure whether this
+! formulation is correct for moving meshes. it could
+! be that an additional term is needed there.
+        grad(j, k) = ((qj*(uux*rxj+uuy*ryj+uuz*rzj)+qk*(uux*rxk+uuy*ryk+&
+&         uuz*rzk))*ww2(j, k, irho)-rj*dpj-rk*dpk)/ri
+      end do
+      call pushcontrol2b(0)
     case default
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 1
+      call pushcontrol2b(2)
     end select
 ! determine the state in the halo cell. again loop over
 ! the cell range for this subface.
@@ -1459,17 +1584,145 @@ branch = myIntStack(myIntPtr)
       ww1d(j, k, ivx) = 0.0_8
       ww2d(j, k, irho) = ww2d(j, k, irho) + ww1d(j, k, irho)
       ww1d(j, k, irho) = 0.0_8
-      tempd = two*vnd
-      ww2d(j, k, ivx) = ww2d(j, k, ivx) - bcdata(nn)%norm(j, k, 1)*tempd
-      ww2d(j, k, ivy) = ww2d(j, k, ivy) - bcdata(nn)%norm(j, k, 2)*tempd
-      ww2d(j, k, ivz) = ww2d(j, k, ivz) - bcdata(nn)%norm(j, k, 3)*tempd
+      tempd3 = two*vnd
+      ww2d(j, k, ivx) = ww2d(j, k, ivx) - bcdata(nn)%norm(j, k, 1)*&
+&       tempd3
+      ww2d(j, k, ivy) = ww2d(j, k, ivy) - bcdata(nn)%norm(j, k, 2)*&
+&       tempd3
+      ww2d(j, k, ivz) = ww2d(j, k, ivz) - bcdata(nn)%norm(j, k, 3)*&
+&       tempd3
       call mydim_fast_b(pp2(j, k), pp2d(j, k), grad(j, k), gradd(j, k), &
 &                 pp1d(j, k))
       pp1d(j, k) = 0.0_8
     end do
-branch = myIntStack(myIntPtr)
- myIntPtr = myIntPtr - 1
+    call popcontrol2b(branch)
     if (branch .eq. 0) then
+      do ii=0,isize*jsize-1
+        j = mod(ii, isize) + istart
+        k = ii/isize + jstart
+! store the indices k+1, k-1 a bit easier and make
+! sure that they do not exceed the range of the arrays.
+        km1 = k - 1
+        if (jstart .lt. km1) then
+          km1 = km1
+        else
+          km1 = jstart
+        end if
+        kp1 = k + 1
+        if (jend .gt. kp1) then
+          kp1 = kp1
+        else
+          kp1 = jend
+        end if
+        if (1_inttype .lt. kp1 - km1) then
+          max1 = kp1 - km1
+        else
+          max1 = 1_inttype
+        end if
+! compute the scaling factor for the central difference
+! in the k-direction.
+        b1 = one/max1
+! the indices j+1 and j-1. make sure that they
+! do not exceed the range of the arrays.
+        jm1 = j - 1
+        if (istart .lt. jm1) then
+          jm1 = jm1
+        else
+          jm1 = istart
+        end if
+        jp1 = j + 1
+        if (iend .gt. jp1) then
+          jp1 = jp1
+        else
+          jp1 = iend
+        end if
+        if (1_inttype .lt. jp1 - jm1) then
+          max2 = jp1 - jm1
+        else
+          max2 = 1_inttype
+        end if
+! compute the scaling factor for the central
+! difference in the j-direction.
+        a1 = one/max2
+! compute (twice) the average normal in the generic i,
+! j and k-direction. note that in j and k-direction
+! the average in the original indices should be taken
+! using j-1 and j (and k-1 and k). however due to the
+! usage of pointers ssj and ssk there is an offset in
+! the indices of 1 and therefore now the correct
+! average is obtained with the indices j and j+1
+! (k and k+1).
+        sixa = two*ssi(j, k, 1)
+        siya = two*ssi(j, k, 2)
+        siza = two*ssi(j, k, 3)
+        sjxa = ssj(j, k, 1) + ssj(j+1, k, 1)
+        sjya = ssj(j, k, 2) + ssj(j+1, k, 2)
+        sjza = ssj(j, k, 3) + ssj(j+1, k, 3)
+        skxa = ssk(j, k, 1) + ssk(j, k+1, 1)
+        skya = ssk(j, k, 2) + ssk(j, k+1, 2)
+        skza = ssk(j, k, 3) + ssk(j, k+1, 3)
+! compute the difference of the normal vector and
+! pressure in j and k-direction. as the indices are
+! restricted to the 1st halo-layer, the computation
+! of the internal halo values is not consistent;
+! however this is not really a problem, because these
+! values are overwritten in the communication pattern.
+        rxj = a1*(bcdata(nn)%norm(jp1, k, 1)-bcdata(nn)%norm(jm1, k, 1))
+        ryj = a1*(bcdata(nn)%norm(jp1, k, 2)-bcdata(nn)%norm(jm1, k, 2))
+        rzj = a1*(bcdata(nn)%norm(jp1, k, 3)-bcdata(nn)%norm(jm1, k, 3))
+        rxk = b1*(bcdata(nn)%norm(j, kp1, 1)-bcdata(nn)%norm(j, km1, 1))
+        ryk = b1*(bcdata(nn)%norm(j, kp1, 2)-bcdata(nn)%norm(j, km1, 2))
+        rzk = b1*(bcdata(nn)%norm(j, kp1, 3)-bcdata(nn)%norm(j, km1, 3))
+! compute the dot product between the unit vector
+! and the normal vectors in i, j and k-direction.
+        ri = bcdata(nn)%norm(j, k, 1)*sixa + bcdata(nn)%norm(j, k, 2)*&
+&         siya + bcdata(nn)%norm(j, k, 3)*siza
+        rj = bcdata(nn)%norm(j, k, 1)*sjxa + bcdata(nn)%norm(j, k, 2)*&
+&         sjya + bcdata(nn)%norm(j, k, 3)*sjza
+        rk = bcdata(nn)%norm(j, k, 1)*skxa + bcdata(nn)%norm(j, k, 2)*&
+&         skya + bcdata(nn)%norm(j, k, 3)*skza
+! store the velocity components in uux, uuy and uuz and
+! subtract the mesh velocity if the face is moving.
+        uux = ww2(j, k, ivx)
+        uuy = ww2(j, k, ivy)
+        uuz = ww2(j, k, ivz)
+        if (addgridvelocities) then
+          uux = uux - ss(j, k, 1)
+          uuy = uuy - ss(j, k, 2)
+          uuz = uuz - ss(j, k, 3)
+        end if
+! compute the velocity components in j and
+! k-direction.
+        qj = uux*sjxa + uuy*sjya + uuz*sjza
+        qk = uux*skxa + uuy*skya + uuz*skza
+! compute the pressure gradient, which is stored
+! in pp1. i'm not entirely sure whether this
+! formulation is correct for moving meshes. it could
+! be that an additional term is needed there.
+        tempd = gradd(j, k)/ri
+        tempd0 = ww2(j, k, irho)*tempd
+        temp = rxj*uux + ryj*uuy + rzj*uuz
+        tempd1 = qj*tempd0
+        temp0 = rxk*uux + ryk*uuy + rzk*uuz
+        tempd2 = qk*tempd0
+        qjd = temp*tempd0
+        qkd = temp0*tempd0
+        uuxd = skxa*qkd + sjxa*qjd + rxk*tempd2 + rxj*tempd1
+        uuyd = skya*qkd + sjya*qjd + ryk*tempd2 + ryj*tempd1
+        uuzd = skza*qkd + sjza*qjd + rzk*tempd2 + rzj*tempd1
+        ww2d(j, k, irho) = ww2d(j, k, irho) + (qj*temp+qk*temp0)*tempd
+        dpjd = -(rj*tempd)
+        dpkd = -(rk*tempd)
+        gradd(j, k) = 0.0_8
+        ww2d(j, k, ivz) = ww2d(j, k, ivz) + uuzd
+        ww2d(j, k, ivy) = ww2d(j, k, ivy) + uuyd
+        ww2d(j, k, ivx) = ww2d(j, k, ivx) + uuxd
+        pp2d(j, kp1) = pp2d(j, kp1) + b1*dpkd
+        pp2d(j, km1) = pp2d(j, km1) - b1*dpkd
+        pp2d(jp1, k) = pp2d(jp1, k) + a1*dpjd
+        pp2d(jm1, k) = pp2d(jm1, k) - a1*dpjd
+      end do
+    else if (branch .eq. 1) then
       do ii=0,isize*jsize-1
         j = mod(ii, isize) + istart
         k = ii/isize + jstart
@@ -1507,6 +1760,10 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: uux, uuy, uuz
     real(kind=realtype), dimension(istart:iend, jstart:jend) :: grad
     intrinsic mod
+    intrinsic max
+    intrinsic min
+    integer(kind=inttype) :: max2
+    integer(kind=inttype) :: max1
 ! make sure that on the coarser grids the constant pressure
 ! boundary condition is used.
     walltreatment = eulerwallbctreatment
@@ -1525,6 +1782,122 @@ branch = myIntStack(myIntPtr)
         j = mod(ii, isize) + istart
         k = ii/isize + jstart
         grad(j, k) = pp3(j, k) - pp2(j, k)
+      end do
+    case (normalmomentum) 
+! pressure gradient is computed using the normal momentum
+! equation. first set a couple of additional variables for
+! the normals, depending on the block face. note that the
+! construction 1: should not be used in these pointers,
+! because element 0 is needed. consequently there will be
+! an offset of 1 for these normals. this is commented in
+! the code. for moving faces also the grid velocity of
+! the 1st cell center from the wall is needed.
+      do ii=0,isize*jsize-1
+        j = mod(ii, isize) + istart
+        k = ii/isize + jstart
+! store the indices k+1, k-1 a bit easier and make
+! sure that they do not exceed the range of the arrays.
+        km1 = k - 1
+        if (jstart .lt. km1) then
+          km1 = km1
+        else
+          km1 = jstart
+        end if
+        kp1 = k + 1
+        if (jend .gt. kp1) then
+          kp1 = kp1
+        else
+          kp1 = jend
+        end if
+        if (1_inttype .lt. kp1 - km1) then
+          max1 = kp1 - km1
+        else
+          max1 = 1_inttype
+        end if
+! compute the scaling factor for the central difference
+! in the k-direction.
+        b1 = one/max1
+! the indices j+1 and j-1. make sure that they
+! do not exceed the range of the arrays.
+        jm1 = j - 1
+        if (istart .lt. jm1) then
+          jm1 = jm1
+        else
+          jm1 = istart
+        end if
+        jp1 = j + 1
+        if (iend .gt. jp1) then
+          jp1 = jp1
+        else
+          jp1 = iend
+        end if
+        if (1_inttype .lt. jp1 - jm1) then
+          max2 = jp1 - jm1
+        else
+          max2 = 1_inttype
+        end if
+! compute the scaling factor for the central
+! difference in the j-direction.
+        a1 = one/max2
+! compute (twice) the average normal in the generic i,
+! j and k-direction. note that in j and k-direction
+! the average in the original indices should be taken
+! using j-1 and j (and k-1 and k). however due to the
+! usage of pointers ssj and ssk there is an offset in
+! the indices of 1 and therefore now the correct
+! average is obtained with the indices j and j+1
+! (k and k+1).
+        sixa = two*ssi(j, k, 1)
+        siya = two*ssi(j, k, 2)
+        siza = two*ssi(j, k, 3)
+        sjxa = ssj(j, k, 1) + ssj(j+1, k, 1)
+        sjya = ssj(j, k, 2) + ssj(j+1, k, 2)
+        sjza = ssj(j, k, 3) + ssj(j+1, k, 3)
+        skxa = ssk(j, k, 1) + ssk(j, k+1, 1)
+        skya = ssk(j, k, 2) + ssk(j, k+1, 2)
+        skza = ssk(j, k, 3) + ssk(j, k+1, 3)
+! compute the difference of the normal vector and
+! pressure in j and k-direction. as the indices are
+! restricted to the 1st halo-layer, the computation
+! of the internal halo values is not consistent;
+! however this is not really a problem, because these
+! values are overwritten in the communication pattern.
+        rxj = a1*(bcdata(nn)%norm(jp1, k, 1)-bcdata(nn)%norm(jm1, k, 1))
+        ryj = a1*(bcdata(nn)%norm(jp1, k, 2)-bcdata(nn)%norm(jm1, k, 2))
+        rzj = a1*(bcdata(nn)%norm(jp1, k, 3)-bcdata(nn)%norm(jm1, k, 3))
+        dpj = a1*(pp2(jp1, k)-pp2(jm1, k))
+        rxk = b1*(bcdata(nn)%norm(j, kp1, 1)-bcdata(nn)%norm(j, km1, 1))
+        ryk = b1*(bcdata(nn)%norm(j, kp1, 2)-bcdata(nn)%norm(j, km1, 2))
+        rzk = b1*(bcdata(nn)%norm(j, kp1, 3)-bcdata(nn)%norm(j, km1, 3))
+        dpk = b1*(pp2(j, kp1)-pp2(j, km1))
+! compute the dot product between the unit vector
+! and the normal vectors in i, j and k-direction.
+        ri = bcdata(nn)%norm(j, k, 1)*sixa + bcdata(nn)%norm(j, k, 2)*&
+&         siya + bcdata(nn)%norm(j, k, 3)*siza
+        rj = bcdata(nn)%norm(j, k, 1)*sjxa + bcdata(nn)%norm(j, k, 2)*&
+&         sjya + bcdata(nn)%norm(j, k, 3)*sjza
+        rk = bcdata(nn)%norm(j, k, 1)*skxa + bcdata(nn)%norm(j, k, 2)*&
+&         skya + bcdata(nn)%norm(j, k, 3)*skza
+! store the velocity components in uux, uuy and uuz and
+! subtract the mesh velocity if the face is moving.
+        uux = ww2(j, k, ivx)
+        uuy = ww2(j, k, ivy)
+        uuz = ww2(j, k, ivz)
+        if (addgridvelocities) then
+          uux = uux - ss(j, k, 1)
+          uuy = uuy - ss(j, k, 2)
+          uuz = uuz - ss(j, k, 3)
+        end if
+! compute the velocity components in j and
+! k-direction.
+        qj = uux*sjxa + uuy*sjya + uuz*sjza
+        qk = uux*skxa + uuy*skya + uuz*skza
+! compute the pressure gradient, which is stored
+! in pp1. i'm not entirely sure whether this
+! formulation is correct for moving meshes. it could
+! be that an additional term is needed there.
+        grad(j, k) = ((qj*(uux*rxj+uuy*ryj+uuz*rzj)+qk*(uux*rxk+uuy*ryk+&
+&         uuz*rzk))*ww2(j, k, irho)-rj*dpj-rk*dpk)/ri
       end do
     end select
 ! determine the state in the halo cell. again loop over

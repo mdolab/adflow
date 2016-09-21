@@ -36,7 +36,6 @@ contains
     use turbMod
     use utils, only : EChk, setPointers, getDirAngle, setPointers_d
     use haloExchange, only : whalo2
-    use adjointExtra, only : block_res
     use masterRoutines, only : block_res_state, master
 #ifndef USE_COMPLEX
     use masterRoutines, only : block_res_state_d
@@ -770,46 +769,6 @@ contains
        end do
     end do
 
-    ! Finally allocate space for the BC pointers
-    isizemax = 0
-    jsizemax = 0
-    do nn=1,nDom
-       isizemax = max(isizemax, flowDoms(nn, 1, 1)%ie)
-       isizemax = max(isizemax, flowDoms(nn, 1, 1)%je)
-
-       jsizemax = max(jsizemax, flowDoms(nn, 1, 1)%je)
-       jsizemax = max(jsizemax, flowDoms(nn, 1, 1)%ke)
-    end do
-
-    allocate(&
-         ww0d(isizemax, jsizemax, nw), ww1d(isizemax, jsizemax, nw), &
-         ww2d(isizemax, jsizemax, nw), ww3d(isizemax, jsizemax, nw), &
-         pp0d(isizemax, jsizemax), pp1d(isizemax, jsizemax), &
-         pp2d(isizemax, jsizemax), pp3d(isizemax, jsizemax), &
-         rlv0d(isizemax, jsizemax), rlv1d(isizemax, jsizemax), &
-         rlv2d(isizemax, jsizemax), rlv3d(isizemax, jsizemax), &
-         rev0d(isizemax, jsizemax), rev1d(isizemax, jsizemax), &
-         rev2d(isizemax, jsizemax), rev3d(isizemax, jsizemax), &
-         ssid(isizemax, jsizemax,3), xxd(isizemax+1, jsizemax+1,3), &
-         sfaced(isizemax, jsizemax), &
-         gcp(isizemax, jsizemax), stat=ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-    allocate(&
-         ww0(isizemax, jsizemax, nw), ww1(isizemax, jsizemax, nw), &
-         ww2(isizemax, jsizemax, nw), ww3(isizemax, jsizemax, nw), &
-         pp0(isizemax, jsizemax), pp1(isizemax, jsizemax), &
-         pp2(isizemax, jsizemax), pp3(isizemax, jsizemax), &
-         rlv0(isizemax, jsizemax), rlv1(isizemax, jsizemax), &
-         rlv2(isizemax, jsizemax), rlv3(isizemax, jsizemax), &
-         rev0(isizemax, jsizemax), rev1(isizemax, jsizemax), &
-         rev2(isizemax, jsizemax), rev3(isizemax, jsizemax), &
-         gamma0(isizemax, jsizemax), gamma1(isizemax, jsizemax), &
-         gamma2(isizemax, jsizemax), gamma3(isizemax, jsizemax), &
-         ssi(isizemax, jsizemax,3), xx(isizemax+1, jsizemax+1,3), &
-         sface(isizemax, jsizemax), &
-         stat=ierr)
-    call EChk(ierr,__FILE__,__LINE__) 
-
     derivVarsAllocated = .True. 
   end subroutine allocDerivativeValues
 
@@ -928,31 +887,6 @@ contains
     liftdirectiond = zero
     dragdirectiond = zero
 
-#ifndef USE_COMPLEX
-    ! Now zero these
-    ww0d = zero
-    ww1d = zero
-    ww2d = zero
-    ww3d = zero
-
-    pp0d = zero
-    pp1d = zero
-    pp2d = zero
-    pp3d = zero
-
-    rlv0d = zero
-    rlv1d = zero
-    rlv2d = zero
-    rlv3d = zero
-
-    rev0d = zero
-    rev1d = zero
-    rev2d = zero
-    rev3d = zero
-    ssid = zero
-    xxd = zero
-    sfaced = zero
-#endif
   end subroutine zeroADSeeds
   ! This is a special function that is sued to dealloc derivative values
   ! in blockpointers_d for use with the AD code.
@@ -1641,7 +1575,6 @@ contains
     use utils, only : EChk, setPointers, getDirAngle
     use residuals, only : initRes_block
     use masterRoutines, only : block_res_state
-    use adjointExtra, only : block_res
 
     implicit none
 

@@ -876,7 +876,7 @@ contains
        kEnd = kl
     end if
 
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     iSize = (iEnd-iBeg)+1
     jSize = (jEnd-jBeg)+1
     kSize = (kEnd-kBeg)+1
@@ -895,7 +895,7 @@ contains
                 p(i, j, k) = gm1*(w(i, j, k, irhoE) - half*w( i, j, k, irho)*v2)
                 p(i, j, k) = max(p(i, j, k), 1.e-4_realType*pInfCorr)
 
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           end do
@@ -1237,7 +1237,7 @@ subroutine computeLamViscosity(includeHalos)
   ! stresses, in case the pressure must be corrected.
 
   if( correctForK ) then
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
      iSize = (iEnd-iBeg)+1
      jSize = (jEnd-jBeg)+1
      kSize = (kEnd-kBeg)+1
@@ -1256,7 +1256,7 @@ subroutine computeLamViscosity(includeHalos)
                  T = pp/(RGas*w(i,j,k,irho))
                  rlv(i,j,k) = muSuth*((TSuth + SSuth)/(T + SSuth)) &
                       * ((T/TSuth)**1.5_realType)
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
               end do
 #else
            enddo
@@ -1266,7 +1266,7 @@ subroutine computeLamViscosity(includeHalos)
   else
      ! Loop over the owned cells *AND* first level halos of this
      ! block and compute the laminar viscosity ratio.
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
      iSize = (iEnd-iBeg)+1
      jSize = (jEnd-jBeg)+1
      kSize = (kEnd-kBeg)+1
@@ -1287,7 +1287,7 @@ subroutine computeLamViscosity(includeHalos)
                  T = p(i,j,k)/(RGas*w(i,j,k,irho))
                  rlv(i,j,k) = muSuth*((TSuth + SSuth)/(T + SSuth)) &
                       * ((T/TSuth)**1.5_realType)
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
               end do
 #else
            enddo
@@ -1682,7 +1682,7 @@ subroutine allNodalGradients
   ! The contribution is scattered to both the left and right node
   ! in k-direction.
 
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
   !$AD II-LOOP
   do ii=0,il*jl*ke-1
      i = mod(ii, il) + 1
@@ -1764,7 +1764,7 @@ subroutine allNodalGradients
                  qy(i,j,k) = qy(i,j,k) + a2*sy
                  qz(i,j,k) = qz(i,j,k) + a2*sz
               endif
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
            end do
 #else
         enddo
@@ -1776,7 +1776,7 @@ subroutine allNodalGradients
   ! The contribution is scattered to both the left and right node
   ! in j-direction.
 
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
   !$AD II-LOOP
   do ii=0,il*je*kl-1
      i = mod(ii, il) + 1
@@ -1858,7 +1858,7 @@ subroutine allNodalGradients
                  qy(i,j,k) = qy(i,j,k) + a2*sy
                  qz(i,j,k) = qz(i,j,k) + a2*sz
               endif
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
            end do
 #else
         enddo
@@ -1870,7 +1870,7 @@ subroutine allNodalGradients
   ! The contribution is scattered to both the left and right node
   ! in i-direction.
 
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
   !$AD II-LOOP
   do ii=0,ie*jl*kl-1
      i = mod(ii, ie) + 1
@@ -1952,7 +1952,7 @@ subroutine allNodalGradients
                  qy(i,j,k) = qy(i,j,k) + a2*sy
                  qz(i,j,k) = qz(i,j,k) + a2*sz
               endif
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
            end do
 #else
         enddo
@@ -1961,7 +1961,7 @@ subroutine allNodalGradients
 #endif   
   ! Divide by 8 times the volume to obtain the correct gradients.
 
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
   !$AD II-LOOP
   do ii=0,il*jl*kl-1
      i = mod(ii, il) + 1
@@ -1997,7 +1997,7 @@ subroutine allNodalGradients
               qx(i,j,k) = qx(i,j,k)*oneOverV
               qy(i,j,k) = qy(i,j,k)*oneOverV
               qz(i,j,k) = qz(i,j,k)*oneOverV
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
            end do
 #else
         enddo

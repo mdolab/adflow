@@ -357,16 +357,16 @@ bocos:do mm=1,nbocos
         ssid(i, j, 2) = ssid(i, j, 2) + tauyz*tempd12
         tauzzd = ssi(i, j, 3)*tempd12
         ssid(i, j, 3) = ssid(i, j, 3) + tauzz*tempd12
-        prefd = prefd - fact*(tauxy*ssi(i, j, 1)+tauyy*ssi(i, j, 2)+&
-&         tauyz*ssi(i, j, 3))*fyd - fact*(tauxx*ssi(i, j, 1)+tauxy*ssi(i&
-&         , j, 2)+tauxz*ssi(i, j, 3))*fxd - fact*(tauxz*ssi(i, j, 1)+&
-&         tauyz*ssi(i, j, 2)+tauzz*ssi(i, j, 3))*fzd
+        prefd = prefd - fact*(tauxz*ssi(i, j, 1)+tauyz*ssi(i, j, 2)+&
+&         tauzz*ssi(i, j, 3))*fzd
         tempd14 = -(fact*pref*fyd)
         tauyzd = ssi(i, j, 3)*tempd14 + ssi(i, j, 2)*tempd12
         ssid(i, j, 1) = ssid(i, j, 1) + tauxy*tempd14
         tauyyd = ssi(i, j, 2)*tempd14
         ssid(i, j, 2) = ssid(i, j, 2) + tauyy*tempd14
         ssid(i, j, 3) = ssid(i, j, 3) + tauyz*tempd14
+        prefd = prefd - fact*(tauxy*ssi(i, j, 1)+tauyy*ssi(i, j, 2)+&
+&         tauyz*ssi(i, j, 3))*fyd
         tempd13 = -(fact*pref*fxd)
         tauxzd = ssi(i, j, 3)*tempd13 + ssi(i, j, 1)*tempd12
         tauxyd = ssi(i, j, 2)*tempd13 + ssi(i, j, 1)*tempd14
@@ -374,6 +374,8 @@ bocos:do mm=1,nbocos
         ssid(i, j, 1) = ssid(i, j, 1) + tauxx*tempd13
         ssid(i, j, 2) = ssid(i, j, 2) + tauxy*tempd13
         ssid(i, j, 3) = ssid(i, j, 3) + tauxz*tempd13
+        prefd = prefd - fact*(tauxx*ssi(i, j, 1)+tauxy*ssi(i, j, 2)+&
+&         tauxz*ssi(i, j, 3))*fxd
         viscsubfaced(mm)%tau(i, j, 6) = viscsubfaced(mm)%tau(i, j, 6) + &
 &         tauyzd
         viscsubfaced(mm)%tau(i, j, 5) = viscsubfaced(mm)%tau(i, j, 5) + &

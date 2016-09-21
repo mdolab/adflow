@@ -39,7 +39,7 @@ contains
     ! efficient to loop over the faces and to scatter the gradient,
     ! but in that case the gradients for u, v and w must be stored.
     ! In the current approach no extra memory is needed.
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     !$AD II-LOOP
     do ii=0,nx*ny*nz-1
        i = mod(ii, nx) + 2
@@ -117,7 +117,7 @@ contains
                 ! Compute the production term.
 
                 scratch(i,j,k, iprod) = two*sqrt(sijsij*oijoij)
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo
@@ -153,7 +153,7 @@ contains
     ! but in that case the gradients for u, v and w must be stored.
     ! In the current approach no extra memory is needed.
 
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     !$AD II-LOOP
     do ii=0,nx*ny*nz-1
        i = mod(ii, nx) + 2
@@ -227,7 +227,7 @@ contains
 
                 scratch(i,j,k, iprod) = two*(two*(sxy**2 + sxz**2 + syz**2) &
                      +           sxx**2 + syy**2 + szz**2) - div2
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo
@@ -268,7 +268,7 @@ contains
     ! efficient to loop over the faces and to scatter the gradient,
     ! but in that case the gradients for u, v and w must be stored.
     ! In the current approach no extra memory is needed.
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     !$AD II-LOOP
     do ii=0,nx*ny*nz-1
        i = mod(ii, nx) + 2
@@ -322,7 +322,7 @@ contains
                 ! Compute the magnitude squared of the vorticity.
 
                 scratch(i,j,k,ivort) = vortx**2 + vorty**2 + vortz**2
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo
@@ -680,7 +680,7 @@ contains
 
     ! Loop over the cells of this block and compute the eddy viscosity.
     ! Do not include halo's.
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     iSize = (iEnd-iBeg)+1
     jSize = (jEnd-jBeg)+1
     kSize = (kEnd-kBeg)+1
@@ -700,7 +700,7 @@ contains
                 chi3       = chi**3
                 fv1        = chi3/(chi3+cv13)
                 rev(i,j,k) = fv1*rnuSA
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo
@@ -728,7 +728,7 @@ contains
 
     ! Loop over the cells of this block and compute the eddy viscosity.
     ! Do not include halo's.
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     iSize = (iEnd-iBeg)+1
     jSize = (jEnd-jBeg)+1
     kSize = (kEnd-kBeg)+1
@@ -744,7 +744,7 @@ contains
              do i=iBeg, iEnd
 #endif            
                 rev(i,j,k) = abs(w(i,j,k,irho)*w(i,j,k,itu1)/w(i,j,k,itu2))
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo
@@ -782,7 +782,7 @@ contains
 
     ! Loop over the cells of this block and compute the eddy viscosity.
     ! Do not include halo's.
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     iSize = (iEnd-iBeg)+1
     jSize = (jEnd-jBeg)+1
     kSize = (kEnd-kBeg)+1
@@ -813,7 +813,7 @@ contains
                 vortMag    = sqrt(scratch(i,j,k,iprod))
                 rev(i,j,k) = w(i,j,k,irho)*rSSTA1*w(i,j,k,itu1) &
                      / max(rSSTA1*w(i,j,k,itu2), f2*vortMag)
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo
@@ -878,7 +878,7 @@ contains
     !       combination with the minmod limiter.                           
     !       The possible grid velocity must be taken into account.         
     !
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     !$AD II-LOOP
     do iii=0,nx*ny*nz-1
        i = mod(iii, nx) + 2
@@ -1082,7 +1082,7 @@ contains
                    enddo
 
                 endif velKdir
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo
@@ -1101,7 +1101,7 @@ contains
     continue
     !$AD CHECKPOINT-START
     qs = zero
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     !$AD II-LOOP
     do iii=0,nx*ny*nz-1
        i = mod(iii, nx) + 2
@@ -1305,7 +1305,7 @@ contains
                    enddo
 
                 endif velJdir
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo
@@ -1324,7 +1324,7 @@ contains
     continue
     !$AD CHECKPOINT-START
     qs = zero
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     !$AD II-LOOP
     do iii=0,nx*ny*nz-1
        i = mod(iii, nx) + 2
@@ -1529,7 +1529,7 @@ contains
                    enddo
 
                 endif velIdir
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo
@@ -1659,7 +1659,7 @@ contains
 
     ! Loop over the cells of this block and compute the eddy viscosity.
     ! Do not include halo's.
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     iSize = (iEnd-iBeg)+1
     jSize = (jEnd-jBeg)+1
     kSize = (kEnd-kBeg)+1
@@ -1684,7 +1684,7 @@ contains
                 tepl  = max(tepa,rvfLimitE)
 
                 rev(i,j,k) = rvfCmu*w(i,j,k,irho)*tv2a/tepl*sct(i,j,k)
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo
@@ -1875,7 +1875,7 @@ contains
 
     ! Loop over the cells of this block and compute the eddy viscosity.
     ! Do not include halo's.
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     iSize = (iEnd-iBeg)+1
     jSize = (jEnd-jBeg)+1
     kSize = (kEnd-kBeg)+1
@@ -1891,7 +1891,7 @@ contains
              do i=iBeg, iEnd
 #endif     
                 rev(i,j,k) = abs(w(i,j,k,irho)*w(i,j,k,itu1)*w(i,j,k,itu2))
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo

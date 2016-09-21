@@ -320,15 +320,9 @@ preprocess_reverse:
 	@echo "Preprocessing all input files for reverse mode AD..."
 	@for file in $(ALL_RES_FILES); do \
 		echo Preprocessing $$file; \
-		cpp -DUSE_TAPENADE -DTAPENADE_REVERSE -DTAPENADE_FAST -traditional -P $$file $$file.f90; \
+		cpp -DUSE_TAPENADE -DTAPENADE_REVERSE -traditional -P $$file $$file.f90; \
 	done
 
-preprocess_reverse_fast:
-	@echo "Preprocessing all input files for reverse mode AD..."
-	@for file in $(ALL_RES_FILES); do \
-		echo Preprocessing $$file; \
-		cpp -DUSE_TAPENADE -DTAPENADE_REVERSE -DTAPENADE_FAST -DTAPENADE_POINTERS -traditional -P $$file $$file.f90; \
-	done
 cleanpreprocess_res:
 	@echo "Cleaning up residual preprocessed files..."
 	@for file in $(ALL_RES_FILES); do \
