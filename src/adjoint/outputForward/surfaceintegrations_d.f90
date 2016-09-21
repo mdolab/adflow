@@ -20,7 +20,7 @@ contains
     use blockpointers, only : nbocos, bcdata, bctype, sk, sj, si, x, &
 &   rlv, sfacei, sfacej, sfacek, gamma, rev, p, viscsubface
     use surfacefamilies, only : famgroups
-    use utils_d, only : setbcpointers, resetbcpointers, iswalltype
+    use utils_d, only : setbcpointers, iswalltype
     use sorting, only : bsearchintegers
     use costfunctions, only : nlocalvalues
 ! tapenade needs to see these modules that the callees use.
@@ -53,8 +53,6 @@ bocos:do mm=1,nbocos
         call setbcpointers(mm, .true.)
         if (iswalltype(bctype(mm))) call forcesandmomentsface(&
 &                                                       localvalues, mm)
-! reset the pointers
-        call resetbcpointers(mm, .true.)
       end if
     end do bocos
   end subroutine integratesurfaces

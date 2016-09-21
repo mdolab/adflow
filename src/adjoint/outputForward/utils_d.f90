@@ -801,27 +801,6 @@ contains
       end if
     end if
   end subroutine setbcpointers
-  subroutine resetbcpointers(nn, spatialpointers)
-!
-!       resetbcpointers nullifyies the boundary pointers. for reverse  
-!       mode ad it copies the values back in to the respective arrays  
-!
-    use constants
-    use blockpointers, only : w, p, rlv, rev, gamma, x, d2wall, si, sj&
-&   , sk, s, globalcell, bcdata, nx, il, ie, ib, ny, jl, je, jb, nz, kl,&
-&   ke, kb, bcfaceid, sfacei, sfacej, sfacek, addgridvelocities
-    use bcpointers_d, only : ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, &
-&   rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3, gamma0, gamma1, &
-&   gamma2, gamma3, gcp, xx, ss, ssi, ssj, ssk, dd2wall, istart, iend, &
-&   jstart, jend, isize, jsize, sface
-    use inputphysics, only : cpmodel, equations
-    implicit none
-! for forward mode we are using pointers so we just don't do
-! anything.
-! subroutine arguments.
-    integer(kind=inttype), intent(in) :: nn
-    logical, intent(in) :: spatialpointers
-  end subroutine resetbcpointers
   subroutine computerootbendingmoment(cf, cm, bendingmoment)
 !                                                      *
 ! compute a normalized bending moment coefficient from *
