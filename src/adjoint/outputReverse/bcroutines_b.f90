@@ -17,7 +17,7 @@ contains
 &   vol, il, jl, kl, sectionid, wold, volold, bcdata, si, sj, sk, sfacei&
 &   , sfacej, sfacek, rlv, gamma, p, rev, bmtj1, bmtj2, scratch, bmtk2, &
 &   bmtk1, fw, aa, d2wall, bmti1, bmti2, s
-    use utils_b, only : setbcpointers, resetbcpointers, getcorrectfork
+    use utils_b, only : setbcpointers, getcorrectfork
     use bcpointers_b
     implicit none
 ! subroutine arguments.
@@ -38,7 +38,6 @@ contains
       if (bctype(nn) .eq. symm) then
         call setbcpointers(nn, .false.)
         call bcsymm1sthalo(nn)
-        call resetbcpointers(nn, .false.)
       end if
     end do
     if (secondhalo) then
@@ -46,7 +45,6 @@ contains
         if (bctype(nn) .eq. symm) then
           call setbcpointers(nn, .false.)
           call bcsymm2ndhalo(nn)
-          call resetbcpointers(nn, .false.)
         end if
       end do
     end if
@@ -57,7 +55,6 @@ contains
       if (bctype(nn) .eq. symmpolar) then
         call setbcpointers(nn, .true.)
         call bcsymmpolar1sthalo(nn)
-        call resetbcpointers(nn, .true.)
       end if
     end do
     if (secondhalo) then
@@ -65,7 +62,6 @@ contains
         if (bctype(nn) .eq. symmpolar) then
           call setbcpointers(nn, .true.)
           call bcsymmpolar2ndhalo(nn)
-          call resetbcpointers(nn, .true.)
         end if
       end do
     end if
@@ -76,7 +72,6 @@ contains
       if (bctype(nn) .eq. nswalladiabatic) then
         call setbcpointers(nn, .false.)
         call bcnswalladiabatic(nn, secondhalo, correctfork)
-        call resetbcpointers(nn, .false.)
       end if
     end do
 ! ------------------------------------
@@ -86,7 +81,6 @@ contains
       if (bctype(nn) .eq. nswallisothermal) then
         call setbcpointers(nn, .false.)
         call bcnswallisothermal(nn, secondhalo, correctfork)
-        call resetbcpointers(nn, .false.)
       end if
     end do
 ! ------------------------------------
@@ -96,7 +90,6 @@ contains
       if (bctype(nn) .eq. farfield) then
         call setbcpointers(nn, .false.)
         call bcfarfield(nn, secondhalo, correctfork)
-        call resetbcpointers(nn, .false.)
       end if
     end do
 ! ------------------------------------
@@ -107,7 +100,6 @@ contains
 &         massbleedoutflow) then
         call setbcpointers(nn, .false.)
         call bcsubsonicoutflow(nn, secondhalo, correctfork)
-        call resetbcpointers(nn, .false.)
       end if
     end do
 ! ------------------------------------
@@ -117,7 +109,6 @@ contains
       if (bctype(nn) .eq. subsonicinflow) then
         call setbcpointers(nn, .false.)
         call bcsubsonicinflow(nn, secondhalo, correctfork)
-        call resetbcpointers(nn, .false.)
       end if
     end do
 ! ------------------------------------
@@ -134,7 +125,6 @@ contains
 &     ) then
         call setbcpointers(nn, .false.)
         call bcextrap(nn, secondhalo, correctfork)
-        call resetbcpointers(nn, .false.)
       end if
     end do
 ! ------------------------------------
@@ -144,7 +134,6 @@ contains
       if (bctype(nn) .eq. eulerwall) then
         call setbcpointers(nn, .true.)
         call bceulerwall(nn, secondhalo, correctfork)
-        call resetbcpointers(nn, .true.)
       end if
     end do
 ! ------------------------------------
@@ -154,7 +143,6 @@ contains
       if (bctype(nn) .eq. supersonicinflow) then
         call setbcpointers(nn, .false.)
         call bcsupersonicinflow(nn, secondhalo, correctfork)
-        call resetbcpointers(nn, .false.)
       end if
     end do
   end subroutine applyallbc_block

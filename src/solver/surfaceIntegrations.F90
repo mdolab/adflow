@@ -13,7 +13,7 @@ contains
     use blockPointers, only : nBocos, BCData, BCType, sk, sj, si, x, rlv, &
          sfacei, sfacej, sfacek, gamma, rev, p, viscSubface
     use surfaceFamilies, only : famGroups
-    use utils, only : setBCPointers, resetBCPointers, isWallType
+    use utils, only : setBCPointers, isWallType
     use sorting, only : bsearchIntegers
     use costFunctions, only : nLocalValues
     ! Tapenade needs to see these modules that the callees use.
@@ -53,8 +53,6 @@ contains
              call flowPropertiesFace(localValues, mm)
           end if isInflowOutflow
 #endif
-          ! Reset the pointers
-          call resetBCPointers(mm, .True.)
 
        end if famInclude
     end do bocos
