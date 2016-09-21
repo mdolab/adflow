@@ -37,7 +37,7 @@ contains
     use utils, only : EChk, setPointers, getDirAngle, setPointers_d
     use haloExchange, only : whalo2
     use adjointExtra, only : block_res
-    use masterRoutines, only : block_res_state
+    use masterRoutines, only : block_res_state, master
 #ifndef USE_COMPLEX
     use masterRoutines, only : block_res_state_d
 #endif
@@ -528,6 +528,13 @@ contains
        call MatSetOption(matrixTurb, MAT_NEW_NONZERO_LOCATIONS, PETSC_FALSE, ierr)
        call EChk(ierr, __FILE__, __LINE__)
     end if
+
+    ! ================= Important =================== 
+
+    ! We must run the residual computation to make sure that all
+    ! intermediate variables are up to date. We can just call master
+    ! for this. No need to recompute spatial terms.
+    call master(.false.)
 
   contains
 

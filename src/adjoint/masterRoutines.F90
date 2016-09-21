@@ -1,6 +1,6 @@
 module masterRoutines
 contains
-  subroutine master(forces, fSize)
+  subroutine master(useSpatial, forces)
 
     use constants
     use communication, only : sumb_comm_world
@@ -10,7 +10,7 @@ contains
     use inputAdjoint,  only : viscPC
     use flowVarRefState, only : nwf, nw
     use costFunctions, only : nLocalValues
-    use blockPointers, only : nDom
+    use blockPointers, only : nDom, il, jl, kl
     use flowVarRefState, only : viscous
     use inputPhysics , only : turbProd, equationMode, equations, turbModel
     use inputDiscretization, only : lowSpeedPreconditioner, lumpedDiss, spaceDiscr, useAPproxWallDistance
@@ -36,38 +36,43 @@ contains
     implicit none
 
     ! Input Arguments:
-    integer(kind=intType), intent(in) ::  fSize
+    logical, intent(in) :: useSpatial
 
     ! Output Variables
-    real(kind=realType), intent(out),  dimension(3, fSize, nTimeIntervalsSpectral) :: forces
+    real(kind=realType), intent(out), optional, dimension(:, :, :) :: forces
 
     ! Working Variables
-    integer(kind=intType) :: ierr, nn, sps
+    integer(kind=intType) :: ierr, nn, sps, fSize
     real(kind=realType), dimension(nSections) :: t
     real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVal, globalVal
 
-    call adjustInflowAngle()
-    call referenceState
-
-    do sps=1,nTimeIntervalsSpectral
-       do nn=1,nDom
-          call setPointers(nn, 1, sps)
-          call xhalo_block()
+    if (useSpatial) then 
+       call adjustInflowAngle()
+       call referenceState
+       
+       do sps=1,nTimeIntervalsSpectral
+          do nn=1,nDom
+             call setPointers(nn, 1, sps)
+             call xhalo_block()
+          end do
        end do
-    end do
+       
+       ! Now exchange the coordinates (fine level only)
+       call exchangecoor(1)
+    end if
 
-    ! Now exchange the coordinates (fine level only)
-    call exchangecoor(1)
     do sps=1,nTimeIntervalsSpectral
        do nn=1,nDom
           call setPointers(nn, 1, sps)
-
-          call volume_block
-          call metric_block
-          call boundaryNormals
-
-          if (equations == RANSEquations .and. useApproxWallDistance) then 
-             call updateWallDistancesQuickly(nn, 1, sps)
+          
+          if (useSpatial) then 
+             call volume_block
+             call metric_block
+             call boundaryNormals
+             
+             if (equations == RANSEquations .and. useApproxWallDistance) then 
+                call updateWallDistancesQuickly(nn, 1, sps)
+             end if
           end if
 
           ! Compute the pressures/viscositites
@@ -105,11 +110,13 @@ contains
              select case (turbModel)
 
              case (spalartAllmaras)
+                allocate(qq(2:il, 2:jl, 2:kl))
                 call saSource
                 call turbAdvection(1_intType, 1_intType, itu1-1, qq)
                 !call unsteadyTurbTerm(1_intType, 1_intType, itu1-1, qq)
                 call saViscous
                 call saResScale
+                deallocate(qq)
              end select
           endif
 
@@ -155,9 +162,12 @@ contains
           call integrateSurfaces(localval(:, sps))
 
        end do
-
-       ! Now we can retrieve the forces/tractions for this spectral instance
-       call getForces(forces(:, :, sps), fSize, sps)
+       
+       if (present(forces)) then 
+          ! Now we can retrieve the forces/tractions for this spectral instance
+          fSize = size(forces, 2)
+          call getForces(forces(:, :, sps), fSize, sps)
+       end if
     end do
 
     ! Now we need to reduce all the cost functions
