@@ -28,14 +28,6 @@ contains
     use flowvarrefstate
     use inputphysics
     implicit none
-! do we actually need to zero the forces/area on a wall that wasn't inclded? maybe?
-!       ! if it wasn't included, but still a wall...zero
-!       if(bctype(mm) == eulerwall .or. &
-!            bctype(mm) == nswalladiabatic .or. &
-!            bctype(mm) == nswallisothermal) then
-!          bcdata(mm)%area = zero
-!          bcdata(mm)%fp = zero
-!          bcdata(mm)%fv = zero
 ! input/output variables
     real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
 &   localvalues
@@ -51,19 +43,23 @@ bocos:do mm=1,nbocos
 ! set a bunch of pointers depending on the face id to make
 ! a generic treatment possible. 
         call setbcpointers(mm, .true.)
-        if (iswalltype(bctype(mm))) call forcesandmomentsface(&
-&                                                       localvalues, mm)
+        if (iswalltype(bctype(mm))) call wallintegrationface(localvalues&
+&                                                      , mm)
       end if
     end do bocos
   end subroutine integratesurfaces
-  subroutine flowpropertiesface(localvalues, mm)
+  subroutine flowintegrationface(localvalues, mm)
     use constants
+    use costfunctions
     use blockpointers, only : bcfaceid, bcdata, addgridvelocities
     use costfunctions, only : nlocalvalues, imassflow, imassptot, &
 &   imassttot, imassps
     use sorting, only : bsearchintegers
+    use flowvarrefstate, only : pref, rhoref, pref, timeref, lref, &
+&   tref
+    use inputphysics, only : pointref
     use flowutils_d, only : computeptot, computettot
-    use bcpointers_d, only : ssi, sface, ww1, ww2, pp1, pp2
+    use bcpointers_d, only : ssi, sface, ww1, ww2, pp1, pp2, xx
     implicit none
 ! input/output variables
     real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
@@ -72,14 +68,20 @@ bocos:do mm=1,nbocos
 ! local variables
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps
     integer(kind=inttype) :: i, j, ii
-    real(kind=realtype) :: fact
-    real(kind=realtype) :: sf, vnm, vxm, vym, vzm
-    real(kind=realtype) :: pm, ptot, ttot, rhom, massflowratelocal, tmp
+    real(kind=realtype) :: fact, xc, yc, zc, cellarea, mx, my, mz
+    real(kind=realtype) :: sf, vnm, vxm, vym, vzm, mredim, fx, fy, fz
+    real(kind=realtype) :: pm, ptot, ttot, rhom, massflowratelocal
+    real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint
+    intrinsic sqrt
     intrinsic mod
+    real(kind=realtype) :: arg1
     massflowrate = zero
     mass_ptot = zero
     mass_ttot = zero
     mass_ps = zero
+    refpoint(1) = lref*pointref(1)
+    refpoint(2) = lref*pointref(2)
+    refpoint(3) = lref*pointref(3)
     select case  (bcfaceid(mm)) 
     case (imin, jmin, kmin) 
       fact = -one
@@ -95,6 +97,7 @@ bocos:do mm=1,nbocos
 !
 ! do j=(bcdata(mm)%jnbeg+1),bcdata(mm)%jnend
 !    do i=(bcdata(mm)%inbeg+1),bcdata(mm)%inend
+    mredim = sqrt(pref*rhoref)
     do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
 &       (mm)%inbeg)-1
       i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&
@@ -111,21 +114,72 @@ bocos:do mm=1,nbocos
       rhom = half*(ww1(i, j, irho)+ww2(i, j, irho))
       pm = half*(pp1(i, j)+pp2(i, j))
       vnm = vxm*ssi(i, j, 1) + vym*ssi(i, j, 2) + vzm*ssi(i, j, 3) - sf
-      massflowratelocal = rhom*vnm*fact
-      massflowrate = massflowrate + massflowratelocal
       call computeptot(rhom, vxm, vym, vzm, pm, ptot)
       call computettot(rhom, vxm, vym, vzm, pm, ttot)
-      mass_ptot = mass_ptot + ptot*massflowratelocal
-      mass_ttot = mass_ttot + ttot*massflowratelocal
+      pm = pm*pref
+      massflowratelocal = rhom*vnm*fact*mredim
+      massflowrate = massflowrate + massflowratelocal
+      mass_ptot = mass_ptot + ptot*massflowratelocal*pref
+      mass_ttot = mass_ttot + ttot*massflowratelocal*tref
       mass_ps = mass_ps + pm*massflowratelocal
+      xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
+&       1)) - refpoint(1)
+      yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
+&       2)) - refpoint(2)
+      zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
+&       3)) - refpoint(3)
+! compute the force components.
+! blk = max(bcdata(mm)%iblank(i,j), 0) ! iblank forces for overset stuff
+      fx = pm*ssi(i, j, 1)
+      fy = pm*ssi(i, j, 2)
+      fz = pm*ssi(i, j, 3)
+! pressure forces
+! fx = fx*blk
+! fy = fy*blk
+! fz = fz*blk
+! update the pressure force and moment coefficients.
+      fp(1) = fp(1) + fx*fact
+      fp(2) = fp(2) + fy*fact
+      fp(3) = fp(3) + fz*fact
+      mx = yc*fz - zc*fy
+      my = zc*fx - xc*fz
+      mz = xc*fy - yc*fx
+      mp(1) = mp(1) + mx
+      mp(2) = mp(2) + my
+      mp(3) = mp(3) + mz
+! momentum forces
+      arg1 = ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**2
+      cellarea = sqrt(arg1)
+      fx = massflowratelocal*bcdata(mm)%norm(i, j, 1)*vxm/timeref
+      fy = massflowratelocal*bcdata(mm)%norm(i, j, 2)*vym/timeref
+      fz = massflowratelocal*bcdata(mm)%norm(i, j, 3)*vzm/timeref
+! fx = fx*blk
+! fy = fy*blk
+! fz = fz*block
+! note: momentum forces have opposite sign to pressure forces
+      fmom(1) = fmom(1) - fx*fact
+      fmom(2) = fmom(2) - fy*fact
+      fmom(3) = fmom(3) - fz*fact
+      mx = yc*fz - zc*fy
+      my = zc*fx - xc*fz
+      mz = xc*fy - yc*fx
+      mmom(1) = mmom(1) + mx
+      mmom(2) = mmom(2) + my
+      mmom(3) = mmom(3) + mz
     end do
 ! increment the local values array with what we computed here
     localvalues(imassflow) = localvalues(imassflow) + massflowrate
     localvalues(imassptot) = localvalues(imassptot) + mass_ptot
     localvalues(imassttot) = localvalues(imassttot) + mass_ttot
     localvalues(imassps) = localvalues(imassps) + mass_ps
-  end subroutine flowpropertiesface
-!  differentiation of forcesandmomentsface in forward (tangent) mode (with options i4 dr8 r8):
+    localvalues(iflowfp:iflowfp+2) = localvalues(iflowfp:iflowfp+2) + fp
+    localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
+&     fmom
+    localvalues(iflowmp:iflowmp+2) = localvalues(iflowmp:iflowmp+2) + mp
+    localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
+&     mmom
+  end subroutine flowintegrationface
+!  differentiation of wallintegrationface in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *(*bcdata.fv) *(*bcdata.fp)
 !                *(*bcdata.area) localvalues
 !   with respect to varying inputs: *(*viscsubface.tau) *(*bcdata.fv)
@@ -139,9 +193,9 @@ bocos:do mm=1,nbocos
 !   plus diff mem management of: viscsubface:in *viscsubface.tau:in
 !                bcdata:in *bcdata.fv:in *bcdata.fp:in *bcdata.area:in
 !                xx:in pp1:in pp2:in ssi:in ww2:in
-  subroutine forcesandmomentsface_d(localvalues, localvaluesd, mm)
+  subroutine wallintegrationface_d(localvalues, localvaluesd, mm)
 !
-!       forcesandmoments computes the contribution of the block
+!       wallintegrations computes the contribution of the block
 !       given by the pointers in blockpointers to the force and
 !       moment of the geometry. a distinction is made
 !       between the inviscid and viscous parts. in case the maximum
@@ -151,6 +205,7 @@ bocos:do mm=1,nbocos
 !       here.
 !
     use constants
+    use costfunctions
     use communication
     use blockpointers
     use flowvarrefstate
@@ -554,10 +609,10 @@ bocos:do mm=1,nbocos
 &     sepsensoravgd
     localvalues(isepavg:isepavg+2) = localvalues(isepavg:isepavg+2) + &
 &     sepsensoravg
-  end subroutine forcesandmomentsface_d
-  subroutine forcesandmomentsface(localvalues, mm)
+  end subroutine wallintegrationface_d
+  subroutine wallintegrationface(localvalues, mm)
 !
-!       forcesandmoments computes the contribution of the block
+!       wallintegrations computes the contribution of the block
 !       given by the pointers in blockpointers to the force and
 !       moment of the geometry. a distinction is made
 !       between the inviscid and viscous parts. in case the maximum
@@ -567,6 +622,7 @@ bocos:do mm=1,nbocos
 !       here.
 !
     use constants
+    use costfunctions
     use communication
     use blockpointers
     use flowvarrefstate
@@ -826,5 +882,5 @@ bocos:do mm=1,nbocos
     localvalues(icavitation) = localvalues(icavitation) + cavitation
     localvalues(isepavg:isepavg+2) = localvalues(isepavg:isepavg+2) + &
 &     sepsensoravg
-  end subroutine forcesandmomentsface
+  end subroutine wallintegrationface
 end module surfaceintegrations_d

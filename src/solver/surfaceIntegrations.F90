@@ -42,7 +42,7 @@ contains
           call setBCPointers(mm, .True.)
 
           isWall: if( isWallType(BCType(mm))) then 
-             call forcesAndMomentsFace(localvalues, mm)
+             call wallIntegrationFace(localvalues, mm)
           end if isWall
 
 #ifndef USE_TAPENADE
@@ -50,32 +50,26 @@ contains
                BCType(mm) == SubsonicOutflow .or. &
                BCType(mm) == SupersonicInflow .or. &
                BCType(mm) == SupersonicOutflow) then 
-             call flowPropertiesFace(localValues, mm)
+             call flowIntegrationFace(localValues, mm)
           end if isInflowOutflow
 #endif
 
        end if famInclude
     end do bocos
 
-    ! Do we actually need to zero the forces/area on a wall that wasn't inclded? Maybe?
-    !       ! If it wasn't included, but still a wall...zero
-    !       if(BCType(mm) == EulerWall .or. &
-    !            BCType(mm) == NSWallAdiabatic .or. &
-    !            BCType(mm) == NSWallIsothermal) then
-    !          bcData(mm)%area = zero
-    !          bcData(mm)%Fp = zero
-    !          bcData(mm)%Fv = zero
-
   end subroutine integrateSurfaces
 
-  subroutine flowPropertiesFace(localValues, mm)
+  subroutine flowIntegrationFace(localValues, mm)
 
     use constants
+    use costFunctions
     use blockPointers, only : BCFaceID, BCData, addGridVelocities
     use costFunctions, onlY : nLocalValues, iMassFlow, iMassPtot, iMassTtot, iMassPs
     use sorting, only : bsearchIntegers
+    use flowVarRefState, only : pRef, rhoRef, pRef, timeRef, LRef, TRef
+    use inputPhysics, only : pointREf
     use flowUtils, only : computePtot, computeTtot
-    use BCPointers, only : ssi, sFace, ww1, ww2, pp1, pp2
+    use BCPointers, only : ssi, sFace, ww1, ww2, pp1, pp2, xx
     implicit none
 
     ! Input/Output variables
@@ -85,14 +79,19 @@ contains
     ! Local variables
     real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps
     integer(kind=intType) :: i, j, ii
-    real(kind=realType) :: fact
-    real(kind=realType) :: sF, vnm, vxm, vym, vzm
-    real(kind=realType) :: pm, Ptot, Ttot, rhom, massFlowRateLocal, tmp
+    real(kind=realType) :: fact, xc, yc, zc, cellArea, mx, my, mz
+    real(kind=realType) :: sF, vnm, vxm, vym, vzm, mReDim, Fx, Fy, Fz
+    real(kind=realType) :: pm, Ptot, Ttot, rhom, massFlowRateLocal
+    real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint
 
     massFlowRate = zero
     mass_Ptot = zero
     mass_Ttot = zero
     mass_Ps = zero
+
+    refPoint(1) = LRef*pointRef(1)
+    refPoint(2) = LRef*pointRef(2)
+    refPoint(3) = LRef*pointRef(3)
 
     select case (BCFaceID(mm))
     case (iMin, jMin, kMin)
@@ -111,6 +110,8 @@ contains
     ! do j=(BCData(mm)%jnBeg+1),BCData(mm)%jnEnd
     !    do i=(BCData(mm)%inBeg+1),BCData(mm)%inEnd
     
+    mReDim = sqrt(pRef*rhoRef)
+
     !$AD II-LOOP
     do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
        i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
@@ -121,6 +122,7 @@ contains
        else
           sF = zero
        end if
+
        vxm = half*(ww1(i,j,ivx) + ww2(i,j,ivx))
        vym = half*(ww1(i,j,ivy) + ww2(i,j,ivy))
        vzm = half*(ww1(i,j,ivz) + ww2(i,j,ivz))
@@ -129,29 +131,91 @@ contains
 
        vnm = vxm*ssi(i,j,1) + vym*ssi(i,j,2) + vzm*ssi(i,j,3)  - sF
        
-       massFlowRateLocal = rhom*vnm*fact
-       massFlowRate = massFlowRate + massFlowRateLocal
-       
        call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
        call computeTtot(rhom, vxm, vym, vzm, pm, Ttot)
+
+       pm = pm*pRef
        
-       mass_Ptot = mass_pTot + Ptot * massFlowRateLocal
-       mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal
+       massFlowRateLocal = rhom*vnm*fact*mReDim
+       massFlowRate = massFlowRate + massFlowRateLocal
+
+       mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
+       mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
        mass_Ps = mass_Ps + pm*massFlowRateLocal
+
+       xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+            +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
+       yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+            +         xx(i,j+1,2) + xx(i+1,j+1,2)) - refPoint(2)
+       zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+            +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
+
+       ! Compute the force components.
+       ! blk = max(BCData(mm)%iblank(i,j), 0) ! iBlank forces for overset stuff
+       
+       fx = pm*ssi(i,j,1)
+       fy = pm*ssi(i,j,2)
+       fz = pm*ssi(i,j,3)
+
+       ! Pressure forces
+       ! fx = fx*blk
+       ! fy = fy*blk
+       ! fz = fz*blk
+
+       ! Update the pressure force and moment coefficients.
+       Fp(1) = Fp(1) + fx*fact
+       Fp(2) = Fp(2) + fy*fact
+       Fp(3) = Fp(3) + fz*fact
+                 
+       mx = yc*fz - zc*fy
+       my = zc*fx - xc*fz
+       mz = xc*fy - yc*fx
+       
+       Mp(1) = Mp(1) + mx
+       Mp(2) = Mp(2) + my
+       Mp(3) = Mp(3) + mz
+       
+       ! Momentum forces
+       cellArea = sqrt(ssi(i,j,1)**2 + ssi(i,j,2)**2 + ssi(i,j,3)**2)
+
+       fx = massFlowRateLocal*BCData(mm)%norm(i,j,1)*vxm/timeRef
+       fy = massFlowRateLocal*BCData(mm)%norm(i,j,2)*vym/timeRef
+       fz = massFlowRateLocal*BCData(mm)%norm(i,j,3)*vzm/timeRef
+
+       ! fx = fx*blk
+       ! fy = fy*blk
+       ! fz = fz*block
+
+       ! Note: momentum forces have opposite sign to pressure forces
+       FMom(1) = FMom(1) - fx*fact
+       FMom(2) = FMom(2) - fy*fact
+       FMom(3) = FMom(3) - fz*fact
+
+       mx = yc*fz - zc*fy
+       my = zc*fx - xc*fz
+       mz = xc*fy - yc*fx
+
+       MMom(1) = MMom(1) + mx
+       MMom(2) = MMom(2) + my
+       MMom(3) = MMom(3) + mz
        
     enddo
- 
-    ! Increment the local values array with what we computed here
+
+   ! Increment the local values array with what we computed here
     localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate
     localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
     localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
     localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
+    localValues(iFlowFp:iFlowFp+2)   = localValues(iFlowFp:iFlowFp+2) + Fp
+    localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
+    localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
+    localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
 
-  end subroutine flowPropertiesFace
+  end subroutine flowIntegrationFace
 
-  subroutine forcesAndMomentsFace(localValues, mm)
+  subroutine wallIntegrationFace(localValues, mm)
     !
-    !       forcesAndMoments computes the contribution of the block
+    !       wallIntegrations computes the contribution of the block
     !       given by the pointers in blockPointers to the force and
     !       moment of the geometry. A distinction is made
     !       between the inviscid and viscous parts. In case the maximum
@@ -161,6 +225,7 @@ contains
     !       here.
     !
     use constants
+    use costFunctions
     use communication
     use blockPointers
     use flowVarRefState
@@ -462,7 +527,7 @@ contains
 #ifndef USE_TAPENADE
     localValues(iyPlus) = max(localValues(iyPlus), yplusMax)
 #endif
-  end subroutine forcesAndMomentsFace
+  end subroutine wallIntegrationFace
 
   ! ----------------------------------------------------------------------
   !                                                                      |
@@ -509,12 +574,16 @@ contains
     end do domains
 
     if (oversetPresent) then
-       call forcesAndMomentsZipper(localValues, sps)
+       call wallIntegrationsZipper(localValues, sps)
     end if
 
-    ! Sum pressure and viscous contributions
-    Force = localValues(iFp:iFp+2) + localValues(iFv:iFv+2)
-    Moment = localValues(iMp:iMp+2) + localValues(iMv:iMv+2)
+    ! Sum pressure and viscous contributions from the walls, and
+    ! pressure and momentum contributions from the inflow/outflow
+    ! conditions. 
+    Force = localValues(iFp:iFp+2) + localValues(iFv:iFv+2) + &
+            localValues(iFlowFp:iFlowFp+2) + localValues(iFlowFm:iFlowFm+2)
+    Moment = localValues(iMp:iMp+2) + localValues(iMv:iMv+2) + &
+             localValues(iFlowMp:iFlowMp+2) + localValues(iFlowMm:iFlowMm+2)
 
     fact = two/(gammaInf*MachCoef*MachCoef &
          *surfaceRef*LRef*LRef*pRef)
@@ -571,10 +640,10 @@ contains
     call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, sumb_real, &
          mpi_sum, SUmb_comm_world, ierr)
 
-    globalCFVals(costFuncMavgPtot) = globalCFVals(costFuncMavgPtot)/globalCFVals(costFuncMdot)*pRef
-    globalCFVals(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)/globalCFVals(costFuncMdot)*tRef
-    globalCFVals(costFuncMavgPs) = globalCFVals(costFuncMavgPs)/globalCFVals(costFuncMdot)*pRef
-    globalCFVals(costFuncMdot) = globalCFVals(costFuncMdot)*sqrt(pRef*rhoRef)
+    globalCFVals(costFuncMavgPtot) = globalCFVals(costFuncMavgPtot)/globalCFVals(costFuncMdot)
+    globalCFVals(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)/globalCFVals(costFuncMdot)
+    globalCFVals(costFuncMavgPs) = globalCFVals(costFuncMavgPs)/globalCFVals(costFuncMdot)
+    globalCFVals(costFuncMdot) = globalCFVals(costFuncMdot)
 
   end subroutine computeAeroCoef
 
@@ -688,7 +757,7 @@ contains
     end if
   end subroutine getSolution
 
-  subroutine forcesAndMomentsZipper(localValues, sps)
+  subroutine wallIntegrationsZipper(localValues, sps)
 
     use communication
     use blockPointers
@@ -906,6 +975,6 @@ contains
 
     end if
 
-  end subroutine forcesAndMomentsZipper
+  end subroutine wallIntegrationsZipper
 #endif
 end module surfaceIntegrations
