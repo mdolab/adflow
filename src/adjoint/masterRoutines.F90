@@ -1096,7 +1096,7 @@ contains
     call resscale
 
   end subroutine block_res_state
-
+#ifndef USE_COMPLEX
   subroutine block_res_state_d(nn, sps)
 
     ! This is a special state-only forward mode linearization
@@ -1198,6 +1198,6 @@ contains
     call sumDwAndFw_d
     call resscale_d
   end subroutine block_res_state_d
-
+#endif
 
 end module masterRoutines
