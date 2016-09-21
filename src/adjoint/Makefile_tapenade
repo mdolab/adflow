@@ -169,8 +169,8 @@ adjointExtra%sumDwandFw(fw, dw) > (dw) \
 \
 adjointExtra%resScale(dw) > (dw) \
 \
-surfaceIntegrations%forcesAndMomentsFace(Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues BCData%Fp bcData%Fv BCData%area) > \
-                                        (Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues BCdata%Fp bcData%Fv BCData%area localValues)\
+surfaceIntegrations%wallIntegrationFace(Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues BCData%Fp bcData%Fv BCData%area) > \
+                                       (Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues BCdata%Fp bcData%Fv BCData%area localValues)\
 \
 adjointExtra%getCostFunctions(globalVals, liftDirection, dragDirection, pRef, rhoRef, tRef, machCoef) > \
 	                     (funcValues) \

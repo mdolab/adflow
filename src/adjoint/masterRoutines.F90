@@ -213,7 +213,7 @@ contains
     use solverutils_d, only : timeStep_Block_d
     use turbbcroutines_d, only : applyAllTurbBCthisblock_d,  bcTurbTreatment_d
     use initializeflow_d, only : referenceState_d
-    use surfaceIntegrations_d, only : forcesAndMomentsFace_d
+    use surfaceIntegrations_d, only : wallIntegrationFace_d
     use surfaceFamilies, only : famGroups
     use sorting, only : bsearchIntegers
     use adjointExtra_d, only : xhalo_block_d, volume_block_d, metric_BLock_d, boundarynormals_d
@@ -429,7 +429,7 @@ contains
                 call setBCPointers_d(mm, .True.)
 
                 isWall: if( isWallType(BCType(mm))) then 
-                   call forcesAndMomentsFace_d(localVal, localVald, mm)
+                   call wallIntegrationFace_d(localVal, localVald, mm)
                 end if isWall
              end if famInclude
           end do
@@ -513,7 +513,7 @@ contains
     use solverutils_b, only : timeStep_Block_b
     use turbbcroutines_b, only : applyAllTurbBCthisblock_b,  bcTurbTreatment_b
     use initializeflow_b, only : referenceState_b
-    use surfaceIntegrations_b, only : forcesAndMomentsFace_b
+    use surfaceIntegrations_b, only : wallIntegrationFace_b
     use wallDistance_b, only : updateWallDistancesQuickly_b
     use sa_b, only : saSource_b, saViscous_b, saResScale_b, qq
     use turbutils_b, only : turbAdvection_b, computeEddyViscosity_b
@@ -635,7 +635,7 @@ contains
                 ! a generic treatment possible. 
                 call setBCPointers_d(mm, .True.)
                 isWall: if( isWallType(BCType(mm))) then 
-                   call forcesAndMomentsFace_b(localVal, localVald, mm)
+                   call wallIntegrationFace_b(localVal, localVald, mm)
                 end if isWall
              end if famInclude
           end do
