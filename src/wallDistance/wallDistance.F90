@@ -53,7 +53,7 @@ contains
     integer(kind=intType) :: i, j, k, ii, ind(4)
     real(kind=realType) :: xp(3), xc(3), u, v
 
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     !$AD II-LOOP
     do ii=0,nx*ny*nz-1
        i = mod(ii, nx) + 2
@@ -110,7 +110,7 @@ contains
 
                 d2wall(i,j,k) = sqrt(&
                      (xc(1)-xp(1))**2 + (xc(2)-xp(2))**2 + (xc(3)-xp(3))**2)
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo

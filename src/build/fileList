@@ -30,9 +30,6 @@ fortranFiles=	ADT/adtUtils.F90\
 		modules/surfaceFamilies.F90\
 		modules/adtData.F90\
 		modules/BCPointers.F90\
-		modules/BCPointers_b.F90\
-		modules/BCPointers_d.F90\
-		modules/BCPointers_fast_b.F90\
 		modules/wallDistanceData.F90\
 		modules/section.f90\
 		modules/ADjointVars.F90\

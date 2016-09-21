@@ -34,7 +34,7 @@ contains
     !
     !       Advective fluxes in the i-direction.                           
     !
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     !$AD II-LOOP
     do ii=0,il*ny*nz-1
        i = mod(ii, il) + 1
@@ -128,7 +128,7 @@ contains
                      + porFlux*(vnp*p(i+1,j,k) + vnm*p(i,j,k))
                 dw(i+1,j,k,irhoE) = dw(i+1,j,k,irhoE) - fs
                 dw(i,  j,k,irhoE) = dw(i,  j,k,irhoE) + fs
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo
@@ -144,7 +144,7 @@ contains
     continue
     !$AD CHECKPOINT-START
     sface = zero
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     !$AD II-LOOP
     do ii=0,nx*jl*nz-1
        i = mod(ii, nx) + 2
@@ -240,7 +240,7 @@ contains
                 dw(i,j+1,k,irhoE) = dw(i,j+1,k,irhoE) - fs
                 dw(i,j,  k,irhoE) = dw(i,j,  k,irhoE) + fs
 
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo
@@ -255,7 +255,7 @@ contains
     continue
     !$AD CHECKPOINT-START
     sface = zero
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     !$AD II-LOOP
     do ii=0,nx*ny*kl-1
        i = mod(ii, nx) + 2
@@ -351,7 +351,7 @@ contains
                      + porFlux*(vnp*p(i,j,k+1) + vnm*p(i,j,k))
                 dw(i,j,k+1,irhoE) = dw(i,j,k+1,irhoE) - fs
                 dw(i,j,k,  irhoE) = dw(i,j,k,  irhoE) + fs
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo
@@ -2578,7 +2578,7 @@ contains
     continue
     !$AD CHECKPOINT-START
     mue = zero
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     !$AD II-LOOP
     do ii=0,nx*ny*kl-1
        i = mod(ii, nx) + 2
@@ -2836,7 +2836,7 @@ contains
                    viscSubface(viscKmaxPointer(i,j))%q(i,j,2) = q_y
                    viscSubface(viscKmaxPointer(i,j))%q(i,j,3) = q_z
                 endif
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo
@@ -2852,7 +2852,7 @@ contains
     continue
     !$AD CHECKPOINT-START
     mue = zero
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     !$AD II-LOOP
     do ii=0,nx*jl*nz-1
        i = mod(ii, nx) + 2
@@ -3110,7 +3110,7 @@ contains
                    viscSubface(viscJmaxPointer(i,k))%q(i,k,2) = q_y
                    viscSubface(viscJmaxPointer(i,k))%q(i,k,3) = q_z
                 endif
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo
@@ -3128,7 +3128,7 @@ contains
     continue
     !$AD CHECKPOINT-START
     mue= zero
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     !$AD II-LOOP
     do ii=0,il*ny*nz-1
        i = mod(ii, il) + 1
@@ -3389,7 +3389,7 @@ contains
                    viscSubface(viscImaxPointer(j,k))%q(j,k,2) = q_y
                    viscSubface(viscImaxPointer(j,k))%q(j,k,3) = q_z
                 endif
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo

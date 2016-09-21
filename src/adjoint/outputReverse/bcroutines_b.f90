@@ -2298,6 +2298,8 @@ contains
         rlv1d(i, j) = 0.0_8
       end if
       ww1d(i, j, irho) = ww1d(i, j, irho) + cc*pp1d(i, j)
+      ccd = ww1(i, j, irho)*pp1d(i, j)
+      pp1d(i, j) = 0.0_8
       wfd = ww1d(i, j, ivz)
       ww1d(i, j, ivz) = 0.0_8
       vfd = ww1d(i, j, ivy)
@@ -2310,9 +2312,8 @@ contains
       else
         tempd9 = ovgm1*(sf*cc)**(ovgm1-1)*ww1d(i, j, irho)
       end if
-      ccd = sf*tempd9 + ww1(i, j, irho)*pp1d(i, j)
-      pp1d(i, j) = 0.0_8
       sfd = cc*tempd9
+      ccd = ccd + sf*tempd9
       ww1d(i, j, irho) = 0.0_8
       cfd = 2*cf*ccd/gamma2(i, j)
       call popcontrol1b(branch)

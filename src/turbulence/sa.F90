@@ -12,7 +12,7 @@ module sa
   real(kind=realType), dimension(:,:),   pointer :: dd2Wall
   
 contains
-
+#ifndef USE_TAPENADE
   subroutine sa_block(resOnly)
     !
     !       sa solves the transport equation for the Spalart-Allmaras
@@ -65,7 +65,7 @@ contains
 
     ! We need to do an acutal solve. Solve and update the eddy
     ! viscosity and the boundary conditions
-#ifndef USE_TAPENADE
+
     if(.not. resOnly ) then
        
        ! Do solve
@@ -81,10 +81,10 @@ contains
 
        call applyAllTurbBCThisBlock(.true.)
     endif
-#endif
 
     deallocate(qq)
   end subroutine sa_block
+#endif
 
   subroutine saSource
     !
@@ -135,7 +135,7 @@ contains
        stop
     end if
 
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     !$AD II-LOOP
     do ii=0,nx*ny*nz-1
        i = mod(ii, nx) + 2
@@ -327,7 +327,7 @@ contains
 
                 qq(i,j,k) = max(qq(i,j,k), zero)
 #endif
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo
@@ -363,7 +363,7 @@ contains
     !
     !       Viscous terms in k-direction.                                  
     !
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     !$AD II-LOOP
     do ii=0,nx*ny*nz-1
        i = mod(ii, nx) + 2
@@ -452,7 +452,7 @@ contains
                    qq(i,j,k) = qq(i,j,k) + c1
                 endif
 #endif
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo
@@ -462,7 +462,7 @@ contains
     !
     !       Viscous terms in j-direction.                                  
     !
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     !$AD II-LOOP
     do ii=0,nx*ny*nz-1
        i = mod(ii, nx) + 2
@@ -551,7 +551,7 @@ contains
                    qq(i,j,k) = qq(i,j,k) + c1
                 endif
 #endif
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo
@@ -561,7 +561,7 @@ contains
     !
     !       Viscous terms in i-direction.                                  
     !
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     !$AD II-LOOP
     do ii=0,nx*ny*nz-1
        i = mod(ii, nx) + 2
@@ -650,7 +650,7 @@ contains
                    qq(i,j,k) = qq(i,j,k) + c1
                 endif
 #endif
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo
@@ -675,7 +675,7 @@ contains
     integer(kind=intType) :: i,j,k,ii
     real(kind=realType) :: rblank
     
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
     !$AD II-LOOP
     do ii=0,nx*ny*nz-1
        i = mod(ii, nx) + 2
@@ -688,7 +688,7 @@ contains
 #endif 
                 rblank = max(real(iblank(i,j,k), realType), zero)
                 dw(i,j,k,itu1) = -volRef(i,j,k)*scratch(i,j,k,idvt)*rblank
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
              end do
 #else
           enddo
