@@ -16,7 +16,7 @@ contains
     use cgnsGrid, only : cgnsDoms, cgnsNDom, cgnsFamilies, &
          cgnsCellDim, cgnsPhysDim, cgnsDomsd, cgnsBaseName, &
          cgnsNFamilies
-    use communication, only : myid, sumb_comm_world
+    use communication, only : myid, adflow_comm_world
     use inputPhysics, only: equations, equationMode
     use iteration, only : changing_grid, deforming_grid
     use partitionMod, only: fileIds, gridFiles, nGridsRead
@@ -176,7 +176,7 @@ contains
                ": Different number of blocks than&
                & in file ", trim(gridFiles(1))
           if(myID == 0) call terminate("readBlockSizes", errorMessage)
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
     enddo
 
@@ -276,7 +276,7 @@ contains
     use constants
     use su_cgns
     use cgnsGrid, only : cgnsDoms, cgnsNDom, cgnsFamilies, cgnsNFamilies
-    use communication, only : myid, sumb_comm_world
+    use communication, only : myid, adflow_comm_world
     use utils, only: terminate
     implicit none
     !
@@ -384,7 +384,7 @@ contains
                 write(errorMessage,101) trim(cgnsFamilies(nn)%familyName)
                 if(myID == 0) &
                      call terminate("readFamilyInfo", errorMessage)
-                call mpi_barrier(SUmb_comm_world, ierr)
+                call mpi_barrier(ADflow_comm_world, ierr)
              endif
 
              ! Read the name of the user defined data node.
@@ -418,7 +418,7 @@ contains
           write(errorMessage,201) trim(cgnsFamilies(nn)%familyName)
           if(myID == 0) &
                call terminate("readFamilyInfo", errorMessage)
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
 
        end select
 
@@ -444,7 +444,7 @@ contains
     use constants
     use su_cgns
     use cgnsGrid, only : cgnsDoms, cgnsNDom, cgnsFamilies, cgnsNFamilies
-    use communication, only : sumb_comm_world, myid
+    use communication, only : adflow_comm_world, myid
     use flowVarRefState, only : LRefSpecified, LRef
     use iteration, only : changing_grid
     use partitionMod, only : nGridsRead, fileIDs, gridFiles
@@ -505,7 +505,7 @@ contains
             trim(cgnsDoms(nZone)%zoneName), &
             " of the grid file is not structured"
        if(myID == 0) call terminate("readZoneInfo", errorMessage)
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
 
     ! Set the values for the number of nodes and cells in i, j and
@@ -539,7 +539,7 @@ contains
                " Zone dimensions are different&
                & than in file ", trim(gridFiles(1))
           if(myID == 0) call terminate("readBlockSizes", errorMessage)
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
     enddo
 
@@ -573,7 +573,7 @@ contains
           write(errorMessage,100) trim(familyName)
 100       format("Family name",1X,A,1X,"not present in the grid")
           if(myID == 0) call terminate("readZoneInfo", errorMessage)
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
 
        endif
 
@@ -601,7 +601,7 @@ contains
             " of base 1 is", i1, ". This should 3.")
 
        if(myID == 0) call terminate("readZoneInfo", errorMessage)
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
 
     ! Loop over the three coordinates.
@@ -827,7 +827,7 @@ contains
     use constants
     use su_cgns
     use cgnsGrid, only : cgnsDoms, cgnsNDom, cgnsNonMatchAbuttingConnType
-    use communication, only : myid, sumb_comm_world
+    use communication, only : myid, adflow_comm_world
     use partitionMod, only : subfaceNonMatchType, qsortSubfaceNonMatchType
     use utils, only : terminate
     implicit none
@@ -930,7 +930,7 @@ contains
                   trim(connectName)
              if(myID == 0) &
                   call terminate("countConnectivities", errorMessage)
-             call mpi_barrier(SUmb_comm_world, ierr)
+             call mpi_barrier(ADflow_comm_world, ierr)
 
           endif
 
@@ -977,7 +977,7 @@ contains
                   trim(connectName)
              if(myID == 0) &
                   call terminate("countConnectivities", errorMessage)
-             call mpi_barrier(SUmb_comm_world, ierr)
+             call mpi_barrier(ADflow_comm_world, ierr)
 
           endif
 
@@ -1156,7 +1156,7 @@ contains
     use constants
     use su_cgns
     use cgnsGrid, only : cgnsDoms, cgnsNDom
-    use communication, only : sumb_comm_world, myID
+    use communication, only : adflow_comm_world, myID
     use utils, only : terminate
     implicit none
     !
@@ -1242,7 +1242,7 @@ contains
     !
     use constants
     use cgnsGrid, only : cgnsDoms
-    use communication, only : myID, sumb_comm_world
+    use communication, only : myID, adflow_comm_world
     use utils, only : delta, terminate
     implicit none
     !
@@ -1307,7 +1307,7 @@ contains
 
        ! Make sure that other processors wait until they are killed.
 
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
 
     ! Idem for the donor subface.
@@ -1326,7 +1326,7 @@ contains
 
        ! Make sure that other processors wait until they are killed.
 
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
 
     ! Check if the sum of the absolute values of transform equals 6.
@@ -1357,7 +1357,7 @@ contains
 
           ! Make sure that other processors wait until they are killed.
 
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        else
           ! Repair successful, although the orientation might be wrong.
           ! This will be checked later. Anyway print a warning message
@@ -1438,7 +1438,7 @@ contains
 
        ! Make sure that other processors wait until they are killed.
 
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
 
     else if(haloDir(nDirDonor)*donorDir(nDirDonor) < 0) then
 
@@ -1470,7 +1470,7 @@ contains
     use su_cgns
     use cgnsGrid, only : cgnsDoms, cgnsNDom, cgns1to1ConnType, &
          cgnsNOnMatchAbuttingConnType
-    use communication, only : myid, sumb_comm_world
+    use communication, only : myid, adflow_comm_world
     use utils, only : terminate
     implicit none
     !
@@ -1760,7 +1760,7 @@ contains
                   trim(connectName)
              if(myID == 0) &
                   call terminate("readGeneralConn", errorMessage)
-             call mpi_barrier(SUmb_comm_world, ierr)
+             call mpi_barrier(ADflow_comm_world, ierr)
 
           endif
 
@@ -1840,7 +1840,7 @@ contains
                   trim(connNonMatch(i)%connectNames(1))
              if(myID == 0) &
                   call terminate("readGeneralConn", errorMessage)
-             call mpi_barrier(SUmb_comm_world, ierr)
+             call mpi_barrier(ADflow_comm_world, ierr)
 
           endif checkConsistency
 
@@ -1882,7 +1882,7 @@ contains
     use su_cgns
     use cgnsGrid, only : cgnsDoms, cgnsNDom, cgnsBcDatasetType, &
          cgnsFamilies, cgnsBcdataArray, cgnsNFamilies
-    use communication, only : myID, sumb_comm_world
+    use communication, only : myID, adflow_comm_world
     use utils, only: terminate, setcgnsRealType
     use sorting, only: bsearchStrings
     implicit none
@@ -2092,7 +2092,7 @@ contains
                 write(errorMessage,101) trim(cgnsDoms(nZone)%zoneName), &
                      trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName)
                 if(myID == 0) call terminate("readBocos", errorMessage)
-                call mpi_barrier(SUmb_comm_world, ierr)
+                call mpi_barrier(ADflow_comm_world, ierr)
 
              endif
 
@@ -2105,7 +2105,7 @@ contains
 
                 write(errorMessage,102) trim(familyName)
                 if(myID == 0) call terminate("readBocos", errorMessage)
-                call mpi_barrier(SUmb_comm_world, ierr)
+                call mpi_barrier(ADflow_comm_world, ierr)
 
              endif
 
@@ -2144,7 +2144,7 @@ contains
                 write(errorMessage,103) trim(cgnsDoms(nZone)%zoneName), &
                      trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName)
                 if(myID == 0) call terminate("readBocos", errorMessage)
-                call mpi_barrier(SUmb_comm_world, ierr)
+                call mpi_barrier(ADflow_comm_world, ierr)
              endif
 
              ! Read the name of the user defined data node.
@@ -2171,7 +2171,7 @@ contains
                      trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName),        &
                      trim(cgnsDoms(nZone)%bocoInfo(i)%userDefinedName)
                 if(myID == 0) call terminate("readBocos", errorMessage)
-                call mpi_barrier(SUmb_comm_world, ierr)
+                call mpi_barrier(ADflow_comm_world, ierr)
              endif
 
              ! At the moment the domain interfaces as well as the
@@ -2189,7 +2189,7 @@ contains
                      trim(cgnsDoms(nZone)%bocoInfo(i)%userDefinedName)
                 if(myID == 0) &
                      call terminate("readBocos", errorMessage)
-                call mpi_barrier(SUmb_comm_world, ierr)
+                call mpi_barrier(ADflow_comm_world, ierr)
 
              end select
 
@@ -2223,7 +2223,7 @@ contains
                 write(errorMessage,106) trim(cgnsDoms(nZone)%zoneName), &
                      trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName)
                 if(myID == 0) call terminate("readBocos", errorMessage)
-                call mpi_barrier(SUmb_comm_world, ierr)
+                call mpi_barrier(ADflow_comm_world, ierr)
              endif
 
              !added to accomodate case where a grid family is specified
@@ -2814,7 +2814,7 @@ contains
     use constants
     use su_cgns
     use cgnsGrid, only : cgnsDoms, cgnsNDom
-    use communication, only : sumb_comm_world, myid
+    use communication, only : adflow_comm_world, myid
     use utils, only : siAngle, terminate
     implicit none
     !
@@ -2956,7 +2956,7 @@ contains
     use su_cgns
     use block, only : flowDoms, nDom
     use cgnsGrid, only : cgnsDoms, cgnsNDom
-    use communication, only : sumb_comm_world, myID
+    use communication, only : adflow_comm_world, myID
     use flowVarRefState, only : LRef
     use inputIO, only : writeCoorMeter
     use IOModule, only : IOVar
@@ -3145,8 +3145,8 @@ contains
     ! to store the result. If a type mismatch occured,
     ! print a warning.
 
-    call mpi_reduce(typeMismatch, ii, 1, sumb_integer, &
-         mpi_sum, 0, SUmb_comm_world, ierr)
+    call mpi_reduce(typeMismatch, ii, 1, adflow_integer, &
+         mpi_sum, 0, ADflow_comm_world, ierr)
     if(myID == 0 .and. ii > 0) then
 
        write(int1String,"(i6)") ii

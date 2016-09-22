@@ -631,7 +631,7 @@ subroutine getForces_b(forces, forces_b, npts, sps)
         call vecPointwiseMult(tmp, exch%nodeValGlobal, T_b, ierr)
         call EChk(ierr,__FILE__,__LINE__)
         
-        ! Accumulate seed on sumbGlobal_b
+        ! Accumulate seed on adflowGlobal_b
         call vecAXPY(sumGlobal_b, one, tmp, ierr)
         call EChk(ierr,__FILE__,__LINE__)
         

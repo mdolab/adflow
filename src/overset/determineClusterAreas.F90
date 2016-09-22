@@ -7,7 +7,7 @@ subroutine determineClusterAreas
 
   use constants
   use blockPointers, only : nDom, BCData, nBocos, BCType
-  use communication, only : sumb_comm_world, myid
+  use communication, only : adflow_comm_world, myid
   use overset, onlY : clusterAreas, nClusters, clusters, cumDomProc
   use surfaceFamilies, onlY : totalWallFamilies, wallFamilies
   use surfaceUtils, only : getSurfaceSize, getSurfacePoints, setFamilyInfo
@@ -89,12 +89,12 @@ subroutine determineClusterAreas
   ! All reduce sum for the localAreas to get clusterAreas and
   ! localCount to get globalCount
 
-  call mpi_allreduce(localAreas, clusterAreas, nClusters, sumb_real, &
-       MPI_SUM, sumb_comm_world, ierr)
+  call mpi_allreduce(localAreas, clusterAreas, nClusters, adflow_real, &
+       MPI_SUM, adflow_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
   
-  call mpi_allreduce(localCount, globalCount, nClusters, sumb_integer, &
-       MPI_SUM, sumb_comm_world, ierr)
+  call mpi_allreduce(localCount, globalCount, nClusters, adflow_integer, &
+       MPI_SUM, adflow_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
 
   ! Final get the average global area

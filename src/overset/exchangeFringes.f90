@@ -9,7 +9,7 @@ subroutine exchangeFringes(level, sps, commPattern, internal)
   use constants
   use blockPointers, only : flowDoms
   use communication, only : commType, internalCommType, recvBuffer, sendBuffer, myid, &
-       sumb_comm_world, sendRequests, recvRequests
+       adflow_comm_world, sendRequests, recvRequests
   !use overset
   implicit none
   !
@@ -79,8 +79,8 @@ subroutine exchangeFringes(level, sps, commPattern, internal)
 
      ! Send the data.
 
-     call mpi_isend(sendBufInt(ii), size, sumb_integer, procId, &
-          procId, SUmb_comm_world, sendRequests(i),   &
+     call mpi_isend(sendBufInt(ii), size, adflow_integer, procId, &
+          procId, ADflow_comm_world, sendRequests(i),   &
           ierr)
 
      ! Set ii to jj for the next processor.
@@ -102,8 +102,8 @@ subroutine exchangeFringes(level, sps, commPattern, internal)
 
      ! Post the receive.
 
-     call mpi_irecv(recvBufInt(ii), size, sumb_integer, procId, &
-          myId, SUmb_comm_world, recvRequests(i), ierr)
+     call mpi_irecv(recvBufInt(ii), size, adflow_integer, procId, &
+          myId, ADflow_comm_world, recvRequests(i), ierr)
 
      ! And update ii.
 
@@ -235,8 +235,8 @@ subroutine exchangeFringes(level, sps, commPattern, internal)
 
      ! Send the data.
 
-     call mpi_isend(sendBuffer(ii), size, sumb_real, procId, &
-          procId, SUmb_comm_world, sendRequests(i),   &
+     call mpi_isend(sendBuffer(ii), size, adflow_real, procId, &
+          procId, ADflow_comm_world, sendRequests(i),   &
           ierr)
 
      ! Set ii to jj for the next processor.
@@ -258,8 +258,8 @@ subroutine exchangeFringes(level, sps, commPattern, internal)
 
      ! Post the receive.
 
-     call mpi_irecv(recvBuffer(ii), size, sumb_real, procId, &
-          myId, SUmb_comm_world, recvRequests(i), ierr)
+     call mpi_irecv(recvBuffer(ii), size, adflow_real, procId, &
+          myId, ADflow_comm_world, recvRequests(i), ierr)
 
      ! And update ii.
 

@@ -1,5 +1,5 @@
 ############################################################
-# DO NOT USE THIS SCRIPT AS A REFERENCE FOR HOW TO USE SUMB
+# DO NOT USE THIS SCRIPT AS A REFERENCE FOR HOW TO USE ADFLOW
 # THIS SCRIPT USES PRIVATE INTERNAL FUNCTIONALITY THAT IS
 # SUBJECT TO CHANGE!!
 ############################################################
@@ -13,9 +13,9 @@ import pyspline
 
 # ###################################################################
 # DO NOT USE THIS IMPORT STRATEGY! THIS IS ONLY USED FOR REGRESSION
-# SCRIPTS ONLY. Use 'from sumb import SUMB' for regular scripts.
+# SCRIPTS ONLY. Use 'from adflow import ADFLOW' for regular scripts.
 sys.path.append(os.path.abspath('../../'))
-from python.pySUmb import SUMB
+from python.pyADflow import ADFLOW
 # ###################################################################
 
 # First thing we will do is define a complete set of default options
@@ -235,7 +235,7 @@ def test1():
     ap.addDV('alpha')
     ap.addDV('mach')
     ap.addDV('altitude')
-    CFDSolver = SUMB(options=aeroOptions, debug=True)
+    CFDSolver = ADFLOW(options=aeroOptions, debug=True)
     DVGeo = DVGeometry('../oldInputFiles/mdo_tutorial_ffd.fmt')
     nTwist = 6
     DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
@@ -274,7 +274,7 @@ def test1():
         print 'Eval Functions Sens:'
         reg_write_dict(funcsSens, 1e-10, 1e-10)
 
-    # Get the forces...these are the sumb forces:
+    # Get the forces...these are the adflow forces:
     forces = CFDSolver.getForces()
     forces = MPI.COMM_WORLD.allreduce(numpy.sum(forces), MPI.SUM)
     if MPI.COMM_WORLD.rank == 0:
@@ -359,7 +359,7 @@ def test2():
                                                              'cmx','cmy','cmz'])
     ap.addDV('alpha')
     ap.addDV('mach')
-    CFDSolver = SUMB(options=aeroOptions)
+    CFDSolver = ADFLOW(options=aeroOptions)
     DVGeo = DVGeometry('../oldInputFiles/mdo_tutorial_ffd.fmt')
     nTwist = 6
     DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
@@ -424,7 +424,7 @@ def test3():
                                                              'cmx','cmy','cmz'])
     ap.addDV('alpha')
     ap.addDV('mach')
-    CFDSolver = SUMB(options=aeroOptions)
+    CFDSolver = ADFLOW(options=aeroOptions)
     CFDSolver(ap)
     # Just check the functions
     funcs = {}
@@ -468,7 +468,7 @@ def test4():
                          areaRef=45.5, chordRef=3.25, evalFuncs=['cl', 'drag'])
         ap.addDV('alpha')
         ap.addDV('mach')
-        CFDSolver = SUMB(options=aeroOptions, comm=MPI.COMM_SELF)
+        CFDSolver = ADFLOW(options=aeroOptions, comm=MPI.COMM_SELF)
         DVGeo = DVGeometry('../oldInputFiles/mdo_tutorial_ffd.fmt')
         nTwist = 6
         DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
@@ -542,7 +542,7 @@ def test5():
     ap.addDV('alpha')
     # Note that the mach number derivative for the timspectral is
     # broken and needs to be fixed. 
-    CFDSolver = SUMB(options=aeroOptions)
+    CFDSolver = ADFLOW(options=aeroOptions)
     DVGeo = DVGeometry('../oldInputFiles/mdo_tutorial_ffd.fmt')
     nTwist = 6
     DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
@@ -608,7 +608,7 @@ def test6():
                      areaRef=45.5, chordRef=3.25, evalFuncs=['cd','lift'])
     ap.addDV('alpha')
     ap.addDV('mach')
-    CFDSolver = SUMB(options=aeroOptions)
+    CFDSolver = ADFLOW(options=aeroOptions)
     DVGeo = DVGeometry('../oldInputFiles/mdo_tutorial_ffd.fmt')
     nTwist = 6
     DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
@@ -681,7 +681,7 @@ def test7():
                      areaRef=45.5, chordRef=3.25, evalFuncs=['cd','lift','cmz'])
     ap.addDV('alpha')
     ap.addDV('mach')
-    CFDSolver = SUMB(options=aeroOptions)
+    CFDSolver = ADFLOW(options=aeroOptions)
     DVGeo = DVGeometry('../oldInputFiles/mdo_tutorial_ffd.fmt')
     nTwist = 6
     DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
@@ -752,7 +752,7 @@ def test8():
                      areaRef=45.5, chordRef=3.25, evalFuncs=['cd','lift','cmz'])
     ap.addDV('alpha')
     ap.addDV('mach')
-    CFDSolver = SUMB(options=aeroOptions)
+    CFDSolver = ADFLOW(options=aeroOptions)
     DVGeo = DVGeometry('../oldInputFiles/mdo_tutorial_ffd.fmt')
     nTwist = 6
     DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
@@ -818,7 +818,7 @@ def test9():
                      evalFuncs=['cd','lift','cmy'])
     ap.addDV('alpha')
     ap.addDV('mach')
-    CFDSolver = SUMB(options=aeroOptions)
+    CFDSolver = ADFLOW(options=aeroOptions)
     DVGeo = DVGeometry('../oldInputFiles/CRM_ffd.fmt')
 
     # Setup curves for ref_axis
@@ -982,7 +982,7 @@ def test10():
                      degreePol=0,coefPol=[0.0],degreeFourier=1,omegaFourier=omega,
                      cosCoefFourier=[0.0,0.0],sinCoefFourier=[deltaAlpha])
 
-    CFDSolver = SUMB(options=aeroOptions)
+    CFDSolver = ADFLOW(options=aeroOptions)
     CFDSolver.addSlices('z',[0.5])
     CFDSolver(ap)
 
@@ -1062,7 +1062,7 @@ def test11():
     Mesh = MBMesh(options=meshOptions)
                      
     # Create solver
-    CFDSolver = SUMB(options=aeroOptions)
+    CFDSolver = ADFLOW(options=aeroOptions)
     CFDSolver.setMesh(Mesh)
     CFDSolver.addFamilyGroup("upperSurface",["upperSurface"])
     CFDSolver.addFamilyGroup("lowerSurface",["lowerSurface"])

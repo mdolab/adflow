@@ -2,7 +2,7 @@
 
 import sys
 
-name = 'libsumb_cs'
+name = 'libadflow_cs'
 print "Testing if module %s can be imported..." % name
 import_cmd = "import %s" % name
 try:

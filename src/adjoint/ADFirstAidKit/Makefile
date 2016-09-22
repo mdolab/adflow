@@ -22,11 +22,11 @@
 #      *                                                                *
 #      ******************************************************************
 
-SUMB_DIR = ../../..
-SUMB_COMMON_FILE = $(SUMB_DIR)/SUmb_Common.mk
-SUMB_RULES_FILE  = $(SUMB_DIR)/rulesSources.mk
-include ${SUMB_COMMON_FILE}
-include ${SUMB_RULES_FILE}
+ADFLOW_DIR = ../../..
+ADFLOW_COMMON_FILE = $(ADFLOW_DIR)/ADflow_Common.mk
+ADFLOW_RULES_FILE  = $(ADFLOW_DIR)/rulesSources.mk
+include ${ADFLOW_COMMON_FILE}
+include ${ADFLOW_RULES_FILE}
 
 #      ******************************************************************
 #      *                                                                *
@@ -34,7 +34,7 @@ include ${SUMB_RULES_FILE}
 #      *                                                                *
 #      ******************************************************************
 
-vpath %.o $(SUMB_OBJDIR)
+vpath %.o $(ADFLOW_OBJDIR)
 
 # Running Tapenade in the reverse mode, requires linking the
 # differentiated program to a separate library, written in Fortran and C,
@@ -76,7 +76,7 @@ clean:
 adkit:	$(ADKIT_OBJECTS) 
 
 .f.o: Makefile
-	$(FF90) $(FF90_ALL_FLAGS) -c $< -o $(SUMB_OBJDIR)/$(@F)
+	$(FF90) $(FF90_ALL_FLAGS) -c $< -o $(ADFLOW_OBJDIR)/$(@F)
 	@echo
 	@echo "        --- Compiled $*.f successfully ---"
 	@echo

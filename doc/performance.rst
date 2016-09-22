@@ -1,10 +1,10 @@
-.. _sumb_performance:
+.. _adflow_performance:
 
 Performance
 ===========
 
 This section is intended to give a rough measure of the performance
-that users may expect from SUmb. It is intended to give users some
+that users may expect from ADflow. It is intended to give users some
 indication if their simulation is performing as well as it should 
 be. 
 
@@ -24,7 +24,7 @@ For the following analysis options:
 * viscPC = False
 * useMatrixFreedRdw = True
 
-SUmb will be able to run ~40\,000 cells/Gb of main memory. This
+ADflow will be able to run ~40\,000 cells/Gb of main memory. This
 figure includes some additional overhead for the mesh movement
 algorithm as well. Increasing the amount of ILU fill, the ASM overlap,
 or subspace size will increase memory usage. The viscPC option will

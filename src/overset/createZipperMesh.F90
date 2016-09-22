@@ -16,7 +16,7 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
      nOwallSend, nOwallRecv, size1, size2, work, nWork)
 
   use constants
-  use communication, only : myID, sumb_comm_world, nProc, recvRequests, &
+  use communication, only : myID, adflow_comm_world, nProc, recvRequests, &
        sendRequests, commPatternCell_2nd, internalCell_2nd
   use blockPointers
   use overset, only : oversetString, oversetWall
@@ -90,8 +90,8 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   end do
 
   ! Make sure everyone has the sizes
-  call mpi_allreduce(tmpInt2D, bufSizes, 2*nDomTotal, sumb_integer, MPI_SUM, &
-       sumb_comm_world, ierr)
+  call mpi_allreduce(tmpInt2D, bufSizes, 2*nDomTotal, adflow_integer, MPI_SUM, &
+       adflow_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
   deallocate(tmpInt2D)
 
@@ -176,8 +176,8 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
      iProc = oWallRecvList(1, jj)
      iDom = oWallRecvList(2, jj)
      sendCount = sendCount + 1
-     call mpi_isend(oWalls(iDom)%iBlank, oWalls(iDom)%maxCells, sumb_integer, &
-          iproc, iDom, sumb_comm_world, sendRequests(sendCount), ierr)
+     call mpi_isend(oWalls(iDom)%iBlank, oWalls(iDom)%maxCells, adflow_integer, &
+          iproc, iDom, adflow_comm_world, sendRequests(sendCount), ierr)
      call ECHK(ierr, __FILE__, __LINE__)
   end do
 
@@ -189,8 +189,8 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
      iSize = oWalls(iDom)%maxCells
      recvCount = recvCount + 1       
 
-     call mpi_irecv(intRecvBuf(iStart), iSize, sumb_integer, &
-          iProc, iDom, sumb_comm_world, recvRequests(recvCount), ierr)
+     call mpi_irecv(intRecvBuf(iStart), iSize, adflow_integer, &
+          iProc, iDom, adflow_comm_world, recvRequests(recvCount), ierr)
      call ECHK(ierr, __FILE__, __LINE__)
      iStart = iStart + iSize
   end do
@@ -352,7 +352,7 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   ! These three vectors are the MPI vectors with only non-zero size on
   ! the root proc. This is where we scatter the nodes, pressure
   ! tractions and viscous tractions into. 
-  call VecCreateMPI(SUMB_COMM_WORLD, size(nodeIndices), PETSC_DETERMINE, &
+  call VecCreateMPI(ADFLOW_COMM_WORLD, size(nodeIndices), PETSC_DETERMINE, &
        localZipperNodes, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
@@ -364,13 +364,13 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
 
   ! This is a generic global nodal vector that can store the nodal
   ! values, pressure tractions or viscous tractions. 
-  call VecCreateMPI(SUMB_COMM_WORLD, 3*nNodesLocal(1), PETSC_DETERMINE, &
+  call VecCreateMPI(ADFLOW_COMM_WORLD, 3*nNodesLocal(1), PETSC_DETERMINE, &
        globalNodalVec, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Now create the general scatter that goes from the
   ! globalNodalVector to the local vectors. 
-  call ISCreateGeneral(sumb_comm_world, size(nodeIndices), &
+  call ISCreateGeneral(adflow_comm_world, size(nodeIndices), &
        nodeIndices, PETSC_COPY_VALUES, IS1, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 

@@ -1,4 +1,4 @@
-.. _sumb_tutorial:
+.. _adflow_tutorial:
 
 Tutorial
 ========
@@ -6,7 +6,7 @@ Tutorial
 Basic Run Script
 ----------------
 
-The following shows how to get started with SUmb by running the mdo_tutorial
+The following shows how to get started with ADflow by running the mdo_tutorial
 wing problem. First, we show the complete program listing and then go through 
 each statement line by line::
 
@@ -19,7 +19,7 @@ each statement line by line::
   import numpy
   from mpi4py import MPI
   from baseclasses import *
-  from sumb import SUMB
+  from adflow import ADFLOW
   
   # ======================================================================
   #         Input Information -- Modify accordingly!
@@ -63,7 +63,7 @@ each statement line by line::
   areaRef=areaRef, chordRef=chordRef,
   evalFuncs=['cl','cd'])
   # Create solver
-  CFDSolver = SUMB(options=aeroOptions)
+  CFDSolver = ADFLOW(options=aeroOptions)
 
   # Solve and evaluate functions
   funcs = {}
@@ -75,7 +75,7 @@ each statement line by line::
       print funcs
   
 
-Start by importing the ``sumb``, ``baseclasses``, and ``mpi4py``.::
+Start by importing the ``adflow``, ``baseclasses``, and ``mpi4py``.::
 
   # ======================================================================
   #         Import modules
@@ -83,9 +83,9 @@ Start by importing the ``sumb``, ``baseclasses``, and ``mpi4py``.::
   import numpy
   from mpi4py import MPI
   from baseclasses import *
-  from sumb import SUMB
+  from adflow import ADFLOW
 
-Then, we define inputs as well as options for SUmb. The grid files is in
+Then, we define inputs as well as options for ADflow. The grid files is in
 CGNS format. We usually use ICEM CFD to generate grids. Here, we also define
 a few flow conditions and reference values to be put into ``AeroProblem`` later.::
 
@@ -135,14 +135,14 @@ we are interested in. In this case, we use the keyword ``evalFuncs``. ::
   areaRef=areaRef, chordRef=chordRef,
   evalFuncs=['cl','cd'])
 
-Then, we create the SUmb instant. We also provide SUmb all the options that we 
+Then, we create the ADflow instant. We also provide ADflow all the options that we 
 just specified above. ::
 
   # Create solver
-  CFDSolver = SUMB(options=aeroOptions)
+  CFDSolver = ADFLOW(options=aeroOptions)
   
 Now, we solve the CFD problem. ``CFDSolver(ap)`` is the command that actually
-solve the CFD. You can see print out from SUmb of each iteration here. This 
+solve the CFD. You can see print out from ADflow of each iteration here. This 
 example will take just a couple minutes. ``CFDSolver.evalFunctions()`` return
 the function of interests we specified in ``AeroProblem``.::
 
@@ -162,12 +162,12 @@ root processor. ::
 
 Specifics
 ---------
-Here some notes on how to set up various functionality in SUmb is listed.
+Here some notes on how to set up various functionality in ADflow is listed.
 
 
 Rigid rotation for time-accurate solution
 *****************************************
-This is a small tutorial how to set the apppropriate flags to do a rigid rotation. The following SUmb options flags need to be set::
+This is a small tutorial how to set the apppropriate flags to do a rigid rotation. The following ADflow options flags need to be set::
 
   useGridMotion = True
   alphaFollowing = False

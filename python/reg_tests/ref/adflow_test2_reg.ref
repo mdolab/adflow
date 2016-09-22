@@ -1,8 +1,8 @@
 +------------------------------------------------------------------------------+
-|  Test 6: MDO tutorial -- Rans -- Scalar JST                                  |
+|  Test 2: MDO tutorial -- Euler -- Matrix                                     |
 +------------------------------------------------------------------------------+
 #
-# SUmb, multiblock structured flow solver
+# ADflow, multiblock structured flow solver
 #
 # This code solves the 3D RANS, laminar NS or Euler equations
 # on multiblock structured hexahedral grids.
@@ -15,7 +15,7 @@
 # - With support for signals.
 #
 +---------------------------------------+
-|          All SUMB Options:            |
+|          All ADFLOW Options:            |
 +---------------------------------------+
 {'adjointdivtol': 100000.0,
  'adjointl2convergence': 1e-14,
@@ -47,26 +47,26 @@
  'backgroundvolscale': 1.0,
  'betamode': False,
  'blocksplitting': False,
- 'cfl': 1.5,
- 'cflcoarse': 1.25,
+ 'cfl': 1.7,
+ 'cflcoarse': 1.0,
  'cfllimit': 1.5,
- 'coarsediscretization': 'central plus scalar dissipation',
+ 'coarsediscretization': 'central plus matrix dissipation',
  'debugzipper': False,
  'deltat': 0.01,
  'designsurfacefamily': None,
- 'discretization': 'central plus scalar dissipation',
+ 'discretization': 'central plus matrix dissipation',
  'dissipationlumpingparameter': 6.0,
  'dissipationscalingexponent': 0.67,
  'eddyvisinfratio': 0.009,
  'equationmode': 'steady',
- 'equationtype': 'RANS',
+ 'equationtype': 'euler',
  'eulerwalltreatment': 'linear pressure extrapolation',
  'firstrun': True,
  'flowtype': 'external',
  'forcesastractions': True,
- 'frozenturbulence': False,
+ 'frozenturbulence': True,
  'globalpreconditioner': 'additive schwartz',
- 'gridfile': '../inputFiles/mdo_tutorial_rans_scalar_jst.cgns',
+ 'gridfile': '../inputFiles/mdo_tutorial_euler_matrix.cgns',
  'gridprecision': 'double',
  'gridprecisionsurface': 'single',
  'ilufill': 2,
@@ -74,7 +74,7 @@
  'isosurface': {},
  'isovariables': [],
  'l2convergence': 1e-14,
- 'l2convergencecoarse': 0.0001,
+ 'l2convergencecoarse': 0.01,
  'l2convergencerel': 1e-16,
  'liftindex': 2,
  'limiter': 'vanalbeda',
@@ -86,18 +86,11 @@
  'matrixordering': 'rcm',
  'maxl2deviationfactor': 1.0,
  'meshsurfacefamily': None,
- 'mgcycle': 'sg',
+ 'mgcycle': '2w',
  'mgstartlevel': -1,
- 'monitorvariables': ['cpu',
-                      'resrho',
-                      'resturb',
-                      'cl',
-                      'cd',
-                      'cmz',
-                      'yplus',
-                      'totalr'],
- 'ncycles': 1000,
- 'ncyclescoarse': 100,
+ 'monitorvariables': ['cpu', 'resrho', 'cl', 'cd', 'cmz', 'totalr'],
+ 'ncycles': 500,
+ 'ncyclescoarse': 250,
  'nearwalldist': 0.1,
  'nkadpc': False,
  'nkasmoverlap': 1,
@@ -109,15 +102,15 @@
  'nkouterpreconits': 1,
  'nkpcilufill': 2,
  'nksubspacesize': 60,
- 'nkswitchtol': 0.001,
+ 'nkswitchtol': 0.01,
  'nkuseew': True,
  'nkviscpc': False,
  'nodaloutput': True,
  'nrkreset': 5,
  'nsavesurface': 1,
  'nsavevolume': 1,
- 'nsubiter': 3,
- 'nsubiterturb': 3,
+ 'nsubiter': 1,
+ 'nsubiterturb': 1,
  'ntimestepscoarse': 48,
  'ntimestepsfine': 400,
  'numbersolutions': True,
@@ -133,16 +126,16 @@
  'printtiming': True,
  'printwarnings': True,
  'qmode': False,
- 'resaveraging': 'noresaveraging',
+ 'resaveraging': 'alternateresaveraging',
  'restartadjoint': True,
- 'restartfile': '../inputFiles/mdo_tutorial_rans_scalar_jst.cgns',
+ 'restartfile': '../inputFiles/mdo_tutorial_euler_matrix.cgns',
  'restrictionrelaxation': 0.8,
  'rkreset': False,
  'rmode': False,
  'sepsensoroffset': 0.0,
  'sepsensorsharpness': 10.0,
  'setmonitor': True,
- 'smoother': 'dadi',
+ 'smoother': 'runge kutta',
  'smoothparameter': 1.5,
  'solutionprecision': 'double',
  'solutionprecisionsurface': 'single',
@@ -172,7 +165,7 @@
  'verifystate': True,
  'vis2': 0.25,
  'vis2coarse': 0.5,
- 'vis4': 0.0156,
+ 'vis4': 0.1,
  'viscoussurfacevelocities': True,
  'viscpc': False,
  'viscwalltreatment': 'constant pressure extrapolation',
@@ -186,191 +179,189 @@
  'writevolumesolution': True}
 -> Alpha... 0.000000 
 #
-#                      Warning
-# Conversion factor from grid units to meter not specified and some blocks
-# do not have units. It is assumed that the grid is given in meters.
-#
-#
 # Specified load imbalance tolerance  0.100 acheived
 # Continuing with  0.000 load imbalance for the cells and  0.000 for the faces
 #
 #
-# Grid level: 1, Total number of cells: 24192
+# Grid level: 1, Total number of cells: 12096
+#
+#
+# Grid level: 2, Total number of cells: 1512
 #
 Total number of state DOF
-@value  1.4515200000000e+05 1e-12 1e-12
+@value  6.0480000000000e+04 1e-12 1e-12
 Total number of adjoint state DOF
-@value  1.4515200000000e+05 1e-12 1e-12
+@value  6.0480000000000e+04 1e-12 1e-12
 Total number of spatial DOF
-@value  1.0995000000000e+05 1e-12 1e-12
+@value  5.7174000000000e+04 1e-12 1e-12
 +----------------------------------------------------------------------+
 |  Switching to Aero Problem: mdo_tutorial                             |
 +----------------------------------------------------------------------+
 -> Alpha... 1.800000 
 #
-# Found restart file: ../inputFiles/mdo_tutorial_rans_scalar_jst.cgns
+# Found restart file: ../inputFiles/mdo_tutorial_euler_matrix.cgns
 #
 -> Alpha... 1.800000 
 Norm of residual
-@value  1.1801101135948e-14 1e-10 1e-10
+@value  9.0315509850597e-15 1e-10 1e-10
 -> Alpha... 1.800000 
 Eval Functions:
 Dictionary Key: mdo_tutorial_cd
-@value  8.4137927823821e-02 1e-10 1e-10
+@value  2.1513798699733e-02 1e-10 1e-10
 Dictionary Key: mdo_tutorial_cfx
-@value  7.0360072269900e-02 1e-10 1e-10
+@value  3.8638825431866e-03 1e-10 1e-10
 Dictionary Key: mdo_tutorial_cfy
-@value  4.3974021665291e-01 1e-10 1e-10
+@value  5.6196740439892e-01 1e-10 1e-10
 Dictionary Key: mdo_tutorial_cfz
-@value  7.6559277956176e-03 1e-10 1e-10
+@value  9.4795460846119e-03 1e-10 1e-10
 Dictionary Key: mdo_tutorial_cl
-@value  4.3731316812245e-01 1e-10 1e-10
+@value  5.6156873992475e-01 1e-10 1e-10
 Dictionary Key: mdo_tutorial_cmx
-@value -8.4950004866951e-01 1e-10 1e-10
+@value -1.0761380624128e+00 1e-10 1e-10
 Dictionary Key: mdo_tutorial_cmy
-@value  9.3442352237389e-02 1e-10 1e-10
+@value -2.9135793975732e-02 1e-10 1e-10
 Dictionary Key: mdo_tutorial_cmz
-@value  6.7569453198407e-01 1e-10 1e-10
+@value  8.7548398695279e-01 1e-10 1e-10
 Dictionary Key: mdo_tutorial_drag
-@value  3.4301350415215e+04 1e-10 1e-10
+@value  8.7707454539073e+03 1e-10 1e-10
 Dictionary Key: mdo_tutorial_fx
-@value  2.8684394262993e+04 1e-10 1e-10
+@value  1.5752276352063e+03 1e-10 1e-10
 Dictionary Key: mdo_tutorial_fy
-@value  1.7927329152506e+05 1e-10 1e-10
+@value  2.2910287142535e+05 1e-10 1e-10
 Dictionary Key: mdo_tutorial_fz
-@value  3.1211686437174e+03 1e-10 1e-10
+@value  3.8646213477746e+03 1e-10 1e-10
 Dictionary Key: mdo_tutorial_lift
-@value  1.7828383238016e+05 1e-10 1e-10
+@value  2.2894034389252e+05 1e-10 1e-10
 Dictionary Key: mdo_tutorial_mx
-@value -1.1255535844852e+06 1e-10 1e-10
+@value -1.4258398871745e+06 1e-10 1e-10
 Dictionary Key: mdo_tutorial_my
-@value  1.2380737902045e+05 1e-10 1e-10
+@value -3.8603761586085e+04 1e-10 1e-10
 Dictionary Key: mdo_tutorial_mz
-@value  8.9526822709761e+05 1e-10 1e-10
+@value  1.1599812633530e+06 1e-10 1e-10
 Dictionary Key: mdo_tutorial_sepsensor
-@value  4.2347848701260e-03 1e-10 1e-10
+@value  3.3830703997163e-07 1e-10 1e-10
 Dictionary Key: mdo_tutorial_sepsensoravgx
-@value  2.8924120234321e-02 1e-10 1e-10
+@value  1.4499574915825e-06 1e-10 1e-10
 Dictionary Key: mdo_tutorial_sepsensoravgy
-@value  6.2172736781725e-06 1e-10 1e-10
+@value  4.9500116949178e-09 1e-10 1e-10
 Dictionary Key: mdo_tutorial_sepsensoravgz
-@value  2.7897401121741e-02 1e-10 1e-10
+@value  1.9322985486381e-06 1e-10 1e-10
 Sum of Tractions x
-@value  7.8058815855818e+05 1e-10 1e-10
+@value  1.6969008765019e+05 1e-10 1e-10
 Sum of Tractions y
-@value  2.1653930016903e+06 1e-10 1e-10
+@value  2.6700294489534e+06 1e-10 1e-10
 Sum of Tractions z
-@value  2.9145790579762e+05 1e-10 1e-10
+@value  4.3101997928108e+05 1e-10 1e-10
 Sum of Forces x
-@value  2.8684394262993e+04 1e-10 1e-10
+@value  1.5752276352063e+03 1e-10 1e-10
 Sum of Forces y
-@value  1.7927329152506e+05 1e-10 1e-10
+@value  2.2910287142535e+05 1e-10 1e-10
 Sum of Forces z
-@value  3.1211686437174e+03 1e-10 1e-10
+@value  3.8646213477746e+03 1e-10 1e-10
 Norm of state vector
-@value  4.7404939897831e+02 1e-10 1e-12
+@value  3.5556103591460e+02 1e-10 1e-12
 # ---------------------------------------------------#
 #             Forward mode testing                   #
 # ---------------------------------------------------#
 -> Derivatives with respect to states. wDot, 
 ||dR/dw * wDot||
-@value  3.4943092132823e+09 1e-10 1e-10
+@value  1.5563534264989e+03 1e-10 1e-10
 dFuncs/dw * wDot
 Dictionary Key: cd
-@value  2.9809157514689e-02 1e-10 1e-10
+@value -9.6159237638453e-04 1e-10 1e-10
 Dictionary Key: cfx
-@value  2.8166059518966e-02 1e-10 1e-10
+@value -2.9458952116430e-03 1e-10 1e-10
 Dictionary Key: cfy
-@value  5.2752505652882e-02 1e-10 1e-10
+@value  6.3126434126304e-02 1e-10 1e-10
 Dictionary Key: cfz
-@value  2.4699939172986e-02 1e-10 1e-10
+@value  8.2491152152641e-03 1e-10 1e-10
 Dictionary Key: cl
-@value  5.1841758166056e-02 1e-10 1e-10
+@value  6.3187817846498e-02 1e-10 1e-10
 Dictionary Key: cmx
-@value -1.1847197049162e-01 1e-10 1e-10
+@value -6.5008074056906e-02 1e-10 1e-10
 Dictionary Key: cmy
-@value  3.2209199507427e-04 1e-10 1e-10
+@value -1.9904983342551e-02 1e-10 1e-10
 Dictionary Key: cmz
-@value  9.7037201972259e-02 1e-10 1e-10
+@value  5.7405288802083e-02 1e-10 1e-10
 Dictionary Key: drag
-@value  1.2152597335588e+04 1e-10 1e-10
+@value -3.9202198000445e+02 1e-10 1e-10
 Dictionary Key: fx
-@value  1.1482739144692e+04 1e-10 1e-10
+@value -1.2009825598826e+03 1e-10 1e-10
 Dictionary Key: fy
-@value  2.1506141504567e+04 1e-10 1e-10
+@value  2.5735384664611e+04 1e-10 1e-10
 Dictionary Key: fz
-@value  1.0069671202043e+04 1e-10 1e-10
+@value  3.3629992909589e+03 1e-10 1e-10
 Dictionary Key: lift
-@value  2.1134847969138e+04 1e-10 1e-10
+@value  2.5760409579660e+04 1e-10 1e-10
 Dictionary Key: mx
-@value -1.5697062202258e+05 1e-10 1e-10
+@value -8.6133097802438e+04 1e-10 1e-10
 Dictionary Key: my
-@value  4.2675900979361e+02 1e-10 1e-10
+@value -2.6373306729547e+04 1e-10 1e-10
 Dictionary Key: mz
-@value  1.2857041112516e+05 1e-10 1e-10
+@value  7.6059711451208e+04 1e-10 1e-10
 Dictionary Key: sepsensor
-@value -1.5690549167967e+00 1e-10 1e-10
+@value  1.3594455928559e-07 1e-10 1e-10
 Dictionary Key: sepsensoravgx
-@value -1.0583111291817e+01 1e-10 1e-10
+@value  3.0743565997519e-07 1e-10 1e-10
 Dictionary Key: sepsensoravgy
-@value -2.6231921408664e-03 1e-10 1e-10
+@value -1.0649536414572e-08 1e-10 1e-10
 Dictionary Key: sepsensoravgz
-@value -9.6269523433366e+00 1e-10 1e-10
+@value  1.0463019205264e-06 1e-10 1e-10
 ||dF/dw * wDot||
-@value  1.4492854177973e+05 1e-10 1e-10
+@value  1.3576687660972e+05 1e-10 1e-10
 -> Derivatives with respect to nodes
 ||dR/dXv * xVDot||
-@value  2.5100574456550e+07 1e-10 1e-10
+@value  1.0311288803637e+04 1e-10 1e-10
 dFuncs/dXv * xVDot
 Dictionary Key: cd
-@value  1.2070059818278e+01 1e-09 1e-09
+@value -2.8209123683940e-02 1e-09 1e-09
 Dictionary Key: cfx
-@value  1.2080984694283e+01 1e-09 1e-09
+@value -2.9791308398130e-02 1e-09 1e-09
 Dictionary Key: cfy
-@value -1.5802353974444e-01 1e-09 1e-09
+@value  4.9902789613296e-02 1e-09 1e-09
 Dictionary Key: cfz
-@value  7.1779980280202e-01 1e-09 1e-09
+@value  1.1560982185671e-02 1e-09 1e-09
 Dictionary Key: cl
-@value -5.3741846432545e-01 1e-09 1e-09
+@value  5.0813933209756e-02 1e-09 1e-09
 Dictionary Key: cmx
-@value  6.8810966228359e-01 1e-09 1e-09
+@value -1.8131317916984e-01 1e-09 1e-09
 Dictionary Key: cmy
-@value  1.6265853937257e+01 1e-09 1e-09
+@value -8.5861649590026e-02 1e-09 1e-09
 Dictionary Key: cmz
-@value -6.1238850691472e-01 1e-09 1e-09
+@value  1.6429368760166e-01 1e-09 1e-09
 Dictionary Key: drag
-@value  4.9207219867155e+06 1e-09 1e-09
+@value -1.1500295543469e+04 1e-09 1e-09
 Dictionary Key: fx
-@value  4.9251758401651e+06 1e-09 1e-09
+@value -1.2145320607750e+04 1e-09 1e-09
 Dictionary Key: fy
-@value -6.4423036683014e+04 1e-09 1e-09
+@value  2.0344369269548e+04 1e-09 1e-09
 Dictionary Key: fz
-@value  2.9263262360633e+05 1e-09 1e-09
+@value  4.7131812174542e+03 1e-09 1e-09
 Dictionary Key: lift
-@value -2.1909475953620e+05 1e-09 1e-09
+@value  2.0715824290953e+04 1e-09 1e-09
 Dictionary Key: mx
-@value  9.1171777813927e+05 1e-09 1e-09
+@value -2.4023270987287e+05 1e-09 1e-09
 Dictionary Key: my
-@value  2.1551605832708e+07 1e-09 1e-09
+@value -1.1376325124080e+05 1e-09 1e-09
 Dictionary Key: mz
-@value -8.1139027612173e+05 1e-09 1e-09
+@value  2.1768256432470e+05 1e-09 1e-09
 Dictionary Key: sepsensor
-@value -5.7382313458870e-02 1e-09 1e-09
+@value  2.9974884862732e-08 1e-09 1e-09
 Dictionary Key: sepsensoravgx
-@value -4.3080231799268e-01 1e-09 1e-09
+@value  3.8982217312885e-07 1e-09 1e-09
 Dictionary Key: sepsensoravgy
-@value  1.9647633295158e-03 1e-09 1e-09
+@value  1.6863851377502e-07 1e-09 1e-09
 Dictionary Key: sepsensoravgz
-@value -5.0530919280937e-01 1e-09 1e-09
+@value  5.2516033219586e-07 1e-09 1e-09
 ||dF/dXv * xVDot||
-@value  6.4419142904541e+06 1e-10 1e-10
+@value  1.1544198444507e+06 1e-10 1e-10
 -> Derivatives with respect to extra variables
   -> alpha
 ||dR/dalpha||
-@value  1.0271003000581e-02 1e-10 1e-10
+@value  5.9495536116192e-03 1e-10 1e-10
 dFuncs/dalpha
 Dictionary Key: cd
-@value  7.6204542839400e-03 1e-10 1e-10
+@value  9.8012234879627e-03 1e-10 1e-10
 Dictionary Key: cfx
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: cfy
@@ -378,7 +369,7 @@ Dictionary Key: cfy
 Dictionary Key: cfz
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: cl
-@value -4.0648881161623e-04 1e-10 1e-10
+@value -3.7548662192162e-04 1e-10 1e-10
 Dictionary Key: cmx
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: cmy
@@ -386,7 +377,7 @@ Dictionary Key: cmy
 Dictionary Key: cmz
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: drag
-@value  3.1067068024767e+03 1e-10 1e-10
+@value  3.9957627915726e+03 1e-10 1e-10
 Dictionary Key: fx
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: fy
@@ -394,7 +385,7 @@ Dictionary Key: fy
 Dictionary Key: fz
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: lift
-@value -1.6571735871971e+02 1e-10 1e-10
+@value -1.5307838602501e+02 1e-10 1e-10
 Dictionary Key: mx
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: my
@@ -402,21 +393,21 @@ Dictionary Key: my
 Dictionary Key: mz
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: sepsensor
-@value  1.0454228956247e-03 1e-10 1e-10
+@value -2.8795169536001e-09 1e-10 1e-10
 Dictionary Key: sepsensoravgx
-@value  7.2232498238913e-03 1e-10 1e-10
+@value -7.8282285001875e-09 1e-10 1e-10
 Dictionary Key: sepsensoravgy
-@value  1.7464636736091e-06 1e-10 1e-10
+@value -2.9097253894145e-10 1e-10 1e-10
 Dictionary Key: sepsensoravgz
-@value  6.9400218944467e-03 1e-10 1e-10
+@value -2.7755247869244e-08 1e-10 1e-10
 ||dF/dalpha||
 @value  0.0000000000000e+00 1e-10 1e-10
   -> beta
 ||dR/dbeta||
-@value  6.0708676359813e-01 1e-10 1e-10
+@value  3.2604093521785e-01 1e-10 1e-10
 dFuncs/dbeta
 Dictionary Key: cd
-@value -8.1348322486378e-03 1e-10 1e-10
+@value -9.4748685008588e-03 1e-10 1e-10
 Dictionary Key: cfx
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: cfy
@@ -424,7 +415,7 @@ Dictionary Key: cfy
 Dictionary Key: cfz
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: cl
-@value  2.5564740246372e-04 1e-10 1e-10
+@value  2.9775973823376e-04 1e-10 1e-10
 Dictionary Key: cmx
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: cmy
@@ -432,7 +423,7 @@ Dictionary Key: cmy
 Dictionary Key: cmz
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: drag
-@value -3.3164084111246e+03 1e-10 1e-10
+@value -3.8627143904301e+03 1e-10 1e-10
 Dictionary Key: fx
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: fy
@@ -440,7 +431,7 @@ Dictionary Key: fy
 Dictionary Key: fz
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: lift
-@value  1.0422233303641e+02 1e-10 1e-10
+@value  1.2139069008314e+02 1e-10 1e-10
 Dictionary Key: mx
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: my
@@ -448,35 +439,35 @@ Dictionary Key: my
 Dictionary Key: mz
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: sepsensor
-@value  3.7885168509631e-02 1e-10 1e-10
+@value  6.8875172575003e-07 1e-10 1e-10
 Dictionary Key: sepsensoravgx
-@value  2.6081691908644e-01 1e-10 1e-10
+@value  1.6796060336331e-06 1e-10 1e-10
 Dictionary Key: sepsensoravgy
-@value  5.2036186489245e-05 1e-10 1e-10
+@value -3.5225587637177e-08 1e-10 1e-10
 Dictionary Key: sepsensoravgz
-@value  2.6322292621949e-01 1e-10 1e-10
+@value  3.1675119999687e-06 1e-10 1e-10
 ||dF/dbeta||
 @value  0.0000000000000e+00 1e-10 1e-10
   -> mach
 ||dR/dmach||
-@value  9.2838332787270e-01 1e-10 1e-10
+@value  5.3686601797456e-01 1e-10 1e-10
 dFuncs/dmach
 Dictionary Key: cd
-@value -5.8225233312247e-02 1e-10 1e-10
+@value -5.3784496749333e-02 1e-10 1e-10
 Dictionary Key: cfx
-@value -2.3910098933515e-02 1e-10 1e-10
+@value -9.6597063579666e-03 1e-10 1e-10
 Dictionary Key: cfy
-@value -1.0928399560107e+00 1e-10 1e-10
+@value -1.4049185109973e+00 1e-10 1e-10
 Dictionary Key: cfz
-@value -2.0347120697390e-02 1e-10 1e-10
+@value -2.3698865211530e-02 1e-10 1e-10
 Dictionary Key: cl
-@value -1.0915496711054e+00 1e-10 1e-10
+@value -1.4039218498119e+00 1e-10 1e-10
 Dictionary Key: cmx
-@value  2.1124124793229e+00 1e-10 1e-10
+@value  2.6903451560320e+00 1e-10 1e-10
 Dictionary Key: cmy
-@value  3.5988325681339e-02 1e-10 1e-10
+@value  7.2839484939329e-02 1e-10 1e-10
 Dictionary Key: cmz
-@value -1.6800322410029e+00 1e-10 1e-10
+@value -2.1887099673820e+00 1e-10 1e-10
 Dictionary Key: drag
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: fx
@@ -505,40 +496,40 @@ Dictionary Key: sepsensoravgz
 @value  0.0000000000000e+00 1e-10 1e-10
   -> P
 ||dR/dP||
-@value  2.5390972782774e-02 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 dFuncs/dP
 Dictionary Key: cd
-@value  8.2089922444180e-08 1e-10 1e-10
+@value -1.3108975602377e-22 1e-10 1e-10
 Dictionary Key: cfx
-@value  8.2085204177879e-08 1e-10 1e-10
+@value -3.4410713482206e-22 1e-10 1e-10
 Dictionary Key: cfy
-@value  1.4397092192600e-09 1e-10 1e-10
+@value  6.7762635780344e-21 1e-10 1e-10
 Dictionary Key: cfz
-@value  2.8691744454636e-09 1e-10 1e-10
+@value -3.1763735522036e-22 1e-10 1e-10
 Dictionary Key: cl
-@value -1.1393597626409e-09 1e-10 1e-10
+@value  6.7837285673217e-21 1e-10 1e-10
 Dictionary Key: cmx
-@value -3.6538178476404e-09 1e-10 1e-10
+@value  3.3881317890172e-20 1e-10 1e-10
 Dictionary Key: cmy
-@value  1.4621605259614e-07 1e-10 1e-10
+@value  2.1175823681358e-22 1e-10 1e-10
 Dictionary Key: cmz
-@value  1.3180746292731e-09 1e-10 1e-10
+@value -4.7433845046241e-20 1e-10 1e-10
 Dictionary Key: drag
-@value  5.0821168191678e-01 1e-10 1e-10
+@value  4.3853727269536e-01 1e-10 1e-10
 Dictionary Key: fx
-@value  2.2841787870354e-01 1e-10 1e-10
+@value  7.8761381760316e-02 1e-10 1e-10
 Dictionary Key: fy
-@value  8.9111668059835e+00 1e-10 1e-10
+@value  1.1455143571268e+01 1e-10 1e-10
 Dictionary Key: fz
-@value  1.6707198835616e-01 1e-10 1e-10
+@value  1.9323106738873e-01 1e-10 1e-10
 Dictionary Key: lift
-@value  8.8995949041368e+00 1e-10 1e-10
+@value  1.1447017194626e+01 1e-10 1e-10
 Dictionary Key: mx
-@value -5.5982081934569e+01 1e-10 1e-10
+@value -7.1291994358723e+01 1e-10 1e-10
 Dictionary Key: my
-@value -7.5993141884716e-01 1e-10 1e-10
+@value -1.9301880793043e+00 1e-10 1e-10
 Dictionary Key: mz
-@value  4.4521256756946e+01 1e-10 1e-10
+@value  5.7999063167648e+01 1e-10 1e-10
 Dictionary Key: sepsensor
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: sepsensoravgx
@@ -548,43 +539,43 @@ Dictionary Key: sepsensoravgy
 Dictionary Key: sepsensoravgz
 @value  0.0000000000000e+00 1e-10 1e-10
 ||dF/dP||
-@value  6.3181623615577e+00 1e-10 1e-10
+@value  7.5070641076265e+00 1e-10 1e-10
   -> T
 ||dR/dT||
-@value  9.2206317487501e-07 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 dFuncs/dT
 Dictionary Key: cd
-@value  7.2761796075115e-22 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: cfx
-@value  7.2788067112073e-22 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: cfy
-@value  3.0707568169984e-24 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: cfz
-@value  6.4886834070093e-23 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: cl
-@value -1.9794042814322e-23 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: cmx
-@value -2.5262512621023e-24 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: cmy
-@value  1.5850732414105e-21 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: cmz
-@value  1.5200845584592e-23 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: drag
-@value  2.9663529023903e-16 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: fx
-@value  2.9674239200250e-16 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: fy
-@value  1.2518861391539e-18 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: fz
-@value  2.6453064513695e-17 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: lift
-@value -8.0696353745428e-18 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: mx
-@value -3.3471818722351e-18 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: my
-@value  2.1001586419392e-15 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: mz
-@value  2.0140512365761e-17 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: sepsensor
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: sepsensoravgx
@@ -594,7 +585,7 @@ Dictionary Key: sepsensoravgy
 Dictionary Key: sepsensoravgz
 @value  0.0000000000000e+00 1e-10 1e-10
 ||dF/dT||
-@value  4.0343635555161e-16 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
   -> xRef
 ||dR/dxRef||
 @value  0.0000000000000e+00 1e-10 1e-10
@@ -612,9 +603,9 @@ Dictionary Key: cl
 Dictionary Key: cmx
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: cmy
-@value  2.5042610089095e-03 1e-10 1e-10
+@value  2.9167834106498e-03 1e-10 1e-10
 Dictionary Key: cmz
-@value -1.3450337920132e-01 1e-10 1e-10
+@value -1.7291304750736e-01 1e-10 1e-10
 Dictionary Key: drag
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: fx
@@ -628,9 +619,9 @@ Dictionary Key: lift
 Dictionary Key: mx
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: my
-@value  3.3180456663647e+03 1e-10 1e-10
+@value  3.8646213477746e+03 1e-10 1e-10
 Dictionary Key: mz
-@value -1.7821159730658e+05 1e-10 1e-10
+@value -2.2910287142535e+05 1e-10 1e-10
 Dictionary Key: sepsensor
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: sepsensoravgx
@@ -656,11 +647,11 @@ Dictionary Key: cfz
 Dictionary Key: cl
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: cmx
-@value -2.5042610089095e-03 1e-10 1e-10
+@value -2.9167834106498e-03 1e-10 1e-10
 Dictionary Key: cmy
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: cmz
-@value  2.9427814072018e-03 1e-10 1e-10
+@value  1.1888869363651e-03 1e-10 1e-10
 Dictionary Key: drag
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: fx
@@ -672,11 +663,11 @@ Dictionary Key: fz
 Dictionary Key: lift
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: mx
-@value -3.3180456663647e+03 1e-10 1e-10
+@value -3.8646213477746e+03 1e-10 1e-10
 Dictionary Key: my
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: mz
-@value  3.8990676532861e+03 1e-10 1e-10
+@value  1.5752276352063e+03 1e-10 1e-10
 Dictionary Key: sepsensor
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: sepsensoravgx
@@ -702,9 +693,9 @@ Dictionary Key: cfz
 Dictionary Key: cl
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: cmx
-@value  1.3450337920132e-01 1e-10 1e-10
+@value  1.7291304750736e-01 1e-10 1e-10
 Dictionary Key: cmy
-@value -2.9427814072018e-03 1e-10 1e-10
+@value -1.1888869363651e-03 1e-10 1e-10
 Dictionary Key: cmz
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: drag
@@ -718,9 +709,9 @@ Dictionary Key: fz
 Dictionary Key: lift
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: mx
-@value  1.7821159730658e+05 1e-10 1e-10
+@value  2.2910287142535e+05 1e-10 1e-10
 Dictionary Key: my
-@value -3.8990676532861e+03 1e-10 1e-10
+@value -1.5752276352063e+03 1e-10 1e-10
 Dictionary Key: mz
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: sepsensor
@@ -738,20 +729,20 @@ Dictionary Key: sepsensoravgz
 # ---------------------------------------------------#
 -> Res bar Seed
 ||dwBar^T * dR/dw||
-@value  3.6307658440012e+09 1e-10 1e-10
+@value  1.9971050652050e+03 1e-10 1e-10
 ||dwBar^T * dR/dXv||
-@value  1.1295953378317e+08 1e-10 1e-10
+@value  1.2137826524863e+04 1e-10 1e-10
 ||dwBar^T * dR/xDv||
 Dictionary Key: P_mdo_tutorial
-@value  4.1241946292443e-01 1e-10 1e-10
+@value  1.0842021724855e-19 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
-@value -7.4241590326255e-06 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
-@value -5.6162290990221e-03 1e-10 1e-10
+@value -1.7996994920608e-02 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
-@value -1.5192997627551e+00 1e-10 1e-10
+@value -2.4490999093407e+00 1e-10 1e-10
 Dictionary Key: mach_mdo_tutorial
-@value -3.2621581837007e+00 1e-10 1e-10
+@value -3.2629284163357e+00 1e-10 1e-10
 Dictionary Key: xRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: yRef_mdo_tutorial
@@ -760,12 +751,12 @@ Dictionary Key: zRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 -> F Bar Seed
 ||FBar^T * dF/dw||
-@value  1.9341131934025e+05 1e-10 1e-10
+@value  4.5715426322492e+05 1e-10 1e-10
 ||FBar^T * dF/dXv||
-@value  4.6070479430858e+07 1e-10 1e-10
+@value  3.6358507159734e+06 1e-10 1e-10
 ||FBar^T * dF/xDv||
 Dictionary Key: P_mdo_tutorial
-@value  7.3406223276193e+01 1e-10 1e-10
+@value  8.5907040195053e+01 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
@@ -783,18 +774,18 @@ Dictionary Key: zRef_mdo_tutorial
  -> Objective Seeds
   -> lift
 ||dlift/dw||
-@value  4.6241913255989e+04 1e-10 1e-10
+@value  9.7290064636984e+04 1e-10 1e-10
 ||dlift/dXv||
-@value  8.6833059822066e+05 1e-10 1e-10
+@value  4.9352897996693e+04 1e-10 1e-10
 ||dlift/dXdv||
 Dictionary Key: P_mdo_tutorial
-@value  8.8995949041368e+00 1e-10 1e-10
+@value  1.1447017194626e+01 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
-@value -1.5265566588596e-16 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
-@value -1.6571735871971e+02 1e-10 1e-10
+@value -1.5307838602501e+02 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
-@value  1.0422233303641e+02 1e-10 1e-10
+@value  1.2139069008314e+02 1e-10 1e-10
 Dictionary Key: mach_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: xRef_mdo_tutorial
@@ -805,18 +796,18 @@ Dictionary Key: zRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
   -> drag
 ||ddrag/dw||
-@value  5.7695967844133e+03 1e-10 1e-10
+@value  1.1211443755686e+04 1e-10 1e-10
 ||ddrag/dXv||
-@value  8.9734316609479e+06 1e-10 1e-10
+@value  4.4153357796969e+04 1e-10 1e-10
 ||ddrag/dXdv||
 Dictionary Key: P_mdo_tutorial
-@value  5.0821168191678e-01 1e-10 1e-10
+@value  4.3853727269536e-01 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
-@value -1.2434497875802e-14 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
-@value  3.1067068024767e+03 1e-10 1e-10
+@value  3.9957627915726e+03 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
-@value -3.3164084111246e+03 1e-10 1e-10
+@value -3.8627143904301e+03 1e-10 1e-10
 Dictionary Key: mach_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: xRef_mdo_tutorial
@@ -827,20 +818,20 @@ Dictionary Key: zRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
   -> cl
 ||dcl/dw||
-@value  1.1342698502745e-01 1e-10 1e-10
+@value  2.3864321192353e-01 1e-10 1e-10
 ||dcl/dXv||
-@value  2.1299318048976e+00 1e-10 1e-10
+@value  1.2105793268420e-01 1e-10 1e-10
 ||dcl/dXdv||
 Dictionary Key: P_mdo_tutorial
-@value -1.1393597626186e-09 1e-10 1e-10
+@value -1.6297768356896e-20 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
-@value  2.1175823681358e-22 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
-@value -4.0648881161623e-04 1e-10 1e-10
+@value -3.7548662192162e-04 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
-@value  2.5564740246372e-04 1e-10 1e-10
+@value  2.9775973823376e-04 1e-10 1e-10
 Dictionary Key: mach_mdo_tutorial
-@value -1.0915496711054e+00 1e-10 1e-10
+@value -1.4039218498119e+00 1e-10 1e-10
 Dictionary Key: xRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: yRef_mdo_tutorial
@@ -849,20 +840,20 @@ Dictionary Key: zRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
   -> cd
 ||dcd/dw||
-@value  1.4152268407607e-02 1e-10 1e-10
+@value  2.7500597909355e-02 1e-10 1e-10
 ||dcd/dXv||
-@value  2.2010968556093e+01 1e-10 1e-10
+@value  1.0830395848942e-01 1e-10 1e-10
 ||dcd/dXdv||
 Dictionary Key: P_mdo_tutorial
-@value  8.2089922444180e-08 1e-10 1e-10
+@value  1.4902434216967e-21 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
-@value  1.6940658945086e-20 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
-@value  7.6204542839400e-03 1e-10 1e-10
+@value  9.8012234879627e-03 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
-@value -8.1348322486378e-03 1e-10 1e-10
+@value -9.4748685008588e-03 1e-10 1e-10
 Dictionary Key: mach_mdo_tutorial
-@value -5.8225233312247e-02 1e-10 1e-10
+@value -5.3784496749333e-02 1e-10 1e-10
 Dictionary Key: xRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: yRef_mdo_tutorial
@@ -871,14 +862,14 @@ Dictionary Key: zRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
   -> fx
 ||dfx/dw||
-@value  5.7403276500953e+03 1e-10 1e-10
+@value  1.1059570249584e+04 1e-10 1e-10
 ||dfx/dXv||
-@value  8.9735372587949e+06 1e-10 1e-10
+@value  4.4144160849784e+04 1e-10 1e-10
 ||dfx/dXdv||
 Dictionary Key: P_mdo_tutorial
-@value  2.2841787870354e-01 1e-10 1e-10
+@value  7.8761381760317e-02 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
-@value  1.1546319456102e-14 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
@@ -893,14 +884,14 @@ Dictionary Key: zRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
   -> fy
 ||dfy/dw||
-@value  4.6245555755107e+04 1e-10 1e-10
+@value  9.7307446036005e+04 1e-10 1e-10
 ||dfy/dXv||
-@value  8.6723864450786e+05 1e-10 1e-10
+@value  4.9361124463362e+04 1e-10 1e-10
 ||dfy/dXdv||
 Dictionary Key: P_mdo_tutorial
-@value  8.9111668059835e+00 1e-10 1e-10
+@value  1.1455143571268e+01 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
-@value -8.3266726846887e-17 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
@@ -915,14 +906,14 @@ Dictionary Key: zRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
   -> fz
 ||dfz/dw||
-@value  3.1172016503764e+03 1e-10 1e-10
+@value  4.9930051398852e+03 1e-10 1e-10
 ||dfz/dXv||
-@value  7.8130524877307e+05 1e-10 1e-10
+@value  2.2133860267223e+04 1e-10 1e-10
 ||dfz/dXdv||
 Dictionary Key: P_mdo_tutorial
-@value  1.6707198835616e-01 1e-10 1e-10
+@value  1.9323106738873e-01 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
-@value  4.4408920985006e-16 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
@@ -937,20 +928,20 @@ Dictionary Key: zRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
   -> cfx
 ||dcfx/dw||
-@value  1.4080474023978e-02 1e-10 1e-10
+@value  2.7128066742504e-02 1e-10 1e-10
 ||dcfx/dXv||
-@value  2.2011227577499e+01 1e-10 1e-10
+@value  1.0828139925869e-01 1e-10 1e-10
 ||dcfx/dXdv||
 Dictionary Key: P_mdo_tutorial
-@value  8.2085204177880e-08 1e-10 1e-10
+@value -1.5849980109963e-22 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
-@value -2.3716922523120e-20 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: mach_mdo_tutorial
-@value -2.3910098933515e-02 1e-10 1e-10
+@value -9.6597063579666e-03 1e-10 1e-10
 Dictionary Key: xRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: yRef_mdo_tutorial
@@ -959,20 +950,20 @@ Dictionary Key: zRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
   -> cfy
 ||dcfy/dw||
-@value  1.1343591972897e-01 1e-10 1e-10
+@value  2.3868584683086e-01 1e-10 1e-10
 ||dcfy/dXv||
-@value  2.1272533470071e+00 1e-10 1e-10
+@value  1.2107811141916e-01 1e-10 1e-10
 ||dcfy/dXdv||
 Dictionary Key: P_mdo_tutorial
-@value  1.4397092192763e-09 1e-10 1e-10
+@value  2.6381604087103e-20 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
-@value -1.0587911840679e-22 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: mach_mdo_tutorial
-@value -1.0928399560107e+00 1e-10 1e-10
+@value -1.4049185109973e+00 1e-10 1e-10
 Dictionary Key: xRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: yRef_mdo_tutorial
@@ -981,20 +972,20 @@ Dictionary Key: zRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
   -> cfz
 ||dcfz/dw||
-@value  7.6461971408370e-03 1e-10 1e-10
+@value  1.2247363471069e-02 1e-10 1e-10
 ||dcfz/dXv||
-@value  1.9164669563704e+00 1e-10 1e-10
+@value  5.4292239666461e-02 1e-10 1e-10
 ||dcfz/dXdv||
 Dictionary Key: P_mdo_tutorial
-@value  2.8691744454646e-09 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
-@value -5.2939559203394e-22 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: mach_mdo_tutorial
-@value -2.0347120697390e-02 1e-10 1e-10
+@value -2.3698865211530e-02 1e-10 1e-10
 Dictionary Key: xRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: yRef_mdo_tutorial
@@ -1003,14 +994,14 @@ Dictionary Key: zRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
   -> mx
 ||dmx/dw||
-@value  2.8155343154638e+05 1e-10 1e-10
+@value  6.0052931891804e+05 1e-10 1e-10
 ||dmx/dXv||
-@value  5.6325620731281e+06 1e-10 1e-10
+@value  3.6222725672538e+05 1e-10 1e-10
 ||dmx/dXdv||
 Dictionary Key: P_mdo_tutorial
-@value -5.5982081934568e+01 1e-10 1e-10
+@value -7.1291994358723e+01 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
-@value -1.3322676295502e-15 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
@@ -1020,19 +1011,19 @@ Dictionary Key: mach_mdo_tutorial
 Dictionary Key: xRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: yRef_mdo_tutorial
-@value -3.3180456663647e+03 1e-10 1e-10
+@value -3.8646213477746e+03 1e-10 1e-10
 Dictionary Key: zRef_mdo_tutorial
-@value  1.7821159730658e+05 1e-10 1e-10
+@value  2.2910287142535e+05 1e-10 1e-10
   -> my
 ||dmy/dw||
-@value  4.4797057676056e+04 1e-10 1e-10
+@value  8.7060118911884e+04 1e-10 1e-10
 ||dmy/dXv||
-@value  5.6574683921893e+07 1e-10 1e-10
+@value  4.1905707153119e+05 1e-10 1e-10
 ||dmy/dXdv||
 Dictionary Key: P_mdo_tutorial
-@value -7.5993141884715e-01 1e-10 1e-10
+@value -1.9301880793043e+00 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
-@value -7.1054273576010e-14 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
@@ -1040,21 +1031,21 @@ Dictionary Key: beta_mdo_tutorial
 Dictionary Key: mach_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: xRef_mdo_tutorial
-@value  3.3180456663647e+03 1e-10 1e-10
+@value  3.8646213477746e+03 1e-10 1e-10
 Dictionary Key: yRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: zRef_mdo_tutorial
-@value -3.8990676532861e+03 1e-10 1e-10
+@value -1.5752276352063e+03 1e-10 1e-10
   -> mz
 ||dmz/dw||
-@value  2.2527580296346e+05 1e-10 1e-10
+@value  4.7504190422239e+05 1e-10 1e-10
 ||dmz/dXv||
-@value  3.9317861718376e+06 1e-10 1e-10
+@value  2.3133442277952e+05 1e-10 1e-10
 ||dmz/dXdv||
 Dictionary Key: P_mdo_tutorial
-@value  4.4521256756946e+01 1e-10 1e-10
+@value  5.7999063167648e+01 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
-@value -1.1102230246252e-16 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
@@ -1062,91 +1053,91 @@ Dictionary Key: beta_mdo_tutorial
 Dictionary Key: mach_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: xRef_mdo_tutorial
-@value -1.7821159730658e+05 1e-10 1e-10
+@value -2.2910287142535e+05 1e-10 1e-10
 Dictionary Key: yRef_mdo_tutorial
-@value  3.8990676532861e+03 1e-10 1e-10
+@value  1.5752276352063e+03 1e-10 1e-10
 Dictionary Key: zRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
   -> cmx
 ||dcmx/dw||
-@value  2.1249957096545e-01 1e-10 1e-10
+@value  4.5324335747346e-01 1e-10 1e-10
 ||dcmx/dXv||
-@value  4.2511185795255e+00 1e-10 1e-10
+@value  2.7338731488149e-01 1e-10 1e-10
 ||dcmx/dXdv||
 Dictionary Key: P_mdo_tutorial
-@value -3.6538178476586e-09 1e-10 1e-10
+@value  2.6357283038390e-20 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
-@value  9.5291206566109e-22 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: mach_mdo_tutorial
-@value  2.1124124793229e+00 1e-10 1e-10
+@value  2.6903451560320e+00 1e-10 1e-10
 Dictionary Key: xRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: yRef_mdo_tutorial
-@value -2.5042610089095e-03 1e-10 1e-10
+@value -2.9167834106498e-03 1e-10 1e-10
 Dictionary Key: zRef_mdo_tutorial
-@value  1.3450337920132e-01 1e-10 1e-10
+@value  1.7291304750736e-01 1e-10 1e-10
   -> cmy
 ||dcmy/dw||
-@value  3.3810120815765e-02 1e-10 1e-10
+@value  6.5707733751874e-02 1e-10 1e-10
 ||dcmy/dXv||
-@value  4.2699163689389e+01 1e-10 1e-10
+@value  3.1627903599443e-01 1e-10 1e-10
 ||dcmy/dXdv||
 Dictionary Key: P_mdo_tutorial
-@value  1.4621605259614e-07 1e-10 1e-10
+@value  1.2705494208815e-21 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
-@value -4.7433845046241e-20 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: mach_mdo_tutorial
-@value  3.5988325681339e-02 1e-10 1e-10
+@value  7.2839484939329e-02 1e-10 1e-10
 Dictionary Key: xRef_mdo_tutorial
-@value  2.5042610089095e-03 1e-10 1e-10
+@value  2.9167834106498e-03 1e-10 1e-10
 Dictionary Key: yRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: zRef_mdo_tutorial
-@value -2.9427814072018e-03 1e-10 1e-10
+@value -1.1888869363651e-03 1e-10 1e-10
   -> cmz
 ||dcmz/dw||
-@value  1.7002460675300e-01 1e-10 1e-10
+@value  3.5853301550415e-01 1e-10 1e-10
 ||dcmz/dXv||
-@value  2.9674753742283e+00 1e-10 1e-10
+@value  1.7459728805361e-01 1e-10 1e-10
 ||dcmz/dXdv||
 Dictionary Key: P_mdo_tutorial
-@value  1.3180746293174e-09 1e-10 1e-10
+@value  6.3854776072702e-20 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
-@value  3.1763735522036e-22 1e-10 1e-10
+@value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: mach_mdo_tutorial
-@value -1.6800322410029e+00 1e-10 1e-10
+@value -2.1887099673820e+00 1e-10 1e-10
 Dictionary Key: xRef_mdo_tutorial
-@value -1.3450337920132e-01 1e-10 1e-10
+@value -1.7291304750736e-01 1e-10 1e-10
 Dictionary Key: yRef_mdo_tutorial
-@value  2.9427814072018e-03 1e-10 1e-10
+@value  1.1888869363651e-03 1e-10 1e-10
 Dictionary Key: zRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
   -> sepsensor
 ||dsepsensor/dw||
-@value  9.2205902597219e-01 1e-10 1e-10
+@value  4.0542407257190e-07 1e-10 1e-10
 ||dsepsensor/dXv||
-@value  4.6710673712921e-01 1e-10 1e-10
+@value  4.3411444202165e-07 1e-10 1e-10
 ||dsepsensor/dXdv||
 Dictionary Key: P_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
-@value  1.0454228956247e-03 1e-10 1e-10
+@value -2.8795169536001e-09 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
-@value  3.7885168509632e-02 1e-10 1e-10
+@value  6.8875172575003e-07 1e-10 1e-10
 Dictionary Key: mach_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: xRef_mdo_tutorial
@@ -1157,18 +1148,18 @@ Dictionary Key: zRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
   -> sepsensoravgx
 ||dsepsensoravgx/dw||
-@value  6.4213291511353e+00 1e-10 1e-10
+@value  1.0751163726086e-06 1e-10 1e-10
 ||dsepsensoravgx/dXv||
-@value  3.2697885205411e+00 1e-10 1e-10
+@value  1.4377025788955e-06 1e-10 1e-10
 ||dsepsensoravgx/dXdv||
 Dictionary Key: P_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
-@value  7.2232498238913e-03 1e-10 1e-10
+@value -7.8282285001875e-09 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
-@value  2.6081691908644e-01 1e-10 1e-10
+@value  1.6796060336331e-06 1e-10 1e-10
 Dictionary Key: mach_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: xRef_mdo_tutorial
@@ -1179,18 +1170,18 @@ Dictionary Key: zRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
   -> sepsensoravgy
 ||dsepsensoravgy/dw||
-@value  1.4979999839190e-03 1e-10 1e-10
+@value  1.1233504148970e-08 1e-10 1e-10
 ||dsepsensoravgy/dXv||
-@value  1.0549809489802e-03 1e-10 1e-10
+@value  2.2296933577411e-08 1e-10 1e-10
 ||dsepsensoravgy/dXdv||
 Dictionary Key: P_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
-@value  1.7464636736091e-06 1e-10 1e-10
+@value -2.9097253894145e-10 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
-@value  5.2036186489246e-05 1e-10 1e-10
+@value -3.5225587637177e-08 1e-10 1e-10
 Dictionary Key: mach_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: xRef_mdo_tutorial
@@ -1201,18 +1192,18 @@ Dictionary Key: zRef_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
   -> sepsensoravgz
 ||dsepsensoravgz/dw||
-@value  7.0197132434614e+00 1e-10 1e-10
+@value  1.9807587679861e-06 1e-10 1e-10
 ||dsepsensoravgz/dXv||
-@value  3.6357207893032e+00 1e-10 1e-10
+@value  2.6583550138479e-06 1e-10 1e-10
 ||dsepsensoravgz/dXdv||
 Dictionary Key: P_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: T_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: alpha_mdo_tutorial
-@value  6.9400218944466e-03 1e-10 1e-10
+@value -2.7755247869244e-08 1e-10 1e-10
 Dictionary Key: beta_mdo_tutorial
-@value  2.6322292621949e-01 1e-10 1e-10
+@value  3.1675119999688e-06 1e-10 1e-10
 Dictionary Key: mach_mdo_tutorial
 @value  0.0000000000000e+00 1e-10 1e-10
 Dictionary Key: xRef_mdo_tutorial
@@ -1225,17 +1216,17 @@ Dictionary Key: zRef_mdo_tutorial
 #                 Dot product Tests                  #
 # ---------------------------------------------------#
 Dot product test for w -> R
-@value  7.3657443376122e+10 1e-10 1e-10
-@value  7.3657443376122e+10 1e-10 1e-10
+@value  2.2492451884413e+04 1e-10 1e-10
+@value  2.2492451884413e+04 1e-10 1e-10
 Dot product test for Xv -> R
-@value  1.4176919171393e+07 1e-09 1e-09
-@value  1.4176919171393e+07 1e-09 1e-09
+@value -1.5570352299850e+03 1e-09 1e-09
+@value -1.5570352299851e+03 1e-09 1e-09
 Dot product test for w -> F
-@value  1.0660523927220e+05 1e-10 1e-10
-@value  1.0660523927220e+05 1e-10 1e-10
+@value -3.3824021173721e+04 1e-10 1e-10
+@value -3.3824021173722e+04 1e-10 1e-10
 Dot product test for xV -> F
-@value  1.8037564730244e+06 1e-10 1e-10
-@value  1.8037564730244e+06 1e-10 1e-10
+@value  6.9809368627150e+05 1e-10 1e-10
+@value  6.9809368627150e+05 1e-10 1e-10
 Dot product test for (w, xV) -> (dw, F)
-@value  7.3673530657006e+10 1e-10 1e-10
-@value  7.3673530657006e+10 1e-10 1e-10
+@value  6.8520508175221e+05 1e-10 1e-10
+@value  6.8520508175221e+05 1e-10 1e-10

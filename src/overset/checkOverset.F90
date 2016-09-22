@@ -10,7 +10,7 @@ subroutine checkOverset (level, sps, totalOrphans)
        iBegOR, jBegOr, kBegOr, nbkGlobal, nOrphans
   !use overset, only : 
   use stencils, only : visc_drdw_stencil, N_visc_drdw
-  use communication, only : myid, sumb_comm_world
+  use communication, only : myid, adflow_comm_world
   use utils, only : setPointers, EChk
   implicit none
 
@@ -99,8 +99,8 @@ subroutine checkOverset (level, sps, totalOrphans)
   end do
 
   ! Determine the total number of overset orphans
-  call mpi_allreduce(localOrphans, totalOrphans, 1, sumb_integer, MPI_SUM, &
-       sumb_comm_world, ierr)
+  call mpi_allreduce(localOrphans, totalOrphans, 1, adflow_integer, MPI_SUM, &
+       adflow_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
 
   if (myid == 0) then 

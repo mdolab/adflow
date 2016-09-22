@@ -1,7 +1,7 @@
 /*
        ******************************************************************
        *                                                                *
-       * File:          SUmb_c_types.h                                  *
+       * File:          ADflow_c_types.h                                  *
        * Author:        Edwin van der Weide                             *
        * Starting date: 02-11-2003                                      *
        * Last modified: 06-12-2005                                      *
@@ -9,13 +9,13 @@
        ******************************************************************
 */
 
-#ifndef SUmb_c_types_h
-#define SUmb_c_types_h
+#ifndef ADflow_c_types_h
+#define ADflow_c_types_h
 
 /*
        ******************************************************************
        *                                                                *
-       * SUmb_c_types.h defines the integer and floating point types to *
+       * ADflow_c_types.h defines the integer and floating point types to *
        * be used for the C source code, depending on the compiler       *
        * options. In this way it is compatible with the kind type used  *
        * in the Fortran sources.                                        *
@@ -33,13 +33,13 @@
 
   /* 8 byte integers must be used for the default integer type. */
 
-  typedef long long SUmb_intT;
+  typedef long long ADflow_intT;
 
 #else
 
   /* Default, 4 byte, integers must be used for the default integer type. */
 
-  typedef int SUmb_intT;
+  typedef int ADflow_intT;
 
 #endif
 
@@ -51,21 +51,21 @@
 
   /* Single precision floating point type must be used. */
 
-  typedef float  SUmb_floatT;
+  typedef float  ADflow_floatT;
 
 #elif USE_QUADRUPLE_PRECISION
 
   /* Quadruple precision floating point type must be used. */
   /* This may not be fully compatible for 32 bit machines. */
 
-  typedef long double SUmb_floatT;
+  typedef long double ADflow_floatT;
 
 #else
 
   /* Double precision floating point type must be used. */
 
-  typedef double SUmb_floatT;
+  typedef double ADflow_floatT;
 
 #endif
 
-#endif /* SUmb_c_types_h */
+#endif /* ADflow_c_types_h */

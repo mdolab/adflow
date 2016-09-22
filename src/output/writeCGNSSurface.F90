@@ -239,7 +239,7 @@ contains
     ! Wait until all processors (especially processor 0) reach
     ! this point.
 
-    call mpi_barrier(SUmb_comm_world, ierr)
+    call mpi_barrier(ADflow_comm_world, ierr)
 
     ! Write a message that the solution file(s) have been written.
     ! Of course only processor 0 does this.
@@ -573,8 +573,8 @@ contains
     ! to processor 0. The result needs only to be known on
     ! processor 0.
 
-    call mpi_gather(mBlocks, 1, sumb_integer, nMessages, 1, &
-         sumb_integer, 0, SUmb_comm_world, ierr)
+    call mpi_gather(mBlocks, 1, adflow_integer, nMessages, 1, &
+         adflow_integer, 0, ADflow_comm_world, ierr)
 
     ! At the moment the writing of the cgns file is sequential and done
     ! by processor 0. This means that this processor gathers all info
@@ -644,11 +644,11 @@ contains
              source = i -1
              size   = 6*nMessages(i)
 
-             call mpi_recv(rangeNode(1,1,mm), size, sumb_integer,   &
-                  source, source, SUmb_comm_world, status, &
+             call mpi_recv(rangeNode(1,1,mm), size, adflow_integer,   &
+                  source, source, ADflow_comm_world, status, &
                   ierr)
-             call mpi_recv(rangeCell(1,1,mm), size, sumb_integer,     &
-                  source, source+1, SUmb_comm_world, status, &
+             call mpi_recv(rangeCell(1,1,mm), size, adflow_integer,     &
+                  source, source+1, ADflow_comm_world, status, &
                   ierr)
 
              ! Update mm.
@@ -697,10 +697,10 @@ contains
           ! and cell ranges to processor 0.
 
           size = 6*mBlocks
-          call mpi_send(nodalRange, size, sumb_integer, 0, myID, &
-               SUmb_comm_world, ierr)
-          call mpi_send(cellRange, size, sumb_integer, 0, myID+1, &
-               SUmb_comm_world, ierr)
+          call mpi_send(nodalRange, size, adflow_integer, 0, myID, &
+               ADflow_comm_world, ierr)
+          call mpi_send(cellRange, size, adflow_integer, 0, myID+1, &
+               ADflow_comm_world, ierr)
        endif
 
        ! Loop over the number of solutions to be written.
@@ -1102,13 +1102,13 @@ contains
 
                   size   = il*jl - jj
                   source = ll -1
-                  call mpi_recv(buffer(jj+1), size, sumb_real, source, &
-                       source, SUmb_comm_world, status, ierr)
+                  call mpi_recv(buffer(jj+1), size, adflow_real, source, &
+                       source, ADflow_comm_world, status, ierr)
 
                   ! Determine the true size of the message and update
                   ! the counter jj accordingly.
 
-                  call mpi_get_count(status, sumb_real, size, ierr)
+                  call mpi_get_count(status, adflow_real, size, ierr)
                   jj = jj + size
                endif
             enddo
@@ -1212,8 +1212,8 @@ contains
 
             if( jj > 0 ) then
                size = jj
-               call mpi_send(buffer, size, sumb_real, 0, myID, &
-                    SUmb_comm_world, ierr)
+               call mpi_send(buffer, size, adflow_real, 0, myID, &
+                    ADflow_comm_world, ierr)
             endif
 
          endif rootproc
@@ -1338,13 +1338,13 @@ contains
 
                   size   = (il+1)*(jl+1) - jj
                   source = ll -1
-                  call mpi_recv(buffer(jj+1), size, sumb_real, source, &
-                       source, SUmb_comm_world, status, ierr)
+                  call mpi_recv(buffer(jj+1), size, adflow_real, source, &
+                       source, ADflow_comm_world, status, ierr)
 
                   ! Determine the true size of the message and update
                   ! the counter jj accordingly.
 
-                  call mpi_get_count(status, sumb_real, size, ierr)
+                  call mpi_get_count(status, adflow_real, size, ierr)
                   jj = jj + size
                endif
             enddo
@@ -1403,8 +1403,8 @@ contains
 
             if( jj > 0 ) then
                size = jj
-               call mpi_send(buffer, size, sumb_real, 0, myID, &
-                    SUmb_comm_world, ierr)
+               call mpi_send(buffer, size, adflow_real, 0, myID, &
+                    ADflow_comm_world, ierr)
             endif
 
          endif rootproc
@@ -1595,11 +1595,11 @@ contains
     nConnProc(:) = 0_intType
 
     call  MPI_Allgather(nUnique, 1, mpi_integer4, nPtsProc, 1, mpi_integer4, &
-         sumb_comm_world, ierr)
+         adflow_comm_world, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     call  MPI_Allgather(iCoor/3, 1, mpi_integer4, nConnProc, 1, mpi_integer4, &
-         sumb_comm_world, ierr)
+         adflow_comm_world, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
 
@@ -1668,14 +1668,14 @@ contains
              ! allocate space for the recv
              allocate(buffer(3*nPtsProc(iProc+1)))
 
-             call mpi_recv(buffer, nPtsProc(iProc+1)*3, sumb_real, iProc, tag, &
-                  sumb_comm_world, status, ierr)
+             call mpi_recv(buffer, nPtsProc(iProc+1)*3, adflow_real, iProc, tag, &
+                  adflow_comm_world, status, ierr)
              call EChk(ierr, __FILE__, __LINE__)
           end if
 
           if (myid == iProc) then
-             call mpi_send(buffer, nPtsProc(iProc+1)*3, sumb_real, 0, tag, &
-                  sumb_comm_world, ierr)
+             call mpi_send(buffer, nPtsProc(iProc+1)*3, adflow_real, 0, tag, &
+                  adflow_comm_world, ierr)
              call EChk(ierr, __FILE__, __LINE__)
           end if
        end if
@@ -1742,14 +1742,14 @@ contains
           if (myid == 0) then
              ! allocate space for the recv
              allocate(connBuffer(3,nConnProc(iProc+1)))
-             call mpi_recv(connBuffer, nConnProc(iProc+1)*3, sumb_integer, iProc, tag, &
-                  sumb_comm_world, status, ierr)
+             call mpi_recv(connBuffer, nConnProc(iProc+1)*3, adflow_integer, iProc, tag, &
+                  adflow_comm_world, status, ierr)
              call EChk(ierr, __FILE__, __LINE__)
           end if
 
           if (myid == iProc) then
-             call mpi_send(connBuffer, nConnProc(iProc+1)*3, sumb_integer, 0, tag, &
-                  sumb_comm_world, ierr)
+             call mpi_send(connBuffer, nConnProc(iProc+1)*3, adflow_integer, 0, tag, &
+                  adflow_comm_world, ierr)
              call EChk(ierr, __FILE__, __LINE__)
           end if
        endif
@@ -1842,14 +1842,14 @@ contains
           if (iproc .ne. 0) then
              tag = 13
              if (myid == 0) then
-                call mpi_recv(buffer, nPtsProc(iProc+1), sumb_real, iProc, tag, &
-                     sumb_comm_world, status, ierr)
+                call mpi_recv(buffer, nPtsProc(iProc+1), adflow_real, iProc, tag, &
+                     adflow_comm_world, status, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
              end if
 
              if (myid == iProc) then
-                call mpi_send(buffer, nPtsProc(iProc+1), sumb_real, 0, tag, &
-                     sumb_comm_world, ierr)
+                call mpi_send(buffer, nPtsProc(iProc+1), adflow_real, 0, tag, &
+                     adflow_comm_world, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
              end if
           end if

@@ -24,7 +24,7 @@ function oversetPresent()
      end do
   end do
 
-  call mpi_allreduce(local, oversetPresent, 1, MPI_LOGICAL, MPI_LOR, SUmb_comm_world, ierr)
+  call mpi_allreduce(local, oversetPresent, 1, MPI_LOGICAL, MPI_LOR, ADflow_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
 
 end function oversetPresent

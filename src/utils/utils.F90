@@ -504,7 +504,7 @@ module utils
     !       terminates the execution of the program.                       
     !
     use constants
-    use communication, only : sumb_comm_world, myid
+    use communication, only : adflow_comm_world, myid
     implicit none
     !
     !      Subroutine arguments
@@ -602,7 +602,7 @@ module utils
     ! Call abort and stop the program. This stop should be done in
     ! abort, but just to be sure.
 
-    call mpi_abort(SUmb_comm_world, 1, ierr)
+    call mpi_abort(ADflow_comm_world, 1, ierr)
     stop
 
 #endif
@@ -3995,7 +3995,7 @@ module utils
 
     use constants
     use blockPointers, only : x, il, jl, kl, BCType, nDom, BCData, BCFaceID, nBocos
-    use communication, only : sumb_comm_world
+    use communication, only : adflow_comm_world
     implicit none
 
     ! Output
@@ -4055,8 +4055,8 @@ module utils
 
     ! Now we have a bunch of sym_locals, mpi_allreduce them and SUM
 
-    call MPI_Allreduce (sym_local, sym, 3, sumb_integer, &
-         MPI_SUM, sumb_comm_world, ierr)
+    call MPI_Allreduce (sym_local, sym, 3, adflow_integer, &
+         MPI_SUM, adflow_comm_world, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Now we should make sure that only ONE of the values is
@@ -4099,7 +4099,7 @@ module utils
     ! I'm processor 0. Write the info to stdout.
 
     print "(a)", "#"
-    print "(a)", "# SUmb, multiblock structured flow solver"
+    print "(a)", "# ADflow, multiblock structured flow solver"
     print "(a)", "#"
     print "(a)", "# This code solves the 3D RANS, laminar NS or &
          &Euler equations"
@@ -5525,7 +5525,7 @@ module utils
     !       sets fail flags to be returned to python.                      
     !
     use constants
-    use communication, only : sumb_comm_world, myid
+    use communication, only : adflow_comm_world, myid
 #ifndef USE_TAPENADE
     use killSignals, only : fatalFail, fromPython, routinefailed
 #endif
@@ -5628,7 +5628,7 @@ module utils
        routineFailed=.True.
        fatalFail = .True.
     else
-       call mpi_abort(SUmb_comm_world, 1, ierr)
+       call mpi_abort(ADflow_comm_world, 1, ierr)
        stop
     end if
 #endif
@@ -5641,7 +5641,7 @@ module utils
     ! Check if ierr that resulted from a petsc or MPI call is in fact an
     ! error. 
     use constants
-    use communication, only : sumb_comm_world, myid
+    use communication, only : adflow_comm_world, myid
     implicit none
 
     integer(kind=intType),intent(in) :: ierr
@@ -5663,7 +5663,7 @@ module utils
        write(*,901) "Error at line: ",line," in file: ",file
        print *,'-----------------------------------------------------------------'
 #endif
-       call MPI_Abort(sumb_comm_world,ierr)
+       call MPI_Abort(adflow_comm_world,ierr)
        stop ! Just in case
 #else
        stop
@@ -5710,7 +5710,7 @@ module utils
 
     use constants
     use block, only : nDom, flowDoms
-    use communication, only : sumb_comm_world
+    use communication, only : adflow_comm_world
     implicit none
     !
     !      Local variables.
@@ -5738,8 +5738,8 @@ module utils
 
     i = 0
     if( localEulerWalls ) i = 1
-    call mpi_allreduce(i, nn, 1, sumb_integer, mpi_max, &
-         SUmb_comm_world, ierr)
+    call mpi_allreduce(i, nn, 1, adflow_integer, mpi_max, &
+         ADflow_comm_world, ierr)
 
     if(nn == 0) then
        EulerWallsPresent = .false.

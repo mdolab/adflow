@@ -147,7 +147,7 @@ def is_fortran(name, root):
     if name == 'complexify.f90': return 0
     # Do not process SU_MPI stuff
     if patt_sumpi.match(root): return 0
-    # Hack for SUmb: do not process 'precision.F90'
+    # Hack for ADflow: do not process 'precision.F90'
     if name == 'precision.F90': return 0
     if name == 'dummy_mpi.f90': return 0 #hack for pywarp
     if name == 'su_mpi.F90': return 0

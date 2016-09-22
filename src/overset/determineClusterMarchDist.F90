@@ -1,7 +1,7 @@
 subroutine determineClusterMarchDist
   use constants
   use blockPointers, only : nDom, x, xSeed, il, jl, kl
-  use communication, only : sumb_comm_world, myid
+  use communication, only : adflow_comm_world, myid
   use overset, only : clusterMarchDist, cumDomProc, nClusters, clusters
   implicit none
 
@@ -47,8 +47,8 @@ subroutine determineClusterMarchDist
   end do domains
   ! All reduce sum for the localDist to get clusterMarchDist
 
-  call mpi_allreduce(localDist, clusterMarchDist, nClusters, sumb_real, &
-       MPI_SUM, sumb_comm_world, ierr)
+  call mpi_allreduce(localDist, clusterMarchDist, nClusters, adflow_real, &
+       MPI_SUM, adflow_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
     
   deallocate(localDist)

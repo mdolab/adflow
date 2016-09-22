@@ -32,7 +32,7 @@ void metisInterface(int *n, int *ncon, idxtype *xadj, idxtype *adjncy,
   /* Take care of the special case nparts == 1 here.                 */
   /*printf("metisinterface: %d",*nparts); */
 
-  /* The PartGraphKway does NOT work with SUMB. Therefore ALWAYS use the */
+  /* The PartGraphKway does NOT work with ADFLOW. Therefore ALWAYS use the */
   /* the graphRecursive algorithm */
 
 

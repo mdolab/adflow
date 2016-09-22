@@ -317,7 +317,7 @@ contains
     ii = 1
     if(nBBoxes == 0) ii = 0
 
-    call mpi_allgather(ii, 1, sumb_integer, tmpArr, 1, sumb_integer, &
+    call mpi_allgather(ii, 1, adflow_integer, tmpArr, 1, adflow_integer, &
          ADT%comm, ierr)
 
     ii = 0
@@ -368,8 +368,8 @@ contains
 
     ! Gather the data of the root leaves.
 
-    call mpi_allgather(rootLeafBBox, 6, sumb_real, rootLeavesBBox, &
-         6, sumb_real, ADT%comm, ierr)
+    call mpi_allgather(rootLeafBBox, 6, adflow_real, rootLeavesBBox, &
+         6, adflow_real, ADT%comm, ierr)
 
     ! Store the 3D root bounding boxes of the non-empty trees in
     ! the data structure for the current ADT.

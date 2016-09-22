@@ -7,7 +7,7 @@ subroutine finalOversetCommStructures(level, sps)
   use constants
   use blockPointers, only : nDom, fringes, ib, jb, kb
   use overset, only: fringeType
-  use communication, only : sumb_comm_world, myid, nProc, sendRequests, recvRequests, &
+  use communication, only : adflow_comm_world, myid, nProc, sendRequests, recvRequests, &
        commPatternOverset, internalOverset
   use utils, only : setPointers, terminate, EChk
 
@@ -91,8 +91,8 @@ subroutine finalOversetCommStructures(level, sps)
   end do
 
   ! Sum how much data we must receive from each processor. 
-  call mpi_alltoall(tmpInt, 1, sumb_integer, recvSizes, 1, sumb_integer, &
-       sumb_comm_world, ierr)
+  call mpi_alltoall(tmpInt, 1, adflow_integer, recvSizes, 1, adflow_integer, &
+       adflow_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
   deallocate(tmpInt)
 
@@ -129,7 +129,7 @@ subroutine finalOversetCommStructures(level, sps)
   ! This will sum up the nProcSendLocal array and then send out the
   ! number of sends I have to do. 
   ! call mpi_reduce_scatter_block(nProcSendLocal, nProcSend, 1, &
-  !      sumb_integer, MPI_SUM, sumb_comm_world, ierr)
+  !      adflow_integer, MPI_SUM, adflow_comm_world, ierr)
 
  !
   ! The following is done for MPI 2.0 compatibility. 
@@ -140,13 +140,13 @@ subroutine finalOversetCommStructures(level, sps)
 
   ! Step 1: Reduce at root proc
   call mpi_reduce(nProcSendLocal, nProcSendLocaltmp, nProc, &
-           sumb_integer, MPI_SUM, 0, sumb_comm_world, ierr)
+           adflow_integer, MPI_SUM, 0, adflow_comm_world, ierr)
 
   ! Step 2: Scatter from root proc
   ! sendbuf = nProcSendLocaltmp, sendcount = 1, 
   ! recvbuf = nProcSend, recvcount = 1, source = 0
-  call mpi_scatter(nProcSendLocaltmp, 1, sumb_integer, nProcSend, 1, &
-           sumb_integer, 0, sumb_comm_world, ierr)
+  call mpi_scatter(nProcSendLocaltmp, 1, adflow_integer, nProcSend, 1, &
+           adflow_integer, 0, adflow_comm_world, ierr)
 
   deallocate(nProcSendLocaltmp, nProcSendLocal)
 
@@ -179,13 +179,13 @@ subroutine finalOversetCommStructures(level, sps)
      
      if (iProc /= myid) then 
         sendCount = sendCount + 1
-        call mpi_isend(intSendBuf(iStart*4+1), 4*iSize, sumb_integer, iProc, myid, &
-             sumb_comm_world, sendRequests(sendCount), ierr)
+        call mpi_isend(intSendBuf(iStart*4+1), 4*iSize, adflow_integer, iProc, myid, &
+             adflow_comm_world, sendRequests(sendCount), ierr)
         call ECHK(ierr, __FILE__, __LINE__)
 
         sendCount = sendCount + 1
-        call mpi_isend(realSendBuf(iStart*3+1), 3*iSize, sumb_real, iProc, myid, &
-             sumb_comm_world, sendRequests(sendCount), ierr)
+        call mpi_isend(realSendBuf(iStart*3+1), 3*iSize, adflow_real, iProc, myid, &
+             adflow_comm_world, sendRequests(sendCount), ierr)
         call ECHK(ierr, __FILE__, __LINE__)
      end if
   end do
@@ -198,15 +198,15 @@ subroutine finalOversetCommStructures(level, sps)
      
      if (recvSizes(iProc) > 0) then
         recvCount = recvCount + 1
-        call mpi_irecv(intRecvBuf(ii), 4*recvSizes(iProc), sumb_integer, &
-             iProc, iProc, sumb_comm_world, recvRequests(recvCount), ierr) 
+        call mpi_irecv(intRecvBuf(ii), 4*recvSizes(iProc), adflow_integer, &
+             iProc, iProc, adflow_comm_world, recvRequests(recvCount), ierr) 
         call ECHK(ierr, __FILE__, __LINE__) 
        
         ii = ii + recvSizes(iProc)*4
 
         recvCount = recvCount + 1
-        call mpi_irecv(realRecvBuf(jj), 3*recvSizes(iProc), sumb_real, &
-             iProc, iProc, sumb_comm_world, recvRequests(recvCount), ierr) 
+        call mpi_irecv(realRecvBuf(jj), 3*recvSizes(iProc), adflow_real, &
+             iProc, iProc, adflow_comm_world, recvRequests(recvCount), ierr) 
         call ECHK(ierr, __FILE__, __LINE__) 
         jj = jj + recvSizes(iProc)*3
      end if

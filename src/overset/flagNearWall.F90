@@ -98,8 +98,8 @@ subroutine flagNearWallCells(level, sps)
   end do
 
   ! Determine if any cells made it to the other side of a face. If so, we have to keep going:
-  call mpi_allreduce(nAtBoundaryLocal, nAtBoundary, 1, sumb_integer, MPI_SUM, &
-       sumb_comm_world, ierr)
+  call mpi_allreduce(nAtBoundaryLocal, nAtBoundary, 1, adflow_integer, MPI_SUM, &
+       adflow_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
  
   ! Iterative loop
@@ -170,8 +170,8 @@ subroutine flagNearWallCells(level, sps)
      end do
 
      ! Determine if any cells made it to the other side of a face. If so, we have to keep going:
-     call mpi_allreduce(nAtBoundaryLocal, nAtBoundary, 1, sumb_integer, MPI_SUM, &
-          sumb_comm_world, ierr)
+     call mpi_allreduce(nAtBoundaryLocal, nAtBoundary, 1, adflow_integer, MPI_SUM, &
+          adflow_comm_world, ierr)
      call ECHK(ierr, __FILE__, __LINE__)
 
      loopIter = loopIter + 1

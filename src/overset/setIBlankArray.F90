@@ -3,7 +3,7 @@ subroutine setIblankArray(level, sps)
   use constants
   use blockPointers
   use communication, only : myid, commPatternCell_2nd, internalCell_2nd,&
-       sumb_comm_world
+       adflow_comm_world
   use utils, only : setPointers, EChk
   use haloExchange, only : whalo1to1IntGeneric
   implicit none
@@ -65,7 +65,7 @@ subroutine setIblankArray(level, sps)
   call wHalo1to1IntGeneric(1, level, sps, commPatternCell_2nd, internalCell_2nd)
 
   call mpi_reduce((/nCompute, nFringe, nBlank, nFlooded, nFloodSeed/), &
-       counts, 5, sumb_integer, MPI_SUM, 0, sumb_comm_world, ierr)
+       counts, 5, adflow_integer, MPI_SUM, 0, adflow_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
 
   if (myid == 0) then 

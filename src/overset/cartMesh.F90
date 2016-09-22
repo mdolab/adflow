@@ -111,16 +111,16 @@ module cartMesh
        end do
     end do
 
-    call MPI_Allreduce(xMinLocal, xMin, 3, sumb_real, MPI_MIN, sumb_comm_world, ierr)
+    call MPI_Allreduce(xMinLocal, xMin, 3, adflow_real, MPI_MIN, adflow_comm_world, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    call MPI_Allreduce(xMaxLocal, xMax, 3, sumb_real, MPI_MAX, sumb_comm_world, ierr)
+    call MPI_Allreduce(xMaxLocal, xMax, 3, adflow_real, MPI_MAX, adflow_comm_world, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    call MPI_Allreduce(areaLocal, area, 1, sumb_real, MPI_SUM, sumb_comm_world, ierr)
+    call MPI_Allreduce(areaLocal, area, 1, adflow_real, MPI_SUM, adflow_comm_world, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    call MPI_Allreduce(countLocal, count, 1, sumb_integer, MPI_SUM, sumb_comm_world, ierr)
+    call MPI_Allreduce(countLocal, count, 1, adflow_integer, MPI_SUM, adflow_comm_world, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Compute the average area:
@@ -197,7 +197,7 @@ module cartMesh
     ! Now we all reduce with max. Values that are not zero have
     ! symmetry planes on them. 
 
-    call MPI_Allreduce(symOnFaceLocal, symOnFace, 6, sumb_integer, MPI_MAX, sumb_comm_world, ierr)
+    call MPI_Allreduce(symOnFaceLocal, symOnFace, 6, adflow_integer, MPI_MAX, adflow_comm_world, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Now we will expand xmin/xmax by 2h (just to be sure) but only
@@ -267,7 +267,7 @@ module cartMesh
        print *,'K sizes:', lSizes(1:procDims(3), 3)
     end if
 
-    call DMDAcreate3d(sumb_comm_world, DM_BOUNDARY_GHOSTED, DM_BOUNDARY_GHOSTED, &
+    call DMDAcreate3d(adflow_comm_world, DM_BOUNDARY_GHOSTED, DM_BOUNDARY_GHOSTED, &
          DM_BOUNDARY_GHOSTED, DMDA_STENCIL_STAR, cellDims(1), cellDims(2), &
          cellDims(3),  procDims(1), procDims(2), procDims(3), 1, 1, &
          lSizes(1:procDims(1), 1), lSizes(1:procDims(2), 2), lSizes(1:procDims(3), 3), &
@@ -663,8 +663,8 @@ module cartMesh
        call ECHK(ierr, __FILE__, __LINE__)
 
        ! Determine if cells got changd. If so do another loop.
-       call mpi_allreduce(nChangedLocal, nChanged, 1, sumb_integer, MPI_SUM, &
-            sumb_comm_world, ierr)
+       call mpi_allreduce(nChangedLocal, nChanged, 1, adflow_integer, MPI_SUM, &
+            adflow_comm_world, ierr)
        call ECHK(ierr, __FILE__, __LINE__)
        if (myid == 0) then 
           print *, 'Cart Flood Iteration:', loopIter, 'Blanked ', nChanged, 'Interior Cells.'
@@ -720,14 +720,14 @@ module cartMesh
     ! ordering that we actually want.
 
     i = cellDims(1)*cellDims(2)*cellDims(3)
-    call VecCreateMPI(sumb_comm_world, PETSC_DECIDE, i, blankVec, ierr)
+    call VecCreateMPI(adflow_comm_world, PETSC_DECIDE, i, blankVec, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
 
     ! Create the index for the real global Vector
     call VecGetOwnershipRange(blankVec, i, j, ierr)
     call EChk(ierr, __FILE__, __LINE__)
-    call ISCreateStride(sumb_comm_world, j-i, i, 1, IS2, ierr)
+    call ISCreateStride(adflow_comm_world, j-i, i, 1, IS2, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     call ISDuplicate(IS2, IS1, ierr)

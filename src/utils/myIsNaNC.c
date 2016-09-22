@@ -9,7 +9,7 @@
        ******************************************************************
 */
 
-#include "SUmb_c_types.h"
+#include "ADflow_c_types.h"
 #include <math.h>
 
 /*
@@ -23,7 +23,7 @@
        ******************************************************************
 */
 
-void myIsNanC(SUmb_floatT *val, SUmb_intT *res)
+void myIsNanC(ADflow_floatT *val, ADflow_intT *res)
 {
   if(isnan(*val) || isinf(*val)) *res = 1;
   else                           *res = 0;
@@ -37,6 +37,6 @@ void myIsNanC(SUmb_floatT *val, SUmb_intT *res)
        ******************************************************************
 */
 
-void MYISNANC(SUmb_floatT *val, SUmb_intT *res) {myIsNanC(val, res);}
-void myisnanc_(SUmb_floatT *val, SUmb_intT *res) {myIsNanC(val, res);}
-void myisnanc__(SUmb_floatT *val, SUmb_intT *res) {myIsNanC(val, res);}
+void MYISNANC(ADflow_floatT *val, ADflow_intT *res) {myIsNanC(val, res);}
+void myisnanc_(ADflow_floatT *val, ADflow_intT *res) {myIsNanC(val, res);}
+void myisnanc__(ADflow_floatT *val, ADflow_intT *res) {myIsNanC(val, res);}

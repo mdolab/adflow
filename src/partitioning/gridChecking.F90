@@ -10,7 +10,7 @@ contains
     use constants
     use blockPointers, only : nDom, nbkGlobal
     use cgnsGrid, only : cgnsNDom, cgnsDoms
-    use communication, only : sumb_comm_world, myid, nProc
+    use communication, only : adflow_comm_world, myid, nProc
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use utils, only : setPointers, terminate
     use partitionMod, only : sortBadEntities
@@ -69,8 +69,8 @@ contains
     !
     ! Determine the number of bad blocks per processor.
 
-    call mpi_allgather(nBad, 1, sumb_integer, counts, 1, &
-         sumb_integer, SUmb_comm_world, ierr)
+    call mpi_allgather(nBad, 1, adflow_integer, counts, 1, &
+         adflow_integer, ADflow_comm_world, ierr)
 
     ! Determine the global number of bad blocks and the arrays
     ! recvcounts and displs needed for the call to allgatherv.
@@ -95,9 +95,9 @@ contains
     ! Gather the data.
 
     size = 4*nBad
-    call mpi_allgatherv(bad, size, sumb_integer, badGlobal, &
-         recvcounts, displs, sumb_integer,   &
-         SUmb_comm_world, ierr)
+    call mpi_allgatherv(bad, size, adflow_integer, badGlobal, &
+         recvcounts, displs, adflow_integer,   &
+         ADflow_comm_world, ierr)
 
     ! Sort the bad blocks and get rid of the multiple entries.
     ! The last argument is .false. to indicate that only the
@@ -220,7 +220,7 @@ contains
 
        ! The other processors wait to get killed.
 
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
 
     endif testBadPresent
 
@@ -423,7 +423,7 @@ contains
          dinBeg, djnBeg, djnEnd, dknBeg, dknEnd, x, cgnsSubFace, &
          neighBlock, l1, l2, l3
     use cgnsGrid, only : cgnsDoms, cgnsNDom
-    use communication, only : myID, sumb_comm_world, nProc, sendRequests, &
+    use communication, only : myID, adflow_comm_world, nProc, sendRequests, &
          recvRequests
     use inputPhysics
     use inputTimeSpectral, only : nTimeIntervalsSpectral
@@ -681,8 +681,8 @@ contains
 
     sizeMessage = 1
     call mpi_reduce_scatter(nCCount, nMessagesReceive,          &
-         sizeMessage, sumb_integer, mpi_sum, &
-         SUmb_comm_world, ierr)
+         sizeMessage, adflow_integer, mpi_sum, &
+         ADflow_comm_world, ierr)
 
     ! Send the data I have to send. Do not send a message to myself.
     ! That is handled separately. As nonblocking sends must be used
@@ -705,8 +705,8 @@ contains
           size   = 10*(nFSend(nn) - nFSend(nn-1))
           mm     = nFSend(nn-1) + 1
 
-          call mpi_isend(intBuf(1,mm), size, sumb_integer, procID,  &
-               procID, SUmb_comm_world, sendRequests(ii), &
+          call mpi_isend(intBuf(1,mm), size, adflow_integer, procID,  &
+               procID, ADflow_comm_world, sendRequests(ii), &
                ierr)
 
           ! Send the real buffer.
@@ -714,8 +714,8 @@ contains
           size = 3*(nCoor(nn) - nCoor(nn-1))
           mm   = nCoor(nn-1) + 1
 
-          call mpi_isend(realBuf(1,mm), size, sumb_real, procID, &
-               procID+1, SUmb_comm_world,              &
+          call mpi_isend(realBuf(1,mm), size, adflow_real, procID, &
+               procID+1, ADflow_comm_world,              &
                recvRequests(ii), ierr)
 
        endif
@@ -760,11 +760,11 @@ contains
        ! Wait until an integer message arrives and determine the
        ! source and size of the message.
 
-       call mpi_probe(mpi_any_source, myID, SUmb_comm_world, &
+       call mpi_probe(mpi_any_source, myID, ADflow_comm_world, &
             status, ierr)
 
        procID = status(mpi_source)
-       call mpi_get_count(status, sumb_integer, size, ierr)
+       call mpi_get_count(status, adflow_integer, size, ierr)
 
        ! Check in debug mode that the incoming message is of
        ! correct size.
@@ -787,15 +787,15 @@ contains
        ! Receive the integer buffer. Blocking receives can be used,
        ! because the message has already arrived.
 
-       call mpi_recv(intRecv, size, sumb_integer, procID, &
-            myID, SUmb_comm_world, status, ierr)
+       call mpi_recv(intRecv, size, adflow_integer, procID, &
+            myID, ADflow_comm_world, status, ierr)
 
        ! Probe for the corresponding real buffer and determine its
        ! size.
 
-       call mpi_probe(procID, myID+1, SUmb_comm_world, &
+       call mpi_probe(procID, myID+1, ADflow_comm_world, &
             status, ierr)
-       call mpi_get_count(status, sumb_real, size, ierr)
+       call mpi_get_count(status, adflow_real, size, ierr)
 
        ! Check in debug mode that the incoming message is of
        ! correct size.
@@ -818,8 +818,8 @@ contains
        ! Receive the real buffer. Blocking receives can be used,
        ! because the message has already arrived.
 
-       call mpi_recv(realRecv, size, sumb_real, procID, &
-            myID+1, SUmb_comm_world, status, ierr)
+       call mpi_recv(realRecv, size, adflow_real, procID, &
+            myID+1, ADflow_comm_world, status, ierr)
 
        ! Check the subfaces stored in these messages.
 
@@ -856,8 +856,8 @@ contains
     !
     ! Determine the global number of bad subfaces.
 
-    call mpi_allgather(nBad, 1, sumb_integer, nCCount, 1, &
-         sumb_integer, SUmb_comm_world, ierr)
+    call mpi_allgather(nBad, 1, adflow_integer, nCCount, 1, &
+         adflow_integer, ADflow_comm_world, ierr)
 
     ! Determine the global number of bad subfaces and the arrays
     ! recvcounts and displs needed for the call to allgatherv
@@ -884,9 +884,9 @@ contains
     ! Gather the data. First the distance info.
 
     size = nBad
-    call mpi_allgatherv(badDist, size, sumb_real, badDistGlobal, &
-         recvcounts, displs, sumb_real,           &
-         SUmb_comm_world, ierr)
+    call mpi_allgatherv(badDist, size, adflow_real, badDistGlobal, &
+         recvcounts, displs, adflow_real,           &
+         ADflow_comm_world, ierr)
 
     ! And the integer info. Multiply recvcounts and displs
     ! by 4, because 4 integers are received.
@@ -897,9 +897,9 @@ contains
     enddo
 
     size = 4*nBad
-    call mpi_allgatherv(badSubfaces, size, sumb_integer, badGlobal, &
-         recvcounts, displs, sumb_integer,           &
-         SUmb_comm_world, ierr)
+    call mpi_allgatherv(badSubfaces, size, adflow_integer, badGlobal, &
+         recvcounts, displs, adflow_integer,           &
+         ADflow_comm_world, ierr)
 
     ! Sort the bad subfaces and get rid of the multiple entries.
 
@@ -915,7 +915,7 @@ contains
                call terminate("check1to1Subfaces", &
                "Non-matching internally created &
                &face found.")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
     enddo
 
@@ -1009,7 +1009,7 @@ contains
 
     ! Synchronize the processors, because wild cards have been used.
 
-    call mpi_barrier(SUmb_comm_world, ierr)
+    call mpi_barrier(ADflow_comm_world, ierr)
 
   end subroutine check1to1Subfaces
 

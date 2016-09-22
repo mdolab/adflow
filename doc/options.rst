@@ -1,9 +1,9 @@
-.. _sumb_options:
+.. _adflow_options:
 
 Options
 =======
 
-Here are a list of options currently available in SUmb.
+Here are a list of options currently available in ADflow.
 
 ======================================  ==========  ===========================================   ================================================================================================================================================================================
 Parameter                                  Type       Default                                       Description
@@ -12,7 +12,7 @@ Parameter                                  Type       Default                   
                                                                                                     all block-to-block information and boundary condition information contained in the
 		                       				                
 `restartFile`                            `Object`    `None`                                         Accepts a single string or a list of strings pointing to a CGNS file(s) which must
-                                                                                                    be a volume solution file that was written by ``sumb``. For steady state restart one
+                                                                                                    be a volume solution file that was written by ``adflow``. For steady state restart one
                                                                                                     CGNS file is sufficient and does not need to be provided as a list with single item. 
                                                                                                     For unsteady restart you typically provide a list with 2 items for second order restart.
                                                                                                                                                                          
@@ -237,7 +237,7 @@ Parameter                                  Type       Default                   
                                                                                                     option also determines the convergence, but the reference is taken as free-stream 
                                                                                                     residual. 
                                                           
-`l2ConvergenceRel`                       `float`     1e-16                                          This option is typically **only** used when SUmb is used in conjunction with an
+`l2ConvergenceRel`                       `float`     1e-16                                          This option is typically **only** used when ADflow is used in conjunction with an
                                                                                                     aerostructural solver. This specifies the relative tolerance in relation to the
                                                                                                     current starting point. 
                                                           
@@ -296,14 +296,14 @@ Parameter                                  Type       Default                   
                                                                                                     10 iterations. For simple problems, it may be possible to increase the Jacobian lag
                                                                                                     to such a high value that the precondition is never reformed at all during a solution. 
                                                                                                     For more difficult cases, a lower value may help convergence. A lower value will 
-                                                                                                    result in more (preconditioner) Jacobian assemblies that are fairly costly in SUmb. 
+                                                                                                    result in more (preconditioner) Jacobian assemblies that are fairly costly in ADflow. 
 
 `RKReset`                                `bool`      `False`                                        Option to reset Runge-Kutta solver at each iteration.
 
 `NKReset`                                `int`       5                                              Option to reset Newton-Krylov solver at given number of iteration intervals.
 
-`applyPCSubSpaceSize`                    `int`       10                                             This option is only used when SUmb is used in an aero-structural analysis. This parameter
-                                                                                                    determines the subspace **and** the total number of iterations to run when SUmb is only
+`applyPCSubSpaceSize`                    `int`       10                                             This option is only used when ADflow is used in an aero-structural analysis. This parameter
+                                                                                                    determines the subspace **and** the total number of iterations to run when ADflow is only
                                                                                                     being used to precondition residuals via the globalNKPreCon() function. 
 
 `NKOuterPreConIts`                       `int`       1                                              Number of times to apply the global (NKPC option) precondition. More iterations may help

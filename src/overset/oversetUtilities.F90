@@ -441,7 +441,7 @@ end subroutine getOWallCommPattern
 subroutine sendOBlock(oBlock, iDom, iProc, tagOffset, sendCount)
 
   use constants
-  use communication, only : sumb_comm_world, sendRequests
+  use communication, only : adflow_comm_world, sendRequests
   use overset, only : oversetBlock
   use utils, only : EChk
   implicit none
@@ -456,13 +456,13 @@ subroutine sendOBlock(oBlock, iDom, iProc, tagOffset, sendCount)
 
   tag = tagOffset + iDom
   sendCount = sendCount + 1
-  call mpi_isend(oBlock%rBuffer, size(oBlock%rbuffer), sumb_real, &
-       iProc, tag, SUmb_comm_world, sendRequests(sendCount), ierr)
+  call mpi_isend(oBlock%rBuffer, size(oBlock%rbuffer), adflow_real, &
+       iProc, tag, ADflow_comm_world, sendRequests(sendCount), ierr)
   call ECHK(ierr, __FILE__, __LINE__)
   
   sendCount = sendCount + 1
-  call mpi_isend(oBlock%iBuffer, size(oBlock%iBuffer), sumb_integer, &
-       iProc, tag, SUmb_comm_world, sendRequests(sendCount), ierr)
+  call mpi_isend(oBlock%iBuffer, size(oBlock%iBuffer), adflow_integer, &
+       iProc, tag, ADflow_comm_world, sendRequests(sendCount), ierr)
   call ECHK(ierr, __FILE__, __LINE__)
   
 end subroutine sendOBlock
@@ -470,7 +470,7 @@ end subroutine sendOBlock
 subroutine sendOFringe(oFringe, iDom, iProc, tagOffset, sendCount)
 
   use constants
-  use communication, only : sumb_comm_world, sendRequests
+  use communication, only : adflow_comm_world, sendRequests
   use overset, only : oversetFringe
   use utils, only : EChk
   implicit none
@@ -485,13 +485,13 @@ subroutine sendOFringe(oFringe, iDom, iProc, tagOffset, sendCount)
 
   tag = iDom + tagOffset
   sendCount = sendCount + 1
-  call mpi_isend(oFringe%rBuffer, size(oFringe%rbuffer), sumb_real, &
-       iProc, tag, SUmb_comm_world, sendRequests(sendCount), ierr)
+  call mpi_isend(oFringe%rBuffer, size(oFringe%rbuffer), adflow_real, &
+       iProc, tag, ADflow_comm_world, sendRequests(sendCount), ierr)
   call ECHK(ierr, __FILE__, __LINE__)
   
   sendCount = sendCount + 1
-  call mpi_isend(oFringe%iBuffer, size(oFringe%iBuffer), sumb_integer, &
-       iProc, tag, SUmb_comm_world, sendRequests(sendCount), ierr)
+  call mpi_isend(oFringe%iBuffer, size(oFringe%iBuffer), adflow_integer, &
+       iProc, tag, ADflow_comm_world, sendRequests(sendCount), ierr)
   call ECHK(ierr, __FILE__, __LINE__)
   
 end subroutine sendOFringe
@@ -499,7 +499,7 @@ end subroutine sendOFringe
 subroutine sendOWall(oWall, iDom, iProc, tagOffset, sendCount)
 
   use constants
-  use communication, only : sendRequests, sumb_comm_world
+  use communication, only : sendRequests, adflow_comm_world
   use overset, only : oversetWall
   use utils, only : EChk
   implicit none
@@ -514,13 +514,13 @@ subroutine sendOWall(oWall, iDom, iProc, tagOffset, sendCount)
 
   tag = iDom + tagOffset
   sendCount = sendCount + 1
-  call mpi_isend(oWall%rBuffer, size(oWall%rbuffer), sumb_real, &
-       iProc, tag, SUmb_comm_world, sendRequests(sendCount), ierr)
+  call mpi_isend(oWall%rBuffer, size(oWall%rbuffer), adflow_real, &
+       iProc, tag, ADflow_comm_world, sendRequests(sendCount), ierr)
   call ECHK(ierr, __FILE__, __LINE__)
   
   sendCount = sendCount + 1
-  call mpi_isend(oWall%iBuffer, size(oWall%iBuffer), sumb_integer, &
-       iProc, tag, SUmb_comm_world, sendRequests(sendCount), ierr)
+  call mpi_isend(oWall%iBuffer, size(oWall%iBuffer), adflow_integer, &
+       iProc, tag, ADflow_comm_world, sendRequests(sendCount), ierr)
   call ECHK(ierr, __FILE__, __LINE__)
   
 end subroutine sendOWall
@@ -529,7 +529,7 @@ subroutine recvOBlock(oBlock, iDom, iProc, tagOffset, iSize, rSize, &
      recvCount, recvInfo)
 
   use constants
-  use communication, only : sumb_comm_world, recvRequests
+  use communication, only : adflow_comm_world, recvRequests
   use overset, only : oversetBlock
   use utils, only : EChk
   implicit none
@@ -547,14 +547,14 @@ subroutine recvOBlock(oBlock, iDom, iProc, tagOffset, iSize, rSize, &
   allocate(oBLock%rBuffer(rSize), oBlock%iBuffer(iSize))
  
   recvCount = recvCount + 1
-  call mpi_irecv(oBlock%rBuffer, rSize, sumb_real, &
-       iProc, tag, SUmb_comm_world, recvRequests(recvCount), ierr)
+  call mpi_irecv(oBlock%rBuffer, rSize, adflow_real, &
+       iProc, tag, ADflow_comm_world, recvRequests(recvCount), ierr)
   call ECHK(ierr, __FILE__, __LINE__)
   recvInfo(:, recvCount) = (/iDom, 1/) 
 
   recvCount = recvCount + 1
-  call mpi_irecv(oBlock%iBuffer, iSize, sumb_integer, &
-       iProc, tag, SUmb_comm_world, recvRequests(recvCount), ierr)
+  call mpi_irecv(oBlock%iBuffer, iSize, adflow_integer, &
+       iProc, tag, ADflow_comm_world, recvRequests(recvCount), ierr)
   call ECHK(ierr, __FILE__, __LINE__)
   recvInfo(:, recvCount) = (/iDom, 2/) 
   
@@ -564,7 +564,7 @@ subroutine recvOFringe(oFringe, iDom, iProc, tagOffset, iSize, rSize, &
      recvCount, recvInfo)
 
   use constants
-  use communication, only : sumb_comm_world, recvRequests
+  use communication, only : adflow_comm_world, recvRequests
   use overset, only : oversetFringe
   use utils, only : EChk
   implicit none
@@ -582,14 +582,14 @@ subroutine recvOFringe(oFringe, iDom, iProc, tagOffset, iSize, rSize, &
   allocate(oFringe%rBuffer(rSize), oFringe%iBuffer(iSize))
  
   recvCount = recvCount + 1
-  call mpi_irecv(oFringe%rBuffer, rSize, sumb_real, &
-       iProc, tag, SUmb_comm_world, recvRequests(recvCount), ierr)
+  call mpi_irecv(oFringe%rBuffer, rSize, adflow_real, &
+       iProc, tag, ADflow_comm_world, recvRequests(recvCount), ierr)
   call ECHK(ierr, __FILE__, __LINE__)
   recvInfo(:, recvCount) = (/iDom, 3/) 
 
   recvCount = recvCount + 1
-  call mpi_irecv(oFringe%iBuffer, iSize, sumb_integer, &
-       iProc, tag, SUmb_comm_world, recvRequests(recvCount), ierr)
+  call mpi_irecv(oFringe%iBuffer, iSize, adflow_integer, &
+       iProc, tag, ADflow_comm_world, recvRequests(recvCount), ierr)
   call ECHK(ierr, __FILE__, __LINE__)
   recvInfo(:, recvCount) = (/iDom, 4/) 
   
@@ -599,7 +599,7 @@ subroutine recvOWall(oWall, iDom, iProc, tagOffset, iSize, rSize, &
      recvCount, recvInfo)
 
   use constants
-  use communication, only : sumb_comm_world, recvRequests
+  use communication, only : adflow_comm_world, recvRequests
   use overset, only : oversetWall
   use utils, only : EChk
   implicit none
@@ -617,15 +617,15 @@ subroutine recvOWall(oWall, iDom, iProc, tagOffset, iSize, rSize, &
   allocate(oWall%rBuffer(rSize), oWall%iBuffer(iSize))
  
   recvCount = recvCount + 1
-  call mpi_irecv(oWall%rBuffer, rSize, sumb_real, &
-       iProc, tag, SUmb_comm_world, recvRequests(recvCount), ierr)
+  call mpi_irecv(oWall%rBuffer, rSize, adflow_real, &
+       iProc, tag, ADflow_comm_world, recvRequests(recvCount), ierr)
   call ECHK(ierr, __FILE__, __LINE__)
   recvInfo(:, recvCount) = (/iDom, 5/) 
 
   recvCount = recvCount + 1
 
-  call mpi_irecv(oWall%iBuffer, iSize, sumb_integer, &
-       iProc, tag, SUmb_comm_world, recvRequests(recvCount), ierr)
+  call mpi_irecv(oWall%iBuffer, iSize, adflow_integer, &
+       iProc, tag, ADflow_comm_world, recvRequests(recvCount), ierr)
   call ECHK(ierr, __FILE__, __LINE__)
   recvInfo(:, recvCount) = (/iDom, 6/) 
   

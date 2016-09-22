@@ -14,9 +14,9 @@
 /* Modified by Edwin van der Weide, 02-12-2003, such that idxtype */
 /* is set to the integer type used in the entire code.            */
 
-#include <SUmb_c_types.h>
+#include <ADflow_c_types.h>
 
-typedef SUmb_intT idxtype;
+typedef ADflow_intT idxtype;
 
 #define MAXIDX	(((idxtype) 1)<<(8*sizeof(idxtype)-2))
 

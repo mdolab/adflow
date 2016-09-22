@@ -6,7 +6,7 @@
 !
        use constants
        use extraOutput
-       use communication, only : sumb_comm_world
+       use communication, only : adflow_comm_world
        use monitor, only : writeVolume
        use inputIO, only : storeRindLayer
        use killSignals, only : localSignal, globalSignal
@@ -69,8 +69,8 @@
        ! Therefore determine the global signal as the maximum of the
        ! local ones.
 
-       call mpi_allreduce(localSignal, globalSignal, 1, sumb_integer, &
-                          mpi_max, SUmb_comm_world, ierr)
+       call mpi_allreduce(localSignal, globalSignal, 1, adflow_integer, &
+                          mpi_max, ADflow_comm_world, ierr)
 #endif
 
        end subroutine writeSol

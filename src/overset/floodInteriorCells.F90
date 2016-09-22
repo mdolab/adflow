@@ -1,6 +1,6 @@
 subroutine floodInteriorCells(level, sps)
   use constants
-  use communication, only : commPatternCell_1st, internalCell_1st, sumb_comm_world, myid
+  use communication, only : commPatternCell_1st, internalCell_1st, adflow_comm_world, myid
   use blockPointers, only : il, jl, kl, nx, ny, nz, ie, je, ke, ib, jb, kb,  &
        nDom, flowDoms, iBlank, fringes
   use utils, only : setPointers, EChk
@@ -215,8 +215,8 @@ subroutine floodInteriorCells(level, sps)
      call wHalo1to1IntGeneric(1, level, sps, commPatternCell_1st, internalCell_1st)
 
      ! Determine if cells got changd. If so do another loop.
-     call mpi_allreduce(nChangedLocal, nChanged, 1, sumb_integer, MPI_SUM, &
-          sumb_comm_world, ierr)
+     call mpi_allreduce(nChangedLocal, nChanged, 1, adflow_integer, MPI_SUM, &
+          adflow_comm_world, ierr)
      call ECHK(ierr, __FILE__, __LINE__)
 
      if (myid == 0) then 

@@ -2,7 +2,7 @@
 !
 !       Contains the variable definition of the processor number,      
 !       myID and the number of processors, nProc, which belong to the  
-!       group defined by the communicator SUmb_comm_world. The range   
+!       group defined by the communicator ADflow_comm_world. The range   
 !       of processor numbers is <0..Nproc-1>, i.e. the numbering       
 !       starts at 0. This is done for compatibility with MPI.          
 !       Furthermore this module contains the communication pattern for 
@@ -168,10 +168,10 @@
 !
 !       Variables stored in this module.                               
 !
-       ! SUmb_comm_world: The communicator of this processor group.
-       ! myID:            My processor number in SUmb_comm_world.
-       ! nProc:           The number of processors in SUmb_comm_world.
-       integer :: SUmb_comm_world, SUmb_comm_self
+       ! ADflow_comm_world: The communicator of this processor group.
+       ! myID:            My processor number in ADflow_comm_world.
+       ! nProc:           The number of processors in ADflow_comm_world.
+       integer :: ADflow_comm_world, ADflow_comm_self
 
        integer :: myID, nProc
 

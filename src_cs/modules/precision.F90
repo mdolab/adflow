@@ -34,14 +34,14 @@ module precision
   ! Long, i.e. 8 byte, integers are used as default integers
 
   integer(kind=8), private :: dummyInt
-  integer, parameter       :: sumb_integer  = mpi_integer8
+  integer, parameter       :: adflow_integer  = mpi_integer8
   integer, parameter       :: sizeOfInteger = 8
 #else
 
   ! Standard 4 byte integer types are used as default integers.
 
   integer(kind=4), private :: dummyInt
-  integer, parameter       :: sumb_integer  = mpi_integer4
+  integer, parameter       :: adflow_integer  = mpi_integer4
   integer, parameter       :: sizeOfInteger = 4
 #endif
 
@@ -56,7 +56,7 @@ module precision
   ! Single precision reals are used as default real types.
 
   complex(kind=4), private :: dummyReal
-  integer, parameter    :: sumb_real  = MPI_DOUBLE_COMPLEX
+  integer, parameter    :: adflow_real  = MPI_DOUBLE_COMPLEX
   integer, parameter    :: sizeOfReal = 4
   real(kind=4), private :: dummyCGNSReal
 
@@ -68,7 +68,7 @@ module precision
   ! precision is used instead.
 
   complex(kind=16), private :: dummyReal
-  integer, parameter     :: sumb_real  = mpi_DOUBLE_COMPLE16
+  integer, parameter     :: adflow_real  = mpi_DOUBLE_COMPLE16
   integer, parameter     :: sizeOfReal = 16
   real(kind=8), private :: dummyCGNSReal
 
@@ -77,7 +77,7 @@ module precision
   ! Double precision reals are used as default real types.
 
   complex(kind=8), private :: dummyReal
-  integer, parameter    :: sumb_real   = MPI_DOUBLE_COMPLEX
+  integer, parameter    :: adflow_real   = MPI_DOUBLE_COMPLEX
   integer, parameter    :: sizeOfReal = 8
   real(kind=8), private :: dummyCGNSReal
 

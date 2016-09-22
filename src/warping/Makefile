@@ -22,11 +22,11 @@
 #      *                                                                *
 #      ******************************************************************
 
-SUMB_DIR = ../..
-SUMB_COMMON_FILE = $(SUMB_DIR)/SUmb_Common.mk
-SUMB_RULES_FILE  = $(SUMB_DIR)/rulesSources.mk
-include ${SUMB_COMMON_FILE}
-include ${SUMB_RULES_FILE}
+ADFLOW_DIR = ../..
+ADFLOW_COMMON_FILE = $(ADFLOW_DIR)/ADflow_Common.mk
+ADFLOW_RULES_FILE  = $(ADFLOW_DIR)/rulesSources.mk
+include ${ADFLOW_COMMON_FILE}
+include ${ADFLOW_RULES_FILE}
 
 #      ******************************************************************
 #      *                                                                *
@@ -34,7 +34,7 @@ include ${SUMB_RULES_FILE}
 #      *                                                                *
 #      ******************************************************************
 
-vpath %.o $(SUMB_OBJDIR)
+vpath %.o $(ADFLOW_OBJDIR)
 
 FILES_TO_COMPLEXIFY = 	getForces.F90\
 	        getHeatFlux.f90\

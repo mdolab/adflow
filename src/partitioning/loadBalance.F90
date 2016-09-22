@@ -11,7 +11,7 @@ contains
     use constants
     use block, only : flowDoms, nDom
     use cgnsGrid, only : cgnsDoms, cgnsNDom
-    use communication, only : sumb_comm_world, nProc, myID
+    use communication, only : adflow_comm_world, nProc, myID
     use inputMotion, only : gridMotionSpecified
     use inputParallel, only : partitionLikeNProc
     use inputPhysics, only : equationMode
@@ -47,7 +47,7 @@ contains
     call blockDistribution
 
     ! Restore the size of the comm
-    call mpi_Comm_Size(sumb_comm_world, nProc, ierr)
+    call mpi_Comm_Size(adflow_comm_world, nProc, ierr)
 
     ! We ned to modify what comes back if we are using the
     ! partitionLikenProc option:
@@ -418,7 +418,7 @@ contains
     !
     use constants
     use cgnsGrid, only : cgnsDoms, cgnsNDom
-    use communication, only : myID, sumb_comm_world, nProc
+    use communication, only : myID, adflow_comm_world, nProc
     use inputParallel, only : loadBalanceIter, loadImbalance, splitBlocks
     use partitionMod, onlY : splitCGNSType, distributionBlockType, ubVec, &
          blocks, part, nBlocks, sortRangesSplitInfo
@@ -453,7 +453,7 @@ contains
             "Number of processors is larger than number &
             &of blocks, but it is not allowed to split &
             &blocks")
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
     !
     !       Determine how the blocks must be split (if allowed) for        
@@ -582,7 +582,7 @@ contains
        if(myID == 0)                         &
             call terminate("blockDistribution", &
             "Empty partitions present")
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
 
     ! Processor 0 prints a warning if the communication was
@@ -1645,7 +1645,7 @@ contains
                 call terminate("BCFacesSubblock", errorMessage)
              endif
 
-             call mpi_barrier(SUmb_comm_world, ierr)
+             call mpi_barrier(ADflow_comm_world, ierr)
           endif
 
           ! Continue with the next subface if there is more than
@@ -1740,7 +1740,7 @@ contains
                 call terminate("BCFacesSubblock", errorMessage)
              endif
 
-             call mpi_barrier(SUmb_comm_world, ierr)
+             call mpi_barrier(ADflow_comm_world, ierr)
           endif
 
           ! Store the corresponding family a bit easier.
@@ -1883,7 +1883,7 @@ contains
                 call terminate("externalFacesSubblock", errorMessage)
              endif
 
-             call mpi_barrier(SUmb_comm_world, ierr)
+             call mpi_barrier(ADflow_comm_world, ierr)
           endif
 
           ! Continue with the next subface if there is more than
@@ -2444,7 +2444,7 @@ contains
     !       number of faces is about equal on all processors.              
     !
     use constants       
-    use communication, only : myID, sumb_comm_world, nProc
+    use communication, only : myID, adflow_comm_world, nProc
     use partitionMod, only : part, blocks, ubvec, nBlocks
     use inputParallel, only : loadImbalance
     use utils, only : terminate
@@ -2716,7 +2716,7 @@ contains
     !       for the cells and faces is met.                                
     !
     use constants
-    use communication, only : sumb_comm_world, myid, nProc
+    use communication, only : adflow_comm_world, myid, nProc
     use partitionMod, only : blocks, ubvec, part, nBlocks
     implicit none
     !

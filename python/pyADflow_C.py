@@ -2,7 +2,7 @@
 from __future__ import print_function
 from __future__ import division
 """
-pySUmb - A Python interface to SUmb.
+pyADflow - A Python interface to ADflow.
 
 Copyright (c) 2008 by Mr.C.A (Sandy) Mader
 All rights reserved. Not to be used for commercial purposes.
@@ -29,11 +29,11 @@ import numpy
 from mpi4py import MPI
 from baseclasses import AeroSolver, AeroProblem
 from . import MExt
-from .pySUmb import SUMB
+from .pyADflow import ADFLOW
 # =============================================================================
-# SUMB_C Class
+# ADFLOW_C Class
 # =============================================================================
-class SUMB_C(SUMB):
+class ADFLOW_C(ADFLOW):
 
     def __init__(self, *args, **kwargs):
       
@@ -44,8 +44,8 @@ class SUMB_C(SUMB):
             debug=True
             
         curDir = os.path.dirname(os.path.realpath(__file__))
-        self.sumb = MExt.MExt('libsumb_cs',[curDir], debug=debug)._module
-        SUMB.__init__(self, dtype='D', *args, **kwargs)        
+        self.adflow = MExt.MExt('libadflow_cs',[curDir], debug=debug)._module
+        ADFLOW.__init__(self, dtype='D', *args, **kwargs)        
 
     def _on_setOption(self, name, value):
         
@@ -69,15 +69,15 @@ class SUMB_C(SUMB):
                 # end if
                 varStr = varStr[0:-1] # Get rid of last '_'
                 if name == 'monitorvariables':
-                    self.sumb.monitorvariables(varStr)
+                    self.adflow.monitorvariables(varStr)
                 if name == 'surfacevariables':
-                    self.sumb.surfacevariables(varStr)
+                    self.adflow.surfacevariables(varStr)
                 if name == 'volumevariables':
-                    self.sumb.volumevariables(varStr)
+                    self.adflow.volumevariables(varStr)
             # end if
             if name == 'metricconversion':
-                self.sumb.flowvarrefstate.lref = value
-                self.sumb.flowvarrefstate.lrefspecified = True
+                self.adflow.flowvarrefstate.lref = value
+                self.adflow.flowvarrefstate.lrefspecified = True
                 self.metricConversion = value
             return
         # end if
@@ -115,7 +115,7 @@ class SUMB_C(SUMB):
             value = str(value)
       
         # Exec str is what is actually executed:
-        exec_str = 'self.sumb.'+self.optionMap[name]['location'] + '=' + value
+        exec_str = 'self.adflow.'+self.optionMap[name]['location'] + '=' + value
         exec(exec_str)
     
     def writeMeshFile(self, filename=None):

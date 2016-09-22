@@ -9,7 +9,7 @@ contains
     use constants
     use adjointvars
     use blockPointers, only : nDom
-    use communication, only : sumb_comm_world
+    use communication, only : adflow_comm_world
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputPhysics, only :pointRefd, alphad, betad, equations, machCoefd, &
          machd, machGridd, rgasdimd
@@ -42,7 +42,7 @@ contains
     groundLevel = level
 
     ! Allocate the memory we need for derivatives if not done so
-    ! already. Note this isn't deallocated until the sumb is
+    ! already. Note this isn't deallocated until the adflow is
     ! destroyed.
     if (.not. derivVarsAllocated) then 
        call allocDerivativeValues(level)
@@ -83,7 +83,7 @@ contains
        extrabar, wbar, spatialSize, extraSize, stateSize, costSize, fSize, nTime)
     use constants
     use costFunctions, only : funcValuesd
-    use communication, only : sumb_comm_world
+    use communication, only : adflow_comm_world
     use blockPointers, only : nDom, dwd, il, jl, kl
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputPhysics, only : equations
@@ -174,7 +174,7 @@ contains
   !   use sa_fast_b, only : saresscale_fast_b, saviscous_fast_b, &
   !        sasource_fast_b, cb3Inv, cv13, cw36, kar2inv, qq
   !   use adjointvars
-  !   use communication, only : sumb_comm_world
+  !   use communication, only : adflow_comm_world
   !   use paramTurb
   !   use utils, only : terminate, setPointers_d
   !   use haloExchange, only : whalo2_b
@@ -583,7 +583,7 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
 
     use constants
     use ADjointPETSc, only: drdwt
-    use communication, only : sumb_comm_world
+    use communication, only : adflow_comm_world
     use utils, only : EChk
     implicit none
 
@@ -597,7 +597,7 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
     PetscViewer binViewer
     integer(kind=intType) :: ierr
 
-    call PetscViewerBinaryOpen(sumb_comm_world, fileName, FILE_MODE_WRITE, binViewer, ierr)
+    call PetscViewerBinaryOpen(adflow_comm_world, fileName, FILE_MODE_WRITE, binViewer, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     call MatView(dRdwT, binViewer, ierr)
@@ -612,7 +612,7 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
 
     use constants
     use ADjointPETSc, only: drdwpret
-    use communication, only : sumb_comm_world
+    use communication, only : adflow_comm_world
     use utils, only : EChk
     implicit none
 
@@ -626,7 +626,7 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
     PetscViewer binViewer
     integer(kind=intType) :: ierr
 
-    call PetscViewerBinaryOpen(sumb_comm_world, fileName, FILE_MODE_WRITE, binViewer, ierr)
+    call PetscViewerBinaryOpen(adflow_comm_world, fileName, FILE_MODE_WRITE, binViewer, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     call MatView(dRdwPreT, binViewer, ierr)
@@ -743,7 +743,7 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
 
     use constants
     use ADjointPETSc, only : dRdwT
-    use communication, only : sumb_comm_world, myid
+    use communication, only : adflow_comm_world, myid
     use inputADjoint, only : frozenTurbulence, useMatrixFreedRdw
     use adjointUtils, only : setupStateResidualMatrix
     use utils, only : EChk
@@ -771,8 +771,8 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
        time(2) = mpi_wtime()
        timeAdjLocal = time(2)-time(1)
 
-       call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
-            mpi_max, 0, SUMB_COMM_WORLD, ierr)
+       call mpi_reduce(timeAdjLocal, timeAdj, 1, adflow_real, &
+            mpi_max, 0, ADFLOW_COMM_WORLD, ierr)
        call EChk(ierr,  __FILE__, __LINE__)
 
        if(myid ==0)  then 
@@ -801,7 +801,7 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
     use inputADjoint, only : adjAbsTol, adjDivTol, adjMaxIter, adjRelTol, &
          adjRelTolRel, printTiming
     use adjointVars, only: derivVarsAllocated
-    use communication, only : myid, sumb_comm_world
+    use communication, only : myid, adflow_comm_world
     use blockPointers, only : nDom
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use adjointUtils, only : allocDerivativeValues, zeroADSeeds
@@ -922,8 +922,8 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
        ! Determine the maximum time using MPI reduce
        ! with operation mpi_max.
 
-       call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
-            mpi_max, 0, SUMB_COMM_WORLD, ierr)
+       call mpi_reduce(timeAdjLocal, timeAdj, 1, adflow_real, &
+            mpi_max, 0, ADFLOW_COMM_WORLD, ierr)
 
        call MatMult(dRdWT, psi_like1, adjointRes, ierr)
        call EChk(ierr,__FILE__,__LINE__)
@@ -1071,7 +1071,7 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
 
     Vec cellCenters
 
-    call VecCreateMPI(SUMB_COMM_WORLD, nCellsLocal(1)*3, &
+    call VecCreateMPI(ADFLOW_COMM_WORLD, nCellsLocal(1)*3, &
          PETSC_DETERMINE, cellCenters, ierr)
     call EChk(ierr, __FILE__, __LINE__)
     call VecSetBlockSize(cellCenters, 3, ierr)
@@ -1109,7 +1109,7 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
     call VecAssemblyEnd  (cellCenters, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    call PetscViewerBinaryOpen(sumb_comm_world, fileName, FILE_MODE_WRITE, binViewer, ierr)
+    call PetscViewerBinaryOpen(adflow_comm_world, fileName, FILE_MODE_WRITE, binViewer, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     call VecView(cellCenters, binViewer, ierr)
@@ -1251,7 +1251,7 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
     use ADjointPETSc, only: dRdwT, dRdwPreT, &
          adjointKSP, matfreectx, x_like, psi_like1, adjointPETScVarsAllocated
     use ADjointVars   
-    use communication, only : sumb_comm_world
+    use communication, only : adflow_comm_world
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use flowVarRefState, only : nwf, nw, viscous
     use inputADjoint, only : approxPC, frozenTurbulence, useMatrixFreedRdw, viscPC
@@ -1314,7 +1314,7 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
        deallocate(nnzDiagonal, nnzOffDiag)
     else
        ! Setup matrix-free dRdwT
-       call MatCreateShell(SUMB_COMM_WORLD, nDimW, nDimW, PETSC_DETERMINE, &
+       call MatCreateShell(ADFLOW_COMM_WORLD, nDimW, nDimW, PETSC_DETERMINE, &
             PETSC_DETERMINE, matfreectx, dRdwT, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
@@ -1358,7 +1358,7 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
     end if
 
     ! Create the KSP Object
-    call KSPCreate(SUMB_COMM_WORLD, adjointKSP, ierr)
+    call KSPCreate(ADFLOW_COMM_WORLD, adjointKSP, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     adjointPETScVarsAllocated = .True.

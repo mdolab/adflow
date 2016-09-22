@@ -1109,7 +1109,7 @@ contains
 
     sizeMessage = 1
     call mpi_reduce_scatter(tmp, nMessageReceive, sizeMessage,      &
-         sumb_integer, mpi_sum, SUmb_comm_world, &
+         adflow_integer, mpi_sum, ADflow_comm_world, &
          ierr)
 
     ! Put size2proc in cumulative storage format and store the
@@ -1219,8 +1219,8 @@ contains
 
           ! Send the message.
 
-          call mpi_isend(sendBuf(ii), size, sumb_integer, proc, proc, &
-               SUmb_comm_world, sendRequests(mm), ierr)
+          call mpi_isend(sendBuf(ii), size, adflow_integer, proc, proc, &
+               ADflow_comm_world, sendRequests(mm), ierr)
 
        endif
 
@@ -1256,13 +1256,13 @@ contains
 
        ! Block until a message arrives.
 
-       call mpi_probe(mpi_any_source, myID, SUmb_comm_world, &
+       call mpi_probe(mpi_any_source, myID, ADflow_comm_world, &
             status, ierr)
 
        ! Find the source and size of the message.
 
        proc = status(mpi_source)
-       call mpi_get_count(status, sumb_integer, size, ierr)
+       call mpi_get_count(status, adflow_integer, size, ierr)
 
        ! Check in debug mode that the incoming message is of
        ! correct size.
@@ -1283,8 +1283,8 @@ contains
        ! Receive the messsage. As it has already arrived a blocking
        ! receive can be used.
 
-       call mpi_recv(recvBuf, size, sumb_integer, proc, myID, &
-            SUmb_comm_world, status, ierr)
+       call mpi_recv(recvBuf, size, adflow_integer, proc, myID, &
+            ADflow_comm_world, status, ierr)
 
        ! Loop to extract the 1 to 1 subface info from the buffer.
 
@@ -1354,7 +1354,7 @@ contains
 
     ! Synchronize the processors, because wild cards have been used.
 
-    call mpi_barrier(SUmb_comm_world, ierr)
+    call mpi_barrier(ADflow_comm_world, ierr)
 
   end subroutine coarseDonorInfo
 
