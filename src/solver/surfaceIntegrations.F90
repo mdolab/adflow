@@ -111,6 +111,10 @@ contains
     !    do i=(BCData(mm)%inBeg+1),BCData(mm)%inEnd
     
     mReDim = sqrt(pRef*rhoRef)
+    Fp = zero
+    Mp = zero
+    FMom = zero
+    MMom = zero
 
     !$AD II-LOOP
     do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
@@ -581,9 +585,9 @@ contains
     ! pressure and momentum contributions from the inflow/outflow
     ! conditions. 
     Force = localValues(iFp:iFp+2) + localValues(iFv:iFv+2) + &
-            localValues(iFlowFp:iFlowFp+2) + localValues(iFlowFm:iFlowFm+2)
+         localValues(iFlowFp:iFlowFp+2) + localValues(iFlowFm:iFlowFm+2)
     Moment = localValues(iMp:iMp+2) + localValues(iMv:iMv+2) + &
-             localValues(iFlowMp:iFlowMp+2) + localValues(iFlowMm:iFlowMm+2)
+         localValues(iFlowMp:iFlowMp+2) + localValues(iFlowMm:iFlowMm+2)
 
     fact = two/(gammaInf*MachCoef*MachCoef &
          *surfaceRef*LRef*LRef*pRef)
