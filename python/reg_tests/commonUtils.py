@@ -10,7 +10,7 @@ defaultFuncList = ['lift', 'drag', 'cl', 'cd', 'fx', 'fy', 'fz', 'cfx', 'cfy', '
 defaultAeroDVs = ['alpha', 'beta', 'mach', 'P', 'T', 'xRef', 'yRef', 'zRef']
 
 # Note that the option keys here are all consistently LOWERCASE. 
-sumbDefOpts = {
+adflowDefOpts = {
     # Common Paramters
     'gridfile':'default.cgns',
     'restartfile':None,
@@ -334,7 +334,7 @@ def standardTest(CFDSolver, ap, solve):
     # to account for this we have to set the random set of numbers to
     # correspond to the full CGNS mesh volume ordering and then scatter
     # back to the correct locations. We have a special routine built into
-    # sumb specifically for this purpose. 
+    # adflow specifically for this purpose. 
 
     # Our "full" jacobian looks like the following:
     #                       residuals  objectives   forces
@@ -346,7 +346,7 @@ def standardTest(CFDSolver, ap, solve):
     #   "extra" Variables |          |            |        |
     #                     +----------+------------+--------+
     #
-    # This defines everything that goes into sumb and everything we care
+    # This defines everything that goes into adflow and everything we care
     # about coming back out. We will check all the derivatives using
     # forward mode AD, reverse mode AD as well as with the dot product
     # test.

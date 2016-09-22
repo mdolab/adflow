@@ -429,8 +429,8 @@ contains
     ! Determine the global kill parameter if signals are supported.
 
 #ifndef USE_NO_SIGNALS
-    call mpi_allreduce(localSignal, globalSignal, 1, sumb_integer, &
-         mpi_max, SUmb_comm_world, ierr)
+    call mpi_allreduce(localSignal, globalSignal, 1, adflow_integer, &
+         mpi_max, ADflow_comm_world, ierr)
 #endif
 
     ! Initialize the logicals for the writing to .false.
@@ -1400,7 +1400,7 @@ contains
     !       found in the module iteration.                                 
     !
     use constants
-    use communication, only : myID, sumb_comm_world
+    use communication, only : myID, adflow_comm_world
     use NKSolver, only : NKLSFuncEvals, freestreamResset, NK_LS, &
          NK_switchTol, useNKSolver, NK_CFL, getFreeStreamResidual, &
          getCurrentResidual, NKStep, computeResidualNK
@@ -1628,7 +1628,7 @@ contains
        ! Check if we've received a signal:
 #ifndef USE_NO_SIGNALS
        call mpi_allreduce(localSignal, globalSignal, 1,         &
-            sumb_integer, mpi_max, SUmb_comm_world, &
+            adflow_integer, mpi_max, ADflow_comm_world, &
             ierr)
 #endif
 
@@ -1679,7 +1679,7 @@ contains
     use cgnsNames
     use block, only : nCellGlobal
     use blockPointers, only : nDom
-    use communication, only : sumb_comm_world, myid
+    use communication, only : adflow_comm_world, myid
     use inputIteration, only : printIterations, l2convcoarse, l2conv, l2convrel, &
          minIterNum, maxL2DeviationFactor, ncycles, RKReset
     use inputPhysics, only : liftDirection, dragDirection, equationMode, &
@@ -1960,14 +1960,14 @@ contains
        ! know the residual to make the same descisions. 
 
        if(nMonSum > 0) &
-            call mpi_allreduce(monLoc, monGlob, nMonSum, sumb_real, &
-            mpi_sum, SUmb_comm_world, ierr)
+            call mpi_allreduce(monLoc, monGlob, nMonSum, adflow_real, &
+            mpi_sum, ADflow_comm_world, ierr)
 
        ! Idem for the maximum monitoring variables.
 #ifndef USE_COMPLEX
        if(nMonMax > 0) &
             call mpi_allreduce(monLoc(nMonSum+1), monGlob(nMonSum+1), &
-            nMonMax, sumb_real, mpi_max, SUmb_comm_world, ierr)
+            nMonMax, adflow_real, mpi_max, ADflow_comm_world, ierr)
 #else
        if (nMonMax < 0) & 
             monGlob(nMonSum+1) = zero
@@ -2259,7 +2259,7 @@ contains
                 end if
              enddo
           endif
-          call mpi_bcast(routineFailed, 1, MPI_LOGICAL, 0, SUmb_comm_world, ierr)
+          call mpi_bcast(routineFailed, 1, MPI_LOGICAL, 0, ADflow_comm_world, ierr)
 
        end select
     end if
@@ -2268,7 +2268,7 @@ contains
     ! converged.  This info is only known at processor 0 and must
     ! therefore be broadcast to the other processors.
 
-    call mpi_bcast(converged, 1, MPI_LOGICAL, 0, SUmb_comm_world, ierr)
+    call mpi_bcast(converged, 1, MPI_LOGICAL, 0, ADflow_comm_world, ierr)
 
   end subroutine convergenceInfo
 

@@ -10,7 +10,7 @@ subroutine determineClusters()
   use constants
   use blockPointers, only : nDom, flowDoms
   use cgnsGrid
-  use communication, only : sumb_comm_world, myID
+  use communication, only : adflow_comm_world, myID
   use overset, only :clusters, nDomTotal, nClusters, cumDomProc
   implicit none
 
@@ -70,8 +70,8 @@ subroutine determineClusters()
      cgnsBlk = flowDoms(nn, 1, 1)%cgnsBlockID
      clustersLocal(cumDomProc(myid) + nn) = cgnsDoms(cgnsBlk)%cluster
   end do
-  call MPI_Allreduce(clustersLocal, clusters, nDomTotal, sumb_integer, MPI_SUM, &
-       sumb_comm_world, ierr)
+  call MPI_Allreduce(clustersLocal, clusters, nDomTotal, adflow_integer, MPI_SUM, &
+       adflow_comm_world, ierr)
   
   ! Finally, set the total number of clusters
   nClusters = clusterID

@@ -9,7 +9,7 @@ import os, sys, argparse
 import mdo_regression_helper as reg
 
 # define scripts to run:
-module_name = 'sumb'
+module_name = 'adflow'
 
 # Get the optional commandline arguments:
 parser = argparse.ArgumentParser()

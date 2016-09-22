@@ -109,7 +109,7 @@ contains
     !       time spectral method.                                          
     !
     use constants
-    use communication, only: myID, sumb_comm_world
+    use communication, only: myID, adflow_comm_world
     use inputIO, only : gridFile
     use inputPhysics, only :equationMode
     use inputTimeSpectral, only : nTimeIntervalsSpectral
@@ -255,7 +255,7 @@ contains
           if(myID == 0)                              &
                call terminate("determineGridFileNames", &
                "Grid file(s) could not be opened")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        !===============================================================
@@ -490,7 +490,7 @@ contains
     use cgnsGrid, only : cgnsDoms, cgnsNDom, cgnsFamilies, &
          famIDsDomainInterfaces, bcIDsDomainInterfaces, famIDsSliding, &
          cgnsNFamilies, cgnsNSliding, cgnsNDomainInterfaces
-    use communication, only : sumb_comm_world, myid
+    use communication, only : adflow_comm_world, myid
     use iteration, only : standAloneMode
     use utils, only : terminate
     use sorting, only: qsortstrings, bsearchstrings
@@ -569,7 +569,7 @@ contains
             call terminate("determineInterfaceIDs", &
             "Domain interfaces are not allowed in &
             &stand alone mode.")
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
 
     ! The number of sliding mesh interfaces must be even, because each
@@ -580,7 +580,7 @@ contains
        if(myID == 0)                              &
             call terminate("determineInterfaceIDs", &
             "Odd number of sliding mesh families found")
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
 
     ! Allocate memory to store the names and IDs for the interfaces.
@@ -670,7 +670,7 @@ contains
           write(errorMessage,101) trim(namesSliding(ii))
           if(myID == 0) &
                call terminate("determineInterfaceIDs", errorMessage)
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
 
        endif
 
@@ -728,7 +728,7 @@ contains
                trim(namesSliding(mm))
           if(myID == 0) &
                call terminate("determineInterfaceIDs", errorMessage)
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        ! The two names form a valid sliding interface. Store the
@@ -840,7 +840,7 @@ contains
     !       different periodic times.                                      
     !
     use constants
-    use communication, only : myID, sumb_comm_world
+    use communication, only : myID, adflow_comm_world
     use inputMotion, only : degreeFourXRot, degreeFourYRot, degreeFourZrot, &
          omegaFourAlpha, omegaFourBeta, omegaFourMach, omegaFourXRot, &
          omegaFourYRot, omegaFourZRot, degreeFourMach, degreeFourAlpha, &
@@ -1027,7 +1027,7 @@ contains
                      call terminate("timePeriodSpectral", &
                      "Rotational frequencies of the rotating &
                      &sections are not identical.")
-                call mpi_barrier(SUmb_comm_world, ierr)
+                call mpi_barrier(ADflow_comm_world, ierr)
              endif
 
           else
@@ -1060,7 +1060,7 @@ contains
          call terminate("timePeriodSpectral", &
          "Not possible to determine the periodic time &
          &for the time spectral method")
-    call mpi_barrier(SUmb_comm_world, ierr)
+    call mpi_barrier(ADflow_comm_world, ierr)
 
   end subroutine timePeriodSpectral
 
@@ -1118,7 +1118,7 @@ contains
             call terminate("commonTimeSpectral", &
             "No common time periodic time found. &
             &Problem may not be periodic")
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
 
     ! Set the common time.
@@ -2214,7 +2214,7 @@ contains
                call terminate("determineSections", &
                "Periodic angle not a integer divide of &
                &360 degrees")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        ! Set the number of slices for this section.
@@ -2291,7 +2291,7 @@ contains
                call terminate("determineSections", &
                "Encountered sliding interface between &
                &two non-rotating sections")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        ! Set the rotation axis if section mm is not rotating.

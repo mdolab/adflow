@@ -3,7 +3,7 @@ subroutine makeGapBoundaryStrings(level, sps, master)
   use constants
   use adtBuild, only : buildSerialQuad
   use blockPointers
-  use communication, only : sumb_comm_world, myid, nProc
+  use communication, only : adflow_comm_world, myid, nProc
   use overset, only : oversetString, oversetWall
   use stringOps
   use kdtree2_module
@@ -358,12 +358,12 @@ subroutine makeGapBoundaryStrings(level, sps, master)
      nElemsProc(0) = 0
      nNodesProc(0) = 0
 
-     call MPI_Gather(localStrings(c)%nElems, 1, sumb_integer, nElemsProc(1:nProc), 1, sumb_integer, 0, &
-          sumb_comm_world, ierr)
+     call MPI_Gather(localStrings(c)%nElems, 1, adflow_integer, nElemsProc(1:nProc), 1, adflow_integer, 0, &
+          adflow_comm_world, ierr)
      call ECHK(ierr, __FILE__, __LINE__)
 
-     call MPI_Gather(localStrings(c)%nNodes, 1, sumb_integer, nNodesProc(1:nProc), 1, sumb_integer, 0, &
-          sumb_comm_world, ierr)
+     call MPI_Gather(localStrings(c)%nNodes, 1, adflow_integer, nNodesProc(1:nProc), 1, adflow_integer, 0, &
+          adflow_comm_world, ierr)
      call ECHK(ierr, __FILE__, __LINE__)
 
      if (myid == 0) then 
@@ -409,20 +409,20 @@ subroutine makeGapBoundaryStrings(level, sps, master)
               iSize = iEnd - iStart + 1
 
               ! ----------- Node sized arrays -------------
-              call MPI_Recv(globalStrings(c)%nodeData(:, iStart:iEnd), iSize*10, sumb_real, iProc, iProc, &
-                   sumb_comm_world, status, ierr)
+              call MPI_Recv(globalStrings(c)%nodeData(:, iStart:iEnd), iSize*10, adflow_real, iProc, iProc, &
+                   adflow_comm_world, status, ierr)
               call ECHK(ierr, __FILE__, __LINE__)
 
-              call MPI_Recv(globalStrings(c)%intNodeData(:, iStart:iEnd), iSize*3, sumb_integer, iProc, iProc, &
-                   sumb_comm_world, status, ierr)
+              call MPI_Recv(globalStrings(c)%intNodeData(:, iStart:iEnd), iSize*3, adflow_integer, iProc, iProc, &
+                   adflow_comm_world, status, ierr)
               call ECHK(ierr, __FILE__, __LINE__)
 
               ! ----------- Element sized arrays -------------
               iStart = nElemsProc(iProc) + 1
               iEnd =   nElemsProc(iProc+1)
               iSize = iEnd - iStart + 1
-              call MPI_Recv(globalStrings(c)%conn(:, iStart:iEnd), iSize*2, sumb_integer, iProc, iProc, &
-                   sumb_comm_world, status, ierr)
+              call MPI_Recv(globalStrings(c)%conn(:, iStart:iEnd), iSize*2, adflow_integer, iProc, iProc, &
+                   adflow_comm_world, status, ierr)
               call ECHK(ierr, __FILE__, __LINE__)
 
               ! Increment the conn we just received by the node offset:
@@ -436,17 +436,17 @@ subroutine makeGapBoundaryStrings(level, sps, master)
         if (localStrings(c)%nElems > 0) then 
  
           ! ----------- Node sized arrays -------------
-           call MPI_Send(localStrings(c)%nodeData, 10*localStrings(c)%nNodes, sumb_real, 0, myid, &
-                sumb_comm_world, ierr)
+           call MPI_Send(localStrings(c)%nodeData, 10*localStrings(c)%nNodes, adflow_real, 0, myid, &
+                adflow_comm_world, ierr)
            call ECHK(ierr, __FILE__, __LINE__)
            
-           call MPI_Send(localStrings(c)%intNodeData, 3*localStrings(c)%nNodes, sumb_integer, 0, myid, &
-                sumb_comm_world, ierr)
+           call MPI_Send(localStrings(c)%intNodeData, 3*localStrings(c)%nNodes, adflow_integer, 0, myid, &
+                adflow_comm_world, ierr)
            call ECHK(ierr, __FILE__, __LINE__)
 
            ! ----------- Element sized arrays -------------
-           call MPI_Send(localStrings(c)%conn, 2*localStrings(c)%nElems, sumb_integer, 0, myid, &
-                sumb_comm_world, ierr)
+           call MPI_Send(localStrings(c)%conn, 2*localStrings(c)%nElems, adflow_integer, 0, myid, &
+                adflow_comm_world, ierr)
            call ECHK(ierr, __FILE__, __LINE__)
 
         end if

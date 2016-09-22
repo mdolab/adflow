@@ -9,7 +9,7 @@ import os, sys, argparse, glob
 import mdo_regression_helper as reg
 
 # define scripts to run:
-module_name = 'sumb'
+module_name = 'adflow'
 
 # Get the optional commandline arguments:
 parser = argparse.ArgumentParser()
@@ -71,8 +71,8 @@ else:
 
     masterRes = 0
 
-    os.system('rm -fr sumb_reg.ref sumb_reg sumb_reg.orig')
-    os.system('touch sumb_reg.ref sumb_reg sumb_reg.orig')
+    os.system('rm -fr adflow_reg.ref adflow_reg adflow_reg.orig')
+    os.system('touch adflow_reg.ref adflow_reg adflow_reg.orig')
 
     # Run each script
     for iTest in tests:
@@ -99,9 +99,9 @@ else:
 
         # Concentenate outputs for reference if it failed:
         if res == reg.REG_FILES_DO_NOT_MATCH or res == reg.REG_ERROR:
-            os.system('cat %s >> sumb_reg.ref'%(refFile))
-            os.system('cat %s >> sumb_reg'%(curFile))
-            os.system('cat %s.orig >> sumb_reg.orig'%(curFile))
+            os.system('cat %s >> adflow_reg.ref'%(refFile))
+            os.system('cat %s >> adflow_reg'%(curFile))
+            os.system('cat %s.orig >> adflow_reg.orig'%(curFile))
                           
 # Exit with code equal to the number of failures
 sys.exit(masterRes)

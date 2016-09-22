@@ -3842,7 +3842,7 @@ subroutine terminate(routineName, errorMessage)
     !       terminates the execution of the program.                       
     !
     use constants
-    use communication, only : sumb_comm_world, myid
+    use communication, only : adflow_comm_world, myid
     implicit none
     !
     !      Subroutine arguments
@@ -3940,7 +3940,7 @@ subroutine terminate(routineName, errorMessage)
     ! Call abort and stop the program. This stop should be done in
     ! abort, but just to be sure.
 
-    call mpi_abort(SUmb_comm_world, 1, ierr)
+    call mpi_abort(ADflow_comm_world, 1, ierr)
     stop
 
 #endif

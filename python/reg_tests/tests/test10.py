@@ -1,5 +1,5 @@
 ############################################################
-# DO NOT USE THIS SCRIPT AS A REFERENCE FOR HOW TO USE SUMB
+# DO NOT USE THIS SCRIPT AS A REFERENCE FOR HOW TO USE ADFLOW
 # THIS SCRIPT USES PRIVATE INTERNAL FUNCTIONALITY THAT IS
 # SUBJECT TO CHANGE!!
 ############################################################
@@ -11,9 +11,9 @@ from commonUtils import *
 
 # ###################################################################
 # DO NOT USE THIS IMPORT STRATEGY! THIS IS ONLY USED FOR REGRESSION
-# SCRIPTS ONLY. Use 'from sumb import SUMB' for regular scripts.
+# SCRIPTS ONLY. Use 'from adflow import ADFLOW' for regular scripts.
 sys.path.append(os.path.abspath('../../'))
-from python.pySUmb import SUMB
+from python.pyADflow import ADFLOW
 # ###################################################################
 
 # ****************************************************************************
@@ -21,7 +21,7 @@ printHeader('Test10: MDO tutorial -- Solve-CL Test')
 
 
 gridFile = '../inputFiles/mdo_tutorial_euler_scalar_jst.cgns'
-options = copy.copy(sumbDefOpts)
+options = copy.copy(adflowDefOpts)
 options.update(
     {'gridfile': gridFile,
      'mgcycle':'2w',
@@ -39,7 +39,7 @@ options.update(
 ap = AeroProblem(name='mdo_tutorial', alpha=1.20, mach=0.80, altitude=10000.0,
                  areaRef=45.5, chordRef=3.25)
 
-CFDSolver = SUMB(options=options, debug=True)
+CFDSolver = ADFLOW(options=options, debug=True)
 CFDSolver.solveCL(ap, 0.475, alpha0=1.20, delta=0.025, tol=1e-4, autoReset=False)
 funcs = {}
 CFDSolver.evalFunctions(ap, funcs, evalFuncs=['cl'])

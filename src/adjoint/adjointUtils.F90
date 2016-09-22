@@ -619,7 +619,7 @@ contains
     use flowvarrefstate, only : winf, winfd, nw, nt1, nt2
     use inputDiscretization, only : useApproxWallDistance
     use inputPhysics, only : wallDistanceNeeded
-    use communication, only : sumb_comm_world
+    use communication, only : adflow_comm_world
     use wallDistanceData, only : xSurfVec, xSurfVecd, PETSC_DETERMINE
     use BCPointers_b
     use adjointVars, only : derivVarsAllocated
@@ -647,7 +647,7 @@ contains
     ! since one does not yet exist
     if (.not. wallDistanceNeeded .or. .not. useApproxWallDistance) then 
        do sps=1, nTimeIntervalsSpectral
-          call VecCreateMPI(SUMB_COMM_WORLD, 1, PETSC_DETERMINE, xSurfVec(1, sps), ierr)
+          call VecCreateMPI(ADFLOW_COMM_WORLD, 1, PETSC_DETERMINE, xSurfVec(1, sps), ierr)
           call EChk(ierr,__FILE__,__LINE__)
        end do
     end if
@@ -1105,7 +1105,7 @@ contains
     ! one place to make a change based on petsc version. 
 
     use constants
-    use communication, only : sumb_comm_world
+    use communication, only : adflow_comm_world
     use utils, only : EChk, setPointers
     implicit none
 
@@ -1118,11 +1118,11 @@ contains
     character*(*) :: file
     integer(kind=intType) :: ierr, line
     if (blockSize > 1) then
-       call MatCreateBAIJ(SUMB_COMM_WORLD, blockSize, &
+       call MatCreateBAIJ(ADFLOW_COMM_WORLD, blockSize, &
             m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
             0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
     else     
-       call MatCreateAIJ(SUMB_COMM_WORLD,&
+       call MatCreateAIJ(ADFLOW_COMM_WORLD,&
             m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
             0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
        call EChk(ierr, file, line)
@@ -1396,10 +1396,10 @@ contains
     ! Call the C-version of the petsc initialize routine
 
     use ADjointPETSc, only : petsc_comm_world
-    use communication, only : sumb_comm_world
+    use communication, only : adflow_comm_world
     implicit none
 
-    PETSC_COMM_WORLD= SUMB_COMM_WORLD
+    PETSC_COMM_WORLD= ADFLOW_COMM_WORLD
     call initPETScWrap()
 
   end subroutine initializePETSc

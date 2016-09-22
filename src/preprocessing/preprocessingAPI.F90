@@ -14,7 +14,7 @@ contains
     use blockPointers, only : BCType, nBocos
     use cgnsGrid
     use bcdata, only : initBCData, allocMemBCData
-    use communication, only : sumb_comm_world, commPatternCell_1st, &
+    use communication, only : adflow_comm_world, commPatternCell_1st, &
          commPatternCell_2nd, commPatternNode_1st, internalCell_1st, &
          internalCell_2nd, internalNode_1st, myid, nProc, &
          recvBufferSize_1to1, sendBufferSize_1to1, sendBufferSIzeOver,&
@@ -58,7 +58,7 @@ contains
             call terminate("preprocessing", &
             "Different rotational periodicity encountered &
             &for time accurate computation")
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
 
     endif
 
@@ -139,7 +139,7 @@ contains
 
     ! Synchronize the processors, just to be sure.
 
-    call mpi_barrier(SUmb_comm_world, ierr)
+    call mpi_barrier(ADflow_comm_world, ierr)
 
     ! Allocate memory for the nonblocking point to point communication.
 
@@ -171,12 +171,12 @@ contains
     allocate(nDomProc(0:nProc-1), cumDomProc(0:nProc))
 
     ! Gather the dimensions of all blocks to everyone
-    call mpi_allreduce(nDom, nDomTotal, 1, sumb_integer, MPI_SUM, &
-         sumb_comm_world, ierr)
+    call mpi_allreduce(nDom, nDomTotal, 1, adflow_integer, MPI_SUM, &
+         adflow_comm_world, ierr)
 
     ! Receive the number of domains from each proc using an allgather.
-    call mpi_allgather(nDom, 1, sumb_integer, nDomProc, 1, sumb_integer, &
-         sumb_comm_world, ierr)
+    call mpi_allgather(nDom, 1, adflow_integer, nDomProc, 1, adflow_integer, &
+         adflow_comm_world, ierr)
 
     ! Compute the cumulative format:
     cumDomProc(0) = 0
@@ -199,7 +199,7 @@ contains
        end do
     end do
 
-    call mpi_allreduce(local, oversetPresent, 1, MPI_LOGICAL, MPI_LOR, SUmb_comm_world, ierr)
+    call mpi_allreduce(local, oversetPresent, 1, MPI_LOGICAL, MPI_LOR, ADflow_comm_world, ierr)
 
     ! Loop over the number of levels and perform a lot of tasks.
     ! See the corresponding subroutine header, although the
@@ -476,7 +476,7 @@ contains
     ! And determine the global sum.
 
     call mpi_allreduce(nCellLocal, nCellGlobal(level), 1, &
-         sumb_integer, mpi_sum, SUmb_comm_world, ierr)
+         adflow_integer, mpi_sum, ADflow_comm_world, ierr)
 
     ! Write the total number of cells to stdout; only done by
     ! processor 0 to avoid a messy output.
@@ -728,8 +728,8 @@ contains
 
        ! Send the data.
 
-       call mpi_isend(sendBufInt(ii), size, sumb_integer, procId, &
-            procId, SUmb_comm_world, sendRequests(i),   &
+       call mpi_isend(sendBufInt(ii), size, adflow_integer, procId, &
+            procId, ADflow_comm_world, sendRequests(i),   &
             ierr)
 
        ! Set ii to jj for the next processor.
@@ -751,8 +751,8 @@ contains
 
        ! Post the receive.
 
-       call mpi_irecv(recvBufInt(ii), size, sumb_integer, procId, &
-            myId, SUmb_comm_world, recvRequests(i), ierr)
+       call mpi_irecv(recvBufInt(ii), size, adflow_integer, procId, &
+            myId, ADflow_comm_world, recvRequests(i), ierr)
 
        ! And update ii.
 
@@ -1286,7 +1286,7 @@ contains
     use su_cgns
     use blockPointers, onlY : nDom, flowDoms, nBocos, cgnsSubFace, BCType
     use cgnsGrid, onlY : cgnsDoms
-    use communication, only : myid, sumb_comm_world
+    use communication, only : myid, adflow_comm_world
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use surfaceFamilies, only : wallExchange, familyExchanges, famNames, &
          famGroups, wallFamilies, famIsWall, totalFamilies, totalWallFamilies, &
@@ -1449,7 +1449,7 @@ contains
        end do
     end do
 
-    call mpi_allreduce(localFlag, famIsWall, totalFamilies, sumb_integer, MPI_SUM, sumb_comm_world, ierr)
+    call mpi_allreduce(localFlag, famIsWall, totalFamilies, adflow_integer, MPI_SUM, adflow_comm_world, ierr)
 
     ! Save the wall family list. 
     totalWallFamilies = 0
@@ -1534,7 +1534,7 @@ contains
     ! 2. Lift distributions/slices also requires node-based tractions
     ! 3. Node-based output for tecplot files.
     use constants
-    use communication, only : sumb_comm_world, myid, nProc
+    use communication, only : adflow_comm_world, myid, nProc
     use surfaceFamilies, only : famGroups, familyExchange, &
          IS1, IS2, PETSC_COPY_VALUES, PETSC_DETERMINE
     use utils, only : pointReduce, eChk
@@ -1588,8 +1588,8 @@ contains
     end do
 
     ! Determine the total number of nodes on each proc
-    call mpi_allgather(nNodesLocal, 1, sumb_integer, nNodesProc, 1, sumb_integer, &
-         sumb_comm_world, ierr)
+    call mpi_allgather(nNodesLocal, 1, adflow_integer, nNodesProc, 1, adflow_integer, &
+         adflow_comm_world, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Determine cumulative version
@@ -1602,8 +1602,8 @@ contains
 
     ! Send all the nodes to everyone
     allocate(allNodes(3, nNodesTotal))
-    call mpi_allgatherv(localNodes, nNodesLocal*3, sumb_real, allNodes, &
-         nNodesProc*3, cumNodesProc*3, sumb_real, sumb_comm_world, ierr)
+    call mpi_allgatherv(localNodes, nNodesLocal*3, adflow_real, allNodes, &
+         nNodesProc*3, cumNodesProc*3, adflow_real, adflow_comm_world, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Local nodes is no longer necessary
@@ -1627,11 +1627,11 @@ contains
     end do
 
     ! Create the basic (scalar) local vector
-    call VecCreateMPI(SUMB_COMM_WORLD, nNodesLocal, PETSC_DETERMINE, &
+    call VecCreateMPI(ADFLOW_COMM_WORLD, nNodesLocal, PETSC_DETERMINE, &
          famExchange%nodeValLocal, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
-    call VecCreateMPI(SUMB_COMM_WORLD, nCellsLocal, PETSC_DETERMINE, &
+    call VecCreateMPI(ADFLOW_COMM_WORLD, nCellsLocal, PETSC_DETERMINE, &
          famExchange%localWeight, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
@@ -1670,12 +1670,12 @@ contains
     do iProc=0, nProc-2
        if (myid == iProc) then 
           ! I need to send my iEnd to proc+1
-          call mpi_send(iEnd, 1, sumb_integer, iProc+1, iProc, sumb_comm_world, ierr)
+          call mpi_send(iEnd, 1, adflow_integer, iProc+1, iProc, adflow_comm_world, ierr)
           call EChk(ierr,__FILE__,__LINE__)
        else if(myid == iProc+1) then 
 
           ! Receive the value from the proc below me:
-          call mpi_recv(iEnd, 1, sumb_integer, iProc, iProc, sumb_comm_world, status, ierr)
+          call mpi_recv(iEnd, 1, adflow_integer, iProc, iProc, adflow_comm_world, status, ierr)
           call EChk(ierr,__FILE__,__LINE__)
 
           ! On this proc, the start index is the 
@@ -1692,7 +1692,7 @@ contains
     !print *,'isize:', myid, iEnd, iStart, iSize, nnodeslocal, nunique
     ! Create the actual global vec. Note we also include nUnique to make
     ! sure we have all the local sizes correct.
-    call VecCreateMPI(SUMB_COMM_WORLD, iSize, nUnique, &
+    call VecCreateMPI(ADFLOW_COMM_WORLD, iSize, nUnique, &
          famExchange%nodeValGlobal, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
@@ -1704,13 +1704,13 @@ contains
 
     ! Indices for the local vector is just a stride, starting at the
     ! offset
-    call ISCreateStride(SUMB_COMM_WORLD, nNodesLocal, cumNodesProc(myid), &
+    call ISCreateStride(ADFLOW_COMM_WORLD, nNodesLocal, cumNodesProc(myid), &
          1, IS1, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
     ! Indices for the global vector are the "localIndices" we previously
     ! computed. 
-    call ISCreateGeneral(sumb_comm_world, nNodesLocal, localIndices, &
+    call ISCreateGeneral(adflow_comm_world, nNodesLocal, localIndices, &
          PETSC_COPY_VALUES, IS2, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
@@ -1831,21 +1831,21 @@ contains
     ! into nCellsGlobal and sends the result to all processors.
     ! (use mpi sum operation)
 
-    call mpi_allreduce(nCellsLocal(level), nCellsGlobal(level), 1, sumb_integer, &
-         mpi_sum, SUmb_comm_world, ierr)
+    call mpi_allreduce(nCellsLocal(level), nCellsGlobal(level), 1, adflow_integer, &
+         mpi_sum, ADflow_comm_world, ierr)
 
     ! Gather the number of Cells per processor in the root processor.
-    call mpi_gather(nCellsLocal(level), 1, sumb_integer, nCells, 1, &
-         sumb_integer, 0, SUmb_comm_world, ierr)
+    call mpi_gather(nCellsLocal(level), 1, adflow_integer, nCells, 1, &
+         adflow_integer, 0, ADflow_comm_world, ierr)
 
     ! Repeat for the number of nodes.
     ! (use mpi sum operation)
-    call mpi_allreduce(nNodesLocal(level), nNodesGlobal(level), 1, sumb_integer, &
-         mpi_sum, SUmb_comm_world, ierr)
+    call mpi_allreduce(nNodesLocal(level), nNodesGlobal(level), 1, adflow_integer, &
+         mpi_sum, ADflow_comm_world, ierr)
 
     ! Gather the number of nodes per processor in the root processor.
-    call mpi_gather(nNodesLocal(level), 1, sumb_integer, nNodes, 1, &
-         sumb_integer, 0, SUmb_comm_world, ierr)
+    call mpi_gather(nNodesLocal(level), 1, adflow_integer, nNodes, 1, &
+         adflow_integer, 0, ADflow_comm_world, ierr)
 
     ! Determine the global cell number offset for each processor.
     rootProc: if( myID==0) then
@@ -1858,8 +1858,8 @@ contains
     endif rootProc
 
     ! Scatter the global cell number offset per processor.
-    call mpi_scatter(nCellOffset, 1, sumb_integer, nCellOffsetLocal(level), 1, &
-         sumb_integer, 0, SUmb_comm_world, ierr)
+    call mpi_scatter(nCellOffset, 1, adflow_integer, nCellOffsetLocal(level), 1, &
+         adflow_integer, 0, ADflow_comm_world, ierr)
 
     ! Determine the global cell number offset for each local block.
     nCellBlockOffset(1) = nCellOffsetLocal(level)
@@ -1870,8 +1870,8 @@ contains
     enddo
 
     ! Repeat for nodes.
-    call mpi_scatter(nNodeOffset, 1, sumb_integer, nNodeOffsetLocal(level), 1, &
-         sumb_integer, 0, SUmb_comm_world, ierr)
+    call mpi_scatter(nNodeOffset, 1, adflow_integer, nNodeOffsetLocal(level), 1, &
+         adflow_integer, 0, ADflow_comm_world, ierr)
 
     ! Determine the global node number offset for each local block.
     nNodeBlockOffset(1) = nNodeOffsetLocal(level)
@@ -3105,8 +3105,8 @@ contains
     ! Determine the global number of bad blocks. The result must be
     ! known on all processors and thus an allreduce is needed.
 
-    call mpi_allreduce(nBlockBad, nBlockBadGlobal, 1, sumb_integer, &
-         mpi_sum, SUmb_comm_world, ierr)
+    call mpi_allreduce(nBlockBad, nBlockBadGlobal, 1, adflow_integer, &
+         mpi_sum, ADflow_comm_world, ierr)
 
     ! Test if bad blocks are present in the grid. If so, the action
     ! taken depends on the grid level.
@@ -3121,7 +3121,7 @@ contains
 
           if(myID == 0) &
                call terminate("metric", "Negative volumes present in grid")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
 
        else
 
@@ -3147,8 +3147,8 @@ contains
     ! only be done for the finest grid level.
 
     if(level == 1) then
-       call mpi_reduce(nVolBad, nVolBadGlobal, 1, sumb_integer, &
-            mpi_sum, 0, SUmb_comm_world, ierr)
+       call mpi_reduce(nVolBad, nVolBadGlobal, 1, adflow_integer, &
+            mpi_sum, 0, ADflow_comm_world, ierr)
 
        ! Print a warning in case bad volumes were found. Only processor
        ! 0 prints this warning.
@@ -3366,7 +3366,7 @@ contains
 
        ! Synchronize the processors to avoid a messy output.
 
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
 
     enddo procLoop
 
@@ -3794,7 +3794,7 @@ contains
     !      deallocated in src/utils/releaseMemory.f90                     
     !
     use constants
-    use communication, only : sumb_comm_world
+    use communication, only : adflow_comm_world
     use adjointVars, only :nCellsLocal, nNOdesLocal
     use flowVarRefState, only : nw, nwf
     use inputTimeSpectral, only : nTimeIntervalsSpectral
@@ -3828,28 +3828,28 @@ contains
     nDimX = 3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
 
     ! Two w-like vectors. 
-    call VecCreateMPIWithArray(SUMB_COMM_WORLD,nw,ndimW,PETSC_DECIDE, &
+    call VecCreateMPIWithArray(ADFLOW_COMM_WORLD,nw,ndimW,PETSC_DECIDE, &
          PETSC_NULL_SCALAR,w_like1,PETScIerr)
     call EChk(PETScIerr,__FILE__,__LINE__)
 
-    call VecCreateMPIWithArray(SUMB_COMM_WORLD,nw,ndimW,PETSC_DECIDE, &
+    call VecCreateMPIWithArray(ADFLOW_COMM_WORLD,nw,ndimW,PETSC_DECIDE, &
          PETSC_NULL_SCALAR,w_like2,PETScIerr)
     call EChk(PETScIerr,__FILE__,__LINE__)
 
     ! Two psi-like vectors. 
-    call VecCreateMPIWithArray(SUMB_COMM_WORLD,nState,ndimPsi,PETSC_DECIDE, &
+    call VecCreateMPIWithArray(ADFLOW_COMM_WORLD,nState,ndimPsi,PETSC_DECIDE, &
          PETSC_NULL_SCALAR,psi_like1,PETScIerr)
     call EChk(PETScIerr,__FILE__,__LINE__)
 
-    call VecCreateMPIWithArray(SUMB_COMM_WORLD,nstate,ndimPsi,PETSC_DECIDE, &
+    call VecCreateMPIWithArray(ADFLOW_COMM_WORLD,nstate,ndimPsi,PETSC_DECIDE, &
          PETSC_NULL_SCALAR,psi_like2,PETScIerr)
     call EChk(PETScIerr,__FILE__,__LINE__)
 
-    call VecCreateMPIWithArray(SUMB_COMM_WORLD,nstate,ndimPsi,PETSC_DECIDE, &
+    call VecCreateMPIWithArray(ADFLOW_COMM_WORLD,nstate,ndimPsi,PETSC_DECIDE, &
          PETSC_NULL_SCALAR,psi_like3,PETScIerr)
     call EChk(PETScIerr,__FILE__,__LINE__)
 
-    call VecCreateMPIWithArray(SUMB_COMM_WORLD,3,ndimX,PETSC_DECIDE, &
+    call VecCreateMPIWithArray(ADFLOW_COMM_WORLD,3,ndimX,PETSC_DECIDE, &
          PETSC_NULL_SCALAR,x_like,PETScIerr)
     call EChk(PETScIerr,__FILE__,__LINE__)
 

@@ -137,7 +137,7 @@ contains
     !       computed; the nearest wall point may lie in a periodic domain. 
     use constants
     use blockPointers, only : nDom
-    use communication, only : sendBuffer, recvBuffer, myid, sumb_comm_world, &
+    use communication, only : sendBuffer, recvBuffer, myid, adflow_comm_world, &
          sendBufferSize, recvBufferSize
     use inputPhysics, only : equations, wallDistanceNeeded
     use inputTimeSpectral, only :nTimeIntervalsSpectral
@@ -314,7 +314,7 @@ contains
 
     ! Synchronize the processors.
 
-    call mpi_barrier(SUmb_comm_world, ierr)
+    call mpi_barrier(ADflow_comm_world, ierr)
 
     ! Write a message to stdout with the amount of time it
     ! took to compute the distances.
@@ -524,7 +524,7 @@ contains
     use adtAPI, only :adtBuildSurfaceADT, adtMinDistanceSearch, adtDeallocateADTs
     use blockPointers, only : x, flowDoms, kl, jl, il, nDom, nx, ny, nz, &
          sectionID, d2Wall
-    use communication, only : sumb_comm_world
+    use communication, only : adflow_comm_world
     use section, only : sections
     use inputPhysics, only : wallOffset
     use utils, only : setPointers, terminate
@@ -574,7 +574,7 @@ contains
 
     call adtBuildSurfaceADT(nTria,    nquadVisc, nNodeVisc,       &
          coorVisc, connTria,  connVisc,        &
-         dummy,    .false.,   SUmb_comm_world, &
+         dummy,    .false.,   ADflow_comm_world, &
          viscAdt)
 
     ! Determine the number of cell centers for which the distance
@@ -913,7 +913,7 @@ contains
     use constants
     use blockPointers, only : BCData, x, il, jl, kl, BCFaceID, sectionID, &
          flowDoms, nBocos, nDom, BCType
-    use communication, only : myid, sumb_comm_world
+    use communication, only : myid, adflow_comm_world
     use section, only : sections, nSections
     use utils, only : setPointers, terminate
     implicit none
@@ -1214,20 +1214,20 @@ contains
     ! the maximum angles for all sections.
 
     size = nSections
-    call mpi_allreduce(thetaNMax, tmp, size, sumb_real, mpi_max, &
-         SUmb_comm_world, ierr)
+    call mpi_allreduce(thetaNMax, tmp, size, adflow_real, mpi_max, &
+         ADflow_comm_world, ierr)
     thetaNMax = tmp
 
-    call mpi_allreduce(thetaPMax, tmp, size, sumb_real, mpi_max, &
-         SUmb_comm_world, ierr)
+    call mpi_allreduce(thetaPMax, tmp, size, adflow_real, mpi_max, &
+         ADflow_comm_world, ierr)
     thetaPMax = tmp
 
-    call mpi_allreduce(thetaNMin, tmp, size, sumb_real, mpi_min, &
-         SUmb_comm_world, ierr)
+    call mpi_allreduce(thetaNMin, tmp, size, adflow_real, mpi_min, &
+         ADflow_comm_world, ierr)
     thetaNMin = tmp
 
-    call mpi_allreduce(thetaPMin, tmp, size, sumb_real, mpi_min, &
-         SUmb_comm_world, ierr)
+    call mpi_allreduce(thetaPMin, tmp, size, adflow_real, mpi_min, &
+         ADflow_comm_world, ierr)
     thetaPMin = tmp
 
     ! Allocate the memory for rotMatrixSections, the rotation
@@ -1558,7 +1558,7 @@ contains
     !
     use constants
     use block, only : flowDoms, nDom
-    use communication, only : sumb_comm_world, myid
+    use communication, only : adflow_comm_world, myid
     use section, only : nsections, sections
     use utils, only : terminate
     implicit none
@@ -1640,8 +1640,8 @@ contains
     ! Determine the global number of elements on the viscous
     ! surfaces. Return if there are no viscous quads present.
 
-    call mpi_allreduce(nQuadVisc, nquadViscGlob, 1, sumb_integer, &
-         mpi_sum, SUmb_comm_world, ierr)
+    call mpi_allreduce(nQuadVisc, nquadViscGlob, 1, adflow_integer, &
+         mpi_sum, ADflow_comm_world, ierr)
 
     if(nquadViscGlob == 0) return
 
@@ -1947,7 +1947,7 @@ contains
        link((i-1)*3+3) = indicesToGet(i)*3+2
     end do
 
-    call ISCreateGeneral(sumb_comm_world, nUnique*3, link, PETSC_COPY_VALUES, IS1, ierr)
+    call ISCreateGeneral(adflow_comm_world, nUnique*3, link, PETSC_COPY_VALUES, IS1, ierr)
     call EChk(ierr,__FILE__,__LINE__)
     deallocate(link)
 
@@ -1955,20 +1955,20 @@ contains
     ! this vector contains all the spectal instances. It is therefore
     ! only allocated on the first call with sps=1
     if (sps == 1) then 
-       call VecCreateMPI(SUMB_COMM_WORLD, 3*nNodesLocal(level)*nTimeIntervalsSpectral, &
+       call VecCreateMPI(ADFLOW_COMM_WORLD, 3*nNodesLocal(level)*nTimeIntervalsSpectral, &
             PETSC_DETERMINE, xVolumeVec(level), ierr)
        call EChk(ierr,__FILE__,__LINE__)
     end if
 
     ! This is the vector we will scatter the nodes into. 
-    call VecCreateMPI(SUMB_COMM_WORLD, 3*nUnique, PETSC_DETERMINE, &
+    call VecCreateMPI(ADFLOW_COMM_WORLD, 3*nUnique, PETSC_DETERMINE, &
          xSurfVec(level, sps), ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
     call VecGetOwnershipRange(xSurfVec(level, sps), i, j, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
-    call ISCreateStride(SUMB_COMM_WORLD, j-i, i, 1, IS2, ierr)
+    call ISCreateStride(ADFLOW_COMM_WORLD, j-i, i, 1, IS2, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
     ! Create the actual final scatter context.

@@ -23,7 +23,7 @@ from mpi4py import MPI
 from baseclasses import AeroSolver, AeroProblem
 from . import MExt
 from pprint import pprint as pp
-from .pySUmb import SUMB
+from .pyADflow import ADFLOW
 
 class Error(Exception):
     """
@@ -45,19 +45,19 @@ class Error(Exception):
         Exception.__init__(self)
 
 # =============================================================================
-# SUMB Class
+# ADFLOW Class
 # =============================================================================
-class OversetCheck(SUMB):
+class OversetCheck(ADFLOW):
     """
     Create the OversetCheck object.
 
     Parameters
     ----------
     comm : MPI intra comm
-        The communicator on which to create SUmb. If not given, defaults
+        The communicator on which to create ADflow. If not given, defaults
         to MPI.COMM_WORLD.
     options : dictionary
-        The list of options to use with SUmb. This keyword arguement
+        The list of options to use with ADflow. This keyword arguement
         is NOT OPTIONAL. It must always be provided. It must contain, at least
         the 'gridFile' entry for the filename of the grid to load
     debug : bool
@@ -70,10 +70,10 @@ class OversetCheck(SUMB):
         # Load the compiled module using MExt, allowing multiple
         # imports
         curDir = os.path.dirname(os.path.realpath(__file__))
-        self.sumb = MExt.MExt('libsumb', [curDir], debug=debug)._module
+        self.adflow = MExt.MExt('libadflow', [curDir], debug=debug)._module
 
         # Information for base class:
-        name = 'SUMB'
+        name = 'ADFLOW'
         category = 'Three Dimensional CFD'
         informs = {}
 
@@ -84,7 +84,7 @@ class OversetCheck(SUMB):
                 options[key.lower()] = options.pop(key)
         else:
             raise Error("The 'options' keyword argument must be passed "
-                        "sumb. The options dictionary must contain (at least) "
+                        "adflow. The options dictionary must contain (at least) "
                         "the gridFile entry for the grid")
 
         # Load all the option/objective/DV information:
@@ -104,31 +104,31 @@ class OversetCheck(SUMB):
             comm = MPI.COMM_WORLD
 
         self.comm = comm
-        self.sumb.communication.sumb_comm_world = self.comm.py2f()
-        self.sumb.communication.sumb_comm_self = MPI.COMM_SELF.py2f()
-        self.sumb.communication.sendrequests = numpy.zeros(self.comm.size)
-        self.sumb.communication.recvrequests = numpy.zeros(self.comm.size)
-        self.myid = self.sumb.communication.myid = self.comm.rank
-        self.sumb.communication.nproc = self.comm.size
+        self.adflow.communication.adflow_comm_world = self.comm.py2f()
+        self.adflow.communication.adflow_comm_self = MPI.COMM_SELF.py2f()
+        self.adflow.communication.sendrequests = numpy.zeros(self.comm.size)
+        self.adflow.communication.recvrequests = numpy.zeros(self.comm.size)
+        self.myid = self.adflow.communication.myid = self.comm.rank
+        self.adflow.communication.nproc = self.comm.size
 
         # Initialize the inherited aerosolver
         AeroSolver.__init__(self, name, category, defOpts, informs,
                             options=options)
 
         # Initialize petec in case the user has not already
-        self.sumb.initializepetsc()
+        self.adflow.initializepetsc()
 
-        # Set the stand-alone sumb flag to false...this changes how
+        # Set the stand-alone adflow flag to false...this changes how
         # terminate calls are handled.
-        self.sumb.iteration.standalonemode = False
+        self.adflow.iteration.standalonemode = False
 
         # Set the frompython flag to true... this also changes how
         # terminate calls are handled
-        self.sumb.killsignals.frompython = True
+        self.adflow.killsignals.frompython = True
 
         # Set default values
-        self.sumb.setdefaultvalues()
-        self.sumb.inputio.autoparameterupdate = False
+        self.adflow.setdefaultvalues()
+        self.adflow.inputio.autoparameterupdate = False
         
         # Make sure all the params are ok
         for option in self.options:
@@ -145,10 +145,10 @@ class OversetCheck(SUMB):
         self._setAeroProblemData(firstCall=True)
 
         # Finally complete loading
-        self.sumb.dummyreadparamfile()
-        self.sumb.partitionandreadgrid(False)
-        self.sumb.preprocessingcustomoverset()
-        # self.sumb.initflow()
-        # self.sumb.preprocessingpart2()
-        # self.sumb.initflowpart2()
-        # self.sumb.preprocessingadjoint()
+        self.adflow.dummyreadparamfile()
+        self.adflow.partitionandreadgrid(False)
+        self.adflow.preprocessingcustomoverset()
+        # self.adflow.initflow()
+        # self.adflow.preprocessingpart2()
+        # self.adflow.initflowpart2()
+        # self.adflow.preprocessingadjoint()

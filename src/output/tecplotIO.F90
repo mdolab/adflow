@@ -178,7 +178,7 @@ contains
 
   subroutine writeTecplot(sliceFile, writeSlices, liftFile, writeLift, surfFile, writeSurf)
     !
-    !       This is the master routine for writing tecplot data from sumb. 
+    !       This is the master routine for writing tecplot data from adflow. 
     !       This routine will write the slice, lift and surface files      
     !       depending on the flags writeSlics, writeLift and writeSurface. 
     !       The reason for the combined routine is that we can safely only 
@@ -276,7 +276,7 @@ contains
              open(unit=file, file=trim(fname))
 
              ! Write Header Information 
-             write (file,*) "Title = ""SUmb Slice Data"""
+             write (file,*) "Title = ""ADflow Slice Data"""
              write (file,"(a)", advance="no") "Variables = "
              write(file,"(a)",advance="no") " ""CoordinateX"" "
              write(file,"(a)",advance="no") " ""CoordinateY"" "
@@ -298,7 +298,7 @@ contains
              write(file,"(1x)")
              deallocate(solNames)
           end if
-          call mpi_bcast(nSolVar, 1, sumb_integer, 0, sumb_comm_world, ierr)
+          call mpi_bcast(nSolVar, 1, adflow_integer, 0, adflow_comm_world, ierr)
           call EChk(ierr,__FILE__,__LINE__)
 
           ! Integration is performed in parallel
@@ -463,12 +463,12 @@ contains
        end do elemLoop
 
        ! Globalize all min/max values. 
-       call mpi_allreduce(xmin_local, xmin, 3, sumb_real, MPI_MIN, &
-            sumb_comm_world, ierr)
+       call mpi_allreduce(xmin_local, xmin, 3, adflow_real, MPI_MIN, &
+            adflow_comm_world, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
-       call mpi_allreduce(xmax_local, xmax, 3, sumb_real, MPI_MAX, &
-            sumb_comm_world, ierr)
+       call mpi_allreduce(xmax_local, xmax, 3, adflow_real, MPI_MAX, &
+            adflow_comm_world, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
        d%delta = (xMax(d%dir_ind) - xMin(d%dir_ind))/dble((d%nSegments - 1))
@@ -502,7 +502,7 @@ contains
        ! Only write header info for first distribution only
        if (myid == 0) then 
           if (iDist == 1) then
-             write (fileID,*) "Title= ""SUmb Lift Distribution Data"""
+             write (fileID,*) "Title= ""ADflow Lift Distribution Data"""
              write (fileID,"(a)", advance="no") "Variables = "
              do i=1,nLIftDistVar
                 write(fileID,"(a,a,a)",advance="no") """",trim(liftDistNames(i)),""" "
@@ -678,7 +678,7 @@ contains
           open(unit=fileID, file=trim(fname))
 
           ! Write Header Information 
-          write (fileID,*) "Title = ""SUmb Surface Data"""
+          write (fileID,*) "Title = ""ADflow Surface Data"""
           write (fileID,"(a)", advance="no") "Variables = "
           write(fileID,"(a)",advance="no") " ""CoordinateX"" "
           write(fileID,"(a)",advance="no") " ""CoordinateY"" "
@@ -698,7 +698,7 @@ contains
           deallocate(solNames)
        end if
 
-       call mpi_bcast(nSolVar, 1, sumb_integer, 0, sumb_comm_world, ierr)
+       call mpi_bcast(nSolVar, 1, adflow_integer, 0, adflow_comm_world, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
        ! ================================================================
@@ -715,8 +715,8 @@ contains
        allocate(nodeSizes(nProc), nodeDisps(0:nProc))
        nodeSizes = 0
        nodeDisps = 0
-       call mpi_allgather(wallExchange(sps)%nNodes, 1, sumb_integer, nodeSizes, 1, sumb_integer, &
-            sumb_comm_world, ierr)
+       call mpi_allgather(wallExchange(sps)%nNodes, 1, adflow_integer, nodeSizes, 1, adflow_integer, &
+            adflow_comm_world, ierr)
        call EChk(ierr,__FILE__,__LINE__)
        nodeDisps(0) = 0
        do iProc=1, nProc
@@ -732,14 +732,14 @@ contains
        ! Gather values to the root proc.
        do i=1, iSize
           call mpi_gatherv(wallExchange(sps)%nodalValues(:, i), wallExchange(sps)%nNodes, &
-               sumb_real, vars(:, i), nodeSizes, nodeDisps, sumb_real, 0, sumb_comm_world, ierr)
+               adflow_real, vars(:, i), nodeSizes, nodeDisps, adflow_real, 0, adflow_comm_world, ierr)
           call EChk(ierr,__FILE__,__LINE__)
        end do
        ! Now gather up the connectivity
        allocate(cellDisps(0:nProc), cellSizes(nProc))
 
-       call mpi_gather(size(wallExchange(sps)%conn, 2), 1, sumb_integer, &
-            cellSizes, 1, sumb_integer, 0, sumb_comm_world, ierr)
+       call mpi_gather(size(wallExchange(sps)%conn, 2), 1, adflow_integer, &
+            cellSizes, 1, adflow_integer, 0, adflow_comm_world, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
        if (myid == 0) then 
@@ -757,13 +757,13 @@ contains
        ! number of nodes from different processors
 
        call mpi_gatherv(wallExchange(sps)%conn+nodeDisps(myid), &
-            4*size(wallExchange(sps)%conn, 2), sumb_integer, conn, &
-            cellSizes*4, cellDisps*4, sumb_integer, 0, sumb_comm_world, ierr)
+            4*size(wallExchange(sps)%conn, 2), adflow_integer, conn, &
+            cellSizes*4, cellDisps*4, adflow_integer, 0, adflow_comm_world, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
        call mpi_gatherv(wallExchange(sps)%elemFam, &
-            size(wallExchange(sps)%elemFam), sumb_integer, elemFam, &
-            cellSizes, cellDisps, sumb_integer, 0, sumb_comm_world, ierr)
+            size(wallExchange(sps)%elemFam), adflow_integer, elemFam, &
+            cellSizes, cellDisps, adflow_integer, 0, adflow_comm_world, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
 
@@ -824,8 +824,8 @@ contains
              allocate(nodeSizes(nProc), nodeDisps(0:nProc))
              nodeSizes = 0
              nodeDisps = 0
-             call mpi_allgather(familyExchanges(iFam, sps)%nNodes, 1, sumb_integer, nodeSizes, 1, sumb_integer, &
-                  sumb_comm_world, ierr)
+             call mpi_allgather(familyExchanges(iFam, sps)%nNodes, 1, adflow_integer, nodeSizes, 1, adflow_integer, &
+                  adflow_comm_world, ierr)
              call EChk(ierr,__FILE__,__LINE__)
              nodeDisps(0) = 0
              do iProc=1, nProc
@@ -841,14 +841,14 @@ contains
              ! Gather values to the root proc.
              do i=1, iSize
                 call mpi_gatherv(familyExchanges(iFam, sps)%nodalValues(:, i), familyExchanges(iFam, sps)%nNodes, &
-                     sumb_real, vars(:, i), nodeSizes, nodeDisps, sumb_real, 0, sumb_comm_world, ierr)
+                     adflow_real, vars(:, i), nodeSizes, nodeDisps, adflow_real, 0, adflow_comm_world, ierr)
                 call EChk(ierr,__FILE__,__LINE__)
              end do
              ! Now gather up the connectivity
              allocate(cellDisps(0:nProc), cellSizes(nProc))
 
-             call mpi_gather(size(familyExchanges(iFam, sps)%conn, 2), 1, sumb_integer, &
-                  cellSizes, 1, sumb_integer, 0, sumb_comm_world, ierr)
+             call mpi_gather(size(familyExchanges(iFam, sps)%conn, 2), 1, adflow_integer, &
+                  cellSizes, 1, adflow_integer, 0, adflow_comm_world, ierr)
              call EChk(ierr,__FILE__,__LINE__)
 
              if (myid == 0) then 
@@ -865,8 +865,8 @@ contains
              ! number of nodes from different processors
 
              call mpi_gatherv(familyExchanges(iFam, sps)%conn+nodeDisps(myid), &
-                  4*size(familyExchanges(iFam, sps)%conn, 2), sumb_integer, conn, &
-                  cellSizes*4, cellDisps*4, sumb_integer, 0, sumb_comm_world, ierr)
+                  4*size(familyExchanges(iFam, sps)%conn, 2), adflow_integer, conn, &
+                  cellSizes*4, cellDisps*4, adflow_integer, 0, adflow_comm_world, ierr)
              call EChk(ierr,__FILE__,__LINE__)
 
              ! Not quite finished yet since we will have gathered nodes from
@@ -1550,8 +1550,8 @@ contains
     allocate(sliceNodeSizes(nProc), nodeDisps(0:nProc))
     sliceNodeSizes = 0
     nodeDisps = 0
-    call mpi_allgather(lSlc%nNodes,1, sumb_integer, sliceNodeSizes, 1, sumb_integer, &
-         sumb_comm_world, ierr)
+    call mpi_allgather(lSlc%nNodes,1, adflow_integer, sliceNodeSizes, 1, adflow_integer, &
+         adflow_comm_world, ierr)
     call EChk(ierr,__FILE__,__LINE__)
     nodeDisps(0) = 0
     do iProc=1, nProc
@@ -1564,8 +1564,8 @@ contains
 
     end if
 
-    call mpi_gatherv(localVals, iSize*lSlc%nNodes, sumb_real, gSlc%vars, sliceNodeSizes*iSize, &
-         nodeDisps, sumb_real, 0, sumb_comm_world, ierr)
+    call mpi_gatherv(localVals, iSize*lSlc%nNodes, adflow_real, gSlc%vars, sliceNodeSizes*iSize, &
+         nodeDisps, adflow_real, 0, adflow_comm_world, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
     ! We may also need to gather the connectivity if the slice will have
@@ -1574,8 +1574,8 @@ contains
        i = size(lslc%conn, 2)
        allocate(cellDisps(0:nProc), sliceCellSizes(nProc))
 
-       call mpi_gather(i, 1, sumb_integer, sliceCellSizes, 1, sumb_integer, &
-            0, sumb_comm_world, ierr)
+       call mpi_gather(i, 1, adflow_integer, sliceCellSizes, 1, adflow_integer, &
+            0, adflow_comm_world, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
 
@@ -1591,8 +1591,8 @@ contains
        ! automagically adjust the connectivity to account for the
        ! number of nodes from different processors
 
-       call mpi_gatherv(lSlc%conn+nodeDisps(myid)/iSize, 2*size(lSlc%conn, 2), sumb_integer, gSlc%conn, &
-            sliceCellSizes*2, cellDisps, sumb_integer, 0, sumb_comm_world, ierr)
+       call mpi_gatherv(lSlc%conn+nodeDisps(myid)/iSize, 2*size(lSlc%conn, 2), adflow_integer, gSlc%conn, &
+            sliceCellSizes*2, cellDisps, adflow_integer, 0, adflow_comm_world, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
        ! Not quite finished yet since we will have gathered nodes from
@@ -1609,8 +1609,8 @@ contains
     lSlc%vD = dragDirection(1)*vF(1) + dragDirection(2)*vF(2) + dragDirection(3)*vF(3)
 
     ! Reduce the lift/drag values
-    call mpi_reduce((/lSlc%pL, lSlc%pD, lSlc%vL, lSlc%vD/), tmp, 4, sumb_real, MPI_SUM, &
-         0, sumb_comm_world, ierr)
+    call mpi_reduce((/lSlc%pL, lSlc%pD, lSlc%vL, lSlc%vD/), tmp, 4, adflow_real, MPI_SUM, &
+         0, adflow_comm_world, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
     if (myid == 0) then 

@@ -1,5 +1,5 @@
 ############################################################
-# DO NOT USE THIS SCRIPT AS A REFERENCE FOR HOW TO USE SUMB
+# DO NOT USE THIS SCRIPT AS A REFERENCE FOR HOW TO USE ADFLOW
 # THIS SCRIPT USES PRIVATE INTERNAL FUNCTIONALITY THAT IS
 # SUBJECT TO CHANGE!!
 ############################################################
@@ -11,9 +11,9 @@ from commonUtils import *
 
 # ###################################################################
 # DO NOT USE THIS IMPORT STRATEGY! THIS IS ONLY USED FOR REGRESSION
-# SCRIPTS ONLY. Use 'from sumb import SUMB' for regular scripts.
+# SCRIPTS ONLY. Use 'from adflow import ADFLOW' for regular scripts.
 sys.path.append(os.path.abspath('../../'))
-from python.pySUmb import SUMB
+from python.pyADflow import ADFLOW
 # ###################################################################
 
 # ****************************************************************************
@@ -22,7 +22,7 @@ printHeader('Test 16: Euler Convergenent Nozzle -- Flow Properties Integration '
 # ****************************************************************************
 gridFile = '../inputFiles/euler_conv_nozzle.cgns'
 
-options = copy.copy(sumbDefOpts)
+options = copy.copy(adflowDefOpts)
 
 options = {
     'gridFile':gridFile,
@@ -58,7 +58,7 @@ ap = AeroProblem(name='conv_nozzle', alpha=0.0,  mach=0.25, T=500, P=100000,
 
 # Creat the solver
 
-CFDSolver = SUMB(options=options, debug=False)
+CFDSolver = ADFLOW(options=options, debug=False)
 
 CFDSolver.addFamilyGroup('upstream',['INFLOW'])
 CFDSolver.addFamilyGroup('downstream',['OUTFLOW'])

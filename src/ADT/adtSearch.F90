@@ -265,7 +265,7 @@ contains
 
     ! Determine the global sum of nFail, which is stored in ii.
 
-    call mpi_allreduce(nFail, ii, 1, sumb_integer, mpi_max, &
+    call mpi_allreduce(nFail, ii, 1, adflow_integer, mpi_max, &
          ADT%comm, ierr)
 
     ! Return if ii == 0, because the minimum distance search
@@ -415,7 +415,7 @@ contains
     ! as an upper bound for the number of points to be searched
     ! during a round.
 
-    call mpi_allreduce(nCoor, nCoorMax, 1, sumb_integer, mpi_max, &
+    call mpi_allreduce(nCoor, nCoorMax, 1, adflow_integer, mpi_max, &
          comm, ierr)
     nCoorMax = max(nCoorMax,nCoorMaxLowerLimit)
     !
@@ -669,8 +669,8 @@ contains
 
     ! Communicate these numbers to the other processors.
 
-    call mpi_alltoall(nCoorPerProc,  1, sumb_integer, &
-         nCoorFromProc, 1, sumb_integer, comm, ierr)
+    call mpi_alltoall(nCoorPerProc,  1, adflow_integer, &
+         nCoorFromProc, 1, adflow_integer, comm, ierr)
 
     ! Determine the total number of coordinates I have to interpolate
     ! and the processor ID's I will receive coordinates from.
@@ -693,7 +693,7 @@ contains
     if(i*nCoorMax < nn) i = i + 1
     i = max(i, 1_intType)
 
-    call mpi_allreduce(i, nRounds, 1, sumb_integer, mpi_max, &
+    call mpi_allreduce(i, nRounds, 1, adflow_integer, mpi_max, &
          comm, ierr)
 
     ! Modify the sequence of procRecv, such that number of
@@ -1068,8 +1068,8 @@ contains
        ! Do an all to all communication such that every processor
        ! knows the amount of data it should send to other processors.
 
-       call mpi_alltoall(nCoorFromProc, 1, sumb_integer, &
-            nCoorPerProc,  1, sumb_integer, comm, ierr)
+       call mpi_alltoall(nCoorFromProc, 1, adflow_integer, &
+            nCoorPerProc,  1, adflow_integer, comm, ierr)
 
        ! Set the non-zero entries of nCoorFromProc to zero again
        ! for the next round.
@@ -1218,7 +1218,7 @@ contains
           ! Use nonblocking sends to avoid deadlock.
 
           sizeMessage = nVarCoor*(k-k1)
-          call mpi_isend(coorBuf(1,k1+1), sizeMessage, sumb_real, &
+          call mpi_isend(coorBuf(1,k1+1), sizeMessage, adflow_real, &
                procCur,         procCur,     comm,     &
                sendRequest(i),  ierr)
 
@@ -1444,7 +1444,7 @@ contains
           call mpi_probe(mpi_any_source, myID, comm, status, ierr)
 
           procCur = status(mpi_source)
-          call mpi_get_count(status, sumb_real, sizeMessage, ierr)
+          call mpi_get_count(status, adflow_real, sizeMessage, ierr)
 
           ! Check in debug mode that the message is of correct size.
 
@@ -1466,7 +1466,7 @@ contains
                "Memory allocation failure for &
                &coorRecv.")
 
-          call mpi_recv(coorRecv, sizeMessage, sumb_real, procCur, &
+          call mpi_recv(coorRecv, sizeMessage, adflow_real, procCur, &
                myID,     comm,        status,   ierr)
 
           ! Search the corresponding elements in the local tree and
@@ -1493,12 +1493,12 @@ contains
           ! the requesting processor.
 
           sizeMessage = 3*nn
-          call mpi_isend(intRecv(1,ii),        sizeMessage, sumb_integer, &
+          call mpi_isend(intRecv(1,ii),        sizeMessage, adflow_integer, &
                procCur,              procCur+1,   comm,        &
                sendRecvRequest(1,i), ierr)
 
           sizeMessage = nVarUVW*nn
-          call mpi_isend(uvwRecv(1,ii),        sizeMessage, sumb_real, &
+          call mpi_isend(uvwRecv(1,ii),        sizeMessage, adflow_real, &
                procCur,              procCur+2,   comm,     &
                sendRecvRequest(2,i), ierr)
 
@@ -1534,7 +1534,7 @@ contains
           call mpi_probe(mpi_any_source, myID+1, comm, status, ierr)
 
           procCur = status(mpi_source)
-          call mpi_get_count(status, sumb_integer, sizeMessage, ierr)
+          call mpi_get_count(status, adflow_integer, sizeMessage, ierr)
 
           ! Check in debug mode that the message is of correct size.
 
@@ -1555,11 +1555,11 @@ contains
                "Memory allocation failure for intBuf &
                &and uvwBuf.")
 
-          call mpi_recv(intBuf, sizeMessage, sumb_integer, procCur, &
+          call mpi_recv(intBuf, sizeMessage, adflow_integer, procCur, &
                myID+1, comm,        status,      ierr)
 
           sizeMessage = nVarUVW*nn
-          call mpi_recv(uvwBuf, sizeMessage, sumb_real, procCur, &
+          call mpi_recv(uvwBuf, sizeMessage, adflow_real, procCur, &
                myID+2, comm,        status,   ierr)
 
           ! Store the interpolation data at the correct location in the

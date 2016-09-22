@@ -2,7 +2,7 @@
 |  Test13: MDO tutorial -- Euler -- Adjoint Test                               |
 +------------------------------------------------------------------------------+
 #
-# SUmb, multiblock structured flow solver
+# ADflow, multiblock structured flow solver
 #
 # This code solves the 3D RANS, laminar NS or Euler equations
 # on multiblock structured hexahedral grids.
@@ -15,7 +15,7 @@
 # - With support for signals.
 #
 +---------------------------------------+
-|          All SUMB Options:            |
+|          All ADFLOW Options:            |
 +---------------------------------------+
 {'adjointdivtol': 100000.0,
  'adjointl2convergence': 1e-14,

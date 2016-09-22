@@ -1,7 +1,7 @@
 module warping
 
   ! This module cotains the required inferface functions for using an
-  ! external mesh warping utility with SUmb
+  ! external mesh warping utility with ADflow
 
 contains
 
@@ -199,7 +199,7 @@ contains
     use constants
     use cgnsGrid, only : cgnsDoms, cgnsNDom
     use blockPointers, only : nDom, il, jl, kl, nx, ny, nz, x, nbkglobal, iBegOr, jBegOr, kBegOr
-    use communication, only : sumb_comm_world, myid
+    use communication, only : adflow_comm_world, myid
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use adjointVars, only : nCellsLocal
     use flowVarRefState, only : nw
@@ -266,7 +266,7 @@ contains
 
     use constants
     use blockPointers, only : nDom, BCData, nBocos, BCFaceID, il, jl ,kl
-    use communication, only : sumb_comm_world, myid
+    use communication, only : adflow_comm_world, myid
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use surfaceFamilies, only : famGroups
     use utils, only : setPointers

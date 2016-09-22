@@ -1422,7 +1422,7 @@ contains
     !
     use constants
     use cgnsNames
-    use communication, only : myid, sumb_comm_world
+    use communication, only : myid, adflow_comm_world
     use monitor, only : monNames, nMOn , nMonMax, nMonSum, showCPU
     use utils, only : convertToLowerCase, terminate
     implicit none
@@ -1603,7 +1603,7 @@ contains
                trim(keyword), ", specified"
           if(myID == 0) &
                call terminate("monitorVariables", errorMessage)
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
 
        end select
 
@@ -1654,7 +1654,7 @@ contains
     !       function of the temperature from the file cpFile.              
     !
     use constants
-    use communication, only : myid, sumb_comm_world
+    use communication, only : myid, adflow_comm_world
     use cpCurveFits, only : cpTrange, cpTempFit, cpEint, cpHint, cvn, cv0, &
          cpNParts
     use inputIO, only : cpFile
@@ -1686,7 +1686,7 @@ contains
        if(myID == 0) &
             call terminate("readCpTempCurveFits", errorMessage)
 
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
 
     ! Skip the comment lines and read the number of parts.
@@ -1700,7 +1700,7 @@ contains
             call terminate("readCpTempCurveFits", &
             "Wrong number of temperature ranges in &
             &Cp curve fit file.")
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
 
     ! Allocate the memory for the variables to store the curve fit
@@ -1738,7 +1738,7 @@ contains
              if(myID == 0)                           &
                   call terminate("readCpTempCurveFits", &
                   "Curve fit boundary not continuous")
-             call mpi_barrier(SUmb_comm_world, ierr)
+             call mpi_barrier(ADflow_comm_world, ierr)
           endif
        endif
 
@@ -1780,7 +1780,7 @@ contains
                      call terminate("readCpTempCurveFits", &
                      "Not enough exponents on line; &
                      &Cp curve fit file not valid.")
-                call mpi_barrier(SUmb_comm_world, ierr)
+                call mpi_barrier(ADflow_comm_world, ierr)
              endif
           endif
        enddo
@@ -1808,7 +1808,7 @@ contains
                      call terminate("readCpTempCurveFits", &
                      "Not enough constants on line; &
                      &Cp curve fit file not valid.")
-                call mpi_barrier(SUmb_comm_world, ierr)
+                call mpi_barrier(ADflow_comm_world, ierr)
              endif
           endif
        enddo
@@ -2042,7 +2042,7 @@ contains
           if(myID == 0)                        &
                call terminate("findNextInfoLine", &
                "Unexpected end of Cp curve fit file")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        ! Get rid of the leading and trailing spaces in string.
@@ -2744,7 +2744,7 @@ contains
     use inputTSStabDeriv
     !  ------------------------------------------------
     use inputPhysics, only : velDirFreeStream, liftDirection, dragDirection
-    use communication, only : myid, sumb_comm_world
+    use communication, only : myid, adflow_comm_world
     use iteration, only : coefTime, coefTimeALE, coefMeshALE, &
          oldSolWritten, nALEMeshes, nALESteps, nOldLevels
     use monitor, only : nTimeStepsRestart
@@ -2769,7 +2769,7 @@ contains
        if(myID == 0)                       &
             call terminate("checkInputParam", &
             "Discretization scheme not specified")
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
 
     if(spaceDiscrCoarse == none) spaceDiscrCoarse = spaceDiscr
@@ -2805,7 +2805,7 @@ contains
     if(gridFile == "") then
        if(myID == 0) &
             call terminate("checkInputParam", "Grid file not specified")
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
 
     if(newGridFile == "") then
@@ -2813,7 +2813,7 @@ contains
     endif
 
     if(solFile == "") then
-       solFile = "SolSUmb.cgns"
+       solFile = "SolADflow.cgns"
     endif
 
     if(surfaceSolFile == "") &
@@ -2823,7 +2823,7 @@ contains
        if(myID == 0)                        &
             call terminate("checkInputParam", &
             "Cp curve fit file not specified")
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
 
 #ifdef USE_NO_CGNS
@@ -2833,7 +2833,7 @@ contains
        if(myID == 0)                       &
             call terminate("checkInputParam", &
             "cgns support disabled during compile time")
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
 
 #endif
@@ -2856,7 +2856,7 @@ contains
        if(smoother == none) then
           if(myID == 0) &
                call terminate("checkInputParam", "Smoother not specified")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        if(ncycles < 0) then
@@ -2864,14 +2864,14 @@ contains
                call terminate("checkInputParam", &
                "Number of multigrid cycles not or wrongly &
                &specified")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        if(cfl < zero) then
           if(myID == 0)                        &
                call terminate("checkInputParam", &
                "cfl number not or wrongly specified")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        if(l2Conv <= zero .or. L2Conv >= one) then
@@ -2879,7 +2879,7 @@ contains
                call terminate("checkInputParam", &
                "Relative L2 norm for convergence must be a &
                & number between 0 and 1.")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        if(l2ConvCoarse <= zero .or. L2ConvCoarse >= one) then
@@ -2887,7 +2887,7 @@ contains
                call terminate("checkInputParam", &
                "Relative L2 norm for convergence coarse grid &
                &must be a number between 0 and 1.")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
     endif
     !
@@ -2899,7 +2899,7 @@ contains
             call terminate("checkInputParam", &
             "Grid motion specified for an internal flow; &
             &this is not possible")
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
     !
     !       Physics parameters. Check if the key parameters have been      
@@ -2908,33 +2908,33 @@ contains
     if(equations == none) then
        if(myID == 0) &
             call terminate("checkInputParam", "Equations not specified")
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
 
     if(equationMode == none) then
        if(myID == 0) &
             call terminate("checkInputParam", "Mode not specified")
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
 
     if(flowType == none) then
        if(myID == 0) &
             call terminate("checkInputParam", "Flow type not specified")
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
 
     if(Mach < zero .and. flowType == externalFlow) then
        if(myID == 0)                        &
             call terminate("checkInputParam", &
             "Mach not or wrongly specified")
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
 
     if(equations == RANSEquations .and. turbModel == none) then
        if(myID == 0)                        &
             call terminate("checkInputParam", &
             "Turbulence model not specified")
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     endif
 
     ! Create a unit vector for the free stream velocity. It is checked
@@ -2950,7 +2950,7 @@ contains
                call terminate("checkInputParam", &
                "Free stream velocity direction wrongly &
                &specified")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        vecLength = one/vecLength
@@ -2985,7 +2985,7 @@ contains
           if(myID == 0)                        &
                call terminate("checkInputParam", &
                "Lift direction wrongly specified")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        vecLength = one/vecLength
@@ -3004,7 +3004,7 @@ contains
                call terminate("checkInputParam", &
                "Lift direction not orthogonal to &
                &free-stream")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
     else
@@ -3041,7 +3041,7 @@ contains
                call terminate("checkInputParam", &
                "Number time intervals spectral not or &
                &wrongly specified")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        ! If an unsteady restart solution file must be written, check
@@ -3053,7 +3053,7 @@ contains
                   call terminate("checkInputParam", &
                   "Time step (in sec) for unsteady restart &
                   &not or wrongly specified.")
-             call mpi_barrier(SUmb_comm_world, ierr)
+             call mpi_barrier(ADflow_comm_world, ierr)
           endif
        endif
 
@@ -3067,7 +3067,7 @@ contains
                   call terminate("checkInputParam", &
                   "Number of unsteady solution files &
                   &not or wrongly specified.")
-             call mpi_barrier(SUmb_comm_world, ierr)
+             call mpi_barrier(ADflow_comm_world, ierr)
           endif
        endif
 
@@ -3091,7 +3091,7 @@ contains
                call terminate("checkInputParam", &
                "Number of unsteady time steps fine grid &
                &not or wrongly specified")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        if(nTimeStepsCoarse < 0) nTimeStepsCoarse = nTimeStepsFine
@@ -3101,7 +3101,7 @@ contains
                call terminate("checkInputParam", &
                "Unsteady time step (in sec) &
                &not or wrongly specified")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        ! Check if the rigid body rotation parameters are consistent.
@@ -3113,7 +3113,7 @@ contains
                call terminate("checkInputParam", &
                "Polynomial coefficients x-rotation &
                &not specified")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        if(degreePolYRot >= 0 .and. &
@@ -3122,7 +3122,7 @@ contains
                call terminate("checkInputParam", &
                "Polynomial coefficients y-rotation &
                &not specified")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        if(degreePolZRot >= 0 .and. &
@@ -3131,7 +3131,7 @@ contains
                call terminate("checkInputParam", &
                "Polynomial coefficients z-rotation &
                &not specified")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        ! The fourier rotation coefficients.
@@ -3142,7 +3142,7 @@ contains
                call terminate("checkInputParam", &
                "Fourier cosine coefficients x-rotation &
                &not specified")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        if(degreeFourXRot >= 1 .and. &
@@ -3151,7 +3151,7 @@ contains
                call terminate("checkInputParam", &
                "Fourier sine coefficients x-rotation &
                &not specified")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        if(degreeFourYRot >= 0 .and. &
@@ -3160,7 +3160,7 @@ contains
                call terminate("checkInputParam", &
                "Fourier cosine coefficients y-rotation &
                &not specified")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        if(degreeFourYRot >= 1 .and. &
@@ -3169,7 +3169,7 @@ contains
                call terminate("checkInputParam", &
                "Fourier sine coefficients y-rotation &
                &not specified")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        if(degreeFourZRot >= 0 .and. &
@@ -3178,7 +3178,7 @@ contains
                call terminate("checkInputParam", &
                "Fourier cosine coefficients z-rotation &
                &not specified")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        if(degreeFourZRot >= 1 .and. &
@@ -3187,7 +3187,7 @@ contains
                call terminate("checkInputParam", &
                "Fourier sine coefficients z-rotation &
                &not specified")
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
     endif testUnsteady

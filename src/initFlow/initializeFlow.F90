@@ -2143,8 +2143,8 @@ contains
           ! Determine the sum of dirLoc and create a unit vector
           ! for the global direction.
 
-          call mpi_allreduce(dirLoc, dirGlob, 3, sumb_real, mpi_sum, &
-               SUmb_comm_world, ierr)
+          call mpi_allreduce(dirLoc, dirGlob, 3, adflow_real, mpi_sum, &
+               ADflow_comm_world, ierr)
 
           tmp         = one/max(eps,sqrt(dirGlob(1)**2 &
                +                  dirGlob(2)**2 &
@@ -2714,7 +2714,7 @@ contains
     use variableReading ! Full import since we need basically everything
     use blockPointers, only: iBegOr, jBegOr, kBegOr, il, jl, kl, nDom, &
          nBKGlobal, nx, ny, nz
-    use communication, only : sumb_comm_world, myid
+    use communication, only : adflow_comm_world, myid
     use inputPhysics, only : equationMode
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use monitor, only : nTimeStepsRestart, timeUnsteadyRestart
@@ -2808,10 +2808,10 @@ contains
     ! processors. These values are needed to perform a consistent
     ! unsteady restart.
 
-    call mpi_bcast(nTimeStepsRestart, 1, sumb_integer, 0, &
-         SUmb_comm_world, ierr)
-    call mpi_bcast(timeUnsteadyRestart, 1, sumb_real, 0, &
-         SUmb_comm_world, ierr)
+    call mpi_bcast(nTimeStepsRestart, 1, adflow_integer, 0, &
+         ADflow_comm_world, ierr)
+    call mpi_bcast(timeUnsteadyRestart, 1, adflow_real, 0, &
+         ADflow_comm_world, ierr)
 
     ! Get the scaling factors for density, pressure and velocity
     ! by reading the reference state.
@@ -3111,8 +3111,8 @@ contains
     ! to store the result. If a type mismatch occured,
     ! print a warning.
 
-    call mpi_reduce(nTypeMismatch, ii, 1, sumb_integer, &
-         mpi_sum, 0, SUmb_comm_world, ierr)
+    call mpi_reduce(nTypeMismatch, ii, 1, adflow_integer, &
+         mpi_sum, 0, ADflow_comm_world, ierr)
     if(myID == 0 .and. ii > 0) then
 
        write(integerString,"(i6)") ii

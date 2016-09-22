@@ -26,7 +26,7 @@ contains
 !
 !       the original version has been nuked since the computations are
 !       no longer necessary when calling from python
-!       this is the most compliclated routine in all of sumb. it is
+!       this is the most compliclated routine in all of adflow. it is
 !       stupidly complicated. this is most likely the reason your
 !       derivatives are wrong. you don't understand this routine
 !       and its effects.
@@ -226,7 +226,7 @@ contains
 !
 !       the original version has been nuked since the computations are
 !       no longer necessary when calling from python
-!       this is the most compliclated routine in all of sumb. it is
+!       this is the most compliclated routine in all of adflow. it is
 !       stupidly complicated. this is most likely the reason your
 !       derivatives are wrong. you don't understand this routine
 !       and its effects.

@@ -3248,7 +3248,7 @@ contains
     !
     use constants
     use blockPointers, only : BCData, BCType, nBKGlobal, nBocos, nDom, cgnsSubFace
-    use communication, only : sumb_comm_world, myid
+    use communication, only : adflow_comm_world, myid
     use inputTimeSpectral, only :nTimeIntervalsSpectral
     use iteration, only : groundLevel
     use utils, only : setPointers, terminate
@@ -3352,8 +3352,8 @@ contains
 
        i = 0
        if( axAssumed ) i = 1
-       call mpi_reduce(i, j, 1, sumb_integer, mpi_max, 0, &
-            SUmb_comm_world, ierr)
+       call mpi_reduce(i, j, 1, adflow_integer, mpi_max, 0, &
+            ADflow_comm_world, ierr)
 
        if(myID == 0 .and. j == 1) then
 
@@ -3376,8 +3376,8 @@ contains
 
        i = 0
        if( massflowPrescribed ) i = 1
-       call mpi_reduce(i, j, 1, sumb_integer, mpi_max, 0, &
-            SUmb_comm_world, ierr)
+       call mpi_reduce(i, j, 1, adflow_integer, mpi_max, 0, &
+            ADflow_comm_world, ierr)
 
        if(myID == 0 .and. j == 1) then
 
@@ -3399,8 +3399,8 @@ contains
 
        i = 0
        if(.not. allTurbMassBleedInflow) i = 1
-       call mpi_reduce(i, j, 1, sumb_integer, mpi_max, 0, &
-            SUmb_comm_world, ierr)
+       call mpi_reduce(i, j, 1, adflow_integer, mpi_max, 0, &
+            ADflow_comm_world, ierr)
 
        if(myID == 0 .and. j == 1) then
 
@@ -3423,8 +3423,8 @@ contains
 
        i = 0
        if(.not. allTurbSubsonicInflow) i = 1
-       call mpi_reduce(i, j, 1, sumb_integer, mpi_max, 0, &
-            SUmb_comm_world, ierr)
+       call mpi_reduce(i, j, 1, adflow_integer, mpi_max, 0, &
+            ADflow_comm_world, ierr)
 
        if(myID == 0 .and. j == 1) then
 
@@ -3447,8 +3447,8 @@ contains
 
        i = 0
        if(.not. allFlowSupersonicInflow) i = 1
-       call mpi_reduce(i, j, 1, sumb_integer, mpi_max, 0, &
-            SUmb_comm_world, ierr)
+       call mpi_reduce(i, j, 1, adflow_integer, mpi_max, 0, &
+            ADflow_comm_world, ierr)
 
        if(myID == 0 .and. j == 1) then
 
@@ -3470,8 +3470,8 @@ contains
 
        i = 0
        if(.not. allTurbSupersonicInflow) i = 1
-       call mpi_reduce(i, j, 1, sumb_integer, mpi_max, 0, &
-            SUmb_comm_world, ierr)
+       call mpi_reduce(i, j, 1, adflow_integer, mpi_max, 0, &
+            ADflow_comm_world, ierr)
 
        if(myID == 0 .and. j == 1) then
 

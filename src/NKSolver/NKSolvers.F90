@@ -17,8 +17,8 @@ module NKSolver
   Mat  dRdw, dRdwPre, dRdwPseudo
 
   ! PETSc Vectors:
-  ! wVec: PETsc version of SUmb 'w'
-  ! rVec: PETSc version of SUmb 'dw', but divided by volume
+  ! wVec: PETsc version of ADflow 'w'
+  ! rVec: PETSc version of ADflow 'dw', but divided by volume
   ! deltaW: Update to the wVec from linear solution
   ! diagV: Diagonal lumping term
 
@@ -83,7 +83,7 @@ contains
 
     use constants
     use stencils, only : visc_pc_stencil, euler_pc_stencil, N_visc_pc, N_euler_pc
-    use communication, only : sumb_comm_world
+    use communication, only : adflow_comm_world
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use flowVarRefState, only : nw, viscous
     use InputAdjoint, only: viscPC
@@ -106,7 +106,7 @@ contains
     if (.not. NK_solverSetup) then
        nDimW = nw * nCellsLocal(1_intTYpe) * nTimeIntervalsSpectral
 
-       call VecCreate(SUMB_COMM_WORLD, wVec, ierr)
+       call VecCreate(ADFLOW_COMM_WORLD, wVec, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
        call VecSetSizes(wVec, nDimW, PETSC_DECIDE, ierr)
@@ -155,7 +155,7 @@ contains
        deallocate(nnzDiagonal, nnzOffDiag)
 
        ! Setup Matrix-Free dRdw matrix and its function
-       call MatCreateMFFD(sumb_comm_world, nDimW, nDimW, &
+       call MatCreateMFFD(adflow_comm_world, nDimW, nDimW, &
             PETSC_DETERMINE, PETSC_DETERMINE, dRdw, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
@@ -163,7 +163,7 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
 
        ! Setup a matrix free matrix for drdw
-       call MatCreateShell(SUMB_COMM_WORLD, nDimW, nDimW, PETSC_DETERMINE, &
+       call MatCreateShell(ADFLOW_COMM_WORLD, nDimW, nDimW, PETSC_DETERMINE, &
             PETSC_DETERMINE, ctx, dRdwPseudo, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
@@ -180,7 +180,7 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
 
        !  Create the linear solver context
-       call KSPCreate(SUMB_COMM_WORLD, NK_KSP, ierr)
+       call KSPCreate(ADFLOW_COMM_WORLD, NK_KSP, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
        ! Set operators for the solver
@@ -281,7 +281,7 @@ contains
   subroutine getCurrentResidual(rhoRes,totalRRes)
 
     use constants
-    use communication, only : sumb_comm_world 
+    use communication, only : adflow_comm_world 
     use block, only : nCellGlobal
     use blockPointers, only : nDom
     use inputTimeSpectral, only : nTimeIntervalsSpectral
@@ -307,8 +307,8 @@ contains
 
     ! This is the same calc as in convergence info, just for rehoRes and
     ! totalR only. 
-    call mpi_allreduce(monLoc, monGlob, nMonSum, sumb_real, &
-         mpi_sum, SUmb_comm_world, ierr)
+    call mpi_allreduce(monLoc, monGlob, nMonSum, adflow_real, &
+         mpi_sum, ADflow_comm_world, ierr)
 
     rhoRes = sqrt(monGlob(1)/nCellGlobal(currentLevel))
     totalRRes = sqrt(monGlob(2))
@@ -476,7 +476,7 @@ contains
     if (firstCall) then 
        call setupNKSolver()
 
-       ! Copy the sumb 'w' into the petsc wVec
+       ! Copy the adflow 'w' into the petsc wVec
        call setwVec(wVec)
 
        ! Evaluate the residual before we start and put the residual in
@@ -1360,7 +1360,7 @@ contains
 
   subroutine setStates(states,ndimw)
 
-    ! Take in externallly generated states and set them in SUmb
+    ! Take in externallly generated states and set them in ADflow
     use constants
     use blockPointers, only : il, jl, kl, nDom, w
     use inputTimeSpectral, only : nTimeIntervalsSpectral
@@ -1595,7 +1595,7 @@ contains
 
     use constants
     use stencils, only : euler_PC_stencil, N_euler_PC
-    use communication, only : sumb_comm_world
+    use communication, only : adflow_comm_world
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use flowVarRefState, only : nw, viscous, nwf
     use ADjointVars , only: nCellsLocal
@@ -1618,7 +1618,7 @@ contains
     if (.not. ANK_solverSetup) then
        nDimW = nwf * nCellsLocal(1_intTYpe) * nTimeIntervalsSpectral
 
-       call VecCreate(SUMB_COMM_WORLD, wVec, ierr)
+       call VecCreate(ADFLOW_COMM_WORLD, wVec, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
        call VecSetSizes(wVec, nDimW, PETSC_DECIDE, ierr)
@@ -1660,7 +1660,7 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
 
        !  Create the linear solver context
-       call KSPCreate(SUMB_COMM_WORLD, ANK_KSP, ierr)
+       call KSPCreate(ADFLOW_COMM_WORLD, ANK_KSP, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
        ! Set operators for the solver
@@ -1673,7 +1673,7 @@ contains
        if (.not. ANK_useTurbDADI .and. nw > nwf) then 
           nDimW = nCellsLocal(1_intTYpe) * nTimeIntervalsSpectral
 
-          call VecCreate(SUMB_COMM_WORLD, wVecTurb, ierr)
+          call VecCreate(ADFLOW_COMM_WORLD, wVecTurb, ierr)
           call EChk(ierr, __FILE__, __LINE__)
 
           call VecSetSizes(wVecTurb, nDimW, PETSC_DECIDE, ierr)
@@ -1715,7 +1715,7 @@ contains
           call EChk(ierr, __FILE__, __LINE__)
 
           !  Create the linear solver context
-          call KSPCreate(SUMB_COMM_WORLD, ANK_KSPTurb, ierr)
+          call KSPCreate(ADFLOW_COMM_WORLD, ANK_KSPTurb, ierr)
           call EChk(ierr, __FILE__, __LINE__)
 
           ! Set operators for the solver
@@ -2265,7 +2265,7 @@ contains
        call destroyANKSolver()
        call setupANKSolver()
 
-       ! Copy the sumb 'w' into the petsc wVec
+       ! Copy the adflow 'w' into the petsc wVec
        call setwVecANK(wVec)
 
        ! Evaluate the residual before we start and put the residual in

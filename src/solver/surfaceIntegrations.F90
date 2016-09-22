@@ -544,7 +544,7 @@ contains
     !
     use constants
     use blockPointers
-    use communication, only : sumb_comm_world, myid
+    use communication, only : adflow_comm_world, myid
     use inputPhysics
     use iteration
     use costFunctions
@@ -637,8 +637,8 @@ contains
     localCFVals(costFuncMavgPs) = localValues(iMassPs)
 
     ! Now we will mpi_allReduce them into globalCFVals
-    call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, sumb_real, &
-         mpi_sum, SUmb_comm_world, ierr)
+    call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, adflow_real, &
+         mpi_sum, ADflow_comm_world, ierr)
 
     globalCFVals(costFuncMavgPtot) = globalCFVals(costFuncMavgPtot)/globalCFVals(costFuncMdot)
     globalCFVals(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)/globalCFVals(costFuncMdot)
@@ -652,7 +652,7 @@ contains
     use costFunctions
     use inputTSStabDeriv, only : TSSTability
     use inputTimeSpectral , only : nTimeIntervalsSpectral
-    use communication, only : sumb_comm_world
+    use communication, only : adflow_comm_world
     use blockPointers, only : nDom
     use utils, only : computeTSDerivatives, computeRootBendingMoment, getDirAngle
     use inputPhysics, only : velDirFreeStream, liftDirection, dragDirection

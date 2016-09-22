@@ -513,7 +513,7 @@ module fortranPC
     call VecPlaceArray(psi_like2, v2, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
-    call mpi_barrier(sumb_comm_world, ierr)
+    call mpi_barrier(adflow_comm_world, ierr)
     timeA = mpi_wtime()
     call matMult(drdwpret, psi_like1, psi_like2, ierr)
     call EChk(ierr,__FILE__,__LINE__)
@@ -524,7 +524,7 @@ module fortranPC
     print *,'PETsc Norm:', val
 
 
-    call mpi_barrier(sumb_comm_world, ierr)
+    call mpi_barrier(adflow_comm_world, ierr)
     timeA = mpi_wtime()
     call PCMatMult(drdwpret, psi_like1, psi_like2, ierr)
     timeB = mpi_wtime()
@@ -856,8 +856,8 @@ module fortranPC
 
           ! Send the data.
 
-          call mpi_isend(sendBuffer(ii), size, sumb_real, procID,  &
-               procID, SUmb_comm_world, sendRequests(i), &
+          call mpi_isend(sendBuffer(ii), size, adflow_real, procID,  &
+               procID, ADflow_comm_world, sendRequests(i), &
                ierr)
 
           ! Set ii to jj for the next processor.
@@ -879,8 +879,8 @@ module fortranPC
 
           ! Post the receive.
 
-          call mpi_irecv(recvBuffer(ii), size, sumb_real, procID, &
-               myID, SUmb_comm_world, recvRequests(i), ierr)
+          call mpi_irecv(recvBuffer(ii), size, adflow_real, procID, &
+               myID, ADflow_comm_world, recvRequests(i), ierr)
 
           ! And update ii.
 

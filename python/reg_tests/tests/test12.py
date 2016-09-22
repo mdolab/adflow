@@ -1,5 +1,5 @@
 ############################################################
-# DO NOT USE THIS SCRIPT AS A REFERENCE FOR HOW TO USE SUMB
+# DO NOT USE THIS SCRIPT AS A REFERENCE FOR HOW TO USE ADFLOW
 # THIS SCRIPT USES PRIVATE INTERNAL FUNCTIONALITY THAT IS
 # SUBJECT TO CHANGE!!
 ############################################################
@@ -11,9 +11,9 @@ from commonUtils import *
 
 # ###################################################################
 # DO NOT USE THIS IMPORT STRATEGY! THIS IS ONLY USED FOR REGRESSION
-# SCRIPTS ONLY. Use 'from sumb import SUMB' for regular scripts.
+# SCRIPTS ONLY. Use 'from adflow import ADFLOW' for regular scripts.
 sys.path.append(os.path.abspath('../../'))
-from python.pySUmb import SUMB
+from python.pyADflow import ADFLOW
 # ###################################################################
 
 # ****************************************************************************
@@ -22,7 +22,7 @@ printHeader('Test12: MDO tutorial -- RANS -- Solution Test')
 # ****************************************************************************
 gridFile = '../inputFiles/mdo_tutorial_rans_scalar_jst.cgns'
 
-options = copy.copy(sumbDefOpts)
+options = copy.copy(adflowDefOpts)
 
 options.update(
     {'gridfile': gridFile,
@@ -46,7 +46,7 @@ options.update(
  }
 )
 
-CFDSolver = SUMB(options=options, debug=False)
+CFDSolver = ADFLOW(options=options, debug=False)
 
 # Setup aeroproblem, cfdsolver, mesh and geometry.
 ap = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.80, P=20000.0, T=220.0,

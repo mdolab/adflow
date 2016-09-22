@@ -1,11 +1,11 @@
-.. _sumb_meshing:
+.. _adflow_meshing:
 
 Meshing
 ============
 
 *1. Load or open geometry file and block file*
 
-We generally use ANSYS ICEM-CFD to generate multiblock structured mesh for ``SUmb``.
+We generally use ANSYS ICEM-CFD to generate multiblock structured mesh for ``ADflow``.
 If you already have the .tin file ( geometry file ) and .blk file ( gird block file), use ``File->Geometry->Open Geometry`` and ``File->Blocking->Open Blocking`` to load them. 
 If you have to generate a grid from a geometry file (CATIA .model file or .iges file ), use ``File->Import Geometry`` and select the type of the geometry file. After that, a .tin file would be automatically generated in the current working folder. 
 
@@ -25,7 +25,7 @@ quality. If negative volume exists somewhere, you have to fix them (that's anoth
 In the hierarchy tree window, use ``Blocking->Pre-Mesh->Scan Planes`` to scan the mesh on the slices of the grid. If the grid distribution
 is not smooth, you have to change the spacing and distribution law of the related edges to fix that. 
 
-*4. Ouput the grid to CGNS format for SUmb*
+*4. Ouput the grid to CGNS format for ADflow*
 
 1. In the hierarchy tree window, right click ``Blocking->Pre-Mesh->Convert to Multi-Block Mesh`` , then select ``Volume`` and ``Yes``.
 

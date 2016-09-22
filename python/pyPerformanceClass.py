@@ -640,7 +640,7 @@ class PERFORMANCE(object):
 #==============================================================================
 if __name__ == '__main__':
     
-    # Test SUmb
+    # Test ADflow
     print 'Testing ...'
     acp = PERFORMANCE()
     print acp
