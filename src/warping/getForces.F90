@@ -1345,6 +1345,58 @@ subroutine setTNSWall(tnsw, npts, sps)
      end do bocos
   end do domains
 
-  ! TODO: The temperature must be interpolated to the coarse meshes. 
+  ! TODO: The temperature must be interpolated to the coarse meshes.
+  !
+  ! The following lines are extracted from BCData/setBCDataCoarseGrid
+  ! By the design of the subroutine, TNSWall shall be interpolated during this process.
+  ! Yet, the subroutine requires an internal subroutine interpolateBcData.
+  ! It remains a question whether interpolateBcData shall become a normal subroutine.
+  !
+  ! use blockPointers, only : flowDoms
+  ! use inputTimeSpectral, only : nTimeIntervalsSpectral
+  ! use iteration, only : groundLevel
+  ! implicit none
+  ! !
+  ! !      Local variables.
+  ! !
+  ! integer(kind=intType) :: nLevels, level, levm1
+
+  ! ! Determine the number of grid levels.
+
+  ! nLevels = ubound(flowDoms,2)
+
+  ! ! Loop over the coarser grid levels. It is assumed that the
+  ! ! bc data of groundLevel is set correctly.
+
+  ! coarseLevelLoop: do level=(groundLevel+1),nLevels
+
+  !    ! Store the fine grid level a bit easier.
+
+  !    levm1 = level - 1
+
+  !    ! Loop over the number of spectral solutions and local blocks.
+
+  !    spectralLoop: do sps=1,nTimeIntervalsSpectral
+  !       domainsLoop: do i=1,nDom
+
+  !          ! Set the pointers to the coarse block.
+
+  !          call setPointers(i, level, sps)
+
+  !          ! Loop over the boundary subfaces and interpolate the
+  !          ! prescribed boundary data for this grid level.
+
+  !          bocoLoop: do j=1,nBocos
+
+  !             ! Interpolate the data for the possible prescribed boundary
+  !             ! data.
+
+  !             call interpolateBcData(BCData(j)%TNS_Wall, &
+  !                  flowDoms(i,levm1,sps)%BCData(j)%TNS_Wall)
+
+  !          enddo bocoLoop
+  !       enddo domainsLoop
+  !    enddo spectralLoop
+  ! enddo coarseLevelLoop
 
 end subroutine setTNSWall
