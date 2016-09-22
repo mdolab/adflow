@@ -7,7 +7,7 @@ subroutine writeDualMesh(fileName)
   ! This is a debugging routine for writing out meshes *as they are
   ! partioned*. This can be useful for debugging overset issues.
   use constants
-  use communication, only : sumb_comm_world, myid, nProc
+  use communication, only : adflow_comm_world, myid, nProc
   use blockPointers, only : ie, je, ke, il, jl, kl, x, globalCell, vol, &
        nDom, iblank
   implicit none
@@ -35,8 +35,8 @@ subroutine writeDualMesh(fileName)
   coorNames(3) = "CoordinateZ"
 
   ! Gather the dimensions of all blocks to everyone
-  call mpi_allreduce(nDom, nDomTotal, 1, sumb_integer, MPI_SUM, &
-       sumb_comm_world, ierr)
+  call mpi_allreduce(nDom, nDomTotal, 1, adflow_integer, MPI_SUM, &
+       adflow_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
 
   ! Store the sizes of the local blocks
@@ -51,8 +51,8 @@ subroutine writeDualMesh(fileName)
   allocate(nDomProc(0:nProc-1), cumDomProc(0:nProc), dims(3, nDomTotal))
 
   ! Receive the number of domains from each proc using an allgather.
-  call mpi_allgather(nDom, 1, sumb_integer, nDomProc, 1, sumb_integer, &
-       sumb_comm_world, ierr)
+  call mpi_allgather(nDom, 1, adflow_integer, nDomProc, 1, adflow_integer, &
+       adflow_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
 
   ! Compute the cumulative format:
@@ -64,8 +64,8 @@ subroutine writeDualMesh(fileName)
   ! We will also allgather all of the block sizes which will make
   ! things a little easier since everyone will know the proper sizes
   ! for the sends
-  call mpi_allgatherV(localDim, nDom*3, sumb_integer, dims, 3*nDomProc, &
-       3*cumDomProc, sumb_integer, sumb_comm_world, ierr)
+  call mpi_allgatherV(localDim, nDom*3, adflow_integer, dims, 3*nDomProc, &
+       3*cumDomProc, adflow_integer, adflow_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
 
   maxSize = 0
@@ -148,8 +148,8 @@ subroutine writeDualMesh(fileName)
            iDom = cumDomProc(iProc) + nn
            bufSize = dims(1, iDom)*dims(2, iDom)*dims(3,iDom)*5
 
-           call MPI_Recv(buffer, bufSize, sumb_real, iProc, iProc, &
-                sumb_comm_world, status, ierr)
+           call MPI_Recv(buffer, bufSize, adflow_real, iProc, iProc, &
+                adflow_comm_world, status, ierr)
 
            zoneCounter = zoneCounter + 1
            write(zonename, 999) zoneCounter 
@@ -225,8 +225,8 @@ subroutine writeDualMesh(fileName)
            end do
         end do
 
-        call mpi_send(buffer, ii, sumb_real, 0, myid, &
-             sumb_comm_world, ierr)
+        call mpi_send(buffer, ii, adflow_real, 0, myid, &
+             adflow_comm_world, ierr)
      end do
   end if
 

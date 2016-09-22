@@ -3,7 +3,7 @@ contains
   subroutine master(useSpatial, forces)
 
     use constants
-    use communication, only : sumb_comm_world
+    use communication, only : adflow_comm_world
     use BCRoutines, only : applyallBC_block
     use turbbcRoutines, only : applyallTurbBCthisblock, bcTurbTreatment
     use iteration, only : currentLevel
@@ -171,8 +171,8 @@ contains
     end do
 
     ! Now we need to reduce all the cost functions
-    call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, sumb_real, &
-         MPI_SUM, sumb_comm_world, ierr)
+    call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
+         MPI_SUM, adflow_comm_world, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Call the final routine that will comptue all of our functions of
@@ -185,7 +185,7 @@ contains
     use constants
     use costFunctions
     use diffsizes, only :  ISIZE1OFDrfbcdata, ISIZE1OFDrfviscsubface
-    use communication, only : sumb_comm_world
+    use communication, only : adflow_comm_world
     use iteration, only : currentLevel
     use BCExtra_d, only : applyAllBC_Block_d
     use inputAdjoint,  only : viscPC
@@ -439,12 +439,12 @@ contains
     end do
 
     ! Now we need to reduce all the cost functions
-    call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, sumb_real, &
-         MPI_SUM, sumb_comm_world, ierr)
+    call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
+         MPI_SUM, adflow_comm_world, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    call mpi_allreduce(localvald, globalVald, nLocalValues*nTimeIntervalsSpectral, sumb_real, &
-         MPI_SUM, sumb_comm_world, ierr)
+    call mpi_allreduce(localvald, globalVald, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
+         MPI_SUM, adflow_comm_world, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Call the final routine that will comptue all of our functions of
@@ -486,7 +486,7 @@ contains
     use costFunctions
     use adjointVars, only : iAlpha, iBeta, iMach, iMachGrid, iTemperature, iDensity, &
          iPointrefX, iPointRefY, iPointRefZ, iPressure
-    use communication, only : sumb_comm_world, myid
+    use communication, only : adflow_comm_world, myid
     use iteration, only : currentLevel
     use inputAdjoint,  only : viscPC
     use fluxes, only : viscousFlux
@@ -587,8 +587,8 @@ contains
           call integrateSurfaces(localval(:, sps))
        end do
     end do
-    call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, sumb_real, &
-         MPI_SUM, sumb_comm_world, ierr)
+    call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
+         MPI_SUM, adflow_comm_world, ierr)
     call EChk(ierr,__FILE__,__LINE__)
     call getCostFunctions(globalVal)
 
@@ -608,7 +608,7 @@ contains
 
     ! Now we need to bast out the localValues to all procs. 
     call mpi_bcast(localVald, nLocalValues*nTimeIntervalsSpectral, &
-         sumb_real, 0, sumb_comm_world, ierr)
+         adflow_real, 0, adflow_comm_world, ierr)
     call EChk(ierr, __FILE__, __LINE__) 
     spsLoop1: do sps=1, nTimeIntervalsSpectral
 
@@ -824,8 +824,8 @@ contains
     ! Finally get the full contribution of the extra variables by
     ! summing all local contributions. 
     extraBar = zero
-    call mpi_allreduce(extraLocalBar, extraBar, size(extraBar), sumb_real, &
-         mpi_sum, SUmb_comm_world, ierr)
+    call mpi_allreduce(extraLocalBar, extraBar, size(extraBar), adflow_real, &
+         mpi_sum, ADflow_comm_world, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
   end subroutine master_b

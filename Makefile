@@ -1,4 +1,4 @@
-# Master makefile for SUmb. The actual makefile you want is:
+# Master makefile for ADflow. The actual makefile you want is:
 # src/build/Makefile
 
 default:
@@ -13,7 +13,7 @@ default:
 	echo "The modify this config file as required. Typically the CGNS directory "; \
 	echo "will have to be modified. With the config file specified, rerun "; \
 	echo "'make' and the build will start"; \
-	else make sumb;\
+	else make adflow;\
 	fi;
 
 clean:
@@ -21,12 +21,12 @@ clean:
 	rm -fr src/build/*.o
 	rm -fr src/build/*.a
 	rm -fr src/build/*.so
-	rm -fr src/build/sumb_project.dep
+	rm -fr src/build/adflow_project.dep
 	rm -f *~ config.mk;
 
 
 
-sumb:
+adflow:
 	ln -sf config/config.mk config.mk;
 	(cd src/build/ && make)
 

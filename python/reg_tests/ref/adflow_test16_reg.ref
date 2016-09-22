@@ -2,7 +2,7 @@
 |  Test 16: Euler Convergenent Nozzle -- Flow Properties Integration           |
 +------------------------------------------------------------------------------+
 +---------------------------------------+
-|          All SUMB Options:            |
+|          All ADFLOW Options:            |
 +---------------------------------------+
 {'adjointdivtol': 100000.0,
  'adjointl2convergence': 1e-06,
@@ -166,7 +166,7 @@
 +----------------------------------------------------------------------+
 -> Alpha... 0.000000 
 +---------------------------------------+
-|      All Modified SUMB Options:       |
+|      All Modified ADFLOW Options:       |
 +---------------------------------------+
 {'cfl': 3.0,
  'cflcoarse': 1.5,
@@ -185,7 +185,7 @@
  'vis2': 0.0,
  'vis4': 0.006}
 #
-# SUmb, multiblock structured flow solver
+# ADflow, multiblock structured flow solver
 #
 # This code solves the 3D RANS, laminar NS or Euler equations
 # on multiblock structured hexahedral grids.

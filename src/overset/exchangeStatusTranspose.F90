@@ -73,8 +73,8 @@ integer(kind=intType) :: cellStatus, donorStatus
      enddo
 
      ! Send the data.
-     call mpi_isend(recvBuf(ii), size, sumb_integer, procID,  &
-          procID, SUmb_comm_world, sendRequests(i), &
+     call mpi_isend(recvBuf(ii), size, adflow_integer, procID,  &
+          procID, ADflow_comm_world, sendRequests(i), &
           ierr)
 
      ! Set ii to jj for the next processor.
@@ -96,8 +96,8 @@ integer(kind=intType) :: cellStatus, donorStatus
 
      ! Post the receive.
 
-     call mpi_irecv(sendBuf(ii), size, sumb_integer, procID, &
-          myID, SUmb_comm_world, recvRequests(i), ierr)
+     call mpi_irecv(sendBuf(ii), size, adflow_integer, procID, &
+          myID, ADflow_comm_world, recvRequests(i), ierr)
 
      ! And update ii.
 

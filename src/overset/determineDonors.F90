@@ -10,7 +10,7 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
 
   use constants
   use block, only : fringeType, flowDoms
-  use communication, only : sumb_comm_world, myid, nProc, recvRequests, sendRequests
+  use communication, only : adflow_comm_world, myid, nProc, recvRequests, sendRequests
   use utils, only : Echk, setPointers
   use overset, only : clusters, nDomTotal, nClusters
   implicit none
@@ -63,8 +63,8 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
   end do
 
   ! Sum how much data we must receive from each processor. 
-  call mpi_alltoall(tmpInt, 1, sumb_integer, recvSizes, 1, sumb_integer, &
-       sumb_comm_world, ierr)
+  call mpi_alltoall(tmpInt, 1, adflow_integer, recvSizes, 1, adflow_integer, &
+       adflow_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
 
   ! We will need to send 4 integers to the donor processor:
@@ -92,8 +92,8 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
      
      if (iProc /= myid) then 
         sendCount = sendCount + 1
-        call mpi_isend(intSendBuf(iStart), iSize, sumb_integer, iProc, myid, &
-             sumb_comm_world, sendRequests(sendCount), ierr)
+        call mpi_isend(intSendBuf(iStart), iSize, adflow_integer, iProc, myid, &
+             adflow_comm_world, sendRequests(sendCount), ierr)
         call ECHK(ierr, __FILE__, __LINE__)
      end if
   end do
@@ -105,8 +105,8 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
      
      if (recvSizes(iProc) > 0) then
         recvCount = recvCount + 1
-        call mpi_irecv(intRecvBuf(ii), recvSizes(iProc), sumb_integer, &
-             iProc, iProc, sumb_comm_world, recvRequests(recvCount), ierr) 
+        call mpi_irecv(intRecvBuf(ii), recvSizes(iProc), adflow_integer, &
+             iProc, iProc, adflow_comm_world, recvRequests(recvCount), ierr) 
         call ECHK(ierr, __FILE__, __LINE__) 
         
         ii = ii + recvSizes(iProc)

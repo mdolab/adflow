@@ -133,12 +133,12 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
   allocate(nCellProc(nProc), cumCellProc(0:nProc), &
            nNodeProc(nProc), cumNodeProc(0:nProc))
 
-  call mpi_allgather(nCellsLocal, 1, sumb_integer, nCellProc, 1, sumb_integer, &
-       sumb_comm_world, ierr)
+  call mpi_allgather(nCellsLocal, 1, adflow_integer, nCellProc, 1, adflow_integer, &
+       adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call mpi_allgather(nNodesLocal, 1, sumb_integer, nNodeProc, 1, sumb_integer, &
-       sumb_comm_world, ierr)
+  call mpi_allgather(nNodesLocal, 1, adflow_integer, nNodeProc, 1, adflow_integer, &
+       adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Now make cumulative versions of these
@@ -391,39 +391,39 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
        cellIndicesGlobal(nCellsGlobal))
          
   ! Communicate the nodes, connectivity and cluster information to everyone
-  call mpi_allgatherv(nodesLocal, 3*nNodesLocal, sumb_real, & 
-       nodesGlobal, nNodeProc*3, cumNodeProc*3, sumb_real, &
-       sumb_comm_world, ierr)
+  call mpi_allgatherv(nodesLocal, 3*nNodesLocal, adflow_real, & 
+       nodesGlobal, nNodeProc*3, cumNodeProc*3, adflow_real, &
+       adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call mpi_allgatherv(clusterNodeLocal, nNodesLocal, sumb_integer, & 
-       clusterNodeGlobal, nNodeProc, cumNodeProc, sumb_integer, &
-       sumb_comm_world, ierr)
+  call mpi_allgatherv(clusterNodeLocal, nNodesLocal, adflow_integer, & 
+       clusterNodeGlobal, nNodeProc, cumNodeProc, adflow_integer, &
+       adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call mpi_allgatherv(nodeIndicesLocal, nNodesLocal, sumb_integer, & 
-       nodeIndicesGlobal, nNodeProc, cumNodeProc, sumb_integer, &
-       sumb_comm_world, ierr)
+  call mpi_allgatherv(nodeIndicesLocal, nNodesLocal, adflow_integer, & 
+       nodeIndicesGlobal, nNodeProc, cumNodeProc, adflow_integer, &
+       adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call mpi_allgatherv(nodeIndicesCGNSLocal, nNodesLocal, sumb_integer, & 
-       nodeIndicesCGNSGlobal, nNodeProc, cumNodeProc, sumb_integer, &
-       sumb_comm_world, ierr)
+  call mpi_allgatherv(nodeIndicesCGNSLocal, nNodesLocal, adflow_integer, & 
+       nodeIndicesCGNSGlobal, nNodeProc, cumNodeProc, adflow_integer, &
+       adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call mpi_allgatherv(connLocal, 4*nCellsLocal, sumb_integer, &
-       connGlobal, nCellProc*4, cumCellProc*4, sumb_integer, &
-       sumb_comm_world, ierr)
+  call mpi_allgatherv(connLocal, 4*nCellsLocal, adflow_integer, &
+       connGlobal, nCellProc*4, cumCellProc*4, adflow_integer, &
+       adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call mpi_allgatherv(clusterCellLocal, nCellsLocal, sumb_integer, &
-       clusterCellGlobal, nCellProc, cumCellProc, sumb_integer, &
-       sumb_comm_world, ierr)
+  call mpi_allgatherv(clusterCellLocal, nCellsLocal, adflow_integer, &
+       clusterCellGlobal, nCellProc, cumCellProc, adflow_integer, &
+       adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call mpi_allgatherv(cellIndicesLocal, nCellsLocal, sumb_integer, &
-       cellIndicesGlobal, nCellProc, cumCellProc, sumb_integer, &
-       sumb_comm_world, ierr)
+  call mpi_allgatherv(cellIndicesLocal, nCellsLocal, adflow_integer, &
+       cellIndicesGlobal, nCellProc, cumCellProc, adflow_integer, &
+       adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Free the local data we do not need anymore

@@ -2611,7 +2611,7 @@ contains
     ! Write the info about the solver used.
 
     call cg_descriptor_write_f("SolverInfo", &
-         "SUmb multiblock code", ierr)
+         "ADflow multiblock code", ierr)
     if(ierr /= CG_OK)                  &
          call terminate("writeCGNSHeader", &
          "Something wrong when calling &

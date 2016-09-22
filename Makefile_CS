@@ -1,4 +1,4 @@
-# Master makefilefor complex SUmb. The actual makefile you want is 
+# Master makefilefor complex ADflow. The actual makefile you want is 
 # src/build/Makefile_CS
 default:
 # Check if the config.mk file is in the config dir.
@@ -12,7 +12,7 @@ default:
 	echo "The modify this config file as required. Typically the CGNS directory "; \
 	echo "will have to be modified. With the config file specified, rerun "; \
 	echo "'make' and the build will start"; \
-	else make -f Makefile_CS sumb;\
+	else make -f Makefile_CS adflow;\
 	fi;
 
 
@@ -21,7 +21,7 @@ clean:
 	rm -fr src_cs/build/*.o
 	rm -fr src_cs/build/*.a
 	rm -fr src_cs/build/*.so
-	rm -fr src_cs/build/sumb_project.dep
+	rm -fr src_cs/build/adflow_project.dep
 	rm -f *~ config.mk;
 # Completely nuke most of the directories
 	rm -fr src_cs/adjoint
@@ -41,7 +41,7 @@ clean:
 	rm -fr src_cs/wallDistance
 	rm -fr src_cs/warping
 
-sumb:
+adflow:
 	ln -sf config/config.mk config.mk;
 	(cd src_cs/build/ && make -f Makefile1 directories)
 	(cd src_cs/build/ && make -f Makefile1 complexify)

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 """
-Text in the sumb.pyf cannot contain ANY upper case characters.
+Text in the adflow.pyf cannot contain ANY upper case characters.
 This script is intended to report any lines that contain UPPER 
 case characters. Text in comments and preprocessor tags are ignored
 """
@@ -9,15 +9,15 @@ case characters. Text in comments and preprocessor tags are ignored
 import sys
 
 def error(i,line):
-    print "ERROR : No code related characters in sumb.pyf cannot contain upper case characters"
-    print "ERROR : Uppercase found in sumb.pyf line {0:d}. String found is: {1:s} ".format(i,line)    
+    print "ERROR : No code related characters in adflow.pyf cannot contain upper case characters"
+    print "ERROR : Uppercase found in adflow.pyf line {0:d}. String found is: {1:s} ".format(i,line)    
     sys.exit(1)
 
 
 # Define charachter set
 ignoreChars = set("!#")
 
-f = open("../f2py/sumb.pyf","r")
+f = open("../f2py/adflow.pyf","r")
 for i, line in enumerate(f):
     line = line.rstrip()
     if not line:

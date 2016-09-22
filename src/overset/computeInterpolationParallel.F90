@@ -6,7 +6,7 @@
 subroutine oversetComm(level, firstTime, coarseLevel)
 
   use constants
-  use communication, only : sumb_comm_world, sendRequests, &
+  use communication, only : adflow_comm_world, sendRequests, &
        recvRequests, sendBuffer, recvBuffer, commPatternCell_2nd, &
        internalCell_2nd, sendBufferSize, recvBufferSize, myid, &
        nProc
@@ -183,12 +183,12 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      end if
 
      ! Determine the total search costs for each proc and all the bufferSizes
-     call mpi_allreduce(tmpReal, overlap%data, overlap%nnz, sumb_real, MPI_SUM, &
-          sumb_comm_world, ierr)
+     call mpi_allreduce(tmpReal, overlap%data, overlap%nnz, adflow_real, MPI_SUM, &
+          adflow_comm_world, ierr)
      call ECHK(ierr, __FILE__, __LINE__)
 
-     call mpi_allreduce(tmpInt2D, bufSizes, 6*nDomTotal, sumb_integer, MPI_SUM, &
-          sumb_comm_world, ierr)
+     call mpi_allreduce(tmpInt2D, bufSizes, 6*nDomTotal, adflow_integer, MPI_SUM, &
+          adflow_comm_world, ierr)
      call ECHK(ierr, __FILE__, __LINE__)
 
      ! Done with the tmp arrays. This should be the last of the
@@ -597,8 +597,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
            iDom = oFringeRecvList(2, jj)
 
            sendCount = sendCount + 1
-           call mpi_isend(oFringes(iDom)%fringeReturnSize, 1, sumb_integer, &
-                iproc, iDom, sumb_comm_world, sendRequests(sendCount), ierr)
+           call mpi_isend(oFringes(iDom)%fringeReturnSize, 1, adflow_integer, &
+                iproc, iDom, adflow_comm_world, sendRequests(sendCount), ierr)
            call ECHK(ierr, __FILE__, __LINE__)
         end do
 
@@ -612,8 +612,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
            iDom = oFringeSendList(2, jj)
            recvCount = recvCount + 1
 
-           call mpi_irecv(fringeRecvSizes(jj), 1, sumb_integer, &
-                iProc, iDom, sumb_comm_world, recvRequests(recvCount), ierr)
+           call mpi_irecv(fringeRecvSizes(jj), 1, adflow_integer, &
+                iProc, iDom, adflow_comm_world, recvRequests(recvCount), ierr)
            call ECHK(ierr, __FILE__, __LINE__)
         end do
 
@@ -657,14 +657,14 @@ subroutine oversetComm(level, firstTime, coarseLevel)
            if (iSize > 0) then 
               tag = iDom + MAGIC
               sendCount = sendCount + 1
-              call mpi_isend(oFringes(iDom)%rBuffer, iSize*4, sumb_real, &
-                   iproc, tag, sumb_comm_world, sendRequests(sendCount), ierr)
+              call mpi_isend(oFringes(iDom)%rBuffer, iSize*4, adflow_real, &
+                   iproc, tag, adflow_comm_world, sendRequests(sendCount), ierr)
               call ECHK(ierr, __FILE__, __LINE__)
 
               tag = iDom + 2*MAGIC
               sendCount = sendCount + 1
-              call mpi_isend(oFringes(iDom)%iBuffer, iSize*14, sumb_integer, &
-                   iproc, tag, sumb_comm_world, sendRequests(sendCount), ierr)
+              call mpi_isend(oFringes(iDom)%iBuffer, iSize*14, adflow_integer, &
+                   iproc, tag, adflow_comm_world, sendRequests(sendCount), ierr)
               call ECHK(ierr, __FILE__, __LINE__)
            end if
         end do
@@ -681,16 +681,16 @@ subroutine oversetComm(level, firstTime, coarseLevel)
               iStart = (cumFringeRecv(jj  )-1)*4 + 1
               tag = iDom + MAGIC
               recvCount = recvCount + 1       
-              call mpi_irecv(realRecvBuf(iStart), iSize*4, sumb_real, &
-                   iProc, tag, sumb_comm_world, recvRequests(recvCount), ierr)
+              call mpi_irecv(realRecvBuf(iStart), iSize*4, adflow_real, &
+                   iProc, tag, adflow_comm_world, recvRequests(recvCount), ierr)
               call ECHK(ierr, __FILE__, __LINE__)
               recvInfo(:, recvCount) = (/iDom, 1/) ! 1 for real recv
 
               iStart = (cumFringeRecv(jj  )-1)*14 + 1
               tag = iDom + 2*MAGIC
               recvCount = recvCount + 1                
-              call mpi_irecv(intRecvBuf(iStart), iSize*14, sumb_integer, &
-                   iProc, tag, sumb_comm_world, recvRequests(recvCount), ierr)
+              call mpi_irecv(intRecvBuf(iStart), iSize*14, adflow_integer, &
+                   iProc, tag, adflow_comm_world, recvRequests(recvCount), ierr)
               call ECHK(ierr, __FILE__, __LINE__)
               recvInfo(:, recvCount) = (/iDom, 2/) ! 2 for int recv
            end if
@@ -1053,12 +1053,12 @@ contains
 
     ! Now we can allgather the xMin and xMax  from each
     ! processor to everyone
-    call mpi_allgatherV(xMinLocal, nDom*3, sumb_real, xMin, 3*nDomProc, &
-         3*cumDomProc, sumb_real, sumb_comm_world, ierr)
+    call mpi_allgatherV(xMinLocal, nDom*3, adflow_real, xMin, 3*nDomProc, &
+         3*cumDomProc, adflow_real, adflow_comm_world, ierr)
     call ECHK(ierr, __FILE__, __LINE__)
 
-    call mpi_allgatherV(xMaxLocal, nDom*3, sumb_real, xMax, 3*nDomProc, &
-         3*cumDomProc, sumb_real, sumb_comm_world, ierr)
+    call mpi_allgatherV(xMaxLocal, nDom*3, adflow_real, xMax, 3*nDomProc, &
+         3*cumDomProc, adflow_real, adflow_comm_world, ierr)
     call ECHK(ierr, __FILE__, __LINE__)
 
   end subroutine computeDomainBoundingBoxes
@@ -1152,8 +1152,8 @@ contains
 
     ! Determine distribution of non-zero locations
     allocate(nnzProc(nProc), cumNNZProc(0:nProc))
-    call mpi_allgather(nnzLocal, 1, sumb_integer, nnzProc, 1, sumb_integer, &
-         sumb_comm_world, ierr)
+    call mpi_allgather(nnzLocal, 1, adflow_integer, nnzProc, 1, adflow_integer, &
+         adflow_comm_world, ierr)
 
     overlap%nnz = sum(nnzProc)
     overlap%nRow = nDomTotal
@@ -1177,14 +1177,14 @@ contains
     rowPtrLocal = rowPtrLocal + cumNNZProc(myid)
 
     ! Gather the column indicies
-    call mpi_allgatherV(colIndLocal, nnzLocal, sumb_integer, overlap%colInd, &
-         nnzProc, cumNNZProc, sumb_integer, sumb_comm_world, ierr)
+    call mpi_allgatherV(colIndLocal, nnzLocal, adflow_integer, overlap%colInd, &
+         nnzProc, cumNNZProc, adflow_integer, adflow_comm_world, ierr)
 
     ! Now we gather the rowPtr to everone
     overlap%rowPtr(1) = 1
-    call mpi_allgatherV(rowPtrLocal(2:nDom), nDom, sumb_integer, &
+    call mpi_allgatherV(rowPtrLocal(2:nDom), nDom, adflow_integer, &
          overlap%rowPtr(2:nDomTotal+1), &
-         nDomProc, cumDomProc, sumb_integer, sumb_comm_world, ierr)
+         nDomProc, cumDomProc, adflow_integer, adflow_comm_world, ierr)
 
     ! Initialize the assignedProc to the owned rows of a processor
     do iProc=0,nProc-1
@@ -1293,7 +1293,7 @@ subroutine writePartitionedMesh(fileName)
   ! used as input again.
 
   use constants
-  use communication, only : sumb_comm_world, myID, nProc
+  use communication, only : adflow_comm_world, myID, nProc
   use blockPointers, only : il, jl, kl, nx, ny, nz, x, nDom
   use utils, only : EChk, setPointers
   implicit none
@@ -1320,11 +1320,11 @@ subroutine writePartitionedMesh(fileName)
   coorNames(2) = "CoordinateY"
   coorNames(3) = "CoordinateZ"
 
-  call MPI_BARRIER(sumb_comm_world, ierr)
+  call MPI_BARRIER(adflow_comm_world, ierr)
 
   ! Gather the dimensions of all blocks to everyone
-  call mpi_allreduce(nDom, nDomTotal, 1, sumb_integer, MPI_SUM, &
-       sumb_comm_world, ierr)
+  call mpi_allreduce(nDom, nDomTotal, 1, adflow_integer, MPI_SUM, &
+       adflow_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
 
   ! Store the sizes of the local blocks
@@ -1341,8 +1341,8 @@ subroutine writePartitionedMesh(fileName)
   allocate(nDomProc(0:nProc-1), cumDomProc(0:nProc), dims(3, nDomTotal))
 
   ! Receive the number of domains from each proc using an allgather.
-  call mpi_allgather(nDom, 1, sumb_integer, nDomProc, 1, sumb_integer, &
-       sumb_comm_world, ierr)
+  call mpi_allgather(nDom, 1, adflow_integer, nDomProc, 1, adflow_integer, &
+       adflow_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
 
   ! Compute the cumulative format:
@@ -1354,8 +1354,8 @@ subroutine writePartitionedMesh(fileName)
   ! We will also allgather all of the block sizes which will make
   ! things a little easier since everyone will know the proper sizes
   ! for the sends
-  call mpi_allgatherV(localDim, nDom*3, sumb_integer, dims, 3*nDomProc, &
-       3*cumDomProc, sumb_integer, sumb_comm_world, ierr)
+  call mpi_allgatherV(localDim, nDom*3, adflow_integer, dims, 3*nDomProc, &
+       3*cumDomProc, adflow_integer, adflow_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
 
   maxSize = 0
@@ -1417,8 +1417,8 @@ subroutine writePartitionedMesh(fileName)
            iDom = cumDomProc(iProc) + nn
            bufSize = dims(1, iDom)*dims(2, iDom)*dims(3,iDom)*3
 
-           call MPI_Recv(buffer, bufSize, sumb_real, iProc, iProc, &
-                sumb_comm_world, status, ierr)
+           call MPI_Recv(buffer, bufSize, adflow_real, iProc, iProc, &
+                adflow_comm_world, status, ierr)
 
            zoneCounter = zoneCounter + 1
            write(zonename, 999) zoneCounter 
@@ -1468,8 +1468,8 @@ subroutine writePartitionedMesh(fileName)
            end do
         end do
 
-        call mpi_send(buffer, ii, sumb_real, 0, myid, &
-             sumb_comm_world, ierr)
+        call mpi_send(buffer, ii, adflow_real, 0, myid, &
+             adflow_comm_world, ierr)
      end do
   end if
 

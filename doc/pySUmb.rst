@@ -1,8 +1,8 @@
-.. _sumb_pySUmb:
+.. _adflow_pyADflow:
 
-pySUmb
+pyADflow
 ---------
-.. currentmodule:: sumb.python.pySUmb
+.. currentmodule:: adflow.python.pyADflow
 
-.. autoclass:: sumb.python.pySUmb.SUMB
+.. autoclass:: adflow.python.pyADflow.ADFLOW
     :members: 

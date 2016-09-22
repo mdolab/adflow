@@ -1,5 +1,5 @@
 ############################################################
-# DO NOT USE THIS SCRIPT AS A REFERENCE FOR HOW TO USE SUMB
+# DO NOT USE THIS SCRIPT AS A REFERENCE FOR HOW TO USE ADFLOW
 # THIS SCRIPT USES PRIVATE INTERNAL FUNCTIONALITY THAT IS
 # SUBJECT TO CHANGE!!
 ############################################################
@@ -11,14 +11,14 @@ from commonUtils import *
 
 # ###################################################################
 # DO NOT USE THIS IMPORT STRATEGY! THIS IS ONLY USED FOR REGRESSION
-# SCRIPTS ONLY. Use 'from sumb import SUMB' for regular scripts.
+# SCRIPTS ONLY. Use 'from adflow import ADFLOW' for regular scripts.
 sys.path.append(os.path.abspath('../../'))
-from python.pySUmb import SUMB
+from python.pyADflow import ADFLOW
 
 printHeader('Test 15: NACA 0012 2D Time-Accurate, Forced motion, Rigid Rotation of Mesh - DADI Smoother')
 gridFile = '../inputFiles/naca0012_rans-L2.cgns'
 
-options = copy.copy(sumbDefOpts)
+options = copy.copy(adflowDefOpts)
 
 k = 0.0808
 M = 0.6
@@ -77,7 +77,7 @@ ap = AeroProblem(name=name, alpha=alpha_m,  mach=M, machRef=M, reynolds=4800000.
                  degreePol=0,coefPol=[0.0],degreeFourier=1,omegaFourier=omega,
                  cosCoefFourier=[0.0,0.0],sinCoefFourier=[deltaAlpha])
 
-CFDSolver = SUMB(options=options)
+CFDSolver = ADFLOW(options=options)
 CFDSolver.addSlices('z',[0.5])
 CFDSolver(ap)
 

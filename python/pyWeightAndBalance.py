@@ -821,7 +821,7 @@ class WEIGHTANDBALANCE(Base):
 #==============================================================================
 if __name__ == '__main__':
     
-    # Test SUmb
+    # Test ADflow
     print 'Testing ...'
     wbc = WEIGHTANDBALANCE()
     print wbc

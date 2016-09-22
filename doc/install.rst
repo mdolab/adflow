@@ -1,12 +1,12 @@
-.. _sumb_install:
+.. _adflow_install:
 
 Install
 --------
 
-All the core computations in ``SUmb`` are coded in Fortran.  It
-is therefore necessary to build this library before using ``SUmb``.
+All the core computations in ``ADflow`` are coded in Fortran.  It
+is therefore necessary to build this library before using ``ADflow``.
 
-To see a list of architectures that ``SUmb`` has been known to
+To see a list of architectures that ``ADflow`` has been known to
 compile on run::
    
    make
@@ -18,14 +18,14 @@ attempt a build using (for example)::
 
    make LINUX_INTEL_OPENMPI
 
-SUmb has been successfully compiled on LINUX, and OS X with either
+ADflow has been successfully compiled on LINUX, and OS X with either
 ifort or gfortran.
 
 If everything was successful, the following lines will be printed to
 the screen (near the end)::
 
-   Testing if module sumb can be imported...
-   Module sumb was successfully imported.
+   Testing if module adflow can be imported...
+   Module adflow was successfully imported.
 
 If you don't see this, it will be necessary to configure the build
 manually. To configure manually, first copy a default configuration

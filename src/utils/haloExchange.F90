@@ -568,8 +568,8 @@ contains
 
        ! Send the data.
 
-       call mpi_isend(sendBuffer(ii), size, sumb_real, procID,  &
-            procID, SUmb_comm_world, sendRequests(i), &
+       call mpi_isend(sendBuffer(ii), size, adflow_real, procID,  &
+            procID, ADflow_comm_world, sendRequests(i), &
             ierr)
 
        ! Set ii to jj for the next processor.
@@ -591,8 +591,8 @@ contains
 
        ! Post the receive.
 
-       call mpi_irecv(recvBuffer(ii), size, sumb_real, procID, &
-            myID, SUmb_comm_world, recvRequests(i), ierr)
+       call mpi_irecv(recvBuffer(ii), size, adflow_real, procID, &
+            myID, ADflow_comm_world, recvRequests(i), ierr)
 
        ! And update ii.
 
@@ -739,8 +739,8 @@ contains
 
        ! Send the data.
 
-       call mpi_isend(sendBufInt(ii), size, sumb_integer, procID,  &
-            procID, SUmb_comm_world, sendRequests(i), &
+       call mpi_isend(sendBufInt(ii), size, adflow_integer, procID,  &
+            procID, ADflow_comm_world, sendRequests(i), &
             ierr)
 
        ! Set ii to jj for the next processor.
@@ -762,8 +762,8 @@ contains
 
        ! Post the receive.
 
-       call mpi_irecv(recvBufInt(ii), size, sumb_integer, procID, &
-            myID, SUmb_comm_world, recvRequests(i), ierr)
+       call mpi_irecv(recvBufInt(ii), size, adflow_integer, procID, &
+            myID, ADflow_comm_world, recvRequests(i), ierr)
 
        ! And update ii.
 
@@ -953,8 +953,8 @@ contains
           enddo
 
           ! Send the data.
-          call mpi_isend(recvBuffer(ii), size, sumb_real, procID,  &
-               procID, SUmb_comm_world, recvRequests(i), &
+          call mpi_isend(recvBuffer(ii), size, adflow_real, procID,  &
+               procID, ADflow_comm_world, recvRequests(i), &
                ierr)
 
           ! Set ii to jj for the next processor.
@@ -976,8 +976,8 @@ contains
 
           ! Post the receive.
 
-          call mpi_irecv(sendBuffer(ii), size, sumb_real, procID, &
-               myID, SUmb_comm_world, sendRequests(i), ierr)
+          call mpi_irecv(sendBuffer(ii), size, adflow_real, procID, &
+               myID, ADflow_comm_world, sendRequests(i), ierr)
 
           ! And update ii.
 
@@ -1475,8 +1475,8 @@ contains
 
           ! Send the data.
 
-          call mpi_isend(sendBuffer(ii), size, sumb_real, procId,  &
-               procId, SUmb_comm_world, sendRequests(i), &
+          call mpi_isend(sendBuffer(ii), size, adflow_real, procId,  &
+               procId, ADflow_comm_world, sendRequests(i), &
                ierr)
 
           ! Set ii to jj for the next processor.
@@ -1498,8 +1498,8 @@ contains
 
           ! Post the receive.
 
-          call mpi_irecv(recvBuffer(ii), size, sumb_real, procId, &
-               myId, SUmb_comm_world, recvRequests(i), ierr)
+          call mpi_irecv(recvBuffer(ii), size, adflow_real, procId, &
+               myId, ADflow_comm_world, recvRequests(i), ierr)
 
           ! And update ii.
 
@@ -1796,8 +1796,8 @@ contains
           enddo
 
           ! Send the data.
-          call mpi_isend(recvBuffer(ii), size, sumb_real, procID,  &
-               procID, SUmb_comm_world, recvRequests(i), &
+          call mpi_isend(recvBuffer(ii), size, adflow_real, procID,  &
+               procID, ADflow_comm_world, recvRequests(i), &
                ierr)
 
           ! Set ii to jj for the next processor.
@@ -1819,8 +1819,8 @@ contains
 
           ! Post the receive.
 
-          call mpi_irecv(sendBuffer(ii), size, sumb_real, procId, &
-               myId, SUmb_comm_world, sendRequests(i), ierr)
+          call mpi_irecv(sendBuffer(ii), size, adflow_real, procId, &
+               myId, ADflow_comm_world, sendRequests(i), ierr)
 
           ! And update ii.
 
@@ -2364,8 +2364,8 @@ contains
 
           ! Send the data.
 
-          call mpi_isend(sendBuffer(ii), size, sumb_real, procId,  &
-               procId, SUmb_comm_world, sendRequests(i), &
+          call mpi_isend(sendBuffer(ii), size, adflow_real, procId,  &
+               procId, ADflow_comm_world, sendRequests(i), &
                ierr)
 
           ! Set ii to jj for the next processor.
@@ -2387,8 +2387,8 @@ contains
 
           ! Post the receive.
 
-          call mpi_irecv(recvBuffer(ii), size, sumb_real, procId, &
-               myId, SUmb_comm_world, recvRequests(i), ierr)
+          call mpi_irecv(recvBuffer(ii), size, adflow_real, procId, &
+               myId, ADflow_comm_world, recvRequests(i), ierr)
 
           ! And update ii.
 
@@ -2687,8 +2687,8 @@ contains
 
           ! Send the data.
 
-          call mpi_isend(sendBuffer(ii), size, sumb_real, procID,  &
-               procID, SUmb_comm_world, sendRequests(i), &
+          call mpi_isend(sendBuffer(ii), size, adflow_real, procID,  &
+               procID, ADflow_comm_world, sendRequests(i), &
                ierr)
 
           ! Set ii to jj for the next processor.
@@ -2710,8 +2710,8 @@ contains
 
           ! Post the receive.
 
-          call mpi_irecv(recvBuffer(ii), size, sumb_real, procID, &
-               myID, SUmb_comm_world, recvRequests(i), ierr)
+          call mpi_irecv(recvBuffer(ii), size, adflow_real, procID, &
+               myID, ADflow_comm_world, recvRequests(i), ierr)
 
           ! And update ii.
 
@@ -2853,8 +2853,8 @@ contains
 
           ! Send the data.
 
-          call mpi_isend(sendBuffer(ii), size, sumb_real, procID,    &
-               procID, SUmb_comm_world, sendRequests(i), &
+          call mpi_isend(sendBuffer(ii), size, adflow_real, procID,    &
+               procID, ADflow_comm_world, sendRequests(i), &
                ierr)
 
           ! Set ii to jj for the next processor.
@@ -2876,8 +2876,8 @@ contains
 
           ! Post the receive.
 
-          call mpi_irecv(recvBuffer(ii), size, sumb_real, procID, &
-               myID, SUmb_comm_world, recvRequests(i), ierr)
+          call mpi_irecv(recvBuffer(ii), size, adflow_real, procID, &
+               myID, ADflow_comm_world, recvRequests(i), ierr)
 
           ! And update ii.
 
@@ -3106,8 +3106,8 @@ subroutine exchangeCoor_b(level)
 
         ! Send the data.
 
-        call mpi_isend(recvBuffer(ii), size, sumb_real, procID,    &
-             procID, SUmb_comm_world, recvRequests(i), &
+        call mpi_isend(recvBuffer(ii), size, adflow_real, procID,    &
+             procID, ADflow_comm_world, recvRequests(i), &
              ierr)
 
         ! Set ii to jj for the next processor.
@@ -3129,8 +3129,8 @@ subroutine exchangeCoor_b(level)
 
         ! Post the receive.
 
-        call mpi_irecv(sendBuffer(ii), size, sumb_real, procID, &
-             myID, SUmb_comm_world, sendRequests(i), ierr)
+        call mpi_irecv(sendBuffer(ii), size, adflow_real, procID, &
+             myID, ADflow_comm_world, sendRequests(i), ierr)
 
         ! And update ii.
 
@@ -3286,8 +3286,8 @@ subroutine exchangeCoor_d(level)
 
         ! Send the data.
 
-        call mpi_isend(sendBuffer(ii), size, sumb_real, procID,    &
-             procID, SUmb_comm_world, sendRequests(i), &
+        call mpi_isend(sendBuffer(ii), size, adflow_real, procID,    &
+             procID, ADflow_comm_world, sendRequests(i), &
              ierr)
 
         ! Set ii to jj for the next processor.
@@ -3309,8 +3309,8 @@ subroutine exchangeCoor_d(level)
 
         ! Post the receive.
 
-        call mpi_irecv(recvBuffer(ii), size, sumb_real, procID, &
-             myID, SUmb_comm_world, recvRequests(i), ierr)
+        call mpi_irecv(recvBuffer(ii), size, adflow_real, procID, &
+             myID, ADflow_comm_world, recvRequests(i), ierr)
 
         ! And update ii.
 

@@ -1,24 +1,24 @@
-.. _sumb_introduction:
+.. _adflow_introduction:
 
 Introduction
 ============
 
-``SUmb`` is a multi-block structured flow solver initially developed in 
+``ADflow`` is a multi-block structured flow solver initially developed in 
 the Stanford University under the sponsorship of the Department of
 Energy Advanced Strategic Computing (ASC) Initiative . It solves the 
 compressible Euler, laminar Navier-Stokes and Reynolds-Averaged Navier-Stokes 
 equations. Although its primary objective in this program was to compute the
-flows in the rotating components of jet engines, SUmb has been developed as 
+flows in the rotating components of jet engines, ADflow has been developed as 
 a completely general solver and it is therefore applicable to a variety of 
 other types of problems, including external aerodynamic flows.
 
-``SUmb`` is a parallel code, suited for running on massively parallel platforms. 
+``ADflow`` is a parallel code, suited for running on massively parallel platforms. 
 The parallelization is hidden as much as possible from the end user, i.e. 
 there is only one grid file, one volume solution file and one surface solution file. The
 only thing the end user needs to do is to specify the number of processors 
 he/she wants to use via the mpirun (or equivalent) command.
 
-A summary of the various features that can be found in ``SUmb`` is given below:
+A summary of the various features that can be found in ``ADflow`` is given below:
 
 * Compressible, URANS flow solver with various turbulence modeling options (Spalart-Allmaras, k-w, SST, v2-f)
 

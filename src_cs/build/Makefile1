@@ -8,9 +8,9 @@ includeFiles:=	metis-4.0/defs.h\
 		metis-4.0/proto.h\
 		metis-4.0/rename.h\
 		metis-4.0/struct.h\
-		c_defines/SUmb_c_types.h\
+		c_defines/ADflow_c_types.h\
 		adjoint/ADFirstAidKit/debugAD.inc\
-		f2py/sumb.pyf\
+		f2py/adflow.pyf\
 		f2py/checkPyfForUpperCase.py\
 		f2py/get_f2py.py\
 		f2py/pyf_preprocessor.py\

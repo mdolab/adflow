@@ -3,7 +3,7 @@ from __future__ import print_function
 from __future__ import division
 from six import iteritems
 """
-pySUmb - A Python interface to SUmb.
+pyADflow - A Python interface to ADflow.
 
 Copyright (c) 2008 by Mr.C.A (Sandy) Mader
 All rights reserved. Not to be used for commercial purposes.
@@ -39,7 +39,7 @@ class Error(Exception):
     was a expliclty raised exception.
     """
     def __init__(self, message):
-        msg = '\n+'+'-'*78+'+'+'\n' + '| pySUMB Error: '
+        msg = '\n+'+'-'*78+'+'+'\n' + '| pyADFLOW Error: '
         i = 15
         for word in message.split():
             if len(word) + i + 1 > 78: # Finish line and start new one
@@ -52,12 +52,12 @@ class Error(Exception):
         print(msg)
         Exception.__init__(self)
 
-class SUMBWarning(object):
+class ADFLOWWarning(object):
     """
     Format a warning message
     """
     def __init__(self, message):
-        msg = '\n+'+'-'*78+'+'+'\n' + '| pySUMB Warning: '
+        msg = '\n+'+'-'*78+'+'+'\n' + '| pyADFLOW Warning: '
         i = 17
         for word in message.split():
             if len(word) + i + 1 > 78: # Finish line and start new one
@@ -70,19 +70,19 @@ class SUMBWarning(object):
         print(msg)
 
 # =============================================================================
-# SUMB Class
+# ADFLOW Class
 # =============================================================================
-class SUMB(AeroSolver):
+class ADFLOW(AeroSolver):
     """
-    Create the SUmb object.
+    Create the ADflow object.
 
     Parameters
     ----------
     comm : MPI intra comm
-        The communicator on which to create SUmb. If not given, defaults
+        The communicator on which to create ADflow. If not given, defaults
         to MPI.COMM_WORLD.
     options : dictionary
-        The list of options to use with SUmb. This keyword arguement
+        The list of options to use with ADflow. This keyword arguement
         is NOT OPTIONAL. It must always be provided. It must contain, at least
         the 'gridFile' entry for the filename of the grid to load
     debug : bool
@@ -97,13 +97,13 @@ class SUMB(AeroSolver):
         # Load the compiled module using MExt, allowing multiple
         # imports
         try:
-            self.sumb
+            self.adflow
         except:
             curDir = os.path.dirname(os.path.realpath(__file__))
-            self.sumb = MExt.MExt('libsumb', [curDir], debug=debug)._module
+            self.adflow = MExt.MExt('libadflow', [curDir], debug=debug)._module
 
         # Information for base class:
-        name = 'SUMB'
+        name = 'ADFLOW'
         category = 'Three Dimensional CFD'
         informs = {}
 
@@ -118,9 +118,9 @@ class SUMB(AeroSolver):
             self._getObjectivesAndDVs())
 
         # Now add the group for each of the "basic" cost functions:
-        self.sumbCostFunctions = {}
+        self.adflowCostFunctions = {}
         for key in self.basicCostFunctions:
-            self.sumbCostFunctions[key] = [None, key]
+            self.adflowCostFunctions[key] = [None, key]
 
         # This is the real solver so dtype is 'd'
         self.dtype = dtype
@@ -130,21 +130,21 @@ class SUMB(AeroSolver):
             comm = MPI.COMM_WORLD
 
         self.comm = comm
-        self.sumb.communication.sumb_comm_world = self.comm.py2f()
-        self.sumb.communication.sumb_comm_self = MPI.COMM_SELF.py2f()
-        self.sumb.communication.sendrequests = numpy.zeros(self.comm.size)
-        self.sumb.communication.recvrequests = numpy.zeros(self.comm.size)
-        self.myid = self.sumb.communication.myid = self.comm.rank
-        self.sumb.communication.nproc = self.comm.size
+        self.adflow.communication.adflow_comm_world = self.comm.py2f()
+        self.adflow.communication.adflow_comm_self = MPI.COMM_SELF.py2f()
+        self.adflow.communication.sendrequests = numpy.zeros(self.comm.size)
+        self.adflow.communication.recvrequests = numpy.zeros(self.comm.size)
+        self.myid = self.adflow.communication.myid = self.comm.rank
+        self.adflow.communication.nproc = self.comm.size
 
         # Initialize the inherited aerosolver.
         if options is None:
             raise Error("The 'options' keyword argument must be passed "
-                        "sumb. The options dictionary must contain (at least) "
+                        "adflow. The options dictionary must contain (at least) "
                         "the gridFile entry for the grid.")
 
-        # Set all internal sumb default options before we set anything from python
-        self.sumb.inputparamroutines.setdefaultvalues()
+        # Set all internal adflow default options before we set anything from python
+        self.adflow.inputparamroutines.setdefaultvalues()
 
         AeroSolver.__init__(self, name, category, defOpts, informs,
                             options=options)
@@ -153,15 +153,15 @@ class SUMB(AeroSolver):
         self._updateTurbResScale()
 
         # Initialize petec in case the user has not already
-        self.sumb.adjointutils.initializepetsc()
+        self.adflow.adjointutils.initializepetsc()
 
-        # Set the stand-alone sumb flag to false...this changes how
+        # Set the stand-alone adflow flag to false...this changes how
         # terminate calls are handled.
-        self.sumb.iteration.standalonemode = False
+        self.adflow.iteration.standalonemode = False
 
         # Set the frompython flag to true... this also changes how
         # terminate calls are handled
-        self.sumb.killsignals.frompython = True
+        self.adflow.killsignals.frompython = True
 
         # Dictionary of design varibales and their index
         self.aeroDVs = []
@@ -172,7 +172,7 @@ class SUMB(AeroSolver):
         self.nLiftDist = 0
 
         # Set default values
-        self.sumb.inputio.autoparameterupdate = False
+        self.adflow.inputio.autoparameterupdate = False
         self._updateGeomInfo = True
 
         # By Default we don't have an external mesh object or a
@@ -184,14 +184,14 @@ class SUMB(AeroSolver):
         self.adjointSetup = False
 
         # Write the intro message
-        self.sumb.utils.writeintromessage()
+        self.adflow.utils.writeintromessage()
 
-        # Remind the user of all the sumb options:
+        # Remind the user of all the adflow options:
         self.printCurrentOptions()
 
         # Do the remainder of the operations that would have been done
         # had we read in a param file
-        self.sumb.iteration.deforming_grid = True
+        self.adflow.iteration.deforming_grid = True
 
         # In order to properly initialize we need to have mach number
         # and a few other things set. Just create a dummy aeroproblem,
@@ -208,20 +208,20 @@ class SUMB(AeroSolver):
         self.curAP = None
 
         # Finally complete loading
-        self.sumb.inputparamroutines.dummyreadparamfile()
+        self.adflow.inputparamroutines.dummyreadparamfile()
         if self.getOption('partitionOnly'):
-            self.sumb.partitioning.partitionandreadgrid(True)
+            self.adflow.partitioning.partitionandreadgrid(True)
             return
 
-        self.sumb.partitioning.partitionandreadgrid(False)
-        self.sumb.preprocessingapi.preprocessing()
-        self.sumb.tecplotio.initializeliftdistributiondata()
-        self.sumb.initializeflow.updatebcdataalllevels()
-        self.sumb.initializeflow.initflow()
+        self.adflow.partitioning.partitionandreadgrid(False)
+        self.adflow.preprocessingapi.preprocessing()
+        self.adflow.tecplotio.initializeliftdistributiondata()
+        self.adflow.initializeflow.updatebcdataalllevels()
+        self.adflow.initializeflow.initflow()
 
         famList = self._processFortranStringArray(
-            self.sumb.surfacefamilies.famnames)
-        isWall = self.sumb.surfacefamilies.famiswall
+            self.adflow.surfacefamilies.famnames)
+        isWall = self.adflow.surfacefamilies.famiswall
 
         # Add the initial families that already exist in the CGNS
         # file.
@@ -258,8 +258,8 @@ class SUMB(AeroSolver):
         Get the list of indices to pass to the mesh object for the
         volume mesh mapping
         '''
-        ndof_1_instance = self.sumb.adjointvars.nnodeslocal[0]*3
-        meshInd = self.sumb.warping.getcgnsmeshindices(ndof_1_instance)
+        ndof_1_instance = self.adflow.adjointvars.nnodeslocal[0]*3
+        meshInd = self.adflow.warping.getcgnsmeshindices(ndof_1_instance)
 
         return meshInd
 
@@ -305,7 +305,7 @@ class SUMB(AeroSolver):
             localD[j] = D[index[j]]
 
         # Fianlly we have the local displacements for this processor we save
-        self.curAP.sumbData.disp = localD
+        self.curAP.adflowData.disp = localD
 
     def addLiftDistribution(self, nSegments, direction,
                             groupName=None):
@@ -353,7 +353,7 @@ class SUMB(AeroSolver):
             self.nLiftDist + 1, groupTag, direction)
         self.nLiftDist += 1
 
-        self.sumb.tecplotio.addliftdistribution(
+        self.adflow.tecplotio.addliftdistribution(
             nSegments, dirVec, dirInd, distName, famList)
 
     def addSlices(self, direction, positions, sliceType='relative',
@@ -418,17 +418,17 @@ class SUMB(AeroSolver):
             if sliceType == 'relative':
                 sliceName = 'Slice_%4.4d %s Para Init %s=%7.3f'% (
                     j, groupTag, direction, positions[i])
-                self.sumb.tecplotio.addparaslice(sliceName, tmp[i], dirVec, famList)
+                self.adflow.tecplotio.addparaslice(sliceName, tmp[i], dirVec, famList)
             else:
                 sliceName = 'Slice_%4.4d %s Absolute %s=%7.3f'% (
                     j, groupTag, direction, positions[i])
-                self.sumb.tecplotio.addabsslice(sliceName, tmp[i], dirVec, famList)
+                self.adflow.tecplotio.addabsslice(sliceName, tmp[i], dirVec, famList)
 
         self.nSlice += N
 
     def addFunction(self, funcName, groupName, name=None):
-        """Add a "new" function to SUmb by restricting the integration of an
-        existing SUmb function by a section of the mesh defined by
+        """Add a "new" function to ADflow by restricting the integration of an
+        existing ADflow function by a section of the mesh defined by
         'groupName'. The function will be named 'funcName_groupName'
         provided that the 'name' keyword argument is not given. It is
         is, the function will be use that name. If necessary, this
@@ -443,7 +443,7 @@ class SUMB(AeroSolver):
         Parameters
         ----------
         funcName : str or list
-            The name of the built-in sumb function
+            The name of the built-in adflow function
         groupName : str or list
             The family or group of families to use for the function
         Name : str or list
@@ -461,7 +461,7 @@ class SUMB(AeroSolver):
 
     def addFunctions(self, funcNames, groupNames, names=None):
 
-        """Add a series of new functions to SUmb. This is a vector version of
+        """Add a series of new functions to ADflow. This is a vector version of
         the addFunction() routine. See that routine for more documentation. """
 
         if names is None:
@@ -477,9 +477,9 @@ class SUMB(AeroSolver):
             groupName = groupNames[i]
             name = names[i]
 
-            # First make sure the supplied function is already known to sumb
+            # First make sure the supplied function is already known to adflow
             if funcName.lower() not in self.basicCostFunctions:
-                raise Error('Supplied function name is not known to SUmb')
+                raise Error('Supplied function name is not known to ADflow')
 
             # Check if the goupName has been added to the mesh.
             if groupName is not None:
@@ -488,14 +488,14 @@ class SUMB(AeroSolver):
                                 " as a combination of families"%(groupName))
 
             if name is None:
-                sumbFuncName = '%s_%s'%(funcName, groupName)
+                adflowFuncName = '%s_%s'%(funcName, groupName)
             else:
-                sumbFuncName = name
+                adflowFuncName = name
 
-            # Now register the function into sumbCostFunctions
-            self.sumbCostFunctions[sumbFuncName] = [groupName, funcName]
+            # Now register the function into adflowCostFunctions
+            self.adflowCostFunctions[adflowFuncName] = [groupName, funcName]
 
-            newFuncNames.append(sumbFuncName)
+            newFuncNames.append(adflowFuncName)
 
         return newFuncNames
 
@@ -512,10 +512,10 @@ class SUMB(AeroSolver):
         """
         if isinstance(rotRate, AeroProblem):
             aeroProblem = rotRate
-            a  = numpy.sqrt(self.sumb.flowvarrefstate.gammainf*\
-                                self.sumb.flowvarrefstate.pinfdim/ \
-                                self.sumb.flowvarrefstate.rhoinfdim)
-            V = (self.sumb.inputphysics.machgrid+self.sumb.inputphysics.mach)*a
+            a  = numpy.sqrt(self.adflow.flowvarrefstate.gammainf*\
+                                self.adflow.flowvarrefstate.pinfdim/ \
+                                self.adflow.flowvarrefstate.rhoinfdim)
+            V = (self.adflow.inputphysics.machgrid+self.adflow.inputphysics.mach)*a
 
             p = aeroProblem.phat*V/aeroProblem.spanRef
             q = aeroProblem.qhat*V/aeroProblem.chordRef
@@ -533,9 +533,9 @@ class SUMB(AeroSolver):
 
         if cgnsBlocks is None:
             # By Default set all the blocks:
-            cgnsBlocks = numpy.arange(1, self.sumb.cgnsgrid.cgnsndom+1)
+            cgnsBlocks = numpy.arange(1, self.adflow.cgnsgrid.cgnsndom+1)
 
-        self.sumb.updaterotationrate(rotCenter, rotations, cgnsBlocks)
+        self.adflow.updaterotationrate(rotCenter, rotations, cgnsBlocks)
         self._updateVelInfo = True
 
     def checkPartitioning(self, nprocs):
@@ -558,7 +558,7 @@ class SUMB(AeroSolver):
             The fraction of inbalance for faces. This gives an idea of
             communication code. 0 is god. 1.0 is really bad.
         """
-        loadInbalance, faceInbalance = self.sumb.partitioning.checkpartitioning(nprocs)
+        loadInbalance, faceInbalance = self.adflow.partitioning.checkpartitioning(nprocs)
 
         return loadInbalance, faceInbalance
 
@@ -612,8 +612,8 @@ class SUMB(AeroSolver):
 
         # Clear out any saved adjoint RHS since they are now out of
         # data. Also increment the counter for this case.
-        self.curAP.sumbData.adjointRHS = {}
-        self.curAP.sumbData.callCounter += 1
+        self.curAP.adflowData.adjointRHS = {}
+        self.curAP.adflowData.callCounter += 1
 
         # --------------------------------------------------------------
         # Setup interation arrays ---- don't touch this unless you
@@ -621,32 +621,32 @@ class SUMB(AeroSolver):
 
         # iterTot is non-zero which means we already did a solution,
         # so we can run on the finest level.
-        if self.sumb.iteration.itertot != 0:
-            self.sumb.inputiteration.mgstartlevel = 1
+        if self.adflow.iteration.itertot != 0:
+            self.adflow.inputiteration.mgstartlevel = 1
 
-        self.sumb.iteration.itertot = 0
-        desiredSize = self.sumb.inputiteration.nsgstartup + \
-                      self.sumb.inputiteration.ncycles
-        self.sumb.utils.allocconvarrays(desiredSize)
+        self.adflow.iteration.itertot = 0
+        desiredSize = self.adflow.inputiteration.nsgstartup + \
+                      self.adflow.inputiteration.ncycles
+        self.adflow.utils.allocconvarrays(desiredSize)
         # --------------------------------------------------------------
 
         if self.getOption('equationMode').lower() == 'unsteady':
-            self.sumb.utils.alloctimearrays(self.getOption('nTimeStepsFine'))
+            self.adflow.utils.alloctimearrays(self.getOption('nTimeStepsFine'))
             self._setUnsteadyFileParameters()
 
         # Mesh warp may have already failed:
-        if not self.sumb.killsignals.fatalfail:
+        if not self.adflow.killsignals.fatalfail:
 
             if (self.getOption('equationMode').lower() == 'steady' or
                 self.getOption('equationMode').lower() == 'time spectral'):
                 self.updateGeometryInfo()
 
                 # Check to see if the above update routines failed.
-                self.sumb.killsignals.fatalfail = \
+                self.adflow.killsignals.fatalfail = \
                     self.comm.allreduce(
-                    bool(self.sumb.killsignals.fatalfail), op=MPI.LOR)
+                    bool(self.adflow.killsignals.fatalfail), op=MPI.LOR)
 
-        if self.sumb.killsignals.fatalfail:
+        if self.adflow.killsignals.fatalfail:
             print("Fatal failure during mesh warp! Bad mesh is "
                   "written in output directory as failed_mesh.cgns")
             fileName = os.path.join(self.getOption('outputDirectory'),
@@ -657,8 +657,8 @@ class SUMB(AeroSolver):
             return
 
         # We now now the mesh warping was ok so reset the flags:
-        self.sumb.killsignals.routinefailed =  False
-        self.sumb.killsignals.fatalfail = False
+        self.adflow.killsignals.routinefailed =  False
+        self.adflow.killsignals.fatalfail = False
 
         t1 = time.time()
 
@@ -667,16 +667,16 @@ class SUMB(AeroSolver):
         # When callback is not given, or time integration scheme is not md/ale
         # use normal solver instead
         if MDCallBack is None or not self.getOption('timeIntegrationScheme') == 'md' :
-            self.sumb.solvers.solver()
+            self.adflow.solvers.solver()
         else:
-            self.sumb.solvers.solverunsteady_ale(MDCallBack)
+            self.adflow.solvers.solverunsteady_ale(MDCallBack)
 
         # Save the states into the aeroProblem
-        self.curAP.sumbData.stateInfo = self._getInfo()
+        self.curAP.adflowData.stateInfo = self._getInfo()
 
         # Assign Fail Flags
-        self.curAP.solveFailed = bool(self.sumb.killsignals.routinefailed)
-        self.curAP.fatalFail = bool(self.sumb.killsignals.fatalfail)
+        self.curAP.solveFailed = bool(self.adflow.killsignals.routinefailed)
+        self.curAP.fatalFail = bool(self.adflow.killsignals.fatalfail)
 
         # Reset Flow if there's a fatal fail reset and return;
         # --> Do not write solution
@@ -742,16 +742,16 @@ class SUMB(AeroSolver):
         # function grouping. We can also do the error checking
         groupMap = {}
         for f in evalFuncs:
-            if f.lower() in self.sumbCostFunctions:
-                group = self.sumbCostFunctions[f][0]
-                basicFunc = self.sumbCostFunctions[f][1]
+            if f.lower() in self.adflowCostFunctions:
+                group = self.adflowCostFunctions[f][0]
+                basicFunc = self.adflowCostFunctions[f][1]
                 if group not in groupMap:
                     groupMap[group] = [[basicFunc, f]]
                 else:
                     groupMap[group].append([basicFunc, f])
             else:
                 if not ignoreMissing:
-                    raise Error('Supplied function %s is not known to SUmb.'%f)
+                    raise Error('Supplied function %s is not known to ADflow.'%f)
 
         # Now we loop over the unique groups calling the required
         # getSolution, there may be just one. No need for error
@@ -794,7 +794,7 @@ class SUMB(AeroSolver):
         """
 
         # This is the one and only gateway to the getting derivatives
-        # out of sumb. If you want a derivative, it should come from
+        # out of adflow. If you want a derivative, it should come from
         # here.
 
         self.setAeroProblem(aeroProblem)
@@ -806,8 +806,8 @@ class SUMB(AeroSolver):
 
         # Do the functions one at a time:
         for f in evalFuncs:
-            if f.lower() not in self.sumbCostFunctions:
-                raise Error('Supplied %s function is not known to SUmb.'%f)
+            if f.lower() not in self.adflowCostFunctions:
+                raise Error('Supplied %s function is not known to ADflow.'%f)
 
             if self.comm.rank == 0:
                 print('Solving adjoint: %s'%f)
@@ -889,7 +889,7 @@ class SUMB(AeroSolver):
             print ('Current alpha is: ', aeroProblem.alpha)
 
         self.__call__(aeroProblem, writeSolution=False)
-        self.curAP.sumbData.callCounter -= 1
+        self.curAP.adflowData.callCounter -= 1
         sol = self.getSolution()
         fnm2 = sol['cl'] - CLStar
 
@@ -935,7 +935,7 @@ class SUMB(AeroSolver):
 
             # Solve for n-1 value (anm1)
             self.__call__(aeroProblem, writeSolution=False)
-            self.curAP.sumbData.callCounter -= 1
+            self.curAP.adflowData.callCounter -= 1
             sol = self.getSolution()
             fnm1 = sol['cl'] - CLStar
 
@@ -1011,7 +1011,7 @@ class SUMB(AeroSolver):
             xGeo[trimDV][dvIndex] = Xn[1]
             self.DVGeo.setDesignVars(xGeo)
             self.__call__(self.curAP, writeSolution=False)
-            self.curAP.sumbData.callCounter -= 1
+            self.curAP.adflowData.callCounter -= 1
             funcs = {}
             self.evalFunctions(self.curAP, funcs, evalFuncs=[liftFunc, trimFunc])
             F = numpy.array([funcs['%s_%s'%(self.curAP.name, liftFunc)]-CLstar,
@@ -1122,7 +1122,7 @@ class SUMB(AeroSolver):
         funcName = '%s_%s'%(ap.name, sepName)
 
         if not self.getOption('rkreset') and self.getOption('usenksolve'):
-            SUMBWarning("nRKReset option is not set. It is usually necessary "
+            ADFLOWWarning("nRKReset option is not set. It is usually necessary "
                         "for solveSep() when NK solver is used.")
 
         # Solve first problem
@@ -1227,7 +1227,7 @@ class SUMB(AeroSolver):
     def writeSolution(self, outputDir=None, baseName=None, number=None):
         """This is a generic shell function that potentially writes
         the various output files. The intent is that the user or
-        calling program can call this file and SUmb write all the
+        calling program can call this file and ADflow write all the
         files that the user has defined. It is recommneded that this
         function is used along with the associated logical flags in
         the options to determine the desired writing procedure
@@ -1256,7 +1256,7 @@ class SUMB(AeroSolver):
             # if number is none, i.e. standalone, but we need to
             # number solutions, use internal counter
             if self.getOption('numberSolutions'):
-                baseName = baseName + '_%3.3d'% self.curAP.sumbData.callCounter
+                baseName = baseName + '_%3.3d'% self.curAP.adflowData.callCounter
 
         # Join to get the actual filename root
         base = os.path.join(outputDir, baseName)
@@ -1265,7 +1265,7 @@ class SUMB(AeroSolver):
         # to the same values as the nsave values (which is 1) for steady
         # and time-spectral solution to be written,
         if self.getOption('equationMode').lower() == 'unsteady':
-            ts = self.sumb.monitor.timestepunsteady
+            ts = self.adflow.monitor.timestepunsteady
         else:
             ts = 1
 
@@ -1289,7 +1289,7 @@ class SUMB(AeroSolver):
             sliceName = base + '_slices.dat'
             surfName = base + '_surf.dat'
         writeSurf = self.getOption('writeTecplotSurfaceSolution')
-        self.sumb.tecplotio.writetecplot(sliceName, True, liftName, True,
+        self.adflow.tecplotio.writetecplot(sliceName, True, liftName, True,
                                          surfName, writeSurf)
 
     def writeMeshFile(self, fileName):
@@ -1308,19 +1308,19 @@ class SUMB(AeroSolver):
         fileName += '.cgns'
 
         # Set Flags for writing
-        self.sumb.monitor.writegrid = True
-        self.sumb.monitor.writevolume = False
-        self.sumb.monitor.writesurface = False
+        self.adflow.monitor.writegrid = True
+        self.adflow.monitor.writevolume = False
+        self.adflow.monitor.writesurface = False
 
-        # Set filename in sumb
-        self.sumb.inputio.solfile[:] = ''
-        self.sumb.inputio.solfile[0:len(fileName)] = fileName
+        # Set filename in adflow
+        self.adflow.inputio.solfile[:] = ''
+        self.adflow.inputio.solfile[0:len(fileName)] = fileName
 
-        self.sumb.inputio.newgridfile[:] = ''
-        self.sumb.inputio.newgridfile[0:len(fileName)] = fileName
+        self.adflow.inputio.newgridfile[:] = ''
+        self.adflow.inputio.newgridfile[0:len(fileName)] = fileName
 
         # Actual fortran write call
-        self.sumb.writesol()
+        self.adflow.writesol()
 
     def writeVolumeSolutionFile(self, fileName, writeGrid=True):
         """Write the current state of the volume flow solution to a CGNS
@@ -1344,19 +1344,19 @@ class SUMB(AeroSolver):
         fileName += '.cgns'
 
         # Set Flags for writing
-        self.sumb.monitor.writegrid = writeGrid
-        self.sumb.monitor.writevolume = True
-        self.sumb.monitor.writesurface = False
+        self.adflow.monitor.writegrid = writeGrid
+        self.adflow.monitor.writevolume = True
+        self.adflow.monitor.writesurface = False
 
-        # Set fileName in sumb
-        self.sumb.inputio.solfile[:] = ''
-        self.sumb.inputio.solfile[0:len(fileName)] = fileName
+        # Set fileName in adflow
+        self.adflow.inputio.solfile[:] = ''
+        self.adflow.inputio.solfile[0:len(fileName)] = fileName
 
-        self.sumb.inputio.newgridfile[:] = ''
-        self.sumb.inputio.newgridfile[0:len(fileName)] = fileName
+        self.adflow.inputio.newgridfile[:] = ''
+        self.adflow.inputio.newgridfile[0:len(fileName)] = fileName
 
         # Actual fortran write call
-        self.sumb.writesol()
+        self.adflow.writesol()
 
     def writeSurfaceSolutionFile(self, fileName):
         """Write the current state of the surface flow solution to a CGNS file.
@@ -1372,16 +1372,16 @@ class SUMB(AeroSolver):
         fileName += '.cgns'
 
         # Set Flags for writing
-        self.sumb.monitor.writegrid=False
-        self.sumb.monitor.writevolume=False
-        self.sumb.monitor.writesurface=True
+        self.adflow.monitor.writegrid=False
+        self.adflow.monitor.writevolume=False
+        self.adflow.monitor.writesurface=True
 
-        # Set fileName in sumb
-        self.sumb.inputio.surfacesolfile[:] = ''
-        self.sumb.inputio.surfacesolfile[0:len(fileName)] = fileName
+        # Set fileName in adflow
+        self.adflow.inputio.surfacesolfile[:] = ''
+        self.adflow.inputio.surfacesolfile[0:len(fileName)] = fileName
 
         # Actual fortran write call
-        self.sumb.writesol()
+        self.adflow.writesol()
 
     def writeLiftDistributionFile(self, fileName):
         """Evaluate and write the lift distibution to a tecplot file.
@@ -1398,7 +1398,7 @@ class SUMB(AeroSolver):
         # Actual write command
         sliceName = ""
         surfName = ""
-        self.sumb.tecplotio.writetecplot(sliceName, False, fileName, True,
+        self.adflow.tecplotio.writetecplot(sliceName, False, fileName, True,
                                          surfName, False)
 
     def writeSlicesFile(self, fileName):
@@ -1418,7 +1418,7 @@ class SUMB(AeroSolver):
         # Actual write command
         sliceName = ""
         surfName = ""
-        self.sumb.tecplotio.writetecplot(sliceName, False, fileName, True,
+        self.adflow.tecplotio.writetecplot(sliceName, False, fileName, True,
                                          surfName, False)
 
     def writeForceFile(self, fileName, TS=0, groupName=None,
@@ -1504,8 +1504,8 @@ class SUMB(AeroSolver):
         obj : str
             String identifing the objective.
         """
-        if obj in self.curAP.sumbData.adjoints:
-            self.curAP.sumbData.adjoints[obj][:] = 0.0
+        if obj in self.curAP.adflowData.adjoints:
+            self.curAP.adflowData.adjoints[obj][:] = 0.0
 
     def resetFlow(self, aeroProblem, releaseAdjointMemory=True):
         """
@@ -1523,19 +1523,19 @@ class SUMB(AeroSolver):
 
     def _resetFlow(self):
         strLvl = self.getOption('MGStartLevel')
-        nLevels = self.sumb.inputiteration.nmglevels
+        nLevels = self.adflow.inputiteration.nmglevels
         if strLvl < 0 or strLvl > nLevels:
             strLvl = nLevels
 
-        self.sumb.inputiteration.mgstartlevel = strLvl
-        self.sumb.iteration.groundlevel = strLvl
-        self.sumb.iteration.currentlevel = strLvl
-        self.sumb.monitor.nitercur = 0
-        self.sumb.iteration.itertot = 0
-        self.sumb.initializeflow.setuniformflow()
-        self.sumb.killsignals.routinefailed =  False
-        self.sumb.killsignals.fatalfail = False
-        self.sumb.nksolver.freestreamresset = False
+        self.adflow.inputiteration.mgstartlevel = strLvl
+        self.adflow.iteration.groundlevel = strLvl
+        self.adflow.iteration.currentlevel = strLvl
+        self.adflow.monitor.nitercur = 0
+        self.adflow.iteration.itertot = 0
+        self.adflow.initializeflow.setuniformflow()
+        self.adflow.killsignals.routinefailed =  False
+        self.adflow.killsignals.fatalfail = False
+        self.adflow.nksolver.freestreamresset = False
 
     def getSolution(self, groupName=None):
         """ Retrieve the solution variables from the solver. Note this
@@ -1547,55 +1547,55 @@ class SUMB(AeroSolver):
 
         # We should return the list of results that is the same as the
         # possibleObjectives list
-        self.sumb.surfaceintegrations.getsolution(1)
+        self.adflow.surfaceintegrations.getsolution(1)
 
-        funcVals = self.sumb.costfunctions.funcvalues
-        SUmbsolution = {
-            'lift':funcVals[self.sumb.costfunctions.costfunclift-1],
-            'drag':funcVals[self.sumb.costfunctions.costfuncdrag-1],
-            'cl'  :funcVals[self.sumb.costfunctions.costfuncliftcoef-1],
-            'cd'  :funcVals[self.sumb.costfunctions.costfuncdragcoef-1],
-            'fx'  :funcVals[self.sumb.costfunctions.costfuncforcex-1],
-            'fy'  :funcVals[self.sumb.costfunctions.costfuncforcey-1],
-            'fz'  :funcVals[self.sumb.costfunctions.costfuncforcez-1],
-            'cfx' :funcVals[self.sumb.costfunctions.costfuncforcexcoef-1],
-            'cfy' :funcVals[self.sumb.costfunctions.costfuncforceycoef-1],
-            'cfz' :funcVals[self.sumb.costfunctions.costfuncforcezcoef-1],
-            'mx'  :funcVals[self.sumb.costfunctions.costfuncmomx-1],
-            'my'  :funcVals[self.sumb.costfunctions.costfuncmomy-1],
-            'mz'  :funcVals[self.sumb.costfunctions.costfuncmomz-1],
-            'cmx' :funcVals[self.sumb.costfunctions.costfuncmomxcoef-1],
-            'cmy' :funcVals[self.sumb.costfunctions.costfuncmomycoef-1],
-            'cmz' :funcVals[self.sumb.costfunctions.costfuncmomzcoef-1],
-            'cmzalphadot':funcVals[self.sumb.costfunctions.costfunccmzalphadot-1],
-            'cmzalpha'   :funcVals[self.sumb.costfunctions.costfunccmzalpha-1],
-            'cm0'        :funcVals[self.sumb.costfunctions.costfunccm0-1],
-            'clalphadot' :funcVals[self.sumb.costfunctions.costfuncclalphadot-1],
-            'clalpha'    :funcVals[self.sumb.costfunctions.costfuncclalpha-1],
-            'cl0'        :funcVals[self.sumb.costfunctions.costfunccl0-1],
-            'cfyalphadot':funcVals[self.sumb.costfunctions.costfunccfyalphadot-1],
-            'cfyalpha'   :funcVals[self.sumb.costfunctions.costfunccfyalpha-1],
-            'cfy0'       :funcVals[self.sumb.costfunctions.costfunccfy0-1],
-            'cdalphadot' :funcVals[self.sumb.costfunctions.costfunccdalphadot-1],
-            'cdalpha'    :funcVals[self.sumb.costfunctions.costfunccdalpha-1],
-            'cd0'        :funcVals[self.sumb.costfunctions.costfunccd0-1],
-            'cmzqdot'    :funcVals[self.sumb.costfunctions.costfunccmzqdot-1],
-            'cmzq'       :funcVals[self.sumb.costfunctions.costfunccmzq-1],
-            'clqdot'     :funcVals[self.sumb.costfunctions.costfuncclqdot-1],
-            'clq'        :funcVals[self.sumb.costfunctions.costfuncclq-1],
-            'cbend'      :funcVals[self.sumb.costfunctions.costfuncbendingcoef-1],
-            'sepsensor'  :funcVals[self.sumb.costfunctions.costfuncsepsensor-1],
-            'sepsensoravgx'  :funcVals[self.sumb.costfunctions.costfuncsepsensoravgx-1],
-            'sepsensoravgy'  :funcVals[self.sumb.costfunctions.costfuncsepsensoravgy-1],
-            'sepsensoravgz'  :funcVals[self.sumb.costfunctions.costfuncsepsensoravgz-1],
-            'cavitation' :funcVals[self.sumb.costfunctions.costfunccavitation-1],
-            'mdot' :funcVals[self.sumb.costfunctions.costfuncmdot-1],
-            'mavgptot':funcVals[self.sumb.costfunctions.costfuncmavgptot-1],
-            'mavgttot':funcVals[self.sumb.costfunctions.costfuncmavgttot-1],
-            'mavgps':funcVals[self.sumb.costfunctions.costfuncmavgps-1]
+        funcVals = self.adflow.costfunctions.funcvalues
+        ADflowsolution = {
+            'lift':funcVals[self.adflow.costfunctions.costfunclift-1],
+            'drag':funcVals[self.adflow.costfunctions.costfuncdrag-1],
+            'cl'  :funcVals[self.adflow.costfunctions.costfuncliftcoef-1],
+            'cd'  :funcVals[self.adflow.costfunctions.costfuncdragcoef-1],
+            'fx'  :funcVals[self.adflow.costfunctions.costfuncforcex-1],
+            'fy'  :funcVals[self.adflow.costfunctions.costfuncforcey-1],
+            'fz'  :funcVals[self.adflow.costfunctions.costfuncforcez-1],
+            'cfx' :funcVals[self.adflow.costfunctions.costfuncforcexcoef-1],
+            'cfy' :funcVals[self.adflow.costfunctions.costfuncforceycoef-1],
+            'cfz' :funcVals[self.adflow.costfunctions.costfuncforcezcoef-1],
+            'mx'  :funcVals[self.adflow.costfunctions.costfuncmomx-1],
+            'my'  :funcVals[self.adflow.costfunctions.costfuncmomy-1],
+            'mz'  :funcVals[self.adflow.costfunctions.costfuncmomz-1],
+            'cmx' :funcVals[self.adflow.costfunctions.costfuncmomxcoef-1],
+            'cmy' :funcVals[self.adflow.costfunctions.costfuncmomycoef-1],
+            'cmz' :funcVals[self.adflow.costfunctions.costfuncmomzcoef-1],
+            'cmzalphadot':funcVals[self.adflow.costfunctions.costfunccmzalphadot-1],
+            'cmzalpha'   :funcVals[self.adflow.costfunctions.costfunccmzalpha-1],
+            'cm0'        :funcVals[self.adflow.costfunctions.costfunccm0-1],
+            'clalphadot' :funcVals[self.adflow.costfunctions.costfuncclalphadot-1],
+            'clalpha'    :funcVals[self.adflow.costfunctions.costfuncclalpha-1],
+            'cl0'        :funcVals[self.adflow.costfunctions.costfunccl0-1],
+            'cfyalphadot':funcVals[self.adflow.costfunctions.costfunccfyalphadot-1],
+            'cfyalpha'   :funcVals[self.adflow.costfunctions.costfunccfyalpha-1],
+            'cfy0'       :funcVals[self.adflow.costfunctions.costfunccfy0-1],
+            'cdalphadot' :funcVals[self.adflow.costfunctions.costfunccdalphadot-1],
+            'cdalpha'    :funcVals[self.adflow.costfunctions.costfunccdalpha-1],
+            'cd0'        :funcVals[self.adflow.costfunctions.costfunccd0-1],
+            'cmzqdot'    :funcVals[self.adflow.costfunctions.costfunccmzqdot-1],
+            'cmzq'       :funcVals[self.adflow.costfunctions.costfunccmzq-1],
+            'clqdot'     :funcVals[self.adflow.costfunctions.costfuncclqdot-1],
+            'clq'        :funcVals[self.adflow.costfunctions.costfuncclq-1],
+            'cbend'      :funcVals[self.adflow.costfunctions.costfuncbendingcoef-1],
+            'sepsensor'  :funcVals[self.adflow.costfunctions.costfuncsepsensor-1],
+            'sepsensoravgx'  :funcVals[self.adflow.costfunctions.costfuncsepsensoravgx-1],
+            'sepsensoravgy'  :funcVals[self.adflow.costfunctions.costfuncsepsensoravgy-1],
+            'sepsensoravgz'  :funcVals[self.adflow.costfunctions.costfuncsepsensoravgz-1],
+            'cavitation' :funcVals[self.adflow.costfunctions.costfunccavitation-1],
+            'mdot' :funcVals[self.adflow.costfunctions.costfuncmdot-1],
+            'mavgptot':funcVals[self.adflow.costfunctions.costfuncmavgptot-1],
+            'mavgttot':funcVals[self.adflow.costfunctions.costfuncmavgttot-1],
+            'mavgps':funcVals[self.adflow.costfunctions.costfuncmavgps-1]
             }
 
-        return SUmbsolution
+        return ADflowsolution
 
     # =========================================================================
     #   The following routines are public functions however, they should
@@ -1613,7 +1613,7 @@ class SUMB(AeroSolver):
         Take the apName and return the mangled point set name.
 
         """
-        return 'sumb_%s_coords'% apName
+        return 'adflow_%s_coords'% apName
 
 
     def setSurfaceCoordinates(self, coordinates, groupName=None):
@@ -1649,9 +1649,9 @@ class SUMB(AeroSolver):
         self.mesh.setSurfaceCoordinates(meshSurfCoords)
 
     def setAeroProblem(self, aeroProblem, releaseAdjointMemory=True):
-        """Set the supplied aeroProblem to be used in SUmb"""
+        """Set the supplied aeroProblem to be used in ADflow"""
 
-        ptSetName = 'sumb_%s_coords'% aeroProblem.name
+        ptSetName = 'adflow_%s_coords'% aeroProblem.name
 
         newAP = False
         # Tell the user if we are switching aeroProblems
@@ -1662,11 +1662,11 @@ class SUMB(AeroSolver):
                 print('|  Switching to Aero Problem: %-41s|'% aeroProblem.name)
                 print('+'+'-'*70+'+')
 
-        # See if the aeroProblem has sumbData already, if not, create.
+        # See if the aeroProblem has adflowData already, if not, create.
         try:
-            aeroProblem.sumbData
+            aeroProblem.adflowData
         except AttributeError:
-            aeroProblem.sumbData = sumbFlowCase()
+            aeroProblem.adflowData = adflowFlowCase()
             aeroProblem.ptSetName = ptSetName
             aeroProblem.surfMesh = self.getSurfaceCoordinates(self.designFamilyGroup)
 
@@ -1680,14 +1680,14 @@ class SUMB(AeroSolver):
             # (self.curAP) modified. We have to be slightly careful
             # since a setOption() may have been called in between:
 
-            for key in self.curAP.savedOptions['sumb']:
+            for key in self.curAP.savedOptions['adflow']:
                 # Saved Val: This is the main option value when the
                 # aeroProblem set it's own option
                 # setVal: This is the value the aeroProblem set itself
                 # curVal: This is the actual value currently set
 
-                savedVal = self.curAP.savedOptions['sumb'][key]
-                setVal = self.curAP.solverOptions['sumb'][key]
+                savedVal = self.curAP.savedOptions['adflow'][key]
+                setVal = self.curAP.solverOptions['adflow'][key]
                 curVal = self.getOption(key)
 
                 if curVal == setVal:
@@ -1708,8 +1708,8 @@ class SUMB(AeroSolver):
                 coords = self.DVGeo.update(ptSetName, config=aeroProblem.name)
 
                 # Potentially add a fixed set of displacements to it.
-                if aeroProblem.sumbData.disp is not None:
-                    coords += self.curAP.sumbData.disp
+                if aeroProblem.adflowData.disp is not None:
+                    coords += self.curAP.adflowData.disp
                 self.setSurfaceCoordinates(coords, self.designFamilyGroup)
 
         self._setAeroProblemData(aeroProblem)
@@ -1721,22 +1721,22 @@ class SUMB(AeroSolver):
         # If the state info none, initialize to the supplied
         # restart file or the free-stream values by calling
         # resetFlow()
-        if aeroProblem.sumbData.stateInfo is None:
+        if aeroProblem.adflowData.stateInfo is None:
             if self.getOption('restartFile') is not None:
-                self.sumb.inputiteration.mgstartlevel = 1
-                self.sumb.initializeflow.initflowrestart()
+                self.adflow.inputiteration.mgstartlevel = 1
+                self.adflow.initializeflow.initflowrestart()
                 # Save this state information
-                aeroProblem.sumbData.stateInfo = self._getInfo()
+                aeroProblem.adflowData.stateInfo = self._getInfo()
             else:
                 self._resetFlow()
      
         # Now set the data from the incomming aeroProblem:
-        stateInfo = aeroProblem.sumbData.stateInfo
+        stateInfo = aeroProblem.adflowData.stateInfo
         if stateInfo is not None and newAP:
             self._setInfo(stateInfo)
 
-        self.sumb.killsignals.routinefailed = False
-        self.sumb.killsignals.fatalFail = False
+        self.adflow.killsignals.routinefailed = False
+        self.adflow.killsignals.fatalFail = False
 
         # We are now ready to associate self.curAP with the supplied AP
         self.curAP = aeroProblem
@@ -1744,33 +1744,33 @@ class SUMB(AeroSolver):
 
         # Destroy the ANK/NK solver and the adjoint memory
         if newAP:
-            self.sumb.nksolver.destroynksolver()
-            self.sumb.anksolver.destroyanksolver()
+            self.adflow.nksolver.destroynksolver()
+            self.adflow.anksolver.destroyanksolver()
             if releaseAdjointMemory:
                 self.releaseAdjointMemory()
 
     def _setAeroProblemData(self, aeroProblem, firstCall=False):
         """
         After an aeroProblem has been associated with self.cuAP, set
-        all the updated information in SUmb."""
+        all the updated information in ADflow."""
 
-        # Set any additional sumb options that may be defined in the
+        # Set any additional adflow options that may be defined in the
         # aeroproblem. While we do it we save the options that we've
         # modified if they are different than the current option.
         AP = aeroProblem
         try:
             AP.savedOptions
         except:
-            AP.savedOptions = {'sumb':{}}
+            AP.savedOptions = {'adflow':{}}
 
 
-        if 'sumb' in AP.solverOptions:
-            for key in AP.solverOptions['sumb']:
+        if 'adflow' in AP.solverOptions:
+            for key in AP.solverOptions['adflow']:
                 curVal = self.getOption(key)
-                overwriteVal =  AP.solverOptions['sumb'][key]
+                overwriteVal =  AP.solverOptions['adflow'][key]
                 if overwriteVal != curVal:
                     self.setOption(key, overwriteVal)
-                    AP.savedOptions['sumb'][key] = curVal
+                    AP.savedOptions['adflow'][key] = curVal
 
         alpha = AP.alpha
         beta = AP.beta
@@ -1825,13 +1825,13 @@ class SUMB(AeroSolver):
         # Do some checking here for things that MUST be specified:
         if AP.mach is None:
             raise Error("'mach' number must be specified in the aeroProblem"
-                        " for SUmb.")
+                        " for ADflow.")
         if areaRef is None:
             raise Error("'areaRef' must be specified in aeroProblem"
-                        " for SUmb.")
+                        " for ADflow.")
         if chordRef is None:
             raise Error("'chordRef' must be specified in aeroProblem"
-                        " for SUmb.")
+                        " for ADflow.")
 
         # Now set defaults
         if alpha is None:
@@ -1868,103 +1868,103 @@ class SUMB(AeroSolver):
 
         # 1. Angle of attack:
         dToR = numpy.pi/180.0
-        self.sumb.inputphysics.alpha = alpha*dToR
-        self.sumb.inputphysics.beta = beta*dToR
-        self.sumb.inputphysics.liftindex = liftIndex
-        self.sumb.flowutils.adjustinflowangle()
+        self.adflow.inputphysics.alpha = alpha*dToR
+        self.adflow.inputphysics.beta = beta*dToR
+        self.adflow.inputphysics.liftindex = liftIndex
+        self.adflow.flowutils.adjustinflowangle()
 
         if self.getOption('printIterations') and self.comm.rank == 0:
             print('-> Alpha... %f '% numpy.real(alpha))
 
         # 2. Reference Points:
-        self.sumb.inputphysics.pointref = [xRef, yRef, zRef]
-        self.sumb.inputmotion.rotpoint = [xRot, yRot, zRot]
+        self.adflow.inputphysics.pointref = [xRef, yRef, zRef]
+        self.adflow.inputmotion.rotpoint = [xRot, yRot, zRot]
 
         # 3. Reference Areas
-        self.sumb.inputphysics.surfaceref = areaRef
-        self.sumb.inputphysics.lengthref = chordRef
+        self.adflow.inputphysics.surfaceref = areaRef
+        self.adflow.inputphysics.lengthref = chordRef
 
         # 4. Set mach numbers
         # Mach number for time spectral needs to be set to set to zero
         # If time-spectral (TS) then mach = 0, machcoef = mach, machgrid = mach
         # If Steady-State (SS), time-accurate (TA) then mach = mach, machcoef = mach, machgrid = 0
         if self.getOption('equationMode').lower()=='time spectral':
-            self.sumb.inputphysics.mach = 0.0
+            self.adflow.inputphysics.mach = 0.0
         else:
-            self.sumb.inputphysics.mach = mach
+            self.adflow.inputphysics.mach = mach
 
-        self.sumb.inputphysics.machcoef = machRef
-        self.sumb.inputphysics.machgrid = machGrid
+        self.adflow.inputphysics.machcoef = machRef
+        self.adflow.inputphysics.machgrid = machGrid
 
         # Set reference state information:
 
         # Set the dimensional free strema values
-        self.sumb.flowvarrefstate.pinfdim = P
-        self.sumb.flowvarrefstate.tinfdim = T
-        self.sumb.flowvarrefstate.rhoinfdim = rho
+        self.adflow.flowvarrefstate.pinfdim = P
+        self.adflow.flowvarrefstate.tinfdim = T
+        self.adflow.flowvarrefstate.rhoinfdim = rho
 
-        self.sumb.inputphysics.ssuthdim = SSuthDim
-        self.sumb.inputphysics.musuthdim = muSuthDim
-        self.sumb.inputphysics.tsuthdim = TSuthDim
-        self.sumb.inputphysics.rgasdim = RGasDim
-        self.sumb.inputphysics.prandtl = Pr
+        self.adflow.inputphysics.ssuthdim = SSuthDim
+        self.adflow.inputphysics.musuthdim = muSuthDim
+        self.adflow.inputphysics.tsuthdim = TSuthDim
+        self.adflow.inputphysics.rgasdim = RGasDim
+        self.adflow.inputphysics.prandtl = Pr
 
         # Update gamma only if it has changed from what currently is set
-        if abs(self.sumb.inputphysics.gammaconstant - gammaConstant) > 1.0e-12:
-            self.sumb.inputphysics.gammaconstant = gammaConstant
-            self.sumb.updategamma() # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
+        if abs(self.adflow.inputphysics.gammaconstant - gammaConstant) > 1.0e-12:
+            self.adflow.inputphysics.gammaconstant = gammaConstant
+            self.adflow.updategamma() # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
 
         # 4. Periodic Parameters --- These are not checked/verified
         # and come directly from aeroProblem. Make sure you specify
         # them there properly!!
         if  self.getOption('alphaMode'):
-            self.sumb.inputmotion.degreepolalpha = int(AP.degreePol)
-            self.sumb.inputmotion.coefpolalpha = AP.coefPol
-            self.sumb.inputmotion.omegafouralpha   = AP.omegaFourier
-            self.sumb.inputmotion.degreefouralpha  = AP.degreeFourier
-            self.sumb.inputmotion.coscoeffouralpha = AP.cosCoefFourier
-            self.sumb.inputmotion.sincoeffouralpha = AP.sinCoefFourier
+            self.adflow.inputmotion.degreepolalpha = int(AP.degreePol)
+            self.adflow.inputmotion.coefpolalpha = AP.coefPol
+            self.adflow.inputmotion.omegafouralpha   = AP.omegaFourier
+            self.adflow.inputmotion.degreefouralpha  = AP.degreeFourier
+            self.adflow.inputmotion.coscoeffouralpha = AP.cosCoefFourier
+            self.adflow.inputmotion.sincoeffouralpha = AP.sinCoefFourier
         elif  self.getOption('betaMode'):
-            self.sumb.inputmotion.degreepolmach = int(AP.degreePol)
-            self.sumb.inputmotion.coefpolmach = AP.coefPol
-            self.sumb.inputmotion.omegafourbeta   = AP.omegaFourier
-            self.sumb.inputmotion.degreefourbeta  = AP.degreeFourier
-            self.sumb.inputmotion.coscoeffourbeta = AP.cosCoefFourier
-            self.sumb.inputmotion.sincoeffourbeta = AP.sinCoefFourier
+            self.adflow.inputmotion.degreepolmach = int(AP.degreePol)
+            self.adflow.inputmotion.coefpolmach = AP.coefPol
+            self.adflow.inputmotion.omegafourbeta   = AP.omegaFourier
+            self.adflow.inputmotion.degreefourbeta  = AP.degreeFourier
+            self.adflow.inputmotion.coscoeffourbeta = AP.cosCoefFourier
+            self.adflow.inputmotion.sincoeffourbeta = AP.sinCoefFourier
         elif self.getOption('machMode'):
-            self.sumb.inputmotion.degreepolmach = int(AP.degreePol)
-            self.sumb.inputmotion.coefpolmach = AP.coefPol
-            self.sumb.inputmotion.omegafourmach   = AP.omegaFourier
-            self.sumb.inputmotion.degreefourmach  = AP.degreeFourier
-            self.sumb.inputmotion.coscoeffourmach = AP.cosCoefFourier
-            self.sumb.inputmotion.sincoeffourmach = AP.sinCoefFourier
+            self.adflow.inputmotion.degreepolmach = int(AP.degreePol)
+            self.adflow.inputmotion.coefpolmach = AP.coefPol
+            self.adflow.inputmotion.omegafourmach   = AP.omegaFourier
+            self.adflow.inputmotion.degreefourmach  = AP.degreeFourier
+            self.adflow.inputmotion.coscoeffourmach = AP.cosCoefFourier
+            self.adflow.inputmotion.sincoeffourmach = AP.sinCoefFourier
         elif  self.getOption('pMode'):
             ### add in lift axis dependence
-            self.sumb.inputmotion.degreepolxrot = int(AP.degreePol)
-            self.sumb.inputmotion.coefpolxrot = AP.coefPol
-            self.sumb.inputmotion.omegafourxrot = AP.omegaFourier
-            self.sumb.inputmotion.degreefourxrot  = AP.degreeFourier
-            self.sumb.inputmotion.coscoeffourxrot = AP.cosCoefFourier
-            self.sumb.inputmotion.sincoeffourxrot = AP.sinCoefFourier
+            self.adflow.inputmotion.degreepolxrot = int(AP.degreePol)
+            self.adflow.inputmotion.coefpolxrot = AP.coefPol
+            self.adflow.inputmotion.omegafourxrot = AP.omegaFourier
+            self.adflow.inputmotion.degreefourxrot  = AP.degreeFourier
+            self.adflow.inputmotion.coscoeffourxrot = AP.cosCoefFourier
+            self.adflow.inputmotion.sincoeffourxrot = AP.sinCoefFourier
         elif self.getOption('qMode'):
-            self.sumb.inputmotion.degreepolzrot = int(AP.degreePol)
-            self.sumb.inputmotion.coefpolzrot = AP.coefPol
-            self.sumb.inputmotion.omegafourzrot = AP.omegaFourier
-            self.sumb.inputmotion.degreefourzrot  = AP.degreeFourier
-            self.sumb.inputmotion.coscoeffourzrot = AP.cosCoefFourier
-            self.sumb.inputmotion.sincoeffourzrot = AP.sinCoefFourier
+            self.adflow.inputmotion.degreepolzrot = int(AP.degreePol)
+            self.adflow.inputmotion.coefpolzrot = AP.coefPol
+            self.adflow.inputmotion.omegafourzrot = AP.omegaFourier
+            self.adflow.inputmotion.degreefourzrot  = AP.degreeFourier
+            self.adflow.inputmotion.coscoeffourzrot = AP.cosCoefFourier
+            self.adflow.inputmotion.sincoeffourzrot = AP.sinCoefFourier
         elif self.getOption('rMode'):
-            self.sumb.inputmotion.degreepolyrot = int(AP.degreePol)
-            self.sumb.inputmotion.coefpolyrot = AP.coefPol
-            self.sumb.inputmotion.omegafouryrot = AP.omegaFourier
-            self.sumb.inputmotion.degreefouryrot  = AP.degreeFourier
-            self.sumb.inputmotion.coscoeffouryrot = AP.cosCoefFourier
-            self.sumb.inputmotion.sincoeffouryrot = AP.sinCoefFourier
+            self.adflow.inputmotion.degreepolyrot = int(AP.degreePol)
+            self.adflow.inputmotion.coefpolyrot = AP.coefPol
+            self.adflow.inputmotion.omegafouryrot = AP.omegaFourier
+            self.adflow.inputmotion.degreefouryrot  = AP.degreeFourier
+            self.adflow.inputmotion.coscoeffouryrot = AP.cosCoefFourier
+            self.adflow.inputmotion.sincoeffouryrot = AP.sinCoefFourier
 
         if not firstCall:
-            self.sumb.initializeflow.updatebcdataalllevels()
-            self.sumb.preprocessingapi.updateperiodicinfoalllevels()
-            self.sumb.preprocessingapi.updategridvelocitiesalllevels()
+            self.adflow.initializeflow.updatebcdataalllevels()
+            self.adflow.preprocessingapi.updateperiodicinfoalllevels()
+            self.adflow.preprocessingapi.updategridvelocitiesalllevels()
 
     def getForces(self, groupName=None, TS=0):
         """ Return the forces on this processor on the families defined by groupName.
@@ -1991,7 +1991,7 @@ class SUMB(AeroSolver):
         npts, ncell = self._getSurfaceSize(self.allWallsGroup)
 
         forces = numpy.zeros((npts, 3), self.dtype)
-        self.sumb.getforces(numpy.ravel(forces), TS+1)
+        self.adflow.getforces(numpy.ravel(forces), TS+1)
         if groupName is None:
             groupName = self.allWallsGroup
 
@@ -2025,7 +2025,7 @@ class SUMB(AeroSolver):
         npts, ncell = self._getSurfaceSize(self.allWallsGroup)
 
         fluxes = numpy.zeros(npts, self.dtype)
-        self.sumb.getheatfluxes(fluxes, TS+1)
+        self.adflow.getheatfluxes(fluxes, TS+1)
 
         # Map vector expects and Nx3 array. So we will do just that.
         tmp = numpy.zeros((nPts, 3))
@@ -2059,7 +2059,7 @@ class SUMB(AeroSolver):
             groupName = self.allWallsGroup
         self._setFamilyList(groupName)
             
-        self.sumb.settnswall(temperature, TS+1)
+        self.adflow.settnswall(temperature, TS+1)
         
     def getSurfacePoints(self, groupName=None, TS=0):
 
@@ -2088,7 +2088,7 @@ class SUMB(AeroSolver):
         self._setFamilyList(groupName)
 
         if npts > 0:
-            self.sumb.surfaceutils.getsurfacepoints(pts.T, TS+1)
+            self.adflow.surfaceutils.getsurfacepoints(pts.T, TS+1)
 
         return pts
 
@@ -2113,7 +2113,7 @@ class SUMB(AeroSolver):
         self._setFamilyList(groupName)
         npts, ncell = self._getSurfaceSize(groupName)
         conn =  numpy.zeros((ncell, 4), dtype='intc')
-        self.sumb.surfaceutils.getsurfaceconnectivity(numpy.ravel(conn))
+        self.adflow.surfaceutils.getsurfaceconnectivity(numpy.ravel(conn))
 
         faceSizes = 4*numpy.ones(len(conn), 'intc')
 
@@ -2140,7 +2140,7 @@ class SUMB(AeroSolver):
 
         nameArray = self._createFortranStringArray(nameList)
         bcInArray = numpy.array(valList, dtype=self.dtype)
-        self.sumb.bcdata.setbcdata(nameArray,bcInArray, self._getFamilyList(groupName), sps)
+        self.adflow.bcdata.setbcdata(nameArray,bcInArray, self._getFamilyList(groupName), sps)
 
 
     def globalNKPreCon(self, inVec, outVec):
@@ -2159,7 +2159,7 @@ class SUMB(AeroSolver):
         outVec : array
             Preconditioned vector
         """
-        return self.sumb.nksolver.applypc(inVec, outVec)
+        return self.adflow.nksolver.applypc(inVec, outVec)
 
     def globalAdjointPreCon(self, inVec, outVec):
         """This function is ONLY used as a preconditioner to the
@@ -2177,10 +2177,10 @@ class SUMB(AeroSolver):
         outVec : array
             Preconditioned vector
         """
-        return self.sumb.nksolver.applyadjointpc(inVec, outVec)
+        return self.adflow.nksolver.applyadjointpc(inVec, outVec)
 
     def _addAeroDV(self, dv):
-        """Add a single desgin variable that SUmb knows about.
+        """Add a single desgin variable that ADflow knows about.
 
         Parameters
         ----------
@@ -2190,7 +2190,7 @@ class SUMB(AeroSolver):
         dv = dv.lower()
         if dv not in self.possibleAeroDVs:
             raise Error("%s was not one of the possible AeroDVs. "
-                        "The complete list of DVs for SUmb is %s. "%(
+                        "The complete list of DVs for ADflow is %s. "%(
                             dv, repr(set(self.possibleAeroDVs.keys()))))
 
         if dv not in self.aeroDVs:
@@ -2204,18 +2204,18 @@ class SUMB(AeroSolver):
 
         # Destroy the NKsolver to free memory -- Call this even if the
         # solver is not used...a safeguard check is done in Fortran
-        self.sumb.nksolver.destroynksolver()
-        self.sumb.anksolver.destroyanksolver()
+        self.adflow.nksolver.destroynksolver()
+        self.adflow.anksolver.destroyanksolver()
         self._setAeroDVs()
 
         if not self.adjointSetup or reform:
             # Create any PETSc variables if necessary
-            self.sumb.adjointapi.createpetscvars()
+            self.adflow.adjointapi.createpetscvars()
 
             # Setup all required matrices in forward mode. (possibly none
             # of them)
-            self.sumb.adjointapi.setupallresidualmatricesfwd()
-            self.sumb.adjointapi.setuppetscksp()
+            self.adflow.adjointapi.setupallresidualmatricesfwd()
+            self.adflow.adjointapi.setuppetscksp()
             self.adjointSetup = True
 
     def releaseAdjointMemory(self):
@@ -2223,7 +2223,7 @@ class SUMB(AeroSolver):
         release the PETSc Memory that have been allocated
         """
         if self.adjointSetup:
-            self.sumb.adjointutils.destroypetscvars()
+            self.adflow.adjointutils.destroypetscvars()
             self.adjointSetup = False
 
     def solveAdjoint(self, aeroProblem, objective, forcePoints=None,
@@ -2236,12 +2236,12 @@ class SUMB(AeroSolver):
         self._setupAdjoint()
 
         # # Check to see if the RHS Partials have been computed
-        if objective not in self.curAP.sumbData.adjointRHS:
+        if objective not in self.curAP.adflowData.adjointRHS:
             RHS = self.computeJacobianVectorProductBwd(
                 funcsBar={objective.lower():1.0}, wDeriv=True)
-            self.curAP.sumbData.adjointRHS[objective] = RHS.copy()
+            self.curAP.adflowData.adjointRHS[objective] = RHS.copy()
         else:
-            RHS = self.curAP.sumbData.adjointRHS[objective].copy()
+            RHS = self.curAP.adflowData.adjointRHS[objective].copy()
 
         # Check to see if we need to agument the RHS with a structural
         # adjoint:
@@ -2253,24 +2253,24 @@ class SUMB(AeroSolver):
             RHS -= agument
 
         # Check if objective is python 'allocated':
-        if objective not in self.curAP.sumbData.adjoints:
-            self.curAP.sumbData.adjoints[objective] = (
+        if objective not in self.curAP.adflowData.adjoints:
+            self.curAP.adflowData.adjoints[objective] = (
                 numpy.zeros(self.getAdjointStateSize(), float))
 
         # Extract the psi:
-        psi = self.curAP.sumbData.adjoints[objective]
+        psi = self.curAP.adflowData.adjoints[objective]
 
         # Actually Solve the adjoint system...psi is updated with the
         # new solution.
-        self.sumb.adjointapi.solveadjoint(RHS, psi, True)
+        self.adflow.adjointapi.solveadjoint(RHS, psi, True)
 
         # Now set the flags and possibly reset adjoint
-        if self.sumb.killsignals.adjointfailed:
+        if self.adflow.killsignals.adjointfailed:
             self.adjointFailed = True
             # Reset stored adjoint
-            self.curAP.sumbData.adjoints[objective][:] = 0.0
+            self.curAP.adflowData.adjoints[objective][:] = 0.0
         else:
-            self.curAP.sumbData.adjoints[objective] = psi
+            self.curAP.adflowData.adjoints[objective] = psi
             self.adjointFailed = False
 
     def _processAeroDerivatives(self, dIda):
@@ -2293,7 +2293,7 @@ class SUMB(AeroSolver):
 	        self.curAP.evalFunctionsSens(tmp, ['P', 'T', 'rho'])
 
                 # Extract the derivatives wrt the independent
-                # parameters in SUmb
+                # parameters in ADflow
                 dIdP = dIda[self.possibleAeroDVs['p']]
                 dIdT = dIda[self.possibleAeroDVs['t']]
                 dIdrho = dIda[self.possibleAeroDVs['rho']]
@@ -2333,7 +2333,7 @@ class SUMB(AeroSolver):
     def _setAeroDVs(self):
 
         """ Do everything that is required to deal with aerodynamic
-        design variables in SUmb"""
+        design variables in ADflow"""
 
         DVsRequired = list(self.curAP.DVNames.keys())
         DVMap = {}
@@ -2353,7 +2353,7 @@ class SUMB(AeroSolver):
                 self._addAeroDV(dv)
             else:
                 raise Error("The design variable '%s' as specified in the"
-                            " aeroProblem cannot be used with SUmb."% dv)
+                            " aeroProblem cannot be used with ADflow."% dv)
 
     def solveAdjointForRHS(self, inVec, relTol=None):
         """
@@ -2371,7 +2371,7 @@ class SUMB(AeroSolver):
         """
         if relTol is None:
             relTol = self.getOption('adjointl2convergence')
-        outVec = self.sumb.adjointapi.solveadjointforrhs(inVec, relTol)
+        outVec = self.adflow.adjointapi.solveadjointforrhs(inVec, relTol)
 
         return outVec
 
@@ -2391,7 +2391,7 @@ class SUMB(AeroSolver):
         """
         if relTol is None:
             relTol = self.getOption('adjointl2convergence')
-        outVec = self.sumb.solvedirectforrhs(inVec, relTol)
+        outVec = self.adflow.solvedirectforrhs(inVec, relTol)
 
         return outVec
 
@@ -2409,38 +2409,38 @@ class SUMB(AeroSolver):
         pcMatrixName = baseFileNmae + '_drdwPre.bin'
         rhsName = baseFileName + '_rsh.bin'
         cellCenterName = baseFileName + '_cellCen.bin'
-        self.sumb.adjointapi.saveadjointmatrix(adjointMatrixName)
-        self.sumb.adjointapi.saveadjointpc(pcMatrixName)
-        self.sumb.saveadjointrhs(rhsName)
+        self.adflow.adjointapi.saveadjointmatrix(adjointMatrixName)
+        self.adflow.adjointapi.saveadjointpc(pcMatrixName)
+        self.adflow.saveadjointrhs(rhsName)
 
     def computeStabilityParameters(self):
         """
         run the stability derivative driver to compute the stability parameters
         from the time spectral solution
         """
-        self.sumb.utils.stabilityderivativedriver()
+        self.adflow.utils.stabilityderivativedriver()
 
     def updateGeometryInfo(self):
-        """Update the SUmb internal geometry info, if necessary."""
+        """Update the ADflow internal geometry info, if necessary."""
 
         if self._updateGeomInfo and self.mesh is not None:
             timeA = time.time()
             self.mesh.warpMesh()
             newGrid = self.mesh.getSolverGrid()
-            self.sumb.killsignals.routinefailed = False
-            self.sumb.killsignals.fatalFail = False
+            self.adflow.killsignals.routinefailed = False
+            self.adflow.killsignals.fatalFail = False
             self.updateTime = time.time()-timeA
             if newGrid is not None:
-                self.sumb.warping.setgrid(newGrid)
-            self.sumb.preprocessingapi.updatecoordinatesalllevels()
-            self.sumb.walldistance.updatewalldistancealllevels()
-            self.sumb.preprocessingapi.updatemetricsalllevels()
-            self.sumb.preprocessingapi.updategridvelocitiesalllevels()
+                self.adflow.warping.setgrid(newGrid)
+            self.adflow.preprocessingapi.updatecoordinatesalllevels()
+            self.adflow.walldistance.updatewalldistancealllevels()
+            self.adflow.preprocessingapi.updatemetricsalllevels()
+            self.adflow.preprocessingapi.updategridvelocitiesalllevels()
             self._updateGeomInfo = False
-            self.sumb.killsignals.routinefailed = \
+            self.adflow.killsignals.routinefailed = \
                 self.comm.allreduce(
-                bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
-            self.sumb.killsignals.fatalfail = self.sumb.killsignals.routinefailed
+                bool(self.adflow.killsignals.routinefailed), op=MPI.LOR)
+            self.adflow.killsignals.fatalfail = self.adflow.killsignals.routinefailed
 
     def getAdjointResNorms(self):
         '''
@@ -2449,29 +2449,29 @@ class SUMB(AeroSolver):
         startRes Norm: Norm at the start of adjoint call (with possible non-zero restart)
         finalCFD Norm: Norm at the end of adjoint solve
         '''
-        initRes  = self.sumb.adjointpetsc.adjresinit
-        startRes = self.sumb.adjointpetsc.adjresstart
-        finalRes = self.sumb.adjointpetsc.adjresfinal
-        fail = self.sumb.killsignals.adjointfailed
+        initRes  = self.adflow.adjointpetsc.adjresinit
+        startRes = self.adflow.adjointpetsc.adjresstart
+        finalRes = self.adflow.adjointpetsc.adjresfinal
+        fail = self.adflow.killsignals.adjointfailed
 
         return initRes, startRes, finalRes, fail
 
     def getResNorms(self):
         """Return the initial, starting and final Res Norms. Typically
         used by an external solver."""
-        return (numpy.real(self.sumb.iteration.totalr0),
-                numpy.real(self.sumb.iteration.totalrstart),
-                numpy.real(self.sumb.iteration.totalrfinal))
+        return (numpy.real(self.adflow.iteration.totalr0),
+                numpy.real(self.adflow.iteration.totalrstart),
+                numpy.real(self.adflow.iteration.totalrfinal))
 
     def setResNorms(self, initNorm=None, startNorm=None, finalNorm=None):
         """ Set one of these norms if not None. Typlically used by an
         external solver"""
         if initNorm is not None:
-            self.sumb.iteration.totalr0 = initNorm
+            self.adflow.iteration.totalr0 = initNorm
         if startNorm is not None:
-            self.sumb.iteration.totalrstart = startNorm
+            self.adflow.iteration.totalrstart = startNorm
         if finalNorm is not None:
-            self.sumb.iteration.finalNorm = finalNorm
+            self.adflow.iteration.finalNorm = finalNorm
 
     def _prescribedTSMotion(self):
         """Determine if we have prescribed motion timespectral analysis"""
@@ -2487,7 +2487,7 @@ class SUMB(AeroSolver):
     def _isAeroObjective(self, objective):
         """
         This function takes in an external objective string and determines
-        if the string is a valid function in SUmb. The function returns
+        if the string is a valid function in ADflow. The function returns
         a boolean.
 
         Parameters
@@ -2495,7 +2495,7 @@ class SUMB(AeroSolver):
         objective: string
             The objective to be tested.
         """
-        if objective.lower() in self.sumbCostFunctions.keys():
+        if objective.lower() in self.adflowCostFunctions.keys():
             return True
         else:
             return False
@@ -2544,7 +2544,7 @@ class SUMB(AeroSolver):
                         'all be None')
 
         self._setAeroDVs()
-        nTime  = self.sumb.inputtimespectral.ntimeintervalsspectral
+        nTime  = self.adflow.inputtimespectral.ntimeintervalsspectral
 
         # Default flags
         useState = False
@@ -2575,7 +2575,7 @@ class SUMB(AeroSolver):
 
         # Process the extra variable perturbation....this comes from
         # xDvDot
-        extradot = numpy.zeros(self.sumb.adjointvars.ndesignextra)
+        extradot = numpy.zeros(self.adflow.adjointvars.ndesignextra)
         if xDvDot is not None:
             useSpatial = True
             for key in xDvDot:
@@ -2594,10 +2594,10 @@ class SUMB(AeroSolver):
             useSpatial = True
 
         # Sizes for output arrays
-        costSize = self.sumb.costfunctions.ncostfunction
+        costSize = self.adflow.costfunctions.ncostfunction
         fSize, nCell = self._getSurfaceSize(self.allWallsGroup)
 
-        dwdot,tmp,fdot = self.sumb.adjointapi.computematrixfreeproductfwd(
+        dwdot,tmp,fdot = self.adflow.adjointapi.computematrixfreeproductfwd(
             xvdot, extradot, wdot, useSpatial, useState, costSize,  max(1, fSize), nTime)
 
         # Explictly put fdot to nothing if size is zero
@@ -2607,7 +2607,7 @@ class SUMB(AeroSolver):
         # Process the derivative of the functions
         funcsDot = {}
         for f in self.curAP.evalFuncs:
-            basicFunc = self.sumbCostFunctions[f.lower()][1]
+            basicFunc = self.adflowCostFunctions[f.lower()][1]
             mapping = self.basicCostFunctions[basicFunc]
             funcsDot[f] = tmp[mapping - 1]
 
@@ -2637,7 +2637,7 @@ class SUMB(AeroSolver):
         Parameters
         ----------
         resBar : numpy array
-            Seed for the residuals (dwb in sumb)
+            Seed for the residuals (dwb in adflow)
         funcsBar : dict
             Dictionary of functions with reverse seeds. Only nonzero seeds
             need to be provided. All other seeds will be taken as zero.
@@ -2689,7 +2689,7 @@ class SUMB(AeroSolver):
         # -------------------------
         #  Check for fBar (forces)
         # ------------------------
-        nTime  = self.sumb.inputtimespectral.ntimeintervalsspectral
+        nTime  = self.adflow.inputtimespectral.ntimeintervalsspectral
         nPts, nCell = self._getSurfaceSize(self.allWallsGroup)
 
         if fBar is None:
@@ -2706,9 +2706,9 @@ class SUMB(AeroSolver):
         self._setFamilyList(self.allFamilies)
 
         if funcsBar is None:
-            funcsBar = numpy.zeros(self.sumb.costfunctions.ncostfunction)
+            funcsBar = numpy.zeros(self.adflow.costfunctions.ncostfunction)
         else:
-            tmp = numpy.zeros(self.sumb.costfunctions.ncostfunction)
+            tmp = numpy.zeros(self.adflow.costfunctions.ncostfunction)
 
             # We have to make sure that the user has supplied
             # functions that have the same group, otherwise, we can't
@@ -2716,10 +2716,10 @@ class SUMB(AeroSolver):
             groups = set()
 
             for f in funcsBar:
-                if f.lower() in self.sumbCostFunctions:
+                if f.lower() in self.adflowCostFunctions:
 
-                    groupName = self.sumbCostFunctions[f][0]
-                    basicFunc = self.sumbCostFunctions[f][1]
+                    groupName = self.adflowCostFunctions[f][0]
+                    basicFunc = self.adflowCostFunctions[f][1]
                     groups.add(groupName)
 
                     mapping = self.basicCostFunctions[basicFunc]
@@ -2749,9 +2749,9 @@ class SUMB(AeroSolver):
             useSpatial = True
 
         # Do actual Fortran call.
-        xvbar, extrabar, wbar = self.sumb.adjointapi.computematrixfreeproductbwd(
+        xvbar, extrabar, wbar = self.adflow.adjointapi.computematrixfreeproductbwd(
             resBar, funcsBar, fBar.T, useSpatial, useState, self.getSpatialSize(),
-            self.sumb.adjointvars.ndesignextra)
+            self.adflow.adjointvars.ndesignextra)
 
         # Assemble the possible returns the user has requested:
         returns = []
@@ -2789,12 +2789,12 @@ class SUMB(AeroSolver):
                             xsbar, self.curAP.ptSetName, self.comm, config=self.curAP.name))
                     else:
                         if self.comm.rank == 0:
-                            SUMBWarning("No DVGeo object is present or it has no "
+                            ADFLOWWarning("No DVGeo object is present or it has no "
                                         "design variables specified. No geometric "
                                         "derivatives computed.")
                 else:
                     if self.comm.rank == 0:
-                        SUMBWarning("No mesh object is present. No geometric "
+                        ADFLOWWarning("No mesh object is present. No geometric "
                                     "derivatives computed.")
 
                 # Include aero derivatives here:
@@ -2813,7 +2813,7 @@ class SUMB(AeroSolver):
 
     def mapVector(self, vec1, groupName1, groupName2, vec2=None):
         """This is the main workhorse routine of everything that deals with
-        families in SUmb. The purpose of this routine is to convert a
+        families in ADflow. The purpose of this routine is to convert a
         vector 'vec1' (of size Nx3) that was evaluated with
         'groupName1' and expand or contract it (and adjust the
         ordering) to produce 'vec2' evaluated on groupName2.
@@ -2879,7 +2879,7 @@ class SUMB(AeroSolver):
 
         famList1 = self.families[groupName1]
         famList2 = self.families[groupName2]
-        self.sumb.surfaceutils.mapvector(vec1.T, famList1, vec2.T, famList2)
+        self.adflow.surfaceutils.mapvector(vec1.T, famList1, vec2.T, famList2)
 
         return vec2
 
@@ -2890,9 +2890,9 @@ class SUMB(AeroSolver):
 
         """
 
-        nstate = self.sumb.flowvarrefstate.nw
-        ncells = self.sumb.adjointvars.ncellslocal[0]
-        ntime  = self.sumb.inputtimespectral.ntimeintervalsspectral
+        nstate = self.adflow.flowvarrefstate.nw
+        ncells = self.adflow.adjointvars.ncellslocal[0]
+        ntime  = self.adflow.inputtimespectral.ntimeintervalsspectral
 
         return nstate*ncells*ntime
 
@@ -2903,12 +2903,12 @@ class SUMB(AeroSolver):
         the nonlinear system has 5+neq turb states per cell, while the
         adjoint still has 5."""
         if self.getOption('frozenTurbulence'):
-            nstate = self.sumb.flowvarrefstate.nwf
+            nstate = self.adflow.flowvarrefstate.nwf
         else:
-            nstate = self.sumb.flowvarrefstate.nw
+            nstate = self.adflow.flowvarrefstate.nw
 
-        ncells = self.sumb.adjointvars.ncellslocal[0]
-        ntime  = self.sumb.inputtimespectral.ntimeintervalsspectral
+        ncells = self.adflow.adjointvars.ncellslocal[0]
+        ntime  = self.adflow.inputtimespectral.ntimeintervalsspectral
 
         return nstate*ncells*ntime
 
@@ -2917,8 +2917,8 @@ class SUMB(AeroSolver):
         on this processor. This is (number of nodes)*(number of
         spectral instances)*3"""
 
-        nnodes = self.sumb.adjointvars.nnodeslocal[0]
-        ntime  = self.sumb.inputtimespectral.ntimeintervalsspectral
+        nnodes = self.adflow.adjointvars.nnodeslocal[0]
+        ntime  = self.adflow.inputtimespectral.ntimeintervalsspectral
 
         return 3*nnodes*ntime
 
@@ -2926,13 +2926,13 @@ class SUMB(AeroSolver):
         """Return the states on this processor. Used in aerostructural
         analysis"""
 
-        return self.sumb.nksolver.getstates(self.getStateSize())
+        return self.adflow.nksolver.getstates(self.getStateSize())
 
     def setStates(self, states):
         """Set the states on this processor. Used in aerostructural analysis
         and for switching aeroproblems
         """
-        self.sumb.nksolver.setstates(states)
+        self.adflow.nksolver.setstates(states)
     
     def getSurfacePerturbation(self, seed=314):
         """This is is a debugging routine only. It is used only in regression
@@ -2950,7 +2950,7 @@ class SUMB(AeroSolver):
         xRand = self.getSpatialPerturbation(seed)
         self._setFamilyList(self.allWallsGroup)
         surfRand = numpy.zeros((nPts, 3))
-        self.sumb.warping.getsurfaceperturbation(xRand, numpy.ravel(surfRand))
+        self.adflow.warping.getsurfaceperturbation(xRand, numpy.ravel(surfRand))
         return surfRand
 
     def getStatePerturbation(self, seed=314):
@@ -2975,7 +2975,7 @@ class SUMB(AeroSolver):
 
         randVec = self.comm.bcast(randVec)
 
-        return self.sumb.warping.getstateperturbation(
+        return self.adflow.warping.getstateperturbation(
             randVec, self.getStateSize())
         
     def getSpatialPerturbation(self, seed=314):
@@ -2995,11 +2995,11 @@ class SUMB(AeroSolver):
         # verification purposes. 
 
         # Get all CGNS Mesh indices to all Proc. 
-        localIndices = self.sumb.warping.getcgnsmeshindices(self.getSpatialSize())
+        localIndices = self.adflow.warping.getcgnsmeshindices(self.getSpatialSize())
         cgnsIndices = numpy.hstack(self.comm.allgather(localIndices)) 
 
         # Gather all nodes to all procs. 
-        pts = self.sumb.warping.getgrid(self.getSpatialSize())
+        pts = self.adflow.warping.getgrid(self.getSpatialSize())
         allPts = numpy.hstack(self.comm.allgather(pts))
 
         # Also need the point offset.s.
@@ -3014,7 +3014,7 @@ class SUMB(AeroSolver):
         CGNSVec = CGNSVec.reshape((len(CGNSVec)/3, 3))
         
         # Run the pointReduce on the CGNS nodes
-        uniquePts, linkTmp, nUnique = self.sumb.utils.pointreduce(CGNSVec.T, 1e-12)
+        uniquePts, linkTmp, nUnique = self.adflow.utils.pointreduce(CGNSVec.T, 1e-12)
         
         # Expand link out to the 3x the size and convert to 1 based ordering
         linkTmp -= 1
@@ -3052,7 +3052,7 @@ class SUMB(AeroSolver):
         """
 
         # Gather all nodes to the root proc:
-        pts = self.sumb.warping.getgrid(self.getSpatialSize())
+        pts = self.adflow.warping.getgrid(self.getSpatialSize())
         allPts = numpy.hstack(self.comm.allgather(pts))
         dXv    = numpy.hstack(self.comm.allgather(dXv))
         norm = None
@@ -3060,7 +3060,7 @@ class SUMB(AeroSolver):
             allPts = allPts.reshape((len(allPts)/3, 3))
             dXv = dXv.reshape((len(dXv)/3,3))
             # Run the pointReduce on all nodes
-            uniquePts, link, nUnique = self.sumb.utils.pointreduce(allPts.T, 1e-12)
+            uniquePts, link, nUnique = self.adflow.utils.pointreduce(allPts.T, 1e-12)
             uniquePtsBar = numpy.zeros((nUnique,3))
             link = link -1 # Convert to zero-based for python:
             
@@ -3084,25 +3084,25 @@ class SUMB(AeroSolver):
         save "state" between aeroProblems
 
         """
-        return self.sumb.nksolver.getinfo(self.sumb.nksolver.getinfosize())
+        return self.adflow.nksolver.getinfo(self.adflow.nksolver.getinfosize())
 
     def _setInfo(self, info):
         """Set the haloed state vector, pressure (and viscocities). Used to
         restore "state" between aeroProblems
         """
-        self.sumb.nksolver.setinfo(info)
+        self.adflow.nksolver.setinfo(info)
 
     def setAdjoint(self, adjoint, objective=None):
         """Sets the adjoint vector externally. Used in coupled solver"""
         if objective is not None:
-            self.curAP.sumbData.adjoints[objective] = adjoint.copy()
+            self.curAP.adflowData.adjoints[objective] = adjoint.copy()
 
     def getAdjoint(self, objective):
         """ Return the adjoint values for objective if they
         exist. Otherwise just return zeros"""
 
-        if objective in self.curAP.sumbData.adjoints:
-            return self.curAP.sumbData.adjoints[objective]
+        if objective in self.curAP.adflowData.adjoints:
+            return self.curAP.adflowData.adjoints[objective]
         else:
             return numpy.zeros(self.getAdjointStateSize(), self.dtype)
 
@@ -3112,13 +3112,13 @@ class SUMB(AeroSolver):
         self.setAeroProblem(aeroProblem, releaseAdjointMemory)
         if res is None:
             res = numpy.zeros(self.getStateSize())
-        res = self.sumb.nksolver.getres(res)
+        res = self.adflow.nksolver.getres(res)
 
         return res
         
     def getFreeStreamResidual(self, aeroProblem):
         self.setAeroProblem(aeroProblem)
-        rhoRes, totalRRes = self.sumb.nksolver.getfreestreamresidual()
+        rhoRes, totalRRes = self.adflow.nksolver.getfreestreamresidual()
         return totalRRes
 
     def _getSurfaceSize(self, groupName):
@@ -3131,7 +3131,7 @@ class SUMB(AeroSolver):
             raise Error("'%s' is not a family in the CGNS file or has not been added"
                         " as a combination of families"%groupName)
 
-        [nPts, nCells] = self.sumb.surfaceutils.getsurfacesize(self.families[groupName])
+        [nPts, nCells] = self.adflow.surfaceutils.getsurfacesize(self.families[groupName])
         return nPts, nCells
 
     def _setFamilyList(self, groupName):
@@ -3149,7 +3149,7 @@ class SUMB(AeroSolver):
             raise Error("'%s' is not a family in the CGNS file or has not been added"
                         " as a combination of families"%groupName)
 
-        self.sumb.surfaceutils.setfamilyinfo(self.families[groupName])
+        self.adflow.surfaceutils.setfamilyinfo(self.families[groupName])
 
 
     def setOption(self, name, value):
@@ -3168,13 +3168,13 @@ class SUMB(AeroSolver):
         # warning that this is deprecated.
         if name in self.deprecatedOptions:
             if self.comm.rank == 0:
-                SUMBWarning("Option '%-29s\' is a deprecated SUmb Option |"% name)
+                ADFLOWWarning("Option '%-29s\' is a deprecated ADflow Option |"% name)
             return
 
         # Try the option in the option dictionary to make sure we are setting a valid option
         if name not in self.defaultOptions:
             if self.comm.rank == 0:
-                SUMBWarning("Option '%-30s' is not a valid SUmb Option |"%name)
+                ADFLOWWarning("Option '%-30s' is not a valid ADflow Option |"%name)
             return
 
         # Now we know the option exists, lets check if the type is ok:
@@ -3202,13 +3202,13 @@ class SUMB(AeroSolver):
                 # end if
                 varStr = varStr[0:-1] # Get rid of last '_'
                 if name == 'monitorvariables':
-                    self.sumb.inputparamroutines.monitorvariables(varStr)
+                    self.adflow.inputparamroutines.monitorvariables(varStr)
                 if name == 'surfacevariables':
-                    self.sumb.inputparamroutines.surfacevariables(varStr)
+                    self.adflow.inputparamroutines.surfacevariables(varStr)
                 if name == 'volumevariables':
-                    self.sumb.inputparamroutines.volumevariables(varStr)
+                    self.adflow.inputparamroutines.volumevariables(varStr)
                 if name == 'isovariables':
-                    self.sumb.inputparamroutines.isovariables(varStr)
+                    self.adflow.inputparamroutines.isovariables(varStr)
 
             elif name == "restartfile":
                 # If value is None no value has been specified by the
@@ -3221,8 +3221,8 @@ class SUMB(AeroSolver):
                         if value:
                             # Allocate only one slot since we have
                             # only one filename
-                            self.sumb.initializeflow.allocrestartfiles(1)
-                            self.sumb.initializeflow.setrestartfiles(value, 1)
+                            self.adflow.initializeflow.allocrestartfiles(1)
+                            self.adflow.initializeflow.setrestartfiles(value, 1)
                         else:
                             # Empty string. Raise error
                             raise Error("Option 'restartfile' string cannot be empty. "
@@ -3234,11 +3234,11 @@ class SUMB(AeroSolver):
                         if nFiles > 0:
                             if type(value[0]) is str:
                                 # Allocate for the entire list
-                                self.sumb.initializeflow.allocrestartfiles(nFiles)
+                                self.adflow.initializeflow.allocrestartfiles(nFiles)
                                 # Populate the array
                                 for i, val in enumerate(value):
                                     # The +1 is to match fortran indexing
-                                    self.sumb.initializeflow.setrestartfiles(val,i+1)
+                                    self.adflow.initializeflow.setrestartfiles(val,i+1)
                             else:
                                 raise Error("Datatype for Option %-35s was not "
                                             "valid. Expected list of <type 'str'>. "
@@ -3269,9 +3269,9 @@ class SUMB(AeroSolver):
 
                 val = numpy.array(val)
 
-                self.sumb.inputparamroutines.initializeisosurfacevariables(val)
+                self.adflow.inputparamroutines.initializeisosurfacevariables(val)
                 for i in xrange(len(val)):
-                    self.sumb.inputparamroutines.setisosurfacevariable(var[i], i+1)
+                    self.adflow.inputparamroutines.setisosurfacevariable(var[i], i+1)
 
             elif name == "turbresscale":
                 # If value is None no value has been specified by the
@@ -3323,7 +3323,7 @@ class SUMB(AeroSolver):
 
         # If the value is a string, pads additional spaces
         if isinstance(value, str):
-            spacesToAdd = self.sumb.constants.maxstringlen - len(value)
+            spacesToAdd = self.adflow.constants.maxstringlen - len(value)
             value = ''.join([value,' '*spacesToAdd])
 
         # Set in the correct module
@@ -3340,7 +3340,7 @@ class SUMB(AeroSolver):
 
     def _getDefOptions(self):
         """
-        There are many options for SUmb. These technically belong in
+        There are many options for ADflow. These technically belong in
         the __init__ function but it gets far too long so we split
         them out.
         """
@@ -3544,7 +3544,7 @@ class SUMB(AeroSolver):
 
     def _getImmutableOptions(self):
         """We define the list of options that *cannot* be changed after the
-        object is created. SUmb will raise an error if a user tries to
+        object is created. ADflow will raise an error if a user tries to
         change these. The strings for these options are placed in a set"""
 
         return ('gridfile', 'equationtype', 'equationmode', 'flowtype',
@@ -3555,22 +3555,22 @@ class SUMB(AeroSolver):
                 'meshSurfaceFamily', 'designSurfaceFamily')
 
     def _getOptionMap(self):
-        """ The SUmb option map and module mapping"""
+        """ The ADflow option map and module mapping"""
 
-        moduleMap = {'io': self.sumb.inputio,
-                     'discr':self.sumb.inputdiscretization,
-                     'iter':self.sumb.inputiteration,
-                     'physics':self.sumb.inputphysics,
-                     'stab': self.sumb.inputtsstabderiv,
-                     'nk': self.sumb.nksolver,
-                     'ank': self.sumb.anksolver,
-                     'adjoint': self.sumb.inputadjoint,
-                     'cost': self.sumb.costfunctions,
-                     'unsteady':self.sumb.inputunsteady,
-                     'motion':self.sumb.inputmotion,
-                     'parallel':self.sumb.inputparallel,
-                     'ts':self.sumb.inputtimespectral,
-                     'overset':self.sumb.inputoverset,
+        moduleMap = {'io': self.adflow.inputio,
+                     'discr':self.adflow.inputdiscretization,
+                     'iter':self.adflow.inputiteration,
+                     'physics':self.adflow.inputphysics,
+                     'stab': self.adflow.inputtsstabderiv,
+                     'nk': self.adflow.nksolver,
+                     'ank': self.adflow.anksolver,
+                     'adjoint': self.adflow.inputadjoint,
+                     'cost': self.adflow.costfunctions,
+                     'unsteady':self.adflow.inputunsteady,
+                     'motion':self.adflow.inputmotion,
+                     'parallel':self.adflow.inputparallel,
+                     'ts':self.adflow.inputtimespectral,
+                     'overset':self.adflow.inputoverset,
                  }
 
         # In the option map, we first list the "module" defined in
@@ -3586,65 +3586,65 @@ class SUMB(AeroSolver):
             'nodaloutput':['io', 'nodaloutput'],
             'nsavesurface':['iter', 'nsavesurface'],
             'viscoussurfacevelocities':['io', 'viscoussurfacevelocities'],
-            'solutionprecision':{'single':self.sumb.constants.precisionsingle,
-                                 'double':self.sumb.constants.precisiondouble,
+            'solutionprecision':{'single':self.adflow.constants.precisionsingle,
+                                 'double':self.adflow.constants.precisiondouble,
                                  'location':['io', 'precisionsol']},
-            'gridprecision':{'single':self.sumb.constants.precisionsingle,
-                             'double':self.sumb.constants.precisiondouble,
+            'gridprecision':{'single':self.adflow.constants.precisionsingle,
+                             'double':self.adflow.constants.precisiondouble,
                              'location':['io', 'precisiongrid']},
-            'solutionprecisionsurface':{'single':self.sumb.constants.precisionsingle,
-                                        'double':self.sumb.constants.precisiondouble,
+            'solutionprecisionsurface':{'single':self.adflow.constants.precisionsingle,
+                                        'double':self.adflow.constants.precisiondouble,
                                         'location':['io', 'precisionsol']},
-            'gridprecisionsurface':{'single':self.sumb.constants.precisionsingle,
-                                    'double':self.sumb.constants.precisiondouble,
+            'gridprecisionsurface':{'single':self.adflow.constants.precisionsingle,
+                                    'double':self.adflow.constants.precisiondouble,
                                     'location':['io', 'precisiongrid']},
             # Physics Paramters
-            'discretization':{'central plus scalar dissipation': self.sumb.constants.dissscalar,
-                              'central plus matrix dissipation': self.sumb.constants.dissmatrix,
-                              'central plus cusp dissipation':self.sumb.constants.disscusp,
-                              'upwind':self.sumb.constants.upwind,
+            'discretization':{'central plus scalar dissipation': self.adflow.constants.dissscalar,
+                              'central plus matrix dissipation': self.adflow.constants.dissmatrix,
+                              'central plus cusp dissipation':self.adflow.constants.disscusp,
+                              'upwind':self.adflow.constants.upwind,
                               'location':['discr', 'spacediscr']},
-            'coarsediscretization':{'central plus scalar dissipation': self.sumb.constants.dissscalar,
-                                    'central plus matrix dissipation': self.sumb.constants.dissmatrix,
-                                    'central plus cusp dissipation': self.sumb.constants.disscusp,
-                                    'upwind': self.sumb.constants.upwind,
+            'coarsediscretization':{'central plus scalar dissipation': self.adflow.constants.dissscalar,
+                                    'central plus matrix dissipation': self.adflow.constants.dissmatrix,
+                                    'central plus cusp dissipation': self.adflow.constants.disscusp,
+                                    'upwind': self.adflow.constants.upwind,
                                     'location':['discr', 'spacediscrcoarse']},
-            'limiter':{'vanalbeda':self.sumb.constants.vanalbeda,
-                       'minmod':self.sumb.constants.minmod,
-                       'nolimiter':self.sumb.constants.nolimiter,
+            'limiter':{'vanalbeda':self.adflow.constants.vanalbeda,
+                       'minmod':self.adflow.constants.minmod,
+                       'nolimiter':self.adflow.constants.nolimiter,
                        'location':['discr', 'limiter']},
-            'smoother':{'runge kutta':self.sumb.constants.rungekutta,
-                        'lu sgs':self.sumb.constants.nllusgs,
-                        'lu sgs line':self.sumb.constants.nllusgsline,
-                        'dadi':self.sumb.constants.dadi,
+            'smoother':{'runge kutta':self.adflow.constants.rungekutta,
+                        'lu sgs':self.adflow.constants.nllusgs,
+                        'lu sgs line':self.adflow.constants.nllusgsline,
+                        'dadi':self.adflow.constants.dadi,
                         'location':['iter', 'smoother']},
 
-            'equationtype':{'euler':self.sumb.constants.eulerequations,
-                            'laminar ns':self.sumb.constants.nsequations,
-                            'rans':self.sumb.constants.ransequations,
+            'equationtype':{'euler':self.adflow.constants.eulerequations,
+                            'laminar ns':self.adflow.constants.nsequations,
+                            'rans':self.adflow.constants.ransequations,
                             'location':['physics', 'equations']},
-            'equationmode':{'steady':self.sumb.constants.steady,
-                            'unsteady':self.sumb.constants.unsteady,
-                            'time spectral':self.sumb.constants.timespectral,
+            'equationmode':{'steady':self.adflow.constants.steady,
+                            'unsteady':self.adflow.constants.unsteady,
+                            'time spectral':self.adflow.constants.timespectral,
                             'location':['physics', 'equationmode']},
-            'flowtype':{'internal':self.sumb.constants.internalflow,
-                        'external':self.sumb.constants.externalflow,
+            'flowtype':{'internal':self.adflow.constants.internalflow,
+                        'external':self.adflow.constants.externalflow,
                         'location':['physics', 'flowtype']},
-            'turbulencemodel':{'sa':self.sumb.constants.spalartallmaras,
-                               'sae':self.sumb.constants.spalartallmarasedwards,
-                               'k omega wilcox':self.sumb.constants.komegawilcox,
-                               'k omega modified':self.sumb.constants.komegamodified,
-                               'ktau':self.sumb.constants.ktau,
-                               'menter sst':self.sumb.constants.mentersst,
-                               'v2f':self.sumb.constants.v2f,
+            'turbulencemodel':{'sa':self.adflow.constants.spalartallmaras,
+                               'sae':self.adflow.constants.spalartallmarasedwards,
+                               'k omega wilcox':self.adflow.constants.komegawilcox,
+                               'k omega modified':self.adflow.constants.komegamodified,
+                               'ktau':self.adflow.constants.ktau,
+                               'menter sst':self.adflow.constants.mentersst,
+                               'v2f':self.adflow.constants.v2f,
                                'location':['physics', 'turbmodel']},
             'turbulenceorder':{'first order':1,
                                'second order':2,
                                'location':['discr', 'orderturb']},
             'turbresscale':['iter', 'turbresscale'],
-            'turbulenceproduction':{'strain':self.sumb.constants.strain,
-                                    'vorticity':self.sumb.constants.vorticity,
-                                    'katolaunder':self.sumb.constants.katolaunder,
+            'turbulenceproduction':{'strain':self.adflow.constants.strain,
+                                    'vorticity':self.adflow.constants.vorticity,
+                                    'katolaunder':self.adflow.constants.katolaunder,
                                     'location':['physics', 'turbprod']},
             'useqcr':['physics', 'useqcr'],
             'userotationsa':['physics', 'userotationsa'],
@@ -3653,13 +3653,13 @@ class SUMB(AeroSolver):
             'usewallfunctions':['physics', 'wallfunctions'],
             'walldistcutoff':['physics', 'walldistcutoff'],
             'useapproxwalldistance':['discr', 'useapproxwalldistance'],
-            'eulerwalltreatment':{'linear pressure extrapolation':self.sumb.constants.linextrapolpressure,
-                                  'constant pressure extrapolation':self.sumb.constants.constantpressure,
-                                  'quadratic pressure extrapolation':self.sumb.constants.quadextrapolpressure,
-                                  'normal momentum':self.sumb.constants.normalmomentum,
+            'eulerwalltreatment':{'linear pressure extrapolation':self.adflow.constants.linextrapolpressure,
+                                  'constant pressure extrapolation':self.adflow.constants.constantpressure,
+                                  'quadratic pressure extrapolation':self.adflow.constants.quadextrapolpressure,
+                                  'normal momentum':self.adflow.constants.normalmomentum,
                                   'location':['discr', 'eulerwallbctreatment']},
-            'viscwalltreatment':{'linear pressure extrapolation':self.sumb.constants.linextrapolpressure,
-                                 'constant pressure extrapolation':self.sumb.constants.constantpressure,
+            'viscwalltreatment':{'linear pressure extrapolation':self.adflow.constants.linextrapolpressure,
+                                 'constant pressure extrapolation':self.adflow.constants.constantpressure,
                                  'location':['discr', 'viscwallbctreatment']},
             'dissipationscalingexponent':['discr', 'adis'],
             'vis4':['discr', 'vis4'],
@@ -3678,9 +3678,9 @@ class SUMB(AeroSolver):
             'cflcoarse':['iter', 'cflcoarse'],
             'mgcycle':['iter', 'mgdescription'],
             'mgstartlevel':['iter', 'mgstartlevel'],
-            'resaveraging':{'noresaveraging':self.sumb.constants.noresaveraging,
-                            'alwaysresaveraging':self.sumb.constants.alwaysresaveraging,
-                            'alternateresaveraging':self.sumb.constants.alternateresaveraging,
+            'resaveraging':{'noresaveraging':self.adflow.constants.noresaveraging,
+                            'alwaysresaveraging':self.adflow.constants.alwaysresaveraging,
+                            'alternateresaveraging':self.adflow.constants.alternateresaveraging,
                             'location':['iter', 'resaveraging']},
             'smoothparameter':['iter', 'smoop'],
             'cfllimit':['iter', 'cfllimit'],
@@ -3693,10 +3693,10 @@ class SUMB(AeroSolver):
             'debugzipper':['overset','debugzipper'],
 
             # Unsteady Params
-            'timeintegrationscheme':{'bdf':self.sumb.constants.bdf,
-                                     'explicitrk':self.sumb.constants.explicitrk,
-                                     'implicitrk':self.sumb.constants.implicitrk,
-                                     'md':self.sumb.constants.md,
+            'timeintegrationscheme':{'bdf':self.adflow.constants.bdf,
+                                     'explicitrk':self.adflow.constants.explicitrk,
+                                     'implicitrk':self.adflow.constants.implicitrk,
+                                     'md':self.adflow.constants.md,
                                      'location':['unsteady', 'timeintegrationscheme']},
             'timeaccuracy':['unsteady', 'timeaccuracy'],
             'ntimestepscoarse':['unsteady', 'ntimestepscoarse'],
@@ -3741,9 +3741,9 @@ class SUMB(AeroSolver):
             'nkinnerpreconits':['nk', 'nk_innerpreconits'],
             'nkouterpreconits':['nk', 'nk_outerpreconits'],
             'nkcfl0':['nk', 'nk_cfl0'],
-            'nkls':{'none':self.sumb.constants.nolinesearch,
-                    'cubic':self.sumb.constants.cubiclinesearch,
-                    'non monotone':self.sumb.constants.nonmonotonelinesearch,
+            'nkls':{'none':self.adflow.constants.nolinesearch,
+                    'cubic':self.adflow.constants.cubiclinesearch,
+                    'non monotone':self.adflow.constants.nonmonotonelinesearch,
                     'location':['nk', 'nk_ls']},
             'rkreset':['iter', 'rkreset'],
             'nrkreset':['iter', 'miniternum'],
@@ -3868,74 +3868,74 @@ class SUMB(AeroSolver):
 
     def _getObjectivesAndDVs(self):
         iDV = {}
-        iDV['alpha'] = self.sumb.adjointvars.ialpha
-        iDV['beta'] = self.sumb.adjointvars.ibeta
-        iDV['mach'] = self.sumb.adjointvars.imach
-        iDV['machgrid'] = self.sumb.adjointvars.imachgrid
-        iDV['p'] = self.sumb.adjointvars.ipressure
-        iDV['rho'] = self.sumb.adjointvars.idensity
-        iDV['t'] = self.sumb.adjointvars.itemperature
-        iDV['rotx'] = self.sumb.adjointvars.irotx
-        iDV['roty'] = self.sumb.adjointvars.iroty
-        iDV['rotz'] = self.sumb.adjointvars.irotz
-        iDV['rotcenx'] = self.sumb.adjointvars.irotcenx
-        iDV['rotceny'] = self.sumb.adjointvars.irotceny
-        iDV['rotcenz'] = self.sumb.adjointvars.irotcenz
-        iDV['xref'] = self.sumb.adjointvars.ipointrefx
-        iDV['yref'] = self.sumb.adjointvars.ipointrefy
-        iDV['zref'] = self.sumb.adjointvars.ipointrefz
+        iDV['alpha'] = self.adflow.adjointvars.ialpha
+        iDV['beta'] = self.adflow.adjointvars.ibeta
+        iDV['mach'] = self.adflow.adjointvars.imach
+        iDV['machgrid'] = self.adflow.adjointvars.imachgrid
+        iDV['p'] = self.adflow.adjointvars.ipressure
+        iDV['rho'] = self.adflow.adjointvars.idensity
+        iDV['t'] = self.adflow.adjointvars.itemperature
+        iDV['rotx'] = self.adflow.adjointvars.irotx
+        iDV['roty'] = self.adflow.adjointvars.iroty
+        iDV['rotz'] = self.adflow.adjointvars.irotz
+        iDV['rotcenx'] = self.adflow.adjointvars.irotcenx
+        iDV['rotceny'] = self.adflow.adjointvars.irotceny
+        iDV['rotcenz'] = self.adflow.adjointvars.irotcenz
+        iDV['xref'] = self.adflow.adjointvars.ipointrefx
+        iDV['yref'] = self.adflow.adjointvars.ipointrefy
+        iDV['zref'] = self.adflow.adjointvars.ipointrefz
 
         # Convert to python indexing
         for key in iDV:
             iDV[key] = iDV[key] - 1 
 
-        # This is SUmb's internal mapping for cost functions
-        sumbCostFunctions = {
-            'lift':self.sumb.costfunctions.costfunclift,
-            'drag':self.sumb.costfunctions.costfuncdrag,
-            'cl'  :self.sumb.costfunctions.costfuncliftcoef,
-            'cd'  :self.sumb.costfunctions.costfuncdragcoef,
-            'fx'  :self.sumb.costfunctions.costfuncforcex,
-            'fy'  :self.sumb.costfunctions.costfuncforcey,
-            'fz'  :self.sumb.costfunctions.costfuncforcez,
-            'cfx' :self.sumb.costfunctions.costfuncforcexcoef,
-            'cfy' :self.sumb.costfunctions.costfuncforceycoef,
-            'cfz' :self.sumb.costfunctions.costfuncforcezcoef,
-            'mx'  :self.sumb.costfunctions.costfuncmomx,
-            'my'  :self.sumb.costfunctions.costfuncmomy,
-            'mz'  :self.sumb.costfunctions.costfuncmomz,
-            'cmx':self.sumb.costfunctions.costfuncmomxcoef,
-            'cmy':self.sumb.costfunctions.costfuncmomycoef,
-            'cmz':self.sumb.costfunctions.costfuncmomzcoef,
-            'cm0':self.sumb.costfunctions.costfunccm0,
-            'cmzalpha':self.sumb.costfunctions.costfunccmzalpha,
-            'cmzalphadot':self.sumb.costfunctions.costfunccmzalphadot,
-            'cl0':self.sumb.costfunctions.costfunccl0,
-            'clalpha':self.sumb.costfunctions.costfuncclalpha,
-            'clalphadot':self.sumb.costfunctions.costfuncclalphadot,
-            'cfy0':self.sumb.costfunctions.costfunccfy0,
-            'cfyalpha':self.sumb.costfunctions.costfunccfyalpha,
-            'cfyalphdDot':self.sumb.costfunctions.costfunccfyalphadot,
-            'cd0':self.sumb.costfunctions.costfunccd0,
-            'cdalpha':self.sumb.costfunctions.costfunccdalpha,
-            'cdalphadot':self.sumb.costfunctions.costfunccdalphadot,
-            'cmzq':self.sumb.costfunctions.costfunccmzq,
-            'cmzqdot':self.sumb.costfunctions.costfunccmzqdot,
-            'clq':self.sumb.costfunctions.costfuncclq,
-            'clqdot':self.sumb.costfunctions.costfuncclqdot,
-            'cbend':self.sumb.costfunctions.costfuncbendingcoef,
-            'sepsensor':self.sumb.costfunctions.costfuncsepsensor,
-            'sepsensoravgx':self.sumb.costfunctions.costfuncsepsensoravgx,
-            'sepsensoravgy':self.sumb.costfunctions.costfuncsepsensoravgy,
-            'sepsensoravgz':self.sumb.costfunctions.costfuncsepsensoravgz,
-            'cavitation':self.sumb.costfunctions.costfunccavitation,
-            'mdot':self.sumb.costfunctions.costfuncmdot,
-            'mavgptot':self.sumb.costfunctions.costfuncmavgptot,
-            'mavgttot':self.sumb.costfunctions.costfuncmavgttot,
-            'mavgps':self.sumb.costfunctions.costfuncmavgps
+        # This is ADflow's internal mapping for cost functions
+        adflowCostFunctions = {
+            'lift':self.adflow.costfunctions.costfunclift,
+            'drag':self.adflow.costfunctions.costfuncdrag,
+            'cl'  :self.adflow.costfunctions.costfuncliftcoef,
+            'cd'  :self.adflow.costfunctions.costfuncdragcoef,
+            'fx'  :self.adflow.costfunctions.costfuncforcex,
+            'fy'  :self.adflow.costfunctions.costfuncforcey,
+            'fz'  :self.adflow.costfunctions.costfuncforcez,
+            'cfx' :self.adflow.costfunctions.costfuncforcexcoef,
+            'cfy' :self.adflow.costfunctions.costfuncforceycoef,
+            'cfz' :self.adflow.costfunctions.costfuncforcezcoef,
+            'mx'  :self.adflow.costfunctions.costfuncmomx,
+            'my'  :self.adflow.costfunctions.costfuncmomy,
+            'mz'  :self.adflow.costfunctions.costfuncmomz,
+            'cmx':self.adflow.costfunctions.costfuncmomxcoef,
+            'cmy':self.adflow.costfunctions.costfuncmomycoef,
+            'cmz':self.adflow.costfunctions.costfuncmomzcoef,
+            'cm0':self.adflow.costfunctions.costfunccm0,
+            'cmzalpha':self.adflow.costfunctions.costfunccmzalpha,
+            'cmzalphadot':self.adflow.costfunctions.costfunccmzalphadot,
+            'cl0':self.adflow.costfunctions.costfunccl0,
+            'clalpha':self.adflow.costfunctions.costfuncclalpha,
+            'clalphadot':self.adflow.costfunctions.costfuncclalphadot,
+            'cfy0':self.adflow.costfunctions.costfunccfy0,
+            'cfyalpha':self.adflow.costfunctions.costfunccfyalpha,
+            'cfyalphdDot':self.adflow.costfunctions.costfunccfyalphadot,
+            'cd0':self.adflow.costfunctions.costfunccd0,
+            'cdalpha':self.adflow.costfunctions.costfunccdalpha,
+            'cdalphadot':self.adflow.costfunctions.costfunccdalphadot,
+            'cmzq':self.adflow.costfunctions.costfunccmzq,
+            'cmzqdot':self.adflow.costfunctions.costfunccmzqdot,
+            'clq':self.adflow.costfunctions.costfuncclq,
+            'clqdot':self.adflow.costfunctions.costfuncclqdot,
+            'cbend':self.adflow.costfunctions.costfuncbendingcoef,
+            'sepsensor':self.adflow.costfunctions.costfuncsepsensor,
+            'sepsensoravgx':self.adflow.costfunctions.costfuncsepsensoravgx,
+            'sepsensoravgy':self.adflow.costfunctions.costfuncsepsensoravgy,
+            'sepsensoravgz':self.adflow.costfunctions.costfuncsepsensoravgz,
+            'cavitation':self.adflow.costfunctions.costfunccavitation,
+            'mdot':self.adflow.costfunctions.costfuncmdot,
+            'mavgptot':self.adflow.costfunctions.costfuncmavgptot,
+            'mavgttot':self.adflow.costfunctions.costfuncmavgttot,
+            'mavgps':self.adflow.costfunctions.costfuncmavgps
             }
 
-        return iDV, sumbCostFunctions
+        return iDV, adflowCostFunctions
 
     def _updateTurbResScale(self):
         # If turbresscale is None it has not been set by the user in script
@@ -3961,16 +3961,16 @@ class SUMB(AeroSolver):
         # THIS DOES NOT CURRENTLY WORK DUE TO INTERNAL LOGIC. REFACTOR FORTRAN
         # Set parameters for outputing data
         #if self.getOption('writevolumesolution'):
-        #    self.sumb.monitor.writevolume = True
-        #    self.sumb.monitor.writegrid = True
+        #    self.adflow.monitor.writevolume = True
+        #    self.adflow.monitor.writegrid = True
         #else:
-        #    self.sumb.monitor.writevolume = False
-        #    self.sumb.monitor.writegrid = False
+        #    self.adflow.monitor.writevolume = False
+        #    self.adflow.monitor.writegrid = False
 
         #if self.getOption('writesurfacesolution'):
-        #    self.sumb.monitor.writesurface = True
+        #    self.adflow.monitor.writesurface = True
         #else:
-        #    self.sumb.monitor.writesurface = False
+        #    self.adflow.monitor.writesurface = False
 
         outputDir = self.getOption('outputDirectory')
         baseName = self.curAP.name
@@ -3981,32 +3981,32 @@ class SUMB(AeroSolver):
         sliceFileName = os.path.join(outputDir, baseName + "_slices")
         liftDistributionFileName = os.path.join(outputDir, baseName + "_lift")
 
-        # Set fileName in sumb
-        self.sumb.inputio.solfile[:] = ''
-        self.sumb.inputio.solfile[0:len(volFileName)] = volFileName
+        # Set fileName in adflow
+        self.adflow.inputio.solfile[:] = ''
+        self.adflow.inputio.solfile[0:len(volFileName)] = volFileName
 
         # Set the grid file to the same name so the grids will be written
         # to the volume files
-        self.sumb.inputio.newgridfile[:] = ''
-        self.sumb.inputio.newgridfile[0:len(volFileName)] = volFileName
+        self.adflow.inputio.newgridfile[:] = ''
+        self.adflow.inputio.newgridfile[0:len(volFileName)] = volFileName
 
-        self.sumb.inputio.surfacesolfile[:] = ''
-        self.sumb.inputio.surfacesolfile[0:len(surfFileName)] = surfFileName
+        self.adflow.inputio.surfacesolfile[:] = ''
+        self.adflow.inputio.surfacesolfile[0:len(surfFileName)] = surfFileName
 
-        self.sumb.inputio.slicesolfile[:] = ''
-        self.sumb.inputio.slicesolfile[0:len(sliceFileName)] = sliceFileName
+        self.adflow.inputio.slicesolfile[:] = ''
+        self.adflow.inputio.slicesolfile[0:len(sliceFileName)] = sliceFileName
 
-        self.sumb.inputio.liftdistributionfile[:] = ''
-        self.sumb.inputio.liftdistributionfile[0:len(liftDistributionFileName)] = liftDistributionFileName
+        self.adflow.inputio.liftdistributionfile[:] = ''
+        self.adflow.inputio.liftdistributionfile[0:len(liftDistributionFileName)] = liftDistributionFileName
 
     def _setForcedFileNames(self):
         # Set the filenames that will be used if the user forces a
         # write during a solution.
 
-        self.sumb.inputio.forcedvolumefile[:] = ''
-        self.sumb.inputio.forcedsurfacefile[:] = ''
-        self.sumb.inputio.forcedliftfile[:] = ''
-        self.sumb.inputio.forcedslicefile[:] = ''
+        self.adflow.inputio.forcedvolumefile[:] = ''
+        self.adflow.inputio.forcedsurfacefile[:] = ''
+        self.adflow.inputio.forcedliftfile[:] = ''
+        self.adflow.inputio.forcedslicefile[:] = ''
 
         outputDir = self.getOption('outputDirectory')
         baseName = self.curAP.name
@@ -4017,10 +4017,10 @@ class SUMB(AeroSolver):
         liftFileName = base + '_forced_lift.dat'
         sliceFileName = base + '_forced_slices.dat'
 
-        self.sumb.inputio.forcedvolumefile[0:len(volFileName)] = volFileName
-        self.sumb.inputio.forcedsurfacefile[0:len(surfFileName)] = surfFileName
-        self.sumb.inputio.forcedliftfile[0:len(liftFileName)] = liftFileName
-        self.sumb.inputio.forcedslicefile[0:len(sliceFileName)] = sliceFileName
+        self.adflow.inputio.forcedvolumefile[0:len(volFileName)] = volFileName
+        self.adflow.inputio.forcedsurfacefile[0:len(surfFileName)] = surfFileName
+        self.adflow.inputio.forcedliftfile[0:len(liftFileName)] = liftFileName
+        self.adflow.inputio.forcedslicefile[0:len(sliceFileName)] = sliceFileName
 
     def _processFortranStringArray(self, strArray):
         """Getting arrays of strings out of Fortran can be kinda nasty. This
@@ -4037,7 +4037,7 @@ class SUMB(AeroSolver):
         """Setting arrays of strings in Fortran can be kinda nasty. This
         takesa list of strings and returns the array"""
 
-        arr = numpy.zeros((len(strList),self.sumb.constants.maxcgnsnamelen), dtype="str")
+        arr = numpy.zeros((len(strList),self.adflow.constants.maxcgnsnamelen), dtype="str")
         arr[:] = " "
         for i,s in enumerate(strList):
             for j in range(len(s)):
@@ -4052,14 +4052,14 @@ class SUMB(AeroSolver):
         self.setAeroProblem(master)
 
         slave = copy.deepcopy(master)
-        slave.sumbData = master.sumbData
+        slave.adflowData = master.adflowData
         slave.surfMesh = master.surfMesh
         slave.isSlave = True
         return slave
 
-class sumbFlowCase(object):
+class adflowFlowCase(object):
     """
-    Class containing the data that SUmb requires to be saved to an
+    Class containing the data that ADflow requires to be saved to an
     aeroProblem to permit the analysis of multiple flow cases
     """
     def __init__(self):

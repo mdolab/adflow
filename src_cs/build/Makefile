@@ -61,7 +61,7 @@ cmplxFiles:=$(addprefix ../,$(fortranFiles))
 OFILES=$(f90Files:%.f90=%.o) $(F90Files:%.F90=%.o) $(cFilesNoDir:%.c=%.o) $(f77FilesNoDir:%.f=%.o)
 
 # Define the file name for the auto-generated dependency file.
-DEP_FILE=sumb_project.dep
+DEP_FILE=adflow_project.dep
 
 # Not real targets are "phony"
 .PHONY: sources lib
@@ -83,12 +83,12 @@ include $(DEP_FILE)
 
 # The 'lib' target builds the static archive. It depends on "sources".
 lib: sources
-	$(AR) $(AR_FLAGS) libsumb.a $(OFILES)
+	$(AR) $(AR_FLAGS) libadflow.a $(OFILES)
 
 # These are the extra python objects for the python library
 PYTHON_OBJECTS = fortranobject.o\
-		 libsumb_csmodule.o\
-		 libsumb_cs-f2pywrappers2.o
+		 libadflow_csmodule.o\
+		 libadflow_cs-f2pywrappers2.o
 
 # For all (driven by default)...we depend on having the library 'lib'
 # up to date as well changes to the pyf file. This is where we execute
@@ -96,7 +96,7 @@ PYTHON_OBJECTS = fortranobject.o\
 all: 
 	$(PMAKE) python
 
-python: lib ../f2py/sumb.pyf
+python: lib ../f2py/adflow.pyf
 # Generate Python inlude directory
 	 $(eval PYTHON_INCLUDES = $(shell $(PYTHON-CONFIG) --includes))
 	 @echo "#------------------------------------------------------#"
@@ -119,23 +119,23 @@ python: lib ../f2py/sumb.pyf
 	python ../f2py/checkPyfForUpperCase.py
 
 # Run the preprocessor on the pyf file:
-	python ../f2py/pyf_preprocessor.py complex ../f2py/sumb.pyf 
+	python ../f2py/pyf_preprocessor.py complex ../f2py/adflow.pyf 
 
-# Run f2py to get sumbmodule.c and sumb-f2pywrapper2.f90
-	f2py ../f2py/sumb.pyf.autogen
+# Run f2py to get adflowmodule.c and adflow-f2pywrapper2.f90
+	f2py ../f2py/adflow.pyf.autogen
 
 # Compile c wrapper. Don't use CC_ALL_FLAGS...PETSc wil F-up this command.
 	$(CC) $(CC_ALL_FLAGS) $(PYTHON_INCLUDES) -I$(NUMPY_INCLUDES) \
-	-I$(F2PY_ROOT)/src -c libsumb_csmodule.c
+	-I$(F2PY_ROOT)/src -c libadflow_csmodule.c
 
 # Compile fortranobject needed by all f2py modules
 	$(CC) $(CC_ALL_FLAGS) $(PYTHON_INCLUDES) -I$(NUMPY_INCLUDES) \
 	-c $(F2PY_ROOT)/src/fortranobject.c -o fortranobject.o
 
 # Compiled f2py-generated wrapper file
-	$(FF90) $(FF90_ALL_FLAGS) -I./ -c libsumb_cs-f2pywrappers2.f90
+	$(FF90) $(FF90_ALL_FLAGS) -I./ -c libadflow_cs-f2pywrappers2.f90
 
 # Final Link:
-	$(FF90) -shared $(PYTHON_OBJECTS) libsumb.a $(LINKER_ALL_FLAGS) -o libsumb_cs.so
+	$(FF90) -shared $(PYTHON_OBJECTS) libadflow.a $(LINKER_ALL_FLAGS) -o libadflow_cs.so
 	python ../f2py/importTest.py
-	mv libsumb_cs.so ../../python
+	mv libadflow_cs.so ../../python

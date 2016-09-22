@@ -110,12 +110,12 @@ subroutine computeHolesInsideBody(level, sps)
   allocate(nCellProc(nProc), cumCellProc(0:nProc), &
            nNodeProc(nProc), cumNodeProc(0:nProc))
 
-  call mpi_allgather(nCellsLocal, 1, sumb_integer, nCellProc, 1, sumb_integer, &
-       sumb_comm_world, ierr)
+  call mpi_allgather(nCellsLocal, 1, adflow_integer, nCellProc, 1, adflow_integer, &
+       adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call mpi_allgather(nNodesLocal, 1, sumb_integer, nNodeProc, 1, sumb_integer, &
-       sumb_comm_world, ierr)
+  call mpi_allgather(nNodesLocal, 1, adflow_integer, nNodeProc, 1, adflow_integer, &
+       adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Now make cumulative versions of these
@@ -260,29 +260,29 @@ subroutine computeHolesInsideBody(level, sps)
        nodeIndicesGlobal(nNodesGlobal))
          
   ! Communicate the nodes, connectivity and cluster information to everyone
-  call mpi_allgatherv(nodesLocal, 3*nNodesLocal, sumb_real, & 
-       nodesGlobal, nNodeProc*3, cumNodeProc*3, sumb_real, &
-       sumb_comm_world, ierr)
+  call mpi_allgatherv(nodesLocal, 3*nNodesLocal, adflow_real, & 
+       nodesGlobal, nNodeProc*3, cumNodeProc*3, adflow_real, &
+       adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call mpi_allgatherv(clusterNodeLocal, nNodesLocal, sumb_integer, & 
-       clusterNodeGlobal, nNodeProc, cumNodeProc, sumb_integer, &
-       sumb_comm_world, ierr)
+  call mpi_allgatherv(clusterNodeLocal, nNodesLocal, adflow_integer, & 
+       clusterNodeGlobal, nNodeProc, cumNodeProc, adflow_integer, &
+       adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call mpi_allgatherv(nodeIndicesLocal, nNodesLocal, sumb_integer, & 
-       nodeIndicesGlobal, nNodeProc, cumNodeProc, sumb_integer, &
-       sumb_comm_world, ierr)
+  call mpi_allgatherv(nodeIndicesLocal, nNodesLocal, adflow_integer, & 
+       nodeIndicesGlobal, nNodeProc, cumNodeProc, adflow_integer, &
+       adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call mpi_allgatherv(connLocal, 4*nCellsLocal, sumb_integer, &
-       connGlobal, nCellProc*4, cumCellProc*4, sumb_integer, &
-       sumb_comm_world, ierr)
+  call mpi_allgatherv(connLocal, 4*nCellsLocal, adflow_integer, &
+       connGlobal, nCellProc*4, cumCellProc*4, adflow_integer, &
+       adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call mpi_allgatherv(clusterCellLocal, nCellsLocal, sumb_integer, &
-       clusterCellGlobal, nCellProc, cumCellProc, sumb_integer, &
-       sumb_comm_world, ierr)
+  call mpi_allgatherv(clusterCellLocal, nCellsLocal, adflow_integer, &
+       clusterCellGlobal, nCellProc, cumCellProc, adflow_integer, &
+       adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Free the local data we do not need anymore
@@ -657,7 +657,7 @@ subroutine computeHolesInsideBody(level, sps)
      link((i-1)*3+3) = indicesToGet(i)*3+2
   end do
 
-  call ISCreateGeneral(sumb_comm_world, nUnique*3, link, PETSC_COPY_VALUES, IS1, ierr)
+  call ISCreateGeneral(adflow_comm_world, nUnique*3, link, PETSC_COPY_VALUES, IS1, ierr)
   call EChk(ierr,__FILE__,__LINE__)
   deallocate(link)
 
@@ -665,20 +665,20 @@ subroutine computeHolesInsideBody(level, sps)
   ! this vector contains all the spectal instances. It is therefore
   ! only allocated on the first call with sps=1
   if (sps == 1) then 
-     call VecCreateMPI(SUMB_COMM_WORLD, 3*totalVolumeNodes(level)*nTimeIntervalsSpectral, &
+     call VecCreateMPI(ADFLOW_COMM_WORLD, 3*totalVolumeNodes(level)*nTimeIntervalsSpectral, &
           PETSC_DETERMINE, xVolumeVec(level), ierr)
      call EChk(ierr,__FILE__,__LINE__)
   end if
 
   ! This is the vector we will scatter the nodes into. 
-  call VecCreateMPI(SUMB_COMM_WORLD, 3*nUnique, PETSC_DETERMINE, &
+  call VecCreateMPI(ADFLOW_COMM_WORLD, 3*nUnique, PETSC_DETERMINE, &
        xSurfVec(level, sps), ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   call VecGetOwnershipRange(xSurfVec(level, sps), i, j, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call ISCreateStride(SUMB_COMM_WORLD, j-i, i, 1, IS2, ierr)
+  call ISCreateStride(ADFLOW_COMM_WORLD, j-i, i, 1, IS2, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Create the actual final scatter context.

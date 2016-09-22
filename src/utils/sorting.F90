@@ -882,7 +882,7 @@ contains
   ! Michel Olagnon
   ! http://www.fortran-2000.com/rank/
   ! 
-  ! Slight modifications of I_unirnk and I_uniinv for use with SUmb by
+  ! Slight modifications of I_unirnk and I_uniinv for use with ADflow by
   ! Gaetan Kenway. The 'unique' subroutine was added that combines the
   ! functionality of both routines in a single call.
 

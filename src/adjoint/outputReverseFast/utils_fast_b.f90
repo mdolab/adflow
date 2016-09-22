@@ -1233,7 +1233,7 @@ contains
 !       terminates the execution of the program.                       
 !
     use constants
-    use communication, only : sumb_comm_world, myid
+    use communication, only : adflow_comm_world, myid
     implicit none
 !
 !      subroutine arguments

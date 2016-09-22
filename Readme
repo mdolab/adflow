@@ -1,4 +1,4 @@
-This is the SUmb README. Please read this before trying to compile.
+This is the ADflow README. Please read this before trying to compile.
 
 
 ----------------
@@ -7,10 +7,10 @@ Prerequisites:
 See the MDOLab website for setting up the prerequresites. 
 
 ---------------------
-   SUmb -- Build
+   ADflow -- Build
 ---------------------
 
-   With all the prerequisites installed SUmb can now be compiled. To
+   With all the prerequisites installed ADflow can now be compiled. To
    begin type:
 
    $ make
@@ -25,19 +25,19 @@ See the MDOLab website for setting up the prerequresites.
 
    If this is successful and the end of output contains
 
-   "module sumb was successfully imported"
+   "module adflow was successfully imported"
 
-   The SUmb build was successful and we're done.
+   The ADflow build was successful and we're done.
 
    If there was an issue compiling it will be necessary to modify the
    config file.
 
 ---------------------
-     SUmb -- Verify
+     ADflow -- Verify
 ---------------------
 
-    SUmb contains a set of simple tests that can be run automatically
-    to ensure SUmb reproduces the expected reference results. You should
+    ADflow contains a set of simple tests that can be run automatically
+    to ensure ADflow reproduces the expected reference results. You should
     a diff-viewer installed. xxdiff is used by default which can be installed
     using 
 
@@ -55,19 +55,19 @@ See the MDOLab website for setting up the prerequresites.
     $ python run_reg_tests.py
 
     
-    If the tests are successful a 'sumb: Success!' message
+    If the tests are successful a 'adflow: Success!' message
     will be printed, otherwise a diff window will appear hihglighting
     the differences between the reference case and the most recently
     completed verification run.
 
 ---------------------
-     SUmb -- Complex
+     ADflow -- Complex
 ---------------------
 	
-    SUmb contains scripts to automatically build a "complexified"
-    version of SUmb directly from the real version.
+    ADflow contains scripts to automatically build a "complexified"
+    version of ADflow directly from the real version.
 
-    SUmb_CS REQUIRES a complex build of petsc to build and run. The
+    ADflow_CS REQUIRES a complex build of petsc to build and run. The
     petsc configuration script must be re-run with the following
     options:
 
@@ -75,7 +75,7 @@ See the MDOLab website for setting up the prerequresites.
 
    Follow instructions as before to complete complex build. 
 
-   Now, to build complex SUmb do:
+   Now, to build complex ADflow do:
 
    $ export PETSC_ARCH=complex-debug
    $ make -f Makefile_CS <ARCH>

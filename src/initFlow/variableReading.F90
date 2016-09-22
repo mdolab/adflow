@@ -1247,7 +1247,7 @@ contains
     !       turbulence model used.
     !
     use constants
-    use communication, only : myid, sumb_comm_world
+    use communication, only : myid, adflow_comm_world
     use inputPhysics, only : equations, turbModel
     use utils, only : terminate
     implicit none
@@ -1288,7 +1288,7 @@ contains
        if(myID == 0) &
             call terminate("readTurbvar", "Restart not implemented &
             &for this turbulence model.")
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
 
     end select
 
@@ -2368,7 +2368,7 @@ contains
     use constants
     use cgnsNames
     use su_cgns
-    use communication, only : myID, sumb_comm_world
+    use communication, only : myID, adflow_comm_world
     use flowVarRefState, only : pRef, muRef, rhoRef
     use inputIO, only : checkRestartSol
     use sorting, only : bsearchStrings, qsortStrings
@@ -2442,7 +2442,7 @@ contains
 
        ! The other processors will wait until they are killed.
 
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
 
     endif
 
@@ -2517,7 +2517,7 @@ contains
 
           ! The other processors will wait until they are killed.
 
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        i = ind(ii)
@@ -2539,7 +2539,7 @@ contains
 
           ! The other processors will wait until they are killed.
 
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        i = ind(ii)
@@ -2561,7 +2561,7 @@ contains
 
           ! The other processors will wait until they are killed.
 
-          call mpi_barrier(SUmb_comm_world, ierr)
+          call mpi_barrier(ADflow_comm_world, ierr)
        endif
 
        i = ind(ii)

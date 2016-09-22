@@ -319,7 +319,7 @@ contains
 
        ! Synchronize the processors to avoid possible problems.
 
-       call mpi_barrier(SUmb_comm_world, ierr)
+       call mpi_barrier(ADflow_comm_world, ierr)
     enddo
 
     ! Release the memory of the module indirectHalo.
@@ -1724,9 +1724,9 @@ contains
     ! Perform an all to all communication, such that the processors
     ! know how many messages will be received as well as their size.
 
-    call mpi_alltoall(nHaloPerProc(1), 1,  sumb_integer, &
-         sendInfo(0),      1, sumb_integer, &
-         SUmb_comm_world, ierr)
+    call mpi_alltoall(nHaloPerProc(1), 1,  adflow_integer, &
+         sendInfo(0),      1, adflow_integer, &
+         ADflow_comm_world, ierr)
 
     ! Allocate the memory for indexRecvProc, the index in the
     ! receive info for a certain processor. Initialize these value
@@ -1847,16 +1847,16 @@ contains
 
           ! And send the stuff.
 
-          call mpi_isend(buffer(1,mm), count, sumb_integer, &
-               dest, dest+2, SUmb_comm_world,     &
+          call mpi_isend(buffer(1,mm), count, adflow_integer, &
+               dest, dest+2, ADflow_comm_world,     &
                sendRequests(jj), ierr)
 
           ! Now send the interpolants, if any are being exchanged.
 
           if(ninterp > 0) then
              count = nInterp*kk
-             call mpi_isend(bufInt(1,mm), count, sumb_real, &
-                  dest, dest+3, SUmb_comm_world,  &
+             call mpi_isend(bufInt(1,mm), count, adflow_real, &
+                  dest, dest+3, ADflow_comm_world,  &
                   recvRequests(jj), ierr)
           end if
 
@@ -1991,7 +1991,7 @@ contains
 
        ! Block until a message arrives.
 
-       call mpi_probe(mpi_any_source, myId+2, SUmb_comm_world, &
+       call mpi_probe(mpi_any_source, myId+2, ADflow_comm_world, &
             status, ierr)
 
        ! Store the source processor a bit easier and determine the
@@ -2007,7 +2007,7 @@ contains
                call terminate("finalCommStructures",     &
                "Send processor not in the list")
 
-          call mpi_get_count(status, sumb_integer, sizeRecv, ierr)
+          call mpi_get_count(status, adflow_integer, sizeRecv, ierr)
           if(sizeRecv /= 4*commPattern%nsend(ii)) &
                call terminate("finalCommStructures",     &
                "Unexpected size of message")
@@ -2018,15 +2018,15 @@ contains
 
        sizeRecv = 4*commPattern%nsend(ii)
 
-       call mpi_recv(recvBuf, sizeRecv, sumb_integer, source, &
-            myId+2, SUmb_comm_world, status, ierr)
+       call mpi_recv(recvBuf, sizeRecv, adflow_integer, source, &
+            myId+2, ADflow_comm_world, status, ierr)
 
        ! Now receive the interpolants, if any.
 
        if(ninterp > 0) then
           sizeRecv = nInterp*commPattern%nsend(ii)
-          call mpi_recv(recvBufInt, sizeRecv, sumb_real, source, &
-               myId+3, SUmb_comm_world, status, ierr)
+          call mpi_recv(recvBufInt, sizeRecv, adflow_real, source, &
+               myId+3, ADflow_comm_world, status, ierr)
        end if
 
        ! Store the info I must send to this processor in a normal
@@ -2579,7 +2579,7 @@ contains
     ! tmpBuf is used as a temporary buffer to receive the data.
 
     call mpi_reduce_scatter(counter, tmpBuf, sizeMessage,           &
-         sumb_integer, mpi_sum, SUmb_comm_world, &
+         adflow_integer, mpi_sum, ADflow_comm_world, &
          ierr)
 
     nProcsRecv  = tmpBuf(1)
@@ -2617,8 +2617,8 @@ contains
 
           count = nItemSend*mm
           dest  = i-1
-          call mpi_isend(sendBuf(ms), count, sumb_integer, dest, dest, &
-               SUmb_comm_world, sendRequests(nn), ierr)
+          call mpi_isend(sendBuf(ms), count, adflow_integer, dest, dest, &
+               ADflow_comm_world, sendRequests(nn), ierr)
 
           ! Update ms to the starting index in buffer for the next
           ! message to be sent.
@@ -2726,13 +2726,13 @@ contains
 
        ! Block until a message arrives.
 
-       call mpi_probe(mpi_any_source, myID, SUmb_comm_world, &
+       call mpi_probe(mpi_any_source, myID, ADflow_comm_world, &
             status, ierr)
 
        ! Find the source and size of the message.
 
        source = status(mpi_source)
-       call mpi_get_count(status, sumb_integer, sizeRecv, ierr)
+       call mpi_get_count(status, adflow_integer, sizeRecv, ierr)
 
        ! Check in debug mode that the incoming message is of
        ! correct size.
@@ -2747,8 +2747,8 @@ contains
        ! Receive the message. As it has already arrived a blocking
        ! receive can be used.
 
-       call mpi_recv(recvBuf(ms), sizeRecv, sumb_integer, &
-            source, myID, SUmb_comm_world, status, ierr)
+       call mpi_recv(recvBuf(ms), sizeRecv, adflow_integer, &
+            source, myID, ADflow_comm_world, status, ierr)
 
        ! Determine the number of halo's in the receive buffer.
 
@@ -2763,8 +2763,8 @@ contains
        ! Send the modified receive buffer back to the source processor.
 
        count = nItemReturn*mm
-       call mpi_isend(recvBuf(ms), count, sumb_integer, source, &
-            source+1, SUmb_comm_world, recvRequests(i), ierr)
+       call mpi_isend(recvBuf(ms), count, adflow_integer, source, &
+            source+1, ADflow_comm_world, recvRequests(i), ierr)
 
        ! Update the starting index ms for the next message.
 
@@ -2796,13 +2796,13 @@ contains
 
        ! Block until a message arrives.
 
-       call mpi_probe(mpi_any_source, myID+1, SUmb_comm_world, &
+       call mpi_probe(mpi_any_source, myID+1, ADflow_comm_world, &
             status, ierr)
 
        ! Find the source and size of the message.
 
        source = status(mpi_source)
-       call mpi_get_count(status, sumb_integer, sizeRecv, ierr)
+       call mpi_get_count(status, adflow_integer, sizeRecv, ierr)
 
        ! Check in debug mode that the incoming message is of
        ! correct size.
@@ -2821,8 +2821,8 @@ contains
        ! Receive the message. Use a blocking receive, as the message
        ! has already arrived.
 
-       call mpi_recv(sendBuf, sizeRecv, sumb_integer, source, &
-            myID+1, SUmb_comm_world, status, ierr)
+       call mpi_recv(sendBuf, sizeRecv, adflow_integer, source, &
+            myID+1, ADflow_comm_world, status, ierr)
 
        ! Store the donors in the list.
 

@@ -110,7 +110,7 @@ contains
     ! Wait until all processors (especially processor 0) reach
     ! this point.
 
-    call mpi_barrier(SUmb_comm_world, ierr)
+    call mpi_barrier(ADflow_comm_world, ierr)
 
     ! Write a message that the grid file has been written.
     ! Of course only processor 0 does this.
@@ -1095,8 +1095,8 @@ contains
     ! Determine the amount of block parts each processor will send to
     ! processor 0.
 
-    call mpi_gather(nBlocks, 1, sumb_integer, nMessages, 1, &
-         sumb_integer, 0, SUmb_comm_world, ierr)
+    call mpi_gather(nBlocks, 1, adflow_integer, nMessages, 1, &
+         adflow_integer, 0, ADflow_comm_world, ierr)
 
     ! At the moment the writing of the cgns file is sequential and done
     ! by processor 0. This means that this processor gathers all info
@@ -1169,8 +1169,8 @@ contains
 
        do i=(nBlocks+1),nSubBlocks
 
-          call mpi_recv(ii, 6, sumb_integer, proc(i), proc(i), &
-               SUmb_comm_world, status, ierr)
+          call mpi_recv(ii, 6, adflow_integer, proc(i), proc(i), &
+               ADflow_comm_world, status, ierr)
 
           subRanges(1,1,i) = ii(1)
           subRanges(1,2,i) = ii(2)
@@ -1274,8 +1274,8 @@ contains
 
                 ! Receive the range of subblock mm and copy it into coor.
 
-                call mpi_recv(buffer, bufSize, sumb_real, proc(mm), &
-                     proc(mm)+1, SUmb_comm_world, status, ierr)
+                call mpi_recv(buffer, bufSize, adflow_real, proc(mm), &
+                     proc(mm)+1, ADflow_comm_world, status, ierr)
 
                 select case (precisionGrid)
                 case (precisionSingle)
@@ -1389,8 +1389,8 @@ contains
 
           ! Send the buffer ii to processor 0.
 
-          call mpi_send(ii, 6, sumb_integer, 0, myID, &
-               SUmb_comm_world, ierr)
+          call mpi_send(ii, 6, adflow_integer, 0, myID, &
+               ADflow_comm_world, ierr)
 
           ! Check the size of this subblock and update bufSize
           ! if needed.
@@ -1426,8 +1426,8 @@ contains
                 call storeCoorInBuffer(buffer, zone, ind, nn, &
                      blocksCGNSblock(mm+offset), tmp)
 
-                call mpi_send(buffer, tmp, sumb_real, 0, myID+1, &
-                     SUmb_comm_world, ierr)
+                call mpi_send(buffer, tmp, adflow_real, 0, myID+1, &
+                     ADflow_comm_world, ierr)
              enddo
 
           enddo coorLoopOthers

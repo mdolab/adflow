@@ -1,5 +1,5 @@
 ############################################################
-# DO NOT USE THIS SCRIPT AS A REFERENCE FOR HOW TO USE SUMB
+# DO NOT USE THIS SCRIPT AS A REFERENCE FOR HOW TO USE ADFLOW
 # THIS SCRIPT USES PRIVATE INTERNAL FUNCTIONALITY THAT IS
 # SUBJECT TO CHANGE!!
 ############################################################
@@ -14,9 +14,9 @@ from commonUtils import *
 
 # ###################################################################
 # DO NOT USE THIS IMPORT STRATEGY! THIS IS ONLY USED FOR REGRESSION
-# SCRIPTS ONLY. Use 'from sumb import SUMB' for regular scripts.
+# SCRIPTS ONLY. Use 'from adflow import ADFLOW' for regular scripts.
 sys.path.append(os.path.abspath('../../'))
-from python.pySUmb import SUMB
+from python.pyADflow import ADFLOW
 # ###################################################################
 
 # ****************************************************************************
@@ -25,7 +25,7 @@ printHeader('Test14: MDO tutorial -- Rans -- Adjoint Test')
 # ****************************************************************************
 gridFile = '../inputFiles/mdo_tutorial_rans_scalar_jst.cgns'
 
-options = copy.copy(sumbDefOpts)
+options = copy.copy(adflowDefOpts)
 
 options.update(
     {'gridfile': gridFile,
@@ -56,7 +56,7 @@ ap = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.80, P=20000.0, T=220.0,
 
 ap.addDV('alpha')
 ap.addDV('mach')
-CFDSolver = SUMB(options=options)
+CFDSolver = ADFLOW(options=options)
 DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt')
 nTwist = 6
 DVGeo.addRefAxis('wing', Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 

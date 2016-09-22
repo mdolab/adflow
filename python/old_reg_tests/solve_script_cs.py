@@ -1,5 +1,5 @@
 ############################################################
-# DO NOT USE THIS SCRIPT AS A REFERENCE FOR HOW TO USE SUMB
+# DO NOT USE THIS SCRIPT AS A REFERENCE FOR HOW TO USE ADFLOW
 # THIS SCRIPT USES PRIVATE INTERNAL FUNCTIONALITY THAT IS
 # SUBJECT TO CHANGE!!
 ############################################################
@@ -12,14 +12,14 @@ import pyspline
 
 # ###################################################################
 # DO NOT USE THIS IMPORT STRATEGY! THIS IS ONLY USED FOR REGRESSION
-# SCRIPTS ONLY. Use 'from sumb import SUMB' for regular scripts.
+# SCRIPTS ONLY. Use 'from adflow import ADFLOW' for regular scripts.
 sys.path.append(os.path.abspath('../../'))
 if 'complex' in sys.argv:
-    from python.pySUmb_C import SUMB_C as SUMB
+    from python.pyADflow_C import ADFLOW_C as ADFLOW
     from pywarp import MBMesh_C as MBMesh
 else:
     from pywarp import MBMesh
-    from python.pySUmb import SUMB
+    from python.pyADflow import ADFLOW
 
 
 # ###################################################################
@@ -219,7 +219,7 @@ def test1():
     ap.addDV('alpha')
     ap.addDV('mach')
     ap.addDV('altitude')
-    CFDSolver = SUMB(options=aeroOptions, debug=True)
+    CFDSolver = ADFLOW(options=aeroOptions, debug=True)
 
     if not 'complex' in sys.argv:
         # Solve system
@@ -326,7 +326,7 @@ def test2():
                      altitude=10000.0, areaRef=45.5, chordRef=3.25,
                      evalFuncs=['cl','cmz','drag'])
 
-    CFDSolver = SUMB(options=aeroOptions)
+    CFDSolver = ADFLOW(options=aeroOptions)
     if 'complex' in sys.argv:
         DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt', complex=True)
     else:
@@ -455,7 +455,7 @@ def test3():
     ap.addDV('alpha')
     ap.addDV('mach')
 
-    CFDSolver = SUMB(options=aeroOptions)
+    CFDSolver = ADFLOW(options=aeroOptions)
 
     if not 'complex' in sys.argv:
         # Solve system
@@ -545,7 +545,7 @@ def test4():
                      reynolds=50000.0, reynoldsLength=3.25, T=293.15,
                      areaRef=45.5, chordRef=3.25, evalFuncs=['cl','cmz','drag'])
 
-    CFDSolver = SUMB(options=aeroOptions)
+    CFDSolver = ADFLOW(options=aeroOptions)
     if 'complex' in sys.argv:
         DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt', complex=True)
     else:
@@ -707,7 +707,7 @@ def test5():
     ap.addDV('alpha')
     ap.addDV('mach')
     ap.addDV('altitude')
-    CFDSolver = SUMB(options=aeroOptions,debug=True)
+    CFDSolver = ADFLOW(options=aeroOptions,debug=True)
 
     if not 'complex' in sys.argv:
         # Solve system
@@ -820,7 +820,7 @@ def test6():
     
     ap.addDV('alpha')
     ap.addDV('mach')
-    CFDSolver = SUMB(options=aeroOptions)
+    CFDSolver = ADFLOW(options=aeroOptions)
     if 'complex' in sys.argv:
         DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt', complex=True)
     else:
