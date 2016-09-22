@@ -11,7 +11,7 @@ contains
     !
     !       The original version has been nuked since the computations are
     !       no longer necessary when calling from python
-    !       This is the most compliclated routine in all of SUMb. It is
+    !       This is the most compliclated routine in all of ADflow. It is
     !       stupidly complicated. This is most likely the reason your
     !       derivatives are wrong. You don't understand this routine
     !       and its effects.
