@@ -665,6 +665,13 @@ class SUMB(AeroSolver):
         # Solve the equations in appropriate mode
         mode = self.getOption('equationMode').lower()
         if mode in ['steady', 'time spectral']:
+            # In steady mode, the wall temperature has to be set after the solver
+            # switches to current AP, otherwise the data will be overwritten.
+            wallTemperature = kwargs.pop('wallTemperature', None)
+            groupName       = kwargs.pop('groupName', None)
+            if wallTemperature is not None:
+                self.setWallTemperature(wallTemperature, groupName=groupName)
+            
             self.sumb.solvers.solver()
         elif mode == 'unsteady':
             # Initialization specific for unsteady simulation
@@ -676,8 +683,8 @@ class SUMB(AeroSolver):
             # Otherwise, the problem is solved within this function
             else:
                 # Get the callback functions
-                surfaceMeshCallback = kwargs.pop('surfaceMeshCallback', None)            
-                volumeMeshCallback  = kwargs.pop('volumeMeshCallback', None)            
+                surfaceMeshCallback = kwargs.pop('surfaceMeshCallback', None)
+                volumeMeshCallback  = kwargs.pop('volumeMeshCallback', None)
                 
                 # Call solver wrapper for unsteady simulations
                 self._solverunsteady(surfaceMeshCallback = surfaceMeshCallback,
@@ -2150,7 +2157,7 @@ class SUMB(AeroSolver):
         if groupName is None:
             groupName = self.allWallsGroup
         self._setFamilyList(groupName)
-            
+        
         self.sumb.settnswall(temperature, TS+1)
         
     def getSurfacePoints(self, groupName=None, TS=0):
