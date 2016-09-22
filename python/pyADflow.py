@@ -1879,6 +1879,7 @@ class ADFLOW(AeroSolver):
         # 2. Reference Points:
         self.adflow.inputphysics.pointref = [xRef, yRef, zRef]
         self.adflow.inputmotion.rotpoint = [xRot, yRot, zRot]
+        self.adflow.inputphysics.pointrefec = [0.0, 0.0, 0.0]
 
         # 3. Reference Areas
         self.adflow.inputphysics.surfaceref = areaRef

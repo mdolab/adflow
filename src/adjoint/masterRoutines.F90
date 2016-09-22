@@ -46,6 +46,9 @@ contains
     real(kind=realType), dimension(nSections) :: t
     real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVal, globalVal
 
+    ! Zero out the accumulation array for forces and other integrated quantities
+    localVal = zero
+
     if (useSpatial) then 
        call adjustInflowAngle()
        call referenceState
