@@ -728,9 +728,9 @@ contains
        ! Mass flow like objective
        mFlow = globalVals(iMassFlow, sps)
        if (mFlow /= zero) then 
-          mAvgPtot = globalVals(iMassPtot, sps)/mFlow*pRef
-          mAvgTtot = globalVals(iMassTtot, sps)/mFlow*tRef
-          mAvgPs   = globalVals(iMassPs, sps)/mFlow*pRef
+          mAvgPtot = globalVals(iMassPtot, sps)/mFlow
+          mAvgTtot = globalVals(iMassTtot, sps)/mFlow
+          mAvgPs   = globalVals(iMassPs, sps)/mFlow
           mFlow = globalVals(iMassFlow, sps)*sqrt(Pref/rhoRef)
        else
           mAvgPtot = zero
