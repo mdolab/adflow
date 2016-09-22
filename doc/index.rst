@@ -9,7 +9,8 @@
 ADflow
 ====
 
-ADflow -- Stanford University MultiBlock -- is a structured multi-block 3D CFD solver. 
+ADflow -- Automatic Differentation Flow Solver -- is a structured
+multi-block and overset 3D CFD solver.
 
 .. toctree::
    :maxdepth: 2
