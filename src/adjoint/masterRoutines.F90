@@ -538,7 +538,6 @@ contains
     real(kind=realType), intent(out), dimension(:) :: wBar, xBar, extraBar
 
     ! Working Variables
-    real(kind=realType), dimension(:, :, :), allocatable :: forces
     integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj,  level
     real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVal, globalVal
     real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVald, globalVald, tmp
@@ -620,9 +619,7 @@ contains
        ! bcData%area seeds.
 
        fSize = size(forcesBar, 2)
-       allocate(forces(3, fSize, nTimeIntervalsSpectral))
-       call getForces_b(forces(:, :, sps), forcesBar(:, :, sps), fSize, sps)
-       deallocate(forces)
+       call getForces_b(forcesBar(:, :, sps), fSize, sps)
 
        domainLoop1: do nn=1, nDom
           call setPointers_d(nn, 1, sps)

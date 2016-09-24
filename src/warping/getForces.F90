@@ -354,7 +354,7 @@ subroutine computeNodalForces(sps)
   end do
 end subroutine computeNodalForces
 
-subroutine getForces_b(forces, forces_b, npts, sps)
+subroutine getForces_b(forces_b, npts, sps)
 
   ! This routine performs the reverse of getForces. It takes in
   ! forces_b and perfroms the reverse of the nodal averaging procedure
@@ -374,12 +374,12 @@ subroutine getForces_b(forces, forces_b, npts, sps)
 #include "petsc/finclude/petscvec.h90"
 
   integer(kind=intType), intent(in) :: npts, sps
-  real(kind=realType), intent(out) :: forces(3, npts)
   real(kind=realType), intent(in) :: forces_b(3, npts)
   integer(kind=intType) :: mm, nn, i, j, ii, jj, iDim, ierr
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ind(4), ni, nj
   real(kind=realType) :: qf_b, qf, qa, qa_b
   real(kind=realType), dimension(:), pointer :: localPtr, localPtr_b
+  real(kind=realType) :: forces(3, npts)
   type(familyExchange), pointer :: exch
   Vec nodeValLocal_b, nodeValGlobal_b, sumGlobal_b, tmp, tmp_b, T_b
 
