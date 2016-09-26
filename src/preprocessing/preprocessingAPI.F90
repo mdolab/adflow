@@ -31,6 +31,7 @@ contains
     use utils, only : setPointers, EChk, setBufferSizes, terminate
     use coarseUtils, only : createCoarseBlocks
     use pointMatchedCommPattern, only : determineCommPattern
+    use oversetAPI, only : oversetComm, determineClusters
     implicit none
     !
     !      Local variables.
