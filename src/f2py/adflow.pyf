@@ -1,13 +1,4 @@
 !    -*- f90 -*-
-python module solverunsteadyale__user__routines 
-    interface solverunsteadyale_user_interface 
-        subroutine alecallback_python(t) ! in :test:solverUnsteady_ALE.f90
-          real(kind=realtype) :: t
-        end subroutine alecallback_python
-    end interface solverunsteadyale_user_interface
-end python module solverunsteadyale__user__routines
-
-
 #ifdef USE_COMPLEX
 python module libadflow_cs ! in 
 #else
@@ -34,6 +25,12 @@ python module libadflow
          subroutine alloctimearrays(nitertot) 
            integer(kind=inttype) :: ntimetot
          end subroutine alloctimearrays
+<<<<<<< local
+         
+         subroutine unsteadyheader 
+         end subroutine unsteadyheader
+
+=======
 
          subroutine pointreduce(pts,n,tol,uniquepts,link,nunique) ! in :test:utils.F90:utils
            real(kind=realtype) dimension(3,n),intent(in) :: pts
@@ -44,6 +41,7 @@ python module libadflow
            integer(kind=inttype) intent(out) :: nunique
          end subroutine pointreduce
 
+>>>>>>> other
        end module utils
 
        module walldistance
@@ -356,13 +354,24 @@ python module libadflow
 
          subroutine solver 
          end subroutine solver
-
-         subroutine solverunsteady_ale(alecallback_python) ! in :test:solverUnsteady_ALE.F90
-           use solverunsteadyale__user__routines
-           external alecallback_python
-         end subroutine solverunsteady_ale
          
+         subroutine solverunsteadyinit
+         end subroutine solverunsteadyinit
+         
+         subroutine updateunsteadygeometry
+         end subroutine updateunsteadygeometry
+         
+         subroutine solverunsteadystep
+         end subroutine solverunsteadystep
+
        end module solvers
+       
+       module aleutils
+
+         subroutine shiftlevelale 
+         end subroutine shiftlevelale
+         
+       end module aleutils
        
        module preprocessingapi
          subroutine preprocessing ! in :adflow:../../preprocessing/preprocessing.f90
@@ -500,13 +509,13 @@ python module libadflow
          integer(kind=inttype) intent(in) :: sps_in
        end subroutine getforces
 
-       subroutine getheatflux(hflux,npts,sps) ! in :test:getHeatFlux.f90
-         real(kind=realtype) dimension(npts),intent(out),depend(npts) :: hflux
-         integer(kind=inttype) intent(in) :: npts
-         integer(kind=inttype) intent(in) :: sps
+       subroutine getheatflux(hflux,npts,sps_in) ! in :test:getForces.F90
+         real(kind=realtype) dimension(npts),intent(inout) :: hflux
+         integer(kind=inttype), optional,intent(in),depend(hflux) :: npts=len(hflux)
+         integer(kind=inttype) intent(in) :: sps_in
        end subroutine getheatflux
 
-       subroutine settnswall(tnsw,npts,sps) ! in :test:setTNSWall.f90
+       subroutine settnswall(tnsw,npts,sps_in) ! in :test:getForces.F90
          real(kind=realtype) dimension(npts),intent(in) :: tnsw
          integer(kind=inttype) optional,intent(in),check(len(tnsw)>=npts),depend(tnsw) :: npts=len(tnsw)
          integer(kind=inttype) intent(in) :: sps_in
