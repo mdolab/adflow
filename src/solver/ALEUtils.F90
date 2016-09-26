@@ -622,7 +622,7 @@ subroutine fillCoor
   !
   integer(kind=intType) :: i,j,k,nn,kk
 
-  if (.not. useALE .or. equationMode .ne. unsteady)  then 
+  if (equationMode .ne. unsteady)  then 
      return
   end if
 

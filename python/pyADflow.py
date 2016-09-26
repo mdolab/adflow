@@ -656,11 +656,47 @@ class ADFLOW(AeroSolver):
             self.curAP.solveFailed = True
             return
 
+<<<<<<< local
+        # We now know the mesh warping was ok so reset the flags:
+        self.sumb.killsignals.routinefailed =  False
+        self.sumb.killsignals.fatalfail = False
+=======
         # We now now the mesh warping was ok so reset the flags:
         self.adflow.killsignals.routinefailed =  False
         self.adflow.killsignals.fatalfail = False
+>>>>>>> other
 
         t1 = time.time()
+<<<<<<< local
+        
+        # Solve the equations in appropriate mode
+        mode = self.getOption('equationMode').lower()
+        if mode in ['steady', 'time spectral']:
+            # In steady mode, the wall temperature has to be set after the solver
+            # switches to current AP, otherwise the data will be overwritten.
+            wallTemperature = kwargs.pop('wallTemperature', None)
+            groupName       = kwargs.pop('groupName', None)
+            if wallTemperature is not None:
+                self.setWallTemperature(wallTemperature, groupName=groupName)
+            
+            self.sumb.solvers.solver()
+        elif mode == 'unsteady':
+            # Initialization specific for unsteady simulation
+            self.sumb.solvers.solverunsteadyinit()
+
+            # If SUmb is to be coupled with other solvers, we are done
+            if self.getOption('coupledsolution'):
+                return
+            # Otherwise, the problem is solved within this function
+            else:
+                # Get the callback functions
+                surfaceMeshCallback = kwargs.pop('surfaceMeshCallback', None)
+                volumeMeshCallback  = kwargs.pop('volumeMeshCallback', None)
+                
+                # Call solver wrapper for unsteady simulations
+                self._solverunsteady(surfaceMeshCallback = surfaceMeshCallback,
+                                     volumeMeshCallback  = volumeMeshCallback)
+=======
 
         # Call the Solver or the MD callback solver
         MDCallBack = kwargs.pop('MDCallBack', None)
@@ -668,9 +704,15 @@ class ADFLOW(AeroSolver):
         # use normal solver instead
         if MDCallBack is None or not self.getOption('timeIntegrationScheme') == 'md' :
             self.adflow.solvers.solver()
+>>>>>>> other
         else:
+<<<<<<< local
+            raise Error("Mode {0} not supported".format(mode))
+        
+=======
             self.adflow.solvers.solverunsteady_ale(MDCallBack)
 
+>>>>>>> other
         # Save the states into the aeroProblem
         self.curAP.adflowData.stateInfo = self._getInfo()
 
@@ -698,6 +740,82 @@ class ADFLOW(AeroSolver):
 
         if self.getOption('TSStability'):
             self.computeStabilityParameters()
+
+    def _solverunsteady(self, surfaceMeshCallback=None, volumeMeshCallback=None):
+        """
+        This routine is intended for time accurate simulation, including
+        - Unsteady problem with (possibly) prescribed mesh motion
+        - Unsteady problem with warping mesh
+        - Unsteady problem with rigidly translating/rotating mesh (N/A yet)
+        The latter two require ALE.
+
+        Parameters
+        ----------
+        surfaceMeshCallback : Python function handle
+            Computes new surface coordinates for mesh warping
+        
+        volumeMeshCallback : Python function handle
+            Computes new volume coordinates for mesh moving
+        """
+
+        # Store initial data if necessary
+        if surfaceMeshCallback is not None:
+            refCoor = self.getSurfaceCoordinates(self.designFamilyGroup)
+        else:
+            refCoor = None
+        if volumeMeshCallback is not None:
+            refGrid = self.mesh.getSolverGrid().reshape(-1, 3)
+        else:
+            refGrid = None
+        
+        # Time advancing
+        nTimeStepsFine = self.getOption('ntimestepsfine')
+        for tdx in xrange(1, nTimeStepsFine+1):
+            # Increment counter
+            curTime, curTimeStep = self.advanceTimeStepCounter()
+
+            # Warp mesh if necessary
+            if surfaceMeshCallback is not None:
+                newCoor = surfaceMeshCallback(refCoor, curTime, curTimeStep)
+                self.setSurfaceCoordinates(newCoor, self.designFamilyGroup)
+                self.updateGeometryInfo()
+            # Rigidly move mesh if necessary
+            elif volumeMeshCallback is not None:
+                newGrid = volumeMeshCallback(refGrid, curTime, curTimeStep).reshape(-1)
+                self.sumb.warping.setgrid(newGrid)
+                self._updateGeomInfo = True
+                self.updateGeometryInfo(warpMesh=False)
+            # Otherwise do naive unsteady simulation
+            else:
+                self.sumb.preprocessingapi.shiftcoorandvolumes()
+                self.sumb.solvers.updateunsteadygeometry()
+            
+            # Solve current step
+            self.solveTimeStep()
+            self.writeSolution()
+
+    def advanceTimeStepCounter(self):
+        """
+        Advance one unit of timestep and physical time.
+        """
+        self.sumb.monitor.timestepunsteady = self.sumb.monitor.timestepunsteady + 1
+        self.sumb.monitor.timeunsteady     = self.sumb.monitor.timeunsteady     + \
+            self.sumb.inputunsteady.deltat
+
+        if self.myid == 0:
+            self.sumb.utils.unsteadyheader()
+        
+        return self.sumb.monitor.timeunsteady, self.sumb.monitor.timestepunsteady
+        
+    def solveTimeStep(self):
+        """
+        Solve the current time step, and write solutions if necessary
+        """
+        t1 = time.time()
+        self.sumb.solvers.solverunsteadystep()
+        t2 = time.time()
+        if self.getOption('printTiming') and self.comm.rank == 0:
+            print('Timestep solution time: {0:10.3f} sec'.format(t2-t1))
 
     def evalFunctions(self, aeroProblem, funcs, evalFuncs=None, 
                       ignoreMissing=False):
@@ -2026,13 +2144,19 @@ class ADFLOW(AeroSolver):
         npts, ncell = self._getSurfaceSize(self.allWallsGroup)
 
         fluxes = numpy.zeros(npts, self.dtype)
+<<<<<<< local
+        self.sumb.getheatflux(fluxes, TS+1)
+        if groupName is None:
+            groupName = self.allWallsGroup
+=======
         self.adflow.getheatfluxes(fluxes, TS+1)
+>>>>>>> other
 
         # Map vector expects and Nx3 array. So we will do just that.
-        tmp = numpy.zeros((nPts, 3))
+        tmp = numpy.zeros((npts, 3))
         tmp[:, 0] = fluxes
         tmp = self.mapVector(tmp, self.allWallsGroup, groupName)
-        fuxes = tmp[:, 0]
+        fluxes = tmp[:, 0]
         return fluxes
 
     def setWallTemperature(self, temperature, groupName=None, TS=0):
@@ -2059,8 +2183,13 @@ class ADFLOW(AeroSolver):
         if groupName is None:
             groupName = self.allWallsGroup
         self._setFamilyList(groupName)
+<<<<<<< local
+        
+        self.sumb.settnswall(temperature, TS+1)
+=======
             
         self.adflow.settnswall(temperature, TS+1)
+>>>>>>> other
         
     def getSurfacePoints(self, groupName=None, TS=0):
 
@@ -2421,10 +2550,44 @@ class ADFLOW(AeroSolver):
         """
         self.adflow.utils.stabilityderivativedriver()
 
+<<<<<<< local
+    def updateGeometryInfo(self, warpMesh=True):
+        """
+        Update the SUmb internal geometry info.
+        """
+
+        # The mesh is modified
+=======
     def updateGeometryInfo(self):
         """Update the ADflow internal geometry info, if necessary."""
 
+>>>>>>> other
         if self._updateGeomInfo and self.mesh is not None:
+<<<<<<< local
+            # If it is unsteady, and mesh is modified, then it has to be ALE
+            if self.getOption('equationMode').lower() == 'unsteady':
+                self.sumb.preprocessingapi.shiftcoorandvolumes()
+                self.sumb.aleutils.shiftlevelale()
+            # Warp the mesh if surface coordinates are modified
+            if warpMesh:
+                timeA = time.time()
+                self.mesh.warpMesh()
+                newGrid = self.mesh.getSolverGrid()
+                self.sumb.killsignals.routinefailed = False
+                self.sumb.killsignals.fatalFail = False
+                self.updateTime = time.time()-timeA
+                if newGrid is not None:
+                    self.sumb.warping.setgrid(newGrid)
+            # Update geometric data, depending on the type of simulation
+            if self.getOption('equationMode').lower() == 'unsteady':
+                self.sumb.solvers.updateunsteadygeometry()
+            else:
+                self.sumb.preprocessingapi.updatecoordinatesalllevels()
+                self.sumb.walldistance.updatewalldistancealllevels()
+                self.sumb.preprocessingapi.updatemetricsalllevels()
+                self.sumb.preprocessingapi.updategridvelocitiesalllevels()
+            # Update flags
+=======
             timeA = time.time()
             self.mesh.warpMesh()
             newGrid = self.mesh.getSolverGrid()
@@ -2437,6 +2600,7 @@ class ADFLOW(AeroSolver):
             self.adflow.walldistance.updatewalldistancealllevels()
             self.adflow.preprocessingapi.updatemetricsalllevels()
             self.adflow.preprocessingapi.updategridvelocitiesalllevels()
+>>>>>>> other
             self._updateGeomInfo = False
             self.adflow.killsignals.routinefailed = \
                 self.comm.allreduce(
@@ -3430,6 +3594,7 @@ class ADFLOW(AeroSolver):
             'deltat':[float, .010],
             'useale':[bool, True],
             'usegridmotion':[bool, False],
+            'coupledsolution':[bool, False],
 
             # Time Spectral Paramters
             'timeintervals': [int, 1],
@@ -3694,10 +3859,16 @@ class ADFLOW(AeroSolver):
             'debugzipper':['overset','debugzipper'],
 
             # Unsteady Params
+<<<<<<< local
+            'timeintegrationscheme':{'bdf':self.sumb.constants.bdf,
+                                     'explicitrk':self.sumb.constants.explicitrk,
+                                     'implicitrk':self.sumb.constants.implicitrk,
+=======
             'timeintegrationscheme':{'bdf':self.adflow.constants.bdf,
                                      'explicitrk':self.adflow.constants.explicitrk,
                                      'implicitrk':self.adflow.constants.implicitrk,
                                      'md':self.adflow.constants.md,
+>>>>>>> other
                                      'location':['unsteady', 'timeintegrationscheme']},
             'timeaccuracy':['unsteady', 'timeaccuracy'],
             'ntimestepscoarse':['unsteady', 'ntimestepscoarse'],
@@ -3841,6 +4012,7 @@ class ADFLOW(AeroSolver):
                              'writesurfacesolution',
                              'writevolumesolution',
                              'writetecplotsurfacesolution',
+                             'coupledsolution',
                              'autosolveretry',
                              'autoadjointretry',
                              'partitiononly',

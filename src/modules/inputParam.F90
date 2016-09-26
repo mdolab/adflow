@@ -708,7 +708,6 @@ module inputUnsteady
 
   integer(kind=intType) :: nOldGridRead
 
-
   ! useALE: Use the deforming mesh ale formuation. 
   logical :: useALE
 
