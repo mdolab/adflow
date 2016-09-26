@@ -4,7 +4,7 @@ subroutine makeGapBoundaryStrings(level, sps, master)
   use adtBuild, only : buildSerialQuad
   use blockPointers
   use communication, only : adflow_comm_world, myid, nProc
-  use overset, only : oversetString, oversetWall
+  use overset
   use stringOps
   use kdtree2_module
   use inputOverset
