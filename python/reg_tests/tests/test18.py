@@ -94,15 +94,13 @@ options.update(
      'usenksolver':False,
      'l2convergence':1e-6,
      'l2convergencecoarse':1e-4,
-     'qmode':True,
+     'qmode':False,
      'alphafollowing': False,
      'blockSplitting':True,
      }
 )
 ap = AeroProblem(name=name, alpha=alpha_m,  mach=M, machRef=M, reynolds=4800000.0,reynoldsLength=c, T=T, R=R,
-                 areaRef=1.0, chordRef=c, evalFuncs=['cl','cd','cmz'],xRef=0.25,xRot=0.25,
-                 degreePol=0,coefPol=[0.0],degreeFourier=1,omegaFourier=omega,
-                 cosCoefFourier=[0.0,0.0],sinCoefFourier=[deltaAlpha])
+                 areaRef=1.0, chordRef=c, evalFuncs=['cl','cd','cmz'],xRef=0.25,xRot=0.25)
 
 def callback(refGrid, t, ts):
     newGrid = numpy.copy(refGrid)
