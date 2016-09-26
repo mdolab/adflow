@@ -2,7 +2,7 @@ module oversetUtilities
 contains
   subroutine emptyFringe(fringe)
     use constants
-    use block
+    use block, only : fringeType
     implicit none
     ! Input/Output
     type(fringeType), intent(inout) :: fringe
@@ -30,7 +30,7 @@ contains
     ! This is a debugging routine to print out the overlap matrix.
     use constants
     use communication, only : myid
-    use overset
+    use overset, only : CSRMatrix
     implicit none
 
     ! Input/output
@@ -62,9 +62,9 @@ contains
   end subroutine printOverlapMatrix
 
   subroutine getCumulativeForm(sizeArray, n, cumArray)
+
     use constants
     implicit none
-
 
     ! Input/Output
     integer(kind=intType), dimension(n), intent(in) :: sizeArray
@@ -151,6 +151,7 @@ contains
 
   subroutine deallocateCSRMatrix(mat1)
 
+    use constants
     use overset, only : CSRMatrix
     implicit none
 
@@ -674,7 +675,7 @@ contains
     !  where 'search' lies in arr.                                
 
     use constants
-    use overset
+    use overset ! cannot use only becuase of <= operator
     implicit none
 
     ! Input parameters
@@ -721,7 +722,7 @@ contains
     !       (Generously copied from qsortFringeType.F90)                   
     !
     use constants
-    use overset
+    use overset ! cannot use only becuase of <= operator
     use utils, only : terminate
     implicit none
     !
@@ -938,7 +939,7 @@ contains
     !       data type.                                                     
     !
     use constants
-    use block
+    use block ! Cannot use-only becuase of <= operator
     use utils, only : terminate
     implicit none
     !
@@ -1157,7 +1158,7 @@ contains
     !       (Generously copied from qsortFringeType.F90)                   
     !
     use constants
-    use overset
+    use overset ! Cannot use-only becuase of <= operator
     use utils, onlY : terminate
     implicit none
     !
@@ -1827,8 +1828,9 @@ contains
 
   subroutine fringeReduction(level, sps)
 
+    use constants
     use blockPointers, only : nDom, il, jl, kl, fringes
-    use stencils
+    use stencils, only : visc_drdw_stencil, n_visc_drdw
     use utils, only : setPointers
     implicit none
 
