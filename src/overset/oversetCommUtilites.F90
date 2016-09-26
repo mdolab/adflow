@@ -404,8 +404,8 @@ contains
   subroutine oversetLoadBalance(overlap)
 
     use constants
-    use communication
-    use overset
+    use communication, only : nProc
+    use overset, only : CSRMatrix
     implicit none
 
     ! Input/Output
@@ -592,7 +592,6 @@ contains
     use blockPointers, only : flowDoms
     use communication, only : commType, internalCommType, recvBuffer, sendBuffer, myid, &
          adflow_comm_world, sendRequests, recvRequests
-    !use overset
     implicit none
     !
     !      Subroutine arguments.
@@ -1284,8 +1283,9 @@ contains
     !       given level and sps instance.                                  
     !
     use constants
-    use blockPointers
-    use communication
+    use blockPointers, only : nDom, ib, jb, kb, iBlank, BCData, &
+         il, jl, kl, BCFaceID, nBocos, flowDoms, BCType
+    use communication, only : commType, internalCommType
     use utils, only : setPointers
     use haloExchange, only : whalo1to1intgeneric
     implicit none
