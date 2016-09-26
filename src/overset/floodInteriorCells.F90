@@ -243,7 +243,7 @@ subroutine floodInteriorCells(level, sps)
 contains
   ! Simple routine to make code easier to read above
   subroutine addSeed(i, j, k)
-    use precision
+
     implicit none
     integer(kind=intType), intent(in) :: i, j, k
     nSeed = nSeed + 1
@@ -252,7 +252,6 @@ contains
   
   function onBlock(i, j, k)
 
-    use precision
     implicit none
     
     integer(kind=intType), intent(in) :: i, j, k
