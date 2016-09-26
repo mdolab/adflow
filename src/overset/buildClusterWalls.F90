@@ -1,4 +1,4 @@
-subroutine buildClusterWalls(level, sps, useDual, walls)
+subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
 
   ! This routine will will build a global reduced surface mesh and ADT
   ! for each cluster. It can build using either the primal mesh or the
@@ -13,12 +13,14 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
   use inputOverset
   use utils, only : setPointers, EChk, pointReduce
   use warping, only : getCGNSMeshIndices
+  use sorting, only :bsearchIntegers
   implicit none
 
   ! Input Variables
-  integer(kind=intType), intent(in) :: level, sps
+  integer(kind=intType), intent(in) :: level, sps, nFamList
   logical :: useDual
   type(oversetWall), intent(inout), dimension(nClusters), target :: walls
+  integer(Kind=intType), intent(in) :: famList(nFamList)
 
   ! Local Variables
   integer(kind=intType) :: i, j, k, l, ii, jj, kk, nn, mm, iNode, iCell, c
@@ -95,6 +97,11 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
            do j=1, jl
               do i=1, il
                  ii = ii + 3
+                 ! The reason for the +3 in the counter and the /3 is
+                 ! that the CGNSMesh indicies include all DOF, so it
+                 ! is the total number of mesh nodes *3. Here We only
+                 ! care about nodes themselves so it is sufficient to
+                 ! use basic ordering.
                  flowDoms(nn, level, sps)%globalCGNSNode(i,j,k) = cgnsIndices(ii)/3
               end do
            end do
@@ -107,9 +114,8 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
      call setPointers(nn, level, sps)
 
      do mm=1, nBocos
-        if(BCType(mm) == NSWallAdiabatic .or. &
-           BCType(mm) == NSWallIsothermal .or. &
-           BCType(mm) == EulerWall) then
+        if (bsearchIntegers(BCdata(mm)%famID, &
+             famlist, nFamList) > 0) then 
            iBeg = bcData(mm)%inBeg
            iEnd = bcData(mm)%inEnd
            jBeg = bcData(mm)%jnBeg
@@ -167,9 +173,8 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
      c = clusters(cumDomProc(myid) + nn)
      globalCGNSNode => flowDoms(nn, level, sps)%globalCGNSNode
      do mm=1,nBocos
-        if(  BCType(mm) == NSWallAdiabatic .or. &
-             BCType(mm) == NSWallIsothermal .or. &
-             BCType(mm) == EulerWall) then
+        if (bsearchIntegers(BCdata(mm)%famID, &
+             famlist, nFamList) > 0) then 
 
            jBeg = BCData(mm)%jnBeg-1 ; jEnd = BCData(mm)%jnEnd
            iBeg = BCData(mm)%inBeg-1 ; iEnd = BCData(mm)%inEnd
@@ -275,6 +280,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
               xx4 => xx
 
            end if
+
            ! We want to ensure that all the normals of the faces are
            ! consistent. To ensure this, we enforce that all normals
            ! are "into" the domain. Therefore we must treat difference
