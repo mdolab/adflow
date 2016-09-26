@@ -23,6 +23,12 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   use utils, only : EChk, setPointers, setBufferSizes, terminate
   use surfaceFamilies, only : walLFamilies
   use kdtree2_module
+  use oversetInitialization, only : initializeFringes, initializeOBlock, &
+       initializeOFringes
+  use oversetCommUtilities
+  use oversetUtilities
+  use oversetPackingRoutines
+  use zipperMesh, only : createZipperMesh
   implicit none
 
   ! Input Parameters
@@ -37,7 +43,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   integer(kind=intType) :: nn, mm, n, ierr, iProc, myIndex, iRefine
   integer(kind=intType) :: iWork, nWork, nFringeProc, nLocalFringe
   real(kind=realType) :: startTime, endTime, quality, xp(3)
-  logical :: computeCellFound,  isCompute
+  logical :: computeCellFound
 
   type(CSRMatrix), pointer :: overlap
   type(CSRMatrix) :: overlapTranspose
@@ -1289,7 +1295,7 @@ subroutine writePartitionedMesh(fileName)
 
   ! This is a debugging routine for writing out meshes *as they are
   ! partioned*. This can be useful for debugging overset issues. Only
-  ! the grid coordinates are writting...these will have to be post
+  ! the grid coordinates are written...these will have to be post
   ! processed to get connectivity information if the grid is to be
   ! used as input again.
 

@@ -34,6 +34,7 @@ contains
     use communication
     use adjointVars
     use turbMod
+    use oversetUtilities, only : fracToWeights
     use utils, only : EChk, setPointers, getDirAngle, setPointers_d
     use haloExchange, only : whalo2
     use masterRoutines, only : block_res_state, master

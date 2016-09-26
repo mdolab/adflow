@@ -10,7 +10,7 @@ subroutine finalOversetCommStructures(level, sps)
   use communication, only : adflow_comm_world, myid, nProc, sendRequests, recvRequests, &
        commPatternOverset, internalOverset
   use utils, only : setPointers, terminate, EChk
-
+  use oversetUtilities, only : fracToWeights, qsortFringeType, getCumulativeForm, computeFringeProcArray
   implicit none
 
   ! Input Parameters

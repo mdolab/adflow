@@ -5,6 +5,9 @@ subroutine floodInteriorCells(level, sps)
        nDom, flowDoms, iBlank, fringes
   use utils, only : setPointers, EChk
   use haloExchange, only : whalo1to1intGeneric
+  use oversetUtilities, only :  isCompute, isWallDonor, isFloodSeed, isHole, setIsFlooded, &
+       setIsHole, setIsCompute, setIsFloodSeed, setIsHole, emptyFringe
+
   implicit none
 
   ! Input/Output
@@ -14,7 +17,7 @@ subroutine floodInteriorCells(level, sps)
   integer(kind=intType) :: nn, i, j, k, nSeed, iSeed, ierr
   integer(kind=intType), dimension(:, :), allocatable :: stack, floodSeeds
   integer(kind=intType) :: nChanged, nChangedLocal, stackPointer, loopIter
-  logical :: tmpSave, isCompute, isWallDonor, isFloodSeed, isHole
+  logical :: tmpSave
   integer(kind=intType), dimension(:, :, :), pointer :: changed
 
   ! Allocate pointer space for the integer flag communication
@@ -262,44 +265,5 @@ contains
     end if
   end function onBlock
 
-
 end subroutine floodInteriorCells
 
-
-subroutine floodInteriorCells_init(level, sps)
-  use communication
-  use blockPointers
-  use utils, only : setPointers
-  implicit none
-
-  ! Input/Output
-  integer(kind=intType), intent(in) :: level, sps
-
-  ! Working
-  integer(kind=intType) :: nn, i, j, k, nSeed, iSeed, ierr
-  integer(kind=intType), dimension(:, :), allocatable :: stack, floodSeeds
-  integer(kind=intType) :: nChanged, nChangedLocal, stackPointer, loopIter
-  logical :: tmpSave, isCompute, isWallDonor, isFloodSeed, isHole
-  integer(kind=intType), dimension(:, :, :), pointer :: changed
-
-  do nn=1,nDom
-     call setPointers(nn, level, sps)
-
-     do k=2, kl
-        do j=2, jl
-           do i=2, il
-              if (isWallDonor(fringes(i, j, k)%status) .and. &
-                   isCompute(fringes(i, j, k)%status)) then 
-             
-                 ! Pure compute cell, convert to hole
-                 call emptyFringe(fringes(i, j, k))
-                 call setIsHole(fringes(i, j, k)%status, .True.)
-                 call setIsFlooded(fringes(i, j, k)%status, .True.)
-                 call setIsCompute(fringes(i, j, k)%status, .False.)
-                 call setIsFloodSeed(fringes(i, j, k)%status, .True.)
-              end if
-           end do
-        end do
-     end do
-  end do
-end subroutine floodInteriorCells_init
