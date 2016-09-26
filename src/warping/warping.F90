@@ -297,8 +297,7 @@ contains
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
 
-             famInclude: if (bsearchIntegers(BCdata(mm)%famID, &
-                  famGroups, size(famGroups)) > 0) then 
+             famInclude: if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then 
 
                 do j=jBeg, jEnd ! This is a node loop
                    do i=iBeg, iEnd ! This is a node loop

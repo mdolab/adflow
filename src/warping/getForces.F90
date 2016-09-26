@@ -1327,8 +1327,7 @@ subroutine setTNSWall(tnsw, npts, sps)
 
      ! Loop over the number of viscous boundary subfaces of this block.
      bocos: do mm=1,nBocos
-        famInclude: if (bsearchIntegers(BCdata(mm)%famID, &
-             famGroups, size(famGroups)) > 0) then
+        famInclude: if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then
            jBeg = BCdata(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
            iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd
 

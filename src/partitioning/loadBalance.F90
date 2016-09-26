@@ -988,7 +988,7 @@ contains
       ! number of cells. Note that the processor ID's start at 0.
 
       do i=1,nProc
-         j = bsearchIntegers(nCellOr(i), nCell, nCellDiff)
+         j = bsearchIntegers(nCellOr(i), nCell(1:nCellDiff))
          tmp(j) = tmp(j) + 1
          procNCell(tmp(j)) = i - 1
       enddo
@@ -1357,7 +1357,7 @@ contains
 
     do i=1,blockID%nBocos
 
-       ii = bsearchIntegers(bcPrior(i), bcPriorSort, nDiff)
+       ii = bsearchIntegers(bcPrior(i), bcPriorSort(1:nDiff))
 
        ! Update the lower boundary in the multiplicity for this
        ! boundary condition and store the entry a bit easier.
@@ -2611,7 +2611,7 @@ contains
              ! is used when calling Metis.
 
              jj = xadj(i-1) &
-                  + bsearchIntegers(blocks(i)%neighBlock(ii), tmp, nEdges)
+                  + bsearchIntegers(blocks(i)%neighBlock(ii), tmp(1:nEdges))
              adjncy(jj) = blocks(i)%neighBlock(ii) - 1
 
              ! The weight equals the number of 1st and 2nd level halo

@@ -23,7 +23,7 @@ contains
        call setPointers(nn,1_intType,1_intType)
        bocos: do mm=1,nBocos
           ! Check if this surface should be included or not:
-          famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList, n) > 0) then 
+          famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then 
 
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
@@ -57,8 +57,7 @@ contains
     domains: do nn=1,nDom
        call setPointers(nn, 1_intType, 1_intType)
        bocos: do mm=1,nBocos
-          famInclude: if (bsearchIntegers(BCdata(mm)%famID, &
-               famGroups, size(famGroups)) > 0) then 
+          famInclude: if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then 
 
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
@@ -160,8 +159,7 @@ contains
     domains: do nn=1,nDom
        call setPointers(nn, 1_intType, 1_intType)
        bocos: do mm=1,nBocos
-          famInclude: if (bsearchIntegers(BCdata(mm)%famID, &
-               famGroups, size(famGroups)) > 0) then 
+          famInclude: if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then 
 
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
@@ -205,8 +203,7 @@ contains
        ! Loop over the number of boundary subfaces of this block.
        bocos: do mm=1,nBocos
 
-          famInclude: if (bsearchIntegers(BCdata(mm)%famID, &
-               famGroups, size(famGroups)) > 0) then 
+          famInclude: if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then 
 
              ! NODE Based
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
@@ -269,8 +266,8 @@ contains
        bocos: do mm=1,flowDoms(nn, 1, 1)%nBocos
           famId = flowDoms(nn, 1, 1)%BCdata(mm)%famID
 
-          fam1Included = bsearchIntegers(famID, famList1, nf1) > 0
-          fam2Included = bsearchIntegers(famID, famList2, nf2) > 0
+          fam1Included = bsearchIntegers(famID, famList1) > 0
+          fam2Included = bsearchIntegers(famID, famList2) > 0
 
           jBeg = flowDoms(nn, 1, 1)%bcData(mm)%jnBeg
           jEnd = flowDoms(nn, 1, 1)%bcData(mm)%jnEnd
