@@ -25,12 +25,9 @@ python module libadflow
          subroutine alloctimearrays(nitertot) 
            integer(kind=inttype) :: ntimetot
          end subroutine alloctimearrays
-<<<<<<< local
          
          subroutine unsteadyheader 
          end subroutine unsteadyheader
-
-=======
 
          subroutine pointreduce(pts,n,tol,uniquepts,link,nunique) ! in :test:utils.F90:utils
            real(kind=realtype) dimension(3,n),intent(in) :: pts
@@ -41,7 +38,6 @@ python module libadflow
            integer(kind=inttype) intent(out) :: nunique
          end subroutine pointreduce
 
->>>>>>> other
        end module utils
 
        module walldistance
