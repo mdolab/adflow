@@ -1,10 +1,11 @@
 subroutine surfaceCorrection(oBlock, oFringe, offset, n)
 
-  use overset
+  use constants
+  use overset, only : oversetBlock, oversetFringe, oversetWall, clusterWalls
   use adtData, only : adtBBoxTargetType
   use adtLocalSearch, only : minDistanceTreeSearchSinglePoint
-  use kdtree2_module
-  use inputOverset
+  use kdtree2_module, onlY : kdtree2_result, kdtree2_n_nearest
+  use inputOverset, only : nearWallDist
   use sorting, only : unique
   use utils, only : myNorm2
   implicit none

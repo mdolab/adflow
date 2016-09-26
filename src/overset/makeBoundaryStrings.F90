@@ -2,12 +2,12 @@ subroutine makeGapBoundaryStrings(level, sps, master)
 
   use constants
   use adtBuild, only : buildSerialQuad
-  use blockPointers
+  use blockPointers, only : x, globalCell, globalNOde, BCData, nBocos, &
+       il, jl, kl, nDom, rightHanded, BCFaceID, BCType
   use communication, only : adflow_comm_world, myid, nProc
-  use overset
-  use stringOps
-  use kdtree2_module
-  use inputOverset
+  use overset, only : oversetString, oversetWall, nClusters, clusters, cumDomProc
+  use stringOps, only : nullifyString, deallocateString, setStringPointers, &
+       reduceGapString
   use utils, only : setPointers, EChk, myNorm2, isWallType
   use surfaceFamilies, only : walLFamilies
   use oversetPackingRoutines, only : getWallSize
