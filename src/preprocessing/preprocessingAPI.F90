@@ -218,7 +218,6 @@ contains
        call determineNcellGlobal(level)
        call setGlobalCellsAndNodes(level)
        call setReferenceVolume(level)
-       call computeWallDistance(level, .True.)
     end do
 
     ! BC Data must be alloaced (for surface iblank) before we can do
@@ -226,11 +225,14 @@ contains
     call allocMemBCData
 
     call setSurfaceFamilyInfo
-
+    
+    ! Surface info needs to be computed before the wall distance can
+    ! be done and overset connectivity computed
     do level=1,nLevels
+       call computeWallDistance(level, .True.)
+
        if (level == 1) then
           call oversetComm(level, .true., .false.)
-
        else
           call oversetComm(level, .true., .true.)
        end if
