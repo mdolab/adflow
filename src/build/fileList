@@ -58,25 +58,20 @@ fortranFiles=	ADT/adtUtils.F90\
 		\
 		overset/stringOps.F90\
 		overset/cartMesh.F90\
-		overset/computeInterpolationParallel.F90\
+		overset/oversetAPI.F90\
 		overset/buildClusterWalls.F90\
-		overset/createZipperMesh.F90\
+		overset/zipperMesh.F90\
 		overset/bowtieAndIsolationElimination.F90\
-		overset/determineClusters.F90 \
-		overset/determineClusterMarchDist.F90\
 		overset/computeCellWallPoint.F90\
 		overset/floodInteriorCells.F90\
 		overset/determineDonors.F90\
-		overset/packingRoutines.F90\
+		overset/oversetPackingRoutines.F90\
 		overset/fringeSearch.F90\
 		overset/oversetUtilities.F90\
 		overset/finalOversetCommStructures.F90\
-		overset/setIBlankArray.F90\
 		overset/surfaceCorrection.F90\
 		overset/wallSearch.F90\
-		overset/determineZipperWallAssociation.F90\
 		overset/makeBoundaryStrings.F90\
-		overset/writeDualGrid.F90\
 		overset/oversetInitialization.F90\
 		overset/oversetCommUtilites.F90\
 		\

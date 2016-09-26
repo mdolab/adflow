@@ -1942,7 +1942,7 @@ contains
     call ECHK(ierr, __FILE__, __LINE__)
 
   end function checkOversetPresent
-  
+
   subroutine setIblankArray(level, sps)
 
     use constants

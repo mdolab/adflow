@@ -278,7 +278,7 @@ contains
     ! -------------------------------------------------------------------
 
     if (debugZipper) then 
-       call writeWalls(oWalls, size(oWalls))
+       call writeWalls
     end if
 
     call makeGapBoundaryStrings(level, sps, master)
@@ -911,5 +911,81 @@ contains
     end do
 
   end function checkDeviation
+
+  subroutine writeWalls
+
+    use communication
+    use overset
+    use constants
+    use blockPointers
+    use utils, only : setPointers
+    implicit none
+
+    character(80) :: fileName, zoneName
+    integer(kind=intType) :: i, j, nn, iDom, iBeg, iEnd, jBeg, jEnd, mm, iDim
+    real(kind=realType), dimension(:, :, :), pointer :: xx
+
+    write (fileName,"(a,I5.5,a)") "wall_", myid, ".dat"
+
+    open(unit=101,file=trim(fileName),form='formatted')
+    write(101,*) 'TITLE = "mywalls"'
+    write(101,*) 'Variables = "X", "Y", "Z", "CellIBlank"'
+
+    do nn=1,nDom
+       iDom = nn + cumDomProc(myid)
+       call setPointers(nn, 1, 1)
+       if (nBocos > 0) then 
+          do mm=1, nBocos
+             jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
+             iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
+             if (BCType(mm) == EulerWall .or. &
+                  BCType(mm) == NSWallAdiabatic .or. &
+                  BCType(mm) == NSWallIsothermal) then
+                select case (BCFaceID(mm))
+                case (iMin)
+                   xx => x(1,:,:,:)
+                case (iMax)
+                   xx => x(il,:,:,:)
+                case (jMin)
+                   xx => x(:,1,:,:)
+                case (jMax)
+                   xx => x(:,jl,:,:)
+                case (kMin)
+                   xx => x(:,:,1,:)
+                case (kMax)
+                   xx => x(:,:,kl,:)
+                end select
+
+                write(zoneName, "(a,I5.5,a,I5.5)") "Zone", iDom, "_Proc_", myid
+110             format('ZONE T=',a, " I=", i5, " J=", i5)
+                write(101, 110), trim(zoneName), iEnd-iBeg+1, jEnd-jBeg+1
+                write (101,*) "DATAPACKING=BLOCK, VARLOCATION=([1,2,3]=NODAL, [4]=CELLCENTERED)"
+
+13              format (E14.6)
+                do iDim=1,3
+                   do j=jBeg, jEnd
+                      do i=iBeg, iEnd
+                         write(101, *) xx(i+1, j+1, iDim)
+                      end do
+                   end do
+                end do
+
+                do j=jBeg+1, jEnd
+                   do i=iBeg+1, iEnd
+                      write(101, *) BCData(mm)%iBlank(i, j)
+                   end do
+                end do
+             end if
+          end do
+       else
+          ! Write dummy zone
+          write(zoneName, "(a,I1,a,I1)") "Zone", 0, "_Proc_", myid
+          write(101, 110), trim(zoneName), 1, 1
+          write (101,*) "DATAPACKING=POINT"
+          write(101, *) zero, zero, zero, one, one
+       end if
+    end do
+    close(101)
+  end subroutine writeWalls
 
 end module zipperMesh
