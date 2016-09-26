@@ -656,18 +656,11 @@ class ADFLOW(AeroSolver):
             self.curAP.solveFailed = True
             return
 
-<<<<<<< local
-        # We now know the mesh warping was ok so reset the flags:
-        self.sumb.killsignals.routinefailed =  False
-        self.sumb.killsignals.fatalfail = False
-=======
         # We now now the mesh warping was ok so reset the flags:
         self.adflow.killsignals.routinefailed =  False
         self.adflow.killsignals.fatalfail = False
->>>>>>> other
 
         t1 = time.time()
-<<<<<<< local
         
         # Solve the equations in appropriate mode
         mode = self.getOption('equationMode').lower()
@@ -679,12 +672,12 @@ class ADFLOW(AeroSolver):
             if wallTemperature is not None:
                 self.setWallTemperature(wallTemperature, groupName=groupName)
             
-            self.sumb.solvers.solver()
+            self.adflow.solvers.solver()
         elif mode == 'unsteady':
             # Initialization specific for unsteady simulation
-            self.sumb.solvers.solverunsteadyinit()
+            self.adflow.solvers.solverunsteadyinit()
 
-            # If SUmb is to be coupled with other solvers, we are done
+            # If ADflow is to be coupled with other solvers, we are done
             if self.getOption('coupledsolution'):
                 return
             # Otherwise, the problem is solved within this function
@@ -696,23 +689,9 @@ class ADFLOW(AeroSolver):
                 # Call solver wrapper for unsteady simulations
                 self._solverunsteady(surfaceMeshCallback = surfaceMeshCallback,
                                      volumeMeshCallback  = volumeMeshCallback)
-=======
-
-        # Call the Solver or the MD callback solver
-        MDCallBack = kwargs.pop('MDCallBack', None)
-        # When callback is not given, or time integration scheme is not md/ale
-        # use normal solver instead
-        if MDCallBack is None or not self.getOption('timeIntegrationScheme') == 'md' :
-            self.adflow.solvers.solver()
->>>>>>> other
         else:
-<<<<<<< local
             raise Error("Mode {0} not supported".format(mode))
-        
-=======
-            self.adflow.solvers.solverunsteady_ale(MDCallBack)
 
->>>>>>> other
         # Save the states into the aeroProblem
         self.curAP.adflowData.stateInfo = self._getInfo()
 
@@ -782,13 +761,13 @@ class ADFLOW(AeroSolver):
             # Rigidly move mesh if necessary
             elif volumeMeshCallback is not None:
                 newGrid = volumeMeshCallback(refGrid, curTime, curTimeStep).reshape(-1)
-                self.sumb.warping.setgrid(newGrid)
+                self.adflow.warping.setgrid(newGrid)
                 self._updateGeomInfo = True
                 self.updateGeometryInfo(warpMesh=False)
             # Otherwise do naive unsteady simulation
             else:
-                self.sumb.preprocessingapi.shiftcoorandvolumes()
-                self.sumb.solvers.updateunsteadygeometry()
+                self.adflow.preprocessingapi.shiftcoorandvolumes()
+                self.adflow.solvers.updateunsteadygeometry()
             
             # Solve current step
             self.solveTimeStep()
@@ -798,21 +777,21 @@ class ADFLOW(AeroSolver):
         """
         Advance one unit of timestep and physical time.
         """
-        self.sumb.monitor.timestepunsteady = self.sumb.monitor.timestepunsteady + 1
-        self.sumb.monitor.timeunsteady     = self.sumb.monitor.timeunsteady     + \
-            self.sumb.inputunsteady.deltat
+        self.adflow.monitor.timestepunsteady = self.adflow.monitor.timestepunsteady + 1
+        self.adflow.monitor.timeunsteady     = self.adflow.monitor.timeunsteady     + \
+            self.adflow.inputunsteady.deltat
 
         if self.myid == 0:
-            self.sumb.utils.unsteadyheader()
+            self.adflow.utils.unsteadyheader()
         
-        return self.sumb.monitor.timeunsteady, self.sumb.monitor.timestepunsteady
+        return self.adflow.monitor.timeunsteady, self.adflow.monitor.timestepunsteady
         
     def solveTimeStep(self):
         """
         Solve the current time step, and write solutions if necessary
         """
         t1 = time.time()
-        self.sumb.solvers.solverunsteadystep()
+        self.adflow.solvers.solverunsteadystep()
         t2 = time.time()
         if self.getOption('printTiming') and self.comm.rank == 0:
             print('Timestep solution time: {0:10.3f} sec'.format(t2-t1))
@@ -2144,13 +2123,9 @@ class ADFLOW(AeroSolver):
         npts, ncell = self._getSurfaceSize(self.allWallsGroup)
 
         fluxes = numpy.zeros(npts, self.dtype)
-<<<<<<< local
-        self.sumb.getheatflux(fluxes, TS+1)
+        self.adflow.getheatflux(fluxes, TS+1)
         if groupName is None:
             groupName = self.allWallsGroup
-=======
-        self.adflow.getheatfluxes(fluxes, TS+1)
->>>>>>> other
 
         # Map vector expects and Nx3 array. So we will do just that.
         tmp = numpy.zeros((npts, 3))
@@ -2183,13 +2158,7 @@ class ADFLOW(AeroSolver):
         if groupName is None:
             groupName = self.allWallsGroup
         self._setFamilyList(groupName)
-<<<<<<< local
-        
-        self.sumb.settnswall(temperature, TS+1)
-=======
-            
         self.adflow.settnswall(temperature, TS+1)
->>>>>>> other
         
     def getSurfacePoints(self, groupName=None, TS=0):
 
@@ -2550,57 +2519,36 @@ class ADFLOW(AeroSolver):
         """
         self.adflow.utils.stabilityderivativedriver()
 
-<<<<<<< local
     def updateGeometryInfo(self, warpMesh=True):
         """
-        Update the SUmb internal geometry info.
+        Update the ADflow internal geometry info.
         """
 
         # The mesh is modified
-=======
-    def updateGeometryInfo(self):
-        """Update the ADflow internal geometry info, if necessary."""
-
->>>>>>> other
         if self._updateGeomInfo and self.mesh is not None:
-<<<<<<< local
             # If it is unsteady, and mesh is modified, then it has to be ALE
             if self.getOption('equationMode').lower() == 'unsteady':
-                self.sumb.preprocessingapi.shiftcoorandvolumes()
-                self.sumb.aleutils.shiftlevelale()
+                self.adflow.preprocessingapi.shiftcoorandvolumes()
+                self.adflow.aleutils.shiftlevelale()
             # Warp the mesh if surface coordinates are modified
             if warpMesh:
                 timeA = time.time()
                 self.mesh.warpMesh()
                 newGrid = self.mesh.getSolverGrid()
-                self.sumb.killsignals.routinefailed = False
-                self.sumb.killsignals.fatalFail = False
+                self.adflow.killsignals.routinefailed = False
+                self.adflow.killsignals.fatalFail = False
                 self.updateTime = time.time()-timeA
                 if newGrid is not None:
-                    self.sumb.warping.setgrid(newGrid)
+                    self.adflow.warping.setgrid(newGrid)
             # Update geometric data, depending on the type of simulation
             if self.getOption('equationMode').lower() == 'unsteady':
-                self.sumb.solvers.updateunsteadygeometry()
+                self.adflow.solvers.updateunsteadygeometry()
             else:
-                self.sumb.preprocessingapi.updatecoordinatesalllevels()
-                self.sumb.walldistance.updatewalldistancealllevels()
-                self.sumb.preprocessingapi.updatemetricsalllevels()
-                self.sumb.preprocessingapi.updategridvelocitiesalllevels()
+                self.adflow.preprocessingapi.updatecoordinatesalllevels()
+                self.adflow.walldistance.updatewalldistancealllevels()
+                self.adflow.preprocessingapi.updatemetricsalllevels()
+                self.adflow.preprocessingapi.updategridvelocitiesalllevels()
             # Update flags
-=======
-            timeA = time.time()
-            self.mesh.warpMesh()
-            newGrid = self.mesh.getSolverGrid()
-            self.adflow.killsignals.routinefailed = False
-            self.adflow.killsignals.fatalFail = False
-            self.updateTime = time.time()-timeA
-            if newGrid is not None:
-                self.adflow.warping.setgrid(newGrid)
-            self.adflow.preprocessingapi.updatecoordinatesalllevels()
-            self.adflow.walldistance.updatewalldistancealllevels()
-            self.adflow.preprocessingapi.updatemetricsalllevels()
-            self.adflow.preprocessingapi.updategridvelocitiesalllevels()
->>>>>>> other
             self._updateGeomInfo = False
             self.adflow.killsignals.routinefailed = \
                 self.comm.allreduce(
@@ -3859,16 +3807,9 @@ class ADFLOW(AeroSolver):
             'debugzipper':['overset','debugzipper'],
 
             # Unsteady Params
-<<<<<<< local
-            'timeintegrationscheme':{'bdf':self.sumb.constants.bdf,
-                                     'explicitrk':self.sumb.constants.explicitrk,
-                                     'implicitrk':self.sumb.constants.implicitrk,
-=======
             'timeintegrationscheme':{'bdf':self.adflow.constants.bdf,
                                      'explicitrk':self.adflow.constants.explicitrk,
                                      'implicitrk':self.adflow.constants.implicitrk,
-                                     'md':self.adflow.constants.md,
->>>>>>> other
                                      'location':['unsteady', 'timeintegrationscheme']},
             'timeaccuracy':['unsteady', 'timeaccuracy'],
             'ntimestepscoarse':['unsteady', 'ntimestepscoarse'],
