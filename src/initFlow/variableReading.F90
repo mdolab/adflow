@@ -99,7 +99,7 @@ contains
     !
     integer :: realTypeCGNS
 
-    integer(kind=intType) :: i, j, k, nn, mm, po, ip, jp, kp
+    integer(kind=intType) :: i, j, k, nn, po, ip, jp, kp
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
 
     ! Set the cell range to be copied from the buffer.
@@ -118,8 +118,7 @@ contains
 
     ! Find out if the density is present in the solution file.
 
-    mm = nVar
-    nn = bsearchStrings(cgnsDensity, varNames, mm)
+    nn = bsearchStrings(cgnsDensity, varNames)
     if(nn > 0) then
 
        ! Density is present. First determine whether or not a type
@@ -189,7 +188,7 @@ contains
     !
     integer :: realTypeCGNS
 
-    integer(kind=intType) :: i, j, k, nn, mm, po, ip, jp, kp
+    integer(kind=intType) :: i, j, k, nn, po, ip, jp, kp
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
 
     real(kind=realType) :: vvx, vvy, vvz, dummyK, pres, rhoInv
@@ -210,8 +209,7 @@ contains
 
     ! Find out if the total energy is present in the solution file.
 
-    mm = nVar
-    nn = bsearchStrings(cgnsEnergy, varNames, mm)
+    nn = bsearchStrings(cgnsEnergy, varNames)
 
     testRhoEPresent: if(nn > 0) then
 
@@ -248,7 +246,7 @@ contains
 
     ! Total energy is not present. Check for the pressure.
 
-    nn = bsearchStrings(cgnsPressure, varNames, mm)
+    nn = bsearchStrings(cgnsPressure, varNames)
 
     testPressure: if(nn > 0) then
 
@@ -354,7 +352,7 @@ contains
     !
     integer :: realTypeCGNS
 
-    integer(kind=intType) :: i, j, k, nn, mm, po, ip, jp, kp
+    integer(kind=intType) :: i, j, k, nn, po, ip, jp, kp
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
 
     ! Set the cell range to be copied from the buffer.
@@ -373,8 +371,7 @@ contains
 
     ! Find out if the pressure is present in the solution file.
 
-    mm = nVar
-    nn = bsearchStrings(cgnsPressure, varNames, mm)
+    nn = bsearchStrings(cgnsPressure, varNames)
     if(nn > 0) then
 
        ! Pressure is present. First determine whether or not a type
@@ -412,7 +409,7 @@ contains
 
     ! Pressure is not present. Check for the total energy.
 
-    nn = bsearchStrings(cgnsEnergy, varNames, mm)
+    nn = bsearchStrings(cgnsEnergy, varNames)
     if(nn > 0) then
 
        ! Total energy is present. First determine whether or not a type
@@ -484,7 +481,7 @@ contains
     !
     integer :: realTypeCGNS
 
-    integer(kind=intType) :: i, j, k, nn, mm
+    integer(kind=intType) :: i, j, k, nn
 
     ! Set the cgns real type
 
@@ -492,8 +489,7 @@ contains
 
     ! Check if the eddy viscosity is present. If so, read it.
 
-    mm = nVar
-    nn = bsearchStrings(cgnsEddy, varNames, mm)
+    nn = bsearchStrings(cgnsEddy, varNames)
 
     if(nn > 0) then
 
@@ -529,7 +525,7 @@ contains
     ! ratio is present. If so read it and construct the eddy
     ! viscosity from it.
 
-    nn = bsearchStrings(cgnsEddyRatio, varNames, mm)
+    nn = bsearchStrings(cgnsEddyRatio, varNames)
 
     if(nn > 0) then
 
@@ -607,7 +603,7 @@ contains
     !
     integer :: realTypeCGNS
 
-    integer(kind=intType) :: i, j, k, nn, mm, po, ip, jp, kp
+    integer(kind=intType) :: i, j, k, nn, po, ip, jp, kp
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
 
     real(kind=realType) :: nuScale, kScale, omegaScale, val
@@ -638,8 +634,7 @@ contains
 
     turbKPresent = .false.
 
-    mm = nVar
-    nn = bsearchStrings(cgnsTurbK, varNames, mm)
+    nn = bsearchStrings(cgnsTurbK, varNames)
 
     if(nn > 0) then
 
@@ -678,7 +673,7 @@ contains
 
     omegaPresent = .false.
 
-    nn = bsearchStrings(cgnsTurbOmega, varNames, mm)
+    nn = bsearchStrings(cgnsTurbOmega, varNames)
 
     if(nn > 0) then
 
@@ -718,7 +713,7 @@ contains
 
     if(.not. omegaPresent) then
 
-       nn = bsearchStrings(cgnsTurbTau, varNames, mm)
+       nn = bsearchStrings(cgnsTurbTau, varNames)
 
        if(nn > 0) then
 
@@ -943,7 +938,7 @@ contains
     !
     integer :: realTypeCGNS
 
-    integer(kind=intType) :: i, j, k, nn, mm, po, ip, jp, kp
+    integer(kind=intType) :: i, j, k, nn, po, ip, jp, kp
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
 
     real(kind=realType) :: nuScale, ratio, nu
@@ -969,8 +964,7 @@ contains
 
     ! Check if the nu tilde variable is present.
 
-    mm = nVar
-    nn = bsearchStrings(cgnsTurbSANu, varNames, mm)
+    nn = bsearchStrings(cgnsTurbSANu, varNames)
 
     nuTildePresent: if(nn > 0) then
 
@@ -1116,7 +1110,7 @@ contains
     integer :: realTypeCGNS, itu
     integer, dimension(4) :: indW
 
-    integer(kind=intType) :: i, j, k, ii, nn, mm, po, ip, jp, kp
+    integer(kind=intType) :: i, j, k, ii, nn, po, ip, jp, kp
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
 
     real(kind=realType) :: nuScale, kScale, epsScale, fScale
@@ -1166,8 +1160,7 @@ contains
        ! Find the index of the variable in the solution file and check
        ! if it is present. If not exit the loop.
 
-       mm = nVar
-       nn = bsearchStrings(namesVar(ii), varNames, mm)
+       nn = bsearchStrings(namesVar(ii), varNames)
 
        if(nn == 0) exit
 
@@ -1346,8 +1339,7 @@ contains
 
     ! Find out if the X-momentum is present in the solution file.
 
-    mm = nVar
-    nn = bsearchStrings(cgnsMomX, varNames, mm)
+    nn = bsearchStrings(cgnsMomX, varNames)
 
     testMxPresent: if(nn > 0) then
 
@@ -1384,7 +1376,7 @@ contains
 
     ! X-momentum is not present. Check for x-velocity.
 
-    nn = bsearchStrings(cgnsVelX, varNames, mm)
+    nn = bsearchStrings(cgnsVelX, varNames)
 
     testVxPresent: if(nn > 0) then
 
@@ -1454,7 +1446,7 @@ contains
     !
     integer :: realTypeCGNS
 
-    integer(kind=intType) :: i, j, k, nn, mm, po, ip, jp, kp
+    integer(kind=intType) :: i, j, k, nn, po, ip, jp, kp
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
 
     real(kind=realType) :: scale
@@ -1475,8 +1467,7 @@ contains
 
     ! Find out if the x-velocity is present in the solution file.
 
-    mm = nVar
-    nn = bsearchStrings(cgnsVelX, varNames, mm)
+    nn = bsearchStrings(cgnsVelX, varNames)
     if(nn > 0) then
 
        ! X-velocity is present. First determine whether or not a type
@@ -1513,7 +1504,7 @@ contains
 
     ! X-velocity not present. Check for x-momentum.
 
-    nn = bsearchStrings(cgnsMomX, varNames, mm)
+    nn = bsearchStrings(cgnsMomX, varNames)
     if(nn > 0) then
 
        ! X-momentum is present. First determine whether or not a type
@@ -1588,7 +1579,7 @@ contains
     !
     integer :: realTypeCGNS
 
-    integer(kind=intType) :: i, j, k, nn, mm, po, ip, jp, kp
+    integer(kind=intType) :: i, j, k, nn, po, ip, jp, kp
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
 
     real(kind=realType) :: momScale
@@ -1611,8 +1602,7 @@ contains
 
     ! Find out if the Y-momentum is present in the solution file.
 
-    mm = nVar
-    nn = bsearchStrings(cgnsMomY, varNames, mm)
+    nn = bsearchStrings(cgnsMomY, varNames)
 
     testMyPresent: if(nn > 0) then
 
@@ -1649,7 +1639,7 @@ contains
 
     ! Y-momentum is not present. Check for y-velocity.
 
-    nn = bsearchStrings(cgnsVelY, varNames, mm)
+    nn = bsearchStrings(cgnsVelY, varNames)
 
     testVyPresent: if(nn > 0) then
 
@@ -1721,7 +1711,7 @@ contains
     !
     integer :: realTypeCGNS
 
-    integer(kind=intType) :: i, j, k, nn, mm, po, ip, jp, kp
+    integer(kind=intType) :: i, j, k, nn, po, ip, jp, kp
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
 
     real(kind=realType) :: scale
@@ -1742,8 +1732,7 @@ contains
 
     ! Find out if the y-velocity is present in the solution file.
 
-    mm = nVar
-    nn = bsearchStrings(cgnsVelY, varNames, mm)
+    nn = bsearchStrings(cgnsVelY, varNames)
     if(nn > 0) then
 
        ! Y-velocity is present. First determine whether or not a type
@@ -1780,7 +1769,7 @@ contains
 
     ! Y-velocity not present. Check for y-momentum.
 
-    nn = bsearchStrings(cgnsMomY, varNames, mm)
+    nn = bsearchStrings(cgnsMomY, varNames)
     if(nn > 0) then
 
        ! Y-momentum is present. First determine whether or not a type
@@ -1854,7 +1843,7 @@ contains
     !
     integer :: realTypeCGNS
 
-    integer(kind=intType) :: i, j, k, nn, mm, po, ip, jp, kp
+    integer(kind=intType) :: i, j, k, nn, po, ip, jp, kp
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
 
     real(kind=realType) :: momScale
@@ -1877,8 +1866,7 @@ contains
 
     ! Find out if the Z-momentum is present in the solution file.
 
-    mm = nVar
-    nn = bsearchStrings(cgnsMomZ, varNames, mm)
+    nn = bsearchStrings(cgnsMomZ, varNames)
 
     testMzPresent: if(nn > 0) then
 
@@ -1915,7 +1903,7 @@ contains
 
     ! Z-momentum is not present. Check for z-velocity.
 
-    nn = bsearchStrings(cgnsVelZ, varNames, mm)
+    nn = bsearchStrings(cgnsVelZ, varNames)
 
     testVzPresent: if(nn > 0) then
 
@@ -1986,7 +1974,7 @@ contains
     !
     integer :: realTypeCGNS
 
-    integer(kind=intType) :: i, j, k, nn, mm, po, ip, jp, kp
+    integer(kind=intType) :: i, j, k, nn, po, ip, jp, kp
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
 
     real(kind=realType) :: scale
@@ -2007,8 +1995,7 @@ contains
 
     ! Find out if the z-velocity is present in the solution file.
 
-    mm = nVar
-    nn = bsearchStrings(cgnsVelZ, varNames, mm)
+    nn = bsearchStrings(cgnsVelZ, varNames)
     if(nn > 0) then
 
        ! Z-velocity is present. First determine whether or not a type
@@ -2045,7 +2032,7 @@ contains
 
     ! Z-velocity not present. Check for z-momentum.
 
-    nn = bsearchStrings(cgnsMomZ, varNames, mm)
+    nn = bsearchStrings(cgnsMomZ, varNames)
     if(nn > 0) then
 
        ! Z-momentum is present. First determine whether or not a type
@@ -2242,14 +2229,14 @@ contains
     ! Find the numbers for the just sorted convergence names.
 
     do i=1,nConv
-       ii      = bsearchStrings(tmpNames(i), convNames, nn)
+       ii      = bsearchStrings(tmpNames(i), convNames)
        ind(ii) = i
     enddo
 
     ! Find out whether the old time values are present.
     ! If not the time history stored will be ignored.
 
-    ii = bsearchStrings(cgnsTimeValue, convNames, nn)
+    ii = bsearchStrings(cgnsTimeValue, convNames)
     if(ii == 0) then
        print "(a)", "#"
        print "(a)", "#                 Warning"
@@ -2300,7 +2287,7 @@ contains
        ! Search for the monitoring name in the sorted
        ! convergence names present in the restart file.
 
-       ii = bsearchStrings(monNames(j), convNames, nn)
+       ii = bsearchStrings(monNames(j), convNames)
 
        ! Check if the name was found.
 
@@ -2499,7 +2486,7 @@ contains
     ! Find the numbers for the just sorted reference names.
 
     do i=1,nRef
-       ii      = bsearchStrings(tmpNames(i), refNames, nn)
+       ii      = bsearchStrings(tmpNames(i), refNames)
        ind(ii) = i
     enddo
 
@@ -2509,7 +2496,7 @@ contains
 
        ! Read the reference density from the restart file.
 
-       ii = bsearchStrings(cgnsDensity, refNames, nn)
+       ii = bsearchStrings(cgnsDensity, refNames)
        if(ii == 0) then
           if(myId == 0)                    &
                call terminate("scaleFactors", &
@@ -2530,7 +2517,7 @@ contains
 
        ! Read the reference pressure from the restart file.
 
-       ii = bsearchStrings(cgnsPressure, refNames, nn)
+       ii = bsearchStrings(cgnsPressure, refNames)
        if(ii == 0) then
           if(myId == 0)                    &
                call terminate("scaleFactors", &
@@ -2552,7 +2539,7 @@ contains
 
        ! Read the reference velocity from the restart file.
 
-       ii = bsearchStrings(cgnsVelocity, refNames, nn)
+       ii = bsearchStrings(cgnsVelocity, refNames)
        if(ii == 0) then
           if(myId == 0)                    &
                call terminate("scaleFactors", &
@@ -2577,7 +2564,7 @@ contains
 
        muScalePresent = .true.
 
-       ii = bsearchStrings(cgnsViscMol, refNames, nn)
+       ii = bsearchStrings(cgnsViscMol, refNames)
        if(ii > 0) then
 
           ! Scale is present; read the value.
@@ -2594,7 +2581,7 @@ contains
 
           ! Try to read the kinematic viscosity.
 
-          ii = bsearchStrings(cgnsViscKin, refNames, nn)
+          ii = bsearchStrings(cgnsViscKin, refNames)
           if(ii > 0) then
 
              ! Scale is present; read the value and multiply it by the
@@ -2613,7 +2600,7 @@ contains
 
              ! Final possibility. Try to read the length scale.
 
-             ii = bsearchStrings(cgnsLength, refNames, nn)
+             ii = bsearchStrings(cgnsLength, refNames)
              if(ii > 0) then
 
                 ! Scale is present; read the value and create the

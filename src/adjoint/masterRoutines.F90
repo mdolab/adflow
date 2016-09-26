@@ -424,8 +424,7 @@ contains
           do mm=1, nBocos
              ! Determine if this boundary condition is to be incldued in the
              ! currently active group
-             famInclude: if (bsearchIntegers(BCdata(mm)%famID, &
-                  famGroups, size(famGroups)) > 0) then
+             famInclude: if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then 
 
                 ! Set a bunch of pointers depending on the face id to make
                 ! a generic treatment possible. 
@@ -631,8 +630,7 @@ contains
           do mm=1, nBocos
              ! Determine if this boundary condition is to be incldued in the
              ! currently active group
-             famInclude: if (bsearchIntegers(BCdata(mm)%famID, &
-                  famGroups, size(famGroups)) > 0) then
+             famInclude: if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then
 
                 ! Set a bunch of pointers depending on the face id to make
                 ! a generic treatment possible. 

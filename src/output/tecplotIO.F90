@@ -448,7 +448,7 @@ contains
        exch => wallExchange(sps)
        ! Get the bounding box for the entire geometry we have been slicing.
        elemLoop: do i=1, size(exch%conn, 2)
-          if (bSearchIntegers(exch%elemFam(i), d%FamList, size(d%famList)) > 0) then 
+          if (bSearchIntegers(exch%elemFam(i), d%FamList) > 0) then 
 
              ! Extract each of the 4 nodes on this quad:
              do jj=1,4
@@ -817,7 +817,7 @@ contains
 
        do iFam=1, totalFamilies
 
-          notAWall: if (.not. (bsearchIntegers(iFam, wallFamilies, totalWallFamilies)>0)) then 
+          notAWall: if (.not. (bsearchIntegers(iFam, wallFamilies)>0)) then 
              call computeSurfaceOutputNodalData(familyExchanges(iFam, sps), .False.)
 
              ! Gather up the number of nodes to be set to the root proc:
@@ -1031,8 +1031,7 @@ contains
              iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
              jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
 
-             if (bsearchIntegers(BCdata(mm)%famID, &
-                  famGroups, size(famGroups)) > 0) then 
+             if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then 
                 do j=jBeg, jEnd
                    do i=iBeg, iEnd
                       ii = ii + 1
@@ -1072,8 +1071,7 @@ contains
           jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
           ni = iEnd - iBeg + 1
           nj = jEnd - jBeg + 1
-          if (bsearchIntegers(BCdata(mm)%famID, &
-               famGroups, size(famGroups)) > 0) then 
+          if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then 
              do j=0,nj-2
                 do i=0,ni-2
 
@@ -1132,8 +1130,7 @@ contains
           call setPointers(nn, 1, exch%sps)
 
           bocoLoop: do mm=1, nBocos
-             if (bsearchIntegers(BCdata(mm)%famID, &
-                  famGroups, size(famGroups)) > 0) then 
+             if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then 
 
                 ! storeSurfSolInBuffer needs to know if the subface is
                 ! viscous or not. 
@@ -1338,7 +1335,7 @@ contains
 
        foundFam = slc%famList(oldInd) == exch%elemFam(i)
        if (.not. foundFam) then 
-          newInd = bsearchIntegers(exch%elemFam(i), slc%famList, size(slc%famList))
+          newInd = bsearchIntegers(exch%elemFam(i), slc%famList)
           if (newInd > 0) then
              foundFam = .True.
              oldInd = newInd

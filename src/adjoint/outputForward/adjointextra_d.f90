@@ -1446,9 +1446,9 @@ loopbocos:do mm=1,nbocos
 !  differentiation of getcostfunctions in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: funcvalues
 !   with respect to varying inputs: machcoef dragdirection liftdirection
-!                tref pref rhoref globalvals
+!                pref rhoref globalvals
 !   rw status of diff variables: machcoef:in dragdirection:in liftdirection:in
-!                tref:in pref:in rhoref:in funcvalues:out globalvals:in
+!                pref:in rhoref:in funcvalues:out globalvals:in
   subroutine getcostfunctions_d(globalvals, globalvalsd)
     use constants
     use costfunctions
@@ -1576,17 +1576,14 @@ loopbocos:do mm=1,nbocos
       mflow = globalvals(imassflow, sps)
       if (mflow .ne. zero) then
         mavgptotd = (globalvalsd(imassptot, sps)*mflow-globalvals(&
-&         imassptot, sps)*mflowd)*pref/mflow**2 + globalvals(imassptot, &
-&         sps)*prefd/mflow
-        mavgptot = globalvals(imassptot, sps)/mflow*pref
+&         imassptot, sps)*mflowd)/mflow**2
+        mavgptot = globalvals(imassptot, sps)/mflow
         mavgttotd = (globalvalsd(imassttot, sps)*mflow-globalvals(&
-&         imassttot, sps)*mflowd)*tref/mflow**2 + globalvals(imassttot, &
-&         sps)*trefd/mflow
-        mavgttot = globalvals(imassttot, sps)/mflow*tref
+&         imassttot, sps)*mflowd)/mflow**2
+        mavgttot = globalvals(imassttot, sps)/mflow
         mavgpsd = (globalvalsd(imassps, sps)*mflow-globalvals(imassps, &
-&         sps)*mflowd)*pref/mflow**2 + globalvals(imassps, sps)*prefd/&
-&         mflow
-        mavgps = globalvals(imassps, sps)/mflow*pref
+&         sps)*mflowd)/mflow**2
+        mavgps = globalvals(imassps, sps)/mflow
         arg1d = (prefd*rhoref-pref*rhorefd)/rhoref**2
         arg1 = pref/rhoref
         if (arg1 .eq. 0.0_8) then
@@ -1740,9 +1737,9 @@ loopbocos:do mm=1,nbocos
 ! mass flow like objective
       mflow = globalvals(imassflow, sps)
       if (mflow .ne. zero) then
-        mavgptot = globalvals(imassptot, sps)/mflow*pref
-        mavgttot = globalvals(imassttot, sps)/mflow*tref
-        mavgps = globalvals(imassps, sps)/mflow*pref
+        mavgptot = globalvals(imassptot, sps)/mflow
+        mavgttot = globalvals(imassttot, sps)/mflow
+        mavgps = globalvals(imassps, sps)/mflow
         arg1 = pref/rhoref
         result1 = sqrt(arg1)
         mflow = globalvals(imassflow, sps)*result1

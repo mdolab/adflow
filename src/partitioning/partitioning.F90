@@ -411,7 +411,7 @@ contains
     ! Find the original zone ids for the sorted zone names.
 
     do i=1,cgnsNDom
-       ii = bsearchStrings(cgnsDoms(i)%zoneName, zoneNames, cgnsNDom)
+       ii = bsearchStrings(cgnsDoms(i)%zoneName, zoneNames)
 
        ! Check if the zone number is not already taken. If this is the
        ! case, this means that the grid file contains two identical
@@ -438,8 +438,7 @@ contains
 
           ! Determine the neighbor ID for this internal block boundary.
 
-          ii = bsearchStrings(cgnsDoms(i)%conn1to1(j)%donorName, &
-               zoneNames, cgnsNDom)
+          ii = bsearchStrings(cgnsDoms(i)%conn1to1(j)%donorName, zoneNames)
           if(ii == 0)                              &
                call terminate("determineNeighborIDs", &
                "donor name not found in sorted zone names")
@@ -456,9 +455,8 @@ contains
 
           do k=1,cgnsDoms(i)%connNonMatchAbutting(j)%nDonorBlocks
 
-             ii = bsearchStrings(                                      &
-                  cgnsDoms(i)%connNonMatchAbutting(j)%donorNames(k), &
-                  zoneNames, cgnsNDom)
+             ii = bsearchStrings(&                                      
+                  cgnsDoms(i)%connNonMatchAbutting(j)%donorNames(k), zoneNames)
              if(ii == 0)                              &
                   call terminate("determineNeighborIDs", &
                   "donor name not found in sorted zone names")
@@ -661,7 +659,7 @@ contains
 
        ! Search the sorted strings.
 
-       mm = bsearchStrings(namesSliding(ii), namesSorted, nSliding)
+       mm = bsearchStrings(namesSliding(ii), namesSorted)
 
        if(orID(mm) /= -1) then
 
@@ -2046,7 +2044,7 @@ contains
        ! section id in sorted.
 
        mm = flowDoms(nn,1,1)%cgnsBlockID
-       mm = bsearchIntegers(sectionID(mm), sorted, nSections)
+       mm = bsearchIntegers(sectionID(mm), sorted)
 
        if( debug ) then
           if(mm == 0) call terminate("determineSections", &
@@ -2091,7 +2089,7 @@ contains
 
        ! Search for the corresponding section.
 
-       ii = bsearchIntegers(sectionID(nn), sorted, nSections)
+       ii = bsearchIntegers(sectionID(nn), sorted)
        if( debug ) then
           if(ii == 0) call terminate("determineSections", &
                "Entry not found in sorted.")
@@ -2234,7 +2232,7 @@ contains
 
        if( cgnsDoms(nn)%rotatingFrameSpecified ) then
 
-          ii = bsearchIntegers(sectionID(nn), sorted, nSections)
+          ii = bsearchIntegers(sectionID(nn), sorted)
           sections(ii)%rotating = .true.
           sections(ii)%rotAxis  = cgnsDoms(nn)%rotRate
           sections(ii)%rotRate  = cgnsDoms(nn)%rotRate
@@ -2262,7 +2260,7 @@ contains
              ! Determine the section to which this block belongs and
              ! store its id for this sliding interface.
 
-             ii = bsearchIntegers(sectionID(nn), sorted, nSections)
+             ii = bsearchIntegers(sectionID(nn), sorted)
              if(secSliding(slideID,1) == 0) then
                 secSliding(slideID,1) = ii
              else if(secSliding(slideID,1) /= ii) then

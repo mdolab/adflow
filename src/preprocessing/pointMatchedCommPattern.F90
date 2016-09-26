@@ -992,9 +992,8 @@ contains
                 key%cgnsBlock   = nbkGlobal
                 key%cgnsSubface = kk
 
-                indexPeriodic = bsearchCGNSPeriodicType(key,            &
-                     periodicGlobal, &
-                     nPeriodicGlobal)
+                indexPeriodic = bsearchCGNSPeriodicType(key, periodicGlobal)
+
                 if( debug ) then
                    if(indexPeriodic == 0)                 &
                         call terminate("determineFaceHalos", &
@@ -3506,7 +3505,7 @@ contains
 
   end subroutine determinePeriodicFaces
 
-  function bsearchCGNSPeriodicType(key, base, nn)
+  function bsearchCGNSPeriodicType(key, base)
     !
     !       bsearchCGNSPeriodicType returns the index in base where key    
     !       is stored. A binary search algorithm is used here, so it is    
@@ -3524,8 +3523,8 @@ contains
     !      Function arguments.
     !
     type(cgnsPeriodicType), intent(in)               :: key
-    type(cgnsPeriodicType), dimension(*), intent(in) :: base
-    integer(kind=intType), intent(in)                :: nn
+    type(cgnsPeriodicType), dimension(:), intent(in) :: base
+    integer(kind=intType)                            :: nn
     !
     !      Local variables.
     !
@@ -3535,7 +3534,7 @@ contains
     ! Initialize some values.
 
     start       = 1
-    ii          = nn
+    ii          = size(base)
     entryFound = .false.
 
     ! Binary search to find key.

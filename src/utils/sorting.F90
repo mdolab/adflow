@@ -3,7 +3,7 @@ module sorting
   use utils, only : terminate
 contains
 
-  function bsearchIntegers(key, base, nn)
+  function bsearchIntegers(key, base)
     !
     !       bsearchIntegers returns the index in base where key is stored. 
     !       A binary search algorithm is used here, so it is assumed that  
@@ -21,8 +21,8 @@ contains
     !      Function arguments.
     !
     integer(kind=intType), intent(in)               :: key
-    integer(kind=intType), dimension(*), intent(in) :: base
-    integer(kind=intType), intent(in)               :: nn
+    integer(kind=intType), dimension(:), intent(in) :: base
+    integer(kind=intType)                           :: nn
     !
     !      Local variables.
     !
@@ -32,7 +32,7 @@ contains
     ! Initialize some values.
 
     start       = 1
-    ii          = nn
+    ii          = size(base)
     entryFound = .false.
 
     ! Binary search to find key.
@@ -724,7 +724,7 @@ contains
   end subroutine qsortStrings
 
 
-  function bsearchReals(key, base, nn)
+  function bsearchReals(key, base)
     !
     !       bsearchReals returns the index in base where key is stored.    
     !       A binary search algorithm is used here, so it is assumed that  
@@ -742,8 +742,8 @@ contains
     !      Function arguments.
     !
     real(kind=realType), intent(in)               :: key
-    real(kind=realType), dimension(*), intent(in) :: base
-    integer(kind=intType), intent(in)             :: nn
+    real(kind=realType), dimension(:), intent(in) :: base
+    integer(kind=intType)                         :: nn
     !
     !      Local variables.
     !
@@ -753,7 +753,7 @@ contains
     ! Initialize some values.
 
     start       = 1
-    ii          = nn
+    ii          = size(base)
     entryFound = .false.
 
     ! Binary search to find key.
@@ -799,7 +799,7 @@ contains
 
   end function bsearchReals
 
-  function bsearchStrings(key, base, nn)
+  function bsearchStrings(key, base)
     !
     !       bsearchStrings returns the index in base where key is stored.  
     !       A binary search algorithm is used here, so it is assumed that  
@@ -817,7 +817,7 @@ contains
     !      Function arguments.
     !
     character(len=*), intent(in)               :: key
-    character(len=*), dimension(*), intent(in) :: base
+    character(len=*), dimension(:), intent(in) :: base
     integer(kind=intType)                      :: nn
     !
     !      Local variables.
@@ -828,7 +828,7 @@ contains
     ! Initialize some values.
 
     start       = 1
-    ii          = nn
+    ii          = size(base)
     entryFound = .false.
 
     ! Binary search to find key.

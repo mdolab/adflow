@@ -2863,7 +2863,7 @@ contains
           ! cgnsName. The name must be found; otherwise the restart
           ! is pointless. If found, the zone number is set accordingly.
 
-          jj = bsearchStrings(cgnsname, zoneNames, cgnsNdom)
+          jj = bsearchStrings(cgnsname, zoneNames)
           if(jj == 0) then
              write(errorMessage,*) "Zone name ", trim(cgnsName),  &
                   " not found in restart file ", &
@@ -3297,7 +3297,7 @@ contains
     ! Find the original zone numbers for the sorted zone names.
 
     do nn=1,cgnsNdom
-       ii = bsearchStrings(tmpNames(nn), zoneNames, cgnsNdom)
+       ii = bsearchStrings(tmpNames(nn), zoneNames)
 
        ! Check if the zone number is not already taken. If this is the
        ! case, this means that two identical zone names are present.
@@ -3399,7 +3399,7 @@ contains
     ! variable names.
 
     do i=1,nVar
-       ii = bsearchStrings(tmpNames(i), varNames, nn)
+       ii = bsearchStrings(tmpNames(i), varNames)
 
        ! Check if the variable number is not already taken. If this is
        ! the case, this means that two identical var names are present.
