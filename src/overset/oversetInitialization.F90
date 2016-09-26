@@ -7,11 +7,12 @@ contains
     ! block, level and spectral instance. It is assumed that
     ! blockPointers are already set. 
     use constants
-    use communication
-    use blockPointers
-    use overset
-    use stencils
-    use inputOverset
+    use communication, only : myid
+    use blockPointers, only : nDom, ib, jb, kb, il, jl, kl, fringes, BCData, &
+         nBocos, BCFaceID, vol, ie, je, ke, flowDoms, x, iBlank, BCType
+    use overset, only : cumDomProc, clusters
+    use stencils, only : visc_drdw_stencil, N_visc_drdw
+    use inputOverset, only : backgroundVolScale
     use utils, only : isWallType
     use oversetUtilities, only : flagForcedReceivers, emptyFringe, setIsCompute, &
          wallsOnBlock
@@ -199,19 +200,18 @@ contains
     end do
   end subroutine initializeFringes
 
-
   subroutine initializeOBlock(oBlock, nn, level, sps)
 
     ! This routine allocates the data for the supplied oBlock using the
     !  data currently in blockPointers
     use constants
-    use overset
-    use inputOverset
-    use blockPointers
+    use overset, only : oversetBlock, clusters, cumDomProc
+    use inputOverset, only : backgroundVolScale, nearWallDist
+    use blockPointers, only : x, globalCell, il, jl, kl, ib, jb, kb, &
+         ie, je, ke, vol, iBlank, xSeed
     use adtBuild, only : buildSerialHex
-    use cgnsGrid
-    use communication
-    use stencils
+    use communication, only : myID
+    use stencils, only : visc_drdw_stencil, n_visc_drdw
     use utils, only : mynorm2, isWallType
     use oversetUtilities, only : flagForcedReceivers, wallsOnBlock
     implicit none 
@@ -420,12 +420,13 @@ contains
     ! This subroutine initializes the fringe information for the given
     ! block, level and spectral instance. It is assumed that
     ! blockPointers are already set. 
-    use communication
+    use constants
+    use communication, only : myID
     use blockPointers
-    use overset
-    use stencils
-    use inputOverset
-    use utils
+    use overset, only : oversetFringe, clusters, cumDomProc
+    use stencils, only : visc_drdw_stencil, N_visc_drdw
+    use inputOverset, only :  backgroundVolScale
+    use utils, only : isWallType
     use oversetUtilities, only : flagForcedReceivers, wallsOnBlock
     implicit none
 
@@ -640,11 +641,13 @@ contains
 
     ! This routine builds the ADT tree for any wall surfaces for the
     ! block currently being pointed to by block Pointers.
-    use overset
-    use blockPointers
+    use constants
+    use overset, only : oversetWall
+    use blockPointers, only : nBocos, BCData, BCFaceID, il, jl, kl, &
+         BCFaceID, x, BCType
     use adtBuild, only : buildSerialQuad
-    use kdtree2_module
-    use utils
+    use kdtree2_module, onlY : kdtree2_create
+    use utils, only : isWallType
     use oversetPackingRoutines, only : getWallSize
     implicit none 
 

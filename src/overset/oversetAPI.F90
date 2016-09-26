@@ -20,15 +20,20 @@ contains
     use stencils, only : N_visc_drdw, visc_drdw_stencil
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use adtBuild, only : destroySerialQuad
-    use inputOverset
+    use inputOverset, onlY : lowOversetMemory, overlapFactor
     use utils, only : EChk, setPointers, setBufferSizes, terminate
     use surfaceFamilies, only : walLFamilies
-    use kdtree2_module
+    use kdtree2_module, onlY : kdtree2_create, kdtree2destroy
     use oversetInitialization, only : initializeFringes, initializeOBlock, &
          initializeOFringes
-    use oversetCommUtilities
-    use oversetUtilities
-    use oversetPackingRoutines
+    use oversetCommUtilities , only : recvOBlock, recvOFringe, getCommPattern, getOWallCommPattern, &
+         emptyOversetComm, exchangeStatusTranspose, exchangeStatus, oversetLoadBalance, &
+         exchangeFringes, sendOFringe, sendOBlock
+    use oversetUtilities, only : isCompute, checkOverset, irregularCellCorrection, &
+         fringeReduction, transposeOverlap, setIBlankArray, deallocateOFringes, deallocateoBlocks, &
+         deallocateOWalls, deallocateCSRMatrix, setIsCompute
+    use oversetPackingRoutines, only : packOFringe, packOBlock, unpackOFringe, unpackOBlock, &
+         getOFringeBufferSizes, getOBlockBufferSizes, getOWallBufferSizes
     use zipperMesh, only : createZipperMesh
     implicit none
 
@@ -1073,7 +1078,7 @@ contains
 
     subroutine buildGLobalSparseOverlap(overlap)
 
-      use overset
+      use overset, only : clusters
       implicit none
 
       ! Input/Output
@@ -1688,13 +1693,10 @@ contains
 
     use constants
     use blockPointers, only : nDom, flowDoms
-    use cgnsGrid
+    use cgnsGrid, only : CGNSDoms, cgnsNDom
     use communication, only : adflow_comm_world, myID
     use overset, only :clusters, nDomTotal, nClusters, cumDomProc
     implicit none
-
-    ! Input/output variables
-    !integer(kind=intType), intent(out) :: clusterID
 
     ! Working variables
     integer(kind=intType) :: numBlocks, blockID, cgnsBlk, ierr, clusterID
