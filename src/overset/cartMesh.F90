@@ -4,6 +4,7 @@ module cartMesh
   use communication
   use utils
   use haloExchange
+  use oversetPackingRoutines
   implicit none
 
  contains

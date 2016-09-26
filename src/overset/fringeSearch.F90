@@ -9,6 +9,7 @@ subroutine fringeSearch(oBlock, oFringe)
   use adtData, only : adtBBoxTargetType
   use adtUtils, only : stack
   use utils, only : mynorm2
+  use oversetUtilities, only : fracToWeights2
   implicit none
 
   type(oversetBlock), intent(inout) :: oBlock

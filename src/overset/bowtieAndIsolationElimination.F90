@@ -4,6 +4,7 @@ subroutine bowTieAndIsolationElimination(level, sps)
   use blockPointers
   use communication
   use utils, only : setPointers, isWallType
+  use oversetCommUtilities, only : exchangeSurfaceIBlanks
   implicit none
 
   ! Input Parameters

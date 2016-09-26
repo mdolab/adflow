@@ -13,11 +13,13 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
   use communication, only : adflow_comm_world, myid, nProc, recvRequests, sendRequests
   use utils, only : Echk, setPointers
   use overset, only : clusters, nDomTotal, nClusters
+  use oversetUtilities, only : qsortFringeType, setIsDonor, setIsWallDonor, &
+       computeFringeProcArray
   implicit none
 
   ! Input Params
   integer(kind=intType), intent(in) :: level, sps, nFringe
-  type(fringeType), intent(in), dimension(nFringe) :: fringeList
+  type(fringeType), intent(inout), dimension(nFringe) :: fringeList
   logical, intent(in) :: useWall
 
   ! Working

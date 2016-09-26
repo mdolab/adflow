@@ -2,7 +2,7 @@ module stringOps
   use constants
   use overset
   use utils, only : mynorm2
-
+  use oversetUtilities
   contains
 
   subroutine nullifyString(string)
