@@ -661,7 +661,7 @@ class SUMB(AeroSolver):
         self.sumb.killsignals.fatalfail = False
 
         t1 = time.time()
-
+        
         # Solve the equations in appropriate mode
         mode = self.getOption('equationMode').lower()
         if mode in ['steady', 'time spectral']:
