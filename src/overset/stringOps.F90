@@ -1,14 +1,14 @@
 module stringOps
-  use constants
-  use overset
-  use utils, only : mynorm2
-  use oversetUtilities
+
+  ! Import oversetString becuase every routine uses this. 
+  use overset, only : oversetString
   contains
 
   subroutine nullifyString(string)
 
-    use overset
+    use constants
     implicit none
+
     type(oversetString) :: string
 
     nullify(string%nodeData, &
@@ -36,8 +36,9 @@ module stringOps
 
   subroutine deallocateString(string)
 
-    use overset
+    use constants
     implicit none
+
     type(oversetString) :: string
     integer(kind=intType) :: i
 
@@ -86,7 +87,7 @@ module stringOps
 
   subroutine setStringPointers(string)
 
-    use overset
+    use constants
     implicit none
     type(oversetString) :: string
     string%x => string%nodeData(1:3, :)
@@ -102,6 +103,7 @@ module stringOps
 
   subroutine createOrderedStrings(master, strings, nString)
 
+    use constants
     implicit none
 
     ! Input/Output
@@ -201,9 +203,12 @@ module stringOps
   end subroutine createOrderedStrings
 
   subroutine performSelfZip(master, strings, nStrings)
+
+    use constants
+    use inputOverset, only : debugZipper
     use kdtree2_module
-    use inputOverset
     implicit none
+
     ! Input/Output
     type(oversetString) :: master
     type(oversetString), dimension(nStrings), target ::  strings
@@ -300,8 +305,8 @@ module stringOps
     ! string. The string is returned with the nodes and connectivities
     ! adjusted accordingly.
 
-    use overset
-    use utils, only : pointReduce
+    use constants
+    use utils, only : pointReduce, myNOrm2
     implicit none
 
     ! Input/Ouput
@@ -362,7 +367,7 @@ module stringOps
     ! array. Each node should point to 1 element (at a
     ! boundary) or two elements for a normal part of a chain.
 
-    use overset
+    use constants
     use utils, only : terminate
     implicit none
 
@@ -451,7 +456,7 @@ module stringOps
 
   subroutine doChain(master, iStart, iSub)
 
-    use overset
+    use constants
     implicit none
     ! Input/OUtput
     type(oversetString) :: master
@@ -525,7 +530,7 @@ module stringOps
 
   subroutine createSubStringFromElems(p, s, id)
 
-    use overset
+    use constants
     implicit none
 
     ! Input/output
@@ -630,7 +635,7 @@ module stringOps
 
   subroutine combineChainBuffers(s)
 
-    use overset
+    use constants
     implicit none
     type(oversetString), intent(inout) :: s
     integer(kind=intType) :: N1, N2
@@ -652,8 +657,9 @@ module stringOps
 
   subroutine selfZip(s, cutOff, nZipped)
 
-    use overset
+    use constants
     use kdtree2_module
+    use utils, only : myNorm2
     implicit none
 
     ! Input/Output
@@ -757,7 +763,11 @@ module stringOps
 
   subroutine crossZip(str1, N1, N2, str2, N3, N4)
 
+    use constants
+    use utils, only : myNorm2
+
     implicit none
+
     type(oversetString), intent(inout) :: str1, str2
     integer(kind=intType) :: N1, N2, N3, N4
 
@@ -1117,7 +1127,7 @@ module stringOps
   contains
 
     function nextNode(str, i, pos)
-
+      
       implicit none
       type(oversetString), intent(iN) :: str
       integer(kind=intType), intent(in) :: i
@@ -1158,7 +1168,6 @@ module stringOps
     end function nextNode
 
     function vecAngle(vec1, vec2)
-
       implicit none
 
       ! Input/Output
@@ -1215,6 +1224,8 @@ module stringOps
 
     function triArea(pt1, pt2, pt3)
 
+      use constants
+      use utils, only : myNorm2
       implicit none
 
       ! Input/Output
@@ -1236,6 +1247,7 @@ module stringOps
     ! Form a triangle from index 'A' on string 'sA' , index 'B' on
     ! string 'sB' and index 'C' on string 'sC'
 
+    use constants
     implicit none
 
     ! Input/Output
@@ -1276,7 +1288,9 @@ module stringOps
   end subroutine addTri
 
   subroutine makeCrossZip(p, strings, nStrings)
-    use inputoverset
+
+    use constants
+    use inputOverset, only : debugZipper
     implicit none
 
     ! Input/output
@@ -1676,9 +1690,11 @@ module stringOps
   end subroutine makeCrossZip
 
   subroutine makePocketZip(p, strings, nStrings, pocketMaster)
+    use constants
+    use overset, only : oversetString, oversetEdge
+    use oversetUtilities, only : qsortEdgeType
+    use inputOverset, only : debugZipper
     use kdtree2_module
-    use overset
-    use inputOverset
     implicit none
 
     ! Input/output
@@ -1906,8 +1922,10 @@ module stringOps
 
   subroutine pocketZip(s)
 
-    use overset
+    use constants
     use kdtree2_module
+    use utils, only : mynorm2
+
     implicit none
 
     ! Input parameters
@@ -2007,7 +2025,8 @@ module stringOps
   subroutine computeTriSurfArea(master, area)
 
     ! Computes area sum of all triangles belonging to object master
-    use overset
+    use constants
+    use utils, only : mynorm2
     implicit none
 
     ! Input parameters
@@ -2034,7 +2053,10 @@ module stringOps
 
   function triOverlap(pt1, pt2, pt3, str, i1, i2)
 
+    use constants
+    use utils, only : mynorm2
     implicit none
+
     ! Input/Output
     real(kind=realType), dimension(3), intent(in) :: pt1, pt2, pt3
     integer(kind=intType), intent(in) :: i1, i2
@@ -2071,7 +2093,7 @@ module stringOps
     ! map of len s%nNodes, with 1 or 0. A 1 means that the node will
     ! be in the shortened string, 0 means that the node should be
     ! deleted.
-
+    use constants
     implicit none
 
     ! Input/Output
@@ -2163,6 +2185,7 @@ module stringOps
 
     ! Common routine (for pocketZip and selfZip) to potentially add a
     ! triangle resulting from a single string. 
+    use constants
     use kdtree2_priority_queue_module
     use kdtree2_module
     implicit none
@@ -2263,6 +2286,8 @@ module stringOps
   end subroutine addPotentialTriangle
 
   subroutine closestSymmetricNode(s1, s2, i, j)
+    use constants
+    use utils, only : mynorm2
 
     implicit none
 
@@ -2294,8 +2319,10 @@ module stringOps
   end subroutine closestSymmetricNode
 
   subroutine stringMatch(strings, nStrings)
+    use constants
     use kdtree2_priority_queue_module
     use kdtree2_module
+    use utils, only : mynorm2
     implicit none
 
     type(oversetString), dimension(nstrings), target :: strings
@@ -2518,13 +2545,10 @@ module stringOps
     end do
   end subroutine stringMatch
 
-
-
-
   subroutine writeOversetString(str, strings, n, fileID)
 
-    use communication
-    use overset
+    use constants
+    use utils, only : mynorm2
     implicit none
 
     type(oversetString), intent(inout) :: str
@@ -2632,8 +2656,7 @@ module stringOps
 
   subroutine writeOversetTriangles(string, fileName)
 
-    use communication
-    use overset
+    use constants
     implicit none
 
     type(oversetString), intent(inout) :: string
@@ -2672,8 +2695,11 @@ module stringOps
     ! Save the state of an unsplit string such that it can be debugged
     ! later without running overset interpolation.
 
+    use constants
+    implicit none
+
     type(oversetString) :: str
-    integer(kind=intType) :: i
+    integer(kind=intType) :: i, j
 
     open(unit=101, file="debug.zipper", form='formatted')
     write(101, *), str%nNodes
@@ -2746,7 +2772,7 @@ module stringOps
 
   subroutine getNodeInfo(str, j, checkLeft, checkRight, concave, xj, xjm1, xjp1, normj)
 
-    use overset
+    use constants
     implicit none
 
     type(oversetString) :: str
@@ -2839,7 +2865,9 @@ module stringOps
 
   function overlappedEdges(str, j, pt)
 
-    use overset
+    use constants
+    use utils, only : mynorm2
+
     implicit none
 
     ! Input/output
@@ -2930,7 +2958,8 @@ module stringOps
 
   function overlappedEdges2(str, pt1, norm, pt2)
 
-    use overset
+    use constants
+    use utils, only : mynorm2
     implicit none
 
     ! Input/output

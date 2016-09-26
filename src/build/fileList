@@ -61,7 +61,6 @@ fortranFiles=	ADT/adtUtils.F90\
 		overset/oversetAPI.F90\
 		overset/buildClusterWalls.F90\
 		overset/zipperMesh.F90\
-		overset/bowtieAndIsolationElimination.F90\
 		overset/computeCellWallPoint.F90\
 		overset/floodInteriorCells.F90\
 		overset/determineDonors.F90\
