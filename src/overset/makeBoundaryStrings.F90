@@ -10,6 +10,7 @@ subroutine makeGapBoundaryStrings(level, sps, master)
   use inputOverset
   use utils, only : setPointers, EChk, myNorm2, isWallType
   use surfaceFamilies, only : walLFamilies
+  use oversetPackingRoutines, only : getWallSize
   implicit none
 
   ! Input Params
