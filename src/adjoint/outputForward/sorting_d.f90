@@ -11,7 +11,7 @@ module sorting_d
 ! ----------------------------------------------------------------------
 
 contains
-  function bsearchintegers(key, base, nn)
+  function bsearchintegers(key, base)
 !
 !       bsearchintegers returns the index in base where key is stored. 
 !       a binary search algorithm is used here, so it is assumed that  
@@ -29,16 +29,17 @@ contains
 !      function arguments.
 !
     integer(kind=inttype), intent(in) :: key
-    integer(kind=inttype), dimension(*), intent(in) :: base
-    integer(kind=inttype), intent(in) :: nn
+    integer(kind=inttype), dimension(:), intent(in) :: base
+    integer(kind=inttype) :: nn
 !
 !      local variables.
 !
     integer(kind=inttype) :: ii, pos, start
     logical :: entryfound
+    intrinsic size
 ! initialize some values.
     start = 1
-    ii = nn
+    ii = size(base)
     entryfound = .false.
 ! binary search to find key.
     do 100 

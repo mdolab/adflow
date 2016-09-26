@@ -339,7 +339,7 @@ contains
     ! new sequence in monNames.
 
     do i=1,nn
-       ii = bsearchIntegers(tmpNumber(i), sortNumber, nn)
+       ii = bsearchIntegers(tmpNumber(i), sortNumber)
        monNames(ii) = tmpNames(i)
     enddo
 

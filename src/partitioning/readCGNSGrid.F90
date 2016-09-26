@@ -123,8 +123,7 @@ contains
     call qsortStrings(sortedFamName, nn)
 
     do i=1,cgnsNFamilies
-       ii = bsearchStrings(cgnsFamilies(i)%familyName, &
-            sortedFamName, nn)
+       ii = bsearchStrings(cgnsFamilies(i)%familyName, sortedFamName)
 
        if( debug ) then
           if(ii == 0)                        &
@@ -455,8 +454,8 @@ contains
     !      Subroutine arguments
     !
     integer, intent(in) :: cgnsBase, nZone
-    character(len=*), dimension(*), intent(in) :: sortedFamName
-    integer(kind=intType), dimension(*), intent(in) :: famID
+    character(len=*), dimension(:), intent(in) :: sortedFamName
+    integer(kind=intType), dimension(:), intent(in) :: famID
 
     logical, intent(inout) :: noUnits
 
@@ -567,7 +566,7 @@ contains
        ! grid this name must be found.
 
        nn = cgnsNFamilies
-       ii = bsearchStrings(familyName, sortedFamName, nn)
+       ii = bsearchStrings(familyName, sortedFamName)
        if(ii == 0) then
 
           write(errorMessage,100) trim(familyName)
@@ -1892,8 +1891,8 @@ contains
     integer, intent(in)    :: cgnsInd, cgnsBase, nZone
     integer, intent(inout) :: nDoubleBoundFaces
 
-    character(len=*), dimension(*), intent(in) :: sortedFamName
-    integer(kind=intType), dimension(*), intent(in) :: famID
+    character(len=*), dimension(:), intent(in) :: sortedFamName
+    integer(kind=intType), dimension(:), intent(in) :: famID
     !
     !      Local variables
     !
@@ -2100,7 +2099,7 @@ contains
              ! grid this name must be found.
 
              nn = cgnsNFamilies
-             ii = bsearchStrings(familyName, sortedFamName, nn)
+             ii = bsearchStrings(familyName, sortedFamName)
              if(ii == 0) then
 
                 write(errorMessage,102) trim(familyName)

@@ -2204,7 +2204,7 @@ contains
                   cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%dataSet
 
              ! Check if this surface should be included or not:
-             famInclude: if (bsearchIntegers(BCdata(j)%famID, famList, nFams) > 0) then 
+             famInclude: if (bsearchIntegers(BCdata(j)%famID, famList) > 0) then 
                 ! Modify from here  +++++++++++++++++++++==
                 select case (BCType(j))
                    

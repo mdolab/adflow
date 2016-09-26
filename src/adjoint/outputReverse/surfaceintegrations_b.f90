@@ -33,13 +33,11 @@ contains
 &   localvalues
 ! working variables
     integer(kind=inttype) :: mm
-    intrinsic size
 ! loop over all possible boundary conditions
 bocos:do mm=1,nbocos
 ! determine if this boundary condition is to be incldued in the
 ! currently active group
-      if (bsearchintegers(bcdata(mm)%famid, famgroups, size(famgroups)) &
-&         .gt. 0) then
+      if (bsearchintegers(bcdata(mm)%famid, famgroups) .gt. 0) then
 ! set a bunch of pointers depending on the face id to make
 ! a generic treatment possible. 
         call setbcpointers(mm, .true.)
@@ -97,6 +95,10 @@ bocos:do mm=1,nbocos
 ! do j=(bcdata(mm)%jnbeg+1),bcdata(mm)%jnend
 !    do i=(bcdata(mm)%inbeg+1),bcdata(mm)%inend
     mredim = sqrt(pref*rhoref)
+    fp = zero
+    mp = zero
+    fmom = zero
+    mmom = zero
     do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
 &       (mm)%inbeg)-1
       i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&

@@ -1412,7 +1412,7 @@ contains
           family = cgnsDoms(cgb)%bocoInfo(cgnsSubface(mm))%wallBCName
           call convertToLowerCase(family)
 
-          famID = bsearchStrings(family, fullFamList, totalFamilies)
+          famID = bsearchStrings(family, fullFamList)
           if (famID == 0) then 
              ! Somehow we never found the family...
              call terminate("setSurfaceFamilyInfo", &

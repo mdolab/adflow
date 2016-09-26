@@ -2101,10 +2101,10 @@ loopbocos:do mm=1,nbocos
 !  differentiation of getcostfunctions in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: funcvalues
 !   with respect to varying inputs: machcoef dragdirection liftdirection
-!                tref pref rhoref funcvalues globalvals
+!                pref rhoref funcvalues globalvals
 !   rw status of diff variables: machcoef:out dragdirection:out
-!                liftdirection:out tref:out pref:out rhoref:out
-!                funcvalues:in-zero globalvals:out
+!                liftdirection:out pref:out rhoref:out funcvalues:in-zero
+!                globalvals:out
   subroutine getcostfunctions_b(globalvals, globalvalsd)
     use constants
     use costfunctions
@@ -2143,9 +2143,6 @@ loopbocos:do mm=1,nbocos
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tmpd
     real(kind=realtype) :: tempd
-    real(kind=realtype) :: tempd3
-    real(kind=realtype) :: tempd2
-    real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: tmpd3
     real(kind=realtype) :: tmpd2
@@ -2204,9 +2201,9 @@ loopbocos:do mm=1,nbocos
 ! mass flow like objective
       mflow = globalvals(imassflow, sps)
       if (mflow .ne. zero) then
-        mavgptot = globalvals(imassptot, sps)/mflow*pref
-        mavgttot = globalvals(imassttot, sps)/mflow*tref
-        mavgps = globalvals(imassps, sps)/mflow*pref
+        mavgptot = globalvals(imassptot, sps)/mflow
+        mavgttot = globalvals(imassttot, sps)/mflow
+        mavgps = globalvals(imassps, sps)/mflow
         mflow = globalvals(imassflow, sps)*sqrt(pref/rhoref)
       else
         mavgptot = zero
@@ -2307,7 +2304,6 @@ loopbocos:do mm=1,nbocos
 &       liftdirection(3)*tmpd2
       liftdirectiond(3) = liftdirectiond(3) + funcvalues(costfuncforcez)&
 &       *tmpd2
-      trefd = 0.0_8
       prefd = 0.0_8
       rhorefd = 0.0_8
       globalvalsd = 0.0_8
@@ -2333,9 +2329,6 @@ loopbocos:do mm=1,nbocos
         mflowd = ovrnts*funcvaluesd(costfuncmdot)
         call popcontrol1b(branch)
         if (branch .eq. 0) then
-          tempd2 = globalvals(imassptot, sps)*mavgptotd/mflow
-          tempd3 = globalvals(imassttot, sps)*mavgttotd/mflow
-          tempd1 = globalvals(imassps, sps)*mavgpsd/mflow
           temp1 = pref/rhoref
           temp2 = sqrt(temp1)
           if (temp1 .eq. 0.0_8) then
@@ -2346,17 +2339,17 @@ loopbocos:do mm=1,nbocos
           end if
           globalvalsd(imassflow, sps) = globalvalsd(imassflow, sps) + &
 &           temp2*mflowd
-          prefd = prefd + tempd1 + tempd2 + tempd0
+          prefd = prefd + tempd0
           rhorefd = rhorefd - temp1*tempd0
-          globalvalsd(imassps, sps) = globalvalsd(imassps, sps) + pref*&
+          globalvalsd(imassps, sps) = globalvalsd(imassps, sps) + &
 &           mavgpsd/mflow
-          mflowd = -(tref*tempd3/mflow) - pref*tempd2/mflow - pref*&
-&           tempd1/mflow
+          mflowd = -(globalvals(imassttot, sps)*mavgttotd/mflow**2) - &
+&           globalvals(imassptot, sps)*mavgptotd/mflow**2 - globalvals(&
+&           imassps, sps)*mavgpsd/mflow**2
           globalvalsd(imassttot, sps) = globalvalsd(imassttot, sps) + &
-&           tref*mavgttotd/mflow
-          trefd = trefd + tempd3
+&           mavgttotd/mflow
           globalvalsd(imassptot, sps) = globalvalsd(imassptot, sps) + &
-&           pref*mavgptotd/mflow
+&           mavgptotd/mflow
         end if
         globalvalsd(imassflow, sps) = globalvalsd(imassflow, sps) + &
 &         mflowd
@@ -2482,9 +2475,9 @@ loopbocos:do mm=1,nbocos
 ! mass flow like objective
       mflow = globalvals(imassflow, sps)
       if (mflow .ne. zero) then
-        mavgptot = globalvals(imassptot, sps)/mflow*pref
-        mavgttot = globalvals(imassttot, sps)/mflow*tref
-        mavgps = globalvals(imassps, sps)/mflow*pref
+        mavgptot = globalvals(imassptot, sps)/mflow
+        mavgttot = globalvals(imassttot, sps)/mflow
+        mavgps = globalvals(imassps, sps)/mflow
         mflow = globalvals(imassflow, sps)*sqrt(pref/rhoref)
       else
         mavgptot = zero
