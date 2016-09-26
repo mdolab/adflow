@@ -9,6 +9,7 @@ subroutine makeGapBoundaryStrings(level, sps, master)
   use kdtree2_module
   use inputOverset
   use utils, only : setPointers, EChk, myNorm2, isWallType
+  use surfaceFamilies, only : walLFamilies
   implicit none
 
   ! Input Params
@@ -468,7 +469,8 @@ subroutine makeGapBoundaryStrings(level, sps, master)
   ! ---------- Begin wall data accumulation -------------
   allocate(walls(nClusters))
   ! Build primal quad walls ADT
-  call buildClusterWalls(level, sps, .False., walls)
+  call buildClusterWalls(level, sps, .False., walls, wallFamilies, size(wallFamilies))
+
 
   ! Finally build up a "full wall" that is made up of all the cluster
   ! walls. 

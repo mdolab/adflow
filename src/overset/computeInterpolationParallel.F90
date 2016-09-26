@@ -21,6 +21,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   use adtBuild, only : destroySerialQuad
   use inputOverset
   use utils, only : EChk, setPointers, setBufferSizes, terminate
+  use surfaceFamilies, only : walLFamilies
   use kdtree2_module
   implicit none
 
@@ -347,7 +348,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         nLocalWallFringe = 0
   
         allocate(clusterWalls(nClusters))
-        call buildClusterWalls(level, sps, .True., clusterWalls)
+        call buildClusterWalls(level, sps, .False., clusterWalls, wallFamilies, size(wallFamilies))
 
         ! Determine the cells that are near wall. We have a special routine for this. 
         call computeCellWallPoint(level, sps, clusterWalls)

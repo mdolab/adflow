@@ -1679,6 +1679,7 @@ contains
     use overset, only : oversetPresent, oversetWall, nClusters, clusters, cumDomProc
     use inputOverset
     use adjointVars
+   use surfaceFamilies, only : walLFamilies
     use utils, only : setPointers, EChk
     use sorting, only : unique
     implicit none
@@ -1718,7 +1719,7 @@ contains
     ! the hundreds of millions of cells. 
 
     allocate(walls(nClusters))
-    call buildClusterWalls(level, sps, .False., walls)
+    call buildClusterWalls(level, sps, .False., walls, wallFamilies, size(wallFamilies))
 
     if (oversetPresent) then 
        ! Finally build up a "full wall" that is made up of all the cluster
