@@ -645,7 +645,8 @@ contains
     !       the explicit Runge-Kutta schemes for the multigrid level       
     !       groundLevel.                                                   
     !
-    use blockPointers
+    use constants
+    use blockPointers, only: nDom, il, jl, kl, vol, dw, w, dwOldRK, p
     use communication
     use flowVarRefState
     use inputPhysics
@@ -1164,7 +1165,8 @@ contains
     !       Second part of initTimeStepPart1_ALE and                       
     !       initTimeStepPart2_ALE                                          
     !
-    use blockPointers
+    use constants
+    !use blockPointers
     use communication
     use inputMotion
     use inputUnsteady
