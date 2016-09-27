@@ -59,8 +59,8 @@ contains
     integer(kind=intType) :: nTransfer, nState, tmp, icount, cols(8), nCol
     integer(kind=intType) :: n_stencil, i_stencil, m
     integer(kind=intType), dimension(:, :), pointer :: stencil
-    real(kind=alwaysRealType) :: delta_x, one_over_dx, weights(8)
-
+    real(kind=alwaysRealType) :: delta_x, one_over_dx
+    real(kind=realType) :: weights(8)
     real(kind=realType), dimension(:,:), allocatable :: blk
 
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, colInd
