@@ -2089,7 +2089,7 @@ contains
 
        ! Search for the corresponding section.
 
-       ii = bsearchIntegers(sectionID(nn), sorted)
+       ii = bsearchIntegers(sectionID(nn), sorted(1:nSections))
        if( debug ) then
           if(ii == 0) call terminate("determineSections", &
                "Entry not found in sorted.")
@@ -2232,7 +2232,7 @@ contains
 
        if( cgnsDoms(nn)%rotatingFrameSpecified ) then
 
-          ii = bsearchIntegers(sectionID(nn), sorted)
+          ii = bsearchIntegers(sectionID(nn), sorted(1:nSections))
           sections(ii)%rotating = .true.
           sections(ii)%rotAxis  = cgnsDoms(nn)%rotRate
           sections(ii)%rotRate  = cgnsDoms(nn)%rotRate
@@ -2260,7 +2260,7 @@ contains
              ! Determine the section to which this block belongs and
              ! store its id for this sliding interface.
 
-             ii = bsearchIntegers(sectionID(nn), sorted)
+             ii = bsearchIntegers(sectionID(nn), sorted(1:nSections))
              if(secSliding(slideID,1) == 0) then
                 secSliding(slideID,1) = ii
              else if(secSliding(slideID,1) /= ii) then
