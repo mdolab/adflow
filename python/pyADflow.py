@@ -40,7 +40,7 @@ class Error(Exception):
     """
     def __init__(self, message):
         msg = '\n+'+'-'*78+'+'+'\n' + '| pyADFLOW Error: '
-        i = 15
+        i = 17
         for word in message.split():
             if len(word) + i + 1 > 78: # Finish line and start new one
                 msg += ' '*(78-i)+'|\n| ' + word + ' '
@@ -58,7 +58,7 @@ class ADFLOWWarning(object):
     """
     def __init__(self, message):
         msg = '\n+'+'-'*78+'+'+'\n' + '| pyADFLOW Warning: '
-        i = 17
+        i = 19
         for word in message.split():
             if len(word) + i + 1 > 78: # Finish line and start new one
                 msg += ' '*(78-i)+'|\n| ' + word + ' '
@@ -179,7 +179,7 @@ class ADFLOW(AeroSolver):
         # geometric manipulation object
         self.mesh = None
         self.DVGeo = None
-
+        self.zipperCreated = False
         # Matrix Setup Flag
         self.adjointSetup = False
 
@@ -1814,6 +1814,9 @@ class ADFLOW(AeroSolver):
         # Note that it is safe to call updateGeometryInfo since it
         # only updates the mesh if necessary
         self.updateGeometryInfo()
+
+        # Create the zipper mehs if not done so
+        self._createZipperMesh()
 
         # If the state info none, initialize to the supplied
         # restart file or the free-stream values by calling
@@ -3533,6 +3536,7 @@ class ADFLOW(AeroSolver):
             'oversetprojtol':[float, 1e-12],
             'overlapfactor':[float, 0.9],
             'debugzipper':[bool, False],
+            'zippersurfacefamily':[object, None],
 
             # Unsteady Paramters
             'timeintegrationscheme':[str, 'bdf'],
@@ -3666,7 +3670,8 @@ class ADFLOW(AeroSolver):
                 'mgstartlevel', 'timeintegrationscheme', 'timeaccuracy',
                 'useale', 'timeintervals', 'blocksplitting',
                 'loadimbalance', 'loadbalanceiter', 'partitiononly',
-                'meshSurfaceFamily', 'designSurfaceFamily')
+                'meshSurfaceFamily', 'designSurfaceFamily', 
+                'zippersurfacefamily')
 
     def _getOptionMap(self):
         """ The ADflow option map and module mapping"""
@@ -3959,7 +3964,8 @@ class ADFLOW(AeroSolver):
                              'partitiononly',
                              'liftindex',
                              'meshsurfacefamily',
-                             'designsurfacefamily'
+                             'designsurfacefamily',
+                             'zippersurfacefamily'
                          ))
 
         # Deprecated options. These should not be used, but old
@@ -4135,6 +4141,32 @@ class ADFLOW(AeroSolver):
         self.adflow.inputio.forcedsurfacefile[0:len(surfFileName)] = surfFileName
         self.adflow.inputio.forcedliftfile[0:len(liftFileName)] = liftFileName
         self.adflow.inputio.forcedslicefile[0:len(sliceFileName)] = sliceFileName
+
+    def _createZipperMesh(self):
+        """Internal routine for generating the zipper mesh. This operation is
+        postposted as long as possible and now it cannot wait any longer."""
+        if self.zipperCreated:
+            return 
+
+        zipFam = self.getOption('zipperSurfaceFamily')
+        
+        if zipFam is None:
+            # The user didn't tell us anything. So we will use all
+            # walls. Remind the user what those are. 
+            zipperFamList = self.families[self.allWallsGroup]
+            if self.myid == 0:
+                ADFLOWWarning("'zipperSurfaceFamily' option was not given. Using all "
+                              "wall boundary conditions for the zipper mesh.")
+        else:
+
+            if zipFam not in self.families:
+                raise Error("Trying to create the zipper mesh, but '%s' is not a "
+                            "family in the CGNS file or has not been added"
+                            " as a combination of families"%groupName)
+            zipperFamList = self.families[zipFam]
+
+        #self.adflow.createzippermesh(zipperFamList)
+        self.zipperCreated = True
 
     def _processFortranStringArray(self, strArray):
         """Getting arrays of strings out of Fortran can be kinda nasty. This
