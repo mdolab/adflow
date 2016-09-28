@@ -26,15 +26,14 @@ contains
     use kdtree2_module, onlY : kdtree2_create, kdtree2destroy
     use oversetInitialization, only : initializeFringes, initializeOBlock, &
          initializeOFringes
-    use oversetCommUtilities , only : recvOBlock, recvOFringe, getCommPattern, getOWallCommPattern, &
+    use oversetCommUtilities , only : recvOBlock, recvOFringe, getCommPattern, getOSurfCommPattern, &
          emptyOversetComm, exchangeStatusTranspose, exchangeStatus, oversetLoadBalance, &
          exchangeFringes, sendOFringe, sendOBlock
     use oversetUtilities, only : isCompute, checkOverset, irregularCellCorrection, &
          fringeReduction, transposeOverlap, setIBlankArray, deallocateOFringes, deallocateoBlocks, &
-         deallocateOWalls, deallocateCSRMatrix, setIsCompute
+         deallocateOSurfs, deallocateCSRMatrix, setIsCompute, getWorkArray
     use oversetPackingRoutines, only : packOFringe, packOBlock, unpackOFringe, unpackOBlock, &
-         getOFringeBufferSizes, getOBlockBufferSizes, getOWallBufferSizes
-    use zipperMesh, only : createZipperMesh
+         getOFringeBufferSizes, getOBlockBufferSizes, getOSurfBufferSizes
     implicit none
 
     ! Input Parameters
@@ -72,12 +71,12 @@ contains
     integer(kind=intType) :: MAGIC, source, tag, sendCount, recvCount
     integer(kind=intType) :: nOFringeSend, nOFringeRecv
     integer(kind=intType) :: nOBlockSend, nOBlockRecv
-    integer(kind=intType) :: nOWallSend, nOWallRecv
+    integer(kind=intType) :: nOSurfSend, nOSurfRecv
     logical :: flag
 
     integer(kind=intType), dimension(:, :), allocatable :: oBlockSendList, oBlockRecvList
     integer(kind=intType), dimension(:, :), allocatable :: oFringeSendList, oFringeRecvList
-    integer(kind=intType), dimension(:, :), allocatable :: oWallSendList, oWallRecvList
+    integer(kind=intType), dimension(:, :), allocatable :: oSurfSendList, oSurfRecvList
     integer(kind=intType), dimension(:, :), allocatable :: bufSizes, recvInfo
     integer(kind=intType), dimension(:), allocatable :: intRecvBuf
     real(kind=realType), dimension(:), allocatable :: realRecvBuf
@@ -111,13 +110,8 @@ contains
                 flowDoms(nn, level, sps)%iblank = 1
              end if
              do mm=1, flowDoms(nn, level, sps)%nBocos
-                if (flowDoms(nn, level, sps)%BCType(mm) == EulerWall .or. &
-                     flowDoms(nn, level, sps)%BCType(mm) == NSWallAdiabatic .or. &
-                     flowDoms(nn, level, sps)%BCType(mm) == NSWallIsoThermal) then 
-                   flowDoms(nn, level, sps)%BCData(mm)%iblank = 1
-                end if
+                flowDoms(nn, level, sps)%BCData(mm)%iblank = 1
              end do
-
           end do
        end do
        return
@@ -188,7 +182,7 @@ contains
           ! Sizes
           call getOBlockBufferSizes (il, jl, kl, tmpInt2D(iDom, 1), tmpInt2D(iDom, 2))
           call getOFringeBufferSizes(il, jl, kl, tmpInt2D(iDom, 3), tmpInt2D(iDom, 4))
-          call getOWallBufferSizes  (il, jl, kl, tmpInt2D(iDom, 5), tmpInt2D(iDom, 6), .True.)
+          call getOSurfBufferSizes  (wallFamilies, il, jl, kl, tmpInt2D(iDom, 5), tmpInt2D(iDom, 6), .True.)
        end do
 
        if (.not. firstTime) then 
@@ -229,27 +223,8 @@ contains
        !  not. We want this small so we can constantlly loop over it quickly. 
        !  -----------------------------------------------------------------
 
-       nWork = 0
-       do jj=1,overlap%nnz
-          if (overlap%assignedProc(jj) == myid) then 
-             nWork = nWork + 1
-          end if
-       end do
-       allocate(work(4, nWork))
-
-       nWork = 0
-       do iDom=1, nDomTotal
-          do jj=overlap%rowPtr(iDom), overlap%rowPtr(iDom+1)-1
-             jDom = overlap%colInd(jj)
-             if (overlap%assignedProc(jj) == myID) then 
-                nWork = nWork + 1
-                work(1, nWork) = iDom
-                work(2, nWork) = jDom
-                work(3, nWork) = jj
-                work(4, nWork) = 0
-             end if
-          end do
-       end do
+       call getWorkArray(overlap, work)
+       nWork = size(work, 2)
 
        ! Call the generic routines to determine the send/receive pattern
        ! for oBlock comm and the fringe comm. These are transpose of
@@ -258,27 +233,24 @@ contains
        ! For sending, the worse case is sending all my blocks/fringes/walls to
        ! everyone but myself:
        ii = nDom*(nProc-1)
-       allocate(oBlockSendList(2, ii), oFringeSendList(2, ii), oWallSendList(2, ii))
+       allocate(oBlockSendList(2, ii), oFringeSendList(2, ii), oSurfSendList(2, ii))
 
        ! For receiving, the worse receive is all the blocks/fringes/wall I
        ! don't already have:
        ii = nDomTotal - nDom
-       allocate(oBlockRecvList(2, ii), oFringeRecvList(2, ii), oWallRecvList(2, ii))
+       allocate(oBlockRecvList(2, ii), oFringeRecvList(2, ii), oSurfRecvList(2, ii))
 
-       call getCommPattern(overlap, &
-            oblockSendList, size(oBlockSendList, 2),  nOblockSend, &
-            oBlockRecvList, size(oBlockRecvList, 2), nOblockRecv)
+       call getCommPattern(overlap, oblockSendList, nOblockSend, &
+            oBlockRecvList, nOblockRecv)
 
-       call getCommPattern(overlapTranspose, &
-            oFringeSendList, size(oFringeSendList, 2), nOFringeSend, &
-            oFringeRecvList, size(oFringeRecvList, 2), nOFringeRecv)
+       call getCommPattern(overlapTranspose, oFringeSendList, nOFringeSend,  &
+            oFringeRecvList, nOFringeRecv)
 
        ! The wall send/recv list is essentially the merging of the
        ! oBlock and oFringe send/recv lists. Essentially if we have an
-       ! oBlock OR an oFringe we need to have the oWall for it as well. 
-       call getOWallCommPattern(overlap, overlapTranspose, &
-            oWallSendList, size(oWallSendList, 2), nOWallSend, &
-            oWallRecvList, size(oWallRecvList, 2), nOWallRecv, bufSizes(:, 6))
+       ! oBlock OR an oFringe we need to have the oSurf for it as well. 
+       call getOSurfCommPattern(overlap, overlapTranspose, &
+            oSurfSendList, nOSurfSend, oSurfRecvList, nOSurfRecv, bufSizes(:, 6))
 
        ! Done with the transposed matrix
        call deallocateCSRMatrix(overlapTranspose)
@@ -1015,13 +987,6 @@ contains
           end if
 
        end do refineLoop
-       ! -----------------------------------------------------------------
-       ! Step 18: Create the zipper mesh. We pass in a few arrays
-       ! dealing with wall exchange since there is no need to recompute them. 
-       ! -----------------------------------------------------------------
-       call createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
-            nOwallSend, nOwallRecv, size(oWallSendList, 2), &
-            size(oWallRecvList, 2), work, nWork)
 
        ! Setup the buffer sizes
        call setBufferSizes(level, sps, .false., .True.)

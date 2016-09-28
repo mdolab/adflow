@@ -97,7 +97,9 @@ subroutine surfaceCellCenterToNode(exch)
         nj = jEnd - jBeg + 1
         do j=0,nj-2
            do i=0,ni-2
-              qv = fourth * BCData(mm)%cellVal(i+iBeg+1, j+jBeg+1)
+              ! Note: No +iBeg, and +jBeg becuase cellVal is a pointer
+              ! and always starts at one
+              qv = fourth * BCData(mm)%cellVal(i+2, j+2)
               ind(1) = ii + (j  )*ni + i + 1
               ind(2) = ii + (j  )*ni + i + 2 
               ind(3) = ii + (j+1)*ni + i + 2 
@@ -149,8 +151,13 @@ subroutine surfaceCellCenterToNode(exch)
      do mm=1, nBocos
         iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
         jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
-        do j=jBeg, jEnd
-           do i=iBeg, iEnd
+
+        ni = iEnd - iBeg + 1
+        nj = jEnd - jBeg + 1
+        do j=1,nj
+           do i=1,ni
+              ! Note: No +iBeg, and +jBeg becuase cellVal is a pointer
+              ! and always starts at one
               ii = ii + 1
               BCData(mm)%nodeVal(i, j) = localPtr(ii)
            end do
@@ -201,7 +208,9 @@ subroutine computeWeighting(exch)
            do i=0,ni-2
               
               ! Scatter a quarter of the face value to each node:
-              qa = fourth*BCData(mm)%cellVal(i+iBeg+1, j+jBeg+1)
+              ! Note: No +iBeg, and +jBeg becuase cellVal is a pointer
+              ! and always starts at one
+              qa = fourth*BCData(mm)%cellVal(i+2, j+2)
               ind(1) = ii + (j  )*ni + i + 1
               ind(2) = ii + (j  )*ni + i + 2 
               ind(3) = ii + (j+1)*ni + i + 2 
@@ -214,7 +223,7 @@ subroutine computeWeighting(exch)
         ii = ii + ni*nj
      end do
   end do
-   
+
   call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
@@ -278,9 +287,8 @@ subroutine computeNodalTractions(sps)
         end if bocoType1
      end do
   end do
-
   call computeWeighting(fullExchange(sps))
-
+  
   FpFvLoop: do iDim=1, 6
      ! ii is the running counter through the pointer array.
      ii = 0

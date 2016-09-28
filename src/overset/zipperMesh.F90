@@ -15,57 +15,75 @@ contains
   !      http://people.nas.nasa.gov/~wchan/publications/AIAA-2009-3990.pdf  
   !
 
-  subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
-       nOwallSend, nOwallRecv, size1, size2, work, nWork)
+  subroutine createZipperMesh(zipperFamList, nZipFam)
 
     use constants
     use communication, only : myID, adflow_comm_world, nProc, recvRequests, &
          sendRequests, commPatternCell_2nd, internalCell_2nd
     use blockPointers, only : nDom, BCData, nBocos, BCType, il, jl, kl
-    use overset!, only : oversetString, oversetWall
-    use wallDistanceData, only : xVolumeVec, IS1
-    use stringops
-    use inputOverset
-    use adtapi
-    use utils, only : setPointers, EChk, isWallType
+    use overset, only : oversetString, oversetWall, CSRMatrix, cumDomProc, nDomTotal, &
+         clusters, overlapMatrix, globalNodalVec, localZipperVal, zipperConn, zipperFam, &
+         zipperIndices, nodeZipperScatter, PETSC_COPY_VALUES, PETSC_DETERMINE, PETSC_NULL_OBJECT, &
+         oversetPresent
+    use wallDistanceData, only : xVolumeVec, IS1, IS2, PETSC_VIEWER_STDOUT_WORLD
+    use utils, only : setPointers, EChk
     use adjointvars, only :nNodesLocal
-    use oversetUtilities
-    use oversetCommUtilities, only : exchangeSurfaceIBlanks, recvOwall, sendOWall
-    use oversetPackingRoutines
-    use oversetInitialization
+    use sorting, only : bsearchIntegers
+    use oversetUtilities, only : getWorkArray, deallocateOSurfs, transposeOverlap
+    use oversetCommUtilities, only : exchangeSurfaceIBlanks, recvOSurf, sendOSurf, &
+         getOSurfCommPattern
+    use oversetPackingRoutines, only : packOSurf, unpackOSurf, getOSurfBufferSizes
+    use oversetInitialization, only : initializeOSurf
+    use inputOverset, only : debugZipper
+    use stringOps
+    use gapBoundaries
+    use surfaceFamilies, only : wallFamilies, totalWallfamilies
     implicit none
 
     ! Input Parameters
-    integer(kind=intType), intent(in) :: level, sps, nOwallSend, nOwallRecv, nWork
-    integer(kind=intType), intent(in) :: size1, size2
-    integer(kind=intType), intent(in) :: oWallSendList(2, size1)
-    integer(kind=intType), intent(in) :: oWallRecvList(2, size2)
-    integer(kind=intType), intent(in) :: work(4, nWork)
+    integer(kind=intType), intent(in), dimension(nZipFam) :: zipperFamList
+    integer(kind=intType), intent(in) :: nZipFam
 
     ! Local Variables
-    integer(kind=intType) :: i, j, k, ii, jj, kk, iStart, iSize
-    integer(kind=intType) :: iDom, jDom, nn, mm, n, ierr, iProc, iWork, nStrings
-    integer(kind=intType), dimension(:,:), allocatable :: tmpInt2D
-    logical, dimension(:), allocatable :: oWallReady
-    type(oversetWall), dimension(:), allocatable :: oWalls
+    !integer(kind=intType) :: zipperFamList(totalwallfamilies)
+    integer(kind=intType) :: i, j, k, ii, jj, kk, iStart, iSize, sps, level, iStr
+    integer(kind=intType) :: iDom, jDom, nn, mm, n, ierr, iProc, iWork, nStrings, nodeFam(3)
+    integer(kind=intType) :: nNodeTotal, nTriTotal, offset
+    integer(kind=intType), dimension(:,:), allocatable :: tmpInt2D, work
+    logical, dimension(:), allocatable :: oSurfReady
+    type(oversetWall), dimension(:), allocatable :: oSurfs
     integer(kind=intType), dimension(:), allocatable :: intRecvBuf
-    type(oversetString) :: master, pocketMaster
+    type(oversetString), target :: master, pocketMaster
     integer(kind=intType), dimension(:), allocatable :: nodeIndices
-
     type(oversetString), dimension(:), allocatable, target :: strings
+    type(oversetString), pointer :: str
     integer(kind=intType) :: nFullStrings, nUnique
-
+    integer(kind=intType) :: nOSurfRecv, nOSurfSend
+    integer(kind=intType) , dimension(:,:), allocatable :: oSurfRecvList, oSurfSendList
     ! MPI/Communication related
     integer status(MPI_STATUS_SIZE) 
     integer(kind=intType), dimension(:, :), allocatable :: bufSizes
     integer(kind=intType), dimension(:, :), allocatable :: recvInfo
     integer(kind=intType) :: sendCount, recvCount, index
+    type(CSRMatrix), pointer :: overlap
+    type(CSRMatrix) :: overlapTranspose
 
     ! Wall search related
     integer(kind=intType) :: ncells
     type(oversetWall), dimension(:), allocatable, target :: walls
     type(oversetWall),  target :: fullWall
 
+    if (.not. oversetPresent) then 
+       ! Not overset so we don't can't have a zipper. 
+       return
+    end if
+
+    ! Zipper is only implemented for single grid and 1 spectral
+    ! instance (ie not time spectral). 
+    level = 1
+    sps = 1
+    overlap => overlapMatrix(level, sps)
+    call transposeOverlap(overlap, overlapTranspose)
     ! -------------------------------------------------------------------
     ! Step 1: Eliminate any gap overlaps between meshes
     ! -------------------------------------------------------------------
@@ -73,27 +91,60 @@ contains
     ! Determine the average area of surfaces on each cluster. This
     ! will be independent of any block splitting distribution. 
 
-    call determineClusterAreas()
+    call determineClusterAreas(zipperFamList)
 
     ! Set the boundary condition blank values
-    call initBCDataIBlank(level, sps)
+    call initBCDataIBlank(zipperFamList, level, sps)
 
     ! Create the surface deltas
-    call surfaceDeviation(level, sps)
+    call surfaceDeviation(zipperFamList, level, sps)
 
-    ! Alloc data for the OWalls
-    nn = max(nProc, 2*nOWallSend, 2*nOwallRecv)
+
+    ! ================ WE NORMALLY GOT THIS FROM OVERSETCOMM =============
+    ! Get the OSurf buffer sizes becuase we need that for getOSurfCommPattern
+    allocate(bufSizes(nDomTotal, 6), tmpInt2D(nDomTotal, 6))
+    tmpInt2D = 0
+    do nn=1, nDom
+       call setPointers(nn, level, sps)
+       iDom = cumDomProc(myid) + nn
+       call getOSurfBufferSizes(zipperFamList, il, jl, kl, tmpInt2D(iDom, 5), &
+            tmpInt2D(iDom, 6), .True.)
+    end do
+
+    call mpi_allreduce(tmpInt2D, bufSizes, 6*nDomTotal, adflow_integer, MPI_SUM, &
+         adflow_comm_world, ierr)
+    call ECHK(ierr, __FILE__, __LINE__)
+
+    ! Get the basic surface comm pattern. 
+    ! For sending, the worse case is sending all my blocks/fringes/walls to
+    ! everyone but myself:
+    ii = nDom*(nProc-1)
+    allocate(oSurfSendList(2, ii))
+    
+    ! For receiving, the worse receive is all the blocks/fringes/wall I
+    ! don't already have:
+    ii = nDomTotal - nDom
+    allocate(oSurfRecvList(2, ii))
+
+    call getOSurfCommPattern(overlap, overlapTranspose, &
+         oSurfSendList, nOSurfSend, oSurfRecvList, nOSurfRecv, bufSizes(:, 6))
+    deallocate(tmpInt2D, bufSizes)
+    ! ========================================================================
+
+    ! Alloc data for the OSurfs
+    nn = max(nProc, 2*nOSurfSend, 2*nOSurfRecv)
     allocate(tmpInt2D(nDomTotal, 2), bufSizes(nDomTotal, 2), &
-         oWallReady(nDomTotal), recvInfo(2, nn))
+         oSurfReady(nDomTotal), recvInfo(2, nn))
 
     tmpInt2D = 0
-    ! Need to get the differt sizes for the OWalls since they are now
+    ! Need to get the differt sizes for the OSurfs since they are now
     ! based on the primal mesh as opposed to do the dual mesh as
     ! previously done
     do nn=1, nDom
        call setPointers(nn, level, sps)
        iDom = cumDomProc(myid) + nn
-       call getOWallBufferSizes  (il, jl, kl, tmpInt2D(iDom, 1), tmpInt2D(iDom, 2), .False.)
+       call getOSurfBufferSizes(zipperFamList, il, jl, kl, tmpInt2D(iDom, 1), &
+            tmpInt2D(iDom, 2), .False.)
     end do
 
     ! Make sure everyone has the sizes
@@ -102,13 +153,13 @@ contains
     call ECHK(ierr, __FILE__, __LINE__)
     deallocate(tmpInt2D)
 
-    ! allocate oWalls for the primal mesh
-    allocate(oWalls(nDomTotal))
+    ! allocate oSurfs for the primal mesh
+    allocate(oSurfs(nDomTotal))
     do iDom=1, nDomtotal
        if (bufSizes(iDom, 1) == 0) then 
-          oWallReady(iDom) = .True.
+          oSurfReady(iDom) = .True.
        else
-          oWallReady(iDom) = .False.
+          oSurfReady(iDom) = .False.
        end if
     end do
 
@@ -116,24 +167,24 @@ contains
     do nn=1, nDom
        call setPointers(nn, level, sps)
        iDom = cumDomProc(myid) + nn
-       call initializeOWall(oWalls(iDom), .False., clusters(iDom))
-       call packOWall(oWalls(iDom), .False.)
-       oWallReady(iDom) = .True. 
+       call initializeOSurf(zipperFamList, oSurfs(iDom), .False., clusters(iDom))
+       call packOSurf(zipperFamList, oSurfs(iDom), .False.)
+       oSurfReady(iDom) = .True. 
     end do
 
-    ! Post all the oWall iSends
+    ! Post all the oSurf iSends
     sendCount = 0
-    do jj=1, nOWallSend
-       iProc = oWallSendList(1, jj)
-       iDom = oWallSendList(2, jj)
-       call sendOWall(oWalls(iDom), iDom, iProc, 0, sendCount)
+    do jj=1, nOSurfSend
+       iProc = oSurfSendList(1, jj)
+       iDom = oSurfSendList(2, jj)
+       call sendOSurf(oSurfs(iDom), iDom, iProc, 0, sendCount)
     end do
 
     recvCount = 0
-    do jj=1, nOWallRecv
-       iProc = oWallRecvList(1, jj)
-       iDom = oWallRecvList(2, jj)
-       call recvOWall(oWalls(iDom), iDom, iProc, 0, &
+    do jj=1, nOSurfRecv
+       iProc = oSurfRecvList(1, jj)
+       iDom = oSurfRecvList(2, jj)
+       call recvOSurf(oSurfs(iDom), iDom, iProc, 0, &
             bufSizes(iDom, 1), bufSizes(iDom, 2), recvCount, recvInfo)
     end do
 
@@ -153,8 +204,8 @@ contains
 
        ! Global domain index of the recv that finished
        iDom = recvInfo(1, i)
-       if (.not. oWalls(iDom)%allocated) then 
-          call unpackOWall(oWalls(iDom))
+       if (.not. oSurfs(iDom)%allocated) then 
+          call unpackOSurf(oSurfs(iDom))
        end if
     end do
 
@@ -162,38 +213,41 @@ contains
     ! receives. We do this outside the main iteration loop since it
     ! always the same size.
     ii = 0
-    do jj=1, noWallSend
+    do jj=1, noSurfSend
        ! These blocks are by definition local. 
-       iDom = oWallSendList(2, jj)
-       ii = ii + oWalls(iDom)%maxCells
+       iDom = oSurfSendList(2, jj)
+       ii = ii + oSurfs(iDom)%maxCells
     end do
     allocate(intRecvBuf(max(1, ii)))
 
     ! ------------------------ Performing Searches ----------------        
-    do iWork=1, nWork
+    call getWorkArray(overlap, work)
+
+  
+    do iWork=1, size(work,2)
        iDom = work(1, iWork)
        jDom = work(2, iWork)
-       call wallSearch(oWalls(iDom), oWalls(jDom))
+       call wallSearch(oSurfs(iDom), oSurfs(jDom))
     end do
 
     ! ------------------------ Receiving iBlank back ---------------
 
     sendCount = 0
-    do jj=1, noWallRecv
-       iProc = oWallRecvList(1, jj)
-       iDom = oWallRecvList(2, jj)
+    do jj=1, noSurfRecv
+       iProc = oSurfRecvList(1, jj)
+       iDom = oSurfRecvList(2, jj)
        sendCount = sendCount + 1
-       call mpi_isend(oWalls(iDom)%iBlank, oWalls(iDom)%maxCells, adflow_integer, &
+       call mpi_isend(oSurfs(iDom)%iBlank, oSurfs(iDom)%maxCells, adflow_integer, &
             iproc, iDom, adflow_comm_world, sendRequests(sendCount), ierr)
        call ECHK(ierr, __FILE__, __LINE__)
     end do
 
     recvCount = 0
     iStart = 1
-    do jj=1, noWallSend
-       iProc = oWallSendList(1, jj)
-       iDom = oWallSendList(2, jj)
-       iSize = oWalls(iDom)%maxCells
+    do jj=1, noSurfSend
+       iProc = oSurfSendList(1, jj)
+       iDom = oSurfSendList(2, jj)
+       iSize = oSurfs(iDom)%maxCells
        recvCount = recvCount + 1       
 
        call mpi_irecv(intRecvBuf(iStart), iSize, adflow_integer, &
@@ -213,17 +267,17 @@ contains
        call ECHK(ierr, __FILE__, __LINE__)
     end do
 
-    ! Process the oWalls we own locally
+    ! Process the oSurfs we own locally
     do nn=1, nDom
        call setPointers(nn, level, sps)
        iDom = cumDomProc(myid) + nn
        ii = 0
        do mm=1, nBocos
-          if (isWallType(BCType(mm))) then 
+          if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
              do j=BCData(mm)%jnBeg+1, BCData(mm)%jnEnd
                 do i=BCData(mm)%inBeg+1, BCData(mm)%inEnd
                    ii = ii +1
-                   if (oWalls(iDom)%iBlank(ii) == -2) then 
+                   if (oSurfs(iDom)%iBlank(ii) == -2) then 
                       BCData(mm)%iblank(i,j) = -2
                    end if
                 end do
@@ -234,16 +288,16 @@ contains
 
     ! And update based on the data we received from other processors
     ii = 0
-    do kk=1, noWallSend
+    do kk=1, noSurfSend
 
-       iDom = oWallSendList(2, kk)
+       iDom = oSurfSendList(2, kk)
        nn = iDom - cumDomProc(myid)
 
        ! Set the block pointers for the local block we are dealing
        ! with:
        call setPointers(nn, level, sps)
        do mm=1, nBocos
-          if (isWallType(BCType(mm))) then 
+          if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
              do j=BCData(mm)%jnBeg+1, BCData(mm)%jnEnd
                 do i=BCData(mm)%inBeg+1, BCData(mm)%inEnd
                    ii = ii + 1
@@ -256,9 +310,9 @@ contains
        end do
     end do
 
-    ! Ditch our owalls
-    call deallocateOWalls(OWalls, nDomTotal)
-    deallocate(oWalls, intRecvBuf)
+    ! Ditch our oSurfs
+    call deallocateOSurfs(OSurfs, nDomTotal)
+    deallocate(oSurfs, intRecvBuf)
 
     ! We are still left with an issue since we had only worked with
     ! the owned cells, we don't know if if a halo surface iblank was
@@ -266,32 +320,33 @@ contains
     ! this is do just do a halo-surface-iblank exchange. Essentially
     ! we will put the surface iblankvalues into the volume iblank,
     ! communicate and the extract again. Easy-peasy
-    call exchangeSurfaceIBlanks(level, sps, commPatternCell_2nd, internalCell_2nd)
+    call exchangeSurfaceIBlanks(zipperFamList, level, sps, commPatternCell_2nd, internalCell_2nd)
 
     ! Before we continue, we do a little more
     ! processing. bowTieElimination tries to eliminate cells
-    call bowTieAndIsolationElimination(level, sps)
-
+    call bowTieAndIsolationElimination(zipperFamList, level, sps)
+  
     ! -------------------------------------------------------------------
     ! Step 2: Identify gap boundary strings and split the strings to 
     !         sub-strings.
     ! -------------------------------------------------------------------
 
     if (debugZipper) then 
-       call writeWalls
+       call writeWalls(zipperFamList)
     end if
 
-    call makeGapBoundaryStrings(level, sps, master)
+    call makeGapBoundaryStrings(zipperFamList, level, sps, master)
 
-    if (myid == 0) then 
+    rootProc: if (myid == 0) then 
 
        if (debugZipper) then 
           call writeZipperDebug(master)
        end if
-
+  
        call createOrderedStrings(master, strings, nStrings)
-       call performSelfZip(master, strings, nStrings)
 
+       call performSelfZip(master, strings, nStrings)
+    
        ! Write out any self-zipped triangles
        if (debugZipper) then 
           call writeOversetTriangles(master, "selfzipTriangulation.dat")
@@ -313,91 +368,142 @@ contains
           call writeOversetTriangles(pocketMaster, "pocketTriangulation.dat")
        end if
 
-
-       ! (3 nodes per triangle and 3 DOF per ndoe)
-       allocate(nodeIndices(3*3*(master%ntris + pocketMaster%ntris)))
+       ! Before we create the final data structures for the zipper
+       ! mesh; we will combine the master and pocketMaster
+       ! strings, and unique-ify the indices to help keep amount of data
+       ! transfer to a minimum. We also determine at this point which
+       ! triangle belongs to which family.
+       call setStringPointers(master)
+       nTriTotal = master%ntris + pocketMaster%ntris
+       nNodeTotal = master%nNodes + pocketMaster%nNodes
+       allocate(zipperConn(3, nTriTotal), zipperFam(nTriTotal), zipperIndices(nNodeTotal))
 
        ii = 0
-       do i=1, master%nTris
-          do j=1, 3 ! Triangle node loop
-             jj = master%tris(j, i)
-             do k=1, 3 ! DOF Loop 
-                ! Zero-based ordering for petsc
-                nodeIndices(9*ii+3*(j-1)+k) = 3*master%ind(jj) + k-1 
-             end do
-          end do
-          ii = ii + 1
-       end do
+       jj = 0
+       outerLoop: do iStr=1,2
+          ! Select which of the two we are dealing with
+          if (iStr ==1) then 
+             str => master
+             offset = 0
+          else
+             str => pocketMaster
+             offset = master%nNodes
+          end if
 
-       do i=1, pocketMaster%nTris
-          do j=1, 3 ! Triangle node loop
-             jj = pocketMaster%tris(j, i)
-             do k=1, 3 ! DOF Loop 
-                ! Zero-based ordering for petsc
-                nodeIndices(9*ii+3*(j-1)+k) = 3*pocketMaster%ind(jj) + k-1 
-             end do
-          end do
-          ii = ii + 1
-       end do
-    else
-       ! Other procs don't have any triangles :-(
-       allocate(nodeIndices(0))
-    end if
+          ! Loop over the number of triangles.
+          do i=1, str%nTris
+             ii = 0
 
-    ! Clean up memory on the root proc
-    if (myid == 0) then 
+             ! Extract the family from the nodes
+             do j=1,3
+                nodeFam(j) = str%family(str%tris(j, i))
+             end do
+
+             ! Increment the running counter for all triangles.
+             ii = ii + 1
+
+             ! Set the family
+             zipperFam(ii) = selectNodeFamily(nodeFam)
+
+             ! Set the connectivity. 
+             zipperConn(:, ii) = str%tris(:, i) + offset
+          end do
+
+          ! Loop over the nodal indices and add
+          do j=1, str%nNodes
+             ! And set the global indices that the zipper needs. Note
+             ! that we are doing zipperIndices as a scalar and that
+             ! the indices refer to the global nodes so are already in
+             ! 0-based ordering. 
+             jj = jj + 1
+             zipperIndices(jj) = str%ind(j)
+          end do
+       end do outerLoop
+
+       ! Clean up the reminder of the sting memory on the root proc
        do i=1, nFullStrings
           call deallocateString(strings(i))
        end do
        deallocate(strings)
        call deallocateString(master)
        call deallocateString(pocketMaster)
-    end if
+    else
+       ! Other procs don't have any triangles *sniffle* :-( 
+       allocate(zipperConn(3, 0), zipperFam(0), zipperIndices(0))
+    end if rootProc
 
-    ! ------------------------------------------------
-
-    ! These three vectors are the MPI vectors with only non-zero size on
-    ! the root proc. This is where we scatter the nodes, pressure
-    ! tractions and viscous tractions into. 
-    call VecCreateMPI(ADFLOW_COMM_WORLD, size(nodeIndices), PETSC_DETERMINE, &
-         localZipperNodes, ierr)
+    call VecCreateMPI(ADFLOW_COMM_WORLD, size(zipperIndices), PETSC_DETERMINE, &
+         localZipperVal, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
-    call VecDuplicate(localZipperNodes, localZipperTp, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-
-    call VecDuplicate(localZipperNodes, localZipperTv, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-
-    ! This is a generic global nodal vector that can store the nodal
-    ! values, pressure tractions or viscous tractions. 
-    call VecCreateMPI(ADFLOW_COMM_WORLD, 3*nNodesLocal(1), PETSC_DETERMINE, &
+    ! This is a generic scalar global nodal vector that can store the
+    ! coordinates, tractions, or other values the zipper needs
+    call VecCreateMPI(ADFLOW_COMM_WORLD, nNodesLocal(1), PETSC_DETERMINE, &
          globalNodalVec, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
     ! Now create the general scatter that goes from the
     ! globalNodalVector to the local vectors. 
-    call ISCreateGeneral(adflow_comm_world, size(nodeIndices), &
-         nodeIndices, PETSC_COPY_VALUES, IS1, ierr)
+    call ISCreateGeneral(adflow_comm_world, size(zipperIndices), &
+         zipperIndices, PETSC_COPY_VALUES, IS1, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
-    call VecScatterCreate(globalNodalVec, IS1, localZipperNodes, PETSC_NULL_OBJECT, &
+    call VecScatterCreate(globalNodalVec, IS1, localZipperVal, PETSC_NULL_OBJECT, &
          nodeZipperScatter, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
     call ISDestroy(IS1, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
-    ! Free the remaining memory
-    deallocate(nodeIndices)
+  contains
+    function selectNodeFamily(nodeFam)
+      implicit none
+      integer(kind=intType), dimension(3) :: nodeFam
+      integer(kind=intType) :: selectNodeFamily
+      
+      ! We have a few cases to check: 
 
-  end subroutine createZipperMesh
+      if (nodeFam(1) == nodeFam(2) .and. nodeFam(1) == nodeFam(3)) then 
+         ! Case 1: All of the nodes have the same family. This is what
+         ! *should* happen all the time:
+         
+         selectNodeFamily = nodeFam(1)
+
+      else if (nodeFam(1) == nodeFam(2)) then 
+
+         ! Case 2a: First two nodes are the same. Take the family from 1. 
+         
+         selectNodeFamily = nodeFam(1)
+
+      else if (nodeFam(2) == nodeFam(3)) then 
+
+         ! Case 2b: Last two nodes are the same. Take the family from 2. 
+         
+         selectNodeFamily = nodeFam(2)
+
+      else if (nodeFam(1) == nodeFam(3)) then 
+
+         ! Case 2b: First and last nodes are the same. Take the family from 1. 
+         
+         selectNodeFamily = nodeFam(1)
+
+      else
+         
+         ! All nodes are different. We arbitrarily take the first and
+         ! print a warning becuase this should not happen. 
+         
+         selectNodeFamily = nodeFam(1)
+         print *,'Family for triangle could not be uniquely determined. Nodes are from 3 different families!'
+      end if
+
+      end function selectNodeFamily
+    end subroutine createZipperMesh
   !
   !       determineClusterArea determine the average cell surface area   
   !       for all blocks in a particular cluster. This is used for       
   !       determine blanking preference for overlapping surface cells.   
 
-  subroutine determineClusterAreas
+  subroutine determineClusterAreas(zipperFamList)
 
     use constants
     use blockPointers, only : nDom, BCData, nBocos, BCType
@@ -405,13 +511,17 @@ contains
     use overset, onlY : clusterAreas, nClusters, clusters, cumDomProc
     use surfaceFamilies, onlY : totalWallFamilies, wallFamilies
     use surfaceUtils, only : getSurfaceSize, getSurfacePoints, setFamilyInfo
-    use utils, only : setPointers, EChk, isWallType
+    use utils, only : setPointers, EChk, setBCPointers
+    use BCPointers, only : xx
+    use sorting, only : bsearchIntegers
     implicit none
+
+    ! Input Parameters
+    integer(kind=intType), intent(in), dimension(:) :: zipperFamList
 
     ! Working
     integer(kind=intType) :: i, j, mm, nn, clusterID, ierr, nPts, nCells
-    integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii
-    integer(kind=intType) :: lower_left, lower_right, upper_left, upper_right
+    integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
     real(kind=realType), dimension(:), allocatable :: localAreas
     integer(kind=intType), dimension(:), allocatable :: localCount, globalCount
     real(kind=realType), dimension(:, :), allocatable :: pts
@@ -428,12 +538,6 @@ contains
     localAreas = zero
     localCount = 0
 
-    call getSurfaceSize(nPts, nCells, wallFamilies, totalWallFamilies)
-    call setFamilyInfo(wallfamilies, totalWallFamilies)
-    allocate(pts(3, nPts))
-    call getSurfacePoints(pts, nPts, 1_intType)
-
-    ii = 0 
     domains: do nn=1,nDom
        call setPointers(nn, 1_intType, 1_intType)
 
@@ -441,7 +545,7 @@ contains
 
        ! Loop over the number of boundary subfaces of this block.
        bocos: do mm=1,nBocos
-          if( isWalltype(BCType(mm))) then            
+          famInclude: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
 
              ! Store the cell range of the subfaces a bit easier.
              ! As only owned faces must be considered the nodal range
@@ -450,18 +554,14 @@ contains
              jBeg = BCData(mm)%jnBeg + 1; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
 
+             call setBCPointers(mm, .True.)
+
              ! Compute the dual area at each node. Just store in first dof
              do j=jBeg, jEnd ! This is a face loop
                 do i=iBeg, iEnd ! This is a face loop 
 
-                   ! Compute Normal
-                   lower_left  = ii + (j-jBeg)*(iEnd-iBeg+2) + i-iBeg + 1
-                   lower_right = lower_left + 1
-                   upper_left  = lower_right + iend - ibeg + 1
-                   upper_right = upper_left + 1
-
-                   v1(:) = pts(:, upper_right) -   pts(:, lower_left)
-                   v2(:) = pts(:, upper_left) -  pts(:, lower_right)
+                   v1(:) = xx(i+1, j+1, :) - xx(i,   j,  :)
+                   v2(:) = xx(i  , j+1, :) - xx(i+1, j,  :)
 
                    ! Cross Product
                    call cross_prod(v1, v2, sss)
@@ -470,13 +570,7 @@ contains
                    localCount(clusterID) = localCount(clusterID) + 1
                 end do
              end do
-
-             ! Note how iBeg,iBeg is defined above... it is one MORE
-             ! then the starting node (used for looping over faces, not
-             ! nodes)
-             ii = ii + (jEnd-jBeg+2)*(iEnd-iBeg+2)
-
-          end if
+          end if famInclude
        end do bocos
     end do domains
 
@@ -499,16 +593,18 @@ contains
     deallocate(localAreas, localCount, globalCount)
   end subroutine determineClusterAreas
 
-  subroutine initBCDataiBlank(level, sps)
+  subroutine initBCDataiBlank(zipperFamList, level, sps)
 
     use constants
     use blockPointers
     use communication
-    use utils, only : setPointers, isWallType
+    use utils, only : setPointers
     use oversetUtilities, only : flagForcedReceivers
+    use sorting, only : bsearchIntegers
     implicit none
 
     ! Input Parameters
+    integer(kind=intType), intent(in), dimension(:) :: zipperFamList
     integer(kind=intType), intent(in) :: level, sps
 
     ! Local variables
@@ -555,63 +651,65 @@ contains
     ! This criterial allows one-cell wide 'slits' to be pre-eliminated.
 
 
+
     domainLoop: do nn=1, nDom
        call setPointers(nn, level, sps)
        allocate(forcedRecv(1:ie, 1:je, 1:ke))
        call flagForcedReceivers(forcedRecv)
 
+       ! Setting the surface IBlank array is done for *all* bocos. 
        bocoLoop: do mm=1, nBocos
-          wallType: if (isWallType(BCType(mm))) then
-             select case (BCFaceID(mm))
-             case (iMin)
-                ibp => iblank(2, :, :)
-                gcp => globalCell(2, :, :)
-                frx => forcedRecv(2, :, :)
-             case (iMax)
-                ibp => iblank(il, :, :)
-                gcp => globalCell(il, :, :)
-                frx => forcedRecv(il, :, :)
-             case (jMin)
-                ibp => iblank(:, 2, :)
-                gcp => globalCell(:, 2, :)
-                frx => forcedRecv(:, 2, :)
-             case (jMax)
-                ibp => iblank(:, jl, :)
-                gcp => globalCell(:, jl, :)
-                frx => forcedRecv(:, jl, :)
-             case (kMin)
-                ibp => iblank(:, :, 2)
-                gcp => globalCell(:, :, 2)
-                frx => forcedRecv(:, :, 2)
-             case (kMax)
-                ibp => iblank(:, :, kl)
-                gcp => globalCell(:, :, kl)
-                frx => forcedRecv(:, :, kl)
-             end select
+          select case (BCFaceID(mm))
+          case (iMin)
+             ibp => iblank(2, :, :)
+             gcp => globalCell(2, :, :)
+             frx => forcedRecv(2, :, :)
+          case (iMax)
+             ibp => iblank(il, :, :)
+             gcp => globalCell(il, :, :)
+             frx => forcedRecv(il, :, :)
+          case (jMin)
+             ibp => iblank(:, 2, :)
+             gcp => globalCell(:, 2, :)
+             frx => forcedRecv(:, 2, :)
+          case (jMax)
+             ibp => iblank(:, jl, :)
+             gcp => globalCell(:, jl, :)
+             frx => forcedRecv(:, jl, :)
+          case (kMin)
+             ibp => iblank(:, :, 2)
+             gcp => globalCell(:, :, 2)
+             frx => forcedRecv(:, :, 2)
+          case (kMax)
+             ibp => iblank(:, :, kl)
+             gcp => globalCell(:, :, kl)
+             frx => forcedRecv(:, :, kl)
+          end select
+          
+          ! -------------------------------------------------
+          ! Step 1: Set the (haloed) cell iBlanks directly from
+          ! the volume iBlanks
+          ! -------------------------------------------------
+          jBeg = BCData(mm)%jnBeg+1 ; jEnd = BCData(mm)%jnEnd
+          iBeg = BCData(mm)%inBeg+1 ; iEnd = BCData(mm)%inEnd
 
-             ! -------------------------------------------------
-             ! Step 1: Set the (haloed) cell iBlanks directly from
-             ! the volume iBlanks
-             ! -------------------------------------------------
-             jBeg = BCData(mm)%jnBeg+1 ; jEnd = BCData(mm)%jnEnd
-             iBeg = BCData(mm)%inBeg+1 ; iEnd = BCData(mm)%inEnd
-
-             ! Just set the cell iblank directly from the cell iblank
-             ! above it. Remember the +1 in ibp is for the pointer
-             ! offset. These ranges *ALWAYS* give 1 level of halos
-             do j=jBeg-1, jEnd+1
-                do i=iBeg-1, iEnd+1
-                   BCData(mm)%iBlank(i,j) = ibp(i+1, j+1)
-                end do
+          ! Just set the cell iblank directly from the cell iblank
+          ! above it. Remember the +1 in ibp is for the pointer
+          ! offset. These ranges *ALWAYS* give 1 level of halos
+          do j=jBeg-1, jEnd+1
+             do i=iBeg-1, iEnd+1
+                BCData(mm)%iBlank(i,j) = ibp(i+1, j+1)
              end do
+          end do
 
-             ! Make bounds a little easier to read. Owned cells only
-             ! from now on.
-
+          ! Only do the slit elimination if we actually care about
+          ! this surface for the zipper
+          famInclude: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
+          
              ! -------------------------------------------------
              ! Step 2: Slit elimination
              ! -------------------------------------------------
-
+             
              ! Now we loop back through the cells again. For
              ! interpolated cells with iblank=-1 we see if it satifies
              ! the criteria above. If so we flag it wil "toFlip" =
@@ -623,40 +721,40 @@ contains
              toFlip = 0
              do j=jBeg, jEnd
                 do i=iBeg, iEnd
-
-                   ! We *might* add it if the interpolated cell is
+                   
+                ! We *might* add it if the interpolated cell is
                    ! touching two real cell on opposite sides.
                    if (BCData(mm)%iBlank(i, j) == -1 .and. validCell(i, j)) then
-
+                      
                       ! Reset the side flag
                       side = .False.
-
+                      
                       if (validCell(i-1, j) .and. BCData(mm)%iBlank(i-1, j) == 1) then
                          side(1) = .True.
                       end if
-
+                      
                       if (validCell(i+1, j) .and. BCData(mm)%iBlank(i+1, j) == 1) then
                          side(2) = .True.
                       end if
-
+                      
                       if (validCell(i, j-1) .and. BCData(mm)%iBlank(i, j-1) ==1 ) then
                          side(3) = .True.
                       end if
-
+                      
                       if (validCell(i, j+1) .and. BCData(mm)%iBlank(i, j+1) == 1) then
                          side(4) = .True.
                       end if
-
+                      
                       if ((side(1) .and. side(2)) .or. (side(3) .and. side(4)))  then
                          toFlip(i,j) = 1
                       end if
                    end if
                 end do
              end do
-
+             
              ! Now just set the cell surface iblank to 1 if we
              ! determined above we need to flip  the cell
-
+             
              do j=jBeg, jEnd
                 do i=iBeg, iEnd
                    if (toFlip(i, j) == 1) then
@@ -665,7 +763,7 @@ contains
                 end do
              end do
              deallocate(toFlip)
-          end if wallType
+          end if famInclude
        end do bocoLoop
        deallocate(forcedRecv)
     end do domainLoop
@@ -695,45 +793,31 @@ contains
   !     * wall. 
   !
 
-  subroutine surfaceDeviation(level, sps)
+  subroutine surfaceDeviation(zipperFamList, level, sps)
 
     use constants
     use blockPointers, only :BCdata, x, nBocos, nDom, BCType, il, jl, kl, BCFaceID
-    use utils, only : setPointers, myNorm2, isWallType
+    use utils, only : setPointers, myNorm2, setBCPointers
+    use sorting, only : bsearchIntegers
+    use BCPointers, only : xx
     implicit none
 
     ! Input Parameters
+    integer(kind=intType), intent(in), dimension(:) :: zipperFamList
     integer(kind=intType), intent(in) :: level, sps
 
     ! Local Variables
     integer(kind=intType) :: i, j, k, ii, jj, kk, nn, iBeg, iEnd, jBeg, jEnd, mm
     real(kind=realType) ::  deviation
-    real(kind=realType), dimension(:, :, :), pointer :: xx
 
     ! Loop over blocks
     do nn=1, nDom
        call setPointers(nn, level, sps)
 
        bocoLoop: do mm=1, nBocos
-          wallType: if (isWallType(BCType(mm))) then
+          famInclude: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
 
-             ! Extract pointers for the primal wall mesh
-
-             select case (BCFaceID(mm))
-             case (iMin)
-                xx => x(1, :, :, :)
-             case (iMax)
-                xx => x(il, :, :, :)
-             case (jMin)
-                xx => x(:, 1, :, :)
-             case (jMax)
-                xx => x(:, jl, :, :)
-             case (kMin)
-                xx => x(:, :, 1, :)
-             case (kMax)
-                xx => x(:, :, kl, :)
-             end select
-
+             call setBCPointers(mm, .True.)
              jBeg = BCdata(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd  
 
@@ -800,7 +884,7 @@ contains
 
                 end do
              end do
-          end if wallType
+          end if famInclude
        end do bocoLoop
     end do
 
@@ -819,7 +903,7 @@ contains
        call setPointers(nn, level, sps)
 
        bocoLoop2: do mm=1, nBocos
-          wallType2: if (isWallType(BCType(mm))) then
+          famInclude2: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
 
              jBeg = BCdata(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd  
@@ -838,7 +922,7 @@ contains
                         BCData(mm)%delta(i+1, j+1))
                 end do
              end do
-          end if wallType2
+          end if famInclude2
        end do bocoLoop2
     end do
 
@@ -912,18 +996,19 @@ contains
 
   end function checkDeviation
 
-  subroutine writeWalls
+  subroutine writeWalls(zipperFamList)
 
     use communication
     use overset
     use constants
     use blockPointers
-    use utils, only : setPointers
+    use utils, only : setPointers, setBCPointers
+    use BCPointers, only : xx
+    use sorting, only : bsearchIntegers
     implicit none
-
+    integer(kind=intType), intent(in), dimension(:) :: zipperFamList
     character(80) :: fileName, zoneName
     integer(kind=intType) :: i, j, nn, iDom, iBeg, iEnd, jBeg, jEnd, mm, iDim
-    real(kind=realType), dimension(:, :, :), pointer :: xx
 
     write (fileName,"(a,I5.5,a)") "wall_", myid, ".dat"
 
@@ -938,23 +1023,8 @@ contains
           do mm=1, nBocos
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
-             if (BCType(mm) == EulerWall .or. &
-                  BCType(mm) == NSWallAdiabatic .or. &
-                  BCType(mm) == NSWallIsothermal) then
-                select case (BCFaceID(mm))
-                case (iMin)
-                   xx => x(1,:,:,:)
-                case (iMax)
-                   xx => x(il,:,:,:)
-                case (jMin)
-                   xx => x(:,1,:,:)
-                case (jMax)
-                   xx => x(:,jl,:,:)
-                case (kMin)
-                   xx => x(:,:,1,:)
-                case (kMax)
-                   xx => x(:,:,kl,:)
-                end select
+             famInclude2: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
+                call setBCPointers(mm, .True.)
 
                 write(zoneName, "(a,I5.5,a,I5.5)") "Zone", iDom, "_Proc_", myid
 110             format('ZONE T=',a, " I=", i5, " J=", i5)
@@ -975,7 +1045,7 @@ contains
                       write(101, *) BCData(mm)%iBlank(i, j)
                    end do
                 end do
-             end if
+             end if famInclude2
           end do
        else
           ! Write dummy zone
@@ -987,16 +1057,18 @@ contains
     end do
     close(101)
   end subroutine writeWalls
-  subroutine bowTieAndIsolationElimination(level, sps)
+  subroutine bowTieAndIsolationElimination(zipperFamList, level, sps)
 
     use constants
     use blockPointers
     use communication
-    use utils, only : setPointers, isWallType
+    use utils, only : setPointers
     use oversetCommUtilities, only : exchangeSurfaceIBlanks
+    use sorting, only : bsearchIntegers
     implicit none
 
     ! Input Parameters
+    integer(kind=intType), intent(in), dimension(:) :: zipperFamList
     integer(kind=intType), intent(in) :: level, sps
 
     ! Local variables
@@ -1018,7 +1090,7 @@ contains
           call setPointers(nn, level, sps)
 
           bocoLoop1: do mm=1, nBocos
-             wallType1: if (isWallType(BCType(mm))) then
+             famInclude1: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
 
                 select case (BCFaceID(mm))
                 case (iMin)
@@ -1068,13 +1140,13 @@ contains
                 end do
 
                 deallocate(nC, nE)
-             end if wallType1
+             end if famInclude1
           end do bocoLoop1
        end do domainLoop1
 
        ! Since we potentially changed iBlanks, we need to updated by
        ! performing an exchange.
-       call exchangeSurfaceIBlanks(level, sps, commPatternCell_2nd, internalCell_2nd)
+       call exchangeSurfaceIBlanks(zipperFamList, level, sps, commPatternCell_2nd, internalCell_2nd)
 
     end do bowTieLoop
 
@@ -1082,8 +1154,8 @@ contains
        call setPointers(nn, level, sps)
 
        bocoLoop2: do mm=1, nBocos
-          wallType2: if (isWallType(BCType(mm))) then
-
+          famInclude2: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
+             
              select case (BCFaceID(mm))
              case (iMin)
                 gcp => globalCell(2, :, :)
@@ -1125,13 +1197,13 @@ contains
 
              deallocate(nE, nC)
 
-          end if wallType2
+          end if famInclude2
        end do bocoLoop2
     end do domainLoop2
 
     ! Again, since we potentially changed iBlanks, we need to updated by
     ! performing an exchange.
-    call exchangeSurfaceIBlanks(level, sps, commPatternCell_2nd, internalCell_2nd)
+    call exchangeSurfaceIBlanks(zipperFamList, level, sps, commPatternCell_2nd, internalCell_2nd)
   contains
     subroutine findBowTies
 
