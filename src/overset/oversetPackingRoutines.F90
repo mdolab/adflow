@@ -525,15 +525,17 @@ contains
 
   end subroutine unpackOFringe
 
-  subroutine getWallSize(nNodes, nCells, dualMesh)
+  subroutine getWallSize(famList, nNodes, nCells, dualMesh)
     ! Simple helper routine to return the number of wall nodes and cells
     ! for the block pointed to by blockPointers. 
 
     use constants
     use blockPointers, only :BCType, nBocos, BCData
+    use sorting, only : bsearchIntegers
     implicit none
 
     ! Input
+    integer(kind=intType), intent(in), dimension(:) :: famList
     logical :: dualMesh
 
     ! Output
@@ -546,8 +548,7 @@ contains
     nNodes = 0
     nCells = 0
     do mm=1, nBocos
-       if (BCType(mm) == EulerWall .or. BCType(mm) == NSWallAdiabatic .or. &
-            BCType(mm) == NSWallIsoThermal) then 
+       famInclude: if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
           if (dualMesh) then 
              jBeg = BCData(mm)%jnBeg-1 ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg-1 ; iEnd = BCData(mm)%inEnd
@@ -558,12 +559,12 @@ contains
 
           nNodes = nNodes + (iEnd - iBeg + 1)*(jEnd - jBeg + 1)
           nCells = nCells + (iEnd - iBeg )*(jEnd - jBeg)
-       end if
+       end if famInclude
     end do
-
+    
   end subroutine getWallSize
 
-  subroutine getOWallBufferSizes(il, jl, kl, iSize, rSize, dualMesh)
+  subroutine getOSurfBufferSizes(famList, il, jl, kl, iSize, rSize, dualMesh)
 
     ! Subroutine to get the required buffer sizes. This one is pretty
     ! easy, but we use a routine to make it look the same as for hte
@@ -574,6 +575,7 @@ contains
     implicit none
 
     ! Input/OUtput
+    integer(kind=intType), intent(in), dimension(:) :: famList
     integer(kind=intType), intent(in) :: il, jl ,kl
     logical, intent(in) :: dualMesh
     integer(kind=intType), intent(out) :: rSize, iSize
@@ -586,7 +588,7 @@ contains
     iSize = iSize + 4 ! For the maxCells/nCells/nNodes variables
     rSize = 0
 
-    call getWallSize(nNodes, nCells, dualMesh)
+    call getWallSize(famList, nNodes, nCells, dualMesh)
 
     ! Note that nCells here is the maximum number size. This will result
     ! in a slight overestimate of the buffer size. This is ok.
@@ -616,94 +618,95 @@ contains
 
        rSize = rSize + nLeaves*12 ! Bounding boxes for leaves
     end if
-  end subroutine getOWallBufferSizes
+  end subroutine getOSurfBufferSizes
 
-  subroutine packOWall(oWall, dualMesh)
+  subroutine packOSurf(famList, oSurf, dualMesh)
 
     use constants
     use overset, only : oversetWall
 
     implicit none
 
-    ! Pack up the search coordines in this oWall into its own buffer
+    ! Pack up the search coordines in this oSurf into its own buffer
     ! so we are ready to send it.
 
     ! Input/Output Parameters
-    type(oversetWall), intent(inout) :: oWall
+    integer(kind=intType), intent(in), dimension(:) :: famList
+    type(oversetWall), intent(inout) :: oSurf
     logical, intent(in) :: dualMesh
     ! Working paramters
     integer(kind=intType) :: rSize, iSize, mm, i, j, nNodes, nCells
 
-    call getOWallBufferSizes(oWall%il, oWall%kl, oWall%kl, isize, rSize, dualMesh)
+    call getOSurfBufferSizes(famList, oSurf%il, oSurf%kl, oSurf%kl, isize, rSize, dualMesh)
 
     ! Allocate the buffers
-    allocate(oWall%rBuffer(rSize), oWall%iBuffer(iSize))
+    allocate(oSurf%rBuffer(rSize), oSurf%iBuffer(iSize))
 
-    oWall%iBuffer(1) = oWalL%il
-    oWall%iBuffer(2) = oWalL%jl
-    oWall%iBuffer(3) = oWalL%kl
-    oWall%iBuffer(4) = oWall%nNodes
-    oWall%iBuffer(5) = oWall%nCells
-    oWall%iBuffer(6) = oWall%maxCells
-    oWall%iBuffer(7) = oWall%cluster
+    oSurf%iBuffer(1) = oSurf%il
+    oSurf%iBuffer(2) = oSurf%jl
+    oSurf%iBuffer(3) = oSurf%kl
+    oSurf%iBuffer(4) = oSurf%nNodes
+    oSurf%iBuffer(5) = oSurf%nCells
+    oSurf%iBuffer(6) = oSurf%maxCells
+    oSurf%iBuffer(7) = oSurf%cluster
 
-    if (oWall%nNodes > 0) then 
+    if (oSurf%nNodes > 0) then 
        iSize = 7
-       do j=1, oWall%nCells
+       do j=1, oSurf%nCells
           do i=1, 4
              iSize = iSize + 1
-             oWall%iBuffer(iSize) = oWall%conn(i, j)
+             oSurf%iBuffer(iSize) = oSurf%conn(i, j)
           end do
        end do
 
-       do i=1, oWall%maxCells
+       do i=1, oSurf%maxCells
           iSize = iSize + 1
-          oWall%iBuffer(iSize) = oWall%iBlank(i)
+          oSurf%iBuffer(iSize) = oSurf%iBlank(i)
        end do
 
-       do i=1, oWall%nCells
+       do i=1, oSurf%nCells
           iSize = iSize + 1
-          oWall%iBuffer(iSize) = oWall%cellPtr(i)
+          oSurf%iBuffer(iSize) = oSurf%cellPtr(i)
        end do
 
-       do i=1, oWall%ADT%nLeaves
+       do i=1, oSurf%ADT%nLeaves
           iSize = iSize + 1
-          oWall%iBuffer(iSize) = oWall%ADT%ADTree(i)%children(1)
+          oSurf%iBuffer(iSize) = oSurf%ADT%ADTree(i)%children(1)
           iSize = iSize + 1
-          oWall%iBuffer(iSize) = oWall%ADT%ADTree(i)%children(2)
+          oSurf%iBuffer(iSize) = oSurf%ADT%ADTree(i)%children(2)
        end do
 
        ! Done with the integer values, do the real ones
        rSize = 0
 
-       do i=1, oWall%nNodes
+       do i=1, oSurf%nNodes
           do j=1, 3
              rSize = rSize + 1
-             oWall%rBuffer(rSize) = oWall%x(j, i)
+             oSurf%rBuffer(rSize) = oSurf%x(j, i)
           end do
        end do
 
-       do i=1, oWall%nNodes
+       do i=1, oSurf%nNodes
           rSize = rSize + 1
-          oWall%rBuffer(rSize) = oWall%delta(i)
+          oSurf%rBuffer(rSize) = oSurf%delta(i)
        end do
 
-       do i=1, oWall%ADT%nBboxes
-          oWall%rBuffer(rSize+1:rSize+6) = oWall%ADT%xBBox(:, i)
+       do i=1, oSurf%ADT%nBboxes
+          oSurf%rBuffer(rSize+1:rSize+6) = oSurf%ADT%xBBox(:, i)
           rSize = rSize + 6
        end do
 
-       do i=1, oWall%ADT%nLeaves
-          oWall%rBuffer(rSize+1:rSize+6) = oWall%ADT%ADTree(i)%xMin(:)
+       do i=1, oSurf%ADT%nLeaves
+          oSurf%rBuffer(rSize+1:rSize+6) = oSurf%ADT%ADTree(i)%xMin(:)
           rSize = rSize + 6
 
-          oWall%rBuffer(rSize+1:rSize+6) = oWall%ADT%ADTree(i)%xMax(:)
+          oSurf%rBuffer(rSize+1:rSize+6) = oSurf%ADT%ADTree(i)%xMax(:)
           rSize = rSize + 6
        end do
     end if
-  end subroutine packOWall
+  end subroutine packOSurf
 
-  subroutine unpackOWall(oWall)
+  subroutine unpackOSurf(oSurf)
 
     use constants
     use overset, only : oversetWall
@@ -711,141 +714,141 @@ contains
     implicit none
 
     ! Input/Output Parameters
-    type(oversetWall), intent(inout) :: oWall
+    type(oversetWall), intent(inout) :: oSurf
 
     ! Working paramters
     integer(kind=intType) :: rSize, iSize, idom, i,  j, k, n, iNode
 
-    ! Set the sizes of this oWall
-    oWall%il = oWall%iBuffer(1)
-    oWall%jl = oWall%iBuffer(2)
-    oWall%kl = oWall%iBuffer(3)
+    ! Set the sizes of this oSurf
+    oSurf%il = oSurf%iBuffer(1)
+    oSurf%jl = oSurf%iBuffer(2)
+    oSurf%kl = oSurf%iBuffer(3)
 
-    oWall%nNodes = oWall%iBuffer(4)
-    oWall%nCells = oWall%iBuffer(5)
-    oWall%maxCells = oWall%iBuffer(6)
-    oWall%cluster = oWall%iBuffer(7)
+    oSurf%nNodes = oSurf%iBuffer(4)
+    oSurf%nCells = oSurf%iBuffer(5)
+    oSurf%maxCells = oSurf%iBuffer(6)
+    oSurf%cluster = oSurf%iBuffer(7)
 
     iSize = 7
     rSize = 0
 
     ! Allocate the arrays now that we know the sizes
-    allocate(oWall%x(3, oWall%nNodes))
-    allocate(oWall%delta(oWall%nNodes))
-    allocate(oWall%conn(4, oWall%nCells))
-    allocate(oWall%iBlank(oWall%maxCells))
-    allocate(oWall%cellPtr(oWall%nCells))
-    allocate(oWall%nte(4, oWall%nNodes))
+    allocate(oSurf%x(3, oSurf%nNodes))
+    allocate(oSurf%delta(oSurf%nNodes))
+    allocate(oSurf%conn(4, oSurf%nCells))
+    allocate(oSurf%iBlank(oSurf%maxCells))
+    allocate(oSurf%cellPtr(oSurf%nCells))
+    allocate(oSurf%nte(4, oSurf%nNodes))
     ! Once we know the sizes, allocate all the arrays in the
     ! ADTree. Since we are not going to call the *actual* build routine
     ! for the ADT, we need to set all the information ourselves. This
     ! essentially does the same thing as buildSerialHex.
-    oWall%ADT%adtType = adtSurfaceADT
-    oWall%ADT%nNodes = oWall%nNodes
-    oWall%ADT%nTetra = 0
-    oWall%ADT%nPyra = 0
-    oWall%ADT%nPrisms = 0
-    oWall%ADT%nTria = 0
-    oWall%ADT%nQuads = oWall%nCells
-    oWall%ADT%coor => oWall%x
-    oWall%ADT%quadsConn => oWall%conn
-    nullify(oWall%ADT%triaConn)
-    oWall%ADT%nBBoxes = oWall%nCells
-    allocate(oWall%ADT%xBBOX(6, oWall%nCells))
-    allocate(oWall%ADT%elementType(oWall%nCells))
-    allocate(oWall%ADT%elementID(oWall%nCells))
-    oWall%ADT%comm = MPI_COMM_SELF
-    oWall%ADT%nProcs = 1
-    oWall%ADT%myID = 0
+    oSurf%ADT%adtType = adtSurfaceADT
+    oSurf%ADT%nNodes = oSurf%nNodes
+    oSurf%ADT%nTetra = 0
+    oSurf%ADT%nPyra = 0
+    oSurf%ADT%nPrisms = 0
+    oSurf%ADT%nTria = 0
+    oSurf%ADT%nQuads = oSurf%nCells
+    oSurf%ADT%coor => oSurf%x
+    oSurf%ADT%quadsConn => oSurf%conn
+    nullify(oSurf%ADT%triaConn)
+    oSurf%ADT%nBBoxes = oSurf%nCells
+    allocate(oSurf%ADT%xBBOX(6, oSurf%nCells))
+    allocate(oSurf%ADT%elementType(oSurf%nCells))
+    allocate(oSurf%ADT%elementID(oSurf%nCells))
+    oSurf%ADT%comm = MPI_COMM_SELF
+    oSurf%ADT%nProcs = 1
+    oSurf%ADT%myID = 0
 
     ! All hexas
-    oWall%ADT%elementType = adtQuadrilateral
+    oSurf%ADT%elementType = adtQuadrilateral
 
-    do i=1, oWall%nCells
-       oWall%ADT%elementID(i) = i
+    do i=1, oSurf%nCells
+       oSurf%ADT%elementID(i) = i
     end do
 
-    oWall%ADT%nLeaves = oWall%ADT%nBBoxes - 1
-    if(oWall%ADT%nBBoxes <= 1) oWall%ADT%nLeaves = oWall%ADT%nLeaves + 1
+    oSurf%ADT%nLeaves = oSurf%ADT%nBBoxes - 1
+    if(oSurf%ADT%nBBoxes <= 1) oSurf%ADT%nLeaves = oSurf%ADT%nLeaves + 1
 
-    allocate(oWall%ADT%ADTree(oWall%ADT%nLeaves))
+    allocate(oSurf%ADT%ADTree(oSurf%ADT%nLeaves))
 
     ! Now continue copying out the values if necessary:
-    if (oWall%nNodes > 0) then 
-       do j=1, oWall%nCells
+    if (oSurf%nNodes > 0) then 
+       do j=1, oSurf%nCells
           do i=1, 4
              iSize = iSize + 1
-             oWall%conn(i, j) = oWall%iBuffer(iSize)
+             oSurf%conn(i, j) = oSurf%iBuffer(iSize)
           end do
        end do
 
-       do i=1, oWall%maxCells
+       do i=1, oSurf%maxCells
           iSize = iSize + 1
-          oWall%iBlank(i) = oWall%iBuffer(iSize)
+          oSurf%iBlank(i) = oSurf%iBuffer(iSize)
        end do
 
-       do i=1, oWall%nCells
+       do i=1, oSurf%nCells
           iSize = iSize + 1
-          oWall%cellPtr(i) = oWall%iBuffer(iSize)
+          oSurf%cellPtr(i) = oSurf%iBuffer(iSize)
        end do
 
-       do i=1, oWall%ADT%nLeaves
+       do i=1, oSurf%ADT%nLeaves
           iSize = iSize + 1
-          oWall%ADT%ADTree(i)%children(1) = oWall%iBuffer(iSize)
+          oSurf%ADT%ADTree(i)%children(1) = oSurf%iBuffer(iSize)
           iSize = iSize + 1
-          oWall%ADT%ADTree(i)%children(2) = oWall%iBuffer(iSize)
+          oSurf%ADT%ADTree(i)%children(2) = oSurf%iBuffer(iSize)
        end do
 
        ! Done with the integer values, do the real ones
        rSize = 0
 
-       do i=1, oWall%nNodes
+       do i=1, oSurf%nNodes
           do j=1, 3
              rSize = rSize + 1
-             oWall%x(j, i) = oWall%rBuffer(rSize)
+             oSurf%x(j, i) = oSurf%rBuffer(rSize)
           end do
        end do
 
-       do i=1, oWall%nNodes
+       do i=1, oSurf%nNodes
           rSize = rSize + 1
-          oWall%delta(i) = oWall%rBuffer(rSize)
+          oSurf%delta(i) = oSurf%rBuffer(rSize)
        end do
 
-       do i=1, oWall%ADT%nBboxes
-          oWall%ADT%xBBox(:, i) = oWall%rBuffer(rSize+1:rSize+6)
+       do i=1, oSurf%ADT%nBboxes
+          oSurf%ADT%xBBox(:, i) = oSurf%rBuffer(rSize+1:rSize+6)
           rSize = rSize + 6
        end do
 
-       do i=1, oWall%ADT%nLeaves
-          oWall%ADT%ADTree(i)%xMin(:) = oWall%rBuffer(rSize+1:rSize+6)
+       do i=1, oSurf%ADT%nLeaves
+          oSurf%ADT%ADTree(i)%xMin(:) = oSurf%rBuffer(rSize+1:rSize+6)
           rSize = rSize + 6
 
-          oWall%ADT%ADTree(i)%xMax(:) = oWall%rBuffer(rSize+1:rSize+6)
+          oSurf%ADT%ADTree(i)%xMax(:) = oSurf%rBuffer(rSize+1:rSize+6)
           rSize = rSize + 6
        end do
     end if
 
     ! Build the KDTree
-    if (oWall%nNodes > 0) then 
-       oWall%tree => kdtree2_create(oWall%x)
+    if (oSurf%nNodes > 0) then 
+       oSurf%tree => kdtree2_create(oSurf%x)
     end if
 
     ! Build the inverse of the connectivity, the nodeToElem array. 
-    oWall%nte = 0
-    do i=1, oWall%nCells
+    oSurf%nte = 0
+    do i=1, oSurf%nCells
        do j=1, 4
-          n = oWall%conn(j, i)
+          n = oSurf%conn(j, i)
           inner:do k=1,4
-             if (oWall%nte(k, n) == 0) then 
-                oWall%nte(k, n) = i
+             if (oSurf%nte(k, n) == 0) then 
+                oSurf%nte(k, n) = i
                 exit inner
              end if
           end do inner
        end do
     end do
 
-    ! Flag this oWall as being allocated:
-    oWall%allocated = .True.
-    deallocate(oWall%rBuffer, oWall%iBuffer)
-  end subroutine unpackOWall
+    ! Flag this oSurf as being allocated:
+    oSurf%allocated = .True.
+    deallocate(oSurf%rBuffer, oSurf%iBuffer)
+  end subroutine unpackOSurf
 end module oversetPackingRoutines

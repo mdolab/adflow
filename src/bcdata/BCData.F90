@@ -1494,6 +1494,17 @@ contains
                 inodeBeg = BCData(mm)%inbeg; inodeEnd = BCData(mm)%inend
                 jnodeBeg = BCData(mm)%jnbeg; jnodeEnd = BCData(mm)%jnend
 
+
+                ! Note: iBlank/delta are cell based, but uses the node
+                ! numbers to guarantee a halo exists. These must be
+                ! allocated for all boundary conditions. 
+                allocate(BCData(mm)%iBlank(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
+                     BCData(mm)%delta(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
+                     BCData(mm)%deltaNode(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd))
+
+                ! Set the iBlank to 1 for non-overset cases.
+                BCData(mm)%iBlank = 1
+
                 ! Determine the boundary condition we are having here
                 ! and allocate the memory accordingly.
 
@@ -1507,14 +1518,12 @@ contains
                         BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), & 
                         BCData(mm)%fIndex(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
-                        BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
-                        BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
-                                ! Note: iBlank/delta are cell based, but uses the
-                                ! node number to guarantee a halo exists. 
-                        BCData(mm)%iBlank(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
-                        BCData(mm)%delta(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
-                        BCData(mm)%deltaNode(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
-                        BCData(mm)%area(iBeg:iEnd,jBeg:jEnd), &
+
+                        ! These are cell based but guaranteed to have
+                        ! a halo. iBeg, ind, jBeg, jEnd may not have halo. 
+                        BCData(mm)%Fp(iNodeBeg:iNodeEnd+1, jNodeBeg:jNodeEnd+1, 3), &
+                        BCData(mm)%Fv(iNodeBeg:iNodeEnd+1, jNodeBeg:jNodeEnd+1, 3), &
+                        BCData(mm)%area(iNodeBeg:iNodeEnd+1, jNodeBeg:jNodeEnd+1), &
                         stat=ierr)
                    if(ierr /= 0)                      &
                         call terminate("allocMemBCData", &
@@ -1535,14 +1544,11 @@ contains
                         BCData(mm)%fIndex(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                         BCData(mm)%cellHeatFlux(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%nodeHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
-                        BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
-                        BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
-                        ! Note: iBlank/delta are cell based, but uses the
-                        ! node number to guarantee a halo exists. 
-                        BCData(mm)%iBlank(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
-                        BCData(mm)%delta(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
-                        BCData(mm)%deltaNode(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
-                        BCData(mm)%area(iBeg:iEnd,jBeg:jEnd), &
+                        ! These are cell based but guaranteed to have
+                        ! a halo. iBeg, ind, jBeg, jEnd may not have halo. 
+                        BCData(mm)%Fp(iNodeBeg:iNodeEnd+1, jNodeBeg:jNodeEnd+1, 3), &
+                        BCData(mm)%Fv(iNodeBeg:iNodeEnd+1, jNodeBeg:jNodeEnd+1, 3), &
+                        BCData(mm)%area(iNodeBeg:iNodeEnd+1, jNodeBeg:jNodeEnd+1), &
                         
                         stat=ierr)
                    if(ierr /= 0)                      &
@@ -1561,14 +1567,11 @@ contains
                         BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), & 
                         BCData(mm)%fIndex(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
-                        BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
-                        BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
-                                ! Note: iBlank/delta are cell based, but uses the
-                                ! node number to guarantee a halo exists. 
-                        BCData(mm)%iBlank(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
-                        BCData(mm)%delta(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
-                        BCData(mm)%deltaNode(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
-                        BCData(mm)%area(iBeg:iEnd,jBeg:jEnd), &
+                        ! These are cell based but guaranteed to have
+                        ! a halo. iBeg, ind, jBeg, jEnd may not have halo. 
+                        BCData(mm)%Fp(iNodeBeg:iNodeEnd+1, jNodeBeg:jNodeEnd+1, 3), &
+                        BCData(mm)%Fv(iNodeBeg:iNodeEnd+1, jNodeBeg:jNodeEnd+1, 3), &
+                        BCData(mm)%area(iNodeBeg:iNodeEnd+1, jNodeBeg:jNodeEnd+1), &
                         stat=ierr)
                    if(ierr /= 0)                      &
                         call terminate("allocMemBCData", &

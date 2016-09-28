@@ -2,7 +2,7 @@ module oversetCommUtilities
 
 contains
 
-  subroutine getCommPattern(oMat,  sendList, size1, nSend, recvList, size2, nRecv)
+  subroutine getCommPattern(oMat,  sendList,  nSend, recvList, nRecv)
 
     use constants
     use overset, only : cumDomProc, nDomProc, nDomTotal, CSRMatrix
@@ -13,8 +13,7 @@ contains
 
     ! Input/output
     type(CSRMatrix), intent(in) :: oMat
-    integer(kind=intType), intent(in) :: size1, size2
-    integer(kind=intType), intent(out) :: sendList(2, size1), recvList(2, size2)
+    integer(kind=intType), intent(out) :: sendList(:, :) , recvList(:,:)
     integer(kind=intType), intent(out) :: nSend, nRecv
 
     ! Working:
@@ -101,8 +100,8 @@ contains
     deallocate(procsForThisRow, inverse, blkProc)
   end subroutine getCommPattern
 
-  subroutine getOWallCommPattern(oMat, oMatT, sendList, size1, nSend, &
-       recvList, size2, nRecv, rBufSize)
+  subroutine getOSurfCommPattern(oMat, oMatT, sendList, nSend, &
+       recvList, nRecv, rBufSize)
 
     ! This subroutine get the the comm pattern to send the oWall types. 
     use constants
@@ -114,8 +113,7 @@ contains
 
     ! Input/output
     type(CSRMatrix), intent(in) :: oMat, oMatT
-    integer(kind=intType), intent(in) :: size1, size2
-    integer(kind=intType), intent(out) :: sendList(2, size1), recvList(2, size2)
+    integer(kind=intType), intent(out) :: sendList(:, :), recvList(:, :)
     integer(kind=intType), intent(out) :: nSend, nRecv
     integer(kind=intType), intent(in) :: rBufSize(nDomTotal)
 
@@ -199,7 +197,7 @@ contains
     end do
 
     deallocate(procsForThisRow, inverse, blkProc, toRecv)
-  end subroutine getOWallCommPattern
+  end subroutine getOSurfCommPattern
 
   subroutine sendOBlock(oBlock, iDom, iProc, tagOffset, sendCount)
 
@@ -259,7 +257,7 @@ contains
 
   end subroutine sendOFringe
 
-  subroutine sendOWall(oWall, iDom, iProc, tagOffset, sendCount)
+  subroutine sendOSurf(oWall, iDom, iProc, tagOffset, sendCount)
 
     use constants
     use communication, only : sendRequests, adflow_comm_world
@@ -286,7 +284,7 @@ contains
          iProc, tag, ADflow_comm_world, sendRequests(sendCount), ierr)
     call ECHK(ierr, __FILE__, __LINE__)
 
-  end subroutine sendOWall
+  end subroutine sendOSurf
 
   subroutine recvOBlock(oBlock, iDom, iProc, tagOffset, iSize, rSize, &
        recvCount, recvInfo)
@@ -358,7 +356,7 @@ contains
 
   end subroutine recvOFringe
 
-  subroutine recvOWall(oWall, iDom, iProc, tagOffset, iSize, rSize, &
+  subroutine recvOSurf(oWall, iDom, iProc, tagOffset, iSize, rSize, &
        recvCount, recvInfo)
 
     use constants
@@ -392,7 +390,7 @@ contains
     call ECHK(ierr, __FILE__, __LINE__)
     recvInfo(:, recvCount) = (/iDom, 6/) 
 
-  end subroutine recvOWall
+  end subroutine recvOSurf
 
 
   !
@@ -1162,7 +1160,7 @@ contains
 
   end subroutine exchangeStatusTranspose
 
-  subroutine exchangeSurfaceDelta(level, sps, commPattern, internal)
+  subroutine exchangeSurfaceDelta(zipperFamList, level, sps, commPattern, internal)
     !
     !       ExchangeSurfaceDelta exchanges surface delta to fill up halo   
     !       surface cells from adjacent blocks.                            
@@ -1174,10 +1172,12 @@ contains
          internalCell_1st
     use utils, only : setPointers
     use haloExchange, only : whalo1to1RealGeneric
+    use sorting, only : bSearchIntegers
     implicit none
     !
     !      Subroutine arguments.
     !
+    integer(kind=intType), intent(in), dimension(:) :: zipperFamList
     integer(kind=intType), intent(in) :: level, sps
 
     type(commType),          dimension(*), intent(in) :: commPattern
@@ -1199,10 +1199,8 @@ contains
 
        ! Push the surface iblank back to the generic volume variable rVar1
        bocoLoop: do mm=1, nBocos
-          wallType: if (BCType(mm) == EulerWall .or. &
-               BCType(mm) == NSWallAdiabatic .or. &
-               BCType(mm) == NSWallIsothermal) then
-
+          famInclude: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
+          
              select case (BCFaceID(mm))
              case (iMin)
                 deltaPtr => flowDoms(nn, level, sps)%realCommVars(1)%var(2+1, :, :)
@@ -1227,7 +1225,7 @@ contains
                    deltaPtr(i+1, j+1) = BCData(mm)%delta(i, j)
                 end do
              end do
-          end if wallType
+          end if famInclude
        end do bocoLoop
     end do
 
@@ -1241,9 +1239,7 @@ contains
 
        ! Extract the surface iblank from the volume. 
        bocoLoop2: do mm=1, nBocos
-          wallType2: if (BCType(mm) == EulerWall .or. &
-               BCType(mm) == NSWallAdiabatic .or. &
-               BCType(mm) == NSWallIsothermal) then
+          famInclude2: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
 
              select case (BCFaceID(mm))
              case (iMin)
@@ -1269,7 +1265,7 @@ contains
                    BCData(mm)%delta(i,j) = deltaPtr(i+1, j+1)
                 end do
              end do
-          end if wallType2
+          end if famInclude2
        end do bocoLoop2
 
        ! Now deallocate this pointer
@@ -1277,7 +1273,7 @@ contains
     end do
   end subroutine exchangeSurfaceDelta
 
-  subroutine exchangeSurfaceIblanks(level, sps, commPattern, internal)
+  subroutine exchangeSurfaceIblanks(zipperFamList, level, sps, commPattern, internal)
     !
     !       ExchangeIblank exchanges the 1 to 1 internal halo's for the    
     !       given level and sps instance.                                  
@@ -1288,11 +1284,13 @@ contains
     use communication, only : commType, internalCommType
     use utils, only : setPointers
     use haloExchange, only : whalo1to1intgeneric
+    use sorting, only : bsearchIntegers
     implicit none
     !
     !      Subroutine arguments.
     !
     integer(kind=intType), intent(in) :: level, sps
+    integer(kind=intType), intent(in), dimension(:) :: zipperFamList
 
     type(commType),          dimension(*), intent(in) :: commPattern
     type(internalCommType), dimension(*), intent(in) :: internal
@@ -1325,9 +1323,7 @@ contains
 
        ! Push the surface iblank back to the volume:
        bocoLoop: do mm=1, nBocos
-          wallType: if (BCType(mm) == EulerWall .or. &
-               BCType(mm) == NSWallAdiabatic .or. &
-               BCType(mm) == NSWallIsothermal) then
+          famInclude: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
 
              select case (BCFaceID(mm))
              case (iMin)
@@ -1353,7 +1349,7 @@ contains
                    ibp(i+1, j+1) = BCData(mm)%iBlank(i,j)
                 end do
              end do
-          end if wallType
+          end if famInclude
        end do bocoLoop
     end do
 
@@ -1372,9 +1368,7 @@ contains
 
        ! Extract the surface iblank from the volume. 
        bocoLoop2: do mm=1, nBocos
-          wallType2: if (BCType(mm) == EulerWall .or. &
-               BCType(mm) == NSWallAdiabatic .or. &
-               BCType(mm) == NSWallIsothermal) then
+          famInclude2: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
 
              select case (BCFaceID(mm))
              case (iMin)
@@ -1399,7 +1393,7 @@ contains
                    BCData(mm)%iBlank(i,j) = ibp(i+1, j+1)
                 end do
              end do
-          end if wallType2
+          end if famInclude2
        end do bocoLoop2
 
        ! Restore the saved array

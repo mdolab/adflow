@@ -13,7 +13,7 @@ module cartMesh
 
     use constants
     use blockPointers
-
+    use surfaceFamilies, only : wallFamilies
     implicit none
     include 'cgnslib_f.h'
 
@@ -284,7 +284,7 @@ module cartMesh
     i = 0
     do nn=1, nDom
        call setPointers(nn, level, sps)
-       call getWallSize(nNodes, nCells, .False.)
+       call getWallSize(wallFamilies, nNodes, nCells, .False.)
        i = i + nNodes
     end do
     i = i * 10

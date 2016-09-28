@@ -1,4 +1,4 @@
-subroutine wallSearch(aWall, bWall)
+subroutine wallSearch(aSurf, bSurf)
 
   use constants
   use overset, only : oversetWall, clusterAreas
@@ -10,7 +10,7 @@ subroutine wallSearch(aWall, bWall)
   implicit none
 
   ! Input/Output
-  type(oversetWall), intent(inout) :: aWall, bWall
+  type(oversetWall), intent(inout) :: aSurf, bSurf
 
   ! Working Varaibles
   integer(kind=intType) :: i, j, elem, jj, n, ii, k
@@ -27,13 +27,14 @@ subroutine wallSearch(aWall, bWall)
   type(adtLeafType), dimension(:), pointer :: ADTree
 
   logical :: overlapped, debugit
-  if (aWall%nNodes == 0 .or. bWall%nNodes == 0) then 
+
+  if (aSurf%nNodes == 0 .or. bSurf%nNodes == 0) then 
      ! Either block doesn't have walls, so there is nothing do but just
      ! return. 
      return
   end if
 
-  if (clusterAreas(bWall%cluster) <= clusterAreas(aWall%cluster)) then 
+  if (clusterAreas(bSurf%cluster) <= clusterAreas(aSurf%cluster)) then 
      ! B is smaller so we don't need to do anything
      return
   end if
@@ -43,7 +44,7 @@ subroutine wallSearch(aWall, bWall)
   ! the singlePoint search routine. 
   allocate(BB(10), frontLeaves(25), frontLeavesNew(25), stack(100))
 
-  ! Basically what we are doing it looping all of our bWall NODES. We
+  ! Basically what we are doing it looping all of our bSurf NODES. We
   ! use a special "surface containment search". Essentially all we are
   ! looking for is if a point it inside of of an actual element
   ! BBox. If it isn't inside any BBox then we know it it can't
@@ -51,17 +52,15 @@ subroutine wallSearch(aWall, bWall)
   ! we can later just focus on the ones that may actually overlap.
   ! node as being blanked
 
-  allocate(tmpNodeElem(bWall%nNodes), tmpCellElem(bWall%nCells))
+  allocate(tmpNodeElem(bSurf%nNodes), tmpCellElem(bSurf%nCells))
   tmpNodeElem(:) = 0
   tmpCellElem(:) = 0
 
-  ADTree => aWall%ADT%ADTree
+  ADTree => aSurf%ADT%ADTree
 
+  do i=1, bSurf%nNodes
 
-
-  do i=1, bWall%nNodes
-
-     xx(1:3) = bWall%x(:, i)
+     xx(1:3) = bSurf%x(:, i)
      xx(4) = large
      
      ! Just check if it is inside the root bounding box..ie the full
@@ -79,22 +78,21 @@ subroutine wallSearch(aWall, bWall)
         ! Now find the closest element on the other mesh for this
         ! node. This is the regular (expensive) closest point search
 
-        call minDistanceTreeSearchSinglePoint(aWall%ADT, xx, intInfo, uvw, &
+        call minDistanceTreeSearchSinglePoint(aSurf%ADT, xx, intInfo, uvw, &
              dummy, nInterpol, BB, frontLeaves, frontLeavesNew)
 
         ! Don't accept the element just yet. Check that that it is
         ! within a factor of our node tolernace. We have to check both
-        ! the node on bWall and the nodes on the cell we found becuase
+        ! the node on bSurf and the nodes on the cell we found becuase
         ! one could be bigger. 
         dist = sqrt(uvw(4))
         elemID = intInfo(3)
 
-       delta = bWall%delta(i)
+        delta = bSurf%delta(i)
 
         do k=1,4
-           delta = max(delta, aWall%delta(aWall%conn(k, elemID)))
+           delta = max(delta, aSurf%delta(aSurf%conn(k, elemID)))
         end do
-
         if (dist < max(nearWallDist, 10*delta)) then 
            ! Store the closest element for this node
            tmpNodeElem(i) = elemID
@@ -103,12 +101,12 @@ subroutine wallSearch(aWall, bWall)
   end do
 
   ! Also check the cell centers
-  do i=1,bWall%nCells
+  do i=1,bSurf%nCells
 
      ! Compute the cell center
      xx(1:3) = zero
      do jj=1,4
-        xx(1:3) = xx(1:3) + fourth*bWall%x(:, bwall%conn(jj, i))
+        xx(1:3) = xx(1:3) + fourth*bSurf%x(:, bSurf%conn(jj, i))
      end do
 
      xx(4) = large
@@ -124,7 +122,7 @@ subroutine wallSearch(aWall, bWall)
         ! Now find the closest element on the other mesh for this
         ! node. This is the regular (expensive) closest point search
 
-        call minDistanceTreeSearchSinglePoint(aWall%ADT, xx, intInfo, uvw, &
+        call minDistanceTreeSearchSinglePoint(aSurf%ADT, xx, intInfo, uvw, &
              dummy, nInterpol, BB, frontLeaves, frontLeavesNew)
 
         ! Don't accept the element just yet. Check that that it is
@@ -134,8 +132,8 @@ subroutine wallSearch(aWall, bWall)
 
         delta = zero
         do k=1, 4
-           delta = max(delta, bWall%delta(bWall%conn(k, i)))
-           delta = max(delta, aWall%delta(aWall%conn(k, elemID)))
+           delta = max(delta, bSurf%delta(bSurf%conn(k, i)))
+           delta = max(delta, aSurf%delta(aSurf%conn(k, elemID)))
         end do
 
         if (dist < max(nearWallDist, 10*delta)) then 
@@ -146,30 +144,31 @@ subroutine wallSearch(aWall, bWall)
   end do
 
   ! On the next pass loop over the *cells*
-  do i=1, bWall%nCells
+  do i=1, bSurf%nCells
 
      ! Get my coordiantes for my (3D) quad
      do jj=1,4
-        q1(:, jj) = bWall%x(:, bWall%conn(jj, i))
+        q1(:, jj) = bSurf%x(:, bSurf%conn(jj, i))
      end do
 
      ! We first check overlap with the 4 elements found from
      ! projecting the nodes.
      do j=1, 4
-        n = bWall%conn(j, i)
+        n = bSurf%conn(j, i)
         elem = tmpNodeElem(n)
 
         if (elem > 0) then 
 
            ! Get coordinates of the other quad
            do jj=1,4
-              q2(:, jj) = aWall%x(:, aWall%conn(jj, elem))
+              q2(:, jj) = aSurf%x(:, aSurf%conn(jj, elem))
            end do
 
            call  quadOverlap(q1, q2, overlapped)
            
            if (overlapped) then 
-              bWall%iBlank(bWall%cellPtr(i)) = -2
+
+              bSurf%iBlank(bSurf%cellPtr(i)) = -2
            end if
         end if
      end do
@@ -180,12 +179,12 @@ subroutine wallSearch(aWall, bWall)
         ! Get coordinates of the other quad
 
         do jj=1,4
-           q2(:, jj) = aWall%x(:, aWall%conn(jj, elem))
+           q2(:, jj) = aSurf%x(:, aSurf%conn(jj, elem))
         end do
 
         call  quadOverlap(q1, q2, overlapped)
         if (overlapped) then 
-           bWall%iBlank(bWall%cellPtr(i)) = -2 ! -2 means it was overlapped and got blanked
+           bSurf%iBlank(bSurf%cellPtr(i)) = -2 ! -2 means it was overlapped and got blanked
         end if
      end if
   end do
@@ -197,14 +196,14 @@ subroutine wallSearch(aWall, bWall)
   ! it. 
 
   deallocate(tmpNodeElem, tmpCellElem)
-  allocate(tmpNodeElem(aWall%nNodes), tmpCellElem(aWall%nCells))
+  allocate(tmpNodeElem(aSurf%nNodes), tmpCellElem(aSurf%nCells))
   tmpNodeElem(:) = 0
   tmpCellElem(:) = 0
 
-  ADTree => bWall%ADT%ADTree
-  do i=1, aWall%nNodes
+  ADTree => bSurf%ADT%ADTree
+  do i=1, aSurf%nNodes
 
-     xx(1:3) = aWall%x(:, i)
+     xx(1:3) = aSurf%x(:, i)
      xx(4) = large
 
      ! Just check if it is inside the root bounding box..ie the full
@@ -219,20 +218,20 @@ subroutine wallSearch(aWall, bWall)
         ! Now find the closest element on the other mesh for this
         ! node. This is the regular (expensive) closest point search
 
-        call minDistanceTreeSearchSinglePoint(bWall%ADT, xx, intInfo, uvw, &
+        call minDistanceTreeSearchSinglePoint(bSurf%ADT, xx, intInfo, uvw, &
              dummy, nInterpol, BB, frontLeaves, frontLeavesNew)
 
         ! Don't accept the element just yet. Check that that it is
         ! within a factor of our node tolernace. We have to check both
-        ! the node on bWall and the nodes on the cell we found becuase
+        ! the node on bSurf and the nodes on the cell we found becuase
         ! one could be bigger. 
         dist = sqrt(uvw(4))
         elemID = intInfo(3)
 
-        delta = aWall%delta(i)
+        delta = aSurf%delta(i)
 
         do k=1,4
-           delta = max(delta, bWall%delta(bWall%conn(k, elemID)))
+           delta = max(delta, bSurf%delta(bSurf%conn(k, elemID)))
         end do
 
         if (dist < max(nearWallDist, 10*delta)) then 
@@ -243,12 +242,12 @@ subroutine wallSearch(aWall, bWall)
   end do
 
   ! Also check the cell centers
-  do i=1,aWall%nCells
+  do i=1,aSurf%nCells
 
      ! Compute the cell center
      xx(1:3) = zero
      do jj=1,4
-        xx(1:3) = xx(1:3) + fourth*aWall%x(:, awall%conn(jj, i))
+        xx(1:3) = xx(1:3) + fourth*aSurf%x(:, aSurf%conn(jj, i))
      end do
 
      xx(4) = large
@@ -264,7 +263,7 @@ subroutine wallSearch(aWall, bWall)
         ! Now find the closest element on the other mesh for this
         ! node. This is the regular (expensive) closest point search
 
-        call minDistanceTreeSearchSinglePoint(bWall%ADT, xx, intInfo, uvw, &
+        call minDistanceTreeSearchSinglePoint(bSurf%ADT, xx, intInfo, uvw, &
              dummy, nInterpol, BB, frontLeaves, frontLeavesNew)
 
         ! Don't accept the element just yet. Check that that it is
@@ -274,8 +273,8 @@ subroutine wallSearch(aWall, bWall)
 
         delta = zero
         do k=1, 4
-           delta = max(delta, aWall%delta(aWall%conn(k, i)))
-           delta = max(delta, bWall%delta(bWall%conn(k, elemID)))
+           delta = max(delta, aSurf%delta(aSurf%conn(k, i)))
+           delta = max(delta, bSurf%delta(bSurf%conn(k, elemID)))
         end do
 
         if (dist < max(nearWallDist, 10*delta)) then 
@@ -286,30 +285,30 @@ subroutine wallSearch(aWall, bWall)
   end do
 
   ! On the next pass loop over the *cells*
-  do i=1, aWall%nCells
+  do i=1, aSurf%nCells
 
      ! Get my coordiantes for my (3D) quad
      do jj=1,4
-        q1(:, jj) = aWall%x(:, aWall%conn(jj, i))
+        q1(:, jj) = aSurf%x(:, aSurf%conn(jj, i))
      end do
 
      ! We first check overlap with the 4 elements found from
      ! projecting the nodes.
      do j=1, 4
-        n = aWall%conn(j, i)
+        n = aSurf%conn(j, i)
         elem = tmpNodeElem(n)
 
         if (elem > 0) then 
 
            ! Get coordinates of the other quad
            do jj=1,4
-              q2(:, jj) = bWall%x(:, bWall%conn(jj, elem))
+              q2(:, jj) = bSurf%x(:, bSurf%conn(jj, elem))
            end do
 
            call  quadOverlap(q1, q2, overlapped)
            
            if (overlapped) then 
-              bWall%iBlank(bWall%cellPtr(elem)) = -2
+              bSurf%iBlank(bSurf%cellPtr(elem)) = -2
            end if
         end if
      end do
@@ -320,13 +319,13 @@ subroutine wallSearch(aWall, bWall)
         ! Get coordinates of the other quad
 
         do jj=1,4
-           q2(:, jj) = bWall%x(:, bWall%conn(jj, elem))
+           q2(:, jj) = bSurf%x(:, bSurf%conn(jj, elem))
         end do
 
         call  quadOverlap(q1, q2, overlapped)
         if (overlapped) then 
-           ! bWall is still the one blanked
-           bWall%iBlank(bWall%cellPtr(elem)) = -2 ! -2 means it was overlapped and got blanked
+           ! bSurf is still the one blanked
+           bSurf%iBlank(bSurf%cellPtr(elem)) = -2 ! -2 means it was overlapped and got blanked
         end if
      end if
   end do

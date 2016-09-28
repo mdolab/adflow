@@ -13,7 +13,6 @@ contains
     use overset, only : cumDomProc, clusters
     use stencils, only : visc_drdw_stencil, N_visc_drdw
     use inputOverset, only : backgroundVolScale
-    use utils, only : isWallType
     use oversetUtilities, only : flagForcedReceivers, emptyFringe, setIsCompute, &
          wallsOnBlock
     implicit none
@@ -212,7 +211,7 @@ contains
     use adtBuild, only : buildSerialHex
     use communication, only : myID
     use stencils, only : visc_drdw_stencil, n_visc_drdw
-    use utils, only : mynorm2, isWallType
+    use utils, only : mynorm2
     use oversetUtilities, only : flagForcedReceivers, wallsOnBlock
     implicit none 
 
@@ -633,48 +632,48 @@ contains
 
     ! Flag this set of fringes as being allocated
     oFringe%allocated = .True.
-
-
   end subroutine initializeOFringes
 
-  subroutine initializeOWall(oWall, dualMesh, cluster)
+  subroutine initializeOSurf(famList, oSurf, dualMesh, cluster)
 
     ! This routine builds the ADT tree for any wall surfaces for the
     ! block currently being pointed to by block Pointers.
     use constants
     use overset, only : oversetWall
     use blockPointers, only : nBocos, BCData, BCFaceID, il, jl, kl, &
-         BCFaceID, x, BCType
+         BCFaceID, x, BCType, rightHanded, nbklocal
     use adtBuild, only : buildSerialQuad
     use kdtree2_module, onlY : kdtree2_create
-    use utils, only : isWallType
     use oversetPackingRoutines, only : getWallSize
+    use sorting, only : bsearchIntegers
     implicit none 
 
     ! Input Params
-    type(oversetWall), intent(inout) :: oWall
+    integer(kind=intType), intent(in), dimension(:) :: famList
+    type(oversetWall), intent(inout) :: oSurf
     logical, intent(in) :: dualMesh 
     integer(kind=intType), intent(in) :: cluster
 
     ! Working paramters
     integer(kind=intType) :: i, j, k, n, ii, jj, jjj, mm, ni, nj, nodeCount
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, nNodes, maxCells, nCells, iNode
+    logical :: regularOrdering
 
     ! Set all the sizes for this block.
-    oWall%il = il
-    oWall%jl = jl
-    oWall%kl = kl
+    oSurf%il = il
+    oSurf%jl = jl
+    oSurf%kl = kl
 
-    call getWallSize(nNodes, maxCells, dualMesh)
+    call getWallSize(famList, nNodes, maxCells, dualMesh)
 
-    oWall%nNodes = nNodes
-    oWall%maxCells = maxCells
-    oWall%cluster = cluster
+    oSurf%nNodes = nNodes
+    oSurf%maxCells = maxCells
+    oSurf%cluster = cluster
     ! Allocate space for the x array and connectivity array. cellPtr is
     ! larger than necessary.
-    allocate(oWall%x(3, nNodes), oWall%conn(4, maxCells), &
-         oWall%cellPtr(maxCells), oWall%iBlank(maxCells), &
-         oWall%delta(nNodes), oWall%nte(4, nNodes))
+    allocate(oSurf%x(3, nNodes), oSurf%conn(4, maxCells), &
+         oSurf%cellPtr(maxCells), oSurf%iBlank(maxCells), &
+         oSurf%delta(nNodes), oSurf%nte(4, nNodes))
 
     ii = 0 ! Cumulative node counter
     jj = 0 ! Cumulative cell counter (with iblanks)
@@ -682,8 +681,21 @@ contains
     nodeCount = 0
 
     do mm=1, nBocos
-       if (isWallType(BCType(mm))) then 
+       famInclude: if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
 
+          select case(BCFaceID(mm))
+          case(iMin, jMax, kMin)
+             regularOrdering = .True.
+          case default
+             regularOrdering = .False.
+          end select
+
+          ! Now this can be reversed *again* if we have a block that
+          ! is left handed. 
+          if (.not. rightHanded) then 
+             regularOrdering = .not. (regularOrdering)
+          end if
+          
           ! THIS IS SUPER IMPORTANT: It is absolutely critical that the
           ! wall be built *FROM THE DUAL MESH!!* IT WILL NOT WORK IF YOU
           ! USE THE PRIMAL MESH! The -1 for the node ranges below gives
@@ -698,22 +710,22 @@ contains
                    ii = ii +1
                    select case(BCFaceID(mm))
                    case(imin)
-                      oWall%x(:,ii) = fourth*(x(1, i, j, :) + x(1, i+1, j, :) + &
+                      oSurf%x(:,ii) = fourth*(x(1, i, j, :) + x(1, i+1, j, :) + &
                            x(1, i, j+1, :) + x(1, i+1, j+1, :))
                    case(imax)
-                      oWall%x(:,ii) = fourth*(x(il, i, j, :) + x(il, i+1, j, :) + &
+                      oSurf%x(:,ii) = fourth*(x(il, i, j, :) + x(il, i+1, j, :) + &
                            x(il, i, j+1, :) + x(il, i+1, j+1, :))
                    case(jmin) 
-                      oWall%x(:,ii) = fourth*(x(i, 1, j, :) + x(i+1, 1, j, :) + &
+                      oSurf%x(:,ii) = fourth*(x(i, 1, j, :) + x(i+1, 1, j, :) + &
                            x(i, 1, j+1, :) + x(i+1, 1, j+1, :))
                    case(jmax) 
-                      oWall%x(:,ii) = fourth*(x(i, jl, j, :) + x(i+1, jl, j, :) + &
+                      oSurf%x(:,ii) = fourth*(x(i, jl, j, :) + x(i+1, jl, j, :) + &
                            x(i, jl, j+1, :) + x(i+1, jl, j+1, :))
                    case(kmin) 
-                      oWall%x(:,ii) = fourth*(x(i, j, 1, :) + x(i+1, j, 1, :) + &
+                      oSurf%x(:,ii) = fourth*(x(i, j, 1, :) + x(i+1, j, 1, :) + &
                            x(i, j+1, 1, :) + x(i+1, j+1, 1, :))
                    case(kmax) 
-                      oWall%x(:,ii) = fourth*(x(i, j, kl, :) + x(i+1, j, kl, :) + &
+                      oSurf%x(:,ii) = fourth*(x(i, j, kl, :) + x(i+1, j, kl, :) + &
                            x(i, j+1, kl, :) + x(i+1, j+1, kl, :))
                    end select
                 end do
@@ -730,19 +742,26 @@ contains
              do j=0, nj-2
                 do i=0, ni-2
                    jj = jj + 1
-                   oWall%conn(1, jj) = nodeCount + (j  )*ni + i + 1 ! n1
-                   oWall%conn(2, jj) = nodeCount + (j  )*ni + i + 2 ! n2
-                   oWall%conn(3, jj) = nodeCount + (j+1)*ni + i + 2 ! n3
-                   oWall%conn(4, jj) = nodeCount + (j+1)*ni + i + 1 ! n4
+                   if (regularOrdering) then 
+                      oSurf%conn(1, jj) = nodeCount + (j  )*ni + i + 1 ! n1
+                      oSurf%conn(2, jj) = nodeCount + (j  )*ni + i + 2 ! n2
+                      oSurf%conn(3, jj) = nodeCount + (j+1)*ni + i + 2 ! n3
+                      oSurf%conn(4, jj) = nodeCount + (j+1)*ni + i + 1 ! n4
+                   else
+                      oSurf%conn(1, jj) = nodeCount + (j  )*ni + i + 1 ! n1
+                      oSurf%conn(2, jj) = nodeCount + (j+1)*ni + i + 1 ! n4
+                      oSurf%conn(3, jj) = nodeCount + (j+1)*ni + i + 2 ! n3
+                      oSurf%conn(4, jj) = nodeCount + (j  )*ni + i + 2 ! n2
+                   end if
                 end do
              end do
              nodeCount = nodeCount + ni*nj
 
              ! We don't care about iBlank, cellPtr or delta for the dual
              ! mesh
-             oWall%iBlank = 1
-             oWall%cellPtr = 0
-             oWall%delta = zero
+             oSurf%iBlank = 1
+             oSurf%cellPtr = 0
+             oSurf%delta = zero
           else ! Using the primal mesh
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
@@ -753,19 +772,19 @@ contains
                    ii = ii +1
                    select case(BCFaceID(mm))
                    case(imin)
-                      oWall%x(:,ii) = x(1, i, j, :)
+                      oSurf%x(:,ii) = x(1, i, j, :)
                    case(imax)
-                      oWall%x(:,ii) = x(il, i, j, :) 
+                      oSurf%x(:,ii) = x(il, i, j, :) 
                    case(jmin) 
-                      oWall%x(:,ii) = x(i, 1, j, :) 
+                      oSurf%x(:,ii) = x(i, 1, j, :) 
                    case(jmax) 
-                      oWall%x(:,ii) = x(i, jl, j, :) 
+                      oSurf%x(:,ii) = x(i, jl, j, :) 
                    case(kmin) 
-                      oWall%x(:,ii) = x(i, j, 1, :) 
+                      oSurf%x(:,ii) = x(i, j, 1, :) 
                    case(kmax) 
-                      oWall%x(:,ii) = x(i, j, kl, :) 
+                      oSurf%x(:,ii) = x(i, j, kl, :) 
                    end select
-                   oWall%delta(ii) = BCData(mm)%deltaNode(i, j)
+                   oSurf%delta(ii) = BCData(mm)%deltaNode(i, j)
                 end do
              end do
 
@@ -776,41 +795,48 @@ contains
              do j=0, nj-2
                 do i=0, ni-2
                    jjj = jjj + 1
-                   oWall%iBlank(jjj) = BCData(mm)%iblank(iBeg+i+1,jBeg+j+1)
-                   if (oWall%iBlank(jjj) == 1) then 
+                   oSurf%iBlank(jjj) = BCData(mm)%iblank(iBeg+i+1,jBeg+j+1)
+                   if (oSurf%iBlank(jjj) == 1) then 
                       jj = jj + 1
-                      oWall%conn(1, jj) = nodeCount + (j  )*ni + i + 1 ! n1
-                      oWall%conn(2, jj) = nodeCount + (j  )*ni + i + 2 ! n2
-                      oWall%conn(3, jj) = nodeCount + (j+1)*ni + i + 2 ! n3
-                      oWall%conn(4, jj) = nodeCount + (j+1)*ni + i + 1 ! n4
-                      oWall%cellPtr(jj) = jjj
+                      if (regularOrdering) then 
+                         oSurf%conn(1, jj) = nodeCount + (j  )*ni + i + 1 ! n1
+                         oSurf%conn(2, jj) = nodeCount + (j  )*ni + i + 2 ! n2
+                         oSurf%conn(3, jj) = nodeCount + (j+1)*ni + i + 2 ! n3
+                         oSurf%conn(4, jj) = nodeCount + (j+1)*ni + i + 1 ! n4
+                      else
+                         oSurf%conn(1, jj) = nodeCount + (j  )*ni + i + 1 ! n1
+                         oSurf%conn(2, jj) = nodeCount + (j+1)*ni + i + 1 ! n4
+                         oSurf%conn(3, jj) = nodeCount + (j+1)*ni + i + 2 ! n3
+                         oSurf%conn(4, jj) = nodeCount + (j  )*ni + i + 2 ! n2
+                      end if
+                      oSurf%cellPtr(jj) = jjj
                    end if
                 end do
              end do
              nodeCount = nodeCount + ni*nj
           end if dualCheck
-       end if
+       end if famInclude
     end do
 
     ! Set the actual number of cells
-    oWall%nCells = jj
+    oSurf%nCells = jj
 
     ! Build the tree itself.
-    call buildSerialQuad(oWall%nCells, nNodes, oWall%x, oWall%conn, owall%ADT)
+    call buildSerialQuad(oSurf%nCells, nNodes, oSurf%x, oSurf%conn, oSurf%ADT)
 
     ! Build the KDTree
-    if (oWall%nNodes > 0) then 
-       oWall%tree => kdtree2_create(oWall%x)
+    if (oSurf%nNodes > 0) then 
+       oSurf%tree => kdtree2_create(oSurf%x)
     end if
 
     ! Build the inverse of the connectivity, the nodeToElem array. 
-    oWall%nte = 0
-    do i=1, oWall%nCells
+    oSurf%nte = 0
+    do i=1, oSurf%nCells
        do j=1, 4
-          n = oWall%conn(j, i)
+          n = oSurf%conn(j, i)
           inner:do k=1, 4
-             if (oWall%nte(k, n) == 0) then 
-                oWall%nte(k, n) = i
+             if (oSurf%nte(k, n) == 0) then 
+                oSurf%nte(k, n) = i
                 exit inner
              end if
           end do inner
@@ -818,8 +844,8 @@ contains
     end do
 
     ! Flag this wall as being allocated
-    oWall%allocated = .True.
+    oSurf%allocated = .True.
 
-  end subroutine initializeOWall
+  end subroutine initializeOSurf
 
 end module oversetInitialization

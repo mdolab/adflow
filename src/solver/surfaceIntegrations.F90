@@ -77,7 +77,7 @@ contains
 
     ! Local variables
     real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps
-    integer(kind=intType) :: i, j, ii
+    integer(kind=intType) :: i, j, ii, blk
     real(kind=realType) :: fact, xc, yc, zc, cellArea, mx, my, mz
     real(kind=realType) :: sF, vnm, vxm, vym, vzm, mReDim, Fx, Fy, Fz
     real(kind=realType) :: pm, Ptot, Ttot, rhom, massFlowRateLocal
@@ -154,16 +154,16 @@ contains
             +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
 
        ! Compute the force components.
-       ! blk = max(BCData(mm)%iblank(i,j), 0) ! iBlank forces for overset stuff
+       blk = max(BCData(mm)%iblank(i,j), 0) ! iBlank forces for overset stuff
        
        fx = pm*ssi(i,j,1)
        fy = pm*ssi(i,j,2)
        fz = pm*ssi(i,j,3)
 
        ! Pressure forces
-       ! fx = fx*blk
-       ! fy = fy*blk
-       ! fz = fz*blk
+       fx = fx*blk
+       fy = fy*blk
+       fz = fz*blk
 
        ! Update the pressure force and moment coefficients.
        Fp(1) = Fp(1) + fx*fact
@@ -185,9 +185,9 @@ contains
        fy = massFlowRateLocal*BCData(mm)%norm(i,j,2)*vym/timeRef
        fz = massFlowRateLocal*BCData(mm)%norm(i,j,3)*vzm/timeRef
 
-       ! fx = fx*blk
-       ! fy = fy*blk
-       ! fz = fz*block
+       fx = fx*blk
+       fy = fy*blk
+       fz = fz*blk
 
        ! Note: momentum forces have opposite sign to pressure forces
        FMom(1) = FMom(1) - fx*fact
@@ -808,7 +808,8 @@ contains
 
     ! Communicate the nodes, pressure tractions and viscous tractions to
     ! the root proc for the triangles. We do a generic loop
-
+    print *,'dont call this!'
+    stop
     call VecGetOwnershipRange(globalNodalVec, rowStart, rowEnd, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
