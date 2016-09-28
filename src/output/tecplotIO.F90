@@ -632,34 +632,49 @@ contains
     use inputPhysics
     use inputIteration
     use inputIO
-    use surfaceFamilies
-    use utils, only : EChk
+    use blockPointers
+    use surfaceFamilies, onlY : fullExchange
+    use utils, only : EChk, setPointers, setBCPointers
+    use BCPointers, only : xx
     use sorting, only : bsearchIntegers
     use extraOutput, only : surfWriteBlank
     implicit none
+
+#define PETSC_AVOID_MPIF_H
+#include "petsc/finclude/petscsys.h"
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscvec.h90"
 
     ! Input Params
     character*(*), intent(in) :: fileName
     integer(kind=intType), intent(in), dimension(:) :: famList
 
     ! Working parameters
-    integer(kind=intType) :: i, j, iProc, sps, nSolVar, ierr, fileID, iSize, iFam
+    integer(kind=intType) :: i, j, nn, mm, fileID, iVar, ii, ierr, iSize
+     integer(Kind=intType) :: nSolVar, iBeg, iEnd, jBeg, jEnd, sps
     character(len=maxStringLen) :: fname
     character(len=7) :: intString
-    integer(Kind=intType) :: nNodes, nCells
     integer(kind=intType), dimension(:), allocatable :: nodeSizes, nodeDisps
     integer(kind=intType), dimension(:), allocatable :: cellSizes, cellDisps
     character(len=maxCGNSNameLen), dimension(:), allocatable :: solNames
-    real(kind=realType), dimension(:, :), allocatable :: vars
+    real(kind=realType), dimension(:, :), allocatable :: allNodalValues
     integer(kind=intType), dimension(:, :), allocatable :: conn
-    integer(kind=intType), dimension(:), allocatable :: mask, elemFam
     logical :: blankSave
+    type(familyExchange), pointer :: exch
+    real(kind=realType), dimension(:), pointer :: localPtr
+
+    Vec localNodeVec
+    VecScatter :: tecScatter
+
     if(myID == 0 .and. printIterations) then
        print "(a)", "#"
        print "(a)", "# Writing tecplot surface file(s) ..."
     endif
 
     spectralLoop: do sps=1,nTimeIntervalsSpectral
+
+       ! For easier reading
+       exch => fullExchange(sps)
 
        ! If it is time spectral we need to agument the filename
        if (equationMode == timeSpectral) then
@@ -696,10 +711,10 @@ contains
           call surfSolNames(solNames)
           surfWriteBlank = blankSave
 
-          ! Write the rest of the variable header
-          do i=1,nSolVar
-             write(fileID,"(a,a,a)",advance="no") """",trim(solNames(i)),""" "
-          end do
+          ! ! Write the rest of the variable header
+          ! do i=1,nSolVar
+          !    write(fileID,"(a,a,a)",advance="no") """",trim(solNames(i)),""" "
+          ! end do
 
           write(fileID,"(1x)")
           deallocate(solNames)
@@ -709,15 +724,108 @@ contains
        call mpi_bcast(nSolVar, 1, adflow_integer, 0, adflow_comm_world, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
+       ! The general idea here is that we have to gather up nodes and
+       ! connectivity (on a per-family basis) for the root processor
+       ! to write.
+
+       call VecScatterCreateToZero(exch%nodeValGlobal, tecScatter, localNodeVec, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+       
+       if (myid == 0) then 
+          call VecGetSize(localNodeVec, iSize, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+
+          allocate(allNodalValues(iSize, 3 + nSolVar))
+       end if
+
+       masterNodeLoop: do iVar=1, nSolVar+3
+          
+          ! Variables 1 through 3 are special becuase they are the nodes themselves. 
+
+          ! Set the PETSc array to our own data so we can scatter in directly
+          if (myid == 0) then 
+             call VecPlaceArray(localNodeVec, allNodalValues(:, iVar), ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+          end if
+
+          if (iVar <= 3) then 
+             ! ------------ Nodes --------------- !
+
+             ! Get the petsc vector
+             call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+             
+             ! Copy in the x-coordinates
+             ii = 0
+             domains: do nn=1,nDom
+                call setPointers(nn, 1_intType, sps)
+
+                do mm=1, nBocos
+                   call setBCPointers(mm, .true.)
+                   iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
+                   jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
+                   do j=jBeg, jEnd
+                      do i=iBeg, iEnd
+                         ii = ii + 1
+                         localPtr(ii) = xx(i+1, j+1, iVar)
+                      end do
+                   end do
+                end do
+             end do domains
+
+             call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+     
+             call VecScatterBegin(exch%scatter, exch%nodeValLocal, &
+                  exch%sumGlobal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+             
+             call VecScatterEnd(exch%scatter, exch%nodeValLocal, &
+                  exch%sumGlobal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+             
+             ! Do the actual scatter from the parallel global Vec to the root. 
+             call VecScatterBegin(tecScatter, fullExchange(sps)%nodeValGlobal, localNodeVec, &
+                  INSERT_VALUES, SCATTER_FORWARD, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+
+             call VecScatterEnd(tecScatter, fullExchange(sps)%nodeValGlobal, localNodeVec, &
+                  INSERT_VALUES, SCATTER_FORWARD, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+             
+          else
+             ! ----------Solution Vars ---------- !
+       
+             ! For the remainder of the variables we need to store
+             ! them
+
+             
+
+             
+          end if
+          
+          ! Replace the PETSc memory
+          if (myid == 0) THEN 
+             call VecResetArray(localNodeVec, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+          end if
+       end do masterNodeLoop
        
 
 
+       ! Clean up the tempoeray PETSc variables
+       call VecDestroy(localNodeVec, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+       
+       call VecScatterDestroy(tecScatter, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
 
 
        if (myid == 0) then 
           close(fileID)
        end if
     end do spectralLoop
+
 
     if(myID == 0 .and. printIterations) then
        print "(a)", "# Tecplot surface file(s) written"

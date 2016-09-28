@@ -4809,8 +4809,8 @@ module utils
             deallocate(BCData(i)%area, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
-       if( associated(BCData(i)%fIndex) ) &
-            deallocate(BCData(i)%fIndex, stat=ierr)
+       if( associated(BCData(i)%surfIndex) ) &
+            deallocate(BCData(i)%surfIndex, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
        if( associated(BCData(i)%F) ) &

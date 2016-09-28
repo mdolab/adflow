@@ -27,7 +27,7 @@ contains
     integer(kind=intType) :: below, above, left, right, nNodes, nElems
     integer(kind=intType) :: patchNodeCounter, nZipped, gc
     integer(kind=intType), dimension(:), allocatable :: nElemsProc, nNodesProc
-    integer(kind=intType), dimension(:, :), pointer :: gcp, gnp
+    integer(kind=intType), dimension(:, :), pointer :: gcp
     real(kind=realType), dimension(:, :, :), pointer :: xx
     real(kind=realType), dimension(3) :: s1, s2, s3, s4, v1, v2, v3, v4, x0
     real(kind=realType) ::  fact, timeA
@@ -105,37 +105,31 @@ contains
              select case (BCFaceID(mm))
              case (iMin)
                 xx => x(1, :, :, :)
-                gnp => globalNode(1, :, :)
                 gcp => globalCell(2, :, :)
                 fact = one
                 regularOrdering = .True.
              case (iMax)
                 xx => x(il, :, :, :)
-                gnp => globalNode(il, :, :)
                 gcp => globalCell(il, :, :)
                 fact = -one
                 regularOrdering = .False.
              case (jMin)
                 xx => x(:, 1, :, :)
-                gnp => globalNode(:, 1, :)
                 gcp => globalCell(:, 2, :)
                 fact = -one
                 regularOrdering = .False.
              case (jMax)
                 xx => x(:, jl, :, :)
-                gnp => globalNode(:, jl, :)
                 gcp => globalCell(:, jl, :)
                 fact = one
                 regularOrdering = .True.
              case (kMin)
                 xx => x(:, :, 1, :)          
-                gnp => globalNode(:, :, 1)
                 gcp => globalCell(:, :, 2)
                 fact = one
                 regularOrdering = .True.
              case (kMax)
                 xx => x(:, :, kl, :)
-                gnp => globalNode(:, :, kl)
                 gcp => globalCell(:, :, kl)
                 fact = -one
                 regularOrdering = .False.
@@ -251,9 +245,9 @@ contains
                          localStrings(c)%nodeData(10, 2*e-1) = patchH(i1, j1)
                          localStrings(c)%nodeData(10, 2*e  ) = patchH(i2, j2)
 
-                         ! Index of global node
-                         localStrings(c)%intNodeData(1, 2*e-1) = gnp(i1+1, j1+1)
-                         localStrings(c)%intNodeData(1, 2*e  ) = gnp(i2+1, j2+1)
+                         ! Global index of node on reduced global surface.
+                         localStrings(c)%intNodeData(1, 2*e-1) = BCData(mm)%surfIndex(i1, j1)
+                         localStrings(c)%intNodeData(1, 2*e  ) = BCData(mm)%surfIndex(i2, j2)
 
                          ! Cluster of the node
                          localStrings(c)%intNodeData(2, 2*e-1) = c
@@ -330,8 +324,8 @@ contains
                          localStrings(c)%nodeData(10, 2*e  ) = patchH(i2, j2)
 
                          ! Index of global node
-                         localStrings(c)%intNodeData(1, 2*e-1) = gnp(i1+1, j1+1)
-                         localStrings(c)%intNodeData(1, 2*e  ) = gnp(i2+1, j2+1)
+                         localStrings(c)%intNodeData(1, 2*e-1) = BCData(mm)%surfIndex(i1, j1)
+                         localStrings(c)%intNodeData(1, 2*e  ) = BCData(mm)%surfIndex(i2, j2)
 
                          ! Cluster of the node
                          localStrings(c)%intNodeData(2, 2*e-1) = c
