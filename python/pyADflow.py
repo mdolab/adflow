@@ -1387,8 +1387,8 @@ class ADFLOW(AeroSolver):
             surfName = base + '_surf.dat'
         writeSurf = self.getOption('writeTecplotSurfaceSolution')
         self.adflow.tecplotio.writetecplot(sliceName, True, liftName, True,
-                                         surfName, writeSurf)
-
+                                           surfName, writeSurf)
+        
     def writeMeshFile(self, fileName):
         """Write the current mesh to a CGNS file. This call isn't used
         normally since the volume solution usually contains the grid
@@ -4165,7 +4165,7 @@ class ADFLOW(AeroSolver):
                             " as a combination of families"%groupName)
             zipperFamList = self.families[zipFam]
 
-        #self.adflow.createzippermesh(zipperFamList)
+        self.adflow.zippermesh.createzippermesh(zipperFamList)
         self.zipperCreated = True
 
     def _processFortranStringArray(self, strArray):

@@ -370,13 +370,16 @@ module overset
   logical :: oversetPresent
 
   ! Data required for zipper mesh surface integration:
+  integer(kind=intType), dimension(:, :), allocatable ::zipperConn
+  integer(kind=intType), dimension(:), allocatable :: zipperFam, zipperIndices
+
   VecScatter :: nodeZipperScatter
   Vec :: globalNodalVec
   Vec, target :: localZipperNodes
   Vec, target :: localZipperTp
   Vec, target :: localZIpperTv
 
-  PetscViewer viewer
+  Vec, target :: localZipperVal
 
   contains
   ! ==============================

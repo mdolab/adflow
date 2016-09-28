@@ -318,9 +318,9 @@ contains
     end do
   end subroutine deallocateOFringes
 
-  subroutine deallocateOWalls(oWalls, n)
+  subroutine deallocateOSurfs(oSurfs, n)
 
-    ! This subroutine deallocates all data stores in a list of oWalls
+    ! This subroutine deallocates all data stores in a list of oSurfs
 
     use constants
     use adtBuild, only : destroySerialQuad
@@ -329,27 +329,27 @@ contains
     implicit none
 
     ! Input Params
-    type(oversetWall), dimension(n), intent(inout) :: oWalls
+    type(oversetWall), dimension(n), intent(inout) :: oSurfs
     integer(kind=intType) :: n
 
     ! Working Parameters
     integer(kind=intType) :: i
 
     do i=1, n
-       if (oWalls(i)%allocated) then 
+       if (oSurfs(i)%allocated) then 
           deallocate(&
-               oWalls(i)%x, &
-               oWalls(i)%conn, &
-               oWalls(i)%iblank, &
-               oWalls(i)%cellPtr)
-          call destroySerialQuad(oWalls(i)%ADT)
-          if (oWalls(i)%nNodes > 0) then 
-             call kdtree2destroy(oWalls(i)%tree)
+               oSurfs(i)%x, &
+               oSurfs(i)%conn, &
+               oSurfs(i)%iblank, &
+               oSurfs(i)%cellPtr)
+          call destroySerialQuad(oSurfs(i)%ADT)
+          if (oSurfs(i)%nNodes > 0) then 
+             call kdtree2destroy(oSurfs(i)%tree)
           end if
        end if
-       oWalls(i)%allocated = .False.
+       oSurfs(i)%allocated = .False.
     end do
-  end subroutine deallocateOWalls
+  end subroutine deallocateOSurfs
 
   subroutine wallsOnBlock(wallsPresent) 
 
@@ -2070,5 +2070,42 @@ contains
     close(19)
 
   end subroutine dumpIblank
+
+  subroutine getWorkArray(overlap, work)
+
+    use constants
+    use communication, only : myid
+    use overset, only : CSRMatrix, nDomTotal
+    implicit none
+
+    ! Input/Output
+    type(CSRMatrix), intent(in) :: overlap
+    integer(kind=intType), dimension(:,:), allocatable :: work
+
+    ! Local variables
+    integer(kind=intType) :: nWork, jj, iDom, jDom
+
+    nWork = 0
+    do jj=1,overlap%nnz
+       if (overlap%assignedProc(jj) == myid) then 
+          nWork = nWork + 1
+       end if
+    end do
+    allocate(work(4, nWork))
+    
+    nWork = 0
+    do iDom=1, nDomTotal
+       do jj=overlap%rowPtr(iDom), overlap%rowPtr(iDom+1)-1
+          jDom = overlap%colInd(jj)
+          if (overlap%assignedProc(jj) == myID) then 
+             nWork = nWork + 1
+             work(1, nWork) = iDom
+             work(2, nWork) = jDom
+             work(3, nWork) = jj
+             work(4, nWork) = 0
+          end if
+       end do
+    end do
+  end subroutine getWorkArray
 
 end module oversetUtilities

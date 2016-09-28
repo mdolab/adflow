@@ -1280,7 +1280,7 @@ contains
           localvalues = zero
           call integrateSurfaces(localValues)
 
-          ! Conver to coefficinets for monitoring:
+          ! Convert to coefficients for monitoring:
           fact = two/(gammaInf*MachCoef*MachCoef &
                *surfaceRef*LRef*LRef*pRef)
           cfp = fact*localValues(iFp:iFp+2)
@@ -1405,82 +1405,82 @@ contains
           end do nMonitoringVar
        end do domains
 
-       ! Add the corrections from zipper meshes from proc 0
-       if (oversetPresent) then 
-          localValues = zero
-          call wallIntegrationsZipper(localValues, sps)
+       ! ! Add the corrections from zipper meshes from proc 0
+       ! if (oversetPresent) then 
+       !    localValues = zero
+       !    !call wallIntegrationsZipper(localValues, sps)
 
-          fact = two/(gammaInf*MachCoef*MachCoef &
-               *surfaceRef*LRef*LRef*pRef)
-          cfp = localValues(iFp:iFp+2)*fact
-          cfv = localValues(iFv:iFv+2)*fact
-          fact = fact/(lengthRef*Lref)
-          cmp = localValues(iMp:iMp+2)*fact
-          cmv = localValues(iMv:iMv+2)*fact
+       !    fact = two/(gammaInf*MachCoef*MachCoef &
+       !         *surfaceRef*LRef*LRef*pRef)
+       !    cfp = localValues(iFp:iFp+2)*fact
+       !    cfv = localValues(iFv:iFv+2)*fact
+       !    fact = fact/(lengthRef*Lref)
+       !    cmp = localValues(iMp:iMp+2)*fact
+       !    cmv = localValues(iMv:iMv+2)*fact
 
-          !Loop over the number of monitoring variables and just modify
-          !the ones that need to be updated with the zipper forces we just
-          !computed. 
-          nMonitoringVarZip: do mm=1,nMon
+       !    !Loop over the number of monitoring variables and just modify
+       !    !the ones that need to be updated with the zipper forces we just
+       !    !computed. 
+       !    nMonitoringVarZip: do mm=1,nMon
 
-             ! Determine the monitoring variable and act accordingly.
+       !       ! Determine the monitoring variable and act accordingly.
 
-             select case (monNames(mm))
+       !       select case (monNames(mm))
 
-             case (cgnsCl)
-                monLoc(mm) = monLoc(mm)                         &
-                     + (cfp(1) + cfv(1))*liftDirection(1) &
-                     + (cfp(2) + cfv(2))*liftDirection(2) &
-                     + (cfp(3) + cfv(3))*liftDirection(3)
+       !       case (cgnsCl)
+       !          monLoc(mm) = monLoc(mm)                         &
+       !               + (cfp(1) + cfv(1))*liftDirection(1) &
+       !               + (cfp(2) + cfv(2))*liftDirection(2) &
+       !               + (cfp(3) + cfv(3))*liftDirection(3)
 
-             case (cgnsClp)
-                monLoc(mm) = monLoc(mm) + cfp(1)*liftDirection(1) &
-                     +              cfp(2)*liftDirection(2) &
-                     +              cfp(3)*liftDirection(3)
+       !       case (cgnsClp)
+       !          monLoc(mm) = monLoc(mm) + cfp(1)*liftDirection(1) &
+       !               +              cfp(2)*liftDirection(2) &
+       !               +              cfp(3)*liftDirection(3)
 
-             case (cgnsClv)
-                monLoc(mm) = monLoc(mm) + cfv(1)*liftDirection(1) &
-                     +              cfv(2)*liftDirection(2) &
-                     +              cfv(3)*liftDirection(3)
+       !       case (cgnsClv)
+       !          monLoc(mm) = monLoc(mm) + cfv(1)*liftDirection(1) &
+       !               +              cfv(2)*liftDirection(2) &
+       !               +              cfv(3)*liftDirection(3)
 
-             case (cgnsCd)
-                monLoc(mm) = monLoc(mm)                         &
-                     + (cfp(1) + cfv(1))*dragDirection(1) &
-                     + (cfp(2) + cfv(2))*dragDirection(2) &
-                     + (cfp(3) + cfv(3))*dragDirection(3)
+       !       case (cgnsCd)
+       !          monLoc(mm) = monLoc(mm)                         &
+       !               + (cfp(1) + cfv(1))*dragDirection(1) &
+       !               + (cfp(2) + cfv(2))*dragDirection(2) &
+       !               + (cfp(3) + cfv(3))*dragDirection(3)
 
-             case (cgnsCdp)
-                monLoc(mm) = monLoc(mm) + cfp(1)*dragDirection(1) &
-                     +              cfp(2)*dragDirection(2) &
-                     +              cfp(3)*dragDirection(3)
+       !       case (cgnsCdp)
+       !          monLoc(mm) = monLoc(mm) + cfp(1)*dragDirection(1) &
+       !               +              cfp(2)*dragDirection(2) &
+       !               +              cfp(3)*dragDirection(3)
 
-             case (cgnsCdv)
-                monLoc(mm) = monLoc(mm) + cfv(1)*dragDirection(1) &
-                     +              cfv(2)*dragDirection(2) &
-                     +              cfv(3)*dragDirection(3)
+       !       case (cgnsCdv)
+       !          monLoc(mm) = monLoc(mm) + cfv(1)*dragDirection(1) &
+       !               +              cfv(2)*dragDirection(2) &
+       !               +              cfv(3)*dragDirection(3)
 
-             case (cgnsCfx)
-                monLoc(mm) = monLoc(mm) + cfp(1) + cfv(1)
+       !       case (cgnsCfx)
+       !          monLoc(mm) = monLoc(mm) + cfp(1) + cfv(1)
 
-             case (cgnsCfy)
-                monLoc(mm) = monLoc(mm) + cfp(2) + cfv(2)
+       !       case (cgnsCfy)
+       !          monLoc(mm) = monLoc(mm) + cfp(2) + cfv(2)
 
-             case (cgnsCfz)
-                monLoc(mm) = monLoc(mm) + cfp(3) + cfv(3)
+       !       case (cgnsCfz)
+       !          monLoc(mm) = monLoc(mm) + cfp(3) + cfv(3)
 
-             case (cgnsCmx)
-                monLoc(mm) = monLoc(mm) + cmp(1) + cmv(1)
+       !       case (cgnsCmx)
+       !          monLoc(mm) = monLoc(mm) + cmp(1) + cmv(1)
 
-             case (cgnsCmy)
-                monLoc(mm) = monLoc(mm) + cmp(2) + cmv(2)
+       !       case (cgnsCmy)
+       !          monLoc(mm) = monLoc(mm) + cmp(2) + cmv(2)
 
-             case (cgnsCmz)
-                monLoc(mm) = monLoc(mm) + cmp(3) + cmv(3)
+       !       case (cgnsCmz)
+       !          monLoc(mm) = monLoc(mm) + cmp(3) + cmv(3)
 
-             end select
+       !       end select
 
-          end do nMonitoringVarZip
-       end if
+       !    end do nMonitoringVarZip
+       ! end if
        ! Determine the global sum of the summation monitoring
        ! variables. This is an all reduce since every processor needs to
        ! know the residual to make the same descisions. 
@@ -1552,7 +1552,6 @@ contains
              end if
           case ('totalR')
              monGlob(mm) = sqrt(monGlob(mm))
-             if( myIsNAN(monGlob(mm)) ) nanOccurred = .true.
              totalR = monGlob(mm)
           end select
 
