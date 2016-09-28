@@ -22,7 +22,7 @@ contains
     use adtBuild, only : destroySerialQuad
     use inputOverset, onlY : lowOversetMemory, overlapFactor
     use utils, only : EChk, setPointers, setBufferSizes, terminate
-    use surfaceFamilies, only : walLFamilies
+    use surfaceFamilies, only : wallFamList
     use kdtree2_module, onlY : kdtree2_create, kdtree2destroy
     use oversetInitialization, only : initializeFringes, initializeOBlock, &
          initializeOFringes
@@ -182,7 +182,7 @@ contains
           ! Sizes
           call getOBlockBufferSizes (il, jl, kl, tmpInt2D(iDom, 1), tmpInt2D(iDom, 2))
           call getOFringeBufferSizes(il, jl, kl, tmpInt2D(iDom, 3), tmpInt2D(iDom, 4))
-          call getOSurfBufferSizes  (wallFamilies, il, jl, kl, tmpInt2D(iDom, 5), tmpInt2D(iDom, 6), .True.)
+          call getOSurfBufferSizes  (wallFamList, il, jl, kl, tmpInt2D(iDom, 5), tmpInt2D(iDom, 6), .True.)
        end do
 
        if (.not. firstTime) then 
@@ -332,7 +332,7 @@ contains
           nLocalWallFringe = 0
 
           allocate(clusterWalls(nClusters))
-          call buildClusterWalls(level, sps, .False., clusterWalls, wallFamilies, size(wallFamilies))
+          call buildClusterWalls(level, sps, .False., clusterWalls, wallFamList, size(wallFamList))
 
           ! Determine the cells that are near wall. We have a special routine for this. 
           call computeCellWallPoint(level, sps, clusterWalls)

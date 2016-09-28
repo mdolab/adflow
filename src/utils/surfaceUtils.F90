@@ -34,11 +34,10 @@ contains
     end do domains
   end subroutine getSurfaceSize
 
-  subroutine getSurfaceConnectivity(conn, ncell)
+  subroutine getSurfaceConnectivity(conn, ncell, famList, nFamList)
     ! Return the connectivity list for the each of the patches
     use constants
     use blockPointers, only : nDom, nBocos, BCData, BCFaceID, rightHanded
-    use surfaceFamilies, only : famGroups
     use utils, only : setPointers
     use sorting, only : bsearchIntegers
     implicit none
@@ -46,6 +45,7 @@ contains
     ! Input/Output
     integer(kind=intType), intent(in) :: ncell
     integer(kind=intType), intent(inout) :: conn(4*ncell)
+    integer(kind=intType), intent(in) :: nFamList, famList(nFamList)
 
     ! Working
     integer(kind=intType) :: nn, mm, cellCount, nodeCount, ni, nj, i, j
@@ -57,7 +57,7 @@ contains
     domains: do nn=1,nDom
        call setPointers(nn, 1_intType, 1_intType)
        bocos: do mm=1,nBocos
-          famInclude: if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then 
+          famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then 
 
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
@@ -136,11 +136,10 @@ contains
   end subroutine getSurfaceConnectivity
 
 
-  subroutine getSurfaceFamily(elemFam, ncell)
+  subroutine getSurfaceFamily(elemFam, ncell, famList)
 
     use constants
     use blockPointers, only : nDom, nBocos, BCData
-    use surfaceFamilies, only : famGroups
     use utils, only : setPointers
     use sorting, only : bsearchIntegers
     implicit none
@@ -148,6 +147,7 @@ contains
     ! Input/Output
     integer(kind=intType), intent(in) :: ncell
     integer(kind=intType), intent(inout) :: elemFam(nCell)
+    integer(kind=intType), intent(in) :: famList(:)
 
     ! Working
     integer(kind=intType) :: nn, mm, cellCount, nodeCount, ni, nj, i, j
@@ -159,7 +159,7 @@ contains
     domains: do nn=1,nDom
        call setPointers(nn, 1_intType, 1_intType)
        bocos: do mm=1,nBocos
-          famInclude: if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then 
+          famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then 
 
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
@@ -178,10 +178,9 @@ contains
     end do domains
   end subroutine getSurfaceFamily
 
-  subroutine getSurfacePoints(points, npts, sps_in)
+  subroutine getSurfacePoints(points, npts, sps_in, famList, nFamList)
     use constants
     use blockPointers, only : nDom, BCData, nBocos, x, BCFaceID, il, jl, kl
-    use surfaceFamilies, only : famGroups
     use utils, only : setPointers
     use sorting, only : bsearchIntegers
     implicit none
@@ -190,6 +189,7 @@ contains
     !
     integer(kind=intType), intent(in) :: npts,sps_in
     real(kind=realType), intent(inout) :: points(3,npts)
+    integer(kind=intType), intent(in) :: nFamList, famList(nFamList)
 
     integer(kind=intType) :: mm, nn, i, j, ii,sps
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
@@ -203,7 +203,7 @@ contains
        ! Loop over the number of boundary subfaces of this block.
        bocos: do mm=1,nBocos
 
-          famInclude: if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then 
+          famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then 
 
              ! NODE Based
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
@@ -295,53 +295,5 @@ contains
        end do bocos
     end do domains
   end subroutine mapVector
-  ! The only two groups we need to deal with in fortran directly is the
-  ! fullFamilyList and all walls. We write special routines for them. 
-  subroutine setFullFamilyList()
-
-    use surfaceFamilies
-    implicit none
-
-    integer(kind=intType) :: i
-    if (allocated(famGroups)) then 
-       deallocate(famGroups)
-    end if
-    allocate(famGroups(totalFamilies))
-    do i=1, totalFamilies
-       famGroups(i) = i
-    end do
-
-  end subroutine setFullFamilyList
-
-  subroutine setWallFamilyList()
-
-    use surfaceFamilies
-    implicit none
-    integer(kind=intType) :: i
-
-    if (allocated(famGroups)) then 
-       deallocate(famGroups)
-    end if
-    allocate(famGroups(totalWallFamilies))
-    do i=1, totalWallFamilies
-       famGroups(i) = wallFamilies(i)
-    end do
-
-  end subroutine setWallFamilyList
-
-  subroutine setFamilyInfo(famList, n)
-
-    use surfaceFamilies
-    implicit none
-    integer(kind=intType), intent(in) :: famList(n), n
-
-    if (allocated(famGroups)) then 
-       deallocate(famGroups)
-    end if
-    allocate(famGroups(n))
-    famGroups = famList
-
-  end subroutine setFamilyInfo
-
 
 end module surfaceUtils

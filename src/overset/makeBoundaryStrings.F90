@@ -11,7 +11,6 @@ contains
     use stringOps!, only : nullifyString, deallocateString, setStringPointers, &
     !         reduceGapString
     use utils, only : setPointers, EChk, myNorm2
-    use surfaceFamilies, only : walLFamilies
     use oversetPackingRoutines, only : getWallSize
     use sorting, only : bsearchIntegers
     implicit none

@@ -2,7 +2,7 @@ module surfaceIntegrations
 
 contains
 
-  subroutine integrateSurfaces(localValues)
+  subroutine integrateSurfaces(localValues, famList)
     ! This is a shell routine that calls the specific surface
     ! integration routines. Currently we have have the forceAndMoment
     ! routine as well as the flow properties routine. This routine
@@ -12,7 +12,6 @@ contains
     use constants
     use blockPointers, only : nBocos, BCData, BCType, sk, sj, si, x, rlv, &
          sfacei, sfacej, sfacek, gamma, rev, p, viscSubface
-    use surfaceFamilies, only : famGroups
     use utils, only : setBCPointers, isWallType
     use sorting, only : bsearchIntegers
     use costFunctions, only : nLocalValues
@@ -25,7 +24,7 @@ contains
 
     ! Input/output Variables
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
-
+    integer(kind=intType), dimension(:), intent(in) :: famList
     ! Working variables
     integer(kind=intType) :: mm
 
@@ -34,7 +33,7 @@ contains
        
        ! Determine if this boundary condition is to be incldued in the
        ! currently active group
-       famInclude: if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then
+       famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then
           
           ! Set a bunch of pointers depending on the face id to make
           ! a generic treatment possible. 
@@ -540,7 +539,7 @@ contains
 
 
 #ifndef USE_TAPENADE
-  subroutine computeAeroCoef(globalCFVals,sps)
+  subroutine computeAeroCoef(globalCFVals,sps, famList)
     !
     !      Compute the aerodynamic coefficients from the force and moment
     !      produced by the pressure and shear stresses on the body walls:
@@ -561,6 +560,7 @@ contains
     ! Input/Ouput Variables
     integer(kind=intType), intent(in) :: sps
     real(kind=realType), intent(out), dimension(nCostFunction)::globalCFVals
+    integer(kind=intType), dimension(:), intent(in) :: famList
 
     !      Local variables.
     integer(kind=intType) :: nn, ierr
@@ -572,7 +572,7 @@ contains
     localValues = zero
     domains: do nn=1,nDom
        call setPointers(nn,1_intType,sps)
-       call integrateSurfaces(localValues)
+       call integrateSurfaces(localValues, famList)
 
     end do domains
 
@@ -650,7 +650,7 @@ contains
 
   end subroutine computeAeroCoef
 
-  subroutine getSolution(sps)
+  subroutine getSolution(sps, famList)
     use constants
     use costFunctions
     use inputTSStabDeriv, only : TSSTability
@@ -663,6 +663,7 @@ contains
 
     ! Input Variables
     integer(kind=intType) :: sps
+    integer(kind=intType), dimension(:), intent(in) :: famList
 
     !  Local variables.
     real(kind=realType)   :: alpha, beta
@@ -678,7 +679,7 @@ contains
 
     bendingSum = 0.0
     do i =1,nTimeIntervalsSpectral
-       call computeAeroCoef(globalCFVals,i)
+       call computeAeroCoef(globalCFVals,i, famList)
 
        force(1, i) = globalCFVals(costFuncForceX)
        force(2, i) = globalCFVals(costFuncForceY)
@@ -698,7 +699,7 @@ contains
        bendingsum = bendingsum+bendingMoment
     end do
 
-    call computeAeroCoef(globalCFVals, sps)
+    call computeAeroCoef(globalCFVals, sps, famList)
     funcValues(costFuncBendingCoef)=bendingSum/nTimeIntervalsSpectral
 
     funcValues(costFuncLift) = globalCFVals(costFuncLift)

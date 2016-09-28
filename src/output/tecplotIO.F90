@@ -176,7 +176,8 @@ contains
 
   end subroutine addLiftDistribution
 
-  subroutine writeTecplot(sliceFile, writeSlices, liftFile, writeLift, surfFile, writeSurf)
+  subroutine writeTecplot(sliceFile, writeSlices, liftFile, writeLift, &
+       surfFile, writeSurf, famList, nFamList)
     !
     !       This is the master routine for writing tecplot data from adflow. 
     !       This routine will write the slice, lift and surface files      
@@ -193,10 +194,12 @@ contains
     ! Input Params
     character*(*), intent(in) :: sliceFile, liftFile, surfFile
     logical, intent(in) :: writeSlices, writeLift, writeSurf
+    integer(kind=intType), intent(in), dimension(nFamList) :: famList
+    integer(kind=intType), intent(in) :: nFamList
 
     ! Working
     integer(kind=intType) :: sps
-    real(kind=realType) :: time1
+
     do sps=1, nTimeIntervalsSpectral
        call computeSurfaceOutputNodalData(wallExchange(sps), .True.)
     end do
@@ -210,7 +213,7 @@ contains
     end if
 
     if (writeSurf) then 
-       call writeTecplotSurfaceFile(surfFile, .False.)
+       call writeTecplotSurfaceFile(surfFile, famList)
     end if
 
   end subroutine writeTecplot
@@ -230,7 +233,6 @@ contains
     use inputIteration
     use inputIO
     use surfaceFamilies
-    use surfaceUtils, only  : setWallFamilyList
     use utils, only : EChk
     implicit none
 
@@ -253,7 +255,7 @@ contains
           print "(a)", "#"
           print "(a)", "# Writing slices file(s) ..."
        endif
-       call setWallFamilyList
+
        do sps=1,nTimeIntervalsSpectral
 
           ! Gather the forces and nodes
@@ -622,7 +624,7 @@ contains
 
   end subroutine writeLiftDistributions
 
-  subroutine writeTecplotSurfaceFile(fileName, updateSurfaceData)
+  subroutine writeTecplotSurfaceFile(fileName, famList)
     use constants
     use communication
     use outputMod
@@ -633,11 +635,12 @@ contains
     use surfaceFamilies
     use utils, only : EChk
     use sorting, only : bsearchIntegers
+    use extraOutput, only : surfWriteBlank
     implicit none
 
     ! Input Params
     character*(*), intent(in) :: fileName
-    logical, intent(in) :: updateSurfaceData
+    integer(kind=intType), intent(in), dimension(:) :: famList
 
     ! Working parameters
     integer(kind=intType) :: i, j, iProc, sps, nSolVar, ierr, fileID, iSize, iFam
@@ -650,18 +653,13 @@ contains
     real(kind=realType), dimension(:, :), allocatable :: vars
     integer(kind=intType), dimension(:, :), allocatable :: conn
     integer(kind=intType), dimension(:), allocatable :: mask, elemFam
-
+    logical :: blankSave
     if(myID == 0 .and. printIterations) then
        print "(a)", "#"
        print "(a)", "# Writing tecplot surface file(s) ..."
     endif
 
     spectralLoop: do sps=1,nTimeIntervalsSpectral
-
-       ! Gather the forces and nodes
-       if (updateSurfaceData) then 
-          call computeSurfaceOutputNodalData(wallExchange(sps), .True.)
-       end if
 
        ! If it is time spectral we need to agument the filename
        if (equationMode == timeSpectral) then
@@ -673,7 +671,9 @@ contains
        end if
 
        fileID = 11
-       ! Open file on root proc:
+
+       ! Open file on root proc and write all surface variables we
+       ! which to write. 
        if (myid == 0) then 
           open(unit=fileID, file=trim(fname))
 
@@ -684,12 +684,19 @@ contains
           write(fileID,"(a)",advance="no") " ""CoordinateY"" "
           write(fileID,"(a)",advance="no") " ""CoordinateZ"" "
 
-          ! Number of surface variables
+          ! Number of surface variables. Note that we *explictly*
+          ! remove the potential for writing the surface blanks as
+          ! these are not necessary for the tecplot IO as we write the
+          ! zipper mesh directly. We must save and restore the
+          ! variable in case the CGNS otuput will write it. 
+          blankSave = surfWriteBlank
+          surfWriteBlank = .False.
           call numberOfSurfSolVariables(nSolVar)
           allocate(solNames(nSolVar))
           call surfSolNames(solNames)
+          surfWriteBlank = blankSave
 
-          ! Write the rest of the variables
+          ! Write the rest of the variable header
           do i=1,nSolVar
              write(fileID,"(a,a,a)",advance="no") """",trim(solNames(i)),""" "
           end do
@@ -698,211 +705,14 @@ contains
           deallocate(solNames)
        end if
 
+       ! Let all processor know the number of solution variables. 
        call mpi_bcast(nSolVar, 1, adflow_integer, 0, adflow_comm_world, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
-       ! ================================================================
-       !                        Wall Writing
-       ! ================================================================
-
-       ! Firstly we write all the walls. We have already computed the
-       ! data for those. For now, just dump all the nodal data on each
-       ! zone.  We should be smart and do the fancy variable sharing
-       ! stuff, but that can be done later. We also have to gather up
-       ! the type of each element corresponding to conn.
-
-       ! Gather up the number of nodes to be set to the root proc:
-       allocate(nodeSizes(nProc), nodeDisps(0:nProc))
-       nodeSizes = 0
-       nodeDisps = 0
-       call mpi_allgather(wallExchange(sps)%nNodes, 1, adflow_integer, nodeSizes, 1, adflow_integer, &
-            adflow_comm_world, ierr)
-       call EChk(ierr,__FILE__,__LINE__)
-       nodeDisps(0) = 0
-       do iProc=1, nProc
-          nodeDisps(iProc) = nodeDisps(iProc-1) + nodeSizes(iProc)
-       end do
-
-       iSize = 3 + 6 + nSolVar
-       if (myid == 0) then 
-          nNodes = sum(nodeSizes)
-          allocate(vars(nNodes, iSIze))
-       end if
-
-       ! Gather values to the root proc.
-       do i=1, iSize
-          call mpi_gatherv(wallExchange(sps)%nodalValues(:, i), wallExchange(sps)%nNodes, &
-               adflow_real, vars(:, i), nodeSizes, nodeDisps, adflow_real, 0, adflow_comm_world, ierr)
-          call EChk(ierr,__FILE__,__LINE__)
-       end do
-       ! Now gather up the connectivity
-       allocate(cellDisps(0:nProc), cellSizes(nProc))
-
-       call mpi_gather(size(wallExchange(sps)%conn, 2), 1, adflow_integer, &
-            cellSizes, 1, adflow_integer, 0, adflow_comm_world, ierr)
-       call EChk(ierr,__FILE__,__LINE__)
-
-       if (myid == 0) then 
-          cellDisps(0) = 0
-          do iProc=1, nProc
-             cellDisps(iProc) = cellDisps(iProc-1) + cellSizes(iProc)
-          end do
-          nCells = sum(cellSizes)
-          allocate(conn(4, nCells))
-          allocate(elemFam(nCells))
-       end if
-
-       ! We offset the conn array by nodeDisps(iProc) which
-       ! automagically adjusts the connectivity to account for the
-       ! number of nodes from different processors
-
-       call mpi_gatherv(wallExchange(sps)%conn+nodeDisps(myid), &
-            4*size(wallExchange(sps)%conn, 2), adflow_integer, conn, &
-            cellSizes*4, cellDisps*4, adflow_integer, 0, adflow_comm_world, ierr)
-       call EChk(ierr,__FILE__,__LINE__)
-
-       call mpi_gatherv(wallExchange(sps)%elemFam, &
-            size(wallExchange(sps)%elemFam), adflow_integer, elemFam, &
-            cellSizes, cellDisps, adflow_integer, 0, adflow_comm_world, ierr)
-       call EChk(ierr,__FILE__,__LINE__)
+       
 
 
-       if (myid == 0) then 
-          allocate(mask(nCells))
-          do iFam=1, totalWallFamilies
 
-             ! Create a temporary mask
-             mask = 0
-             do i=1, nCells
-                ! Check if this elem is to be included
-                if (elemFam(i) == wallFamilies(iFam)) then 
-                   mask(i) = 1
-                end if
-             end do
-
-             write (fileID,"(a,a,a)") "Zone T= """,famNames(wallFamilies(iFam)),""""
-             write (fileID,*) "Nodes = ", nNodes, " Elements= ",  sum(mask), " ZONETYPE=FEQUADRILATERAL"
-             write (fileID,*) "DATAPACKING=BLOCK"
-
-             ! Write the points (indices 1:3)
-             do j=1, 3
-                do i=1, nNOdes
-                   write(fileID,15) vars(i, j)
-                end do
-             end do
-
-             ! And the rest of the variables
-             do j=1,nSolVar
-                do i=1, nNodes
-                   write(fileID,15) vars(i, j+9)
-                end do
-             end do
-
-             ! And now the connectivity
-             do i=1, nCells
-                ! Check if this elem is to be included
-                if (mask(i) == 1) then 
-                   write(fileID, 16) conn(1, i), conn(2, i), conn(3,i), conn(4, i)
-                end if
-             end do
-          end do
-          deallocate(mask, elemFam, vars , conn)
-       end if
-
-       deallocate(cellSizes, cellDisps, nodeSizes, nodeDisps)
-
-       ! ================================================================
-       !                     All other surfaces
-       ! ================================================================
-
-       do iFam=1, totalFamilies
-
-          notAWall: if (.not. (bsearchIntegers(iFam, wallFamilies)>0)) then 
-             call computeSurfaceOutputNodalData(familyExchanges(iFam, sps), .False.)
-
-             ! Gather up the number of nodes to be set to the root proc:
-             allocate(nodeSizes(nProc), nodeDisps(0:nProc))
-             nodeSizes = 0
-             nodeDisps = 0
-             call mpi_allgather(familyExchanges(iFam, sps)%nNodes, 1, adflow_integer, nodeSizes, 1, adflow_integer, &
-                  adflow_comm_world, ierr)
-             call EChk(ierr,__FILE__,__LINE__)
-             nodeDisps(0) = 0
-             do iProc=1, nProc
-                nodeDisps(iProc) = nodeDisps(iProc-1) + nodeSizes(iProc)
-             end do
-
-             iSize = 3 + 6 + nSolVar
-             if (myid == 0) then 
-                nNodes = sum(nodeSizes)
-                allocate(vars(nNodes, iSIze))
-             end if
-
-             ! Gather values to the root proc.
-             do i=1, iSize
-                call mpi_gatherv(familyExchanges(iFam, sps)%nodalValues(:, i), familyExchanges(iFam, sps)%nNodes, &
-                     adflow_real, vars(:, i), nodeSizes, nodeDisps, adflow_real, 0, adflow_comm_world, ierr)
-                call EChk(ierr,__FILE__,__LINE__)
-             end do
-             ! Now gather up the connectivity
-             allocate(cellDisps(0:nProc), cellSizes(nProc))
-
-             call mpi_gather(size(familyExchanges(iFam, sps)%conn, 2), 1, adflow_integer, &
-                  cellSizes, 1, adflow_integer, 0, adflow_comm_world, ierr)
-             call EChk(ierr,__FILE__,__LINE__)
-
-             if (myid == 0) then 
-                cellDisps(0) = 0
-                do iProc=1, nProc
-                   cellDisps(iProc) = cellDisps(iProc-1) + cellSizes(iProc)
-                end do
-                nCells = sum(cellSizes)
-                allocate(conn(4, nCells))
-             end if
-
-             ! We offset the conn array by nodeDisps(iProc) which
-             ! automagically adjusts the connectivity to account for the
-             ! number of nodes from different processors
-
-             call mpi_gatherv(familyExchanges(iFam, sps)%conn+nodeDisps(myid), &
-                  4*size(familyExchanges(iFam, sps)%conn, 2), adflow_integer, conn, &
-                  cellSizes*4, cellDisps*4, adflow_integer, 0, adflow_comm_world, ierr)
-             call EChk(ierr,__FILE__,__LINE__)
-
-             ! Not quite finished yet since we will have gathered nodes from
-             ! multiple procs we have to adjust the connectivity
-
-             if (myid == 0) then 
-                write (fileID,"(a,a,a)") "Zone T= """,trim(famNames(iFam)),""""
-                write (fileID,*) "Nodes = ", nNodes, " Elements= ",  nCells, " ZONETYPE=FEQUADRILATERAL"
-                write (fileID,*) "DATAPACKING=BLOCK"
-
-                ! Write the points (indices 1:3)
-15              format (E14.6)
-
-                do j=1, 3
-                   do i=1, nNOdes
-                      write(fileID,15) vars(i, j)
-                   end do
-                end do
-
-                ! And the rest of the variables
-                do j=1,nSolVar
-                   do i=1, nNodes
-                      write(fileID,15) vars(i, j+9)
-                   end do
-                end do
-
-                ! And now the connectivity
-16              format ((I6) (I6) (I6) (I6))
-                do i=1, nCells
-                   write(fileID, 16) conn(1, i), conn(2, i), conn(3,i), conn(4, i)
-                end do
-                deallocate(conn, vars)
-             end if
-             deallocate(cellSizes, cellDisps, nodeSizes, nodeDisps)
-          end if notAWall
-       end do
 
        if (myid == 0) then 
           close(fileID)
@@ -971,10 +781,10 @@ contains
     use communication
     use inputPhysics
     use blockPointers
+    use surfaceFamilies, only : wallFamList
     use outputMod, only : storeSurfSolInBuffer, numberOfSurfSolVariables, &
          surfSolNames
-    use surfaceUtils, only : getSurfacePoints, setFamilyInfo
-    use surfaceFamilies, only: famGroups
+    use surfaceUtils, only : getSurfacePoints
     use utils, only : setPointers, EChk
     use sorting, only : bsearchIntegers
     implicit none
@@ -998,7 +808,6 @@ contains
     real(kind=realType), dimension(:, :), allocatable :: tmp
     logical :: viscousSubFace
 
-
     ! Determine the number of surface variables we have
     call numberOfSurfSolVariables(nSolVar)
     allocate(solNames(nSolVar))
@@ -1012,7 +821,7 @@ contains
     exch%nodalValues = zero
 
     ! Set the main family group to the family this exchange. 
-    call setFamilyInfo(exch%famGroups, exch%nFam)
+    !call setFamilyInfo(exch%famGroups, exch%nFam)
 
     ! The tractions have a sepcial routine so call that first before we
     ! mess with the family information. 
@@ -1031,7 +840,7 @@ contains
              iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
              jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
 
-             if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then 
+             if (bsearchIntegers(BCdata(mm)%famID, wallFamList) > 0) then 
                 do j=jBeg, jEnd
                    do i=iBeg, iEnd
                       ii = ii + 1
@@ -1051,7 +860,7 @@ contains
 
     ! Get the current set of surface points for the family we just set. 
     allocate(tmp(3, exch%nNodes))
-    call getSurfacePoints(tmp, exch%nNodes, exch%sps)
+    call getSurfacePoints(tmp, exch%nNodes, exch%sps, exch%famList, size(exch%famList))
 
     do i=1, exch%nNodes
        exch%nodalValues(i, 1:3) = tmp(1:3, i)
@@ -1071,7 +880,7 @@ contains
           jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
           ni = iEnd - iBeg + 1
           nj = jEnd - jBeg + 1
-          if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then 
+          if (bsearchIntegers(BCdata(mm)%famID, wallFamList) > 0) then 
              do j=0,nj-2
                 do i=0,ni-2
 
@@ -1130,7 +939,7 @@ contains
           call setPointers(nn, 1, exch%sps)
 
           bocoLoop: do mm=1, nBocos
-             if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then 
+             if (bsearchIntegers(BCdata(mm)%famID, wallFamList) > 0) then 
 
                 ! storeSurfSolInBuffer needs to know if the subface is
                 ! viscous or not. 

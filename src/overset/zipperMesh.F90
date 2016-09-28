@@ -37,7 +37,6 @@ contains
     use inputOverset, only : debugZipper
     use stringOps
     use gapBoundaries
-    use surfaceFamilies, only : wallFamilies, totalWallfamilies
     implicit none
 
     ! Input Parameters
@@ -45,7 +44,6 @@ contains
     integer(kind=intType), intent(in) :: nZipFam
 
     ! Local Variables
-    !integer(kind=intType) :: zipperFamList(totalwallfamilies)
     integer(kind=intType) :: i, j, k, ii, jj, kk, iStart, iSize, sps, level, iStr
     integer(kind=intType) :: iDom, jDom, nn, mm, n, ierr, iProc, iWork, nStrings, nodeFam(3)
     integer(kind=intType) :: nNodeTotal, nTriTotal, offset
@@ -509,8 +507,7 @@ contains
     use blockPointers, only : nDom, BCData, nBocos, BCType
     use communication, only : adflow_comm_world, myid
     use overset, onlY : clusterAreas, nClusters, clusters, cumDomProc
-    use surfaceFamilies, onlY : totalWallFamilies, wallFamilies
-    use surfaceUtils, only : getSurfaceSize, getSurfacePoints, setFamilyInfo
+    use surfaceUtils, only : getSurfaceSize, getSurfacePoints
     use utils, only : setPointers, EChk, setBCPointers
     use BCPointers, only : xx
     use sorting, only : bsearchIntegers

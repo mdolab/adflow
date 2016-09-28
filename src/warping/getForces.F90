@@ -4,10 +4,10 @@ subroutine getForces(forces, npts, sps)
   use blockPointers, only : BCData, nDom, nBocos, BCType
   use inputPhysics, only : forcesAsTractions
   use costFunctions, only : nLocalValues
-  use surfaceUtils, only : setFullFamilyList
   use utils, only : setPointers
   use sorting, only : bsearchIntegers
   use surfaceIntegrations, only : integrateSurfaces
+  use surfaceFamilies, only : fullfamList
   implicit none
 
   integer(kind=intType), intent(in) :: npts, sps
@@ -22,11 +22,11 @@ subroutine getForces(forces, npts, sps)
   real(kind=realType) :: timea,timeb,timec, timed
   ! Make sure *all* forces are computed. Sectioning will be done
   ! else-where.
-  call setFullFamilyList()
+
   domains: do nn=1,nDom
      call setPointers(nn, 1_intType, sps)
      localValues = zero
-     call integrateSurfaces(localValues)
+     call integrateSurfaces(localValues, fullFamList)
   end do domains
 
   if (forcesAsTractions) then 
@@ -820,7 +820,6 @@ subroutine getForces_d(forces, forcesd, npts, sps)
   use blockPointers, only : nDom, nBocos, BCData, BCType, nBocos, BCDatad
   use inputPhysics, only : forcesAsTractions
   use surfaceFamilies, only: wallExchange, familyExchange
-  use surfaceUtils, only : setFullFamilyList
   use utils, only : setPointers, setPointers_d, EChk
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -838,10 +837,6 @@ subroutine getForces_d(forces, forcesd, npts, sps)
   Vec nodeValLocald, nodeValGlobald, sumGlobald, tmp
 
   exch => wallExchange(sps)
-
-  ! Make sure *all* forces are computed. Sectioning will be done
-  ! else-where.
-  call setFullFamilyList()
 
   call VecDuplicate(exch%nodeValLocal, nodeValLocald, ierr)
   call EChk(ierr,__FILE__,__LINE__)
@@ -1177,7 +1172,6 @@ subroutine getHeatFlux(hflux, npts, sps)
   use constants
   use blockPointers, only : nDom, nBocos, BCType, BCData
   use surfaceFamilies, only : zeroCellVal, zeroNodeVal, fullExchange
-  use surfaceUtils, only : setFullFamilyList
   use utils, only : setPointers
   implicit none
   !
@@ -1189,10 +1183,6 @@ subroutine getHeatFlux(hflux, npts, sps)
   integer(kind=intType) :: mm, nn, i, j, ii
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
 
-  ! Make sure *all* heat fluxes are computed. Sectioning will be done
-  ! else-where.
-  call setFullFamilyList()
-  
   do nn=1, nDom
      call setPointers(nn, 1_intType, sps)
      call heatFluxes()
@@ -1316,7 +1306,6 @@ subroutine setTNSWall(tnsw, npts, sps)
   use constants
   use blockPointers, only : nDom, nBocos, BCData, BCType
   use flowVarRefState, only : TRef
-  use surfaceFamilies, only : famGroups
   use sorting, only : bsearchIntegers
   use utils, only : setPointers
   implicit none
@@ -1334,27 +1323,18 @@ subroutine setTNSWall(tnsw, npts, sps)
      call setPointers(nn, 1_intType, sps)
      ! Loop over the number of viscous boundary subfaces of this block.
      bocos: do mm=1,nBocos
-        famInclude: if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then
+        isoWall: if (BCType(mm) == NSWallIsoThermal) then 
            jBeg = BCdata(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
            iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd
-
-           ! Only set if it is an *actual* isothermal wall
-           isoWall: if (BCType(mm) == NSWallIsoThermal) then 
-              do j=jBeg,jEnd
-                 do i=iBeg, iEnd
-                    ii = ii + 1
-                    BCData(mm)%TNS_Wall(i,j) = tnsw(ii)/TRef
-                 end do
+           do j=jBeg,jEnd
+              do i=iBeg, iEnd
+                 ii = ii + 1
+                 BCData(mm)%TNS_Wall(i,j) = tnsw(ii)/TRef
               end do
-           else
-              ! Included in the temp array, but not an actual
-              ! isothermalwall so just increment the counter.
-              ii =ii + (jEnd-jBeg+1)*(iEnd-iBeg+1)
-           end if isoWall
-        end if famInclude
+           end do
+        end if isoWall
      end do bocos
   end do domains
-
   ! TODO: The temperature must be interpolated to the coarse meshes.
   !
   ! The following lines are extracted from BCData/setBCDataCoarseGrid
@@ -1410,3 +1390,37 @@ subroutine setTNSWall(tnsw, npts, sps)
   ! enddo coarseLevelLoop
 
 end subroutine setTNSWall
+
+subroutine getTNSWall(tnsw, npts, sps)
+
+  use constants
+  use blockPointers, only : nDom, nBocos, BCData, BCType
+  use flowVarRefState, only : TRef
+  use sorting, only : bsearchIntegers
+  use utils, only : setPointers
+  implicit none
+
+  ! Input Variables
+  integer(kind=intType), intent(in) :: npts, sps
+  real(kind=realType), intent(out) :: tnsw(npts)
+
+  ! Local Variables
+  integer(kind=intType) :: mm, nn, i, j, ii
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
+
+  ii = 0 
+  domains: do nn=1,nDom
+     call setPointers(nn, 1_intType, sps)
+     ! Loop over the number of viscous boundary subfaces of this block.
+     bocos: do mm=1,nBocos
+        isoWall: if (BCType(mm) == NSWallIsoThermal) then 
+           do j=jBeg,jEnd
+              do i=iBeg, iEnd
+                 ii = ii + 1
+                 tnsw(ii) = BCData(mm)%TNS_Wall(i,j)*Tref
+              end do
+           end do
+        end if isoWall
+     end do bocos
+  end do domains
+end subroutine getTNSWall
