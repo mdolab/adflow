@@ -34,6 +34,7 @@ contains
     use communication
     use adjointVars
     use turbMod
+    use surfaceFamilies, only : fullFamList
     use oversetUtilities, only : fracToWeights
     use utils, only : EChk, setPointers, getDirAngle, setPointers_d
     use haloExchange, only : whalo2
@@ -534,7 +535,7 @@ contains
     ! We must run the residual computation to make sure that all
     ! intermediate variables are up to date. We can just call master
     ! for this. No need to recompute spatial terms.
-    call master(.false.)
+    call master(.false., fullFamList)
 
   contains
 

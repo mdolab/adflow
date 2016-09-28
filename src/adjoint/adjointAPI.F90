@@ -3,7 +3,7 @@ module adjointAPI
 contains
 #ifndef USE_COMPLEX
   subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useState, dwdot, funcsDot, &
-       fDot, spatialSize, extraSize, stateSize, costSize, fSize, nTime)
+       fDot, spatialSize, extraSize, stateSize, costSize, fSize, nTime, famList, nFamList)
 
     ! This is the main matrix-free forward mode computation
     use constants
@@ -26,6 +26,7 @@ contains
     real(kind=realType), dimension(extraSize), intent(in) :: extradot
     real(kind=realType), dimension(stateSize), intent(in) :: wdot
     logical, intent(in) :: useSpatial, useState
+    integer(kind=intType), intent(in) :: famList(nFamlist), nFamList
 
     ! Ouput Variables
     real(kind=realType), dimension(stateSize), intent(out) :: dwDot
@@ -72,7 +73,7 @@ contains
     rgasdimd = zero
 
     ! Run the super-dee-duper master forward rotuine
-    call master_d(wDot, xVDot, fDot, dwDot)
+    call master_d(wDot, xVDot, fDot, dwDot, famList)
 
     ! Copy over the derivative of the function values
     funcsDot = funcValuesd
@@ -80,7 +81,7 @@ contains
   end subroutine computeMatrixFreeProductFwd
 
   subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useState, xvbar, &
-       extrabar, wbar, spatialSize, extraSize, stateSize, costSize, fSize, nTime)
+       extrabar, wbar, spatialSize, extraSize, stateSize, costSize, fSize, nTime, famList, nFamList)
     use constants
     use costFunctions, only : funcValuesd
     use communication, only : adflow_comm_world
@@ -103,6 +104,7 @@ contains
     real(kind=realType), dimension(costSize), intent(in) :: funcsbar
     real(kind=realType), dimension(3, fSize, nTime), intent(in) :: fBar
     logical, intent(in) :: useSpatial, useState
+    integer(kind=intType), intent(in) :: famList(nFamlist), nFamList
 
     ! Ouput Variables
     real(kind=realType), dimension(stateSize), intent(out) :: wbar
@@ -147,7 +149,7 @@ contains
     ! Set the function seeds
     funcValuesd= funcsBar
 
-    call master_b(wbar, xvbar, extraBar, fBar, dwbar, nstate)
+    call master_b(wbar, xvbar, extraBar, fBar, dwbar, nstate, famList)
 
     ! Reset the correct equation parameters if we were useing the frozen
     ! Turbulent 
@@ -157,194 +159,7 @@ contains
 
   end subroutine computeMatrixFreeProductBwd
  
-  ! subroutine computeMatrixFreeProductBwdFast2(dwbar, wbar, stateSize)
-  !   ! This is the "Fast" ie. State variable only version of the reverse
-  !   ! mode computation. It is intended to compute dRdw^T product
-  !   ! ONLY. The main purpose is for fast matrix-vector products for the
-  !   ! actual adjoint solve. 
-  !   use block, only : flowDomsd
-  !   use blockPointers
-  !   use inputDiscretization
-  !   use inputTimeSpectral 
-  !   use inputPhysics
-  !   use flowVarRefState
-  !   use inputAdjoint       
-  !   use iteration
-  !   use inputIteration
-  !   use sa_fast_b, only : saresscale_fast_b, saviscous_fast_b, &
-  !        sasource_fast_b, cb3Inv, cv13, cw36, kar2inv, qq
-  !   use adjointvars
-  !   use communication, only : adflow_comm_world
-  !   use paramTurb
-  !   use utils, only : terminate, setPointers_d
-  !   use haloExchange, only : whalo2_b
-  !   use flowutils_fast_b
-  !   use turbutils_fast_b
-  !   use turbbcroutines_b
-  !   use turbutils_b, only : saeddyviscosity_b
-  !   use fluxes_fast_b
-  !   use solverutils_fast_b
-  !   use flowutils_fast_b, only : computelamviscosity_fast_b, allnodalgradients_fast_b
-  !   implicit none
-
-  !   ! Input Variables
-  !   integer(kind=intType), intent(in) :: stateSize
-  !   real(kind=realType), dimension(stateSize), intent(in) :: dwbar
-
-  !   ! Ouput Variables
-  !   real(kind=realType), dimension(stateSize), intent(out) :: wbar
-
-  !   ! Working variables
-  !   integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
-  !   integer(kind=intType) :: nState, level
-  !   logical :: resetToRans
-  !   real(kind=realType) :: ovol, timea, timeb, totaltime
-
-  !   ! Setup number of state variable based on turbulence assumption
-  !   if ( frozenTurbulence ) then
-  !      nState = nwf
-  !   else
-  !      nState = nw
-  !   endif
-  !   ! Assembling matrix on coarser levels is not entirely implemented yet. 
-  !   level = 1
-  !   currentLevel = level
-  !   groundLevel = level
-
-  !   ! Determine if we want to use frozenTurbulent Adjoint
-  !   resetToRANS = .False. 
-  !   if (frozenTurbulence .and. equations == RANSEquations) then
-  !      equations = NSEquations 
-  !      resetToRANS = .True.
-  !   end if
-
-  !   ! Note: The calling routine is responsible for ensuring that the
-  !   ! derivative values are allocated AND ZEROED! This routine makes use
-  !   ! of the fact that only wbar needs to be zeroed since all other
-  !   ! required seeds are zeroed in the individual fast routines. This is
-  !   ! slightly unsafe, but it necessary for speed. 
-  !   do nn=1,nDom
-  !      do sps=1,nTimeIntervalsSpectral
-  !         flowDomsd(nn, level, sps)%w = zero
-  !      end do
-  !   end do
-
-  !   ii = 0
-
-  !   do nn=1,nDom
-  !      do sps=1,nTimeIntervalsSpectral
-  !         ! Set pointers and derivative pointers
-  !         call setPointers_d(nn, level, sps)
-  !         do k=2,kl
-  !            do j=2,jl
-  !               do i=2,il
-  !                  ovol = one/vol(i,j,k)
-  !                  do l=1,nwf
-  !                     dwd(i,j,k,l) = dwbar(ii+ l)*ovol
-  !                     fwd(i,j,k,l) = dwd(i,j,k,l)
-  !                  end do
-  !                  do l=nt1,nState
-  !                     dwd(i,j,k,l) = dwbar(ii+ l)*ovol*turbresscale(l-nt1+1)
-  !                     fwd(i,j,k,l) = dwd(i,j,k,l)
-  !                  end do
-  !                  ii = ii + nState
-  !               end do
-  !            end do
-  !         end do
-
-  !         call pushreal8array(radk, size(radk, 1)*size(radk, 2)*size(radk, 3))
-  !         call pushreal8array(radj, size(radj, 1)*size(radj, 2)*size(radj, 3))
-  !         call pushreal8array(radi, size(radi, 1)*size(radi, 2)*size(radi, 3))
-
-  !         if (viscous) then 
-  !            call viscousFlux_fast_b
-  !            call allnodalgradients_fast_b
-  !            call computespeedofsoundsquared_fast_b
-  !         end if
-
-  !         select case (spaceDiscr)
-  !         case(dissScalar) 
-  !            call inviscidDissFluxScalar_fast_b
-  !         case(dissMatrix)
-  !            call inviscidDissFluxMatrix_fast_b
-  !         end select
-
-  !         call inviscidcentralflux_fast_b
-
-  !         if (equations == RANSEquations) then 
-  !            select case(turbModel)
-  !            case (spalartAllmaras)
-  !               cv13    = rsaCv1**3
-  !               kar2Inv = one/(rsaK**2)
-  !               cw36    = rsaCw3**6
-  !               cb3Inv  = one/rsaCb3
-  !               call saresscale_fast_b()
-  !               call saviscous_fast_b()
-  !               call turbadvection_fast_b(1_inttype, 1_inttype, itu1-1, qq)
-  !               call sasource_fast_b()
-  !            case default
-  !               call terminate("matrixFreeRoutines", &
-  !                    "Only SA turbulence adjoint implemented")
-  !            end select
-  !            ! And the turbulence BCs
-  !            call applyallturbbcthisblock_b(.true.)
-  !            call bcturbtreatment_b()
-  !         end if
-
-  !         call timestep_block_fast_b(.False.)
-  !         call applyAllBC_block_fast_b(.True.)
-
-  !         call popreal8array(radi, size(radi, 1)*size(radi, 2)*size(radi, 3))
-  !         call popreal8array(radj, size(radj, 1)*size(radj, 2)*size(radj, 3))
-  !         call popreal8array(radk, size(radk, 1)*size(radk, 2)*size(radk, 3))
-
-  !      end do
-  !   end do
-
-  !   ! Communicate all the derivative values in reverse
-  !   call whalo2_b(1, 1, nw, .True., .True., .True.)
-
-  !   ii = 0
-  !   do nn=1,nDom
-  !      do sps=1,nTimeIntervalsSpectral
-  !         call setPointers_d(nn, level, sps)
-
-  !         if (equations == RANSEquations) then 
-  !            select case(turbModel)
-  !            case (spalartAllmaras)
-  !               call saeddyviscosity_b(0, ib, 0, jb, 0, kb)
-  !            end select
-  !         end if
-
-  !         if (viscous) then 
-  !            call computelamviscosity_fast_b(.True.)
-  !         end if
-
-  !         call computepressuresimple_fast_b(.true.)
-
-  !         ! We can put stuff directly into wbar with no assembly; the
-  !         ! whalo_b already takes care of it. 
-  !         do k=2, kl
-  !            do j=2,jl
-  !               do i=2,il
-  !                  do l=1,nState
-  !                     ii =ii + 1
-  !                     wbar(ii) = flowdomsd(nn, level, sps)%w(i,j,k,l)
-  !                  end do
-  !               end do
-  !            end do
-  !         end do
-  !      end do
-  !   end do
-
-  !   ! Reset the correct equation parameters if we are using the frozen
-  !   ! Turbulent
-  !   if (resetToRANS) then
-  !      equations = RANSEquations
-  !   end if
-  ! end subroutine computeMatrixFreeProductBwdFast2
-
-subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
+  subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
     ! This is the "Fast" ie. State variable only version of the reverse
     ! mode computation. It is intended to compute dRdw^T product
     ! ONLY. The main purpose is for fast matrix-vector products for the
@@ -1179,9 +994,9 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
     use inputAdjoint       
     use ADjointVars
     use inputTimeSpectral  
-    use surfaceFamilies, only: wallFamilies, totalWallFamilies
+    use surfaceFamilies, only : fullFamList, wallFamList
     use utils, only : EChk
-    use surfaceUtils, only : getSurfaceSize, setFulLFamilyList
+    use surfaceUtils, only : getSurfaceSize
     use costFunctions
     implicit none
 #define PETSC_AVOID_MPIF_H
@@ -1220,8 +1035,7 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
     stateSize   = size(wd_pointer)
     costSize    = nCostFunction
 
-    call getSurfaceSize(fSize, fSizeCell, wallFamilies, totalWallFamilies)
-    call setFullFamilyList()
+    call getSurfaceSize(fSize, fSizeCell, wallFamList, size(wallFamList))
     allocate(xvdot(spatialSize))
     allocate(fdot(3, fSize, nTimeIntervalsSpectral))
 
@@ -1230,7 +1044,8 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
     fdot = zero
     call computeMatrixFreeProductFwd(xvdot, extradot, wd_pointer, &
          useSpatial, useState, dwd_pointer, funcsDot, fDot, &
-         spatialSize, extraSize, stateSize, costSize, fSize, nTimeIntervalsSpectral)
+         spatialSize, extraSize, stateSize, costSize, fSize, nTimeIntervalsSpectral, &
+         fullFamList, size(fullFamList))
     deallocate(xvdot)
 
     call VecRestoreArrayReadF90(vecX, wd_pointer, ierr)

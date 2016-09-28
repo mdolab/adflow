@@ -1172,9 +1172,12 @@ contains
 
           call writeSol()
 
-          ! Also write potential tecplot files
-          call writeTecplot(forcedSliceFile, .True., forcedLiftFile, .True., "", .False.)
-
+          ! Also write potential tecplot files. Note that we are not
+          ! writing the tecplot surface file so pass in an empty file
+          ! name and a nonsense family list. 
+          call writeTecplot(forcedSliceFile, .True., forcedLiftFile, .True., &
+               "", .False., [0], 1)
+          
           ! Reset the signal 
           localSignal = noSignal
        end if
@@ -1225,6 +1228,7 @@ contains
     use utils, only : setPointers, myisnan, returnFail, maxHDiffMach, maxEddyv, &
          sumResiduals, sumAllResiduals
     use surfaceIntegrations, only : integrateSurfaces, wallIntegrationsZipper
+    use surfaceFamilies, only : fullFamLIst
     use costFunctions, only : nLocalValues, iFp, iFv, iMv, iMp, iYplus
     implicit none
     !
@@ -1278,7 +1282,7 @@ contains
           ! we zero localValues before each call becuase we are
           ! summing into momLocal. 
           localvalues = zero
-          call integrateSurfaces(localValues)
+          call integrateSurfaces(localValues, fullFamList)
 
           ! Convert to coefficients for monitoring:
           fact = two/(gammaInf*MachCoef*MachCoef &

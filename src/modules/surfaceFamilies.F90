@@ -15,7 +15,7 @@ module surfaceFamilies
      VecScatter scatter
      logical :: allocated =.False.
 
-     integer(kind=intType), dimension(:) , allocatable :: famGroups
+     integer(kind=intType), dimension(:) , allocatable :: famList
      integer(kind=intType) :: nFam
      integer(Kind=intType) :: sps
      ! Data required for exchange
@@ -31,7 +31,7 @@ module surfaceFamilies
 
 
   ! The list of family exchanges for each individual family
-  type(familyExchange) , dimension(:, :), allocatable, target :: familyExchanges
+  !type(familyExchange) , dimension(:, :), allocatable, target :: familyExchanges
 
   ! All the walls get their own exchange that is reduced over all
   ! walls. This is used for the lift distribution/slice data to make
@@ -40,10 +40,19 @@ module surfaceFamilies
   type(familyExchange), dimension(:), allocatable, target :: fullExchange
 
 #endif
-  integer(kind=intType), dimension(:), allocatable :: famGroups
+  ! The full list of the family names 
   character(len=maxCGNSNameLen), dimension(:), allocatable :: famNames
-  integer(kind=intType), dimension(:), allocatable :: wallFamilies, famIsWall
-  integer(kind=intType) :: totalFamilies, totalWallFamilies
+  
+  ! Integer flag of if a fam is a wall:
+  integer(kind=intType), dimension(:), allocatable :: famIsWall
+
+  ! List of all families
+  integer(kind=intType), dimension(:), allocatable :: fullFamList
+
+  ! Special list of all wall families
+  integer(kind=intType), dimension(:), allocatable :: wallFamList
+
+
   real(kind=realType), dimension(:, :), allocatable, target :: zeroCellVal
   real(kind=realType), dimension(:, :), allocatable, target :: oneCellVal
   real(kind=realType), dimension(:, :), allocatable, target :: zeroNodeVal
@@ -76,9 +85,6 @@ module surfaceFamilies
         
         if (allocated(exch%fc)) & 
              deallocate(exch%fc)
-        
-        if (allocated(famGroups)) &
-             deallocate(famGroups)
         
         exch%allocated = .False.
         

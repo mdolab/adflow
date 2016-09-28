@@ -4385,18 +4385,16 @@ module utils
          famIDsSliding)
     deallocate(sections)
 
-    ! Destroy the traction force stuff
-    do j=1, size(familyExchanges, 2)
-       do i=1, size(familyExchanges, 1)
-          call destroyFamilyExchange(familyExchanges(i, j))
-       end do
-    end do
-    deallocate(familyExchanges)
-
+ 
     do i=1, size(wallExchange)
        call destroyFamilyExchange(wallExchange(i))
     end do
     deallocate(wallExchange)
+
+   do i=1, size(fullExchange)
+       call destroyFamilyExchange(fullExchange(i))
+    end do
+    deallocate(fullExchange)
 
     ! From Communication Stuff
     do l=1,nLevels

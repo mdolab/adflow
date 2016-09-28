@@ -1,6 +1,6 @@
 module masterRoutines
 contains
-  subroutine master(useSpatial, forces)
+  subroutine master(useSpatial, famList, forces)
 
     use constants
     use communication, only : adflow_comm_world
@@ -37,6 +37,7 @@ contains
 
     ! Input Arguments:
     logical, intent(in) :: useSpatial
+    integer(kind=intType), dimension(:), intent(in) :: famList
 
     ! Output Variables
     real(kind=realType), intent(out), optional, dimension(:, :, :) :: forces
@@ -162,7 +163,7 @@ contains
           call resScale
 
           ! Now compute the forces and moments for this block. 
-          call integrateSurfaces(localval(:, sps))
+          call integrateSurfaces(localval(:, sps), famList)
 
        end do
        
@@ -184,7 +185,7 @@ contains
 
   end subroutine master
 #ifndef USE_COMPLEX
-  subroutine master_d(wdot, xdot, forcesDot, dwDot)
+  subroutine master_d(wdot, xdot, forcesDot, dwDot, famList)
     use constants
     use costFunctions
     use diffsizes, only :  ISIZE1OFDrfbcdata, ISIZE1OFDrfviscsubface
@@ -217,7 +218,6 @@ contains
     use turbbcroutines_d, only : applyAllTurbBCthisblock_d,  bcTurbTreatment_d
     use initializeflow_d, only : referenceState_d
     use surfaceIntegrations_d, only : wallIntegrationFace_d
-    use surfaceFamilies, only : famGroups
     use sorting, only : bsearchIntegers
     use adjointExtra_d, only : xhalo_block_d, volume_block_d, metric_BLock_d, boundarynormals_d
     use adjointextra_d, only : getcostfunctions_D, resscale_D, sumdwandfw_d
@@ -229,6 +229,7 @@ contains
 
     ! Input Arguments:
     real(kind=realType), intent(in), dimension(:) :: wDot, xDot
+    integer(kind=intType), dimension(:), intent(in) :: famList
 
     ! Output variables:
     real(kind=realType), intent(out), dimension(:) :: dwDot
@@ -424,7 +425,7 @@ contains
           do mm=1, nBocos
              ! Determine if this boundary condition is to be incldued in the
              ! currently active group
-             famInclude: if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then 
+             famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then 
 
                 ! Set a bunch of pointers depending on the face id to make
                 ! a generic treatment possible. 
@@ -475,7 +476,7 @@ contains
     deallocate(forces)
   end subroutine master_d
 
-  subroutine master_b(wbar, xbar, extraBar, forcesBar, dwBar, nState)
+  subroutine master_b(wbar, xbar, extraBar, forcesBar, dwBar, nState, famList)
 
     ! This is the main reverse mode differentiaion of master. It
     ! compute the reverse mode sensitivity of *all* outputs with
@@ -504,7 +505,6 @@ contains
     use haloExchange, only : whalo2_b, exchangeCoor_b, exchangeCoor, whalo2
     use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
     use surfaceIntegrations, only : integrateSurfaces
-    use surfaceFamilies, only : famGroups
     use sorting, only : bsearchIntegers
     use adjointExtra, only : getCostFunctions
     use flowUtils, only : fixAllNodalGradientsFromAD
@@ -532,6 +532,7 @@ contains
     real(kind=realType), intent(in), dimension(:) :: dwBar
     real(kind=realType), intent(in), dimension(:, :, :) :: forcesBar
     integer(kind=intType), intent(in) :: nState
+    integer(kind=intType), dimension(:), intent(in) :: famList
 
     ! Input Arguments:
     real(kind=realType), intent(out), dimension(:) :: wBar, xBar, extraBar
@@ -585,7 +586,7 @@ contains
     do nn=1, nDom
        do sps=1, nTimeIntervalsSpectral
           call setPointers_d(nn, 1, sps)
-          call integrateSurfaces(localval(:, sps))
+          call integrateSurfaces(localval(:, sps), famList)
        end do
     end do
     call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
@@ -627,7 +628,7 @@ contains
           do mm=1, nBocos
              ! Determine if this boundary condition is to be incldued in the
              ! currently active group
-             famInclude: if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then
+             famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then
 
                 ! Set a bunch of pointers depending on the face id to make
                 ! a generic treatment possible. 

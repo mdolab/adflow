@@ -10,7 +10,7 @@ module surfaceintegrations_b
 ! ----------------------------------------------------------------------
 
 contains
-  subroutine integratesurfaces(localvalues)
+  subroutine integratesurfaces(localvalues, famlist)
 ! this is a shell routine that calls the specific surface
 ! integration routines. currently we have have the forceandmoment
 ! routine as well as the flow properties routine. this routine
@@ -19,7 +19,6 @@ contains
     use constants
     use blockpointers, only : nbocos, bcdata, bctype, sk, sj, si, x, &
 &   rlv, sfacei, sfacej, sfacek, gamma, rev, p, viscsubface
-    use surfacefamilies, only : famgroups
     use utils_b, only : setbcpointers, iswalltype
     use sorting, only : bsearchintegers
     use costfunctions, only : nlocalvalues
@@ -31,13 +30,14 @@ contains
 ! input/output variables
     real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
 &   localvalues
+    integer(kind=inttype), dimension(:), intent(in) :: famlist
 ! working variables
     integer(kind=inttype) :: mm
 ! loop over all possible boundary conditions
 bocos:do mm=1,nbocos
 ! determine if this boundary condition is to be incldued in the
 ! currently active group
-      if (bsearchintegers(bcdata(mm)%famid, famgroups) .gt. 0) then
+      if (bsearchintegers(bcdata(mm)%famid, famlist) .gt. 0) then
 ! set a bunch of pointers depending on the face id to make
 ! a generic treatment possible. 
         call setbcpointers(mm, .true.)
@@ -65,13 +65,14 @@ bocos:do mm=1,nbocos
     integer(kind=inttype), intent(in) :: mm
 ! local variables
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps
-    integer(kind=inttype) :: i, j, ii
+    integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: fact, xc, yc, zc, cellarea, mx, my, mz
     real(kind=realtype) :: sf, vnm, vxm, vym, vzm, mredim, fx, fy, fz
     real(kind=realtype) :: pm, ptot, ttot, rhom, massflowratelocal
     real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint
     intrinsic sqrt
     intrinsic mod
+    intrinsic max
     massflowrate = zero
     mass_ptot = zero
     mass_ttot = zero
@@ -129,15 +130,18 @@ bocos:do mm=1,nbocos
 &       2)) - refpoint(2)
       zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
 &       3)) - refpoint(3)
-! compute the force components.
-! blk = max(bcdata(mm)%iblank(i,j), 0) ! iblank forces for overset stuff
+      if (bcdata(mm)%iblank(i, j) .lt. 0) then
+        blk = 0
+      else
+        blk = bcdata(mm)%iblank(i, j)
+      end if
       fx = pm*ssi(i, j, 1)
       fy = pm*ssi(i, j, 2)
       fz = pm*ssi(i, j, 3)
 ! pressure forces
-! fx = fx*blk
-! fy = fy*blk
-! fz = fz*blk
+      fx = fx*blk
+      fy = fy*blk
+      fz = fz*blk
 ! update the pressure force and moment coefficients.
       fp(1) = fp(1) + fx*fact
       fp(2) = fp(2) + fy*fact
@@ -154,9 +158,9 @@ bocos:do mm=1,nbocos
       fx = massflowratelocal*bcdata(mm)%norm(i, j, 1)*vxm/timeref
       fy = massflowratelocal*bcdata(mm)%norm(i, j, 2)*vym/timeref
       fz = massflowratelocal*bcdata(mm)%norm(i, j, 3)*vzm/timeref
-! fx = fx*blk
-! fy = fy*blk
-! fz = fz*block
+      fx = fx*blk
+      fy = fy*blk
+      fz = fz*blk
 ! note: momentum forces have opposite sign to pressure forces
       fmom(1) = fmom(1) - fx*fact
       fmom(2) = fmom(2) - fy*fact
