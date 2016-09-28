@@ -26,3 +26,6 @@ doc/*
 src/build/adflow_project.dep
 src/build/libadflow-f2pywrappers2.f90
 src/build/libadflowmodule.c
+python/reg_tests/adflow_test*_reg
+python/reg_tests/adflow_reg.ref
+python/reg_tests/adflow_reg
