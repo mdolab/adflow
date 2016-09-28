@@ -262,13 +262,12 @@ contains
     end do
   end subroutine getStatePerturbation
 
-  subroutine getSurfacePerturbation(xRand, nRand, randSurface, nRandSurface)
+  subroutine getSurfacePerturbation(xRand, nRand, randSurface, nRandSurface, famList, nFamList)
 
     use constants
     use blockPointers, only : nDom, BCData, nBocos, BCFaceID, il, jl ,kl
     use communication, only : adflow_comm_world, myid
     use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use surfaceFamilies, only : famGroups
     use utils, only : setPointers
     use sorting, only : bsearchIntegers
     implicit none
@@ -276,7 +275,7 @@ contains
     ! Input Parameters
     real(kind=realType), intent(in), dimension(nRand) :: xRand
     integer(kind=intType), intent(in) :: nRand, nRandSurface
-
+    integer(kind=intType), intent(in) :: famList(nFamList), nFamList
     ! Ouput Parameters
     real(kind=realType), intent(inout), dimension(3*nRandSurface) :: randSurface
 
@@ -297,7 +296,7 @@ contains
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
 
-             famInclude: if (bsearchIntegers(BCdata(mm)%famID, famGroups) > 0) then 
+             famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then 
 
                 do j=jBeg, jEnd ! This is a node loop
                    do i=iBeg, iEnd ! This is a node loop

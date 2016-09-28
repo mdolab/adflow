@@ -1291,20 +1291,19 @@ contains
     use cgnsGrid, onlY : cgnsDoms
     use communication, only : myid, adflow_comm_world
     use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use surfaceFamilies, only : wallExchange, familyExchanges, famNames, &
-         famGroups, wallFamilies, famIsWall, totalFamilies, totalWallFamilies, &
-         zeroCellVal, zeroNodeVal, oneCellVal, fullExchange
+    use surfaceFamilies, only : wallExchange, famNames, fullFamList, wallFamList, &
+         famIsWall, zeroCellVal, zeroNodeVal, oneCellVal, fullExchange
     use utils, only : setPointers, EChk, pointReduce, terminate, convertToLowerCase
     use sorting, only : qsortStrings, bsearchStrings
     implicit none
 
     integer :: ierr
     integer(kind=intType) :: nLevels, level, nn, mm, nsMin, nsMax, i, j, k, nFam, famID, cgb, iFam
-    integer(kind=intType) :: sps, currentFamily, curFam(1), isizemax, jsizemax
+    integer(kind=intType) :: sps, isizemax, jsizemax, totalFamilies, totalWallFamilies
     character(maxCGNSNameLen), dimension(25) :: defaultFamName 
     character(maxCGNSNameLen) :: curStr, family
-    character(maxCGNSNameLen), dimension(:), allocatable :: fulLFamList, uniqueFamList
-    integer(kind=intType), dimension(:), allocatable :: localFlag, temp
+    character(maxCGNSNameLen), dimension(:), allocatable :: uniqueFamListNames, fullFamListNames
+    integer(kind=intType), dimension(:), allocatable :: localFlag
 
     ! Process out the family information. The goal here is to
     ! assign a unique integer to each family in each boundary
@@ -1359,48 +1358,48 @@ contains
     end do
 
     ! Allocate space for the full family list
-    allocate(fullFamList(nFam))
+    allocate(fullFamListNames(nFam))
     nFam = 0
     do i=1, size(cgnsDoms)
        do j=1, size(cgnsDoms(i)%bocoInfo)
           if (cgnsDoms(i)%bocoInfo(j)%actualFace) then 
              nFam = nFam + 1
-             fullFamList(nfam) = cgnsDoms(i)%bocoInfo(j)%wallBCName
-             call convertToLowerCase(fullFamList(nFam))
+             fullFamListNames(nfam) = cgnsDoms(i)%bocoInfo(j)%wallBCName
+             call convertToLowerCase(fullFamListNames(nFam))
           end if
        end do
     end do
 
     ! Now sort the family names:
-    call qsortStrings(fullFamList, nFam)
+    call qsortStrings(fullFamListNames, nFam)
 
     ! Next we need to generate a unique set of names. 
-    allocate(uniqueFamList(nFam))
+    allocate(uniqueFamListNames(nFam))
 
-    curStr = fullFamList(1)
-    uniqueFamList(1) = curStr
+    curStr = fullFamListNames(1)
+    uniqueFamListNames(1) = curStr
     j = 1
     i = 1
     do while(i < nFam)
 
        i = i + 1
-       if (fullFamList(i) == curStr) then 
+       if (fullFamListNames(i) == curStr) then 
           ! Same str, do nothing. 
        else
           j = j + 1
-          curStr = fullFamList(i)
-          uniqueFamList(j) = curStr
+          curStr = fullFamListNames(i)
+          uniqueFamListNames(j) = curStr
        end if
     end do
 
 
     totalFamilies = j
-    ! Now copy the uniqueFamList back to "fullFamList" and allocate
+    ! Now copy the uniqueFamListNames back to "fullFamListNames" and allocate
     ! exactly the right size. 
-    deallocate(fullFamList)
-    allocate(fullFamList(totalFamilies))
-    fulLFamList(1:totalFamilies) = uniqueFamList(1:totalFamilies)
-    deallocate(uniqueFamList)
+    deallocate(fullFamListNames)
+    allocate(fullFamListNames(totalFamilies))
+    fullFamListNames(1:totalFamilies) = uniqueFamListNames(1:totalFamilies)
+    deallocate(uniqueFamListNames)
 
     ! Now each block boundary condition can uniquely determine it's
     ! famID. We do all BC on all blocks and levels. 
@@ -1413,7 +1412,7 @@ contains
           family = cgnsDoms(cgb)%bocoInfo(cgnsSubface(mm))%wallBCName
           call convertToLowerCase(family)
 
-          famID = bsearchStrings(family, fullFamList)
+          famID = bsearchStrings(family, fullFamListNames)
           if (famID == 0) then 
              ! Somehow we never found the family...
              call terminate("setSurfaceFamilyInfo", &
@@ -1434,7 +1433,7 @@ contains
 
     allocate(famNames(totalFamilies), famIsWall(totalFamilies), localFlag(totalFamilies))
     localFlag = 0
-    famNames = fullFamList
+    famNames = fullFamListNames
 
     ! Determine which of the unique families are walls. This is
     ! slightly inefficient but not terribly so.
@@ -1462,45 +1461,28 @@ contains
        end if
     end do
 
-    allocate(wallFamilies(totalWallFamilies))
+    allocate(wallFamList(totalWallFamilies))
     k = 0
     do i=1,totalFamilies
        if (famIsWall(i) > 0) then 
           k = k + 1
-          wallFamilies(k) = i
+          wallFamList(k) = i
        end if
     end do
 
-    ! Determine the local-to-global mapping for the traction
-    ! computation. Before we do so, set the famGroup list to
-    ! include all boundary conditions
-
-    allocate(famGroups(totalFamilies))
-
-    ! Finally create the scatter context for each individual family
-    ! as well as a special one for all wall families
-
-    allocate(familyExchanges(totalFamilies, ntimeIntervalsSpectral))
-
-    do sps=1, nTimeIntervalsSpectral
-       do i=1, totalFamilies
-          curFam(1) = i
-          nFam = 1
-          call createNodeScatterForFamilies(curFam, nFam, familyExchanges(i, sps), sps)
-       end do
+    ! Create the shortcut array for all families:
+    allocate(fullFamList(totalFamilies))
+    do i=1,totalFamilies
+       fullFamList(i) = i
     end do
 
     allocate(wallExchange(nTimeIntervalsSpectral), fullExchange(nTimeIntervalsSpectral))
-    allocate(temp(totalFamilies))
-    do i=1, totalFamilies
-       temp(i) =i
-    end do
     do sps=1, nTimeIntervalsSpectral
-       call createNodeScatterForFamilies(wallFamilies, totalWallFamilies, wallExchange(sps), sps)
-       call createNodeScatterForFamilies(temp, totalFamilies, fullExchange(sps), sps)
+       call createNodeScatterForFamilies(wallFamList, wallExchange(sps), sps)
+       call createNodeScatterForFamilies(fulLFamLIst, fullExchange(sps), sps)
     end do
-    deallocate(temp)
-    ! Allocate two arrays that have the maximum face size. These may
+
+    ! Allocate  arrays that have the maximum face size. These may
     ! be slightly larger than necessary, but that's ok. We just need
     ! somethwere to point the pointers. 
     isizemax = 0
@@ -1513,6 +1495,9 @@ contains
        jsizemax = max(jsizemax, flowDoms(nn, 1, 1)%ke)
     end do
 
+    ! Allocate generic arrays for the cell and nodes. These will be
+    ! used when a BC is not included in a computed but needs to be
+    ! point somehwere. 
     allocate(zeroCellVal(isizemax, jsizemax), zeroNodeVal(isizemax, jsizemax), oneCellVal(isizemax, jsizemax))
     oneCellVal = one
     zeroCellVal = zero
@@ -1520,7 +1505,7 @@ contains
 
   end subroutine setSurfaceFamilyInfo
 
-  subroutine createNodeScatterForFamilies(famList, nFam, famExchange, sps)
+  subroutine createNodeScatterForFamilies(famList, famExchange, sps)
 
     ! The purpose of this routine is to create the appropriate data
     ! structures that allow for the averaging of cell based surface
@@ -1538,20 +1523,19 @@ contains
     ! 3. Node-based output for tecplot files.
     use constants
     use communication, only : adflow_comm_world, myid, nProc
-    use surfaceFamilies, only : famGroups, familyExchange, &
-         IS1, IS2, PETSC_COPY_VALUES, PETSC_DETERMINE
+    use surfaceFamilies, only : familyExchange, IS1, IS2, PETSC_COPY_VALUES, PETSC_DETERMINE
     use utils, only : pointReduce, eChk
     use surfaceUtils, only : getSurfaceSize, getSurfaceConnectivity, getSurfaceFamily, &
          getSurfacePoints
     implicit none
 
     ! Input Parameters
-    integer(kind=intType) , dimension(nFam), intent(in) :: famList
-    integer(kind=intType) , intent(in) :: nFam, sps
+    integer(kind=intType) , dimension(:), intent(in) :: famList
+    integer(kind=intType) , intent(in) :: sps
     type(familyExchange), intent(inout) :: famExchange
 
     ! Working param
-    integer(kind=intType) :: i,j, ierr, nNodesLocal, nNodesTotal, nCellsLocal
+    integer(kind=intType) :: i,j, ierr, nNodesLocal, nNodesTotal, nCellsLocal, nFam
     integer(kind=intType) :: nUnique, iSize, iStart, iEnd, iProc
     real(kind=realType), dimension(:, :), allocatable :: localNodes, allNodes
     real(kind=realType), dimension(:, :), allocatable :: uniqueNodes
@@ -1564,12 +1548,9 @@ contains
 
     ! Get the nodes for the surfaces. Note that the nodeScatter works
     ! over *all* possible boundary condition surfaces. 
-    if (allocated(famGroups)) then 
-       deallocate(famGroups)
-    end if
-    allocate(famGroups(nFam), famExchange%famGroups(nFam))
-    famGroups = famList
-    famExchange%famGroups = famList
+    nFam = size(famList)
+    allocate(famExchange%famList(nFam))
+    famExchange%famList = famList
     famExchange%nFam = nFam
     famExchange%sps = sps
 
@@ -1579,12 +1560,12 @@ contains
     allocate(famExchange%conn(4, nCellsLocal), famExchange%elemFam(nCellsLocal), &
          famExchange%fc(nNodesLocal), famExchange%nodalValues(nNodesLocal, 3))
 
-    call getSurfaceConnectivity(famExchange%conn, nCellsLocal)
-    call getSurfaceFamily(famExchange%elemFam, nCellsLocal)
+    call getSurfaceConnectivity(famExchange%conn, nCellsLocal, famList, size(famList))
+    call getSurfaceFamily(famExchange%elemFam, nCellsLocal, famList)
 
 
     allocate(localNodes(3, nNodesLocal), nNodesProc(nProc), cumNodesProc(0:nProc))
-    call getSurfacePoints(localNodes, nNodesLocal, sps)
+    call getSurfacePoints(localNodes, nNodesLocal, sps, famList, nFam)
 
     do i=1, nNodesLocal
        famExchange%nodalValues(i, 1:3) = localNodes(1:3, i)
@@ -1692,7 +1673,6 @@ contains
     end do
 
     iSize = iEnd-iStart
-    !print *,'isize:', myid, iEnd, iStart, iSize, nnodeslocal, nunique
     ! Create the actual global vec. Note we also include nUnique to make
     ! sure we have all the local sizes correct.
     call VecCreateMPI(ADFLOW_COMM_WORLD, iSize, nUnique, &

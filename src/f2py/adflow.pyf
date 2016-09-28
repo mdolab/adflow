@@ -255,35 +255,41 @@ python module libadflow
            integer(kind=inttype) intent(in) :: nrandstate
          end subroutine getstateperturbation
 
-          subroutine getsurfaceperturbation(xrand,nrand,randsurface,nrandsurface) ! in :test:warping.F90:warping
+          subroutine getsurfaceperturbation(xrand,nrand,randsurface,nrandsurface, famlist,nfamlist) ! in :test:warping.F90:warping
            real(kind=realtype) dimension(nrand),intent(in) :: xrand
            integer(kind=inttype), optional,intent(in),check(len(xrand)>=nrand),depend(xrand) :: nrand=len(xrand)
            real(kind=realtype) dimension(3 * nrandsurface),intent(inout) :: randsurface
            integer(kind=inttype), optional,intent(in),check((len(randsurface))/(3)>=nrandsurface),depend(randsurface) :: nrandsurface=(len(randsurface))/(3)
+           integer(kind=inttype) dimension(nfamlist),intent(in) :: famlist
+           integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
          end subroutine getsurfaceperturbation
        end module warping
        
        module surfaceutils
 
-         subroutine getsurfacesize(npts, ncells, famlist, n) 
-           integer(kind=inttype) intent(out) :: npts
-           integer(kind=inttype) intent(out) :: ncells
+         subroutine getsurfacesize(size_bn,sizecell,famlist,n) ! in :test:surfaceUtils.F90:surfaceutils
+           integer(kind=inttype) intent(out) :: size_bn
+           integer(kind=inttype) intent(out) :: sizecell
            integer(kind=inttype) dimension(n),intent(in) :: famlist
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
          end subroutine getsurfacesize
-         
-         subroutine getsurfaceconnectivity(conn,ncell) 
+
+         subroutine getsurfaceconnectivity(conn,ncell,famlist,nfamlist) ! in :test:surfaceUtils.F90:surfaceutils
            integer(kind=inttype) dimension(4 * ncell),intent(inout) :: conn
-           integer(kind=inttype) optional,intent(in),check((len(conn))/(4)>=ncell),depend(conn) :: ncell=(len(conn))/(4)
+           integer(kind=inttype), optional,intent(in),check((len(conn))/(4)>=ncell),depend(conn) :: ncell=(len(conn))/(4)
+           integer(kind=inttype) dimension(nfamlist),intent(in) :: famlist
+           integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
          end subroutine getsurfaceconnectivity
-         
-         subroutine getsurfacepoints(points,npts,sps_in) 
-           integer(kind=inttype), intent(in) :: sps_in
+
+         subroutine getsurfacepoints(points,npts,sps_in,famlist,nfamlist) ! in :test:surfaceUtils.F90:surfaceutils
            real(kind=realtype) dimension(3,npts),intent(inout) :: points
-           integer(kind=inttype) optional,intent(in),check(shape(points,1)==npts),depend(points) :: npts=shape(points,1)
+           integer(kind=inttype), optional,intent(in),check(shape(points,1)==npts),depend(points) :: npts=shape(points,1)
+           integer(kind=inttype) intent(in) :: sps_in
+           integer(kind=inttype) dimension(nfamlist),intent(in) :: famlist
+           integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
          end subroutine getsurfacepoints
 
-         subroutine mapvector(vec1,n1,famlist1,nf1,vec2,n2,famlist2,nf2)
+         subroutine mapvector(vec1,n1,famlist1,nf1,vec2,n2,famlist2,nf2) ! in :test:surfaceUtils.F90:surfaceutils
            real(kind=realtype) dimension(3,n1),intent(in) :: vec1
            integer(kind=inttype), optional,check(shape(vec1,1)==n1),depend(vec1) :: n1=shape(vec1,1)
            integer(kind=inttype) dimension(nf1),intent(in) :: famlist1
@@ -294,11 +300,6 @@ python module libadflow
            integer(kind=inttype), optional,check(len(famlist2)>=nf2),depend(famlist2) :: nf2=len(famlist2)
          end subroutine mapvector
 
-         subroutine setfamilyinfo(famlist,n) ! in :test:getForces.F90
-           integer(kind=inttype) dimension(n),intent(in) :: famlist
-           integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
-         end subroutine setfamilyinfo
-         
        end module surfaceutils
 
        module tecplotio
@@ -326,14 +327,16 @@ python module libadflow
            integer(kind=inttype) dimension(n),intent(in) :: famlist
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
          end subroutine addliftdistribution
-         
-         subroutine writetecplot(slicefile, writeslices, liftfile, writelift, surffile, writesurf)
-           character*(*), intent(in) :: slicefile
-           logical, intent(in) :: writeslices
-           character*(*), intent(in) :: liftfile
-           logical, intent(in) :: writelift
-           character*(*), intent(in) :: surffile
-           logical, intent(in) :: writesurf
+
+         subroutine writetecplot(slicefile,writeslices,liftfile,writelift,surffile,writesurf,famlist,nfamlist) ! in :test:tecplotIO.F90:tecplotio
+           character*(*) intent(in) :: slicefile
+           logical intent(in) :: writeslices
+           character*(*) intent(in) :: liftfile
+           logical intent(in) :: writelift
+           character*(*) intent(in) :: surffile
+           logical intent(in) :: writesurf
+           integer(kind=inttype) dimension(nfamlist),intent(in) :: famlist
+           integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
          end subroutine writetecplot
 
          subroutine initializeliftdistributiondata
@@ -341,8 +344,9 @@ python module libadflow
        end subroutine tecplotio
 
        module surfaceintegrations
-         subroutine getsolution(sps) ! in :test:getSolution.f90
+         subroutine getsolution(sps,famlist) ! in :test:surfaceIntegrations.F90:surfaceintegrations
            integer(kind=inttype) :: sps
+           integer(kind=inttype) dimension(:),intent(in) :: famlist
          end subroutine getsolution
        end module surfaceintegrations
 
@@ -450,7 +454,7 @@ python module libadflow
          end subroutine createpetscvars
 
 #ifndef USE_COMPLEX
-            subroutine computematrixfreeproductfwd(xvdot,extradot,wdot,usespatial,usestate,dwdot,funcsdot,fdot,spatialsize,extrasize,statesize,costsize,fsize,ntime) ! in :test:adjointAPI.F90:adjointapi
+            subroutine computematrixfreeproductfwd(xvdot,extradot,wdot,usespatial,usestate,dwdot,funcsdot,fdot,spatialsize,extrasize,statesize,costsize,fsize,ntime,famlist,nfamlist) ! in :test:adjointAPI.F90:adjointapi
                 real(kind=realtype) dimension(spatialsize),intent(in) :: xvdot
                 real(kind=realtype) dimension(extrasize),intent(in) :: extradot
                 real(kind=realtype) dimension(statesize),intent(in) :: wdot
@@ -465,8 +469,10 @@ python module libadflow
                 integer(kind=inttype) intent(in) :: costsize
                 integer(kind=inttype) intent(in) :: fsize
                 integer(kind=inttype) intent(in) :: ntime
+                integer(kind=inttype) dimension(nfamlist),intent(in) :: famlist
+                integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
             end subroutine computematrixfreeproductfwd
-            subroutine computematrixfreeproductbwd(dwbar,funcsbar,fbar,usespatial,usestate,xvbar,extrabar,wbar,spatialsize,extrasize,statesize,costsize,fsize,ntime) ! in :test:adjointAPI.F90:adjointapi
+            subroutine computematrixfreeproductbwd(dwbar,funcsbar,fbar,usespatial,usestate,xvbar,extrabar,wbar,spatialsize,extrasize,statesize,costsize,fsize,ntime,famlist,nfamlist) ! in :test:adjointAPI.F90:adjointapi
                 real(kind=realtype) dimension(statesize),intent(in) :: dwbar
                 real(kind=realtype) dimension(costsize),intent(in) :: funcsbar
                 real(kind=realtype) dimension(3,fsize,ntime),intent(in) :: fbar
@@ -481,7 +487,9 @@ python module libadflow
                 integer(kind=inttype), optional,intent(in),check(len(funcsbar)>=costsize),depend(funcsbar) :: costsize=len(funcsbar)
                 integer(kind=inttype), optional,intent(in),check(shape(fbar,1)==fsize),depend(fbar) :: fsize=shape(fbar,1)
                 integer(kind=inttype), optional,intent(in),check(shape(fbar,2)==ntime),depend(fbar) :: ntime=shape(fbar,2)
-            end subroutine computematrixfreeproductbwd
+                integer(kind=inttype) dimension(nfamlist),intent(in) :: famlist
+                integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
+              end subroutine computematrixfreeproductbwd
 #endif
        end module adjointapi
        module adjointutils
@@ -523,6 +531,12 @@ python module libadflow
          integer(kind=inttype) optional,intent(in),check(len(tnsw)>=npts),depend(tnsw) :: npts=len(tnsw)
          integer(kind=inttype) intent(in) :: sps_in
        end subroutine settnswall
+
+       subroutine gettnswall(tnsw,npts,sps) ! in :test:getForces.F90
+         real(kind=realtype) dimension(npts),intent(out),depend(npts) :: tnsw
+         integer(kind=inttype) intent(in) :: npts
+         integer(kind=inttype) intent(in) :: sps
+       end subroutine gettnswall
 
        subroutine getareas(areas,pts,npts,sps_in,axis) ! in :test:getAreas.f90
          real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: areas
@@ -1078,7 +1092,6 @@ python module libadflow
        end module inputtsstabderiv
 
         module surfacefamilies ! in :test:inputParam.F90
-          integer(kind=inttype), allocatable,dimension(:) :: famgroups
           character(len=32), dimension(:), allocatable :: famnames
           integer(kind=inttype), allocatable,dimension(:) :: famiswall
         end module surfacefamilies

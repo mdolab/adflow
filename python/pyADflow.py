@@ -337,8 +337,6 @@ class ADFLOW(AeroSolver):
             if direction not in ['x','y','z']:
                 raise Error("direction must be one of 'x', 'y', or 'z'")
 
-        self._setFamilyList(groupName)
-
         if direction == 'x':
             dirVec = [1.0, 0.0, 0.0]
             dirInd = 1
@@ -594,10 +592,6 @@ class ADFLOW(AeroSolver):
 
         # Set filenames for possible forced write during solution
         self._setForcedFileNames()
-
-        # Set the full set of families such that we get the full
-        # coefficients in the printout.
-        self._setFamilyList(self.allFamilies)
 
         # Remind the users of the modified options:
         if self.getOption('printIterations'):
@@ -1385,9 +1379,17 @@ class ADFLOW(AeroSolver):
             liftName = base + '_lift.dat'
             sliceName = base + '_slices.dat'
             surfName = base + '_surf.dat'
+
+        
+        # Get the family list to write for the surface.
+        famList = self._getFamilyList(self.getOption('outputSurfaceFamily'))
+
+        # Flag to write the tecplot surface solution or not
         writeSurf = self.getOption('writeTecplotSurfaceSolution')
+
+        # Call fully compbined fortran routine. 
         self.adflow.tecplotio.writetecplot(sliceName, True, liftName, True,
-                                           surfName, writeSurf)
+                                           surfName, writeSurf, famList)
         
     def writeMeshFile(self, fileName):
         """Write the current mesh to a CGNS file. This call isn't used
@@ -1533,7 +1535,6 @@ class ADFLOW(AeroSolver):
         if groupName is None:
             groupName = self.allWallsGroup
 
-
         # Now we need to gather the data:
         if cfdForcePts is None:
             pts = self.comm.gather(self.getSurfacePoints(groupName, TS), root=0)
@@ -1640,11 +1641,11 @@ class ADFLOW(AeroSolver):
         """
 
         # Extract the familiy list we want to use for evaluation
-        self._setFamilyList(groupName)
+        famList = self._getFamilyList(groupName)
 
         # We should return the list of results that is the same as the
         # possibleObjectives list
-        self.adflow.surfaceintegrations.getsolution(1)
+        self.adflow.surfaceintegrations.getsolution(1, famList)
 
         funcVals = self.adflow.costfunctions.funcvalues
         ADflowsolution = {
@@ -2160,8 +2161,16 @@ class ADFLOW(AeroSolver):
         """
         if groupName is None:
             groupName = self.allWallsGroup
-        self._setFamilyList(groupName)
-        self.adflow.settnswall(temperature, TS+1)
+            
+        # For the mapVector to work correctly, we need to retrieve the
+        # existing values and just overwrite the ones we've changed
+        # using mapVector.
+        npts, ncell = self._getSurfaceSize(self.allWallsGroup)
+        fullTemp = self.adflow.gettnswall(npts, TS+1)
+
+        # Now map new values in and set.
+        fullTemp = self.mapVector(temperature, groupName, self.allWallsGroup, fullTemp)
+        self.adflow.settnswall(fullTemp, TS+1)
         
     def getSurfacePoints(self, groupName=None, TS=0):
 
@@ -2185,12 +2194,10 @@ class ADFLOW(AeroSolver):
         # Get the required size
         npts, ncell = self._getSurfaceSize(groupName)
         pts = numpy.zeros((npts, 3), self.dtype)
-
-        # Set the list of surfaces this family requires
-        self._setFamilyList(groupName)
+        famList = self._getFamilyList(groupName)
 
         if npts > 0:
-            self.adflow.surfaceutils.getsurfacepoints(pts.T, TS+1)
+            self.adflow.surfaceutils.getsurfacepoints(pts.T, TS+1, famList)
 
         return pts
 
@@ -2212,10 +2219,10 @@ class ADFLOW(AeroSolver):
             groupName = self.allWallsGroup
 
         # Set the list of surfaces this family requires
-        self._setFamilyList(groupName)
+        famList = self._getFamilyList(groupName)
         npts, ncell = self._getSurfaceSize(groupName)
         conn =  numpy.zeros((ncell, 4), dtype='intc')
-        self.adflow.surfaceutils.getsurfaceconnectivity(numpy.ravel(conn))
+        self.adflow.surfaceutils.getsurfaceconnectivity(numpy.ravel(conn), famList)
 
         faceSizes = 4*numpy.ones(len(conn), 'intc')
 
@@ -2623,7 +2630,8 @@ class ADFLOW(AeroSolver):
     #   =========================================================================
 
     def computeJacobianVectorProductFwd(self, xDvDot=None, xSDot=None, xVDot=None, wDot=None,
-                                    residualDeriv=False, funcDeriv=False, fDeriv=False):
+                                        residualDeriv=False, funcDeriv=False, fDeriv=False, 
+                                        groupName=None):
         """This the main python gateway for producing forward mode jacobian
         vector products. It is not generally called by the user by
         rather internally or from another solver. A DVGeo object and a
@@ -2648,6 +2656,9 @@ class ADFLOW(AeroSolver):
         Fderiv : bool
             Flag specifiying if the derviative of the surface forces (tractions)
             should be returned
+        groupName : str
+            Optional group name to use for evaluating functions. Defaults to all 
+            surfaces. 
 
         Returns
         -------
@@ -2713,8 +2724,11 @@ class ADFLOW(AeroSolver):
         costSize = self.adflow.costfunctions.ncostfunction
         fSize, nCell = self._getSurfaceSize(self.allWallsGroup)
 
+        # Get the famList from the groupName
+        famList = self._getFamilyList(groupName)
+        
         dwdot,tmp,fdot = self.adflow.adjointapi.computematrixfreeproductfwd(
-            xvdot, extradot, wdot, useSpatial, useState, costSize,  max(1, fSize), nTime)
+            xvdot, extradot, wdot, useSpatial, useState, costSize,  max(1, fSize), nTime, famList)
 
         # Explictly put fdot to nothing if size is zero
         if fSize==0:
@@ -2818,11 +2832,10 @@ class ADFLOW(AeroSolver):
         # ---------------------
         #  Check for funcsBar
         # ---------------------
-        # (do this after fBar since we need to set the family list here)
-        self._setFamilyList(self.allFamilies)
 
         if funcsBar is None:
             funcsBar = numpy.zeros(self.adflow.costfunctions.ncostfunction)
+            famList = self._getFamilyList(self.allWallsGroup)
         else:
             tmp = numpy.zeros(self.adflow.costfunctions.ncostfunction)
 
@@ -2844,7 +2857,7 @@ class ADFLOW(AeroSolver):
             if len(groups) == 1:
                 # We're ok..there was only one group from the
                 # functions..
-                self._setFamilyList(list(groups)[0])
+                famList = self._getFamilyList(list(groups)[0])
 
             elif len(groups) > 1:
                 raise Error("Attemping to compute a jacobian vector product "
@@ -2867,7 +2880,7 @@ class ADFLOW(AeroSolver):
         # Do actual Fortran call.
         xvbar, extrabar, wbar = self.adflow.adjointapi.computematrixfreeproductbwd(
             resBar, funcsBar, fBar.T, useSpatial, useState, self.getSpatialSize(),
-            self.adflow.adjointvars.ndesignextra)
+            self.adflow.adjointvars.ndesignextra, famList)
 
         # Assemble the possible returns the user has requested:
         returns = []
@@ -3064,9 +3077,9 @@ class ADFLOW(AeroSolver):
         """
         nPts, nCell = self._getSurfaceSize(self.allWallsGroup)
         xRand = self.getSpatialPerturbation(seed)
-        self._setFamilyList(self.allWallsGroup)
         surfRand = numpy.zeros((nPts, 3))
-        self.adflow.warping.getsurfaceperturbation(xRand, numpy.ravel(surfRand))
+        famList = self._getFamilyList(self.allWallsGroup)
+        self.adflow.warping.getsurfaceperturbation(xRand, numpy.ravel(surfRand), famList)
         return surfRand
 
     def getStatePerturbation(self, seed=314):
@@ -3249,24 +3262,6 @@ class ADFLOW(AeroSolver):
 
         [nPts, nCells] = self.adflow.surfaceutils.getsurfacesize(self.families[groupName])
         return nPts, nCells
-
-    def _setFamilyList(self, groupName):
-
-        """Internal routine for setting the (sorted) list of integers that
-        corresponds to the speficied groupName"""
-
-        # The default for this routine is all the families. Usually an
-        # intermediate routine will have a default so this default is
-        # rarely used.
-        if groupName is None:
-            groupName = self.allFamilies
-
-        if groupName not in self.families:
-            raise Error("'%s' is not a family in the CGNS file or has not been added"
-                        " as a combination of families"%groupName)
-
-        self.adflow.surfaceutils.setfamilyinfo(self.families[groupName])
-
 
     def setOption(self, name, value):
         """
@@ -3472,8 +3467,7 @@ class ADFLOW(AeroSolver):
             # Output Parameters
             'storerindlayer':[bool, True],
             'outputdirectory':[str, './'],
-            'writesymmetry':[bool, True],
-            'writefarfield':[bool, False],
+            'outputsurfacefamily':[str, 'allSurfaces'],
             'writesurfacesolution':[bool,True],
             'writevolumesolution':[bool,True],
             'writetecplotsurfacesolution':[bool,False],
@@ -3485,7 +3479,6 @@ class ADFLOW(AeroSolver):
             'gridprecisionsurface':[str,'single'],
             'isosurface':[dict, {}],
             'isovariables':[list, []],
-            'nodaloutput':[bool, True],
             'viscoussurfacevelocities':[bool, True],
 
             # Physics Paramters
@@ -3702,7 +3695,6 @@ class ADFLOW(AeroSolver):
             'writesymmetry':['io', 'writesymmetry'],
             'writefarfield':['io', 'writefarfield'],
             'nsavevolume':['io', 'nsavevolume'],
-            'nodaloutput':['io', 'nodaloutput'],
             'nsavesurface':['iter', 'nsavesurface'],
             'viscoussurfacevelocities':['io', 'viscoussurfacevelocities'],
             'solutionprecision':{'single':self.adflow.constants.precisionsingle,
@@ -3965,7 +3957,8 @@ class ADFLOW(AeroSolver):
                              'liftindex',
                              'meshsurfacefamily',
                              'designsurfacefamily',
-                             'zippersurfacefamily'
+                             'zippersurfacefamily',
+                             'outputsurfacefamily'
                          ))
 
         # Deprecated options. These should not be used, but old
