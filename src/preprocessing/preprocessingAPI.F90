@@ -1287,7 +1287,7 @@ contains
 
     use constants
     use su_cgns
-    use blockPointers, onlY : nDom, flowDoms, nBocos, cgnsSubFace, BCType
+    use blockPointers, onlY : nDom, flowDoms, nBocos, cgnsSubFace, BCType, BCData
     use cgnsGrid, onlY : cgnsDoms
     use communication, only : myid, adflow_comm_world
     use inputTimeSpectral, only : nTimeIntervalsSpectral
@@ -1300,10 +1300,12 @@ contains
     integer :: ierr
     integer(kind=intType) :: nLevels, level, nn, mm, nsMin, nsMax, i, j, k, nFam, famID, cgb, iFam
     integer(kind=intType) :: sps, isizemax, jsizemax, totalFamilies, totalWallFamilies
+    integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii
     character(maxCGNSNameLen), dimension(25) :: defaultFamName 
     character(maxCGNSNameLen) :: curStr, family
     character(maxCGNSNameLen), dimension(:), allocatable :: uniqueFamListNames, fullFamListNames
     integer(kind=intType), dimension(:), allocatable :: localFlag
+    integer(kind=intType), dimension(:), allocatable :: localIndices
 
     ! Process out the family information. The goal here is to
     ! assign a unique integer to each family in each boundary
@@ -1478,8 +1480,27 @@ contains
 
     allocate(wallExchange(nTimeIntervalsSpectral), fullExchange(nTimeIntervalsSpectral))
     do sps=1, nTimeIntervalsSpectral
-       call createNodeScatterForFamilies(wallFamList, wallExchange(sps), sps)
-       call createNodeScatterForFamilies(fulLFamLIst, fullExchange(sps), sps)
+       call createNodeScatterForFamilies(wallFamList, wallExchange(sps), sps, localIndices)
+       call createNodeScatterForFamilies(fulLFamLIst, fullExchange(sps), sps, localIndices)
+
+       ! For the fullExchange the "localIndices" is the globalIndex
+       ! into the reduced global surface vector. We want to this
+       ! information around and will put in in the special BCData slot surfIndex. 
+       ii = 0
+       do nn=1, nDom
+          call setPointers(nn, 1, sps)
+          do mm=1, nBocos
+             iBeg = BCData(mm)%inbeg; iEnd = BCData(mm)%inend
+             jBeg = BCData(mm)%jnbeg; jEnd = BCData(mm)%jnend
+             do j=jBeg, jEnd
+                do i=iBeg, iEnd
+                   ii = ii + 1
+                   BCData(mm)%surfIndex(i,j) = localIndices(ii)
+                end do
+             end do
+          end do
+       end do
+       deallocate(localIndices)
     end do
 
     ! Allocate  arrays that have the maximum face size. These may
@@ -1505,7 +1526,7 @@ contains
 
   end subroutine setSurfaceFamilyInfo
 
-  subroutine createNodeScatterForFamilies(famList, famExchange, sps)
+  subroutine createNodeScatterForFamilies(famList, famExchange, sps, localIndices)
 
     ! The purpose of this routine is to create the appropriate data
     ! structures that allow for the averaging of cell based surface
@@ -1533,13 +1554,14 @@ contains
     integer(kind=intType) , dimension(:), intent(in) :: famList
     integer(kind=intType) , intent(in) :: sps
     type(familyExchange), intent(inout) :: famExchange
+    integer(kind=intType), dimension(:), intent(out), allocatable :: localIndices
 
     ! Working param
     integer(kind=intType) :: i,j, ierr, nNodesLocal, nNodesTotal, nCellsLocal, nFam
     integer(kind=intType) :: nUnique, iSize, iStart, iEnd, iProc
     real(kind=realType), dimension(:, :), allocatable :: localNodes, allNodes
     real(kind=realType), dimension(:, :), allocatable :: uniqueNodes
-    integer(kind=intType), dimension(:), allocatable :: link, localIndices, startIndices, endIndices
+    integer(kind=intType), dimension(:), allocatable :: link, startIndices, endIndices
     integer(kind=intType), dimension(:), allocatable :: nNodesProc, cumNodesProc
     real(kind=realType) :: tol
     integer(kind=intType) :: status(MPI_STATUS_SIZE)
@@ -1604,6 +1626,9 @@ contains
     deallocate(uniqueNodes, allNodes)
 
     ! Now back out the global indices for our local points
+    if (allocated(localIndices)) then 
+       deallocate(localIndices)
+    end if
     allocate(localIndices(nNodesLocal))
     do i=1, nNodesLocal
        ! The -1 is to convert to 0-based ordering for petsc
@@ -1708,7 +1733,6 @@ contains
     call ISDestroy(IS2, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
-    deallocate(localIndices)
     famExchange%allocated = .True.
   end subroutine createNodeScatterForFamilies
 

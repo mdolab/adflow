@@ -1500,7 +1500,8 @@ contains
                 ! allocated for all boundary conditions. 
                 allocate(BCData(mm)%iBlank(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
                      BCData(mm)%delta(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
-                     BCData(mm)%deltaNode(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd))
+                     BCData(mm)%deltaNode(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
+                     BCData(mm)%surfIndex(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd))
 
                 ! Set the iBlank to 1 for non-overset cases.
                 BCData(mm)%iBlank = 1
@@ -1517,7 +1518,6 @@ contains
                         BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &                         
                         BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), & 
-                        BCData(mm)%fIndex(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
 
                         ! These are cell based but guaranteed to have
                         ! a halo. iBeg, ind, jBeg, jEnd may not have halo. 
@@ -1541,7 +1541,6 @@ contains
                         BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &                         
                         BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), & 
-                        BCData(mm)%fIndex(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                         BCData(mm)%cellHeatFlux(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%nodeHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                         ! These are cell based but guaranteed to have
@@ -1566,7 +1565,6 @@ contains
                         BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &                         
                         BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), & 
-                        BCData(mm)%fIndex(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                         ! These are cell based but guaranteed to have
                         ! a halo. iBeg, ind, jBeg, jEnd may not have halo. 
                         BCData(mm)%Fp(iNodeBeg:iNodeEnd+1, jNodeBeg:jNodeEnd+1, 3), &
@@ -2511,7 +2509,7 @@ contains
                 nullify(BCData(j)%tv)
                 nullify(BCData(j)%Tp)
                 nullify(BCData(j)%area)
-                nullify(BCData(j)%fIndex)
+                nullify(BCData(j)%surfIndex)
                 nullify(BCData(j)%uSlip)
                 nullify(BCData(j)%TNS_Wall)
 

@@ -42,7 +42,7 @@ if 'solve' not in sys.argv:
     options['restartfile'] = gridFile
     solve = False
 # Create the solver
-CFDSolver = ADFLOW(options=options, debug=True)
+CFDSolver = ADFLOW(options=options, debug=False)
 
 # Setup aeroproblem, cfdsolver, mesh and geometry.
 ap = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.80, P=20000.0, T=220.0,
