@@ -1679,7 +1679,7 @@ contains
     use overset, only : oversetPresent, oversetWall, nClusters, clusters, cumDomProc
     use inputOverset
     use adjointVars
-    use surfaceFamilies, only : wallFamList
+    use surfaceFamilies, only : BCFamGroups
     use utils, only : setPointers, EChk
     use sorting, only : unique
     implicit none
@@ -1706,7 +1706,8 @@ contains
     real(kind=realType) :: coor(4), uvw(5), uvw2(5)
     real(kind=realType), dimension(3, 2) :: dummy
     real(kind=realType), parameter :: tol=1e-12
-    integer(kind=intType), dimension(:), pointer :: frontLeaves, frontLeavesNew, BBint
+    integer(kind=intType), dimension(:), pointer :: frontLeaves, frontLeavesNew, &
+         BBint, wallFamList
     type(adtBBoxTargetType), dimension(:), pointer :: BB
     real(kind=realType), dimension(3) :: xp
 
@@ -1719,7 +1720,8 @@ contains
     ! the hundreds of millions of cells. 
 
     allocate(walls(nClusters))
-    call buildClusterWalls(level, sps, .False., walls, wallFamList, size(wallFamList))
+    wallFamList => BCFamGroups(iBCGroupWalls)%famList
+    call buildClusterWalls(level, sps, .False., walls, walLFamList, size(wallFamList))
 
     if (oversetPresent) then 
        ! Finally build up a "full wall" that is made up of all the cluster

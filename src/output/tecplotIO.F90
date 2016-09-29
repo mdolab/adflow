@@ -97,9 +97,9 @@ contains
           print *,'Error: Exceeded the maximum number of slices. Increase nSliceMax'
           stop
        end if
-
-       call createSlice(wallExchange(sps), paraSlices(nParaSlices, sps), pt, &
-            direction, sliceName, famList, n)
+       
+       call createSlice(BCFamExchange(iBCGroupWalls, sps), &
+            paraSlices(nParaSlices, sps), pt, direction, sliceName, famList, n)
     end do
 
   end subroutine addParaSlice
@@ -136,8 +136,8 @@ contains
           stop
        end if
 
-       call createSlice(wallExchange(sps), absSlices(nAbsSlices, sps), pt, &
-            direction, sliceName, famList, n)
+       call createSlice(BCFamExchange(iBCGroupWalls, sps), &
+            absSlices(nAbsSlices, sps), pt, direction, sliceName, famList, n)
     end do
 
   end subroutine addAbsSlice
@@ -201,7 +201,7 @@ contains
     integer(kind=intType) :: sps
 
     do sps=1, nTimeIntervalsSpectral
-       call computeSurfaceOutputNodalData(wallExchange(sps), .True.)
+       call computeSurfaceOutputNodalData(BCFamExchange(iBCGroupWalls, sps), .True.)
     end do
 
     if (writeSlices) then 
@@ -260,7 +260,7 @@ contains
 
           ! Gather the forces and nodes
           if (updateSurfaceData) then 
-             call computeSurfaceOutputNodalData(wallExchange(sps), .True.)
+             call computeSurfaceOutputNodalData(BCFamExchange(iBCGroupWalls, sps), .True.)
           end if
 
           ! If it is time spectral we need to agument the filename
@@ -320,8 +320,9 @@ contains
              call destroySlice(absSlices(i, sps))
 
              ! Make new one in the same location
-             call createSlice(wallExchange(sps), absSlices(i, sps), absSlices(i, sps)%pt, &
-                  absSlices(i, sps)%dir, absSlices(i, sps)%sliceName, famList, size(famList))
+             call createSlice(BCFamExchange(iBCGroupWalls, sps), absSlices(i, sps), &
+                  absSlices(i, sps)%pt, absSlices(i, sps)%dir, &
+                  absSlices(i, sps)%sliceName, famList, size(famList))
 
              call integrateSlice(absSlices(i, sps), globalSlice, nSolVar, .True.)
              if (myid == 0) then 
@@ -381,7 +382,7 @@ contains
        do sps=1,nTimeIntervalsSpectral
 
           if (updateSurfaceData) then 
-             call computeSurfaceOutputNodalData(wallExchange(sps), .False.)
+             call computeSurfaceOutputNodalData(BCfamExchange(iBCGroupWalls, sps), .False.)
           end if
 
           ! If it is time spectral we need to agument the filename
@@ -425,7 +426,7 @@ contains
     use outputMod
     use su_cgns
     use cgnsNames
-    use surfaceFamilies, only : wallExchange
+    use surfaceFamilies, only : BCFamExchange
     use utils, only : EChk
     use sorting, only : bsearchIntegers
     implicit none
@@ -447,7 +448,7 @@ contains
        d => liftDists(iDist)
        xmin_local = huge(real(zero))
        xmax_local = -huge(real(zero))
-       exch => wallExchange(sps)
+       exch => BCFamExchange(iBCGroupWalls, sps)
        ! Get the bounding box for the entire geometry we have been slicing.
        elemLoop: do i=1, size(exch%conn, 2)
           if (bSearchIntegers(exch%elemFam(i), d%FamList) > 0) then 
@@ -626,18 +627,17 @@ contains
 
   subroutine writeTecplotSurfaceFile(fileName, famList)
     use constants
-    use communication
-    use outputMod
-    use inputTimeSpectral
-    use inputPhysics
-    use inputIteration
-    use inputIO
-    use blockPointers
-    use surfaceFamilies, onlY : fullExchange
+    use communication, only : myid, adflow_comm_world, nProc
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use inputPhysics, only : equationMode
+    use inputIteration, only : printIterations
+    use outputMod, only : surfSolNames, numberOfSurfSolVariables
+    use surfaceFamilies, onlY : BCFamExchange, famNames
     use utils, only : EChk, setPointers, setBCPointers
     use BCPointers, only : xx
     use sorting, only : bsearchIntegers
     use extraOutput, only : surfWriteBlank
+    use overset, only : zipperMesh, zipperMeshes
     implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -651,7 +651,8 @@ contains
 
     ! Working parameters
     integer(kind=intType) :: i, j, nn, mm, fileID, iVar, ii, ierr, iSize
-     integer(Kind=intType) :: nSolVar, iBeg, iEnd, jBeg, jEnd, sps
+    integer(Kind=intType) :: nSolVar, iBeg, iEnd, jBeg, jEnd, sps
+    integer(kind=intType) :: iBCGroup, iFam, iProc, nCells, nNodes, nCellsToWrite
     character(len=maxStringLen) :: fname
     character(len=7) :: intString
     integer(kind=intType), dimension(:), allocatable :: nodeSizes, nodeDisps
@@ -659,22 +660,28 @@ contains
     character(len=maxCGNSNameLen), dimension(:), allocatable :: solNames
     real(kind=realType), dimension(:, :), allocatable :: allNodalValues
     integer(kind=intType), dimension(:, :), allocatable :: conn
-    logical :: blankSave
+    real(kind=realType), dimension(:, :), allocatable :: vars
+    integer(kind=intType), dimension(:), allocatable :: mask, elemFam
+    logical :: blankSave, BCGroupNeeded
     type(familyExchange), pointer :: exch
-    real(kind=realType), dimension(:), pointer :: localPtr
-
-    Vec localNodeVec
-    VecScatter :: tecScatter
-
+    type(zipperMesh), pointer :: zipper
     if(myID == 0 .and. printIterations) then
        print "(a)", "#"
        print "(a)", "# Writing tecplot surface file(s) ..."
     endif
-
+    
+    ! Number of surface variables. Note that we *explictly*
+    ! remove the potential for writing the surface blanks as
+    ! these are not necessary for the tecplot IO as we write the
+    ! zipper mesh directly. We must save and restore the
+    ! variable in case the CGNS otuput will write it. 
+    blankSave = surfWriteBlank
+    surfWriteBlank = .False.
+    call numberOfSurfSolVariables(nSolVar)
+    allocate(solNames(nSolVar))
+    call surfSolNames(solNames)
+    
     spectralLoop: do sps=1,nTimeIntervalsSpectral
-
-       ! For easier reading
-       exch => fullExchange(sps)
 
        ! If it is time spectral we need to agument the filename
        if (equationMode == timeSpectral) then
@@ -684,11 +691,10 @@ contains
        else
           fname = fileName
        end if
-
+       
        fileID = 11
-
-       ! Open file on root proc and write all surface variables we
-       ! which to write. 
+       ! Open file on root proc:
+       
        if (myid == 0) then 
           open(unit=fileID, file=trim(fname))
 
@@ -698,139 +704,173 @@ contains
           write(fileID,"(a)",advance="no") " ""CoordinateX"" "
           write(fileID,"(a)",advance="no") " ""CoordinateY"" "
           write(fileID,"(a)",advance="no") " ""CoordinateZ"" "
-
-          ! Number of surface variables. Note that we *explictly*
-          ! remove the potential for writing the surface blanks as
-          ! these are not necessary for the tecplot IO as we write the
-          ! zipper mesh directly. We must save and restore the
-          ! variable in case the CGNS otuput will write it. 
-          blankSave = surfWriteBlank
-          surfWriteBlank = .False.
-          call numberOfSurfSolVariables(nSolVar)
-          allocate(solNames(nSolVar))
-          call surfSolNames(solNames)
-          surfWriteBlank = blankSave
-
-          ! ! Write the rest of the variable header
-          ! do i=1,nSolVar
-          !    write(fileID,"(a,a,a)",advance="no") """",trim(solNames(i)),""" "
-          ! end do
+          
+          ! Write the rest of the variables
+          do i=1,nSolVar
+             write(fileID,"(a,a,a)",advance="no") """",trim(solNames(i)),""" "
+          end do
 
           write(fileID,"(1x)")
           deallocate(solNames)
        end if
 
-       ! Let all processor know the number of solution variables. 
-       call mpi_bcast(nSolVar, 1, adflow_integer, 0, adflow_comm_world, ierr)
-       call EChk(ierr,__FILE__,__LINE__)
+       masterBCLoop: do iBCGroup=1,nFamExchange
+          
+          ! Pointers for easier reading
+          exch => BCFamExchange(iBCGroup, sps)
+          zipper => zipperMeshes(iBCGroup)
 
-       ! The general idea here is that we have to gather up nodes and
-       ! connectivity (on a per-family basis) for the root processor
-       ! to write.
+          ! First thing we do is figure out if we actually need to do
+          ! anything with this BCgroup at all. If none the requested
+          ! families are in this BCExcahnge we don't have to do
+          ! anything. 
 
-       call VecScatterCreateToZero(exch%nodeValGlobal, tecScatter, localNodeVec, ierr)
-       call EChk(ierr,__FILE__,__LINE__)
-       
-       if (myid == 0) then 
-          call VecGetSize(localNodeVec, iSize, ierr)
+          BCGroupNeeded = .False.
+          do i=1,size(famList)
+             if (bsearchIntegers(famList(i), exch%famList) > 0) then 
+                BCGroupNeeded = .True.
+             end if
+          end do
+
+          ! Keep going if we don't need this.
+          if (.not. BCGroupNeeded) then 
+             cycle
+          end if
+
+          ! Compute the nodal data
+          call computeSurfaceOutputNodalData(exch, .false.)
+
+          ! Gather up the number of nodes to be set to the root proc:
+          allocate(nodeSizes(nProc), nodeDisps(0:nProc))
+          nodeSizes = 0
+          nodeDisps = 0
+          call mpi_allgather(exch%nNodes, 1, adflow_integer, nodeSizes, 1, adflow_integer, &
+               adflow_comm_world, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+          nodeDisps(0) = 0
+          do iProc=1, nProc
+             nodeDisps(iProc) = nodeDisps(iProc-1) + nodeSizes(iProc)
+          end do
+          
+          iSize = 3 + nSolVar
+          if (myid == 0) then 
+             nNodes = sum(nodeSizes)
+             allocate(vars(nNodes, iSIze))
+          end if
+
+          ! Gather values to the root proc.
+          do i=1, iSize
+             call mpi_gatherv(exch%nodalValues(:, i), exch%nNodes, &
+                  adflow_real, vars(:, i), nodeSizes, nodeDisps, adflow_real, 0, adflow_comm_world, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+          end do
+
+          ! Now gather up the connectivity
+          allocate(cellDisps(0:nProc), cellSizes(nProc))
+
+          call mpi_gather(size(exch%conn, 2), 1, adflow_integer, &
+               cellSizes, 1, adflow_integer, 0, adflow_comm_world, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+          
+          if (myid == 0) then 
+             cellDisps(0) = 0
+             do iProc=1, nProc
+                cellDisps(iProc) = cellDisps(iProc-1) + cellSizes(iProc)
+             end do
+             nCells = sum(cellSizes)
+             allocate(conn(4, nCells))
+             allocate(elemFam(nCells))
+          end if
+
+          ! We offset the conn array by nodeDisps(iProc) which
+          ! automagically adjusts the connectivity to account for the
+          ! number of nodes from different processors
+
+          call mpi_gatherv(exch%conn+nodeDisps(myid), &
+               4*size(exch%conn, 2), adflow_integer, conn, &
+               cellSizes*4, cellDisps*4, adflow_integer, 0, adflow_comm_world, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+          
+          call mpi_gatherv(exch%elemFam, &
+               size(exch%elemFam), adflow_integer, elemFam, &
+               cellSizes, cellDisps, adflow_integer, 0, adflow_comm_world, ierr)
           call EChk(ierr,__FILE__,__LINE__)
 
-          allocate(allNodalValues(iSize, 3 + nSolVar))
-       end if
-
-       masterNodeLoop: do iVar=1, nSolVar+3
-          
-          ! Variables 1 through 3 are special becuase they are the nodes themselves. 
-
-          ! Set the PETSc array to our own data so we can scatter in directly
-          if (myid == 0) then 
-             call VecPlaceArray(localNodeVec, allNodalValues(:, iVar), ierr)
-             call EChk(ierr,__FILE__,__LINE__)
-          end if
-
-          if (iVar <= 3) then 
-             ! ------------ Nodes --------------- !
-
-             ! Get the petsc vector
-             call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
-             call EChk(ierr,__FILE__,__LINE__)
+          rootProc: if (myid == 0 .and. nCells > 0) then 
              
-             ! Copy in the x-coordinates
-             ii = 0
-             domains: do nn=1,nDom
-                call setPointers(nn, 1_intType, sps)
+             allocate(mask(nCells))
+             
+             do iFam=1, size(exch%famList)
+                
+                ! Check if we have to write this one:
+                famInclude: if (bsearchIntegers(exch%famList(iFam), famList) > 0) then 
 
-                do mm=1, nBocos
-                   call setBCPointers(mm, .true.)
-                   iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
-                   jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
-                   do j=jBeg, jEnd
-                      do i=iBeg, iEnd
-                         ii = ii + 1
-                         localPtr(ii) = xx(i+1, j+1, iVar)
-                      end do
+                   ! Create a temporary mask
+                   mask = 0
+                   do i=1, nCells
+                      ! Check if this elem is to be included
+                      if (elemFam(i) == exch%famList(iFam)) then 
+                         mask(i) = 1
+                      end if
                    end do
-                end do
-             end do domains
+                   nCellsToWrite = sum(mask)
+                   do i=1, size(zipper%conn, 2)
+                      if (zipper%fam(i) == exch%famList(iFam)) then 
+                         nCellsToWrite = nCellsToWrite + 1
+                      end if
+                   end do
 
-             call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
-             call EChk(ierr,__FILE__,__LINE__)
-     
-             call VecScatterBegin(exch%scatter, exch%nodeValLocal, &
-                  exch%sumGlobal, INSERT_VALUES, SCATTER_FORWARD, ierr)
-             call EChk(ierr,__FILE__,__LINE__)
-             
-             call VecScatterEnd(exch%scatter, exch%nodeValLocal, &
-                  exch%sumGlobal, INSERT_VALUES, SCATTER_FORWARD, ierr)
-             call EChk(ierr,__FILE__,__LINE__)
-             
-             ! Do the actual scatter from the parallel global Vec to the root. 
-             call VecScatterBegin(tecScatter, fullExchange(sps)%nodeValGlobal, localNodeVec, &
-                  INSERT_VALUES, SCATTER_FORWARD, ierr)
-             call EChk(ierr,__FILE__,__LINE__)
-
-             call VecScatterEnd(tecScatter, fullExchange(sps)%nodeValGlobal, localNodeVec, &
-                  INSERT_VALUES, SCATTER_FORWARD, ierr)
-             call EChk(ierr,__FILE__,__LINE__)
-             
-          else
-             ! ----------Solution Vars ---------- !
-       
-             ! For the remainder of the variables we need to store
-             ! them
-
-             
-
-             
-          end if
-          
-          ! Replace the PETSc memory
-          if (myid == 0) THEN 
-             call VecResetArray(localNodeVec, ierr)
-             call EChk(ierr,__FILE__,__LINE__)
-          end if
-       end do masterNodeLoop
-       
-
-
-       ! Clean up the tempoeray PETSc variables
-       call VecDestroy(localNodeVec, ierr)
-       call EChk(ierr,__FILE__,__LINE__)
-       
-       call VecScatterDestroy(tecScatter, ierr)
-       call EChk(ierr,__FILE__,__LINE__)
-
-
-       if (myid == 0) then 
-          close(fileID)
-       end if
+                   actualWrite : if (nCellsToWrite > 0) then
+                   
+                      write (fileID,"(a,a,a)") "Zone T= """,famNames(exch%famList(iFam)),""""
+                      write (fileID,*) "Nodes = ", nNodes, " Elements= ",  nCellsToWrite, " ZONETYPE=FEQUADRILATERAL"
+                      write (fileID,*) "DATAPACKING=BLOCK"
+15                    format (E14.6)
+                      
+                      ! Write the points (indices 1:3)
+                      do j=1, 3
+                         do i=1, nNodes
+                            write(fileID,15) vars(i, j)
+                         end do
+                      end do
+                      
+                      ! And the rest of the variables
+                      do j=1,nSolVar
+                         do i=1, nNodes
+                            write(fileID,15) vars(i, j+3)
+                         end do
+                      end do
+16                    format ((I6) (I6) (I6) (I6))
+                      
+                      ! And now the connectivity
+                      do i=1, nCells
+                         ! Check if this elem is to be included
+                         if (mask(i) == 1) then 
+                            write(fileID, 16) conn(1, i), conn(2, i), conn(3,i), conn(4, i)
+                         end if
+                      end do
+                      
+                      do i=1, size(zipper%conn, 2)
+                         if (zipper%fam(i) == exch%famList(iFam)) then 
+                            
+                            write(fileID, 16) &
+                                 zipper%indices(zipper%conn(1, i)), &
+                                 zipper%indices(zipper%conn(2, i)), &
+                                 zipper%indices(zipper%conn(3, i)), &
+                                 zipper%indices(zipper%conn(1, i))
+                         end if
+                      end do
+                   end if actualWrite
+                end if famInclude
+             end do
+             deallocate(mask)
+          end if rootProc
+          deallocate(cellSizes, cellDisps, nodeSizes, nodeDisps, vars, conn, elemFam)
+       end do masterBCLoop
     end do spectralLoop
 
-
-    if(myID == 0 .and. printIterations) then
-       print "(a)", "# Tecplot surface file(s) written"
-       print "(a)", "#"
-    endif
+    ! Restore the modified option
+    surfWriteBlank = blankSave
 
   end subroutine writeTecplotSurfaceFile
 
@@ -889,7 +929,7 @@ contains
     use communication
     use inputPhysics
     use blockPointers
-    use surfaceFamilies, only : wallFamList
+    use surfaceFamilies, only : BCFamGroups
     use outputMod, only : storeSurfSolInBuffer, numberOfSurfSolVariables, &
          surfSolNames
     use surfaceUtils, only : getSurfacePoints
@@ -927,10 +967,7 @@ contains
     end if
     allocate(exch%nodalValues(exch%nNodes, nSolVar+6+3))
     exch%nodalValues = zero
-
-    ! Set the main family group to the family this exchange. 
-    !call setFamilyInfo(exch%famGroups, exch%nFam)
-
+    
     ! The tractions have a sepcial routine so call that first before we
     ! mess with the family information. 
 
@@ -948,7 +985,7 @@ contains
              iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
              jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
 
-             if (bsearchIntegers(BCdata(mm)%famID, wallFamList) > 0) then 
+             if (bsearchIntegers(BCdata(mm)%famID, exch%famList) > 0) then 
                 do j=jBeg, jEnd
                    do i=iBeg, iEnd
                       ii = ii + 1
@@ -988,7 +1025,7 @@ contains
           jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
           ni = iEnd - iBeg + 1
           nj = jEnd - jBeg + 1
-          if (bsearchIntegers(BCdata(mm)%famID, wallFamList) > 0) then 
+          if (bsearchIntegers(BCdata(mm)%famID, exch%FamList) > 0) then 
              do j=0,nj-2
                 do i=0,ni-2
 
@@ -1047,7 +1084,7 @@ contains
           call setPointers(nn, 1, exch%sps)
 
           bocoLoop: do mm=1, nBocos
-             if (bsearchIntegers(BCdata(mm)%famID, wallFamList) > 0) then 
+             if (bsearchIntegers(BCdata(mm)%famID, exch%famList) > 0) then 
 
                 ! storeSurfSolInBuffer needs to know if the subface is
                 ! viscous or not. 
@@ -1131,7 +1168,7 @@ contains
           end do bocoLoop
        end do domainLoop
 
-       ! Return our pointers
+       ! Return our pointer
        call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 

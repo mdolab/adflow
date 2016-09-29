@@ -22,9 +22,8 @@ contains
          sendRequests, commPatternCell_2nd, internalCell_2nd
     use blockPointers, only : nDom, BCData, nBocos, BCType, il, jl, kl
     use overset, only : oversetString, oversetWall, CSRMatrix, cumDomProc, nDomTotal, &
-         clusters, overlapMatrix, globalNodalVec, localZipperVal, zipperConn, zipperFam, &
-         zipperIndices, nodeZipperScatter, PETSC_COPY_VALUES, PETSC_DETERMINE, PETSC_NULL_OBJECT, &
-         oversetPresent
+         clusters, overlapMatrix, PETSC_COPY_VALUES, PETSC_DETERMINE, PETSC_NULL_OBJECT, &
+         oversetPresent, zipperMesh, zipperMeshes
     use wallDistanceData, only : xVolumeVec, IS1, IS2, PETSC_VIEWER_STDOUT_WORLD
     use utils, only : setPointers, EChk
     use adjointvars, only :nNodesLocal
@@ -35,6 +34,7 @@ contains
     use oversetPackingRoutines, only : packOSurf, unpackOSurf, getOSurfBufferSizes
     use oversetInitialization, only : initializeOSurf
     use inputOverset, only : debugZipper
+    use surfaceFamilies, only : BCFamExchange, famNames, BCFamGroups
     use stringOps
     use gapBoundaries
     implicit none
@@ -46,7 +46,9 @@ contains
     ! Local Variables
     integer(kind=intType) :: i, j, k, ii, jj, kk, iStart, iSize, sps, level, iStr
     integer(kind=intType) :: iDom, jDom, nn, mm, n, ierr, iProc, iWork, nStrings, nodeFam(3)
-    integer(kind=intType) :: nNodeTotal, nTriTotal, offset
+    integer(kind=intType) :: nNodeTotal, nTriTotal, offset, iBCGroup, nFam
+    integer(kind=intType), dimension(:), allocatable :: famList
+
     integer(kind=intType), dimension(:,:), allocatable :: tmpInt2D, work
     logical, dimension(:), allocatable :: oSurfReady
     type(oversetWall), dimension(:), allocatable :: oSurfs
@@ -65,7 +67,7 @@ contains
     integer(kind=intType) :: sendCount, recvCount, index
     type(CSRMatrix), pointer :: overlap
     type(CSRMatrix) :: overlapTranspose
-
+    type(zipperMesh), pointer :: zipper
     ! Wall search related
     integer(kind=intType) :: ncells
     type(oversetWall), dimension(:), allocatable, target :: walls
@@ -80,428 +82,484 @@ contains
     ! instance (ie not time spectral). 
     level = 1
     sps = 1
-    overlap => overlapMatrix(level, sps)
-    call transposeOverlap(overlap, overlapTranspose)
-    ! -------------------------------------------------------------------
-    ! Step 1: Eliminate any gap overlaps between meshes
-    ! -------------------------------------------------------------------
 
-    ! Determine the average area of surfaces on each cluster. This
-    ! will be independent of any block splitting distribution. 
+    ! We build the zipper meshes *independently* for each BCType. 
+    BCGroupLoop: do iBCGroup=1, nFamExchange
 
-    call determineClusterAreas(zipperFamList)
+       ! Set a pointer to the zipper we are working on to make code
+       ! easier to read
+       zipper => zipperMeshes(iBCGroup)
 
-    ! Set the boundary condition blank values
-    call initBCDataIBlank(zipperFamList, level, sps)
+       ! Before we can proceed with the zipper, we need to generate
+       ! union of the zipperFamList() with the families on this
+       ! BCGroup. This would be so much easier in Python...
 
-    ! Create the surface deltas
-    call surfaceDeviation(zipperFamList, level, sps)
+       if (allocated(famList)) then 
+          deallocate(famList)
+       end if
 
-
-    ! ================ WE NORMALLY GOT THIS FROM OVERSETCOMM =============
-    ! Get the OSurf buffer sizes becuase we need that for getOSurfCommPattern
-    allocate(bufSizes(nDomTotal, 6), tmpInt2D(nDomTotal, 6))
-    tmpInt2D = 0
-    do nn=1, nDom
-       call setPointers(nn, level, sps)
-       iDom = cumDomProc(myid) + nn
-       call getOSurfBufferSizes(zipperFamList, il, jl, kl, tmpInt2D(iDom, 5), &
-            tmpInt2D(iDom, 6), .True.)
-    end do
-
-    call mpi_allreduce(tmpInt2D, bufSizes, 6*nDomTotal, adflow_integer, MPI_SUM, &
-         adflow_comm_world, ierr)
-    call ECHK(ierr, __FILE__, __LINE__)
-
-    ! Get the basic surface comm pattern. 
-    ! For sending, the worse case is sending all my blocks/fringes/walls to
-    ! everyone but myself:
-    ii = nDom*(nProc-1)
-    allocate(oSurfSendList(2, ii))
-    
-    ! For receiving, the worse receive is all the blocks/fringes/wall I
-    ! don't already have:
-    ii = nDomTotal - nDom
-    allocate(oSurfRecvList(2, ii))
-
-    call getOSurfCommPattern(overlap, overlapTranspose, &
-         oSurfSendList, nOSurfSend, oSurfRecvList, nOSurfRecv, bufSizes(:, 6))
-    deallocate(tmpInt2D, bufSizes)
-    ! ========================================================================
-
-    ! Alloc data for the OSurfs
-    nn = max(nProc, 2*nOSurfSend, 2*nOSurfRecv)
-    allocate(tmpInt2D(nDomTotal, 2), bufSizes(nDomTotal, 2), &
-         oSurfReady(nDomTotal), recvInfo(2, nn))
-
-    tmpInt2D = 0
-    ! Need to get the differt sizes for the OSurfs since they are now
-    ! based on the primal mesh as opposed to do the dual mesh as
-    ! previously done
-    do nn=1, nDom
-       call setPointers(nn, level, sps)
-       iDom = cumDomProc(myid) + nn
-       call getOSurfBufferSizes(zipperFamList, il, jl, kl, tmpInt2D(iDom, 1), &
-            tmpInt2D(iDom, 2), .False.)
-    end do
-
-    ! Make sure everyone has the sizes
-    call mpi_allreduce(tmpInt2D, bufSizes, 2*nDomTotal, adflow_integer, MPI_SUM, &
-         adflow_comm_world, ierr)
-    call ECHK(ierr, __FILE__, __LINE__)
-    deallocate(tmpInt2D)
-
-    ! allocate oSurfs for the primal mesh
-    allocate(oSurfs(nDomTotal))
-    do iDom=1, nDomtotal
-       if (bufSizes(iDom, 1) == 0) then 
-          oSurfReady(iDom) = .True.
+       nFam = 0
+       do i=1, size(BCFamGroups(iBCGroup)%famList)
+          do j=1, size(zipperFamlist)
+             if (BCFamGroups(iBCGroup)%famList(i) == zipperFamList(j)) then 
+                nFam = nFam + 1
+             end if
+          end do
+       end do
+       
+       ! If nFam is zero, no need ot do anything for this zipper. Just
+       ! allocated zero-sized arrays so we know the size is 0.
+       if (nFam == 0) then 
+          allocate(zipper%conn(3, 0), zipper%fam(0), zipper%indices(0))
+          cycle
        else
-          oSurfReady(iDom) = .False.
-       end if
-    end do
-
-    ! Initialize the primal walls
-    do nn=1, nDom
-       call setPointers(nn, level, sps)
-       iDom = cumDomProc(myid) + nn
-       call initializeOSurf(zipperFamList, oSurfs(iDom), .False., clusters(iDom))
-       call packOSurf(zipperFamList, oSurfs(iDom), .False.)
-       oSurfReady(iDom) = .True. 
-    end do
-
-    ! Post all the oSurf iSends
-    sendCount = 0
-    do jj=1, nOSurfSend
-       iProc = oSurfSendList(1, jj)
-       iDom = oSurfSendList(2, jj)
-       call sendOSurf(oSurfs(iDom), iDom, iProc, 0, sendCount)
-    end do
-
-    recvCount = 0
-    do jj=1, nOSurfRecv
-       iProc = oSurfRecvList(1, jj)
-       iDom = oSurfRecvList(2, jj)
-       call recvOSurf(oSurfs(iDom), iDom, iProc, 0, &
-            bufSizes(iDom, 1), bufSizes(iDom, 2), recvCount, recvInfo)
-    end do
-
-    ! Complete all the recives and sends
-    do i=1, recvCount
-       call mpi_waitany(recvCount, recvRequests, index, status, ierr)
-       call ECHK(ierr, __FILE__, __LINE__)
-    end do
-
-    do i=1,sendCount
-       call mpi_waitany(sendCount, sendRequests, index, status, ierr)
-       call ECHK(ierr, __FILE__, __LINE__)
-    end do
-
-    ! Unpack any blocks we received if necessary:
-    do i=1, recvCount
-
-       ! Global domain index of the recv that finished
-       iDom = recvInfo(1, i)
-       if (.not. oSurfs(iDom)%allocated) then 
-          call unpackOSurf(oSurfs(iDom))
-       end if
-    end do
-
-    ! Determine the size of the buffer we need locally for the
-    ! receives. We do this outside the main iteration loop since it
-    ! always the same size.
-    ii = 0
-    do jj=1, noSurfSend
-       ! These blocks are by definition local. 
-       iDom = oSurfSendList(2, jj)
-       ii = ii + oSurfs(iDom)%maxCells
-    end do
-    allocate(intRecvBuf(max(1, ii)))
-
-    ! ------------------------ Performing Searches ----------------        
-    call getWorkArray(overlap, work)
-
-  
-    do iWork=1, size(work,2)
-       iDom = work(1, iWork)
-       jDom = work(2, iWork)
-       call wallSearch(oSurfs(iDom), oSurfs(jDom))
-    end do
-
-    ! ------------------------ Receiving iBlank back ---------------
-
-    sendCount = 0
-    do jj=1, noSurfRecv
-       iProc = oSurfRecvList(1, jj)
-       iDom = oSurfRecvList(2, jj)
-       sendCount = sendCount + 1
-       call mpi_isend(oSurfs(iDom)%iBlank, oSurfs(iDom)%maxCells, adflow_integer, &
-            iproc, iDom, adflow_comm_world, sendRequests(sendCount), ierr)
-       call ECHK(ierr, __FILE__, __LINE__)
-    end do
-
-    recvCount = 0
-    iStart = 1
-    do jj=1, noSurfSend
-       iProc = oSurfSendList(1, jj)
-       iDom = oSurfSendList(2, jj)
-       iSize = oSurfs(iDom)%maxCells
-       recvCount = recvCount + 1       
-
-       call mpi_irecv(intRecvBuf(iStart), iSize, adflow_integer, &
-            iProc, iDom, adflow_comm_world, recvRequests(recvCount), ierr)
-       call ECHK(ierr, __FILE__, __LINE__)
-       iStart = iStart + iSize
-    end do
-
-    ! Now wait for the sends and receives to finish
-    do i=1, sendCount
-       call mpi_waitany(sendCount, sendRequests, index, status, ierr)
-       call ECHK(ierr, __FILE__, __LINE__)
-    end do
-
-    do i=1, recvCount
-       call mpi_waitany(recvCount, recvRequests, index, status, ierr)
-       call ECHK(ierr, __FILE__, __LINE__)
-    end do
-
-    ! Process the oSurfs we own locally
-    do nn=1, nDom
-       call setPointers(nn, level, sps)
-       iDom = cumDomProc(myid) + nn
-       ii = 0
-       do mm=1, nBocos
-          if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
-             do j=BCData(mm)%jnBeg+1, BCData(mm)%jnEnd
-                do i=BCData(mm)%inBeg+1, BCData(mm)%inEnd
-                   ii = ii +1
-                   if (oSurfs(iDom)%iBlank(ii) == -2) then 
-                      BCData(mm)%iblank(i,j) = -2
-                   end if
-                end do
+          ! Do a second pass and fill up the famList
+          allocate(famList(nFam))
+          nFam = 0
+          do i=1, size(BCFamGroups(iBCGroup)%famList)
+             do j=1, size(zipperFamlist)
+                if (BCFamGroups(iBCGroup)%famList(i) == zipperFamList(j)) then 
+                   nFam = nFam + 1
+                   famList(nFam) = zipperFamList(j)
+                end if
              end do
-          end if
+          end do
+       end if
+
+       if (debugZipper) then 
+          write(*,"(a)",advance="no") '-> Creating zipper for families : '
+          do i=1, size(famList)
+             write(*,"(a,1x)",advance="no") trim(famNames(famList(i)))
+          end do
+          print "(1x)"
+       end if
+
+
+       overlap => overlapMatrix(level, sps)
+       call transposeOverlap(overlap, overlapTranspose)
+       ! -------------------------------------------------------------------
+       ! Step 1: Eliminate any gap overlaps between meshes
+       ! -------------------------------------------------------------------
+
+       ! Determine the average area of surfaces on each cluster. This
+       ! will be independent of any block splitting distribution. 
+
+       call determineClusterAreas(famList)
+
+       ! Set the boundary condition blank values
+       call initBCDataIBlank(famList, level, sps)
+
+       ! Create the surface deltas
+       call surfaceDeviation(famList, level, sps)
+
+
+       ! ================ WE NORMALLY GOT THIS FROM OVERSETCOMM =============
+       ! Get the OSurf buffer sizes becuase we need that for getOSurfCommPattern
+       allocate(bufSizes(nDomTotal, 6), tmpInt2D(nDomTotal, 6))
+       tmpInt2D = 0
+       do nn=1, nDom
+          call setPointers(nn, level, sps)
+          iDom = cumDomProc(myid) + nn
+          call getOSurfBufferSizes(famList, il, jl, kl, tmpInt2D(iDom, 5), &
+               tmpInt2D(iDom, 6), .True.)
        end do
-    end do
 
-    ! And update based on the data we received from other processors
-    ii = 0
-    do kk=1, noSurfSend
+       call mpi_allreduce(tmpInt2D, bufSizes, 6*nDomTotal, adflow_integer, MPI_SUM, &
+            adflow_comm_world, ierr)
+       call ECHK(ierr, __FILE__, __LINE__)
 
-       iDom = oSurfSendList(2, kk)
-       nn = iDom - cumDomProc(myid)
+       ! Get the basic surface comm pattern. 
+       ! For sending, the worse case is sending all my blocks/fringes/walls to
+       ! everyone but myself:
+       ii = nDom*(nProc-1)
+       allocate(oSurfSendList(2, ii))
 
-       ! Set the block pointers for the local block we are dealing
-       ! with:
-       call setPointers(nn, level, sps)
-       do mm=1, nBocos
-          if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
-             do j=BCData(mm)%jnBeg+1, BCData(mm)%jnEnd
-                do i=BCData(mm)%inBeg+1, BCData(mm)%inEnd
-                   ii = ii + 1
-                   if (intRecvBuf(ii) == -2) then 
-                      BCData(mm)%iBlank(i  , j) = -2
-                   end if
-                end do
-             end do
-          end if
+       ! For receiving, the worse receive is all the blocks/fringes/wall I
+       ! don't already have:
+       ii = nDomTotal - nDom
+       allocate(oSurfRecvList(2, ii))
+
+       call getOSurfCommPattern(overlap, overlapTranspose, &
+            oSurfSendList, nOSurfSend, oSurfRecvList, nOSurfRecv, bufSizes(:, 6))
+       deallocate(tmpInt2D, bufSizes)
+       ! ========================================================================
+
+       ! Alloc data for the OSurfs
+       nn = max(nProc, 2*nOSurfSend, 2*nOSurfRecv)
+       allocate(tmpInt2D(nDomTotal, 2), bufSizes(nDomTotal, 2), &
+            oSurfReady(nDomTotal), recvInfo(2, nn))
+
+       tmpInt2D = 0
+       ! Need to get the differt sizes for the OSurfs since they are now
+       ! based on the primal mesh as opposed to do the dual mesh as
+       ! previously done
+       do nn=1, nDom
+          call setPointers(nn, level, sps)
+          iDom = cumDomProc(myid) + nn
+          call getOSurfBufferSizes(famList, il, jl, kl, tmpInt2D(iDom, 1), &
+               tmpInt2D(iDom, 2), .False.)
        end do
-    end do
 
-    ! Ditch our oSurfs
-    call deallocateOSurfs(OSurfs, nDomTotal)
-    deallocate(oSurfs, intRecvBuf)
+       ! Make sure everyone has the sizes
+       call mpi_allreduce(tmpInt2D, bufSizes, 2*nDomTotal, adflow_integer, MPI_SUM, &
+            adflow_comm_world, ierr)
+       call ECHK(ierr, __FILE__, __LINE__)
+       deallocate(tmpInt2D)
 
-    ! We are still left with an issue since we had only worked with
-    ! the owned cells, we don't know if if a halo surface iblank was
-    ! modified by another processor. The easiest way to deal with
-    ! this is do just do a halo-surface-iblank exchange. Essentially
-    ! we will put the surface iblankvalues into the volume iblank,
-    ! communicate and the extract again. Easy-peasy
-    call exchangeSurfaceIBlanks(zipperFamList, level, sps, commPatternCell_2nd, internalCell_2nd)
-
-    ! Before we continue, we do a little more
-    ! processing. bowTieElimination tries to eliminate cells
-    call bowTieAndIsolationElimination(zipperFamList, level, sps)
-  
-    ! -------------------------------------------------------------------
-    ! Step 2: Identify gap boundary strings and split the strings to 
-    !         sub-strings.
-    ! -------------------------------------------------------------------
-
-    if (debugZipper) then 
-       call writeWalls(zipperFamList)
-    end if
-
-    call makeGapBoundaryStrings(zipperFamList, level, sps, master)
-
-    rootProc: if (myid == 0) then 
-
-       if (debugZipper) then 
-          call writeZipperDebug(master)
-       end if
-  
-       call createOrderedStrings(master, strings, nStrings)
-
-       call performSelfZip(master, strings, nStrings)
-    
-       ! Write out any self-zipped triangles
-       if (debugZipper) then 
-          call writeOversetTriangles(master, "selfzipTriangulation.dat")
-       end if
-
-       call makeCrossZip(master, strings, nStrings)
-
-       if (debugZipper) then 
-          call writeOversetTriangles(master, "fullTriangulation.dat")
-       end if
-
-       ! ---------------------------------------------------------------
-       ! Sort through zipped triangle edges and the edges which have not
-       ! been used twice (orphan edges) will be ultimately gathered to 
-       ! form polygon pockets to be zipped.
-       call makePocketZip(master, strings, nStrings, pocketMaster)
-
-       if (debugZipper) then 
-          call writeOversetTriangles(pocketMaster, "pocketTriangulation.dat")
-       end if
-
-       ! Before we create the final data structures for the zipper
-       ! mesh; we will combine the master and pocketMaster
-       ! strings, and unique-ify the indices to help keep amount of data
-       ! transfer to a minimum. We also determine at this point which
-       ! triangle belongs to which family.
-       call setStringPointers(master)
-       nTriTotal = master%ntris + pocketMaster%ntris
-       nNodeTotal = master%nNodes + pocketMaster%nNodes
-       allocate(zipperConn(3, nTriTotal), zipperFam(nTriTotal), zipperIndices(nNodeTotal))
-
-       ii = 0
-       jj = 0
-       outerLoop: do iStr=1,2
-          ! Select which of the two we are dealing with
-          if (iStr ==1) then 
-             str => master
-             offset = 0
+       ! allocate oSurfs for the primal mesh
+       allocate(oSurfs(nDomTotal))
+       do iDom=1, nDomtotal
+          if (bufSizes(iDom, 1) == 0) then 
+             oSurfReady(iDom) = .True.
           else
-             str => pocketMaster
-             offset = master%nNodes
+             oSurfReady(iDom) = .False.
+          end if
+       end do
+
+       ! Initialize the primal walls
+       do nn=1, nDom
+          call setPointers(nn, level, sps)
+          iDom = cumDomProc(myid) + nn
+          call initializeOSurf(famList, oSurfs(iDom), .False., clusters(iDom))
+          call packOSurf(famList, oSurfs(iDom), .False.)
+          oSurfReady(iDom) = .True. 
+       end do
+
+       ! Post all the oSurf iSends
+       sendCount = 0
+       do jj=1, nOSurfSend
+          iProc = oSurfSendList(1, jj)
+          iDom = oSurfSendList(2, jj)
+          call sendOSurf(oSurfs(iDom), iDom, iProc, 0, sendCount)
+       end do
+
+       recvCount = 0
+       do jj=1, nOSurfRecv
+          iProc = oSurfRecvList(1, jj)
+          iDom = oSurfRecvList(2, jj)
+          call recvOSurf(oSurfs(iDom), iDom, iProc, 0, &
+               bufSizes(iDom, 1), bufSizes(iDom, 2), recvCount, recvInfo)
+       end do
+
+       ! Complete all the recives and sends
+       do i=1, recvCount
+          call mpi_waitany(recvCount, recvRequests, index, status, ierr)
+          call ECHK(ierr, __FILE__, __LINE__)
+       end do
+
+       do i=1,sendCount
+          call mpi_waitany(sendCount, sendRequests, index, status, ierr)
+          call ECHK(ierr, __FILE__, __LINE__)
+       end do
+
+       ! Unpack any blocks we received if necessary:
+       do i=1, recvCount
+
+          ! Global domain index of the recv that finished
+          iDom = recvInfo(1, i)
+          if (.not. oSurfs(iDom)%allocated) then 
+             call unpackOSurf(oSurfs(iDom))
+          end if
+       end do
+
+       ! Determine the size of the buffer we need locally for the
+       ! receives. We do this outside the main iteration loop since it
+       ! always the same size.
+       ii = 0
+       do jj=1, noSurfSend
+          ! These blocks are by definition local. 
+          iDom = oSurfSendList(2, jj)
+          ii = ii + oSurfs(iDom)%maxCells
+       end do
+       allocate(intRecvBuf(max(1, ii)))
+
+       ! ------------------------ Performing Searches ----------------        
+       call getWorkArray(overlap, work)
+
+
+       do iWork=1, size(work,2)
+          iDom = work(1, iWork)
+          jDom = work(2, iWork)
+          call wallSearch(oSurfs(iDom), oSurfs(jDom))
+       end do
+
+       ! ------------------------ Receiving iBlank back ---------------
+
+       sendCount = 0
+       do jj=1, noSurfRecv
+          iProc = oSurfRecvList(1, jj)
+          iDom = oSurfRecvList(2, jj)
+          sendCount = sendCount + 1
+          call mpi_isend(oSurfs(iDom)%iBlank, oSurfs(iDom)%maxCells, adflow_integer, &
+               iproc, iDom, adflow_comm_world, sendRequests(sendCount), ierr)
+          call ECHK(ierr, __FILE__, __LINE__)
+       end do
+
+       recvCount = 0
+       iStart = 1
+       do jj=1, noSurfSend
+          iProc = oSurfSendList(1, jj)
+          iDom = oSurfSendList(2, jj)
+          iSize = oSurfs(iDom)%maxCells
+          recvCount = recvCount + 1       
+
+          call mpi_irecv(intRecvBuf(iStart), iSize, adflow_integer, &
+               iProc, iDom, adflow_comm_world, recvRequests(recvCount), ierr)
+          call ECHK(ierr, __FILE__, __LINE__)
+          iStart = iStart + iSize
+       end do
+
+       ! Now wait for the sends and receives to finish
+       do i=1, sendCount
+          call mpi_waitany(sendCount, sendRequests, index, status, ierr)
+          call ECHK(ierr, __FILE__, __LINE__)
+       end do
+
+       do i=1, recvCount
+          call mpi_waitany(recvCount, recvRequests, index, status, ierr)
+          call ECHK(ierr, __FILE__, __LINE__)
+       end do
+
+       ! Release some unnecessary memory
+       deallocate(bufSizes, oSurfSendList, oSurfRecvList, oSurfReady, recvInfo, work)
+
+       ! Process the oSurfs we own locally
+       do nn=1, nDom
+          call setPointers(nn, level, sps)
+          iDom = cumDomProc(myid) + nn
+          ii = 0
+          do mm=1, nBocos
+             if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
+                do j=BCData(mm)%jnBeg+1, BCData(mm)%jnEnd
+                   do i=BCData(mm)%inBeg+1, BCData(mm)%inEnd
+                      ii = ii +1
+                      if (oSurfs(iDom)%iBlank(ii) == -2) then 
+                         BCData(mm)%iblank(i,j) = -2
+                      end if
+                   end do
+                end do
+             end if
+          end do
+       end do
+
+       ! And update based on the data we received from other processors
+       ii = 0
+       do kk=1, noSurfSend
+
+          iDom = oSurfSendList(2, kk)
+          nn = iDom - cumDomProc(myid)
+
+          ! Set the block pointers for the local block we are dealing
+          ! with:
+          call setPointers(nn, level, sps)
+          do mm=1, nBocos
+             if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
+                do j=BCData(mm)%jnBeg+1, BCData(mm)%jnEnd
+                   do i=BCData(mm)%inBeg+1, BCData(mm)%inEnd
+                      ii = ii + 1
+                      if (intRecvBuf(ii) == -2) then 
+                         BCData(mm)%iBlank(i  , j) = -2
+                      end if
+                   end do
+                end do
+             end if
+          end do
+       end do
+
+       ! Ditch our oSurfs
+       call deallocateOSurfs(OSurfs, nDomTotal)
+       deallocate(oSurfs, intRecvBuf)
+
+       ! We are still left with an issue since we had only worked with
+       ! the owned cells, we don't know if if a halo surface iblank was
+       ! modified by another processor. The easiest way to deal with
+       ! this is do just do a halo-surface-iblank exchange. Essentially
+       ! we will put the surface iblankvalues into the volume iblank,
+       ! communicate and the extract again. Easy-peasy
+       call exchangeSurfaceIBlanks(famList, level, sps, commPatternCell_2nd, internalCell_2nd)
+
+       ! Before we continue, we do a little more
+       ! processing. bowTieElimination tries to eliminate cells
+       call bowTieAndIsolationElimination(famList, level, sps)
+
+       ! -------------------------------------------------------------------
+       ! Step 2: Identify gap boundary strings and split the strings to 
+       !         sub-strings.
+       ! -------------------------------------------------------------------
+
+       if (debugZipper) then 
+          call writeWalls(famList)
+       end if
+
+       call makeGapBoundaryStrings(famList, level, sps, master)
+
+       rootProc: if (myid == 0) then 
+
+          if (debugZipper) then 
+             call writeZipperDebug(master)
           end if
 
-          ! Loop over the number of triangles.
-          do i=1, str%nTris
-             ii = 0
+          call createOrderedStrings(master, strings, nStrings)
 
-             ! Extract the family from the nodes
-             do j=1,3
-                nodeFam(j) = str%family(str%tris(j, i))
+          call performSelfZip(master, strings, nStrings)
+
+          ! Write out any self-zipped triangles
+          if (debugZipper) then 
+             call writeOversetTriangles(master, "selfzipTriangulation.dat")
+          end if
+
+          call makeCrossZip(master, strings, nStrings)
+
+          if (debugZipper) then 
+             call writeOversetTriangles(master, "fullTriangulation.dat")
+          end if
+
+          ! ---------------------------------------------------------------
+          ! Sort through zipped triangle edges and the edges which have not
+          ! been used twice (orphan edges) will be ultimately gathered to 
+          ! form polygon pockets to be zipped.
+          call makePocketZip(master, strings, nStrings, pocketMaster)
+
+          if (debugZipper) then 
+             call writeOversetTriangles(pocketMaster, "pocketTriangulation.dat")
+          end if
+
+          ! Before we create the final data structures for the zipper
+          ! mesh; we will combine the master and pocketMaster
+          ! strings, and unique-ify the indices to help keep amount of data
+          ! transfer to a minimum. We also determine at this point which
+          ! triangle belongs to which family.
+          call setStringPointers(master)
+          nTriTotal = master%ntris + pocketMaster%ntris
+          nNodeTotal = master%nNodes + pocketMaster%nNodes
+          allocate(zipper%conn(3, nTriTotal), zipper%fam(nTriTotal), zipper%indices(nNodeTotal))
+
+          ii = 0
+          jj = 0
+          outerLoop: do iStr=1,2
+             ! Select which of the two we are dealing with
+             if (iStr ==1) then 
+                str => master
+                offset = 0
+             else
+                str => pocketMaster
+                offset = master%nNodes
+             end if
+
+             ! Loop over the number of triangles.
+             do i=1, str%nTris
+
+                ! Extract the family from the nodes
+                do j=1,3
+                   nodeFam(j) = str%family(str%tris(j, i))
+                end do
+
+                ! Increment the running counter for all triangles.
+                ii = ii + 1
+
+                ! Set the family
+                zipper%Fam(ii) = selectNodeFamily(nodeFam)
+
+                ! Set the connectivity. 
+                zipper%conn(:, ii) = str%tris(:, i) + offset
              end do
 
-             ! Increment the running counter for all triangles.
-             ii = ii + 1
+             ! Loop over the nodal indices and add
+             do j=1, str%nNodes
+                ! And set the global indices that the zipper needs. Note
+                ! that we are doing zipperIndices as a scalar and that
+                ! the indices refer to the global nodes so are already in
+                ! 0-based ordering. 
+                jj = jj + 1
+                zipper%indices(jj) = str%ind(j)
+             end do
+          end do outerLoop
 
-             ! Set the family
-             zipperFam(ii) = selectNodeFamily(nodeFam)
-
-             ! Set the connectivity. 
-             zipperConn(:, ii) = str%tris(:, i) + offset
+          ! Clean up the reminder of the sting memory on the root proc
+          do i=1, nFullStrings
+             call deallocateString(strings(i))
           end do
+          deallocate(strings)
+          call deallocateString(master)
+          call deallocateString(pocketMaster)
 
-          ! Loop over the nodal indices and add
-          do j=1, str%nNodes
-             ! And set the global indices that the zipper needs. Note
-             ! that we are doing zipperIndices as a scalar and that
-             ! the indices refer to the global nodes so are already in
-             ! 0-based ordering. 
-             jj = jj + 1
-             zipperIndices(jj) = str%ind(j)
-          end do
-       end do outerLoop
+       else
+          ! Other procs don't have any triangles *sniffle* :-( 
+          allocate(zipper%conn(3, 0), zipper%fam(0), zipper%indices(0))
+       end if rootProc
 
-       ! Clean up the reminder of the sting memory on the root proc
-       do i=1, nFullStrings
-          call deallocateString(strings(i))
-       end do
-       deallocate(strings)
-       call deallocateString(master)
-       call deallocateString(pocketMaster)
-    else
-       ! Other procs don't have any triangles *sniffle* :-( 
-       allocate(zipperConn(3, 0), zipperFam(0), zipperIndices(0))
-    end if rootProc
+       call VecCreateMPI(ADFLOW_COMM_WORLD, size(zipper%indices), PETSC_DETERMINE, &
+            zipper%localVal, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
 
-    call VecCreateMPI(ADFLOW_COMM_WORLD, size(zipperIndices), PETSC_DETERMINE, &
-         localZipperVal, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
+       ! Now create the general scatter that goes from the
+       ! globalNodalVector to the local vectors. 
+       call ISCreateGeneral(adflow_comm_world, size(zipper%indices), &
+            zipper%indices, PETSC_COPY_VALUES, IS1, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
 
-    ! This is a generic scalar global nodal vector that can store the
-    ! coordinates, tractions, or other values the zipper needs
-    call VecCreateMPI(ADFLOW_COMM_WORLD, nNodesLocal(1), PETSC_DETERMINE, &
-         globalNodalVec, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
+       call VecScatterCreate(BCFamExchange(iBCGroup, sps)%nodeValGlobal, IS1, &
+            zipper%localVal, PETSC_NULL_OBJECT, zipper%scatter, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
 
-    ! Now create the general scatter that goes from the
-    ! globalNodalVector to the local vectors. 
-    call ISCreateGeneral(adflow_comm_world, size(zipperIndices), &
-         zipperIndices, PETSC_COPY_VALUES, IS1, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
+       call ISDestroy(IS1, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
 
-    call VecScatterCreate(globalNodalVec, IS1, localZipperVal, PETSC_NULL_OBJECT, &
-         nodeZipperScatter, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
 
-    call ISDestroy(IS1, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
+
+       ! Flag to keep track of allocated PETSc object.
+       zipper%allocated = .True.
+    end do BCGroupLoop
 
   contains
     function selectNodeFamily(nodeFam)
       implicit none
       integer(kind=intType), dimension(3) :: nodeFam
       integer(kind=intType) :: selectNodeFamily
-      
+
       ! We have a few cases to check: 
 
       if (nodeFam(1) == nodeFam(2) .and. nodeFam(1) == nodeFam(3)) then 
          ! Case 1: All of the nodes have the same family. This is what
          ! *should* happen all the time:
-         
+
          selectNodeFamily = nodeFam(1)
 
       else if (nodeFam(1) == nodeFam(2)) then 
 
          ! Case 2a: First two nodes are the same. Take the family from 1. 
-         
+
          selectNodeFamily = nodeFam(1)
 
       else if (nodeFam(2) == nodeFam(3)) then 
 
          ! Case 2b: Last two nodes are the same. Take the family from 2. 
-         
+
          selectNodeFamily = nodeFam(2)
 
       else if (nodeFam(1) == nodeFam(3)) then 
 
          ! Case 2b: First and last nodes are the same. Take the family from 1. 
-         
+
          selectNodeFamily = nodeFam(1)
 
       else
-         
+
          ! All nodes are different. We arbitrarily take the first and
          ! print a warning becuase this should not happen. 
-         
+
          selectNodeFamily = nodeFam(1)
          print *,'Family for triangle could not be uniquely determined. Nodes are from 3 different families!'
       end if
 
-      end function selectNodeFamily
-    end subroutine createZipperMesh
+    end function selectNodeFamily
+  end subroutine createZipperMesh
   !
   !       determineClusterArea determine the average cell surface area   
   !       for all blocks in a particular cluster. This is used for       
   !       determine blanking preference for overlapping surface cells.   
 
-  subroutine determineClusterAreas(zipperFamList)
+  subroutine determineClusterAreas(famList)
 
     use constants
     use blockPointers, only : nDom, BCData, nBocos, BCType
@@ -514,7 +572,7 @@ contains
     implicit none
 
     ! Input Parameters
-    integer(kind=intType), intent(in), dimension(:) :: zipperFamList
+    integer(kind=intType), intent(in), dimension(:) :: famList
 
     ! Working
     integer(kind=intType) :: i, j, mm, nn, clusterID, ierr, nPts, nCells
@@ -542,7 +600,7 @@ contains
 
        ! Loop over the number of boundary subfaces of this block.
        bocos: do mm=1,nBocos
-          famInclude: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
+          famInclude: if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
 
              ! Store the cell range of the subfaces a bit easier.
              ! As only owned faces must be considered the nodal range
@@ -590,7 +648,7 @@ contains
     deallocate(localAreas, localCount, globalCount)
   end subroutine determineClusterAreas
 
-  subroutine initBCDataiBlank(zipperFamList, level, sps)
+  subroutine initBCDataiBlank(famList, level, sps)
 
     use constants
     use blockPointers
@@ -601,7 +659,7 @@ contains
     implicit none
 
     ! Input Parameters
-    integer(kind=intType), intent(in), dimension(:) :: zipperFamList
+    integer(kind=intType), intent(in), dimension(:) :: famList
     integer(kind=intType), intent(in) :: level, sps
 
     ! Local variables
@@ -682,7 +740,7 @@ contains
              gcp => globalCell(:, :, kl)
              frx => forcedRecv(:, :, kl)
           end select
-          
+
           ! -------------------------------------------------
           ! Step 1: Set the (haloed) cell iBlanks directly from
           ! the volume iBlanks
@@ -701,12 +759,12 @@ contains
 
           ! Only do the slit elimination if we actually care about
           ! this surface for the zipper
-          famInclude: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
-          
+          famInclude: if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
+
              ! -------------------------------------------------
              ! Step 2: Slit elimination
              ! -------------------------------------------------
-             
+
              ! Now we loop back through the cells again. For
              ! interpolated cells with iblank=-1 we see if it satifies
              ! the criteria above. If so we flag it wil "toFlip" =
@@ -718,40 +776,40 @@ contains
              toFlip = 0
              do j=jBeg, jEnd
                 do i=iBeg, iEnd
-                   
-                ! We *might* add it if the interpolated cell is
+
+                   ! We *might* add it if the interpolated cell is
                    ! touching two real cell on opposite sides.
                    if (BCData(mm)%iBlank(i, j) == -1 .and. validCell(i, j)) then
-                      
+
                       ! Reset the side flag
                       side = .False.
-                      
+
                       if (validCell(i-1, j) .and. BCData(mm)%iBlank(i-1, j) == 1) then
                          side(1) = .True.
                       end if
-                      
+
                       if (validCell(i+1, j) .and. BCData(mm)%iBlank(i+1, j) == 1) then
                          side(2) = .True.
                       end if
-                      
+
                       if (validCell(i, j-1) .and. BCData(mm)%iBlank(i, j-1) ==1 ) then
                          side(3) = .True.
                       end if
-                      
+
                       if (validCell(i, j+1) .and. BCData(mm)%iBlank(i, j+1) == 1) then
                          side(4) = .True.
                       end if
-                      
+
                       if ((side(1) .and. side(2)) .or. (side(3) .and. side(4)))  then
                          toFlip(i,j) = 1
                       end if
                    end if
                 end do
              end do
-             
+
              ! Now just set the cell surface iblank to 1 if we
              ! determined above we need to flip  the cell
-             
+
              do j=jBeg, jEnd
                 do i=iBeg, iEnd
                    if (toFlip(i, j) == 1) then
@@ -790,7 +848,7 @@ contains
   !     * wall. 
   !
 
-  subroutine surfaceDeviation(zipperFamList, level, sps)
+  subroutine surfaceDeviation(famList, level, sps)
 
     use constants
     use blockPointers, only :BCdata, x, nBocos, nDom, BCType, il, jl, kl, BCFaceID
@@ -800,7 +858,7 @@ contains
     implicit none
 
     ! Input Parameters
-    integer(kind=intType), intent(in), dimension(:) :: zipperFamList
+    integer(kind=intType), intent(in), dimension(:) :: famList
     integer(kind=intType), intent(in) :: level, sps
 
     ! Local Variables
@@ -812,7 +870,7 @@ contains
        call setPointers(nn, level, sps)
 
        bocoLoop: do mm=1, nBocos
-          famInclude: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
+          famInclude: if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
 
              call setBCPointers(mm, .True.)
              jBeg = BCdata(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
@@ -900,7 +958,7 @@ contains
        call setPointers(nn, level, sps)
 
        bocoLoop2: do mm=1, nBocos
-          famInclude2: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
+          famInclude2: if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
 
              jBeg = BCdata(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd  
@@ -993,7 +1051,7 @@ contains
 
   end function checkDeviation
 
-  subroutine writeWalls(zipperFamList)
+  subroutine writeWalls(famList)
 
     use communication
     use overset
@@ -1003,7 +1061,7 @@ contains
     use BCPointers, only : xx
     use sorting, only : bsearchIntegers
     implicit none
-    integer(kind=intType), intent(in), dimension(:) :: zipperFamList
+    integer(kind=intType), intent(in), dimension(:) :: famList
     character(80) :: fileName, zoneName
     integer(kind=intType) :: i, j, nn, iDom, iBeg, iEnd, jBeg, jEnd, mm, iDim
 
@@ -1020,7 +1078,7 @@ contains
           do mm=1, nBocos
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
-             famInclude2: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
+             famInclude2: if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
                 call setBCPointers(mm, .True.)
 
                 write(zoneName, "(a,I5.5,a,I5.5)") "Zone", iDom, "_Proc_", myid
@@ -1054,7 +1112,7 @@ contains
     end do
     close(101)
   end subroutine writeWalls
-  subroutine bowTieAndIsolationElimination(zipperFamList, level, sps)
+  subroutine bowTieAndIsolationElimination(famList, level, sps)
 
     use constants
     use blockPointers
@@ -1065,7 +1123,7 @@ contains
     implicit none
 
     ! Input Parameters
-    integer(kind=intType), intent(in), dimension(:) :: zipperFamList
+    integer(kind=intType), intent(in), dimension(:) :: famList
     integer(kind=intType), intent(in) :: level, sps
 
     ! Local variables
@@ -1087,7 +1145,7 @@ contains
           call setPointers(nn, level, sps)
 
           bocoLoop1: do mm=1, nBocos
-             famInclude1: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
+             famInclude1: if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
 
                 select case (BCFaceID(mm))
                 case (iMin)
@@ -1143,7 +1201,7 @@ contains
 
        ! Since we potentially changed iBlanks, we need to updated by
        ! performing an exchange.
-       call exchangeSurfaceIBlanks(zipperFamList, level, sps, commPatternCell_2nd, internalCell_2nd)
+       call exchangeSurfaceIBlanks(famList, level, sps, commPatternCell_2nd, internalCell_2nd)
 
     end do bowTieLoop
 
@@ -1151,8 +1209,8 @@ contains
        call setPointers(nn, level, sps)
 
        bocoLoop2: do mm=1, nBocos
-          famInclude2: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
-             
+          famInclude2: if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
+
              select case (BCFaceID(mm))
              case (iMin)
                 gcp => globalCell(2, :, :)
@@ -1200,7 +1258,7 @@ contains
 
     ! Again, since we potentially changed iBlanks, we need to updated by
     ! performing an exchange.
-    call exchangeSurfaceIBlanks(zipperFamList, level, sps, commPatternCell_2nd, internalCell_2nd)
+    call exchangeSurfaceIBlanks(famList, level, sps, commPatternCell_2nd, internalCell_2nd)
   contains
     subroutine findBowTies
 

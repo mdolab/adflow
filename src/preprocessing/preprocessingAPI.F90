@@ -1291,20 +1291,20 @@ contains
     use cgnsGrid, onlY : cgnsDoms
     use communication, only : myid, adflow_comm_world
     use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use surfaceFamilies, only : wallExchange, famNames, fullFamList, wallFamList, &
-         famIsWall, zeroCellVal, zeroNodeVal, oneCellVal, fullExchange
+    use surfaceFamilies, only : BCFamExchange, famNames, fullFamList, &
+         zeroCellVal, zeroNodeVal, oneCellVal, BCFamgroups
     use utils, only : setPointers, EChk, pointReduce, terminate, convertToLowerCase
-    use sorting, only : qsortStrings, bsearchStrings
+    use sorting, only : qsortStrings, bsearchStrings, bSearchIntegers
     implicit none
 
     integer :: ierr
     integer(kind=intType) :: nLevels, level, nn, mm, nsMin, nsMax, i, j, k, nFam, famID, cgb, iFam
     integer(kind=intType) :: sps, isizemax, jsizemax, totalFamilies, totalWallFamilies
-    integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii
+    integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii, iBCGroup, totalBCFamilies
     character(maxCGNSNameLen), dimension(25) :: defaultFamName 
     character(maxCGNSNameLen) :: curStr, family
-    character(maxCGNSNameLen), dimension(:), allocatable :: uniqueFamListNames, fullFamListNames
-    integer(kind=intType), dimension(:), allocatable :: localFlag
+    character(maxCGNSNameLen), dimension(:), allocatable :: uniqueFamListNames
+    integer(kind=intType), dimension(:), allocatable :: localFlag, famIsPartOfBCGroup
     integer(kind=intType), dimension(:), allocatable :: localIndices
 
     ! Process out the family information. The goal here is to
@@ -1360,47 +1360,47 @@ contains
     end do
 
     ! Allocate space for the full family list
-    allocate(fullFamListNames(nFam))
+    allocate(famNames(nFam))
     nFam = 0
     do i=1, size(cgnsDoms)
        do j=1, size(cgnsDoms(i)%bocoInfo)
           if (cgnsDoms(i)%bocoInfo(j)%actualFace) then 
              nFam = nFam + 1
-             fullFamListNames(nfam) = cgnsDoms(i)%bocoInfo(j)%wallBCName
-             call convertToLowerCase(fullFamListNames(nFam))
+             famNames(nfam) = cgnsDoms(i)%bocoInfo(j)%wallBCName
+             call convertToLowerCase(famNames(nFam))
           end if
        end do
     end do
 
     ! Now sort the family names:
-    call qsortStrings(fullFamListNames, nFam)
+    call qsortStrings(famNames, nFam)
 
     ! Next we need to generate a unique set of names. 
     allocate(uniqueFamListNames(nFam))
 
-    curStr = fullFamListNames(1)
+    curStr = famNames(1)
     uniqueFamListNames(1) = curStr
     j = 1
     i = 1
     do while(i < nFam)
 
        i = i + 1
-       if (fullFamListNames(i) == curStr) then 
+       if (famNames(i) == curStr) then 
           ! Same str, do nothing. 
        else
           j = j + 1
-          curStr = fullFamListNames(i)
+          curStr = famNames(i)
           uniqueFamListNames(j) = curStr
        end if
     end do
 
 
     totalFamilies = j
-    ! Now copy the uniqueFamListNames back to "fullFamListNames" and allocate
+    ! Now copy the uniqueFamListNames back to "famNames" and allocate
     ! exactly the right size. 
-    deallocate(fullFamListNames)
-    allocate(fullFamListNames(totalFamilies))
-    fullFamListNames(1:totalFamilies) = uniqueFamListNames(1:totalFamilies)
+    deallocate(famNames)
+    allocate(famNames(totalFamilies))
+    famNames(1:totalFamilies) = uniqueFamListNames(1:totalFamilies)
     deallocate(uniqueFamListNames)
 
     ! Now each block boundary condition can uniquely determine it's
@@ -1414,7 +1414,7 @@ contains
           family = cgnsDoms(cgb)%bocoInfo(cgnsSubface(mm))%wallBCName
           call convertToLowerCase(family)
 
-          famID = bsearchStrings(family, fullFamListNames)
+          famID = bsearchStrings(family, famNames)
           if (famID == 0) then 
              ! Somehow we never found the family...
              call terminate("setSurfaceFamilyInfo", &
@@ -1433,75 +1433,174 @@ contains
        end do
     end do
 
-    allocate(famNames(totalFamilies), famIsWall(totalFamilies), localFlag(totalFamilies))
-    localFlag = 0
-    famNames = fullFamListNames
+    ! Next we need to group the families based on their boundary
+    ! condition. The reason for this is that we generate the reduction
+    ! scatterd based on groups of BC types. Specifically the following groups:
 
-    ! Determine which of the unique families are walls. This is
-    ! slightly inefficient but not terribly so.
-    do iFam=1, totalFamilies
+    ! 1. Walls : EulerWall, NSWallAdiabatic, NSWallIsothermal
+    ! 2. Symm : Symm, SymmPolar
+    ! 3. Inflow/Outflow : subSonicInflow, subSonicOutflow, supersonicInflow, superSonicOutflow
+    ! 4. Farfield : Farfield
+    ! 5. Overset : OversetouterBound
+    ! 6. Others : All remaining BCs
 
-       do nn=1,nDom
-          call setPointers(nn, 1_intType, 1_intType)
-          do mm=1, nBocos
-             if (flowDoms(nn, 1, 1)%bcData(mm)%famID == iFam .and. &
-                  (BCType(mm) == EulerWall .or. BCtype(mm) == NSWallAdiabatic .or. &
-                  BCType(mm) == NSwallIsoThermal)) then 
-                localFlag(iFam) = 1
-             end if
-          end do
+    
+    ! The final familyExchange structure. 
+    allocate(BCFamExchange(nFamExchange, nTimeIntervalsSpectral), localFlag(totalFamilies))
+
+    BCGroupLoop: do iBCGroup=1, nfamExchange
+       localFlag = 0
+       ! Determine which of the unique families match the specific
+       ! BCGroup.  This is slightly inefficient but not it isn't
+       ! performance critical. 
+       famLoop: do iFam=1, totalFamilies
+          domainLoop: do nn=1,nDom
+             call setPointers(nn, 1_intType, 1_intType)
+             bocoLoop: do mm=1, nBocos
+                matchiFam: if (flowDoms(nn, 1, 1)%bcData(mm)%famID == iFam) then 
+                   select case(iBCGroup)
+
+                   case (iBCGroupWalls)
+                      if (BCType(mm) == EulerWall .or. &
+                           BCType(mm) == NSWallAdiabatic .or. &
+                           BCType(mm) == NSwallIsoThermal) then 
+                         localFlag(iFam) = 1
+                      end if
+
+                   case (iBCGroupInflowOutflow)
+                      if (BCType(mm) == SubsonicInflow .or. &
+                           BCType(mm) == SubsonicOutflow .or. &
+                           BCType(mm) == SupersonicInflow .or. &
+                           BCType(mm) == SupersonicOutflow) then 
+                         localFlag(iFam) = 1
+                      end if
+
+                   case (iBCGroupSymm)
+                      if (BCType(mm) == Symm .or. BCType(mm) == SymmPolar) then 
+                         localFlag(iFam) = 1
+                      end if
+
+                   case (iBCGroupFarfield) 
+                      if (BCType(mm) == Farfield) then 
+                         localFlag(iFam) = 1
+                      end if
+
+                   case (iBCGroupOverset)
+                      if (BCType(mm) == OversetOuterBound) then 
+                         localFlag(iFam) = 1
+                      end if
+
+                   case (iBCGroupOther)
+                      ! All other boundary conditions. Note that some
+                      ! of these are not actually implemeented
+                      if (BCType(mm) == BCNull .or. &
+                           BCType(mm) == MassBleedInflow .or. &
+                           BCType(mm) == MassbleedOutflow .or. &
+                           BCType(mm) == mDot .or. &
+                           BCType(mm) == Thrust .or. &
+                           BCType(mm) == Extrap .or. &
+                           BCType(mm) == B2BMatch .or. &
+                           BCType(mm) == B2BMisMatch .or. &
+                           BCType(mm) == SlidingInterface .or. &
+                           BCType(mm) == DomainInterfaceAll .or. &
+                           BCType(mm) == DomainInterfaceRhoUVW .or. &
+                           BCType(mm) == DomainInterfaceP .or. &
+                           BCType(mm) == DomainInterfaceRho .or. &
+                           BCType(mm) == DomainInterfaceTotal) then 
+                         localFlag(iFam) = 1
+                      end if
+                   end select
+                end if matchiFam
+             end do bocoLoop
+          end do domainLoop
+       end do famLoop
+       
+       ! All Reduce so all procs know the same information. 
+       allocate(famIsPartOfBCGroup(totalFamilies))
+       call mpi_allreduce(localFlag, famIsPartOfBCGroup, totalFamilies, &
+            adflow_integer, MPI_SUM, adflow_comm_world, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+
+       ! Count up the number of families this BC has. 
+       totalBCFamilies = 0
+       do i=1, totalFamilies
+          if (famIsPartOfBCGroup(i) > 0) then 
+             totalBCFamilies = totalBCFamilies + 1
+          end if
        end do
-    end do
+       
+       ! Allocate the space for the list of fam for each BC and set. 
+       allocate(BCFamGroups(iBCGroup)%famList(totalBCFamilies))
+       k = 0
+       do i=1, totalFamilies
+          if (famIsPartOfBCGroup(i) > 0) then 
+             k = k + 1
+             BCFamGroups(iBCGroup)%famList(k) = i
+          end if
+       end do
+       deallocate(famIsPartOfBCGroup)
 
-    call mpi_allreduce(localFlag, famIsWall, totalFamilies, adflow_integer, MPI_SUM, adflow_comm_world, ierr)
-
-    ! Save the wall family list. 
-    totalWallFamilies = 0
-    do i=1,totalFamilies
-       if (famIsWall(i) > 0) then 
-          totalWallFamilies = totalWallFamilies + 1
-       end if
-    end do
-
-    allocate(wallFamList(totalWallFamilies))
-    k = 0
-    do i=1,totalFamilies
-       if (famIsWall(i) > 0) then 
-          k = k + 1
-          wallFamList(k) = i
-       end if
-    end do
-
-    ! Create the shortcut array for all families:
-    allocate(fullFamList(totalFamilies))
-    do i=1,totalFamilies
-       fullFamList(i) = i
-    end do
-
-    allocate(wallExchange(nTimeIntervalsSpectral), fullExchange(nTimeIntervalsSpectral))
-    do sps=1, nTimeIntervalsSpectral
-       call createNodeScatterForFamilies(wallFamList, wallExchange(sps), sps, localIndices)
-       call createNodeScatterForFamilies(fulLFamLIst, fullExchange(sps), sps, localIndices)
-
-       ! For the fullExchange the "localIndices" is the globalIndex
-       ! into the reduced global surface vector. We want to this
-       ! information around and will put in in the special BCData slot surfIndex. 
-       ii = 0
-       do nn=1, nDom
-          call setPointers(nn, 1, sps)
-          do mm=1, nBocos
-             iBeg = BCData(mm)%inbeg; iEnd = BCData(mm)%inend
-             jBeg = BCData(mm)%jnbeg; jEnd = BCData(mm)%jnend
-             do j=jBeg, jEnd
-                do i=iBeg, iEnd
-                   ii = ii + 1
-                   BCData(mm)%surfIndex(i,j) = localIndices(ii)
-                end do
+       ! Create a scatter for each spectral instance. 
+       spsLoop: do sps=1, nTimeIntervalsSpectral
+          
+          call createNodeScatterForFamilies(&
+               BCFamGroups(iBCGroup)%famList, BCFamExchange(iBCGroup, sps), sps, localIndices)
+          
+          ! The "localIndices" is the globalIndex into the reduced
+          ! global surface vector for this BCGroup. We want to this
+          ! information around and will put in in the special BCData
+          ! slot surfIndex.
+          ii = 0
+          do nn=1, nDom
+             call setPointers(nn, 1, sps)
+             do mm=1, nBocos
+                famInclude: if (bsearchIntegers(BCData(mm)%famId, BCFamGroups(iBCGroup)%famList) >0) then 
+                   iBeg = BCData(mm)%inbeg; iEnd = BCData(mm)%inend
+                   jBeg = BCData(mm)%jnbeg; jEnd = BCData(mm)%jnend
+                   do j=jBeg, jEnd
+                      do i=iBeg, iEnd
+                         ii = ii + 1
+                         BCData(mm)%surfIndex(i,j) = ii!localIndices(ii)+1
+                      end do
+                   end do
+                end if famInclude
              end do
           end do
+          deallocate(localIndices)
+       end do spsLoop
+    end do BCGroupLoop
+
+    ! Dump a little information out to the user giving the family and
+    ! the BC types. This will probably be useful in general. 
+
+    if (myid == 0) then 
+       write(*, "(a)") '+--------------------------------------------------+'
+       write(*, "(a)") '  CGNS Surface Families by Boundary Condition Type'
+       write(*, "(a)") '+--------------------------------------------------+'
+
+       do iBCGroup=1,6
+          select case(iBCGroup)
+          case (iBCGroupWalls)
+             write(*,"(a)",advance="no") '| Wall Types           : '
+          case (iBCGroupInflowOutflow)
+             write(*,"(a)",advance="no") '| Inflow/Outflow Types : '
+          case (iBCGroupSymm)
+             write(*,"(a)",advance="no") '| Symmetry Types       : '
+          case (iBCGroupFarfield)
+             write(*,"(a)",advance="no") '| Farfield Types       : '
+          case (iBCGroupOverset)
+             write(*,"(a)",advance="no") '| Oveset Types         : '
+          case (iBCGroupOther)
+             write(*,"(a)",advance="no") '| Other Types          : '
+          end select
+
+          do i=1,size(BCFamGroups(iBCGroup)%famList)
+             write(*,"(a,1x)",advance="no") trim(famNames(BCFamGroups(iBCGroup)%famList(i)))
+          end do
+          print "(1x)"
        end do
-       deallocate(localIndices)
-    end do
+       write(*, "(a)") '+--------------------------------------------------+'
+    end if
 
     ! Allocate  arrays that have the maximum face size. These may
     ! be slightly larger than necessary, but that's ok. We just need
@@ -1523,6 +1622,13 @@ contains
     oneCellVal = one
     zeroCellVal = zero
     zeroNodeVal = zero
+
+    ! Finally, create the shortcut array for all families. This is just
+    ! 1,2,3..totalFamilies.
+    allocate(fullFamList(totalFamilies))
+    do i=1, totalFamilies
+       fullFamList(i) = i
+    end do
 
   end subroutine setSurfaceFamilyInfo
 

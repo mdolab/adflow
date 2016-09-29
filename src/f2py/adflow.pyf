@@ -300,6 +300,11 @@ python module libadflow
            integer(kind=inttype), optional,check(len(famlist2)>=nf2),depend(famlist2) :: nf2=len(famlist2)
          end subroutine mapvector
 
+         subroutine getwalllist(walllist,nwalllist,nfamtotal) ! in :test:surfaceUtils.F90:surfaceutils
+           integer(kind=inttype) dimension(nfamtotal),intent(out),depend(nfamtotal) :: walllist
+           integer(kind=inttype) intent(out) :: nwalllist
+           integer(kind=inttype) intent(in) :: nfamtotal
+         end subroutine getwalllist
        end module surfaceutils
 
        module tecplotio
@@ -1093,7 +1098,6 @@ python module libadflow
 
         module surfacefamilies ! in :test:inputParam.F90
           character(len=32), dimension(:), allocatable :: famnames
-          integer(kind=inttype), allocatable,dimension(:) :: famiswall
         end module surfacefamilies
 
 

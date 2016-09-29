@@ -22,7 +22,7 @@ contains
     use adtBuild, only : destroySerialQuad
     use inputOverset, onlY : lowOversetMemory, overlapFactor
     use utils, only : EChk, setPointers, setBufferSizes, terminate
-    use surfaceFamilies, only : wallFamList
+    use surfaceFamilies, only : BCFamGroups
     use kdtree2_module, onlY : kdtree2_create, kdtree2destroy
     use oversetInitialization, only : initializeFringes, initializeOBlock, &
          initializeOFringes
@@ -55,7 +55,7 @@ contains
 
     integer(kind=intType), dimension(:), allocatable :: cumFringeRecv, fringeRecvSizes
     integer(kind=intType), dimension(:, :), allocatable :: work, tmpInt2D
-
+    integer(kind=intType), dimension(:), pointer ::  wallFamList
     real(kind=realType), dimension(:), allocatable :: tmpReal
     real(kind=realType), dimension(:, :), allocatable :: xMin, xMax
 
@@ -168,6 +168,7 @@ contains
        allocate(bufSizes(nDomTotal, 6), tmpInt2D(nDomTotal, 6), &
             tmpReal(size(overlap%data)))
 
+       wallFamList => BCFamGroups(iBCGroupWalls)%famList
        ! Initialization 
        tmpReal = zero
        tmpInt2D = 0

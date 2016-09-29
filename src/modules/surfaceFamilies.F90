@@ -1,6 +1,6 @@
 module surfaceFamilies
 
-  use constants, only : intType, realType, maxCGNSNameLen
+  use constants, only : intType, realType, maxCGNSNameLen, nFamExchange
   implicit none
   save
 #ifndef USE_TAPENADE
@@ -27,35 +27,33 @@ module surfaceFamilies
 
   end type familyExchange
 
+  type BCGroupType
+     integer(kind=intType), dimension(:), pointer :: famList
+  end type BCGroupType
+
+  ! Generic PETSc scatters
   IS IS1, IS2
 
+  ! The list of exchanges based on boundary condition type
+  type(familyExchange), dimension(:, :), allocatable, target :: BCFamExchange
 
-  ! The list of family exchanges for each individual family
-  !type(familyExchange) , dimension(:, :), allocatable, target :: familyExchanges
+  ! List of familis grouped by BC. See constants.F90 for the indices
+  ! to use for this array. 
+  type(BCGroupType), dimension(nFamExchange) :: BCFamGroups
 
-  ! All the walls get their own exchange that is reduced over all
-  ! walls. This is used for the lift distribution/slice data to make
-  ! sure all data is consistently reduced. 
-  type(familyExchange), dimension(:), allocatable, target :: wallExchange
-  type(familyExchange), dimension(:), allocatable, target :: fullExchange
-
-#endif
   ! The full list of the family names 
   character(len=maxCGNSNameLen), dimension(:), allocatable :: famNames
-  
-  ! Integer flag of if a fam is a wall:
-  integer(kind=intType), dimension(:), allocatable :: famIsWall
 
-  ! List of all families
+  ! List of all families. This is just 1,2,3,4...nFam. It is just used
+  ! in fortran when a specific family is not required. 
   integer(kind=intType), dimension(:), allocatable :: fullFamList
+#endif
 
-  ! Special list of all wall families
-  integer(kind=intType), dimension(:), allocatable :: wallFamList
-
-
+  ! Special BC array's that are sometime required for reducitons. 
   real(kind=realType), dimension(:, :), allocatable, target :: zeroCellVal
   real(kind=realType), dimension(:, :), allocatable, target :: oneCellVal
   real(kind=realType), dimension(:, :), allocatable, target :: zeroNodeVal
+
 
 #ifndef USE_TAPENADE
   contains
