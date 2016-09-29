@@ -28,7 +28,7 @@ subroutine wallSearch(aSurf, bSurf)
 
   logical :: overlapped, debugit
 
-  if (aSurf%nNodes == 0 .or. bSurf%nNodes == 0) then 
+  if (aSurf%nCells == 0 .or. bSurf%nCells == 0) then 
      ! Either block doesn't have walls, so there is nothing do but just
      ! return. 
      return
@@ -57,6 +57,7 @@ subroutine wallSearch(aSurf, bSurf)
   tmpCellElem(:) = 0
 
   ADTree => aSurf%ADT%ADTree
+
 
   do i=1, bSurf%nNodes
 

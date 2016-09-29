@@ -292,5 +292,15 @@ module constants
   real(kind=realType), parameter :: nbcVarSupersonicInflow = 7
   real(kind=realType), parameter :: nbcVarIsothermalWall = 1
 
+  ! Indices of specific familyExcahnge groups based on BC
+  integer(kind=intType), parameter :: iBCGroupWalls=1
+  integer(kind=intType), parameter :: iBCGroupInflowOutflow=2
+  integer(kind=intType), parameter :: iBCGroupSymm=3
+  integer(kind=intType), parameter :: iBCGroupFarfield=4
+  integer(kind=intType), parameter :: iBCGroupOverset=5
+  integer(kind=intType), parameter :: iBCGroupOther=6
+
+  integer(kind=intType), parameter :: nFamExchange=6
+
 
 end module constants

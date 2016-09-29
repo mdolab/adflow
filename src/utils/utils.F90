@@ -4385,16 +4385,12 @@ module utils
          famIDsSliding)
     deallocate(sections)
 
- 
-    do i=1, size(wallExchange)
-       call destroyFamilyExchange(wallExchange(i))
+    do j=1, size(BCFamExchange, 2)
+       do i=1, size(BCFamExchange, 1)
+          call destroyFamilyExchange(BCFamExchange(i,j))
+       end do
     end do
-    deallocate(wallExchange)
-
-   do i=1, size(fullExchange)
-       call destroyFamilyExchange(fullExchange(i))
-    end do
-    deallocate(fullExchange)
+    deallocate(BCFamExchange)
 
     ! From Communication Stuff
     do l=1,nLevels

@@ -221,22 +221,26 @@ class ADFLOW(AeroSolver):
 
         famList = self._processFortranStringArray(
             self.adflow.surfacefamilies.famnames)
-        isWall = self.adflow.surfacefamilies.famiswall
 
         # Add the initial families that already exist in the CGNS
         # file.
-        wallList = []
         for i in range(len(famList)):
             self.families[famList[i]] = [i+1]
-            if isWall[i]:
-                wallList.append(famList[i])
 
-        # Add a couple of special families.
+        # Add the special "all surfaces" family.
         self.allFamilies = 'allSurfaces'
         self.addFamilyGroup(self.allFamilies, famList)
 
+        # We also need to know about which surfaces are walls. Pull
+        # out that information from fortran and set the special
+        # familyGroup. 
+        wallList, nWalls = self.adflow.surfaceutils.getwalllist(len(famList))
+        wallList = wallList[0:nWalls]
+        wallListFam = []
+        for i in range(len(wallList)):
+            wallListFam.append(famList[wallList[i]-1])
         self.allWallsGroup = 'allWalls'
-        self.addFamilyGroup(self.allWallsGroup, wallList)
+        self.addFamilyGroup(self.allWallsGroup, wallListFam)
 
         # Set the design families if given, otherwise default to all
         # walls
