@@ -994,7 +994,7 @@ contains
     use inputAdjoint       
     use ADjointVars
     use inputTimeSpectral  
-    use surfaceFamilies, only : fullFamList, wallFamList
+    use surfaceFamilies, only : fullFamList, BCFamGroups
     use utils, only : EChk
     use surfaceUtils, only : getSurfaceSize
     use costFunctions
@@ -1019,6 +1019,7 @@ contains
     real(kind=realType), dimension(:, :, :), allocatable :: fDot
     real(kind=realType) :: extraDot(nDesignExtra)
     real(kind=realType) ::funcsDot(nCostFunction)
+    integer(kind=intType), dimension(:), pointer :: walLFamList
 #ifndef USE_COMPLEX
 
     call VecGetArrayReadF90(vecX, wd_pointer, ierr)
@@ -1034,7 +1035,8 @@ contains
     extraSize   = size(extraDot)
     stateSize   = size(wd_pointer)
     costSize    = nCostFunction
-
+    
+    wallFamList => BCFamGroups(iBCGroupWalls)%famList
     call getSurfaceSize(fSize, fSizeCell, wallFamList, size(wallFamList))
     allocate(xvdot(spatialSize))
     allocate(fdot(3, fSize, nTimeIntervalsSpectral))

@@ -67,6 +67,7 @@ subroutine surfaceCellCenterToNode(exch)
   use blockPointers, only : BCData, nDom, nBocos, BCType
   use surfaceFamilies, only : familyExchange
   use utils, only : setPointers, EChk
+  use sorting, only : bsearchIntegers
   implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -91,25 +92,27 @@ subroutine surfaceCellCenterToNode(exch)
   do nn=1, nDom
      call setPointers(nn, 1_intType, sps)
      do mm=1, nBocos
-        iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
-        jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
-        ni = iEnd - iBeg + 1
-        nj = jEnd - jBeg + 1
-        do j=0,nj-2
-           do i=0,ni-2
-              ! Note: No +iBeg, and +jBeg becuase cellVal is a pointer
-              ! and always starts at one
-              qv = fourth * BCData(mm)%cellVal(i+2, j+2)
-              ind(1) = ii + (j  )*ni + i + 1
-              ind(2) = ii + (j  )*ni + i + 2 
-              ind(3) = ii + (j+1)*ni + i + 2 
-              ind(4) = ii + (j+1)*ni + i + 1
-              do jj=1,4
-                 localPtr(ind(jj)) = localPtr(ind(jj)) + qv
+        famInclude: if (bsearchIntegers(BCData(mm)%famID, exch%famList) > 0) then 
+           iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
+           jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
+           ni = iEnd - iBeg + 1
+           nj = jEnd - jBeg + 1
+           do j=0,nj-2
+              do i=0,ni-2
+                 ! Note: No +iBeg, and +jBeg becuase cellVal is a pointer
+                 ! and always starts at one
+                 qv = fourth * BCData(mm)%cellVal(i+2, j+2)
+                 ind(1) = ii + (j  )*ni + i + 1
+                 ind(2) = ii + (j  )*ni + i + 2 
+                 ind(3) = ii + (j+1)*ni + i + 2 
+                 ind(4) = ii + (j+1)*ni + i + 1
+                 do jj=1,4
+                    localPtr(ind(jj)) = localPtr(ind(jj)) + qv
+                 end do
               end do
            end do
-        end do
-        ii = ii + ni*nj
+           ii = ii + ni*nj
+        end if famInclude
      end do
   end do
 
@@ -149,19 +152,21 @@ subroutine surfaceCellCenterToNode(exch)
   do nn=1, nDom
      call setPointers(nn, 1_intType, sps)
      do mm=1, nBocos
-        iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
-        jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
-
-        ni = iEnd - iBeg + 1
-        nj = jEnd - jBeg + 1
-        do j=1,nj
-           do i=1,ni
-              ! Note: No +iBeg, and +jBeg becuase cellVal is a pointer
-              ! and always starts at one
-              ii = ii + 1
-              BCData(mm)%nodeVal(i, j) = localPtr(ii)
+        famInclude2: if (bsearchIntegers(BCData(mm)%famID, exch%famList) > 0) then 
+           iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
+           jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
+           
+           ni = iEnd - iBeg + 1
+           nj = jEnd - jBeg + 1
+           do j=1,nj
+              do i=1,ni
+                 ! Note: No +iBeg, and +jBeg becuase cellVal is a pointer
+                 ! and always starts at one
+                 ii = ii + 1
+                 BCData(mm)%nodeVal(i, j) = localPtr(ii)
+              end do
            end do
-        end do
+        end if famInclude2
      end do
   end do
 
@@ -176,6 +181,7 @@ subroutine computeWeighting(exch)
   use blockPointers, only : BCData, nDom, nBocos, BCType
   use surfaceFamilies, only : familyExchange
   use utils, only : setPointers, EChk
+  use sorting, only : bsearchIntegers
   implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -200,27 +206,29 @@ subroutine computeWeighting(exch)
   do nn=1, nDom
      call setPointers(nn, 1_intType, sps)
      do mm=1, nBocos
-        iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
-        jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
-        ni = iEnd - iBeg + 1
-        nj = jEnd - jBeg + 1
-        do j=0,nj-2
-           do i=0,ni-2
-              
-              ! Scatter a quarter of the face value to each node:
-              ! Note: No +iBeg, and +jBeg becuase cellVal is a pointer
-              ! and always starts at one
-              qa = fourth*BCData(mm)%cellVal(i+2, j+2)
-              ind(1) = ii + (j  )*ni + i + 1
-              ind(2) = ii + (j  )*ni + i + 2 
-              ind(3) = ii + (j+1)*ni + i + 2 
-              ind(4) = ii + (j+1)*ni + i + 1
-              do jj=1,4
-                 localPtr(ind(jj)) = localPtr(ind(jj)) + qa
+        famInclude: if (bsearchIntegers(BCData(mm)%famID, exch%famList) > 0) then 
+           iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
+           jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
+           ni = iEnd - iBeg + 1
+           nj = jEnd - jBeg + 1
+           do j=0,nj-2
+              do i=0,ni-2
+                 
+                 ! Scatter a quarter of the face value to each node:
+                 ! Note: No +iBeg, and +jBeg becuase cellVal is a pointer
+                 ! and always starts at one
+                 qa = fourth*BCData(mm)%cellVal(i+2, j+2)
+                 ind(1) = ii + (j  )*ni + i + 1
+                 ind(2) = ii + (j  )*ni + i + 2 
+                 ind(3) = ii + (j+1)*ni + i + 2 
+                 ind(4) = ii + (j+1)*ni + i + 1
+                 do jj=1,4
+                    localPtr(ind(jj)) = localPtr(ind(jj)) + qa
+                 end do
               end do
            end do
-        end do
-        ii = ii + ni*nj
+           ii = ii + ni*nj
+        end if famInclude
      end do
   end do
 
@@ -261,7 +269,7 @@ end subroutine computeWeighting
 subroutine computeNodalTractions(sps)
   use constants
   use blockPointers, only : BCData, nDom, nBocos, BCType
-  use surfaceFamilies, only : zeroCellVal, zeroNodeVal, fullExchange
+  use surfaceFamilies, only : BCFamExchange, familyExchange
   use utils, only : setPointers, EChk, isWallType
   implicit none
 
@@ -270,8 +278,12 @@ subroutine computeNodalTractions(sps)
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ind(4), ni, nj
   real(kind=realType) :: qf, qa
   real(kind=realType), dimension(:), pointer :: localPtr
-  ! Set the weighting factors. In this case, area
+  type(familyExchange), pointer :: exch
 
+  ! Set the pointer to the wall exchange:
+  exch => BCfamExchange(iBCGroupWalls, sps)
+
+  ! Set the weighting factors. In this case, area
   ii = 0
   do nn=1, nDom
      call setPointers(nn, 1_intType, sps)
@@ -281,13 +293,10 @@ subroutine computeNodalTractions(sps)
 
         bocoType1: if(isWallType(BCType(mm))) then 
            BCData(mm)%cellVal => BCData(mm)%area(:, :)
-        else
-           BCData(mm)%cellVal => zeroCellVal
-           BCData(mm)%nodeVal => zeroNodeVal
         end if bocoType1
      end do
   end do
-  call computeWeighting(fullExchange(sps))
+  call computeWeighting(exch)
   
   FpFvLoop: do iDim=1, 6
      ! ii is the running counter through the pointer array.
@@ -307,7 +316,7 @@ subroutine computeNodalTractions(sps)
         end do
      end do
 
-     call surfaceCellCenterToNode(fullExchange(sps))
+     call surfaceCellCenterToNode(exch) 
      
   end do FpFVLoop
 
@@ -371,7 +380,7 @@ subroutine getForces_b(forces_b, npts, sps)
   use constants
   use blockPointers, only : nDom, nBocos, BCData, BCType, nBocos, BCDatad
   use inputPhysics, only : forcesAsTractions
-  use surfaceFamilies, only: wallExchange, familyExchange
+  use surfaceFamilies, only: BCFamExchange, familyExchange
   use communication
   use utils, only : EChk, setPointers, setPointers_d
 
@@ -395,7 +404,7 @@ subroutine getForces_b(forces_b, npts, sps)
   call getForces(forces, npts, sps)
 
   ! For better readibility
-  exch => wallExchange(sps)
+  exch => BCFamExchange(iBCGroupWalls, sps)
 
   if (.not. forcesAsTractions) then 
      ! For forces, we can accumulate the nodal seeds on the Fp and Fv
@@ -819,7 +828,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
   use constants
   use blockPointers, only : nDom, nBocos, BCData, BCType, nBocos, BCDatad
   use inputPhysics, only : forcesAsTractions
-  use surfaceFamilies, only: wallExchange, familyExchange
+  use surfaceFamilies, only: BCFamExchange, familyExchange
   use utils, only : setPointers, setPointers_d, EChk
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -836,7 +845,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
   type(familyExchange), pointer :: exch
   Vec nodeValLocald, nodeValGlobald, sumGlobald, tmp
 
-  exch => wallExchange(sps)
+  exch => BCFamExchange(iBCGroupWalls, sps)
 
   call VecDuplicate(exch%nodeValLocal, nodeValLocald, ierr)
   call EChk(ierr,__FILE__,__LINE__)
@@ -1171,7 +1180,8 @@ end subroutine getForces_d
 subroutine getHeatFlux(hflux, npts, sps)
   use constants
   use blockPointers, only : nDom, nBocos, BCType, BCData
-  use surfaceFamilies, only : zeroCellVal, zeroNodeVal, fullExchange
+  use surfaceFamilies, only : BCFamExchange, familyExchange, &
+       zeroCellVal, zeroNodeVal
   use utils, only : setPointers
   implicit none
   !
@@ -1182,7 +1192,9 @@ subroutine getHeatFlux(hflux, npts, sps)
 
   integer(kind=intType) :: mm, nn, i, j, ii
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
+  type(familyExchange), pointer :: exch
 
+  exch => BCFamExchange(iBCGroupWalls, sps)
   do nn=1, nDom
      call setPointers(nn, 1_intType, sps)
      call heatFluxes()
@@ -1193,14 +1205,14 @@ subroutine getHeatFlux(hflux, npts, sps)
 
         bocoType1: if (BCType(mm) == NSWallIsoThermal) then 
            BCData(mm)%cellVal => BCData(mm)%area(:, :)
-        else
+        else if (BCType(mm) == EulerWall .or. BCType(mm) == NSWallAdiabatic) then 
            BCData(mm)%cellVal => zeroCellVal
            BCData(mm)%nodeVal => zeroNodeVal
         end if bocoType1
      end do
   end do
 
-  call computeWeighting(fullExchange(sps))
+  call computeWeighting(exch)
 
   do nn=1, nDom
      call setPointers(nn, 1_intType, sps)
@@ -1212,7 +1224,7 @@ subroutine getHeatFlux(hflux, npts, sps)
      end do
   end do
 
-  call surfaceCellCenterToNode(fullExchange(sps))
+  call surfaceCellCenterToNode(exch)
 
   ! Now extract into the flat array:
   ii = 0 

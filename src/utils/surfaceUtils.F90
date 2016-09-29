@@ -296,4 +296,19 @@ contains
     end do domains
   end subroutine mapVector
 
+  subroutine getWallList(wallList, nWallList, nFamTotal)
+    
+    use constants
+    use surfaceFamilies, only :BCFamGroups
+    implicit none
+    
+    integer(kind=intType), intent(in) :: nFamtotal
+    integer(kind=intType), dimension(nFamTotal), intent(out) :: wallList
+    integer(kind=intType), intent(out) :: nWallList
+
+    nWallList = size(BCFamGroups(iBCGroupWalls)%famList)
+    wallList(1:nWallList) = BCfamGroups(iBCGroupWalls)%famList
+    
+  end subroutine getWallList
+
 end module surfaceUtils

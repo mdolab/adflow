@@ -348,6 +348,18 @@ module overset
      module procedure EqualPocketEdgeN2
   end interface operator(==)
 
+  type zipperMesh
+
+     ! Data required for zipper mesh surface integer for a particular BCGroup
+     integer(kind=intType), dimension(:, :), allocatable :: conn
+     integer(kind=intType), dimension(:), allocatable :: fam, indices
+     logical :: allocated=.False.
+     VecScatter :: scatter
+     Vec :: localVal
+     
+  end type zipperMesh
+
+
   ! This is the flattened list of the fringes next to the wall that we
   !  have actually found donors for.
   ! tmpFringePtr is only used if we need to realloc. 
@@ -369,17 +381,8 @@ module overset
   ! Flag specifying if overset is present in mesh
   logical :: oversetPresent
 
-  ! Data required for zipper mesh surface integration:
-  integer(kind=intType), dimension(:, :), allocatable ::zipperConn
-  integer(kind=intType), dimension(:), allocatable :: zipperFam, zipperIndices
-
-  VecScatter :: nodeZipperScatter
-  Vec :: globalNodalVec
-  Vec, target :: localZipperNodes
-  Vec, target :: localZipperTp
-  Vec, target :: localZIpperTv
-
-  Vec, target :: localZipperVal
+  ! Zipper meshes
+  type(zipperMesh), dimension(nFamExchange), target :: zipperMeshes
 
   contains
   ! ==============================
