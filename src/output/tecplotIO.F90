@@ -662,7 +662,7 @@ contains
     integer(kind=intType), dimension(:, :), allocatable :: conn
     real(kind=realType), dimension(:, :), allocatable :: vars
     integer(kind=intType), dimension(:), allocatable :: mask, elemFam
-    logical :: blankSave, BCGroupNeeded
+    logical :: blankSave, BCGroupNeeded, dataWritten
     type(familyExchange), pointer :: exch
     type(zipperMesh), pointer :: zipper
     if(myID == 0 .and. printIterations) then
@@ -800,7 +800,7 @@ contains
           rootProc: if (myid == 0 .and. nCells > 0) then 
              
              allocate(mask(nCells))
-             
+             dataWritten=.False.
              do iFam=1, size(exch%famList)
                 
                 ! Check if we have to write this one:
@@ -827,8 +827,8 @@ contains
                       write (fileID,*) "Nodes = ", nNodes, " Elements= ",  nCellsToWrite, " ZONETYPE=FEQUADRILATERAL"
                       write (fileID,*) "DATAPACKING=BLOCK"
 
-                      if (iFam == 1) then 
-                         ! For the first family, we write all data:
+                      if (.not. dataWritten) then 
+                         ! For the first family we want so we must write data.
 
                          ! Write the points (indices 1:3)
 15                       format (E14.6)
@@ -844,6 +844,7 @@ contains
                                write(fileID,15) vars(i, j+9)
                             end do
                          end do
+                         dataWritten = .True.
                       else
                          ! For all other zones we can 
                          if (3+nSolVar < 10) then 
