@@ -2205,7 +2205,7 @@ class ADFLOW(AeroSolver):
 
         return pts
 
-    def getSurfaceConnectivity(self, groupName=None):
+    def getSurfaceConnectivity(self, groupName=None, useBlanking=True):
         """Return the connectivity dinates at which the forces (or tractions) are
         defined. This is the complement of getForces() which returns
         the forces at the locations returned in this routine.
@@ -2226,7 +2226,7 @@ class ADFLOW(AeroSolver):
         famList = self._getFamilyList(groupName)
         npts, ncell = self._getSurfaceSize(groupName)
         conn =  numpy.zeros((ncell, 4), dtype='intc')
-        self.adflow.surfaceutils.getsurfaceconnectivity(numpy.ravel(conn), famList)
+        self.adflow.surfaceutils.getsurfaceconnectivity(numpy.ravel(conn), famList, useBlanking)
 
         faceSizes = 4*numpy.ones(len(conn), 'intc')
 
@@ -3254,7 +3254,7 @@ class ADFLOW(AeroSolver):
         rhoRes, totalRRes = self.adflow.nksolver.getfreestreamresidual()
         return totalRRes
 
-    def _getSurfaceSize(self, groupName):
+    def _getSurfaceSize(self, groupName, useBlanking=True):
         """Internal routine to return the size of a particular surface. This
         does *NOT* set the actual family group"""
         if groupName is None:
@@ -3264,7 +3264,8 @@ class ADFLOW(AeroSolver):
             raise Error("'%s' is not a family in the CGNS file or has not been added"
                         " as a combination of families"%groupName)
 
-        [nPts, nCells] = self.adflow.surfaceutils.getsurfacesize(self.families[groupName])
+        [nPts, nCells] = self.adflow.surfaceutils.getsurfacesize(
+            self.families[groupName], useBlanking)
         return nPts, nCells
 
     def setOption(self, name, value):
