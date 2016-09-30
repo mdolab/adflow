@@ -35,6 +35,7 @@ contains
     use oversetInitialization, only : initializeOSurf
     use inputOverset, only : debugZipper
     use surfaceFamilies, only : BCFamExchange, famNames, BCFamGroups
+    use preprocessingAPI, only : setFamilyExchanges
     use stringOps
     use gapBoundaries
     implicit none
@@ -74,7 +75,10 @@ contains
     type(oversetWall),  target :: fullWall
 
     if (.not. oversetPresent) then 
-       ! Not overset so we don't can't have a zipper. 
+       ! Not overset so we don't can't have a zipper. Just run setFamilyExcahnges
+       do i=1, nFamExchange
+          call setFamilyExchanges(i)
+       end do
        return
     end if
 
@@ -111,6 +115,7 @@ contains
        ! allocated zero-sized arrays so we know the size is 0.
        if (nFam == 0) then 
           allocate(zipper%conn(3, 0), zipper%fam(0), zipper%indices(0))
+          call setFamilyExchanges(iBCGroup)
           cycle
        else
           ! Do a second pass and fill up the famList
@@ -126,7 +131,7 @@ contains
           end do
        end if
 
-       if (debugZipper) then 
+       if (debugZipper .and. myid == 0) then 
           write(*,"(a)",advance="no") '-> Creating zipper for families : '
           do i=1, size(famList)
              write(*,"(a,1x)",advance="no") trim(famNames(famList(i)))
@@ -276,7 +281,6 @@ contains
        ! ------------------------ Performing Searches ----------------        
        call getWorkArray(overlap, work)
 
-
        do iWork=1, size(work,2)
           iDom = work(1, iWork)
           jDom = work(2, iWork)
@@ -320,9 +324,6 @@ contains
           call ECHK(ierr, __FILE__, __LINE__)
        end do
 
-       ! Release some unnecessary memory
-       deallocate(bufSizes, oSurfSendList, oSurfRecvList, oSurfReady, recvInfo, work)
-
        ! Process the oSurfs we own locally
        do nn=1, nDom
           call setPointers(nn, level, sps)
@@ -350,7 +351,7 @@ contains
           nn = iDom - cumDomProc(myid)
 
           ! Set the block pointers for the local block we are dealing
-          ! with:
+           !with:
           call setPointers(nn, level, sps)
           do mm=1, nBocos
              if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
@@ -360,11 +361,13 @@ contains
                       if (intRecvBuf(ii) == -2) then 
                          BCData(mm)%iBlank(i  , j) = -2
                       end if
-                   end do
+                   enddo
                 end do
              end if
           end do
        end do
+       ! Release some unnecessary memory
+       deallocate(bufSizes, oSurfSendList, oSurfRecvList, oSurfReady, recvInfo, work)
 
        ! Ditch our oSurfs
        call deallocateOSurfs(OSurfs, nDomTotal)
@@ -492,6 +495,8 @@ contains
             zipper%localVal, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
+       call setFamilyExchanges(iBCGroup)
+
        ! Now create the general scatter that goes from the
        ! globalNodalVector to the local vectors. 
        call ISCreateGeneral(adflow_comm_world, size(zipper%indices), &
@@ -504,8 +509,6 @@ contains
 
        call ISDestroy(IS1, ierr)
        call EChk(ierr,__FILE__,__LINE__)
-
-
 
        ! Flag to keep track of allocated PETSc object.
        zipper%allocated = .True.
@@ -1371,5 +1374,4 @@ contains
       end do
     end subroutine setNeighbourCounts
   end subroutine bowTieAndIsolationElimination
-
 end module zipperMesh

@@ -266,19 +266,19 @@ python module libadflow
        end module warping
        
        module surfaceutils
-
-         subroutine getsurfacesize(size_bn,sizecell,famlist,n) ! in :test:surfaceUtils.F90:surfaceutils
+         subroutine getsurfacesize(size_bn,sizecell,famlist,n,useblanking) ! in :test:surfaceUtils.F90:surfaceutils
            integer(kind=inttype) intent(out) :: size_bn
            integer(kind=inttype) intent(out) :: sizecell
            integer(kind=inttype) dimension(n),intent(in) :: famlist
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
+           logical intent(in) :: useblanking
          end subroutine getsurfacesize
-
-         subroutine getsurfaceconnectivity(conn,ncell,famlist,nfamlist) ! in :test:surfaceUtils.F90:surfaceutils
+         subroutine getsurfaceconnectivity(conn,ncell,famlist,nfamlist,useblanking) ! in :test:surfaceUtils.F90:surfaceutils
            integer(kind=inttype) dimension(4 * ncell),intent(inout) :: conn
            integer(kind=inttype), optional,intent(in),check((len(conn))/(4)>=ncell),depend(conn) :: ncell=(len(conn))/(4)
            integer(kind=inttype) dimension(nfamlist),intent(in) :: famlist
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
+           logical intent(in) :: useblanking
          end subroutine getsurfaceconnectivity
 
          subroutine getsurfacepoints(points,npts,sps_in,famlist,nfamlist) ! in :test:surfaceUtils.F90:surfaceutils

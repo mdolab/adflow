@@ -752,7 +752,7 @@ contains
              nodeDisps(iProc) = nodeDisps(iProc-1) + nodeSizes(iProc)
           end do
           
-          iSize = 3 + nSolVar
+          iSize = 3 + 6 + nSolVar
           if (myid == 0) then 
              nNodes = sum(nodeSizes)
              allocate(vars(nNodes, iSIze))
@@ -825,47 +825,59 @@ contains
                       write (fileID,"(a,a,a)") "Zone T= """,famNames(exch%famList(iFam)),""""
                       write (fileID,*) "Nodes = ", nNodes, " Elements= ",  nCellsToWrite, " ZONETYPE=FEQUADRILATERAL"
                       write (fileID,*) "DATAPACKING=BLOCK"
-15                    format (E14.6)
-                      
-                      ! Write the points (indices 1:3)
-                      do j=1, 3
-                         do i=1, nNodes
-                            write(fileID,15) vars(i, j)
+
+                      if (iFam == 1) then 
+                         ! For the first family, we write all data:
+
+                         ! Write the points (indices 1:3)
+15                       format (E14.6)
+                         do j=1, 3
+                            do i=1, nNodes
+                               write(fileID,15) vars(i, j)
+                            end do
                          end do
-                      end do
-                      
-                      ! And the rest of the variables
-                      do j=1,nSolVar
-                         do i=1, nNodes
-                            write(fileID,15) vars(i, j+3)
+                         
+                         ! And the rest of the variables
+                         do j=1,nSolVar
+                            do i=1, nNodes
+                               write(fileID,15) vars(i, j+9)
+                            end do
                          end do
-                      end do
-16                    format ((I6) (I6) (I6) (I6))
+                      else
+                         ! For all other zones we can 
+                         if (3+nSolVar < 10) then 
+                            write(fileID, "(a,I1,a)") "VARSHARELIST=([1-",3+nSolVar,"])"
+                         else
+                            write(fileID, "(a,I2,a)") "VARSHARELIST=([1-",3+nSolVar,"])"
+                         end if
+                      end if
                       
                       ! And now the connectivity
                       do i=1, nCells
                          ! Check if this elem is to be included
                          if (mask(i) == 1) then 
-                            write(fileID, 16) conn(1, i), conn(2, i), conn(3,i), conn(4, i)
+                            write(fileID, *) conn(1, i), conn(2, i), conn(3,i), conn(4, i)
                          end if
                       end do
                       
                       do i=1, size(zipper%conn, 2)
                          if (zipper%fam(i) == exch%famList(iFam)) then 
                             
-                            write(fileID, 16) &
+                            write(fileID, *) &
                                  zipper%indices(zipper%conn(1, i)), &
                                  zipper%indices(zipper%conn(2, i)), &
                                  zipper%indices(zipper%conn(3, i)), &
-                                 zipper%indices(zipper%conn(1, i))
+                                 zipper%indices(zipper%conn(3, i))
                          end if
                       end do
                    end if actualWrite
                 end if famInclude
              end do
-             deallocate(mask)
+             deallocate(mask, vars, conn, elemFam)
           end if rootProc
-          deallocate(cellSizes, cellDisps, nodeSizes, nodeDisps, vars, conn, elemFam)
+
+
+          deallocate(cellSizes, cellDisps, nodeSizes, nodeDisps)
        end do masterBCLoop
     end do spectralLoop
 
@@ -1238,7 +1250,7 @@ contains
     real(kind=realType), dimension(:, :), pointer :: tmpWeight, dummy, tmpNodes
     integer(kind=intType), dimension(:, :), pointer :: tmpInd
     integer(kind=intType), dimension(:), allocatable :: link
-
+    real(kind=realType), dimension(:), allocatable :: fc
 
     ! Allocate the family list this slice is to use:
     allocate(slc%famList(nFam))
@@ -1259,9 +1271,10 @@ contains
 
     ! Compute the distance function on all possible surfaces on this
     ! processor.
+    allocate(fc(exch%nNodes))
     do i=1, exch%nNodes
        ! Now compute the signed distance
-       exch%fc(i) = (dir(1)*exch%nodalValues(i, 1) + dir(2)*exch%nodalValues(i, 2) + &
+       fc(i) = (dir(1)*exch%nodalValues(i, 1) + dir(2)*exch%nodalValues(i, 2) + &
             dir(3)*exch%nodalValues(i, 3) + d)*ovrdnom
     end do
 
@@ -1300,7 +1313,7 @@ contains
           ! Extract the indices and function values at each corner
           do jj=1,4
              patchIndices(jj) = exch%conn(jj, i)
-             f(jj) = exch%fc(patchIndices(jj))
+             f(jj) = fc(patchIndices(jj))
           end do
 
           ! Based on the values at each corner, determine which
@@ -1378,7 +1391,7 @@ contains
        slc%conn(2, i) = link(2*i)
     end do
 
-    deallocate(tmpNodes, tmpWeight, tmpInd, dummy, link)
+    deallocate(tmpNodes, tmpWeight, tmpInd, dummy, link, fc)
   end subroutine createSlice
 
   subroutine destroySlice(slc)
