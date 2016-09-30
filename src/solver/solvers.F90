@@ -372,6 +372,7 @@ contains
     use monitor, only : nTimeStepsRestart, timeStepUnsteady, timeUnsteadyRestart, &
          writeVolume, writeSurface, writeGrid
     use tecplotIO, only : writeLiftDistributionFile, writeSlicesFile
+    use surfaceFamilies, only : fullFamList
     implicit none
     !
     !      Local variables.
@@ -418,7 +419,7 @@ contains
        ! Write the solution.
 
        if(writeGrid .or. writeVolume .or. writeSurface) &
-            call writeSol
+            call writeSol(fullFamList, size(fullFamList))
 
        ! Write the slice files for this timestep if they have been specified. TEMPORARY
        ! Write lift distribution TEMPORARY
@@ -451,6 +452,7 @@ contains
     use iteration, only : changing_grid, groundLevel, nOldLevels, &
          oldSolWritten, standAloneMode
     use monitor, only : writeVolume, writeSurface, writeGrid
+    use surfaceFamilies, only : fullFamList
     implicit none
     !
     !      Local variables.
@@ -475,7 +477,7 @@ contains
 
           ! Write the solution.
 
-          call writeSol
+          call writeSol(fullFamList, size(fullFamList))
 
           ! Update the variable oldSolWritten.
 
@@ -944,7 +946,7 @@ contains
     use utils, only: allocConvArrays, convergenceHeader
     use tecplotIO, only : writeTecplot
     use multiGrid, only : setCycleStrategy, executeMGCycle
-
+    use surfaceFamilies, only : fullFamList
     implicit none
     !
     !      Local parameter
@@ -1170,7 +1172,7 @@ contains
           newGridFile = forcedVolumeFile
           solFile = forcedVolumeFile
 
-          call writeSol()
+          call writeSol(fullFamList, size(fullFamList))
 
           ! Also write potential tecplot files. Note that we are not
           ! writing the tecplot surface file so pass in an empty file

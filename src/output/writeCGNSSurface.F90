@@ -2,7 +2,7 @@ module writeCGNSSurface
 
 contains
 
-  subroutine writeCGNSSurfaceSol
+  subroutine writeCGNSSurfaceSol(famList)
     !
     !       writeCGNSSurfaceSol and its subroutines write the surface      
     !       solution file(s). The unknowns are stored in the center of the 
@@ -18,7 +18,13 @@ contains
     use cgnsNames
     use extraOutput
     use utils, only : terminate, setPointers
+    use surfaceFamilies, only : famNames
+    use sorting, only : qsortStrings
     implicit none
+    
+    ! Input Param
+    integer(kind=intType), dimension(:), intent(in) :: famList
+
     !
     !      Local parameter, the cell dimension.
     !
@@ -28,14 +34,14 @@ contains
     !
     integer :: cgnsInd, ierr
 
-    integer(kind=intType) :: nn, mm, ll
+    integer(kind=intType) :: nn, mm, ll, i
     integer(kind=intType) :: nSolVar, nZonesWritten
     character(len=maxStringLen) :: errorMessage
     integer(kind=intType) :: iSurf, nisoSurfVar
     character(len=maxCGNSNameLen), dimension(:), allocatable :: &
          solNames, isoSurfSolNames
     character(len=maxCGNSNameLen) :: contourName
-
+    character(len=maxCGNSNAMELen), dimension(:), allocatable :: famListStr
     ! Determine the number and names of the solution files.
 
     call surfSolFileNamesWrite
@@ -113,6 +119,16 @@ contains
 
     call surfSolNames(solNames)
 
+    ! Based on the famList generate the list of strings corresponding
+    ! to the families we want to write.
+    allocate(famListStr(size(famList)))
+    do i=1,size(famList)
+       famListStr(i) = trim(famNames(famList(i)))
+    end do
+
+    ! Sort them so we can binary search.
+    call qsortStrings(famListStr, size(famListStr))
+
     ! Loop over the number of cgns blocks and its boundary subfaces
     ! and write the cell centered surface solution of the subface.
 
@@ -133,7 +149,7 @@ contains
           ! Only write the solution to file if this is a true subface.
           if( cgnsDoms(nn)%bocoInfo(ll)%actualFace )                 &
                call writeSurfsolCGNSZone(nn, mm, ll, nSolVar, solNames, &
-               nZonesWritten, .false.)
+               nZonesWritten, .false., famListStr)
        enddo
 
        ! Loop over the number of internal block boundaries of the
@@ -145,7 +161,7 @@ contains
 
           if( cgnsDoms(nn)%conn1to1(ll)%periodic )                   &
                call writeSurfsolCGNSZone(nn, mm, ll, nSolVar, solNames, &
-               nZonesWritten, .true.)
+               nZonesWritten, .true., famListStr)
        enddo
     enddo zoneLoop
 
@@ -333,7 +349,7 @@ contains
   end subroutine surfSolFileNamesWrite
 
   subroutine writeSurfsolCGNSZone(zone, nBlocks, subface, nSolVar, &
-       solNames, nZonesWritten, periodic)
+       solNames, nZonesWritten, periodic, famListStr)
     !
     !       writeSurfsolCGNSZone writes a surface solution of the given    
     !       zone (block) and boundary subface to the cgns surface file(s). 
@@ -347,7 +363,8 @@ contains
     use inputIO
     use su_cgns
     use outputMod
-    use utils, only : terminate
+    use utils, only : terminate, convertToLowerCase
+    use sorting, only : bsearchStrings
     implicit none
     !
     !      Subroutine arguments.
@@ -355,7 +372,7 @@ contains
     integer(kind=intType), intent(in)    :: zone, nBlocks
     integer(kind=intType), intent(in)    :: subface, nSolVar
     integer(kind=intType), intent(inout) :: nZonesWritten
-
+    character(len=*), dimension(:), intent(in) :: famListStr
     character(len=*), dimension(*), intent(in) :: solNames
 
     logical, intent(in) :: periodic
@@ -385,7 +402,7 @@ contains
     logical :: iOverlap, jOverlap, kOverlap
     logical :: viscousSubface
     logical, dimension(nBlocks) :: contributeToFace
-
+    character(len=maxCGNSNameLen) :: tmpStr
 
     ! Store the offset in blocksCGNSblock for this zone in offset.
 
@@ -427,20 +444,12 @@ contains
 
        if(cgnsDoms(zone)%bocoInfo(subface)%BCType == Extrap) return
 
-       ! Possibly do to write symmetry and farfield conditions
-       if (.not. writeSymmetry) then
-          if(cgnsDoms(zone)%bocoInfo(subface)%BCType == Symm) then
-             return
-          end if
+       ! Possibly do not write this surface if it is not in the famList
+       tmpStr = trim(CGNSDoms(zone)%bocoInfo(subface)%wallBCName)
+       call convertToLowerCase(tmpStr)
+       if (bsearchStrings(tmpStr, famListStr) == 0) then
+          return 
        end if
-       if (.not. writeFarfield) then
-          if(cgnsDoms(zone)%bocoInfo(subface)%BCType == Farfield) then
-             return
-          end if
-       end if
-       ! Store the nodal range of the cgns subface a bit easier.
-       ! Make sure that iBeg, jBeg and kBeg contain the lowest values
-       ! and iEnd, jEnd and kEnd the highest.
 
        iBeg = min(cgnsDoms(zone)%bocoInfo(subface)%iBeg, &
             cgnsDoms(zone)%bocoInfo(subface)%iEnd)

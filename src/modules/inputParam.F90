@@ -161,11 +161,6 @@ module inputIO
   logical :: storeConvInnerIter
 
   logical :: firstWrite = .true.
-
-  ! writeSymmetry        Flag to turn off writing of symmetry planes
-  ! writeFarfield        Flag to turn off writing of farfield surfaces
-  logical :: writeSymmetry = .True. 
-  logical :: writeFarfield = .False. 
   logical :: viscousSurfaceVelocities = .True.
 
   ! Extra file names (set from python) that specify the name of

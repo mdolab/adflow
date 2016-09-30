@@ -1422,8 +1422,9 @@ class ADFLOW(AeroSolver):
         self.adflow.inputio.newgridfile[:] = ''
         self.adflow.inputio.newgridfile[0:len(fileName)] = fileName
 
-        # Actual fortran write call
-        self.adflow.writesol()
+        # Actual fortran write call. Family list doesn't matter.
+        famList = self._getFamilyList(self.allFamilies)
+        self.adflow.writesol(famList)
 
     def writeVolumeSolutionFile(self, fileName, writeGrid=True):
         """Write the current state of the volume flow solution to a CGNS
@@ -1458,8 +1459,9 @@ class ADFLOW(AeroSolver):
         self.adflow.inputio.newgridfile[:] = ''
         self.adflow.inputio.newgridfile[0:len(fileName)] = fileName
 
-        # Actual fortran write call
-        self.adflow.writesol()
+        # Actual fortran write call. family list doesn't matter
+        famList = self._getFamilyList(self.allFamilies)
+        self.adflow.writesol(famList)
 
     def writeSurfaceSolutionFile(self, fileName):
         """Write the current state of the surface flow solution to a CGNS file.
@@ -1483,8 +1485,9 @@ class ADFLOW(AeroSolver):
         self.adflow.inputio.surfacesolfile[:] = ''
         self.adflow.inputio.surfacesolfile[0:len(fileName)] = fileName
 
-        # Actual fortran write call
-        self.adflow.writesol()
+        # Actual fortran write call. Fam list matters. 
+        famList = self._getFamilyList(self.getOption('outputSurfaceFamily'))
+        self.adflow.writesol(famList)
 
     def writeLiftDistributionFile(self, fileName):
         """Evaluate and write the lift distibution to a tecplot file.
@@ -3697,8 +3700,6 @@ class ADFLOW(AeroSolver):
             # Common Paramters
             'gridfile':['io', 'gridfile'],
             'storerindlayer':['io', 'storerindlayer'],
-            'writesymmetry':['io', 'writesymmetry'],
-            'writefarfield':['io', 'writefarfield'],
             'nsavevolume':['io', 'nsavevolume'],
             'nsavesurface':['iter', 'nsavesurface'],
             'viscoussurfacevelocities':['io', 'viscoussurfacevelocities'],

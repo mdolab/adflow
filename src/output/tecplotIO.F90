@@ -744,6 +744,7 @@ contains
           allocate(nodeSizes(nProc), nodeDisps(0:nProc))
           nodeSizes = 0
           nodeDisps = 0
+
           call mpi_allgather(exch%nNodes, 1, adflow_integer, nodeSizes, 1, adflow_integer, &
                adflow_comm_world, ierr)
           call EChk(ierr,__FILE__,__LINE__)
@@ -875,14 +876,16 @@ contains
              end do
              deallocate(mask, vars, conn, elemFam)
           end if rootProc
-
-
           deallocate(cellSizes, cellDisps, nodeSizes, nodeDisps)
        end do masterBCLoop
     end do spectralLoop
 
     ! Restore the modified option
     surfWriteBlank = blankSave
+    if(myID == 0 .and. printIterations) then
+       print "(a)", "# Tecplot surface file(s) written"
+       print "(a)", "#"
+    endif
 
   end subroutine writeTecplotSurfaceFile
 
