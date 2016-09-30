@@ -379,7 +379,7 @@ contains
        ! this is do just do a halo-surface-iblank exchange. Essentially
        ! we will put the surface iblankvalues into the volume iblank,
        ! communicate and the extract again. Easy-peasy
-       call exchangeSurfaceIBlanks(famList, level, sps, commPatternCell_2nd, internalCell_2nd)
+       ! call exchangeSurfaceIBlanks(famList, level, sps, commPatternCell_2nd, internalCell_2nd)
 
        ! Before we continue, we do a little more
        ! processing. bowTieElimination tries to eliminate cells
@@ -395,7 +395,7 @@ contains
        end if
 
        call makeGapBoundaryStrings(famList, level, sps, master)
-
+  
        rootProc: if (myid == 0) then 
 
           if (debugZipper) then 
@@ -500,10 +500,10 @@ contains
        ! Now create the general scatter that goes from the
        ! globalNodalVector to the local vectors. 
        call ISCreateGeneral(adflow_comm_world, size(zipper%indices), &
-            zipper%indices, PETSC_COPY_VALUES, IS1, ierr)
+            zipper%indices-1, PETSC_COPY_VALUES, IS1, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
-       call VecScatterCreate(BCFamExchange(iBCGroup, sps)%nodeValGlobal, IS1, &
+       call VecScatterCreate(BCFamExchange(iBCGroup, sps)%nodeValLocal, IS1, &
             zipper%localVal, PETSC_NULL_OBJECT, zipper%scatter, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
@@ -512,6 +512,7 @@ contains
 
        ! Flag to keep track of allocated PETSc object.
        zipper%allocated = .True.
+
     end do BCGroupLoop
 
   contains

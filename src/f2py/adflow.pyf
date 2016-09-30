@@ -502,7 +502,6 @@ python module libadflow
          subroutine initializepetsc 
          end subroutine initializepetsc
 
-         
          subroutine destroypetscvars
          end subroutine destroypetscvars
        end module adjointutils
@@ -516,10 +515,12 @@ python module libadflow
        
 ! ================ bare subroutines =============
 
-       subroutine writesol ! in :adflow:../../output/writeSol.f90
-       end subroutine writesol
-
-       subroutine getforces(forces,npts,sps_in) ! in :test:getForces.F90
+        subroutine writesol(famlist,nfamlist) ! in :test:writeSol.F90
+            integer(kind=inttype) dimension(nfamlist),intent(in) :: famlist
+            integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
+        end subroutine writesol
+ 
+        subroutine getforces(forces,npts,sps_in) ! in :test:getForces.F90
          real(kind=realtype) dimension(3 * npts),intent(inout) :: forces
          integer(kind=inttype), optional,intent(in),check((len(forces))/(3)>=npts),depend(forces) :: npts=(len(forces))/(3)
          integer(kind=inttype) intent(in) :: sps_in
@@ -690,8 +691,6 @@ python module libadflow
          logical :: storerindlayer
          logical :: checkrestartsol
          logical :: autoparameterupdate
-         logical :: writesymmetry
-         logical :: writefarfield
          logical :: viscoussurfacevelocities
          logical optional :: firstwrite=.true.
          character(len=maxstringlen) :: paramfile
