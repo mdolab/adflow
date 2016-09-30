@@ -1445,7 +1445,6 @@ contains
     ! 5. Overset : OversetouterBound
     ! 6. Others : All remaining BCs
 
-    
     ! The final familyExchange structure. 
     allocate(BCFamExchange(nFamExchange, nTimeIntervalsSpectral), localFlag(totalFamilies))
 
@@ -1719,7 +1718,6 @@ contains
     nFam = size(famList)
     allocate(famExchange%famList(nFam))
     famExchange%famList = famList
-    famExchange%nFam = nFam
     famExchange%sps = sps
 
     call getSurfaceSize(nNodesLocal, nCellsLocal, famList, nFam, .True.)
@@ -1785,11 +1783,6 @@ contains
     call VecCreateMPI(ADFLOW_COMM_WORLD, nNodesLocal, PETSC_DETERMINE, &
          famExchange%nodeValLocal, ierr)
     call EChk(ierr,__FILE__,__LINE__)
-
-    call VecCreateMPI(ADFLOW_COMM_WORLD, nCellsLocal, PETSC_DETERMINE, &
-         famExchange%localWeight, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-
 
     ! Create the basic global vector. This is slightly tricker than it
     ! sounds. We could just make it uniform, but then there would be

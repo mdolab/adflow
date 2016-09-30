@@ -8,15 +8,26 @@ module surfaceFamilies
 
   type familyExchange 
      ! Vectors for global traction calc
+     
+     ! Parallel vector of un-uniqufied values concatenated for all
+     ! included surfaces 
      Vec nodeValLocal
-     Vec nodevalGlobal
-     Vec localWeight
+
+     ! Parallel vector of uniqueifed values. 
+     Vec nodeValGlobal
+
+     ! Sum global. Same size as nodeValGlobal
      Vec sumGlobal
+     
+     ! Scatter from nodeValLocal to NodeValGlobal
      VecScatter scatter
+
+     
+     ! Flag for allocated petsc variables
      logical :: allocated =.False.
 
      integer(kind=intType), dimension(:) , allocatable :: famList
-     integer(kind=intType) :: nFam
+
      integer(Kind=intType) :: sps
      ! Data required for exchange
      integer(kind=intType) :: nNodes
@@ -64,7 +75,6 @@ module surfaceFamilies
       if (exch%allocated) then
 
            call vecDestroy(exch%nodeValLocal, ierr)
-           call vecDestroy(exch%localWeight, ierr)
            call vecDestroy(exch%nodeValGlobal, ierr)
            call vecDestroy(exch%sumGlobal, ierr)
            call vecScatterDestroy(exch%scatter, ierr)
