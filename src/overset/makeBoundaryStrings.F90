@@ -223,9 +223,18 @@ contains
                          if (regularOrdering) then 
                             localStrings(c)%nodeData(1:3, 2*e-1) = xx(i1+1, j1+1, :)
                             localStrings(c)%nodeData(1:3, 2*e  ) = xx(i2+1, j2+1, :)
+
+                            
+                            ! Global index of node on reduced global surface.
+                            localStrings(c)%intNodeData(1, 2*e-1) = BCData(mm)%surfIndex(i1, j1)
+                            localStrings(c)%intNodeData(1, 2*e  ) = BCData(mm)%surfIndex(i2, j2)
                          else
                             localStrings(c)%nodeData(1:3, 2*e  ) = xx(i1+1, j1+1, :)
                             localStrings(c)%nodeData(1:3, 2*e-1) = xx(i2+1, j2+1, :)
+
+                            localStrings(c)%intNodeData(1, 2*e  )= BCData(mm)%surfIndex(i1, j1)
+                            localStrings(c)%intNodeData(1, 2*e-1) = BCData(mm)%surfIndex(i2, j2)
+
                          end if
                          v1 = xx(i1+1, j1+1, :) - xx(i3+1, j3+1, :)
                          v1 = v1 / mynorm2(v1)
@@ -245,9 +254,6 @@ contains
                          localStrings(c)%nodeData(10, 2*e-1) = patchH(i1, j1)
                          localStrings(c)%nodeData(10, 2*e  ) = patchH(i2, j2)
 
-                         ! Global index of node on reduced global surface.
-                         localStrings(c)%intNodeData(1, 2*e-1) = BCData(mm)%surfIndex(i1, j1)
-                         localStrings(c)%intNodeData(1, 2*e  ) = BCData(mm)%surfIndex(i2, j2)
 
                          ! Cluster of the node
                          localStrings(c)%intNodeData(2, 2*e-1) = c
@@ -300,9 +306,19 @@ contains
                          if (regularOrdering)  then
                             localStrings(c)%nodeData(1:3, 2*e-1) = xx(i1+1, j1+1, :)
                             localStrings(c)%nodeData(1:3, 2*e  ) = xx(i2+1, j2+1, :)
+
+                            ! Index of global node
+                            localStrings(c)%intNodeData(1, 2*e-1) = BCData(mm)%surfIndex(i1, j1)
+                            localStrings(c)%intNodeData(1, 2*e  ) = BCData(mm)%surfIndex(i2, j2)
+
                          else
                             localStrings(c)%nodeData(1:3, 2*e  ) = xx(i1+1, j1+1, :)
                             localStrings(c)%nodeData(1:3, 2*e-1) = xx(i2+1, j2+1, :)
+
+                            ! Index of global node
+                            localStrings(c)%intNodeData(1, 2*e  ) = BCData(mm)%surfIndex(i1, j1)
+                            localStrings(c)%intNodeData(1, 2*e-1) = BCData(mm)%surfIndex(i2, j2)
+
                          end if
 
                          v1 = xx(i1+1, j1+1, :) - xx(i3+1, j3+1, :)
@@ -323,9 +339,7 @@ contains
                          localStrings(c)%nodeData(10, 2*e-1) = patchH(i1, j1)
                          localStrings(c)%nodeData(10, 2*e  ) = patchH(i2, j2)
 
-                         ! Index of global node
-                         localStrings(c)%intNodeData(1, 2*e-1) = BCData(mm)%surfIndex(i1, j1)
-                         localStrings(c)%intNodeData(1, 2*e  ) = BCData(mm)%surfIndex(i2, j2)
+                    
 
                          ! Cluster of the node
                          localStrings(c)%intNodeData(2, 2*e-1) = c
@@ -351,7 +365,7 @@ contains
     do c=1, nClusters
        call reduceGapString(localStrings(c))
     end do
-
+    
 
     ! Allocate the global list of strings on the root proc
     if (myid == 0) then 

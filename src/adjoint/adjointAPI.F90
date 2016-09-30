@@ -1037,7 +1037,7 @@ contains
     costSize    = nCostFunction
     
     wallFamList => BCFamGroups(iBCGroupWalls)%famList
-    call getSurfaceSize(fSize, fSizeCell, wallFamList, size(wallFamList))
+    call getSurfaceSize(fSize, fSizeCell, wallFamList, size(wallFamList), .True.)
     allocate(xvdot(spatialSize))
     allocate(fdot(3, fSize, nTimeIntervalsSpectral))
 
@@ -1121,7 +1121,7 @@ contains
        level = 1
 
        call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nState, stencil, n_stencil, &
-            level)
+            level, .true.)
        call myMatCreate(dRdwT, nState, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
             __FILE__, __LINE__)
 
@@ -1164,7 +1164,7 @@ contains
 
        level = 1
        call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nState, stencil, n_stencil, &
-            level)
+            level, .true.)
        call myMatCreate(dRdwPreT, nState, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
             __FILE__, __LINE__)
 

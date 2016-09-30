@@ -1282,7 +1282,6 @@ contains
 
   end subroutine xhalo
 
-
   subroutine setSurfaceFamilyInfo
 
     use constants
@@ -1539,40 +1538,11 @@ contains
           end if
        end do
        deallocate(famIsPartOfBCGroup)
-
-       ! Create a scatter for each spectral instance. 
-       spsLoop: do sps=1, nTimeIntervalsSpectral
-          
-          call createNodeScatterForFamilies(&
-               BCFamGroups(iBCGroup)%famList, BCFamExchange(iBCGroup, sps), sps, localIndices)
-          
-          ! The "localIndices" is the globalIndex into the reduced
-          ! global surface vector for this BCGroup. We want to this
-          ! information around and will put in in the special BCData
-          ! slot surfIndex.
-          ii = 0
-          do nn=1, nDom
-             call setPointers(nn, 1, sps)
-             do mm=1, nBocos
-                famInclude: if (bsearchIntegers(BCData(mm)%famId, BCFamGroups(iBCGroup)%famList) >0) then 
-                   iBeg = BCData(mm)%inbeg; iEnd = BCData(mm)%inend
-                   jBeg = BCData(mm)%jnbeg; jEnd = BCData(mm)%jnend
-                   do j=jBeg, jEnd
-                      do i=iBeg, iEnd
-                         ii = ii + 1
-                         BCData(mm)%surfIndex(i,j) = ii!localIndices(ii)+1
-                      end do
-                   end do
-                end if famInclude
-             end do
-          end do
-          deallocate(localIndices)
-       end do spsLoop
     end do BCGroupLoop
 
     ! Dump a little information out to the user giving the family and
     ! the BC types. This will probably be useful in general. 
-
+    
     if (myid == 0) then 
        write(*, "(a)") '+--------------------------------------------------+'
        write(*, "(a)") '  CGNS Surface Families by Boundary Condition Type'
@@ -1602,6 +1572,32 @@ contains
        write(*, "(a)") '+--------------------------------------------------+'
     end if
 
+    do iBCGroup=1, nFamExchange
+       ! Create a scatter for each spectral instance. 
+       spsLoop: do sps=1, nTimeIntervalsSpectral
+          
+          ! The "localIndices" is the globalIndex into the reduced
+          ! global surface vector for this BCGroup. We want to this
+          ! information around and will put in in the special BCData
+          ! slot surfIndex.
+          ii = 0
+          do nn=1, nDom
+             call setPointers(nn, 1, sps)
+             do mm=1, nBocos
+                famInclude: if (bsearchIntegers(BCData(mm)%famId, BCFamGroups(iBCGroup)%famList) >0) then 
+                   iBeg = BCData(mm)%inbeg; iEnd = BCData(mm)%inend
+                   jBeg = BCData(mm)%jnbeg; jEnd = BCData(mm)%jnend
+                   do j=jBeg, jEnd
+                      do i=iBeg, iEnd
+                         ii = ii + 1
+                         BCData(mm)%surfIndex(i,j) = ii
+                      end do
+                   end do
+                end if famInclude
+             end do
+          end do
+       end do spsLoop
+    end do
     ! Allocate  arrays that have the maximum face size. These may
     ! be slightly larger than necessary, but that's ok. We just need
     ! somethwere to point the pointers. 
@@ -1614,6 +1610,29 @@ contains
        jsizemax = max(jsizemax, flowDoms(nn, 1, 1)%je)
        jsizemax = max(jsizemax, flowDoms(nn, 1, 1)%ke)
     end do
+
+    do iBCGroup=1,6
+       ! Create a scatter for each spectral instance. 
+       do sps=1, nTimeIntervalsSpectral
+          ii = 0
+          do nn=1, nDom
+             call setPointers(nn, 1, sps)
+             do mm=1, nBocos
+                if (bsearchIntegers(BCData(mm)%famId, BCFamGroups(iBCGroup)%famList) >0) then 
+                   iBeg = BCData(mm)%inbeg; iEnd = BCData(mm)%inend
+                   jBeg = BCData(mm)%jnbeg; jEnd = BCData(mm)%jnend
+                   do j=jBeg, jEnd
+                      do i=iBeg, iEnd
+                         ii = ii + 1
+                         BCData(mm)%surfIndex(i,j) = ii!localIndices(ii)+1
+                      end do
+                   end do
+                end if
+             end do
+          end do
+       end do
+    end do
+    
 
     ! Allocate generic arrays for the cell and nodes. These will be
     ! used when a BC is not included in a computed but needs to be
@@ -1631,6 +1650,53 @@ contains
     end do
 
   end subroutine setSurfaceFamilyInfo
+
+  subroutine setFamilyExchanges(iBCGroup)
+    
+    use constants
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use blockPointers, only : nDom, nBOCOS, BCdata
+    use utils, only : setPointers
+    use sorting, only : bSearchIntegers
+    use surfaceFamilies, only : BCFamGroups, BCFamExchange
+    implicit none
+
+    ! Input
+    integer(kind=intTYpe), intent(in) :: iBCGroup
+
+    ! Working
+    integer(kind=intType) :: ii, nn, mm, iBeg, jBeg, iEnd, jEnd, i,j, sps
+    integer(kind=intType), dimension(:), allocatable :: localINdices
+
+    ! Create a scatter for each spectral instance. 
+    spsLoop: do sps=1, nTimeIntervalsSpectral
+       
+       call createNodeScatterForFamilies(&
+            BCFamGroups(iBCGroup)%famList, BCFamExchange(iBCGroup, sps), sps, localIndices)
+       
+       ! ! The "localIndices" is the globalIndex into the reduced
+       ! ! global surface vector for this BCGroup. We want to this
+       ! ! information around and will put in in the special BCData
+       ! ! slot surfIndex.
+       ! ii = 0
+       ! do nn=1, nDom
+       !    call setPointers(nn, 1, sps)
+       !    do mm=1, nBocos
+       !       famInclude: if (bsearchIntegers(BCData(mm)%famId, BCFamGroups(iBCGroup)%famList) >0) then 
+       !          iBeg = BCData(mm)%inbeg; iEnd = BCData(mm)%inend
+       !          jBeg = BCData(mm)%jnbeg; jEnd = BCData(mm)%jnend
+       !          do j=jBeg, jEnd
+       !             do i=iBeg, iEnd
+       !                ii = ii + 1
+       !                BCData(mm)%surfIndex(i,j) = ii!localIndices(ii)+1
+       !             end do
+       !          end do
+       !       end if famInclude
+       !    end do
+       ! end do
+       deallocate(localIndices)
+    end do spsLoop
+  end subroutine setFamilyExchanges
 
   subroutine createNodeScatterForFamilies(famList, famExchange, sps, localIndices)
 
@@ -1682,16 +1748,16 @@ contains
     famExchange%nFam = nFam
     famExchange%sps = sps
 
-    call getSurfaceSize(nNodesLocal, nCellsLocal, famList, nFam)
-    famExchange%nNodes = nNodesLocal
-    ! Allocate space for the nodes/connectivities
+    call getSurfaceSize(nNodesLocal, nCellsLocal, famList, nFam, .True.)
     allocate(famExchange%conn(4, nCellsLocal), famExchange%elemFam(nCellsLocal), &
-         famExchange%fc(nNodesLocal), famExchange%nodalValues(nNodesLocal, 3))
+         famExchange%nodalValues(nNodesLocal, 3))
 
-    call getSurfaceConnectivity(famExchange%conn, nCellsLocal, famList, size(famList))
-    call getSurfaceFamily(famExchange%elemFam, nCellsLocal, famList)
+    call getSurfaceConnectivity(famExchange%conn, nCellsLocal, famList, size(famList), .True.)
+    call getSurfaceFamily(famExchange%elemFam, nCellsLocal, famList, .True.)
 
-
+    famExchange%nNodes = nNodesLocal
+    ! Allocate space for the some arrays
+    
     allocate(localNodes(3, nNodesLocal), nNodesProc(nProc), cumNodesProc(0:nProc))
     call getSurfacePoints(localNodes, nNodesLocal, sps, famList, nFam)
 
@@ -1872,6 +1938,7 @@ contains
        end do domains
     end do spectral
   end subroutine setReferenceVolume
+
   subroutine setGlobalCellsAndNodes(level)
     !
     !      Determine the global node numbering that is used to assemble   

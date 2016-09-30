@@ -21,10 +21,8 @@ module surfaceFamilies
      ! Data required for exchange
      integer(kind=intType) :: nNodes
      real(kind=realType), dimension(:, :), allocatable :: nodalValues
-     integer(kind=intType), allocatable, dimension(:, :) :: conn
-     integer(kind=intType), allocatable, dimension(:) :: elemFam
-     real(kind=realType),   allocatable, dimension(:) :: fc
-
+     integer(kind=intType), dimension(:, :), allocatable :: conn
+     integer(kind=intType), dimension(:), allocatable :: elemFam
   end type familyExchange
 
   type BCGroupType
@@ -74,15 +72,6 @@ module surfaceFamilies
 
         if (allocated(exch%nodalvalues)) &
              deallocate(exch%nodalValues)
-        
-        if (allocated(exch%conn)) &
-             deallocate(exch%conn)
-        
-        if (allocated(exch%elemFam)) & 
-             deallocate(exch%elemFam)
-        
-        if (allocated(exch%fc)) & 
-             deallocate(exch%fc)
         
         exch%allocated = .False.
         

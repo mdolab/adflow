@@ -2,7 +2,7 @@ module surfaceUtils
 
 contains
 
-  subroutine getSurfaceSize(size, sizeCell, famList, n)
+  subroutine getSurfaceSize(size, sizeCell, famList, n, useBlanking)
     ! Compute the number of points that will be returned from getForces
     ! or getForcePoints
     use constants
@@ -12,8 +12,9 @@ contains
     implicit none
 
     integer(kind=intType),intent(out) :: size, sizeCell
-    integer(kind=intType) :: nn,mm
-    integer(kind=intType) :: iBeg,iEnd,jBeg,jEnd
+    logical, intent(in) :: useBlanking
+    integer(kind=intType) :: nn, mm, i, j
+    integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
     integer(kind=intType), intent(in) :: famList(n), n
 
     size = 0_intType
@@ -28,13 +29,26 @@ contains
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
              size = size + (iEnd - iBeg + 1)*(jEnd - jBeg + 1)
-             sizeCell = sizeCell + (iEnd - iBeg)*(jEnd - jBeg)
+
+             ! If we don't care about blanking, it's easy:
+             blanking:if (.not. useBlanking) then 
+                sizeCell = sizeCell + (iEnd - iBeg)*(jEnd - jBeg)
+             else
+                ! Otherwise we have to consider the iBlank
+                do j=jBeg+1, jEnd
+                   do i=iBeg+1, iEnd
+                      if (BCData(mm)%iBlank(i,j) == 1) then 
+                         sizeCell = sizeCell + 1
+                      end if
+                   end do
+                end do
+             end if blanking
           end if famInclude
        end do bocos
     end do domains
   end subroutine getSurfaceSize
 
-  subroutine getSurfaceConnectivity(conn, ncell, famList, nFamList)
+  subroutine getSurfaceConnectivity(conn, ncell, famList, nFamList, useBlanking)
     ! Return the connectivity list for the each of the patches
     use constants
     use blockPointers, only : nDom, nBocos, BCData, BCFaceID, rightHanded
@@ -46,6 +60,7 @@ contains
     integer(kind=intType), intent(in) :: ncell
     integer(kind=intType), intent(inout) :: conn(4*ncell)
     integer(kind=intType), intent(in) :: nFamList, famList(nFamList)
+    logical, intent(in) :: useBlanking
 
     ! Working
     integer(kind=intType) :: nn, mm, cellCount, nodeCount, ni, nj, i, j
@@ -110,22 +125,26 @@ contains
 
                 do j=0,nj-2
                    do i=0,ni-2
-                      conn(4*cellCount+1) = nodeCount + (j  )*ni + i       + 1! n1
-                      conn(4*cellCount+2) = nodeCount + (j  )*ni + i + 1   + 1! n2
-                      conn(4*cellCount+3) = nodeCount + (j+1)*ni + i + 1   + 1! n3
-                      conn(4*cellCount+4) = nodeCount + (j+1)*ni + i       + 1! n4
-                      cellCount = cellCount + 1
+                      if (.not. useBlanking .or. BCData(mm)%iBlank(i+iBeg+1, j+jBeg+1) ==1 ) then 
+                         conn(4*cellCount+1) = nodeCount + (j  )*ni + i       + 1! n1
+                         conn(4*cellCount+2) = nodeCount + (j  )*ni + i + 1   + 1! n2
+                         conn(4*cellCount+3) = nodeCount + (j+1)*ni + i + 1   + 1! n3
+                         conn(4*cellCount+4) = nodeCount + (j+1)*ni + i       + 1! n4
+                         cellCount = cellCount + 1
+                      end if
                    end do
                 end do
              else
                 ! Do reverse ordering:
                 do j=0,nj-2
                    do i=0,ni-2
-                      conn(4*cellCount+1) = nodeCount + (j  )*ni + i        + 1! n1
-                      conn(4*cellCount+2) = nodeCount + (j+1)*ni + i        + 1! n4
-                      conn(4*cellCount+3) = nodeCount + (j+1)*ni + i + 1    + 1! n3
-                      conn(4*cellCount+4) = nodeCount + (j  )*ni + i + 1    + 1! n2
-                      cellCount = cellCount + 1
+                      if (.not. useBlanking .or. BCData(mm)%iBlank(i+iBeg+1, j+JBeg+1) ==1 ) then 
+                         conn(4*cellCount+1) = nodeCount + (j  )*ni + i        + 1! n1
+                         conn(4*cellCount+2) = nodeCount + (j+1)*ni + i        + 1! n4
+                         conn(4*cellCount+3) = nodeCount + (j+1)*ni + i + 1    + 1! n3
+                         conn(4*cellCount+4) = nodeCount + (j  )*ni + i + 1    + 1! n2
+                         cellCount = cellCount + 1
+                      end if
                    end do
                 end do
              end if
@@ -136,7 +155,7 @@ contains
   end subroutine getSurfaceConnectivity
 
 
-  subroutine getSurfaceFamily(elemFam, ncell, famList)
+  subroutine getSurfaceFamily(elemFam, ncell, famList, useBlanking)
 
     use constants
     use blockPointers, only : nDom, nBocos, BCData
@@ -148,6 +167,7 @@ contains
     integer(kind=intType), intent(in) :: ncell
     integer(kind=intType), intent(inout) :: elemFam(nCell)
     integer(kind=intType), intent(in) :: famList(:)
+    logical, intent(in) :: useBlanking
 
     ! Working
     integer(kind=intType) :: nn, mm, cellCount, nodeCount, ni, nj, i, j
@@ -168,8 +188,10 @@ contains
              nj = jEnd - jBeg + 1
              do j=0,nj-2
                 do i=0,ni-2
-                   cellCount = cellCount + 1
-                   elemFam(cellCount) = BCdata(mm)%famID
+                   if (.not. useBlanking .or. BCData(mm)%iBlank(i+iBeg+1, j+JBeg+1)==1 ) then 
+                      cellCount = cellCount + 1
+                      elemFam(cellCount) = BCdata(mm)%famID
+                   end if
                 end do
              end do
              nodeCount = nodeCount + ni*nj

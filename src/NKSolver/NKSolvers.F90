@@ -146,7 +146,7 @@ contains
 
        level = 1
        call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nw, stencil, n_stencil, &
-            level)
+            level, .False.)
        call myMatCreate(dRdwPre, nw, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
             __FILE__, __LINE__)
 
@@ -1646,7 +1646,7 @@ contains
 
        level = 1
        call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nwf, stencil, n_stencil, &
-            level)
+            level, .False.)
        call myMatCreate(dRdwPre, nwf, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
             __FILE__, __LINE__)
 
@@ -1701,7 +1701,7 @@ contains
 
           level = 1
           call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW, stencil, n_stencil, &
-               level)
+               level, .False.)
           call myMatCreate(dRdwPreTurb, 1, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
                __FILE__, __LINE__)
 
