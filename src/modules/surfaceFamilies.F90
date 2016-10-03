@@ -22,22 +22,16 @@ module surfaceFamilies
      ! Scatter from nodeValLocal to NodeValGlobal
      VecScatter scatter
 
-     
      ! Flag for allocated petsc variables
      logical :: allocated =.False.
-
      integer(kind=intType), dimension(:) , allocatable :: famList
 
      integer(Kind=intType) :: sps
-     ! Data required for exchange
      integer(kind=intType) :: nNodes
-     real(kind=realType), dimension(:, :), allocatable :: nodalValues
-     integer(kind=intType), dimension(:, :), allocatable :: conn
-     integer(kind=intType), dimension(:), allocatable :: elemFam
   end type familyExchange
 
   type BCGroupType
-     integer(kind=intType), dimension(:), pointer :: famList
+     integer(kind=intType), pointer, dimension(:) :: famList
   end type BCGroupType
 
   ! Generic PETSc scatters
@@ -78,11 +72,9 @@ module surfaceFamilies
            call vecDestroy(exch%nodeValGlobal, ierr)
            call vecDestroy(exch%sumGlobal, ierr)
            call vecScatterDestroy(exch%scatter, ierr)
+              
         end if
-
-        if (allocated(exch%nodalvalues)) &
-             deallocate(exch%nodalValues)
-        
+       
         exch%allocated = .False.
         
       end subroutine destroyFamilyExchange

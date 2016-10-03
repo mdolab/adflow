@@ -329,6 +329,8 @@ class ADFLOW(AeroSolver):
             The family group to use for the lift distribution. Default
             of None corresponds to all wall surfaces.
         """
+        # Create the zipper mesh if not done so
+        self._createZipperMesh()
 
         # Determine the families we want to use
         if groupName is None:
@@ -385,6 +387,9 @@ class ADFLOW(AeroSolver):
              The family to use for the slices. Default is None corresponding to all
              wall groups.
             """
+
+        # Create the zipper mesh if not done so
+        self._createZipperMesh()
 
         # Determine the families we want to use
         if groupName is None:
@@ -1823,7 +1828,7 @@ class ADFLOW(AeroSolver):
         # only updates the mesh if necessary
         self.updateGeometryInfo()
 
-        # Create the zipper mehs if not done so
+        # Create the zipper mesh if not done so
         self._createZipperMesh()
 
         # If the state info none, initialize to the supplied
