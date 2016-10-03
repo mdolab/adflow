@@ -1305,7 +1305,7 @@ contains
     character(maxCGNSNameLen) :: curStr, family
     character(maxCGNSNameLen), dimension(:), allocatable :: uniqueFamListNames
     integer(kind=intType), dimension(:), allocatable :: localFlag, famIsPartOfBCGroup
-    integer(kind=intType), dimension(:), allocatable :: nodeSizes, nodeDisps
+    integer(kind=intType), dimension(:), allocatable :: localIndices, nodeSizes, nodeDisps
     integer(kind=intType) :: iProc, nodeSize, cellSize
 
     ! Process out the family information. The goal here is to
@@ -1573,27 +1573,32 @@ contains
        write(*, "(a)") '+--------------------------------------------------+'
     end if
 
-    ! Generate the surfaceIndex for each BC. We need tobe slightly
-    ! careful to make sure that they are in continuous ordering. That
-    ! is the root processor is from 0->N, and myid==1 starts at N+1 etc. 
+    ! Generate the node scatters for each family. This will also tell
+    ! us the surfaceIndex for each BC. This is the index into the
+    ! *gloablly reduced vector*. This is what we will need for tecplot
+    ! output as well as the zipper mesh computations. 
 
     do iBCGroup=1, nFamExchange
-
-       call getSurfaceSize(nodeSize, cellSize, BCFamGroups(iBCGroup)%famList, &
-            size(BCFamGroups(iBCGroup)%famlist), .False.)
-       allocate(nodeSizes(nProc), nodeDisps(0:nProc))
-       nodeSizes = 0
-       nodeDisps = 0
-
-       call mpi_allgather(nodeSize, 1, adflow_integer, nodeSizes, 1, adflow_integer, &
-            adflow_comm_world, ierr)
-       call EChk(ierr,__FILE__,__LINE__)
-       nodeDisps(0) = 0
-       do iProc=1, nProc
-          nodeDisps(iProc) = nodeDisps(iProc-1) + nodeSizes(iProc)
-       end do
-
-       do sps=1, nTimeIntervalsSpectral
+       do sps=1,nTimeIntervalsSpectral
+          call createNodeScatterForFamilies(&
+               BCFamGroups(iBCGroup)%famList, BCFamExchange(iBCGroup, sps), sps, localIndices)
+          
+          ! this won't include the zipper nodes since that isn't done yet.
+          call getSurfaceSize(nodeSize, cellSize, BCFamGroups(iBCGroup)%famList, &
+               size(BCFamGroups(iBCGroup)%famlist), .False.)
+          allocate(nodeSizes(nProc), nodeDisps(0:nProc))
+          nodeSizes = 0
+          nodeDisps = 0
+          
+          call mpi_allgather(nodeSize, 1, adflow_integer, nodeSizes, 1, adflow_integer, &
+               adflow_comm_world, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+          nodeDisps(0) = 0
+          do iProc=1, nProc
+             nodeDisps(iProc) = nodeDisps(iProc-1) + nodeSizes(iProc)
+          end do
+          
+          
           ii = 0
           do nn=1, nDom
              call setPointers(nn, 1, sps)
@@ -1610,8 +1615,8 @@ contains
                 end if famInclude
              end do
           end do
+          deallocate(localIndices, nodeSizes, nodeDisps)
        end do
-       deallocate(nodeSizes, nodeDisps)
     end do
     ! Allocate  arrays that have the maximum face size. These may
     ! be slightly larger than necessary, but that's ok. We just need
@@ -1644,34 +1649,7 @@ contains
 
   end subroutine setSurfaceFamilyInfo
 
-  subroutine setFamilyExchanges(iBCGroup)
-    
-    use constants
-    use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use blockPointers, only : nDom, nBOCOS, BCdata
-    use utils, only : setPointers
-    use sorting, only : bSearchIntegers
-    use surfaceFamilies, only : BCFamGroups, BCFamExchange
-    implicit none
-
-    ! Input
-    integer(kind=intTYpe), intent(in) :: iBCGroup
-
-    ! Working
-    integer(kind=intType) :: ii, nn, mm, iBeg, jBeg, iEnd, jEnd, i,j, sps
-    integer(kind=intType), dimension(:), allocatable :: localINdices
-
-    ! Create a scatter for each spectral instance. 
-    spsLoop: do sps=1, nTimeIntervalsSpectral
-       
-       call createNodeScatterForFamilies(&
-            BCFamGroups(iBCGroup)%famList, BCFamExchange(iBCGroup, sps), sps, localIndices)
-       
-       deallocate(localIndices)
-    end do spsLoop
-  end subroutine setFamilyExchanges
-
-  subroutine createNodeScatterForFamilies(famList, famExchange, sps, localIndices)
+  subroutine createNodeScatterForFamilies(famList, exch, sps, localIndices)
 
     ! The purpose of this routine is to create the appropriate data
     ! structures that allow for the averaging of cell based surface
@@ -1691,14 +1669,13 @@ contains
     use communication, only : adflow_comm_world, myid, nProc
     use surfaceFamilies, only : familyExchange, IS1, IS2, PETSC_COPY_VALUES, PETSC_DETERMINE
     use utils, only : pointReduce, eChk
-    use surfaceUtils, only : getSurfaceSize, getSurfaceConnectivity, getSurfaceFamily, &
-         getSurfacePoints
+    use surfaceUtils
     implicit none
 
     ! Input Parameters
     integer(kind=intType) , dimension(:), intent(in) :: famList
     integer(kind=intType) , intent(in) :: sps
-    type(familyExchange), intent(inout) :: famExchange
+    type(familyExchange), intent(inout) :: exch
     integer(kind=intType), dimension(:), intent(out), allocatable :: localIndices
 
     ! Working param
@@ -1711,31 +1688,23 @@ contains
     real(kind=realType) :: tol
     integer(kind=intType) :: status(MPI_STATUS_SIZE)
 
-    ! Note that for overset, the reduction must be done by cluster. 
-
-    ! Get the nodes for the surfaces. Note that the nodeScatter works
-    ! over *all* possible boundary condition surfaces. 
+    ! Save the family list. 
     nFam = size(famList)
-    allocate(famExchange%famList(nFam))
-    famExchange%famList = famList
-    famExchange%sps = sps
+    allocate(exch%famList(nFam))
+    exch%famList = famList
+    exch%sps = sps
 
+    ! Determine the total number of nodes and cells on this
+    ! processor. This will include the zipper mesh if there is one. 
     call getSurfaceSize(nNodesLocal, nCellsLocal, famList, nFam, .True.)
-    allocate(famExchange%conn(4, nCellsLocal), famExchange%elemFam(nCellsLocal), &
-         famExchange%nodalValues(nNodesLocal, 3))
 
-    call getSurfaceConnectivity(famExchange%conn, nCellsLocal, famList, size(famList), .True.)
-    call getSurfaceFamily(famExchange%elemFam, nCellsLocal, famList, .True.)
+    ! Allocate the space to store nodal values, connectivity and the
+    ! family of each element
+    exch%nNodes = nNodesLocal
 
-    famExchange%nNodes = nNodesLocal
     ! Allocate space for the some arrays
-    
     allocate(localNodes(3, nNodesLocal), nNodesProc(nProc), cumNodesProc(0:nProc))
     call getSurfacePoints(localNodes, nNodesLocal, sps, famList, nFam)
-
-    do i=1, nNodesLocal
-       famExchange%nodalValues(i, 1:3) = localNodes(1:3, i)
-    end do
 
     ! Determine the total number of nodes on each proc
     call mpi_allgather(nNodesLocal, 1, adflow_integer, nNodesProc, 1, adflow_integer, &
@@ -1781,7 +1750,7 @@ contains
 
     ! Create the basic (scalar) local vector
     call VecCreateMPI(ADFLOW_COMM_WORLD, nNodesLocal, PETSC_DETERMINE, &
-         famExchange%nodeValLocal, ierr)
+         exch%nodeValLocal, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
     ! Create the basic global vector. This is slightly tricker than it
@@ -1840,10 +1809,10 @@ contains
     ! Create the actual global vec. Note we also include nUnique to make
     ! sure we have all the local sizes correct.
     call VecCreateMPI(ADFLOW_COMM_WORLD, iSize, nUnique, &
-         famExchange%nodeValGlobal, ierr)
+         exch%nodeValGlobal, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
-    call VecDuplicate(famExchange%nodeValGlobal, famExchange%sumGlobal, ierr)
+    call VecDuplicate(exch%nodeValGlobal, exch%sumGlobal, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
     ! Now create the scatter that goes from the local vec to the global
@@ -1861,8 +1830,8 @@ contains
          PETSC_COPY_VALUES, IS2, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
-    call VecScatterCreate(famExchange%nodeValLocal, IS1, famExchange%nodeValGlobal, IS2, &
-         famExchange%scatter, ierr)
+    call VecScatterCreate(exch%nodeValLocal, IS1, exch%nodeValGlobal, IS2, &
+         exch%scatter, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
     ! And dont' forget to destroy the index sets
@@ -1872,7 +1841,7 @@ contains
     call ISDestroy(IS2, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
-    famExchange%allocated = .True.
+    exch%allocated = .True.
   end subroutine createNodeScatterForFamilies
 
 
