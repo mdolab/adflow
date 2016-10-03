@@ -1,7 +1,6 @@
 module tecplotIO
 
   use constants, only : realType, intType, maxStringLen, maxCGNSNameLen
-  use surfacefamilies, only : familyExchange
   implicit none
   save
 
@@ -26,7 +25,6 @@ module tecplotIO
      real(kind=realType), dimension(3) :: le, te
      real(kind=realType), dimension(3) :: pt, dir
      integer(kind=intType), allocatable, dimension(:) :: famList
-     type(familyExchange), pointer :: exch
   end type slice
 
   type liftDist
@@ -43,8 +41,6 @@ module tecplotIO
      real(kind=realType) :: dir(3)
      real(kind=realType) :: delta
      real(kind=realType), dimension(:,:), allocatable :: slicePts
-     type(familyExchange), pointer :: exch
-     
   end type liftDist
 
   logical :: liftDistInitialized = .False.
@@ -74,6 +70,7 @@ contains
     use constants
     use communication
     use surfaceFamilies
+    use surfaceUtils
     use inputTimeSpectral 
     implicit none
 
@@ -83,7 +80,11 @@ contains
     integer(kind=intType), intent(in) :: famList(n), n
 
     ! Working
-    integer(kind=intType) :: sps
+    integer(kind=intType) :: sps, sizeNode, sizeCell
+    integer(kind=intType), dimension(:), pointer :: wallList
+    real(kind=realType), dimension(:, :), allocatable :: pts
+    integer(kind=intType), dimension(:, :), allocatable :: conn
+    integer(kind=intType), dimension(:), allocatable :: elemFam
 
     if (.not. allocated(paraSlices)) then 
        allocate(paraSlices(nSliceMax, nTimeIntervalsSpectral))
@@ -98,8 +99,21 @@ contains
           stop
        end if
        
-       call createSlice(BCFamExchange(iBCGroupWalls, sps), &
-            paraSlices(nParaSlices, sps), pt, direction, sliceName, famList, n)
+       ! Slices are created on walls and walls only. Retrieve the
+       ! points, connectivity and familyID of all the walls.
+       wallList =>  BCFamGroups(iBCGroupWalls)%famList
+       call getSurfaceSize(sizeNode, sizeCell, wallList, size(wallList), .True.)
+       allocate(pts(3, sizeNode), conn(4, sizeCell), elemFam(sizeCell))
+       call getSurfaceConnectivity(conn, sizeCell, wallList, size(wallList), .True.)
+       call getSurfacePoints(pts, sizeNode, sps, wallList, size(wallList))
+       call getSurfaceFamily(elemFam, sizeCell, wallList, size(wallList), .True.)
+       
+       ! Create actual slice
+       call createSlice(pts, conn, elemFam, paraSlices(nParaSlices, sps), pt, direction, &
+            sliceName, famList)
+
+       ! Clean up memory.
+       deallocate(pts, conn, elemFam)
     end do
 
   end subroutine addParaSlice
@@ -112,8 +126,8 @@ contains
     use constants
     use communication
     use surfaceFamilies
+    use surfaceUtils
     use inputTimeSpectral
-    use surfaceFamilies
     implicit none
 
     ! Input parameters
@@ -122,7 +136,11 @@ contains
     integer(kind=intType), intent(in) :: famList(n), n
 
     ! Working
-    integer(kind=intType) :: sps
+    integer(kind=intType) :: sps, sizeNode, sizeCell
+    integer(kind=intType), dimension(:), pointer :: wallList
+    real(kind=realType), dimension(:, :), allocatable :: pts
+    integer(kind=intType), dimension(:, :), allocatable :: conn
+    integer(kind=intType), dimension(:), allocatable :: elemFam
 
     if (.not. allocated(absSlices)) then 
        allocate(absSlices(nSliceMax, nTimeIntervalsSpectral))
@@ -136,8 +154,18 @@ contains
           stop
        end if
 
-       call createSlice(BCFamExchange(iBCGroupWalls, sps), &
-            absSlices(nAbsSlices, sps), pt, direction, sliceName, famList, n)
+       wallList =>  BCFamGroups(iBCGroupWalls)%famList
+       call getSurfaceSize(sizeNode, sizeCell, wallList, size(wallList), .True.)
+       allocate(pts(3, sizeNode), conn(4, sizeCell), elemFam(sizeCell))
+       call getSurfaceConnectivity(conn, sizeCell, wallList, size(wallList), .True.)
+       call getSurfacePoints(pts, sizeNode, sps, wallList, size(wallList))
+       call getSurfaceFamily(elemFam, sizeCell, wallList, size(wallList), .True.)
+
+       call createSlice(pts, conn, elemFam, paraSlices(nParaSlices, sps), pt, direction, &
+            sliceName, famList)
+
+       ! Clean up memory.
+       deallocate(pts, conn, elemFam)
     end do
 
   end subroutine addAbsSlice
@@ -188,7 +216,10 @@ contains
     use constants
     use inputTimeSpectral
     use surfaceFamilies
+    use surfaceUtils
     use communication
+    use overset, only : zipperMeshes
+    use outputMod, only : numberOfSurfSolVariables
     implicit none
 
     ! Input Params
@@ -196,21 +227,34 @@ contains
     logical, intent(in) :: writeSlices, writeLift, writeSurf
     integer(kind=intType), intent(in), dimension(nFamList) :: famList
     integer(kind=intType), intent(in) :: nFamList
-
+    real(kind=realType), dimension(:, :, :), allocatable :: nodalValues
     ! Working
-    integer(kind=intType) :: sps
+    integer(kind=intType) :: sps, nSolVar, sizeNOde, sizeCell
+    integer(kind=intType), dimension(:), pointer :: wallLIST
+
+    ! Determine the number of surface variables we have
+    call numberOfSurfSolVariables(nSolVar)
+    wallList =>  BCFamGroups(iBCGroupWalls)%famList
+    call getSurfaceSize(sizeNode, sizeCell, wallList, size(wallList), .True.)
+
+    ! Allocate and compute the wall-based surface data for hte slices
+    ! and lift distributions. 
+    allocate(nodalValues(sizeNode, nSolVar+6+3, nTimeIntervalsSpectral))
 
     do sps=1, nTimeIntervalsSpectral
-       call computeSurfaceOutputNodalData(BCFamExchange(iBCGroupWalls, sps), .True.)
+       call computeSurfaceOutputNodalData(BCFamExchange(iBCGroupWalls, sps), &
+            zipperMeshes(iBCGroupWalls), .True., nodalValues(:, :, sps))
     end do
 
     if (writeSlices) then 
-       call writeSlicesFile(sliceFile, .False.)
+       call writeSlicesFile(sliceFile, nodalValues)
     end if
 
     if (writeLift) then 
-       call writeLiftDistributionFile(liftFile, .False.)
+       call writeLiftDistributionFile(liftFile, nodalValues)
     end if
+
+    deallocate(nodalValues)
 
     if (writeSurf) then 
        call writeTecplotSurfaceFile(surfFile, famList)
@@ -218,13 +262,12 @@ contains
 
   end subroutine writeTecplot
 
-  subroutine writeSlicesFile(fileName, updateSurfaceData)
+  subroutine writeSlicesFile(fileName, nodalValues)
     !
-    !       This subroutine is intended to be called from python.          
-    !       This routine will write the user defined slics to an           
-    !       to the (ascii) tecplot file fileName. ASCII files are          
-    !       used for simplicity since very little information is actually  
-    !       written.                                                       
+    ! This subroutine is intended to be called from python.  This
+    ! routine will write the user defined slics to an to the (ascii)
+    ! tecplot file fileName. ASCII files are used for simplicity since
+    ! very little information is actually written.
     use constants
     use communication
     use outputMod
@@ -233,12 +276,13 @@ contains
     use inputIteration
     use inputIO
     use surfaceFamilies
+    use surfaceUtils
     use utils, only : EChk
     implicit none
 
     ! Input Params
     character*(*), intent(in) :: fileName
-    logical, intent(in) :: updateSurfaceData
+    real(kind=realType), intent(inout), dimension(:, :, :) :: nodalValues
 
     ! Working parameters
     integer(kind=intType) :: file, i, sps, nSolVar, ierr
@@ -247,6 +291,11 @@ contains
     character(len=maxCGNSNameLen), dimension(:), allocatable :: solNames
     integer(kind=intType), allocatable, dimension(:) :: famList
     type(slice) :: globalSlice
+    integer(kind=intType) :: sizeNode, sizeCell
+    integer(kind=intType), dimension(:), pointer :: wallList
+    real(kind=realType), dimension(:, :), allocatable :: pts
+    integer(kind=intType), dimension(:, :), allocatable :: conn
+    integer(kind=intType), dimension(:), allocatable :: elemFam
 
     ! Only write if we actually have lift distributions
     testwriteSlices: if(nParaSlices + nAbsSlices > 0) then
@@ -257,11 +306,6 @@ contains
        endif
 
        do sps=1,nTimeIntervalsSpectral
-
-          ! Gather the forces and nodes
-          if (updateSurfaceData) then 
-             call computeSurfaceOutputNodalData(BCFamExchange(iBCGroupWalls, sps), .True.)
-          end if
 
           ! If it is time spectral we need to agument the filename
           if (equationMode == timeSpectral) then
@@ -303,16 +347,27 @@ contains
           call mpi_bcast(nSolVar, 1, adflow_integer, 0, adflow_comm_world, ierr)
           call EChk(ierr,__FILE__,__LINE__)
 
+
+          ! Slices are created on walls and walls only. Retrieve the
+          ! points, connectivity and familyID of all the walls.
+          wallList =>  BCFamGroups(iBCGroupWalls)%famList
+          call getSurfaceSize(sizeNode, sizeCell, wallList, size(wallList), .True.)
+          allocate(pts(3, sizeNode), conn(4, sizeCell), elemFam(sizeCell))
+          call getSurfaceConnectivity(conn, sizeCell, wallList, size(wallList), .True.)
+          call getSurfacePoints(pts, sizeNode, sps, wallList, size(wallList))
+          call getSurfaceFamily(elemFam, sizeCell, wallList, size(wallList), .True.)
+
           ! Integration is performed in parallel
-          do i=1,nParaSlices
-             call integrateSlice(paraSlices(i, sps), globalSlice, nSolVar, .True.)
+          do i=1, nParaSlices
+             call integrateSlice(paraSlices(i, sps), globalSlice, &
+                  nodalValues(:, :, sps), nSolVar, .True.)
              if (myid == 0) then 
                 call writeSlice(globalSlice, file, nSolVar)
              end if
              call destroySlice(globalSlice)
           end do
 
-          do i=1,nAbsSlices
+          do i=1, nAbsSlices
              ! 'Destroy' the slice...just dealloc the allocated data. 
              ! before we do, save the family list
              allocate(famList(size(absSlices(i, sps)%famList)))
@@ -320,11 +375,12 @@ contains
              call destroySlice(absSlices(i, sps))
 
              ! Make new one in the same location
-             call createSlice(BCFamExchange(iBCGroupWalls, sps), absSlices(i, sps), &
+             call createSlice(pts, conn, elemFam, absSlices(i, sps), &
                   absSlices(i, sps)%pt, absSlices(i, sps)%dir, &
-                  absSlices(i, sps)%sliceName, famList, size(famList))
+                  absSlices(i, sps)%sliceName, famList)
 
-             call integrateSlice(absSlices(i, sps), globalSlice, nSolVar, .True.)
+             call integrateSlice(absSlices(i, sps), globalSlice, &
+                  nodalValues(:, :, sps), nSolVar, .True.)
              if (myid == 0) then 
                 call writeSlice(globalSlice, file, nSolVar)
              end if
@@ -345,7 +401,7 @@ contains
     end if testwriteSlices
   end subroutine writeSlicesFile
 
-  subroutine writeLiftDistributionFile(fileName, updateSurfaceData)
+  subroutine writeLiftDistributionFile(fileName, nodalValues)
     !
     !
     !       This subroutine is intended to be called from python.          
@@ -364,7 +420,7 @@ contains
 
     ! Input Params
     character*(*), intent(in) :: fileName
-    logical :: updateSurfaceData
+    real(kind=realType), dimension(:, :, :), allocatable :: nodalValues
 
     ! Working parameters
     integer(kind=intType) :: file, sps
@@ -381,10 +437,6 @@ contains
 
        do sps=1,nTimeIntervalsSpectral
 
-          if (updateSurfaceData) then 
-             call computeSurfaceOutputNodalData(BCfamExchange(iBCGroupWalls, sps), .False.)
-          end if
-
           ! If it is time spectral we need to agument the filename
           if (equationMode == timeSpectral) then
              write(intString,"(i7)") sps
@@ -400,7 +452,7 @@ contains
              open(unit=file, file=trim(fname))
           end if
 
-          call writeLiftDistributions(sps, file)
+          call writeLiftDistributions(sps, file, nodalValues(:, :, sps))
 
           ! Close file on root proc
           if (myid == 0) then
@@ -416,7 +468,7 @@ contains
     end if testwriteLiftDists
   end subroutine writeLiftDistributionFile
 
-  subroutine writeLiftDistributions(sps, fileID)
+  subroutine writeLiftDistributions(sps, fileID, nodalValues)
     !
     !       This subroutine writes the liftdistribution for the specified  
     !       spectral instance. It is assumed that the required file handles
@@ -426,13 +478,15 @@ contains
     use outputMod
     use su_cgns
     use cgnsNames
-    use surfaceFamilies, only : BCFamExchange
+    use surfaceFamilies, only : BCFamGroups, BCFamExchange
+    use surfaceUtils
     use utils, only : EChk
     use sorting, only : bsearchIntegers
     implicit none
 
     ! Input parameters
     integer(kind=intType), intent(in) :: sps, fileID
+    real(kind=realType), dimension(:, :), intent(in) :: nodalValues
 
     real(kind=realType), dimension(3) :: xmin, xmax, xmin_local, xmax_local
     real(kind=realType), parameter :: tol=1e-8
@@ -442,20 +496,34 @@ contains
     character(len=maxCGNSNameLen), dimension(:), allocatable :: liftDistNames
     real(kind=realType) :: dmin, dmax, sumL, sumD, span, delta, xCur(3)
     type(slice) :: localSlice, globalSlice
-    type(familyExchange), pointer :: exch
+    integer(kind=intType) :: sizeNode, sizeCell
+    integer(kind=intType), dimension(:), pointer :: wallList
+    real(kind=realType), dimension(:, :), allocatable :: pts
+    integer(kind=intType), dimension(:, :), allocatable :: conn
+    integer(kind=intType), dimension(:), allocatable :: elemFam
+
+    ! Slices are created on walls and walls only. Retrieve the
+    ! points, connectivity and familyID of all the walls.
+    wallList =>  BCFamGroups(iBCGroupWalls)%famList
+    call getSurfaceSize(sizeNode, sizeCell, wallList, size(wallList), .True.)
+    allocate(pts(3, sizeNode), conn(4, sizeCell), elemFam(sizeCell))
+    call getSurfaceConnectivity(conn, sizeCell, wallList, size(wallList), .True.)
+    call getSurfacePoints(pts, sizeNode, sps, wallList, size(wallList))
+    call getSurfaceFamily(elemFam, sizeCell, wallList, size(wallList), .True.)
 
     do iDist=1,nLiftDists
+
        d => liftDists(iDist)
        xmin_local = huge(real(zero))
        xmax_local = -huge(real(zero))
-       exch => BCFamExchange(iBCGroupWalls, sps)
+
        ! Get the bounding box for the entire geometry we have been slicing.
-       elemLoop: do i=1, size(exch%conn, 2)
-          if (bSearchIntegers(exch%elemFam(i), d%FamList) > 0) then 
+       elemLoop: do i=1, size(conn, 2)
+          if (bSearchIntegers(elemFam(i), d%FamList) > 0) then 
 
              ! Extract each of the 4 nodes on this quad:
              do jj=1,4
-                xCur = exch%nodalValues(exch%conn(jj, i), 1:3)
+                xCur = pts(:, conn(jj, i))
                 ! Check the max/min on each index
                 do ii=1,3
                    xmin_local(ii) = min(xmin_local(ii) , xCur(ii))
@@ -548,9 +616,9 @@ contains
 
        do i=1, d%nSegments
           ! Make new one in the same location
-          call createSlice(exch, localSlice, d%slicePts(:, i), &
-               d%dir, "does_not_matter", d%famList, size(d%famList))
-          call integrateSlice(localSlice, globalSlice, 0, .False.)
+          call createSlice(pts, conn, elemFam, localSlice, d%slicePts(:, i), &
+               d%dir, "does_not_matter", d%famList)
+          call integrateSlice(localSlice, globalSlice, nodalValues, 0, .False.)
 
           ! Total lift and drag 
           values(i, 5)  = globalSlice%pL + globalSlice%vL
@@ -632,12 +700,13 @@ contains
     use inputPhysics, only : equationMode
     use inputIteration, only : printIterations
     use outputMod, only : surfSolNames, numberOfSurfSolVariables
-    use surfaceFamilies, onlY : BCFamExchange, famNames
+    use surfaceFamilies, onlY : BCFamExchange, famNames, familyExchange
     use utils, only : EChk, setPointers, setBCPointers
     use BCPointers, only : xx
     use sorting, only : bsearchIntegers
     use extraOutput, only : surfWriteBlank
     use overset, only : zipperMesh, zipperMeshes
+    use surfaceUtils 
     implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -651,20 +720,20 @@ contains
 
     ! Working parameters
     integer(kind=intType) :: i, j, nn, mm, fileID, iVar, ii, ierr, iSize
-    integer(Kind=intType) :: nSolVar, iBeg, iEnd, jBeg, jEnd, sps
+    integer(Kind=intType) :: nSolVar, iBeg, iEnd, jBeg, jEnd, sps, sizeNode, sizeCell
     integer(kind=intType) :: iBCGroup, iFam, iProc, nCells, nNodes, nCellsToWrite
     character(len=maxStringLen) :: fname
     character(len=7) :: intString
     integer(kind=intType), dimension(:), allocatable :: nodeSizes, nodeDisps
     integer(kind=intType), dimension(:), allocatable :: cellSizes, cellDisps
     character(len=maxCGNSNameLen), dimension(:), allocatable :: solNames
-    real(kind=realType), dimension(:, :), allocatable :: allNodalValues
-    integer(kind=intType), dimension(:, :), allocatable :: conn
+    real(kind=realType), dimension(:, :), allocatable :: nodalValues
+    integer(kind=intType), dimension(:, :), allocatable :: conn, localConn
     real(kind=realType), dimension(:, :), allocatable :: vars
-    integer(kind=intType), dimension(:), allocatable :: mask, elemFam
+    integer(kind=intType), dimension(:), allocatable :: mask, elemFam, localElemFam
     logical :: blankSave, BCGroupNeeded, dataWritten
-    type(familyExchange), pointer :: exch
     type(zipperMesh), pointer :: zipper
+    type(familyExchange), pointer :: exch
     if(myID == 0 .and. printIterations) then
        print "(a)", "#"
        print "(a)", "# Writing tecplot surface file(s) ..."
@@ -674,7 +743,7 @@ contains
     ! remove the potential for writing the surface blanks as
     ! these are not necessary for the tecplot IO as we write the
     ! zipper mesh directly. We must save and restore the
-    ! variable in case the CGNS otuput will write it. 
+    ! variable in case the CGNS otuput still wants to write it. 
     blankSave = surfWriteBlank
     surfWriteBlank = .False.
     call numberOfSurfSolVariables(nSolVar)
@@ -736,16 +805,20 @@ contains
           if (.not. BCGroupNeeded) then 
              cycle
           end if
-
+          
+          ! Get the sizes of this BCGroup
+          call getSurfaceSize(sizeNode, sizeCell, exch%famList, size(exch%famList), .True.)
+          allocate(nodalValues(sizeNode, nSolVar+3+6))
           ! Compute the nodal data
-          call computeSurfaceOutputNodalData(exch, .false.)
+          call computeSurfaceOutputNodalData(BCFamExchange(iBCGroup, sps), &
+               zipperMeshes(iBCGroup), .False. , nodalValues(:, :))
 
           ! Gather up the number of nodes to be set to the root proc:
           allocate(nodeSizes(nProc), nodeDisps(0:nProc))
           nodeSizes = 0
           nodeDisps = 0
 
-          call mpi_allgather(exch%nNodes, 1, adflow_integer, nodeSizes, 1, adflow_integer, &
+          call mpi_allgather(sizeNode, 1, adflow_integer, nodeSizes, 1, adflow_integer, &
                adflow_comm_world, ierr)
           call EChk(ierr,__FILE__,__LINE__)
           nodeDisps(0) = 0
@@ -761,18 +834,24 @@ contains
 
           ! Gather values to the root proc.
           do i=1, iSize
-             call mpi_gatherv(exch%nodalValues(:, i), exch%nNodes, &
+             call mpi_gatherv(nodalValues(:, i), size(nodalValues, 1), &
                   adflow_real, vars(:, i), nodeSizes, nodeDisps, adflow_real, 0, adflow_comm_world, ierr)
              call EChk(ierr,__FILE__,__LINE__)
           end do
+          deallocate(nodalValues)
 
           ! Now gather up the connectivity
           allocate(cellDisps(0:nProc), cellSizes(nProc))
 
-          call mpi_gather(size(exch%conn, 2), 1, adflow_integer, &
+          call mpi_gather(sizeCell, 1, adflow_integer, &
                cellSizes, 1, adflow_integer, 0, adflow_comm_world, ierr)
           call EChk(ierr,__FILE__,__LINE__)
           
+
+          allocate(localConn(4, sizeCell), localElemFam(sizeCell))
+          call getSurfaceConnectivity(localConn, sizeCell, exch%famList, size(exch%famList), .True.)
+          call getSurfaceFamily(localElemFam, sizeCell, exch%famList, size(exch%famList), .True.)
+
           if (myid == 0) then 
              cellDisps(0) = 0
              do iProc=1, nProc
@@ -787,15 +866,18 @@ contains
           ! automagically adjusts the connectivity to account for the
           ! number of nodes from different processors
 
-          call mpi_gatherv(exch%conn+nodeDisps(myid), &
-               4*size(exch%conn, 2), adflow_integer, conn, &
+          call mpi_gatherv(localConn+nodeDisps(myid), &
+               4*size(localConn, 2), adflow_integer, conn, &
                cellSizes*4, cellDisps*4, adflow_integer, 0, adflow_comm_world, ierr)
           call EChk(ierr,__FILE__,__LINE__)
           
-          call mpi_gatherv(exch%elemFam, &
-               size(exch%elemFam), adflow_integer, elemFam, &
+          call mpi_gatherv(localElemFam, &
+               size(localElemFam), adflow_integer, elemFam, &
                cellSizes, cellDisps, adflow_integer, 0, adflow_comm_world, ierr)
           call EChk(ierr,__FILE__,__LINE__)
+          
+          ! Local values are finished
+          deallocate(localConn, localElemFam)
 
           rootProc: if (myid == 0 .and. nCells > 0) then 
              
@@ -808,19 +890,15 @@ contains
 
                    ! Create a temporary mask
                    mask = 0
+                   nCellsToWrite = 0
                    do i=1, nCells
                       ! Check if this elem is to be included
                       if (elemFam(i) == exch%famList(iFam)) then 
                          mask(i) = 1
-                      end if
-                   end do
-                   nCellsToWrite = sum(mask)
-                   do i=1, size(zipper%conn, 2)
-                      if (zipper%fam(i) == exch%famList(iFam)) then 
                          nCellsToWrite = nCellsToWrite + 1
                       end if
                    end do
-
+                   
                    actualWrite : if (nCellsToWrite > 0) then
                    
                       write (fileID,"(a,a,a)") "Zone T= """,famNames(exch%famList(iFam)),""""
@@ -859,17 +937,6 @@ contains
                          ! Check if this elem is to be included
                          if (mask(i) == 1) then 
                             write(fileID, *) conn(1, i), conn(2, i), conn(3,i), conn(4, i)
-                         end if
-                      end do
-                      
-                      do i=1, size(zipper%conn, 2)
-                         if (zipper%fam(i) == exch%famList(iFam)) then 
-                            
-                            write(fileID, *) &
-                                 zipper%indices(zipper%conn(1, i)), &
-                                 zipper%indices(zipper%conn(2, i)), &
-                                 zipper%indices(zipper%conn(3, i)), &
-                                 zipper%indices(zipper%conn(3, i))
                          end if
                       end do
                    end if actualWrite
@@ -937,7 +1004,7 @@ contains
 
   end subroutine initializeLiftDistributionData
 
-  subroutine computeSurfaceOutputNodalData(exch, includeTractions)
+  subroutine computeSurfaceOutputNodalData(exch, zipper, includeTractions, nodalValues)
     !
     !       This purpose of this subroutine is to compute all nodal values 
     !
@@ -945,12 +1012,13 @@ contains
     use communication
     use inputPhysics
     use blockPointers
-    use surfaceFamilies, only : BCFamGroups
+    use surfaceFamilies, only : BCFamGroups, familyExchange
     use outputMod, only : storeSurfSolInBuffer, numberOfSurfSolVariables, &
          surfSolNames
-    use surfaceUtils, only : getSurfacePoints
+    use surfaceUtils
     use utils, only : setPointers, EChk
     use sorting, only : bsearchIntegers
+    use overset, only : zipperMesh
     implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -961,10 +1029,12 @@ contains
     ! Input Param  
     type(familyExchange) :: exch
     logical :: includeTractions
-
+    real(kind=realType), dimension(:, :), intent(inout) :: nodalValues
+    type(zipperMesh) :: zipper
     ! Working params
     integer(kind=intType) :: i, j, ii, jj, kk, nn, mm, iSol, ierr, nPts, nCells
     integer(kind=intType) :: nFields, nSolVar, iBeg, iEnd, jBeg, jEnd, ind(4), ni, nj
+    integer(kind=intType) :: sizeNode, sizeCell, iDim
     integer(kind=intType), dimension(3,2) :: cellRangeCGNS
     character(len=maxCGNSNameLen), dimension(:), allocatable :: solNames
     real(kind=realType), dimension(:), allocatable :: buffer
@@ -972,18 +1042,12 @@ contains
     real(kind=realType), dimension(:, :), allocatable :: tmp
     logical :: viscousSubFace
 
-    ! Determine the number of surface variables we have
+    nodalValues = zero
+
     call numberOfSurfSolVariables(nSolVar)
     allocate(solNames(nSolVar))
     call surfSolNames(solNames)
 
-    ! Reallocate the nodal values if necessary and zero
-    if (allocated(exch%nodalValues)) then 
-       deallocate(exch%nodalValues)
-    end if
-    allocate(exch%nodalValues(exch%nNodes, nSolVar+6+3))
-    exch%nodalValues = zero
-    
     ! The tractions have a sepcial routine so call that first before we
     ! mess with the family information. 
 
@@ -1005,26 +1069,66 @@ contains
                 do j=jBeg, jEnd
                    do i=iBeg, iEnd
                       ii = ii + 1
-                      exch%nodalValues(ii, 4) = BCData(mm)%Tp(i, j, 1)
-                      exch%nodalValues(ii, 5) = BCData(mm)%Tp(i, j, 2)
-                      exch%nodalValues(ii, 6) = BCData(mm)%Tp(i, j, 3)
+                      nodalValues(ii, 4) = BCData(mm)%Tp(i, j, 1)
+                      nodalValues(ii, 5) = BCData(mm)%Tp(i, j, 2)
+                      nodalValues(ii, 6) = BCData(mm)%Tp(i, j, 3)
 
-                      exch%nodalValues(ii, 7) = BCData(mm)%Tv(i, j, 1)
-                      exch%nodalValues(ii, 8) = BCData(mm)%Tv(i, j, 2)
-                      exch%nodalValues(ii, 9) = BCData(mm)%Tv(i, j, 3)
+                      nodalValues(ii, 7) = BCData(mm)%Tv(i, j, 1)
+                      nodalValues(ii, 8) = BCData(mm)%Tv(i, j, 2)
+                      nodalValues(ii, 9) = BCData(mm)%Tv(i, j, 3)
                    end do
                 end do
              end if
           end do
        end do
+
+       ! Not quite dont yet with the nodal tractions; we need to send
+       ! the nodal tractions that the duplices the *zipper* mesh needs
+       ! to the root proc. We have a special scatter for this. 
+
+       if (zipper%allocated) then 
+
+          ! Loop over the 6 tractions
+          do iDim=1,6
+             ! Place the nodalValues array into petsc vector. Note that
+             ! on the root proc nodalValues may be *longer* than
+             ! exch%nNodes due to the extra zipper nodes. 
+             
+             call VecPlaceArray(exch%nodeValLocal, nodalValues(1:exch%nNodes, 3+iDim), ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+             
+             ! *Also* place the nodalValues array into the
+             ! *zipper%localVal array, from exch%nNodes onward. 
+
+             call VecPlaceArray(zipper%localVal, nodalValues(exch%nNodes+1:size(nodalValues, 1), 3+iDim), ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+
+             ! Now use the *zipper* scatter
+             call VecScatterBegin(zipper%scatter, exch%nodeValLocal,&
+                  zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+
+             call VecScatterEnd(zipper%scatter, exch%nodeValLocal,&
+                  zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+                    
+             ! Reset the two vector
+             call VecResetArray(exch%nodeValLocal, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+
+             call VecResetArray(zipper%localVal, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+          end do
+       end if
     end if
 
     ! Get the current set of surface points for the family we just set. 
-    allocate(tmp(3, exch%nNodes))
-    call getSurfacePoints(tmp, exch%nNodes, exch%sps, exch%famList, size(exch%famList))
+    call getSurfaceSize(sizeNode, sizeCell, exch%famList, size(exch%famlist), .True.)
+    allocate(tmp(3, sizeNode))
+    call getSurfacePoints(tmp, sizeNode, exch%sps, exch%famList, size(exch%famList))
 
-    do i=1, exch%nNodes
-       exch%nodalValues(i, 1:3) = tmp(1:3, i)
+    do i=1, sizeNOde
+       nodalValues(i, 1:3) = tmp(1:3, i)
     end do
     deallocate(tmp)
     ! For the remainder of the variables, use arithematic averaging. 
@@ -1208,7 +1312,7 @@ contains
 
        ! Temporarly place the nodalValues into the array since that is
        ! where we want the data placed.
-       call VecPlaceArray(exch%nodeValLocal, exch%nodalValues(:, iSol+9), ierr)
+       call VecPlaceArray(exch%nodeValLocal, nodalValues(:, iSol+9), ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
        ! Push back to the local values
@@ -1220,19 +1324,40 @@ contains
             exch%nodeValLocal, INSERT_VALUES, SCATTER_REVERSE, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
-       ! Restore the array we replaed.
+       if (zipper%allocated) then 
+
+          ! *Also* place the nodalValues array into the
+          ! *zipper%localVal array, from exch%nNodes onward. 
+          
+          call VecPlaceArray(zipper%localVal, nodalValues(exch%nNodes+1:size(nodalValues, 1), 9+iSol), ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+       
+          ! Now use the *zipper* scatter
+          call VecScatterBegin(zipper%scatter, exch%nodeValLocal,&
+               zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr) 
+          call EChk(ierr,__FILE__,__LINE__)
+          
+          call VecScatterEnd(zipper%scatter, exch%nodeValLocal,&
+               zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+       
+          call VecResetArray(zipper%localVal, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+       end if
+
+       ! Reset the vector
        call VecResetArray(exch%nodeValLocal, ierr)
        call EChk(ierr,__FILE__,__LINE__)
     end do varLoop
     deallocate(solNames)
+
   end subroutine computeSurfaceOutputNodalData
 
-
-  subroutine createSlice(exch, slc, pt, dir, sliceName, famList, nFam)
+  subroutine createSlice(pts, conn, elemFam, slc, pt, dir, sliceName, famList)
     !
     !       This subroutine creates a slice on a plane defined by pt and   
     !       and dir. It only uses the families specified in the famList.   
-    !      * sps define which specral instance to use. 
+    !       sps define which specral instance to use. 
     !
     use constants
     use utils, only : reallocatereal2, reallocateinteger2, pointReduce
@@ -1240,11 +1365,13 @@ contains
     implicit none
 
     ! Input param
-    type(familyExchange), target :: exch
+    real(kind=realType), dimension(:, :), intent(in) :: pts
+    integer(kind=intType), dimension(:,:), intent(in) :: conn
+    integer(kind=intType), dimension(:), intent(in) :: elemFam
     type(slice), intent(inout) :: slc
     real(kind=realType), dimension(3), intent(in) :: pt, dir
     character*(*), intent(in) :: sliceName
-    integer(kind=intType), intent(in) :: famList(nFam), nFam
+    integer(kind=intType), dimension(:), intent(in) :: famList
 
     ! Working param
     integer(kind=intType) :: i, nMax, nUnique, oldInd, newInd
@@ -1257,14 +1384,11 @@ contains
     real(kind=realType), dimension(:), allocatable :: fc
 
     ! Allocate the family list this slice is to use:
-    allocate(slc%famList(nFam))
-    slc%famList = famList
     slc%sliceName = sliceName
     ! Set the info for the slice:
     slc%pt = pt
     slc%dir = dir
     slc%nNodes = 0
-    slc%exch => exch
 
     ! First step is to compute the 'function' value that will be used
     ! for the contour.
@@ -1275,75 +1399,55 @@ contains
 
     ! Compute the distance function on all possible surfaces on this
     ! processor.
-    allocate(fc(exch%nNodes))
-    do i=1, exch%nNodes
+    allocate(fc(size(pts,2)))
+    do i=1, size(pts, 2)
        ! Now compute the signed distance
-       fc(i) = (dir(1)*exch%nodalValues(i, 1) + dir(2)*exch%nodalValues(i, 2) + &
-            dir(3)*exch%nodalValues(i, 3) + d)*ovrdnom
+       fc(i) = (dir(1)*pts(1, i) + dir(2)*pts(2, i) + dir(3)*pts(3, i) + d)*ovrdnom
     end do
 
-    ! Estimate size of slice by the 5 times sqrt of the number of nodes in the
+    ! Estimate size of slice by the sqrt of the number of nodes in the
     ! mesh. Exact size doesn't matter as we realloc if necessary. 
-    nMax = int(sqrt(dble(exch%nNodes)))
-    allocate(tmpWeight(2,nMax), tmpInd(2, nMax), tmpNOdes(3, nMax))
+    nMax = int(sqrt(dble(size(pts, 2))))
+    allocate(tmpWeight(2, nMax), tmpInd(2, nMax), tmpNOdes(3, nMax))
 
     iCoor = 0
     oldInd = 1
 
     ! Loop over all elements
-    elemLoop: do i=1, size(exch%conn, 2)
+    elemLoop: do i=1, size(conn, 2)
 
-       ! Determine if this the family ID of this patch should be
-       ! included. We will be a little cheeky here. Since most of the
-       ! elements next to each other have the same family, 99% of the
-       ! time we can skip the search and jsut look at the index of last
-       ! search to see if that entry in the family list matches our
-       ! current cell. This reduces the cost to O(1) since if we know
-       ! our cell famID is in the list we're done. If the old index
-       ! doesn't work, we can still search and find it or it may not
-       ! actually be there. Of course for cells that are not in it, you
-       ! always have to search. 
-
-       foundFam = slc%famList(oldInd) == exch%elemFam(i)
-       if (.not. foundFam) then 
-          newInd = bsearchIntegers(exch%elemFam(i), slc%famList)
-          if (newInd > 0) then
-             foundFam = .True.
-             oldInd = newInd
-          end if
-       end if
-
-       includeElem: if (foundFam) then
+       famInclude: if (bsearchIntegers(elemFam(i), famList) > 0) then 
+          
           ! Extract the indices and function values at each corner
           do jj=1,4
-             patchIndices(jj) = exch%conn(jj, i)
+             patchIndices(jj) = conn(jj, i)
              f(jj) = fc(patchIndices(jj))
           end do
 
           ! Based on the values at each corner, determine which
           ! type contour we have
           indexSquare = 1
-
+          
           if (f(1) .lt. zero) indexsquare = indexsquare + 1
           if (f(2) .lt. zero) indexsquare = indexsquare + 2
           if (f(3) .lt. zero) indexsquare = indexsquare + 4
           if (f(4) .lt. zero) indexsquare = indexsquare + 8
-
+          
           logic1 = .true.
-
+          
           kk = 1
           do while (logic1)
              ! This is the edge
              icon = mscon1(indexSquare, kk)
-
+             
              if (icon == 0) then
                 logic1=.false.
              else
-
+             
                 ! num1, num2 are node indices
                 num1 = mscon2(icon,1) 
                 num2 = mscon2(icon,2)
-
+                
                 iCoor = iCoor + 1
                 if (iCoor > nMax) then
                    ! Need to reallocate the arrays. Make it double the size
@@ -1352,26 +1456,25 @@ contains
                    call reallocateInteger2(tmpInd, 2, 2*nMax, 2, nMax, .true.)
                    nMax = nMax * 2
                 end if
-
+                
                 ! Weight factors
                 tmpWeight(2, iCoor) = (zero - f(num1))/(f(num2) - f(num1))
                 tmpWeight(1, iCoor) = one - tmpWeight(2, icoor)
-
+             
                 ! Store the weight factors
                 tmpInd(:, iCoor) = (/patchIndices(num1), patchIndices(num2)/)
-
+             
                 ! Store the physical nodes so we know how to reduce
                 tmpNodes(:, iCoor) = &
-                     tmpWeight(1, iCoor)*exch%nodalValues(tmpInd(1, iCoor), 1:3) + &
-                     tmpWeight(2, iCoor)*exch%nodalValues(tmpInd(2, iCoor), 1:3)
-
+                     tmpWeight(1, iCoor)*pts(:, tmpInd(1, iCoor)) + &
+                     tmpWeight(2, iCoor)*pts(:, tmpInd(2, iCoor))
                 kk = kk + 1
              end if
           end do
-       end if includeElem
+       end if famInclude
     end do  ElemLoop
 
-    ! To save space, we can compact out the doubly defined nodes that
+    ! To save disk space, we can compact out the doubly defined nodes that
     ! were created during the slicing process. Then we can allocate the
     ! final weight array and index array to be the exact correct
     ! length
@@ -1432,7 +1535,7 @@ contains
 
   end subroutine destroySlice
 
-  subroutine integrateSlice(lSlc, gSlc, nFields, doConnectivity)
+  subroutine integrateSlice(lSlc, gSlc, nodalValues, nFields, doConnectivity)
     !
     !       This subroutine integrates the forces on slice slc and computes
     !       the integrated quantities for lift, drag, cl and cd with       
@@ -1451,7 +1554,7 @@ contains
     type(slice) :: lSlc, gSlc
     integer(kind=intType), intent(in) :: nFields
     logical, intent(in) :: doConnectivity
-
+    real(kind=realType), dimension(:, :), intent(in) :: nodalValues
     ! Working variables
     integer(kind=intType) :: i, j, i1, i2
     real(kind=realType), dimension(3) :: x1, x2, pT1, pT2, vT1, vT2, pF, vF
@@ -1482,7 +1585,7 @@ contains
        i2 = lSlc%ind(2, i)
        w1 = lSlc%w(1, i)
        w2 = lSlc%w(2, i)
-       localVals(1:iSize, i) = w1*lslc%exch%nodalValues(i1, 1:iSize) + w2*lslc%exch%nodalValues(i2, 1:iSize)
+       localVals(1:iSize, i) = w1*nodalValues(i1, 1:iSize) + w2*nodalValues(i2, 1:iSize)
     end do
 
     do i=1, size(lSlc%conn, 2)
@@ -1611,7 +1714,7 @@ contains
 
        ! Set chord, protected from zero
        gSlc%chord = max(dmax, 1e-12)
-
+       
        ! Compute factor to get coefficient
        fact = two/(gammaInf*pInf*MachCoef*MachCoef*pRef)
 
@@ -1767,7 +1870,7 @@ contains
              write(fileID,13, advance='no') zero
           end do
 
-          do j=7,nFields
+          do j=1,nFields
              write(fileID,13, advance='no') zero
           end do
 

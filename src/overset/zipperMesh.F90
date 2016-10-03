@@ -35,7 +35,6 @@ contains
     use oversetInitialization, only : initializeOSurf
     use inputOverset, only : debugZipper
     use surfaceFamilies, only : BCFamExchange, famNames, BCFamGroups
-    use preprocessingAPI, only : setFamilyExchanges
     use stringOps
     use gapBoundaries
     implicit none
@@ -75,10 +74,7 @@ contains
     type(oversetWall),  target :: fullWall
 
     if (.not. oversetPresent) then 
-       ! Not overset so we don't can't have a zipper. Just run setFamilyExcahnges
-       do i=1, nFamExchange
-          call setFamilyExchanges(i)
-       end do
+       ! Not overset so we don't can't have a zipper.
        return
     end if
 
@@ -115,7 +111,6 @@ contains
        ! allocated zero-sized arrays so we know the size is 0.
        if (nFam == 0) then 
           allocate(zipper%conn(3, 0), zipper%fam(0), zipper%indices(0))
-          call setFamilyExchanges(iBCGroup)
           cycle
        else
           ! Do a second pass and fill up the famList
@@ -495,8 +490,6 @@ contains
             zipper%localVal, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
-       call setFamilyExchanges(iBCGroup)
-
        ! Now create the general scatter that goes from the
        ! globalNodalVector to the local vectors. 
        call ISCreateGeneral(adflow_comm_world, size(zipper%indices), &
@@ -569,7 +562,6 @@ contains
     use blockPointers, only : nDom, BCData, nBocos, BCType
     use communication, only : adflow_comm_world, myid
     use overset, onlY : clusterAreas, nClusters, clusters, cumDomProc
-    use surfaceUtils, only : getSurfaceSize, getSurfacePoints
     use utils, only : setPointers, EChk, setBCPointers
     use BCPointers, only : xx
     use sorting, only : bsearchIntegers
