@@ -2108,4 +2108,32 @@ contains
     end do
   end subroutine getWorkArray
 
+  subroutine writeOversetWall(oWall, fName)
+
+    ! debug routine to dumb an owall to a file
+    use constants
+    use overset
+    implicit none
+    type(oversetWall) :: oWall
+    character(len=*), intent(in) :: fName
+
+    integer(kind=intType) :: i, iDim
+    open(unit=19,file=trim(fName), form='formatted')
+    write (19,*) 'Variables = "CoordinateX" "CoordianteY" "CoordinateZ"'
+    write (19, *) "Zone"
+    write (19,*) "Nodes = ", oWall%nNodes, " Elements= ", oWalL%nCells, " ZONETYPE=FEQUADRILATERAL"
+    write (19,*) "DATAPACKING=BLOCK"
+
+    do iDim=1,3
+       do i=1, oWall%nNodes
+          write(19, *) oWall%x(iDim, i)
+       end do
+    end do
+    
+    do i=1, oWall%nCells
+       write(19, *) oWall%conn(1, i), oWall%conn(2, i), oWall%conn(3, i), oWall%conn(4, i)
+    end do
+    close(19)
+  end subroutine writeOversetWall
+
 end module oversetUtilities
