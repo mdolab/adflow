@@ -333,7 +333,7 @@ contains
           nLocalWallFringe = 0
 
           allocate(clusterWalls(nClusters))
-          call buildClusterWalls(level, sps, .False., clusterWalls, wallFamList, size(wallFamList))
+          call buildClusterWalls(level, sps, .True., clusterWalls, wallFamList, size(wallFamList))
 
           ! Determine the cells that are near wall. We have a special routine for this. 
           call computeCellWallPoint(level, sps, clusterWalls)
