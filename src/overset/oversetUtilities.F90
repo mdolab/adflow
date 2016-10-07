@@ -1369,7 +1369,7 @@ contains
   end subroutine qsortPocketEdgeType
 
 
-  subroutine checkOverset (level, sps, totalOrphans)
+  subroutine checkOverset (level, sps, totalOrphans, printBadCells)
 
     !
     !       CheckOverset checks the integrity of the overset connectivity  
@@ -1387,10 +1387,43 @@ contains
     ! Input/Output
     integer(kind=intType), intent(in) :: level, sps
     integer(kind=intType), intent(out) :: totalOrphans
+    logical, intent(in) :: printBadCells
 
     ! Working
     integer(kind=intType) :: i, j, k, nn, ii, jj, kk, n, ierr
     integer(kind=intType) :: magic, localOrphans, i_stencil
+    logical :: badCell
+
+    ! This pass just lets the user know where the bad cells are. 
+    do nn=1, nDom
+       call setPointers(nn, level, sps)
+
+       ! On the first pass count up the total number of orphans for this block
+       n = 0
+       do k=2, kl
+          do j=2, jl
+             do i=2, il
+                if (iblank(i,j,k) == 1) then 
+                   badCell = .False.
+
+                   stencilLoop: do i_stencil=1, N_visc_drdw
+                      ii = visc_drdw_stencil(i_stencil, 1) + i
+                      jj = visc_drdw_stencil(i_stencil, 2) + j
+                      kk = visc_drdw_stencil(i_stencil, 3) + k
+
+                      if (.not. (iBlank(ii, jj, kk) == 1 .or. iblank(ii,jj,kk) == -1)) then 
+                         badCell = .True.
+                      end if
+                   end do stencilLoop
+                   if (badCell .and. printBadCells) then 
+                      print *,'Error in connectivity at :',nbkglobal, i+iBegOr, j+jBegOr, k+kBegOr
+                   end if
+                end if
+             end do
+          end do
+       end do
+    end do
+
 
     magic = 33
     localOrphans = 0
@@ -1404,7 +1437,7 @@ contains
              do i=2, il
                 if (iblank(i,j,k) == 0 .or. iblank(i,j,k)==-2 .or. iblank(i,j,k)==-3) then 
 
-                   stencilLoop: do i_stencil=1, N_visc_drdw
+                   stencilLoop2: do i_stencil=1, N_visc_drdw
                       ii = visc_drdw_stencil(i_stencil, 1) + i
                       jj = visc_drdw_stencil(i_stencil, 2) + j
                       kk = visc_drdw_stencil(i_stencil, 3) + k
@@ -1414,11 +1447,10 @@ contains
 
                          if (iBlank(ii, jj, kk) == 1) then 
                             ! This cell is an orphan:
-                            print *,'Error in connectivity: ', nbkglobal, i+iBegOR-1, j+jBegOr-1, k+kBegOr-1
                             n = n + 1
                          end if
                       end if
-                   end do stencilLoop
+                   end do stencilLoop2
                 end if
              end do
           end do
@@ -1447,7 +1479,7 @@ contains
              do i=2, il
                 if (iblank(i,j,k) == 0 .or. iblank(i,j,k)==-2 .or. iblank(i,j,k)==-3) then 
 
-                   stencilLoop2: do i_stencil=1, N_visc_drdw
+                   stencilLoop3: do i_stencil=1, N_visc_drdw
                       ii = visc_drdw_stencil(i_stencil, 1) + i
                       jj = visc_drdw_stencil(i_stencil, 2) + j
                       kk = visc_drdw_stencil(i_stencil, 3) + k
@@ -1461,7 +1493,7 @@ contains
                             orphans(:, n) = (/ii, jj, kk/)
                          end if
                       end if
-                   end do stencilLoop2
+                   end do stencilLoop3
                 end if
              end do
           end do
@@ -1882,7 +1914,7 @@ contains
   subroutine irregularCellCorrection(level, sps)
 
     use constants
-    use blockPointers, only : nDom, il, jl, kl, fringes
+    use blockPointers, only : nDom, il, jl, kl, fringes, ie, je, ke
     use utils, only : setPointers
     implicit none
 
@@ -1891,23 +1923,27 @@ contains
 
     ! Working
     integer(kind=intType) :: i, j, k, nn
+    integer(kind=intType), dimension(:, :, :), allocatable :: tmp
 
     do nn=1, nDom
        call setPointers(nn, level, sps)
+       allocate(tmp(1:ie, 1:je, 1:ke))
+       call flagForcedReceivers(tmp)
 
        do k=2, kl
           do j=2, jl
              do i=2, il
                 if (isDonor(fringes(i, j, k)%status) .and. &
-                     fringes(i, j, k)%donorProc /= -1) then 
+                     fringes(i, j, k)%donorProc /= -1 .and. &
+                     tmp(i,j,k) .ne. 1) then 
                    ! Clear this fringe
                    call emptyFringe(fringes(i, j, k))
                 end if
              end do
           end do
        end do
+       deallocate(tmp)
     end do
-
 
   end subroutine irregularCellCorrection
 
@@ -1948,7 +1984,7 @@ contains
   subroutine setIblankArray(level, sps)
 
     use constants
-    use blockPointers, only : nDom, il, jl, kl, fringes, iblank, flowDoms
+    use blockPointers, only : nDom, il, jl, kl, fringes, iblank, flowDoms, ie, je, ke
     use communication, only : myid, commPatternCell_2nd, internalCell_2nd,&
          adflow_comm_world
     use utils, only : setPointers, EChk
@@ -1962,6 +1998,7 @@ contains
     integer(kind=intType) :: i, j, k, nn
     integer(kind=intType) :: nCompute, nFringe, nBlank, nFloodSeed, nFlooded
     integer(kind=intType) :: counts(5), ierr
+    integer(kind=intType), dimension(:, :, :), allocatable :: tmp
     nCompute = 0
     nFringe = 0
     nBlank = 0
@@ -1970,7 +2007,10 @@ contains
 
     do nn=1, nDom
        call setPointers(nn, level, sps)
-       iBlank = 1
+       allocate(tmp(1:ie, 1:je, 1:ke))
+       call flagForcedReceivers(tmp)
+       
+       iBlank(2:il, 2:jl, 2:kl) = 1
        do k=2, kl
           do j=2, jl
              do i=2, il
@@ -1992,13 +2032,25 @@ contains
                    nBlank = nBlank + 1
 
                 else
-                   ! Compute cell
-                   nCompute = nCompute + 1
+                   
+                   ! We need to explictly make sure forced receivers
+                   ! *NEVER EVER EVER EVER* get set as compute cells. 
+                   if (tmp(i,j,k) == 1) then 
+                      ! This is REALLY Bad. This cell must be a forced
+                      ! receiver but never found a donor. 
+                      iblank(i,j,k) = 0
+                      nBlank = nBlank + 1
+                   else
+                      ! Compute cell
+                      nCompute = nCompute + 1
+                   end if
                 end if
+              
 
              end do
           end do
        end do
+       deallocate(tmp)
     end do
 
     ! Update the iblank info. 

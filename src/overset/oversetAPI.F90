@@ -977,7 +977,11 @@ contains
           ! Step 16: The algorithm is now complete. Run the checkOverset
           ! algorithm to verify that we actually have a valid interpolation
           ! -----------------------------------------------------------------
-          call checkOverset(level, sps, i)
+          if (irefine < 3) then 
+             call checkOverset(level, sps, i, .false.)
+          else
+             call checkOverset(level, sps, i, .True.)
+          end if
 
           deallocate(localWallFringes)
           deallocate(fringeRecvSizes, cumFringeRecv, localFringes)
