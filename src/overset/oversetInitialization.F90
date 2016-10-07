@@ -148,7 +148,8 @@ contains
        end do
     end do
 
-    ! Flag the actual halo cells behind an overset outer boundary as holes.
+    ! Flag the actual halo cells behind an overset outer boundary as
+    ! holes. We must *NEVER EVER EVER* use these cells in a stencil. 
     do mm=1,nBocos
 
        select case (BCFaceID(mm))
