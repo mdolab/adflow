@@ -239,7 +239,7 @@ contains
 
     ! Allocate and compute the wall-based surface data for hte slices
     ! and lift distributions. 
-    allocate(nodalValues(sizeNode, nSolVar+6+3, nTimeIntervalsSpectral))
+    allocate(nodalValues(max(sizeNode,1), nSolVar+6+3, nTimeIntervalsSpectral))
 
     do sps=1, nTimeIntervalsSpectral
        call computeSurfaceOutputNodalData(BCFamExchange(iBCGroupWalls, sps), &
@@ -784,7 +784,7 @@ contains
        end if
 
        masterBCLoop: do iBCGroup=1,nFamExchange
-          
+
           ! Pointers for easier reading
           exch => BCFamExchange(iBCGroup, sps)
           zipper => zipperMeshes(iBCGroup)
@@ -805,11 +805,12 @@ contains
           if (.not. BCGroupNeeded) then 
              cycle
           end if
-          
+
           ! Get the sizes of this BCGroup
           call getSurfaceSize(sizeNode, sizeCell, exch%famList, size(exch%famList), .True.)
-          allocate(nodalValues(sizeNode, nSolVar+3+6))
+          allocate(nodalValues(max(sizeNode,1), nSolVar+3+6))
           ! Compute the nodal data
+
           call computeSurfaceOutputNodalData(BCFamExchange(iBCGroup, sps), &
                zipperMeshes(iBCGroup), .False. , nodalValues(:, :))
 
@@ -829,12 +830,16 @@ contains
           iSize = 3 + 6 + nSolVar
           if (myid == 0) then 
              nNodes = sum(nodeSizes)
-             allocate(vars(nNodes, iSIze))
+          else
+             nNodes = 1
           end if
+
+          ! Only root proc actually has any space allocated
+          allocate(vars(nNodes, iSIze))
 
           ! Gather values to the root proc.
           do i=1, iSize
-             call mpi_gatherv(nodalValues(:, i), size(nodalValues, 1), &
+             call mpi_gatherv(nodalValues(:, i), sizeNode, &
                   adflow_real, vars(:, i), nodeSizes, nodeDisps, adflow_real, 0, adflow_comm_world, ierr)
              call EChk(ierr,__FILE__,__LINE__)
           end do
@@ -942,9 +947,9 @@ contains
                    end if actualWrite
                 end if famInclude
              end do
-             deallocate(mask, vars, conn, elemFam)
+             deallocate(mask, conn, elemFam)
           end if rootProc
-          deallocate(cellSizes, cellDisps, nodeSizes, nodeDisps)
+          deallocate(cellSizes, cellDisps, nodeSizes, nodeDisps, vars)
        end do masterBCLoop
     end do spectralLoop
 
@@ -1090,17 +1095,16 @@ contains
 
           ! Loop over the 6 tractions
           do iDim=1,6
-             ! Place the nodalValues array into petsc vector. Note that
-             ! on the root proc nodalValues may be *longer* than
-             ! exch%nNodes due to the extra zipper nodes. 
              
-             call VecPlaceArray(exch%nodeValLocal, nodalValues(1:exch%nNodes, 3+iDim), ierr)
+             ! Copy the values into localPtr
+             call VecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
              call EChk(ierr,__FILE__,__LINE__)
+                          
+             do i=1,exch%nNodes
+                localPtr(i) = nodalValues(i, iDim+3)
+             end do
              
-             ! *Also* place the nodalValues array into the
-             ! *zipper%localVal array, from exch%nNodes onward. 
-
-             call VecPlaceArray(zipper%localVal, nodalValues(exch%nNodes+1:size(nodalValues, 1), 3+iDim), ierr)
+             call VecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
              call EChk(ierr,__FILE__,__LINE__)
 
              ! Now use the *zipper* scatter
@@ -1111,13 +1115,19 @@ contains
              call VecScatterEnd(zipper%scatter, exch%nodeValLocal,&
                   zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
              call EChk(ierr,__FILE__,__LINE__)
-                    
-             ! Reset the two vector
-             call VecResetArray(exch%nodeValLocal, ierr)
-             call EChk(ierr,__FILE__,__LINE__)
 
-             call VecResetArray(zipper%localVal, ierr)
-             call EChk(ierr,__FILE__,__LINE__)
+             ! Copy the zipper values out on the root proc
+             if (myid == 0) then 
+                call VecGetArrayF90(zipper%localVal, localPtr, ierr)
+                call EChk(ierr,__FILE__,__LINE__)
+
+                do i=1,size(localPtr)
+                   nodalValues(exch%nNodes+i, iDim+3) = localPtr(i)
+                end do
+                
+                call VecRestoreArrayF90(zipper%localVal, localPtr, ierr)
+                call EChk(ierr,__FILE__,__LINE__)
+             end if
           end do
        end if
     end if
@@ -1127,7 +1137,7 @@ contains
     allocate(tmp(3, sizeNode))
     call getSurfacePoints(tmp, sizeNode, exch%sps, exch%famList, size(exch%famList))
 
-    do i=1, sizeNOde
+    do i=1, sizeNode
        nodalValues(i, 1:3) = tmp(1:3, i)
     end do
     deallocate(tmp)
@@ -1310,11 +1320,7 @@ contains
             exch%sumGlobal, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
-       ! Temporarly place the nodalValues into the array since that is
-       ! where we want the data placed.
-       call VecPlaceArray(exch%nodeValLocal, nodalValues(:, iSol+9), ierr)
-       call EChk(ierr,__FILE__,__LINE__)
-
+             
        ! Push back to the local values
        call VecScatterBegin(exch%scatter, exch%nodeValGlobal, &
             exch%nodeValLocal, INSERT_VALUES, SCATTER_REVERSE, ierr)
@@ -1324,14 +1330,19 @@ contains
             exch%nodeValLocal, INSERT_VALUES, SCATTER_REVERSE, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
+       ! Copy the values into nodalValues
+       call VecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+       
+       do i=1,size(localPtr)
+          nodalValues(i, iSol+9) = localPtr(i)
+       end do
+       
+       call VecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
        if (zipper%allocated) then 
 
-          ! *Also* place the nodalValues array into the
-          ! *zipper%localVal array, from exch%nNodes onward. 
-          
-          call VecPlaceArray(zipper%localVal, nodalValues(exch%nNodes+1:size(nodalValues, 1), 9+iSol), ierr)
-          call EChk(ierr,__FILE__,__LINE__)
-       
           ! Now use the *zipper* scatter
           call VecScatterBegin(zipper%scatter, exch%nodeValLocal,&
                zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr) 
@@ -1341,13 +1352,19 @@ contains
                zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
           call EChk(ierr,__FILE__,__LINE__)
        
-          call VecResetArray(zipper%localVal, ierr)
-          call EChk(ierr,__FILE__,__LINE__)
-       end if
+          ! Copy the zipper values out on the root proc
+          if (myid == 0) then 
+             call VecGetArrayF90(zipper%localVal, localPtr, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
 
-       ! Reset the vector
-       call VecResetArray(exch%nodeValLocal, ierr)
-       call EChk(ierr,__FILE__,__LINE__)
+             do i=1,size(localPtr)
+                nodalValues(exch%nNodes+i, 9+iSol) = localPtr(i)
+             end do
+             
+             call VecRestoreArrayF90(zipper%localVal, localPtr, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+          end if
+       end if
     end do varLoop
     deallocate(solNames)
 

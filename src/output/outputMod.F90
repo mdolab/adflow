@@ -720,6 +720,7 @@ contains
     use IOModule
     use flowUtils, only : computePTot
     use utils, only : terminate
+    use overset, only : oversetPresent
     implicit none
     !
     !      Subroutine arguments.
@@ -1264,11 +1265,15 @@ contains
        do k=kBeg,kEnd
           do j=jBeg,jEnd
              do i=iBeg,iEnd
-                wIO(i,j,k,1) = real(fringes(i,j,k)%status)
+                if (oversetPresent) then 
+                   wIO(i,j,k,1) = real(fringes(i,j,k)%status)
+                else
+                   wIO(i,j,k,1) = 0
+                end if
              enddo
           enddo
        enddo
-
+       
     case (cgnsShock)
 
        do k=kBeg,kEnd
