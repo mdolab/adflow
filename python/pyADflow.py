@@ -1396,7 +1396,7 @@ class ADFLOW(AeroSolver):
         # Flag to write the tecplot surface solution or not
         writeSurf = self.getOption('writeTecplotSurfaceSolution')
 
-        # Call fully compbined fortran routine. 
+        # # Call fully compbined fortran routine. 
         self.adflow.tecplotio.writetecplot(sliceName, True, liftName, True,
                                            surfName, writeSurf, famList)
         
