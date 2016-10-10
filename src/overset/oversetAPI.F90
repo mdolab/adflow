@@ -1770,8 +1770,10 @@ contains
     use constants
     use adjointVars, only : nCellsGlobal
     use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use blockPointers, only : nDom, il, jl, kl, x, iBlank
+    use blockPointers, only : nDom, il, jl, kl, x, iBlank, flowDoms
     use utils, only : setPointers
+    use communication, only : commPatternCell_2nd, internalCell_2nd
+    use haloExchange, only : whalo1to1IntGeneric
     use adjointvars, only : nCellsLocal
     implicit none
 
@@ -1779,8 +1781,9 @@ contains
     integer(kind=intType), dimension(:), intent(in) :: flag
 
     ! Working
-    integer(kind=intType) ::i, j, k, ii, nn, sps
+    integer(kind=intType) ::i, j, k, ii, nn, sps, level
 
+    level = 1
     ! Set iblank to -4 if the flag is true:
     ii = 0
     do nn=1, nDom
@@ -1799,6 +1802,18 @@ contains
           end do
        end do
     end do
+
+    do sps=1, nTimeIntervalsSpectral
+       ! Exchange iblanks
+       domainLoop:do nn=1, nDom
+          flowDoms(nn, level, sps)%intCommVars(1)%var => &
+               flowDoms(nn, level, sps)%iblank(:, :, :)
+       end do domainLoop
+
+       ! Run the generic integer exchange
+       call wHalo1to1IntGeneric(1, level, sps, commPatternCell_2nd, internalCell_2nd)
+    end do
+
   end subroutine setExplicitHoleCut
 
 end module oversetAPI
