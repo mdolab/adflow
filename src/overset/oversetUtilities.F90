@@ -1996,14 +1996,15 @@ contains
 
     ! Working
     integer(kind=intType) :: i, j, k, nn
-    integer(kind=intType) :: nCompute, nFringe, nBlank, nFloodSeed, nFlooded
-    integer(kind=intType) :: counts(5), ierr
+    integer(kind=intType) :: nCompute, nFringe, nBlank, nFloodSeed, nFlooded, nExplicitBlanked
+    integer(kind=intType) :: counts(6), ierr
     integer(kind=intType), dimension(:, :, :), allocatable :: tmp
     nCompute = 0
     nFringe = 0
     nBlank = 0
     nFloodSeed = 0
     nFlooded = 0
+    nExplicitBlanked = 0
 
     do nn=1, nDom
        call setPointers(nn, level, sps)
@@ -2032,9 +2033,8 @@ contains
 
                 else
                    if (iblank(i,j,k) == -4) then 
-                                         
                       ! do nothing. It is an explict hole.
-                      nBlank = nBlank + 1
+                      nExplicitBlanked = nExplicitBlanked + 1
                    else
                       ! We need to explictly make sure forced receivers
                       ! *NEVER EVER EVER EVER* get set as compute cells. 
@@ -2067,17 +2067,18 @@ contains
     ! Run the generic integer exchange
     call wHalo1to1IntGeneric(1, level, sps, commPatternCell_2nd, internalCell_2nd)
 
-    call mpi_reduce((/nCompute, nFringe, nBlank, nFlooded, nFloodSeed/), &
-         counts, 5, adflow_integer, MPI_SUM, 0, adflow_comm_world, ierr)
+    call mpi_reduce((/nCompute, nFringe, nBlank, nFlooded, nFloodSeed, nExplicitBlanked/), &
+         counts, 6, adflow_integer, MPI_SUM, 0, adflow_comm_world, ierr)
     call ECHK(ierr, __FILE__, __LINE__)
 
     if (myid == 0) then 
        print *, '+--------------------------------+'
-       print *, '| Compute   Cells:', counts(1)
-       print *, '| Fringe    Cells:', counts(2)
-       print *, '| Blanked   Cells:', counts(3)
-       print *, '| Flooded   Cells:', counts(4)
-       print *, '| FloodSeed Cells:', counts(5)
+       print *, '| Compute Cells           :', counts(1)
+       print *, '| Fringe Cells            :', counts(2)
+       print *, '| Blanked Cells           :', counts(3)
+       print *, '| Explicitly Blanked Cells:', counts(6)
+       print *, '| Flooded   Cells         :', counts(4)
+       print *, '| FloodSeed Cells         :', counts(5)
        print *, '+--------------------------------+' 
     end if
   end subroutine setIblankArray
