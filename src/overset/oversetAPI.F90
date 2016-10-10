@@ -1762,4 +1762,43 @@ contains
     end subroutine clusterSearch
   end subroutine determineClusters
 
+  subroutine setExplicitHoleCut(flag)
+
+    ! This is meant to be the gateway for doing any explict hole
+    ! cutting. Right now we have a call-back approach
+
+    use constants
+    use adjointVars, only : nCellsGlobal
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use blockPointers, only : nDom, il, jl, kl, x, iBlank
+    use utils, only : setPointers
+    use adjointvars, only : nCellsLocal
+    implicit none
+
+    ! Input/output
+    integer(kind=intType), dimension(:), intent(in) :: flag
+
+    ! Working
+    integer(kind=intType) ::i, j, k, ii, nn, sps
+
+    ! Set iblank to -4 if the flag is true:
+    ii = 0
+    do nn=1, nDom
+       do sps=1, nTimeIntervalsSpectral
+          call setPointers(nn, 1, sps)
+
+          do k=2, kl
+             do j=2, jl
+                do i=2, il
+                   ii = ii + 1
+                   if (flag(ii) /= 0) then 
+                      iblank(i,j,k) = -4
+                   end if
+                end do
+             end do
+          end do
+       end do
+    end do
+  end subroutine setExplicitHoleCut
+
 end module oversetAPI

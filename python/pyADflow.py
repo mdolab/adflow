@@ -215,6 +215,21 @@ class ADFLOW(AeroSolver):
 
         self.adflow.partitioning.partitionandreadgrid(False)
         self.adflow.preprocessingapi.preprocessing()
+
+        # Do explict hole cutting.
+        ncells = self.adflow.adjointvars.ncellslocal[0]
+        ntime  = self.adflow.inputtimespectral.ntimeintervalsspectral
+        n  = ncells*ntime
+
+        # Call the user supplied callback if necessary
+
+        cutCallBack = self.getOption('cutCallBack')
+        flag = numpy.zeros(n)
+        if cutCallBack is not None:
+            xCen = self.adflow.utils.getcellcenters(1, n).T
+            cutCallBack(xCen, flag)
+        self.adflow.preprocessingapi.preprocessingoverset(flag)
+
         self.adflow.tecplotio.initializeliftdistributiondata()
         self.adflow.initializeflow.updatebcdataalllevels()
         self.adflow.initializeflow.initflow()
@@ -3543,6 +3558,7 @@ class ADFLOW(AeroSolver):
             'overlapfactor':[float, 0.9],
             'debugzipper':[bool, False],
             'zippersurfacefamily':[object, None],
+            'cutcallback':[object, None],
 
             # Unsteady Paramters
             'timeintegrationscheme':[str, 'bdf'],
@@ -3677,7 +3693,7 @@ class ADFLOW(AeroSolver):
                 'useale', 'timeintervals', 'blocksplitting',
                 'loadimbalance', 'loadbalanceiter', 'partitiononly',
                 'meshSurfaceFamily', 'designSurfaceFamily', 
-                'zippersurfacefamily')
+                'zippersurfacefamily', 'cutcallback')
 
     def _getOptionMap(self):
         """ The ADflow option map and module mapping"""
@@ -3969,7 +3985,8 @@ class ADFLOW(AeroSolver):
                              'meshsurfacefamily',
                              'designsurfacefamily',
                              'zippersurfacefamily',
-                             'outputsurfacefamily'
+                             'outputsurfacefamily',
+                             'cutcallback',
                          ))
 
         # Deprecated options. These should not be used, but old
