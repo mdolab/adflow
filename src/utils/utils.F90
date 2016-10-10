@@ -6154,6 +6154,47 @@ module utils
 102 format("# Unsteady time step ",a,", physical time ",a, " seconds")
 
   end subroutine unsteadyHeader
+  
+  subroutine getCellCenters(level, n, xCen)
+    
+    use constants
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use adjointVars, only : nCellsGlobal
+    use blockPointers, only : nDom, il, jl, kl, x
 
+    implicit none
+
+    ! Input/Output
+    integer(kind=intType), intent(in) :: level, n
+    real(kind=realType), dimension(3, n), intent(out) :: xCen
+    
+    ! Working
+    integer(kind=intType) :: i, j, k, ii, nn, sps
+    
+    ii = 0
+    do nn=1, nDom
+       do sps=1, nTimeIntervalsSpectral
+          call setPointers(nn, level, sps)
+
+          do k=2, kl
+             do j=2, jl
+                do i=2, il
+                   ii = ii + 1
+                   
+                   xCen(:, ii) = eighth*(&
+                        x(i-1, j-1, k-1, :) + &
+                        x(i  , j-1, k-1, :) + &
+                        x(i-1, j  , k-1, :) + &
+                        x(i  , j  , k-1, :) + &
+                        x(i-1, j-1, k  , :) + &
+                        x(i  , j-1, k  , :) + &
+                        x(i-1, j  , k  , :) + &
+                        x(i  , j  , k  , :))
+                end do
+             end do
+          end do
+       end do
+    end do
+  end subroutine getCellCenters
 #endif
 end module utils
