@@ -231,18 +231,38 @@ contains
     ! be done and overset connectivity computed
     do level=1,nLevels
        call computeWallDistance(level, .True.)
+    end do
+    call preprocessingADjoint
 
-       if (level == 1) then
+  end subroutine preprocessing
+  
+  subroutine preprocessingoverset(flag, n)
+
+    use constants
+    use block, only : flowDoms
+    use oversetAPI, only : oversetComm, setExplicitHoleCut
+
+    implicit none
+
+    ! Input/Output
+    integer(kind=intType), dimension(n) :: flag
+    integer(kind=intType), intent(in) :: n
+
+    ! Working 
+    integer(kind=intType) :: level, nLevels
+
+    nLevels = ubound(flowDoms,2)
+
+    do level=1,nLevels
+       if (level == 1) then 
+          call setExplicitHoleCut(flag)
           call oversetComm(level, .true., .false.)
        else
-          call oversetComm(level, .true., .true.)
+          call oversetComm(level, .True., .True.)
        end if
     end do
-
-    call preprocessingADjoint
-  end subroutine preprocessing
-
-
+  end subroutine preprocessingoverset
+   
   subroutine cellRangeSubface
     !
     !       cellRangeSubface determines the cell range for every subface   

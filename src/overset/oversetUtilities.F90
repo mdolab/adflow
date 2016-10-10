@@ -1435,7 +1435,7 @@ contains
        do k=2, kl
           do j=2, jl
              do i=2, il
-                if (iblank(i,j,k) == 0 .or. iblank(i,j,k)==-2 .or. iblank(i,j,k)==-3) then 
+                if (iblank(i,j,k) == 0 .or. iblank(i,j,k)==-2 .or. iblank(i,j,k)==-3 .or. iblank(i,j,k) == -4) then 
 
                    stencilLoop2: do i_stencil=1, N_visc_drdw
                       ii = visc_drdw_stencil(i_stencil, 1) + i
@@ -1477,7 +1477,7 @@ contains
        do k=2, kl
           do j=2, jl
              do i=2, il
-                if (iblank(i,j,k) == 0 .or. iblank(i,j,k)==-2 .or. iblank(i,j,k)==-3) then 
+                if (iblank(i,j,k) == 0 .or. iblank(i,j,k)==-2 .or. iblank(i,j,k)==-3 .or. iblank(i,j,k)==-4) then 
 
                    stencilLoop3: do i_stencil=1, N_visc_drdw
                       ii = visc_drdw_stencil(i_stencil, 1) + i
@@ -2010,7 +2010,6 @@ contains
        allocate(tmp(1:ie, 1:je, 1:ke))
        call flagForcedReceivers(tmp)
        
-       iBlank(2:il, 2:jl, 2:kl) = 1
        do k=2, kl
           do j=2, jl
              do i=2, il
@@ -2032,17 +2031,23 @@ contains
                    nBlank = nBlank + 1
 
                 else
-                   
-                   ! We need to explictly make sure forced receivers
-                   ! *NEVER EVER EVER EVER* get set as compute cells. 
-                   if (tmp(i,j,k) == 1) then 
-                      ! This is REALLY Bad. This cell must be a forced
-                      ! receiver but never found a donor. 
-                      iblank(i,j,k) = 0
+                   if (iblank(i,j,k) == -4) then 
+                                         
+                      ! do nothing. It is an explict hole.
                       nBlank = nBlank + 1
                    else
-                      ! Compute cell
-                      nCompute = nCompute + 1
+                      ! We need to explictly make sure forced receivers
+                      ! *NEVER EVER EVER EVER* get set as compute cells. 
+                      if (tmp(i,j,k) == 1) then 
+                         ! This is REALLY Bad. This cell must be a forced
+                         ! receiver but never found a donor. 
+                         iblank(i,j,k) = 0
+                         nBlank = nBlank + 1
+                      else
+                         ! Compute cell
+                         nCompute = nCompute + 1
+                         iblank(i,j,k) = 1
+                      end if
                    end if
                 end if
               

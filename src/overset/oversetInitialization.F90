@@ -114,7 +114,9 @@ contains
     do k=2, kl
        do j=2, jl
           do i=2, il
-             if (iBlank(i, j, k) == -2 .or. iblank(i, j, k)==-3) then 
+
+             if (iBlank(i, j, k) == -2 .or. iblank(i, j, k)==-3 .or. &
+                iblank(i, j, k) == -4) then 
                 fringes(i, j, k)%quality = -large
              end if
           end do
@@ -128,7 +130,7 @@ contains
     do k=0, kb
        do j=0, jb
           do i=0, ib
-             if (iBlank(i,j,k) == -2 .or. iblank(i,j,k)==-3) then 
+             if (iBlank(i,j,k) == -2 .or. iblank(i,j,k)==-3 .or. iblank(i,j,k) == -4) then 
 
                 stencilLoop: do i_stencil=1, N_visc_drdw
                    ii = visc_drdw_stencil(i_stencil, 1) + i
@@ -138,7 +140,8 @@ contains
                    ! Make sure we're on-block
                    if (ii >=2 .and. ii <= il .and. jj >= 2 .and. jj<= jl .and. &
                         kk >=2 .and. kk <= kl) then 
-                      if (iblank(ii, jj, kk) /= -3 .and. iblank(ii, jj, kk) /=-2) then 
+                      if (iblank(ii, jj, kk) /= -3 .and. iblank(ii, jj, kk) /=-2 .and. &
+                         iblank(ii, jj, kk) /= -4) then 
                          fringes(ii, jj, kk)%quality = large
                       end if
                    end if
@@ -183,7 +186,10 @@ contains
           do k=kStart, kEnd
              do j=jStart, jEnd
                 do i=iStart, iEnd
-                   iblank(i,j,k) = 0
+                   ! Set these to 0 if they are not already explictly blanked (-4)
+                   if (.not. iblank(i,j,k) == -4) then 
+                      iblank(i,j,k) = 0
+                   end if
                 end do
              end do
           end do
@@ -198,6 +204,9 @@ contains
           end do
        end do
     end do
+
+  
+
   end subroutine initializeFringes
 
   subroutine initializeOBlock(oBlock, nn, level, sps)
@@ -253,7 +262,7 @@ contains
           do i=0, ib
              ! This is a hard interior cell. Flag EVERY cell it it's
              ! stencil as a invalid donor. 
-             if (iblank(i, j, k) ==-3 .or. iBlank(i, j,k) == -2) then 
+             if (iblank(i, j, k) ==-3 .or. iBlank(i, j,k) == -2 .or. iblank(i,j,k)== -4) then 
 
                 stencilLoop: do i_stencil=1, N_visc_drdw
                    ii = visc_drdw_stencil(i_stencil, 1) + i
@@ -545,7 +554,7 @@ contains
     do k=2, kl
        do j=2, jl
           do i=2, il
-             if (iblank(i,j,k)==-3 .or. iblank(i,j,k)==-2) then 
+             if (iblank(i,j,k)==-3 .or. iblank(i,j,k)==-2 .or. iblank(i,j,k) == -4) then 
                 iii = (k-2)*nx*ny + (j-2)*nx + (i-2) + 1
                 oFringe%quality(iii) = -large
              end if
@@ -559,7 +568,7 @@ contains
     do k=0, kb
        do j=0, jb
           do i=0, ib
-             if (iblank(i,j,k)==-3 .or. iblank(i,j,k)==-2) then 
+             if (iblank(i,j,k)==-3 .or. iblank(i,j,k)==-2 .or. iblank(i,j,k)==-4) then 
 
                 stencilLoop: do i_stencil=1, N_visc_drdw
                    ii = visc_drdw_stencil(i_stencil, 1) + i
@@ -569,7 +578,7 @@ contains
                    ! Make sure we're on-block
                    if (ii >=2 .and. ii <= il .and. jj >= 2 .and. jj<= jl .and. &
                         kk >=2 .and. kk <= kl) then 
-                      if (iblank(ii, jj, kk) /= -3 .and. iblank(ii,jj,kk) /= -2) then 
+                      if (iblank(ii, jj, kk) /= -3 .and. iblank(ii,jj,kk) /= -2 .and. iblank(ii,jj,kk) /= -4) then 
                          iii = (kk-2)*nx*ny + (jj-2)*nx + (ii-2) + 1
                          oFringe%quality(iii) = large
                       end if

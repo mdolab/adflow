@@ -37,7 +37,13 @@ python module libadflow
            integer(kind=inttype) dimension(n),intent(out),depend(n) :: link
            integer(kind=inttype) intent(out) :: nunique
          end subroutine pointreduce
-
+         
+         subroutine getcellcenters(level,n,xcen) ! in :test:utils.F90:utils
+           integer(kind=inttype) intent(in) :: level
+           integer(kind=inttype) intent(in) :: n
+           real(kind=realtype) dimension(3,n),intent(out),depend(n) :: xcen
+         end subroutine getcellcenters
+        
        end module utils
 
        module walldistance
@@ -406,6 +412,12 @@ python module libadflow
            integer(kind=inttype) dimension(nblocks),intent(in) :: blocks
            integer(kind=inttype), optional,intent(in),check(len(blocks)>=nblocks),depend(blocks) :: nblocks=len(blocks)
          end subroutine updaterotationrate
+
+         subroutine preprocessingoverset(flag,n) ! in :test:preprocessingAPI.F90:preprocessingapi
+           integer(kind=inttype) dimension(n) :: flag
+           integer(kind=inttype), optional,intent(in),check(len(flag)>=n),depend(flag) :: n=len(flag)
+         end subroutine preprocessingoverset
+
        end module preprocessingapi
 
        module adjointapi
