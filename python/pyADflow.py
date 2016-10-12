@@ -2887,7 +2887,7 @@ class ADFLOW(AeroSolver):
                 famList = self._getFamilyList(list(groups)[0])
             elif len(groups)==0:
                 # this is probably an aerostructural function
-                # take the all walls group
+                # take the self.allFamilies group
                 famList = self._getFamilyList(self.allFamilies)
 
             elif len(groups) > 1:
