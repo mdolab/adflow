@@ -2885,6 +2885,10 @@ class ADFLOW(AeroSolver):
                 # We're ok..there was only one group from the
                 # functions..
                 famList = self._getFamilyList(list(groups)[0])
+            elif len(groups)==0:
+                # this is probably an aerostructural function
+                # take the all walls group
+                famList = self._getFamilyList(self.allFamilies)
 
             elif len(groups) > 1:
                 raise Error("Attemping to compute a jacobian vector product "
