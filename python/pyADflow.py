@@ -1398,11 +1398,11 @@ class ADFLOW(AeroSolver):
         if self.getOption('equationMode').lower() == 'unsteady':
             liftName = base + '_lift_Timestep%4.4d.dat'% ts
             sliceName = base + '_slices_Timestep%4.4d.dat'% ts
-            surfName = base + '_surf_Timestep%4.4d.dat' %ts
+            surfName = base + '_surf_Timestep%4.4d.plt' %ts
         else:
             liftName = base + '_lift.dat'
             sliceName = base + '_slices.dat'
-            surfName = base + '_surf.dat'
+            surfName = base + '_surf.plt'
 
         
         # Get the family list to write for the surface.
@@ -2241,6 +2241,9 @@ class ADFLOW(AeroSolver):
             group of families. The default is None which corresponds to
             all wall-type surfaces.
         """
+
+        # Create the zipper mesh if not done so
+        self._createZipperMesh()
 
         if groupName is None:
             groupName = self.allWallsGroup
@@ -3736,10 +3739,10 @@ class ADFLOW(AeroSolver):
                              'location':['io', 'precisiongrid']},
             'solutionprecisionsurface':{'single':self.adflow.constants.precisionsingle,
                                         'double':self.adflow.constants.precisiondouble,
-                                        'location':['io', 'precisionsol']},
+                                        'location':['io', 'precisionsurfsol']},
             'gridprecisionsurface':{'single':self.adflow.constants.precisionsingle,
                                     'double':self.adflow.constants.precisiondouble,
-                                    'location':['io', 'precisiongrid']},
+                                    'location':['io', 'precisionsurfgrid']},
             # Physics Paramters
             'discretization':{'central plus scalar dissipation': self.adflow.constants.dissscalar,
                               'central plus matrix dissipation': self.adflow.constants.dissmatrix,
@@ -4187,7 +4190,7 @@ class ADFLOW(AeroSolver):
             if zipFam not in self.families:
                 raise Error("Trying to create the zipper mesh, but '%s' is not a "
                             "family in the CGNS file or has not been added"
-                            " as a combination of families"%groupName)
+                            " as a combination of families"%zipFam)
             zipperFamList = self.families[zipFam]
 
         self.adflow.zippermesh.createzippermesh(zipperFamList)

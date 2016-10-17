@@ -697,6 +697,8 @@ python module libadflow
          logical :: writecoormeter
          integer(kind=inttype) :: precisionsol
          integer(kind=inttype) :: precisiongrid
+         integer(kind=inttype) :: precisionsurfsol
+         integer(kind=inttype) :: precisionsurfgrid
          character(len=maxstringlen) :: newgridfile
          character(len=maxstringlen) :: gridfile
          logical :: storeconvinneriter
