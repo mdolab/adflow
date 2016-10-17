@@ -1150,26 +1150,22 @@ contains
         use iso_fortran_env, only : real32
         implicit none
         real(kind=realType) :: adflowRealVals(:)
-        real(kind=real32) :: float
+        real(kind=real32) :: floats(size(adflowRealVals))
         integer :: i
-        
-        do i=1, size(adflowRealVals)
-           float = adflowRealVals(i)
-           write(fileID) float
-        end do
+        floats = adflowRealvals
+        write(fileID) floats
+
       end subroutine writeFloats
 
       subroutine writeDoubles(adflowRealVals)
         use iso_fortran_env, only : real64
         implicit none
         real(kind=realType) :: adflowRealVals(:)
-        real(kind=real64) :: dble
+        real(kind=real64) :: dbles(size(adflowrealvals))
         integer :: i
-        
-        do i=1, size(adflowRealVals)
-           dble = adflowRealVals(i)
-           write(fileID) dble
-        end do
+        dbles = adflowrealvals
+        write(fileID) dbles
+
       end subroutine writeDoubles
 
       subroutine writeInteger(adflowIntegerVal)
@@ -1186,12 +1182,9 @@ contains
         use iso_fortran_env, only : int32
         implicit none
         integer(kind=intType) :: adflowIntegerVals(:), i
-        integer(kind=int32) :: int
-        
-        do i=1, size(adflowIntegerVals)
-           int = adflowIntegerVals(i)
-           write(fileID) int
-        end do
+        integer(kind=int32) :: ints(size(adflowintegervals))
+        ints = adflowintegervals
+        write(fileID) ints
         
       end subroutine writeIntegers
 
