@@ -214,10 +214,9 @@ contains
     !       perform the nodal averaging once which is required for all     
     !       three output files.                                            
     use constants
-    use inputTimeSpectral
-    use surfaceFamilies
-    use surfaceUtils
-    use communication
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use surfaceFamilies, only : BCFamGroups, BCFamExchange
+    use surfaceUtils, only : getSurfaceSize
     use overset, only : zipperMeshes
     use outputMod, only : numberOfSurfSolVariables
     implicit none
@@ -693,12 +692,13 @@ contains
 
   end subroutine writeLiftDistributions
 
-  subroutine writeTecplotSurfaceFile(fileName, famList)
+ subroutine writeTecplotSurfaceFile(fileName, famList)
     use constants
     use communication, only : myid, adflow_comm_world, nProc
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputPhysics, only : equationMode
     use inputIteration, only : printIterations
+    use inputIO, only :precisionsurfgrid, precisionsurfsol
     use outputMod, only : surfSolNames, numberOfSurfSolVariables
     use surfaceFamilies, onlY : BCFamExchange, famNames, familyExchange
     use utils, only : EChk, setPointers, setBCPointers
@@ -721,7 +721,7 @@ contains
     ! Working parameters
     integer(kind=intType) :: i, j, nn, mm, fileID, iVar, ii, ierr, iSize
     integer(Kind=intType) :: nSolVar, iBeg, iEnd, jBeg, jEnd, sps, sizeNode, sizeCell
-    integer(kind=intType) :: iBCGroup, iFam, iProc, nCells, nNodes, nCellsToWrite
+    integer(kind=intType) :: iBCGroup, iFam, iProc, nCells, nNodes, nCellsToWrite, iZone, lastZoneSharing
     character(len=maxStringLen) :: fname
     character(len=7) :: intString
     integer(kind=intType), dimension(:), allocatable :: nodeSizes, nodeDisps
@@ -765,24 +765,135 @@ contains
        ! Open file on root proc:
        
        if (myid == 0) then 
-          open(unit=fileID, file=trim(fname))
+          open(unit=fileID, file=trim(fname), form='UNFORMATTED', access='stream', status='replace')
 
-          ! Write Header Information 
-          write (fileID,*) "Title = ""ADflow Surface Data"""
-          write (fileID,"(a)", advance="no") "Variables = "
-          write(fileID,"(a)",advance="no") " ""CoordinateX"" "
-          write(fileID,"(a)",advance="no") " ""CoordinateY"" "
-          write(fileID,"(a)",advance="no") " ""CoordinateZ"" "
+          ! Tecplot magic number
+          write(fileID) "#!TDV112"
+
+          ! Integer value of 1 (4 bytes)
+          call writeInteger(1)
+          
+          ! Integer for FileType: 0 = Full, 1= Grid, 2 = Solution
+          call writeInteger(0)
+          
+          ! Write the title of the file
+          call writeString("ADflow Surface Solution Data")
+
+          ! Write the number of variable names
+          call writeInteger(3 + nSolVar)
+
+          ! Write the variable names
+          call writeString("CoordinateX")
+          call writeString("CoordinateY")
+          call writeString("CoordinateZ")
           
           ! Write the rest of the variables
-          do i=1,nSolVar
-             write(fileID,"(a,a,a)",advance="no") """",trim(solNames(i)),""" "
+          do i=1, nSolVar
+             call writeString(trim(solNames(i)))
           end do
 
-          write(fileID,"(1x)")
           deallocate(solNames)
+
        end if
 
+       ! First pass through to generate and write header information
+       masterBCLoop1: do iBCGroup=1, nFamExchange
+
+          ! Pointers for easier reading
+          exch => BCFamExchange(iBCGroup, sps)
+          zipper => zipperMeshes(iBCGroup)
+
+          ! First thing we do is figure out if we actually need to do
+          ! anything with this BCgroup at all. If none the requested
+          ! families are in this BCExcahnge we don't have to do
+          ! anything. 
+
+          BCGroupNeeded = .False.
+          do i=1,size(famList)
+             if (bsearchIntegers(famList(i), exch%famList) > 0) then 
+                BCGroupNeeded = .True.
+             end if
+          end do
+
+          ! Keep going if we don't need this.
+          if (.not. BCGroupNeeded) then 
+             cycle
+          end if
+
+          ! Get the sizes of this BCGroup
+          call getSurfaceSize(sizeNode, sizeCell, exch%famList, size(exch%famList), .True.)
+          call mpi_reduce(sizeNode, nNodes, 1, adflow_integer, MPI_SUM, 0, adflow_comm_world, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+
+          ! Now gather up the cell family info.
+          allocate(cellDisps(0:nProc), cellSizes(nProc))
+
+          call mpi_gather(sizeCell, 1, adflow_integer, &
+               cellSizes, 1, adflow_integer, 0, adflow_comm_world, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+          
+          allocate(localElemFam(sizeCell))
+          call getSurfaceFamily(localElemFam, sizeCell, exch%famList, size(exch%famList), .True.)
+
+          if (myid == 0) then 
+             cellDisps(0) = 0
+             do iProc=1, nProc
+                cellDisps(iProc) = cellDisps(iProc-1) + cellSizes(iProc)
+             end do
+             nCells = sum(cellSizes)
+             allocate(elemFam(nCells))
+          end if
+          
+          call mpi_gatherv(localElemFam, &
+               size(localElemFam), adflow_integer, elemFam, &
+               cellSizes, cellDisps, adflow_integer, 0, adflow_comm_world, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+          
+          ! Deallocate temp memory
+          deallocate(localElemFam, cellSizes, cellDisps)
+
+          rootProc: if (myid == 0 .and. nCells > 0) then 
+             do iFam=1, size(exch%famList)
+                
+                ! Check if we have to write this one:
+                famInclude: if (bsearchIntegers(exch%famList(iFam), famList) > 0) then 
+                   nCellsToWrite = 0
+                   do i=1, nCells
+                      ! Check if this elem is to be included
+                      if (elemFam(i) == exch%famList(iFam)) then 
+                         nCellsToWrite = nCellsToWrite + 1
+                      end if
+                   end do
+                   
+                   if (nCellsToWrite > 0) then
+                      call writeFloat(299.0) ! Zone Marker
+                      call writeString(trim(famNames(exch%famList(iFam)))) ! Zone Name
+                      call writeInteger(-1) ! Parent Zone (-1 for None)
+                      call writeInteger(-1) ! Strand ID (-2 for tecplot assignment)
+                      call writeDouble(0.0) ! Solution Time
+                      call writeInteger(-1)! Zone Color (Not used anymore) (-1)
+                      call writeInteger(3) ! Zone Type (3 for FEQuadrilateral)
+                      call writeInteger(0)! Data Packing (0 for block)
+                      call writeInteger(0)! Specify Var Location (0=don't specify, all at nodes)
+                      call writeInteger(0) ! Are raw 1-to-1 face neighbours supplied (0 for false)
+                      call writeInteger(nNodes) ! Number of nodes in FE Zone
+                      call writeInteger(nCellsToWrite) ! Number of elements in FE Zone
+                      call writeInteger(0) ! ICellDim, jCellDim, kCellDim (for future use, set to 0)
+                      call writeInteger(0) 
+                      call writeInteger(0) 
+                      call writeInteger(0) ! Aux data specified (0 for no)
+                   end if
+                end if famInclude
+             end do
+             deallocate(elemFam)
+          end if rootProc
+       end do masterBCLoop1
+
+       if (myid == 0) then 
+          call writeFloat(357.0) ! Eohmarker to mark difference between header and data section
+       end if
+
+       ! Now do everything again but for real. 
        masterBCLoop: do iBCGroup=1,nFamExchange
 
           ! Pointers for easier reading
@@ -883,15 +994,18 @@ contains
           
           ! Local values are finished
           deallocate(localConn, localElemFam)
+          iZone = 0
+          rootProc2: if (myid == 0 .and. nCells > 0) then 
 
-          rootProc: if (myid == 0 .and. nCells > 0) then 
-             
+             ! Need zero based for binary output.
+             conn = conn - 1 
+
              allocate(mask(nCells))
              dataWritten=.False.
              do iFam=1, size(exch%famList)
                 
                 ! Check if we have to write this one:
-                famInclude: if (bsearchIntegers(exch%famList(iFam), famList) > 0) then 
+                famInclude2: if (bsearchIntegers(exch%famList(iFam), famList) > 0) then 
 
                    ! Create a temporary mask
                    mask = 0
@@ -904,53 +1018,103 @@ contains
                       end if
                    end do
                    
-                   actualWrite : if (nCellsToWrite > 0) then
-                   
-                      write (fileID,"(a,a,a)") "Zone T= """,famNames(exch%famList(iFam)),""""
-                      write (fileID,*) "Nodes = ", nNodes, " Elements= ",  nCellsToWrite, " ZONETYPE=FEQUADRILATERAL"
-                      write (fileID,*) "DATAPACKING=BLOCK"
+                   actualWrite2 : if (nCellsToWrite > 0) then
+  
+                      ! Write Zone Data
+                      call writeFloat(299.0)
+  
+                      ! Data Type for each variable (1 for float, 2 for double)
+                      do i=1, 3
+                         if (precisionSurfGrid == precisionSingle) then 
+                            call writeInteger(1)
+                         else if (precisionSurfGrid == precisionDouble) then 
+                            call writeInteger(2)
+                         end if
+                      end do
+
+                      do i=1, nSolVar
+                         if (precisionSurfSol == precisionSingle) then 
+                            call writeInteger(1)
+                         else if (precisionSurfSol == precisionDouble) then 
+                            call writeInteger(2)
+                         end if
+                      end do
+                         
+                      call writeInteger(0) ! Has passive variables (0 for no)
 
                       if (.not. dataWritten) then 
-                         ! For the first family we want so we must write data.
 
-                         ! Write the points (indices 1:3)
-15                       format (E14.6)
-                         do j=1, 3
-                            do i=1, nNodes
-                               write(fileID,15) vars(i, j)
-                            end do
+                         ! Save the current 0-based zone so we know which to share with. 
+                         lastZoneSharing = iZone
+
+                         call writeInteger(0) ! Has variable sharing (0 for no)
+                         call writeInteger(-1)  ! Zone based zone number to share connectivity (-1 for no sharing)
+
+                         ! Min/Max Value for coordinates
+                         do j=1,3
+                            call writeDouble(minval(vars(:, j)))
+                            call writeDouble(maxval(vars(:, j)))
+                         end do
+                      
+                         ! Min/Max Value for solution variables
+                         do j=1,nSolVar
+                            call writeDouble(minval(vars(:, j+9)))
+                            call writeDouble(maxval(vars(:, j+9)))
+                         end do
+ 
+                         ! Dump the coordinates
+                         do j=1,3
+                            if (precisionSurfGrid == precisionSingle) then 
+                               call writeFloats(vars(1:nNodes, j))
+                            else if (precisionSurfSol == precisionDouble) then 
+                               call writeDoubles(vars(1:nNodes, j))
+                            end if
                          end do
                          
-                         ! And the rest of the variables
+                         ! Dump the solution variables
                          do j=1,nSolVar
-                            do i=1, nNodes
-                               write(fileID,15) vars(i, j+9)
-                            end do
+                            if (precisionSurfSol == precisionSingle) then 
+                               call writeFloats(vars(1:nNodes, j+9))
+                            else if (precisionSurfSol == precisionDouble) then 
+                               call writeDoubles(vars(1:nNodes, j+9))
+                            end if
                          end do
-                         dataWritten = .True.
+                         
                       else
-                         ! For all other zones we can 
-                         if (3+nSolVar < 10) then 
-                            write(fileID, "(a,I1,a)") "VARSHARELIST=([1-",3+nSolVar,"])"
-                         else
-                            write(fileID, "(a,I2,a)") "VARSHARELIST=([1-",3+nSolVar,"])"
-                         end if
+                         ! This will be sharing data from another zone.
+                         call writeInteger(1) ! Has variable sharing (0 for no)
+                         
+                         ! Write out the zone number for sharing the data. 
+                         do j=1,3+nSolVar
+                            call writeInteger(lastZoneSharing)
+                         end do
+
+                         call writeInteger(-1)  ! Zone based zone number to share connectivity (-1 for no sharing
                       end if
-                      
-                      ! And now the connectivity
+
+                      ! Dump the connectivity
+                      j = 0
                       do i=1, nCells
                          ! Check if this elem is to be included
                          if (mask(i) == 1) then 
-                            write(fileID, *) conn(1, i), conn(2, i), conn(3,i), conn(4, i)
+                            call writeIntegers(conn(:, i))
+                            j = j + 1
                          end if
                       end do
-                   end if actualWrite
-                end if famInclude
+
+                      iZone = iZone + 1
+                   end if actualWrite2
+                end if famInclude2
              end do
              deallocate(mask, conn, elemFam)
-          end if rootProc
+          end if rootProc2
           deallocate(cellSizes, cellDisps, nodeSizes, nodeDisps, vars)
        end do masterBCLoop
+
+       if (myid == 0) then 
+          close(fileID)
+       end if
+
     end do spectralLoop
 
     ! Restore the modified option
@@ -960,7 +1124,92 @@ contains
        print "(a)", "#"
     endif
 
-  end subroutine writeTecplotSurfaceFile
+    contains
+
+      subroutine writeFloat(adflowRealVal)
+        use iso_fortran_env, only : real32
+
+        implicit none
+        real(kind=realType) :: adflowRealVal
+        real(kind=real32) :: float
+        float = adflowRealval
+        write(fileID) float
+      end subroutine writeFloat
+
+      subroutine writeDouble(adflowRealVal)
+        use iso_fortran_env, only : real64
+        implicit none
+        real(kind=realType) :: adflowRealVal
+        real(kind=real64) :: dble
+        dble = adFlowRealVal
+        write(fileID) dble
+      end subroutine writeDouble
+
+
+      subroutine writeFloats(adflowRealVals)
+        use iso_fortran_env, only : real32
+        implicit none
+        real(kind=realType) :: adflowRealVals(:)
+        real(kind=real32) :: float
+        integer :: i
+        
+        do i=1, size(adflowRealVals)
+           float = adflowRealVals(i)
+           write(fileID) float
+        end do
+      end subroutine writeFloats
+
+      subroutine writeDoubles(adflowRealVals)
+        use iso_fortran_env, only : real64
+        implicit none
+        real(kind=realType) :: adflowRealVals(:)
+        real(kind=real64) :: dble
+        integer :: i
+        
+        do i=1, size(adflowRealVals)
+           dble = adflowRealVals(i)
+           write(fileID) dble
+        end do
+      end subroutine writeDoubles
+
+      subroutine writeInteger(adflowIntegerVal)
+        use iso_fortran_env, only : int32
+        implicit none
+        integer(kind=intType) :: adflowIntegerVal
+        integer(kind=int32) :: int
+
+        int = adflowIntegerVal
+        write(fileID) int
+      end subroutine writeInteger
+
+      subroutine writeIntegers(adflowIntegerVals)
+        use iso_fortran_env, only : int32
+        implicit none
+        integer(kind=intType) :: adflowIntegerVals(:), i
+        integer(kind=int32) :: int
+        
+        do i=1, size(adflowIntegerVals)
+           int = adflowIntegerVals(i)
+           write(fileID) int
+        end do
+        
+      end subroutine writeIntegers
+
+      subroutine writeString(str)
+
+        implicit none
+        
+        character*(*)::  str
+        integer(kind=intType) :: i
+
+        do i=1,len(str)
+           write(fileID) iachar(str(i:i))
+        end do
+        write(fileID) 0
+        
+      end subroutine writeString
+
+    end subroutine writeTecplotSurfaceFile
 
   subroutine initializeLiftDistributionData
     use constants
