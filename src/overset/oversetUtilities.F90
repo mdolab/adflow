@@ -1435,7 +1435,8 @@ contains
        do k=2, kl
           do j=2, jl
              do i=2, il
-                if (iblank(i,j,k) == 0 .or. iblank(i,j,k)==-2 .or. iblank(i,j,k)==-3 .or. iblank(i,j,k) == -4) then 
+                if (iblank(i,j,k) == 0 .or. iblank(i,j,k)==-2 .or. &
+                     iblank(i,j,k)==-3 .or. iblank(i,j,k) == -4) then 
 
                    stencilLoop2: do i_stencil=1, N_visc_drdw
                       ii = visc_drdw_stencil(i_stencil, 1) + i
@@ -1471,13 +1472,14 @@ contains
        ! with setPointers()
        orphans => flowDoms(nn, level, sps)%orphans
        nOrphans = n
-
+       
        ! On the first pass count up the total number of orphans for this block
        n = 0
        do k=2, kl
           do j=2, jl
              do i=2, il
-                if (iblank(i,j,k) == 0 .or. iblank(i,j,k)==-2 .or. iblank(i,j,k)==-3 .or. iblank(i,j,k)==-4) then 
+                if (iblank(i,j,k) == 0 .or. iblank(i,j,k)==-2 .or. &
+                     iblank(i,j,k)==-3 .or. iblank(i,j,k)==-4) then 
 
                    stencilLoop3: do i_stencil=1, N_visc_drdw
                       ii = visc_drdw_stencil(i_stencil, 1) + i
