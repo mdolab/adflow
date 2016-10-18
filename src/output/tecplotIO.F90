@@ -54,7 +54,7 @@ module tecplotIO
 
   ! Data for the user supplied lift distributions
   integer(kind=intType), parameter :: nLiftDistMax=100
-  integer(kind=intType) :: nLiftDists
+  integer(kind=intType) :: nLiftDists=0
   type(liftDist), dimension(nLiftDistMax), target :: liftDists
 
   ! Tecplot Variable names of the data in the lift distribution data file:
@@ -885,8 +885,10 @@ contains
                    end if
                 end if famInclude
              end do
-             deallocate(elemFam)
           end if rootProc
+          if (myid == 0) then 
+             deallocate(elemFam)
+          end if
        end do masterBCLoop1
 
        if (myid == 0) then 
@@ -1106,8 +1108,11 @@ contains
                    end if actualWrite2
                 end if famInclude2
              end do
-             deallocate(mask, conn, elemFam)
+             deallocate(mask)
           end if rootProc2
+          if (myid == 0) then 
+             deallocate(conn, elemFam)
+          end if
           deallocate(cellSizes, cellDisps, nodeSizes, nodeDisps, vars)
        end do masterBCLoop
 
