@@ -302,5 +302,9 @@ module constants
 
   integer(kind=intType), parameter :: nFamExchange=6
 
+  ! Constants for tecplot I/O
+  real(kind=realType) :: zoneMarker = 299.0
+  real(kind=realType) :: dataSectionMarker = 357.0
+
 
 end module constants

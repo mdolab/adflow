@@ -866,11 +866,11 @@ contains
                    end do
                    
                    if (nCellsToWrite > 0) then
-                      call writeFloat(299.0) ! Zone Marker
+                      call writeFloat(zoneMarker) ! Zone Marker
                       call writeString(trim(famNames(exch%famList(iFam)))) ! Zone Name
                       call writeInteger(-1) ! Parent Zone (-1 for None)
                       call writeInteger(-1) ! Strand ID (-2 for tecplot assignment)
-                      call writeDouble(0.0) ! Solution Time
+                      call writeDouble(zero) ! Solution Time
                       call writeInteger(-1)! Zone Color (Not used anymore) (-1)
                       call writeInteger(3) ! Zone Type (3 for FEQuadrilateral)
                       call writeInteger(0)! Data Packing (0 for block)
@@ -890,7 +890,7 @@ contains
        end do masterBCLoop1
 
        if (myid == 0) then 
-          call writeFloat(357.0) ! Eohmarker to mark difference between header and data section
+          call writeFloat(dataSectionMarker) ! Eohmarker to mark difference between header and data section
        end if
 
        ! Now do everything again but for real. 
@@ -1021,7 +1021,7 @@ contains
                    actualWrite2 : if (nCellsToWrite > 0) then
   
                       ! Write Zone Data
-                      call writeFloat(299.0)
+                      call writeFloat(zoneMarker)
   
                       ! Data Type for each variable (1 for float, 2 for double)
                       do i=1, 3
@@ -1128,7 +1128,6 @@ contains
 
       subroutine writeFloat(adflowRealVal)
         use iso_fortran_env, only : real32
-
         implicit none
         real(kind=realType) :: adflowRealVal
         real(kind=real32) :: float
@@ -1144,7 +1143,6 @@ contains
         dble = adFlowRealVal
         write(fileID) dble
       end subroutine writeDouble
-
 
       subroutine writeFloats(adflowRealVals)
         use iso_fortran_env, only : real32
