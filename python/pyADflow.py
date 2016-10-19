@@ -465,14 +465,25 @@ class ADFLOW(AeroSolver):
            CGNS file.
         """
 
+        # Check that the family name is not already defined:
+        if familyName.lower() in self.families:
+            raise Error("Cannot add integration surface with family name '%s'"
+                        "becuase the name it already exists."%familyName)
+
+        # Need to add an additional family so first figure out what the max family index is:
+        maxInd = 0
+        for fam in self.families:
+            maxInd = max(maxInd, numpy.max(self.families[fam]))
+        famID = maxInd + 1
+        self.families[familyName.lower()] = [famID]
+
         # We are going to operate under the assuption that the number
         # of nodes/elements of the defined surface are sufficiently
         # small that we do not have to worry about parallelization. 
 
         pts, conn = self._readPlot3DSurfFile(fileName)
-
         self.adflow.surfaceintegrations.addintegrationsurface(
-            pts.T, conn.T, familyName)
+            pts.T, conn.T, familyName, famID)
 
     def addFunction(self, funcName, groupName, name=None):
         """Add a "new" function to ADflow by restricting the integration of an
