@@ -4222,6 +4222,9 @@ class ADFLOW(AeroSolver):
         self.adflow.zippermesh.createzippermesh(zipperFamList)
         self.zipperCreated = True
 
+        # We can also do the surface plane integrations here if necessary
+        self.adflow.surfaceintegrations.interpolateintegrationsurfaces()
+
     def _processFortranStringArray(self, strArray):
         """Getting arrays of strings out of Fortran can be kinda nasty. This
         takes the array and returns a nice python list of strings"""
