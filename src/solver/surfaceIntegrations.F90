@@ -21,6 +21,7 @@ module surfaceIntegrations
      integer(kind=intType), dimension(:, :), allocatable :: donorInfo
      integer(kind=intTYpe), dimension(:), allocatable :: procSizes, procDisps
      integer(kind=intTYpe), dimension(:), allocatable :: inv
+     logical, dimension(:), allocatable :: valid
 
   end type userSurfCommType
 
@@ -1744,15 +1745,19 @@ contains
        ! the size of the internal comm structure. 
        
        procSizes = 0
-       
+       allocate(comm%valid(nPts))
+       comm%valid = .True.
        do i=1, nPts
           if (surfFringes(i)%donorProc < 0) then 
-             print *,'We dont have a donor. This is bad!'
-          else
-             ! We actually have a donor. 
-             j = surfFringes(i)%donorProc
-             procSizes(j) = procSizes(j) + 1
+             ! We dont have a donor. Flag this point as invalid
+             comm%valid(i) = .False.
           end if
+
+          ! Dump the points without donors on the root proc by making
+          ! sure j is at least 0 for the root proc. These will just
+          ! simply be ignored during the comm. 
+          j = max(surfFringes(i)%donorProc, 0)
+          procSizes(j) = procSizes(j) + 1
        end do
     end if
        
@@ -1994,15 +1999,17 @@ contains
        ! We are interpolating nVar variables
        do k=varStart, varEnd
           jj = jj + 1
-          sendBuffer(jj) = &
-               weight(1)*flowDoms(d1,1,1)%realCommVars(k)%var(i1  ,j1  ,k1  ) + &
-               weight(2)*flowDoms(d1,1,1)%realCommVars(k)%var(i1+1,j1  ,k1  ) + &
-               weight(3)*flowDoms(d1,1,1)%realCommVars(k)%var(i1  ,j1+1,k1  ) + &
-               weight(4)*flowDoms(d1,1,1)%realCommVars(k)%var(i1+1,j1+1,k1  ) + &
-               weight(5)*flowDoms(d1,1,1)%realCommVars(k)%var(i1  ,j1  ,k1+1) + &
-               weight(6)*flowDoms(d1,1,1)%realCommVars(k)%var(i1+1,j1  ,k1+1) + &
-               weight(7)*flowDoms(d1,1,1)%realCommVars(k)%var(i1  ,j1+1,k1+1) + &
-               weight(8)*flowDoms(d1,1,1)%realCommVars(k)%var(i1+1,j1+1,k1+1)
+          if (d1 > 0) then ! Is this pt valid?
+             sendBuffer(jj) = &
+                  weight(1)*flowDoms(d1,1,1)%realCommVars(k)%var(i1  ,j1  ,k1  ) + &
+                  weight(2)*flowDoms(d1,1,1)%realCommVars(k)%var(i1+1,j1  ,k1  ) + &
+                  weight(3)*flowDoms(d1,1,1)%realCommVars(k)%var(i1  ,j1+1,k1  ) + &
+                  weight(4)*flowDoms(d1,1,1)%realCommVars(k)%var(i1+1,j1+1,k1  ) + &
+                  weight(5)*flowDoms(d1,1,1)%realCommVars(k)%var(i1  ,j1  ,k1+1) + &
+                  weight(6)*flowDoms(d1,1,1)%realCommVars(k)%var(i1+1,j1  ,k1+1) + &
+                  weight(7)*flowDoms(d1,1,1)%realCommVars(k)%var(i1  ,j1+1,k1+1) + &
+                  weight(8)*flowDoms(d1,1,1)%realCommVars(k)%var(i1+1,j1+1,k1+1)
+          end if
        end do
     end do donorLoop
     
@@ -2020,7 +2027,7 @@ contains
     use block, onlY : flowDoms, nDom
     use flowVarRefState, only : pRef, rhoRef, pRef, timeRef, LRef, TRef
     use communication, only : myid, adflow_comm_world
-    use utils, only : EChk
+    use utils, only : EChk, mynorm2
     implicit none
 
     ! Working parameters
@@ -2029,7 +2036,8 @@ contains
     type(userIntSurf), pointer :: surf
     real(kind=realType) :: mReDim, rho, vx, vy, vz, PP, massFLowRate, vn
     real(kind=realType), dimension(3) :: v1, v2, x1, x2, x3, x4, n
-
+    logical :: valid
+    logical, dimension(:), allocatable :: ptValid
     ! Set the pointers for the required communication variables: rho,
     ! vx, vy, vz, P and the x-coordinates
     
@@ -2063,12 +2071,14 @@ contains
        
        ! *Finally* we can do the actual integrations
        if (myid == 0)  then 
+          allocate(ptValid(size(surf%pts, 2)))
 
           ! Before we do the integration, update the pts array from
           ! the values in recvBuffer2
           do i=1, size(surf%pts, 2)
              j = surf%nodeComm%inv(i)
              surf%pts(:, j) = recvBuffer2(3*i-2:3*i)
+             ptValid(j) = surf%nodeComm%valid(i)
           end do
 
           massFlowRate = zero
@@ -2076,35 +2086,47 @@ contains
 
           elemLoop: do i=1, size(surf%conn, 2)
 
-             ! Extract out the interpolated quantities
-             rho = recvBuffer1(5*i-4)
-             vx  = recvBuffer1(5*i-3)
-             vy  = recvBuffer1(5*i-2)
-             vz  = recvBuffer1(5*i-1)
-             PP  = recvBuffer1(5*i  )
+             ! First check if this cell is valid to integrate. Both
+             ! the cell center *and* all nodes must be valid
 
-             ! Get the coordinates of the quad
-             x1 = surf%pts(:, surf%conn(1, surf%faceComm%Inv(i)))
-             x2 = surf%pts(:, surf%conn(2, surf%faceComm%Inv(i)))
-             x3 = surf%pts(:, surf%conn(3, surf%faceComm%Inv(i)))
-             x4 = surf%pts(:, surf%conn(4, surf%faceComm%Inv(i)))
+             ! j is now the element index into the original conn array. 
+             j = surf%faceComm%Inv(i)
 
-             ! Diagonal vectors
-             v1 = x3 - x1
-             v2 = x4 - x2
-
-             ! Take the cross product of the two diagaonal vectors.
-             n(1) = half*(v1(2)*v2(3) - v1(3)*v2(2))
-             n(2) = half*(v1(3)*v2(1) - v1(1)*v2(3))
-             n(3) = half*(v1(1)*v2(2) - v1(2)*v2(1))
-                   
-             ! Normal face velocity
-             vn = vx*n(1) + vy*n(2) + vz*n(3)
-
-             ! Finally the mass flow rate
-             massFlowRate = massFlowRate + rho*vn*mReDim
+             valid = surf%faceComm%valid(i) .and. &
+                  ptValid(surf%conn(1, j)) .and. ptValid(surf%conn(2, j)) .and. &
+                  ptValid(surf%conn(3, j)) .and. ptValid(surf%conn(4, j))
+             if (valid) then 
+                ! Extract out the interpolated quantities
+                rho = recvBuffer1(5*i-4)
+                vx  = recvBuffer1(5*i-3)
+                vy  = recvBuffer1(5*i-2)
+                vz  = recvBuffer1(5*i-1)
+                PP  = recvBuffer1(5*i  )
+                
+                ! Get the coordinates of the quad
+                x1 = surf%pts(:, surf%conn(1, j))
+                x2 = surf%pts(:, surf%conn(2, j))
+                x3 = surf%pts(:, surf%conn(3, j))
+                x4 = surf%pts(:, surf%conn(4, j))
+             
+                ! Diagonal vectors
+                v1 = x3 - x1
+                v2 = x4 - x2
+                
+                ! Take the cross product of the two diagaonal vectors.
+                n(1) = half*(v1(2)*v2(3) - v1(3)*v2(2))
+                n(2) = half*(v1(3)*v2(1) - v1(1)*v2(3))
+                n(3) = half*(v1(1)*v2(2) - v1(2)*v2(1))
+                
+                ! Normal face velocity
+                vn = vx*n(1) + vy*n(2) + vz*n(3)
+                
+                ! Finally the mass flow rate
+                massFlowRate = massFlowRate + rho*vn*mReDim
+             end if
+             
           end do elemLoop
-
+          deallocate(ptValid)
           print *,'mass flow rate:', massFlowRate
        end if
        deallocate(recvBuffer1, recvBuffer2)
