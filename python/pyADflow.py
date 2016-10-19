@@ -448,6 +448,32 @@ class ADFLOW(AeroSolver):
 
         self.nSlice += N
 
+    def addIntegrationSurface(self, fileName, familyName):
+        """Add a specific integration surface for performing massflow-like
+        computations. 
+
+        Parameters
+        ----------
+
+        fileName : str 
+           Surface Plot 3D file (may have multiple zones) defining
+           integration surface.
+
+        familyName : str 
+           User supplied name to use for this family. It should not
+           already be a name that is defined by the surfaces of the
+           CGNS file.
+        """
+
+        # We are going to operate under the assuption that the number
+        # of nodes/elements of the defined surface are sufficiently
+        # small that we do not have to worry about parallelization. 
+
+        pts, conn = self._readPlot3DSurfFile(fileName)
+
+        self.adflow.surfaceintegrations.addintegrationsurface(
+            pts.T, conn.T, familyName)
+
     def addFunction(self, funcName, groupName, name=None):
         """Add a "new" function to ADflow by restricting the integration of an
         existing ADflow function by a section of the mesh defined by
@@ -4230,6 +4256,66 @@ class ADFLOW(AeroSolver):
         slave.surfMesh = master.surfMesh
         slave.isSlave = True
         return slave
+
+    def _readPlot3DSurfFile(self, fileName):
+        """Read a plot3d file and return the points and connectivity in
+        an unstructured mesh format"""
+
+        pts = None
+        conn = None
+
+        if self.comm.rank == 0:
+            f = open(fileName, 'r')
+            nSurf = numpy.fromfile(f, 'int', count=1, sep=' ')[0]
+            sizes = numpy.fromfile(f, 'int', count=3*nSurf, sep=' ').reshape((nSurf, 3))
+            nPts = 0; nElem = 0
+            for i in range(nSurf):
+                curSize = sizes[i, 0]*sizes[i, 1]
+                nPts += curSize
+                nElem += (sizes[i, 0]-1)*(sizes[i, 1]-1)
+
+            # Generate the uncompacted point and connectivity list:
+            pts = numpy.zeros((nPts, 3), dtype=self.dtype)
+            conn = numpy.zeros((nElem, 4))
+
+            nodeCount = 0
+            elemCount = 0
+            for iSurf in range(nSurf):
+                curSize = sizes[iSurf, 0]*sizes[iSurf, 1]
+                for idim in range(3):
+                    pts[nodeCount:nodeCount+curSize, idim] = (
+                        numpy.fromfile(f, 'float', curSize, sep=' '))
+                # Add in the connectivity. 
+                iSize = sizes[iSurf, 0]
+                for j in range(sizes[iSurf, 1]-1):
+                    for i in range(sizes[iSurf, 0]-1):
+                        conn[elemCount, 0] = nodeCount + j*iSize + i
+                        conn[elemCount, 1] = nodeCount + j*iSize + i+1
+                        conn[elemCount, 2] = nodeCount + (j+1)*iSize + i+1
+                        conn[elemCount, 3] = nodeCount + (j+1)*iSize + i
+                        elemCount += 1
+                nodeCount += curSize
+
+            # Next reduce to eliminate the duplicates and form a
+            # FE-like structure. This isn't strictly necessary but
+            # cheap anyway
+            uniquePts, link, nUnique = self.adflow.utils.pointreduce(
+                pts.T, 1e-12)
+            pts = uniquePts[:, 0:nUnique].T
+
+            # Update the conn
+            newConn = numpy.zeros_like(conn)
+            for i in range(elemCount):
+                for j in range(4):
+                    newConn[i, j] = link[conn[i, j]]
+            conn = newConn
+
+        # Now bcast to everyone
+        pts = self.comm.bcast(pts)
+        conn = self.comm.bcast(conn)
+
+        return pts, conn
+
 
 class adflowFlowCase(object):
     """
