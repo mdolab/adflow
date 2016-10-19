@@ -28,6 +28,7 @@ module surfaceIntegrations
   type userIntSurf
 
      character(len=maxStringLen) :: famName
+     integer(Kind=intType) :: famID
      real(kind=realType), dimension(:, :), allocatable :: pts
      integer(kind=intType), dimension(:, :), allocatable :: conn
      
@@ -865,6 +866,9 @@ contains
        call flowIntegrationZipper(localValues, famList, sps)
     end if
 
+    ! Integrate any user-supplied planes as well:
+    call evalUserIntegrationSurfaces(localvalues, famList, sps)
+
     ! Sum pressure and viscous contributions from the walls, and
     ! pressure and momentum contributions from the inflow/outflow
     ! conditions. 
@@ -1267,7 +1271,7 @@ contains
 
   end subroutine wallIntegrationsZipper
 
-  subroutine addIntegrationSurface(pts, conn, famName, nPts, nConn)
+  subroutine addIntegrationSurface(pts, conn, famName, famID, nPts, nConn)
     ! Add a user-supplied integration surface. 
 
     use communication, only : myID
@@ -1278,7 +1282,7 @@ contains
     ! Input variables
     real(kind=realType), dimension(3, nPts), intent(in) :: pts
     integer(kind=intType), dimension(4, nConn), intent(in) :: conn
-    integer(kind=intType), intent(in) :: nPts, nConn
+    integer(kind=intType), intent(in) :: nPts, nConn, famID
     character(len=*) :: famName
     type(userIntSurf), pointer :: surf
 
@@ -1299,6 +1303,7 @@ contains
        surf%pts = pts
        surf%conn = conn
        surf%famName = famName
+       surf%famID = famID
     end if
 
   end subroutine addIntegrationSurface
@@ -2021,20 +2026,29 @@ contains
 
   end subroutine commUsetIntegrationSurfaceVars
 
-  subroutine evalUserIntegrationSurfaces
+  subroutine evalUserIntegrationSurfaces(localValues, famList, sps)
 
     use constants
     use block, onlY : flowDoms, nDom
     use flowVarRefState, only : pRef, rhoRef, pRef, timeRef, LRef, TRef
     use communication, only : myid, adflow_comm_world
     use utils, only : EChk, mynorm2
+    use costFunctions, only : nLocalValues, iMassFlow, iMassPs, iMassPTot, iMassTtot
+    use flowUtils, only : computePtot, computeTtot
+    use sorting, only : bsearchIntegers
     implicit none
+
+    ! Input Parameters
+    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
+    integer(kind=intType), dimension(:), intent(in) :: famList
+    integer(kind=intType), intent(in) :: sps
 
     ! Working parameters
     integer(kind=intType) :: iSurf, i, j, k, jj, ierr, nn, iDim
     real(kind=realType), dimension(:), allocatable :: recvBuffer1, recvBuffer2
     type(userIntSurf), pointer :: surf
     real(kind=realType) :: mReDim, rho, vx, vy, vz, PP, massFLowRate, vn
+    real(Kind=realType) :: pTot, Ttot, mass_Ptot, mass_Ttot, mass_ps, massFlowRateLocal
     real(kind=realType), dimension(3) :: v1, v2, x1, x2, x3, x4, n
     logical :: valid
     logical, dimension(:), allocatable :: ptValid
@@ -2057,79 +2071,102 @@ contains
        ! Pointer for easier reading
        surf => userIntSurfs(iSurf)
        
-       ! Communicate the face values and the nodal values
-       if (myid == 0) then 
-          allocate(recvBuffer1(5*size(surf%conn, 2)))
-          allocate(recvBuffer2(3*size(surf%pts, 2)))
-       else
-          allocate(recvBuffer1(0))
-          allocate(recvBuffer2(0))
-       end if
-
-       call commUsetIntegrationSurfaceVars(recvBuffer1, 1, 5, surf%faceComm)
-       call commUsetIntegrationSurfaceVars(recvBuffer2, 6, 8, surf%nodeComm)
-       
-       ! *Finally* we can do the actual integrations
-       if (myid == 0)  then 
-          allocate(ptValid(size(surf%pts, 2)))
-
-          ! Before we do the integration, update the pts array from
-          ! the values in recvBuffer2
-          do i=1, size(surf%pts, 2)
-             j = surf%nodeComm%inv(i)
-             surf%pts(:, j) = recvBuffer2(3*i-2:3*i)
-             ptValid(j) = surf%nodeComm%valid(i)
-          end do
-
-          massFlowRate = zero
-          mReDim = sqrt(pRef*rhoRef)
-
-          elemLoop: do i=1, size(surf%conn, 2)
-
-             ! First check if this cell is valid to integrate. Both
-             ! the cell center *and* all nodes must be valid
-
-             ! j is now the element index into the original conn array. 
-             j = surf%faceComm%Inv(i)
-
-             valid = surf%faceComm%valid(i) .and. &
-                  ptValid(surf%conn(1, j)) .and. ptValid(surf%conn(2, j)) .and. &
-                  ptValid(surf%conn(3, j)) .and. ptValid(surf%conn(4, j))
-             if (valid) then 
-                ! Extract out the interpolated quantities
-                rho = recvBuffer1(5*i-4)
-                vx  = recvBuffer1(5*i-3)
-                vy  = recvBuffer1(5*i-2)
-                vz  = recvBuffer1(5*i-1)
-                PP  = recvBuffer1(5*i  )
-                
-                ! Get the coordinates of the quad
-                x1 = surf%pts(:, surf%conn(1, j))
-                x2 = surf%pts(:, surf%conn(2, j))
-                x3 = surf%pts(:, surf%conn(3, j))
-                x4 = surf%pts(:, surf%conn(4, j))
+       ! Do we need to include this surface?
+       famInclude: if (bsearchIntegers(surf%famID, famList) > 0) then
+          
+          ! Communicate the face values and the nodal values
+          if (myid == 0) then 
+             allocate(recvBuffer1(5*size(surf%conn, 2)))
+             allocate(recvBuffer2(3*size(surf%pts, 2)))
+          else
+             allocate(recvBuffer1(0))
+             allocate(recvBuffer2(0))
+          end if
+          
+          call commUsetIntegrationSurfaceVars(recvBuffer1, 1, 5, surf%faceComm)
+          call commUsetIntegrationSurfaceVars(recvBuffer2, 6, 8, surf%nodeComm)
+          
+          ! *Finally* we can do the actual integrations
+          if (myid == 0)  then 
+             allocate(ptValid(size(surf%pts, 2)))
              
-                ! Diagonal vectors
-                v1 = x3 - x1
-                v2 = x4 - x2
-                
-                ! Take the cross product of the two diagaonal vectors.
-                n(1) = half*(v1(2)*v2(3) - v1(3)*v2(2))
-                n(2) = half*(v1(3)*v2(1) - v1(1)*v2(3))
-                n(3) = half*(v1(1)*v2(2) - v1(2)*v2(1))
-                
-                ! Normal face velocity
-                vn = vx*n(1) + vy*n(2) + vz*n(3)
-                
-                ! Finally the mass flow rate
-                massFlowRate = massFlowRate + rho*vn*mReDim
-             end if
+             ! Before we do the integration, update the pts array from
+             ! the values in recvBuffer2
+             do i=1, size(surf%pts, 2)
+                j = surf%nodeComm%inv(i)
+                surf%pts(:, j) = recvBuffer2(3*i-2:3*i)
+                ptValid(j) = surf%nodeComm%valid(i)
+             end do
              
-          end do elemLoop
-          deallocate(ptValid)
-          print *,'mass flow rate:', massFlowRate
-       end if
-       deallocate(recvBuffer1, recvBuffer2)
+             massFlowRate = zero
+             mass_Ptot = zero
+             mass_Ttot = zero
+             mass_Ps = zero
+             
+             mReDim = sqrt(pRef*rhoRef)
+             
+             elemLoop: do i=1, size(surf%conn, 2)
+                
+                ! First check if this cell is valid to integrate. Both
+                ! the cell center *and* all nodes must be valid
+                
+                ! j is now the element index into the original conn array. 
+                j = surf%faceComm%Inv(i)
+                
+                valid = surf%faceComm%valid(i) .and. &
+                     ptValid(surf%conn(1, j)) .and. ptValid(surf%conn(2, j)) .and. &
+                     ptValid(surf%conn(3, j)) .and. ptValid(surf%conn(4, j))
+                if (valid) then 
+                   ! Extract out the interpolated quantities
+                   rho = recvBuffer1(5*i-4)
+                   vx  = recvBuffer1(5*i-3)
+                   vy  = recvBuffer1(5*i-2)
+                   vz  = recvBuffer1(5*i-1)
+                   PP  = recvBuffer1(5*i  )
+                   
+                   call computePtot(rho, vx, vy, vz, pp, Ptot)
+                   call computeTtot(rho, vx, vy, vz, pp, Ttot)
+                   
+                   ! Get the coordinates of the quad
+                   x1 = surf%pts(:, surf%conn(1, j))
+                   x2 = surf%pts(:, surf%conn(2, j))
+                   x3 = surf%pts(:, surf%conn(3, j))
+                   x4 = surf%pts(:, surf%conn(4, j))
+                   
+                   ! Diagonal vectors
+                   v1 = x3 - x1
+                   v2 = x4 - x2
+                   
+                   ! Take the cross product of the two diagaonal vectors.
+                   n(1) = half*(v1(2)*v2(3) - v1(3)*v2(2))
+                   n(2) = half*(v1(3)*v2(1) - v1(1)*v2(3))
+                   n(3) = half*(v1(1)*v2(2) - v1(2)*v2(1))
+                
+                   ! Normal face velocity
+                   vn = vx*n(1) + vy*n(2) + vz*n(3)
+                   
+                   ! Finally the mass flow rate
+                   massFlowRateLocal = rho*vn*mReDim
+                   massFlowRate = massFlowRate + massFlowRateLocal
+                   mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
+                   mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
+                   mass_Ps = mass_Ps + pp*massFlowRateLocal*Pref
+                end if
+                
+             end do elemLoop
+             deallocate(ptValid)
+          end if
+
+          ! Accumulate the final values
+          localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate
+          localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
+          localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
+          localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
+                    
+          deallocate(recvBuffer1, recvBuffer2)
+
+
+       end if famInclude
     end do masterLoop
 
   end subroutine evalUserIntegrationSurfaces
