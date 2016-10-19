@@ -1,5 +1,28 @@
 module surfaceIntegrations
 
+  use constants
+  use communication, only : commType, internalCommType
+
+  type userIntSurf
+
+     character(len=maxStringLen) :: famName
+     real(kind=realType), dimension(:, :), allocatable :: pts
+     integer(kind=intType), dimension(:, :), allocatable :: conn
+
+     ! Data required on each proc
+     integer(kind=intType) :: nDonor
+     real(kind=realType), dimension(:,:), allocatable :: frac
+     integer(kind=intType), dimension(:, :), allocatable :: donorInfo
+
+     ! Data for the root proc only
+     integer(kind=intTYpe), dimension(:), allocatable :: elemInv, procSizes, procDisps
+
+  end type userIntSurf
+
+  integer(kind=intType), parameter :: nUserIntSurfsMax=25
+  type(userIntSurf), dimension(nUserIntSurfsMax), target :: userIntSurfs
+  integer(kind=intTYpe) :: nUserIntSurfs=0
+
 contains
 
   subroutine integrateSurfaces(localValues, famList)
@@ -1225,5 +1248,636 @@ contains
     ! end if
 
   end subroutine wallIntegrationsZipper
+
+  subroutine addIntegrationSurface(pts, conn, famName, nPts, nConn)
+    ! Add a user-supplied integration surface. 
+
+    use communication, only : myID
+    use constants
+
+    implicit none
+
+    ! Input variables
+    real(kind=realType), dimension(3, nPts), intent(in) :: pts
+    integer(kind=intType), dimension(4, nConn), intent(in) :: conn
+    integer(kind=intType), intent(in) :: nPts, nConn
+    character(len=*) :: famName
+    type(userIntSurf), pointer :: surf
+
+    ! Not really much to do here...we just have to save the data
+    ! into the data structure untilly we actual have to do the
+    ! search.
+    nUserIntSurfs = nUserIntSurfs + 1
+    if (nUserIntSurfs > nUserIntSurfsMax) then 
+       print *,"Error: Exceeded the maximum number of user-supplied "&
+            &"integration slices. Increase nUserIntSurfsMax"
+       stop
+    end if
+    
+    if (myid == 0) then 
+       surf => userIntSurfs(nUserIntSurfs)
+
+       allocate(surf%pts(3, nPts), surf%conn(4, nConn))
+       surf%pts = pts
+       surf%conn = conn
+       surf%famName = famName
+    end if
+
+  end subroutine addIntegrationSurface
+
+  subroutine interpolateIntegrationSurfaces
+
+    ! This routine performs the actual searches for the slices. We use
+    ! the same overset search tool
+
+    use constants
+    use block, only : fringeType
+    use communication, only : adflow_comm_world, myid, nProc
+    use overset, only : oversetBlock
+    use blockPointers, only : nDom, x, ie, je, ke, il, jl, kl, x, iBlank, vol
+    use adtBuild, only : buildSerialHex, destroySerialHex
+    use adtLocalSearch, only :  mindistancetreesearchsinglepoint, &
+         containmenttreesearchsinglepoint
+    use adtUtils, only : stack
+    use adtData, only : adtBBoxTargetType
+    use utils, only : setPointers, mynorm2, EChk
+    use inputOverset, only : oversetProjTol
+    use oversetUtilities, only : fracToWeights2, qsortFringeType, getCumulativeForm
+    use sorting, only : argqsortintegers
+
+    implicit none
+
+
+    ! Working parameters
+    type(oversetBlock), dimension(nDom), target :: oBlocks
+    type(oversetBlock), pointer :: oBlock
+    type(userIntSurf), pointer :: surf
+    type(fringeType), dimension(:), allocatable :: surfFringes
+
+    integer(Kind=intType) :: i, j, k, ii, jj, kk, iii, jjj, kkk, nn, mm 
+    integer(kind=intType) :: iSurf, ierr, nInterpol, iProc
+    integer(kind=intType) :: nHexa, nAdt, planeOffset, elemID, nPts, nConn
+    real(kind=realType) :: xc(4), weight(8)
+    integer status(MPI_STATUS_SIZE) 
+
+    real(kind=realType) :: uvw(5), uvw2(5), donorQual, xcheck(3)
+    integer(kind=intType) :: intInfo(3), intInfo2(3)
+    logical :: failed, invalid
+
+    integer(kind=intType), dimension(:, :), allocatable :: donorInfo, intSend
+    integer(kind=intType), dimension(:), allocatable :: procSizes
+    real(kind=realType), dimension(:, :), allocatable :: donorFrac, realSend
+
+    ! Variables we have to pass the ADT search routine
+    integer(kind=intType), dimension(:), pointer :: BB
+    type(adtBBoxTargetType), dimension(:), pointer :: BB2
+    integer(kind=intType), dimension(:), pointer :: frontLeaves
+    integer(kind=intType), dimension(:), pointer :: frontLeavesNew
+
+    ! Firstly all procs go through and generate oBlocks for their
+    ! domains. 
+
+    nInterpol = 1 ! we get the ADT to compute the interpolated volume for us. 
+
+    domainLoop: do nn=1, nDom
+
+       call setPointers(nn, 1, 1)
+       oBlock => oBlocks(nn)
+
+       ! Now setup the data for the ADT
+       nHexa = il * jl * kl
+       nADT = ie * je * ke
+       
+       allocate(oBlock%xADT(3, nADT), oBlock%hexaConn(8, nHexa), &
+            oBlock%qualDonor(1, nADT))
+       ! Fill up the xADT using cell centers (dual mesh)
+       mm = 0
+       do k=1, ke
+          do j=1, je
+             do i=1, ie
+                mm = mm + 1
+                oBlock%xADT(:, mm) = eighth*(&
+                     x(i-1, j-1, k-1, :) + &
+                     x(i  , j-1, k-1, :) + &
+                     x(i-1, j  , k-1, :) + &
+                     x(i  , j  , k-1, :) + &
+                     x(i-1, j-1, k  , :) + &
+                     x(i  , j-1, k  , :) + &
+                     x(i-1, j  , k  , :) + &
+                     x(i  , j  , k  , :))
+                oBlock%qualDonor(1, mm) = vol(i, j, k)
+             end do
+          end do
+       end do
+
+       mm = 0
+       ! These are the 'elements' of the dual mesh.
+       planeOffset = ie * je
+       do k=2, ke
+          do j=2, je
+             do i=2, ie
+                mm = mm + 1
+                oBlock%hexaConn(1, mm) = (k-2)*planeOffset + (j-2)*ie + (i-2) + 1
+                oBlock%hexaConn(2, mm) = oBlock%hexaConn(1, mm) + 1 
+                oBlock%hexaConn(3, mm) = oBlock%hexaConn(2, mm) + ie
+                oBlock%hexaConn(4, mm) = oBlock%hexaConn(3, mm) - 1 
+                
+                oBlock%hexaConn(5, mm) = oBlock%hexaConn(1, mm) + planeOffset
+                oBlock%hexaConn(6, mm) = oBlock%hexaConn(2, mm) + planeOffset
+                oBlock%hexaConn(7, mm) = oBlock%hexaConn(3, mm) + planeOffset
+                oBlock%hexaConn(8, mm) = oBlock%hexaConn(4, mm) + planeOffset
+             end do
+          end do
+       end do
+       
+       ! Call the custom build routine -- Serial only, only Hexa volumes,
+       ! we supply our own ADT Type
+
+       call buildSerialHex(nHexa, nADT, oBlock%xADT, oBlock%hexaConn, oBlock%ADT)
+    end do domainLoop
+
+    ! Data for the search.
+    allocate(BB(20), frontLeaves(25), frontLeavesNew(25), stack(100))
+
+    masterLoop: do iSurf=1, nUserIntSurfs
+
+       surf => userIntSurfs(iSurf)
+       
+       ! First send the coordiantes to everyone from the root
+       ! proc. Need to do the sizes first. 
+       if (myid == 0) then 
+          nPts = size(surf%pts, 2)
+          nConn = size(surf%conn, 2)
+       end if
+       call mpi_bcast(nPts, 1, adflow_integer, 0, adflow_comm_world, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       call mpi_bcast(nConn, 1, adflow_integer, 0, adflow_comm_world, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       if (myid /= 0) then 
+          allocate(surf%pts(3, nPts), surf%conn(4, nConn))
+       end if
+       
+       ! Allocate donor information arrays
+       allocate(donorFrac(4, nConn), donorInfo(5, nConn))
+       donorInfo = -1
+       donorFrac(4, :) = large
+
+       call mpi_bcast(surf%pts, 3*nPts, adflow_real, 0, adflow_comm_world, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       call mpi_bcast(surf%conn, 4*nConn, adflow_integer, 0, adflow_comm_world, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! Now everyone has the data we can simply search each of our
+       ! domains for these points. 
+
+       domainSearch: do nn=1, nDom
+          oBlock => oBlocks(nn)
+          call setPointers(nn, 1, 1)
+
+          ! Search the cells one at a time:
+          elemLoop: do i=1, nConn
+
+             ! Compute the center of the cell. 
+             xc(1:3) = fourth*( & 
+                  surf%pts(:, surf%conn(1, i)) + &
+                  surf%pts(:, surf%conn(2, i)) + &
+                  surf%pts(:, surf%conn(3, i)) + &
+                  surf%pts(:, surf%conn(4, i)))
+             
+             ! Call the standard tree search
+             call containmentTreeSearchSinglePoint(oBlock%ADT, xc, intInfo, uvw, &
+                  oBlock%qualDonor, nInterpol, BB, frontLeaves, frontLeavesNew, failed)
+             
+             ! Make sure this point is not garbage.
+             if (intInfo(1) >= 0) then 
+                call fracToWeights2(uvw(1:3), weight)
+                xcheck = zero
+                do j=1,8
+                   xcheck = xcheck + weight(j)*oBlock%xADT(:, oBlock%hexaConn(j, intInfo(3)))
+                end do
+                
+                if (mynorm2(xcheck - xc(1:3)) > oversetProjTol) then 
+                   failed = .True.
+                end if
+             end if
+             
+             if (intInfo(1) >= 0 .and. failed) then 
+                ! we "found" a point but it is garbage. Do the failsafe search
+                xc(4) = large
+                call minDistanceTreeSearchSinglePoint(oBlock%ADT, xc, intInfo, uvw, &
+                     oBlock%qualDonor, nInterpol, BB2, frontLeaves, frontLeavesNew)
+
+                ! Check this one:
+                call fracToWeights2(uvw(1:3), weight)
+                xcheck = zero
+                do j=1,8
+                   xcheck = xcheck + weight(j)*oBlock%xADT(:, oBlock%hexaConn(j, intInfo(3)))
+                end do
+                
+                ! Since this is the last line of defence, relax the tolerance a bit
+                if (mynorm2(xcheck - xc(1:3)) > 100*oversetProjTol) then 
+                   ! This fringe has not found a donor
+                   intInfo(1) = -1
+                else
+                   ! This one has now passed.
+                   
+                   ! Important! uvw(4) is the distance squared for this search
+                   ! not
+                   uvw(4) = uvw(5)
+                end if
+             end if
+             
+             elemFound: if (intInfo(1) >= 0) then 
+
+                ! Donor and block and index information for this donor. 
+                donorQual = uvw(4)
+                elemID = intInfo(3) - 1 ! Make it zero based
+                ii = mod(elemID, il) + 1
+                jj = mod(elemID/il, jl) + 1
+                kk = elemID/(il*jl) + 1
+
+                ! Rememebr donorFrac(4, i) is the current best quality 
+                if ( donorQual < donorFrac(4, i)) then 
+
+                   ! Check if the point is invalid. We can do this
+                   ! with i-blank array. 
+                   invalid = .False.
+                   do kkk=0,1
+                      do jjj=0,1
+                         do iii=0,1
+                            if (iblank(ii+iii, jj+jjj, kk+kkk) == 0 .or. &
+                                 iblank(ii+iii, jj+jjj, kk+kkk) <= -2) then 
+                               invalid = .True.
+                            end if
+                         end do
+                      end do
+                   end do
+                   
+                   if (.not. invalid) then 
+
+                      ! Set the quality of the donor to the one we
+                      ! just found. Save the rest of the necessary
+                      ! information. 
+                      donorInfo(1, i) = myid
+                      donorInfo(2, i) = nn
+                      donorInfo(3, i) = ii
+                      donorInfo(4, i) = jj
+                      donorInfo(5, i) = kk
+                      donorFrac(1:3, i) = uvw(1:3)
+                      donorFrac(4, i) = donorQual
+                   end if
+                end if
+             end if elemFound
+          end do elemLoop
+       end do domainSearch
+      
+       ! Next count up the number of valid donors we've found and compact
+       ! the info back to that length.
+       if (myid /=0) then 
+          j = 0
+          do i=1, nConn
+             if (donorInfo(1, i) /= -1) then 
+                j = j + 1
+             end if
+          end do
+          allocate(intSend(6, j), realSend(4, i))
+          if (j > 0) then 
+             j = 0
+             do i=1, nConn
+                if (donorInfo(1, i) /= -1) then 
+                   j = j + 1
+                   intSend(1:5, j) = donorInfo(:, i)
+                   intSend(6, j) = i
+                   realSend(:, j) = donorFrac(:, i)
+                end if
+             end do
+          end if
+       else
+          ! On the root proc, use intSend and realSend as the receiver
+          ! buffer. These can be at most nConn sized.
+          allocate(intSend(6, nConn), realSend(4, nConn))
+       end if
+       
+       ! Gather up the sizes (j) to the root processor so he know who to
+       ! expect data from.
+       allocate(procSizes(0:nProc-1))
+       
+       call mpi_gather(j, 1, adflow_integer, procSizes, 1, &
+            adflow_integer, 0, adflow_comm_world, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+       
+       ! Next all the procs need to send all the information back to the
+       ! root processor where we will determine the proper donors for
+       ! each of the cells
+       
+       ! All procs except root fire off their data.
+       if (myid >= 1) then 
+          if (j > 0) then 
+             call mpi_send(intSend, j*6, adflow_integer, 0, myid, &
+                  adflow_comm_world, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+             
+             call mpi_send(realSend, j*4, adflow_real, 0, myid, &
+                  adflow_comm_world, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+          end if
+       end if
+       
+       ! And the root processor recieves it...
+       if (myid == 0) then 
+          do iProc=1, nProc-1
+             ! Determine if this proc has sent anything:
+             if (procSizes(iProc) /= 0) then 
+                
+                call MPI_recv(intSend, 6*nConn, adflow_integer, iProc, iProc,&
+                     adflow_comm_world, status, ierr)
+                call EChk(ierr,__FILE__,__LINE__)
+                
+                call MPI_recv(realSend, 4*nConn, adflow_real, iProc, iProc,&
+                     adflow_comm_world, status, ierr)
+                call EChk(ierr,__FILE__,__LINE__)
+                
+                ! Now process the data (intSend and realSend) that we
+                ! just received. We don't need to check the status for
+                ! the sizes becuase we already know the sizes from the
+                ! initial gather we did. 
+                
+                do i=1, procSizes(iProc)
+                   ii = intSend(6, i)
+
+                   if (realSend(4, i) < donorFrac(4, ii)) then 
+                      ! The incoming quality is better. Accept it. 
+                      donorInfo(1:5, ii) = intSend(1:5, i)
+                      donorFrac(:, ii) = realSend(:, i)
+                   end if
+                end do
+             end if
+          end do
+          
+          ! To make this easier, convert the information we hae to a
+          ! 'fringeType' array so we can use the pre-existing sorting
+          ! routine.
+          allocate(surfFringes(nConn))
+          do i=1, nConn
+             surfFringes(i)%donorProc = donorInfo(1, i)
+             surfFringes(i)%donorBlock = donorInfo(2, i)
+             surfFringes(i)%dI = donorInfo(3, i)
+             surfFringes(i)%dJ = donorInfo(4, i)
+             surfFringes(i)%dK = donorInfo(5, i)
+             surfFringes(i)%donorFrac = donorFrac(1:3, i)
+             ! Use the myBlock attribute to keep track of the original
+             ! index. When we sort the fringes, they will no longer be
+             ! in the same order
+             surfFringes(i)%myBlock = i
+          end do
+          
+          call qsortFringeType(surfFringes, nConn)
+          
+          ! We will reuse-proc sizes to now mean the number of elements
+          ! that the processor *actually* has to send. We will include
+          ! the root proc itself in the calc becuase that will tell us
+          ! the size of the internal comm structure. 
+
+          procSizes = 0
+          
+          do i=1, nConn
+             if (surfFringes(i)%donorProc < 0) then 
+                print *,'We dont have a donor. This is bad!'
+             else
+                ! We actually have a donor. 
+                j = surfFringes(i)%donorProc
+                procSizes(j) = procSizes(j) + 1
+             end if
+          end do
+       end if
+       
+       ! Simply broadcast out the the proc sizes back to everyone so all
+       ! processors know if they are to receive anything back. 
+       call mpi_bcast(procSizes, nProc, adflow_Integer, 0, adflow_comm_world, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+       
+       ! We can now save some of the final data required on the
+       ! root proc for this surf. 
+       allocate(surf%procSizes(0:nProc-1), surf%procDisps(0:nProc))
+
+       ! Copy over procSizes and generate the cumulative form of
+       ! the size array, procDisps
+       surf%procSizes = procSizes
+       call getCumulativeForm(surf%procSizes, nProc, surf%procDisps)
+
+       ! Record the elemInverse which is necessary to index into
+       ! the original conn array. 
+       if (myid == 0) then 
+          allocate(surf%elemInv(nConn))
+          do i=1, nConn
+             surf%elemInv(i) = surfFringes(i)%myBlock
+          end do
+       end if
+
+       ! Now we can send out the final donor information to the
+       ! processors that must supply it. 
+       surf%nDonor = procSizes(myID)
+       allocate(surf%frac(3, surf%nDonor), surf%donorInfo(4, surf%nDonor))
+       
+       if (myid >= 1) then 
+          if (surf%nDonor > 0) then 
+             ! We are responible for at least 1 donor. We have to make
+             ! use of the intSend and realSend buffers again (which
+             ! are guaranteed to be big enough). The reason we can't
+             ! dump the data in directlyis that intSend and realSend
+             ! have a different leading index than we need on the
+             ! final data structure. 
+             
+             call MPI_recv(intSend, 6*surf%nDonor, adflow_integer, 0, myid, &
+                  adflow_comm_world, status, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+             
+             call MPI_recv(realSend, 4*surf%nDonor, adflow_real, 0, myID, &
+                  adflow_comm_world, status, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+
+             ! Copy into final structure
+             do i=1, surf%nDonor
+                surf%donorInfo(:, i) = intSend(1:4, i)
+                surf%frac(:, i) = realSend(1:3, i)
+             end do
+
+          end if
+       else
+          ! We are the root processor.
+          if (surf%nDonor > 0) then 
+             ! We need to copy out our donor info on the root proc if we have any
+             do i= surf%procDisps(myID)+1, surf%procDisps(myID+1)
+                surf%donorInfo(1, i) = surfFringes(i)%donorBlock
+                surf%donorInfo(2, i) = surfFringes(i)%dI
+                surf%donorInfo(3, i) = surfFringes(i)%dJ
+                surf%donorInfo(4, i) = surfFringes(i)%dK
+                surf%frac(1:3, i)    = surfFringes(i)%donorFrac
+             end do
+          end if
+          
+          ! Now loop over the rest of the procs and send out the info we
+          ! need. We have to temporarily copy the data back out of
+          ! fringes to the intSend and realSend arrays
+          do iProc=1, nProc-1
+             
+             if (surf%procSizes(iProc) > 0) then 
+                ! Have something to send here:
+                j = 0
+                do i=surf%procDisps(iProc)+1, surf%procDisps(iProc+1)
+                   j = j + 1
+
+                   intSend(1, j) = surfFringes(i)%donorBlock
+                   intSend(2, j) = surfFringes(i)%dI      
+                   intSend(3, j) = surfFringes(i)%dJ
+                   intSend(4, j) = surfFringes(i)%dK
+                   realSend(1:3, j) = surfFringes(i)%donorFrac
+                end do
+                
+                call mpi_send(intSend, j*6, adflow_integer, iProc, iProc, &
+                     adflow_comm_world, ierr)
+                call EChk(ierr,__FILE__,__LINE__)
+                
+                call mpi_send(realSend, j*4, adflow_real, iProc, iProc, &
+                     adflow_comm_world, ierr)
+                call EChk(ierr,__FILE__,__LINE__)
+             end if
+          end do
+
+          ! Deallocate data allocatd only on root proc
+          deallocate(surfFringes)
+       end if
+       
+       ! Nuke rest of allocated on all procs
+       deallocate(intSend, realSend, procSizes, donorInfo, donorFrac)
+    end do masterLoop
+
+    ! Destroy the ADT Data and allocated values
+    do nn=1, nDom
+       call destroySerialHex(oBlocks(nn)%ADT)
+       deallocate(oBlocks(nn)%xADT, oBlocks(nn)%hexaConn)
+    end do
+       
+  end subroutine interpolateIntegrationSurfaces
+
+  subroutine evalUserIntegrationSurfaces
+
+    use constants
+    use block, onlY : flowDoms, nDom
+    use flowVarRefState, only : pRef, rhoRef, pRef, timeRef, LRef, TRef
+    use communication, only : myid, adflow_comm_world
+    use utils, only : EChk
+    use oversetUtilities, only : fracToWeights2
+    implicit none
+
+    ! Working parameters
+    integer(kind=intType) :: iSurf, d1, i1, j1, k1, i, k, jj, ierr, nn
+    real(kind=realType), dimension(8) :: weight
+    real(kind=realType), dimension(:), allocatable :: sendBuffer, recvBuffer
+    type(userIntSurf), pointer :: surf
+    real(kind=realType) :: mReDim, rho, vx, vy, vz, PP, massFLowRate, vn
+    real(kind=realType), dimension(3) :: v1, v2, x1, x2, x3, x4, n
+    ! Set the pointers for the required variables: rho, vx, vy, vz and
+    ! P
+    domainLoop:do nn=1, nDom
+       do k=1,4
+          flowDoms(nn, 1, 1)%realCommVars(k)%var => &
+               flowDoms(nn, 1, 1)%w(:, :, :, k)
+       end do
+       flowDoms(nn, 1, 1)%realCommVars(5)%var => &
+            flowDoms(nn, 1, 1)%P(:, :, :)
+    end do domainLoop
+
+    masterLoop: do iSurf=1, nUserIntSurfs
+
+       ! Pointer for easier reading
+       surf => userIntSurfs(iSurf)
+       
+       allocate(sendBuffer(5*surf%nDonor))
+
+       ! First generate the interpolated data necessary
+       jj = 0
+       donorLoop: do i=1, surf%nDonor
+          ! Convert the frac to weights
+          call fracToWeights2(surf%frac(:, i), weight)
+
+          ! Block and indices for easier reading:
+          d1 = surf%donorInfo(1, i) ! Block Index
+          i1 = surf%donorInfo(2, i)+1 ! donor I index
+          j1 = surf%donorInfo(3, i)+1 ! donor J index
+          k1 = surf%donorInfo(4, i)+1 ! donor K index
+
+          ! We are interpolating 5 values:
+          do k=1,5
+             jj = jj + 1
+             sendBuffer(jj) = &
+                  weight(1)*flowDoms(d1,1,1)%realCommVars(k)%var(i1  ,j1  ,k1  ) + &
+                  weight(2)*flowDoms(d1,1,1)%realCommVars(k)%var(i1+1,j1  ,k1  ) + &
+                  weight(3)*flowDoms(d1,1,1)%realCommVars(k)%var(i1  ,j1+1,k1  ) + &
+                  weight(4)*flowDoms(d1,1,1)%realCommVars(k)%var(i1+1,j1+1,k1  ) + &
+                  weight(5)*flowDoms(d1,1,1)%realCommVars(k)%var(i1  ,j1  ,k1+1) + &
+                  weight(6)*flowDoms(d1,1,1)%realCommVars(k)%var(i1+1,j1  ,k1+1) + &
+                  weight(7)*flowDoms(d1,1,1)%realCommVars(k)%var(i1  ,j1+1,k1+1) + &
+                  weight(8)*flowDoms(d1,1,1)%realCommVars(k)%var(i1+1,j1+1,k1+1)
+          end do
+       end do donorLoop
+
+       if (myid == 0) then 
+          allocate(recvBuffer(5*size(surf%conn, 2)))
+       else
+          allocate(recvBuffer(0))
+       end if
+
+       ! Now we can do an mpi_gatherv to the root proc:
+       call mpi_gatherv(sendBuffer, 5*surf%nDonor, adflow_real, recvBuffer, &
+            5*surf%procSizes, 5*surf%procDisps, adflow_real, 0, adflow_comm_world, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+       
+       ! *Finally* we can do the actual integrations
+       if (myid == 0)  then 
+          massFlowRate = zero
+          mReDim = sqrt(pRef*rhoRef)
+
+          do i=1, size(surf%conn, 2)
+
+             ! Extract out the interpolated quantities
+             rho = recvBuffer(5*i-4)
+             vx  = recvBuffer(5*i-3)
+             vy  = recvBuffer(5*i-2)
+             vz  = recvBuffer(5*i-1)
+             PP  = recvBuffer(5*i  )
+
+             ! Get the coordinates of the quad
+             x1 = surf%pts(:, surf%conn(1, surf%elemInv(i)))
+             x2 = surf%pts(:, surf%conn(2, surf%elemInv(i)))
+             x3 = surf%pts(:, surf%conn(3, surf%elemInv(i)))
+             x4 = surf%pts(:, surf%conn(4, surf%elemInv(i)))
+
+             v1 = x3 - x1
+             v2 = x4 - x2
+
+             ! Take the cross product of the two diagaonal vectors.
+             n(1) = half*(v1(2)*v2(3) - v1(3)*v2(2))
+             n(2) = half*(v1(3)*v2(1) - v1(1)*v2(3))
+             n(3) = half*(v1(1)*v2(2) - v1(2)*v2(1))
+                   
+             ! Normal face velocity
+             vn = vx*n(1) + vy*n(2) + vz*n(3)
+             ! Finally the mass flow rate
+             massFlowRate = massFlowRate + rho*vn*mReDim
+          end do
+
+          print *,'mass flow rate:', massFlowRate
+          deallocate(recvBuffer)
+       end if
+       deallocate(sendBuffer)
+    end do masterLoop
+
+  end subroutine evalUserIntegrationSurfaces
+
+
 #endif
 end module surfaceIntegrations
