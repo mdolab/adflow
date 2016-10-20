@@ -2,12 +2,44 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 module surfaceintegrations_b
+  use constants
+  use communication, only : commtype, internalcommtype
   implicit none
 ! ----------------------------------------------------------------------
 !                                                                      |
 !                    no tapenade routine below this line               |
 !                                                                      |
 ! ----------------------------------------------------------------------
+! data required on each proc:
+! ndonor: the number of donor points the proc will provide
+! frac (3, ndonor) : the uvw coordinates of the interpolation point
+! donorinfo(4, ndonor) : donor information. 1 is the local block id and 2-4 is the 
+!    starting i,j,k indices for the interpolation. 
+! procsizes(0:nproc-1) : the number of donors on each proc
+! procdisps(0:nproc) : cumulative form of procsizes
+! inv(nconn) : array allocated only on root processor used to
+! reorder the nodes or elements back to the original order. 
+  type usersurfcommtype
+      integer(kind=inttype) :: ndonor
+      real(kind=realtype), dimension(:, :), allocatable :: frac
+      integer(kind=inttype), dimension(:, :), allocatable :: donorinfo
+      integer(kind=inttype), dimension(:), allocatable :: procsizes, &
+&     procdisps
+      integer(kind=inttype), dimension(:), allocatable :: inv
+      logical, dimension(:), allocatable :: valid
+  end type usersurfcommtype
+! two separate commes: one for the nodes (based on the primal
+! mesh) and one for the variables (based on the dual mesh)
+  type userintsurf
+      character(len=maxstringlen) :: famname
+      integer(kind=inttype) :: famid
+      real(kind=realtype), dimension(:, :), allocatable :: pts
+      integer(kind=inttype), dimension(:, :), allocatable :: conn
+      type(usersurfcommtype) :: nodecomm, facecomm
+  end type userintsurf
+  integer(kind=inttype), parameter :: nuserintsurfsmax=25
+  type(userintsurf), dimension(nuserintsurfsmax), target :: userintsurfs
+  integer(kind=inttype) :: nuserintsurfs=0
 
 contains
   subroutine integratesurfaces(localvalues, famlist)
@@ -110,6 +142,11 @@ bocos:do mm=1,nbocos
       else
         sf = zero
       end if
+      if (bcdata(mm)%iblank(i, j) .lt. 0) then
+        blk = 0
+      else
+        blk = bcdata(mm)%iblank(i, j)
+      end if
       vxm = half*(ww1(i, j, ivx)+ww2(i, j, ivx))
       vym = half*(ww1(i, j, ivy)+ww2(i, j, ivy))
       vzm = half*(ww1(i, j, ivz)+ww2(i, j, ivz))
@@ -119,7 +156,7 @@ bocos:do mm=1,nbocos
       call computeptot(rhom, vxm, vym, vzm, pm, ptot)
       call computettot(rhom, vxm, vym, vzm, pm, ttot)
       pm = pm*pref
-      massflowratelocal = rhom*vnm*fact*mredim
+      massflowratelocal = rhom*vnm*fact*mredim*blk
       massflowrate = massflowrate + massflowratelocal
       mass_ptot = mass_ptot + ptot*massflowratelocal*pref
       mass_ttot = mass_ttot + ttot*massflowratelocal*tref
@@ -130,11 +167,6 @@ bocos:do mm=1,nbocos
 &       2)) - refpoint(2)
       zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
 &       3)) - refpoint(3)
-      if (bcdata(mm)%iblank(i, j) .lt. 0) then
-        blk = 0
-      else
-        blk = bcdata(mm)%iblank(i, j)
-      end if
       fx = pm*ssi(i, j, 1)
       fy = pm*ssi(i, j, 2)
       fz = pm*ssi(i, j, 3)
@@ -153,8 +185,6 @@ bocos:do mm=1,nbocos
       mp(2) = mp(2) + my
       mp(3) = mp(3) + mz
 ! momentum forces
-      cellarea = sqrt(ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**&
-&       2)
       fx = massflowratelocal*bcdata(mm)%norm(i, j, 1)*vxm/timeref
       fy = massflowratelocal*bcdata(mm)%norm(i, j, 2)*vym/timeref
       fz = massflowratelocal*bcdata(mm)%norm(i, j, 3)*vzm/timeref

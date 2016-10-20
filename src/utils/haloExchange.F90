@@ -1208,6 +1208,9 @@ contains
     use inputPhysics
     use inputTimeSpectral
     use iteration
+    
+    use flowUtils_b, only : computeETotBlock_b
+    use utils, only : setPointers_d, getCorrectForK
     implicit none
     !
     !      Subroutine arguments.
@@ -1236,6 +1239,25 @@ contains
     if(commGamma .and. (cpModel == cpTempCurveFits)) &
          commVarGamma = .true.
 
+    bothPAndE: if(commPressure .and. start <= irhoE .and. &
+         end >= irhoE) then
+
+       ! First determine whether or not the total energy must be
+       ! corrected for the presence of the turbulent kinetic energy.
+
+       correctForK = getCorrectForK()
+
+       domains: do nn=1,nDom
+
+          ! Treat the overset blocks. Since we don't have the logic
+          ! setup here correctly to only update the overset cells,
+          ! just do the whole block, for every block
+          do ll=1, nTimeIntervalsSpectral
+             call setPointers_d(nn, level, ll)
+             call computeETotBlock_b(2, il, 2, jl, 2, kl, correctForK)
+          end do
+       enddo domains
+    endif bothPAndE
 
     mm = ubound(commPatternOverset, 1)
     call wOverset_b(level, start, end, commPressure, commVarGamma, &

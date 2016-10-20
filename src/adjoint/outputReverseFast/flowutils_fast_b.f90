@@ -173,8 +173,10 @@ contains
 !
 !      local variables.
 !
-    integer(kind=inttype) :: i, j, k
+    integer(kind=inttype) :: i, j, k, ii, isize, jsize, ksize
     real(kind=realtype) :: ovgm1, factk, scale
+    intrinsic mod
+!
 ! determine the cp model used in the computation.
     select case  (cpmodel) 
     case (cpconstant) 
@@ -183,31 +185,29 @@ contains
       ovgm1 = one/(gammaconstant-one)
 ! loop over the given range of the block and compute the first
 ! step of the energy.
-      do k=kstart,kend
-        do j=jstart,jend
-          do i=istart,iend
-            w(i, j, k, irhoe) = ovgm1*p(i, j, k) + half*w(i, j, k, irho)&
-&             *(w(i, j, k, ivx)**2+w(i, j, k, ivy)**2+w(i, j, k, ivz)**2&
-&             )
-          end do
-        end do
-      end do
-! second step. correct the energy in case a turbulent kinetic
-! energy is present.
+      isize = iend - istart + 1
+      jsize = jend - jstart + 1
+      ksize = kend - kstart + 1
+      factk = ovgm1*(five*third-gammaconstant)
       if (correctfork) then
-        factk = ovgm1*(five*third-gammaconstant)
-        do k=kstart,kend
-          do j=jstart,jend
-            do i=istart,iend
-              w(i, j, k, irhoe) = w(i, j, k, irhoe) - factk*w(i, j, k, &
-&               irho)*w(i, j, k, itu1)
-            end do
-          end do
+        do ii=0,isize*jsize*ksize-1
+          i = mod(ii, isize) + istart
+          j = mod(ii/isize, jsize) + jstart
+          k = ii/(isize*jsize) + kstart
+          w(i, j, k, irhoe) = ovgm1*p(i, j, k) + half*w(i, j, k, irho)*(&
+&           w(i, j, k, ivx)**2+w(i, j, k, ivy)**2+w(i, j, k, ivz)**2) - &
+&           factk*w(i, j, k, irho)*w(i, j, k, itu1)
+        end do
+      else
+        do ii=0,isize*jsize*ksize-1
+          i = mod(ii, isize) + istart
+          j = mod(ii/isize, jsize) + jstart
+          k = ii/(isize*jsize) + kstart
+          w(i, j, k, irhoe) = ovgm1*p(i, j, k) + half*w(i, j, k, irho)*(&
+&           w(i, j, k, ivx)**2+w(i, j, k, ivy)**2+w(i, j, k, ivz)**2)
         end do
       end if
     end select
-!
- 40 format(1x,i4,i4,i4,e20.6)
   end subroutine computeetotblock
 !  differentiation of etot in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: k p u v w etotal rho

@@ -254,7 +254,7 @@ contains
     localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
 
   end subroutine flowIntegrationFace
-
+#ifndef USE_TAPENADE
   subroutine flowIntegrationZipper(localValues, famList, sps)
 
     ! Integrate over the triangle formed by the zipper mesh. 
@@ -499,7 +499,7 @@ contains
     localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
 
   end subroutine flowIntegrationZipper
-
+#endif
   subroutine wallIntegrationFace(localValues, mm)
     !
     !       wallIntegrations computes the contribution of the block

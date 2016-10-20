@@ -544,8 +544,6 @@ contains
     real(kind=realType), dimension(:), allocatable :: extraLocalBar
     logical ::resetToRans
 
-    real(kind=realType) ::machDeriv
-
     ! extraLocalBar accumulates the seeds onto the extra variables
     allocate(extraLocalBar(size(extrabar)))
     extraLocalBar = zero
@@ -611,7 +609,8 @@ contains
     ! Now we need to bast out the localValues to all procs. 
     call mpi_bcast(localVald, nLocalValues*nTimeIntervalsSpectral, &
          adflow_real, 0, adflow_comm_world, ierr)
-    call EChk(ierr, __FILE__, __LINE__) 
+    call EChk(ierr, __FILE__, __LINE__)
+
     spsLoop1: do sps=1, nTimeIntervalsSpectral
 
        ! First set the force seeds using the custom getForces_b() for
@@ -693,7 +692,7 @@ contains
     
     ! Exchange the adjoint values.
     call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True.)
-    machDeriv = Zero
+
     spsLoop2: do sps=1,nTimeIntervalsSpectral
 
        ! Get the pointers from the petsc vector for the wall
@@ -711,10 +710,8 @@ contains
        
        domainLoop2: do nn=1,nDom
           call setPointers_d(nn, 1, sps)
+          call applyAllBC_block_b(.True.)
           
-         call applyAllBC_block_b(.True.)
-         ! call applyALLBC_Block_b(.True.)
-
           if (equations == RANSequations) then 
              call applyAllTurbBCThisBlock_b(.True.)
              call bcTurbTreatment_b
