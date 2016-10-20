@@ -135,9 +135,9 @@ contains
 
     select case (BCFaceID(mm))
     case (iMin, jMin, kMin)
-       fact = -one
-    case (iMax, jMax, kMax)
        fact = one
+    case (iMax, jMax, kMax)
+       fact = -one
     end select
 
     ! Loop over the quadrilateral faces of the subface. Note that

@@ -114,9 +114,9 @@ bocos:do mm=1,nbocos
     refpoint(3) = lref*pointref(3)
     select case  (bcfaceid(mm)) 
     case (imin, jmin, kmin) 
-      fact = -one
-    case (imax, jmax, kmax) 
       fact = one
+    case (imax, jmax, kmax) 
+      fact = -one
     end select
 ! loop over the quadrilateral faces of the subface. note that
 ! the nodal range of bcdata must be used and not the cell
