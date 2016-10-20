@@ -204,6 +204,85 @@ contains
       end do
     end if
   end subroutine computespeedofsoundsquared
+!  differentiation of computeetotblock in forward (tangent) mode (with options i4 dr8 r8):
+!   variations   of useful results: *w
+!   with respect to varying inputs: *p *w
+!   rw status of diff variables: *p:in *w:in-out
+!   plus diff mem management of: p:in w:in
+  subroutine computeetotblock_d(istart, iend, jstart, jend, kstart, kend&
+&   , correctfork)
+!
+!       computeetot computes the total energy from the given density,  
+!       velocity and presssure. for a calorically and thermally        
+!       perfect gas the well-known expression is used; for only a      
+!       thermally perfect gas, cp is a function of temperature, curve  
+!       fits are used and a more complex expression is obtained.       
+!       it is assumed that the pointers in blockpointers already       
+!       point to the correct block.                                    
+!
+    use constants
+    use blockpointers, only : w, wd, p, pd
+    use flowvarrefstate, only : rgas, rgasd, tref, trefd
+    use inputphysics, only : cpmodel, gammaconstant
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: istart, iend, jstart, jend
+    integer(kind=inttype), intent(in) :: kstart, kend
+    logical, intent(in) :: correctfork
+!
+!      local variables.
+!
+    integer(kind=inttype) :: i, j, k, ii, isize, jsize, ksize
+    real(kind=realtype) :: ovgm1, factk, scale
+!
+! determine the cp model used in the computation.
+    select case  (cpmodel) 
+    case (cpconstant) 
+! constant cp and thus constant gamma.
+! abbreviate 1/(gamma -1) a bit easier.
+      ovgm1 = one/(gammaconstant-one)
+! loop over the given range of the block and compute the first
+! step of the energy.
+      isize = iend - istart + 1
+      jsize = jend - jstart + 1
+      ksize = kend - kstart + 1
+      factk = ovgm1*(five*third-gammaconstant)
+      if (correctfork) then
+        do k=kstart,kend
+          do j=jstart,jend
+            do i=istart,iend
+              wd(i, j, k, irhoe) = ovgm1*pd(i, j, k) + half*(wd(i, j, k&
+&               , irho)*(w(i, j, k, ivx)**2+w(i, j, k, ivy)**2+w(i, j, k&
+&               , ivz)**2)+w(i, j, k, irho)*(2*w(i, j, k, ivx)*wd(i, j, &
+&               k, ivx)+2*w(i, j, k, ivy)*wd(i, j, k, ivy)+2*w(i, j, k, &
+&               ivz)*wd(i, j, k, ivz))) - factk*(wd(i, j, k, irho)*w(i, &
+&               j, k, itu1)+w(i, j, k, irho)*wd(i, j, k, itu1))
+              w(i, j, k, irhoe) = ovgm1*p(i, j, k) + half*w(i, j, k, &
+&               irho)*(w(i, j, k, ivx)**2+w(i, j, k, ivy)**2+w(i, j, k, &
+&               ivz)**2) - factk*w(i, j, k, irho)*w(i, j, k, itu1)
+            end do
+          end do
+        end do
+      else
+        do k=kstart,kend
+          do j=jstart,jend
+            do i=istart,iend
+              wd(i, j, k, irhoe) = ovgm1*pd(i, j, k) + half*(wd(i, j, k&
+&               , irho)*(w(i, j, k, ivx)**2+w(i, j, k, ivy)**2+w(i, j, k&
+&               , ivz)**2)+w(i, j, k, irho)*(2*w(i, j, k, ivx)*wd(i, j, &
+&               k, ivx)+2*w(i, j, k, ivy)*wd(i, j, k, ivy)+2*w(i, j, k, &
+&               ivz)*wd(i, j, k, ivz)))
+              w(i, j, k, irhoe) = ovgm1*p(i, j, k) + half*w(i, j, k, &
+&               irho)*(w(i, j, k, ivx)**2+w(i, j, k, ivy)**2+w(i, j, k, &
+&               ivz)**2)
+            end do
+          end do
+        end do
+      end if
+    end select
+  end subroutine computeetotblock_d
   subroutine computeetotblock(istart, iend, jstart, jend, kstart, kend, &
 &   correctfork)
 !
@@ -229,8 +308,9 @@ contains
 !
 !      local variables.
 !
-    integer(kind=inttype) :: i, j, k
+    integer(kind=inttype) :: i, j, k, ii, isize, jsize, ksize
     real(kind=realtype) :: ovgm1, factk, scale
+!
 ! determine the cp model used in the computation.
     select case  (cpmodel) 
     case (cpconstant) 
@@ -239,31 +319,32 @@ contains
       ovgm1 = one/(gammaconstant-one)
 ! loop over the given range of the block and compute the first
 ! step of the energy.
-      do k=kstart,kend
-        do j=jstart,jend
-          do i=istart,iend
-            w(i, j, k, irhoe) = ovgm1*p(i, j, k) + half*w(i, j, k, irho)&
-&             *(w(i, j, k, ivx)**2+w(i, j, k, ivy)**2+w(i, j, k, ivz)**2&
-&             )
-          end do
-        end do
-      end do
-! second step. correct the energy in case a turbulent kinetic
-! energy is present.
+      isize = iend - istart + 1
+      jsize = jend - jstart + 1
+      ksize = kend - kstart + 1
+      factk = ovgm1*(five*third-gammaconstant)
       if (correctfork) then
-        factk = ovgm1*(five*third-gammaconstant)
         do k=kstart,kend
           do j=jstart,jend
             do i=istart,iend
-              w(i, j, k, irhoe) = w(i, j, k, irhoe) - factk*w(i, j, k, &
-&               irho)*w(i, j, k, itu1)
+              w(i, j, k, irhoe) = ovgm1*p(i, j, k) + half*w(i, j, k, &
+&               irho)*(w(i, j, k, ivx)**2+w(i, j, k, ivy)**2+w(i, j, k, &
+&               ivz)**2) - factk*w(i, j, k, irho)*w(i, j, k, itu1)
+            end do
+          end do
+        end do
+      else
+        do k=kstart,kend
+          do j=jstart,jend
+            do i=istart,iend
+              w(i, j, k, irhoe) = ovgm1*p(i, j, k) + half*w(i, j, k, &
+&               irho)*(w(i, j, k, ivx)**2+w(i, j, k, ivy)**2+w(i, j, k, &
+&               ivz)**2)
             end do
           end do
         end do
       end if
     end select
-!
- 40 format(1x,i4,i4,i4,e20.6)
   end subroutine computeetotblock
 !  differentiation of etot in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: etotal

@@ -574,11 +574,9 @@ contains
     !
     !      Local variables.
     !
-    integer(kind=intType) :: i, j, k
+    integer(kind=intType) :: i, j, k, ii, iSize, jSize, kSize
     real(kind=realType)   :: ovgm1, factK, scale
     !
-40  format (1x,I4,I4,I4,E20.6)
-
     ! Determine the cp model used in the computation.
 
     select case (cpModel)
@@ -593,33 +591,63 @@ contains
        ! Loop over the given range of the block and compute the first
        ! step of the energy.
 
-       do k=kStart,kEnd
-          do j=jStart,jEnd
-             do i=iStart,iEnd
+    iSize = (iEnd-iStart)+1
+    jSize = (jEnd-jStart)+1
+    kSize = (kEnd-kStart)+1
+    factK = ovgm1*(five*third - gammaConstant)
+
+if (correctForK) then 
+#ifdef TAPENADE_REVERSE
+    !$AD II-LOOP
+    do ii=0, iSize*jSize*kSize-1
+       i = mod(ii, iSize) + iStart
+       j = mod(ii/(iSize), jSize) + jStart
+       k = ii/((iSize*jSize)) + kStart
+#else
+       do k=kStart, kEnd
+          do j=jStart, jEnd
+             do i=iStart, iEnd
+#endif            
                 w(i,j,k,irhoE) = ovgm1*p(i,j,k) &
                      + half*w(i,j,k,irho)*(w(i,j,k,ivx)**2 &
                      +                     w(i,j,k,ivy)**2 &
-                     +                     w(i,j,k,ivz)**2)
-             enddo
-          enddo
-       enddo
+                     +                     w(i,j,k,ivz)**2) - &
+                     factK*w(i,j,k,irho)*w(i,j,k,itu1)
 
-       ! Second step. Correct the energy in case a turbulent kinetic
-       ! energy is present.
+#ifdef TAPENADE_REVERSE
+             end do
+#else
+          end do
+       end do
+    end do
+#endif
 
-       if( correctForK ) then
+ else
+#ifdef TAPENADE_REVERSE
+    !$AD II-LOOP
+    do ii=0, iSize*jSize*kSize-1
+       i = mod(ii, iSize) + iStart
+       j = mod(ii/(iSize), jSize) + jStart
+       k = ii/((iSize*jSize)) + kStart
+#else
+       do k=kStart, kEnd
+          do j=jStart, jEnd
+             do i=iStart, iEnd
+#endif            
+                w(i,j,k,irhoE) = ovgm1*p(i,j,k) &
+                     + half*w(i,j,k,irho)*(w(i,j,k,ivx)**2 &
+                     +                     w(i,j,k,ivy)**2 &
+                     +                     w(i,j,k,ivz)**2) 
+#ifdef TAPENADE_REVERSE
+             end do
+#else
+          end do
+       end do
+    end do
+#endif
+ end if
+ 
 
-          factK = ovgm1*(five*third - gammaConstant)
-
-          do k=kStart,kEnd
-             do j=jStart,jEnd
-                do i=iStart,iEnd
-                   w(i,j,k,irhoE) = w(i,j,k,irhoE) &
-                        - factK*w(i,j,k,irho)*w(i,j,k,itu1)
-                enddo
-             enddo
-          enddo
-       endif
 #ifndef USE_TAPENADE
     case (cpTempCurveFits)
 
