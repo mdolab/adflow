@@ -206,6 +206,105 @@ contains
       end do
     end if
   end subroutine computespeedofsoundsquared
+!  differentiation of computeetotblock in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: *p *w
+!   with respect to varying inputs: *p *w
+!   rw status of diff variables: *p:incr *w:in-out
+!   plus diff mem management of: p:in w:in
+  subroutine computeetotblock_b(istart, iend, jstart, jend, kstart, kend&
+&   , correctfork)
+!
+!       computeetot computes the total energy from the given density,  
+!       velocity and presssure. for a calorically and thermally        
+!       perfect gas the well-known expression is used; for only a      
+!       thermally perfect gas, cp is a function of temperature, curve  
+!       fits are used and a more complex expression is obtained.       
+!       it is assumed that the pointers in blockpointers already       
+!       point to the correct block.                                    
+!
+    use constants
+    use blockpointers, only : w, wd, p, pd
+    use flowvarrefstate, only : rgas, rgasd, tref, trefd
+    use inputphysics, only : cpmodel, gammaconstant
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: istart, iend, jstart, jend
+    integer(kind=inttype), intent(in) :: kstart, kend
+    logical, intent(in) :: correctfork
+!
+!      local variables.
+!
+    integer(kind=inttype) :: i, j, k, ii, isize, jsize, ksize
+    real(kind=realtype) :: ovgm1, factk, scale
+    intrinsic mod
+    real(kind=realtype) :: tmp
+    real(kind=realtype) :: tmp0
+    real(kind=realtype) :: temp3
+    real(kind=realtype) :: temp2
+    real(kind=realtype) :: temp1
+    real(kind=realtype) :: temp0
+    real(kind=realtype) :: tmpd
+    real(kind=realtype) :: tempd
+    real(kind=realtype) :: tempd0
+    real(kind=realtype) :: tmpd0
+    real(kind=realtype) :: temp
+    real(kind=realtype) :: temp4
+!
+! determine the cp model used in the computation.
+    select case  (cpmodel) 
+    case (cpconstant) 
+! constant cp and thus constant gamma.
+! abbreviate 1/(gamma -1) a bit easier.
+      ovgm1 = one/(gammaconstant-one)
+! loop over the given range of the block and compute the first
+! step of the energy.
+      isize = iend - istart + 1
+      jsize = jend - jstart + 1
+      ksize = kend - kstart + 1
+      factk = ovgm1*(five*third-gammaconstant)
+      if (correctfork) then
+        do ii=0,isize*jsize*ksize-1
+          i = mod(ii, isize) + istart
+          j = mod(ii/isize, jsize) + jstart
+          k = ii/(isize*jsize) + kstart
+          tmpd = wd(i, j, k, irhoe)
+          wd(i, j, k, irhoe) = 0.0_8
+          temp1 = w(i, j, k, ivz)
+          temp0 = w(i, j, k, ivy)
+          temp = w(i, j, k, ivx)
+          tempd = half*w(i, j, k, irho)*tmpd
+          pd(i, j, k) = pd(i, j, k) + ovgm1*tmpd
+          wd(i, j, k, irho) = wd(i, j, k, irho) + (half*(temp**2+temp0**&
+&           2+temp1**2)-factk*w(i, j, k, itu1))*tmpd
+          wd(i, j, k, ivx) = wd(i, j, k, ivx) + 2*temp*tempd
+          wd(i, j, k, ivy) = wd(i, j, k, ivy) + 2*temp0*tempd
+          wd(i, j, k, ivz) = wd(i, j, k, ivz) + 2*temp1*tempd
+          wd(i, j, k, itu1) = wd(i, j, k, itu1) - factk*w(i, j, k, irho)&
+&           *tmpd
+        end do
+      else
+        do ii=0,isize*jsize*ksize-1
+          i = mod(ii, isize) + istart
+          j = mod(ii/isize, jsize) + jstart
+          k = ii/(isize*jsize) + kstart
+          tmpd0 = wd(i, j, k, irhoe)
+          wd(i, j, k, irhoe) = 0.0_8
+          temp4 = w(i, j, k, ivz)
+          temp3 = w(i, j, k, ivy)
+          temp2 = w(i, j, k, ivx)
+          tempd0 = half*w(i, j, k, irho)*tmpd0
+          pd(i, j, k) = pd(i, j, k) + ovgm1*tmpd0
+          wd(i, j, k, irho) = wd(i, j, k, irho) + half*(temp2**2+temp3**&
+&           2+temp4**2)*tmpd0
+          wd(i, j, k, ivx) = wd(i, j, k, ivx) + 2*temp2*tempd0
+          wd(i, j, k, ivy) = wd(i, j, k, ivy) + 2*temp3*tempd0
+          wd(i, j, k, ivz) = wd(i, j, k, ivz) + 2*temp4*tempd0
+        end do
+      end if
+    end select
+  end subroutine computeetotblock_b
   subroutine computeetotblock(istart, iend, jstart, jend, kstart, kend, &
 &   correctfork)
 !
@@ -231,8 +330,10 @@ contains
 !
 !      local variables.
 !
-    integer(kind=inttype) :: i, j, k
+    integer(kind=inttype) :: i, j, k, ii, isize, jsize, ksize
     real(kind=realtype) :: ovgm1, factk, scale
+    intrinsic mod
+!
 ! determine the cp model used in the computation.
     select case  (cpmodel) 
     case (cpconstant) 
@@ -241,31 +342,29 @@ contains
       ovgm1 = one/(gammaconstant-one)
 ! loop over the given range of the block and compute the first
 ! step of the energy.
-      do k=kstart,kend
-        do j=jstart,jend
-          do i=istart,iend
-            w(i, j, k, irhoe) = ovgm1*p(i, j, k) + half*w(i, j, k, irho)&
-&             *(w(i, j, k, ivx)**2+w(i, j, k, ivy)**2+w(i, j, k, ivz)**2&
-&             )
-          end do
-        end do
-      end do
-! second step. correct the energy in case a turbulent kinetic
-! energy is present.
+      isize = iend - istart + 1
+      jsize = jend - jstart + 1
+      ksize = kend - kstart + 1
+      factk = ovgm1*(five*third-gammaconstant)
       if (correctfork) then
-        factk = ovgm1*(five*third-gammaconstant)
-        do k=kstart,kend
-          do j=jstart,jend
-            do i=istart,iend
-              w(i, j, k, irhoe) = w(i, j, k, irhoe) - factk*w(i, j, k, &
-&               irho)*w(i, j, k, itu1)
-            end do
-          end do
+        do ii=0,isize*jsize*ksize-1
+          i = mod(ii, isize) + istart
+          j = mod(ii/isize, jsize) + jstart
+          k = ii/(isize*jsize) + kstart
+          w(i, j, k, irhoe) = ovgm1*p(i, j, k) + half*w(i, j, k, irho)*(&
+&           w(i, j, k, ivx)**2+w(i, j, k, ivy)**2+w(i, j, k, ivz)**2) - &
+&           factk*w(i, j, k, irho)*w(i, j, k, itu1)
+        end do
+      else
+        do ii=0,isize*jsize*ksize-1
+          i = mod(ii, isize) + istart
+          j = mod(ii/isize, jsize) + jstart
+          k = ii/(isize*jsize) + kstart
+          w(i, j, k, irhoe) = ovgm1*p(i, j, k) + half*w(i, j, k, irho)*(&
+&           w(i, j, k, ivx)**2+w(i, j, k, ivy)**2+w(i, j, k, ivz)**2)
         end do
       end if
     end select
-!
- 40 format(1x,i4,i4,i4,e20.6)
   end subroutine computeetotblock
 !  differentiation of etot in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: k p u v w etotal rho

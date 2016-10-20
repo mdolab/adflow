@@ -94,6 +94,9 @@ flowUtils%computePressureSimple(w, pInfCorr) > \
 flowUtils%computeLamViscosity(w, p, Tref, muRef, rGas) > \
                              (w, p, Tref, muRef, rGas, rlv) \
 \
+flowUtils%computeEtotBlock(w, p) > \
+                          (w, p) \
+\
 turbUtils%computeEddyViscosity(w,rlv)>(w,rlv,rev) \
 \
 BCRoutines%bcSymm1stHalo(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2, bcData%norm) > \
