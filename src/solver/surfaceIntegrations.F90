@@ -133,6 +133,11 @@ contains
     refPoint(2) = LRef*pointRef(2)
     refPoint(3) = LRef*pointRef(3)
 
+    ! Note that these are *opposite* of force integrations. The reason
+    ! is that we want positive mass flow into the domain and negative
+    ! mass flow out of the domain. Since the low faces have ssi
+    ! vectors pointining into the domain, this is correct. The high
+    ! end faces need to flip this. 
     select case (BCFaceID(mm))
     case (iMin, jMin, kMin)
        fact = one
@@ -197,19 +202,16 @@ contains
        zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
             +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
 
-       fx = pm*ssi(i,j,1)
-       fy = pm*ssi(i,j,2)
-       fz = pm*ssi(i,j,3)
-
-       ! Pressure forces
-       fx = fx*blk
-       fy = fy*blk
-       fz = fz*blk
+       ! Pressure forces. Note that these need a *negative* sign to be
+       ! consistent with the force computation. 
+       fx = -pm*ssi(i,j,1)*blk*fact
+       fy = -pm*ssi(i,j,2)*blk*fact
+       fz = -pm*ssi(i,j,3)*blk*fact
 
        ! Update the pressure force and moment coefficients.
-       Fp(1) = Fp(1) + fx*fact
-       Fp(2) = Fp(2) + fy*fact
-       Fp(3) = Fp(3) + fz*fact
+       Fp(1) = Fp(1) + fx
+       Fp(2) = Fp(2) + fy
+       Fp(3) = Fp(3) + fz
                  
        mx = yc*fz - zc*fy
        my = zc*fx - xc*fz
@@ -219,19 +221,17 @@ contains
        Mp(2) = Mp(2) + my
        Mp(3) = Mp(3) + mz
        
-       ! Momentum forces
-       fx = massFlowRateLocal * BCData(mm)%norm(i, j, 1)*vxm/timeRef
-       fy = massFlowRateLocal * BCData(mm)%norm(i, j, 2)*vym/timeRef
-       fz = massFlowRateLocal * BCData(mm)%norm(i, j, 3)*vzm/timeRef
-       
-       fx = fx*blk
-       fy = fy*blk
-       fz = fz*blk
+       ! Momentum forces. These gets a little more complex: TheB
+       ! BCData(mm)%norm already is setup such that it points *out* of
+       ! the domain. The use of fact here *reverses* the factor that
+       ! has already been taken into account on massFLowRateLocal.
+       fx = -massFlowRateLocal * BCData(mm)%norm(i, j, 1)*vxm/timeRef*fact*blk
+       fy = -massFlowRateLocal * BCData(mm)%norm(i, j, 2)*vym/timeRef*fact*blk
+       fz = -massFlowRateLocal * BCData(mm)%norm(i, j, 3)*vzm/timeRef*fact*blk
 
-       ! Note: momentum forces have opposite sign to pressure forces
-       FMom(1) = FMom(1) - fx*fact
-       FMom(2) = FMom(2) - fy*fact
-       FMom(3) = FMom(3) - fz*fact
+       FMom(1) = FMom(1) + fx
+       FMom(2) = FMom(2) + fy
+       FMom(3) = FMom(3) + fz
 
        mx = yc*fz - zc*fy
        my = zc*fx - xc*fz
