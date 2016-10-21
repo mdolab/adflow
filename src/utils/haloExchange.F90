@@ -836,6 +836,7 @@ contains
     deallocate(recvBufInt, sendBufInt)
 
   end subroutine whalo1to1IntGeneric
+
   subroutine whalo1to1_b(level, start, end, commPressure,       &
        commVarGamma, commLamVis, commEddyVis, &
        commPattern, internal)
@@ -1194,7 +1195,7 @@ contains
 
   end subroutine whalo1to1_d
 
-
+#ifndef USE_COMPLEX
   subroutine whalo2_b(level, start, end, commPressure, commGamma, &
        commViscous)
     !
@@ -1274,7 +1275,7 @@ contains
     ! calculation are NOT implementent. 
 
   end subroutine whalo2_b
-
+#endif
   subroutine whalo2_d(level, start, end, commPressure, commGamma, &
        commViscous)
     !
