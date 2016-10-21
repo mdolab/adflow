@@ -572,7 +572,7 @@
       1      58    248     NK   0.11E+06   0.4545027878919613E-14   0.9146918143544878E-14  -0.9944395261952321E+00   0.8495449336452832E-12 
       1      59    257     NK   0.92E+23   0.4545007718321004E-14   0.9146918143544878E-14  -0.9944395261952321E+00   0.8495197566079506E-12 
       1      60    285     NK   0.92E+23   0.4545007718321004E-14   0.9146918143544878E-14  -0.9944395261952321E+00   0.8495197566079506E-12 
-Solution Time:      1.556 sec
+Solution Time:      1.549 sec
 #
 # Writing grid file(s): ./conv_nozzle_000_vol.cgns
 # Grid file(s) written
@@ -611,4 +611,4 @@ Dictionary Key: conv_nozzle_mdot_down
 Dictionary Key: conv_nozzle_mdot_up
 @value  7.4004620391894e+01 1e-10 1e-10
 Dictionary Key: conv_nozzle_thrust
-@value  4.5653414521690e+04 1e-10 1e-10
+@value -6.6359663274900e+04 1e-10 1e-10
