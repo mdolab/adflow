@@ -155,7 +155,7 @@ subroutine floodInteriorCells(level, sps)
               k = stack(3, stackPointer)
               stackPointer = stackPointer - 1
 
-              if (isCompute(fringes(i, j, k)%status) .and. fringes(i, j, k)%donorProc == -1) then 
+              if (isCompute(fringes(i, j, k)%status) .and. fringes(i, j, k)%donorProc == -1 .and. iblank(i,j,k)/=-4) then 
                  ! Flag the cell (using changed) as being changed
                  changed(i+1, j+1, k+1) = 1
 
