@@ -160,8 +160,7 @@ contains
        call getSurfaceConnectivity(conn, sizeCell, wallList, size(wallList), .True.)
        call getSurfacePoints(pts, sizeNode, sps, wallList, size(wallList))
        call getSurfaceFamily(elemFam, sizeCell, wallList, size(wallList), .True.)
-
-       call createSlice(pts, conn, elemFam, paraSlices(nParaSlices, sps), pt, direction, &
+       call createSlice(pts, conn, elemFam, absSlices(nAbsSlices, sps), pt, direction, &
             sliceName, famList)
 
        ! Clean up memory.
