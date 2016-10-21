@@ -1065,7 +1065,7 @@ contains
           call executeMGCycle
           CFLMonitor = CFLCoarse
        else
-          if (.not. useANKSolver .and. .not. useNKSolver .or. (iterTot < minIterNum .and. rkreset)) then 
+          if (.not. useANKSolver .and. .not. useNKSolver .or. (iterTot <= minIterNum .and. rkreset)) then 
 
              ! Always RK/DADI or a RK startup. Run the MG Cycle
 
