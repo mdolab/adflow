@@ -1650,7 +1650,8 @@ contains
     slc%pt = pt
     slc%dir = dir
     slc%nNodes = 0
-
+    allocate(slc%famList(size(famList)))
+    slc%famList = famList
     ! First step is to compute the 'function' value that will be used
     ! for the contour.
 
