@@ -582,6 +582,8 @@ contains
     ! zipper triangles will use.
     BCGroupLoop: do iBCGroup=1, nFamExchange
 
+       zipper => zipperMeshes(iBCGroup)
+
        fam1Included = .False.
        fam2Included = .False.
        BCGroupFamLoop: do i=1, size(BCFamGroups(iBCGroup)%famList)
