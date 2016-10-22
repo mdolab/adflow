@@ -3079,8 +3079,9 @@ class ADFLOW(AeroSolver):
 
         famList1 = self.families[groupName1]
         famList2 = self.families[groupName2]
-        self.adflow.surfaceutils.mapvector(vec1.T, famList1, vec2.T, famList2)
 
+        self.adflow.surfaceutils.mapvector(vec1.T, famList1, vec2.T, famList2)
+        
         return vec2
 
     def getStateSize(self):
