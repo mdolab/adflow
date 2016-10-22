@@ -4236,6 +4236,7 @@ class ADFLOW(AeroSolver):
 
         # We can also do the surface plane integrations here if necessary
         self.adflow.surfaceintegrations.interpolateintegrationsurfaces()
+        self.coords0 = self.getSurfaceCoordinates(self.allFamilies)
 
     def _processFortranStringArray(self, strArray):
         """Getting arrays of strings out of Fortran can be kinda nasty. This
