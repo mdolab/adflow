@@ -769,9 +769,9 @@ module block
   ! isn't allocatable
   type(blockType), dimension(nn:nn,1,ntimeIntervalsSpectral) :: flowDoms
 #else
-  type(blockType), allocatable, dimension(:,:,:) :: flowDoms
-  type(blockType), allocatable, dimension(:,:,:) :: flowDomsd
-  type(blockType), allocatable, dimension(:,:,:) :: flowDomsb
+  type(blockType), allocatable, target, dimension(:,:,:) :: flowDoms
+  type(blockType), allocatable, target, dimension(:,:,:) :: flowDomsd
+  type(blockType), allocatable, target, dimension(:,:,:) :: flowDomsb
 #endif
 
   !
