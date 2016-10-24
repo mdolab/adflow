@@ -112,6 +112,11 @@ bocos:do mm=1,nbocos
     refpoint(1) = lref*pointref(1)
     refpoint(2) = lref*pointref(2)
     refpoint(3) = lref*pointref(3)
+! note that these are *opposite* of force integrations. the reason
+! is that we want positive mass flow into the domain and negative
+! mass flow out of the domain. since the low faces have ssi
+! vectors pointining into the domain, this is correct. the high
+! end faces need to flip this. 
     select case  (bcfaceid(mm)) 
     case (imin, jmin, kmin) 
       fact = one
@@ -167,34 +172,34 @@ bocos:do mm=1,nbocos
 &       2)) - refpoint(2)
       zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
 &       3)) - refpoint(3)
-      fx = pm*ssi(i, j, 1)
-      fy = pm*ssi(i, j, 2)
-      fz = pm*ssi(i, j, 3)
-! pressure forces
-      fx = fx*blk
-      fy = fy*blk
-      fz = fz*blk
+! pressure forces. note that these need a *negative* sign to be
+! consistent with the force computation. 
+      fx = -(pm*ssi(i, j, 1)*blk*fact)
+      fy = -(pm*ssi(i, j, 2)*blk*fact)
+      fz = -(pm*ssi(i, j, 3)*blk*fact)
 ! update the pressure force and moment coefficients.
-      fp(1) = fp(1) + fx*fact
-      fp(2) = fp(2) + fy*fact
-      fp(3) = fp(3) + fz*fact
+      fp(1) = fp(1) + fx
+      fp(2) = fp(2) + fy
+      fp(3) = fp(3) + fz
       mx = yc*fz - zc*fy
       my = zc*fx - xc*fz
       mz = xc*fy - yc*fx
       mp(1) = mp(1) + mx
       mp(2) = mp(2) + my
       mp(3) = mp(3) + mz
-! momentum forces
-      fx = massflowratelocal*bcdata(mm)%norm(i, j, 1)*vxm/timeref
-      fy = massflowratelocal*bcdata(mm)%norm(i, j, 2)*vym/timeref
-      fz = massflowratelocal*bcdata(mm)%norm(i, j, 3)*vzm/timeref
-      fx = fx*blk
-      fy = fy*blk
-      fz = fz*blk
-! note: momentum forces have opposite sign to pressure forces
-      fmom(1) = fmom(1) - fx*fact
-      fmom(2) = fmom(2) - fy*fact
-      fmom(3) = fmom(3) - fz*fact
+! momentum forces. these gets a little more complex: theb
+! bcdata(mm)%norm already is setup such that it points *out* of
+! the domain. the use of fact here *reverses* the factor that
+! has already been taken into account on massflowratelocal.
+      fx = -(massflowratelocal*bcdata(mm)%norm(i, j, 1)*vxm/timeref*fact&
+&       *blk)
+      fy = -(massflowratelocal*bcdata(mm)%norm(i, j, 2)*vym/timeref*fact&
+&       *blk)
+      fz = -(massflowratelocal*bcdata(mm)%norm(i, j, 3)*vzm/timeref*fact&
+&       *blk)
+      fmom(1) = fmom(1) + fx
+      fmom(2) = fmom(2) + fy
+      fmom(3) = fmom(3) + fz
       mx = yc*fz - zc*fy
       my = zc*fx - xc*fz
       mz = xc*fy - yc*fx

@@ -194,7 +194,7 @@ contains
     use BCExtra_d, only : applyAllBC_Block_d
     use inputAdjoint,  only : viscPC
     use flowVarRefState, only : nw, nwf
-    use blockPointers, only : nDom, il, jl, kl, wd, xd, dw, dwd, nBocos, BCType, nViscBocos, BCData
+    use blockPointers, only : nDom, il, jl, kl, wd, xd, dw, dwd, nBocos, BCType, nViscBocos, BCData, iblank
     use flowVarRefState, only : viscous, timerefd
     use inputPhysics , only : turbProd, equationMode, equations, turbModel, wallDistanceNeeded
     use inputDiscretization, only : lowSpeedPreconditioner, lumpedDiss, spaceDiscr, useAPproxWallDistance
@@ -494,7 +494,7 @@ contains
     use inputAdjoint,  only : viscPC
     use fluxes, only : viscousFlux
     use flowVarRefState, only : nw, nwf, viscous,pInfDimd, rhoInfDimd, TinfDimd
-    use blockPointers, only : nDom, il, jl, kl, wd, xd, dw, dwd, nBocos, BCType, nViscBocos, BCData
+    use blockPointers, only : nDom, il, jl, kl, wd, xd, dw, dwd, nBocos, BCType, nViscBocos, BCData, iblank
     use inputPhysics, only :pointRefd, alphad, betad, equations, machCoefd, &
          machd, machGridd, rgasdimd, equationMode, turbModel, wallDistanceNeeded
     use inputDiscretization, only : lowSpeedPreconditioner, lumpedDiss, spaceDiscr, useAPproxWallDistance
@@ -795,7 +795,7 @@ contains
                 do i=2, il
                    do l=1, nState
                       ii = ii + 1
-                      wbar(ii) = wd(i, j, k, l)
+                      wbar(ii) = wd(i, j, k, l)*max(real(iblank(i,j,k)), zero)
                    end do
                 end do
              end do
@@ -841,7 +841,7 @@ contains
     use costFunctions
     use iteration, only : currentLevel
     use flowVarRefState, only : nw, viscous
-    use blockPointers, only : nDom, il, jl, kl, wd, dwd, radi, radj, radk
+    use blockPointers, only : nDom, il, jl, kl, wd, dwd, iblank
     use inputPhysics, only : equationMode, turbModel, equations
     use inputDiscretization, only : lowSpeedPreconditioner, spaceDiscr
     use inputTimeSpectral, only : nTimeIntervalsSpectral
@@ -979,7 +979,7 @@ contains
                 do i=2, il
                    do l=1, nState
                       ii = ii + 1
-                      wbar(ii) = wd(i, j, k, l)
+                      wbar(ii) = wd(i, j, k, l)*max(real(iblank(i,j,k)), zero)
                    end do
                 end do
              end do
