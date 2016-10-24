@@ -2065,15 +2065,41 @@ loopbocos:do mm=1,nbocos
 ! local variables
     integer(kind=inttype) :: i, j, k, l
     intrinsic real
-    real(kind=realtype) :: tempd
+    intrinsic max
+    integer :: branch
+    real(kind=realtype) :: x1
+    real(kind=realtype) :: max1
+    do l=1,nwf
+      do k=2,kl
+        do j=2,jl
+          do i=2,il
+            x1 = real(iblank(i, j, k), realtype)
+            if (x1 .lt. zero) then
+              call pushreal8(max1)
+              max1 = zero
+              call pushcontrol1b(0)
+            else
+              call pushreal8(max1)
+              max1 = x1
+              call pushcontrol1b(1)
+            end if
+          end do
+        end do
+      end do
+    end do
     fwd = 0.0_8
     do l=nwf,1,-1
       do k=kl,2,-1
         do j=jl,2,-1
           do i=il,2,-1
-            tempd = real(iblank(i, j, k), realtype)*dwd(i, j, k, l)
-            fwd(i, j, k, l) = fwd(i, j, k, l) + tempd
-            dwd(i, j, k, l) = tempd
+            fwd(i, j, k, l) = fwd(i, j, k, l) + max1*dwd(i, j, k, l)
+            dwd(i, j, k, l) = max1*dwd(i, j, k, l)
+            call popcontrol1b(branch)
+            if (branch .eq. 0) then
+              call popreal8(max1)
+            else
+              call popreal8(max1)
+            end if
           end do
         end do
       end do
@@ -2087,12 +2113,20 @@ loopbocos:do mm=1,nbocos
 ! local variables
     integer(kind=inttype) :: i, j, k, l
     intrinsic real
+    intrinsic max
+    real(kind=realtype) :: x1
+    real(kind=realtype) :: max1
     do l=1,nwf
       do k=2,kl
         do j=2,jl
           do i=2,il
-            dw(i, j, k, l) = (dw(i, j, k, l)+fw(i, j, k, l))*real(iblank&
-&             (i, j, k), realtype)
+            x1 = real(iblank(i, j, k), realtype)
+            if (x1 .lt. zero) then
+              max1 = zero
+            else
+              max1 = x1
+            end if
+            dw(i, j, k, l) = (dw(i, j, k, l)+fw(i, j, k, l))*max1
           end do
         end do
       end do
