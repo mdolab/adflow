@@ -1724,7 +1724,7 @@ contains
 
     ! Allocate space for the some arrays
     allocate(localNodes(3, nNodesLocal), nNodesProc(nProc), cumNodesProc(0:nProc))
-    call getSurfacePoints(localNodes, nNodesLocal, sps, famList, nFam)
+    call getSurfacePoints(localNodes, nNodesLocal, sps, famList, nFam, .True.)
 
     ! Determine the total number of nodes on each proc
     call mpi_allgather(nNodesLocal, 1, adflow_integer, nNodesProc, 1, adflow_integer, &

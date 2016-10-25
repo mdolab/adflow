@@ -522,7 +522,7 @@ contains
     rtolLast = rtol
 
     ! Set all tolerances for linear solve:
-    atol = totalR0*L2Conv
+    atol = totalR0*L2Conv*.1
     maxIt = NK_subspace
 
     call KSPSetTolerances(NK_KSP, real(rtol), &
