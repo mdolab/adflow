@@ -105,7 +105,7 @@ contains
        call getSurfaceSize(sizeNode, sizeCell, wallList, size(wallList), .True.)
        allocate(pts(3, sizeNode), conn(4, sizeCell), elemFam(sizeCell))
        call getSurfaceConnectivity(conn, sizeCell, wallList, size(wallList), .True.)
-       call getSurfacePoints(pts, sizeNode, sps, wallList, size(wallList))
+       call getSurfacePoints(pts, sizeNode, sps, wallList, size(wallList), .True.)
        call getSurfaceFamily(elemFam, sizeCell, wallList, size(wallList), .True.)
        
        ! Create actual slice
@@ -158,7 +158,7 @@ contains
        call getSurfaceSize(sizeNode, sizeCell, wallList, size(wallList), .True.)
        allocate(pts(3, sizeNode), conn(4, sizeCell), elemFam(sizeCell))
        call getSurfaceConnectivity(conn, sizeCell, wallList, size(wallList), .True.)
-       call getSurfacePoints(pts, sizeNode, sps, wallList, size(wallList))
+       call getSurfacePoints(pts, sizeNode, sps, wallList, size(wallList), .True.)
        call getSurfaceFamily(elemFam, sizeCell, wallList, size(wallList), .True.)
        call createSlice(pts, conn, elemFam, absSlices(nAbsSlices, sps), pt, direction, &
             sliceName, famList)
@@ -352,7 +352,7 @@ contains
           call getSurfaceSize(sizeNode, sizeCell, wallList, size(wallList), .True.)
           allocate(pts(3, sizeNode), conn(4, sizeCell), elemFam(sizeCell))
           call getSurfaceConnectivity(conn, sizeCell, wallList, size(wallList), .True.)
-          call getSurfacePoints(pts, sizeNode, sps, wallList, size(wallList))
+          call getSurfacePoints(pts, sizeNode, sps, wallList, size(wallList), .True.)
           call getSurfaceFamily(elemFam, sizeCell, wallList, size(wallList), .True.)
 
           ! Integration is performed in parallel
@@ -506,7 +506,7 @@ contains
     call getSurfaceSize(sizeNode, sizeCell, wallList, size(wallList), .True.)
     allocate(pts(3, sizeNode), conn(4, sizeCell), elemFam(sizeCell))
     call getSurfaceConnectivity(conn, sizeCell, wallList, size(wallList), .True.)
-    call getSurfacePoints(pts, sizeNode, sps, wallList, size(wallList))
+    call getSurfacePoints(pts, sizeNode, sps, wallList, size(wallList), .True.)
     call getSurfaceFamily(elemFam, sizeCell, wallList, size(wallList), .True.)
 
     do iDist=1,nLiftDists
@@ -1379,7 +1379,7 @@ contains
     ! Get the current set of surface points for the family we just set. 
     call getSurfaceSize(sizeNode, sizeCell, exch%famList, size(exch%famlist), .True.)
     allocate(tmp(3, sizeNode))
-    call getSurfacePoints(tmp, sizeNode, exch%sps, exch%famList, size(exch%famList))
+    call getSurfacePoints(tmp, sizeNode, exch%sps, exch%famList, size(exch%famList), .True.)
 
     do i=1, sizeNode
        nodalValues(i, 1:3) = tmp(1:3, i)
