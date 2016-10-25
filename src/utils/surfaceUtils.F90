@@ -2,7 +2,7 @@ module surfaceUtils
 
 contains
 
-  subroutine getSurfaceSize(sizeNode, sizeCell, famList, n, useBlanking)
+  subroutine getSurfaceSize(sizeNode, sizeCell, famList, n, includeZipper)
     ! Compute the number of points that will be returned from getForces
     ! or getForcePoints
     use constants
@@ -15,7 +15,7 @@ contains
     implicit none
 
     integer(kind=intType),intent(out) :: sizeNode, sizeCell
-    logical, intent(in) :: useBlanking
+    logical, intent(in) :: includeZipper
     integer(kind=intType) :: nn, mm, i, j,iimax, shp(1)
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iBCGroup
     integer(kind=intType), intent(in) :: famList(n), n
@@ -35,7 +35,7 @@ contains
              sizeNode = sizeNode + (iEnd - iBeg + 1)*(jEnd - jBeg + 1)
 
              ! If we don't care about blanking, it's easy:
-             blanking:if (.not. useBlanking) then 
+             blanking:if (.not. includeZipper) then 
                 sizeCell = sizeCell + (iEnd - iBeg)*(jEnd - jBeg)
              else
                 ! Otherwise we have to consider the iBlank
@@ -54,8 +54,8 @@ contains
     ! We know must consider additional nodes that are required by the
     ! zipper mesh triangles on the root proc. 
 
-    ! No overset, no zipper return immediates
-    if (.not. oversetPresent) then
+    ! No overset or we don't want to include the zipper, return immediately
+    if (.not. oversetPresent .or. .not. includeZipper) then
        return 
     end if
 
@@ -98,7 +98,7 @@ contains
 
   end subroutine getSurfaceSize
 
-  subroutine getSurfaceConnectivity(conn, ncell, famList, nFamList, useBlanking)
+  subroutine getSurfaceConnectivity(conn, ncell, famList, nFamList, includeZipper)
     ! Return the connectivity list for the each of the patches
     use constants
     use blockPointers, only : nDom, nBocos, BCData, BCFaceID, rightHanded
@@ -113,7 +113,7 @@ contains
     integer(kind=intType), intent(in) :: ncell
     integer(kind=intType), intent(inout) :: conn(4*ncell)
     integer(kind=intType), intent(in) :: nFamList, famList(nFamList)
-    logical, intent(in) :: useBlanking
+    logical, intent(in) :: includeZipper
 
     ! Working
     integer(kind=intType) :: nn, mm, cellCount, nodeCount, ni, nj, i, j
@@ -179,7 +179,7 @@ contains
 
                 do j=0,nj-2
                    do i=0,ni-2
-                      if (.not. useBlanking .or. BCData(mm)%iBlank(i+iBeg+1, j+jBeg+1) ==1 ) then 
+                      if (.not. includeZipper .or. BCData(mm)%iBlank(i+iBeg+1, j+jBeg+1) ==1 ) then 
                          conn(4*cellCount+1) = nodeCount + (j  )*ni + i       + 1! n1
                          conn(4*cellCount+2) = nodeCount + (j  )*ni + i + 1   + 1! n2
                          conn(4*cellCount+3) = nodeCount + (j+1)*ni + i + 1   + 1! n3
@@ -192,7 +192,7 @@ contains
                 ! Do reverse ordering:
                 do j=0,nj-2
                    do i=0,ni-2
-                      if (.not. useBlanking .or. BCData(mm)%iBlank(i+iBeg+1, j+JBeg+1) ==1 ) then 
+                      if (.not. includeZipper .or. BCData(mm)%iBlank(i+iBeg+1, j+JBeg+1) ==1 ) then 
                          conn(4*cellCount+1) = nodeCount + (j  )*ni + i        + 1! n1
                          conn(4*cellCount+2) = nodeCount + (j+1)*ni + i        + 1! n4
                          conn(4*cellCount+3) = nodeCount + (j+1)*ni + i + 1    + 1! n3
@@ -210,8 +210,8 @@ contains
     ! We know must consider additional connectivity required by the
     ! zipper mesh triangles on the root proc
 
-    ! No overset, no zipper return immediates
-    if (.not. oversetPresent) then
+    ! No overset or don't want zipper return immediately
+    if (.not. oversetPresent .or. .not. includeZipper) then
        return 
     end if
 
@@ -257,7 +257,7 @@ contains
 
   end subroutine getSurfaceConnectivity
 
-  subroutine getSurfaceFamily(elemFam, ncell, famList, nFamList, useBlanking)
+  subroutine getSurfaceFamily(elemFam, ncell, famList, nFamList, includeZipper)
 
     use constants
     use blockPointers, only : nDom, nBocos, BCData
@@ -271,7 +271,7 @@ contains
     integer(kind=intType), intent(in) :: ncell
     integer(kind=intType), intent(inout) :: elemFam(nCell)
     integer(kind=intType), intent(in) :: famList(nFamList), nFamList
-    logical, intent(in) :: useBlanking
+    logical, intent(in) :: includeZipper
 
     ! Working
     integer(kind=intType) :: nn, mm, cellCount, nodeCount, ni, nj, i, j
@@ -294,7 +294,7 @@ contains
              nj = jEnd - jBeg + 1
              do j=0,nj-2
                 do i=0,ni-2
-                   if (.not. useBlanking .or. BCData(mm)%iBlank(i+iBeg+1, j+JBeg+1)==1 ) then 
+                   if (.not. includeZipper .or. BCData(mm)%iBlank(i+iBeg+1, j+JBeg+1)==1 ) then 
                       cellCount = cellCount + 1
                       elemFam(cellCount) = BCdata(mm)%famID
                    end if
@@ -308,8 +308,8 @@ contains
     ! We know must consider additional elements quired by the zipper
     ! mesh triangles on the root proc
 
-    ! No overset, no zipper return immediates
-    if (.not. oversetPresent) then
+    ! No overset or don't want zipper
+    if (.not. oversetPresent .or. .not. includeZipper) then
        return 
     end if
 
@@ -351,7 +351,7 @@ contains
     end do BCGroupLoop
   end subroutine getSurfaceFamily
 
-  subroutine getSurfacePoints(points, npts, sps_in, famList, nFamList)
+  subroutine getSurfacePoints(points, npts, sps_in, famList, nFamList, includeZipper)
     use constants
     use blockPointers, only : nDom, BCData, nBocos, x, BCFaceID, il, jl, kl
     use BCPointers, only : xx
@@ -371,6 +371,7 @@ contains
     integer(kind=intType), intent(in) :: npts,sps_in
     real(kind=realType), intent(inout) :: points(3,npts)
     integer(kind=intType), intent(in) :: nFamList, famList(nFamList)
+    logical, intent(in) :: includeZipper
 
     integer(kind=intType) :: mm, nn, i, j, ii,sps, iDim, jj, ierr
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iBCGroup
@@ -417,8 +418,8 @@ contains
        end do bocos
     end do domains
 
-    ! No overset, no zipper return immediates
-    if (.not. oversetPresent) then
+    ! No overset or not zipper, return 
+    if (.not. oversetPresent .or. .not. includeZipper) then
        return 
     end if
 
@@ -502,7 +503,7 @@ contains
     end do
   end subroutine getSurfacePoints
 
-  subroutine mapVector(vec1, n1, famList1, nf1, vec2, n2, famList2, nf2)
+  subroutine mapVector(vec1, n1, famList1, nf1, vec2, n2, famList2, nf2, includeZipper)
 
     ! Map one vector, vec1 of size (3,n1) defined on family list 'famList1' onto
     ! vector, vec2, of size (3, n2) defined on family list 'famList2'
@@ -522,6 +523,7 @@ contains
     integer(kind=intType), intent(in) :: famList1(nf1), famList2(nf2)
     real(kind=realType), intent(in) :: vec1(3, n1)
     real(kind=realType), intent(inout) :: vec2(3, n2)
+    logical, intent(in) :: includeZipper
 
     ! Working
     integer(kind=intType) :: i, k, ii, jj, nn, mm, iSize
@@ -573,8 +575,8 @@ contains
     ! We know must consider additional nodes that are required by the
     ! zipper mesh triangles on the root proc. 
 
-    ! No overset, no zipper return immediates
-    if (.not. oversetPresent) then
+    ! No overset or don't want to include zipper, return immediately
+    if (.not. oversetPresent .or. .not. includeZipper) then
        return 
     end if
 
