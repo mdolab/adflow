@@ -772,7 +772,7 @@ contains
           end if
        end do
 
-       if (.false.) then
+       if (.True.) then 
           ! select exact median to have fully balanced tree.
           m = (l+u)/2
           call select_on_coordinate(tp%the_data,tp%ind,c,m,l,u)
