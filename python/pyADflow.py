@@ -1669,7 +1669,6 @@ class ADFLOW(AeroSolver):
             # number of nodes we've "used up" so far
             nodeOffset = 0
             for iProc in xrange(len(conn)):
-                conn[iProc] += 1
                 for i in xrange(len(conn[iProc])):
                     f.write('%d %d %d %d\n'%(
                         conn[iProc][i,0]+nodeOffset,
