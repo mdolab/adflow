@@ -1680,6 +1680,103 @@ class ADFLOW(AeroSolver):
             f.close()
         # end if (root proc )
 
+    def writeSurfaceSensitivity(self, fileName, func, groupName=None):
+        """Write a tecplot file of the surface sensitivty. It is up to the use
+        to make sure the adjoint already computed before calling this
+        function. 
+        
+        Parameters
+        ----------
+        fileName : str
+           String for output filename. Should end in .dat for tecplot. 
+        func : str
+           ADFlow objective string for the objective to write. 
+        groupName : str
+           Family group to use. Default to all walls if not given (None)
+        """
+
+        if groupName is None:
+            groupName = self.allWallsGroup
+
+        func = func.lower()
+        # Make sure that we have the adjoint we need:
+        if func in self.curAP.adflowData.adjoints:
+            # These are the reverse mode seeds
+            psi = -self.getAdjoint(func)
+            funcsBar = {func:1.0}
+
+            # Compute everything and update into the dictionary
+            dXs = self.computeJacobianVectorProductBwd(
+                resBar=psi, funcsBar=funcsBar, xSDeriv=True)
+        else:
+            raise Error("The adjoint for '%s' is not computed for the current "
+                        "aeroProblem. cannot write surface sensitivity."%(func))
+
+        # Be careful with conn...need to increment by the offset from
+        # the points.
+        pts = self.getSurfacePoints(groupName, includeZipper=False)
+
+        ptSizes = self.comm.allgather(len(pts))
+        offsets = numpy.zeros(len(ptSizes), 'intc')
+        offsets[1:] = numpy.cumsum(ptSizes)[:-1]
+
+        # Now we need to gather the data to the root proc
+        pts = self.comm.gather(pts)
+        dXs = self.comm.gather(dXs)
+        conn, faceSize = self.getSurfaceConnectivity(groupName, includeZipper=False)
+        conn = self.comm.gather(conn + offsets[self.comm.rank])
+
+        # Write out Data only on root proc:
+        if self.myid == 0:
+         
+            # Make numpy arrays of all data
+            pts = numpy.vstack(pts)
+            dXs = numpy.vstack(dXs)
+            conn = numpy.vstack(conn)
+            
+            # Next point reduce all nodes:
+            uniquePts, link, nUnique = self.adflow.utils.pointreduce(pts.T, 1e-12)
+
+            # Insert existing nodes into the new array. *Accumulate* dXs. 
+            newdXs = numpy.zeros((nUnique, 3))
+            newPts = numpy.zeros((nUnique, 3))
+            newConn = numpy.zeros_like(conn)
+            for i in range(len(pts)):
+                newPts[link[i]-1] = pts[i]
+                newdXs[link[i]-1] += dXs[i]
+
+            # Update conn. Since link is 1 based, we get 1 based order
+            # which is what we need for tecplot
+            for i in range(len(conn)):
+                for j in range(4):
+                    newConn[i, j] = link[conn[i, j]]
+
+            pts = newPts
+            dXs = newdXs
+            conn = newConn
+
+            # Open output file
+            f = open(fileName, 'w')
+
+            # Write the variable headers
+            f.write('Variables = CoordinateX CoordinateY CoordinateZ dX dY dZ\n')
+            f.write('ZONE Nodes=%d Elements=%d Zonetype=FEQuadrilateral \
+            Datapacking=Point\n'%(len(pts), len(conn)))
+
+            # Now write out all the Nodes and Forces (or tractions)
+            for i in range(len(pts)):
+                f.write('%15.8g %15.8g %15.8g '% (
+                    pts[i, 0], pts[i, 1], pts[i, 2]))
+                f.write('%15.8g %15.8g %15.8g\n'% (
+                    dXs[i, 0], dXs[i, 1], dXs[i, 2]))
+
+            for i in range(len(conn)):
+                f.write('%d %d %d %d\n'%(
+                    conn[i,0], conn[i,1], conn[i,2], conn[i,3]))
+
+            f.close()
+        # end if (root proc )
+
     def resetAdjoint(self, obj):
         """
         Reset an adjoint 'obj' that is stored in the current
