@@ -646,8 +646,8 @@ contains
           !    call applyLowSpeedPreconditioner_b
           ! end if
 
-          ! Note that master_b does not include the approximation codes
-          ! as those are never needed in reverse. 
+          ! Note that master_b does not include the first order flux
+          ! approxation codes as those are never needed in reverse.
           if (viscous) then 
              call viscousFlux_b
              call allNodalGradients_b
@@ -657,8 +657,10 @@ contains
           ! So the all nodal gradients doesnt' perform the final
           ! scaling by the volume since it isn't necessary for the
           ! derivative. We have a special routine to fix that.
-          call fixAllNodalGradientsFromAD()
-          call viscousFlux
+          if (viscous) then 
+             call fixAllNodalGradientsFromAD()
+             call viscousFlux
+          end if
 
           select case (spaceDiscr)
           case (dissScalar)
