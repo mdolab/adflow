@@ -1527,12 +1527,10 @@ contains
        enddo domains
     endif bothPAndE
 
-    mm = ubound(commPatternOverset, 1)
     call wOverset_b(level, start, end, commPressure, commVarGamma, &
-         commLamVis, commEddyVis, commPatternOverset, internalOverset, mm)
+         commLamVis, commEddyVis, commPatternOverset, internalOverset)
 
     ! Exchange the 1 to 1 matching 2nd level cell halo's.
-
     call whalo1to1_b(level, start, end, commPressure, commVarGamma, &
          commLamVis, commEddyVis, commPatternCell_2nd,  &
          internalCell_2nd)
@@ -1585,7 +1583,7 @@ contains
     commVarGamma = .false.
     if(commGamma .and. (cpModel == cpTempCurveFits)) &
          commVarGamma = .true.
-
+    
     ! Exchange the 1 to 1 matching 2nd level cell halo's.
 
     call whalo1to1_d(level, start, end, commPressure, commVarGamma, &
@@ -1630,7 +1628,7 @@ contains
 
   subroutine wOverset_b(level, start, end, commPressure,       &
        commVarGamma, commLamVis, commEddyVis, &
-       commPattern, internal, nlev)
+       commPattern, internal)
     !
     !       wOverset_b performs the *TRANSPOSE* operation of wOveset
     !       It is used for adjoint/reverse mode residual evaluations.
@@ -1644,12 +1642,12 @@ contains
     !
     !      Subroutine arguments.
     !
-    integer(kind=intType), intent(in) :: level, start, end, nlev
+    integer(kind=intType), intent(in) :: level, start, end
     logical, intent(in) :: commPressure, commVarGamma
     logical, intent(in) :: commLamVis, commEddyVis
 
-    type(commType), dimension(nlev,*), intent(in) :: commPattern
-    type(internalCommType), dimension(nlev,*), intent(in) :: internal
+    type(commType), dimension(:, :), intent(in) :: commPattern
+    type(internalCommType), dimension(:, :), intent(in) :: internal
     !
     !      Local variables.
     !
