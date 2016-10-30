@@ -917,7 +917,7 @@ contains
          inviscidDissFluxMatrix_fast_b, viscousFlux_fast_b, inviscidCentralFlux_fast_b
     use solverutils_fast_b, only : timeStep_block_fast_b
     use flowutils_fast_b, only : allnodalgradients_fast_b
-
+    use overset, only : oversetPresent
     implicit none
 
     ! Input variables:
@@ -1003,6 +1003,24 @@ contains
           dwd = zero
        end do domainLoop1
     end do spsLoop1
+
+    ! Need to re-apply the BCs. The reason is that BC halos behind
+    ! interpolated cells need to be recomputed with their new
+    ! interpolated values from actual compute cells. Only needed for
+    ! overset. 
+    if (oversetPresent) then 
+       do sps=1, nTimeIntervalsSpectral
+          do nn=1,nDom
+             call setPointers_d(nn, 1, sps)
+             call applyAllBC_block_b(.True.)
+             
+             if (equations == RANSequations) then 
+                call applyAllTurbBCThisBlock_b(.True.)
+                call bcTurbTreatment_b
+             end if
+          end do
+       end do
+    end if
 
     ! Exchange the adjoint values.
     call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True.)
