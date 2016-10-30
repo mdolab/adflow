@@ -863,31 +863,44 @@ contains
                            iblank(i,j,k) /= -3 .and. &
                            iblank(i,j,k)/=-2) then 
 
-                         ! Now check if this cell *really* needs a
-                         ! donor...if all its neighbours are also
-                         ! interpolated it will get blanked so we can
-                         ! just forget about it.
-                         computeCellFound = .False.
-                         stencilLoop2: do i_stencil=1, N_visc_drdw
-                            ii = visc_drdw_stencil(i_stencil, 1) + i
-                            jj = visc_drdw_stencil(i_stencil, 2) + j
-                            kk = visc_drdw_stencil(i_stencil, 3) + k
+                         nLocalFringe = nLocalFringe + 1
+                         localFringes(nLocalFringe) = fringes(i, j, k)
 
-                            ! Only check physical cells:
-                            if (globalCell(ii, jj, kk) >= 0 .and. &
-                                 isCompute(fringes(ii, jj, kk)%status) .and. & 
-                                 iblank(ii,jj,kk) /= -2 .and. &
-                                 iblank(ii,jj,kk) /=-3) then
-                               ! This is a compute cell
-                               computeCellFound = .True.
-                            end if
-                         end do stencilLoop2
+                         ! ********* This code needs to be re-added at
+                         ! some point.  There is however an issue with
+                         ! not adding local fringes here even if they
+                         ! will eventually be blanked. Potential
+                         ! donors are not flagged and then not cell
+                         ! corrected and the end result is a final
+                         ! overset comm structure that includes an
+                         ! interpolated cell in the stencil. This is
+                         ! obviously wrong. 
 
+                         ! ! Now check if this cell *really* needs a
+                         ! ! donor...if all its neighbours are also
+                         ! ! interpolated it will get blanked so we can
+                         ! ! just forget about it.
+                         ! computeCellFound = .False.
+                         ! stencilLoop2: do i_stencil=1, N_visc_drdw
+                         !    ii = visc_drdw_stencil(i_stencil, 1) + i
+                         !    jj = visc_drdw_stencil(i_stencil, 2) + j
+                         !    kk = visc_drdw_stencil(i_stencil, 3) + k
 
-                         if (computeCellFound) then 
-                            nLocalFringe = nLocalFringe + 1
-                            localFringes(nLocalFringe) = fringes(i, j, k)
-                         end if
+                         !    ! Only check physical cells:
+                         !    if (globalCell(ii, jj, kk) >= 0 .and. &
+                         !         isCompute(fringes(ii, jj, kk)%status) .and. & 
+                         !         iblank(ii,jj,kk) /= -2 .and. &
+                         !         iblank(ii,jj,kk) /=-3) then
+                         !       ! This is a compute cell
+                         !       computeCellFound = .True.
+                         !    end if
+                         ! end do stencilLoop2
+
+                         ! if (computeCellFound) then 
+                         !    nLocalFringe = nLocalFringe + 1
+                         !    localFringes(nLocalFringe) = fringes(i, j, k)
+                         ! end if
+                         !  *****************
                       end if
                    end do
                 end do
