@@ -33,6 +33,7 @@ contains
     use surfaceIntegrations, only : integrateSurfaces
     use adjointExtra, only : volume_block, metric_block, boundaryNormals,&
          xhalo_block, sumdwandfw, resScale, getCostFunctions
+    use overset, only : oversetPresent
     implicit none
 
     ! Input Arguments:
@@ -98,6 +99,23 @@ contains
 
     ! Exchange values
     call whalo2(currentLevel, 1_intType, nw, .True., .True., .True.)
+
+    ! Need to re-apply the BCs. The reason is that BC halos behind
+    ! interpolated cells need to be recomputed with their new
+    ! interpolated values from actual compute cells. Only needed for
+    ! overset. 
+    if (oversetPresent) then 
+       do sps=1,nTimeIntervalsSpectral
+          do nn=1,nDom
+             call setPointers(nn, 1, sps)
+             if (equations == RANSequations) then 
+                call BCTurbTreatment
+                call applyAllTurbBCthisblock(.True.)
+             end if
+             call applyAllBC_block(.True.)
+          end do
+       end do
+    end if
 
     ! Main loop for the residual
     do sps=1, nTimeIntervalsSpectral
@@ -221,7 +239,7 @@ contains
     use sorting, only : bsearchIntegers
     use adjointExtra_d, only : xhalo_block_d, volume_block_d, metric_BLock_d, boundarynormals_d
     use adjointextra_d, only : getcostfunctions_D, resscale_D, sumdwandfw_d
-
+    use overset, only : oversetPresent
     implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
@@ -357,6 +375,23 @@ contains
 
     ! Just exchange the derivative values. 
     call whalo2_d(1, 1, nw, .True., .True., .True.)
+
+    ! Need to re-apply the BCs. The reason is that BC halos behind
+    ! interpolated cells need to be recomputed with their new
+    ! interpolated values from actual compute cells. Only needed for
+    ! overset. 
+    if (oversetPresent) then 
+       do sps=1,nTimeIntervalsSpectral
+          do nn=1,nDom
+             call setPointers_d(nn, 1, sps)
+             if (equations == RANSequations) then 
+                call BCTurbTreatment_d
+                call applyAllTurbBCthisblock_d(.True.)
+             end if
+             call applyAllBC_block_d(.True.)
+          end do
+       end do
+    end if
 
     do sps=1, nTimeIntervalsSpectral
        do nn=1, nDom
@@ -522,7 +557,7 @@ contains
     use fluxes_b, only :inviscidUpwindFlux_b, inviscidDissFluxScalar_b, &
          inviscidDissFluxMatrix_b, viscousFlux_b, inviscidCentralFlux_b
     use BCExtra_b, only : applyAllBC_Block_b
-
+    use overset, only : oversetPresent
     implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
@@ -691,7 +726,25 @@ contains
           dwd = zero
        end do domainLoop1
     end do spsLoop1
-    
+
+    ! Need to re-apply the BCs. The reason is that BC halos behind
+    ! interpolated cells need to be recomputed with their new
+    ! interpolated values from actual compute cells. Only needed for
+    ! overset. 
+    if (oversetPresent) then 
+       do sps=1, nTimeIntervalsSpectral
+          do nn=1,nDom
+             call setPointers_d(nn, 1, sps)
+             call applyAllBC_block_b(.True.)
+             
+             if (equations == RANSequations) then 
+                call applyAllTurbBCThisBlock_b(.True.)
+                call bcTurbTreatment_b
+             end if
+          end do
+       end do
+    end if
+
     ! Exchange the adjoint values.
     call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True.)
 
@@ -797,7 +850,7 @@ contains
                 do i=2, il
                    do l=1, nState
                       ii = ii + 1
-                      wbar(ii) = wd(i, j, k, l)*max(real(iblank(i,j,k)), zero)
+                      wbar(ii) = wd(i, j, k, l)
                    end do
                 end do
              end do
@@ -981,7 +1034,7 @@ contains
                 do i=2, il
                    do l=1, nState
                       ii = ii + 1
-                      wbar(ii) = wd(i, j, k, l)*max(real(iblank(i,j,k)), zero)
+                      wbar(ii) = wd(i, j, k, l)!*max(real(iblank(i,j,k)), zero)
                    end do
                 end do
              end do
