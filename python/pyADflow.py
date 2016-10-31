@@ -1197,7 +1197,7 @@ class ADFLOW(AeroSolver):
 
         # Generate initial point
         Xn = numpy.array([alpha0, trim0])
-        Fn, sol = Func(Xn, CLStar)
+        Fn = Func(Xn, CLStar)
 
         # Next we generate the initial jacobian if we haven't been
         # provided with one.
