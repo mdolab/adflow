@@ -723,9 +723,6 @@ module block
      integer(kind=intType), dimension(:,:,:), pointer :: globalCell
      integer(kind=intType), dimension(:,:,:), pointer :: color
 
-     integer(kind=intType),dimension(:),pointer::ifaceptb
-     integer(kind=intType),dimension(:),pointer::iedgeptb
-
      ! Data storing the first order PC in tri-diagonal ordering. 7
      ! real(kind=realType), dimension(:, :, :, :, :), pointer :: Diag
      ! real(kind=realType), dimension(:, :, :, :, :), pointer :: i_L, i_U
