@@ -521,8 +521,18 @@ contains
     oldNorm = norm
     rtolLast = rtol
 
-    ! Set all tolerances for linear solve:
-    atol = totalR0*L2Conv
+    ! Set all tolerances for linear solver. 
+
+    ! The half requires some explaination: The linear residual is
+    ! roughly the same magnitude as the non-linear one. However, it
+    ! very rare situations, it can happen that the non-linear residual
+    ! is *just* above the convergence criteria, while the linear
+    ! residual is *just* below. What happens is that the linear sover
+    ! kicks up and doesnt' do anything and then the non-linear
+    ! convergnce check can't do anything either. By multiplying by
+    ! 0.5, we make sure that the linear solver actually has to do
+    ! *something* and not just kick out immediately.
+    atol = totalR0*L2Conv*half
     maxIt = NK_subspace
 
     call KSPSetTolerances(NK_KSP, real(rtol), &
@@ -949,9 +959,10 @@ contains
     use turbAPI, only : turbResidual
     use turbBCRoutines, only : applyAllTurbBCThisBLock, bcturbTreatment
     use flowUtils, only : computeLamViscosity
-    use BCRoutines, only : applyAllBC
+    use BCRoutines, only : applyAllBC, applyAllBC_block
     use solverUtils, only : timeStep, computeUtau
     use residuals, only :residual, initRes
+    use overset, only : oversetPresent
     implicit none
 
     ! Local Variables
@@ -1022,6 +1033,23 @@ contains
     ! Exchange halos
     call whalo2(currentLevel, 1_intType, nw, .true., &
          .true., .true.)
+
+    ! Need to re-apply the BCs. The reason is that BC halos behind
+    ! interpolated cells need to be recomputed with their new
+    ! interpolated values from actual compute cells. Only needed for
+    ! overset. 
+    if (oversetPresent) then 
+       do sps=1,nTimeIntervalsSpectral
+          do nn=1,nDom
+             call setPointers(nn, 1, sps)
+             if (equations == RANSequations) then 
+                call BCTurbTreatment
+                call applyAllTurbBCthisblock(.True.)
+             end if
+             call applyAllBC_block(.True.)
+          end do
+       end do
+    end if
 
     ! Compute time step (spectral radius is actually what we need)
     call timestep(.false.)

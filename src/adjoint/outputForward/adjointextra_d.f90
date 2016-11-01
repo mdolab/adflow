@@ -1411,14 +1411,21 @@ loopbocos:do mm=1,nbocos
 ! local variables
     integer(kind=inttype) :: i, j, k, l
     intrinsic real
+    intrinsic max
+    real(kind=realtype) :: x1
+    real(kind=realtype) :: max1
     do l=1,nwf
       do k=2,kl
         do j=2,jl
           do i=2,il
-            dwd(i, j, k, l) = real(iblank(i, j, k), realtype)*(dwd(i, j&
-&             , k, l)+fwd(i, j, k, l))
-            dw(i, j, k, l) = (dw(i, j, k, l)+fw(i, j, k, l))*real(iblank&
-&             (i, j, k), realtype)
+            x1 = real(iblank(i, j, k), realtype)
+            if (x1 .lt. zero) then
+              max1 = zero
+            else
+              max1 = x1
+            end if
+            dwd(i, j, k, l) = max1*(dwd(i, j, k, l)+fwd(i, j, k, l))
+            dw(i, j, k, l) = (dw(i, j, k, l)+fw(i, j, k, l))*max1
           end do
         end do
       end do
@@ -1432,12 +1439,20 @@ loopbocos:do mm=1,nbocos
 ! local variables
     integer(kind=inttype) :: i, j, k, l
     intrinsic real
+    intrinsic max
+    real(kind=realtype) :: x1
+    real(kind=realtype) :: max1
     do l=1,nwf
       do k=2,kl
         do j=2,jl
           do i=2,il
-            dw(i, j, k, l) = (dw(i, j, k, l)+fw(i, j, k, l))*real(iblank&
-&             (i, j, k), realtype)
+            x1 = real(iblank(i, j, k), realtype)
+            if (x1 .lt. zero) then
+              max1 = zero
+            else
+              max1 = x1
+            end if
+            dw(i, j, k, l) = (dw(i, j, k, l)+fw(i, j, k, l))*max1
           end do
         end do
       end do
