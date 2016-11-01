@@ -33,6 +33,7 @@ contains
     use surfaceIntegrations, only : integrateSurfaces
     use adjointExtra, only : volume_block, metric_block, boundaryNormals,&
          xhalo_block, sumdwandfw, resScale, getCostFunctions
+    use overset, only : oversetPresent
     implicit none
 
     ! Input Arguments:
@@ -98,6 +99,23 @@ contains
 
     ! Exchange values
     call whalo2(currentLevel, 1_intType, nw, .True., .True., .True.)
+
+    ! Need to re-apply the BCs. The reason is that BC halos behind
+    ! interpolated cells need to be recomputed with their new
+    ! interpolated values from actual compute cells. Only needed for
+    ! overset. 
+    if (oversetPresent) then 
+       do sps=1,nTimeIntervalsSpectral
+          do nn=1,nDom
+             call setPointers(nn, 1, sps)
+             if (equations == RANSequations) then 
+                call BCTurbTreatment
+                call applyAllTurbBCthisblock(.True.)
+             end if
+             call applyAllBC_block(.True.)
+          end do
+       end do
+    end if
 
     ! Main loop for the residual
     do sps=1, nTimeIntervalsSpectral
@@ -194,7 +212,7 @@ contains
     use BCExtra_d, only : applyAllBC_Block_d
     use inputAdjoint,  only : viscPC
     use flowVarRefState, only : nw, nwf
-    use blockPointers, only : nDom, il, jl, kl, wd, xd, dw, dwd, nBocos, BCType, nViscBocos, BCData
+    use blockPointers, only : nDom, il, jl, kl, wd, xd, dw, dwd, nBocos, BCType, nViscBocos, BCData, iblank
     use flowVarRefState, only : viscous, timerefd
     use inputPhysics , only : turbProd, equationMode, equations, turbModel, wallDistanceNeeded
     use inputDiscretization, only : lowSpeedPreconditioner, lumpedDiss, spaceDiscr, useAPproxWallDistance
@@ -221,7 +239,7 @@ contains
     use sorting, only : bsearchIntegers
     use adjointExtra_d, only : xhalo_block_d, volume_block_d, metric_BLock_d, boundarynormals_d
     use adjointextra_d, only : getcostfunctions_D, resscale_D, sumdwandfw_d
-
+    use overset, only : oversetPresent
     implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
@@ -357,6 +375,23 @@ contains
 
     ! Just exchange the derivative values. 
     call whalo2_d(1, 1, nw, .True., .True., .True.)
+
+    ! Need to re-apply the BCs. The reason is that BC halos behind
+    ! interpolated cells need to be recomputed with their new
+    ! interpolated values from actual compute cells. Only needed for
+    ! overset. 
+    if (oversetPresent) then 
+       do sps=1,nTimeIntervalsSpectral
+          do nn=1,nDom
+             call setPointers_d(nn, 1, sps)
+             if (equations == RANSequations) then 
+                call BCTurbTreatment_d
+                call applyAllTurbBCthisblock_d(.True.)
+             end if
+             call applyAllBC_block_d(.True.)
+          end do
+       end do
+    end if
 
     do sps=1, nTimeIntervalsSpectral
        do nn=1, nDom
@@ -494,7 +529,7 @@ contains
     use inputAdjoint,  only : viscPC
     use fluxes, only : viscousFlux
     use flowVarRefState, only : nw, nwf, viscous,pInfDimd, rhoInfDimd, TinfDimd
-    use blockPointers, only : nDom, il, jl, kl, wd, xd, dw, dwd, nBocos, BCType, nViscBocos, BCData
+    use blockPointers, only : nDom, il, jl, kl, wd, xd, dw, dwd, nBocos, BCType, nViscBocos, BCData, iblank
     use inputPhysics, only :pointRefd, alphad, betad, equations, machCoefd, &
          machd, machGridd, rgasdimd, equationMode, turbModel, wallDistanceNeeded
     use inputDiscretization, only : lowSpeedPreconditioner, lumpedDiss, spaceDiscr, useAPproxWallDistance
@@ -522,7 +557,7 @@ contains
     use fluxes_b, only :inviscidUpwindFlux_b, inviscidDissFluxScalar_b, &
          inviscidDissFluxMatrix_b, viscousFlux_b, inviscidCentralFlux_b
     use BCExtra_b, only : applyAllBC_Block_b
-
+    use overset, only : oversetPresent
     implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
@@ -646,8 +681,8 @@ contains
           !    call applyLowSpeedPreconditioner_b
           ! end if
 
-          ! Note that master_b does not include the approximation codes
-          ! as those are never needed in reverse. 
+          ! Note that master_b does not include the first order flux
+          ! approxation codes as those are never needed in reverse.
           if (viscous) then 
              call viscousFlux_b
              call allNodalGradients_b
@@ -657,8 +692,10 @@ contains
           ! So the all nodal gradients doesnt' perform the final
           ! scaling by the volume since it isn't necessary for the
           ! derivative. We have a special routine to fix that.
-          call fixAllNodalGradientsFromAD()
-          call viscousFlux
+          if (viscous) then 
+             call fixAllNodalGradientsFromAD()
+             call viscousFlux
+          end if
 
           select case (spaceDiscr)
           case (dissScalar)
@@ -689,7 +726,25 @@ contains
           dwd = zero
        end do domainLoop1
     end do spsLoop1
-    
+
+    ! Need to re-apply the BCs. The reason is that BC halos behind
+    ! interpolated cells need to be recomputed with their new
+    ! interpolated values from actual compute cells. Only needed for
+    ! overset. 
+    if (oversetPresent) then 
+       do sps=1, nTimeIntervalsSpectral
+          do nn=1,nDom
+             call setPointers_d(nn, 1, sps)
+             call applyAllBC_block_b(.True.)
+             
+             if (equations == RANSequations) then 
+                call applyAllTurbBCThisBlock_b(.True.)
+                call bcTurbTreatment_b
+             end if
+          end do
+       end do
+    end if
+
     ! Exchange the adjoint values.
     call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True.)
 
@@ -841,7 +896,7 @@ contains
     use costFunctions
     use iteration, only : currentLevel
     use flowVarRefState, only : nw, viscous
-    use blockPointers, only : nDom, il, jl, kl, wd, dwd, radi, radj, radk
+    use blockPointers, only : nDom, il, jl, kl, wd, dwd, iblank
     use inputPhysics, only : equationMode, turbModel, equations
     use inputDiscretization, only : lowSpeedPreconditioner, spaceDiscr
     use inputTimeSpectral, only : nTimeIntervalsSpectral
@@ -862,7 +917,7 @@ contains
          inviscidDissFluxMatrix_fast_b, viscousFlux_fast_b, inviscidCentralFlux_fast_b
     use solverutils_fast_b, only : timeStep_block_fast_b
     use flowutils_fast_b, only : allnodalgradients_fast_b
-
+    use overset, only : oversetPresent
     implicit none
 
     ! Input variables:
@@ -949,6 +1004,24 @@ contains
        end do domainLoop1
     end do spsLoop1
 
+    ! Need to re-apply the BCs. The reason is that BC halos behind
+    ! interpolated cells need to be recomputed with their new
+    ! interpolated values from actual compute cells. Only needed for
+    ! overset. 
+    if (oversetPresent) then 
+       do sps=1, nTimeIntervalsSpectral
+          do nn=1,nDom
+             call setPointers_d(nn, 1, sps)
+             call applyAllBC_block_b(.True.)
+             
+             if (equations == RANSequations) then 
+                call applyAllTurbBCThisBlock_b(.True.)
+                call bcTurbTreatment_b
+             end if
+          end do
+       end do
+    end if
+
     ! Exchange the adjoint values.
     call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True.)
 
@@ -979,7 +1052,7 @@ contains
                 do i=2, il
                    do l=1, nState
                       ii = ii + 1
-                      wbar(ii) = wd(i, j, k, l)
+                      wbar(ii) = wd(i, j, k, l)!*max(real(iblank(i,j,k)), zero)
                    end do
                 end do
              end do

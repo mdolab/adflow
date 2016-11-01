@@ -437,6 +437,9 @@ contains
           mass_Ps = mass_Ps + pm*massFlowRateLocal
           
           ! Compute the average cell center. 
+          xc = zero
+          yc = zero
+          zc = zero
           do j=1,3
              xc = xc + (vars(zipper%conn(1, i), 7)) 
              yc = yc + (vars(zipper%conn(2, i), 8)) 
@@ -862,7 +865,7 @@ contains
     end do domains
 
     if (oversetPresent) then
-       !call wallIntegrationsZipper(localValues, sps)
+       call wallIntegrationsZipper(localValues, famList, sps)
        call flowIntegrationZipper(localValues, famList, sps)
     end if
 
@@ -1050,18 +1053,21 @@ contains
     end if
   end subroutine getSolution
 
-  subroutine wallIntegrationsZipper(localValues, sps)
+  subroutine wallIntegrationsZipper(localValues, famList, sps)
 
-    use communication
-    use blockPointers
-    use flowVarRefState
-    use inputPhysics
+    use constants
     use costFunctions
-    !use overset!, only : nodeZipperScatter, globalNodalVec, localZipperNodes, localZipperTp, localZipperTv
-    use inputTimeSpectral
-    use inputIteration
-    use costFunctions, only : nLocalValues
-    use utils, only : EChk, setPointers, myNorm2
+    use communication, only : myid
+    use blockPointers, only : BCFaceID, BCData, addGridVelocities, nDom, nBocos, BCType
+    use costFunctions, onlY : nLocalValues, iMassFlow, iMassPtot, iMassTtot, iMassPs
+    use sorting, only : bsearchIntegers
+    use flowVarRefState, only : pRef, rhoRef, pRef, timeRef, LRef, TRef
+    use inputPhysics, only : pointREf
+    use flowUtils, only : computePtot, computeTtot
+    use BCPointers, only : sFace, ww1, ww2, pp1, pp2, xx
+    use overset, only : zipperMeshes, zipperMesh
+    use surfaceFamilies, only : familyExchange, BCFamExchange
+    use utils, only : setPointers, setBCPointers, EChk, mynorm2, isWallType
     implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -1070,205 +1076,179 @@ contains
 #include "petsc/finclude/petscvec.h90"
 
     ! Input/Output
-    integer(kind=intType), intent(in) :: sps
     real(kind=realType), intent(inout) :: localValues(nLocalValues)
+    integer(kind=intType), dimension(:), intent(in) :: famList
+    integer(kind=intType), intent(in) :: sps
+
     ! Working
     real(kind=realType), dimension(3) :: Fp, Fv, Mp, Mv
+    type(zipperMesh), pointer :: zipper
+    type(familyExchange), pointer :: exch
+    real(kind=realType), dimension(:, :), allocatable :: vars
+    real(kind=realType), dimension(:), pointer :: localPtr
 
-    integer(kind=intType) :: i, j, k, l, ierr, nn, mm, gind, ind, iVar
-    integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, rowStart, rowEnd
-    real(kind=realType), dimension(:, :, :), pointer :: xx
-    real(kind=realType), dimension(:), pointer :: xPtr, pPtr, vPtr, localPtr
-    integer(kind=intType), dimension(:, :), pointer :: gnp
+    integer(kind=intType) :: i, j, k, l, ierr, nn, mm, iVar, ii
+    integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
+    real(kind=realType), dimension(3) :: ss, norm, refPoint
+    real(kind=realType), dimension(3) :: p1, p2, p3, v1, v2, v3, x1, x2, x3
+    real(kind=realType) :: fact, triArea, fx, fy, fz, mx, my, mz, xc, yc, zc
 
-    real(kind=realType), dimension(3) :: x1, x2, x3, xc, ss, norm, refPoint
-    real(kind=realType), dimension(3) :: pp1, pp2, pp3, presForce
-    real(kind=realType), dimension(3) :: vv1, vv2, vv3, viscForce
-    real(kind=realType), dimension(3) ::  MTmp
-    real(kind=realType) :: fact, triArea
+    ! Set the zipper pointer to the zipper for inflow/outflow conditions
+    zipper => zipperMeshes(iBCGroupWalls)
+    exch => BCFamExchange(iBCGroupWalls, sps)
 
-    ! PETsc
-    Vec, pointer :: localVec
+    if (.not. zipper%allocated) then 
+       return
+    end if
 
     ! Determine the reference point for the moment computation in
     ! meters.
     refPoint(1) = LRef*pointRef(1)
     refPoint(2) = LRef*pointRef(2)
     refPoint(3) = LRef*pointRef(3)
+    Fp = zero
+    Fv = zero
+    Mp = zero
+    Mv = zero
+    ! Make sure the nodal tractions are computed
+    call computeNodalTractions(sps)
 
-    ! Communicate the nodes, pressure tractions and viscous tractions to
-    ! the root proc for the triangles. We do a generic loop
-    print *,'dont call this!'
-    stop
-    ! call VecGetOwnershipRange(globalNodalVec, rowStart, rowEnd, ierr)
-    ! call EChk(ierr,__FILE__,__LINE__)
+    ! This is the local set of data we need for the zipper.
+    allocate(vars(size(zipper%indices), 9))
 
-    ! do iVar=1, 3
+    varLoop: do iVar=1,9
+       call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+    
+       ii = 0
+       domainLoop: do nn=1, nDom
+          call setPointers(nn, 1, sps)
+          bocoLoop: do mm=1, nBocos
+             if (isWallType(BCType(mm))) then  
+                call setBCPointers(mm, .True.)
+                iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
+                jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
+                do j=jBeg, jEnd
+                   do i=iBeg, iEnd
+                      ii = ii + 1
+                      select case(iVar)
+                      case (1, 2, 3)
+                         localPtr(ii) = BCData(mm)%Tp(i, j, iVar)
+                      case (4, 5, 6)
+                         localPtr(ii) = BCData(mm)%Tv(i, j, iVar-3)
+                      case (7,8,9)
+                         ! The +1 is due to pointer offset
+                         localPtr(ii) = xx(i+1, j+1, iVar-6)
+                      end select
+                   end do
+                end do
+             end if
+          end do bocoLoop
+       end do domainLoop
 
-    !    call VecGetArrayF90(globalNodalVec, localPtr, ierr)
-    !    call EChk(ierr,__FILE__,__LINE__)
+       ! Return pointer to nodeValLocal
+       call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
 
-    !    domainLoop: do nn=1, nDom
-    !       call setPointers(nn, 1, sps)
+       call VecPlaceArray(zipper%localVal, vars(:, iVar), ierr)
+       call EChk(ierr,__FILE__,__LINE__)
 
-    !       bocoLoop: do mm=1, nBocos
+       ! Send these values to the root using the zipper scatter. 
+       call VecScatterBegin(zipper%scatter, exch%nodeValLocal,&
+            zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
 
-    !          if(BCType(mm) == EulerWall .or. &
-    !               BCType(mm) == NSWallAdiabatic .or. &
-    !               BCType(mm) == NSWallIsothermal) then
+       call VecScatterEnd(zipper%scatter, exch%nodeValLocal,&
+            zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+       
+       ! Reset the original petsc vector.
+       call vecResetArray(zipper%localVal, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+    end do varLoop
 
-    !             select case (BCFaceID(mm))
-    !             case (iMin)
-    !                xx => x(1, :, :, :)
-    !                gnp => globalNode(1, :, :)
-    !             case (iMax)
-    !                xx => x(il, :, :, :)
-    !                gnp => globalNode(il, :, :)
-    !             case (jMin)
-    !                xx => x(:, 1, :, :)
-    !                gnp => globalNode(:, 1, :)
-    !             case (jMax)
-    !                xx => x(:, jl, :, :)
-    !                gnp => globalNode(:, jl, :)
-    !             case (kMin)
-    !                xx => x(:, :, 1, :)
-    !                gnp => globalNode(:, :, 1)
-    !             case (kMax)
-    !                xx => x(:, :, kl, :)
-    !                gnp => globalNode(:, :, kl)
-    !             end select
+    ! Divide everything by 3...this is more useful since we are
+    ! averaging most things anyway. 
+    vars = vars*third
 
-    !             jBeg = BCdata(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
-    !             iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd
+    !$AD II-LOOP
+    do i=1, size(zipper%conn, 2)
+       if (bsearchIntegers(zipper%fam(i), famList) > 0) then 
 
-    !             ! Loop over the nodes of the subface:
-    !             do j=jBeg, jEnd
-    !                do i=iBeg, iEnd
-    !                   gInd = gnp(i+1, j+1)
-    !                   ind = (gInd-rowStart/3)*3+1
-    !                   if (ind < 0) then
-    !                      print *,'something wrong:', myid, gind, rowstart, ind
-    !                      stop
-    !                   end if
+          ! Get the nodes of triangle. The *3 is becuase of the
+          ! blanket third above. 
+          x1 = vars(zipper%conn(1, i), 7:9)*3
+          x2 = vars(zipper%conn(2, i), 7:9)*3
+          x3 = vars(zipper%conn(3, i), 7:9)*3
+          call cross_prod(x2-x1, x3-x1, norm)
+          ss = half*norm
+          triArea = mynorm2(ss)
 
-    !                   select case(iVar)
-    !                   case (1) ! Nodes
-    !                      localPtr(ind:ind+2) = xx(i+1, j+1, :)
-    !                   case (2)
-    !                      localPtr(ind:ind+2) = bcData(mm)%Tp(i, j, :)
-    !                   case (3)
-    !                      localPtr(ind:ind+2) = bcData(mm)%Tv(i, j, :)
-    !                   end select
-    !                end do
-    !             end do
-    !          end if
-    !       end do bocoLoop
-    !    end do domainLoop
+          ! Compute the average cell center. 
+          xc = zero
+          yc = zero
+          zc = zero
+          do j=1,3
+             xc = xc + (vars(zipper%conn(1, i), 7)) 
+             yc = yc + (vars(zipper%conn(2, i), 8)) 
+             zc = zc + (vars(zipper%conn(3, i), 9)) 
+          end do
 
-    !    call vecRestoreArrayF90(globalNodalVec, localPtr, ierr)
-    !    call EChk(ierr,__FILE__,__LINE__)
+          xc = xc - refPoint(1)
+          yc = yc - refPoint(2)
+          zc = zc - refPoint(3)
 
-    !    select case(iVar)
-    !    case(1)
-    !       localVec => localZipperNodes
-    !    case(2)
-    !       localVec => localZipperTp
-    !    case(3)
-    !       localVec => localZipperTv
-    !    end select
+          ! Update the pressure force and moment coefficients.
+          p1 = vars(zipper%conn(1, i), 1:3) 
+          p2 = vars(zipper%conn(2, i), 1:3)
+          p3 = vars(zipper%conn(3, i), 1:3)
 
-    !    ! Perform the scatter from the global x vector to zipperNodes
-    !    call VecScatterBegin(nodeZipperScatter, globalNodalVec, &
-    !         localVec, INSERT_VALUES, SCATTER_FORWARD, ierr)
-    !    call EChk(ierr,__FILE__,__LINE__)
+          fx = (p1(1) + p2(1) + p3(1))*triArea
+          fy = (p1(2) + p2(2) + p3(2))*triArea
+          fz = (p1(3) + p2(3) + p3(3))*triArea
 
-    !    call VecScatterEnd(nodeZipperScatter, globalNodalVec, &
-    !         localVec, INSERT_VALUES, SCATTER_FORWARD, ierr)
-    !    call EChk(ierr,__FILE__,__LINE__)
+          Fp(1) = Fp(1) + fx
+          Fp(2) = Fp(2) + fy
+          Fp(3) = Fp(3) + fz
+                 
+          mx = yc*fz - zc*fy
+          my = zc*fx - xc*fz
+          mz = xc*fy - yc*fx
+       
+          Mp(1) = Mp(1) + mx
+          Mp(2) = Mp(2) + my
+          Mp(3) = Mp(3) + mz
 
-    ! end do
+          ! Update the viscous force and moment coefficients
+          v1 = vars(zipper%conn(1, i), 4:6) 
+          v2 = vars(zipper%conn(2, i), 4:6)
+          v3 = vars(zipper%conn(3, i), 4:6)
 
+          fx = (v1(1) + v2(1) + v3(1))*triArea
+          fy = (v1(2) + v2(2) + v3(2))*triArea
+          fz = (v1(3) + v2(3) + v3(3))*triArea
 
-    ! if (myid == 0) then
+          ! Note: momentum forces have opposite sign to pressure forces
+          Fv(1) = Fv(1) + fx
+          Fv(2) = Fv(2) + fy
+          Fv(3) = Fv(3) + fz
 
-    !    Fp = zero
-    !    Fv = zero
-    !    Mp = zero
-    !    Mv = zero
+          mx = yc*fz - zc*fy
+          my = zc*fx - xc*fz
+          mz = xc*fy - yc*fx
+          
+          Mv(1) = Mv(1) + mx
+          Mv(2) = Mv(2) + my
+          Mv(3) = Mv(3) + mz
+       end if
+    enddo
 
-    !    ! Puck out pointers for the nodes and tractions
-    !    call VecGetArrayF90(localZipperTp, pPtr, ierr)
-    !    call EChk(ierr,__FILE__,__LINE__)
-
-    !    call VecGetArrayF90(localZipperTv, vPtr, ierr)
-    !    call EChk(ierr,__FILE__,__LINE__)
-
-    !    call VecGetArrayF90(localZipperNodes, xPtr, ierr)
-    !    call EChk(ierr,__FILE__,__LINE__)
-
-    !    ! Number of triangles is the length of localZipperNodes /9
-
-    !    do i=1, size(xPtr)/9
-
-    !       ! Nodes for the triangles
-    !       x1 = xPtr((i-1)*9+1:(i-1)*9+3)
-    !       x2 = xPtr((i-1)*9+4:(i-1)*9+6)
-    !       x3 = xPtr((i-1)*9+7:(i-1)*9+9)
-
-    !       ! Nodal pressure tractions
-    !       pp1 = pPtr((i-1)*9+1:(i-1)*9+3)
-    !       pp2 = pPtr((i-1)*9+4:(i-1)*9+6)
-    !       pp3 = pPtr((i-1)*9+7:(i-1)*9+9)
-
-    !       ! Nodal viscous tractions
-    !       vv1 = vPtr((i-1)*9+1:(i-1)*9+3)
-    !       vv2 = vPtr((i-1)*9+4:(i-1)*9+6)
-    !       vv3 = vPtr((i-1)*9+7:(i-1)*9+9)
-
-    !       ! Compute area
-    !       call cross_prod(x2-x1, x3-x1, norm)
-    !       ss = half * norm
-    !       triArea = mynorm2(ss)
-
-    !       ! This is the actual integration
-    !       presForce = third*(pp1 + pp2 + pp3) * triArea
-    !       viscForce = third*(vv1 + vv2 + vv3) * triArea
-
-    !       ! Add to Fp and Fv
-    !       Fp = Fp + presForce
-    !       Fv = Fv + viscForce
-
-    !       ! Compute cell center
-    !       xc(:) = third*(x1 + x2 + x3) - refPoint(:)
-
-    !       ! Add to Mp and Mv
-    !       call cross_prod(xc, presForce, Mtmp)
-    !       Mp = Mp + Mtmp
-
-    !       call cross_prod(xc, viscForce, Mtmp)
-    !       Mv = Mv + Mtmp
-
-    !    end do
-
-    !    ! Return the array pointers
-    !    call VecRestoreArrayF90(localZipperNodes, xPtr, ierr)
-    !    call EChk(ierr,__FILE__,__LINE__)
-
-    !    call VecRestoreArrayF90(localZipperTp, pPtr, ierr)
-    !    call EChk(ierr,__FILE__,__LINE__)
-
-    !    call VecRestoreArrayF90(localZipperTv, vPtr, ierr)
-    !    call EChk(ierr,__FILE__,__LINE__)
-
-    !    ! Increment into the local vector
-    !    localValues(iFp:iFp+2) = localValues(iFp:iFp+2) + Fp
-    !    localValues(iFv:iFv+2) = localValues(iFv:iFv+2) + Fv
-    !    localValues(iMp:iMp+2) = localValues(iMp:iMp+2) + Mp
-    !    localValues(iMv:iMv+2) = localValues(iMv:iMv+2) + Mv
-
-
-    ! end if
-
+    ! Increment into the local vector
+    localValues(iFp:iFp+2) = localValues(iFp:iFp+2) + Fp
+    localValues(iFv:iFv+2) = localValues(iFv:iFv+2) + Fv
+    localValues(iMp:iMp+2) = localValues(iMp:iMp+2) + Mp
+    localValues(iMv:iMv+2) = localValues(iMv:iMv+2) + Mv
+    
   end subroutine wallIntegrationsZipper
 
   subroutine addIntegrationSurface(pts, conn, famName, famID, nPts, nConn)

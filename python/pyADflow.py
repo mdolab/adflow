@@ -271,6 +271,31 @@ class ADFLOW(AeroSolver):
 
         self.coords0 = self.getSurfaceCoordinates(self.allFamilies)
 
+    def setMesh(self, mesh):
+        """
+        Set the mesh object to the aero_solver to do geometric deformations
+
+        Parameters
+        ----------
+        mesh : MBMesh or USMesh object
+            The mesh object for doing the warping
+        """
+
+        # Store a reference to the mesh
+        self.mesh = mesh
+
+        # Setup External Warping with volume indices
+        meshInd = self.getSolverMeshIndices()
+        self.mesh.setExternalMeshIndices(meshInd)
+
+        # Set the surface the user has supplied:
+
+        conn, faceSizes = self.getSurfaceConnectivity(self.meshFamilyGroup, 
+                                                      includeZipper=False)
+
+        pts = self.getSurfaceCoordinates(self.meshFamilyGroup, includeZipper=False)
+
+        self.mesh.setSurfaceDefinition(pts, conn, faceSizes)
 
     def getSolverMeshIndices(self):
         '''
@@ -1172,7 +1197,7 @@ class ADFLOW(AeroSolver):
 
         # Generate initial point
         Xn = numpy.array([alpha0, trim0])
-        Fn, sol = Func(Xn, CLStar)
+        Fn = Func(Xn, CLStar)
 
         # Next we generate the initial jacobian if we haven't been
         # provided with one.
@@ -1644,7 +1669,6 @@ class ADFLOW(AeroSolver):
             # number of nodes we've "used up" so far
             nodeOffset = 0
             for iProc in xrange(len(conn)):
-                conn[iProc] += 1
                 for i in xrange(len(conn[iProc])):
                     f.write('%d %d %d %d\n'%(
                         conn[iProc][i,0]+nodeOffset,
@@ -1653,6 +1677,103 @@ class ADFLOW(AeroSolver):
                         conn[iProc][i,3]+nodeOffset))
 
                 nodeOffset += len(pts[iProc])
+            f.close()
+        # end if (root proc )
+
+    def writeSurfaceSensitivity(self, fileName, func, groupName=None):
+        """Write a tecplot file of the surface sensitivty. It is up to the use
+        to make sure the adjoint already computed before calling this
+        function. 
+        
+        Parameters
+        ----------
+        fileName : str
+           String for output filename. Should end in .dat for tecplot. 
+        func : str
+           ADFlow objective string for the objective to write. 
+        groupName : str
+           Family group to use. Default to all walls if not given (None)
+        """
+
+        if groupName is None:
+            groupName = self.allWallsGroup
+
+        func = func.lower()
+        # Make sure that we have the adjoint we need:
+        if func in self.curAP.adflowData.adjoints:
+            # These are the reverse mode seeds
+            psi = -self.getAdjoint(func)
+            funcsBar = {func:1.0}
+
+            # Compute everything and update into the dictionary
+            dXs = self.computeJacobianVectorProductBwd(
+                resBar=psi, funcsBar=funcsBar, xSDeriv=True)
+        else:
+            raise Error("The adjoint for '%s' is not computed for the current "
+                        "aeroProblem. cannot write surface sensitivity."%(func))
+
+        # Be careful with conn...need to increment by the offset from
+        # the points.
+        pts = self.getSurfacePoints(groupName, includeZipper=False)
+
+        ptSizes = self.comm.allgather(len(pts))
+        offsets = numpy.zeros(len(ptSizes), 'intc')
+        offsets[1:] = numpy.cumsum(ptSizes)[:-1]
+
+        # Now we need to gather the data to the root proc
+        pts = self.comm.gather(pts)
+        dXs = self.comm.gather(dXs)
+        conn, faceSize = self.getSurfaceConnectivity(groupName, includeZipper=False)
+        conn = self.comm.gather(conn + offsets[self.comm.rank])
+
+        # Write out Data only on root proc:
+        if self.myid == 0:
+         
+            # Make numpy arrays of all data
+            pts = numpy.vstack(pts)
+            dXs = numpy.vstack(dXs)
+            conn = numpy.vstack(conn)
+            
+            # Next point reduce all nodes:
+            uniquePts, link, nUnique = self.adflow.utils.pointreduce(pts.T, 1e-12)
+
+            # Insert existing nodes into the new array. *Accumulate* dXs. 
+            newdXs = numpy.zeros((nUnique, 3))
+            newPts = numpy.zeros((nUnique, 3))
+            newConn = numpy.zeros_like(conn)
+            for i in range(len(pts)):
+                newPts[link[i]-1] = pts[i]
+                newdXs[link[i]-1] += dXs[i]
+
+            # Update conn. Since link is 1 based, we get 1 based order
+            # which is what we need for tecplot
+            for i in range(len(conn)):
+                for j in range(4):
+                    newConn[i, j] = link[conn[i, j]]
+
+            pts = newPts
+            dXs = newdXs
+            conn = newConn
+
+            # Open output file
+            f = open(fileName, 'w')
+
+            # Write the variable headers
+            f.write('Variables = CoordinateX CoordinateY CoordinateZ dX dY dZ\n')
+            f.write('ZONE Nodes=%d Elements=%d Zonetype=FEQuadrilateral \
+            Datapacking=Point\n'%(len(pts), len(conn)))
+
+            # Now write out all the Nodes and Forces (or tractions)
+            for i in range(len(pts)):
+                f.write('%15.8g %15.8g %15.8g '% (
+                    pts[i, 0], pts[i, 1], pts[i, 2]))
+                f.write('%15.8g %15.8g %15.8g\n'% (
+                    dXs[i, 0], dXs[i, 1], dXs[i, 2]))
+
+            for i in range(len(conn)):
+                f.write('%d %d %d %d\n'%(
+                    conn[i,0], conn[i,1], conn[i,2], conn[i,3]))
+
             f.close()
         # end if (root proc )
 
@@ -1766,9 +1887,9 @@ class ADFLOW(AeroSolver):
     #   i.e. an Aerostructural solver
     # =========================================================================
 
-    def getSurfaceCoordinates(self, groupName=None):
+    def getSurfaceCoordinates(self, groupName=None, includeZipper=True):
         # This is an alias for getSurfacePoints
-        return self.getSurfacePoints(groupName)
+        return self.getSurfacePoints(groupName, includeZipper)
 
     def getPointSetName(self,apName):
         """
@@ -1807,7 +1928,8 @@ class ADFLOW(AeroSolver):
         # the groupName is a subset, those values will remain unchanged.
         meshSurfCoords = self.getSurfaceCoordinates(self.meshFamilyGroup)
         meshSurfCoords = self.mapVector(coordinates, groupName,
-                                        self.meshFamilyGroup, meshSurfCoords)
+                                        self.meshFamilyGroup, meshSurfCoords, 
+                                        includeZipper=False)
         self.mesh.setSurfaceCoordinates(meshSurfCoords)
 
     def setAeroProblem(self, aeroProblem, releaseAdjointMemory=True):
@@ -1862,7 +1984,7 @@ class ADFLOW(AeroSolver):
             # DVGeo appeared and we have not embedded points!
             if not ptSetName in self.DVGeo.points:
                 coords0 = self.mapVector(self.coords0, self.allFamilies,
-                                         self.designFamilyGroup)
+                                         self.designFamilyGroup, includeZipper=False)
                 self.DVGeo.addPointSet(coords0, ptSetName)
 
             # Check if our point-set is up to date:
@@ -2236,7 +2358,7 @@ class ADFLOW(AeroSolver):
         fullTemp = self.mapVector(temperature, groupName, self.allWallsGroup, fullTemp)
         self.adflow.settnswall(fullTemp, TS+1)
         
-    def getSurfacePoints(self, groupName=None, TS=0):
+    def getSurfacePoints(self, groupName=None, includeZipper=True, TS=0):
 
         """Return the coordinates for the surfaces defined by groupName.
 
@@ -2256,16 +2378,15 @@ class ADFLOW(AeroSolver):
             groupName = self.allWallsGroup
 
         # Get the required size
-        npts, ncell = self._getSurfaceSize(groupName)
+        npts, ncell = self._getSurfaceSize(groupName, includeZipper)
         pts = numpy.zeros((npts, 3), self.dtype)
         famList = self._getFamilyList(groupName)
-
         if npts > 0:
-            self.adflow.surfaceutils.getsurfacepoints(pts.T, TS+1, famList)
+            self.adflow.surfaceutils.getsurfacepoints(pts.T, TS+1, famList, includeZipper)
 
         return pts
 
-    def getSurfaceConnectivity(self, groupName=None, useBlanking=True):
+    def getSurfaceConnectivity(self, groupName=None, includeZipper=True):
         """Return the connectivity dinates at which the forces (or tractions) are
         defined. This is the complement of getForces() which returns
         the forces at the locations returned in this routine.
@@ -2287,9 +2408,9 @@ class ADFLOW(AeroSolver):
 
         # Set the list of surfaces this family requires
         famList = self._getFamilyList(groupName)
-        npts, ncell = self._getSurfaceSize(groupName)
+        npts, ncell = self._getSurfaceSize(groupName, includeZipper)
         conn =  numpy.zeros((ncell, 4), dtype='intc')
-        self.adflow.surfaceutils.getsurfaceconnectivity(numpy.ravel(conn), famList, useBlanking)
+        self.adflow.surfaceutils.getsurfaceconnectivity(numpy.ravel(conn), famList, includeZipper)
 
         faceSizes = 4*numpy.ones(len(conn), 'intc')
 
@@ -2748,7 +2869,8 @@ class ADFLOW(AeroSolver):
         if xSDot is None:
             xsdot = numpy.zeros_like(self.coords0)
             xsdot = self.mapVector(xsdot, self.allFamilies,
-                                   self.designFamilyGroup)
+                                   self.designFamilyGroup, 
+                                   includeZipper=False)
         else:
             xsdot = xSDot
             useSpatial = True
@@ -2966,7 +3088,7 @@ class ADFLOW(AeroSolver):
                 self.mesh.warpDeriv(xvbar)
                 xsbar = self.mesh.getdXs()
                 xsbar = self.mapVector(xsbar, self.meshFamilyGroup,
-                                       self.designFamilyGroup)
+                                       self.designFamilyGroup, includeZipper=False)
 
                 if xSDeriv:
                     returns.append(xsbar)
@@ -3011,7 +3133,7 @@ class ADFLOW(AeroSolver):
         # Single return (most frequent) is 'clean', otherwise a tuple.
         return tuple(returns) if len(returns) > 1 else returns[0]
 
-    def mapVector(self, vec1, groupName1, groupName2, vec2=None):
+    def mapVector(self, vec1, groupName1, groupName2, vec2=None, includeZipper=True):
         """This is the main workhorse routine of everything that deals with
         families in ADflow. The purpose of this routine is to convert a
         vector 'vec1' (of size Nx3) that was evaluated with
@@ -3074,13 +3196,13 @@ class ADFLOW(AeroSolver):
             return vec1
 
         if vec2 is None:
-            npts, ncell = self._getSurfaceSize(groupName2)
+            npts, ncell = self._getSurfaceSize(groupName2, includeZipper)
             vec2 = numpy.zeros((npts, 3), self.dtype)
 
         famList1 = self.families[groupName1]
         famList2 = self.families[groupName2]
 
-        self.adflow.surfaceutils.mapvector(vec1.T, famList1, vec2.T, famList2)
+        self.adflow.surfaceutils.mapvector(vec1.T, famList1, vec2.T, famList2, includeZipper)
         
         return vec2
 
@@ -3147,7 +3269,7 @@ class ADFLOW(AeroSolver):
             Seed to use for random number. Only significant on root processor
 
         """
-        nPts, nCell = self._getSurfaceSize(self.allWallsGroup)
+        nPts, nCell = self._getSurfaceSize(self.allWallsGroup, includeZipper=False)
         xRand = self.getSpatialPerturbation(seed)
         surfRand = numpy.zeros((nPts, 3))
         famList = self._getFamilyList(self.allWallsGroup)
@@ -3322,7 +3444,7 @@ class ADFLOW(AeroSolver):
         rhoRes, totalRRes = self.adflow.nksolver.getfreestreamresidual()
         return totalRRes
 
-    def _getSurfaceSize(self, groupName, useBlanking=True):
+    def _getSurfaceSize(self, groupName, includeZipper=True):
         """Internal routine to return the size of a particular surface. This
         does *NOT* set the actual family group"""
         if groupName is None:
@@ -3333,7 +3455,7 @@ class ADFLOW(AeroSolver):
                         " as a combination of families"%groupName)
 
         [nPts, nCells] = self.adflow.surfaceutils.getsurfacesize(
-            self.families[groupName], useBlanking)
+            self.families[groupName], includeZipper)
         return nPts, nCells
 
     def setOption(self, name, value):
