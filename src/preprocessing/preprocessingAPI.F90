@@ -2725,7 +2725,7 @@ contains
     use inputTimeSpectral
     use checkVolBlock
     use inputIteration
-    use utils, only : setPointers, terminate
+    use utils, only : setPointers, terminate, returnFail
     implicit none
     !
     !      Subroutine arguments.
