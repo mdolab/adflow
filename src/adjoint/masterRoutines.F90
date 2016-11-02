@@ -235,7 +235,7 @@ contains
     use solverutils_d, only : timeStep_Block_d
     use turbbcroutines_d, only : applyAllTurbBCthisblock_d,  bcTurbTreatment_d
     use initializeflow_d, only : referenceState_d
-    use surfaceIntegrations_d, only : wallIntegrationFace_d
+    use surfaceIntegrations_d, only : wallIntegrationFace_d, flowIntegrationFace_d
     use sorting, only : bsearchIntegers
     use adjointExtra_d, only : xhalo_block_d, volume_block_d, metric_BLock_d, boundarynormals_d
     use adjointextra_d, only : getcostfunctions_D, resscale_D, sumdwandfw_d
@@ -469,6 +469,13 @@ contains
                 isWall: if( isWallType(BCType(mm))) then 
                    call wallIntegrationFace_d(localVal, localVald, mm)
                 end if isWall
+
+                isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
+                     BCType(mm) == SubsonicOutflow .or. &
+                     BCType(mm) == SupersonicInflow .or. &
+                     BCType(mm) == SupersonicOutflow) then 
+                   call flowIntegrationFace_d(localVal, localVald, mm)
+                end if isInflowOutflow
              end if famInclude
           end do
        end do
@@ -550,7 +557,7 @@ contains
     use solverutils_b, only : timeStep_Block_b
     use turbbcroutines_b, only : applyAllTurbBCthisblock_b,  bcTurbTreatment_b
     use initializeflow_b, only : referenceState_b
-    use surfaceIntegrations_b, only : wallIntegrationFace_b
+    use surfaceIntegrations_b, only : wallIntegrationFace_b, flowIntegrationFace_b
     use wallDistance_b, only : updateWallDistancesQuickly_b
     use sa_b, only : saSource_b, saViscous_b, saResScale_b, qq
     use turbutils_b, only : turbAdvection_b, computeEddyViscosity_b
@@ -667,9 +674,17 @@ contains
                 ! Set a bunch of pointers depending on the face id to make
                 ! a generic treatment possible. 
                 call setBCPointers_d(mm, .True.)
+
                 isWall: if( isWallType(BCType(mm))) then 
                    call wallIntegrationFace_b(localVal, localVald, mm)
                 end if isWall
+
+                isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
+                     BCType(mm) == SubsonicOutflow .or. &
+                     BCType(mm) == SupersonicInflow .or. &
+                     BCType(mm) == SupersonicOutflow) then 
+                   call flowIntegrationFace_b(localVal, localVald, mm)
+                end if isInflowOutflow
              end if famInclude
           end do
 

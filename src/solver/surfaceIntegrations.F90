@@ -85,15 +85,12 @@ contains
              call wallIntegrationFace(localvalues, mm)
           end if isWall
 
-#ifndef USE_TAPENADE
           isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
                BCType(mm) == SubsonicOutflow .or. &
                BCType(mm) == SupersonicInflow .or. &
                BCType(mm) == SupersonicOutflow) then 
              call flowIntegrationFace(localValues, mm)
           end if isInflowOutflow
-#endif
-
        end if famInclude
     end do bocos
 
@@ -106,8 +103,8 @@ contains
     use blockPointers, only : BCFaceID, BCData, addGridVelocities
     use costFunctions, onlY : nLocalValues, iMassFlow, iMassPtot, iMassTtot, iMassPs
     use sorting, only : bsearchIntegers
-    use flowVarRefState, only : pRef, rhoRef, pRef, timeRef, LRef, TRef
-    use inputPhysics, only : pointREf
+    use flowVarRefState, only : pRef, rhoRef, timeRef, LRef, TRef, RGas
+    use inputPhysics, only : pointRef
     use flowUtils, only : computePtot, computeTtot
     use BCPointers, only : ssi, sFace, ww1, ww2, pp1, pp2, xx
     implicit none
