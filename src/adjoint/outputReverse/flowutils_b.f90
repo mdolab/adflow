@@ -10,6 +10,64 @@ module flowutils_b
 ! ----------------------------------------------------------------------
 
 contains
+!  differentiation of computettot in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: rgas p u v w ttot rho
+!   with respect to varying inputs: rgas p u v w ttot rho
+  subroutine computettot_b(rho, rhod, u, ud, v, vd, w, wd, p, pd, ttot, &
+&   ttotd)
+!
+!       computettot computes the total temperature for the given       
+!       pressures, densities and velocities.                           
+!
+    use constants
+    use inputphysics, only : cpmodel
+    use flowvarrefstate, only : rgas, rgasd, gammainf
+    use utils_b, only : terminate
+    implicit none
+!
+!      subroutine arguments.
+!
+    real(kind=realtype), intent(in) :: rho, p, u, v, w
+    real(kind=realtype) :: rhod, pd, ud, vd, wd
+    real(kind=realtype) :: ttot
+    real(kind=realtype) :: ttotd
+!
+!      local variables.
+!
+    integer(kind=inttype) :: i
+    real(kind=realtype) :: govgm1, t, kin
+    real(kind=realtype) :: td, kind0
+    real(kind=realtype) :: temp0
+    real(kind=realtype) :: tempd
+    real(kind=realtype) :: tempd2
+    real(kind=realtype) :: tempd1
+    real(kind=realtype) :: tempd0
+    real(kind=realtype) :: temp
+! determine the cp model used.
+    select case  (cpmodel) 
+    case (cpconstant) 
+! constant cp and thus constant gamma. the well-known
+! formula is valid.
+      govgm1 = gammainf/(gammainf-one)
+      t = p/(rho*rgas)
+      kin = half*(u*u+v*v+w*w)
+      temp0 = govgm1*p
+      temp = rho*kin/temp0
+      tempd = t*ttotd/temp0
+      td = (one+temp)*ttotd
+      kind0 = rho*tempd
+      tempd2 = half*kind0
+      ud = ud + 2*u*tempd2
+      vd = vd + 2*v*tempd2
+      wd = wd + 2*w*tempd2
+      tempd1 = td/(rho*rgas)
+      pd = pd + tempd1 - temp*govgm1*tempd
+      tempd0 = -(p*tempd1/(rho*rgas))
+      rhod = rhod + rgas*tempd0 + kin*tempd
+      rgasd = rgasd + rho*tempd0
+      ttotd = 0.0_8
+    end select
+  end subroutine computettot_b
   subroutine computettot(rho, u, v, w, p, ttot)
 !
 !       computettot computes the total temperature for the given       
@@ -78,6 +136,67 @@ contains
       end do
     end select
   end subroutine computegamma
+!  differentiation of computeptot in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: p u v w ptot rho
+!   with respect to varying inputs: p u v w ptot rho
+  subroutine computeptot_b(rho, rhod, u, ud, v, vd, w, wd, p, pd, ptot, &
+&   ptotd)
+!
+!       computeptot computes the total pressure for the given          
+!       pressures, densities and velocities.                           
+!
+    use constants
+    use cpcurvefits
+    use flowvarrefstate, only : tref, trefd, rgas, rgasd, gammainf
+    use inputphysics, only : cpmodel
+    implicit none
+    real(kind=realtype), intent(in) :: rho, p, u, v, w
+    real(kind=realtype) :: rhod, pd, ud, vd, wd
+    real(kind=realtype) :: ptot
+    real(kind=realtype) :: ptotd
+!
+!      local parameters.
+!
+    real(kind=realtype), parameter :: dtstop=0.01_realtype
+!
+!      local variables.
+!
+    integer(kind=inttype) :: i, ii, mm, nn, nnt, start
+    real(kind=realtype) :: govgm1, kin
+    real(kind=realtype) :: kind0
+    real(kind=realtype) :: t, t2, tt, dt, h, htot, cp, scale, alp
+    real(kind=realtype) :: intcport, intcportt, intcporttt
+    real(kind=realtype) :: temp0
+    real(kind=realtype) :: tempd
+    real(kind=realtype) :: tempd0
+    real(kind=realtype) :: temp
+!===============================================================
+!
+! determine the cp model used.
+    select case  (cpmodel) 
+    case (cpconstant) 
+! constant cp and thus constant gamma. the well-known
+! formula is valid.
+      govgm1 = gammainf/(gammainf-one)
+      kin = half*(u*u+v*v+w*w)
+      temp0 = govgm1*p
+      temp = rho*kin/temp0
+      if (one + temp .le. 0.0_8 .and. (govgm1 .eq. 0.0_8 .or. govgm1 &
+&         .ne. int(govgm1))) then
+        tempd = 0.0
+      else
+        tempd = govgm1*(one+temp)**(govgm1-1)*p*ptotd/temp0
+      end if
+      pd = pd + (one+temp)**govgm1*ptotd - temp*govgm1*tempd
+      rhod = rhod + kin*tempd
+      kind0 = rho*tempd
+      tempd0 = half*kind0
+      ud = ud + 2*u*tempd0
+      vd = vd + 2*v*tempd0
+      wd = wd + 2*w*tempd0
+      ptotd = 0.0_8
+    end select
+  end subroutine computeptot_b
   subroutine computeptot(rho, u, v, w, p, ptot)
 !
 !       computeptot computes the total pressure for the given          

@@ -75,6 +75,11 @@ bocos:do mm=1,nbocos
         call setbcpointers(mm, .true.)
         if (iswalltype(bctype(mm))) call wallintegrationface(localvalues&
 &                                                      , mm)
+        if (((bctype(mm) .eq. subsonicinflow .or. bctype(mm) .eq. &
+&           subsonicoutflow) .or. bctype(mm) .eq. supersonicinflow) .or.&
+&           bctype(mm) .eq. supersonicoutflow) call flowintegrationface(&
+&                                                            localvalues&
+&                                                                 , mm)
       end if
     end do bocos
   end subroutine integratesurfaces
@@ -85,8 +90,8 @@ bocos:do mm=1,nbocos
     use costfunctions, only : nlocalvalues, imassflow, imassptot, &
 &   imassttot, imassps
     use sorting, only : bsearchintegers
-    use flowvarrefstate, only : pref, rhoref, pref, timeref, lref, &
-&   tref
+    use flowvarrefstate, only : pref, rhoref, timeref, lref, tref, &
+&   rgas
     use inputphysics, only : pointref
     use flowutils_fast_b, only : computeptot, computettot
     use bcpointers_fast_b, only : ssi, sface, ww1, ww2, pp1, pp2, xx
