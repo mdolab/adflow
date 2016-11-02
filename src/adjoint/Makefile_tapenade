@@ -108,8 +108,8 @@ BCRoutines%bcSymm2ndHalo(ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3, bcData%norm
 BCRoutines%bcNSWallAdiabatic(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) > \
                             (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
 \
-BCRoutines%bcNSWallIsothermal(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, rgas) > \
-                             (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, rgas) \
+BCRoutines%bcNSWallIsothermal(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, rGas) > \
+                             (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, rGas) \
 \
 BCRoutines%bcFarField(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, pInfCorr, wInf, bcData%norm) > \
                      (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, pInfCorr, wInf, bcData%norm) \
@@ -174,6 +174,9 @@ adjointExtra%resScale(dw) > (dw) \
 \
 surfaceIntegrations%wallIntegrationFace(Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues BCData%Fp bcData%Fv BCData%area) > \
                                        (Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues BCdata%Fp bcData%Fv BCData%area localValues)\
+\
+surfaceIntegrations%flowIntegrationFace(Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues) > \
+                                       (Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues)\
 \
 adjointExtra%getCostFunctions(globalVals, liftDirection, dragDirection, pRef, rhoRef, tRef, machCoef) > \
 	                     (funcValues) \
