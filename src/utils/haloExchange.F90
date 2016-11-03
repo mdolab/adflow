@@ -3628,7 +3628,7 @@ contains
     ! Compute the derivatives of the nodal tractions. The will
     !accumulate the seeds onto bcDatad%Fv, bcDatad%Fv and bcDatad%area
 
-    !call computeNodalTractions_b(sps)
+    call computeNodalTractions_b(sps)
 
   end subroutine wallIntegrationZipperComm_b
 end module haloExchange
