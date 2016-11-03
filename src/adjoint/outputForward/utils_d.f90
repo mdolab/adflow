@@ -1421,6 +1421,28 @@ contains
       coeftime(nn) = zero
     end do
   end subroutine setcoeftimeintegrator
+!  differentiation of mynorm2 in forward (tangent) mode (with options i4 dr8 r8):
+!   variations   of useful results: mynorm2
+!   with respect to varying inputs: x
+  function mynorm2_d(x, xd, mynorm2)
+    use constants
+    implicit none
+    real(kind=realtype), dimension(3), intent(in) :: x
+    real(kind=realtype), dimension(3), intent(in) :: xd
+    real(kind=realtype) :: mynorm2
+    real(kind=realtype) :: mynorm2_d
+    intrinsic sqrt
+    real(kind=realtype) :: arg1
+    real(kind=realtype) :: arg1d
+    arg1d = 2*x(1)*xd(1) + 2*x(2)*xd(2) + 2*x(3)*xd(3)
+    arg1 = x(1)**2 + x(2)**2 + x(3)**2
+    if (arg1 .eq. 0.0_8) then
+      mynorm2_d = 0.0_8
+    else
+      mynorm2_d = arg1d/(2.0*sqrt(arg1))
+    end if
+    mynorm2 = sqrt(arg1)
+  end function mynorm2_d
   function mynorm2(x)
     use constants
     implicit none
@@ -1440,4 +1462,34 @@ contains
     if ((btype .eq. nswalladiabatic .or. btype .eq. nswallisothermal) &
 &       .or. btype .eq. eulerwall) iswalltype = .true.
   end function iswalltype
+!  differentiation of cross_prod in forward (tangent) mode (with options i4 dr8 r8):
+!   variations   of useful results: c
+!   with respect to varying inputs: a b c
+  subroutine cross_prod_d(a, ad, b, bd, c, cd)
+    use precision
+    implicit none
+! inputs
+    real(kind=realtype), dimension(3), intent(in) :: a, b
+    real(kind=realtype), dimension(3), intent(in) :: ad, bd
+! outputs
+    real(kind=realtype), dimension(3), intent(out) :: c
+    real(kind=realtype), dimension(3), intent(out) :: cd
+    cd(1) = ad(2)*b(3) + a(2)*bd(3) - ad(3)*b(2) - a(3)*bd(2)
+    c(1) = a(2)*b(3) - a(3)*b(2)
+    cd(2) = ad(3)*b(1) + a(3)*bd(1) - ad(1)*b(3) - a(1)*bd(3)
+    c(2) = a(3)*b(1) - a(1)*b(3)
+    cd(3) = ad(1)*b(2) + a(1)*bd(2) - ad(2)*b(1) - a(2)*bd(1)
+    c(3) = a(1)*b(2) - a(2)*b(1)
+  end subroutine cross_prod_d
+  subroutine cross_prod(a, b, c)
+    use precision
+    implicit none
+! inputs
+    real(kind=realtype), dimension(3), intent(in) :: a, b
+! outputs
+    real(kind=realtype), dimension(3), intent(out) :: c
+    c(1) = a(2)*b(3) - a(3)*b(2)
+    c(2) = a(3)*b(1) - a(1)*b(3)
+    c(3) = a(1)*b(2) - a(2)*b(1)
+  end subroutine cross_prod
 end module utils_d

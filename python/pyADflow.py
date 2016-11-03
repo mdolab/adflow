@@ -2279,7 +2279,7 @@ class ADFLOW(AeroSolver):
         npts, ncell = self._getSurfaceSize(self.allWallsGroup)
 
         forces = numpy.zeros((npts, 3), self.dtype)
-        self.adflow.getforces(numpy.ravel(forces), TS+1)
+        self.adflow.getforces(forces.T, TS+1)
         if groupName is None:
             groupName = self.allWallsGroup
 

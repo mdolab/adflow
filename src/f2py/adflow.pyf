@@ -550,12 +550,12 @@ python module libadflow
             integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
         end subroutine writesol
  
-        subroutine getforces(forces,npts,sps_in) ! in :test:getForces.F90
-         real(kind=realtype) dimension(3 * npts),intent(inout) :: forces
-         integer(kind=inttype), optional,intent(in),check((len(forces))/(3)>=npts),depend(forces) :: npts=(len(forces))/(3)
-         integer(kind=inttype) intent(in) :: sps_in
-       end subroutine getforces
-
+        subroutine getforces(forces,npts,sps) ! in :test:getForces.F90
+          real(kind=realtype) dimension(3,npts),intent(inout) :: forces
+          integer(kind=inttype), optional,intent(in),check(shape(forces,1)==npts),depend(forces) :: npts=shape(forces,1)
+          integer(kind=inttype) intent(in) :: sps
+        end subroutine getforces
+        
        subroutine getheatflux(hflux,npts,sps_in) ! in :test:getForces.F90
          real(kind=realtype) dimension(npts),intent(inout) :: hflux
          integer(kind=inttype), optional,intent(in),depend(hflux) :: npts=len(hflux)

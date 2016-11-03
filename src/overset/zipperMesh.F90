@@ -562,7 +562,7 @@ contains
     use blockPointers, only : nDom, BCData, nBocos, BCType
     use communication, only : adflow_comm_world, myid
     use overset, onlY : clusterAreas, nClusters, clusters, cumDomProc
-    use utils, only : setPointers, EChk, setBCPointers
+    use utils, only : setPointers, EChk, setBCPointers, cross_prod
     use BCPointers, only : xx
     use sorting, only : bsearchIntegers
     implicit none

@@ -659,7 +659,7 @@ module stringOps
 
     use constants
     use kdtree2_module
-    use utils, only : myNorm2
+    use utils, only : myNorm2, cross_prod
     implicit none
 
     ! Input/Output
@@ -764,7 +764,7 @@ module stringOps
   subroutine crossZip(str1, N1, N2, str2, N3, N4)
 
     use constants
-    use utils, only : myNorm2
+    use utils, only : myNorm2, cross_prod
 
     implicit none
 
@@ -1225,7 +1225,7 @@ module stringOps
     function triArea(pt1, pt2, pt3)
 
       use constants
-      use utils, only : myNorm2
+      use utils, only : myNorm2, cross_prod
       implicit none
 
       ! Input/Output
@@ -1924,7 +1924,7 @@ module stringOps
 
     use constants
     use kdtree2_module
-    use utils, only : mynorm2
+    use utils, only : mynorm2, cross_prod
 
     implicit none
 
@@ -2026,7 +2026,7 @@ module stringOps
 
     ! Computes area sum of all triangles belonging to object master
     use constants
-    use utils, only : mynorm2
+    use utils, only : mynorm2, cross_prod
     implicit none
 
     ! Input parameters
@@ -2054,7 +2054,7 @@ module stringOps
   function triOverlap(pt1, pt2, pt3, str, i1, i2)
 
     use constants
-    use utils, only : mynorm2
+    use utils, only : mynorm2, cross_prod
     implicit none
 
     ! Input/Output
@@ -2728,6 +2728,7 @@ module stringOps
   subroutine pointInTriangle(x1, x2, x3, pt, inTri) 
 
     use constants
+    use utils, only : cross_prod
     implicit none
     real(kind=realType), dimension(3), intent(in) :: x1, x2, x3, pt
     logical, intent(out) :: inTri
@@ -2757,6 +2758,7 @@ module stringOps
   function positiveTriArea(p1, p2, p3, norm)
 
     use constants
+    use utils, only : cross_prod
     implicit none
     real(kind=realType), intent(in), dimension(3) :: p1, p2, p3, norm
     real(kind=realType), dimension(3) :: n
@@ -2773,6 +2775,7 @@ module stringOps
   subroutine getNodeInfo(str, j, checkLeft, checkRight, concave, xj, xjm1, xjp1, normj)
 
     use constants
+    use utils, only : cross_prod
     implicit none
 
     type(oversetString) :: str
@@ -2866,7 +2869,7 @@ module stringOps
   function overlappedEdges(str, j, pt)
 
     use constants
-    use utils, only : mynorm2
+    use utils, only : mynorm2, cross_prod
 
     implicit none
 
@@ -2959,7 +2962,7 @@ module stringOps
   function overlappedEdges2(str, pt1, norm, pt2)
 
     use constants
-    use utils, only : mynorm2
+    use utils, only : mynorm2, cross_prod
     implicit none
 
     ! Input/output

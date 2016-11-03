@@ -5,10 +5,11 @@ module overset
   use block, only : fringeType
   use kdtree2_module, only : kdtree2
   implicit none
+#ifndef USE_TAPENADE
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
-
+#endif
   ! Helper dataType for communicated overset grid points. This data
   ! structure mirrros the blockType structure in block.F90, but only
   ! contains minimum amount of information required for computing
@@ -354,9 +355,10 @@ module overset
      integer(kind=intType), dimension(:, :), allocatable :: conn
      integer(kind=intType), dimension(:), allocatable :: fam, indices
      logical :: allocated=.False.
+#ifndef USE_TAPENADE    
      VecScatter :: scatter
      Vec :: localVal
-     
+#endif
   end type zipperMesh
 
 

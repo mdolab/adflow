@@ -10,7 +10,7 @@ contains
     use overset, only : oversetString, oversetWall, nClusters, clusters, cumDomProc
     use stringOps!, only : nullifyString, deallocateString, setStringPointers, &
     !         reduceGapString
-    use utils, only : setPointers, EChk, myNorm2
+    use utils, only : setPointers, EChk, myNorm2, cross_prod
     use oversetPackingRoutines, only : getWallSize
     use sorting, only : bsearchIntegers
     implicit none
