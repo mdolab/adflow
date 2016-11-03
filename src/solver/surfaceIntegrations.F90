@@ -889,6 +889,10 @@ contains
 
     ! Determine if we have a wall Zipper:
     if (zipperMeshes(iBCGroupWalls)%allocated) then 
+
+       ! Allocate space necessary to store variables. Only non-zero on
+       ! root proc. 
+       allocate(vars(size(zipperMeshes(iBCGroupWalls)%indices), 9))
        
        ! Gather up the required variables in "vars" on the root
        ! proc. This routine is differientated by hand. 
@@ -903,6 +907,10 @@ contains
 
     ! Determine if we have a flowthrough Zipper:
     if (zipperMeshes(iBCGroupInflowOutflow)%allocated) then 
+
+       ! Allocate space necessary to store variables. Only non-zero on
+       ! root proc. 
+       allocate(vars(size(zipperMeshes(iBCGroupInflowOutflow)%indices), 9))
        
        ! Gather up the required variables in "vars" on the root
        ! proc. This routine is differientated by hand. 
@@ -916,99 +924,119 @@ contains
     end if
   end subroutine integrateZippers
 
-  ! subroutine integrateZippers_d(localValues, localValuesd, famList, sps)
+  subroutine integrateZippers_d(localValues, localValuesd, famList, sps)
 
-  !   ! Forward mode linearization of the zipper integration. 
+    ! Forward mode linearization of the zipper integration. 
 
-  !   use constants
-  !   use costFunctions, only : nLocalValues
-  !   use overset, only : zipperMeshes
-  !   use haloExchange, only : wallIntegrationZipperComm_d, flowIntegrationZipperComm_d
-  !   implicit none
+    use constants
+    use costFunctions, only : nLocalValues
+    use overset, only : zipperMeshes
+    use haloExchange, only : wallIntegrationZipperComm_d, flowIntegrationZipperComm_d
+    use surfaceIntegrations_d, only : flowIntegrationZipper_d, wallIntegrationZipper_d
+    implicit none
 
-  !   ! Input Variables
-  !   real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
-  !   integer(kind=intType), dimension(:), intent(in) :: famList
-  !   integer(kind=intType), intent(in) :: sps
-  !   real(kind=realType), dimension(:, :), allocatable :: vars, varsd
+    ! Input Variables
+    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
+    integer(kind=intType), dimension(:), intent(in) :: famList
+    integer(kind=intType), intent(in) :: sps
+    real(kind=realType), dimension(:, :), allocatable :: vars, varsd
 
-  !   ! Determine if we have a wall Zipper:
-  !   if (zipperMeshes(iBCGroupWalls)%allocated) then 
+    ! Determine if we have a wall Zipper:
+    if (zipperMeshes(iBCGroupWalls)%allocated) then 
+   
+       ! Allocate space necessary to store variables. Only non-zero on
+       ! root proc. 
+       allocate(vars(size(zipperMeshes(iBCGroupInflowOutflow)%indices), 9))
+       allocate(varsd(size(zipperMeshes(iBCGroupInflowOutflow)%indices), 9))
+   
+       ! Gather up the required variables in "vars" on the root
+       ! proc. This routine is differientated by hand. 
+       call wallIntegrationZipperComm_d(vars, varsd, sps)
+
+       ! Perform actual integration. Tapenade ADs this routine.
+       call wallIntegrationZipper_d(vars, varsd, localValues, localValuesd, famList, sps)
+
+       ! Cleanup vars
+       deallocate(vars, varsd)
+    end if
+
+    ! Determine if we have a flowthrough Zipper:
+    if (zipperMeshes(iBCGroupInflowOutflow)%allocated) then 
+
+       ! Allocate space necessary to store variables. Only non-zero on
+       ! root proc. 
+       allocate(vars(size(zipperMeshes(iBCGroupInflowOutflow)%indices), 9))
+       allocate(varsd(size(zipperMeshes(iBCGroupInflowOutflow)%indices), 9))
+  
+       ! Gather up the required variables in "vars" on the root
+       ! proc. This routine is differientated by hand. 
+       call flowIntegrationZipperComm_d(vars, varsd, sps)
+
+       ! Perform actual integration. Tapenade ADs this routine.
+       call flowIntegrationZipper_d(vars, varsd, localValues, localValuesd, famList, sps)
+
+       ! Cleanup vars
+       deallocate(vars, varsd)
+    end if
+  end subroutine integrateZippers_d
+
+  subroutine integrateZippers_b(localValues, localValuesd, famList, sps)
+
+    ! Reverse mode linearization of the zipper integration. 
+
+    use constants
+    use costFunctions, only : nLocalValues
+    use overset, only : zipperMeshes
+    use haloExchange, only : wallIntegrationZipperComm_b, flowIntegrationZipperComm_b
+    use surfaceIntegrations_b, only : wallIntegrationZipper_b, flowIntegrationZipper_b
+    implicit none
+
+    ! Input Variables
+    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
+    integer(kind=intType), dimension(:), intent(in) :: famList
+    integer(kind=intType), intent(in) :: sps
+    real(kind=realType), dimension(:, :), allocatable :: vars, varsd
+
+    ! Determine if we have a wall Zipper:
+    if (zipperMeshes(iBCGroupWalls)%allocated) then 
+  
+       ! Allocate space necessary to store variables. Only non-zero on
+       ! root proc. 
+       allocate(vars(size(zipperMeshes(iBCGroupInflowOutflow)%indices), 9))
+       allocate(varsd(size(zipperMeshes(iBCGroupInflowOutflow)%indices), 9))
+  
+       ! Perform actual integration. Tapenade ADs this routine.
+       call wallIntegrationZipper_b(vars, varsd, localValues, localValuesd, famList, sps)
        
-  !      ! Gather up the required variables in "vars" on the root
-  !      ! proc. This routine is differientated by hand. 
-  !      call wallIntegrationZipperComm_d(vars, varsd, sps)
+       ! Scatter (becuase we are reverse) the values from the root
+       ! back out to all necessary procs.  This routine is
+       ! differientated by hand.
+       call wallIntegrationZipperComm_b(vars, varsd, sps)
 
-  !      ! Perform actual integration. Tapenade ADs this routine.
-  !      call wallIntegrationZipper_d(vars, varsd, localValues, localValuesd, famList)
+       ! Cleanup vars
+       deallocate(vars, varsd)
+    end if
 
-  !      ! Cleanup vars
-  !      deallocate(vars, varsd)
-  !   end if
+    ! Determine if we have a flowthrough Zipper:
+    if (zipperMeshes(iBCGroupInflowOutflow)%allocated) then 
 
-  !   ! Determine if we have a flowthrough Zipper:
-  !   if (zipperMeshes(iBCGroupInflowOutflow)%allocated) then 
+       ! Allocate space necessary to store variables. Only non-zero on
+       ! root proc. 
+       allocate(vars(size(zipperMeshes(iBCGroupInflowOutflow)%indices), 9))
+       allocate(varsd(size(zipperMeshes(iBCGroupInflowOutflow)%indices), 9))
+  
+       ! Perform actual integration. Tapenade ADs this routine.
+       call flowIntegrationZipper_b(vars, varsd, localValues, localValuesd, famList, sps)
        
-  !      ! Gather up the required variables in "vars" on the root
-  !      ! proc. This routine is differientated by hand. 
-  !      call flowIntegrationZipperComm_d(vars, varsd, sps)
+       ! Scatter (becuase we are reverse) the values from the root
+       ! back out to all necessary procs.  This routine is
+       ! differientated by hand.
+       call flowIntegrationZipperComm_b(vars, varsd, sps)
 
-  !      ! Perform actual integration. Tapenade ADs this routine.
-  !      call flowIntegrationZipper_d(vars, varsd, localValues, localValuesd, famList)
-
-  !      ! Cleanup vars
-  !      deallocate(vars, varsd)
-  !   end if
-  ! end subroutine integrateZippers_d
-
-  ! subroutine integrateZippers_b(localValues, localValuesd, famList, sps)
-
-  !   ! Forward mode linearization of the zipper integration. 
-
-  !   use constants
-  !   use costFunctions, only : nLocalValues
-  !   use overset, only : zipperMeshes
-  !   !use haloExchange, only : wallIntegrationZipperComm_b, flowIntegrationZipperComm_b
-    
-  !   implicit none
-
-  !   ! Input Variables
-  !   real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
-  !   integer(kind=intType), dimension(:), intent(in) :: famList
-  !   integer(kind=intType), intent(in) :: sps
-  !   real(kind=realType), dimension(:, :), allocatable :: vars, varsd
-
-  !   ! Determine if we have a wall Zipper:
-  !   if (zipperMeshes(iBCGroupWalls)%allocated) then 
-
-  !      ! Perform actual integration. Tapenade ADs this routine.
-  !      call wallIntegrationZipper_b(vars, varsd, localValues, localValuesd, famList)
-       
-  !      ! Scatter (becuase we are reverse) the values from the root
-  !      ! back out to all necessary procs.  This routine is
-  !      ! differientated by hand.
-  !      !call wallIntegrationZipperComm_b(vars, varsd, sps)
-
-  !      ! Cleanup vars
-  !      deallocate(vars, varsd)
-  !   end if
-
-  !   ! Determine if we have a flowthrough Zipper:
-  !   if (zipperMeshes(iBCGroupInflowOutflow)%allocated) then 
-
-  !      ! Perform actual integration. Tapenade ADs this routine.
-  !      call flowIntegrationZipper_b(vars, varsd, localValues, localValuesd, famList)
-       
-  !      ! Scatter (becuase we are reverse) the values from the root
-  !      ! back out to all necessary procs.  This routine is
-  !      ! differientated by hand.
-  !      !call flowIntegrationZipperComm_b(vars, varsd, sps)
-
-  !      ! Cleanup vars
-  !      deallocate(vars, varsd)
-  !   end if
-  ! end subroutine integrateZippers_b
-
+       ! Cleanup vars
+       deallocate(vars, varsd)
+    end if
+  end subroutine integrateZippers_b
 
   subroutine computeAeroCoef(globalCFVals,sps, famList)
     !

@@ -50,7 +50,7 @@ subroutine getForces(forces, npts, sps)
               do i=BCData(mm)%inBeg, BCData(mm)%inEnd
                  ii = ii + 1
                  if (forcesAsTractions) then 
-                    Forces(:, ii) = bcData(mm)%T(i, j, :)
+                    Forces(:, ii) = bcData(mm)%Tp(i, j, :) + bcData(mm)%Tv(i, j, :)
                  else
                     Forces(:, ii) = bcData(mm)%F(i, j, :) 
                  end if
@@ -320,15 +320,6 @@ subroutine computeNodalTractions(sps)
      
   end do FpFVLoop
 
-  ! Finally sum the Tp and Tv together
-  do nn=1, nDom
-     call setPointers(nn, 1_intType, sps)
-     do mm=1, nBocos
-        bocoType3: if(isWallType(BCType(mm))) then 
-           bcData(mm)%T = bcData(mm)%Tp + bcData(mm)%Tv
-        end if bocoType3
-     end do
-  end do
 end subroutine computeNodalTractions
 
 subroutine computeNodalForces(sps)
@@ -1090,27 +1081,6 @@ subroutine getForces_d(forces, forcesd, npts, sps)
         
      end do dimLoop
 
-     ! Finally sum the Tpd and Tvd together
-     do nn=1, nDom
-        call setPointers_d(nn, 1_intType, sps)
-        do mm=1, nBocos
-           iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
-           jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
-           
-           if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
-                BCType(mm) == NSWallIsothermal) then
-              do iDim=1, 3
-                 do j=jBeg, jEnd
-                    do i=iBeg, iEnd
-                       bcDatad(mm)%T(i, j, iDim) = bcDatad(mm)%Tp(i, j, iDim) + &
-                            bcDatad(mm)%Tv(i, j, iDim)
-                    end do
-                 end do
-              end do
-           end if
-        end do
-     end do
-
   else
      ! Forces are easy, just a linearization of the scatter. 
      do nn=1, nDom
@@ -1153,7 +1123,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
               do i=BCData(mm)%inBeg, BCData(mm)%inEnd
                  ii = ii + 1
                  if (forcesAsTractions) then 
-                    Forcesd(:, ii) = bcDatad(mm)%T(i, j, :)
+                    Forcesd(:, ii) = bcDatad(mm)%Tp(i, j, :) + bcDatad(mm)%Tv(i, j, :)
                  else
                     Forcesd(:, ii) = bcDatad(mm)%F(i, j, :) 
                  end if
