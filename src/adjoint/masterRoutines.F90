@@ -533,7 +533,8 @@ contains
     use adjointPETSc, only : x_like
     use haloExchange, only : whalo2_b, exchangeCoor_b, exchangeCoor, whalo2
     use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
-    use surfaceIntegrations, only : integrateSurfaces
+    use surfaceIntegrations, only : integrateSurfaces, integrateZippers, integrateSurfaces_b, &
+         integrateZippers_b
     use sorting, only : bsearchIntegers
     use adjointExtra, only : getCostFunctions
     use flowUtils, only : fixAllNodalGradientsFromAD
@@ -544,7 +545,6 @@ contains
     use solverutils_b, only : timeStep_Block_b
     use turbbcroutines_b, only : applyAllTurbBCthisblock_b,  bcTurbTreatment_b
     use initializeflow_b, only : referenceState_b
-    use surfaceIntegrations_b, only : wallIntegrationFace_b, flowIntegrationFace_b
     use wallDistance_b, only : updateWallDistancesQuickly_b
     use sa_b, only : saSource_b, saViscous_b, saResScale_b, qq
     use turbutils_b, only : turbAdvection_b, computeEddyViscosity_b
@@ -610,12 +610,14 @@ contains
     ! linearization, so just call the required part of the forward-mode
     ! code.
     localVal = zero
-    do nn=1, nDom
-       do sps=1, nTimeIntervalsSpectral
+    do sps=1, nTimeIntervalsSpectral
+       do nn=1, nDom
           call setPointers_d(nn, 1, sps)
           call integrateSurfaces(localval(:, sps), famList)
        end do
+       call integrateZippers(localVal(:, sps), famList, sps)
     end do
+
     call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
          MPI_SUM, adflow_comm_world, ierr)
     call EChk(ierr,__FILE__,__LINE__)
@@ -649,31 +651,14 @@ contains
        fSize = size(forcesBar, 2)
        call getForces_b(forcesBar(:, :, sps), fSize, sps)
 
+       ! Accumulate zipper contribution
+       call integrateZippers_b(localVal(:, sps), localVald(:, sps), famList, sps)
+
        domainLoop1: do nn=1, nDom
           call setPointers_d(nn, 1, sps)
 
-          ! Call the individual integration routines. 
-          do mm=1, nBocos
-             ! Determine if this boundary condition is to be incldued in the
-             ! currently active group
-             famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then
-
-                ! Set a bunch of pointers depending on the face id to make
-                ! a generic treatment possible. 
-                call setBCPointers_d(mm, .True.)
-
-                isWall: if( isWallType(BCType(mm))) then 
-                   call wallIntegrationFace_b(localVal, localVald, mm)
-                end if isWall
-
-                isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
-                     BCType(mm) == SubsonicOutflow .or. &
-                     BCType(mm) == SupersonicInflow .or. &
-                     BCType(mm) == SupersonicOutflow) then 
-                   call flowIntegrationFace_b(localVal, localVald, mm)
-                end if isInflowOutflow
-             end if famInclude
-          end do
+          ! Perform the surface integration
+          call integrateSurfaces_b(localVal(:, sps), localVald(:, sps), famList)
 
           ! Now we start running back through the main residual code:
           call resScale_b
