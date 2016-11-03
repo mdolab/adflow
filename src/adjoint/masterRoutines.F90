@@ -30,7 +30,7 @@ contains
     use utils, only : setPointers, EChk
     use turbUtils, only : turbAdvection, computeEddyViscosity
     use residuals, only : initRes_block
-    use surfaceIntegrations, only : integrateSurfaces
+    use surfaceIntegrations, only : integrateSurfaces, integrateZippers
     use adjointExtra, only : volume_block, metric_block, boundaryNormals,&
          xhalo_block, sumdwandfw, resScale, getCostFunctions
     use overset, only : oversetPresent
@@ -185,6 +185,9 @@ contains
 
        end do
        
+       ! Integrate any zippers we have
+       call integrateZippers(localval(:, sps), famList, sps)
+
        if (present(forces)) then 
           ! Now we can retrieve the forces/tractions for this spectral instance
           fSize = size(forces, 2)
@@ -235,7 +238,7 @@ contains
     use solverutils_d, only : timeStep_Block_d
     use turbbcroutines_d, only : applyAllTurbBCthisblock_d,  bcTurbTreatment_d
     use initializeflow_d, only : referenceState_d
-    use surfaceIntegrations_d, only : wallIntegrationFace_d, flowIntegrationFace_d
+    use surfaceIntegrations, only : integrateSurfaces_d, integrateZippers_d
     use sorting, only : bsearchIntegers
     use adjointExtra_d, only : xhalo_block_d, volume_block_d, metric_BLock_d, boundarynormals_d
     use adjointextra_d, only : getcostfunctions_D, resscale_D, sumdwandfw_d
@@ -456,29 +459,13 @@ contains
           call sumDwAndFw_d
           call resscale_d
 
-          ! Now compute the forces and moments for this block. 
-          do mm=1, nBocos
-             ! Determine if this boundary condition is to be incldued in the
-             ! currently active group
-             famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then 
-
-                ! Set a bunch of pointers depending on the face id to make
-                ! a generic treatment possible. 
-                call setBCPointers_d(mm, .True.)
-
-                isWall: if( isWallType(BCType(mm))) then 
-                   call wallIntegrationFace_d(localVal, localVald, mm)
-                end if isWall
-
-                isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
-                     BCType(mm) == SubsonicOutflow .or. &
-                     BCType(mm) == SupersonicInflow .or. &
-                     BCType(mm) == SupersonicOutflow) then 
-                   call flowIntegrationFace_d(localVal, localVald, mm)
-                end if isInflowOutflow
-             end if famInclude
-          end do
+          ! Perform the block-based surface integrations
+          call integrateSurfaces_d(localVal(:, sps), localVald(:, sps), famList)
        end do
+
+       ! Do any zipper integration
+       call integrateZippers_d(localVal(:, sps), localVald(:, sps), famList, sps)
+       
        ! Now we can retrieve the forces/tractions for this spectral instance
        call getForces_d(forces(:, :, sps), forcesDot(:, :, sps), fSize, sps)
     end do
