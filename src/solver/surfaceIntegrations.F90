@@ -96,6 +96,50 @@ contains
 
   end subroutine integrateSurfaces
 
+#ifndef USE_TAPENADE
+
+  subroutine integrateSurfaces_d(localValues, localValuesd, famList)
+
+    ! Forward mode linearization of integrateSurfaces
+    use constants
+    use blockPointers, only : nBocos, BCData, BCType
+    use utils, only : setBCPointers_d, isWallType
+    use sorting, only : bsearchIntegers
+    use costFunctions, only : nLocalValues
+    use surfaceIntegrations_d, only : wallIntegrationFace_d, flowIntegrationFace_d
+    implicit none
+
+    ! Input/output Variables
+    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
+    integer(kind=intType), dimension(:), intent(in) :: famList
+    ! Working variables
+    integer(kind=intType) :: mm
+
+    ! Loop over all possible boundary conditions
+    do mm=1, nBocos
+       ! Determine if this boundary condition is to be incldued in the
+       ! currently active group
+       famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then 
+          
+          ! Set a bunch of pointers depending on the face id to make
+          ! a generic treatment possible. 
+          call setBCPointers_d(mm, .True.)
+          
+          isWall: if( isWallType(BCType(mm))) then 
+             call wallIntegrationFace_d(localValues, localValuesd, mm)
+          end if isWall
+          
+          isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
+               BCType(mm) == SubsonicOutflow .or. &
+               BCType(mm) == SupersonicInflow .or. &
+               BCType(mm) == SupersonicOutflow) then 
+             call flowIntegrationFace_d(localValues, localValuesd, mm)
+          end if isInflowOutflow
+       end if famInclude
+    end do
+  end subroutine integrateSurfaces_d
+#endif
+
   subroutine wallIntegrationFace(localValues, mm)
     !
     !       wallIntegrations computes the contribution of the block
