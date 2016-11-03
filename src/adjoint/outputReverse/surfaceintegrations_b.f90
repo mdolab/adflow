@@ -83,396 +83,6 @@ bocos:do mm=1,nbocos
       end if
     end do bocos
   end subroutine integratesurfaces
-!  differentiation of flowintegrationface in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: pointref timeref tref rgas
-!                pref rhoref *xx *pp1 *pp2 *ssi *ww1 *ww2 localvalues
-!   with respect to varying inputs: pointref timeref tref rgas
-!                pref rhoref *xx *pp1 *pp2 *ssi *ww1 *ww2 localvalues
-!   rw status of diff variables: pointref:incr timeref:incr tref:incr
-!                rgas:incr pref:incr rhoref:incr *xx:incr *pp1:incr
-!                *pp2:incr *ssi:incr *ww1:incr *ww2:incr localvalues:in-out
-!   plus diff mem management of: xx:in pp1:in pp2:in ssi:in ww1:in
-!                ww2:in
-  subroutine flowintegrationface_b(localvalues, localvaluesd, mm)
-    use constants
-    use costfunctions
-    use blockpointers, only : bcfaceid, bcdata, bcdatad, &
-&   addgridvelocities
-    use costfunctions, only : nlocalvalues, imassflow, imassptot, &
-&   imassttot, imassps
-    use sorting, only : bsearchintegers
-    use flowvarrefstate, only : pref, prefd, rhoref, rhorefd, timeref,&
-&   timerefd, lref, tref, trefd, rgas, rgasd
-    use inputphysics, only : pointref, pointrefd
-    use flowutils_b, only : computeptot, computeptot_b, computettot, &
-&   computettot_b
-    use bcpointers_b, only : ssi, ssid, sface, ww1, ww1d, ww2, ww2d, pp1&
-&   , pp1d, pp2, pp2d, xx, xxd
-    implicit none
-! input/output variables
-    real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
-&   localvalues
-    real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
-&   localvaluesd
-    integer(kind=inttype), intent(in) :: mm
-! local variables
-    real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps
-    real(kind=realtype) :: massflowrated, mass_ptotd, mass_ttotd, &
-&   mass_psd
-    integer(kind=inttype) :: i, j, ii, blk
-    real(kind=realtype) :: fact, xc, yc, zc, cellarea, mx, my, mz
-    real(kind=realtype) :: xcd, ycd, zcd, mxd, myd, mzd
-    real(kind=realtype) :: sf, vnm, vxm, vym, vzm, mredim, fx, fy, fz
-    real(kind=realtype) :: vnmd, vxmd, vymd, vzmd, mredimd, fxd, fyd, &
-&   fzd
-    real(kind=realtype) :: pm, ptot, ttot, rhom, massflowratelocal
-    real(kind=realtype) :: pmd, ptotd, ttotd, rhomd, massflowratelocald
-    real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint
-    real(kind=realtype), dimension(3) :: fpd, mpd, fmomd, mmomd, &
-&   refpointd
-    intrinsic sqrt
-    intrinsic mod
-    intrinsic max
-    real(kind=realtype) :: tempd9
-    real(kind=realtype) :: tempd
-    real(kind=realtype) :: tempd8
-    real(kind=realtype) :: tempd7
-    real(kind=realtype) :: tempd6
-    real(kind=realtype) :: tempd5
-    real(kind=realtype) :: tempd4
-    real(kind=realtype) :: tempd3
-    real(kind=realtype) :: tempd2
-    real(kind=realtype) :: tempd1
-    real(kind=realtype) :: tempd0
-    refpoint(1) = lref*pointref(1)
-    refpoint(2) = lref*pointref(2)
-    refpoint(3) = lref*pointref(3)
-! note that these are *opposite* of force integrations. the reason
-! is that we want positive mass flow into the domain and negative
-! mass flow out of the domain. since the low faces have ssi
-! vectors pointining into the domain, this is correct. the high
-! end faces need to flip this. 
-    select case  (bcfaceid(mm)) 
-    case (imin, jmin, kmin) 
-      fact = one
-    case (imax, jmax, kmax) 
-      fact = -one
-    end select
-! loop over the quadrilateral faces of the subface. note that
-! the nodal range of bcdata must be used and not the cell
-! range, because the latter may include the halo's in i and
-! j-direction. the offset +1 is there, because inbeg and jnbeg
-! refer to nodal ranges and not to cell ranges. the loop
-! (without the ad stuff) would look like:
-!
-! do j=(bcdata(mm)%jnbeg+1),bcdata(mm)%jnend
-!    do i=(bcdata(mm)%inbeg+1),bcdata(mm)%inend
-    mredim = sqrt(pref*rhoref)
-    mmomd = 0.0_8
-    mmomd = localvaluesd(iflowmm:iflowmm+2)
-    mpd = 0.0_8
-    mpd = localvaluesd(iflowmp:iflowmp+2)
-    fmomd = 0.0_8
-    fmomd = localvaluesd(iflowfm:iflowfm+2)
-    fpd = 0.0_8
-    fpd = localvaluesd(iflowfp:iflowfp+2)
-    mass_psd = localvaluesd(imassps)
-    mass_ttotd = localvaluesd(imassttot)
-    mass_ptotd = localvaluesd(imassptot)
-    massflowrated = localvaluesd(imassflow)
-    mredimd = 0.0_8
-    ptotd = 0.0_8
-    refpointd = 0.0_8
-    ttotd = 0.0_8
-    do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
-&       (mm)%inbeg)-1
-      i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&
-&       inbeg + 1
-      j = ii/(bcdata(mm)%inend-bcdata(mm)%inbeg) + bcdata(mm)%jnbeg + 1
-      if (addgridvelocities) then
-        sf = sface(i, j)
-      else
-        sf = zero
-      end if
-      if (bcdata(mm)%iblank(i, j) .lt. 0) then
-        blk = 0
-      else
-        blk = bcdata(mm)%iblank(i, j)
-      end if
-      vxm = half*(ww1(i, j, ivx)+ww2(i, j, ivx))
-      vym = half*(ww1(i, j, ivy)+ww2(i, j, ivy))
-      vzm = half*(ww1(i, j, ivz)+ww2(i, j, ivz))
-      rhom = half*(ww1(i, j, irho)+ww2(i, j, irho))
-      pm = half*(pp1(i, j)+pp2(i, j))
-      vnm = vxm*ssi(i, j, 1) + vym*ssi(i, j, 2) + vzm*ssi(i, j, 3) - sf
-      call computeptot(rhom, vxm, vym, vzm, pm, ptot)
-      call computettot(rhom, vxm, vym, vzm, pm, ttot)
-      call pushreal8(pm)
-      pm = pm*pref
-      massflowratelocal = rhom*vnm*fact*mredim*blk
-      xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
-&       1)) - refpoint(1)
-      yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
-&       2)) - refpoint(2)
-      zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
-&       3)) - refpoint(3)
-! pressure forces. note that these need a *negative* sign to be
-! consistent with the force computation. 
-! update the pressure force and moment coefficients.
-! momentum forces. these gets a little more complex: theb
-! bcdata(mm)%norm already is setup such that it points *out* of
-! the domain. the use of fact here *reverses* the factor that
-! has already been taken into account on massflowratelocal.
-      fx = -(massflowratelocal*bcdata(mm)%norm(i, j, 1)*vxm/timeref*fact&
-&       *blk)
-      fy = -(massflowratelocal*bcdata(mm)%norm(i, j, 2)*vym/timeref*fact&
-&       *blk)
-      fz = -(massflowratelocal*bcdata(mm)%norm(i, j, 3)*vzm/timeref*fact&
-&       *blk)
-      mzd = mmomd(3)
-      myd = mmomd(2)
-      mxd = mmomd(1)
-      xcd = fy*mzd - fz*myd
-      fyd = fmomd(2) - zc*mxd + xc*mzd
-      ycd = fz*mxd - fx*mzd
-      fxd = zc*myd + fmomd(1) - yc*mzd
-      zcd = fx*myd - fy*mxd
-      fzd = yc*mxd + fmomd(3) - xc*myd
-      tempd0 = -(bcdata(mm)%norm(i, j, 3)*fact*blk*fzd/timeref)
-      vzmd = massflowratelocal*tempd0
-      tempd1 = -(bcdata(mm)%norm(i, j, 2)*fact*blk*fyd/timeref)
-      vymd = massflowratelocal*tempd1
-      tempd2 = -(bcdata(mm)%norm(i, j, 1)*fact*blk*fxd/timeref)
-      massflowratelocald = vym*tempd1 + pm*mass_psd + pref*ptot*&
-&       mass_ptotd + massflowrated + tref*ttot*mass_ttotd + vxm*tempd2 +&
-&       vzm*tempd0
-      timerefd = timerefd - massflowratelocal*vym*tempd1/timeref - &
-&       massflowratelocal*vxm*tempd2/timeref - massflowratelocal*vzm*&
-&       tempd0/timeref
-      vxmd = massflowratelocal*tempd2
-      mzd = mpd(3)
-      myd = mpd(2)
-      mxd = mpd(1)
-      fx = -(pm*ssi(i, j, 1)*blk*fact)
-      fy = -(pm*ssi(i, j, 2)*blk*fact)
-      fyd = fpd(2) - zc*mxd + xc*mzd
-      fxd = zc*myd + fpd(1) - yc*mzd
-      fz = -(pm*ssi(i, j, 3)*blk*fact)
-      xcd = xcd + fy*mzd - fz*myd
-      ycd = ycd + fz*mxd - fx*mzd
-      zcd = zcd + fx*myd - fy*mxd
-      fzd = yc*mxd + fpd(3) - xc*myd
-      tempd3 = -(blk*fact*fzd)
-      ssid(i, j, 3) = ssid(i, j, 3) + pm*tempd3
-      tempd4 = -(blk*fact*fyd)
-      ssid(i, j, 2) = ssid(i, j, 2) + pm*tempd4
-      tempd5 = -(blk*fact*fxd)
-      pmd = ssi(i, j, 2)*tempd4 + massflowratelocal*mass_psd + ssi(i, j&
-&       , 1)*tempd5 + ssi(i, j, 3)*tempd3
-      ssid(i, j, 1) = ssid(i, j, 1) + pm*tempd5
-      tempd6 = fourth*zcd
-      xxd(i, j, 3) = xxd(i, j, 3) + tempd6
-      xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd6
-      xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd6
-      xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd6
-      refpointd(3) = refpointd(3) - zcd
-      tempd7 = fourth*ycd
-      xxd(i, j, 2) = xxd(i, j, 2) + tempd7
-      xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd7
-      xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd7
-      xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd7
-      refpointd(2) = refpointd(2) - ycd
-      tempd8 = fourth*xcd
-      xxd(i, j, 1) = xxd(i, j, 1) + tempd8
-      xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd8
-      xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd8
-      xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd8
-      refpointd(1) = refpointd(1) - xcd
-      ttotd = ttotd + tref*massflowratelocal*mass_ttotd
-      trefd = trefd + ttot*massflowratelocal*mass_ttotd
-      ptotd = ptotd + pref*massflowratelocal*mass_ptotd
-      tempd9 = fact*blk*massflowratelocald
-      rhomd = mredim*vnm*tempd9
-      vnmd = mredim*rhom*tempd9
-      mredimd = mredimd + rhom*vnm*tempd9
-      call popreal8(pm)
-      prefd = prefd + pm*pmd + ptot*massflowratelocal*mass_ptotd
-      pmd = pref*pmd
-      call computettot_b(rhom, rhomd, vxm, vxmd, vym, vymd, vzm, vzmd, &
-&                  pm, pmd, ttot, ttotd)
-      call computeptot_b(rhom, rhomd, vxm, vxmd, vym, vymd, vzm, vzmd, &
-&                  pm, pmd, ptot, ptotd)
-      vxmd = vxmd + ssi(i, j, 1)*vnmd
-      ssid(i, j, 1) = ssid(i, j, 1) + vxm*vnmd
-      vymd = vymd + ssi(i, j, 2)*vnmd
-      ssid(i, j, 2) = ssid(i, j, 2) + vym*vnmd
-      vzmd = vzmd + ssi(i, j, 3)*vnmd
-      ssid(i, j, 3) = ssid(i, j, 3) + vzm*vnmd
-      pp1d(i, j) = pp1d(i, j) + half*pmd
-      pp2d(i, j) = pp2d(i, j) + half*pmd
-      ww1d(i, j, irho) = ww1d(i, j, irho) + half*rhomd
-      ww2d(i, j, irho) = ww2d(i, j, irho) + half*rhomd
-      ww1d(i, j, ivz) = ww1d(i, j, ivz) + half*vzmd
-      ww2d(i, j, ivz) = ww2d(i, j, ivz) + half*vzmd
-      ww1d(i, j, ivy) = ww1d(i, j, ivy) + half*vymd
-      ww2d(i, j, ivy) = ww2d(i, j, ivy) + half*vymd
-      ww1d(i, j, ivx) = ww1d(i, j, ivx) + half*vxmd
-      ww2d(i, j, ivx) = ww2d(i, j, ivx) + half*vxmd
-    end do
-    if (pref*rhoref .eq. 0.0_8) then
-      tempd = 0.0
-    else
-      tempd = mredimd/(2.0*sqrt(pref*rhoref))
-    end if
-    prefd = prefd + rhoref*tempd
-    rhorefd = rhorefd + pref*tempd
-    pointrefd(3) = pointrefd(3) + lref*refpointd(3)
-    refpointd(3) = 0.0_8
-    pointrefd(2) = pointrefd(2) + lref*refpointd(2)
-    refpointd(2) = 0.0_8
-    pointrefd(1) = pointrefd(1) + lref*refpointd(1)
-  end subroutine flowintegrationface_b
-  subroutine flowintegrationface(localvalues, mm)
-    use constants
-    use costfunctions
-    use blockpointers, only : bcfaceid, bcdata, addgridvelocities
-    use costfunctions, only : nlocalvalues, imassflow, imassptot, &
-&   imassttot, imassps
-    use sorting, only : bsearchintegers
-    use flowvarrefstate, only : pref, rhoref, timeref, lref, tref, &
-&   rgas
-    use inputphysics, only : pointref
-    use flowutils_b, only : computeptot, computettot
-    use bcpointers_b, only : ssi, sface, ww1, ww2, pp1, pp2, xx
-    implicit none
-! input/output variables
-    real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
-&   localvalues
-    integer(kind=inttype), intent(in) :: mm
-! local variables
-    real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps
-    integer(kind=inttype) :: i, j, ii, blk
-    real(kind=realtype) :: fact, xc, yc, zc, cellarea, mx, my, mz
-    real(kind=realtype) :: sf, vnm, vxm, vym, vzm, mredim, fx, fy, fz
-    real(kind=realtype) :: pm, ptot, ttot, rhom, massflowratelocal
-    real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint
-    intrinsic sqrt
-    intrinsic mod
-    intrinsic max
-    massflowrate = zero
-    mass_ptot = zero
-    mass_ttot = zero
-    mass_ps = zero
-    refpoint(1) = lref*pointref(1)
-    refpoint(2) = lref*pointref(2)
-    refpoint(3) = lref*pointref(3)
-! note that these are *opposite* of force integrations. the reason
-! is that we want positive mass flow into the domain and negative
-! mass flow out of the domain. since the low faces have ssi
-! vectors pointining into the domain, this is correct. the high
-! end faces need to flip this. 
-    select case  (bcfaceid(mm)) 
-    case (imin, jmin, kmin) 
-      fact = one
-    case (imax, jmax, kmax) 
-      fact = -one
-    end select
-! loop over the quadrilateral faces of the subface. note that
-! the nodal range of bcdata must be used and not the cell
-! range, because the latter may include the halo's in i and
-! j-direction. the offset +1 is there, because inbeg and jnbeg
-! refer to nodal ranges and not to cell ranges. the loop
-! (without the ad stuff) would look like:
-!
-! do j=(bcdata(mm)%jnbeg+1),bcdata(mm)%jnend
-!    do i=(bcdata(mm)%inbeg+1),bcdata(mm)%inend
-    mredim = sqrt(pref*rhoref)
-    fp = zero
-    mp = zero
-    fmom = zero
-    mmom = zero
-    do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
-&       (mm)%inbeg)-1
-      i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&
-&       inbeg + 1
-      j = ii/(bcdata(mm)%inend-bcdata(mm)%inbeg) + bcdata(mm)%jnbeg + 1
-      if (addgridvelocities) then
-        sf = sface(i, j)
-      else
-        sf = zero
-      end if
-      if (bcdata(mm)%iblank(i, j) .lt. 0) then
-        blk = 0
-      else
-        blk = bcdata(mm)%iblank(i, j)
-      end if
-      vxm = half*(ww1(i, j, ivx)+ww2(i, j, ivx))
-      vym = half*(ww1(i, j, ivy)+ww2(i, j, ivy))
-      vzm = half*(ww1(i, j, ivz)+ww2(i, j, ivz))
-      rhom = half*(ww1(i, j, irho)+ww2(i, j, irho))
-      pm = half*(pp1(i, j)+pp2(i, j))
-      vnm = vxm*ssi(i, j, 1) + vym*ssi(i, j, 2) + vzm*ssi(i, j, 3) - sf
-      call computeptot(rhom, vxm, vym, vzm, pm, ptot)
-      call computettot(rhom, vxm, vym, vzm, pm, ttot)
-      pm = pm*pref
-      massflowratelocal = rhom*vnm*fact*mredim*blk
-      massflowrate = massflowrate + massflowratelocal
-      mass_ptot = mass_ptot + ptot*massflowratelocal*pref
-      mass_ttot = mass_ttot + ttot*massflowratelocal*tref
-      mass_ps = mass_ps + pm*massflowratelocal
-      xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
-&       1)) - refpoint(1)
-      yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
-&       2)) - refpoint(2)
-      zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
-&       3)) - refpoint(3)
-! pressure forces. note that these need a *negative* sign to be
-! consistent with the force computation. 
-      fx = -(pm*ssi(i, j, 1)*blk*fact)
-      fy = -(pm*ssi(i, j, 2)*blk*fact)
-      fz = -(pm*ssi(i, j, 3)*blk*fact)
-! update the pressure force and moment coefficients.
-      fp(1) = fp(1) + fx
-      fp(2) = fp(2) + fy
-      fp(3) = fp(3) + fz
-      mx = yc*fz - zc*fy
-      my = zc*fx - xc*fz
-      mz = xc*fy - yc*fx
-      mp(1) = mp(1) + mx
-      mp(2) = mp(2) + my
-      mp(3) = mp(3) + mz
-! momentum forces. these gets a little more complex: theb
-! bcdata(mm)%norm already is setup such that it points *out* of
-! the domain. the use of fact here *reverses* the factor that
-! has already been taken into account on massflowratelocal.
-      fx = -(massflowratelocal*bcdata(mm)%norm(i, j, 1)*vxm/timeref*fact&
-&       *blk)
-      fy = -(massflowratelocal*bcdata(mm)%norm(i, j, 2)*vym/timeref*fact&
-&       *blk)
-      fz = -(massflowratelocal*bcdata(mm)%norm(i, j, 3)*vzm/timeref*fact&
-&       *blk)
-      fmom(1) = fmom(1) + fx
-      fmom(2) = fmom(2) + fy
-      fmom(3) = fmom(3) + fz
-      mx = yc*fz - zc*fy
-      my = zc*fx - xc*fz
-      mz = xc*fy - yc*fx
-      mmom(1) = mmom(1) + mx
-      mmom(2) = mmom(2) + my
-      mmom(3) = mmom(3) + mz
-    end do
-! increment the local values array with what we computed here
-    localvalues(imassflow) = localvalues(imassflow) + massflowrate
-    localvalues(imassptot) = localvalues(imassptot) + mass_ptot
-    localvalues(imassttot) = localvalues(imassttot) + mass_ttot
-    localvalues(imassps) = localvalues(imassps) + mass_ps
-    localvalues(iflowfp:iflowfp+2) = localvalues(iflowfp:iflowfp+2) + fp
-    localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
-&     fmom
-    localvalues(iflowmp:iflowmp+2) = localvalues(iflowmp:iflowmp+2) + mp
-    localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
-&     mmom
-  end subroutine flowintegrationface
 !  differentiation of wallintegrationface in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *(*viscsubface.tau) *(*bcdata.fv)
 !                *(*bcdata.fp) *(*bcdata.area) veldirfreestream
@@ -1219,4 +829,1156 @@ bocos:do mm=1,nbocos
     localvalues(isepavg:isepavg+2) = localvalues(isepavg:isepavg+2) + &
 &     sepsensoravg
   end subroutine wallintegrationface
+!  differentiation of flowintegrationface in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: pointref timeref tref rgas
+!                pref rhoref *xx *pp1 *pp2 *ssi *ww1 *ww2 localvalues
+!   with respect to varying inputs: pointref timeref tref rgas
+!                pref rhoref *xx *pp1 *pp2 *ssi *ww1 *ww2 localvalues
+!   rw status of diff variables: pointref:incr timeref:incr tref:incr
+!                rgas:incr pref:incr rhoref:incr *xx:incr *pp1:incr
+!                *pp2:incr *ssi:incr *ww1:incr *ww2:incr localvalues:in-out
+!   plus diff mem management of: xx:in pp1:in pp2:in ssi:in ww1:in
+!                ww2:in
+  subroutine flowintegrationface_b(localvalues, localvaluesd, mm)
+    use constants
+    use costfunctions
+    use blockpointers, only : bcfaceid, bcdata, bcdatad, &
+&   addgridvelocities
+    use costfunctions, only : nlocalvalues, imassflow, imassptot, &
+&   imassttot, imassps
+    use sorting, only : bsearchintegers
+    use flowvarrefstate, only : pref, prefd, rhoref, rhorefd, timeref,&
+&   timerefd, lref, tref, trefd, rgas, rgasd
+    use inputphysics, only : pointref, pointrefd
+    use flowutils_b, only : computeptot, computeptot_b, computettot, &
+&   computettot_b
+    use bcpointers_b, only : ssi, ssid, sface, ww1, ww1d, ww2, ww2d, pp1&
+&   , pp1d, pp2, pp2d, xx, xxd
+    implicit none
+! input/output variables
+    real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
+&   localvalues
+    real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
+&   localvaluesd
+    integer(kind=inttype), intent(in) :: mm
+! local variables
+    real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps
+    real(kind=realtype) :: massflowrated, mass_ptotd, mass_ttotd, &
+&   mass_psd
+    integer(kind=inttype) :: i, j, ii, blk
+    real(kind=realtype) :: fact, xc, yc, zc, cellarea, mx, my, mz
+    real(kind=realtype) :: xcd, ycd, zcd, mxd, myd, mzd
+    real(kind=realtype) :: sf, vnm, vxm, vym, vzm, mredim, fx, fy, fz
+    real(kind=realtype) :: vnmd, vxmd, vymd, vzmd, mredimd, fxd, fyd, &
+&   fzd
+    real(kind=realtype) :: pm, ptot, ttot, rhom, massflowratelocal
+    real(kind=realtype) :: pmd, ptotd, ttotd, rhomd, massflowratelocald
+    real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint
+    real(kind=realtype), dimension(3) :: fpd, mpd, fmomd, mmomd, &
+&   refpointd
+    intrinsic sqrt
+    intrinsic mod
+    intrinsic max
+    real(kind=realtype) :: tempd9
+    real(kind=realtype) :: tempd
+    real(kind=realtype) :: tempd8
+    real(kind=realtype) :: tempd7
+    real(kind=realtype) :: tempd6
+    real(kind=realtype) :: tempd5
+    real(kind=realtype) :: tempd4
+    real(kind=realtype) :: tempd3
+    real(kind=realtype) :: tempd2
+    real(kind=realtype) :: tempd1
+    real(kind=realtype) :: tempd0
+    refpoint(1) = lref*pointref(1)
+    refpoint(2) = lref*pointref(2)
+    refpoint(3) = lref*pointref(3)
+! note that these are *opposite* of force integrations. the reason
+! is that we want positive mass flow into the domain and negative
+! mass flow out of the domain. since the low faces have ssi
+! vectors pointining into the domain, this is correct. the high
+! end faces need to flip this. 
+    select case  (bcfaceid(mm)) 
+    case (imin, jmin, kmin) 
+      fact = one
+    case (imax, jmax, kmax) 
+      fact = -one
+    end select
+! loop over the quadrilateral faces of the subface. note that
+! the nodal range of bcdata must be used and not the cell
+! range, because the latter may include the halo's in i and
+! j-direction. the offset +1 is there, because inbeg and jnbeg
+! refer to nodal ranges and not to cell ranges. the loop
+! (without the ad stuff) would look like:
+!
+! do j=(bcdata(mm)%jnbeg+1),bcdata(mm)%jnend
+!    do i=(bcdata(mm)%inbeg+1),bcdata(mm)%inend
+    mredim = sqrt(pref*rhoref)
+    mmomd = 0.0_8
+    mmomd = localvaluesd(iflowmm:iflowmm+2)
+    mpd = 0.0_8
+    mpd = localvaluesd(iflowmp:iflowmp+2)
+    fmomd = 0.0_8
+    fmomd = localvaluesd(iflowfm:iflowfm+2)
+    fpd = 0.0_8
+    fpd = localvaluesd(iflowfp:iflowfp+2)
+    mass_psd = localvaluesd(imassps)
+    mass_ttotd = localvaluesd(imassttot)
+    mass_ptotd = localvaluesd(imassptot)
+    massflowrated = localvaluesd(imassflow)
+    mredimd = 0.0_8
+    ptotd = 0.0_8
+    refpointd = 0.0_8
+    ttotd = 0.0_8
+    do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
+&       (mm)%inbeg)-1
+      i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&
+&       inbeg + 1
+      j = ii/(bcdata(mm)%inend-bcdata(mm)%inbeg) + bcdata(mm)%jnbeg + 1
+      if (addgridvelocities) then
+        sf = sface(i, j)
+      else
+        sf = zero
+      end if
+      if (bcdata(mm)%iblank(i, j) .lt. 0) then
+        blk = 0
+      else
+        blk = bcdata(mm)%iblank(i, j)
+      end if
+      vxm = half*(ww1(i, j, ivx)+ww2(i, j, ivx))
+      vym = half*(ww1(i, j, ivy)+ww2(i, j, ivy))
+      vzm = half*(ww1(i, j, ivz)+ww2(i, j, ivz))
+      rhom = half*(ww1(i, j, irho)+ww2(i, j, irho))
+      pm = half*(pp1(i, j)+pp2(i, j))
+      vnm = vxm*ssi(i, j, 1) + vym*ssi(i, j, 2) + vzm*ssi(i, j, 3) - sf
+      call computeptot(rhom, vxm, vym, vzm, pm, ptot)
+      call computettot(rhom, vxm, vym, vzm, pm, ttot)
+      call pushreal8(pm)
+      pm = pm*pref
+      massflowratelocal = rhom*vnm*fact*mredim*blk
+      xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
+&       1)) - refpoint(1)
+      yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
+&       2)) - refpoint(2)
+      zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
+&       3)) - refpoint(3)
+! pressure forces. note that these need a *negative* sign to be
+! consistent with the force computation. 
+! update the pressure force and moment coefficients.
+! momentum forces. these gets a little more complex: theb
+! bcdata(mm)%norm already is setup such that it points *out* of
+! the domain. the use of fact here *reverses* the factor that
+! has already been taken into account on massflowratelocal.
+      fx = -(massflowratelocal*bcdata(mm)%norm(i, j, 1)*vxm/timeref*fact&
+&       *blk)
+      fy = -(massflowratelocal*bcdata(mm)%norm(i, j, 2)*vym/timeref*fact&
+&       *blk)
+      fz = -(massflowratelocal*bcdata(mm)%norm(i, j, 3)*vzm/timeref*fact&
+&       *blk)
+      mzd = mmomd(3)
+      myd = mmomd(2)
+      mxd = mmomd(1)
+      xcd = fy*mzd - fz*myd
+      fyd = fmomd(2) - zc*mxd + xc*mzd
+      ycd = fz*mxd - fx*mzd
+      fxd = zc*myd + fmomd(1) - yc*mzd
+      zcd = fx*myd - fy*mxd
+      fzd = yc*mxd + fmomd(3) - xc*myd
+      tempd0 = -(bcdata(mm)%norm(i, j, 3)*fact*blk*fzd/timeref)
+      vzmd = massflowratelocal*tempd0
+      tempd1 = -(bcdata(mm)%norm(i, j, 2)*fact*blk*fyd/timeref)
+      vymd = massflowratelocal*tempd1
+      tempd2 = -(bcdata(mm)%norm(i, j, 1)*fact*blk*fxd/timeref)
+      massflowratelocald = vym*tempd1 + pm*mass_psd + pref*ptot*&
+&       mass_ptotd + massflowrated + tref*ttot*mass_ttotd + vxm*tempd2 +&
+&       vzm*tempd0
+      timerefd = timerefd - massflowratelocal*vym*tempd1/timeref - &
+&       massflowratelocal*vxm*tempd2/timeref - massflowratelocal*vzm*&
+&       tempd0/timeref
+      vxmd = massflowratelocal*tempd2
+      mzd = mpd(3)
+      myd = mpd(2)
+      mxd = mpd(1)
+      fx = -(pm*ssi(i, j, 1)*blk*fact)
+      fy = -(pm*ssi(i, j, 2)*blk*fact)
+      fyd = fpd(2) - zc*mxd + xc*mzd
+      fxd = zc*myd + fpd(1) - yc*mzd
+      fz = -(pm*ssi(i, j, 3)*blk*fact)
+      xcd = xcd + fy*mzd - fz*myd
+      ycd = ycd + fz*mxd - fx*mzd
+      zcd = zcd + fx*myd - fy*mxd
+      fzd = yc*mxd + fpd(3) - xc*myd
+      tempd3 = -(blk*fact*fzd)
+      ssid(i, j, 3) = ssid(i, j, 3) + pm*tempd3
+      tempd4 = -(blk*fact*fyd)
+      ssid(i, j, 2) = ssid(i, j, 2) + pm*tempd4
+      tempd5 = -(blk*fact*fxd)
+      pmd = ssi(i, j, 2)*tempd4 + massflowratelocal*mass_psd + ssi(i, j&
+&       , 1)*tempd5 + ssi(i, j, 3)*tempd3
+      ssid(i, j, 1) = ssid(i, j, 1) + pm*tempd5
+      tempd6 = fourth*zcd
+      xxd(i, j, 3) = xxd(i, j, 3) + tempd6
+      xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd6
+      xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd6
+      xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd6
+      refpointd(3) = refpointd(3) - zcd
+      tempd7 = fourth*ycd
+      xxd(i, j, 2) = xxd(i, j, 2) + tempd7
+      xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd7
+      xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd7
+      xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd7
+      refpointd(2) = refpointd(2) - ycd
+      tempd8 = fourth*xcd
+      xxd(i, j, 1) = xxd(i, j, 1) + tempd8
+      xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd8
+      xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd8
+      xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd8
+      refpointd(1) = refpointd(1) - xcd
+      ttotd = ttotd + tref*massflowratelocal*mass_ttotd
+      trefd = trefd + ttot*massflowratelocal*mass_ttotd
+      ptotd = ptotd + pref*massflowratelocal*mass_ptotd
+      tempd9 = fact*blk*massflowratelocald
+      rhomd = mredim*vnm*tempd9
+      vnmd = mredim*rhom*tempd9
+      mredimd = mredimd + rhom*vnm*tempd9
+      call popreal8(pm)
+      prefd = prefd + pm*pmd + ptot*massflowratelocal*mass_ptotd
+      pmd = pref*pmd
+      call computettot_b(rhom, rhomd, vxm, vxmd, vym, vymd, vzm, vzmd, &
+&                  pm, pmd, ttot, ttotd)
+      call computeptot_b(rhom, rhomd, vxm, vxmd, vym, vymd, vzm, vzmd, &
+&                  pm, pmd, ptot, ptotd)
+      vxmd = vxmd + ssi(i, j, 1)*vnmd
+      ssid(i, j, 1) = ssid(i, j, 1) + vxm*vnmd
+      vymd = vymd + ssi(i, j, 2)*vnmd
+      ssid(i, j, 2) = ssid(i, j, 2) + vym*vnmd
+      vzmd = vzmd + ssi(i, j, 3)*vnmd
+      ssid(i, j, 3) = ssid(i, j, 3) + vzm*vnmd
+      pp1d(i, j) = pp1d(i, j) + half*pmd
+      pp2d(i, j) = pp2d(i, j) + half*pmd
+      ww1d(i, j, irho) = ww1d(i, j, irho) + half*rhomd
+      ww2d(i, j, irho) = ww2d(i, j, irho) + half*rhomd
+      ww1d(i, j, ivz) = ww1d(i, j, ivz) + half*vzmd
+      ww2d(i, j, ivz) = ww2d(i, j, ivz) + half*vzmd
+      ww1d(i, j, ivy) = ww1d(i, j, ivy) + half*vymd
+      ww2d(i, j, ivy) = ww2d(i, j, ivy) + half*vymd
+      ww1d(i, j, ivx) = ww1d(i, j, ivx) + half*vxmd
+      ww2d(i, j, ivx) = ww2d(i, j, ivx) + half*vxmd
+    end do
+    if (pref*rhoref .eq. 0.0_8) then
+      tempd = 0.0
+    else
+      tempd = mredimd/(2.0*sqrt(pref*rhoref))
+    end if
+    prefd = prefd + rhoref*tempd
+    rhorefd = rhorefd + pref*tempd
+    pointrefd(3) = pointrefd(3) + lref*refpointd(3)
+    refpointd(3) = 0.0_8
+    pointrefd(2) = pointrefd(2) + lref*refpointd(2)
+    refpointd(2) = 0.0_8
+    pointrefd(1) = pointrefd(1) + lref*refpointd(1)
+  end subroutine flowintegrationface_b
+  subroutine flowintegrationface(localvalues, mm)
+    use constants
+    use costfunctions
+    use blockpointers, only : bcfaceid, bcdata, addgridvelocities
+    use costfunctions, only : nlocalvalues, imassflow, imassptot, &
+&   imassttot, imassps
+    use sorting, only : bsearchintegers
+    use flowvarrefstate, only : pref, rhoref, timeref, lref, tref, &
+&   rgas
+    use inputphysics, only : pointref
+    use flowutils_b, only : computeptot, computettot
+    use bcpointers_b, only : ssi, sface, ww1, ww2, pp1, pp2, xx
+    implicit none
+! input/output variables
+    real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
+&   localvalues
+    integer(kind=inttype), intent(in) :: mm
+! local variables
+    real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps
+    integer(kind=inttype) :: i, j, ii, blk
+    real(kind=realtype) :: fact, xc, yc, zc, cellarea, mx, my, mz
+    real(kind=realtype) :: sf, vnm, vxm, vym, vzm, mredim, fx, fy, fz
+    real(kind=realtype) :: pm, ptot, ttot, rhom, massflowratelocal
+    real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint
+    intrinsic sqrt
+    intrinsic mod
+    intrinsic max
+    massflowrate = zero
+    mass_ptot = zero
+    mass_ttot = zero
+    mass_ps = zero
+    refpoint(1) = lref*pointref(1)
+    refpoint(2) = lref*pointref(2)
+    refpoint(3) = lref*pointref(3)
+! note that these are *opposite* of force integrations. the reason
+! is that we want positive mass flow into the domain and negative
+! mass flow out of the domain. since the low faces have ssi
+! vectors pointining into the domain, this is correct. the high
+! end faces need to flip this. 
+    select case  (bcfaceid(mm)) 
+    case (imin, jmin, kmin) 
+      fact = one
+    case (imax, jmax, kmax) 
+      fact = -one
+    end select
+! loop over the quadrilateral faces of the subface. note that
+! the nodal range of bcdata must be used and not the cell
+! range, because the latter may include the halo's in i and
+! j-direction. the offset +1 is there, because inbeg and jnbeg
+! refer to nodal ranges and not to cell ranges. the loop
+! (without the ad stuff) would look like:
+!
+! do j=(bcdata(mm)%jnbeg+1),bcdata(mm)%jnend
+!    do i=(bcdata(mm)%inbeg+1),bcdata(mm)%inend
+    mredim = sqrt(pref*rhoref)
+    fp = zero
+    mp = zero
+    fmom = zero
+    mmom = zero
+    do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
+&       (mm)%inbeg)-1
+      i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&
+&       inbeg + 1
+      j = ii/(bcdata(mm)%inend-bcdata(mm)%inbeg) + bcdata(mm)%jnbeg + 1
+      if (addgridvelocities) then
+        sf = sface(i, j)
+      else
+        sf = zero
+      end if
+      if (bcdata(mm)%iblank(i, j) .lt. 0) then
+        blk = 0
+      else
+        blk = bcdata(mm)%iblank(i, j)
+      end if
+      vxm = half*(ww1(i, j, ivx)+ww2(i, j, ivx))
+      vym = half*(ww1(i, j, ivy)+ww2(i, j, ivy))
+      vzm = half*(ww1(i, j, ivz)+ww2(i, j, ivz))
+      rhom = half*(ww1(i, j, irho)+ww2(i, j, irho))
+      pm = half*(pp1(i, j)+pp2(i, j))
+      vnm = vxm*ssi(i, j, 1) + vym*ssi(i, j, 2) + vzm*ssi(i, j, 3) - sf
+      call computeptot(rhom, vxm, vym, vzm, pm, ptot)
+      call computettot(rhom, vxm, vym, vzm, pm, ttot)
+      pm = pm*pref
+      massflowratelocal = rhom*vnm*fact*mredim*blk
+      massflowrate = massflowrate + massflowratelocal
+      mass_ptot = mass_ptot + ptot*massflowratelocal*pref
+      mass_ttot = mass_ttot + ttot*massflowratelocal*tref
+      mass_ps = mass_ps + pm*massflowratelocal
+      xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
+&       1)) - refpoint(1)
+      yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
+&       2)) - refpoint(2)
+      zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
+&       3)) - refpoint(3)
+! pressure forces. note that these need a *negative* sign to be
+! consistent with the force computation. 
+      fx = -(pm*ssi(i, j, 1)*blk*fact)
+      fy = -(pm*ssi(i, j, 2)*blk*fact)
+      fz = -(pm*ssi(i, j, 3)*blk*fact)
+! update the pressure force and moment coefficients.
+      fp(1) = fp(1) + fx
+      fp(2) = fp(2) + fy
+      fp(3) = fp(3) + fz
+      mx = yc*fz - zc*fy
+      my = zc*fx - xc*fz
+      mz = xc*fy - yc*fx
+      mp(1) = mp(1) + mx
+      mp(2) = mp(2) + my
+      mp(3) = mp(3) + mz
+! momentum forces. these gets a little more complex: theb
+! bcdata(mm)%norm already is setup such that it points *out* of
+! the domain. the use of fact here *reverses* the factor that
+! has already been taken into account on massflowratelocal.
+      fx = -(massflowratelocal*bcdata(mm)%norm(i, j, 1)*vxm/timeref*fact&
+&       *blk)
+      fy = -(massflowratelocal*bcdata(mm)%norm(i, j, 2)*vym/timeref*fact&
+&       *blk)
+      fz = -(massflowratelocal*bcdata(mm)%norm(i, j, 3)*vzm/timeref*fact&
+&       *blk)
+      fmom(1) = fmom(1) + fx
+      fmom(2) = fmom(2) + fy
+      fmom(3) = fmom(3) + fz
+      mx = yc*fz - zc*fy
+      my = zc*fx - xc*fz
+      mz = xc*fy - yc*fx
+      mmom(1) = mmom(1) + mx
+      mmom(2) = mmom(2) + my
+      mmom(3) = mmom(3) + mz
+    end do
+! increment the local values array with what we computed here
+    localvalues(imassflow) = localvalues(imassflow) + massflowrate
+    localvalues(imassptot) = localvalues(imassptot) + mass_ptot
+    localvalues(imassttot) = localvalues(imassttot) + mass_ttot
+    localvalues(imassps) = localvalues(imassps) + mass_ps
+    localvalues(iflowfp:iflowfp+2) = localvalues(iflowfp:iflowfp+2) + fp
+    localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
+&     fmom
+    localvalues(iflowmp:iflowmp+2) = localvalues(iflowmp:iflowmp+2) + mp
+    localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
+&     mmom
+  end subroutine flowintegrationface
+!  differentiation of flowintegrationzipper in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: pointref timeref tref rgas
+!                pref rhoref vars localvalues
+!   with respect to varying inputs: pointref timeref tref rgas
+!                pref rhoref vars localvalues
+!   rw status of diff variables: pointref:incr timeref:incr tref:incr
+!                rgas:incr pref:incr rhoref:incr vars:incr localvalues:in-out
+  subroutine flowintegrationzipper_b(vars, varsd, localvalues, &
+&   localvaluesd, famlist, sps)
+! integrate over the trianges for the inflow/outflow conditions. 
+    use constants
+    use costfunctions, only : nlocalvalues, imassflow, imassptot, &
+&   imassttot, imassps, iflowmm, iflowmp, iflowfm, iflowfp
+    use sorting, only : bsearchintegers
+    use flowvarrefstate, only : pref, prefd, rhoref, rhorefd, pref, &
+&   prefd, timeref, timerefd, lref, tref, trefd, rgas, rgasd
+    use inputphysics, only : pointref, pointrefd
+    use flowutils_b, only : computeptot, computeptot_b, computettot, &
+&   computettot_b
+    use overset, only : zippermeshes, zippermesh
+    use surfacefamilies, only : familyexchange, bcfamexchange
+    use utils_b, only : mynorm2, mynorm2_b, cross_prod, cross_prod_b
+    implicit none
+! input/output variables
+    real(kind=realtype), dimension(:, :), intent(in) :: vars
+    real(kind=realtype), dimension(:, :) :: varsd
+    real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
+&   localvalues
+    real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
+&   localvaluesd
+    integer(kind=inttype), dimension(:), intent(in) :: famlist
+    integer(kind=inttype), intent(in) :: sps
+! working variables
+    integer(kind=inttype) :: i, j
+    real(kind=realtype) :: sf, vnm, vxm, vym, vzm, mredim, fx, fy, fz
+    real(kind=realtype) :: sfd, vnmd, vxmd, vymd, vzmd, mredimd, fxd, &
+&   fyd, fzd
+    real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint, &
+&   ss, x1, x2, x3, norm
+    real(kind=realtype), dimension(3) :: fpd, mpd, fmomd, mmomd, &
+&   refpointd, ssd, x1d, x2d, x3d, normd
+    real(kind=realtype) :: pm, ptot, ttot, rhom, massflowratelocal
+    real(kind=realtype) :: pmd, ptotd, ttotd, rhomd, massflowratelocald
+    real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps
+    real(kind=realtype) :: massflowrated, mass_ptotd, mass_ttotd, &
+&   mass_psd
+    real(kind=realtype) :: fact, xc, yc, zc, cellarea, mx, my, mz
+    real(kind=realtype) :: xcd, ycd, zcd, mxd, myd, mzd
+    real(kind=realtype), dimension(:), pointer :: localptr
+    type(zippermesh), pointer :: zipper
+    intrinsic sqrt
+    intrinsic size
+    real(kind=realtype), dimension(3) :: arg1
+    real(kind=realtype), dimension(3) :: arg1d
+    real(kind=realtype), dimension(3) :: arg2
+    real(kind=realtype), dimension(3) :: arg2d
+    real(kind=realtype) :: result1
+    real(kind=realtype) :: result1d
+    integer(kind=inttype) :: res
+    real(kind=realtype) :: temp1
+    real(kind=realtype) :: temp0
+    real(kind=realtype) :: tempd
+    real(kind=realtype) :: tempd2
+    real(kind=realtype) :: tempd1
+    real(kind=realtype) :: tempd0
+    real(kind=realtype) :: temp
+! set the zipper pointer to the zipper for inflow/outflow conditions
+    refpoint(1) = lref*pointref(1)
+    refpoint(2) = lref*pointref(2)
+    refpoint(3) = lref*pointref(3)
+    mredim = sqrt(pref*rhoref)
+    mmomd = 0.0_8
+    mmomd = localvaluesd(iflowmm:iflowmm+2)
+    mpd = 0.0_8
+    mpd = localvaluesd(iflowmp:iflowmp+2)
+    fmomd = 0.0_8
+    fmomd = localvaluesd(iflowfm:iflowfm+2)
+    fpd = 0.0_8
+    fpd = localvaluesd(iflowfp:iflowfp+2)
+    mass_psd = localvaluesd(imassps)
+    mass_ttotd = localvaluesd(imassttot)
+    mass_ptotd = localvaluesd(imassptot)
+    massflowrated = localvaluesd(imassflow)
+    mredimd = 0.0_8
+    normd = 0.0_8
+    ptotd = 0.0_8
+    refpointd = 0.0_8
+    ttotd = 0.0_8
+    do i=1,size(zipper%conn, 2)
+      res = bsearchintegers(zipper%fam(i), famlist)
+      if (res .gt. 0) then
+! compute the averaged values for this trianlge
+        vxm = zero
+        vym = zero
+        vzm = zero
+        rhom = zero
+        pm = zero
+        sf = zero
+        do j=1,3
+          rhom = rhom + vars(zipper%conn(j, i), irho)
+          vxm = vxm + vars(zipper%conn(j, i), ivx)
+          vym = vym + vars(zipper%conn(j, i), ivy)
+          vzm = vzm + vars(zipper%conn(j, i), ivz)
+          pm = pm + vars(zipper%conn(j, i), irhoe)
+          sf = sf + vars(zipper%conn(j, i), 6)
+        end do
+! divide by 3 due to the summation above:
+        rhom = third*rhom
+        vxm = third*vxm
+        vym = third*vym
+        vzm = third*vzm
+        pm = third*pm
+        sf = third*sf
+! get the nodes of triangle.
+        x1 = vars(zipper%conn(1, i), 7:9)
+        x2 = vars(zipper%conn(2, i), 7:9)
+        x3 = vars(zipper%conn(3, i), 7:9)
+        arg1(:) = x2 - x1
+        arg2(:) = x3 - x1
+        call cross_prod(arg1(:), arg2(:), norm)
+        ss = -(half*norm)
+        call computeptot(rhom, vxm, vym, vzm, pm, ptot)
+        call computettot(rhom, vxm, vym, vzm, pm, ttot)
+        call pushreal8(pm)
+        pm = pm*pref
+        vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3) - sf
+        massflowratelocal = rhom*vnm*mredim
+! compute the average cell center. 
+        xc = zero
+        yc = zero
+        zc = zero
+        do j=1,3
+          xc = xc + vars(zipper%conn(1, i), 7)
+          yc = yc + vars(zipper%conn(2, i), 8)
+          zc = zc + vars(zipper%conn(3, i), 9)
+        end do
+! finish average for cell center
+        xc = third*xc
+        yc = third*yc
+        zc = third*zc
+        xc = xc - refpoint(1)
+        yc = yc - refpoint(2)
+        zc = zc - refpoint(3)
+! update the pressure force and moment coefficients.
+! momentum forces
+! get unit normal vector. 
+        result1 = mynorm2(ss)
+        call pushreal8array(ss, 3)
+        ss = ss/result1
+        fx = massflowratelocal*ss(1)*vxm/timeref
+        fy = massflowratelocal*ss(2)*vym/timeref
+        fz = massflowratelocal*ss(3)*vzm/timeref
+! note: momentum forces have opposite sign to pressure forces
+        temp = ss(1)/timeref
+        temp0 = ss(2)/timeref
+        mzd = mmomd(3)
+        myd = mmomd(2)
+        mxd = mmomd(1)
+        xcd = fy*mzd - fz*myd
+        fyd = xc*mzd - fmomd(2) - zc*mxd
+        ycd = fz*mxd - fx*mzd
+        fxd = zc*myd - fmomd(1) - yc*mzd
+        zcd = fx*myd - fy*mxd
+        fzd = yc*mxd - fmomd(3) - xc*myd
+        ssd = 0.0_8
+        tempd0 = massflowratelocal*vzm*fzd/timeref
+        temp1 = ss(3)/timeref
+        ssd(3) = ssd(3) + tempd0
+        massflowratelocald = temp0*vym*fyd + temp*vxm*fxd + temp1*vzm*&
+&         fzd
+        vzmd = temp1*massflowratelocal*fzd
+        tempd1 = massflowratelocal*vym*fyd/timeref
+        ssd(2) = ssd(2) + tempd1
+        vymd = temp0*massflowratelocal*fyd
+        tempd2 = massflowratelocal*vxm*fxd/timeref
+        timerefd = timerefd - temp0*tempd1 - temp*tempd2 - temp1*tempd0
+        ssd(1) = ssd(1) + tempd2
+        vxmd = temp*massflowratelocal*fxd
+        call popreal8array(ss, 3)
+        result1d = sum(-(ss*ssd/result1))/result1
+        ssd = ssd/result1
+        call mynorm2_b(ss, ssd, result1d)
+        mzd = mpd(3)
+        myd = mpd(2)
+        mxd = mpd(1)
+        fx = pm*ss(1)
+        fy = pm*ss(2)
+        fyd = fpd(2) - zc*mxd + xc*mzd
+        fxd = zc*myd + fpd(1) - yc*mzd
+        fz = pm*ss(3)
+        xcd = xcd + fy*mzd - fz*myd
+        ycd = ycd + fz*mxd - fx*mzd
+        zcd = zcd + fx*myd - fy*mxd
+        fzd = yc*mxd + fpd(3) - xc*myd
+        pmd = ss(2)*fyd + ss(1)*fxd + ss(3)*fzd
+        ssd(3) = ssd(3) + pm*fzd
+        ssd(2) = ssd(2) + pm*fyd
+        ssd(1) = ssd(1) + pm*fxd
+        refpointd(3) = refpointd(3) - zcd
+        refpointd(2) = refpointd(2) - ycd
+        refpointd(1) = refpointd(1) - xcd
+        zcd = third*zcd
+        ycd = third*ycd
+        xcd = third*xcd
+        do j=3,1,-1
+          varsd(zipper%conn(3, i), 9) = varsd(zipper%conn(3, i), 9) + &
+&           zcd
+          varsd(zipper%conn(2, i), 8) = varsd(zipper%conn(2, i), 8) + &
+&           ycd
+          varsd(zipper%conn(1, i), 7) = varsd(zipper%conn(1, i), 7) + &
+&           xcd
+        end do
+        pmd = pmd + massflowratelocal*mass_psd
+        massflowratelocald = massflowratelocald + tref*ttot*mass_ttotd +&
+&         massflowrated + pref*ptot*mass_ptotd + pm*mass_psd
+        ttotd = ttotd + tref*massflowratelocal*mass_ttotd
+        trefd = trefd + ttot*massflowratelocal*mass_ttotd
+        ptotd = ptotd + pref*massflowratelocal*mass_ptotd
+        rhomd = mredim*vnm*massflowratelocald
+        vnmd = mredim*rhom*massflowratelocald
+        mredimd = mredimd + rhom*vnm*massflowratelocald
+        vxmd = vxmd + ss(1)*vnmd
+        ssd(1) = ssd(1) + vxm*vnmd
+        vymd = vymd + ss(2)*vnmd
+        ssd(2) = ssd(2) + vym*vnmd
+        vzmd = vzmd + ss(3)*vnmd
+        ssd(3) = ssd(3) + vzm*vnmd
+        sfd = -vnmd
+        call popreal8(pm)
+        prefd = prefd + pm*pmd + ptot*massflowratelocal*mass_ptotd
+        pmd = pref*pmd
+        call computettot_b(rhom, rhomd, vxm, vxmd, vym, vymd, vzm, vzmd&
+&                    , pm, pmd, ttot, ttotd)
+        call computeptot_b(rhom, rhomd, vxm, vxmd, vym, vymd, vzm, vzmd&
+&                    , pm, pmd, ptot, ptotd)
+        normd = normd - half*ssd
+        call cross_prod_b(arg1(:), arg1d(:), arg2(:), arg2d(:), norm, &
+&                   normd)
+        x1d = 0.0_8
+        x3d = 0.0_8
+        x3d = arg2d(:)
+        x1d = -arg1d(:) - arg2d(:)
+        x2d = 0.0_8
+        x2d = arg1d(:)
+        varsd(zipper%conn(3, i), 7:9) = varsd(zipper%conn(3, i), 7:9) + &
+&         x3d
+        varsd(zipper%conn(2, i), 7:9) = varsd(zipper%conn(2, i), 7:9) + &
+&         x2d
+        varsd(zipper%conn(1, i), 7:9) = varsd(zipper%conn(1, i), 7:9) + &
+&         x1d
+        sfd = third*sfd
+        pmd = third*pmd
+        vzmd = third*vzmd
+        vymd = third*vymd
+        vxmd = third*vxmd
+        rhomd = third*rhomd
+        do j=3,1,-1
+          varsd(zipper%conn(j, i), 6) = varsd(zipper%conn(j, i), 6) + &
+&           sfd
+          varsd(zipper%conn(j, i), irhoe) = varsd(zipper%conn(j, i), &
+&           irhoe) + pmd
+          varsd(zipper%conn(j, i), ivz) = varsd(zipper%conn(j, i), ivz) &
+&           + vzmd
+          varsd(zipper%conn(j, i), ivy) = varsd(zipper%conn(j, i), ivy) &
+&           + vymd
+          varsd(zipper%conn(j, i), ivx) = varsd(zipper%conn(j, i), ivx) &
+&           + vxmd
+          varsd(zipper%conn(j, i), irho) = varsd(zipper%conn(j, i), irho&
+&           ) + rhomd
+        end do
+      end if
+    end do
+    if (pref*rhoref .eq. 0.0_8) then
+      tempd = 0.0
+    else
+      tempd = mredimd/(2.0*sqrt(pref*rhoref))
+    end if
+    prefd = prefd + rhoref*tempd
+    rhorefd = rhorefd + pref*tempd
+    pointrefd(3) = pointrefd(3) + lref*refpointd(3)
+    refpointd(3) = 0.0_8
+    pointrefd(2) = pointrefd(2) + lref*refpointd(2)
+    refpointd(2) = 0.0_8
+    pointrefd(1) = pointrefd(1) + lref*refpointd(1)
+  end subroutine flowintegrationzipper_b
+  subroutine flowintegrationzipper(vars, localvalues, famlist, sps)
+! integrate over the trianges for the inflow/outflow conditions. 
+    use constants
+    use costfunctions, only : nlocalvalues, imassflow, imassptot, &
+&   imassttot, imassps, iflowmm, iflowmp, iflowfm, iflowfp
+    use sorting, only : bsearchintegers
+    use flowvarrefstate, only : pref, rhoref, pref, timeref, lref, &
+&   tref, rgas
+    use inputphysics, only : pointref
+    use flowutils_b, only : computeptot, computettot
+    use overset, only : zippermeshes, zippermesh
+    use surfacefamilies, only : familyexchange, bcfamexchange
+    use utils_b, only : mynorm2, cross_prod
+    implicit none
+! input/output variables
+    real(kind=realtype), dimension(:, :), intent(in) :: vars
+    real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
+&   localvalues
+    integer(kind=inttype), dimension(:), intent(in) :: famlist
+    integer(kind=inttype), intent(in) :: sps
+! working variables
+    integer(kind=inttype) :: i, j
+    real(kind=realtype) :: sf, vnm, vxm, vym, vzm, mredim, fx, fy, fz
+    real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint, &
+&   ss, x1, x2, x3, norm
+    real(kind=realtype) :: pm, ptot, ttot, rhom, massflowratelocal
+    real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps
+    real(kind=realtype) :: fact, xc, yc, zc, cellarea, mx, my, mz
+    real(kind=realtype), dimension(:), pointer :: localptr
+    type(zippermesh), pointer :: zipper
+    intrinsic sqrt
+    intrinsic size
+    real(kind=realtype), dimension(3) :: arg1
+    real(kind=realtype), dimension(3) :: arg2
+    real(kind=realtype) :: result1
+! set the zipper pointer to the zipper for inflow/outflow conditions
+    zipper => zippermeshes(ibcgroupinflowoutflow)
+    massflowrate = zero
+    mass_ptot = zero
+    mass_ttot = zero
+    mass_ps = zero
+    refpoint(1) = lref*pointref(1)
+    refpoint(2) = lref*pointref(2)
+    refpoint(3) = lref*pointref(3)
+    mredim = sqrt(pref*rhoref)
+    fp = zero
+    mp = zero
+    fmom = zero
+    mmom = zero
+    do i=1,size(zipper%conn, 2)
+      if (bsearchintegers(zipper%fam(i), famlist) .gt. 0) then
+! compute the averaged values for this trianlge
+        vxm = zero
+        vym = zero
+        vzm = zero
+        rhom = zero
+        pm = zero
+        sf = zero
+        do j=1,3
+          rhom = rhom + vars(zipper%conn(j, i), irho)
+          vxm = vxm + vars(zipper%conn(j, i), ivx)
+          vym = vym + vars(zipper%conn(j, i), ivy)
+          vzm = vzm + vars(zipper%conn(j, i), ivz)
+          pm = pm + vars(zipper%conn(j, i), irhoe)
+          sf = sf + vars(zipper%conn(j, i), 6)
+        end do
+! divide by 3 due to the summation above:
+        rhom = third*rhom
+        vxm = third*vxm
+        vym = third*vym
+        vzm = third*vzm
+        pm = third*pm
+        sf = third*sf
+! get the nodes of triangle.
+        x1 = vars(zipper%conn(1, i), 7:9)
+        x2 = vars(zipper%conn(2, i), 7:9)
+        x3 = vars(zipper%conn(3, i), 7:9)
+        arg1(:) = x2 - x1
+        arg2(:) = x3 - x1
+        call cross_prod(arg1(:), arg2(:), norm)
+        ss = -(half*norm)
+        call computeptot(rhom, vxm, vym, vzm, pm, ptot)
+        call computettot(rhom, vxm, vym, vzm, pm, ttot)
+        pm = pm*pref
+        vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3) - sf
+        massflowratelocal = rhom*vnm*mredim
+        massflowrate = massflowrate + massflowratelocal
+        mass_ptot = mass_ptot + ptot*massflowratelocal*pref
+        mass_ttot = mass_ttot + ttot*massflowratelocal*tref
+        mass_ps = mass_ps + pm*massflowratelocal
+! compute the average cell center. 
+        xc = zero
+        yc = zero
+        zc = zero
+        do j=1,3
+          xc = xc + vars(zipper%conn(1, i), 7)
+          yc = yc + vars(zipper%conn(2, i), 8)
+          zc = zc + vars(zipper%conn(3, i), 9)
+        end do
+! finish average for cell center
+        xc = third*xc
+        yc = third*yc
+        zc = third*zc
+        xc = xc - refpoint(1)
+        yc = yc - refpoint(2)
+        zc = zc - refpoint(3)
+        fx = pm*ss(1)
+        fy = pm*ss(2)
+        fz = pm*ss(3)
+! update the pressure force and moment coefficients.
+        fp(1) = fp(1) + fx
+        fp(2) = fp(2) + fy
+        fp(3) = fp(3) + fz
+        mx = yc*fz - zc*fy
+        my = zc*fx - xc*fz
+        mz = xc*fy - yc*fx
+        mp(1) = mp(1) + mx
+        mp(2) = mp(2) + my
+        mp(3) = mp(3) + mz
+! momentum forces
+! get unit normal vector. 
+        result1 = mynorm2(ss)
+        ss = ss/result1
+        fx = massflowratelocal*ss(1)*vxm/timeref
+        fy = massflowratelocal*ss(2)*vym/timeref
+        fz = massflowratelocal*ss(3)*vzm/timeref
+! note: momentum forces have opposite sign to pressure forces
+        fmom(1) = fmom(1) - fx
+        fmom(2) = fmom(2) - fy
+        fmom(3) = fmom(3) - fz
+        mx = yc*fz - zc*fy
+        my = zc*fx - xc*fz
+        mz = xc*fy - yc*fx
+        mmom(1) = mmom(1) + mx
+        mmom(2) = mmom(2) + my
+        mmom(3) = mmom(3) + mz
+      end if
+    end do
+! increment the local values array with what we computed here
+    localvalues(imassflow) = localvalues(imassflow) + massflowrate
+    localvalues(imassptot) = localvalues(imassptot) + mass_ptot
+    localvalues(imassttot) = localvalues(imassttot) + mass_ttot
+    localvalues(imassps) = localvalues(imassps) + mass_ps
+    localvalues(iflowfp:iflowfp+2) = localvalues(iflowfp:iflowfp+2) + fp
+    localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
+&     fmom
+    localvalues(iflowmp:iflowmp+2) = localvalues(iflowmp:iflowmp+2) + mp
+    localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
+&     mmom
+  end subroutine flowintegrationzipper
+!  differentiation of wallintegrationzipper in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: pointref vars localvalues
+!   with respect to varying inputs: pointref vars localvalues
+!   rw status of diff variables: pointref:incr vars:incr localvalues:in-out
+  subroutine wallintegrationzipper_b(vars, varsd, localvalues, &
+&   localvaluesd, famlist, sps)
+    use constants
+    use costfunctions
+    use sorting, only : bsearchintegers
+    use flowvarrefstate, only : lref
+    use inputphysics, only : pointref, pointrefd
+    use overset, only : zippermeshes, zippermesh
+    use utils_b, only : mynorm2, mynorm2_b, cross_prod, cross_prod_b
+    implicit none
+! input/output
+    real(kind=realtype), dimension(:, :), intent(in) :: vars
+    real(kind=realtype), dimension(:, :) :: varsd
+    real(kind=realtype), intent(inout) :: localvalues(nlocalvalues)
+    real(kind=realtype) :: localvaluesd(nlocalvalues)
+    integer(kind=inttype), dimension(:), intent(in) :: famlist
+    integer(kind=inttype), intent(in) :: sps
+! working
+    real(kind=realtype), dimension(3) :: fp, fv, mp, mv
+    real(kind=realtype), dimension(3) :: fpd, fvd, mpd, mvd
+    type(zippermesh), pointer :: zipper
+    integer(kind=inttype) :: i, j
+    real(kind=realtype), dimension(3) :: ss, norm, refpoint
+    real(kind=realtype), dimension(3) :: ssd, normd, refpointd
+    real(kind=realtype), dimension(3) :: p1, p2, p3, v1, v2, v3, x1, x2&
+&   , x3
+    real(kind=realtype), dimension(3) :: p1d, p2d, p3d, v1d, v2d, v3d, &
+&   x1d, x2d, x3d
+    real(kind=realtype) :: fact, triarea, fx, fy, fz, mx, my, mz, xc, yc&
+&   , zc
+    real(kind=realtype) :: triaread, fxd, fyd, fzd, mxd, myd, mzd, xcd, &
+&   ycd, zcd
+    intrinsic size
+    real(kind=realtype), dimension(3) :: arg1
+    real(kind=realtype), dimension(3) :: arg1d
+    real(kind=realtype), dimension(3) :: arg2
+    real(kind=realtype), dimension(3) :: arg2d
+    real(kind=realtype) :: result1
+    real(kind=realtype) :: result1d
+    integer(kind=inttype) :: res
+    real(kind=realtype) :: tempd
+    real(kind=realtype) :: tempd4
+    real(kind=realtype) :: tempd3
+    real(kind=realtype) :: tempd2
+    real(kind=realtype) :: tempd1
+    real(kind=realtype) :: tempd0
+! set the zipper pointer to the zipper for inflow/outflow conditions
+! determine the reference point for the moment computation in
+! meters.
+    refpoint(1) = lref*pointref(1)
+    refpoint(2) = lref*pointref(2)
+    refpoint(3) = lref*pointref(3)
+    mvd = 0.0_8
+    mvd = localvaluesd(imv:imv+2)
+    mpd = 0.0_8
+    mpd = localvaluesd(imp:imp+2)
+    fvd = 0.0_8
+    fvd = localvaluesd(ifv:ifv+2)
+    fpd = 0.0_8
+    fpd = localvaluesd(ifp:ifp+2)
+    normd = 0.0_8
+    refpointd = 0.0_8
+    do i=1,size(zipper%conn, 2)
+      res = bsearchintegers(zipper%fam(i), famlist)
+      if (res .gt. 0) then
+! get the nodes of triangle. the *3 is becuase of the
+! blanket third above. 
+        x1 = vars(zipper%conn(1, i), 7:9)
+        x2 = vars(zipper%conn(2, i), 7:9)
+        x3 = vars(zipper%conn(3, i), 7:9)
+        arg1(:) = x2 - x1
+        arg2(:) = x3 - x1
+        call cross_prod(arg1(:), arg2(:), norm)
+        ss = half*norm
+! the third here is to account for the summation of p1, p2
+! and p3
+        result1 = mynorm2(ss)
+        triarea = result1*third
+! compute the average cell center. 
+        xc = zero
+        yc = zero
+        zc = zero
+        do j=1,3
+          xc = xc + vars(zipper%conn(1, i), 7)
+          yc = yc + vars(zipper%conn(2, i), 8)
+          zc = zc + vars(zipper%conn(3, i), 9)
+        end do
+! finish average for cell center          
+        xc = third*xc
+        yc = third*yc
+        zc = third*zc
+        xc = xc - refpoint(1)
+        yc = yc - refpoint(2)
+        zc = zc - refpoint(3)
+! update the pressure force and moment coefficients.
+        p1 = vars(zipper%conn(1, i), 1:3)
+        p2 = vars(zipper%conn(2, i), 1:3)
+        p3 = vars(zipper%conn(3, i), 1:3)
+! update the viscous force and moment coefficients
+        v1 = vars(zipper%conn(1, i), 4:6)
+        v2 = vars(zipper%conn(2, i), 4:6)
+        v3 = vars(zipper%conn(3, i), 4:6)
+        fx = (v1(1)+v2(1)+v3(1))*triarea
+        fy = (v1(2)+v2(2)+v3(2))*triarea
+        fz = (v1(3)+v2(3)+v3(3))*triarea
+! note: momentum forces have opposite sign to pressure forces
+        mzd = mvd(3)
+        myd = mvd(2)
+        mxd = mvd(1)
+        xcd = fy*mzd - fz*myd
+        fyd = fvd(2) - zc*mxd + xc*mzd
+        ycd = fz*mxd - fx*mzd
+        fxd = zc*myd + fvd(1) - yc*mzd
+        zcd = fx*myd - fy*mxd
+        fzd = yc*mxd + fvd(3) - xc*myd
+        v1d = 0.0_8
+        v2d = 0.0_8
+        v3d = 0.0_8
+        tempd = triarea*fzd
+        v1d(3) = v1d(3) + tempd
+        v2d(3) = v2d(3) + tempd
+        v3d(3) = v3d(3) + tempd
+        triaread = (v1(2)+v2(2)+v3(2))*fyd + (v1(1)+v2(1)+v3(1))*fxd + (&
+&         v1(3)+v2(3)+v3(3))*fzd
+        tempd0 = triarea*fyd
+        v1d(2) = v1d(2) + tempd0
+        v2d(2) = v2d(2) + tempd0
+        v3d(2) = v3d(2) + tempd0
+        tempd1 = triarea*fxd
+        v1d(1) = v1d(1) + tempd1
+        v2d(1) = v2d(1) + tempd1
+        v3d(1) = v3d(1) + tempd1
+        varsd(zipper%conn(3, i), 4:6) = varsd(zipper%conn(3, i), 4:6) + &
+&         v3d
+        varsd(zipper%conn(2, i), 4:6) = varsd(zipper%conn(2, i), 4:6) + &
+&         v2d
+        varsd(zipper%conn(1, i), 4:6) = varsd(zipper%conn(1, i), 4:6) + &
+&         v1d
+        mzd = mpd(3)
+        myd = mpd(2)
+        mxd = mpd(1)
+        fx = (p1(1)+p2(1)+p3(1))*triarea
+        fy = (p1(2)+p2(2)+p3(2))*triarea
+        fyd = fpd(2) - zc*mxd + xc*mzd
+        fxd = zc*myd + fpd(1) - yc*mzd
+        fz = (p1(3)+p2(3)+p3(3))*triarea
+        xcd = xcd + fy*mzd - fz*myd
+        ycd = ycd + fz*mxd - fx*mzd
+        zcd = zcd + fx*myd - fy*mxd
+        fzd = yc*mxd + fpd(3) - xc*myd
+        p1d = 0.0_8
+        p2d = 0.0_8
+        p3d = 0.0_8
+        tempd2 = triarea*fzd
+        p1d(3) = p1d(3) + tempd2
+        p2d(3) = p2d(3) + tempd2
+        p3d(3) = p3d(3) + tempd2
+        triaread = triaread + (p1(2)+p2(2)+p3(2))*fyd + (p1(1)+p2(1)+p3(&
+&         1))*fxd + (p1(3)+p2(3)+p3(3))*fzd
+        tempd3 = triarea*fyd
+        p1d(2) = p1d(2) + tempd3
+        p2d(2) = p2d(2) + tempd3
+        p3d(2) = p3d(2) + tempd3
+        tempd4 = triarea*fxd
+        p1d(1) = p1d(1) + tempd4
+        p2d(1) = p2d(1) + tempd4
+        p3d(1) = p3d(1) + tempd4
+        varsd(zipper%conn(3, i), 1:3) = varsd(zipper%conn(3, i), 1:3) + &
+&         p3d
+        varsd(zipper%conn(2, i), 1:3) = varsd(zipper%conn(2, i), 1:3) + &
+&         p2d
+        varsd(zipper%conn(1, i), 1:3) = varsd(zipper%conn(1, i), 1:3) + &
+&         p1d
+        refpointd(3) = refpointd(3) - zcd
+        refpointd(2) = refpointd(2) - ycd
+        refpointd(1) = refpointd(1) - xcd
+        zcd = third*zcd
+        ycd = third*ycd
+        xcd = third*xcd
+        do j=3,1,-1
+          varsd(zipper%conn(3, i), 9) = varsd(zipper%conn(3, i), 9) + &
+&           zcd
+          varsd(zipper%conn(2, i), 8) = varsd(zipper%conn(2, i), 8) + &
+&           ycd
+          varsd(zipper%conn(1, i), 7) = varsd(zipper%conn(1, i), 7) + &
+&           xcd
+        end do
+        result1d = third*triaread
+        ssd = 0.0_8
+        call mynorm2_b(ss, ssd, result1d)
+        normd = normd + half*ssd
+        call cross_prod_b(arg1(:), arg1d(:), arg2(:), arg2d(:), norm, &
+&                   normd)
+        x1d = 0.0_8
+        x3d = 0.0_8
+        x3d = arg2d(:)
+        x1d = -arg1d(:) - arg2d(:)
+        x2d = 0.0_8
+        x2d = arg1d(:)
+        varsd(zipper%conn(3, i), 7:9) = varsd(zipper%conn(3, i), 7:9) + &
+&         x3d
+        varsd(zipper%conn(2, i), 7:9) = varsd(zipper%conn(2, i), 7:9) + &
+&         x2d
+        varsd(zipper%conn(1, i), 7:9) = varsd(zipper%conn(1, i), 7:9) + &
+&         x1d
+      end if
+    end do
+    pointrefd(3) = pointrefd(3) + lref*refpointd(3)
+    refpointd(3) = 0.0_8
+    pointrefd(2) = pointrefd(2) + lref*refpointd(2)
+    refpointd(2) = 0.0_8
+    pointrefd(1) = pointrefd(1) + lref*refpointd(1)
+  end subroutine wallintegrationzipper_b
+  subroutine wallintegrationzipper(vars, localvalues, famlist, sps)
+    use constants
+    use costfunctions
+    use sorting, only : bsearchintegers
+    use flowvarrefstate, only : lref
+    use inputphysics, only : pointref
+    use overset, only : zippermeshes, zippermesh
+    use utils_b, only : mynorm2, cross_prod
+    implicit none
+! input/output
+    real(kind=realtype), dimension(:, :), intent(in) :: vars
+    real(kind=realtype), intent(inout) :: localvalues(nlocalvalues)
+    integer(kind=inttype), dimension(:), intent(in) :: famlist
+    integer(kind=inttype), intent(in) :: sps
+! working
+    real(kind=realtype), dimension(3) :: fp, fv, mp, mv
+    type(zippermesh), pointer :: zipper
+    integer(kind=inttype) :: i, j
+    real(kind=realtype), dimension(3) :: ss, norm, refpoint
+    real(kind=realtype), dimension(3) :: p1, p2, p3, v1, v2, v3, x1, x2&
+&   , x3
+    real(kind=realtype) :: fact, triarea, fx, fy, fz, mx, my, mz, xc, yc&
+&   , zc
+    intrinsic size
+    real(kind=realtype), dimension(3) :: arg1
+    real(kind=realtype), dimension(3) :: arg2
+    real(kind=realtype) :: result1
+! set the zipper pointer to the zipper for inflow/outflow conditions
+    zipper => zippermeshes(ibcgroupwalls)
+! determine the reference point for the moment computation in
+! meters.
+    refpoint(1) = lref*pointref(1)
+    refpoint(2) = lref*pointref(2)
+    refpoint(3) = lref*pointref(3)
+    fp = zero
+    fv = zero
+    mp = zero
+    mv = zero
+    do i=1,size(zipper%conn, 2)
+      if (bsearchintegers(zipper%fam(i), famlist) .gt. 0) then
+! get the nodes of triangle. the *3 is becuase of the
+! blanket third above. 
+        x1 = vars(zipper%conn(1, i), 7:9)
+        x2 = vars(zipper%conn(2, i), 7:9)
+        x3 = vars(zipper%conn(3, i), 7:9)
+        arg1(:) = x2 - x1
+        arg2(:) = x3 - x1
+        call cross_prod(arg1(:), arg2(:), norm)
+        ss = half*norm
+! the third here is to account for the summation of p1, p2
+! and p3
+        result1 = mynorm2(ss)
+        triarea = result1*third
+! compute the average cell center. 
+        xc = zero
+        yc = zero
+        zc = zero
+        do j=1,3
+          xc = xc + vars(zipper%conn(1, i), 7)
+          yc = yc + vars(zipper%conn(2, i), 8)
+          zc = zc + vars(zipper%conn(3, i), 9)
+        end do
+! finish average for cell center          
+        xc = third*xc
+        yc = third*yc
+        zc = third*zc
+        xc = xc - refpoint(1)
+        yc = yc - refpoint(2)
+        zc = zc - refpoint(3)
+! update the pressure force and moment coefficients.
+        p1 = vars(zipper%conn(1, i), 1:3)
+        p2 = vars(zipper%conn(2, i), 1:3)
+        p3 = vars(zipper%conn(3, i), 1:3)
+        fx = (p1(1)+p2(1)+p3(1))*triarea
+        fy = (p1(2)+p2(2)+p3(2))*triarea
+        fz = (p1(3)+p2(3)+p3(3))*triarea
+        fp(1) = fp(1) + fx
+        fp(2) = fp(2) + fy
+        fp(3) = fp(3) + fz
+        mx = yc*fz - zc*fy
+        my = zc*fx - xc*fz
+        mz = xc*fy - yc*fx
+        mp(1) = mp(1) + mx
+        mp(2) = mp(2) + my
+        mp(3) = mp(3) + mz
+! update the viscous force and moment coefficients
+        v1 = vars(zipper%conn(1, i), 4:6)
+        v2 = vars(zipper%conn(2, i), 4:6)
+        v3 = vars(zipper%conn(3, i), 4:6)
+        fx = (v1(1)+v2(1)+v3(1))*triarea
+        fy = (v1(2)+v2(2)+v3(2))*triarea
+        fz = (v1(3)+v2(3)+v3(3))*triarea
+! note: momentum forces have opposite sign to pressure forces
+        fv(1) = fv(1) + fx
+        fv(2) = fv(2) + fy
+        fv(3) = fv(3) + fz
+        mx = yc*fz - zc*fy
+        my = zc*fx - xc*fz
+        mz = xc*fy - yc*fx
+        mv(1) = mv(1) + mx
+        mv(2) = mv(2) + my
+        mv(3) = mv(3) + mz
+      end if
+    end do
+! increment into the local vector
+    localvalues(ifp:ifp+2) = localvalues(ifp:ifp+2) + fp
+    localvalues(ifv:ifv+2) = localvalues(ifv:ifv+2) + fv
+    localvalues(imp:imp+2) = localvalues(imp:imp+2) + mp
+    localvalues(imv:imv+2) = localvalues(imv:imv+2) + mv
+  end subroutine wallintegrationzipper
 end module surfaceintegrations_b

@@ -345,7 +345,7 @@ contains
 
     ! Generic routine for setting pointers to the communication
     ! variables. Can also set pointers to derivatve values if derivPts is True.
-    
+
     use constants
     use block, only : fLowDoms, blockType, flowDomsd, nDom
     implicit none
@@ -379,7 +379,7 @@ contains
           nVar = nVar + 1
           blk%realCommVars(nVar)%var => blkLevel%w(:, :, :, k)
        end do
-       
+
        if( commPressure )  then
           nVar = nVar + 1
           blk%realCommVars(nVar)%var => blkLevel%P(:, :, :)
@@ -394,15 +394,15 @@ contains
           nVar = nVar + 1
           blk%realCommvars(nVar)%var => blk1%rlv(:, :, :)
        end if
-       
+
        if( commEddyVis ) then
           nVar = nVar + 1
           blk%realCommVars(nVar)%var => blkLevel%rev(:, :, :)
        end if
-       
+
     end do domainLoop
   end subroutine setCommPointers
-  
+
   subroutine whalo1to1(level, start, end, commPressure,       &
        commVarGamma, commLamVis, commEddyVis, &
        commPattern, internal)
@@ -442,7 +442,7 @@ contains
     if(start <= ivx .and. end >= ivz) correctPeriodic = .true.
 
     spectralModes: do sps=1,nTimeIntervalsSpectral
-       
+
        call setCommPointers(start, end, commPressure, commVarGamma, &
             commLamVis, commEddyVis, level, sps, .False., nVar)
 
@@ -1227,16 +1227,16 @@ contains
 
     !      Local variables.
     integer(kind=intType) :: nVar, sps
-    
+
     spectralModes: do sps=1,nTimeIntervalsSpectral
-       
+
        call setCommPointers(start, end, commPressure, commVarGamma, &
             commLamVis, commEddyVis, level, sps, .False., nVar)
-       
+
        if (nVar == 0) then 
           return
        end if
-       
+
        ! Run the generic exchange
        call wOversetGeneric(nVar, level, sps, commPattern, internal)
     end do spectralModes
@@ -1271,16 +1271,16 @@ contains
     type(commType), dimension(:, :), intent(in) :: commPattern
     type(internalCommType), dimension(:, :), intent(in) :: internal
     integer(kind=intType) :: nVar, sps
-    
+
     spectralModes: do sps=1,nTimeIntervalsSpectral
-       
+
        call setCommPointers(start, end, commPressure, commVarGamma, &
             commLamVis, commEddyVis, level, sps, .True., nVar)
-       
+
        if (nVar == 0) then 
           return
        end if
-       
+
        ! Run the generic exchange
        call wOversetGeneric(nVar, level, sps, commPattern, internal)
     end do spectralModes
@@ -1583,7 +1583,7 @@ contains
     commVarGamma = .false.
     if(commGamma .and. (cpModel == cpTempCurveFits)) &
          commVarGamma = .true.
-    
+
     ! Exchange the 1 to 1 matching 2nd level cell halo's.
 
     call whalo1to1_d(level, start, end, commPressure, commVarGamma, &
@@ -1663,7 +1663,7 @@ contains
     ! Determine the number of variables per cell to be sent.
 
     nVar = max(0_intType,(end - start + 1))
-  
+
     if( commPressure ) nVar = nVar + 1
     if( commVarGamma ) nVar = nVar + 1
     if( commLamVis )   nVar = nVar + 1
@@ -1803,28 +1803,28 @@ contains
           do k=start,end
              flowDomsd(d1,level,mm)%w(i1  , j1  , k1  , k) = flowDomsd(d1, level, mm)%w(i1  , j1  , k1  , k) + &
                   weight(1)*flowDomsd(d2, level, mm)%w(i2, j2, k2, k)
-             
+
              flowDomsd(d1,level,mm)%w(i1+1, j1  , k1  , k) = flowDomsd(d1, level, mm)%w(i1+1, j1  , k1  , k) + &
                   weight(2)*flowDomsd(d2, level, mm)%w(i2, j2, k2, k)
-             
+
              flowDomsd(d1,level,mm)%w(i1  , j1+1, k1  , k) = flowDomsd(d1, level, mm)%w(i1  , j1+1, k1  , k) + &
                   weight(3)*flowDomsd(d2, level, mm)%w(i2, j2, k2, k)
-             
+
              flowDomsd(d1,level,mm)%w(i1+1, j1+1, k1  , k) = flowDomsd(d1, level, mm)%w(i1+1, j1+1, k1  , k) + &
                   weight(4)*flowDomsd(d2, level, mm)%w(i2, j2, k2, k)
 
              flowDomsd(d1,level,mm)%w(i1  , j1  , k1+1, k) = flowDomsd(d1, level, mm)%w(i1  , j1  , k1+1, k) + &
                   weight(5)*flowDomsd(d2, level, mm)%w(i2, j2, k2, k)
-             
+
              flowDomsd(d1,level,mm)%w(i1+1, j1  , k1+1, k) = flowDomsd(d1, level, mm)%w(i1+1, j1  , k1+1, k) + &
                   weight(6)*flowDomsd(d2, level, mm)%w(i2, j2, k2, k)
 
              flowDomsd(d1,level,mm)%w(i1  , j1+1, k1+1, k) = flowDomsd(d1, level, mm)%w(i1  , j1+1, k1+1, k) + &
                   weight(7)*flowDomsd(d2, level, mm)%w(i2, j2, k2, k)
-             
+
              flowDomsd(d1,level,mm)%w(i1+1, j1+1, k1+1, k) = flowDomsd(d1, level, mm)%w(i1+1, j1+1, k1+1, k) + &
                   weight(8)*flowDomsd(d2, level, mm)%w(i2, j2, k2, k)
-             
+
              flowDomsd(d2, level, mm)%w(i2, j2, k2, k) = zero
           enddo
 
@@ -1989,28 +1989,28 @@ contains
 
              do k=start,end
                 jj = jj + 1
-                
+
                 flowDomsd(d2,level,mm)%w(i2  , j2  , k2  , k) = flowDomsd(d2, level, mm)%w(i2  , j2  , k2  , k) + &
                      weight(1)*sendBuffer(jj)
-                
+
                 flowDomsd(d2,level,mm)%w(i2+1, j2  , k2  , k) = flowDomsd(d2, level, mm)%w(i2+1, j2  , k2  , k) + &
                      weight(2)*sendBuffer(jj)
-                
+
                 flowDomsd(d2,level,mm)%w(i2  , j2+1, k2  , k) = flowDomsd(d2, level, mm)%w(i2  , j2+1, k2  , k) + &
                      weight(3)*sendBuffer(jj)
-                
+
                 flowDomsd(d2,level,mm)%w(i2+1, j2+1, k2  , k) = flowDomsd(d2, level, mm)%w(i2+1, j2+1, k2  , k) + &
                      weight(4)*sendBuffer(jj)
 
                 flowDomsd(d2,level,mm)%w(i2  , j2  , k2+1, k) = flowDomsd(d2, level, mm)%w(i2  , j2  , k2+1, k) + &
                      weight(5)*sendBuffer(jj)
-                
+
                 flowDomsd(d2,level,mm)%w(i2+1, j2  , k2+1, k) = flowDomsd(d2, level, mm)%w(i2+1, j2  , k2+1, k) + &
                      weight(6)*sendBuffer(jj)
 
                 flowDomsd(d2,level,mm)%w(i2  , j2+1, k2+1, k) = flowDomsd(d2, level, mm)%w(i2  , j2+1, k2+1, k) + &
                      weight(7)*sendBuffer(jj)
-                
+
                 flowDomsd(d2,level,mm)%w(i2+1, j2+1, k2+1, k) = flowDomsd(d2, level, mm)%w(i2+1, j2+1, k2+1, k) + &
                      weight(8)*sendBuffer(jj)
              enddo
@@ -2630,367 +2630,797 @@ contains
     enddo
 
   end subroutine correctPeriodicCoor
-subroutine exchangeCoor_b(level)
-  !
-  !       ExchangeCoor_b exchanges the *derivatives* of the given grid
-  !       level IN REVERSE MODE.
-  !
-  use constants
-  use block
-  use communication
-  use inputTimeSpectral
-  implicit none
-  !
-  !      Subroutine arguments.
-  !
-  integer(kind=intType), intent(in) :: level
-  !
-  !      Local variables.
-  !
-  integer :: size, procID, ierr, index
-  integer, dimension(mpi_status_size) :: status
+  subroutine exchangeCoor_b(level)
+    !
+    !       ExchangeCoor_b exchanges the *derivatives* of the given grid
+    !       level IN REVERSE MODE.
+    !
+    use constants
+    use block
+    use communication
+    use inputTimeSpectral
+    implicit none
+    !
+    !      Subroutine arguments.
+    !
+    integer(kind=intType), intent(in) :: level
+    !
+    !      Local variables.
+    !
+    integer :: size, procID, ierr, index
+    integer, dimension(mpi_status_size) :: status
 
-  integer(kind=intType) :: i, j, ii, jj, mm, idim
-  integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
+    integer(kind=intType) :: i, j, ii, jj, mm, idim
+    integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
 
 
-  ! Loop over the number of spectral solutions.
+    ! Loop over the number of spectral solutions.
 
-  spectralLoop: do mm=1,nTimeIntervalsSpectral
+    spectralLoop: do mm=1,nTimeIntervalsSpectral
 
-     ! Send the coordinates i have to send. The data is first copied
-     ! into the send buffer and this buffer is sent.
+       ! Send the coordinates i have to send. The data is first copied
+       ! into the send buffer and this buffer is sent.
 
-     ii = 1
-     jj = 1
-     recvs: do i=1,commPatternNode_1st(level)%nProcRecv
+       ii = 1
+       jj = 1
+       recvs: do i=1,commPatternNode_1st(level)%nProcRecv
 
-        ! Store the processor id and the size of the message
-        ! a bit easier.
+          ! Store the processor id and the size of the message
+          ! a bit easier.
 
-        procID = commPatternNode_1st(level)%recvProc(i)
-        size   = 3*commPatternNode_1st(level)%nRecv(i)
+          procID = commPatternNode_1st(level)%recvProc(i)
+          size   = 3*commPatternNode_1st(level)%nRecv(i)
 
-        ! Copy the data in the correct part of the send buffer.
+          ! Copy the data in the correct part of the send buffer.
 
-        do j=1,commPatternNode_1st(level)%nRecv(i)
+          do j=1,commPatternNode_1st(level)%nRecv(i)
 
-           ! Store the block id and the indices of the donor
-           ! a bit easier.
+             ! Store the block id and the indices of the donor
+             ! a bit easier.
 
-           d1 = commPatternNode_1st(level)%recvList(i)%block(j)
-           i1 = commPatternNode_1st(level)%recvList(i)%indices(j,1)
-           j1 = commPatternNode_1st(level)%recvList(i)%indices(j,2)
-           k1 = commPatternNode_1st(level)%recvList(i)%indices(j,3)
+             d1 = commPatternNode_1st(level)%recvList(i)%block(j)
+             i1 = commPatternNode_1st(level)%recvList(i)%indices(j,1)
+             j1 = commPatternNode_1st(level)%recvList(i)%indices(j,2)
+             k1 = commPatternNode_1st(level)%recvList(i)%indices(j,3)
 
-           ! Copy the coordinates of this point in the buffer.
-           ! Update the counter jj accordingly.
+             ! Copy the coordinates of this point in the buffer.
+             ! Update the counter jj accordingly.
 
-           recvBuffer(jj)   = flowDomsd(d1,level,mm)%x(i1,j1,k1,1)
-           recvBuffer(jj+1) = flowDomsd(d1,level,mm)%x(i1,j1,k1,2)
-           recvBuffer(jj+2) = flowDomsd(d1,level,mm)%x(i1,j1,k1,3)
-           jj = jj + 3
-           flowDomsd(d1, level, mm)%x(i1,j1,k1,:) = zero
-        enddo
+             recvBuffer(jj)   = flowDomsd(d1,level,mm)%x(i1,j1,k1,1)
+             recvBuffer(jj+1) = flowDomsd(d1,level,mm)%x(i1,j1,k1,2)
+             recvBuffer(jj+2) = flowDomsd(d1,level,mm)%x(i1,j1,k1,3)
+             jj = jj + 3
+             flowDomsd(d1, level, mm)%x(i1,j1,k1,:) = zero
+          enddo
 
-        ! Send the data.
+          ! Send the data.
 
-        call mpi_isend(recvBuffer(ii), size, adflow_real, procID,    &
-             procID, ADflow_comm_world, recvRequests(i), &
-             ierr)
+          call mpi_isend(recvBuffer(ii), size, adflow_real, procID,    &
+               procID, ADflow_comm_world, recvRequests(i), &
+               ierr)
 
-        ! Set ii to jj for the next processor.
+          ! Set ii to jj for the next processor.
 
-        ii = jj
+          ii = jj
 
-     enddo recvs
+       enddo recvs
 
-     ! Post the nonblocking receives.
+       ! Post the nonblocking receives.
 
-     ii = 1
-     send: do i=1,commPatternNode_1st(level)%nProcSend
+       ii = 1
+       send: do i=1,commPatternNode_1st(level)%nProcSend
 
-        ! Store the processor id and the size of the message
-        ! a bit easier.
+          ! Store the processor id and the size of the message
+          ! a bit easier.
 
-        procID = commPatternNode_1st(level)%sendProc(i)
-        size   = 3*commPatternNode_1st(level)%nSend(i)
+          procID = commPatternNode_1st(level)%sendProc(i)
+          size   = 3*commPatternNode_1st(level)%nSend(i)
 
-        ! Post the receive.
+          ! Post the receive.
 
-        call mpi_irecv(sendBuffer(ii), size, adflow_real, procID, &
-             myID, ADflow_comm_world, sendRequests(i), ierr)
+          call mpi_irecv(sendBuffer(ii), size, adflow_real, procID, &
+               myID, ADflow_comm_world, sendRequests(i), ierr)
 
-        ! And update ii.
+          ! And update ii.
 
-        ii = ii + size
+          ii = ii + size
 
-     enddo send
+       enddo send
 
-     ! Copy the local data.
+       ! Copy the local data.
 
-     localCopy: do i=1,internalNode_1st(level)%nCopy
+       localCopy: do i=1,internalNode_1st(level)%nCopy
 
-        ! Store the block and the indices of the donor a bit easier.
-
-        d1 = internalNode_1st(level)%donorBlock(i)
-        i1 = internalNode_1st(level)%donorIndices(i,1)
-        j1 = internalNode_1st(level)%donorIndices(i,2)
-        k1 = internalNode_1st(level)%donorIndices(i,3)
-        ! Idem for the halo's.
+          ! Store the block and the indices of the donor a bit easier.
+
+          d1 = internalNode_1st(level)%donorBlock(i)
+          i1 = internalNode_1st(level)%donorIndices(i,1)
+          j1 = internalNode_1st(level)%donorIndices(i,2)
+          k1 = internalNode_1st(level)%donorIndices(i,3)
+          ! Idem for the halo's.
 
-        d2 = internalNode_1st(level)%haloBlock(i)
-        i2 = internalNode_1st(level)%haloIndices(i,1)
-        j2 = internalNode_1st(level)%haloIndices(i,2)
-        k2 = internalNode_1st(level)%haloIndices(i,3)
-
-        ! Sum into the '1' values fro the '2' values
-        do idim=1,3
-           flowDomsd(d1,level,mm)%x(i1,j1,k1,idim) = flowDomsd(d1,level,mm)%x(i1,j1,k1,idim) + &
-                flowDomsd(d2,level,mm)%x(i2,j2,k2,idim)
-           flowDomsd(d2, level, mm)%x(i2,j2,k2,idim) = zero
-        end do
-     enddo localCopy
+          d2 = internalNode_1st(level)%haloBlock(i)
+          i2 = internalNode_1st(level)%haloIndices(i,1)
+          j2 = internalNode_1st(level)%haloIndices(i,2)
+          k2 = internalNode_1st(level)%haloIndices(i,3)
+
+          ! Sum into the '1' values fro the '2' values
+          do idim=1,3
+             flowDomsd(d1,level,mm)%x(i1,j1,k1,idim) = flowDomsd(d1,level,mm)%x(i1,j1,k1,idim) + &
+                  flowDomsd(d2,level,mm)%x(i2,j2,k2,idim)
+             flowDomsd(d2, level, mm)%x(i2,j2,k2,idim) = zero
+          end do
+       enddo localCopy
 
-     ! Correct the periodic halos of the internal communication
-     ! pattern
+       ! Correct the periodic halos of the internal communication
+       ! pattern
 
-     ! NOT IMPLEMENTED
-     ! call correctPeriodicCoor(level, mm,                          &
-     !      internalNode_1st(level)%nPeriodic,  &
-     !      internalNode_1st(level)%periodicData)
+       ! NOT IMPLEMENTED
+       ! call correctPeriodicCoor(level, mm,                          &
+       !      internalNode_1st(level)%nPeriodic,  &
+       !      internalNode_1st(level)%periodicData)
 
-     ! Complete the nonblocking receives in an arbitrary sequence and
-     ! copy the coordinates from the buffer into the halo's.
+       ! Complete the nonblocking receives in an arbitrary sequence and
+       ! copy the coordinates from the buffer into the halo's.
 
-     size = commPatternNode_1st(level)%nProcSend
-     completeSends: do i=1,commPatternNode_1st(level)%nProcSend
+       size = commPatternNode_1st(level)%nProcSend
+       completeSends: do i=1,commPatternNode_1st(level)%nProcSend
 
-        ! Complete any of the requests.
+          ! Complete any of the requests.
 
-        call mpi_waitany(size, sendRequests, index, status, ierr)
+          call mpi_waitany(size, sendRequests, index, status, ierr)
 
-        ! Copy the data just arrived in the halo's.
+          ! Copy the data just arrived in the halo's.
 
-        ii = index
-        jj = 3*commPatternNode_1st(level)%nSendCum(ii-1)
-        do j=1,commPatternNode_1st(level)%nSend(ii)
+          ii = index
+          jj = 3*commPatternNode_1st(level)%nSendCum(ii-1)
+          do j=1,commPatternNode_1st(level)%nSend(ii)
 
-           ! Store the block and the indices of the halo a bit easier.
+             ! Store the block and the indices of the halo a bit easier.
 
-           d2 = commPatternNode_1st(level)%sendList(ii)%block(j)
-           i2 = commPatternNode_1st(level)%sendList(ii)%indices(j,1)
-           j2 = commPatternNode_1st(level)%sendList(ii)%indices(j,2)
-           k2 = commPatternNode_1st(level)%sendList(ii)%indices(j,3)
+             d2 = commPatternNode_1st(level)%sendList(ii)%block(j)
+             i2 = commPatternNode_1st(level)%sendList(ii)%indices(j,1)
+             j2 = commPatternNode_1st(level)%sendList(ii)%indices(j,2)
+             k2 = commPatternNode_1st(level)%sendList(ii)%indices(j,3)
 
-           ! Sum into the '2' values from the recv buffer
-           do idim=1,3
-              flowDomsd(d2,level,mm)%x(i2,j2,k2,idim) = flowDomsd(d2,level,mm)%x(i2,j2,k2,idim) + &
-                   sendBuffer(jj + idim )
-           end do
-           jj = jj + 3
+             ! Sum into the '2' values from the recv buffer
+             do idim=1,3
+                flowDomsd(d2,level,mm)%x(i2,j2,k2,idim) = flowDomsd(d2,level,mm)%x(i2,j2,k2,idim) + &
+                     sendBuffer(jj + idim )
+             end do
+             jj = jj + 3
 
-        enddo
+          enddo
 
-     enddo completeSends
+       enddo completeSends
 
-     ! Correct the periodic halos of the external communication
-     ! pattern.
-     ! NOT IMLEMENTED
-     ! call correctPeriodicCoor(level, mm,                            &
-     !      commPatternNode_1st(level)%nPeriodic, &
-     !      commPatternNode_1st(level)%periodicData)
+       ! Correct the periodic halos of the external communication
+       ! pattern.
+       ! NOT IMLEMENTED
+       ! call correctPeriodicCoor(level, mm,                            &
+       !      commPatternNode_1st(level)%nPeriodic, &
+       !      commPatternNode_1st(level)%periodicData)
 
-     ! Complete the nonblocking sends.
+       ! Complete the nonblocking sends.
 
-     size = commPatternNode_1st(level)%nProcRecv
-     do i=1,commPatternNode_1st(level)%nProcRecv
-        call mpi_waitany(size, recvRequests, index, status, ierr)
-     enddo
+       size = commPatternNode_1st(level)%nProcRecv
+       do i=1,commPatternNode_1st(level)%nProcRecv
+          call mpi_waitany(size, recvRequests, index, status, ierr)
+       enddo
 
-  enddo spectralLoop
+    enddo spectralLoop
 
-end subroutine exchangeCoor_b
-subroutine exchangeCoor_d(level)
-  !
-  !       ExchangeCoor_d exchanges the *derivatives* of the given grid
-  !       level.
-  !
-  use block
-  use communication
-  use inputTimeSpectral
-  implicit none
-  !
-  !      Subroutine arguments.
-  !
-  integer(kind=intType), intent(in) :: level
-  !
-  !      Local variables.
-  !
-  integer :: size, procID, ierr, index
-  integer, dimension(mpi_status_size) :: status
+  end subroutine exchangeCoor_b
+  subroutine exchangeCoor_d(level)
+    !
+    !       ExchangeCoor_d exchanges the *derivatives* of the given grid
+    !       level.
+    !
+    use block
+    use communication
+    use inputTimeSpectral
+    implicit none
+    !
+    !      Subroutine arguments.
+    !
+    integer(kind=intType), intent(in) :: level
+    !
+    !      Local variables.
+    !
+    integer :: size, procID, ierr, index
+    integer, dimension(mpi_status_size) :: status
 
-  integer(kind=intType) :: i, j, ii, jj, mm
-  integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
+    integer(kind=intType) :: i, j, ii, jj, mm
+    integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
 
 
-  ! Loop over the number of spectral solutions.
+    ! Loop over the number of spectral solutions.
 
-  spectralLoop: do mm=1,nTimeIntervalsSpectral
+    spectralLoop: do mm=1,nTimeIntervalsSpectral
 
-     ! Send the coordinates i have to send. The data is first copied
-     ! into the send buffer and this buffer is sent.
+       ! Send the coordinates i have to send. The data is first copied
+       ! into the send buffer and this buffer is sent.
 
-     ii = 1
-     sends: do i=1,commPatternNode_1st(level)%nProcSend
+       ii = 1
+       sends: do i=1,commPatternNode_1st(level)%nProcSend
 
-        ! Store the processor id and the size of the message
-        ! a bit easier.
+          ! Store the processor id and the size of the message
+          ! a bit easier.
 
-        procID = commPatternNode_1st(level)%sendProc(i)
-        size   = 3*commPatternNode_1st(level)%nSend(i)
+          procID = commPatternNode_1st(level)%sendProc(i)
+          size   = 3*commPatternNode_1st(level)%nSend(i)
 
-        ! Copy the data in the correct part of the send buffer.
+          ! Copy the data in the correct part of the send buffer.
 
-        jj = ii
-        do j=1,commPatternNode_1st(level)%nSend(i)
+          jj = ii
+          do j=1,commPatternNode_1st(level)%nSend(i)
 
-           ! Store the block id and the indices of the donor
-           ! a bit easier.
+             ! Store the block id and the indices of the donor
+             ! a bit easier.
 
-           d1 = commPatternNode_1st(level)%sendList(i)%block(j)
-           i1 = commPatternNode_1st(level)%sendList(i)%indices(j,1)
-           j1 = commPatternNode_1st(level)%sendList(i)%indices(j,2)
-           k1 = commPatternNode_1st(level)%sendList(i)%indices(j,3)
+             d1 = commPatternNode_1st(level)%sendList(i)%block(j)
+             i1 = commPatternNode_1st(level)%sendList(i)%indices(j,1)
+             j1 = commPatternNode_1st(level)%sendList(i)%indices(j,2)
+             k1 = commPatternNode_1st(level)%sendList(i)%indices(j,3)
 
-           ! Copy the coordinates of this point in the buffer.
-           ! Update the counter jj accordingly.
+             ! Copy the coordinates of this point in the buffer.
+             ! Update the counter jj accordingly.
 
-           sendBuffer(jj)   = flowDomsd(d1,level,mm)%x(i1,j1,k1,1)
-           sendBuffer(jj+1) = flowDomsd(d1,level,mm)%x(i1,j1,k1,2)
-           sendBuffer(jj+2) = flowDomsd(d1,level,mm)%x(i1,j1,k1,3)
-           jj = jj + 3
+             sendBuffer(jj)   = flowDomsd(d1,level,mm)%x(i1,j1,k1,1)
+             sendBuffer(jj+1) = flowDomsd(d1,level,mm)%x(i1,j1,k1,2)
+             sendBuffer(jj+2) = flowDomsd(d1,level,mm)%x(i1,j1,k1,3)
+             jj = jj + 3
 
-        enddo
+          enddo
 
-        ! Send the data.
+          ! Send the data.
 
-        call mpi_isend(sendBuffer(ii), size, adflow_real, procID,    &
-             procID, ADflow_comm_world, sendRequests(i), &
-             ierr)
+          call mpi_isend(sendBuffer(ii), size, adflow_real, procID,    &
+               procID, ADflow_comm_world, sendRequests(i), &
+               ierr)
 
-        ! Set ii to jj for the next processor.
+          ! Set ii to jj for the next processor.
 
-        ii = jj
+          ii = jj
 
-     enddo sends
+       enddo sends
 
-     ! Post the nonblocking receives.
+       ! Post the nonblocking receives.
 
-     ii = 1
-     receives: do i=1,commPatternNode_1st(level)%nProcRecv
+       ii = 1
+       receives: do i=1,commPatternNode_1st(level)%nProcRecv
 
-        ! Store the processor id and the size of the message
-        ! a bit easier.
+          ! Store the processor id and the size of the message
+          ! a bit easier.
 
-        procID = commPatternNode_1st(level)%recvProc(i)
-        size   = 3*commPatternNode_1st(level)%nRecv(i)
+          procID = commPatternNode_1st(level)%recvProc(i)
+          size   = 3*commPatternNode_1st(level)%nRecv(i)
 
-        ! Post the receive.
+          ! Post the receive.
 
-        call mpi_irecv(recvBuffer(ii), size, adflow_real, procID, &
-             myID, ADflow_comm_world, recvRequests(i), ierr)
+          call mpi_irecv(recvBuffer(ii), size, adflow_real, procID, &
+               myID, ADflow_comm_world, recvRequests(i), ierr)
 
-        ! And update ii.
+          ! And update ii.
 
-        ii = ii + size
+          ii = ii + size
 
-     enddo receives
+       enddo receives
 
-     ! Copy the local data.
+       ! Copy the local data.
 
-     localCopy: do i=1,internalNode_1st(level)%nCopy
+       localCopy: do i=1,internalNode_1st(level)%nCopy
 
-        ! Store the block and the indices of the donor a bit easier.
+          ! Store the block and the indices of the donor a bit easier.
 
-        d1 = internalNode_1st(level)%donorBlock(i)
-        i1 = internalNode_1st(level)%donorIndices(i,1)
-        j1 = internalNode_1st(level)%donorIndices(i,2)
-        k1 = internalNode_1st(level)%donorIndices(i,3)
-        ! Idem for the halo's.
+          d1 = internalNode_1st(level)%donorBlock(i)
+          i1 = internalNode_1st(level)%donorIndices(i,1)
+          j1 = internalNode_1st(level)%donorIndices(i,2)
+          k1 = internalNode_1st(level)%donorIndices(i,3)
+          ! Idem for the halo's.
 
-        d2 = internalNode_1st(level)%haloBlock(i)
-        i2 = internalNode_1st(level)%haloIndices(i,1)
-        j2 = internalNode_1st(level)%haloIndices(i,2)
-        k2 = internalNode_1st(level)%haloIndices(i,3)
-        ! Copy the coordinates.
-        flowDomsd(d2,level,mm)%x(i2,j2,k2,1) = &
-             flowDomsd(d1,level,mm)%x(i1,j1,k1,1)
-        flowDomsd(d2,level,mm)%x(i2,j2,k2,2) = &
-             flowDomsd(d1,level,mm)%x(i1,j1,k1,2)
-        flowDomsd(d2,level,mm)%x(i2,j2,k2,3) = &
-             flowDomsd(d1,level,mm)%x(i1,j1,k1,3)
+          d2 = internalNode_1st(level)%haloBlock(i)
+          i2 = internalNode_1st(level)%haloIndices(i,1)
+          j2 = internalNode_1st(level)%haloIndices(i,2)
+          k2 = internalNode_1st(level)%haloIndices(i,3)
+          ! Copy the coordinates.
+          flowDomsd(d2,level,mm)%x(i2,j2,k2,1) = &
+               flowDomsd(d1,level,mm)%x(i1,j1,k1,1)
+          flowDomsd(d2,level,mm)%x(i2,j2,k2,2) = &
+               flowDomsd(d1,level,mm)%x(i1,j1,k1,2)
+          flowDomsd(d2,level,mm)%x(i2,j2,k2,3) = &
+               flowDomsd(d1,level,mm)%x(i1,j1,k1,3)
 
-     enddo localCopy
+       enddo localCopy
 
-     ! Correct the periodic halos of the internal communication
-     ! pattern
+       ! Correct the periodic halos of the internal communication
+       ! pattern
 
-     ! NOT IMPLEMENTED
-     ! call correctPeriodicCoor(level, mm,                          &
-     !      internalNode_1st(level)%nPeriodic,  &
-     !      internalNode_1st(level)%periodicData)
+       ! NOT IMPLEMENTED
+       ! call correctPeriodicCoor(level, mm,                          &
+       !      internalNode_1st(level)%nPeriodic,  &
+       !      internalNode_1st(level)%periodicData)
 
-     ! Complete the nonblocking receives in an arbitrary sequence and
-     ! copy the coordinates from the buffer into the halo's.
+       ! Complete the nonblocking receives in an arbitrary sequence and
+       ! copy the coordinates from the buffer into the halo's.
 
-     size = commPatternNode_1st(level)%nProcRecv
-     completeRecvs: do i=1,commPatternNode_1st(level)%nProcRecv
+       size = commPatternNode_1st(level)%nProcRecv
+       completeRecvs: do i=1,commPatternNode_1st(level)%nProcRecv
 
-        ! Complete any of the requests.
+          ! Complete any of the requests.
 
-        call mpi_waitany(size, recvRequests, index, status, ierr)
+          call mpi_waitany(size, recvRequests, index, status, ierr)
 
-        ! Copy the data just arrived in the halo's.
+          ! Copy the data just arrived in the halo's.
 
-        ii = index
-        jj = 3*commPatternNode_1st(level)%nRecvCum(ii-1) +1
-        do j=1,commPatternNode_1st(level)%nRecv(ii)
+          ii = index
+          jj = 3*commPatternNode_1st(level)%nRecvCum(ii-1) +1
+          do j=1,commPatternNode_1st(level)%nRecv(ii)
 
-           ! Store the block and the indices of the halo a bit easier.
+             ! Store the block and the indices of the halo a bit easier.
 
-           d2 = commPatternNode_1st(level)%recvList(ii)%block(j)
-           i2 = commPatternNode_1st(level)%recvList(ii)%indices(j,1)
-           j2 = commPatternNode_1st(level)%recvList(ii)%indices(j,2)
-           k2 = commPatternNode_1st(level)%recvList(ii)%indices(j,3)
+             d2 = commPatternNode_1st(level)%recvList(ii)%block(j)
+             i2 = commPatternNode_1st(level)%recvList(ii)%indices(j,1)
+             j2 = commPatternNode_1st(level)%recvList(ii)%indices(j,2)
+             k2 = commPatternNode_1st(level)%recvList(ii)%indices(j,3)
 
-           ! Copy the data.
+             ! Copy the data.
 
-           flowDomsd(d2,level,mm)%x(i2,j2,k2,1) = recvBuffer(jj)
-           flowDomsd(d2,level,mm)%x(i2,j2,k2,2) = recvBuffer(jj+1)
-           flowDomsd(d2,level,mm)%x(i2,j2,k2,3) = recvBuffer(jj+2)
-           jj = jj + 3
+             flowDomsd(d2,level,mm)%x(i2,j2,k2,1) = recvBuffer(jj)
+             flowDomsd(d2,level,mm)%x(i2,j2,k2,2) = recvBuffer(jj+1)
+             flowDomsd(d2,level,mm)%x(i2,j2,k2,3) = recvBuffer(jj+2)
+             jj = jj + 3
 
-        enddo
+          enddo
 
-     enddo completeRecvs
+       enddo completeRecvs
 
-     ! Correct the periodic halos of the external communication
-     ! pattern.
-     ! NOT IMLEMENTED
-     ! call correctPeriodicCoor(level, mm,                            &
-     !      commPatternNode_1st(level)%nPeriodic, &
-     !      commPatternNode_1st(level)%periodicData)
+       ! Correct the periodic halos of the external communication
+       ! pattern.
+       ! NOT IMLEMENTED
+       ! call correctPeriodicCoor(level, mm,                            &
+       !      commPatternNode_1st(level)%nPeriodic, &
+       !      commPatternNode_1st(level)%periodicData)
+
+       ! Complete the nonblocking sends.
+
+       size = commPatternNode_1st(level)%nProcSend
+       do i=1,commPatternNode_1st(level)%nProcSend
+          call mpi_waitany(size, sendRequests, index, status, ierr)
+       enddo
+
+    enddo spectralLoop
+
+  end subroutine exchangeCoor_d
+
+  ! -----------------------------------------------------------------
+  !              Comm routines for zippers
+  ! -----------------------------------------------------------------
+
+  subroutine flowIntegrationZipperComm(vars, sps)
+
+    ! This routine could technically be inside of the
+    ! flowIntegrationZipper subroutine but we split it out becuase it
+    ! has petsc comm stuff that will differentiate manually that
+    ! tapenade doesn't need to see. 
+
+    use constants
+    use blockPointers, only : BCFaceID, BCData, addGridVelocities, nDom, nBocos, BCType
+    use sorting, only : bsearchIntegers
+    use BCPointers, only : sFace, ww1, ww2, pp1, pp2, xx
+    use overset, only : zipperMeshes, zipperMesh
+    use surfaceFamilies, only : familyExchange, BCFamExchange
+    use utils, only : setPointers, setBCPointers, EChk
+    implicit none
+
+#define PETSC_AVOID_MPIF_H
+#include "petsc/finclude/petscsys.h"
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscvec.h90"
+
+    ! Input variables
+    real(kind=realType), dimension(:, :), allocatable :: vars
+    integer(kind=intType) :: sps
+
+    ! Working variables
+    integer(kind=intType) :: ii, iVar, i,j, iBeg, iEnd, jBeg, jEnd, ierr, nn, mm
+    real(kind=realType), dimension(:), pointer :: localPtr
+    type(zipperMesh), pointer :: zipper
+    type(familyExchange), pointer :: exch
+
+    ! Set the zipper pointer to the zipper for inflow/outflow conditions
+    zipper => zipperMeshes(iBCGroupInflowOutFlow)
+    exch => BCFamExchange(iBCGroupInflowOutflow, sps)
+
+    ! This is the local set of data we need for the zipper.
+    allocate(vars(size(zipper%indices), 9))
+
+    ! Note that we can generate all the nodal values we need locally
+    ! using simple arithematic averaging since they are all flow
+    ! properties. There is no need to use the cellToNodeScatter stuff
+    ! here like for the forces. 
+    varLoop: do iVar=1,9
+       call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ii = 0
+       domainLoop: do nn=1, nDom
+          call setPointers(nn, 1, sps)
+          bocoLoop: do mm=1, nBocos
+             if (BCType(mm) == SubsonicInflow .or. &
+                  BCType(mm) == SubsonicOutflow .or. &
+                  BCType(mm) == SupersonicInflow .or. &
+                  BCType(mm) == SupersonicOutflow) then 
+                call setBCPointers(mm, .True.)
+                iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
+                jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
+                do j=jBeg, jEnd
+                   do i=iBeg, iEnd
+                      ii = ii + 1
+                      select case(iVar)
+                      case (1, 2, 3, 4)
+                         localPtr(ii) = eighth*(&
+                              ww1(i, j,   iVar) + ww1(i+1, j,   iVar) + &
+                              ww1(i, j+1, ivar) + ww1(i+1, j+1, iVar) + &
+                              ww2(i, j,   iVar) + ww2(i+1, j,   iVar) + &
+                              ww2(i, j+1, ivar) + ww2(i+1, j+1, iVar))
+                      case (5)
+                         localPtr(ii) = eighth*(&
+                              pp1(i, j  ) + pp1(i+1, j  ) + &
+                              pp1(i, j+1) + pp1(i+1, j+1) + &
+                              pp2(i, j  ) + pp2(i+1, j  ) + &
+                              pp2(i, j+1) + pp2(i+1, j+1))
+                      case (6)
+                         if (addGridVelocities) then 
+                            localPtr(ii) = fourth*(&
+                                 sface(i, j  ) + sface(i+1, j  ) + &
+                                 sface(i, j+1) + sface(i+1, j+1))
+                         else
+                            localPtr(ii) = zero
+                         end if
+                      case (7,8,9)
+                         localPtr(ii) = xx(i+1, j+1, iVar-6)
+                      end select
+                   end do
+                end do
+             end if
+          end do bocoLoop
+       end do domainLoop
+
+       ! Return pointer to nodeValLocal
+       call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       call VecPlaceArray(zipper%localVal, vars(:, iVar), ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! Send these values to the root using the zipper scatter. 
+       call VecScatterBegin(zipper%scatter, exch%nodeValLocal,&
+            zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       call VecScatterEnd(zipper%scatter, exch%nodeValLocal,&
+            zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! Reset the original petsc vector.
+       call vecResetArray(zipper%localVal, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+    end do varLoop
+
+  end subroutine flowIntegrationZipperComm
+
+  subroutine flowIntegrationZipperComm_d(vars, varsd, sps)
+
+    ! This routine could technically be inside of the
+    ! flowIntegrationZipper subroutine but we split it out becuase it
+    ! has petsc comm stuff that will differentiate manually that
+    ! tapenade doesn't need to see. 
+
+    use constants
+    use blockPointers, only : BCFaceID, BCData, addGridVelocities, nDom, nBocos, BCType
+    use sorting, only : bsearchIntegers
+    use BCPointers, only : sFaced, ww1d, ww2d, pp1d, pp2d, xxd
+    use overset, only : zipperMeshes, zipperMesh
+    use surfaceFamilies, only : familyExchange, BCFamExchange
+    use utils, only : setPointers, setBCPointers_d, EChk
+    implicit none
+
+#define PETSC_AVOID_MPIF_H
+#include "petsc/finclude/petscsys.h"
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscvec.h90"
+
+    ! Input variables
+    real(kind=realType), dimension(:, :), allocatable :: vars, varsd
+    integer(kind=intType) :: sps
+
+    ! Working variables
+    integer(kind=intType) :: ii, iVar, i,j, iBeg, iEnd, jBeg, jEnd, ierr, nn, mm
+    real(kind=realType), dimension(:), pointer :: localPtr
+    type(zipperMesh), pointer :: zipper
+    type(familyExchange), pointer :: exch
+
+    ! To be consistent call the regular update:
+    call flowIntegrationZipperComm(vars, sps)
+
+    ! Set the zipper pointer to the zipper for inflow/outflow conditions
+    zipper => zipperMeshes(iBCGroupInflowOutFlow)
+    exch => BCFamExchange(iBCGroupInflowOutflow, sps)
+
+    ! This is the local (derivative) set of data we need for the zipper.
+    allocate(varsd(size(zipper%indices), 9))
+
+    ! Note that we can generate all the nodal values we need locally
+    ! using simple arithematic averaging since they are all flow
+    ! properties. There is no need to use the cellToNodeScatter stuff
+    ! here like for the forces. 
+    varLoop: do iVar=1,9
+       call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ii = 0
+       domainLoop: do nn=1, nDom
+          call setPointers(nn, 1, sps)
+          bocoLoop: do mm=1, nBocos
+             if (BCType(mm) == SubsonicInflow .or. &
+                  BCType(mm) == SubsonicOutflow .or. &
+                  BCType(mm) == SupersonicInflow .or. &
+                  BCType(mm) == SupersonicOutflow) then 
+                call setBCPointers_d(mm, .True.)
+                iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
+                jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
+                do j=jBeg, jEnd
+                   do i=iBeg, iEnd
+                      ii = ii + 1
+                      select case(iVar)
+                      case (1, 2, 3, 4)
+                         localPtr(ii) = eighth*(&
+                              ww1d(i, j,   iVar) + ww1d(i+1, j,   iVar) + &
+                              ww1d(i, j+1, ivar) + ww1d(i+1, j+1, iVar) + &
+                              ww2d(i, j,   iVar) + ww2d(i+1, j,   iVar) + &
+                              ww2d(i, j+1, ivar) + ww2d(i+1, j+1, iVar))
+                      case (5)
+                         localPtr(ii) = eighth*(&
+                              pp1d(i, j  ) + pp1d(i+1, j  ) + &
+                              pp1d(i, j+1) + pp1d(i+1, j+1) + &
+                              pp2d(i, j  ) + pp2d(i+1, j  ) + &
+                              pp2d(i, j+1) + pp2d(i+1, j+1))
+                      case (6)
+                         if (addGridVelocities) then 
+                            localPtr(ii) = fourth*(&
+                                 sfaced(i, j  ) + sfaced(i+1, j  ) + &
+                                 sfaced(i, j+1) + sfaced(i+1, j+1))
+                         else
+                            localPtr(ii) = zero
+                         end if
+                      case (7,8,9)
+                         localPtr(ii) = xxd(i+1, j+1, iVar-6)
+                      end select
+                   end do
+                end do
+             end if
+          end do bocoLoop
+       end do domainLoop
+
+       ! Return pointer to nodeValLocal
+       call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       call VecPlaceArray(zipper%localVal, varsd(:, iVar), ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! Send these values to the root using the zipper scatter. 
+       call VecScatterBegin(zipper%scatter, exch%nodeValLocal,&
+            zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       call VecScatterEnd(zipper%scatter, exch%nodeValLocal,&
+            zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! Reset the original petsc vector.
+       call vecResetArray(zipper%localVal, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+    end do varLoop
+
+  end subroutine flowIntegrationZipperComm_d
+  
+  subroutine wallIntegrationZipperComm(vars, sps)
+
+    ! This routine could technically be inside of the
+    ! flowIntegrationZipper subroutine but we split it out becuase it
+    ! has petsc comm stuff that will differentiate manually that
+    ! tapenade doesn't need to see. 
+
+    use constants
+    use blockPointers, only : BCData, nDom, BCType, nBocos
+    use sorting, only : bsearchIntegers
+    use BCPointers, only : xx
+    use overset, only : zipperMeshes, zipperMesh
+    use surfaceFamilies, only : familyExchange, BCFamExchange
+    use utils, only : setPointers, setBCPointers, EChk, isWallType
+    implicit none
+
+#define PETSC_AVOID_MPIF_H
+#include "petsc/finclude/petscsys.h"
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscvec.h90"
+
+    ! Input variables
+    real(kind=realType), dimension(:, :), allocatable :: vars
+    integer(kind=intType) :: sps
+
+    ! Working variables
+    integer(kind=intType) :: ii, iVar, i,j, iBeg, iEnd, jBeg, jEnd, ierr, nn, mm
+    real(kind=realType), dimension(:), pointer :: localPtr
+    type(zipperMesh), pointer :: zipper
+    type(familyExchange), pointer :: exch
+
+    ! Set the zipper pointer to the zipper for inflow/outflow conditions
+    zipper => zipperMeshes(iBCGroupWalls)
+    exch => BCFamExchange(iBCGroupWalls, sps)
+
+    ! Make sure the nodal tractions are computed
+    call computeNodalTractions(sps)
+
+    ! This is the local set of data we need for the zipper.
+    allocate(vars(size(zipper%indices), 9))
+
+    varLoop: do iVar=1,9
+       call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+    
+       ii = 0
+       domainLoop: do nn=1, nDom
+          call setPointers(nn, 1, sps)
+          bocoLoop: do mm=1, nBocos
+             if (isWallType(BCType(mm))) then  
+                call setBCPointers(mm, .True.)
+                iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
+                jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
+                do j=jBeg, jEnd
+                   do i=iBeg, iEnd
+                      ii = ii + 1
+                      select case(iVar)
+                      case (1, 2, 3)
+                         localPtr(ii) = BCData(mm)%Tp(i, j, iVar)
+                      case (4, 5, 6)
+                         localPtr(ii) = BCData(mm)%Tv(i, j, iVar-3)
+                      case (7,8,9)
+                         ! The +1 is due to pointer offset
+                         localPtr(ii) = xx(i+1, j+1, iVar-6)
+                      end select
+                   end do
+                end do
+             end if
+          end do bocoLoop
+       end do domainLoop
+
+       ! Return pointer to nodeValLocal
+       call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       call VecPlaceArray(zipper%localVal, vars(:, iVar), ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! Send these values to the root using the zipper scatter. 
+       call VecScatterBegin(zipper%scatter, exch%nodeValLocal,&
+            zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       call VecScatterEnd(zipper%scatter, exch%nodeValLocal,&
+            zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+       
+       ! Reset the original petsc vector.
+       call vecResetArray(zipper%localVal, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+    end do varLoop
+
+  end subroutine wallIntegrationZipperComm
+
+  subroutine wallIntegrationZipperComm_d(vars, varsd, sps)
+
+    ! This routine could technically be inside of the
+    ! flowIntegrationZipper subroutine but we split it out becuase it
+    ! has petsc comm stuff that will differentiate manually that
+    ! tapenade doesn't need to see. 
+
+    use constants
+    use blockPointers, only : BCDatad, BCData, nBocos, nDom, BCType
+    use sorting, only : bsearchIntegers
+    use BCPointers, only : xxd
+    use overset, only : zipperMeshes, zipperMesh
+    use surfaceFamilies, only : familyExchange, BCFamExchange
+    use utils, only : setPointers, setBCPointers_d, EChk, isWallType
+    implicit none
+
+#define PETSC_AVOID_MPIF_H
+#include "petsc/finclude/petscsys.h"
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscvec.h90"
+
+    ! Input variables
+    real(kind=realType), dimension(:, :), allocatable :: vars, varsd
+    integer(kind=intType) :: sps
+
+    ! Working variables
+    integer(kind=intType) :: ii, iVar, i,j, iBeg, iEnd, jBeg, jEnd, ierr, nn, mm
+    real(kind=realType), dimension(:), pointer :: localPtr
+    type(zipperMesh), pointer :: zipper
+    type(familyExchange), pointer :: exch
+
+    ! To be consistent call the regular update:
+    call flowIntegrationZipperComm(vars, sps)
+
+    ! Set the zipper pointer to the zipper for inflow/outflow conditions
+    zipper => zipperMeshes(iBCGroupWalls)
+    exch => BCFamExchange(iBCGroupWalls, sps)
+
+    ! This is the local (derivative) set of data we need for the zipper.
+    allocate(varsd(size(zipper%indices), 9))
+
+    ! Compute the derivatives of the nodal tractions
+    !call computeNodalTractions_d(sps)
+
+    ! This is the local set of data we need for the zipper.
+    allocate(varsd(size(zipper%indices), 9))
+
+    varLoop: do iVar=1,9
+       call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+    
+       ii = 0
+       domainLoop: do nn=1, nDom
+          call setPointers(nn, 1, sps)
+          bocoLoop: do mm=1, nBocos
+             if (isWallType(BCType(mm))) then  
+                call setBCPointers_d(mm, .True.)
+                iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
+                jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
+                do j=jBeg, jEnd
+                   do i=iBeg, iEnd
+                      ii = ii + 1
+                      select case(iVar)
+                      case (1, 2, 3)
+                         localPtr(ii) = BCDatad(mm)%Tp(i, j, iVar)
+                      case (4, 5, 6)
+                         localPtr(ii) = BCDatad(mm)%Tv(i, j, iVar-3)
+                      case (7,8,9)
+                         ! The +1 is due to pointer offset
+                         localPtr(ii) = xxd(i+1, j+1, iVar-6)
+                      end select
+                   end do
+                end do
+             end if
+          end do bocoLoop
+       end do domainLoop
+
+       ! Return pointer to nodeValLocal
+       call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       call VecPlaceArray(zipper%localVal, varsd(:, iVar), ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! Send these values to the root using the zipper scatter. 
+       call VecScatterBegin(zipper%scatter, exch%nodeValLocal,&
+            zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       call VecScatterEnd(zipper%scatter, exch%nodeValLocal,&
+            zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+       
+       ! Reset the original petsc vector.
+       call vecResetArray(zipper%localVal, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+    end do varLoop
+
+  end subroutine wallIntegrationZipperComm_d
 
-     ! Complete the nonblocking sends.
 
-     size = commPatternNode_1st(level)%nProcSend
-     do i=1,commPatternNode_1st(level)%nProcSend
-        call mpi_waitany(size, sendRequests, index, status, ierr)
-     enddo
 
-  enddo spectralLoop
-
-end subroutine exchangeCoor_d
 
 end module haloExchange

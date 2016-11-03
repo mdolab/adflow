@@ -11,7 +11,7 @@ subroutine getForces(forces, npts, sps)
   implicit none
 
   integer(kind=intType), intent(in) :: npts, sps
-  real(kind=realType), intent(inout) :: forces(3*npts)
+  real(kind=realType), intent(inout) :: forces(3,npts)
 
   integer(kind=intType) :: mm, nn, i, j, ii, jj, iDim, ierr
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
@@ -50,9 +50,9 @@ subroutine getForces(forces, npts, sps)
               do i=BCData(mm)%inBeg, BCData(mm)%inEnd
                  ii = ii + 1
                  if (forcesAsTractions) then 
-                    Forces(3*ii-2:3*ii) = bcData(mm)%T(i, j, :)
+                    Forces(:, ii) = bcData(mm)%T(i, j, :)
                  else
-                    Forces(3*ii-2:3*ii) = bcData(mm)%F(i, j, :) 
+                    Forces(:, ii) = bcData(mm)%F(i, j, :) 
                  end if
               end do
            end do
