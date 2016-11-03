@@ -3470,7 +3470,7 @@ contains
     type(familyExchange), pointer :: exch
 
     ! Compute the derivative of the nodal tractions
-    !all computeNodalTractions_d(sps)
+    call computeNodalTractions_d(sps)
 
     ! Set the zipper pointer to the zipper for inflow/outflow conditions
     zipper => zipperMeshes(iBCGroupWalls)
