@@ -3019,7 +3019,7 @@ contains
 #include "petsc/finclude/petscvec.h90"
 
     ! Input variables
-    real(kind=realType), dimension(:, :), allocatable :: vars
+    real(kind=realType), dimension(:, :) :: vars
     integer(kind=intType) :: sps
 
     ! Working variables
@@ -3031,9 +3031,6 @@ contains
     ! Set the zipper pointer to the zipper for inflow/outflow conditions
     zipper => zipperMeshes(iBCGroupInflowOutFlow)
     exch => BCFamExchange(iBCGroupInflowOutflow, sps)
-
-    ! This is the local set of data we need for the zipper.
-    allocate(vars(size(zipper%indices), 9))
 
     ! Note that we can generate all the nodal values we need locally
     ! using simple arithematic averaging since they are all flow
@@ -3112,10 +3109,7 @@ contains
 
   subroutine flowIntegrationZipperComm_d(vars, varsd, sps)
 
-    ! This routine could technically be inside of the
-    ! flowIntegrationZipper subroutine but we split it out becuase it
-    ! has petsc comm stuff that will differentiate manually that
-    ! tapenade doesn't need to see. 
+    ! Forward mode linearization of flowIntegratoinZipperComm
 
     use constants
     use blockPointers, only : BCFaceID, BCData, addGridVelocities, nDom, nBocos, BCType
@@ -3132,7 +3126,7 @@ contains
 #include "petsc/finclude/petscvec.h90"
 
     ! Input variables
-    real(kind=realType), dimension(:, :), allocatable :: vars, varsd
+    real(kind=realType), dimension(:, :) :: vars, varsd
     integer(kind=intType) :: sps
 
     ! Working variables
@@ -3147,9 +3141,6 @@ contains
     ! Set the zipper pointer to the zipper for inflow/outflow conditions
     zipper => zipperMeshes(iBCGroupInflowOutFlow)
     exch => BCFamExchange(iBCGroupInflowOutflow, sps)
-
-    ! This is the local (derivative) set of data we need for the zipper.
-    allocate(varsd(size(zipper%indices), 9))
 
     ! Note that we can generate all the nodal values we need locally
     ! using simple arithematic averaging since they are all flow
@@ -3226,6 +3217,136 @@ contains
 
   end subroutine flowIntegrationZipperComm_d
   
+  subroutine flowIntegrationZipperComm_b(vars, varsd, sps)
+
+    ! Reverse mode linearization of the flowIntegrationZipperComm routine
+
+    use constants
+    use blockPointers, only : BCFaceID, BCData, addGridVelocities, nDom, nBocos, BCType
+    use sorting, only : bsearchIntegers
+    use BCPointers, only : sFaced, ww1d, ww2d, pp1d, pp2d, xxd
+    use overset, only : zipperMeshes, zipperMesh
+    use surfaceFamilies, only : familyExchange, BCFamExchange
+    use utils, only : setPointers, setBCPointers_d, EChk
+    implicit none
+
+#define PETSC_AVOID_MPIF_H
+#include "petsc/finclude/petscsys.h"
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscvec.h90"
+
+    ! Input variables
+    real(kind=realType), dimension(:, :) :: vars, varsd
+    integer(kind=intType) :: sps
+
+    ! Working variables
+    integer(kind=intType) :: ii, iVar, i,j, iBeg, iEnd, jBeg, jEnd, ierr, nn, mm
+    real(kind=realType), dimension(:), pointer :: localPtr
+    real(kind=realType) ::tmp
+    type(zipperMesh), pointer :: zipper
+    type(familyExchange), pointer :: exch
+
+    ! Set the zipper pointer to the zipper for inflow/outflow conditions
+    zipper => zipperMeshes(iBCGroupInflowOutFlow)
+    exch => BCFamExchange(iBCGroupInflowOutflow, sps)
+
+    ! Run the var exchange loop backwards:
+    varLoop: do iVar=1,9
+
+       ! Zero the vector we are scatting into:
+       call VecSet(exch%nodeValLocal, zero, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       call VecPlaceArray(zipper%localVal, varsd(:, iVar), ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! Send these values to the root using the zipper scatter. 
+       call VecScatterBegin(zipper%scatter, zipper%localVal, &
+            exch%nodeValLocal, ADD_VALUES, SCATTER_REVERSE, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       call VecScatterEnd(zipper%scatter, zipper%localVal, &
+            exch%nodeValLocal, ADD_VALUES, SCATTER_REVERSE, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! Reset the original petsc vector.
+       call vecResetArray(zipper%localVal, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! To be consistent, varsd must be zeroed since it is "used"
+       varsd(:, iVar) = zero
+
+       ! Now finish the scatting back to the acutual BCs pointers (and
+       ! thus the state variables). 
+
+       call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ii = 0
+       domainLoop: do nn=1, nDom
+          call setPointers(nn, 1, sps)
+          bocoLoop: do mm=1, nBocos
+             if (BCType(mm) == SubsonicInflow .or. &
+                  BCType(mm) == SubsonicOutflow .or. &
+                  BCType(mm) == SupersonicInflow .or. &
+                  BCType(mm) == SupersonicOutflow) then 
+                call setBCPointers_d(mm, .True.)
+                iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
+                jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
+                do j=jBeg, jEnd
+                   do i=iBeg, iEnd
+                      ii = ii + 1
+                      select case(iVar)
+                      case (1, 2, 3, 4)
+                         tmp = eighth * localPtr(ii) 
+                         ww1d(i  , j  , iVar) = ww1d(i  , j  , iVar) + tmp
+                         ww1d(i+1, j  , iVar) = ww1d(i+1, j  , iVar) + tmp
+                         ww1d(i  , j+1, iVar) = ww1d(i  , j+1, iVar) + tmp
+                         ww1d(i+1, j+1, iVar) = ww1d(i+1, j+1, iVar) + tmp
+
+                         ww2d(i  , j  , iVar) = ww2d(i  , j  , iVar) + tmp
+                         ww2d(i+1, j  , iVar) = ww2d(i+1, j  , iVar) + tmp
+                         ww2d(i  , j+1, iVar) = ww2d(i  , j+1, iVar) + tmp
+                         ww2d(i+1, j+1, iVar) = ww2d(i+1, j+1, iVar) + tmp
+                      case (5)
+                         tmp = eighth * localPtr(ii) 
+                         pp1d(i  , j  ) = pp1d(i  , j  ) + tmp
+                         pp1d(i+1, j  ) = pp1d(i+1, j  ) + tmp
+                         pp1d(i  , j+1) = pp1d(i  , j+1) + tmp
+                         pp1d(i+1, j+1) = pp1d(i+1, j+1) + tmp
+
+                         pp2d(i  , j  ) = pp2d(i  , j  ) + tmp
+                         pp2d(i+1, j  ) = pp2d(i+1, j  ) + tmp
+                         pp2d(i  , j+1) = pp2d(i  , j+1) + tmp
+                         pp2d(i+1, j+1) = pp2d(i+1, j+1) + tmp
+                       
+                      case (6)
+                         if (addGridVelocities) then 
+                            tmp = fourth*localPtr(ii)
+                            sfaced(i  , j  ) = sfaced(i  , j  ) + tmp
+                            sfaced(i+1, j  ) = sfaced(i+1, j  ) + tmp
+                            sfaced(i  , j+1) = sfaced(i  , j+1) + tmp
+                            sfaced(i+1, j+1) = sfaced(i+1, j+1) + tmp
+                         else
+                            localPtr(ii) = zero
+                         end if
+                      case (7,8,9)
+                         xxd(i+1, j+1, iVar-6) = xxd(i+1, j+1, iVar-6) + localPtr(ii)
+                      end select
+                   end do
+                end do
+             end if
+          end do bocoLoop
+       end do domainLoop
+
+       ! Return pointer to nodeValLocal
+       call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+  
+    end do varLoop
+
+  end subroutine flowIntegrationZipperComm_b
+
   subroutine wallIntegrationZipperComm(vars, sps)
 
     ! This routine could technically be inside of the
@@ -3322,10 +3443,7 @@ contains
 
   subroutine wallIntegrationZipperComm_d(vars, varsd, sps)
 
-    ! This routine could technically be inside of the
-    ! flowIntegrationZipper subroutine but we split it out becuase it
-    ! has petsc comm stuff that will differentiate manually that
-    ! tapenade doesn't need to see. 
+    ! Forward mode linearization of the wallIntegrationZipperComm
 
     use constants
     use blockPointers, only : BCDatad, BCData, nBocos, nDom, BCType
@@ -3351,21 +3469,12 @@ contains
     type(zipperMesh), pointer :: zipper
     type(familyExchange), pointer :: exch
 
-    ! To be consistent call the regular update:
-    call flowIntegrationZipperComm(vars, sps)
+    ! Compute the derivative of the nodal tractions
+    !all computeNodalTractions_d(sps)
 
     ! Set the zipper pointer to the zipper for inflow/outflow conditions
     zipper => zipperMeshes(iBCGroupWalls)
     exch => BCFamExchange(iBCGroupWalls, sps)
-
-    ! This is the local (derivative) set of data we need for the zipper.
-    allocate(varsd(size(zipper%indices), 9))
-
-    ! Compute the derivatives of the nodal tractions
-    !call computeNodalTractions_d(sps)
-
-    ! This is the local set of data we need for the zipper.
-    allocate(varsd(size(zipper%indices), 9))
 
     varLoop: do iVar=1,9
        call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
@@ -3420,7 +3529,106 @@ contains
 
   end subroutine wallIntegrationZipperComm_d
 
+  subroutine wallIntegrationZipperComm_b(vars, varsd, sps)
 
+    ! Reverse mode linearization of the wallIntegrationZipperComm
 
+    use constants
+    use blockPointers, only : BCDatad, BCData, nBocos, nDom, BCType
+    use sorting, only : bsearchIntegers
+    use BCPointers, only : xxd
+    use overset, only : zipperMeshes, zipperMesh
+    use surfaceFamilies, only : familyExchange, BCFamExchange
+    use utils, only : setPointers, setBCPointers_d, EChk, isWallType
+    implicit none
 
+#define PETSC_AVOID_MPIF_H
+#include "petsc/finclude/petscsys.h"
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscvec.h90"
+
+    ! Input variables
+    real(kind=realType), dimension(:, :), allocatable :: vars, varsd
+    integer(kind=intType) :: sps
+
+    ! Working variables
+    integer(kind=intType) :: ii, iVar, i,j, iBeg, iEnd, jBeg, jEnd, ierr, nn, mm
+    real(kind=realType), dimension(:), pointer :: localPtr
+    type(zipperMesh), pointer :: zipper
+    type(familyExchange), pointer :: exch
+
+    ! Set the zipper pointer to the zipper for inflow/outflow conditions
+    zipper => zipperMeshes(iBCGroupWalls)
+    exch => BCFamExchange(iBCGroupWalls, sps)
+
+    ! Run the var exchange loop backwards:
+    varLoop: do iVar=1,9
+       
+       ! Zero the vector we are scatting into:
+       call VecSet(exch%nodeValLocal, zero, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       call VecPlaceArray(zipper%localVal, varsd(:, iVar), ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! Send these values to the root using the zipper scatter. 
+       call VecScatterBegin(zipper%scatter, zipper%localVal, &
+            exch%nodeValLocal, ADD_VALUES, SCATTER_REVERSE, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       call VecScatterEnd(zipper%scatter, zipper%localVal, &
+            exch%nodeValLocal, ADD_VALUES, SCATTER_REVERSE, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! Reset the original petsc vector.
+       call vecResetArray(zipper%localVal, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! To be consistent, varsd must be zeroed since it is "used"
+       varsd(:, iVar) = zero
+
+       ! Now finish the scatting back to the acutual BCs pointers (and
+       ! thus the state variables). 
+
+       call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ii = 0
+       domainLoop: do nn=1, nDom
+          call setPointers(nn, 1, sps)
+          bocoLoop: do mm=1, nBocos
+             if (isWallType(BCType(mm))) then  
+                call setBCPointers_d(mm, .True.)
+                iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
+                jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
+                do j=jBeg, jEnd
+                   do i=iBeg, iEnd
+                      ii = ii + 1
+                      select case(iVar)
+                      case (1, 2, 3)
+                         BCDatad(mm)%Tp(i, j, iVar) = BCDatad(mm)%Tp(i, j, iVar) + localPtr(ii)
+                      case (4, 5, 6)
+                         BCDatad(mm)%Tv(i, j, iVar-3) = BCDatad(mm)%Tp(i, j, iVar-3) + localPtr(ii)
+                      case (7,8,9)
+                         ! The +1 is due to pointer offset
+                         xxd(i+1, j+1, iVar-6) = xxd(i+1, j+1, iVar-6) + localPtr(ii)
+                      end select
+                   end do
+                end do
+             end if
+          end do bocoLoop
+       end do domainLoop
+       
+       ! Return pointer to nodeValLocal
+       call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+       
+    end do varLoop
+
+    ! Compute the derivatives of the nodal tractions. The will
+    !accumulate the seeds onto bcDatad%Fv, bcDatad%Fv and bcDatad%area
+
+    !call computeNodalTractions_b(sps)
+
+  end subroutine wallIntegrationZipperComm_b
 end module haloExchange
