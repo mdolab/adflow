@@ -1229,7 +1229,7 @@ contains
     use overset, only: oversetPresent
     use utils, only : setPointers, myisnan, returnFail, maxHDiffMach, maxEddyv, &
          sumResiduals, sumAllResiduals
-    use surfaceIntegrations, only : integrateSurfaces, wallIntegrationsZipper
+    use surfaceIntegrations, only : integrateSurfaces, integrateZippers
     use surfaceFamilies, only : fullFamLIst
     use costFunctions, only : nLocalValues, iFp, iFv, iMv, iMp, iYplus
     implicit none
@@ -1414,7 +1414,7 @@ contains
        ! Add the corrections from zipper meshes from proc 0
        if (oversetPresent) then 
           localValues = zero
-          call wallIntegrationsZipper(localValues, fullFamList, sps)
+          call integrateZippers(localValues, fullFamList, sps)
 
           fact = two/(gammaInf*MachCoef*MachCoef &
                *surfaceRef*LRef*LRef*pRef)

@@ -45,6 +45,7 @@ ALL_RES_FILES =	$(SRC)/adjoint/adjointExtra.F90\
 		$(SRC)/modules/flowVarRefState.F90 \
 		$(SRC)/modules/costFunctions.F90\
 		$(SRC)/modules/wallDistanceData.F90\
+		$(SRC)/modules/overset.F90\
 		$(SRC)/solver/BCRoutines.F90\
 		$(SRC)/solver/fluxes.F90\
 		$(SRC)/solver/solverUtils.F90\
@@ -135,8 +136,8 @@ turbutils%turbAdvection(w, vol, si, sj, sk, scratch) > \
 sa%saViscous(w, vol, si, sj, sk, rlv, scratch) > \
             (w, vol, si, sj, sk, rlv, scratch) \
 \
-sa%saResScale(scratch, vol, dw) > \
-             (dw, vol) \
+sa%saResScale(scratch, dw) > \
+             (dw) \
 \
 fluxes%inviscidCentralFlux(w, timeRef, vol, si, sj, sk, p, dw) > \
                           (w, timeRef, vol, si, sj, sk, p, dw) \
@@ -172,13 +173,19 @@ adjointExtra%sumDwandFw(fw, dw) > (dw) \
 \
 adjointExtra%resScale(dw) > (dw) \
 \
-surfaceIntegrations%wallIntegrationFace(Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues BCData%Fp bcData%Fv BCData%area) > \
-                                       (Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues BCdata%Fp bcData%Fv BCData%area localValues)\
+surfaceIntegrations%wallIntegrationFace(Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues, BCData%Fp, bcData%Fv, BCData%area, localValues) > \
+                                       (Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues, BCdata%Fp, bcData%Fv, BCData%area, localValues)\
 \
 surfaceIntegrations%flowIntegrationFace(Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues) > \
                                        (Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues)\
 \
-adjointExtra%getCostFunctions(globalVals, liftDirection, dragDirection, pRef, rhoRef, tRef, machCoef) > \
+surfaceIntegrations%wallIntegrationZipper(vars, pointRef, localValues) > \
+                                         (vars, pointRef, localValues)\
+\
+surfaceIntegrations%flowIntegrationZipper(vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues) > \
+                                         (vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues)\
+\
+adjointExtra%getCostFunctions(globalVals, liftDirection, dragDirection, pRef, rhoRef, machCoef) > \
 	                     (funcValues) \
 \
 "

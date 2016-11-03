@@ -342,7 +342,7 @@ subroutine quadOverlap(q1, q2, overlapped)
   ! the cell normal. Check both normals from each quad.
 
   use constants
-  use utils, only : mynorm2
+  use utils, only : mynorm2, cross_prod
   
   implicit none
 
@@ -487,19 +487,4 @@ subroutine quadOverlap2D(q1, q2, overlapped)
   end do quadLoop
 end subroutine quadOverlap2D
 
-subroutine cross_prod(a,b,c)
-
-  use precision
-
-  ! Inputs
-  real(kind=realType), dimension(3), intent(in) :: a,b
-
-  ! Outputs
-  real(kind=realType), dimension(3), intent(out) :: c
-
-  c(1) = a(2) * b(3) - a(3) * b(2)
-  c(2) = a(3) * b(1) - a(1) * b(3)
-  c(3) = a(1) * b(2) - a(2) * b(1)
-
-end subroutine cross_prod
 
