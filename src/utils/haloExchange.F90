@@ -3075,7 +3075,7 @@ contains
                          else
                             localPtr(ii) = zero
                          end if
-                      case (7,8,9)
+                      case (7, 8, 9)
                          localPtr(ii) = xx(i+1, j+1, iVar-6)
                       end select
                    end do
@@ -3117,7 +3117,7 @@ contains
     use BCPointers, only : sFaced, ww1d, ww2d, pp1d, pp2d, xxd
     use overset, only : zipperMeshes, zipperMesh
     use surfaceFamilies, only : familyExchange, BCFamExchange
-    use utils, only : setPointers, setBCPointers_d, EChk
+    use utils, only : setPointers_d, setBCPointers_d, EChk
     implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -3134,6 +3134,9 @@ contains
     real(kind=realType), dimension(:), pointer :: localPtr
     type(zipperMesh), pointer :: zipper
     type(familyExchange), pointer :: exch
+
+    ! Need to generate the vars themselves.
+    call flowIntegrationZipperComm(vars, sps)
 
     ! To be consistent call the regular update:
     call flowIntegrationZipperComm(vars, sps)
@@ -3152,7 +3155,7 @@ contains
 
        ii = 0
        domainLoop: do nn=1, nDom
-          call setPointers(nn, 1, sps)
+          call setPointers_d(nn, 1, sps)
           bocoLoop: do mm=1, nBocos
              if (BCType(mm) == SubsonicInflow .or. &
                   BCType(mm) == SubsonicOutflow .or. &
@@ -3185,7 +3188,7 @@ contains
                          else
                             localPtr(ii) = zero
                          end if
-                      case (7,8,9)
+                      case (7, 8, 9)
                          localPtr(ii) = xxd(i+1, j+1, iVar-6)
                       end select
                    end do
@@ -3227,7 +3230,7 @@ contains
     use BCPointers, only : sFaced, ww1d, ww2d, pp1d, pp2d, xxd
     use overset, only : zipperMeshes, zipperMesh
     use surfaceFamilies, only : familyExchange, BCFamExchange
-    use utils, only : setPointers, setBCPointers_d, EChk
+    use utils, only : setPointers_d, setBCPointers_d, EChk
     implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -3284,7 +3287,7 @@ contains
 
        ii = 0
        domainLoop: do nn=1, nDom
-          call setPointers(nn, 1, sps)
+          call setPointers_d(nn, 1, sps)
           bocoLoop: do mm=1, nBocos
              if (BCType(mm) == SubsonicInflow .or. &
                   BCType(mm) == SubsonicOutflow .or. &
@@ -3330,7 +3333,7 @@ contains
                          else
                             localPtr(ii) = zero
                          end if
-                      case (7,8,9)
+                      case (7, 8, 9)
                          xxd(i+1, j+1, iVar-6) = xxd(i+1, j+1, iVar-6) + localPtr(ii)
                       end select
                    end do
@@ -3369,7 +3372,7 @@ contains
 #include "petsc/finclude/petscvec.h90"
 
     ! Input variables
-    real(kind=realType), dimension(:, :), allocatable :: vars
+    real(kind=realType), dimension(:, :) :: vars
     integer(kind=intType) :: sps
 
     ! Working variables
@@ -3384,9 +3387,6 @@ contains
 
     ! Make sure the nodal tractions are computed
     call computeNodalTractions(sps)
-
-    ! This is the local set of data we need for the zipper.
-    allocate(vars(size(zipper%indices), 9))
 
     varLoop: do iVar=1,9
        call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
@@ -3408,7 +3408,7 @@ contains
                          localPtr(ii) = BCData(mm)%Tp(i, j, iVar)
                       case (4, 5, 6)
                          localPtr(ii) = BCData(mm)%Tv(i, j, iVar-3)
-                      case (7,8,9)
+                      case (7, 8, 9)
                          ! The +1 is due to pointer offset
                          localPtr(ii) = xx(i+1, j+1, iVar-6)
                       end select
@@ -3451,7 +3451,7 @@ contains
     use BCPointers, only : xxd
     use overset, only : zipperMeshes, zipperMesh
     use surfaceFamilies, only : familyExchange, BCFamExchange
-    use utils, only : setPointers, setBCPointers_d, EChk, isWallType
+    use utils, only : setPointers_d, setBCPointers_d, EChk, isWallType
     implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -3460,7 +3460,7 @@ contains
 #include "petsc/finclude/petscvec.h90"
 
     ! Input variables
-    real(kind=realType), dimension(:, :), allocatable :: vars, varsd
+    real(kind=realType), dimension(:, :):: vars, varsd
     integer(kind=intType) :: sps
 
     ! Working variables
@@ -3468,6 +3468,9 @@ contains
     real(kind=realType), dimension(:), pointer :: localPtr
     type(zipperMesh), pointer :: zipper
     type(familyExchange), pointer :: exch
+
+    ! Need to set the actual variables first.
+    call wallIntegrationZIpperCOmm(vars, sps)
 
     ! Compute the derivative of the nodal tractions
     call computeNodalTractions_d(sps)
@@ -3482,7 +3485,7 @@ contains
     
        ii = 0
        domainLoop: do nn=1, nDom
-          call setPointers(nn, 1, sps)
+          call setPointers_d(nn, 1, sps)
           bocoLoop: do mm=1, nBocos
              if (isWallType(BCType(mm))) then  
                 call setBCPointers_d(mm, .True.)
@@ -3496,7 +3499,7 @@ contains
                          localPtr(ii) = BCDatad(mm)%Tp(i, j, iVar)
                       case (4, 5, 6)
                          localPtr(ii) = BCDatad(mm)%Tv(i, j, iVar-3)
-                      case (7,8,9)
+                      case (7, 8, 9)
                          ! The +1 is due to pointer offset
                          localPtr(ii) = xxd(i+1, j+1, iVar-6)
                       end select
@@ -3539,7 +3542,7 @@ contains
     use BCPointers, only : xxd
     use overset, only : zipperMeshes, zipperMesh
     use surfaceFamilies, only : familyExchange, BCFamExchange
-    use utils, only : setPointers, setBCPointers_d, EChk, isWallType
+    use utils, only : setPointers_d, setBCPointers_d, EChk, isWallType
     implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -3548,7 +3551,7 @@ contains
 #include "petsc/finclude/petscvec.h90"
 
     ! Input variables
-    real(kind=realType), dimension(:, :), allocatable :: vars, varsd
+    real(kind=realType), dimension(:, :) :: vars, varsd
     integer(kind=intType) :: sps
 
     ! Working variables
@@ -3562,7 +3565,7 @@ contains
     exch => BCFamExchange(iBCGroupWalls, sps)
 
     ! Run the var exchange loop backwards:
-    varLoop: do iVar=1,9
+    varLoop: do iVar=1, 9
        
        ! Zero the vector we are scatting into:
        call VecSet(exch%nodeValLocal, zero, ierr)
@@ -3595,7 +3598,7 @@ contains
 
        ii = 0
        domainLoop: do nn=1, nDom
-          call setPointers(nn, 1, sps)
+          call setPointers_d(nn, 1, sps)
           bocoLoop: do mm=1, nBocos
              if (isWallType(BCType(mm))) then  
                 call setBCPointers_d(mm, .True.)
@@ -3606,10 +3609,10 @@ contains
                       ii = ii + 1
                       select case(iVar)
                       case (1, 2, 3)
-                         BCDatad(mm)%Tp(i, j, iVar) = BCDatad(mm)%Tp(i, j, iVar) + localPtr(ii)
+                         BCDatad(mm)%Tp(i, j, iVar) = localPtr(ii)
                       case (4, 5, 6)
-                         BCDatad(mm)%Tv(i, j, iVar-3) = BCDatad(mm)%Tp(i, j, iVar-3) + localPtr(ii)
-                      case (7,8,9)
+                         BCDatad(mm)%Tv(i, j, iVar-3) = localPtr(ii)
+                      case (7, 8, 9)
                          ! The +1 is due to pointer offset
                          xxd(i+1, j+1, iVar-6) = xxd(i+1, j+1, iVar-6) + localPtr(ii)
                       end select

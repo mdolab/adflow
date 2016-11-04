@@ -1226,7 +1226,7 @@ bocos:do mm=1,nbocos
 !                pref rhoref vars localvalues
 !   rw status of diff variables: pointref:incr timeref:incr tref:incr
 !                rgas:incr pref:incr rhoref:incr vars:incr localvalues:in-out
-  subroutine flowintegrationzipper_b(vars, varsd, localvalues, &
+  subroutine flowintegrationzipper_b(zipper, vars, varsd, localvalues, &
 &   localvaluesd, famlist, sps)
 ! integrate over the trianges for the inflow/outflow conditions. 
     use constants
@@ -1243,6 +1243,7 @@ bocos:do mm=1,nbocos
     use utils_b, only : mynorm2, mynorm2_b, cross_prod, cross_prod_b
     implicit none
 ! input/output variables
+    type(zippermesh), intent(in) :: zipper
     real(kind=realtype), dimension(:, :), intent(in) :: vars
     real(kind=realtype), dimension(:, :) :: varsd
     real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
@@ -1268,7 +1269,6 @@ bocos:do mm=1,nbocos
     real(kind=realtype) :: fact, xc, yc, zc, cellarea, mx, my, mz
     real(kind=realtype) :: xcd, ycd, zcd, mxd, myd, mzd
     real(kind=realtype), dimension(:), pointer :: localptr
-    type(zippermesh), pointer :: zipper
     intrinsic sqrt
     intrinsic size
     real(kind=realtype), dimension(3) :: arg1
@@ -1285,7 +1285,6 @@ bocos:do mm=1,nbocos
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: temp
-! set the zipper pointer to the zipper for inflow/outflow conditions
     refpoint(1) = lref*pointref(1)
     refpoint(2) = lref*pointref(2)
     refpoint(3) = lref*pointref(3)
@@ -1504,7 +1503,8 @@ bocos:do mm=1,nbocos
     refpointd(2) = 0.0_8
     pointrefd(1) = pointrefd(1) + lref*refpointd(1)
   end subroutine flowintegrationzipper_b
-  subroutine flowintegrationzipper(vars, localvalues, famlist, sps)
+  subroutine flowintegrationzipper(zipper, vars, localvalues, famlist, &
+&   sps)
 ! integrate over the trianges for the inflow/outflow conditions. 
     use constants
     use costfunctions, only : nlocalvalues, imassflow, imassptot, &
@@ -1519,6 +1519,7 @@ bocos:do mm=1,nbocos
     use utils_b, only : mynorm2, cross_prod
     implicit none
 ! input/output variables
+    type(zippermesh), intent(in) :: zipper
     real(kind=realtype), dimension(:, :), intent(in) :: vars
     real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
 &   localvalues
@@ -1533,14 +1534,11 @@ bocos:do mm=1,nbocos
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps
     real(kind=realtype) :: fact, xc, yc, zc, cellarea, mx, my, mz
     real(kind=realtype), dimension(:), pointer :: localptr
-    type(zippermesh), pointer :: zipper
     intrinsic sqrt
     intrinsic size
     real(kind=realtype), dimension(3) :: arg1
     real(kind=realtype), dimension(3) :: arg2
     real(kind=realtype) :: result1
-! set the zipper pointer to the zipper for inflow/outflow conditions
-    zipper => zippermeshes(ibcgroupinflowoutflow)
     massflowrate = zero
     mass_ptot = zero
     mass_ttot = zero
@@ -1658,7 +1656,7 @@ bocos:do mm=1,nbocos
 !   gradient     of useful results: pointref vars localvalues
 !   with respect to varying inputs: pointref vars localvalues
 !   rw status of diff variables: pointref:incr vars:incr localvalues:in-out
-  subroutine wallintegrationzipper_b(vars, varsd, localvalues, &
+  subroutine wallintegrationzipper_b(zipper, vars, varsd, localvalues, &
 &   localvaluesd, famlist, sps)
     use constants
     use costfunctions
@@ -1669,6 +1667,7 @@ bocos:do mm=1,nbocos
     use utils_b, only : mynorm2, mynorm2_b, cross_prod, cross_prod_b
     implicit none
 ! input/output
+    type(zippermesh), intent(in) :: zipper
     real(kind=realtype), dimension(:, :), intent(in) :: vars
     real(kind=realtype), dimension(:, :) :: varsd
     real(kind=realtype), intent(inout) :: localvalues(nlocalvalues)
@@ -1678,7 +1677,6 @@ bocos:do mm=1,nbocos
 ! working
     real(kind=realtype), dimension(3) :: fp, fv, mp, mv
     real(kind=realtype), dimension(3) :: fpd, fvd, mpd, mvd
-    type(zippermesh), pointer :: zipper
     integer(kind=inttype) :: i, j
     real(kind=realtype), dimension(3) :: ss, norm, refpoint
     real(kind=realtype), dimension(3) :: ssd, normd, refpointd
@@ -1699,12 +1697,12 @@ bocos:do mm=1,nbocos
     real(kind=realtype) :: result1d
     integer(kind=inttype) :: res
     real(kind=realtype) :: tempd
+    real(kind=realtype) :: tempd5
     real(kind=realtype) :: tempd4
     real(kind=realtype) :: tempd3
     real(kind=realtype) :: tempd2
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
-! set the zipper pointer to the zipper for inflow/outflow conditions
 ! determine the reference point for the moment computation in
 ! meters.
     refpoint(1) = lref*pointref(1)
@@ -1720,6 +1718,8 @@ bocos:do mm=1,nbocos
     fpd = localvaluesd(ifp:ifp+2)
     normd = 0.0_8
     refpointd = 0.0_8
+    ycd = 0.0_8
+    zcd = 0.0_8
     do i=1,size(zipper%conn, 2)
       res = bsearchintegers(zipper%fam(i), famlist)
       if (res .gt. 0) then
@@ -1737,18 +1737,7 @@ bocos:do mm=1,nbocos
         result1 = mynorm2(ss)
         triarea = result1*third
 ! compute the average cell center. 
-        xc = zero
-        yc = zero
-        zc = zero
-        do j=1,3
-          xc = xc + vars(zipper%conn(1, i), 7)
-          yc = yc + vars(zipper%conn(2, i), 8)
-          zc = zc + vars(zipper%conn(3, i), 9)
-        end do
-! finish average for cell center          
-        xc = third*xc
-        yc = third*yc
-        zc = third*zc
+        xc = third*(x1(3)+x2(3)+x3(3))
         xc = xc - refpoint(1)
         yc = yc - refpoint(2)
         zc = zc - refpoint(3)
@@ -1769,9 +1758,9 @@ bocos:do mm=1,nbocos
         mxd = mvd(1)
         xcd = fy*mzd - fz*myd
         fyd = fvd(2) - zc*mxd + xc*mzd
-        ycd = fz*mxd - fx*mzd
+        ycd = ycd + fz*mxd - fx*mzd
         fxd = zc*myd + fvd(1) - yc*mzd
-        zcd = fx*myd - fy*mxd
+        zcd = zcd + fx*myd - fy*mxd
         fzd = yc*mxd + fvd(3) - xc*myd
         v1d = 0.0_8
         v2d = 0.0_8
@@ -1834,29 +1823,22 @@ bocos:do mm=1,nbocos
         refpointd(3) = refpointd(3) - zcd
         refpointd(2) = refpointd(2) - ycd
         refpointd(1) = refpointd(1) - xcd
-        zcd = third*zcd
-        ycd = third*ycd
-        xcd = third*xcd
-        do j=3,1,-1
-          varsd(zipper%conn(3, i), 9) = varsd(zipper%conn(3, i), 9) + &
-&           zcd
-          varsd(zipper%conn(2, i), 8) = varsd(zipper%conn(2, i), 8) + &
-&           ycd
-          varsd(zipper%conn(1, i), 7) = varsd(zipper%conn(1, i), 7) + &
-&           xcd
-        end do
+        x1d = 0.0_8
+        x2d = 0.0_8
+        x3d = 0.0_8
+        tempd5 = third*xcd
+        x1d(3) = x1d(3) + tempd5
+        x2d(3) = x2d(3) + tempd5
+        x3d(3) = x3d(3) + tempd5
         result1d = third*triaread
         ssd = 0.0_8
         call mynorm2_b(ss, ssd, result1d)
         normd = normd + half*ssd
         call cross_prod_b(arg1(:), arg1d(:), arg2(:), arg2d(:), norm, &
 &                   normd)
-        x1d = 0.0_8
-        x3d = 0.0_8
-        x3d = arg2d(:)
-        x1d = -arg1d(:) - arg2d(:)
-        x2d = 0.0_8
-        x2d = arg1d(:)
+        x3d = x3d + arg2d
+        x1d = x1d - arg1d - arg2d
+        x2d = x2d + arg1d
         varsd(zipper%conn(3, i), 7:9) = varsd(zipper%conn(3, i), 7:9) + &
 &         x3d
         varsd(zipper%conn(2, i), 7:9) = varsd(zipper%conn(2, i), 7:9) + &
@@ -1871,7 +1853,8 @@ bocos:do mm=1,nbocos
     refpointd(2) = 0.0_8
     pointrefd(1) = pointrefd(1) + lref*refpointd(1)
   end subroutine wallintegrationzipper_b
-  subroutine wallintegrationzipper(vars, localvalues, famlist, sps)
+  subroutine wallintegrationzipper(zipper, vars, localvalues, famlist, &
+&   sps)
     use constants
     use costfunctions
     use sorting, only : bsearchintegers
@@ -1881,13 +1864,13 @@ bocos:do mm=1,nbocos
     use utils_b, only : mynorm2, cross_prod
     implicit none
 ! input/output
+    type(zippermesh), intent(in) :: zipper
     real(kind=realtype), dimension(:, :), intent(in) :: vars
     real(kind=realtype), intent(inout) :: localvalues(nlocalvalues)
     integer(kind=inttype), dimension(:), intent(in) :: famlist
     integer(kind=inttype), intent(in) :: sps
 ! working
     real(kind=realtype), dimension(3) :: fp, fv, mp, mv
-    type(zippermesh), pointer :: zipper
     integer(kind=inttype) :: i, j
     real(kind=realtype), dimension(3) :: ss, norm, refpoint
     real(kind=realtype), dimension(3) :: p1, p2, p3, v1, v2, v3, x1, x2&
@@ -1898,8 +1881,6 @@ bocos:do mm=1,nbocos
     real(kind=realtype), dimension(3) :: arg1
     real(kind=realtype), dimension(3) :: arg2
     real(kind=realtype) :: result1
-! set the zipper pointer to the zipper for inflow/outflow conditions
-    zipper => zippermeshes(ibcgroupwalls)
 ! determine the reference point for the moment computation in
 ! meters.
     refpoint(1) = lref*pointref(1)
@@ -1925,18 +1906,9 @@ bocos:do mm=1,nbocos
         result1 = mynorm2(ss)
         triarea = result1*third
 ! compute the average cell center. 
-        xc = zero
-        yc = zero
-        zc = zero
-        do j=1,3
-          xc = xc + vars(zipper%conn(1, i), 7)
-          yc = yc + vars(zipper%conn(2, i), 8)
-          zc = zc + vars(zipper%conn(3, i), 9)
-        end do
-! finish average for cell center          
-        xc = third*xc
-        yc = third*yc
-        zc = third*zc
+        xc = third*(x1(1)+x2(1)+x3(1))
+        xc = third*(x1(2)+x2(2)+x3(2))
+        xc = third*(x1(3)+x2(3)+x3(3))
         xc = xc - refpoint(1)
         yc = yc - refpoint(2)
         zc = zc - refpoint(3)
