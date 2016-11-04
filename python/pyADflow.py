@@ -2911,7 +2911,7 @@ class ADFLOW(AeroSolver):
 
         # Sizes for output arrays
         costSize = self.adflow.costfunctions.ncostfunction
-        fSize, nCell = self._getSurfaceSize(self.allWallsGroup)
+        fSize, nCell = self._getSurfaceSize(self.allWallsGroup, includeZipper=True)
 
         # Get the famList from the groupName
         famList = self._getFamilyList(groupName)
@@ -3009,7 +3009,7 @@ class ADFLOW(AeroSolver):
         #  Check for fBar (forces)
         # ------------------------
         nTime  = self.adflow.inputtimespectral.ntimeintervalsspectral
-        nPts, nCell = self._getSurfaceSize(self.allWallsGroup)
+        nPts, nCell = self._getSurfaceSize(self.allWallsGroup, includeZipper=True)
 
         if fBar is None:
             fBar = numpy.zeros((nTime, nPts, 3))
@@ -3269,11 +3269,12 @@ class ADFLOW(AeroSolver):
             Seed to use for random number. Only significant on root processor
 
         """
-        nPts, nCell = self._getSurfaceSize(self.allWallsGroup, includeZipper=False)
+        nPts, nCell = self._getSurfaceSize(self.allWallsGroup, includeZipper=True)
         xRand = self.getSpatialPerturbation(seed)
         surfRand = numpy.zeros((nPts, 3))
         famList = self._getFamilyList(self.allWallsGroup)
-        self.adflow.warping.getsurfaceperturbation(xRand, numpy.ravel(surfRand), famList)
+        # Only coded for 1 spectal instance currently.
+        self.adflow.warping.getsurfaceperturbation(xRand, numpy.ravel(surfRand), famList, 1)
         return surfRand
 
     def getStatePerturbation(self, seed=314):

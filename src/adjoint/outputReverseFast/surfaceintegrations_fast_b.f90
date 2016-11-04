@@ -493,7 +493,8 @@ bocos:do mm=1,nbocos
     localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
 &     mmom
   end subroutine flowintegrationface
-  subroutine flowintegrationzipper(vars, localvalues, famlist, sps)
+  subroutine flowintegrationzipper(zipper, vars, localvalues, famlist, &
+&   sps)
 ! integrate over the trianges for the inflow/outflow conditions. 
     use constants
     use costfunctions, only : nlocalvalues, imassflow, imassptot, &
@@ -508,6 +509,7 @@ bocos:do mm=1,nbocos
     use utils_fast_b, only : mynorm2, cross_prod
     implicit none
 ! input/output variables
+    type(zippermesh), intent(in) :: zipper
     real(kind=realtype), dimension(:, :), intent(in) :: vars
     real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
 &   localvalues
@@ -522,14 +524,11 @@ bocos:do mm=1,nbocos
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps
     real(kind=realtype) :: fact, xc, yc, zc, cellarea, mx, my, mz
     real(kind=realtype), dimension(:), pointer :: localptr
-    type(zippermesh), pointer :: zipper
     intrinsic sqrt
     intrinsic size
     real(kind=realtype), dimension(3) :: arg1
     real(kind=realtype), dimension(3) :: arg2
     real(kind=realtype) :: result1
-! set the zipper pointer to the zipper for inflow/outflow conditions
-    zipper => zippermeshes(ibcgroupinflowoutflow)
     massflowrate = zero
     mass_ptot = zero
     mass_ttot = zero
@@ -643,7 +642,8 @@ bocos:do mm=1,nbocos
     localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
 &     mmom
   end subroutine flowintegrationzipper
-  subroutine wallintegrationzipper(vars, localvalues, famlist, sps)
+  subroutine wallintegrationzipper(zipper, vars, localvalues, famlist, &
+&   sps)
     use constants
     use costfunctions
     use sorting, only : bsearchintegers
@@ -653,13 +653,13 @@ bocos:do mm=1,nbocos
     use utils_fast_b, only : mynorm2, cross_prod
     implicit none
 ! input/output
+    type(zippermesh), intent(in) :: zipper
     real(kind=realtype), dimension(:, :), intent(in) :: vars
     real(kind=realtype), intent(inout) :: localvalues(nlocalvalues)
     integer(kind=inttype), dimension(:), intent(in) :: famlist
     integer(kind=inttype), intent(in) :: sps
 ! working
     real(kind=realtype), dimension(3) :: fp, fv, mp, mv
-    type(zippermesh), pointer :: zipper
     integer(kind=inttype) :: i, j
     real(kind=realtype), dimension(3) :: ss, norm, refpoint
     real(kind=realtype), dimension(3) :: p1, p2, p3, v1, v2, v3, x1, x2&
@@ -670,8 +670,6 @@ bocos:do mm=1,nbocos
     real(kind=realtype), dimension(3) :: arg1
     real(kind=realtype), dimension(3) :: arg2
     real(kind=realtype) :: result1
-! set the zipper pointer to the zipper for inflow/outflow conditions
-    zipper => zippermeshes(ibcgroupwalls)
 ! determine the reference point for the moment computation in
 ! meters.
     refpoint(1) = lref*pointref(1)
@@ -697,18 +695,9 @@ bocos:do mm=1,nbocos
         result1 = mynorm2(ss)
         triarea = result1*third
 ! compute the average cell center. 
-        xc = zero
-        yc = zero
-        zc = zero
-        do j=1,3
-          xc = xc + vars(zipper%conn(1, i), 7)
-          yc = yc + vars(zipper%conn(2, i), 8)
-          zc = zc + vars(zipper%conn(3, i), 9)
-        end do
-! finish average for cell center          
-        xc = third*xc
-        yc = third*yc
-        zc = third*zc
+        xc = third*(x1(1)+x2(1)+x3(1))
+        xc = third*(x1(2)+x2(2)+x3(2))
+        xc = third*(x1(3)+x2(3)+x3(3))
         xc = xc - refpoint(1)
         yc = yc - refpoint(2)
         zc = zc - refpoint(3)
