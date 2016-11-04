@@ -185,14 +185,15 @@ contains
 
        end do
        
-       ! Integrate any zippers we have
-       call integrateZippers(localval(:, sps), famList, sps)
-
        if (present(forces)) then 
           ! Now we can retrieve the forces/tractions for this spectral instance
           fSize = size(forces, 2)
           call getForces(forces(:, :, sps), fSize, sps)
        end if
+
+       ! Integrate any zippers we have
+       call integrateZippers(localval(:, sps), famList, sps)
+
     end do
 
     ! Now we need to reduce all the cost functions
@@ -463,11 +464,12 @@ contains
           call integrateSurfaces_d(localVal(:, sps), localVald(:, sps), famList)
        end do
 
+       ! Now we can retrieve the forces/tractions for this spectral instance
+       call getForces_d(forces(:, :, sps), forcesDot(:, :, sps), fSize, sps)
+
        ! Do any zipper integration
        call integrateZippers_d(localVal(:, sps), localVald(:, sps), famList, sps)
        
-       ! Now we can retrieve the forces/tractions for this spectral instance
-       call getForces_d(forces(:, :, sps), forcesDot(:, :, sps), fSize, sps)
     end do
 
     ! Now we need to reduce all the cost functions
@@ -615,7 +617,7 @@ contains
           call setPointers_d(nn, 1, sps)
           call integrateSurfaces(localval(:, sps), famList)
        end do
-       call integrateZippers(localVal(:, sps), famList, sps)
+       !call integrateZippers(localVal(:, sps), famList, sps)
     end do
 
     call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
@@ -644,15 +646,14 @@ contains
 
     spsLoop1: do sps=1, nTimeIntervalsSpectral
 
+       ! Accumulate zipper contribution
+       call integrateZippers_b(localVal(:, sps), localVald(:, sps), famList, sps)
+
        ! First set the force seeds using the custom getForces_b() for
        ! each time instance. This set the bcDatad%Fp, bcDatad%Fv and
        ! bcData%area seeds.
-
        fSize = size(forcesBar, 2)
        call getForces_b(forcesBar(:, :, sps), fSize, sps)
-
-       ! Accumulate zipper contribution
-       call integrateZippers_b(localVal(:, sps), localVald(:, sps), famList, sps)
 
        domainLoop1: do nn=1, nDom
           call setPointers_d(nn, 1, sps)

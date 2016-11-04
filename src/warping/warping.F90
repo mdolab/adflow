@@ -262,85 +262,168 @@ contains
     end do
   end subroutine getStatePerturbation
 
-  subroutine getSurfacePerturbation(xRand, nRand, randSurface, nRandSurface, famList, nFamList)
+  subroutine getSurfacePerturbation(xRand, nRand, randSurface, nRandSurface, famList, nFamList, sps)
 
     use constants
     use blockPointers, only : nDom, BCData, nBocos, BCFaceID, il, jl ,kl
     use communication, only : adflow_comm_world, myid
     use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use utils, only : setPointers
+    use utils, only : setPointers, EChk
     use sorting, only : bsearchIntegers
+    use overset, only : zipperMeshes, zipperMesh, oversetPresent
+    use surfaceFamilies, only : BCFamGroups, familyExchange, BCFamExchange
+
     implicit none
+#define PETSC_AVOID_MPIF_H
+#include "petsc/finclude/petscsys.h"
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscvec.h90"
 
     ! Input Parameters
     real(kind=realType), intent(in), dimension(nRand) :: xRand
     integer(kind=intType), intent(in) :: nRand, nRandSurface
-    integer(kind=intType), intent(in) :: famList(nFamList), nFamList
+    integer(kind=intType), intent(in) :: famList(nFamList), nFamList, sps
     ! Ouput Parameters
     real(kind=realType), intent(inout), dimension(3*nRandSurface) :: randSurface
 
     ! Working parameters
     integer(kind=intType) :: i, j, k, ierr, iDim, iBeg, iEnd, jBeg, jEnd, nn, mm
-    integer(kind=intType) :: sps, ii, jj, indI, indJ, indK, jjInd
+    integer(kind=intType) :: ii, jj, indI, indJ, indK, jjInd, iBCGroup
+    type(zipperMesh), pointer :: zipper
+    type(familyexchange), pointer :: exch
+    logical :: BCGroupNeeded
+    real(kind=realType), dimension(:), pointer :: localPtr
 
     ii = 0 
     jj = 0
     domains: do nn=1,nDom
-       do sps=1, nTimeIntervalsSpectral
-          call setPointers(nn, 1_intType, sps)
+       call setPointers(nn, 1_intType, sps)
 
-          ! Loop over the number of boundary subfaces of this block.
-          bocos: do mm=1,nBocos
+       ! Loop over the number of boundary subfaces of this block.
+       bocos: do mm=1,nBocos
 
-             ! NODE Based
-             jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
-             iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
+          ! NODE Based
+          jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
+          iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
 
-             famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then 
+          famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then 
 
-                do j=jBeg, jEnd ! This is a node loop
-                   do i=iBeg, iEnd ! This is a node loop
-                      select case(BCFaceID(mm))
-                      case(imin)
-                         indI = 1
-                         indJ = i
-                         indK = j
-                      case(imax)
-                         indI = il
-                         indJ = i
-                         indK = j
-                      case(jmin) 
-                         indI = i
-                         indJ = 1
-                         indK = j
-                      case(jmax) 
-                         indI = i
-                         indJ = jl
-                         indK = j
-                      case(kmin) 
-                         indI = i
-                         indJ = j
-                         indK = 1
-                      case(kmax) 
-                         indI = i
-                         indJ = j
-                         indK = kl
-                      end select
+             do j=jBeg, jEnd ! This is a node loop
+                do i=iBeg, iEnd ! This is a node loop
+                   select case(BCFaceID(mm))
+                   case(imin)
+                      indI = 1
+                      indJ = i
+                      indK = j
+                   case(imax)
+                      indI = il
+                      indJ = i
+                      indK = j
+                   case(jmin) 
+                      indI = i
+                      indJ = 1
+                      indK = j
+                   case(jmax) 
+                      indI = i
+                      indJ = jl
+                      indK = j
+                   case(kmin) 
+                      indI = i
+                      indJ = j
+                      indK = 1
+                   case(kmax) 
+                      indI = i
+                      indJ = j
+                      indK = kl
+                   end select
 
-                      do iDim=1,3
-                         jjInd = jj + (indK-1)*il*jl + (indJ-1)*il + (indI-1) + iDim
-                         randSurface(3*ii+iDim) = xRand(jjInd)
-                      end do
-                      ii = ii +1
+                   do iDim=1,3
+                      jjInd = jj + (indK-1)*il*jl + (indJ-1)*il + (indI-1) + iDim
+                      randSurface(3*ii+iDim) = xRand(jjInd)
                    end do
+                   ii = ii +1
                 end do
-             end if famInclude
-          end do bocos
-       end do
+             end do
+          end if famInclude
+       end do bocos
+
        ! jj is the counter through xRand. Increment it by the full
        ! block. 
        jj = jj + il*jl*kl*3
     end do domains
+
+    ! No overset or not zipper, return 
+    if (.not. oversetPresent) then ! .or. .not. includeZipper) then
+       return 
+    end if
+
+
+    ! If there are zipper meshes, we must include the nodes that the
+    ! zipper triangles will use.
+    do iBCGroup=1, nFamExchange
+
+       zipper => zipperMeshes(iBCGroup)
+
+       if (.not. zipper%allocated) then 
+          cycle
+       end if
+
+       exch => BCFamExchange(iBCGroup, sps)
+       BCGroupNeeded = .False.
+       BCGroupFamLoop: do i=1, size(BCFamGroups(iBCGroup)%famList)
+          if (bsearchIntegers(BCFamGroups(iBCGroup)%famList(i), famList) > 0) then 
+             BCGroupNeeded = .True.
+             exit BCGroupFamLoop
+          end if
+       end do BCGroupFamLoop
+
+       if (.not. BCGroupNeeded) then 
+          cycle
+       end if
+
+       ! Now we know we *actually* need something from this BCGroup. 
+
+       ! Loop over each dimension individually since we have a scalar
+       ! scatter.
+       dimLoop: do iDim=1,3
+
+          call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+
+          ! The local Pointer is just the localRandSurface we've set
+          ! above.
+          do j=1, size(localPtr)
+             localPtr(i) = randSurface(3*(j-1) + iDim)
+          end do
+
+          ! Restore the pointer
+          call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+
+          ! Now scatter this to the zipper
+          call VecScatterBegin(zipper%scatter, exch%nodeValLocal,&
+               zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+
+          call VecScatterEnd(zipper%scatter, exch%nodeValLocal,&
+               zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+
+          ! The values we need are precisely what is in zipper%localVal
+          call vecGetArrayF90(zipper%localVal, localPtr, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+
+          ! Just copy the received seeds into the random aray
+          do j=1, size(localPtr)
+             ! Careful here becuase we have to interlate the dim
+             randSurface(3*ii + 3*(j-1) + iDim) = localPtr(j)
+          end do
+
+       end do dimLoop
+
+       ! Increcment the running ii counter. 
+       ii = ii + size(localPtr)
+    end do
   end subroutine getSurfacePerturbation
 
 end module warping

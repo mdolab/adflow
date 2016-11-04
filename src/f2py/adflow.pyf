@@ -261,13 +261,14 @@ python module libadflow
            integer(kind=inttype) intent(in) :: nrandstate
          end subroutine getstateperturbation
 
-          subroutine getsurfaceperturbation(xrand,nrand,randsurface,nrandsurface, famlist,nfamlist) ! in :test:warping.F90:warping
+          subroutine getsurfaceperturbation(xrand,nrand,randsurface,nrandsurface, famlist,nfamlist,sps) ! in :test:warping.F90:warping
            real(kind=realtype) dimension(nrand),intent(in) :: xrand
            integer(kind=inttype), optional,intent(in),check(len(xrand)>=nrand),depend(xrand) :: nrand=len(xrand)
            real(kind=realtype) dimension(3 * nrandsurface),intent(inout) :: randsurface
            integer(kind=inttype), optional,intent(in),check((len(randsurface))/(3)>=nrandsurface),depend(randsurface) :: nrandsurface=(len(randsurface))/(3)
            integer(kind=inttype) dimension(nfamlist),intent(in) :: famlist
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
+           integer(kind=inttype) intent(in) :: sps
          end subroutine getsurfaceperturbation
        end module warping
        

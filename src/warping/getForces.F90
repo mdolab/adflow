@@ -152,17 +152,15 @@ subroutine getForces_b(forcesd, npts, sps)
      bocos: do mm=1, nBocos
         if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
              BCType(mm) == NSWallIsothermal) then
-           bcDatad(mm)%Tp = zero
-           bcDatad(mm)%Tv = zero
            ! This is easy, just copy out F or T in continuous ordering. 
            do j=BCData(mm)%jnBeg, BCData(mm)%jnEnd
               do i=BCData(mm)%inBeg, BCData(mm)%inEnd
                  ii = ii + 1
                  if (forcesAsTractions) then 
-                    bcDatad(mm)%Tp(i, j, :) = bcDatad(mm)%Tp(i, j, :) + forcesd(:, ii)
-                    bcDatad(mm)%Tv(i, j, :) = bcDatad(mm)%Tv(i, j, :) + forcesd(:, ii)
+                    bcDatad(mm)%Tp(i, j, :) = forcesd(:, ii)
+                    bcDatad(mm)%Tv(i, j, :) = forcesd(:, ii)
                  else
-                    bcDatad(mm)%F(i, j, :) = bcDatad(mm)%F(i, j, :) + forcesd(:, ii)
+                    bcDatad(mm)%F(i, j, :) = forcesd(:, ii)
                  end if
               end do
            end do
@@ -997,13 +995,6 @@ subroutine computeNodalTractions_b(sps)
                 BCType(mm) == NSWallAdiabatic .or. &
                 BCType(mm) == NSWallIsothermal) then
 
-              ! Zero the accumulation:
-              if (iDim <= 3) then 
-                 BCDatad(mm)%Fp(:, :, iDim) = zero
-              else
-                 BCDatad(mm)%Fv(:, :, iDim-3) = zero
-              end if
-
               do j=0,nj-2
                  do i=0,ni-2
 
@@ -1089,7 +1080,6 @@ subroutine computeNodalTractions_b(sps)
         if(BCType(mm) == EulerWall .or. &
              BCType(mm) == NSWallAdiabatic .or. &
              BCType(mm) == NSWallIsothermal) then
-           BCDatad(mm)%area = zero
            do j=0,nj-2
               do i=0,ni-2
 
