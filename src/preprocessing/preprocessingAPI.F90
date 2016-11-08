@@ -2725,7 +2725,7 @@ contains
     use inputTimeSpectral
     use checkVolBlock
     use inputIteration
-    use utils, only : setPointers, terminate
+    use utils, only : setPointers, terminate, returnFail
     implicit none
     !
     !      Subroutine arguments.
@@ -3255,8 +3255,8 @@ contains
 
           call writeNegVolumes(checkVolDoms)
 
-          if(myID == 0) &
-               call terminate("metric", "Negative volumes present in grid")
+          call returnFail("metric", &
+            "Negative volumes present in grid.")
           call mpi_barrier(ADflow_comm_world, ierr)
 
        else
