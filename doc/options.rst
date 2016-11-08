@@ -171,7 +171,7 @@ Parameter                                  Type       Default                   
 `CFLCoarse`                              `float`     1.0                                            The CFL number to use on the coarse grids of the multigrid simulations. It is often
                                                                                                     desirable to have this number somewhat lower than the CFL number of the fine grid. 
                                                           
-`mcCycle`                                `str`      `3w`                                            The type of multigrid cycle to use. The dimensions of the grid must be such that the 
+`mgCycle`                                `str`      `3w`                                            The type of multigrid cycle to use. The dimensions of the grid must be such that the 
                                                                                                     requested multigrid level is possible. To run a single grid simulation (no multigrid)
                                                                                                     use `sg`. To run 3 multigrid levels with a 'w' cycle use `3w`. To use a 'v' cycle use
                                                                                                     `3v` etc. 
