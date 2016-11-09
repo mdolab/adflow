@@ -287,9 +287,8 @@ subroutine getForces_b(forcesd, npts, sps)
 
         call vecGetArrayF90(zipper%localVal, localPtr, ierr)
         call EChk(ierr,__FILE__,__LINE__)
-        
-        ii = size(zipper%indices)
 
+        ii = exch%nNodes
         ! Just copy the received data into the forces array. Just on root proc:
         if (myid == 0) then 
            do i=1, size(localPtr)
