@@ -1,14 +1,21 @@
 
 subroutine getForces(forces, npts, sps)
   use constants
+  use communication, only : myid
   use blockPointers, only : BCData, nDom, nBocos, BCType
   use inputPhysics, only : forcesAsTractions
   use costFunctions, only : nLocalValues
-  use utils, only : setPointers
+  use utils, only : setPointers, terminate, EChk
   use sorting, only : bsearchIntegers
   use surfaceIntegrations, only : integrateSurfaces
   use surfaceFamilies, only : fullfamList
+  use overset, only : zipperMeshes, zipperMesh, oversetPresent
+  use surfaceFamilies, only : familyExchange, BCFamExchange
   implicit none
+#define PETSC_AVOID_MPIF_H
+#include "petsc/finclude/petscsys.h"
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscvec.h90"
 
   integer(kind=intType), intent(in) :: npts, sps
   real(kind=realType), intent(inout) :: forces(3,npts)
@@ -19,7 +26,10 @@ subroutine getForces(forces, npts, sps)
   real(kind=realType) :: sepSensorAvg(3)
   real(kind=realType) :: Fp(3), Fv(3), Mp(3), Mv(3), yplusmax, qf(3)
   real(kind=realType) :: localValues(nLocalValues)
-  real(kind=realType) :: timea,timeb,timec, timed
+  type(zipperMesh), pointer :: zipper
+  type(familyexchange), pointer :: exch
+  real(kind=realType), dimension(:), pointer :: localPtr
+
   ! Make sure *all* forces are computed. Sectioning will be done
   ! else-where.
 
@@ -59,6 +69,61 @@ subroutine getForces(forces, npts, sps)
         end if
      end do bocos
   end do domains2
+
+  ! We know must consider additional forces that are required by the
+  ! zipper mesh triangles on the root proc. 
+
+  ! Pointer for easier reading. 
+  zipper => zipperMeshes(iBCGroupWalls)
+  exch => BCFamExchange(iBCGroupWalls, sps)
+  ! No overset present or the zipper isn't allocated nothing to do:
+  if (.not. oversetPresent .or. .not. zipper%allocated) then 
+     return 
+  end if
+
+  if (.not. forcesAsTractions) then 
+     ! We have a zipper and regular forces are requested. This is not yet supported. 
+     call terminate('getForces', 'getForces() is not implmented for zipper meshes and '&
+          &'forcesAsTractions=False')
+  end if
+
+  ! Loop over each dimension individually since we have a scalar
+  ! scatter.
+  dimLoop: do iDim=1,3
+     
+     call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     ! Copy in the values we already have to the exchange. 
+     ii = size(LocalPtr)
+     localPtr = forces(iDim, 1:ii)
+
+     ! Restore the pointer
+     call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     ! Now scatter this to the zipper
+     call VecScatterBegin(zipper%scatter, exch%nodeValLocal,&
+          zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     call VecScatterEnd(zipper%scatter, exch%nodeValLocal,&
+          zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     ! The values we need are precisely what is in zipper%localVal
+     call vecGetArrayF90(zipper%localVal, localPtr, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     ! Just copy the received data into the forces array. Just on root proc:
+     if (myid == 0) then 
+        forces(iDim, ii+1:ii+size(localPtr)) = localPtr
+     end if
+
+     call vecGetArrayF90(zipper%localVal, localPtr, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+  end do dimLoop
+
 end subroutine getForces
 
 subroutine getForces_d(forces, forcesd, npts, sps)
@@ -68,10 +133,13 @@ subroutine getForces_d(forces, forcesd, npts, sps)
   ! bcData(mm)%area and computes either the nodal forces or nodal
   ! tractions. 
   use constants
+  use communication, only : myid
   use blockPointers, only : nDom, nBocos, BCData, BCType, nBocos, BCDatad
   use inputPhysics, only : forcesAsTractions
   use surfaceFamilies, only: BCFamExchange, familyExchange
-  use utils, only : setPointers, setPointers_d, EChk
+  use utils, only : setPointers, setPointers_d, EChk, terminate
+  use overset, only : zipperMeshes, zipperMesh, oversetPresent
+  use surfaceFamilies, only : familyExchange, BCFamExchange
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petscsys.h"
@@ -84,7 +152,8 @@ subroutine getForces_d(forces, forcesd, npts, sps)
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ind(4), ni, nj
   real(kind=realType) :: qa, qad, qf, qfd
   real(kind=realType), dimension(:), pointer :: localPtr, localPtrd
-  type(familyExchange), pointer :: exch
+  type(zipperMesh), pointer :: zipper
+  type(familyexchange), pointer :: exch
 
   if (forcesAsTractions) then 
      call computeNodalTractions_d(sps)
@@ -117,6 +186,60 @@ subroutine getForces_d(forces, forcesd, npts, sps)
      end do bocos
   end do domains2
 
+  ! We know must consider additional forces that are required by the
+  ! zipper mesh triangles on the root proc. 
+
+  ! Pointer for easier reading. 
+  zipper => zipperMeshes(iBCGroupWalls)
+  exch => BCFamExchange(iBCGroupWalls, sps)
+  ! No overset present or the zipper isn't allocated nothing to do:
+  if (.not. oversetPresent .or. .not. zipper%allocated) then 
+     return 
+  end if
+
+  if (.not. forcesAsTractions) then 
+     ! We have a zipper and regular forces are requested. This is not yet supported. 
+     call terminate('getForces', 'getForces() is not implmented for zipper meshes and '&
+          &'forcesAsTractions=False')
+  end if
+
+  ! Loop over each dimension individually since we have a scalar
+  ! scatter.
+  dimLoop: do iDim=1,3
+     
+     call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     ! Copy in the values we already have to the exchange. 
+     ii = size(LocalPtr)
+     localPtr = forcesd(iDim, 1:ii)
+
+     ! Restore the pointer
+     call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     ! Now scatter this to the zipper
+     call VecScatterBegin(zipper%scatter, exch%nodeValLocal,&
+          zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     call VecScatterEnd(zipper%scatter, exch%nodeValLocal,&
+          zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     ! The values we need are precisely what is in zipper%localVal
+     call vecGetArrayF90(zipper%localVal, localPtr, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     ! Just copy the received data into the forces array. Just on root proc:
+     if (myid == 0) then 
+        forcesd(iDim, ii+1:ii+size(localPtr)) = localPtr
+     end if
+
+     call vecGetArrayF90(zipper%localVal, localPtr, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+  end do dimLoop
+
 end subroutine getForces_d
 
 subroutine getForces_b(forcesd, npts, sps)
@@ -126,22 +249,84 @@ subroutine getForces_b(forcesd, npts, sps)
   ! in getForces to compute bcDatad(mm)%Fp, bcDatad(mm)%Fv and
   ! bcDatad(mm)%area.
   use constants
+  use communication, only : myid
   use blockPointers, only : nDom, nBocos, BCData, BCType, nBocos, BCDatad
   use inputPhysics, only : forcesAsTractions
   use surfaceFamilies, only: BCFamExchange, familyExchange
   use communication
   use utils, only : EChk, setPointers, setPointers_d
-
+  use overset, only : zipperMeshes, zipperMesh, oversetPresent
+  use surfaceFamilies, only : familyExchange, BCFamExchange
   implicit none
+
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscvec.h90"
 
   integer(kind=intType), intent(in) :: npts, sps
-  real(kind=realType), intent(in) :: forcesd(3, npts)
-  integer(kind=intType) :: mm, nn, i, j, ii
+  real(kind=realType), intent(inout) :: forcesd(3, npts)
+  integer(kind=intType) :: mm, nn, i, j, ii, iDim, ierr
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
+  type(zipperMesh), pointer :: zipper
+  type(familyexchange), pointer :: exch
+  real(kind=realType), dimension(:), pointer :: localPtr
+
+  ! We know must consider additional forces that are required by the
+  ! zipper mesh triangles on the root proc. 
+
+  ! Pointer for easier reading. 
+  zipper => zipperMeshes(iBCGroupWalls)
+  exch => BCFamExchange(iBCGroupWalls, sps)
+  ! No overset present or the zipper isn't allocated nothing to do:
+  zipperReverse: if (oversetPresent .and. zipper%allocated) then 
+
+     ! Loop over each dimension individually since we have a scalar
+     ! scatter.
+     dimLoop: do iDim=1,3
+
+        call vecGetArrayF90(zipper%localVal, localPtr, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        
+        ii = size(zipper%indices)
+
+        ! Just copy the received data into the forces array. Just on root proc:
+        if (myid == 0) then 
+           do i=1, size(localPtr)
+              localPtr(i) = forcesd(iDim, ii+i)
+              forcesd(iDim, ii+i) = zero
+           end do
+        end if
+        
+        call vecGetArrayF90(zipper%localVal, localPtr, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+
+        ! Zero the vector we are scatting into:
+        call VecSet(exch%nodeValLocal, zero, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+
+        ! Scatter values from the root using the zipper scatter.
+        call VecScatterBegin(zipper%scatter, zipper%localVal, &
+             exch%nodeValLocal, ADD_VALUES, SCATTER_REVERSE, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        
+        call VecScatterEnd(zipper%scatter, zipper%localVal, &
+             exch%nodeValLocal, ADD_VALUES, SCATTER_REVERSE, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        
+        call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+
+        ! Accumulate the scatted values onto forcesd
+        ii = size(localPtr)
+        forcesd(iDim, 1:ii) = forcesd(iDim, 1:ii) + localPtr
+        
+        ! Restore the pointer
+        call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+           
+     end do dimLoop
+  end if zipperReverse
 
   ! Set the incoming derivative values
   ii = 0 
