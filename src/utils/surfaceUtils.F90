@@ -353,6 +353,7 @@ contains
 
   subroutine getSurfacePoints(points, npts, sps_in, famList, nFamList, includeZipper)
     use constants
+    use communication, only : myid
     use blockPointers, only : nDom, BCData, nBocos, x, BCFaceID, il, jl, kl
     use BCPointers, only : xx
     use surfaceFamilies, only : BCFamGroups, familyExchange, BCFamExchange
@@ -492,8 +493,13 @@ contains
           call vecGetArrayF90(zipper%localVal, localPtr, ierr)
           call EChk(ierr,__FILE__,__LINE__)
 
-          ! Just copy the received data into the points array.
-          points(iDim, ii+1:ii+size(localPtr)) = localPtr
+          ! Just copy the received data into the points array. Only root proc. 
+          if (myid == 0) then 
+             points(iDim, ii+1:ii+size(localPtr)) = localPtr
+          end if
+          ! The values we need are precisely what is in zipper%localVal
+          call vecRestoreArrayF90(zipper%localVal, localPtr, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
 
        end do dimLoop
 
