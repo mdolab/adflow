@@ -97,7 +97,7 @@ contains
   end subroutine integrateSurfaces
 
 #ifndef USE_TAPENADE
-
+#ifndef USE_COMPLEX
   subroutine integrateSurfaces_d(localValues, localValuesd, famList)
 
     ! Forward mode linearization of integrateSurfaces
@@ -108,7 +108,7 @@ contains
     use costFunctions, only : nLocalValues
     use surfaceIntegrations_d, only : wallIntegrationFace_d, flowIntegrationFace_d
     implicit none
-
+    
     ! Input/output Variables
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
     integer(kind=intType), dimension(:), intent(in) :: famList
@@ -180,6 +180,7 @@ contains
     end do
   end subroutine integrateSurfaces_b
 
+#endif
 #endif
 
   subroutine wallIntegrationFace(localValues, mm)
@@ -998,7 +999,7 @@ contains
        deallocate(vars)
     end if
   end subroutine integrateZippers
-
+#ifndef USE_COMPLEX
   subroutine integrateZippers_d(localValues, localValuesd, famList, sps)
 
     ! Forward mode linearization of the zipper integration. 
@@ -1122,7 +1123,7 @@ contains
        deallocate(vars, varsd)
     end if
   end subroutine integrateZippers_b
-
+#endif
   subroutine computeAeroCoef(globalCFVals,sps, famList)
     !
     !      Compute the aerodynamic coefficients from the force and moment
