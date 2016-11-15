@@ -2746,6 +2746,22 @@ class ADFLOW(AeroSolver):
                 self.adflow.walldistance.updatewalldistancealllevels()
                 self.adflow.preprocessingapi.updatemetricsalllevels()
                 self.adflow.preprocessingapi.updategridvelocitiesalllevels()
+                # Perform overset update
+                ncells = self.adflow.adjointvars.ncellslocal[0]
+                ntime  = self.adflow.inputtimespectral.ntimeintervalsspectral
+                n  = ncells*ntime
+                flag = numpy.zeros(n)
+
+                # Only need to call the cutCallBack if we're doing a
+                # full update. 
+                if self.getOption('oversetUpdateMode') == 'full':
+                    cutCallBack = self.getOption('cutCallBack')
+                    if cutCallBack is not None:
+                        xCen = self.adflow.utils.getcellcenters(1, n).T
+                        cutCallBack(xCen, flag)
+
+                self.adflow.oversetapi.updateoverset(flag)
+
             # Update flags
             self._updateGeomInfo = False
             self.adflow.killsignals.routinefailed = \
@@ -3727,6 +3743,7 @@ class ADFLOW(AeroSolver):
             'debugzipper':[bool, False],
             'zippersurfacefamily':[object, None],
             'cutcallback':[object, None],
+            'oversetupdatemode':[str, 'fast'],
 
             # Unsteady Paramters
             'timeintegrationscheme':[str, 'bdf'],
@@ -3997,7 +4014,10 @@ class ADFLOW(AeroSolver):
             'oversetprojtol':['overset','oversetprojtol'],
             'overlapfactor':['overset','overlapfactor'],
             'debugzipper':['overset','debugzipper'],
-
+            'oversetupdatemode':{'frozen':self.adflow.constants.updatefrozen,
+                                 'fast':self.adflow.constants.updatefast,
+                                 'full':self.adflow.constants.updatefull,
+                                 'location':['overset', 'oversetupdatemode']},
             # Unsteady Params
             'timeintegrationscheme':{'bdf':self.adflow.constants.bdf,
                                      'explicitrk':self.adflow.constants.explicitrk,

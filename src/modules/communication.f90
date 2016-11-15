@@ -188,7 +188,7 @@
        type(commType), allocatable, dimension(:)   :: commPatternCell_1st
        type(commType), allocatable, dimension(:)   :: commPatternCell_2nd
        type(commType), allocatable, dimension(:)   :: commPatternNode_1st
-       type(commType), allocatable, dimension(:, :) :: commPatternOverset
+       type(commType), allocatable, target, dimension(:, :) :: commPatternOverset
 
        ! internalCell_1st(nLevel): Memory to memory copies for 1st level
        !                           cell halo's on the multiple grids.
@@ -200,7 +200,7 @@
        type(internalCommType), allocatable, dimension(:)   :: internalCell_1st
        type(internalCommType), allocatable, dimension(:)   :: internalCell_2nd
        type(internalCommType), allocatable, dimension(:)   :: internalNode_1st
-       type(internalCommType), allocatable, dimension(:, :) :: internalOverset
+       type(internalCommType), allocatable, target, dimension(:, :) :: internalOverset
 
        ! sendBufferSize_1to1: Size of the send buffer needed to perform
        !                      all 1 to 1 communication.

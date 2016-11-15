@@ -473,6 +473,7 @@ contains
          oFringe%dJ(mm), &
          oFringe%dK(mm), &
          oFringe%donorFrac(3, mm), &
+         oFringe%offset(3, mm), &
          oFringe%gInd(8, mm), &    
          oFringe%xSeed(3, mm), &
          oFringe%wallInd(mm), &
@@ -484,6 +485,7 @@ contains
     oFringe%dJ = -1
     oFringe%dK = -1
     oFringe%donorFrac = -one
+    oFringe%offset = zero
     oFringe%gInd = -1
     oFringe%wallInd = 0
     oFringe%xSeed = large
