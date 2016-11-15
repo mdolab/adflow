@@ -2997,7 +2997,7 @@ contains
   !              Comm routines for zippers
   ! -----------------------------------------------------------------
 
-  subroutine flowIntegrationZipperComm(vars, sps)
+  subroutine flowIntegrationZipperComm(isInflow, vars, sps)
 
     ! This routine could technically be inside of the
     ! flowIntegrationZipper subroutine but we split it out becuase it
@@ -3019,6 +3019,7 @@ contains
 #include "petsc/finclude/petscvec.h90"
 
     ! Input variables
+    logical, intent(in) :: isInflow
     real(kind=realType), dimension(:, :) :: vars
     integer(kind=intType) :: sps
 
@@ -3029,8 +3030,13 @@ contains
     type(familyExchange), pointer :: exch
 
     ! Set the zipper pointer to the zipper for inflow/outflow conditions
-    zipper => zipperMeshes(iBCGroupInflowOutFlow)
-    exch => BCFamExchange(iBCGroupInflowOutflow, sps)
+    if (isInflow) then 
+        zipper => zipperMeshes(iBCGroupInflow)
+        exch => BCFamExchange(iBCGroupInflow, sps)
+    else
+        zipper => zipperMeshes(iBCGroupOutFlow)
+        exch => BCFamExchange(iBCGroupOutflow, sps)
+    end if
 
     ! Note that we can generate all the nodal values we need locally
     ! using simple arithematic averaging since they are all flow
@@ -3107,7 +3113,7 @@ contains
 
   end subroutine flowIntegrationZipperComm
 
-  subroutine flowIntegrationZipperComm_d(vars, varsd, sps)
+  subroutine flowIntegrationZipperComm_d(isInflow, vars, varsd, sps)
 
     ! Forward mode linearization of flowIntegratoinZipperComm
 
@@ -3126,6 +3132,7 @@ contains
 #include "petsc/finclude/petscvec.h90"
 
     ! Input variables
+    logical, intent(in) :: isInflow
     real(kind=realType), dimension(:, :) :: vars, varsd
     integer(kind=intType) :: sps
 
@@ -3135,15 +3142,20 @@ contains
     type(zipperMesh), pointer :: zipper
     type(familyExchange), pointer :: exch
 
-    ! Need to generate the vars themselves.
-    call flowIntegrationZipperComm(vars, sps)
 
-    ! To be consistent call the regular update:
-    call flowIntegrationZipperComm(vars, sps)
 
     ! Set the zipper pointer to the zipper for inflow/outflow conditions
-    zipper => zipperMeshes(iBCGroupInflowOutFlow)
-    exch => BCFamExchange(iBCGroupInflowOutflow, sps)
+    if (isInflow) then 
+        ! Need to generate the vars themselves.
+        call flowIntegrationZipperComm(.true., vars, sps)
+        zipper => zipperMeshes(iBCGroupInflow)
+        exch => BCFamExchange(iBCGroupInflow, sps)
+    else
+        ! Need to generate the vars themselves.
+        call flowIntegrationZipperComm(.false., vars, sps)
+        zipper => zipperMeshes(iBCGroupOutFlow)
+        exch => BCFamExchange(iBCGroupOutflow, sps)
+    end if
 
     ! Note that we can generate all the nodal values we need locally
     ! using simple arithematic averaging since they are all flow
@@ -3220,7 +3232,7 @@ contains
 
   end subroutine flowIntegrationZipperComm_d
   
-  subroutine flowIntegrationZipperComm_b(vars, varsd, sps)
+  subroutine flowIntegrationZipperComm_b(isInflow, vars, varsd, sps)
 
     ! Reverse mode linearization of the flowIntegrationZipperComm routine
 
@@ -3239,6 +3251,7 @@ contains
 #include "petsc/finclude/petscvec.h90"
 
     ! Input variables
+    logical, intent(in) :: isInflow
     real(kind=realType), dimension(:, :) :: vars, varsd
     integer(kind=intType) :: sps
 
@@ -3250,8 +3263,13 @@ contains
     type(familyExchange), pointer :: exch
 
     ! Set the zipper pointer to the zipper for inflow/outflow conditions
-    zipper => zipperMeshes(iBCGroupInflowOutFlow)
-    exch => BCFamExchange(iBCGroupInflowOutflow, sps)
+    if (isInflow) then 
+        zipper => zipperMeshes(iBCGroupInflow)
+        exch => BCFamExchange(iBCGroupInflow, sps)
+    else
+        zipper => zipperMeshes(iBCGroupOutFlow)
+        exch => BCFamExchange(iBCGroupOutflow, sps)
+    end if
 
     ! Run the var exchange loop backwards:
     varLoop: do iVar=1,9

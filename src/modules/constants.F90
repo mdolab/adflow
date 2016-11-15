@@ -294,13 +294,14 @@ module constants
 
   ! Indices of specific familyExcahnge groups based on BC
   integer(kind=intType), parameter :: iBCGroupWalls=1
-  integer(kind=intType), parameter :: iBCGroupInflowOutflow=2
-  integer(kind=intType), parameter :: iBCGroupSymm=3
-  integer(kind=intType), parameter :: iBCGroupFarfield=4
-  integer(kind=intType), parameter :: iBCGroupOverset=5
-  integer(kind=intType), parameter :: iBCGroupOther=6
+  integer(kind=intType), parameter :: iBCGroupInflow=2
+  integer(kind=intType), parameter :: iBCGroupOutflow=3
+  integer(kind=intType), parameter :: iBCGroupSymm=4
+  integer(kind=intType), parameter :: iBCGroupFarfield=5
+  integer(kind=intType), parameter :: iBCGroupOverset=6
+  integer(kind=intType), parameter :: iBCGroupOther=7
 
-  integer(kind=intType), parameter :: nFamExchange=6
+  integer(kind=intType), parameter :: nFamExchange=7
 
   ! Constants for tecplot I/O
   real(kind=realType) :: zoneMarker = 299.0
