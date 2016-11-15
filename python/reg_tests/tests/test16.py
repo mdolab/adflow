@@ -46,10 +46,11 @@ options = {
     'vis4':0.006,
     'vis2': 0.0, 
     'blocksplitting': True, 
-    'solutionPrecision':'double'
+    'solutionPrecision':'double', 
+    'flowtype':'internal'
 }
 
-ap = AeroProblem(name='conv_nozzle', alpha=0.0,  mach=0.25, T=500, P=100000,
+ap = AeroProblem(name='conv_nozzle', alpha=0.0,  mach=0.25, T=500, P=79326.7,
                  areaRef=1., chordRef=2.,
                  evalFuncs=['mdot', 'mdot_up', 'mdot_down',
                             'mavgptot_up', 'mavgptot_down',
