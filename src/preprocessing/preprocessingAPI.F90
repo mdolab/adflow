@@ -1487,10 +1487,14 @@ contains
                          localFlag(iFam) = 1
                       end if
 
-                   case (iBCGroupInflowOutflow)
+                   case (iBCGroupInflow)
                       if (BCType(mm) == SubsonicInflow .or. &
-                           BCType(mm) == SubsonicOutflow .or. &
-                           BCType(mm) == SupersonicInflow .or. &
+                           BCType(mm) == SupersonicInflow) then 
+                         localFlag(iFam) = 1
+                      end if
+
+                   case (iBCGroupOutflow)
+                      if (BCType(mm) == SubsonicOutflow .or. &
                            BCType(mm) == SupersonicOutflow) then 
                          localFlag(iFam) = 1
                       end if
@@ -1512,7 +1516,7 @@ contains
 
                    case (iBCGroupOther)
                       ! All other boundary conditions. Note that some
-                      ! of these are not actually implemeented
+                      ! of these are not actually implemented
                       if (BCType(mm) == BCNull .or. &
                            BCType(mm) == MassBleedInflow .or. &
                            BCType(mm) == MassbleedOutflow .or. &
@@ -1573,8 +1577,10 @@ contains
           select case(iBCGroup)
           case (iBCGroupWalls)
              write(*,"(a)",advance="no") '| Wall Types           : '
-          case (iBCGroupInflowOutflow)
-             write(*,"(a)",advance="no") '| Inflow/Outflow Types : '
+          case (iBCGroupInflow)
+             write(*,"(a)",advance="no") '| Inflow Types : '
+          case (iBCGroupOutflow)
+             write(*,"(a)",advance="no") '| Outflow Types : '
           case (iBCGroupSymm)
              write(*,"(a)",advance="no") '| Symmetry Types       : '
           case (iBCGroupFarfield)

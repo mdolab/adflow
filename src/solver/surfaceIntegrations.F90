@@ -86,10 +86,11 @@ contains
           end if isWall
 
           isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
-               BCType(mm) == SubsonicOutflow .or. &
-               BCType(mm) == SupersonicInflow .or. &
+               BCType(mm) == SupersonicInflow) then 
+               call flowIntegrationFace(.true., localValues, mm)
+            else if (BCType(mm) == SubsonicOutflow .or. &
                BCType(mm) == SupersonicOutflow) then 
-             call flowIntegrationFace(localValues, mm)
+               call flowIntegrationFace(.false., localValues, mm)
           end if isInflowOutflow
        end if famInclude
     end do bocos
@@ -130,10 +131,11 @@ contains
           end if isWall
           
           isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
-               BCType(mm) == SubsonicOutflow .or. &
-               BCType(mm) == SupersonicInflow .or. &
+               BCType(mm) == SupersonicInflow) then 
+               call flowIntegrationFace(.true., localValues, mm)
+            else if (BCType(mm) == SubsonicOutflow .or. &
                BCType(mm) == SupersonicOutflow) then 
-             call flowIntegrationFace_d(localValues, localValuesd, mm)
+               call flowIntegrationFace(.false., localValues, mm)
           end if isInflowOutflow
        end if famInclude
     end do
@@ -171,10 +173,11 @@ contains
           end if isWall
           
           isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
-               BCType(mm) == SubsonicOutflow .or. &
-               BCType(mm) == SupersonicInflow .or. &
+               BCType(mm) == SupersonicInflow) then 
+               call flowIntegrationFace(.true., localValues, mm)
+            else if (BCType(mm) == SubsonicOutflow .or. &
                BCType(mm) == SupersonicOutflow) then 
-             call flowIntegrationFace_b(localValues, localValuesd, mm)
+               call flowIntegrationFace(.false., localValues, mm)
           end if isInflowOutflow
        end if famInclude
     end do
@@ -499,7 +502,7 @@ contains
 #endif
   end subroutine wallIntegrationFace
 
-  subroutine flowIntegrationFace(localValues, mm)
+  subroutine flowIntegrationFace(isInflow, localValues, mm)
 
     use constants
     use costFunctions
@@ -514,6 +517,7 @@ contains
     implicit none
 
     ! Input/Output variables
+    logical, intent(in) :: isInflow
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
     integer(kind=intType), intent(in) :: mm
 
@@ -547,12 +551,10 @@ contains
     end select
 
     ! the sign of momentum forces are flipped for internal flows
-    select case (flowType)
-      case (internalFlow)
-        internalFlowFact = -one
-      case (externalFlow)
-        internalFlowFact = one
-    end select
+    internalFlowFact = one
+    if (isInflow) then 
+      internalFlowFact = -one
+    end if
 
     ! Loop over the quadrilateral faces of the subface. Note that
     ! the nodal range of BCData must be used and not the cell
@@ -722,19 +724,15 @@ contains
     FMom = zero
     MMom = zero
 
-    select case (flowType)
-      case (internalFlow)
-        internalFlowFact = -one
-      case (externalFlow)
-        internalFlowFact = one
-    end select
+    internalFlowFact = one
+    if (isInflow) then 
+      internalFlowFact = -one
+    end if
 
-    select case (isInflow)
-      case (.true.)
-        inflowFact = -one
-      case (.false.)
-        inflowFact = one
-    end select
+    inFlowFact = one
+    if (isInflow) then 
+      inflowFact=-one
+    end if
 
 
     !$AD II-LOOP
@@ -1016,7 +1014,7 @@ contains
        deallocate(vars)
     end if
 
-    zipper => zipperMeshes(iBCGroupInflowOutflow)
+    zipper => zipperMeshes(iBCGroupInflow)
     ! Determine if we have a flowthrough Zipper:
     if (zipper%allocated) then 
 
@@ -1026,7 +1024,26 @@ contains
        
        ! Gather up the required variables in "vars" on the root
        ! proc. This routine is differientated by hand. 
-       call flowIntegrationZipperComm(vars, sps)
+       call flowIntegrationZipperComm(.true., vars, sps)
+
+       ! Perform actual integration. Tapenade ADs this routine.
+       call flowIntegrationZipper(.true., zipper, vars, localValues, famList, sps)
+
+       ! Cleanup vars
+       deallocate(vars)
+    end if
+
+    zipper => zipperMeshes(iBCGroupOutflow)
+    ! Determine if we have a flowthrough Zipper:
+    if (zipper%allocated) then 
+
+       ! Allocate space necessary to store variables. Only non-zero on
+       ! root proc. 
+       allocate(vars(size(zipper%indices), 9))
+       
+       ! Gather up the required variables in "vars" on the root
+       ! proc. This routine is differientated by hand. 
+       call flowIntegrationZipperComm(.false., vars, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
        call flowIntegrationZipper(.false., zipper, vars, localValues, famList, sps)
@@ -1072,7 +1089,7 @@ contains
        deallocate(vars, varsd)
     end if
 
-    zipper => zipperMeshes(iBCGroupInflowOutflow)
+    zipper => zipperMeshes(iBCGroupInflow)
     ! Determine if we have a flowthrough Zipper:
     if (zipper%allocated) then 
 
@@ -1082,10 +1099,29 @@ contains
   
        ! Gather up the required variables in "vars" on the root
        ! proc. This routine is differientated by hand. 
-       call flowIntegrationZipperComm_d(vars, varsd, sps)
+       call flowIntegrationZipperComm_d(.true., vars, varsd, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper_d(zipper, vars, varsd, localValues, localValuesd, famList, sps)
+       call flowIntegrationZipper_d(.true., zipper, vars, varsd, localValues, localValuesd, famList, sps)
+
+       ! Cleanup vars
+       deallocate(vars, varsd)
+    end if
+
+    zipper => zipperMeshes(iBCGroupOutflow)
+    ! Determine if we have a flowthrough Zipper:
+    if (zipper%allocated) then 
+
+       ! Allocate space necessary to store variables. Only non-zero on
+       ! root proc. 
+       allocate(vars(size(zipper%indices), 9), varsd(size(zipper%indices), 9))
+  
+       ! Gather up the required variables in "vars" on the root
+       ! proc. This routine is differientated by hand. 
+       call flowIntegrationZipperComm_d(.false., vars, varsd, sps)
+
+       ! Perform actual integration. Tapenade ADs this routine.
+       call flowIntegrationZipper_d(.false., zipper, vars, varsd, localValues, localValuesd, famList, sps)
 
        ! Cleanup vars
        deallocate(vars, varsd)
@@ -1135,7 +1171,7 @@ contains
        deallocate(vars, varsd)
     end if
 
-    zipper => zipperMeshes(iBCGroupInflowOutflow)
+    zipper => zipperMeshes(iBCGroupInflow)
     ! Determine if we have a flowthrough Zipper:
     if (zipper%allocated) then 
 
@@ -1144,16 +1180,40 @@ contains
        allocate(vars(size(zipper%indices), 9), varsd(size(zipper%indices), 9))
    
        ! Set the forward variables
-       call flowIntegrationZipperComm(vars, sps)
+       call flowIntegrationZipperComm(.true., vars, sps)
   
        ! Perform actual integration. Tapenade ADs this routine.
        varsd = zero
-       call flowIntegrationZipper_b(zipper, vars, varsd, localValues, localValuesd, famList, sps)
+       call flowIntegrationZipper_b(.true., zipper, vars, varsd, localValues, localValuesd, famList, sps)
        
        ! Scatter (becuase we are reverse) the values from the root
        ! back out to all necessary procs.  This routine is
        ! differientated by hand.
-       call flowIntegrationZipperComm_b(vars, varsd, sps)
+       call flowIntegrationZipperComm_b(.true., vars, varsd, sps)
+
+       ! Cleanup vars
+       deallocate(vars, varsd)
+    end if
+
+    zipper => zipperMeshes(iBCGroupOutflow)
+    ! Determine if we have a flowthrough Zipper:
+    if (zipper%allocated) then 
+
+       ! Allocate space necessary to store variables. Only non-zero on
+       ! root proc. 
+       allocate(vars(size(zipper%indices), 9), varsd(size(zipper%indices), 9))
+   
+       ! Set the forward variables
+       call flowIntegrationZipperComm(.false., vars, sps)
+  
+       ! Perform actual integration. Tapenade ADs this routine.
+       varsd = zero
+       call flowIntegrationZipper_b(.false., zipper, vars, varsd, localValues, localValuesd, famList, sps)
+       
+       ! Scatter (becuase we are reverse) the values from the root
+       ! back out to all necessary procs.  This routine is
+       ! differientated by hand.
+       call flowIntegrationZipperComm_b(.false., vars, varsd, sps)
 
        ! Cleanup vars
        deallocate(vars, varsd)
