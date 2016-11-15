@@ -577,6 +577,9 @@ contains
          inviscidDissFluxMatrix_b, viscousFlux_b, inviscidCentralFlux_b
     use BCExtra_b, only : applyAllBC_Block_b
     use overset, only : oversetPresent
+    use inputOverset, only : oversetUpdateMode
+    use oversetCommUtilities, only : updateOversetConnectivity_b
+
     implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
@@ -819,6 +822,14 @@ contains
     call referenceState_b
     call adjustInflowAngle_b
 
+    do sps=1, nTimeIntervalsSpectral
+       ! Update overset connectivity if necessary
+       if (oversetPresent .and. &
+            (oversetUpdateMode == updateFast .or. &
+            oversetUpdateMode == updateFull)) then 
+          call updateOversetConnectivity_b(1_intType, sps)
+       end if
+    end do
     ! Now the adjoint of the coordinate exhcange
     call exchangecoor_b(1)
     do nn=1,nDom
