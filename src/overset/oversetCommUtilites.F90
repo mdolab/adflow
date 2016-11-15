@@ -1699,7 +1699,7 @@ contains
     integer(kind=intType) :: nn, ii,jj, ierr,  i, j, k, d1, i1, j1, k1, d2, i2, j2, k2
     integer(kind=intType) :: size, procID, index, iii,jjj,kkk
     integer, dimension(mpi_status_size) :: status
-    real(kind=realType) :: frac(3), fracd(3), frac0(3), xCen(3), xCend(3)
+    real(kind=realType) :: frac(3), fracd(3), frac0(3), xCen(3), xCend(3), weight(8)
     integer(kind=intType), dimension(8), parameter :: indices=(/1,2,4,3,5,6,8,7/)
 
     ! Pointers to the overset comms to make it easier to read
@@ -1856,8 +1856,6 @@ contains
        j2 = internal%haloIndices(i, 2)
        k2 = internal%haloIndices(i, 3)
 
-       ! xCen is the '2'. This was the receiver, but since this is
-       ! reverse, it's now the "input"
        xCen = flowDoms(d2, level, sps)%xSeed(i2, j2, k2, :)
        xCend = flowDoms(d2, level, sps)%scratch(i2, j2, k2, 1:3)
        frac0 = (/half, half, half/)
@@ -1867,8 +1865,7 @@ contains
             frac0, frac, fracd)
 
        ! Set the new weights
-       call fracToWeights_d(frac, fracd, internal%donorInterp(i, :), &
-            internal%donorInterpd(i, :))
+       call fracToWeights_d(frac, fracd, weight, internal%donorInterpd(i, :))
     
     enddo localInterp
 
@@ -1907,7 +1904,7 @@ contains
                frac0, frac, fracd)
 
           ! Set the new weights
-          call fracToWeights_d(frac, fracd, commPattern%sendList(ii)%interp(j, :), &
+          call fracToWeights_d(frac, fracd, weight, &
                commPattern%sendList(ii)%interpd(j, :))
        enddo
 
@@ -1953,7 +1950,7 @@ contains
     internal => internalOverset(level, sps)
 
     ! Zero out xSeedd (in scratch)
-    do nn=1, nDOm
+    do nn=1, nDom
        flowDoms(nn, 1, sps)%scratch(:, :, :, 1:3) = zero
     end do
        
@@ -2072,8 +2069,8 @@ contains
        
        ! Set the new weights
        call fracToWeights(frac, weight)
-       
-       ! ------------- Reverse pass -----------
+ 
+      ! ------------- Reverse pass -----------
        
        ! Transfer the weights back to the frac
        call fracToWeights_b(frac, fracd, weight, internal%Donorinterpd(i, :))
@@ -2117,7 +2114,7 @@ contains
 
           flowDomsd(d2, level, sps)%scratch(i2, j2, k2, 1:3) = &
                flowDomsd(d2, level, sps)%scratch(i2, j2, k2, 1:3) + recvBuffer(jj+1:jj+3)
-          jj =jj + 1
+          jj =jj + 3
        enddo
     end do completeRecvs
 
