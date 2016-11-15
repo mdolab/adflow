@@ -75,11 +75,13 @@ bocos:do mm=1,nbocos
         call setbcpointers(mm, .true.)
         if (iswalltype(bctype(mm))) call wallintegrationface(localvalues&
 &                                                      , mm)
-        if (((bctype(mm) .eq. subsonicinflow .or. bctype(mm) .eq. &
-&           subsonicoutflow) .or. bctype(mm) .eq. supersonicinflow) .or.&
-&           bctype(mm) .eq. supersonicoutflow) call flowintegrationface(&
-&                                                            localvalues&
-&                                                                 , mm)
+        if (bctype(mm) .eq. subsonicinflow .or. bctype(mm) .eq. &
+&           supersonicinflow) then
+          call flowintegrationface(.true., localvalues, mm)
+        else if (bctype(mm) .eq. subsonicoutflow .or. bctype(mm) .eq. &
+&           supersonicoutflow) then
+          call flowintegrationface(.false., localvalues, mm)
+        end if
       end if
     end do bocos
   end subroutine integratesurfaces
@@ -839,7 +841,8 @@ bocos:do mm=1,nbocos
 !                *pp2:incr *ssi:incr *ww1:incr *ww2:incr localvalues:in-out
 !   plus diff mem management of: xx:in pp1:in pp2:in ssi:in ww1:in
 !                ww2:in
-  subroutine flowintegrationface_b(localvalues, localvaluesd, mm)
+  subroutine flowintegrationface_b(isinflow, localvalues, localvaluesd, &
+&   mm)
     use constants
     use costfunctions
     use blockpointers, only : bctype, bcfaceid, bcdata, bcdatad, &
@@ -857,6 +860,7 @@ bocos:do mm=1,nbocos
     use utils_b, only : mynorm2, mynorm2_b
     implicit none
 ! input/output variables
+    logical, intent(in) :: isinflow
     real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
 &   localvalues
     real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
@@ -910,12 +914,8 @@ bocos:do mm=1,nbocos
       fact = -one
     end select
 ! the sign of momentum forces are flipped for internal flows
-    select case  (flowtype) 
-    case (internalflow) 
-      internalflowfact = -one
-    case (externalflow) 
-      internalflowfact = one
-    end select
+    internalflowfact = one
+    if (isinflow) internalflowfact = -one
 ! loop over the quadrilateral faces of the subface. note that
 ! the nodal range of bcdata must be used and not the cell
 ! range, because the latter may include the halo's in i and
@@ -1126,7 +1126,7 @@ bocos:do mm=1,nbocos
     refpointd(2) = 0.0_8
     pointrefd(1) = pointrefd(1) + lref*refpointd(1)
   end subroutine flowintegrationface_b
-  subroutine flowintegrationface(localvalues, mm)
+  subroutine flowintegrationface(isinflow, localvalues, mm)
     use constants
     use costfunctions
     use blockpointers, only : bctype, bcfaceid, bcdata, &
@@ -1142,6 +1142,7 @@ bocos:do mm=1,nbocos
     use utils_b, only : mynorm2
     implicit none
 ! input/output variables
+    logical, intent(in) :: isinflow
     real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
 &   localvalues
     integer(kind=inttype), intent(in) :: mm
@@ -1175,12 +1176,8 @@ bocos:do mm=1,nbocos
       fact = -one
     end select
 ! the sign of momentum forces are flipped for internal flows
-    select case  (flowtype) 
-    case (internalflow) 
-      internalflowfact = -one
-    case (externalflow) 
-      internalflowfact = one
-    end select
+    internalflowfact = one
+    if (isinflow) internalflowfact = -one
 ! loop over the quadrilateral faces of the subface. note that
 ! the nodal range of bcdata must be used and not the cell
 ! range, because the latter may include the halo's in i and
@@ -1360,18 +1357,10 @@ bocos:do mm=1,nbocos
     refpoint(2) = lref*pointref(2)
     refpoint(3) = lref*pointref(3)
     mredim = sqrt(pref*rhoref)
-    select case  (flowtype) 
-    case (internalflow) 
-      internalflowfact = -one
-    case (externalflow) 
-      internalflowfact = one
-    end select
-    select case  (isinflow) 
-    case (.true.) 
-      inflowfact = -one
-    case (.false.) 
-      inflowfact = one
-    end select
+    internalflowfact = one
+    if (isinflow) internalflowfact = -one
+    inflowfact = one
+    if (isinflow) inflowfact = -one
     mmomd = 0.0_8
     mmomd = localvaluesd(iflowmm:iflowmm+2)
     mpd = 0.0_8
@@ -1649,18 +1638,10 @@ bocos:do mm=1,nbocos
     mp = zero
     fmom = zero
     mmom = zero
-    select case  (flowtype) 
-    case (internalflow) 
-      internalflowfact = -one
-    case (externalflow) 
-      internalflowfact = one
-    end select
-    select case  (isinflow) 
-    case (.true.) 
-      inflowfact = -one
-    case (.false.) 
-      inflowfact = one
-    end select
+    internalflowfact = one
+    if (isinflow) internalflowfact = -one
+    inflowfact = one
+    if (isinflow) inflowfact = -one
     do i=1,size(zipper%conn, 2)
       if (bsearchintegers(zipper%fam(i), famlist) .gt. 0) then
 ! compute the averaged values for this trianlge
