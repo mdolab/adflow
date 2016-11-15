@@ -119,8 +119,8 @@ module overset
      integer(kind=intType), dimension(:), allocatable :: donorProc
      integer(kind=intType), dimension(:), allocatable :: donorBlock
      integer(kind=intType), dimension(:), allocatable :: dI, dJ, dK
-
      real(kind=realType), dimension(:, :), allocatable  :: donorFrac
+     real(kind=realType), dimension(:, :), allocatable :: offset
 
      ! gInd are the global indices of the donor cells. We will need
      ! these for forming the PC for the Newton Krylov solver

@@ -439,6 +439,13 @@ python module libadflow
 
        end module preprocessingapi
 
+       module oversetapi
+         subroutine updateoverset(flag, n)
+           integer(kind=inttype) dimension(n) :: flag
+           integer(kind=inttype), optional,intent(in),check(len(flag)>=n),depend(flag) :: n=len(flag)
+         end subroutine updateoverset
+       end module oversetapi
+
        module adjointapi
          
          subroutine setuppetscksp 
@@ -660,9 +667,13 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: explicitrk=2
          integer(kind=inttype) parameter,optional :: implicitrk=3
          integer(kind=inttype) parameter,optional :: md=4
-         integer(kind=inttype) :: nolinesearch=0
-         integer(kind=inttype) :: cubiclinesearch=1
-         integer(kind=inttype) :: nonmonotonelinesearch=2
+         integer(kind=inttype) :: nolinesearch=0_inttype
+         integer(kind=inttype) :: cubiclinesearch=1_inttype
+         integer(kind=inttype) :: nonmonotonelinesearch=2_inttype
+         integer(kind=inttype) :: updatefrozen = 0_inttype
+         integer(kind=inttype) :: updatefast = 1_inttype
+         integer(kind=inttype) :: updatefull = 2_inttype
+         
        end module constants
 
        module communication ! in :adflow:../../modules/communication.f90
@@ -916,12 +927,13 @@ python module libadflow
          logical :: writeunsteadysurfspectral
          real(kind=realtype) allocatable,dimension(:,:,:) :: rotmatrixspectral
        end module inputtimespectral
-              module inputoverset
+       module inputoverset
          logical :: lowoversetmemory
          real(kind=realtype) :: nearwalldist
          real(kind=realtype) :: backgroundvolscale
          real(kind=realtype) :: oversetprojtol
          real(kind=realtype) :: overlapfactor
+         integer(kind=inttype) :: oversetupdatemode
          logical :: debugzipper
        end module inputoverset
 
