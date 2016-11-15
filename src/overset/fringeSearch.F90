@@ -192,7 +192,7 @@ subroutine fringeSearch(oBlock, oFringe)
                  oFringe%dJ(i) = jj
                  oFringe%dK(i) = kk
                  oFringe%donorFrac(:, i) = uvw(1:3)
-
+                 oFringe%offset(:, i) = offset(:, i)
                  ! This is important: We need to reset the quality of
                  ! this fringe to the donorQuality. This is necessary
                  ! since we may be searching these same fringes local

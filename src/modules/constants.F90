@@ -228,7 +228,12 @@ module constants
        noSubInlet      = 0, &
        totalConditions = 1, &
        massFlow        = 2
-  !
+  ! Parameters for overset update mdoe
+  integer(kind=intType), parameter :: &
+       updateFrozen = 0, &
+       updateFast   = 1, &
+       updateFull   = 2
+
   integer, parameter :: adtSurfaceADT = 1
   integer, parameter :: adtVolumeADT  = 2
   integer(kind=intType), parameter :: nCoorMaxLowerLimit = 100000
