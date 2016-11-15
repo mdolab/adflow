@@ -34,6 +34,8 @@ contains
     use adjointExtra, only : volume_block, metric_block, boundaryNormals,&
          xhalo_block, sumdwandfw, resScale, getCostFunctions
     use overset, only : oversetPresent
+    use inputOverset, only : oversetUpdateMode
+    use oversetCommUtilities, only : updateOversetConnectivity
     implicit none
 
     ! Input Arguments:
@@ -64,8 +66,17 @@ contains
        
        ! Now exchange the coordinates (fine level only)
        call exchangecoor(1)
-    end if
 
+       do sps=1, nTimeIntervalsSpectral
+          ! Update overset connectivity if necessary
+          if (oversetPresent .and. &
+               (oversetUpdateMode == updateFast .or. &
+               oversetUpdateMode == updateFull)) then 
+             call updateOversetConnectivity(1_intType, sps)
+          end if
+       end do
+    end if
+    
     do sps=1,nTimeIntervalsSpectral
        do nn=1,nDom
           call setPointers(nn, 1, sps)
@@ -244,6 +255,9 @@ contains
     use adjointExtra_d, only : xhalo_block_d, volume_block_d, metric_BLock_d, boundarynormals_d
     use adjointextra_d, only : getcostfunctions_D, resscale_D, sumdwandfw_d
     use overset, only : oversetPresent
+    use inputOverset, only : oversetUpdateMode
+    use oversetCommUtilities, only : updateOversetConnectivity_d
+
     implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
@@ -315,6 +329,15 @@ contains
     call exchangecoor_d(1)
     call exchangecoor(1)
 
+    do sps=1, nTimeIntervalsSpectral
+       ! Update overset connectivity if necessary
+       if (oversetPresent .and. &
+            (oversetUpdateMode == updateFast .or. &
+            oversetUpdateMode == updateFull)) then 
+          call updateOversetConnectivity_d(1_intType, sps)
+       end if
+    end do
+    
     ! Now set the xsurfd contribution from the full x perturbation.
     ! scatter from the global seed (in x_like) to xSurfVecd...but only
     ! if wallDistances were used

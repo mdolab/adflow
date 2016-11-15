@@ -341,7 +341,7 @@ contains
   end subroutine orphanAverage
 
   subroutine setCommPointers(start, end, commPressure, commVarGamma, commLamVis, &
-       commEddyVis, level, sps, derivPointers, nVar)
+       commEddyVis, level, sps, derivPointers, nVar, varOffset)
 
     ! Generic routine for setting pointers to the communication
     ! variables. Can also set pointers to derivatve values if derivPts is True.
@@ -354,6 +354,7 @@ contains
     integer(kind=intType), intent(in) :: start, end, level, sps
     logical, intent(in) :: commPressure, commVarGamma, commLamVis, commEddyVis
     logical, intent(in) :: derivPointers
+    integer(kind=intType), intent(in) :: varOffset
 
     ! Output
     integer(kind=intType), intent(out) :: nVar
@@ -364,7 +365,7 @@ contains
 
     ! Set the pointers for the required variables
     domainLoop:do nn=1, nDom
-       nVar = 0
+       nVar = varOffset
        blk => flowDoms(nn, level, sps)
 
        if (derivPointers) then 
@@ -401,6 +402,7 @@ contains
        end if
 
     end do domainLoop
+    nVar = nVar - varOffset
   end subroutine setCommPointers
 
   subroutine whalo1to1(level, start, end, commPressure,       &
@@ -444,7 +446,7 @@ contains
     spectralModes: do sps=1,nTimeIntervalsSpectral
 
        call setCommPointers(start, end, commPressure, commVarGamma, &
-            commLamVis, commEddyVis, level, sps, .False., nVar)
+            commLamVis, commEddyVis, level, sps, .False., nVar, 0)
 
        if (nVar == 0) then 
           return
@@ -1184,7 +1186,7 @@ contains
     spectralModes: do sps=1,nTimeIntervalsSpectral
 
        call setCommPointers(start, end, commPressure, commVarGamma, &
-            commLamVis, commEddyVis, level, sps, .True., nVar)
+            commLamVis, commEddyVis, level, sps, .True., nVar, 0)
 
        if (nVar == 0) then 
           return
@@ -1231,7 +1233,7 @@ contains
     spectralModes: do sps=1,nTimeIntervalsSpectral
 
        call setCommPointers(start, end, commPressure, commVarGamma, &
-            commLamVis, commEddyVis, level, sps, .False., nVar)
+            commLamVis, commEddyVis, level, sps, .False., nVar, 0)
 
        if (nVar == 0) then 
           return
@@ -1270,21 +1272,27 @@ contains
 
     type(commType), dimension(:, :), intent(in) :: commPattern
     type(internalCommType), dimension(:, :), intent(in) :: internal
-    integer(kind=intType) :: nVar, sps
+    integer(kind=intType) :: nVar, sps, offset
 
     spectralModes: do sps=1,nTimeIntervalsSpectral
 
+       ! this one is tricker: We have to set BOTH the real values and
+       ! the the derivative values. Set the derivative values first:
        call setCommPointers(start, end, commPressure, commVarGamma, &
-            commLamVis, commEddyVis, level, sps, .True., nVar)
+            commLamVis, commEddyVis, level, sps, .True., nVar, 0)
+
+       ! And then the original real values
+       offset = nVar
+       call setCommPointers(start, end, commPressure, commVarGamma, &
+            commLamVis, commEddyVis, level, sps, .False., nVar, offset)
 
        if (nVar == 0) then 
           return
        end if
 
        ! Run the generic exchange
-       call wOversetGeneric(nVar, level, sps, commPattern, internal)
+       call wOversetGeneric_d(nVar, level, sps, commPattern, internal)
     end do spectralModes
-
   end subroutine wOverset_d
 
   subroutine wOversetGeneric(nVar, level, sps, commPattern, Internal)
@@ -1461,6 +1469,202 @@ contains
     enddo
 
   end subroutine wOversetGeneric
+
+
+  subroutine wOversetGeneric_d(nVar, level, sps, commPattern, Internal)
+    !
+    !       wOverset_d is the generic halo forward mode linearized
+    !       code for overset halos.
+    !
+    use constants
+    use block, only : flowDoms
+    use communication
+    implicit none
+    !
+    !      Subroutine arguments.
+    !
+    integer(kind=intType), intent(in) :: level, sps
+
+    type(commType), dimension(:, :), intent(in)         :: commPattern
+    type(internalCommType), dimension(:, :), intent(in) :: internal
+    !
+    !      Local variables.
+    !
+    integer :: size, procId, ierr, index
+    integer, dimension(mpi_status_size) :: status
+
+    integer(kind=intType) :: nVar
+    integer(kind=intType) :: i, j, k, ii, jj
+    integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
+    real(kind=realType), dimension(:), pointer :: weight, weightd
+
+    ! Send the variables. The data is first copied into
+    ! the send buffer after which the buffer is sent asap.
+
+    ii = 1
+    sends: do i=1,commPattern(level, sps)%nProcSend
+
+       ! Store the processor id and the size of the message
+       ! a bit easier.
+
+       procID = commPattern(level, sps)%sendProc(i)
+       size    = nVar*commPattern(level, sps)%nsend(i)
+
+       ! Copy the data in the correct part of the send buffer.
+
+       jj = ii
+       do j=1,commPattern(level, sps)%nsend(i)
+
+          ! Store the block id and the indices of the donor
+          ! a bit easier.
+
+          d1 = commPattern(level, sps)%sendList(i)%block(j)
+          i1 = commPattern(level, sps)%sendList(i)%indices(j,1)+1
+          j1 = commPattern(level, sps)%sendList(i)%indices(j,2)+1
+          k1 = commPattern(level, sps)%sendList(i)%indices(j,3)+1
+          weight => commPattern(level, sps)%sendList(i)%interp(j, :)
+          weightd => commPattern(level, sps)%sendList(i)%interpd(j, :)
+          
+          ! Copy the given range of the working variables for
+          ! this cell in the buffer. Update the counter jj.
+          do k=1, nvar
+             sendBuffer(jj) = &
+                  weightd(1)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1  , j1,   k1  ) + &
+                  weightd(2)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1,   k1  ) + &
+                  weightd(3)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1,   j1+1, k1  ) + &
+                  weightd(4)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1+1, k1  ) + &
+                  weightd(5)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1  , j1,   k1+1) + &
+                  weightd(6)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1,   k1+1) + &
+                  weightd(7)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1,   j1+1, k1+1) + &
+                  weightd(8)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1+1, k1+1) + &
+                  weight(1)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1  , j1,   k1  ) + &
+                  weight(2)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1+1, j1,   k1  ) + &
+                  weight(3)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1,   j1+1, k1  ) + &
+                  weight(4)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1+1, j1+1, k1  ) + &
+                  weight(5)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1  , j1,   k1+1) + &
+                  weight(6)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1+1, j1,   k1+1) + &
+                  weight(7)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1,   j1+1, k1+1) + &
+                  weight(8)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1+1, j1+1, k1+1)
+                  
+             jj = jj + 1
+          end do
+       enddo
+
+       ! Send the data.
+
+       call mpi_isend(sendBuffer(ii), size, adflow_real, procId,  &
+            procId, ADflow_comm_world, sendRequests(i), &
+            ierr)
+
+       ! Set ii to jj for the next processor.
+
+       ii = jj
+
+    enddo sends
+
+    ! Post the nonblocking receives.
+
+    ii = 1
+    receives: do i=1,commPattern(level, sps)%nProcRecv
+
+       ! Store the processor id and the size of the message
+       ! a bit easier.
+
+       procID = commPattern(level,sps)%recvProc(i)
+       size    = nVar*commPattern(level,sps)%nrecv(i)
+
+       ! Post the receive.
+
+       call mpi_irecv(recvBuffer(ii), size, adflow_real, procId, &
+            myId, ADflow_comm_world, recvRequests(i), ierr)
+
+       ! And update ii.
+
+       ii = ii + size
+
+    enddo receives
+
+    ! Do the local interpolation.
+    localInterp: do i=1,internal(level, sps)%ncopy
+
+       ! Store the block and the indices of the donor a bit easier.
+
+       d1 = internal(level,sps)%donorBlock(i)
+       i1 = internal(level,sps)%donorIndices(i, 1)+1
+       j1 = internal(level,sps)%donorIndices(i, 2)+1
+       k1 = internal(level,sps)%donorIndices(i, 3)+1
+
+       weight => internal(level,sps)%donorInterp(i, :)
+       weightd => internal(level, sps)%donorInterpd(i, :)
+
+       ! Idem for the halo's.
+
+       d2 = internal(level,sps)%haloBlock(i)
+       i2 = internal(level,sps)%haloIndices(i, 1)+1
+       j2 = internal(level,sps)%haloIndices(i, 2)+1
+       k2 = internal(level,sps)%haloIndices(i, 3)+1
+
+       ! Copy the given range of working variables.
+       do k=1, nVar
+
+          flowDoms(d2, level, sps)%realCommVars(k)%var(i2, j2, k2) = &
+               weightd(1)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1  , j1,   k1  ) + &
+               weightd(2)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1,   k1  ) + &
+               weightd(3)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1,   j1+1, k1  ) + &
+               weightd(4)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1+1, k1  ) + &
+               weightd(5)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1  , j1,   k1+1) + &
+               weightd(6)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1,   k1+1) + &
+               weightd(7)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1,   j1+1, k1+1) + &
+               weightd(8)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1+1, k1+1) + &
+               weight(1)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1  , j1,   k1  ) + &
+               weight(2)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1+1, j1,   k1  ) + &
+               weight(3)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1,   j1+1, k1  ) + &
+               weight(4)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1+1, j1+1, k1  ) + &
+               weight(5)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1  , j1,   k1+1) + &
+               weight(6)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1+1, j1,   k1+1) + &
+               weight(7)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1,   j1+1, k1+1) + &
+               weight(8)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1+1, j1+1, k1+1)
+       end do
+    enddo localInterp
+
+    ! Complete the nonblocking receives in an arbitrary sequence and
+    ! copy the variables from the buffer into the halo's.
+
+    size = commPattern(level, sps)%nProcRecv
+    completeRecvs: do i=1,commPattern(level, sps)%nProcRecv
+
+       ! Complete any of the requests.
+
+       call mpi_waitany(size, recvRequests, index, status, ierr)
+
+       ! Copy the data just arrived in the halo's.
+
+       ii = index
+       jj = nVar*commPattern(level,sps)%nrecvCum(ii-1)
+       do j=1,commPattern(level,sps)%nrecv(ii)
+
+          ! Store the block and the indices of the halo a bit easier.
+
+          d2 = commPattern(level,sps)%recvList(ii)%block(j)
+          i2 = commPattern(level,sps)%recvList(ii)%indices(j,1)+1
+          j2 = commPattern(level,sps)%recvList(ii)%indices(j,2)+1
+          k2 = commPattern(level,sps)%recvList(ii)%indices(j,3)+1
+
+          do k=1, nVar
+             jj = jj + 1
+             flowDoms(d2,level,sps)%realCommVars(k)%var(i2,j2,k2) = recvBuffer(jj)
+          enddo
+       enddo
+    end do completeRecvs
+
+    ! Complete the nonblocking sends.
+
+    size = commPattern(level,sps)%nProcSend
+    do i=1,commPattern(level,sps)%nProcSend
+       call mpi_waitany(size, sendRequests, index, status, ierr)
+    enddo
+
+  end subroutine wOversetGeneric_d
 
 
 #ifndef USE_COMPLEX

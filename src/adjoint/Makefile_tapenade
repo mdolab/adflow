@@ -191,6 +191,8 @@ adjointExtra%getCostFunctions(globalVals, liftDirection, dragDirection, pRef, rh
 \
 oversetUtilities%newtonUpdate(xCen, blk, frac) > \
 	               (blk, frac)\
+oversetUtilities%fracToWeights(frac) > \
+			      (weights) \
 \
 "
 
