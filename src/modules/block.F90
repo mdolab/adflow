@@ -749,7 +749,7 @@ module block
 
      ! A list of pointers for generic communication of either real or
      ! integer data.
-     type(rPtr), dimension(12) :: realCommVars
+     type(rPtr), dimension(24) :: realCommVars
      type(iPtr), dimension(3) :: intCommvars
 
   end type blockType

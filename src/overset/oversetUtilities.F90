@@ -209,41 +209,6 @@ contains
 
   end subroutine computeFringeProcArray
 
-  subroutine fracToWeights(frac, weights)
-    use constants
-    implicit none
-    real(kind=realType), intent(in), dimension(3) :: frac
-    real(kind=realType), intent(out), dimension(8) :: weights
-
-    weights(1) = (one-frac(1))*(one-frac(2))*(one-frac(3))
-    weights(2) = (    frac(1))*(one-frac(2))*(one-frac(3))
-    weights(3) = (one-frac(1))*(    frac(2))*(one-frac(3))
-    weights(4) = (    frac(1))*(    frac(2))*(one-frac(3))
-    weights(5) = (one-frac(1))*(one-frac(2))*(    frac(3))
-    weights(6) = (    frac(1))*(one-frac(2))*(    frac(3))
-    weights(7) = (one-frac(1))*(    frac(2))*(    frac(3))
-    weights(8) = (    frac(1))*(    frac(2))*(    frac(3))
-  end subroutine fracToWeights
-
-
-  subroutine fracToWeights2(frac, weights)
-    use constants
-    implicit none
-    real(kind=realType), intent(in), dimension(3) :: frac
-    real(kind=realType), intent(out), dimension(8) :: weights
-
-    weights(1) = (one-frac(1))*(one-frac(2))*(one-frac(3))
-    weights(2) = (    frac(1))*(one-frac(2))*(one-frac(3))
-    weights(3) = (    frac(1))*(    frac(2))*(one-frac(3))
-    weights(4) = (one-frac(1))*(    frac(2))*(one-frac(3))
-
-    weights(5) = (one-frac(1))*(one-frac(2))*(    frac(3))
-    weights(6) = (    frac(1))*(one-frac(2))*(    frac(3))
-    weights(7) = (    frac(1))*(    frac(2))*(    frac(3))
-    weights(8) = (one-frac(1))*(    frac(2))*(    frac(3))
-
-  end subroutine fracToWeights2
-
 
   subroutine deallocateOBlocks(oBlocks, n)
 
@@ -2202,6 +2167,46 @@ contains
 
 
 #endif
+
+  ! --------------------------------------------------
+  !           Tapenade Routine BELOW this point 
+  ! --------------------------------------------------
+
+  subroutine fracToWeights(frac, weights)
+    use constants
+    implicit none
+    real(kind=realType), intent(in), dimension(3) :: frac
+    real(kind=realType), intent(out), dimension(8) :: weights
+
+    weights(1) = (one-frac(1))*(one-frac(2))*(one-frac(3))
+    weights(2) = (    frac(1))*(one-frac(2))*(one-frac(3))
+    weights(3) = (one-frac(1))*(    frac(2))*(one-frac(3))
+    weights(4) = (    frac(1))*(    frac(2))*(one-frac(3))
+    weights(5) = (one-frac(1))*(one-frac(2))*(    frac(3))
+    weights(6) = (    frac(1))*(one-frac(2))*(    frac(3))
+    weights(7) = (one-frac(1))*(    frac(2))*(    frac(3))
+    weights(8) = (    frac(1))*(    frac(2))*(    frac(3))
+  end subroutine fracToWeights
+
+
+  subroutine fracToWeights2(frac, weights)
+    use constants
+    implicit none
+    real(kind=realType), intent(in), dimension(3) :: frac
+    real(kind=realType), intent(out), dimension(8) :: weights
+
+    weights(1) = (one-frac(1))*(one-frac(2))*(one-frac(3))
+    weights(2) = (    frac(1))*(one-frac(2))*(one-frac(3))
+    weights(3) = (    frac(1))*(    frac(2))*(one-frac(3))
+    weights(4) = (one-frac(1))*(    frac(2))*(one-frac(3))
+
+    weights(5) = (one-frac(1))*(one-frac(2))*(    frac(3))
+    weights(6) = (    frac(1))*(one-frac(2))*(    frac(3))
+    weights(7) = (    frac(1))*(    frac(2))*(    frac(3))
+    weights(8) = (one-frac(1))*(    frac(2))*(    frac(3))
+
+  end subroutine fracToWeights2
+
   subroutine newtonUpdate(xCen, blk, frac0, frac)
 
     ! This routine performs the newton update to recompute the new
@@ -2216,7 +2221,7 @@ contains
     ! Input
     real(kind=realType), dimension(3), intent(in) :: xCen
     real(kind=realType), dimension(3, 3, 3, 3), intent(in) :: blk
-    real(kind=realType) :: frac0(3)
+    real(kind=realType), dimension(3), intent(in) :: frac0
     ! Output
     real(kind=realType), dimension(3), intent(out) :: frac
 
@@ -2286,7 +2291,6 @@ contains
 
     ! Set the starting values of u, v and w based on our previous values
 
-    u = half; v = half; w = half;
     u = frac0(1); v = frac0(2); w=frac0(3);
     ! The Newton algorithm to determine the parametric
     ! weights u, v and w for the given coordinate.
@@ -2358,7 +2362,9 @@ contains
     ! whatever the u,v,w is we have to accept. Even if it is greater than
     ! 1 or less than zero, it shouldn't be by much.  
 
-    frac = (/u, v, w/)
+    frac(1) = u
+    frac(2) = v
+    frac(3) = w
     
   end subroutine newtonUpdate
 
