@@ -5,11 +5,104 @@ module oversetutilities_b
   implicit none
 
 contains
+!  differentiation of fractoweights in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: weights
+!   with respect to varying inputs: weights frac
+!   rw status of diff variables: weights:in-out frac:out
+! --------------------------------------------------
+!           tapenade routine below this point 
+! --------------------------------------------------
+  subroutine fractoweights_b(frac, fracd, weights, weightsd)
+    use constants
+    implicit none
+    real(kind=realtype), dimension(3), intent(in) :: frac
+    real(kind=realtype), dimension(3) :: fracd
+    real(kind=realtype), dimension(8) :: weights
+    real(kind=realtype), dimension(8) :: weightsd
+    real(kind=realtype) :: tempd
+    real(kind=realtype) :: tempd5
+    real(kind=realtype) :: tempd4
+    real(kind=realtype) :: tempd3
+    real(kind=realtype) :: tempd2
+    real(kind=realtype) :: tempd1
+    real(kind=realtype) :: tempd0
+    fracd = 0.0_8
+    fracd(1) = fracd(1) + frac(3)*frac(2)*weightsd(8)
+    fracd(2) = fracd(2) + frac(3)*frac(1)*weightsd(8)
+    fracd(3) = fracd(3) + frac(1)*frac(2)*weightsd(8)
+    weightsd(8) = 0.0_8
+    tempd = (one-frac(1))*weightsd(7)
+    fracd(1) = fracd(1) - frac(2)*frac(3)*weightsd(7)
+    fracd(2) = fracd(2) + frac(3)*tempd
+    fracd(3) = fracd(3) + frac(2)*tempd
+    weightsd(7) = 0.0_8
+    tempd0 = (one-frac(2))*weightsd(6)
+    fracd(2) = fracd(2) - frac(1)*frac(3)*weightsd(6)
+    fracd(1) = fracd(1) + frac(3)*tempd0
+    fracd(3) = fracd(3) + frac(1)*tempd0
+    weightsd(6) = 0.0_8
+    tempd1 = (one-frac(2))*weightsd(5)
+    fracd(1) = fracd(1) - frac(3)*tempd1
+    fracd(3) = fracd(3) + (one-frac(1))*tempd1
+    fracd(2) = fracd(2) - (one-frac(1))*frac(3)*weightsd(5)
+    weightsd(5) = 0.0_8
+    tempd2 = (one-frac(3))*weightsd(4)
+    fracd(1) = fracd(1) + frac(2)*tempd2
+    fracd(2) = fracd(2) + frac(1)*tempd2
+    fracd(3) = fracd(3) - frac(1)*frac(2)*weightsd(4)
+    weightsd(4) = 0.0_8
+    tempd3 = (one-frac(3))*weightsd(3)
+    fracd(1) = fracd(1) - frac(2)*tempd3
+    fracd(2) = fracd(2) + (one-frac(1))*tempd3
+    fracd(3) = fracd(3) - (one-frac(1))*frac(2)*weightsd(3)
+    weightsd(3) = 0.0_8
+    tempd4 = (one-frac(3))*weightsd(2)
+    fracd(1) = fracd(1) + (one-frac(2))*tempd4
+    fracd(2) = fracd(2) - frac(1)*tempd4
+    fracd(3) = fracd(3) - frac(1)*(one-frac(2))*weightsd(2)
+    weightsd(2) = 0.0_8
+    tempd5 = (one-frac(3))*weightsd(1)
+    fracd(1) = fracd(1) - (one-frac(2))*tempd5
+    fracd(2) = fracd(2) - (one-frac(1))*tempd5
+    fracd(3) = fracd(3) - (one-frac(1))*(one-frac(2))*weightsd(1)
+    weightsd(1) = 0.0_8
+  end subroutine fractoweights_b
+! --------------------------------------------------
+!           tapenade routine below this point 
+! --------------------------------------------------
+  subroutine fractoweights(frac, weights)
+    use constants
+    implicit none
+    real(kind=realtype), dimension(3), intent(in) :: frac
+    real(kind=realtype), dimension(8), intent(out) :: weights
+    weights(1) = (one-frac(1))*(one-frac(2))*(one-frac(3))
+    weights(2) = frac(1)*(one-frac(2))*(one-frac(3))
+    weights(3) = (one-frac(1))*frac(2)*(one-frac(3))
+    weights(4) = frac(1)*frac(2)*(one-frac(3))
+    weights(5) = (one-frac(1))*(one-frac(2))*frac(3)
+    weights(6) = frac(1)*(one-frac(2))*frac(3)
+    weights(7) = (one-frac(1))*frac(2)*frac(3)
+    weights(8) = frac(1)*frac(2)*frac(3)
+  end subroutine fractoweights
+  subroutine fractoweights2(frac, weights)
+    use constants
+    implicit none
+    real(kind=realtype), dimension(3), intent(in) :: frac
+    real(kind=realtype), dimension(8), intent(out) :: weights
+    weights(1) = (one-frac(1))*(one-frac(2))*(one-frac(3))
+    weights(2) = frac(1)*(one-frac(2))*(one-frac(3))
+    weights(3) = frac(1)*frac(2)*(one-frac(3))
+    weights(4) = (one-frac(1))*frac(2)*(one-frac(3))
+    weights(5) = (one-frac(1))*(one-frac(2))*frac(3)
+    weights(6) = frac(1)*(one-frac(2))*frac(3)
+    weights(7) = frac(1)*frac(2)*frac(3)
+    weights(8) = (one-frac(1))*frac(2)*frac(3)
+  end subroutine fractoweights2
 !  differentiation of newtonupdate in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: blk frac
 !   with respect to varying inputs: xcen blk frac
-!   rw status of diff variables: xcen:out blk:incr frac:in-zero
-  subroutine newtonupdate_b(xcen, xcend, blk, blkd, frac, fracd)
+!   rw status of diff variables: xcen:out blk:incr frac:in-out
+  subroutine newtonupdate_b(xcen, xcend, blk, blkd, frac0, frac, fracd)
 ! this routine performs the newton update to recompute the new
 ! "frac" (u,v,w) for the point xcen. the actual search is performed
 ! on the the dual cell formed by the cell centers of the 3x3x3 block
@@ -22,6 +115,7 @@ contains
     real(kind=realtype), dimension(3) :: xcend
     real(kind=realtype), dimension(3, 3, 3, 3), intent(in) :: blk
     real(kind=realtype), dimension(3, 3, 3, 3) :: blkd
+    real(kind=realtype), dimension(3), intent(in) :: frac0
 ! output
     real(kind=realtype), dimension(3) :: frac
     real(kind=realtype), dimension(3) :: fracd
@@ -120,13 +214,13 @@ contains
     xn(2, 8) = xn(2, 8) - xn(2, 4) - xn(2, 5)
     xn(3, 8) = xn(3, 8) - xn(3, 4) - xn(3, 5)
 ! set the starting values of u, v and w based on our previous values
-    u = half
-    v = half
-    w = half
+    u = frac0(1)
+    v = frac0(2)
+    w = frac0(3)
     ad_count = 1
 ! the newton algorithm to determine the parametric
 ! weights u, v and w for the given coordinate.
-newtonhexa:do ll=1,3
+newtonhexa:do ll=1,15
 ! compute the rhs.
       uv = u*v
       uw = u*w
@@ -202,19 +296,23 @@ newtonhexa:do ll=1,3
     goto 110
  100 call pushcontrol1b(1)
     call pushinteger4(ad_count)
- 110 call popinteger4(ad_count)
+ 110 wd = fracd(3)
+    fracd(3) = 0.0_8
+    vd = fracd(2)
+    fracd(2) = 0.0_8
+    ud = fracd(1)
+    fracd(1) = 0.0_8
+    call popinteger4(ad_count)
     do 120 i0=1,ad_count
       if (i0 .eq. 1) then
         call popcontrol1b(branch)
         if (branch .eq. 0) then
           fd = 0.0_8
-          ud = 0.0_8
           xd = 0.0_8
           xnd = 0.0_8
           goto 120
         else
           fd = 0.0_8
-          ud = 0.0_8
           xd = 0.0_8
           xnd = 0.0_8
         end if
@@ -463,9 +561,8 @@ newtonhexa:do ll=1,3
         end do
       end do
     end do
-    fracd = 0.0_8
   end subroutine newtonupdate_b
-  subroutine newtonupdate(xcen, blk, frac)
+  subroutine newtonupdate(xcen, blk, frac0, frac)
 ! this routine performs the newton update to recompute the new
 ! "frac" (u,v,w) for the point xcen. the actual search is performed
 ! on the the dual cell formed by the cell centers of the 3x3x3 block
@@ -476,6 +573,7 @@ newtonhexa:do ll=1,3
 ! input
     real(kind=realtype), dimension(3), intent(in) :: xcen
     real(kind=realtype), dimension(3, 3, 3, 3), intent(in) :: blk
+    real(kind=realtype), dimension(3), intent(in) :: frac0
 ! output
     real(kind=realtype), dimension(3), intent(out) :: frac
 ! working
@@ -533,12 +631,12 @@ newtonhexa:do ll=1,3
     xn(2, 8) = xn(2, 8) - xn(2, 4) - xn(2, 5)
     xn(3, 8) = xn(3, 8) - xn(3, 4) - xn(3, 5)
 ! set the starting values of u, v and w based on our previous values
-    u = half
-    v = half
-    w = half
+    u = frac0(1)
+    v = frac0(2)
+    w = frac0(3)
 ! the newton algorithm to determine the parametric
 ! weights u, v and w for the given coordinate.
-newtonhexa:do ll=1,3
+newtonhexa:do ll=1,15
 ! compute the rhs.
       uv = u*v
       uw = u*w
@@ -595,6 +693,8 @@ newtonhexa:do ll=1,3
 ! can't be picky here since we are not changing the donors. so
 ! whatever the u,v,w is we have to accept. even if it is greater than
 ! 1 or less than zero, it shouldn't be by much.  
- 100 frac = (/w, v, w/)
+ 100 frac(1) = u
+    frac(2) = v
+    frac(3) = w
   end subroutine newtonupdate
 end module oversetutilities_b

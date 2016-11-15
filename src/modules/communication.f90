@@ -34,8 +34,8 @@
 
          integer(kind=intType), pointer, dimension(:)   :: block
          integer(kind=intType), pointer, dimension(:,:) :: indices
-         real(kind=realType),   pointer, dimension(:,:) :: interp
-
+         real(kind=realType),   pointer, dimension(:,:) :: interp, interpd
+         
        end type sendCommListType
  
        type recvCommListType
@@ -152,7 +152,7 @@
 
          integer(kind=intType), pointer, dimension(:)   :: donorBlock
          integer(kind=intType), pointer, dimension(:,:) :: donorIndices
-         real(kind=realType),   pointer, dimension(:,:) :: donorInterp
+         real(kind=realType),   pointer, dimension(:,:) :: donorInterp, donorInterpd
 
          integer(kind=intType), pointer, dimension(:)   :: haloBlock
          integer(kind=intType), pointer, dimension(:,:) :: haloIndices
