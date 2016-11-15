@@ -76,6 +76,8 @@ CFDSolver.addFunction('drag', 'all_flow', name="thrust") # this naming makes it 
 
 CFDSolver(ap)
 
+
+
 # Check the residual
 res = CFDSolver.getResidual(ap)
 totalR0, totalRStart, totalRFinal = CFDSolver.getResNorms()

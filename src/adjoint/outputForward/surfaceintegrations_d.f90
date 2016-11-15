@@ -866,7 +866,7 @@ bocos:do mm=1,nbocos
     end select
 ! the sign of momentum forces are flipped for internal flows
     internalflowfact = one
-    if (isinflow) internalflowfact = -one
+    if (flowtype .eq. internalflow) internalflowfact = -one
 ! loop over the quadrilateral faces of the subface. note that
 ! the nodal range of bcdata must be used and not the cell
 ! range, because the latter may include the halo's in i and
@@ -961,6 +961,7 @@ bocos:do mm=1,nbocos
 ! computation on the walls. 
       pmd = -(fact*blk*(pmd-pinf*prefd))
       pm = -((pm-pinf*pref)*fact*blk)
+! print *, "foo", mm, pm, pinf*pref
       fxd = pmd*ssi(i, j, 1) + pm*ssid(i, j, 1)
       fx = pm*ssi(i, j, 1)
       fyd = pmd*ssi(i, j, 2) + pm*ssid(i, j, 2)
@@ -1110,7 +1111,7 @@ bocos:do mm=1,nbocos
     end select
 ! the sign of momentum forces are flipped for internal flows
     internalflowfact = one
-    if (isinflow) internalflowfact = -one
+    if (flowtype .eq. internalflow) internalflowfact = -one
 ! loop over the quadrilateral faces of the subface. note that
 ! the nodal range of bcdata must be used and not the cell
 ! range, because the latter may include the halo's in i and
@@ -1164,6 +1165,7 @@ bocos:do mm=1,nbocos
 ! the reference pressure sign to be consistent with the force 
 ! computation on the walls. 
       pm = -((pm-pinf*pref)*fact*blk)
+! print *, "foo", mm, pm, pinf*pref
       fx = pm*ssi(i, j, 1)
       fy = pm*ssi(i, j, 2)
       fz = pm*ssi(i, j, 3)
@@ -1294,7 +1296,7 @@ bocos:do mm=1,nbocos
     fmom = zero
     mmom = zero
     internalflowfact = one
-    if (isinflow) internalflowfact = -one
+    if (flowtype .eq. internalflow) internalflowfact = -one
     inflowfact = one
     if (isinflow) then
       inflowfact = -one
@@ -1570,7 +1572,7 @@ bocos:do mm=1,nbocos
     fmom = zero
     mmom = zero
     internalflowfact = one
-    if (isinflow) internalflowfact = -one
+    if (flowtype .eq. internalflow) internalflowfact = -one
     inflowfact = one
     if (isinflow) inflowfact = -one
     do i=1,size(zipper%conn, 2)
