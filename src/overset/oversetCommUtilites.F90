@@ -1200,7 +1200,7 @@ contains
        ! Push the surface iblank back to the generic volume variable rVar1
        bocoLoop: do mm=1, nBocos
           famInclude: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
-          
+
              select case (BCFaceID(mm))
              case (iMin)
                 deltaPtr => flowDoms(nn, level, sps)%realCommVars(1)%var(2+1, :, :)
@@ -1442,5 +1442,722 @@ contains
     allocate(internalOverset(level, sps)%haloIndices(0, 3))
 
   end subroutine emptyOversetComm
+
+  subroutine updateOversetConnectivity(level, sps)
+
+    ! This subroutine updates the overset connectivity for a perturbed
+    ! mesh. It does *not* completely redo the connectivity. Rather, a
+    ! newton search on the existing donors are performed using the
+    ! updated coordinates. This type of update is only applicable if the
+    ! entire volume mesh is warped as one a-la pyWarpUstruct. This
+    ! actually ends up being a fairly small correction most of the time,
+    ! however, desipite looks to the contrary is actually quite fast to
+    ! run.                    
+
+    use constants
+    use communication
+    use blockPointers, only : nDom, il, jl, kl, xSeed, flowDoms, x, ib, jb, kb, &
+         ie, je, ke, fringes,scratch
+    use haloExchange, only : whalo1to1RealGeneric
+    use oversetUtilities, only : newtonUpdate, fracToWeights
+    use utils, only : setPointers
+
+    implicit none
+
+    ! Input
+    integer(kind=intType), intent(in) :: level, sps
+    type(commType), pointer :: commPattern
+    type(internalCommType), pointer :: internal
+
+    ! Working
+    integer(kind=intType) :: nn, ii,jj, ierr,  i, j, k, d1, i1, j1, k1, d2, i2, j2, k2
+    integer(kind=intType) :: size, procID, index, iii,jjj,kkk
+    integer, dimension(mpi_status_size) :: status
+    real(kind=realType) :: frac(3), frac0(3), xCen(3)
+    integer(kind=intType), dimension(8), parameter :: indices=(/1,2,4,3,5,6,8,7/)
+
+    ! Pointers to the overset comms to make it easier to read
+    commPattern => commPatternOverset(level, sps)
+    internal => internalOverset(level, sps)
+
+    ! Step 1: Since we need to update donors for all cells including the
+    ! donors for double halos, we must know the new cell center
+    ! locations for the all of these receivers. Unfortunately, the
+    ! double halos don't have coordinates, so we must first perform a
+    ! (forward) block-to-block halo exchange to populate the xSeed
+    ! values for all cells, including double halos.
+
+    do nn=1, nDom
+       call setPointers(nn, level, sps)
+
+       if (.not. associated(flowDoms(nn, level, sps)%xSeed)) then 
+          allocate(flowDoms(nn, level, sps)%XSeed(0:ib, 0:jb, 0:kb, 3))
+       end if
+       xSeed => flowDoms(nn, level, sps)%xSeed
+       xSeed = zero
+       do k=2,kl
+          do j=2, jl
+             do i=2, il
+                xSeed(i, j, k, :) = eighth*(&
+                     x(i-1, j-1, k-1, :) + &
+                     x(i  , j-1, k-1, :) + &
+                     x(i-1, j  , k-1, :) + &
+                     x(i  , j  , k-1, :) + &
+                     x(i-1, j-1, k  , :) + &
+                     x(i  , j-1, k  , :) + &
+                     x(i-1, j  , k  , :) + &
+                     x(i  , j  , k  , :)) + fringes(i,j,k)%offset
+             end do
+          end do
+       end do
+    end do
+
+    ! Exchange the xSeeds. 
+    do nn=1, nDom
+       flowDoms(nn, level, sps)%realCommVars(1)%var => flowDoms(nn, level, sps)%xSeed(:, :, :, 1)
+       flowDoms(nn, level, sps)%realCommVars(2)%var => flowDoms(nn, level, sps)%xSeed(:, :, :, 2) 
+       flowDoms(nn, level, sps)%realCommVars(3)%var => flowDoms(nn, level, sps)%xSeed(:, :, :, 3) 
+    end do
+
+    ! Run the (foward) generic halo exchange.
+    call wHalo1to1RealGeneric(3, level, sps, commPatternCell_2nd, internalCell_2nd)
+
+    ! Step 2: Next we need to communicate the xSeeds to their donor
+    ! procs. This means running the overset exchange in REVERSE (ie from
+    ! receiver to donor).  Most of this code will look like
+    ! wOverset_b. We will runt he newtonUpdate code (below) on the fly
+    ! as we receive the data, which should hide some of the comm time. 
+
+    ! Gather up the seeds into the *recv* buffer. Note we loop over
+    ! nProcRECV here! After the buffer is assembled it is send off.
+
+    jj = 1
+    ii = 1
+    recvs: do i=1,commPattern%nProcRecv
+
+       ! Store the processor id and the size of the message
+       ! a bit easier.
+
+       procID = commPattern%recvProc(i)
+       size    = 3*commPattern%nrecv(i)
+
+       ! Copy the data into the buffer
+
+       do j=1,commPattern%nrecv(i)
+
+          ! Store the block and the indices to make code a bit easier to read
+
+          d2 = commPattern%recvList(i)%block(j)
+          i2 = commPattern%recvList(i)%indices(j,1)
+          j2 = commPattern%recvList(i)%indices(j,2)
+          k2 = commPattern%recvList(i)%indices(j,3)
+
+          ! Copy the xSeed
+          recvBuffer(jj)   = flowDoms(d2,level,sps)%xSeed(i2,j2,k2,1)
+          recvBuffer(jj+1) = flowDoms(d2,level,sps)%xSeed(i2,j2,k2,2)
+          recvBuffer(jj+2) = flowDoms(d2,level,sps)%xSeed(i2,j2,k2,3)
+          jj = jj + 3
+       end do
+
+       ! Send the data.
+       call mpi_isend(recvBuffer(ii), size, adflow_real, procID,  &
+            procID, ADflow_comm_world, recvRequests(i), &
+            ierr)
+
+       ! Set ii to jj for the next processor.
+
+       ii = jj
+
+    end do recvs
+
+    ! Post the nonblocking receives.
+
+    ii = 1
+    sends: do i=1,commPattern%nProcSend
+
+       ! Store the processor id and the size of the message
+       ! a bit easier.
+
+       procID = commPattern%sendProc(i)
+       size    = 3*commPattern%nsend(i)
+
+       ! Post the receive.
+       
+       call mpi_irecv(sendBuffer(ii), size, adflow_real, procId, &
+            myId, ADflow_comm_world, sendRequests(i), ierr)
+
+       ! And update ii.
+
+       ii = ii + size
+
+    enddo sends
+
+    ! Do the local interpolation.
+
+    localInterp: do i=1,internal%ncopy
+
+       ! Store the block and the indices of the donor a bit easier.
+
+       d1 = internal%donorBlock(i)
+       i1 = internal%donorIndices(i, 1)
+       j1 = internal%donorIndices(i, 2)
+       k1 = internal%donorIndices(i, 3)
+
+       ! Idem for the halo's.
+
+       d2 = internal%haloBlock(i)
+       i2 = internal%haloIndices(i, 1)
+       j2 = internal%haloIndices(i, 2)
+       k2 = internal%haloIndices(i, 3)
+
+       ! xCen is the '2'. This was the receiver, but since this is
+       ! reverse, it's now the "input"
+       xCen = flowDoms(d2, level, sps)%xSeed(i2, j2, k2, :)
+
+       ! Store in the comm structure
+       internal%xCen(i, :) = xCen
+
+       ! Do newton update
+       frac0 = (/half, half, half/)
+       call newtonUpdate(xCen, &
+            flowDoms(d1, level, sps)%x(i1-1:i1+1, j1-1:j1+1, k1-1:k1+1, :), frac0, frac)
+
+       ! Set the new weights
+       call fracToWeights(frac, internal%donorInterp(i, :))
+    
+    enddo localInterp
+
+    ! Complete the nonblocking receives in an arbitrary sequence and
+    ! copy the variables from the buffer into the halo's.
+
+    size = commPattern%nProcSend
+    completeSends: do i=1,commPattern%nProcSend
+
+       ! Complete any of the requests.
+
+       call mpi_waitany(size, sendRequests, index, status, ierr)
+
+
+       ii = index
+
+       jj = 3*commPattern%nsendCum(ii-1)
+       do j=1,commPattern%nsend(ii)
+
+          ! Store the block and the indices of the halo a bit easier.
+
+          d2 = commPattern%sendList(ii)%block(j)
+          i2 = commPattern%sendList(ii)%indices(j,1)
+          j2 = commPattern%sendList(ii)%indices(j,2)
+          k2 = commPattern%sendList(ii)%indices(j,3)
+
+          xCen = sendBuffer(jj+1:jj+3)
+          jj = jj + 3
+
+          ! Store in the comm structure
+          commPattern%sendList(ii)%xCen(j, :) = xCen
+
+          ! Compute new fraction
+          frac0 = (/half, half, half/)
+          call newtonUpdate(xCen, &
+               flowDoms(d2, level, sps)%x(i2-1:i2+1, j2-1:j2+1, k2-1:k2+1, :), frac0, frac) 
+
+          ! Set the new weights
+          call fracToWeights(frac, commPattern%sendList(ii)%interp(j, :))
+       enddo
+
+    enddo completeSends
+
+    ! Complete the nonblocking sends.
+
+    size = commPattern%nProcRecv
+    do i=1,commPattern%nProcRecv
+       call mpi_waitany(size, recvRequests, index, status, ierr)
+    enddo
+
+  end subroutine updateOversetConnectivity
+
+  subroutine updateOversetConnectivity_d(level, sps)
+
+    ! Forward mode linearization of updateOversetConnectivity 
+
+    use constants
+    use communication
+    use blockPointers, only : nDom, il, jl, kl, xSeed, flowDoms, x, ib, jb, kb, &
+         ie, je, ke, fringes, scratch, flowDomsd, xd
+    use haloExchange, only : whalo1to1RealGeneric
+    use oversetUtilities_d, only : newtonUpdate_d, fracToWeights_d
+    use utils, only : setPointers_d
+
+    implicit none
+
+    ! Input
+    integer(kind=intType), intent(in) :: level, sps
+    type(commType), pointer :: commPattern
+    type(internalCommType), pointer :: internal
+
+    ! Working
+    integer(kind=intType) :: nn, ii,jj, ierr,  i, j, k, d1, i1, j1, k1, d2, i2, j2, k2
+    integer(kind=intType) :: size, procID, index, iii,jjj,kkk
+    integer, dimension(mpi_status_size) :: status
+    real(kind=realType) :: frac(3), fracd(3), frac0(3), xCen(3), xCend(3), weight(8)
+    integer(kind=intType), dimension(8), parameter :: indices=(/1,2,4,3,5,6,8,7/)
+
+    ! Pointers to the overset comms to make it easier to read
+    commPattern => commPatternOverset(level, sps)
+    internal => internalOverset(level, sps)
+
+    ! Step 1: Since we need to update donors for all cells including the
+    ! donors for double halos, we must know the new cell center
+    ! locations for the all of these receivers. Unfortunately, the
+    ! double halos don't have coordinates, so we must first perform a
+    ! (forward) block-to-block halo exchange to populate the xSeed
+    ! values for all cells, including double halos.
+
+    do nn=1, nDom
+       call setPointers_d(nn, level, sps)
+
+       if (.not. associated(flowDoms(nn, level, sps)%xSeed)) then 
+          allocate(flowDoms(nn, level, sps)%XSeed(0:ib, 0:jb, 0:kb, 3))
+       end if
+       xSeed => flowDoms(nn, level, sps)%xSeed
+       xSeed = zero
+       do k=2,kl
+          do j=2, jl
+             do i=2, il
+                xSeed(i, j, k, :) = eighth*(&
+                     x(i-1, j-1, k-1, :) + &
+                     x(i  , j-1, k-1, :) + &
+                     x(i-1, j  , k-1, :) + &
+                     x(i  , j  , k-1, :) + &
+                     x(i-1, j-1, k  , :) + &
+                     x(i  , j-1, k  , :) + &
+                     x(i-1, j  , k  , :) + &
+                     x(i  , j  , k  , :)) + fringes(i,j,k)%offset
+
+                ! Offset is not active so the xSeed_d just has the x
+                ! part. Just dump the values into scratch so we don't
+                ! acllocate any additional memory. 
+                scratch(i, j, k, 1:3) = eighth*(&
+                     xd(i-1, j-1, k-1, :) + &
+                     xd(i  , j-1, k-1, :) + &
+                     xd(i-1, j  , k-1, :) + &
+                     xd(i  , j  , k-1, :) + &
+                     xd(i-1, j-1, k  , :) + &
+                     xd(i  , j-1, k  , :) + &
+                     xd(i-1, j  , k  , :) + &
+                     xd(i  , j  , k  , :))
+             end do
+          end do
+       end do
+    end do
+
+    ! Exchange the xSeeds. 
+    do nn=1, nDom
+       flowDoms(nn, level, sps)%realCommVars(1)%var => flowDoms(nn, level, sps)%xSeed(:, :, :, 1)
+       flowDoms(nn, level, sps)%realCommVars(2)%var => flowDoms(nn, level, sps)%xSeed(:, :, :, 2) 
+       flowDoms(nn, level, sps)%realCommVars(3)%var => flowDoms(nn, level, sps)%xSeed(:, :, :, 3) 
+       flowDoms(nn, level, sps)%realCommVars(4)%var => flowDoms(nn, level, sps)%scratch(:, :, :, 1)
+       flowDoms(nn, level, sps)%realCommVars(5)%var => flowDoms(nn, level, sps)%scratch(:, :, :, 2) 
+       flowDoms(nn, level, sps)%realCommVars(6)%var => flowDoms(nn, level, sps)%scratch(:, :, :, 3) 
+    end do
+
+    ! Run the (foward) generic halo exchange.
+    call wHalo1to1RealGeneric(6, level, sps, commPatternCell_2nd, internalCell_2nd)
+
+    ! Step 2: Next we need to communicate the xSeeds to their donor
+    ! procs. This means running the overset exchange in REVERSE (ie from
+    ! receiver to donor).  Most of this code will look like
+    ! wOverset_b. We will runt he newtonUpdate code (below) on the fly
+    ! as we receive the data, which should hide some of the comm time. 
+
+    ! Gather up the seeds into the *recv* buffer. Note we loop over
+    ! nProcRECV here! After the buffer is assembled it is send off.
+
+    jj = 1
+    ii = 1
+    recvs: do i=1,commPattern%nProcRecv
+
+       ! Store the processor id and the size of the message
+       ! a bit easier.
+
+       procID = commPattern%recvProc(i)
+       size    = 6*commPattern%nrecv(i)
+
+       ! Copy the data into the buffer
+
+       do j=1,commPattern%nrecv(i)
+
+          ! Store the block and the indices to make code a bit easier to read
+
+          d2 = commPattern%recvList(i)%block(j)
+          i2 = commPattern%recvList(i)%indices(j,1)
+          j2 = commPattern%recvList(i)%indices(j,2)
+          k2 = commPattern%recvList(i)%indices(j,3)
+
+          ! Copy the xSeed and it's derivative
+          recvBuffer(jj)   = flowDoms(d2,level,sps)%xSeed(i2,j2,k2,1)
+          recvBuffer(jj+1) = flowDoms(d2,level,sps)%xSeed(i2,j2,k2,2)
+          recvBuffer(jj+2) = flowDoms(d2,level,sps)%xSeed(i2,j2,k2,3)
+          recvBuffer(jj+3) = flowDoms(d2,level,sps)%scratch(i2,j2,k2,1)
+          recvBuffer(jj+4) = flowDoms(d2,level,sps)%scratch(i2,j2,k2,2)
+          recvBuffer(jj+5) = flowDoms(d2,level,sps)%scratch(i2,j2,k2,3)
+
+          jj = jj + 6
+       end do
+
+       ! Send the data.
+       call mpi_isend(recvBuffer(ii), size, adflow_real, procID,  &
+            procID, ADflow_comm_world, recvRequests(i), &
+            ierr)
+
+       ! Set ii to jj for the next processor.
+
+       ii = jj
+
+    end do recvs
+
+    ! Post the nonblocking receives.
+
+    ii = 1
+    sends: do i=1,commPattern%nProcSend
+
+       ! Store the processor id and the size of the message
+       ! a bit easier.
+
+       procID = commPattern%sendProc(i)
+       size    = 6*commPattern%nsend(i)
+
+       ! Post the receive.
+
+       call mpi_irecv(sendBuffer(ii), size, adflow_real, procId, &
+            myId, ADflow_comm_world, sendRequests(i), ierr)
+
+       ! And update ii.
+
+       ii = ii + size
+
+    enddo sends
+
+    ! Do the local interpolation.
+
+    localInterp: do i=1,internal%ncopy
+
+       ! Store the block and the indices of the donor a bit easier.
+
+       d1 = internal%donorBlock(i)
+       i1 = internal%donorIndices(i, 1)
+       j1 = internal%donorIndices(i, 2)
+       k1 = internal%donorIndices(i, 3)
+
+       ! Idem for the halo's.
+
+       d2 = internal%haloBlock(i)
+       i2 = internal%haloIndices(i, 1)
+       j2 = internal%haloIndices(i, 2)
+       k2 = internal%haloIndices(i, 3)
+
+       xCen = flowDoms(d2, level, sps)%xSeed(i2, j2, k2, :)
+       xCend = flowDoms(d2, level, sps)%scratch(i2, j2, k2, 1:3)
+       frac0 = (/half, half, half/)
+       call newtonUpdate_d(xCen, xCend, &
+            flowDoms(d1, level, sps)%x(i1-1:i1+1, j1-1:j1+1, k1-1:k1+1, :), &
+            flowDomsd(d1, level, sps)%x(i1-1:i1+1, j1-1:j1+1, k1-1:k1+1, :), &
+            frac0, frac, fracd)
+
+       ! Set the new weights
+       call fracToWeights_d(frac, fracd, weight, internal%donorInterpd(i, :))
+    
+    enddo localInterp
+
+    ! Complete the nonblocking receives in an arbitrary sequence and
+    ! copy the variables from the buffer into the halo's.
+
+    size = commPattern%nProcSend
+    completeSends: do i=1,commPattern%nProcSend
+
+       ! Complete any of the requests.
+
+       call mpi_waitany(size, sendRequests, index, status, ierr)
+
+
+       ii = index
+
+       jj = 6*commPattern%nsendCum(ii-1)
+       do j=1,commPattern%nsend(ii)
+
+          ! Store the block and the indices of the halo a bit easier.
+
+          d2 = commPattern%sendList(ii)%block(j)
+          i2 = commPattern%sendList(ii)%indices(j,1)
+          j2 = commPattern%sendList(ii)%indices(j,2)
+          k2 = commPattern%sendList(ii)%indices(j,3)
+
+          xCen = sendBuffer(jj+1:jj+3)
+          xCend = sendBuffer(jj+4:jj+6)
+          jj = jj + 6
+
+          ! Compute new fraction
+          frac0 = (/half, half, half/)
+          call newtonUpdate_d(xCen, xCend, &
+               flowDoms(d2, level, sps)%x(i2-1:i2+1, j2-1:j2+1, k2-1:k2+1, :), &
+               flowDomsd(d2, level, sps)%x(i2-1:i2+1, j2-1:j2+1, k2-1:k2+1, :), &
+               frac0, frac, fracd)
+
+          ! Set the new weights
+          call fracToWeights_d(frac, fracd, weight, &
+               commPattern%sendList(ii)%interpd(j, :))
+       enddo
+
+    enddo completeSends
+
+    ! Complete the nonblocking sends.
+
+    size = commPattern%nProcRecv
+    do i=1,commPattern%nProcRecv
+       call mpi_waitany(size, recvRequests, index, status, ierr)
+    enddo
+
+  end subroutine updateOversetConnectivity_d
+
+  subroutine updateOversetConnectivity_b(level, sps)
+
+    ! Reverse  mode linearization of updateOversetConnectivity 
+
+    use constants
+    use communication
+    use blockPointers, only : nDom, il, jl, kl, xSeed, flowDoms, x, ib, jb, kb, &
+         ie, je, ke, fringes, scratch, flowDomsd, xd
+    use haloExchange, only : whalo1to1RealGeneric_b
+    use oversetUtilities_b, only : newtonUpdate_b, fracToWeights_b, newtonUpdate, fracToWeights
+    use utils, only : setPointers_d
+
+    implicit none
+
+    ! Input
+    integer(kind=intType), intent(in) :: level, sps
+    type(commType), pointer :: commPattern
+    type(internalCommType), pointer :: internal
+
+    ! Working
+    integer(kind=intType) :: nn, ii,jj, kk, ierr,  i, j, k, d1, i1, j1, k1, d2, i2, j2, k2
+    integer(kind=intType) :: size, procID, index, iii,jjj,kkk
+    integer, dimension(mpi_status_size) :: status
+    real(kind=realType) :: frac(3), fracd(3), frac0(3), xCen(3), xCend(3), weight(8), add(3)
+    integer(kind=intType), dimension(8), parameter :: indices=(/1,2,4,3,5,6,8,7/)
+
+    ! Pointers to the overset comms to make it easier to read
+    commPattern => commPatternOverset(level, sps)
+    internal => internalOverset(level, sps)
+
+    ! Zero out xSeedd (in scratch)
+    do nn=1, nDom
+       flowDoms(nn, 1, sps)%scratch(:, :, :, 1:3) = zero
+    end do
+       
+    ! In reverse the fist thing we must do is the compute the
+    ! sensitivites of xCen and send it to the receiving
+    ! processor. This comm pattern is the same as wOverset forward. 
+
+    ii = 1
+    sends: do i=1,commPattern%nProcSend
+
+       ! Store the processor id and the size of the message
+       ! a bit easier.
+
+       procID = commPattern%sendProc(i)
+       size    = 3*commPattern%nsend(i)
+
+       ! Copy the data in the correct part of the send buffer.
+
+       jj = ii
+       do j=1,commPattern%nsend(i)
+
+          ! Store the block id and the indices of the donor
+          ! a bit easier.
+          d1 = commPattern%sendList(i)%block(j)
+          i1 = commPattern%sendList(i)%indices(j,1)
+          j1 = commPattern%sendList(i)%indices(j,2)
+          k1 = commPattern%sendList(i)%indices(j,3)
+   
+          ! -------- Recompute forward pass -------------
+          xCen = commPattern%sendList(i)%xCen(j, :)
+
+          ! Do newton update
+          frac0 = (/half, half, half/)
+          call newtonUpdate(xCen, &
+               flowDoms(d1, level, sps)%x(i1-1:i1+1, j1-1:j1+1, k1-1:k1+1, :), frac0, frac)
+          
+          ! Set the new weights
+          call fracToWeights(frac, weight)
+          
+          ! ------------- Reverse pass -----------
+          
+          ! Transfer the weights back to the frac
+          call fracToWeights_b(frac, fracd, weight, commPattern%sendList(i)%interpd(j, :))
+
+          ! Run the reverse newton update.  Note that we are
+          ! accumulating into the local xd here in the newton_b call. 
+          frac0 = (/half, half, half/)
+          call newtonUpdate_b(xCen, xCend, &
+               flowDoms(d1, level, sps)%x(i1-1:i1+1, j1-1:j1+1, k1-1:k1+1, :), &
+               flowDomsd(d1, level, sps)%x(i1-1:i1+1, j1-1:j1+1, k1-1:k1+1, :), &
+               frac0, frac, fracd)
+
+          ! -------------------------------------
+
+          ! We want to send xCend to the receiver
+          sendBuffer(jj:jj+2) = xCend
+          jj = jj + 3
+ 
+       enddo
+       ! Send the data.
+
+       call mpi_isend(sendBuffer(ii), size, adflow_real, procId,  &
+            procId, ADflow_comm_world, sendRequests(i), &
+            ierr)
+
+       ! Set ii to jj for the next processor.
+
+       ii = jj
+
+    enddo sends
+
+    ! Post the nonblocking receives.
+    
+    ii = 1
+    receives: do i=1,commPattern%nProcRecv
+
+       ! Store the processor id and the size of the message
+       ! a bit easier.
+
+       procID = commPattern%recvProc(i)
+       size    = 3*commPattern%nrecv(i)
+
+       ! Post the receive.
+
+       call mpi_irecv(recvBuffer(ii), size, adflow_real, procId, &
+            myId, ADflow_comm_world, recvRequests(i), ierr)
+
+       ! And update ii.
+
+       ii = ii + size
+
+    enddo receives
+        
+    ! Do the local stuff while we're waiting
+    
+    localInterp: do i=1,internal%ncopy
+
+       ! Store the block and the indices of the donor a bit easier.
+       d1 = internal%donorBlock(i)
+       i1 = internal%donorIndices(i, 1)
+       j1 = internal%donorIndices(i, 2)
+       k1 = internal%donorIndices(i, 3)
+
+       d2 = internal%haloBlock(i)
+       i2 = internal%haloIndices(i, 1)
+       j2 = internal%haloIndices(i, 2)
+       k2 = internal%haloIndices(i, 3)
+
+       ! -------- Recompute forward pass -------------
+       xCen = internal%XCen(i, :)
+       
+       ! Do newton update
+       frac0 = (/half, half, half/)
+       call newtonUpdate(xCen, &
+            flowDoms(d1, level, sps)%x(i1-1:i1+1, j1-1:j1+1, k1-1:k1+1, :), frac0, frac)
+       
+       ! Set the new weights
+       call fracToWeights(frac, weight)
+ 
+      ! ------------- Reverse pass -----------
+       
+       ! Transfer the weights back to the frac
+       call fracToWeights_b(frac, fracd, weight, internal%Donorinterpd(i, :))
+       
+       ! Run the reverse newton update.  Note that we are
+       ! accumulating into the local xd here in the newton_b call. 
+       frac0 = (/half, half, half/)
+       call newtonUpdate_b(xCen, xCend, &
+            flowDoms(d1, level, sps)%x(i1-1:i1+1, j1-1:j1+1, k1-1:k1+1, :), &
+            flowDomsd(d1, level, sps)%x(i1-1:i1+1, j1-1:j1+1, k1-1:k1+1, :), &
+            frac0, frac, fracd)
+
+       ! Accumulate in to the xSeedd (which we're using scratch for)
+       flowDoms(d2, level, sps)%scratch(i2, j2, k2, 1:3) =  &
+            flowDoms(d2, level, sps)%scratch(i2, j2, k2, 1:3) + xCend
+
+    end do localInterp
+
+    ! Complete the nonblocking receives in an arbitrary sequence and
+    ! copy the variables from the buffer into the halo's.
+
+    size = commPattern%nProcRecv
+    completeRecvs: do i=1,commPattern%nProcRecv
+
+       ! Complete any of the requests.
+
+       call mpi_waitany(size, recvRequests, index, status, ierr)
+
+       ! Copy the data just arrived in the halo's.
+
+       ii = index
+       jj = 3*commPattern%nrecvCum(ii-1)
+       do j=1,commPattern%nrecv(ii)
+
+          ! Store the block and the indices of the halo a bit easier.
+
+          d2 = commPattern%recvList(ii)%block(j)
+          i2 = commPattern%recvList(ii)%indices(j,1)
+          j2 = commPattern%recvList(ii)%indices(j,2)
+          k2 = commPattern%recvList(ii)%indices(j,3)
+
+          flowDomsd(d2, level, sps)%scratch(i2, j2, k2, 1:3) = &
+               flowDomsd(d2, level, sps)%scratch(i2, j2, k2, 1:3) + recvBuffer(jj+1:jj+3)
+          jj =jj + 3
+       enddo
+    end do completeRecvs
+
+    ! Complete the nonblocking sends.
+
+    size = commPattern%nProcSend
+    do i=1,commPattern%nProcSend
+       call mpi_waitany(size, sendRequests, index, status, ierr)
+    enddo
+
+    ! Now we have accumulated back as far as xSeedd (stored in
+    ! scratch). We can now do the whalo1to1_b
+    
+    ! Exchange the xSeeds in reverse.
+    do nn=1, nDom
+       flowDoms(nn, level, sps)%realCommVars(1)%var => flowDoms(nn, level, sps)%scratch(:, :, :, 1)
+       flowDoms(nn, level, sps)%realCommVars(2)%var => flowDoms(nn, level, sps)%scratch(:, :, :, 2)
+       flowDoms(nn, level, sps)%realCommVars(3)%var => flowDoms(nn, level, sps)%scratch(:, :, :, 3)
+    end do
+
+    call wHalo1to1RealGeneric_b(3, level, sps, commPatternCell_2nd, internalCell_2nd)
+
+    ! Finaly we can push back to the local x
+    do nn=1, nDom
+       call setPointers_d(nn, level, sps)
+
+       do k=2,kl
+          do j=2, jl
+             do i=2, il
+                ! Add is accumulate seed for xSeed (stored in scratch )
+                add = eighth * scratch(i, j, k, 1:3)
+                do kk=k-1,k
+                   do jj=j-1,j
+                      do ii=i-1,i
+                         xd(ii, jj, kk, :) = xd(ii, jj, kk, :) + add
+                      end do
+                   end do
+                end do
+             end do
+          end do
+       end do
+    end do
+
+  end subroutine updateOversetConnectivity_b
 
 end module oversetCommUtilities

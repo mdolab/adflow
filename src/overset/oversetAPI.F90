@@ -521,7 +521,7 @@ contains
                 do i=1, size(oFringes(iDom)%donorProc)
                    if (oFringes(iDom)%donorProc(i) /= -1) then 
                       iCnt = iCnt + 14
-                      rCnt = rCnt + 4
+                      rCnt = rCnt + 7
                    end if
                 end do
 
@@ -554,11 +554,13 @@ contains
                       oFringes(iDom)%rBuffer(rCnt+2) = oFringes(iDom)%donorFrac(2, i)
                       oFringes(iDom)%rBuffer(rCnt+3) = oFringes(iDom)%donorFrac(3, i)
                       oFringes(iDom)%rBuffer(rCnt+4) = oFringes(iDom)%quality(i)
-
-                      rCnt = rCnt + 4
+                      oFringes(iDom)%rBuffer(rCnt+5) = oFringes(iDom)%offset(1, i)
+                      oFringes(iDom)%rBuffer(rCnt+6) = oFringes(iDom)%offset(2, i)
+                      oFringes(iDom)%rBuffer(rCnt+7) = oFringes(iDom)%offset(3, i)
+                      rCnt = rCnt + 7
                    end if
                 end do
-                oFringes(iDom)%fringeReturnSize = rCnt/4
+                oFringes(iDom)%fringeReturnSize = rCnt/7
 
              end if
           end do
@@ -631,7 +633,7 @@ contains
           ! Now alocate the integer space. Note we are receiving 4 real
           ! values and 14 int values:
           ii = cumFringeRecv(nOfringeSend+1)-1
-          allocate(intRecvBuf(ii*14), realRecvBuf(ii*4))   
+          allocate(intRecvBuf(ii*14), realRecvBuf(ii*7))   
 
           ! We are now ready to actually receive our fringes
           sendCount = 0
@@ -643,7 +645,7 @@ contains
              if (iSize > 0) then 
                 tag = iDom + MAGIC
                 sendCount = sendCount + 1
-                call mpi_isend(oFringes(iDom)%rBuffer, iSize*4, adflow_real, &
+                call mpi_isend(oFringes(iDom)%rBuffer, iSize*7, adflow_real, &
                      iproc, tag, adflow_comm_world, sendRequests(sendCount), ierr)
                 call ECHK(ierr, __FILE__, __LINE__)
 
@@ -664,10 +666,10 @@ contains
              iSize = cumFringeRecv(jj+1) - cumFringeRecv(jj) 
              if (iSize > 0) then 
 
-                iStart = (cumFringeRecv(jj  )-1)*4 + 1
+                iStart = (cumFringeRecv(jj  )-1)*7 + 1
                 tag = iDom + MAGIC
                 recvCount = recvCount + 1       
-                call mpi_irecv(realRecvBuf(iStart), iSize*4, adflow_real, &
+                call mpi_irecv(realRecvBuf(iStart), iSize*7, adflow_real, &
                      iProc, tag, adflow_comm_world, recvRequests(recvCount), ierr)
                 call ECHK(ierr, __FILE__, __LINE__)
                 recvInfo(:, recvCount) = (/iDom, 1/) ! 1 for real recv
@@ -712,6 +714,7 @@ contains
                          fringes(i, j, k)%donorProc  = oFringes(iDom)%donorProc(ii)
                          fringes(i, j, k)%donorBlock = oFringes(iDom)%donorBlock(ii)
                          fringes(i, j, k)%donorFrac = oFringes(iDom)%donorFrac(:, ii)
+                         fringes(i, j, k)%offset = oFringes(iDom)%offset(:, ii)
                          fringes(i, j, k)%dI = oFringes(iDom)%dI(ii)
                          fringes(i, j, k)%dJ = oFringes(iDom)%dJ(ii)
                          fringes(i, j, k)%dK = oFringes(iDom)%dK(ii)
@@ -777,7 +780,7 @@ contains
                 k = myIndex/(nx*ny) + 2
 
                 ! Extract the quality value from the buffer
-                quality = realRecvBuf(4*(jj-1) + 4)
+                quality = realRecvBuf(7*(jj-1) + 4)
 
                 ! This is the acutal implict hole cutting "less than"
                 ! operation. 
@@ -807,8 +810,9 @@ contains
                    fringes(i, j, k)%gInd(7)    = intRecvBuf(iStart + 12)
                    fringes(i, j, k)%gInd(8)    = intRecvBuf(iStart + 13)
 
-                   fringes(i, j, k)%donorFrac = realRecvBuf(4*jj-3:4*jj-1)
-
+                   iStart = 7*(jj-1)
+                   fringes(i, j, k)%donorFrac = realRecvBuf(iStart+1:iStart+3)
+                   fringes(i, j, k)%offset    = realRecvBuf(iStart+5:iStart+7)
                    ! Set this new quality
                    fringes(i, j, k)%quality = quality
 
@@ -1828,5 +1832,72 @@ contains
     end do
 
   end subroutine setExplicitHoleCut
+
+  subroutine updateOverset(flag, n)
+
+    ! This is the main gateway routine for updating the overset
+    ! connecitivty during a solution. It is wrapped and intended to be
+    ! called from Python. What this routine does depends on the value
+    ! of oversetUpdateMode:
+
+    ! updateFrozen: Nothing happens. The initial
+    ! connecitivty computed during initialzation is kept. 
+
+    ! updteFast: Update just the weight, but leave the donors
+    ! unchanged. This is only applicable when the entire mesh is
+    ! warped at the same time with pyWarpuStruct. 
+
+    ! updateFull: Complete from scratch update. Run the full
+    ! oversetComm routine. 
+
+    use constants
+    use inputOverset, only : oversetUpdateMode
+    use block, only : flowDOms
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use oversetCommUtilities, onlY : updateOversetConnectivity
+    use overset, only : oversetPresent
+    implicit none
+
+    ! Input/Output
+    integer(kind=intType), dimension(n) :: flag
+    integer(kind=intType), intent(in) :: n
+
+    ! Working
+    integer(kind=intType) :: nLevels, level, sps
+
+    ! If no overset, don't do anything.
+    if (.not. oversetPresent) then 
+       return 
+    end if
+
+    select case(oversetUpdateMode)
+    case(updateFrozen)
+       return 
+       
+    case (updateFast)
+       ! Run our fast version.
+       nLevels = ubound(flowDoms,2)
+       do level=1,nLevels
+          do sps=1, nTimeIntervalsSpectral
+             call updateOversetConnectivity(level, sps)
+          end do
+       end do
+
+    case (updateFull)
+       ! Do the full update like we would have done during
+       ! initialization.
+       nLevels = ubound(flowDoms,2)
+       do level=1,nLevels
+          if (level == 1) then 
+             call setExplicitHoleCut(flag)
+             call oversetComm(level, .False., .false.)
+          else
+             call oversetComm(level, .False., .True.)
+          end if
+       end do
+       
+    end select
+
+  end subroutine updateOverset
 
 end module oversetAPI
