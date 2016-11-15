@@ -167,6 +167,7 @@ subroutine finalOversetCommStructures(level, sps)
   allocate(internalOverset(level, sps)%donorIndices(nCopy, 3))
   allocate(internalOverset(level, sps)%donorInterp(nCopy, 8))
   allocate(internalOverset(level, sps)%donorInterpd(nCopy, 8))
+  allocate(internalOverset(level, sps)%XCen(nCopy, 3))
   allocate(internalOverset(level, sps)%haloBlock(nCopy))
   allocate(internalOverset(level, sps)%haloIndices(nCopy, 3))
 
@@ -231,6 +232,7 @@ subroutine finalOversetCommStructures(level, sps)
            internalOverset(level, sps)%donorIndices(ii, 3) = localFringes(j)%dK
            call fracToWeights(localFringes(j)%donorFrac, internalOverset(level, sps)%donorInterp(ii, :))
            internalOverset(level, sps)%donorInterpd(ii, :) = zero
+           internalOverset(level, sps)%xCen(ii, :) = zero
 
            ! And the receiver (halo) information
            internalOverset(level, sps)%haloBlock(ii) = localFringes(j)%myBlock
@@ -282,7 +284,8 @@ subroutine finalOversetCommStructures(level, sps)
              commPatternOverset(level, sps)%sendList(iSendProc)%block(n), &
              commPatternOverset(level, sps)%sendList(iSendProc)%indices(n, 3), &
              commPatternOverset(level, sps)%sendList(iSendProc)%interp(n, 8), &
-             commPatternOverset(level, sps)%sendList(iSendProc)%interpd(n, 8))
+             commPatternOverset(level, sps)%sendList(iSendProc)%interpd(n, 8), &
+             commPatternOverset(level, sps)%sendList(iSendProc)%xCen(n, 3))
 
         ! Now set the data
         do i=1, n
@@ -294,6 +297,7 @@ subroutine finalOversetCommStructures(level, sps)
            call fracToWeights(realRecvBuf(jj+1:jj+3), &
                 commPatternOverset(level, sps)%sendList(iSendProc)%interp(i, :))
            commPatternOverset(level, sps)%sendList(iSendProc)%interpd(i, :) = zero
+           commPatternOverset(level, sps)%sendList(iSendProc)%xCen(i, :) = zero
            jj = jj + 3
         end do
      end if
