@@ -552,7 +552,7 @@ contains
 
     ! the sign of momentum forces are flipped for internal flows
     internalFlowFact = one
-    if (isInflow) then 
+    if (flowType == internalFlow) then 
       internalFlowFact = -one
     end if
 
@@ -617,9 +617,12 @@ contains
       ! the reference pressure sign to be consistent with the force 
       ! computation on the walls. 
       pm = -(pm-pInf*pRef)*fact*blk
+      ! print *, "foo", mm, pm, pinf*pref
+
       fx = pm*ssi(i,j,1)
       fy = pm*ssi(i,j,2)
       fz = pm*ssi(i,j,3)
+
 
       ! Update the pressure force and moment coefficients.
       Fp(1) = Fp(1) + fx
@@ -725,7 +728,7 @@ contains
     MMom = zero
 
     internalFlowFact = one
-    if (isInflow) then 
+    if (flowType == internalFlow) then 
       internalFlowFact = -one
     end if
 
