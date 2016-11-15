@@ -355,15 +355,17 @@ bocos:do mm=1,nbocos
   subroutine flowintegrationface(localvalues, mm)
     use constants
     use costfunctions
-    use blockpointers, only : bcfaceid, bcdata, addgridvelocities
+    use blockpointers, only : bctype, bcfaceid, bcdata, &
+&   addgridvelocities
     use costfunctions, only : nlocalvalues, imassflow, imassptot, &
 &   imassttot, imassps
     use sorting, only : bsearchintegers
-    use flowvarrefstate, only : pref, rhoref, timeref, lref, tref, &
-&   rgas
-    use inputphysics, only : pointref
+    use flowvarrefstate, only : pref, pinf, rhoref, timeref, lref, &
+&   tref, rgas
+    use inputphysics, only : pointref, flowtype
     use flowutils_fast_b, only : computeptot, computettot
     use bcpointers_fast_b, only : ssi, sface, ww1, ww2, pp1, pp2, xx
+    use utils_fast_b, only : mynorm2
     implicit none
 ! input/output variables
     real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
@@ -372,7 +374,8 @@ bocos:do mm=1,nbocos
 ! local variables
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps
     integer(kind=inttype) :: i, j, ii, blk
-    real(kind=realtype) :: fact, xc, yc, zc, cellarea, mx, my, mz
+    real(kind=realtype) :: internalflowfact, fact, xc, yc, zc, cellarea&
+&   , mx, my, mz
     real(kind=realtype) :: sf, vnm, vxm, vym, vzm, mredim, fx, fy, fz
     real(kind=realtype) :: pm, ptot, ttot, rhom, massflowratelocal
     real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint
@@ -396,6 +399,13 @@ bocos:do mm=1,nbocos
       fact = one
     case (imax, jmax, kmax) 
       fact = -one
+    end select
+! the sign of momentum forces are flipped for internal flows
+    select case  (flowtype) 
+    case (internalflow) 
+      internalflowfact = -one
+    case (externalflow) 
+      internalflowfact = one
     end select
 ! loop over the quadrilateral faces of the subface. note that
 ! the nodal range of bcdata must be used and not the cell
@@ -435,7 +445,7 @@ bocos:do mm=1,nbocos
       call computeptot(rhom, vxm, vym, vzm, pm, ptot)
       call computettot(rhom, vxm, vym, vzm, pm, ttot)
       pm = pm*pref
-      massflowratelocal = rhom*vnm*fact*mredim*blk
+      massflowratelocal = rhom*vnm*mredim*blk*fact
       massflowrate = massflowrate + massflowratelocal
       mass_ptot = mass_ptot + ptot*massflowratelocal*pref
       mass_ttot = mass_ttot + ttot*massflowratelocal*tref
@@ -446,11 +456,13 @@ bocos:do mm=1,nbocos
 &       2)) - refpoint(2)
       zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
 &       3)) - refpoint(3)
-! pressure forces. note that these need a *negative* sign to be
-! consistent with the force computation. 
-      fx = -(pm*ssi(i, j, 1)*blk*fact)
-      fy = -(pm*ssi(i, j, 2)*blk*fact)
-      fz = -(pm*ssi(i, j, 3)*blk*fact)
+! pressure forces. note that these need a *negative* and to subtract 
+! the reference pressure sign to be consistent with the force 
+! computation on the walls. 
+      pm = -((pm-pinf*pref)*fact*blk)
+      fx = pm*ssi(i, j, 1)
+      fy = pm*ssi(i, j, 2)
+      fz = pm*ssi(i, j, 3)
 ! update the pressure force and moment coefficients.
       fp(1) = fp(1) + fx
       fp(2) = fp(2) + fy
@@ -461,16 +473,22 @@ bocos:do mm=1,nbocos
       mp(1) = mp(1) + mx
       mp(2) = mp(2) + my
       mp(3) = mp(3) + mz
-! momentum forces. these gets a little more complex: theb
-! bcdata(mm)%norm already is setup such that it points *out* of
-! the domain. the use of fact here *reverses* the factor that
-! has already been taken into account on massflowratelocal.
-      fx = -(massflowratelocal*bcdata(mm)%norm(i, j, 1)*vxm/timeref*fact&
-&       *blk)
-      fy = -(massflowratelocal*bcdata(mm)%norm(i, j, 2)*vym/timeref*fact&
-&       *blk)
-      fz = -(massflowratelocal*bcdata(mm)%norm(i, j, 3)*vzm/timeref*fact&
-&       *blk)
+! momentum forces are a little tricky.  we negate because 
+! have to re-apply fact to massflowratelocal to undoo it, because 
+! we need the signed behavior of ssi to get the momentum forces correct. 
+! also, the sign is flipped between inflow and outflow types 
+      cellarea = mynorm2(ssi(i, j, :))
+      select case  (bctype(mm)) 
+      case (subsonicinflow, supersonicinflow) 
+        massflowratelocal = -(massflowratelocal*fact/timeref*blk/&
+&         cellarea*internalflowfact)
+      case (subsonicoutflow, supersonicoutflow) 
+        massflowratelocal = massflowratelocal*fact/timeref*blk/cellarea*&
+&         internalflowfact
+      end select
+      fx = massflowratelocal*ssi(i, j, 1)*vxm
+      fy = massflowratelocal*ssi(i, j, 2)*vym
+      fz = massflowratelocal*ssi(i, j, 3)*vzm
       fmom(1) = fmom(1) + fx
       fmom(2) = fmom(2) + fy
       fmom(3) = fmom(3) + fz
@@ -493,22 +511,24 @@ bocos:do mm=1,nbocos
     localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
 &     mmom
   end subroutine flowintegrationface
-  subroutine flowintegrationzipper(zipper, vars, localvalues, famlist, &
-&   sps)
+  subroutine flowintegrationzipper(isinflow, zipper, vars, localvalues, &
+&   famlist, sps)
 ! integrate over the trianges for the inflow/outflow conditions. 
     use constants
     use costfunctions, only : nlocalvalues, imassflow, imassptot, &
 &   imassttot, imassps, iflowmm, iflowmp, iflowfm, iflowfp
+    use blockpointers, only : bctype
     use sorting, only : bsearchintegers
-    use flowvarrefstate, only : pref, rhoref, pref, timeref, lref, &
-&   tref, rgas
-    use inputphysics, only : pointref
+    use flowvarrefstate, only : pref, pinf, rhoref, pref, timeref, &
+&   lref, tref, rgas
+    use inputphysics, only : pointref, flowtype
     use flowutils_fast_b, only : computeptot, computettot
     use overset, only : zippermeshes, zippermesh
     use surfacefamilies, only : familyexchange, bcfamexchange
     use utils_fast_b, only : mynorm2, cross_prod
     implicit none
 ! input/output variables
+    logical, intent(in) :: isinflow
     type(zippermesh), intent(in) :: zipper
     real(kind=realtype), dimension(:, :), intent(in) :: vars
     real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
@@ -522,7 +542,8 @@ bocos:do mm=1,nbocos
 &   ss, x1, x2, x3, norm
     real(kind=realtype) :: pm, ptot, ttot, rhom, massflowratelocal
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps
-    real(kind=realtype) :: fact, xc, yc, zc, cellarea, mx, my, mz
+    real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, &
+&   cellarea, mx, my, mz
     real(kind=realtype), dimension(:), pointer :: localptr
     intrinsic sqrt
     intrinsic size
@@ -541,6 +562,18 @@ bocos:do mm=1,nbocos
     mp = zero
     fmom = zero
     mmom = zero
+    select case  (flowtype) 
+    case (internalflow) 
+      internalflowfact = -one
+    case (externalflow) 
+      internalflowfact = one
+    end select
+    select case  (isinflow) 
+    case (.true.) 
+      inflowfact = -one
+    case (.false.) 
+      inflowfact = one
+    end select
     do i=1,size(zipper%conn, 2)
       if (bsearchintegers(zipper%fam(i), famlist) .gt. 0) then
 ! compute the averaged values for this trianlge
@@ -598,6 +631,7 @@ bocos:do mm=1,nbocos
         xc = xc - refpoint(1)
         yc = yc - refpoint(2)
         zc = zc - refpoint(3)
+        pm = -(pm-pinf*pref)
         fx = pm*ss(1)
         fy = pm*ss(2)
         fz = pm*ss(3)
@@ -615,6 +649,8 @@ bocos:do mm=1,nbocos
 ! get unit normal vector. 
         result1 = mynorm2(ss)
         ss = ss/result1
+        massflowratelocal = massflowratelocal/timeref*internalflowfact*&
+&         inflowfact
         fx = massflowratelocal*ss(1)*vxm/timeref
         fy = massflowratelocal*ss(2)*vym/timeref
         fz = massflowratelocal*ss(3)*vzm/timeref
