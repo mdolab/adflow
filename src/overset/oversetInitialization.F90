@@ -471,6 +471,7 @@ contains
     allocate(oFringe%dJ(mm))
     allocate(oFringe%dK(mm))
     allocate(oFringe%donorFrac(3, mm))
+    allocate(oFringe%offset(3, mm))
     allocate(oFringe%gInd(8, mm))
     allocate(oFringe%xSeed(3, mm))
     allocate(oFringe%wallInd(mm))
@@ -483,6 +484,7 @@ contains
     oFringe%dJ = -1
     oFringe%dK = -1
     oFringe%donorFrac = -one
+    ofringe%offset = zero
     oFringe%gInd = -1
     oFringe%isWall = 0
     oFringe%xSeed = large

@@ -783,14 +783,15 @@ contains
     use flowVarRefState
     use inputPhysics
     use BCPointers_b
-
+    use communication
+    use overset, only : oversetPresent
     implicit none
 
     ! Input parameters
     integer(kind=intType) :: nn, level, sps
 
     ! Working parameters
-    integer(kind=intType) :: mm
+    integer(kind=intType) :: mm, i
 
     flowDomsd(nn, level, sps)%d2wall = zero
     flowDomsd(nn, level, sps)%x = zero
@@ -861,6 +862,17 @@ contains
        flowDomsd(nn, level, sps)%viscSubface(mm)%tau = zero 
        flowDomsd(nn, level, sps)%viscSubface(mm)%q = zero
     end do viscbocoLoop
+
+    ! For overset, the weights may be active in the comm structure. We
+    ! need to zero them before we can accumulate.
+    if (oversetPresent) then 
+       ! Pointers to the overset comms to make it easier to read
+       sends: do i=1,commPatternOverset(level, sps)%nProcSend
+          commPatternOverset(level, sps)%sendList(i)%interpd = zero
+       end do sends
+       internalOverset(level, sps)%donorInterpd = zero
+    end if
+
 
     alphad = zero
     betad = zero

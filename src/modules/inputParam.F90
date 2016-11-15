@@ -836,5 +836,6 @@ module inputOverset
   real(kind=realType) :: oversetProjTol=1e-12
   real(kind=realType) :: backgroundVolScale = 1.0
   logical :: debugZipper=.False.
+  integer(kind=intType) :: oversetUpdateMode
 end module inputOverset
 
