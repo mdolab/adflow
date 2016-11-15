@@ -174,9 +174,12 @@ module block
     integer(kind=intType) :: myBlock, myI, myJ, myK
 
     ! This is the information about the donor that was found. Note we
-    ! use dI, dJ, dK, short for donorI, etc.
+    ! use dI, dJ, dK, short for donorI, etc. 
     integer(kind=intType) :: donorProc, donorBlock, dI, dJ, dK
     real(kind=realType) :: donorFrac(3)
+
+    ! Offset is the surface correction offset. 
+    real(kind=realType) :: offset(3)
 
     ! gInd are the global indices of the donor cells. We will need
     ! these for forming the PC for the Newton Krylov solver

@@ -60,6 +60,7 @@ ALL_RES_FILES =	$(SRC)/adjoint/adjointExtra.F90\
 		$(SRC)/utils/flowUtils.F90\
 		$(SRC)/utils/utils.F90\
 		$(SRC)/utils/sorting.F90\
+		$(SRC)/overset/oversetUtilities.F90\
 		$(SRC)/wallDistance/wallDistance.F90\
 
 # intermediate preprocessed files.
@@ -187,6 +188,9 @@ surfaceIntegrations%flowIntegrationZipper(vars, Pref, rhoRef, timeRef, TRef, rGa
 \
 adjointExtra%getCostFunctions(globalVals, liftDirection, dragDirection, pRef, rhoRef, machCoef) > \
 	                     (funcValues) \
+\
+oversetUtilities%newtonUpdate(xCen, blk, frac) > \
+	               (blk, frac)\
 \
 "
 
