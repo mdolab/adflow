@@ -1486,14 +1486,6 @@ contains
           ! this cell in the buffer. Update the counter jj.
           do k=1, nvar
              sendBuffer(jj) = &
-                  weightd(1)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1  , j1,   k1  ) + &
-                  weightd(2)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1,   k1  ) + &
-                  weightd(3)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1,   j1+1, k1  ) + &
-                  weightd(4)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1+1, k1  ) + &
-                  weightd(5)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1  , j1,   k1+1) + &
-                  weightd(6)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1,   k1+1) + &
-                  weightd(7)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1,   j1+1, k1+1) + &
-                  weightd(8)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1+1, k1+1) + &
                   weight(1)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1  , j1,   k1  ) + &
                   weight(2)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1+1, j1,   k1  ) + &
                   weight(3)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1,   j1+1, k1  ) + &
@@ -1501,7 +1493,16 @@ contains
                   weight(5)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1  , j1,   k1+1) + &
                   weight(6)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1+1, j1,   k1+1) + &
                   weight(7)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1,   j1+1, k1+1) + &
-                  weight(8)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1+1, j1+1, k1+1)
+                  weight(8)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1+1, j1+1, k1+1) + & 
+                  weightd(1)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1  , j1,   k1  ) + &
+                  weightd(2)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1,   k1  ) + &
+                  weightd(3)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1,   j1+1, k1  ) + &
+                  weightd(4)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1+1, k1  ) + &
+                  weightd(5)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1  , j1,   k1+1) + &
+                  weightd(6)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1,   k1+1) + &
+                  weightd(7)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1,   j1+1, k1+1) + &
+                  weightd(8)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1+1, k1+1)
+                
                   
              jj = jj + 1
           end do
@@ -1563,16 +1564,7 @@ contains
 
        ! Copy the given range of working variables.
        do k=1, nVar
-
           flowDoms(d2, level, sps)%realCommVars(k)%var(i2, j2, k2) = &
-               weightd(1)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1  , j1,   k1  ) + &
-               weightd(2)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1,   k1  ) + &
-               weightd(3)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1,   j1+1, k1  ) + &
-               weightd(4)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1+1, k1  ) + &
-               weightd(5)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1  , j1,   k1+1) + &
-               weightd(6)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1,   k1+1) + &
-               weightd(7)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1,   j1+1, k1+1) + &
-               weightd(8)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1+1, k1+1) + &
                weight(1)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1  , j1,   k1  ) + &
                weight(2)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1+1, j1,   k1  ) + &
                weight(3)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1,   j1+1, k1  ) + &
@@ -1580,7 +1572,16 @@ contains
                weight(5)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1  , j1,   k1+1) + &
                weight(6)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1+1, j1,   k1+1) + &
                weight(7)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1,   j1+1, k1+1) + &
-               weight(8)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1+1, j1+1, k1+1)
+               weight(8)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1+1, j1+1, k1+1) + &
+               weightd(1)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1  , j1,   k1  ) + &
+               weightd(2)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1,   k1  ) + &
+               weightd(3)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1,   j1+1, k1  ) + &
+               weightd(4)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1+1, k1  ) + &
+               weightd(5)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1  , j1,   k1+1) + &
+               weightd(6)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1,   k1+1) + &
+               weightd(7)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1,   j1+1, k1+1) + &
+               weightd(8)*flowDoms(d1,level,sps)%realCommVars(k+nVar)%var(i1+1, j1+1, k1+1)
+           
        end do
     enddo localInterp
 
@@ -1649,7 +1650,7 @@ contains
     integer(kind=intType) :: i, j, k, ii, jj, kk
     integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2, iii, jjj, kkk
     real(kind=realType), dimension(:), pointer :: weight, weightd
-    real(kind=realType) :: var
+    real(kind=realType) :: vard
     ! Gather up the seeds into the *recv* buffer. Note we loop over
     ! nProcRECV here! After the buffer is assembled it is send off.
     
@@ -1738,15 +1739,19 @@ contains
        ! Sum into the '1' values from the '2' values accouting for the weights
 
        do k=1, nVar
-          var = flowDoms(d2, level, sps)%realCommVars(k)%var(i2, j2, k2)
+          vard = flowDoms(d2, level, sps)%realCommVars(k)%var(i2, j2, k2)
           kk = 0
           do kkk=k1,k1+1
              do jjj=j1,j1+1
                 do iii=i1,i1+1
                    kk = kk + 1
                    flowDoms(d1, level, sps)%realCommVars(k)%var(iii, jjj, kkk) = &
-                        flowDoms(d1, level, sps)%realCommVars(k)%var(iii, jjj, kkk) + & 
-                        weight(kk)*var
+                        flowDoms(d1, level, sps)%realCommVars(k)%var(iii, jjj, kkk) + &
+                        weight(kk)*vard
+
+                   weightd(kk) = weightd(kk) + &
+                        flowDoms(d1, level, sps)%realCommVars(k+nVar)%var(iii,jjj,kk)*vard
+                        
                 end do
              end do
           end do
@@ -1783,7 +1788,7 @@ contains
 
           do k=1, nVar
              jj =jj + 1
-             var = sendBuffer(jj)
+             vard = sendBuffer(jj)
              kk = 0
              do kkk=k2,k2+1
                 do jjj=j2,j2+1
@@ -1792,7 +1797,11 @@ contains
                       kk = kk + 1
                       flowDoms(d2, level, sps)%realCommVars(k)%var(iii, jjj, kkk) = &
                            flowDoms(d2, level, sps)%realCommVars(k)%var(iii, jjj, kkk) + &
-                           weight(kk)*var
+                           weight(kk)*vard
+
+                      weightd(kk) = weightd(kk) + &
+                           flowDoms(d2, level, sps)%realCommVars(k+nVar)%var(iii,jjj,kk)*vard
+       
                    end do
                 end do
              end do
