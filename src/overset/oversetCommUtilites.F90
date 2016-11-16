@@ -1675,7 +1675,7 @@ contains
     enddo
 
   end subroutine updateOversetConnectivity
-
+#ifndef USE_COMPLEX
   subroutine updateOversetConnectivity_d(level, sps)
 
     ! Forward mode linearization of updateOversetConnectivity 
@@ -2159,5 +2159,5 @@ contains
     end do
 
   end subroutine updateOversetConnectivity_b
-
+#endif
 end module oversetCommUtilities
