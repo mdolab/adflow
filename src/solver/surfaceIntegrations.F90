@@ -2066,7 +2066,9 @@ contains
     integer(Kind=intType) :: iSurf, ii, i, nn, nPts, ierr
     real(kind=realType), dimension(:, :), allocatable :: pts
     logical :: useDual
-
+    if (nUserIntSurfs == 0) then 
+       return
+    end if
     primalDualLoop: do ii=1, 2
        if (ii==1) then 
           useDual = .True.
