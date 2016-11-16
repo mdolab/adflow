@@ -1471,7 +1471,7 @@ contains
 
     ! Working
     integer(kind=intType) :: nn, ii,jj, ierr,  i, j, k, d1, i1, j1, k1, d2, i2, j2, k2
-    integer(kind=intType) :: size, procID, index, iii,jjj,kkk
+    integer(kind=intType) :: size, procID, index, iii,jjj
     integer, dimension(mpi_status_size) :: status
     real(kind=realType) :: frac(3), frac0(3), xCen(3)
     integer(kind=intType), dimension(8), parameter :: indices=(/1,2,4,3,5,6,8,7/)
@@ -1614,7 +1614,7 @@ contains
        ! reverse, it's now the "input"
        xCen = flowDoms(d2, level, sps)%xSeed(i2, j2, k2, :)
 
-       ! Store in the comm structure
+       ! Store in the comm structure. We need it for the derivatives.
        internal%xCen(i, :) = xCen
 
        ! Do newton update
@@ -1653,7 +1653,7 @@ contains
           xCen = sendBuffer(jj+1:jj+3)
           jj = jj + 3
 
-          ! Store in the comm structure
+          ! Store in the comm structure. We need it for derivatives.
           commPattern%sendList(ii)%xCen(j, :) = xCen
 
           ! Compute new fraction
@@ -1697,7 +1697,7 @@ contains
 
     ! Working
     integer(kind=intType) :: nn, ii,jj, ierr,  i, j, k, d1, i1, j1, k1, d2, i2, j2, k2
-    integer(kind=intType) :: size, procID, index, iii,jjj,kkk
+    integer(kind=intType) :: size, procID, index, iii,jjj
     integer, dimension(mpi_status_size) :: status
     real(kind=realType) :: frac(3), fracd(3), frac0(3), xCen(3), xCend(3), weight(8)
     integer(kind=intType), dimension(8), parameter :: indices=(/1,2,4,3,5,6,8,7/)
@@ -1940,7 +1940,7 @@ contains
 
     ! Working
     integer(kind=intType) :: nn, ii,jj, kk, ierr,  i, j, k, d1, i1, j1, k1, d2, i2, j2, k2
-    integer(kind=intType) :: size, procID, index, iii,jjj,kkk
+    integer(kind=intType) :: size, procID, index, iii,jjj
     integer, dimension(mpi_status_size) :: status
     real(kind=realType) :: frac(3), fracd(3), frac0(3), xCen(3), xCend(3), weight(8), add(3)
     integer(kind=intType), dimension(8), parameter :: indices=(/1,2,4,3,5,6,8,7/)
@@ -2112,8 +2112,9 @@ contains
           j2 = commPattern%recvList(ii)%indices(j,2)
           k2 = commPattern%recvList(ii)%indices(j,3)
 
-          flowDomsd(d2, level, sps)%scratch(i2, j2, k2, 1:3) = &
-               flowDomsd(d2, level, sps)%scratch(i2, j2, k2, 1:3) + recvBuffer(jj+1:jj+3)
+          flowDoms(d2, level, sps)%scratch(i2, j2, k2, 1:3) = &
+               flowDoms(d2, level, sps)%scratch(i2, j2, k2, 1:3) + recvBuffer(jj+1:jj+3)
+
           jj =jj + 3
        enddo
     end do completeRecvs

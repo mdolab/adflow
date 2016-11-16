@@ -1800,7 +1800,7 @@ contains
                            weight(kk)*vard
 
                       weightd(kk) = weightd(kk) + &
-                           flowDoms(d2, level, sps)%realCommVars(k+nVar)%var(iii,jjj,kk)*vard
+                           flowDoms(d2, level, sps)%realCommVars(k+nVar)%var(iii,jjj,kkk)*vard
        
                    end do
                 end do
