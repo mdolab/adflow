@@ -777,7 +777,7 @@ contains
 
 
     ! Allocate the memory for the sending and receiving buffers.
-    nVar = 3
+    nVar = 6
 
     ! Send the variables. The data is first copied into
     ! the send buffer after which the buffer is sent asap.
@@ -807,8 +807,8 @@ contains
           ! Copy integer values to buffer
 
           sendBuffer(jj:jj+2) = flowDoms(d1,level,sps)%fringes(i1,j1,k1)%donorFrac
-
-          jj = jj + 3
+          sendBuffer(jj+3:jj+5) = flowDoms(d1, level, sps)%fringes(i1,j1,k1)%offset
+          jj = jj + 6
 
        enddo
 
@@ -867,6 +867,9 @@ contains
        flowDoms(d2,level,sps)%fringes(i2,j2,k2)%donorFrac = &
             flowDoms(d1,level,sps)%fringes(i1,j1,k1)%donorFrac
 
+       flowDoms(d2,level,sps)%fringes(i2,j2,k2)%offset = &
+            flowDoms(d1,level,sps)%fringes(i1,j1,k1)%offset
+
     enddo localCopy
 
     ! Complete the nonblocking receives in an arbitrary sequence and
@@ -893,8 +896,9 @@ contains
           k2 = commPattern(level)%recvList(ii)%indices(j,3)
 
           flowDoms(d2,level,sps)%fringes(i2,j2,k2)%donorFrac = recvBuffer(jj+1:jj+3)
+          flowDoms(d2,level,sps)%fringes(i2,j2,k2)%offset = recvBuffer(jj+4:jj+6)
 
-          jj = jj + 3
+          jj = jj + 6
        enddo
 
     enddo completeRecvs
@@ -1624,7 +1628,6 @@ contains
 
        ! Set the new weights
        call fracToWeights(frac, internal%donorInterp(i, :))
-    
     enddo localInterp
 
     ! Complete the nonblocking receives in an arbitrary sequence and
