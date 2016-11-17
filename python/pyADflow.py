@@ -3743,7 +3743,7 @@ class ADFLOW(AeroSolver):
             'debugzipper':[bool, False],
             'zippersurfacefamily':[object, None],
             'cutcallback':[object, None],
-            'oversetupdatemode':[str, 'fast'],
+            'oversetupdatemode':[str, 'frozen'],
 
             # Unsteady Paramters
             'timeintegrationscheme':[str, 'bdf'],

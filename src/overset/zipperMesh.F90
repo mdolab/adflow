@@ -90,6 +90,20 @@ contains
        ! easier to read
        zipper => zipperMeshes(iBCGroup)
 
+       ! Deallocate if already exists
+       if (zipper%allocated) then 
+          call VecScatterDestroy(zipper%scatter, ierr)
+          call ECHK(ierr, __FILE__, __LINE__)
+          call VecDestroy(zipper%localVal, ierr)
+          call ECHK(ierr, __FILE__, __LINE__)
+          zipper%allocated = .False.
+       end if
+       ! Note that the zipper%conn could be allocated with size of
+       ! zero, but the vecScatter and Vec are not petsc-allocated.
+       if (allocated(zipper%conn)) then 
+          deallocate(zipper%conn, zipper%fam, zipper%indices)
+       end if
+       
        ! Before we can proceed with the zipper, we need to generate
        ! union of the zipperFamList() with the families on this
        ! BCGroup. This would be so much easier in Python...
@@ -111,6 +125,7 @@ contains
        ! allocated zero-sized arrays so we know the size is 0.
        if (nFam == 0) then 
           allocate(zipper%conn(3, 0), zipper%fam(0), zipper%indices(0))
+          
           cycle
        else
           ! Do a second pass and fill up the famList
