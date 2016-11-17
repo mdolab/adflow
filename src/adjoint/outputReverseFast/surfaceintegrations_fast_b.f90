@@ -724,8 +724,8 @@ bocos:do mm=1,nbocos
         triarea = result1*third
 ! compute the average cell center. 
         xc = third*(x1(1)+x2(1)+x3(1))
-        xc = third*(x1(2)+x2(2)+x3(2))
-        xc = third*(x1(3)+x2(3)+x3(3))
+        yc = third*(x1(2)+x2(2)+x3(2))
+        zc = third*(x1(3)+x2(3)+x3(3))
         xc = xc - refpoint(1)
         yc = yc - refpoint(2)
         zc = zc - refpoint(3)
