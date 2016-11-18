@@ -27,9 +27,10 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
   integer(kind=intType), dimension(:), allocatable :: tmpInt
   integer(kind=intType), dimension(:), allocatable :: recvSizes
   integer(kind=intType), dimension(:), allocatable :: intSendBuf, intRecvBuf
-  integer(kind=intType) :: i, j, k, ii, jj, kk, iii, jjj,  kkk, nn
+  integer(kind=intType) :: i, j, k, ii, jj, kk, iii, jjj,  kkk, nn, index
   integer(kind=intType) :: iStart, iEnd, iProc, iSize, nFringeProc
   integer(kind=intType) :: sendCount, recvCount, ierr, totalRecvSize
+  integer status(MPI_STATUS_SIZE) 
 
   ! First sort the fringes such that they are grouped by destination
   ! procesor.
@@ -156,11 +157,15 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
   
   ! Complete all the sends/receives. We could do overlapping here
   ! like the frist comm for the fringes/blocks. 
-  call mpi_waitall(recvCount, recvRequests, MPI_STATUSES_IGNORE, ierr)
-  call ECHK(ierr, __FILE__, __LINE__)
-  
-  call mpi_waitall(sendCount, sendRequests, MPI_STATUSES_IGNORE, ierr)
-  call ECHK(ierr, __FILE__, __LINE__)
+  do i=1, recvCount
+     call mpi_waitany(recvCount, recvRequests, index, status, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+  enddo
+
+  do i=1, sendCount
+     call mpi_waitany(sendCount, sendRequests, index, status, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+  enddo
   
   ! Loop over the full receive buffer that should now be full. 
   do j=1, totalRecvSize/4
