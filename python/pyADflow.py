@@ -32,7 +32,7 @@ from petsc4py import PETSc
 from baseclasses import AeroSolver, AeroProblem
 from . import MExt
 from pprint import pprint as pp
-import md5
+import hashlib
 
 class Error(Exception):
     """
@@ -1892,7 +1892,7 @@ class ADFLOW(AeroSolver):
         blkList = self.adflow.oversetutilities.getoversetiblank(nCellTotal)
         hexStr = None
         if self.myid == 0:
-            hexStr = md5.md5(str(list(blkList))).hexdigest()
+            hexStr = hashlib.md5(str(list(blkList))).hexdigest()
         return self.comm.bcast(hexStr)
             
     # =========================================================================
