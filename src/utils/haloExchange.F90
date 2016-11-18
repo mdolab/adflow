@@ -547,6 +547,7 @@ contains
     use block
     use communication
     use inputTimeSpectral
+    use utils, only : EChk
     implicit none
     !
     !      Subroutine arguments.
@@ -604,6 +605,7 @@ contains
        call mpi_isend(sendBuffer(ii), size, adflow_real, procID,  &
             procID, ADflow_comm_world, sendRequests(i), &
             ierr)
+       call EChk(ierr,__FILE__,__LINE__)
 
        ! Set ii to jj for the next processor.
 
@@ -626,6 +628,7 @@ contains
 
        call mpi_irecv(recvBuffer(ii), size, adflow_real, procID, &
             myID, ADflow_comm_world, recvRequests(i), ierr)
+       call EChk(ierr,__FILE__,__LINE__)
 
        ! And update ii.
 
@@ -669,6 +672,7 @@ contains
        ! Complete any of the requests.
 
        call mpi_waitany(size, recvRequests, index, status, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
 
        ! Copy the data just arrived in the halo's.
 
@@ -708,6 +712,7 @@ contains
     use block
     use communication
     use inputTimeSpectral
+    use utils, only : EChk
     implicit none
     !
     !      Subroutine arguments.
@@ -763,7 +768,8 @@ contains
        call mpi_isend(recvBuffer(ii), size, adflow_real, procID,  &
             procID, ADflow_comm_world, recvRequests(i), &
             ierr)
-       
+       call EChk(ierr,__FILE__,__LINE__)
+
        ! Set ii to jj for the next processor.
        
        ii = jj
@@ -785,7 +791,8 @@ contains
        
        call mpi_irecv(sendBuffer(ii), size, adflow_real, procID, &
             myID, ADflow_comm_world, sendRequests(i), ierr)
-       
+       call EChk(ierr,__FILE__,__LINE__)
+
        ! And update ii.
        
        ii = ii + size
@@ -829,7 +836,8 @@ contains
        ! Complete any of the requests.
        
        call mpi_waitany(size, sendRequests, index, status, ierr)
-       
+       call EChk(ierr,__FILE__,__LINE__)
+
        ! ! Copy the data just arrived in the halo's.
        
        ii = index
@@ -860,6 +868,7 @@ contains
     size = commPattern(level)%nProcRecv
     do i=1,commPattern(level)%nProcRecv
        call mpi_waitany(size, recvRequests, index, status, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
     enddo
     
   end subroutine whalo1to1RealGeneric_b
@@ -874,6 +883,7 @@ contains
     use block
     use communication
     use inputTimeSpectral
+    use utils, only : EChk
     implicit none
     !
     !      Subroutine arguments.
@@ -941,6 +951,7 @@ contains
        call mpi_isend(sendBufInt(ii), size, adflow_integer, procID,  &
             procID, ADflow_comm_world, sendRequests(i), &
             ierr)
+       call EChk(ierr,__FILE__,__LINE__)
 
        ! Set ii to jj for the next processor.
 
@@ -963,6 +974,7 @@ contains
 
        call mpi_irecv(recvBufInt(ii), size, adflow_integer, procID, &
             myID, ADflow_comm_world, recvRequests(i), ierr)
+       call EChk(ierr,__FILE__,__LINE__)
 
        ! And update ii.
 
@@ -1004,6 +1016,7 @@ contains
        ! Complete any of the requests.
 
        call mpi_waitany(size, recvRequests, index, status, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
 
        ! Copy the data just arrived in the halo's.
 
@@ -1030,6 +1043,7 @@ contains
     size = commPattern(level)%nProcSend
     do i=1,commPattern(level)%nProcSend
        call mpi_waitany(size, sendRequests, index, status, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
     enddo
 
     deallocate(recvBufInt, sendBufInt)
@@ -1261,6 +1275,7 @@ contains
     use constants
     use block, only : flowDoms
     use communication
+    use utils, only : EChk
     implicit none
     !
     !      Subroutine arguments.
@@ -1327,6 +1342,7 @@ contains
        call mpi_isend(sendBuffer(ii), size, adflow_real, procId,  &
             procId, ADflow_comm_world, sendRequests(i), &
             ierr)
+       call EChk(ierr,__FILE__,__LINE__)
 
        ! Set ii to jj for the next processor.
 
@@ -1349,6 +1365,7 @@ contains
 
        call mpi_irecv(recvBuffer(ii), size, adflow_real, procId, &
             myId, ADflow_comm_world, recvRequests(i), ierr)
+       call EChk(ierr,__FILE__,__LINE__)
 
        ! And update ii.
 
@@ -1398,6 +1415,7 @@ contains
        ! Complete any of the requests.
 
        call mpi_waitany(size, recvRequests, index, status, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
 
        ! Copy the data just arrived in the halo's.
 
@@ -1424,6 +1442,7 @@ contains
     size = commPattern(level,sps)%nProcSend
     do i=1,commPattern(level,sps)%nProcSend
        call mpi_waitany(size, sendRequests, index, status, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
     enddo
 
   end subroutine wOversetGeneric
@@ -1436,6 +1455,7 @@ contains
     use constants
     use block, only : flowDoms
     use communication
+    use utils, only : EChk
     implicit none
     !
     !      Subroutine arguments.
@@ -1513,6 +1533,7 @@ contains
        call mpi_isend(sendBuffer(ii), size, adflow_real, procId,  &
             procId, ADflow_comm_world, sendRequests(i), &
             ierr)
+       call EChk(ierr,__FILE__,__LINE__)
 
        ! Set ii to jj for the next processor.
 
@@ -1535,6 +1556,7 @@ contains
 
        call mpi_irecv(recvBuffer(ii), size, adflow_real, procId, &
             myId, ADflow_comm_world, recvRequests(i), ierr)
+       call EChk(ierr,__FILE__,__LINE__)
 
        ! And update ii.
 
@@ -1594,6 +1616,7 @@ contains
        ! Complete any of the requests.
 
        call mpi_waitany(size, recvRequests, index, status, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
 
        ! Copy the data just arrived in the halo's.
 
@@ -1620,7 +1643,8 @@ contains
     size = commPattern(level,sps)%nProcSend
     do i=1,commPattern(level,sps)%nProcSend
        call mpi_waitany(size, sendRequests, index, status, ierr)
-    enddo
+       call EChk(ierr,__FILE__,__LINE__)
+   enddo
 
   end subroutine wOversetGeneric_d
 
@@ -1632,6 +1656,7 @@ contains
     use constants
     use block, only : flowDoms
     use communication
+    use utils, only : EChk
     implicit none
     !
     !      Subroutine arguments.
@@ -1686,7 +1711,8 @@ contains
        call mpi_isend(recvBuffer(ii), size, adflow_real, procID,  &
             procID, ADflow_comm_world, recvRequests(i), &
             ierr)
-       
+       call EChk(ierr,__FILE__,__LINE__)
+
        ! Set ii to jj for the next processor.
 
        ii = jj
@@ -1708,7 +1734,8 @@ contains
        
        call mpi_irecv(sendBuffer(ii), size, adflow_real, procId, &
             myId, ADflow_comm_world, sendRequests(i), ierr)
-       
+       call EChk(ierr,__FILE__,__LINE__)
+
        ! And update ii.
        
        ii = ii + size
@@ -1768,7 +1795,8 @@ contains
        ! Complete any of the requests.
        
        call mpi_waitany(size, sendRequests, index, status, ierr)
-       
+       call EChk(ierr,__FILE__,__LINE__)
+
        ! Copy the data just arrived in the halo's.
        
        ii = index
@@ -1815,6 +1843,7 @@ contains
     size = commPattern(level, sps)%nProcRecv
     do i=1,commPattern(level, sps)%nProcRecv
        call mpi_waitany(size, recvRequests, index, status, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
     enddo
     
   end subroutine wOversetGeneric_b
@@ -1995,7 +2024,7 @@ contains
     use blockPointers
     use communication
     use inputTimeSpectral
-    use utils, only : setPointers
+    use utils, only : setPointers, EChk
     implicit none
     !
     !      Subroutine arguments.
@@ -2106,6 +2135,7 @@ contains
           call mpi_isend(sendBuffer(ii), size, adflow_real, procID,  &
                procID, ADflow_comm_world, sendRequests(i), &
                ierr)
+          call EChk(ierr,__FILE__,__LINE__)
 
           ! Set ii to jj for the next processor.
 
@@ -2128,6 +2158,7 @@ contains
 
           call mpi_irecv(recvBuffer(ii), size, adflow_real, procID, &
                myID, ADflow_comm_world, recvRequests(i), ierr)
+          call EChk(ierr,__FILE__,__LINE__)
 
           ! And update ii.
 
@@ -2171,6 +2202,7 @@ contains
           ! Complete any of the requests.
 
           call mpi_waitany(size, recvRequests, index, status, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
 
           ! Copy the data just arrived in the halo's.
 
@@ -2201,7 +2233,8 @@ contains
        size = commPatternCell_1st(level)%nProcSend
        do i=1,commPatternCell_1st(level)%nProcSend
           call mpi_waitany(size, sendRequests, index, status, ierr)
-       enddo
+          call EChk(ierr,__FILE__,__LINE__)
+    enddo
 
     enddo spectralLoop
 
@@ -2215,6 +2248,7 @@ contains
     use block
     use communication
     use inputTimeSpectral
+    use utils, only : EChk
     !
     !      Subroutine arguments.
     !
@@ -2272,6 +2306,7 @@ contains
           call mpi_isend(sendBuffer(ii), size, adflow_real, procID,    &
                procID, ADflow_comm_world, sendRequests(i), &
                ierr)
+          call EChk(ierr,__FILE__,__LINE__)
 
           ! Set ii to jj for the next processor.
 
@@ -2294,6 +2329,7 @@ contains
 
           call mpi_irecv(recvBuffer(ii), size, adflow_real, procID, &
                myID, ADflow_comm_world, recvRequests(i), ierr)
+          call EChk(ierr,__FILE__,__LINE__)
 
           ! And update ii.
 
@@ -2343,6 +2379,7 @@ contains
           ! Complete any of the requests.
 
           call mpi_waitany(size, recvRequests, index, status, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
 
           ! Copy the data just arrived in the halo's.
 
@@ -2380,7 +2417,8 @@ contains
        size = commPatternNode_1st(level)%nProcSend
        do i=1,commPatternNode_1st(level)%nProcSend
           call mpi_waitany(size, sendRequests, index, status, ierr)
-       enddo
+          call EChk(ierr,__FILE__,__LINE__)
+    enddo
 
     enddo spectralLoop
 
@@ -2466,6 +2504,7 @@ contains
     use block
     use communication
     use inputTimeSpectral
+    use utils, only : EChk
     implicit none
     !
     !      Subroutine arguments.
@@ -2525,6 +2564,7 @@ contains
           call mpi_isend(recvBuffer(ii), size, adflow_real, procID,    &
                procID, ADflow_comm_world, recvRequests(i), &
                ierr)
+          call EChk(ierr,__FILE__,__LINE__)
 
           ! Set ii to jj for the next processor.
 
@@ -2547,6 +2587,7 @@ contains
 
           call mpi_irecv(sendBuffer(ii), size, adflow_real, procID, &
                myID, ADflow_comm_world, sendRequests(i), ierr)
+          call EChk(ierr,__FILE__,__LINE__)
 
           ! And update ii.
 
@@ -2596,6 +2637,7 @@ contains
           ! Complete any of the requests.
 
           call mpi_waitany(size, sendRequests, index, status, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
 
           ! Copy the data just arrived in the halo's.
 
@@ -2633,6 +2675,7 @@ contains
        size = commPatternNode_1st(level)%nProcRecv
        do i=1,commPatternNode_1st(level)%nProcRecv
           call mpi_waitany(size, recvRequests, index, status, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
        enddo
 
     enddo spectralLoop
@@ -2646,6 +2689,7 @@ contains
     use block
     use communication
     use inputTimeSpectral
+    use utils, only : EChk
     implicit none
     !
     !      Subroutine arguments.
@@ -2705,6 +2749,7 @@ contains
           call mpi_isend(sendBuffer(ii), size, adflow_real, procID,    &
                procID, ADflow_comm_world, sendRequests(i), &
                ierr)
+          call EChk(ierr,__FILE__,__LINE__)
 
           ! Set ii to jj for the next processor.
 
@@ -2727,6 +2772,7 @@ contains
 
           call mpi_irecv(recvBuffer(ii), size, adflow_real, procID, &
                myID, ADflow_comm_world, recvRequests(i), ierr)
+          call EChk(ierr,__FILE__,__LINE__)
 
           ! And update ii.
 
@@ -2777,6 +2823,7 @@ contains
           ! Complete any of the requests.
 
           call mpi_waitany(size, recvRequests, index, status, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
 
           ! Copy the data just arrived in the halo's.
 
@@ -2814,7 +2861,8 @@ contains
        size = commPatternNode_1st(level)%nProcSend
        do i=1,commPatternNode_1st(level)%nProcSend
           call mpi_waitany(size, sendRequests, index, status, ierr)
-       enddo
+          call EChk(ierr,__FILE__,__LINE__)
+    enddo
 
     enddo spectralLoop
 
