@@ -20,7 +20,7 @@ subroutine finalOversetCommStructures(level, sps)
   integer(kind=intType) :: i, j, k, ii, jj, kk, nn, tag, ierr, nLocalFringe
   integer(kind=intType) :: n, nFringeProc, sendCount, recvCount, iProc
   integer(kind=intType) :: iSize, iStart, iEnd, iProcRecv, iSendProc, iRecvProc
-  integer(kind=intType) :: nProcSend, nProcRecv, nCopy, totalRecvSize
+  integer(kind=intType) :: nProcSend, nProcRecv, nCopy, totalRecvSize, index
   type(fringeType), dimension(:), allocatable :: localFringes
   integer(kind=intType), dimension(:), allocatable :: tmpInt
   integer(kind=intType), dimension(:), allocatable :: recvSizes
@@ -173,6 +173,7 @@ subroutine finalOversetCommStructures(level, sps)
 
   ! Send the donors back to their own processors.
   sendCount = 0
+
   do j=1, nFringeProc
      
      iProc = fringeProc(j)
@@ -263,11 +264,16 @@ subroutine finalOversetCommStructures(level, sps)
 
   ! Complete all the sends/receives. We could do overlapping here
   ! like the frist comm for the fringes/blocks. 
-  call mpi_waitall(recvCount, recvRequests, MPI_STATUSES_IGNORE, ierr)
-  call ECHK(ierr, __FILE__, __LINE__)
-  
-  call mpi_waitall(sendCount, sendRequests, MPI_STATUSES_IGNORE, ierr)
-  call ECHK(ierr, __FILE__, __LINE__)
+
+  do i=1, recvCount
+     call mpi_waitany(recvCount, recvRequests, index, status, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+  enddo
+
+  do i=1, sendCount
+     call mpi_waitany(sendCount, sendRequests, index, status, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+  enddo
 
   ! All of our data has now arrived we can now finish completing the send information.
   ii = 0
