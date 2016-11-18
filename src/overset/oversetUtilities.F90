@@ -2165,6 +2165,118 @@ contains
     close(19)
   end subroutine writeOversetWall
 
+  subroutine getOversetIblank(blkList, n)
+    
+    ! This routine gathers a list of the iblank status of every
+    ! compute cell in the original CGNS ordering. It then returns the
+    ! full list on the root processor. Therefore, this routine is not
+    ! memory or computation scalable. It is only meant to be used a
+    ! debugging tool to ensure that the overset connectivity as
+    ! computed with given parallel decomposition is the same as a
+    ! different parallel decomposition. 
+
+    use constants
+    use blockPointers, only : nDom, il, jl, kl, iBegOr, jBegOr, kBegOr, &
+         nBkGlobal, iBlank
+    use cgnsGrid, only : cgnsDoms, cgnsNDom
+    use communication, only : adflow_comm_world, myid
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use utils, only : setPointers, EChk, terminate
+    implicit none
+
+#define PETSC_AVOID_MPIF_H
+#include "petsc/finclude/petscsys.h"
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscvec.h90"
+
+    ! Input/Output
+    integer(kind=intType), intent(in) :: n
+    integer(kind=intType), dimension(n), intent(out) :: blkList
+
+    ! Working
+
+    ! Working parameters
+    integer(kind=intType) :: i, j, k, ierr, l, nx_cg, ny_cg, nz_cg
+    integer(kind=intType) :: ii, indx, indy, indz, nn, cgnsInd
+    integer(kind=intType), allocatable, dimension(:) :: cellOffset
+    real(kind=realType), dimension(:), pointer :: localPtr
+    Vec CGNSVec
+
+    ! This routine cannot be used in timespectral mode
+    if (nTimeIntervalsSpectral > 1) then 
+       call terminate('getOversetIBlank', 'This routine can only be used '&
+            &'with 1 spectral instance')
+    end if
+   
+    allocate(cellOffset(cgnsNDom+1))
+    cellOffset(1) = 0
+    do nn=1,cgnsNDom
+       cellOffset(nn+1) = cellOffset(nn) + &
+            cgnsDoms(nn)%nx*cgnsDoms(nn)%ny*cgnsDoms(nn)%nz
+    end do
+
+    ! Create the CGNSVector
+    if (myid == 0) then 
+       call VecCreateMPI(adflow_comm_world, cellOffset(cgnsNDom+1), &
+            PETSC_DETERMINE, cgnsVec, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+       
+    else
+       call VecCreateMPI(adflow_comm_world, 0, PETSC_DETERMINE, cgnsVec, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+    end if
+
+    ii = 0
+    do nn=1, nDom
+       call setPointers(nn, 1, 1)
+       do k=2, kl
+          do j=2, jl
+             do i=2, il
+                
+                nx_cg = cgnsDoms(nbkGlobal)%nx
+                ny_cg = cgnsDoms(nbkGlobal)%ny
+                nz_cg = cgnsDoms(nbkGlobal)%nz
+
+                indx = iBegOr + i - 2
+                indy = jBegOr + j - 2
+                indz = kBegOr + k - 2
+
+                ! cgnsInd is zero-based
+                cgnsInd = cellOffset(nbkGlobal)  + &
+                     (indz-1)*ny_cg*nx_cg + &
+                     (indy-1)*nx_cg       + &
+                     (indx-1)
+
+                call VecSetValue(cgnsVec, cgnsInd, real(iblank(i,j,k), realType), &
+                     INSERT_VALUES, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+             end do
+          end do
+       end do
+    end do
+
+    call VecAssemblyBegin(cgnsVec, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    call VecAssemblyEnd(cgnsVec, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    ! Get the local vector pointer. Only the root proc actually has
+    ! values. 
+    call vecGetArrayF90(cgnsVec, localPtr, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    ! Convert back to integer. 
+    do i=1,size(localPtr)
+       blkList(i) = int(localPtr(i))
+    end do
+
+    call vecRestoreArrayF90(cgnsVec, localPtr, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+
+  end subroutine getOversetIblank
+
 
 #endif
 
