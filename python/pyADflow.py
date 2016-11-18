@@ -32,6 +32,7 @@ from petsc4py import PETSc
 from baseclasses import AeroSolver, AeroProblem
 from . import MExt
 from pprint import pprint as pp
+import md5
 
 class Error(Exception):
     """
@@ -1880,6 +1881,20 @@ class ADFLOW(AeroSolver):
 
         return ADflowsolution
 
+    def getIblankCheckSum(self):
+
+        ncells = self.adflow.adjointvars.ncellslocal[0]
+        nCellTotal = self.comm.allreduce(ncells)
+        if self.myid != 0:
+            nCellTotal = 1 # Should be zero, but f2py doesn't like
+                           # that
+
+        blkList = self.adflow.oversetutilities.getoversetiblank(nCellTotal)
+        hexStr = None
+        if self.myid == 0:
+            hexStr = md5.md5(str(list(blkList))).hexdigest()
+        return self.comm.bcast(hexStr)
+            
     # =========================================================================
     #   The following routines are public functions however, they should
     #   not need to be used by a user using this class directly. They are

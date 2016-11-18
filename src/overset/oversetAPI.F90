@@ -262,7 +262,7 @@ contains
 
        ! Allocate the exact space for our send and recv requests. Note
        ! that for the oBlocks, two values are set, real and integer. 
-       nn = max(nProc, &
+       nn = max(2*nProc, &
             2*nOBlockSend + 2*nOFringeSend, &
             2*nOBlockRecv + 2*nOfringeRecv)
        if (allocated(sendRequests)) then 
