@@ -1881,7 +1881,7 @@ class ADFLOW(AeroSolver):
 
         return ADflowsolution
 
-    def getIblankCheckSum(self):
+    def getIblankCheckSum(self, fileName=None):
 
         ncells = self.adflow.adjointvars.ncellslocal[0]
         nCellTotal = self.comm.allreduce(ncells)
@@ -1889,10 +1889,18 @@ class ADFLOW(AeroSolver):
             nCellTotal = 1 # Should be zero, but f2py doesn't like
                            # that
 
-        blkList = self.adflow.oversetutilities.getoversetiblank(nCellTotal)
+        blkList = self.adflow.oversetutilities.getoversetiblank(nCellTotal*5)
         hexStr = None
         if self.myid == 0:
-            hexStr = hashlib.md5(str(list(blkList))).hexdigest()
+            hexStr = hashlib.md5(str(list(blkList[0::5]))).hexdigest()
+            if fileName is not None:
+                f = open(fileName, 'w')
+                for i in range(nCellTotal):
+                    f.write('%d %d %d %d %d\n'%(blkList[5*i], blkList[5*i+1], blkList[5*i+2], 
+                                                blkList[5*i+3], blkList[5*i+4]))
+                f.close()
+            
+
         return self.comm.bcast(hexStr)
             
     # =========================================================================
@@ -3495,7 +3503,6 @@ class ADFLOW(AeroSolver):
         Set Solver Option Value
         """
         name = name.lower()
-
         # Make sure we are not trying to change an immutable option if
         # we are not allowed to.
         if self.solverCreated and name in self.imOptions:
