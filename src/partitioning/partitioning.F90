@@ -817,6 +817,7 @@ contains
        j = flowDoms(n,1,1)%jb
        k = flowDoms(n,1,1)%kb
        allocate(flowDoms(n,1,1)%iblank(0:i,0:j,0:k), &
+            flowDoms(n,1,1)%forcedRecv(0:i,0:j,0:k), &
             stat=ierr)
        if(ierr /= 0)                             &
             call terminate("initFineGridIblank", &
@@ -826,7 +827,7 @@ contains
        ! for this domain to 0.
 
        flowDoms(n,1,1)%iblank = 1
-
+       flowDoms(n,1,1)%forcedRecv = 0
     end do domains
 
   end subroutine initFineGridIblank
