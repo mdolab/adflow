@@ -31,7 +31,7 @@ contains
          exchangeFringes, sendOFringe, sendOBlock
     use oversetUtilities, only : isCompute, checkOverset, irregularCellCorrection, &
          fringeReduction, transposeOverlap, setIBlankArray, deallocateOFringes, deallocateoBlocks, &
-         deallocateOSurfs, deallocateCSRMatrix, setIsCompute, getWorkArray
+         deallocateOSurfs, deallocateCSRMatrix, setIsCompute, getWorkArray, flagForcedRecv
     use oversetPackingRoutines, only : packOFringe, packOBlock, unpackOFringe, unpackOBlock, &
          getOFringeBufferSizes, getOBlockBufferSizes, getOSurfBufferSizes
     implicit none
@@ -362,6 +362,7 @@ contains
              end do
           end do
 
+          call flagForcedRecv()
           do nn=1, nDom
              call setPointers(nn, level, sps)
              iDom = cumDomProc(myid) + nn
@@ -494,6 +495,7 @@ contains
           end do
 
           ! Now create the fringes
+          call flagForcedRecv()
           do nn=1, nDom
              call setPointers(nn, level, sps)
              call initializeFringes(nn, level, sps)

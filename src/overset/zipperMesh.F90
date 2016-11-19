@@ -665,7 +665,7 @@ contains
     use blockPointers
     use communication
     use utils, only : setPointers
-    use oversetUtilities, only : flagForcedReceivers
+    use oversetUtilities, only : flagForcedRecv
     use sorting, only : bsearchIntegers
     implicit none
 
@@ -678,7 +678,6 @@ contains
     logical :: side(4)
 
     integer(kind=intType), dimension(:, :), pointer :: ibp, gcp, frx
-    integer(kind=intType), dimension(:, :, :), pointer :: forcedRecv
     integer(kind=intType), dimension(:, :), allocatable :: toFlip
 
     ! This routine initializes the surface cell iblank based on the
@@ -716,12 +715,9 @@ contains
 
     ! This criterial allows one-cell wide 'slits' to be pre-eliminated.
 
-
-
+    call flagForcedRecv()
     domainLoop: do nn=1, nDom
        call setPointers(nn, level, sps)
-       allocate(forcedRecv(1:ie, 1:je, 1:ke))
-       call flagForcedReceivers(forcedRecv)
 
        ! Setting the surface IBlank array is done for *all* bocos. 
        bocoLoop: do mm=1, nBocos
@@ -845,7 +841,7 @@ contains
       ! 2. It is not a force receiver.
 
       validCell = .False.
-      if (gcp(i+1, j+1) >= 0 .and. frx(i, j) == 0) then
+      if (gcp(i+1, j+1) >= 0 .and. frx(i+1, j+1) == 0) then
          validCell = .True.
       end if
     end function validCell

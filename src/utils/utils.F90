@@ -3045,6 +3045,7 @@ end subroutine cross_prod
 
     ! Overset boundary and hole info.
     iblank => flowDoms(nn,mm,ll)%iblank
+    forcedRecv => flowDoms(nn,mm,ll)%forcedRecv
     fringes => flowDoms(nn,mm,ll)%fringes
     orphans => flowDoms(nn,mm,ll)%orphans
     nOrphans = flowDoms(nn,mm,ll)%nOrphans
@@ -4924,6 +4925,7 @@ end subroutine cross_prod
 
        if( associated(BCData(i)%iBlank) ) &
             deallocate(BCData(i)%iBlank, stat=ierr)
+
        if(ierr /= 0) deallocationFailure = .true.
 
        nullify(BCData(i)%norm)
