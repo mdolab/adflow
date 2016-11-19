@@ -341,67 +341,83 @@ contains
     end do
   end subroutine wallsOnBlock
 
-  subroutine flagForcedReceivers(tmp)
-
+  subroutine flagForcedRecv
+    
     use constants
-    use blockPointers, only : nx, ny, nz, ie, je, ke, BCData, BCFaceID, nBocos, BCType
+    use blockPointers, only : nx, ny, nz, ie, je, ke, BCData, BCFaceID, nBocos, BCType, &
+         forcedRecv, flowDoms, nDom
+    use utils, only : setPointers
+    use communication
+    use haloExchange, only : whalo1to1IntGeneric
     implicit none
 
     ! This is generic routine for filling up a 3D array of 1st level halos
     ! cells (1:ie, 1:je, 1:ke) indicating cells that are forced
     ! receivers. BlockPointers must have already been set.
 
-    integer(kind=intType), intent(out), dimension(1:ie, 1:je, 1:ke) :: tmp
-    integer(kind=intType) :: i, j, k, mm, iStart, iEnd, jStart, jEnd, kStart, kEnd
+    integer(kind=intType) :: nn, i, j, k, mm, iStart, iEnd, jStart, jEnd, kStart, kEnd
 
-    tmp = 0
-    do mm=1,nBocos
-       ! Just record the ranges necessary and we'll add in a generic
-       ! loop. Why is it the first three? Well, the first level of halos
-       ! off of an overset outer bound is completely
-       ! meaningless. Essentially we ignore those. So the outer two
-       ! layers of cells are indices 2 and 3. Therefore the first 3 on
-       ! either side need to be flagged as invalid.
-
-       select case (BCFaceID(mm))
-       case (iMin)
-          iStart=1; iEnd=3;
-          jStart=BCData(mm)%inBeg+1; jEnd=BCData(mm)%inEnd
-          kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
-       case (iMax)
-          iStart=nx; iEnd=ie;
-          jStart=BCData(mm)%inBeg+1; jEnd=BCData(mm)%inEnd
-          kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
-       case (jMin)
-          iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-          jStart=1; jEnd=3;
-          kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
-       case (jMax)
-          iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-          jStart=ny; jEnd=je;
-          kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
-       case (kMin)
-          iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-          jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
-          kStart=1; kEnd=3;
-       case (kMax)
-          iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-          jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
-          kStart=nz; kEnd=ke;
-       end select
-
-       if (BCType(mm) == OversetOuterBound) then
-          do k=kStart, kEnd
-             do j=jStart, jEnd
-                do i=iStart, iEnd
-                   tmp(i, j, k) = 1
+    do nn=1,nDom
+       call setPointers(nn, 1, 1)
+       forcedRecv = 0
+       do mm=1,nBocos
+          ! Just record the ranges necessarvy and we'll add in a generic
+          ! loop. Why is it the first three? Well, the first level of halos
+          ! off of an overset outer bound is completely
+          ! meaningless. Essentially we ignore those. So the outer two
+          ! layers of cells are indices 2 and 3. Therefore the first 3 on
+          ! either side need to be flagged as invalid.
+          
+          select case (BCFaceID(mm))
+          case (iMin)
+             iStart=1; iEnd=3;
+             jStart=BCData(mm)%inBeg+1; jEnd=BCData(mm)%inEnd
+             kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
+          case (iMax)
+             iStart=nx; iEnd=ie;
+             jStart=BCData(mm)%inBeg+1; jEnd=BCData(mm)%inEnd
+             kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
+          case (jMin)
+             iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
+             jStart=1; jEnd=3;
+             kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
+          case (jMax)
+             iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
+             jStart=ny; jEnd=je;
+             kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
+          case (kMin)
+             iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
+             jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
+             kStart=1; kEnd=3;
+          case (kMax)
+             iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
+             jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
+             kStart=nz; kEnd=ke;
+          end select
+          
+          if (BCType(mm) == OversetOuterBound) then
+             do k=kStart, kEnd
+                do j=jStart, jEnd
+                   do i=iStart, iEnd
+                      forcedRecv(i, j, k) = 1
+                   end do
                 end do
              end do
-          end do
-       end if
+          end if
+       end do
     end do
-  end subroutine flagForcedReceivers
 
+    ! Update the info across block boundaries
+    domainLoop:do nn=1, nDom
+       flowDoms(nn, 1, 1)%intCommVars(1)%var => &
+            flowDoms(nn, 1, 1)%forcedRecv(:, :, :)
+    end do domainLoop
+
+    ! Run the generic integer exchange
+    call wHalo1to1IntGeneric(1, 1, 1, commPatternCell_2nd, internalCell_2nd)
+
+
+  end subroutine flagForcedRecv
 
   ! Utility function for unpacking/accessing the status variable
 
@@ -1885,7 +1901,7 @@ contains
   subroutine irregularCellCorrection(level, sps)
 
     use constants
-    use blockPointers, only : nDom, il, jl, kl, fringes, ie, je, ke
+    use blockPointers, only : nDom, il, jl, kl, fringes, ie, je, ke, forcedRecv
     use utils, only : setPointers
     implicit none
 
@@ -1894,26 +1910,23 @@ contains
 
     ! Working
     integer(kind=intType) :: i, j, k, nn
-    integer(kind=intType), dimension(:, :, :), allocatable :: tmp
 
+    call flagForcedRecv()
     do nn=1, nDom
        call setPointers(nn, level, sps)
-       allocate(tmp(1:ie, 1:je, 1:ke))
-       call flagForcedReceivers(tmp)
 
        do k=2, kl
           do j=2, jl
              do i=2, il
                 if (isDonor(fringes(i, j, k)%status) .and. &
                      fringes(i, j, k)%donorProc /= -1 .and. &
-                     tmp(i,j,k) .ne. 1) then 
+                     forcedRecv(i,j,k) .ne. 1) then 
                    ! Clear this fringe
                    call emptyFringe(fringes(i, j, k))
                 end if
              end do
           end do
        end do
-       deallocate(tmp)
     end do
 
   end subroutine irregularCellCorrection
@@ -1955,7 +1968,7 @@ contains
   subroutine setIblankArray(level, sps)
 
     use constants
-    use blockPointers, only : nDom, il, jl, kl, fringes, iblank, flowDoms, ie, je, ke
+    use blockPointers, only : nDom, il, jl, kl, fringes, iblank, flowDoms, ie, je, ke, forcedRecv
     use communication, only : myid, commPatternCell_2nd, internalCell_2nd,&
          adflow_comm_world
     use utils, only : setPointers, EChk
@@ -1969,7 +1982,6 @@ contains
     integer(kind=intType) :: i, j, k, nn
     integer(kind=intType) :: nCompute, nFringe, nBlank, nFloodSeed, nFlooded, nExplicitBlanked
     integer(kind=intType) :: counts(6), ierr
-    integer(kind=intType), dimension(:, :, :), allocatable :: tmp
     nCompute = 0
     nFringe = 0
     nBlank = 0
@@ -1977,10 +1989,9 @@ contains
     nFlooded = 0
     nExplicitBlanked = 0
 
+    call flagForcedRecv()
     do nn=1, nDom
        call setPointers(nn, level, sps)
-       allocate(tmp(1:ie, 1:je, 1:ke))
-       call flagForcedReceivers(tmp)
 
        do k=2, kl
           do j=2, jl
@@ -2009,7 +2020,7 @@ contains
                    else
                       ! We need to explictly make sure forced receivers
                       ! *NEVER EVER EVER EVER* get set as compute cells. 
-                      if (tmp(i,j,k) == 1) then 
+                      if (forcedRecv(i,j,k) == 1) then 
                          ! This is REALLY Bad. This cell must be a forced
                          ! receiver but never found a donor. 
                          iblank(i,j,k) = 0
@@ -2026,7 +2037,6 @@ contains
              end do
           end do
        end do
-       deallocate(tmp)
     end do
 
     ! Update the iblank info. 

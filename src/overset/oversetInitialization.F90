@@ -9,11 +9,11 @@ contains
     use constants
     use communication, only : myid
     use blockPointers, only : nDom, ib, jb, kb, il, jl, kl, fringes, BCData, &
-         nBocos, BCFaceID, vol, ie, je, ke, flowDoms, x, iBlank, BCType
+         nBocos, BCFaceID, vol, ie, je, ke, flowDoms, x, iBlank, BCType, forcedRecv
     use overset, only : cumDomProc, clusters
     use stencils, only : visc_drdw_stencil, N_visc_drdw
     use inputOverset, only : backgroundVolScale
-    use oversetUtilities, only : flagForcedReceivers, emptyFringe, setIsCompute, &
+    use oversetUtilities, only : flagForcedRecv, emptyFringe, setIsCompute, &
          wallsOnBlock
     implicit none
 
@@ -25,7 +25,6 @@ contains
     integer(kind=intTYpe) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
     logical :: wallsPresent
     integer(kind=intType) :: i_stencil, clusterID
-    integer(kind=intType), dimension(:, :, :), allocatable :: tmp
     real(kind=realType) :: frac, dist, xp(3)
     ! Allocate space for the double halo fringes. 
     if (.not. associated(flowDoms(nn, level, sps)%fringes)) then 
@@ -95,19 +94,16 @@ contains
     ! flagForcedReceiver routine for this since the same information is
     ! used elsewhere.
 
-    allocate(tmp(1:ie, 1:je, 1:ke))
-    call flagForcedReceivers(tmp)
     do k=2, kl
        do j=2, jl
           do i=2, il
-             if (tmp(i,j,k) == 1) then
+             if (forcedRecv(i,j,k) == 1) then
                 fringes(i, j, k)%quality = large
              end if
           end do
        end do
     end do
-    deallocate(tmp)
-
+    
     ! Flag all the interior hole cells with a *negative* quality since
     ! this means it won't try to get a stencil:
 
@@ -217,12 +213,12 @@ contains
     use overset, only : oversetBlock, clusters, cumDomProc
     use inputOverset, only : backgroundVolScale, nearWallDist
     use blockPointers, only : x, globalCell, il, jl, kl, ib, jb, kb, &
-         ie, je, ke, vol, iBlank, xSeed
+         ie, je, ke, vol, iBlank, xSeed, forcedRecv
     use adtBuild, only : buildSerialHex
     use communication, only : myID
     use stencils, only : visc_drdw_stencil, n_visc_drdw
     use utils, only : mynorm2
-    use oversetUtilities, only : flagForcedReceivers, wallsOnBlock
+    use oversetUtilities, only :  wallsOnBlock
     implicit none 
 
     ! Input Params
@@ -254,7 +250,14 @@ contains
          oBlock%invalidDonor(1:ie, 1:je, 1:ke))
 
     oBlock%invalidDonor = 0
-    call flagForcedReceivers(oBlock%invalidDonor)
+    !call flagForcedReceivers(oBlock%invalidDonor)
+    do k=1,ke
+       do j=1,je
+          do i=1,ie
+             oBlock%invalidDonor(i,j,k) = forcedRecv(i,j,k)
+          end do
+       end do
+    end do
 
     ! Add to the invalid donor list if it got flooded with iblank of -2 or -3:
     do k=0, kb
@@ -436,7 +439,7 @@ contains
     use stencils, only : visc_drdw_stencil, N_visc_drdw
     use inputOverset, only :  backgroundVolScale
     use utils, only : isWallType
-    use oversetUtilities, only : flagForcedReceivers, wallsOnBlock
+    use oversetUtilities, only :  wallsOnBlock
     implicit none
 
     ! Input Params
@@ -448,7 +451,6 @@ contains
     integer(kind=intTYpe) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
     logical :: wallsPresent
     integer(kind=intType) :: i_stencil
-    integer(kind=intType), dimension(:, :, :), allocatable :: tmp
     real(kind=realType) :: dist, frac, xp(3)
     ! Check if we have walls:
     call wallsOnBLock(wallsPresent)
@@ -535,12 +537,10 @@ contains
     ! flagForcedReceiver routine for this since the same information is
     ! used elsewhere.
 
-    allocate(tmp(1:ie, 1:je, 1:ke))
-    call flagForcedReceivers(tmp)
     do k=2, kl
        do j=2, jl
           do i=2, il
-             if (tmp(i,j,k) == 1) then
+             if (forcedRecv(i,j,k) == 1) then
                 ii = (k-2)*nx*ny + (j-2)*nx + (i-2) + 1
                 oFringe%quality(ii) = large
              end if
@@ -548,7 +548,6 @@ contains
           end do
        end do
     end do
-    deallocate(tmp)
 
     ! Flag all the interior hole cells with a *negative* quality since
     ! this means it won't try to get a stencil:
