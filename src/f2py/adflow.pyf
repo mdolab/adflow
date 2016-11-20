@@ -444,6 +444,9 @@ python module libadflow
            integer(kind=inttype) dimension(n) :: flag
            integer(kind=inttype), optional,intent(in),check(len(flag)>=n),depend(flag) :: n=len(flag)
          end subroutine updateoverset
+         subroutine writepartitionedmesh(filename)
+           character*(*) intent(in) :: filename
+         end subroutine writepartitionedmesh
        end module oversetapi
 
        module oversetutilities
@@ -841,6 +844,7 @@ python module libadflow
          real(kind=realtype) :: loadimbalance
          logical :: splitblocks
          integer(kind=inttype) :: loadbalanceiter
+         integer(kind=inttype) :: partitionlikenproc
        end module inputparallel
 
        module inputphysics ! in :adflow:../../modules/inputParam.f90
