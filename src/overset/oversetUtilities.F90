@@ -348,7 +348,7 @@ contains
          forcedRecv, flowDoms, nDom
     use utils, only : setPointers
     use communication
-    use haloExchange, only : whalo1to1IntGeneric
+    use haloExchange, only : whalo1to1IntGeneric, whalo1to1IntGeneric_b
     implicit none
 
     ! This is generic routine for filling up a 3D array of 1st level halos
@@ -413,8 +413,34 @@ contains
             flowDoms(nn, 1, 1)%forcedRecv(:, :, :)
     end do domainLoop
 
-    ! Run the generic integer exchange
+    ! Run the reverse halo exchange first. This is necessary if there
+    ! is 1 cell wide block next to a overset outer bound like the following:
+    !
+    !         Blk1         Blk2
+    !   ----+-----+------++-----+
+    !       |     |      ||     |    <= this face has overset outer bound BC
+    !   ----+-----+------++-----+
+    !       |     |      ||     |
+    !   ----+-----+------++-----+
+    !       |     |      ||     |
+    !   ----+-----+------++-----+
+    !                    ^block boundary 
+    !
+    ! So what happens, is blk2 (1 cell wide) sets the two layers of
+    ! cells off of the BC as forced receivers. However, the second of
+    ! those layers is a halo cell. Blk1 then never gets this
+    ! information. as it clearly should. So what we have to do is a
+    ! reverse halo exchange that takes halo information and combines
+    ! it with real cell information. Essentially we will accumulate
+    ! forcedRecv from the halo to the real cell. For this we run the
+    ! generic reverse halo exchange. 
+
+    call wHalo1to1IntGeneric_b(1, 1, 1, commPatternCell_2nd, internalCell_2nd)
+
+    ! Finally we now need to run the forward halo exchange to make
+    ! sure any halos on other procs are set correctly that may be part of a stencil
     call wHalo1to1IntGeneric(1, 1, 1, commPatternCell_2nd, internalCell_2nd)
+    
 
 
   end subroutine flagForcedRecv
@@ -1920,7 +1946,7 @@ contains
              do i=2, il
                 if (isDonor(fringes(i, j, k)%status) .and. &
                      fringes(i, j, k)%donorProc /= -1 .and. &
-                     forcedRecv(i,j,k) .ne. 1) then 
+                     forcedRecv(i,j,k) == 0) then 
                    ! Clear this fringe
                    call emptyFringe(fringes(i, j, k))
                 end if
@@ -2020,7 +2046,7 @@ contains
                    else
                       ! We need to explictly make sure forced receivers
                       ! *NEVER EVER EVER EVER* get set as compute cells. 
-                      if (forcedRecv(i,j,k) == 1) then 
+                      if (forcedRecv(i,j,k) .ne. 0) then 
                          ! This is REALLY Bad. This cell must be a forced
                          ! receiver but never found a donor. 
                          iblank(i,j,k) = 0
