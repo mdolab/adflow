@@ -97,7 +97,7 @@ contains
     do k=2, kl
        do j=2, jl
           do i=2, il
-             if (forcedRecv(i,j,k) == 1) then
+             if (forcedRecv(i,j,k) .ne. 0) then
                 fringes(i, j, k)%quality = large
              end if
           end do
@@ -540,7 +540,7 @@ contains
     do k=2, kl
        do j=2, jl
           do i=2, il
-             if (forcedRecv(i,j,k) == 1) then
+             if (forcedRecv(i,j,k) .ne. 0) then
                 ii = (k-2)*nx*ny + (j-2)*nx + (i-2) + 1
                 oFringe%quality(ii) = large
              end if

@@ -114,6 +114,7 @@ subroutine fringeSearch(oBlock, oFringe)
         
         elemFound: if (intInfo(1) >= 0) then 
 
+
            ! Donor and block and index information for this donor. 
            donorQual = uvw(4)
            elemID = intInfo(3) - 1 ! Make it zero based
@@ -176,13 +177,12 @@ subroutine fringeSearch(oBlock, oFringe)
               do kkk=0,1
                  do jjj=0,1
                     do iii=0,1
-                       if (oBlock%invalidDonor(ii+iii, jj+jjj, kk+kkk)==1) then 
+                       if (oBlock%invalidDonor(ii+iii, jj+jjj, kk+kkk)  .ne. 0) then 
                           invalid = .True.
                        end if
                     end do
                  end do
               end do
-
 
               if (.not. invalid) then 
 

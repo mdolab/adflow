@@ -1050,6 +1050,188 @@ contains
 
   end subroutine whalo1to1IntGeneric
 
+  subroutine whalo1to1IntGeneric_b(nVar, level, sps, commPattern, internal)
+    !
+    !       whalo1to1IntGeneric_b is a generic implementation of the
+    !       reverse mode of whalo1to1IntGeneric. Integers are summed
+    !       together in reverse. 
+    !
+    use constants
+    use block
+    use communication
+    use inputTimeSpectral
+    use utils, only : EChk
+    implicit none
+    !
+    !      Subroutine arguments.
+    !
+    integer(kind=intType), intent(in) :: level, sps
+
+    type(commType), dimension(*), intent(in)         :: commPattern
+    type(internalCommType), dimension(*), intent(in) :: internal
+    !
+    !      Local variables.
+    !
+
+    integer :: size, procID, ierr, index
+    integer, dimension(mpi_status_size) :: status
+
+    integer(kind=intType) :: nVar, mm
+    integer(kind=intType) :: i, j, k, ii, jj
+    integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
+    integer(kind=intType), dimension(:), allocatable :: sendBufInt
+    integer(kind=intType), dimension(:), allocatable :: recvBufInt
+
+    ii = commPattern(level)%nProcSend
+    ii = commPattern(level)%nsendCum(ii)
+    jj = commPattern(level)%nProcRecv
+    jj = commPattern(level)%nrecvCum(jj)
+
+    allocate(sendBufInt(ii*nVar), recvBufInt(jj*nVar), stat=ierr)
+
+    ! Gather up the seeds into the *recv* buffer. Note we loop
+    ! over nProcRECV here! After the buffer is assembled it is
+    ! sent off.
+    
+    jj = 1
+    ii = 1
+    recvs: do i=1,commPattern(level)%nProcRecv
+
+       ! Store the processor id and the size of the message
+       ! a bit easier.
+       
+       procID = commPattern(level)%recvProc(i)
+       size    = nVar*commPattern(level)%nrecv(i)
+
+       ! Copy the data into the buffer
+       
+       do j=1,commPattern(level)%nrecv(i)
+          
+          ! Store the block and the indices of the halo a bit easier.
+          
+          d2 = commPattern(level)%recvList(i)%block(j)
+          i2 = commPattern(level)%recvList(i)%indices(j,1)+1
+          j2 = commPattern(level)%recvList(i)%indices(j,2)+1
+          k2 = commPattern(level)%recvList(i)%indices(j,3)+1
+
+          do k=1, nVar
+             recvBufInt(jj) = flowDoms(d2,level,sps)%intCommVars(k)%var(i2,j2,k2)
+             flowDoms(d2,level,sps)%intCommVars(k)%var(i2, j2, k2) = 0
+             jj = jj + 1
+          enddo
+       end do
+
+       ! Send the data.
+       call mpi_isend(recvBufInt(ii), size, adflow_integer, procID,  &
+            procID, ADflow_comm_world, recvRequests(i), &
+            ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! Set ii to jj for the next processor.
+       
+       ii = jj
+       
+    enddo recvs
+    
+    ! Post the nonblocking receives.
+    
+    ii = 1
+    sends: do i=1,commPattern(level)%nProcSend
+       
+       ! Store the processor id and the size of the message
+       ! a bit easier.
+       
+       procID = commPattern(level)%sendProc(i)
+       size    = nVar*commPattern(level)%nsend(i)
+       
+       ! Post the receive.
+       
+       call mpi_irecv(sendBufInt(ii), size, adflow_integer, procID, &
+            myID, ADflow_comm_world, sendRequests(i), ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! And update ii.
+       
+       ii = ii + size
+       
+    enddo sends
+    
+    ! Copy the local data.
+    
+    localCopy: do i=1,internal(level)%ncopy
+       
+       ! Store the block and the indices of the donor a bit easier.
+       
+       d1 = internal(level)%donorBlock(i)
+       i1 = internal(level)%donorIndices(i,1)+1
+       j1 = internal(level)%donorIndices(i,2)+1
+       k1 = internal(level)%donorIndices(i,3)+1
+       
+       ! Idem for the halo's.
+
+       d2 = internal(level)%haloBlock(i)
+       i2 = internal(level)%haloIndices(i,1)+1
+       j2 = internal(level)%haloIndices(i,2)+1
+       k2 = internal(level)%haloIndices(i,3)+1
+       
+       ! Sum into the '1' values from the '2' values (halos).
+       do k=1, nVar
+          flowDoms(d1, level, sps)%intCommVars(k)%var(i1, j1, k1) = &
+               flowDoms(d1, level, sps)%intCommVars(k)%var(i1, j1, k1) + &
+               flowDoms(d2, level, sps)%intCommVars(k)%var(i2, j2, k2)
+          flowDoms(d2, level, sps)%intCommVars(k)%var(i2, j2, k2) = 0
+       enddo
+       
+    enddo localCopy
+    
+    ! Complete the nonblocking receives in an arbitrary sequence and
+    ! copy the variables from the buffer into the halo's.
+    
+    size = commPattern(level)%nProcSend
+    completeSends: do i=1,commPattern(level)%nProcSend
+       
+       ! Complete any of the requests.
+       
+       call mpi_waitany(size, sendRequests, index, status, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! ! Copy the data just arrived in the halo's.
+       
+       ii = index
+       jj = nVar*commPattern(level)%nsendCum(ii-1)
+       
+       do j=1,commPattern(level)%nsend(ii)
+          
+          ! Store the block and the indices of the halo a bit easier.
+          
+          d2 = commPattern(level)%sendList(ii)%block(j)
+          i2 = commPattern(level)%sendList(ii)%indices(j,1)+1
+          j2 = commPattern(level)%sendList(ii)%indices(j,2)+1
+          k2 = commPattern(level)%sendList(ii)%indices(j,3)+1
+          
+          ! Copy the conservative variables.
+          
+          do k=1, nVar
+             jj = jj + 1
+             flowDoms(d2, level, sps)%intCommVars(k)%var(i2, j2, k2) = & 
+                  flowDoms(d2, level, sps)%intCommVars(k)%var(i2, j2, k2) + sendBufInt(jj)
+          enddo
+       enddo
+       
+    enddo completeSends
+    
+    ! Complete the nonblocking sends.
+    
+    size = commPattern(level)%nProcRecv
+    do i=1,commPattern(level)%nProcRecv
+       call mpi_waitany(size, recvRequests, index, status, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+    enddo
+
+    deallocate(recvBufInt, sendBufInt)
+
+  end subroutine whalo1to1IntGeneric_b
+
   subroutine whalo1to1_d(level, start, end, commPressure,       &
        commVarGamma, commLamVis, commEddyVis, &
        commPattern, internal)
