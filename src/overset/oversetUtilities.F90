@@ -2210,6 +2210,7 @@ contains
     integer(kind=intType) :: ii, indx, indy, indz, nn, cgnsInd
     integer(kind=intType), allocatable, dimension(:) :: cellOffset
     real(kind=realType), dimension(:), pointer :: localPtr
+    real(kind=realType) :: vals(5)
     Vec CGNSVec
 
     ! This routine cannot be used in timespectral mode
@@ -2227,7 +2228,7 @@ contains
 
     ! Create the CGNSVector
     if (myid == 0) then 
-       call VecCreateMPI(adflow_comm_world, cellOffset(cgnsNDom+1), &
+       call VecCreateMPI(adflow_comm_world, cellOffset(cgnsNDom+1)*5, &
             PETSC_DETERMINE, cgnsVec, ierr)
        call EChk(ierr,__FILE__,__LINE__)
        
@@ -2236,6 +2237,8 @@ contains
        call EChk(ierr,__FILE__,__LINE__)
     end if
 
+    call VecSetBlockSize(cgnsVec, 5, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
     ii = 0
     do nn=1, nDom
        call setPointers(nn, 1, 1)
@@ -2256,9 +2259,12 @@ contains
                      (indz-1)*ny_cg*nx_cg + &
                      (indy-1)*nx_cg       + &
                      (indx-1)
-
-                call VecSetValue(cgnsVec, cgnsInd, real(iblank(i,j,k), realType), &
-                     INSERT_VALUES, ierr)
+                vals(1) = real(iblank(i,j,k))
+                vals(2) = real(nbkGlobal)
+                vals(3) = real(indx)
+                vals(4) = real(indy)
+                vals(5) = real(indz)
+                call VecSetValuesBlocked(cgnsVec, 1, (/cgnsInd/), vals, INSERT_VALUES, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
              end do
           end do
