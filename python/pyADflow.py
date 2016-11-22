@@ -1572,6 +1572,25 @@ class ADFLOW(AeroSolver):
         famList = self._getFamilyList(self.getOption('outputSurfaceFamily'))
         self.adflow.writesol(famList)
 
+    def writeSurfaceSolutionFileTecplot(self, fileName):
+        """Write the current state of the surface flow solution to a teclot file.
+
+        Parameters
+        ----------
+        fileName : str
+            Name of the file. Should have .plt extension.
+        """
+        # Ensure fileName is .dat even if the user didn't specify
+        fileName, ext = os.path.splitext(fileName)
+        fileName += '.plt'
+
+        # Actual write command
+        sliceName = ""
+        liftName = ""
+        famList = self._getFamilyList(self.getOption('outputSurfaceFamily'))
+        self.adflow.tecplotio.writetecplot(sliceName, False, liftName, False,
+                                           fileName, True, famList)
+
     def writeLiftDistributionFile(self, fileName):
         """Evaluate and write the lift distibution to a tecplot file.
 
@@ -1584,12 +1603,12 @@ class ADFLOW(AeroSolver):
         fileName, ext = os.path.splitext(fileName)
         fileName += '.dat'
 
-        # Actual write command
+        # Actual write command. Family list doesn't matter.
         sliceName = ""
         surfName = ""
         self.adflow.tecplotio.writetecplot(sliceName, False, fileName, True,
-                                         surfName, False)
-
+                                           surfName, False, self.allFamilies)
+        
     def writeSlicesFile(self, fileName):
         """Evaluate and write the defined slice information to a
         tecplot file.
@@ -1604,11 +1623,11 @@ class ADFLOW(AeroSolver):
         fileName, ext = os.path.splitext(fileName)
         fileName += '.dat'
 
-        # Actual write command
+        # Actual write command. Family list doesn't matter
         sliceName = ""
-        surfName = ""
-        self.adflow.tecplotio.writetecplot(sliceName, False, fileName, True,
-                                         surfName, False)
+        liftName = ""
+        self.adflow.tecplotio.writetecplot(fileName, True, liftName, True,
+                                         surfName, False, self.allFamilies)
 
     def writeForceFile(self, fileName, TS=0, groupName=None,
                        cfdForcePts=None):
