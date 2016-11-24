@@ -3131,7 +3131,7 @@ contains
     !      Local variables.
     !
     integer :: size, procID, ierr, index
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
 
     integer(kind=intType) :: i, j, ii, jj
     integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
@@ -3268,7 +3268,7 @@ contains
 
        ! Complete any of the requests.
 
-       call mpi_waitany(size, recvRequests, index, status, ierr)
+       call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
 
        ! Copy the data just arrived in the halo's.
 
@@ -3309,7 +3309,7 @@ contains
 
     size = commPatternCell_1st(level)%nProcSend
     do i=1,commPatternCell_1st(level)%nProcSend
-       call mpi_waitany(size, sendRequests, index, status, ierr)
+       call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
     enddo
 
   end subroutine exchangeCellGridVelocities

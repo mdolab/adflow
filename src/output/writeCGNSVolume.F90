@@ -782,7 +782,7 @@ contains
     integer :: source, bufSize, size, nnVar
     integer :: cgnsInd, cgnsBase, cgnsZone, cgnsSol, realTypeCGNS
 
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
     integer, dimension(9)               :: sizes
 
     integer(kind=intType) :: i, j, nn, mm, ll, ind, nVarWritten
@@ -1158,7 +1158,7 @@ contains
 
                 source = proc(mm)
                 call mpi_recv(buffer, bufSize, adflow_real, source, &
-                     source+1, ADflow_comm_world, status, ierr)
+                     source+1, ADflow_comm_world, mpiStatus, ierr)
 
                 ! And store it in sol.
 
@@ -1404,7 +1404,7 @@ contains
 
             source = proc(i)
             call mpi_recv(ii, 6, adflow_integer, source, source, &
-                 ADflow_comm_world, status, ierr)
+                 ADflow_comm_world, mpiStatus, ierr)
 
             subRanges(1,1,i) = ii(1)
             subRanges(1,2,i) = ii(2)
