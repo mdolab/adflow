@@ -561,7 +561,7 @@ contains
     !
 
     integer :: size, procID, ierr, index
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
 
     integer(kind=intType) :: nVar, mm
     integer(kind=intType) :: i, j, k, ii, jj
@@ -671,7 +671,7 @@ contains
 
        ! Complete any of the requests.
 
-       call mpi_waitany(size, recvRequests, index, status, ierr)
+       call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
        ! Copy the data just arrived in the halo's.
@@ -698,7 +698,7 @@ contains
 
     size = commPattern(level)%nProcSend
     do i=1,commPattern(level)%nProcSend
-       call mpi_waitany(size, sendRequests, index, status, ierr)
+       call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
     enddo
 
   end subroutine whalo1to1RealGeneric
@@ -726,7 +726,7 @@ contains
     !
 
     integer :: size, procID, ierr, index
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
 
     integer(kind=intType) :: nVar, mm
     integer(kind=intType) :: i, j, k, ii, jj
@@ -835,7 +835,7 @@ contains
        
        ! Complete any of the requests.
        
-       call mpi_waitany(size, sendRequests, index, status, ierr)
+       call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
        ! ! Copy the data just arrived in the halo's.
@@ -867,7 +867,7 @@ contains
     
     size = commPattern(level)%nProcRecv
     do i=1,commPattern(level)%nProcRecv
-       call mpi_waitany(size, recvRequests, index, status, ierr)
+       call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
        call EChk(ierr,__FILE__,__LINE__)
     enddo
     
@@ -897,7 +897,7 @@ contains
     !
 
     integer :: size, procID, ierr, index
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
 
     integer(kind=intType) :: nVar, mm
     integer(kind=intType) :: i, j, k, ii, jj
@@ -1015,7 +1015,7 @@ contains
 
        ! Complete any of the requests.
 
-       call mpi_waitany(size, recvRequests, index, status, ierr)
+       call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
        ! Copy the data just arrived in the halo's.
@@ -1042,7 +1042,7 @@ contains
 
     size = commPattern(level)%nProcSend
     do i=1,commPattern(level)%nProcSend
-       call mpi_waitany(size, sendRequests, index, status, ierr)
+       call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
        call EChk(ierr,__FILE__,__LINE__)
     enddo
 
@@ -1074,7 +1074,7 @@ contains
     !
 
     integer :: size, procID, ierr, index
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
 
     integer(kind=intType) :: nVar, mm
     integer(kind=intType) :: i, j, k, ii, jj
@@ -1192,7 +1192,7 @@ contains
        
        ! Complete any of the requests.
        
-       call mpi_waitany(size, sendRequests, index, status, ierr)
+       call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
        ! ! Copy the data just arrived in the halo's.
@@ -1224,7 +1224,7 @@ contains
     
     size = commPattern(level)%nProcRecv
     do i=1,commPattern(level)%nProcRecv
-       call mpi_waitany(size, recvRequests, index, status, ierr)
+       call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
        call EChk(ierr,__FILE__,__LINE__)
     enddo
 
@@ -1470,7 +1470,7 @@ contains
     !      Local variables.
     !
     integer :: size, procId, ierr, index
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
 
     integer(kind=intType) :: nVar
     integer(kind=intType) :: i, j, k, ii, jj
@@ -1596,7 +1596,7 @@ contains
 
        ! Complete any of the requests.
 
-       call mpi_waitany(size, recvRequests, index, status, ierr)
+       call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
        ! Copy the data just arrived in the halo's.
@@ -1623,7 +1623,7 @@ contains
 
     size = commPattern(level,sps)%nProcSend
     do i=1,commPattern(level,sps)%nProcSend
-       call mpi_waitany(size, sendRequests, index, status, ierr)
+       call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
        call EChk(ierr,__FILE__,__LINE__)
     enddo
 
@@ -1650,7 +1650,7 @@ contains
     !      Local variables.
     !
     integer :: size, procId, ierr, index
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
 
     integer(kind=intType) :: nVar
     integer(kind=intType) :: i, j, k, ii, jj
@@ -1797,7 +1797,7 @@ contains
 
        ! Complete any of the requests.
 
-       call mpi_waitany(size, recvRequests, index, status, ierr)
+       call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
        ! Copy the data just arrived in the halo's.
@@ -1824,7 +1824,7 @@ contains
 
     size = commPattern(level,sps)%nProcSend
     do i=1,commPattern(level,sps)%nProcSend
-       call mpi_waitany(size, sendRequests, index, status, ierr)
+       call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
        call EChk(ierr,__FILE__,__LINE__)
    enddo
 
@@ -1851,7 +1851,7 @@ contains
     !      Local variables.
     !
     integer :: size, procId, ierr, index
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
 
     integer(kind=intType) :: nVar
     integer(kind=intType) :: i, j, k, ii, jj, kk
@@ -1976,7 +1976,7 @@ contains
        
        ! Complete any of the requests.
        
-       call mpi_waitany(size, sendRequests, index, status, ierr)
+       call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
        ! Copy the data just arrived in the halo's.
@@ -2024,7 +2024,7 @@ contains
     
     size = commPattern(level, sps)%nProcRecv
     do i=1,commPattern(level, sps)%nProcRecv
-       call mpi_waitany(size, recvRequests, index, status, ierr)
+       call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
        call EChk(ierr,__FILE__,__LINE__)
     enddo
     
@@ -2216,7 +2216,7 @@ contains
     !      Local variables.
     !
     integer :: size, procID, ierr, index
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
 
     integer(kind=intType) :: nVar, sps
     integer(kind=intType) :: ii, jj, mm, nn, i, j, k, l
@@ -2383,7 +2383,7 @@ contains
 
           ! Complete any of the requests.
 
-          call mpi_waitany(size, recvRequests, index, status, ierr)
+          call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
           call EChk(ierr,__FILE__,__LINE__)
 
           ! Copy the data just arrived in the halo's.
@@ -2414,7 +2414,7 @@ contains
 
        size = commPatternCell_1st(level)%nProcSend
        do i=1,commPatternCell_1st(level)%nProcSend
-          call mpi_waitany(size, sendRequests, index, status, ierr)
+          call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
           call EChk(ierr,__FILE__,__LINE__)
     enddo
 
@@ -2439,7 +2439,7 @@ contains
     !      Local variables.
     !
     integer :: size, procID, ierr, index
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
 
     integer(kind=intType) :: i, j, ii, jj, mm
     integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
@@ -2560,7 +2560,7 @@ contains
 
           ! Complete any of the requests.
 
-          call mpi_waitany(size, recvRequests, index, status, ierr)
+          call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
           call EChk(ierr,__FILE__,__LINE__)
 
           ! Copy the data just arrived in the halo's.
@@ -2598,7 +2598,7 @@ contains
 
        size = commPatternNode_1st(level)%nProcSend
        do i=1,commPatternNode_1st(level)%nProcSend
-          call mpi_waitany(size, sendRequests, index, status, ierr)
+          call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
           call EChk(ierr,__FILE__,__LINE__)
     enddo
 
@@ -2696,7 +2696,7 @@ contains
     !      Local variables.
     !
     integer :: size, procID, ierr, index
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
 
     integer(kind=intType) :: i, j, ii, jj, mm, idim
     integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
@@ -2818,7 +2818,7 @@ contains
 
           ! Complete any of the requests.
 
-          call mpi_waitany(size, sendRequests, index, status, ierr)
+          call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
           call EChk(ierr,__FILE__,__LINE__)
 
           ! Copy the data just arrived in the halo's.
@@ -2856,7 +2856,7 @@ contains
 
        size = commPatternNode_1st(level)%nProcRecv
        do i=1,commPatternNode_1st(level)%nProcRecv
-          call mpi_waitany(size, recvRequests, index, status, ierr)
+          call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
           call EChk(ierr,__FILE__,__LINE__)
        enddo
 
@@ -2881,7 +2881,7 @@ contains
     !      Local variables.
     !
     integer :: size, procID, ierr, index
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
 
     integer(kind=intType) :: i, j, ii, jj, mm
     integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
@@ -3004,7 +3004,7 @@ contains
 
           ! Complete any of the requests.
 
-          call mpi_waitany(size, recvRequests, index, status, ierr)
+          call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
           call EChk(ierr,__FILE__,__LINE__)
 
           ! Copy the data just arrived in the halo's.
@@ -3042,7 +3042,7 @@ contains
 
        size = commPatternNode_1st(level)%nProcSend
        do i=1,commPatternNode_1st(level)%nProcSend
-          call mpi_waitany(size, sendRequests, index, status, ierr)
+          call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
           call EChk(ierr,__FILE__,__LINE__)
     enddo
 

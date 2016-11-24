@@ -383,7 +383,7 @@ contains
     integer :: source, size
     integer :: cgnsBase, cgnsZone, cgnsSol, cgnsInd
 
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
 
     integer(kind=intType) :: i, offset
     integer(kind=intType) :: mm, mBlocks, faceID, nSubfaces

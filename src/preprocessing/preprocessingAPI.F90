@@ -697,7 +697,7 @@ contains
     !      Local variables.
     !
     integer :: size, procId, ierr, index
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
 
     integer(kind=intType) :: i, j, ii, jj
     integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2

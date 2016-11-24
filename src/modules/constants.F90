@@ -312,5 +312,9 @@ module constants
   real(kind=realType) :: zoneMarker = 299.0
   real(kind=realType) :: dataSectionMarker = 357.0
 
+  ! Fringe sort type
+  integer(kind=intType), parameter :: sortByDonor=1
+  integer(kind=intType), parameter :: sortByReceiver=2
+
 
 end module constants

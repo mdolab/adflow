@@ -922,7 +922,7 @@ contains
     integer :: nProcRecvCur, nProcSendCur, nVarCoor, nVarUVW
     integer :: startProcRecv, procCur, sizeMessage
 
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
 
     integer, dimension(:),   allocatable :: procSendCur
     integer, dimension(:),   allocatable :: sendRequest
@@ -1441,10 +1441,10 @@ contains
           ! Block until a message arrives and find the source and size
           ! of the message.
 
-          call mpi_probe(mpi_any_source, myID, comm, status, ierr)
+          call mpi_probe(mpi_any_source, myID, comm, mpiStatus, ierr)
 
-          procCur = status(mpi_source)
-          call mpi_get_count(status, adflow_real, sizeMessage, ierr)
+          procCur = mpiStatus(mpi_source)
+          call mpi_get_count(mpiStatus, adflow_real, sizeMessage, ierr)
 
           ! Check in debug mode that the message is of correct size.
 
@@ -1467,7 +1467,7 @@ contains
                &coorRecv.")
 
           call mpi_recv(coorRecv, sizeMessage, adflow_real, procCur, &
-               myID,     comm,        status,   ierr)
+               myID,     comm,        mpiStatus,   ierr)
 
           ! Search the corresponding elements in the local tree and
           ! release coorRecv afterwards.
@@ -1513,7 +1513,7 @@ contains
 
        do i=1,nProcSendCur
           call mpi_waitany(nProcSendCur, sendRequest, sizeMessage, &
-               status,       ierr)
+               mpiStatus,       ierr)
        enddo
 
        deallocate(coorBuf, stat=ierr)
@@ -1531,10 +1531,10 @@ contains
           ! tags of myID+1. Also determine the sending processor and
           ! the size of the message.
 
-          call mpi_probe(mpi_any_source, myID+1, comm, status, ierr)
+          call mpi_probe(mpi_any_source, myID+1, comm, mpiStatus, ierr)
 
-          procCur = status(mpi_source)
-          call mpi_get_count(status, adflow_integer, sizeMessage, ierr)
+          procCur = mpiStatus(mpi_source)
+          call mpi_get_count(mpiStatus, adflow_integer, sizeMessage, ierr)
 
           ! Check in debug mode that the message is of correct size.
 
@@ -1556,11 +1556,11 @@ contains
                &and uvwBuf.")
 
           call mpi_recv(intBuf, sizeMessage, adflow_integer, procCur, &
-               myID+1, comm,        status,      ierr)
+               myID+1, comm,        mpiStatus,      ierr)
 
           sizeMessage = nVarUVW*nn
           call mpi_recv(uvwBuf, sizeMessage, adflow_real, procCur, &
-               myID+2, comm,        status,   ierr)
+               myID+2, comm,        mpiStatus,   ierr)
 
           ! Store the interpolation data at the correct location in the
           ! corresponding arrays. A distinction must be made between
@@ -1663,7 +1663,7 @@ contains
        nProcRecvCur = 2*nProcRecvCur
        do i=1,nProcRecvCur
           call mpi_waitany(nProcRecvCur, sendRecvRequest, sizeMessage, &
-               status,       ierr)
+               mpiStatus,       ierr)
        enddo
 
        ! Release the memory of the buffers used in the nonblocking

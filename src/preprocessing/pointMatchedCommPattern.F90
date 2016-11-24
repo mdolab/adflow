@@ -1681,7 +1681,7 @@ contains
     !
     integer :: ierr, count, dest, source, sizeRecv
 
-    integer, dimension(mpi_status_size)  :: status
+    integer, dimension(mpi_status_size)  :: mpiStatus
 
     integer(kind=intType) :: i, j
     integer(kind=intType) :: ii, jj, kk, ll, mm, nn, pp
@@ -1991,12 +1991,12 @@ contains
        ! Block until a message arrives.
 
        call mpi_probe(mpi_any_source, myId+2, ADflow_comm_world, &
-            status, ierr)
+            mpiStatus, ierr)
 
        ! Store the source processor a bit easier and determine the
        ! index in the send data structure.
 
-       source = status(mpi_source)
+       source = mpiStatus(mpi_source)
        ii     = commPattern%indexSendProc(source)
 
        ! Perform some checks in debug mode.
@@ -2006,7 +2006,7 @@ contains
                call terminate("finalCommStructures",     &
                "Send processor not in the list")
 
-          call mpi_get_count(status, adflow_integer, sizeRecv, ierr)
+          call mpi_get_count(mpiStatus, adflow_integer, sizeRecv, ierr)
           if(sizeRecv /= 4*commPattern%nsend(ii)) &
                call terminate("finalCommStructures",     &
                "Unexpected size of message")
@@ -2018,14 +2018,14 @@ contains
        sizeRecv = 4*commPattern%nsend(ii)
 
        call mpi_recv(recvBuf, sizeRecv, adflow_integer, source, &
-            myId+2, ADflow_comm_world, status, ierr)
+            myId+2, ADflow_comm_world, mpiStatus, ierr)
 
        ! Now receive the interpolants, if any.
 
        if(ninterp > 0) then
           sizeRecv = nInterp*commPattern%nsend(ii)
           call mpi_recv(recvBufInt, sizeRecv, adflow_real, source, &
-               myId+3, ADflow_comm_world, status, ierr)
+               myId+3, ADflow_comm_world, mpiStatus, ierr)
        end if
 
        ! Store the info I must send to this processor in a normal
@@ -2050,14 +2050,14 @@ contains
 
     dest = commPattern%nProcRecv
     do i=1,commPattern%nProcRecv
-       call mpi_waitany(dest, sendRequests, count, status, ierr)
+       call mpi_waitany(dest, sendRequests, count, mpiStatus, ierr)
     enddo
 
     ! Repeat the call if any interpolants were exchanged.
 
     if(ninterp > 0) then
        do i=1,commPattern%nProcRecv
-          call mpi_waitany(dest, recvRequests, count, status, ierr)
+          call mpi_waitany(dest, recvRequests, count, mpiStatus, ierr)
        enddo
     end if
 
@@ -2482,7 +2482,7 @@ contains
     integer :: ierr
     integer :: count, dest, source, sizeRecv
 
-    integer, dimension(mpi_status_size)  :: status
+    integer, dimension(mpi_status_size)  :: mpiStatus
 
     integer, allocatable, dimension(:) :: sizeMessage
 
@@ -2726,12 +2726,12 @@ contains
        ! Block until a message arrives.
 
        call mpi_probe(mpi_any_source, myID, ADflow_comm_world, &
-            status, ierr)
+            mpiStatus, ierr)
 
        ! Find the source and size of the message.
 
-       source = status(mpi_source)
-       call mpi_get_count(status, adflow_integer, sizeRecv, ierr)
+       source = mpiStatus(mpi_source)
+       call mpi_get_count(mpiStatus, adflow_integer, sizeRecv, ierr)
 
        ! Check in debug mode that the incoming message is of
        ! correct size.
@@ -2747,7 +2747,7 @@ contains
        ! receive can be used.
 
        call mpi_recv(recvBuf(ms), sizeRecv, adflow_integer, &
-            source, myID, ADflow_comm_world, status, ierr)
+            source, myID, ADflow_comm_world, mpiStatus, ierr)
 
        ! Determine the number of halo's in the receive buffer.
 
@@ -2785,7 +2785,7 @@ contains
     ! Complete the 1st series of nonblocking sends.
 
     do i=1,nProcsSend
-       call mpi_waitany(nProcsSend, sendRequests, count, status, ierr)
+       call mpi_waitany(nProcsSend, sendRequests, count, mpiStatus, ierr)
     enddo
 
     ! Loop over the processors to which I sent data to find out the
@@ -2796,12 +2796,12 @@ contains
        ! Block until a message arrives.
 
        call mpi_probe(mpi_any_source, myID+1, ADflow_comm_world, &
-            status, ierr)
+            mpiStatus, ierr)
 
        ! Find the source and size of the message.
 
-       source = status(mpi_source)
-       call mpi_get_count(status, adflow_integer, sizeRecv, ierr)
+       source = mpiStatus(mpi_source)
+       call mpi_get_count(mpiStatus, adflow_integer, sizeRecv, ierr)
 
        ! Check in debug mode that the incoming message is of
        ! correct size.
@@ -2821,7 +2821,7 @@ contains
        ! has already arrived.
 
        call mpi_recv(sendBuf, sizeRecv, adflow_integer, source, &
-            myID+1, ADflow_comm_world, status, ierr)
+            myID+1, ADflow_comm_world, mpiStatus, ierr)
 
        ! Store the donors in the list.
 
@@ -2833,7 +2833,7 @@ contains
     ! Complete the second series of nonblocking sends.
 
     do i=1,nProcsRecv
-       call mpi_waitany(nProcsRecv, recvRequests, count, status, ierr)
+       call mpi_waitany(nProcsRecv, recvRequests, count, mpiStatus, ierr)
     enddo
 
     ! Release the memory allocated in this subroutine.

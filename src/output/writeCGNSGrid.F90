@@ -1066,7 +1066,7 @@ contains
     integer :: ierr, tmp
     integer :: bufSize, realTypeCGNS, cgnsBase, fileInd
 
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
 
     integer, dimension(:), allocatable :: proc
 
@@ -1170,7 +1170,7 @@ contains
        do i=(nBlocks+1),nSubBlocks
 
           call mpi_recv(ii, 6, adflow_integer, proc(i), proc(i), &
-               ADflow_comm_world, status, ierr)
+               ADflow_comm_world, mpiStatus, ierr)
 
           subRanges(1,1,i) = ii(1)
           subRanges(1,2,i) = ii(2)
@@ -1275,7 +1275,7 @@ contains
                 ! Receive the range of subblock mm and copy it into coor.
 
                 call mpi_recv(buffer, bufSize, adflow_real, proc(mm), &
-                     proc(mm)+1, ADflow_comm_world, status, ierr)
+                     proc(mm)+1, ADflow_comm_world, mpiStatus, ierr)
 
                 select case (precisionGrid)
                 case (precisionSingle)
