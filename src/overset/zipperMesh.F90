@@ -61,7 +61,7 @@ contains
     integer(kind=intType) :: nOSurfRecv, nOSurfSend
     integer(kind=intType) , dimension(:,:), allocatable :: oSurfRecvList, oSurfSendList
     ! MPI/Communication related
-    integer status(MPI_STATUS_SIZE) 
+    integer mpiStatus(MPI_STATUS_SIZE) 
     integer(kind=intType), dimension(:, :), allocatable :: bufSizes
     integer(kind=intType), dimension(:, :), allocatable :: recvInfo
     integer(kind=intType) :: sendCount, recvCount, index
@@ -258,12 +258,12 @@ contains
 
        ! Complete all the recives and sends
        do i=1, recvCount
-          call mpi_waitany(recvCount, recvRequests, index, status, ierr)
+          call mpi_waitany(recvCount, recvRequests, index, mpiStatus, ierr)
           call ECHK(ierr, __FILE__, __LINE__)
        end do
 
        do i=1,sendCount
-          call mpi_waitany(sendCount, sendRequests, index, status, ierr)
+          call mpi_waitany(sendCount, sendRequests, index, mpiStatus, ierr)
           call ECHK(ierr, __FILE__, __LINE__)
        end do
 
@@ -325,12 +325,12 @@ contains
 
        ! Now wait for the sends and receives to finish
        do i=1, sendCount
-          call mpi_waitany(sendCount, sendRequests, index, status, ierr)
+          call mpi_waitany(sendCount, sendRequests, index, mpiStatus, ierr)
           call ECHK(ierr, __FILE__, __LINE__)
        end do
 
        do i=1, recvCount
-          call mpi_waitany(recvCount, recvRequests, index, status, ierr)
+          call mpi_waitany(recvCount, recvRequests, index, mpiStatus, ierr)
           call ECHK(ierr, __FILE__, __LINE__)
        end do
 

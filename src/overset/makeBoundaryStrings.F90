@@ -43,7 +43,7 @@ contains
     type(oversetString), dimension(:), allocatable, target :: strings
     integer(kind=intType) :: nFullStrings, nUnique, famID
     logical :: regularOrdering
-    integer status(MPI_STATUS_SIZE) 
+    integer mpiStatus(MPI_STATUS_SIZE) 
 
     ! Wall search related
     integer(kind=intType) :: ncells
@@ -437,11 +437,11 @@ contains
 
                 ! ----------- Node sized arrays -------------
                 call MPI_Recv(globalStrings(c)%nodeData(:, iStart:iEnd), iSize*10, adflow_real, iProc, iProc, &
-                     adflow_comm_world, status, ierr)
+                     adflow_comm_world, mpiStatus, ierr)
                 call ECHK(ierr, __FILE__, __LINE__)
 
                 call MPI_Recv(globalStrings(c)%intNodeData(:, iStart:iEnd), iSize*3, adflow_integer, iProc, iProc, &
-                     adflow_comm_world, status, ierr)
+                     adflow_comm_world, mpiStatus, ierr)
                 call ECHK(ierr, __FILE__, __LINE__)
 
                 ! ----------- Element sized arrays -------------
@@ -449,7 +449,7 @@ contains
                 iEnd =   nElemsProc(iProc+1)
                 iSize = iEnd - iStart + 1
                 call MPI_Recv(globalStrings(c)%conn(:, iStart:iEnd), iSize*2, adflow_integer, iProc, iProc, &
-                     adflow_comm_world, status, ierr)
+                     adflow_comm_world, mpiStatus, ierr)
                 call ECHK(ierr, __FILE__, __LINE__)
 
                 ! Increment the conn we just received by the node offset:

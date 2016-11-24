@@ -435,7 +435,7 @@ contains
     !
     integer :: ierr, procId, size
 
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
     integer, dimension(nProc)           :: sizeMessage
     integer, dimension(nProc)           :: recvcounts, displs
 
@@ -761,10 +761,10 @@ contains
        ! source and size of the message.
 
        call mpi_probe(mpi_any_source, myID, ADflow_comm_world, &
-            status, ierr)
+            mpiStatus, ierr)
 
-       procID = status(mpi_source)
-       call mpi_get_count(status, adflow_integer, size, ierr)
+       procID = mpiStatus(mpi_source)
+       call mpi_get_count(mpiStatus, adflow_integer, size, ierr)
 
        ! Check in debug mode that the incoming message is of
        ! correct size.
@@ -788,14 +788,14 @@ contains
        ! because the message has already arrived.
 
        call mpi_recv(intRecv, size, adflow_integer, procID, &
-            myID, ADflow_comm_world, status, ierr)
+            myID, ADflow_comm_world, mpiStatus, ierr)
 
        ! Probe for the corresponding real buffer and determine its
        ! size.
 
        call mpi_probe(procID, myID+1, ADflow_comm_world, &
-            status, ierr)
-       call mpi_get_count(status, adflow_real, size, ierr)
+            mpiStatus, ierr)
+       call mpi_get_count(mpiStatus, adflow_real, size, ierr)
 
        ! Check in debug mode that the incoming message is of
        ! correct size.
@@ -819,7 +819,7 @@ contains
        ! because the message has already arrived.
 
        call mpi_recv(realRecv, size, adflow_real, procID, &
-            myID+1, ADflow_comm_world, status, ierr)
+            myID+1, ADflow_comm_world, mpiStatus, ierr)
 
        ! Check the subfaces stored in these messages.
 
@@ -840,8 +840,8 @@ contains
 
     size = nMessagesSend
     do nn=1,nMessagesSend
-       call mpi_waitany(size, sendRequests, procID, status, ierr)
-       call mpi_waitany(size, recvRequests, procID, status, ierr)
+       call mpi_waitany(size, sendRequests, procID, mpiStatus, ierr)
+       call mpi_waitany(size, recvRequests, procID, mpiStatus, ierr)
     enddo
 
     ! Deallocate the memory for the integer and real buffers.

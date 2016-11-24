@@ -1058,7 +1058,7 @@ contains
     !
     integer :: proc, size, ierr
 
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
     integer, dimension(nProc)           :: sizeMessage
 
     integer(kind=intType) :: nn, mm, ii, i
@@ -1257,12 +1257,12 @@ contains
        ! Block until a message arrives.
 
        call mpi_probe(mpi_any_source, myID, ADflow_comm_world, &
-            status, ierr)
+            mpiStatus, ierr)
 
        ! Find the source and size of the message.
 
-       proc = status(mpi_source)
-       call mpi_get_count(status, adflow_integer, size, ierr)
+       proc = mpiStatus(mpi_source)
+       call mpi_get_count(mpiStatus, adflow_integer, size, ierr)
 
        ! Check in debug mode that the incoming message is of
        ! correct size.
@@ -1284,7 +1284,7 @@ contains
        ! receive can be used.
 
        call mpi_recv(recvBuf, size, adflow_integer, proc, myID, &
-            ADflow_comm_world, status, ierr)
+            ADflow_comm_world, mpiStatus, ierr)
 
        ! Loop to extract the 1 to 1 subface info from the buffer.
 
@@ -1342,7 +1342,7 @@ contains
 
     size = nMessageSend
     do nn=1,nMessageSend
-       call mpi_waitany(size, sendRequests, proc, status, ierr)
+       call mpi_waitany(size, sendRequests, proc, mpiStatus, ierr)
     enddo
 
     ! Release the memory of the send buffer.
