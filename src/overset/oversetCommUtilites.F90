@@ -576,8 +576,6 @@ contains
 
   end subroutine oversetLoadBalance
 
-
-
   subroutine exchangeFringes(level, sps, commPattern, internal)
     !
     !       ExchangeFringes exchanges the donorInformation of the fringes: 
@@ -587,9 +585,11 @@ contains
     !       first and then the reals.                                      
     !
     use constants
+    use block, only : fringeType
     use blockPointers, only : flowDoms
     use communication, only : commType, internalCommType, recvBuffer, sendBuffer, myid, &
          adflow_comm_world, sendRequests, recvRequests
+    use oversetUtilities, only : addToFringeList
     implicit none
     !
     !      Subroutine arguments.
@@ -602,11 +602,11 @@ contains
     !      Local variables.
     !
     integer :: size, procId, ierr, index
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
 
-    integer(kind=intType) :: i, j, ii, jj, nVar
+    integer(kind=intType) :: i, j, ii, jj, nVar, iFringe, jFringe
     integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
-
+    type(fringeType) :: fringe
     integer(kind=intType), dimension(:), allocatable :: sendBufInt
     integer(kind=intType), dimension(:), allocatable :: recvBufInt
 
@@ -645,14 +645,22 @@ contains
           k1 = commPattern(level)%sendList(i)%indices(j,3)
 
           ! Copy integer values to buffer
+          iFringe = flowDoms(d1, level, sps)%fringePtr(1, i1, j1, k1)
+          if (iFringe > 0) then 
+             sendBufInt(jj  ) = flowDoms(d1,level,sps)%fringes(iFringe)%donorProc
+             sendBufInt(jj+1) = flowDoms(d1,level,sps)%fringes(iFringe)%donorBlock
+             sendBufInt(jj+2) = flowDoms(d1,level,sps)%fringes(iFringe)%dI
+             sendBufInt(jj+3) = flowDoms(d1,level,sps)%fringes(iFringe)%dJ
+             sendBufInt(jj+4) = flowDoms(d1,level,sps)%fringes(iFringe)%dK
+          else
+             sendBufInt(jj  ) = -1
+             sendBufInt(jj+1) = 0
+             sendBufInt(jj+2) = 0
+             sendBufInt(jj+3) = 0
+             sendBufInt(jj+4) = 0
+          end if
 
-          sendBufInt(jj  ) = flowDoms(d1,level,sps)%fringes(i1,j1,k1)%donorProc
-          sendBufInt(jj+1) = flowDoms(d1,level,sps)%fringes(i1,j1,k1)%donorBlock
-          sendBufInt(jj+2) = flowDoms(d1,level,sps)%fringes(i1,j1,k1)%dI
-          sendBufInt(jj+3) = flowDoms(d1,level,sps)%fringes(i1,j1,k1)%dJ
-          sendBufInt(jj+4) = flowDoms(d1,level,sps)%fringes(i1,j1,k1)%dK
-
-          jj = jj + 5
+          jj = jj + nVar
 
        enddo
 
@@ -707,21 +715,52 @@ contains
        i2 = internal(level)%haloIndices(i,1)
        j2 = internal(level)%haloIndices(i,2)
        k2 = internal(level)%haloIndices(i,3)
+       
+       
+       iFringe = flowDoms(d1, level, sps)%fringePtr(1, i1, j1, k1)
+       if (iFringe > 0) then 
+          ! The sender has an actual fringe. Nowe check if the
+          ! receiver has somewhere already to put it:
+          
+          jFringe = flowDoms(d2, level, sps)%fringePtr(1, i2, j2, k2)
 
-       flowDoms(d2,level,sps)%fringes(i2,j2,k2)%donorProc = &
-            flowDoms(d1,level,sps)%fringes(i1,j1,k1)%donorProc
+          ! Setup the new fringe:
+          fringe%myBlock = d2
+          fringe%myI = i2
+          fringe%myJ = j2
+          fringe%myK = k2
+          fringe%donorProc = flowDoms(d1, level, sps)%fringes(iFringe)%donorProc
+          fringe%donorBlock= flowDoms(d1, level, sps)%fringes(iFringe)%donorBlock
+          fringe%dI        = flowDoms(d1, level, sps)%fringes(iFringe)%dI
+          fringe%dJ        = flowDoms(d1, level, sps)%fringes(iFringe)%dJ
+          fringe%dK        = flowDoms(d1, level, sps)%fringes(iFringe)%dK
+          fringe%donorFrac = flowDoms(d1, level, sps)%fringes(iFringe)%donorFrac
+          
+          if (jFringe > 0) then 
+             ! Just copy the fringe into the slot. No need to update
+             ! the pointer since it is already correct. 
+             flowDoms(d2, level, sps)%fringes(jFringe) = fringe
+          else
+             
+             ! There is no slot available yet. Tack the fringe onto
+             ! the end of the d2 fringe list and set the pointers
+             ! accordingly.
 
-       flowDoms(d2,level,sps)%fringes(i2,j2,k2)%donorBlock = &
-            flowDoms(d1,level,sps)%fringes(i1,j1,k1)%donorBlock
+             call addToFringeList(flowDoms(d2, level, sps)%fringes, &
+                  flowDoms(d2, level, sps)%nDonors,  fringe)
 
-       flowDoms(d2,level,sps)%fringes(i2,j2,k2)%dI = &
-            flowDoms(d1,level,sps)%fringes(i1,j1,k1)%dI
+             ! Note that all three values (pointer, start and end) are
+             ! all the same. 
+             flowDoms(d2, level, sps)%fringePtr(:, i2, j2, k2) = &
+                  flowDoms(d2, level, sps)%nDonors
+          end if
+       else
+          ! The donor isn't a receiver so make sure the halo isn't
+          ! either. Just set the fringePtr to 0
 
-       flowDoms(d2,level,sps)%fringes(i2,j2,k2)%dJ = &
-            flowDoms(d1,level,sps)%fringes(i1,j1,k1)%dJ
+          flowDoms(d2, level, sps)%fringePtr(1, i2, j2, k2) = 0
+       end if
 
-       flowDoms(d2,level,sps)%fringes(i2,j2,k2)%dK = &
-            flowDoms(d1,level,sps)%fringes(i1,j1,k1)%dK
     enddo intLocalCopy
 
     ! Complete the nonblocking receives in an arbitrary sequence and
@@ -732,7 +771,7 @@ contains
 
        ! Complete any of the requests.
 
-       call mpi_waitany(size, recvRequests, index, status, ierr)
+       call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
 
        ! Copy the data just arrived in the halo's.
 
@@ -747,13 +786,31 @@ contains
           j2 = commPattern(level)%recvList(ii)%indices(j,2)
           k2 = commPattern(level)%recvList(ii)%indices(j,3)
 
-          flowDoms(d2,level,sps)%fringes(i2,j2,k2)%donorProc  = recvBufInt(jj+1)
-          flowDoms(d2,level,sps)%fringes(i2,j2,k2)%donorBlock = recvBufInt(jj+2)
-          flowDoms(d2,level,sps)%fringes(i2,j2,k2)%dI = recvBufInt(jj+3)
-          flowDoms(d2,level,sps)%fringes(i2,j2,k2)%dJ = recvBufInt(jj+4)
-          flowDoms(d2,level,sps)%fringes(i2,j2,k2)%dK = recvBufInt(jj+5)
+          fringe%myBlock = d2
+          fringe%myI = i2
+          fringe%myJ = j2
+          fringe%myK = k2
+          fringe%donorProc  = recvBufInt(jj+1)
+          fringe%donorBlock = recvBufInt(jj+2)
+          fringe%dI         = recvBufInt(jj+3)       
+          fringe%dJ         = recvBufInt(jj+4)
+          fringe%dK         = recvBufInt(jj+5)
 
-          jj = jj + 5
+          iFringe = flowDoms(d2, level, sps)%fringePtr(1, i2, j2, k2)
+          if (iFringe > 0) then 
+             ! We have somehwere to to put the data already:
+             flowDoms(d2, level, sps)%fringes(iFringe) = fringe
+          else
+             ! We don't somehwhere to put the fringe to add to the list:
+             call addToFringeList(flowDoms(d2, level, sps)%fringes, &
+                  flowDoms(d2, level, sps)%nDonors, fringe)
+
+             ! Note that all three values (pointer, start and end) are
+             ! all the same. 
+             flowDoms(d2, level, sps)%fringePtr(:, i2, j2, k2) = &
+                  flowDoms(d2, level, sps)%nDonors
+          end if
+          jj = jj + nVar
        enddo
 
     enddo intCompleteRecvs
@@ -762,7 +819,7 @@ contains
 
     size = commPattern(level)%nProcSend
     do i=1,commPattern(level)%nProcSend
-       call mpi_waitany(size, sendRequests, index, status, ierr)
+       call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
     enddo
 
     ! Done with the integer memory. 
@@ -777,7 +834,7 @@ contains
 
 
     ! Allocate the memory for the sending and receiving buffers.
-    nVar = 6
+    nVar = 3
 
     ! Send the variables. The data is first copied into
     ! the send buffer after which the buffer is sent asap.
@@ -804,11 +861,14 @@ contains
           j1 = commPattern(level)%sendList(i)%indices(j,2)
           k1 = commPattern(level)%sendList(i)%indices(j,3)
 
-          ! Copy integer values to buffer
-
-          sendBuffer(jj:jj+2) = flowDoms(d1,level,sps)%fringes(i1,j1,k1)%donorFrac
-          sendBuffer(jj+3:jj+5) = flowDoms(d1, level, sps)%fringes(i1,j1,k1)%offset
-          jj = jj + 6
+          ! Copy real values to buffer
+          iFringe = flowDoms(d1, level, sps)%fringePtr(1, i1, j1, k1)
+          if (iFringe > 0) then 
+             sendBuffer(jj:jj+2) = flowDoms(d1,level,sps)%fringes(iFringe)%donorFrac
+          else
+             sendBuffer(jj:jj+2) = zero
+          end if
+          jj = jj + nVar
 
        enddo
 
@@ -846,31 +906,10 @@ contains
 
     enddo receives
 
-    ! Copy the local data.
-
-    localCopy: do i=1,internal(level)%ncopy
-
-       ! Store the block and the indices of the donor a bit easier.
-
-       d1 = internal(level)%donorBlock(i)
-       i1 = internal(level)%donorIndices(i,1)
-       j1 = internal(level)%donorIndices(i,2)
-       k1 = internal(level)%donorIndices(i,3)
-
-       ! Idem for the halo's.
-
-       d2 = internal(level)%haloBlock(i)
-       i2 = internal(level)%haloIndices(i,1)
-       j2 = internal(level)%haloIndices(i,2)
-       k2 = internal(level)%haloIndices(i,3)
-
-       flowDoms(d2,level,sps)%fringes(i2,j2,k2)%donorFrac = &
-            flowDoms(d1,level,sps)%fringes(i1,j1,k1)%donorFrac
-
-       flowDoms(d2,level,sps)%fringes(i2,j2,k2)%offset = &
-            flowDoms(d1,level,sps)%fringes(i1,j1,k1)%offset
-
-    enddo localCopy
+    ! ***********************************************************
+    ! No local copy since we copied the fringes directly and the
+    ! donorFrac info is already there. 
+    ! ***********************************************************
 
     ! Complete the nonblocking receives in an arbitrary sequence and
     ! copy the variables from the buffer into the halo's.
@@ -880,7 +919,7 @@ contains
 
        ! Complete any of the requests.
 
-       call mpi_waitany(size, recvRequests, index, status, ierr)
+       call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
 
        ! Copy the data just arrived in the halo's.
 
@@ -895,10 +934,12 @@ contains
           j2 = commPattern(level)%recvList(ii)%indices(j,2)
           k2 = commPattern(level)%recvList(ii)%indices(j,3)
 
-          flowDoms(d2,level,sps)%fringes(i2,j2,k2)%donorFrac = recvBuffer(jj+1:jj+3)
-          flowDoms(d2,level,sps)%fringes(i2,j2,k2)%offset = recvBuffer(jj+4:jj+6)
-
-          jj = jj + 6
+          ! Now, there should already be a spot available for the
+          ! donorFrac since it was created if necessary in the integer exchange. 
+          iFringe = flowDoms(d2, level, sps)%fringePtr(1, i2, j2, k2)
+          flowDoms(d2, level, sps)%fringes(iFringe)%donorFrac = recvBuffer(jj+1:jj+3)
+          
+          jj = jj + nVar
        enddo
 
     enddo completeRecvs
@@ -907,7 +948,7 @@ contains
 
     size = commPattern(level)%nProcSend
     do i=1,commPattern(level)%nProcSend
-       call mpi_waitany(size, sendRequests, index, status, ierr)
+       call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
     enddo
 
   end subroutine exchangeFringes
@@ -931,39 +972,15 @@ contains
 
     type(commType),          dimension(*), intent(in) :: commPattern
     type(internalCommType), dimension(*), intent(in) :: internal
-    integer(kind=intType) :: i, j, k, nn
+    integer(kind=intType) :: nn
 
-    ! We can't put a pointer directly to status since it is inside of
-    ! fringes. So we allocate the first intComm pointer and copy in the
-    ! value, exchange and then copy back out. 
     domainLoop:do nn=1, nDom
-       call setPointers(nn, level, sps)
-       allocate(flowDoms(nn, level, sps)%intCommVars(1)%var(1:ib+1, 1:jb+1, 1:kb+1))
-       do k=0, kb
-          do j=0, jb
-             do i=0, ib
-                flowDoms(nn, level, sps)%intCommVars(1)%var(i+1, j+1, k+1) = &
-                     flowDoms(nn, level, sps)%fringes(i, j, k)%status
-             end do
-          end do
-       end do
+       flowDoms(nn, level, sps)%intCommVars(1)%var => flowDoms(nn, level, sps)%status(:, :, :)
     end do domainLoop
 
     ! Run the generic integer exchange
     call wHalo1to1IntGeneric(1, level, sps, commPattern, internal)
 
-    domainLoop2:do nn=1, nDom
-       call setPointers(nn, level, sps)
-       do k=0, kb
-          do j=0, jb
-             do i=0, ib
-                flowDoms(nn, level, sps)%fringes(i, j, k)%status = & 
-                     flowDoms(nn, level, sps)%intCommVars(1)%var(i+1, j+1, k+1)
-             end do
-          end do
-       end do
-       deallocate(flowDoms(nn, level, sps)%intCommVars(1)%var)
-    end do domainLoop2
   end subroutine exchangeStatus
 
   subroutine exchangeStatusTranspose(level, sps, commPattern, internal)
@@ -992,14 +1009,14 @@ contains
     !      Local variables.
     !
     integer :: size, procID, ierr, index
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
 
     integer(kind=intType) :: mm
     integer(kind=intType) :: i, j, k, ii, jj
     integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
     integer(kind=intType), dimension(:), allocatable :: sendBuf, recvBuf
-    logical :: CisDonor, CisHole, CisCompute, CisFloodSeed, CisFlooded, CisWall, CisWallDonor
-    logical :: DisDonor, DisHole, DisCompute, DisFloodSeed, DisFlooded, DisWall, DisWallDonor
+    logical :: CisDonor, CisHole, CisCompute, CisFloodSeed, CisFlooded, CisWall, CisWallDonor, CisReceiver
+    logical :: DisDonor, DisHole, DisCompute, DisFloodSeed, DisFlooded, DisWall, DisWallDonor, DisReceiver
     integer(kind=intType) :: cellStatus, donorStatus
 
 
@@ -1037,7 +1054,7 @@ contains
           j2 = commPattern(level)%recvList(i)%indices(j,2)
           k2 = commPattern(level)%recvList(i)%indices(j,3)
 
-          recvBuf(jj) = flowDoms(d2, level, sps)%fringes(i2, j2, k2)%status
+          recvBuf(jj) = flowDoms(d2, level, sps)%status(i2, j2, k2)
           jj = jj + 1
 
        enddo
@@ -1095,18 +1112,18 @@ contains
 
        ! OR operation. Note we modify the '1' values ie. the 'donors'
        ! which are now receivers because of the transpose operation.
-       cellStatus = flowDoms(d1, level, sps)%fringes(i1, j1, k1)%status
+       cellStatus = flowDoms(d1, level, sps)%status(i1, j1, k1)
        call getStatus(cellStatus, CisDonor, CisHole, CisCompute, &
-            CisFloodSeed, CisFlooded, CisWall, CisWallDonor)
+            CisFloodSeed, CisFlooded, CisWall, CisWallDonor, CisReceiver)
 
-       donorStatus = flowDoms(d2, level, sps)%fringes(i2, j2, k2)%status
+       donorStatus = flowDoms(d2, level, sps)%status(i2, j2, k2)
        call getStatus(donorStatus, DisDonor, DisHole, DisCompute, &
-            DisFloodSeed, DisFlooded, DisWall, DisWallDonor)
+            DisFloodSeed, DisFlooded, DisWall, DisWallDonor, DisReceiver)
 
-       call setIsDonor(flowDoms(d1, level, sps)%fringes(i1, j1, k1)%status, &
+       call setIsDonor(flowDoms(d1, level, sps)%status(i1, j1, k1), &
             CIsDonor .or. DisDonor)
 
-       call setIsWallDonor(flowDoms(d1, level, sps)%fringes(i1, j1, k1)%status, &
+       call setIsWallDonor(flowDoms(d1, level, sps)%status(i1, j1, k1), &
             CIsWallDonor .or. DisWallDonor)
 
     enddo localCopy
@@ -1119,7 +1136,7 @@ contains
 
        ! Complete any of the requests.
 
-       call mpi_waitany(size, recvRequests, index, status, ierr)
+       call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
 
        ! Copy the data just arrived in the halo's.
 
@@ -1137,18 +1154,18 @@ contains
           k1 = commPattern(level)%sendList(ii)%indices(j,3)
 
 
-          cellStatus = flowDoms(d1, level, sps)%fringes(i1, j1, k1)%status
+          cellStatus = flowDoms(d1, level, sps)%status(i1, j1, k1)
           call getStatus(cellStatus, CisDonor, CisHole, CisCompute, &
-               CisFloodSeed, CisFlooded, CisWall, CisWallDonor)
+               CisFloodSeed, CisFlooded, CisWall, CisWallDonor, CisReceiver)
           jj = jj + 1
           donorStatus = sendBuf(jj)
           call getStatus(donorStatus, DisDonor, DisHole, DisCompute, &
-               DisFloodSeed, DisFlooded, DisWall, DisWallDonor)
+               DisFloodSeed, DisFlooded, DisWall, DisWallDonor, DisReceiver)
 
-          call setIsDonor(flowDoms(d1, level, sps)%fringes(i1, j1, k1)%status, &
+          call setIsDonor(flowDoms(d1, level, sps)%status(i1, j1, k1), &
                CIsDonor .or. DisDonor)
 
-          call setIsWallDonor(flowDoms(d1, level, sps)%fringes(i1, j1, k1)%status, &
+          call setIsWallDonor(flowDoms(d1, level, sps)%status(i1, j1, k1), &
                CIsWallDonor .or. DisWallDonor)
        enddo
     enddo completeSends
@@ -1157,7 +1174,7 @@ contains
 
     size = commPattern(level)%nProcRecv
     do i=1,commPattern(level)%nProcRecv
-       call mpi_waitany(size, sendRequests, index, status, ierr)
+       call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
     enddo
 
     deallocate(recvBuf, sendBuf)
@@ -1413,6 +1430,220 @@ contains
     deallocate(iblankSave)
   end subroutine exchangeSurfaceIblanks
 
+  subroutine flagInvalidDonors(level, sps)
+
+    use constants
+    use blockPointers
+    use communication
+    use utils, only : EChk
+    implicit none
+    
+    ! This subroutine is used to determine if the existing overset
+    ! donors have become invlaid for some reason. Basically what we do
+    ! is perform a forward overset data exchange with whether or not
+    ! the donors are all still valid. On the receiving end, the
+    ! receiver can then update it's donor information to reflect that
+    ! its current donor is no longer valid. 
+
+    !
+    !      Subroutine arguments.
+    !
+    integer(kind=intType), intent(in) :: level, sps
+
+    !
+    !      Local variables.
+    !
+    integer :: size, procId, ierr, index
+    integer, dimension(mpi_status_size) :: mpiStatus
+
+    integer(kind=intType) :: nVar
+    integer(kind=intType) :: i, j, k, ii, jj, iii, jjj, kkk, iFringe
+    integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
+    integer(kind=intType), dimension(:), allocatable :: sendBufInt
+    integer(kind=intType), dimension(:), allocatable :: recvBufInt
+    logical :: invalid
+    type(commType), pointer :: commPattern
+    type(internalCommType), pointer :: internal
+
+    commPattern => commPatternOverset(level, sps)
+    internal => internalOverset(level, sps)
+    
+    ii = commPattern%nProcSend
+    ii = commPattern%nsendCum(ii)
+    jj = commPattern%nProcRecv
+    jj = commPattern%nrecvCum(jj)
+    nVar = 1
+    allocate(sendBufInt(ii*nVar), recvBufInt(jj*nVar), stat=ierr)
+    
+    ! Send the variables. The data is first copied into
+    ! the send buffer after which the buffer is sent asap.
+
+    ii = 1
+    sends: do i=1,commPattern%nProcSend
+
+       ! Store the processor id and the size of the message
+       ! a bit easier.
+
+       procID = commPattern%sendProc(i)
+       size    = nVar*commPattern%nsend(i)
+
+       ! Copy the data in the correct part of the send buffer.
+
+       jj = ii
+       do j=1,commPattern%nsend(i)
+
+          ! Store the block id and the indices of the donor
+          ! a bit easier.
+
+          d1 = commPattern%sendList(i)%block(j)
+          i1 = commPattern%sendList(i)%indices(j,1)
+          j1 = commPattern%sendList(i)%indices(j,2)
+          k1 = commPattern%sendList(i)%indices(j,3)
+
+          ! Loop over the 8 donors:
+          invalid = .False.
+          do kkk=k1, k1+1
+             do jjj=j1, j1+1
+                do iii=i1, i1+1
+                   if (flowDoms(d1, level, sps)%iblank(iii,jjj,kkk) <= -2 .or. &
+                        flowDoms(d1, level, sps)%forcedRecv(iii,jjj,kkk)> 0) then 
+                      ! IF we are flooded, (-2 or -3), explictly
+                      ! blanked (-4) or an forcedRecver, we are invlalid as a donor
+                      invalid = .True.
+                   end if
+                end do
+             end do
+          end do
+
+          if (invalid) then 
+             sendBufInt(jj) = 1
+          else
+             sendBufInt(jj) = 0
+          end if
+          jj = jj + 1
+       enddo
+
+       ! Send the data.
+
+       call mpi_isend(sendBufInt(ii), size, adflow_integer, procId,  &
+            procId, ADflow_comm_world, sendRequests(i), &
+            ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! Set ii to jj for the next processor.
+
+       ii = jj
+
+    enddo sends
+
+    ! Post the nonblocking receives.
+
+    ii = 1
+    receives: do i=1,commPattern%nProcRecv
+
+       ! Store the processor id and the size of the message
+       ! a bit easier.
+
+       procID = commPattern%recvProc(i)
+       size    = nVar*commPattern%nrecv(i)
+
+       ! Post the receive.
+
+       call mpi_irecv(recvBufInt(ii), size, adflow_integer, procId, &
+            myId, ADflow_comm_world, recvRequests(i), ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! And update ii.
+
+       ii = ii + size
+
+    enddo receives
+
+    ! Do the local interpolation.
+    localInterp: do i=1,internal%ncopy
+
+       ! Store the block and the indices of the donor a bit easier.
+
+       d1 = internal%donorBlock(i)
+       i1 = internal%donorIndices(i, 1)
+       j1 = internal%donorIndices(i, 2)
+       k1 = internal%donorIndices(i, 3)
+
+       ! Idem for the halo's.
+
+       d2 = internal%haloBlock(i)
+       i2 = internal%haloIndices(i, 1)
+       j2 = internal%haloIndices(i, 2)
+       k2 = internal%haloIndices(i, 3)
+
+       ! Loop over the 8 donors:
+       invalid = .False.
+
+       do kkk=k1, k1+1
+          do jjj=j1, j1+1
+             do iii=i1, i1+1
+                if (flowDoms(d1, level, sps)%iblank(iii,jjj,kkk) <= -2 .or. &
+                     flowDoms(d1, level, sps)%forcedRecv(iii,jjj,kkk)> 0) then 
+                   ! IF we are flooded, (-2 or -3), explictly
+                   ! blanked (-4) or an forcedRecver, we are invlalid as a donor
+                   invalid = .True.
+                end if
+             end do
+          end do
+       end do
+       
+       ! We only have to do anything if it's invalid:
+       if (invalid) then 
+          iFringe = flowDoms(d2, level, sps)%fringePtr(1, i2, j2, k2)
+          flowDoms(d2, level, sps)%fringes(iFringe)%quality = large
+       end if
+    enddo localInterp
+
+    ! Complete the nonblocking receives in an arbitrary sequence and
+    ! copy the variables from the buffer into the halo's.
+
+    size = commPattern%nProcRecv
+    completeRecvs: do i=1,commPattern%nProcRecv
+
+       ! Complete any of the requests.
+
+       call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! Copy the data just arrived in the halo's.
+
+       ii = index
+       jj = nVar*commPattern%nrecvCum(ii-1)
+       do j=1,commPattern%nrecv(ii)
+
+          ! Store the block and the indices of the halo a bit easier.
+
+          d2 = commPattern%recvList(ii)%block(j)
+          i2 = commPattern%recvList(ii)%indices(j,1)
+          j2 = commPattern%recvList(ii)%indices(j,2)
+          k2 = commPattern%recvList(ii)%indices(j,3)
+
+          ! We only have to do anything if it's invalid:
+          if (recvBufInt(jj+1) == 1) then 
+             iFringe = flowDoms(d2, level, sps)%fringePtr(1, i2, j2, k2)
+             flowDoms(d2, level, sps)%fringes(iFringe)%quality = large
+          end if
+
+          jj = jj + 1
+       enddo
+    end do completeRecvs
+
+    ! Complete the nonblocking sends.
+
+    size = commPattern%nProcSend
+    do i=1,commPattern%nProcSend
+       call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+    enddo
+    deallocate(sendBufInt, recvBufInt)
+
+  end subroutine flagInvalidDonors
+
   subroutine emptyOversetComm(level, sps)
 
     !  Short cut function to make empty overset comm structure for
@@ -1476,7 +1707,7 @@ contains
     ! Working
     integer(kind=intType) :: nn, ii,jj, ierr,  i, j, k, d1, i1, j1, k1, d2, i2, j2, k2
     integer(kind=intType) :: size, procID, index, iii,jjj
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
     real(kind=realType) :: frac(3), frac0(3), xCen(3)
     integer(kind=intType), dimension(8), parameter :: indices=(/1,2,4,3,5,6,8,7/)
 
@@ -1510,7 +1741,7 @@ contains
                      x(i-1, j-1, k  , :) + &
                      x(i  , j-1, k  , :) + &
                      x(i-1, j  , k  , :) + &
-                     x(i  , j  , k  , :)) + fringes(i,j,k)%offset
+                     x(i  , j  , k  , :)) !+ fringes(i,j,k)%offset
              end do
           end do
        end do
@@ -1638,7 +1869,7 @@ contains
 
        ! Complete any of the requests.
 
-       call mpi_waitany(size, sendRequests, index, status, ierr)
+       call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
 
 
        ii = index
@@ -1674,7 +1905,7 @@ contains
 
     size = commPattern%nProcRecv
     do i=1,commPattern%nProcRecv
-       call mpi_waitany(size, recvRequests, index, status, ierr)
+       call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
     enddo
 
   end subroutine updateOversetConnectivity
@@ -1701,7 +1932,7 @@ contains
     ! Working
     integer(kind=intType) :: nn, ii,jj, ierr,  i, j, k, d1, i1, j1, k1, d2, i2, j2, k2
     integer(kind=intType) :: size, procID, index, iii,jjj
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
     real(kind=realType) :: frac(3), fracd(3), frac0(3), xCen(3), xCend(3), weight(8)
     integer(kind=intType), dimension(8), parameter :: indices=(/1,2,4,3,5,6,8,7/)
 
@@ -1735,7 +1966,7 @@ contains
                      x(i-1, j-1, k  , :) + &
                      x(i  , j-1, k  , :) + &
                      x(i-1, j  , k  , :) + &
-                     x(i  , j  , k  , :)) + fringes(i,j,k)%offset
+                     x(i  , j  , k  , :)) !+ fringes(i,j,k)%offset
 
                 ! Offset is not active so the xSeed_d just has the x
                 ! part. Just dump the values into scratch so we don't
@@ -1880,7 +2111,7 @@ contains
 
        ! Complete any of the requests.
 
-       call mpi_waitany(size, sendRequests, index, status, ierr)
+       call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
 
 
        ii = index
@@ -1917,7 +2148,7 @@ contains
 
     size = commPattern%nProcRecv
     do i=1,commPattern%nProcRecv
-       call mpi_waitany(size, recvRequests, index, status, ierr)
+       call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
     enddo
 
   end subroutine updateOversetConnectivity_d
@@ -1944,7 +2175,7 @@ contains
     ! Working
     integer(kind=intType) :: nn, ii,jj, kk, ierr,  i, j, k, d1, i1, j1, k1, d2, i2, j2, k2
     integer(kind=intType) :: size, procID, index, iii,jjj
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
     real(kind=realType) :: frac(3), fracd(3), frac0(3), xCen(3), xCend(3), weight(8), add(3)
     integer(kind=intType), dimension(8), parameter :: indices=(/1,2,4,3,5,6,8,7/)
 
@@ -2100,7 +2331,7 @@ contains
 
        ! Complete any of the requests.
 
-       call mpi_waitany(size, recvRequests, index, status, ierr)
+       call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
 
        ! Copy the data just arrived in the halo's.
 
@@ -2126,7 +2357,7 @@ contains
 
     size = commPattern%nProcSend
     do i=1,commPattern%nProcSend
-       call mpi_waitany(size, sendRequests, index, status, ierr)
+       call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
     enddo
 
     ! Now we have accumulated back as far as xSeedd (stored in

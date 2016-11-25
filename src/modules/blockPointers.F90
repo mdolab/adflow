@@ -69,8 +69,11 @@ module blockPointers
   integer(kind=intType), dimension(:), pointer :: groupNum
 
   integer(kind=intType), dimension(:,:,:), pointer :: iblank
+  integer(kind=intType), dimension(:,:,:), pointer :: status
   integer(kind=intType), dimension(:,:,:), pointer :: forcedRecv
-  type(fringeType), dimension(:, :, :), pointer :: fringes
+  type(fringeType), dimension(:), pointer :: fringes
+  integer(kind=intType), pointer :: nDonors
+  integer(kind=intType), dimension(:, :, :, :), pointer :: fringePtr
   integer(kind=intType), dimension(:, :), pointer :: orphans
   integer(kind=intType) :: nOrphans
 

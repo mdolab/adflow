@@ -30,11 +30,11 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
   integer(kind=intType) :: i, j, k, ii, jj, kk, iii, jjj,  kkk, nn, index
   integer(kind=intType) :: iStart, iEnd, iProc, iSize, nFringeProc
   integer(kind=intType) :: sendCount, recvCount, ierr, totalRecvSize
-  integer status(MPI_STATUS_SIZE) 
+  integer mpiStatus(MPI_STATUS_SIZE) 
 
   ! First sort the fringes such that they are grouped by destination
   ! procesor.
-  call qsortFringeType(fringeList, nFringe)
+  call qsortFringeType(fringeList, nFringe, sortByDonor)
 
   !-----------------------------------------------------------------
   ! Step 15: Now can scan through the fringeList which is guaranteed
@@ -135,7 +135,7 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
               jjj = fringeList(i)%dJ
               kkk = fringeList(i)%dK
               
-              call setIsWallDonor(flowDoms(nn, level, sps)%fringes(iii, jjj, kkk)%status, .True. )
+              call setIsWallDonor(flowDoms(nn, level, sps)%status(iii, jjj, kkk), .True. )
 
            else
               
@@ -146,7 +146,7 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
                        iii = ii + fringeList(i)%dI
                        jjj = jj + fringeList(i)%dJ
                        kkk = kk + fringeList(i)%dK
-                       call setIsDonor(flowDoms(nn, level, sps)%fringes(iii, jjj, kkk)%status, .True. )
+                       call setIsDonor(flowDoms(nn, level, sps)%status(iii, jjj, kkk), .True. )
                     end do
                  end do
               end do
@@ -158,12 +158,12 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
   ! Complete all the sends/receives. We could do overlapping here
   ! like the frist comm for the fringes/blocks. 
   do i=1, recvCount
-     call mpi_waitany(recvCount, recvRequests, index, status, ierr)
+     call mpi_waitany(recvCount, recvRequests, index, mpiStatus, ierr)
      call EChk(ierr,__FILE__,__LINE__)
   enddo
 
   do i=1, sendCount
-     call mpi_waitany(sendCount, sendRequests, index, status, ierr)
+     call mpi_waitany(sendCount, sendRequests, index, mpiStatus, ierr)
      call EChk(ierr,__FILE__,__LINE__)
   enddo
   
@@ -176,7 +176,7 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
         iii = intRecvBuf(4*j-2)
         jjj = intRecvBuf(4*j-1)
         kkk = intRecvBuf(4*j  )
-        call setIsWallDonor(flowDoms(nn, level, sps)%fringes(iii, jjj, kkk)%status, .True. )
+        call setIsWallDonor(flowDoms(nn, level, sps)%status(iii, jjj, kkk), .True. )
      else
         do kk=0, 1
            do jj=0, 1
@@ -184,7 +184,7 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
                  iii = ii + intRecvBuf(4*j-2)
                  jjj = jj + intRecvBuf(4*j-1)
                  kkk = kk + intRecvBuf(4*j  )
-                 call setIsDonor(flowDoms(nn, level, sps)%fringes(iii, jjj, kkk)%status, .True. )
+                 call setIsDonor(flowDoms(nn, level, sps)%status(iii, jjj, kkk), .True. )
               end do
            end do
         end do

@@ -1,6 +1,7 @@
 subroutine fringeSearch(oBlock, oFringe)
 
   use constants
+  use block, only : fringeType
   use overset, only : oversetBlock, oversetFringe, localWallFringes, &
        tmpFringePtr, nLocalWallFringe
   use inputOverset, onlY : overlapFactor, oversetProjTol
@@ -9,7 +10,7 @@ subroutine fringeSearch(oBlock, oFringe)
   use adtData, only : adtBBoxTargetType
   use adtUtils, only : stack
   use utils, only : mynorm2
-  use oversetUtilities, only : fracToWeights2
+  use oversetUtilities, only : fracToWeights2, addToFringeList
   implicit none
 
   type(oversetBlock), intent(inout) :: oBlock
@@ -31,7 +32,7 @@ subroutine fringeSearch(oBlock, oFringe)
   type(adtBBoxTargetType), dimension(:), pointer :: BB2
   integer(kind=intType), dimension(:), pointer :: frontLeaves
   integer(kind=intType), dimension(:), pointer :: frontLeavesNew
-
+  type(fringeType) :: fringe
   nInterpol = 1 ! we get the ADT to compute the interpolated volume for us. 
 
   ! Allocate the (pointer) memory that may be resized as necessary for
@@ -50,171 +51,123 @@ subroutine fringeSearch(oBlock, oFringe)
   ! Search the cells one at a time:
   do i=1, n
 
-     ! Cells with negative quality are those inside the body. Don't
-     ! bother to search for them since don't need donors. 
-     if (oFringe%quality(i) < zero) then 
-        cycle
-     end if
+     ! Compute the potentailly offset point to search for. 
+     xx(1:3) = oFringe%x(:, i) + offset(:, i)
 
-     ! We can take a little short cut here: If we know that the min
-     ! volume of the oBlock is LARGER than the cell we're searching
-     ! for, it would never be selcted. However, for flood seeding, we
-     ! want to know what is regardless so there is a sepcial attribute
-     ! of fringe to make sure we get an interpolant back, if there is
-     ! one. Note that the check is for whether to do the operation or
-     ! not, so we check that the minimum volume in the oBlock is LESS
-     ! than the volume of the coordinate we're searching for.
-     shortCut: if (  oBlock%minVol < oFringe%quality(i) .or.&
-          (oFringe%isWall(i)>0)) then 
-
-        ! Compute the potentailly offset point to search for. 
-        xx(1:3) = oFringe%x(:, i) + offset(:, i)
-
-        call containmentTreeSearchSinglePoint(oBlock%ADT, xx, intInfo, uvw, &
-             oBlock%qualDonor, nInterpol, BB, frontLeaves, frontLeavesNew, failed)
-
-        if (intInfo(1) >= 0) then 
-           call fracToWeights2(uvw(1:3), weight)
-           xcheck = zero
-           do j=1,8
-              xcheck = xcheck + weight(j)*oBlock%xADT(:, oBlock%hexaConn(j, intInfo(3)))
-           end do
-           
-           if (mynorm2(xcheck - xx(1:3)) > oversetProjTol) then 
-              failed = .True.
-           end if
+     call containmentTreeSearchSinglePoint(oBlock%ADT, xx, intInfo, uvw, &
+          oBlock%qualDonor, nInterpol, BB, frontLeaves, frontLeavesNew, failed)
+     
+     if (intInfo(1) >= 0) then 
+        call fracToWeights2(uvw(1:3), weight)
+        xcheck = zero
+        do j=1,8
+           xcheck = xcheck + weight(j)*oBlock%xADT(:, oBlock%hexaConn(j, intInfo(3)))
+        end do
+        
+        if (mynorm2(xcheck - xx(1:3)) > oversetProjTol) then 
+           failed = .True.
         end if
-
-        if (intInfo(1) >= 0 .and. failed) then 
-           ! we "found" a point but it is garbage. Do the failsafe search
-           xx(4) = large
-           call minDistanceTreeSearchSinglePoint(oBlock%ADT, xx, intInfo, uvw, &
-                oBlock%qualDonor, nInterpol, BB2, frontLeaves, frontLeavesNew)
-
-           ! Check this one:
-           call fracToWeights2(uvw(1:3), weight)
-           xcheck = zero
-           do j=1,8
-              xcheck = xcheck + weight(j)*oBlock%xADT(:, oBlock%hexaConn(j, intInfo(3)))
-           end do
+     end if
+     
+     if (intInfo(1) >= 0 .and. failed) then 
+        ! we "found" a point but it is garbage. Do the failsafe search
+        xx(4) = large
+        call minDistanceTreeSearchSinglePoint(oBlock%ADT, xx, intInfo, uvw, &
+             oBlock%qualDonor, nInterpol, BB2, frontLeaves, frontLeavesNew)
+        
+        ! Check this one:
+        call fracToWeights2(uvw(1:3), weight)
+        xcheck = zero
+        do j=1,8
+           xcheck = xcheck + weight(j)*oBlock%xADT(:, oBlock%hexaConn(j, intInfo(3)))
+        end do
+        
+        ! Since this is the last line of defence, relax the tolerance a bit
+        if (mynorm2(xcheck - xx(1:3)) > 100*oversetProjTol) then 
+           ! This fringe has not found a donor
+           intInfo(1) = -1
+        else
+           ! This one has now passed.
            
-           ! Since this is the last line of defence, relax the tolerance a bit
-           if (mynorm2(xcheck - xx(1:3)) > 100*oversetProjTol) then 
-              ! This fringe has not found a donor
-              intInfo(1) = -1
-           else
-              ! This one has now passed.
-            
-              ! Important! uvw(4) is the distance squared for this search
-              ! not
-              uvw(4) = uvw(5)
-           end if
-
+           ! Important! uvw(4) is the distance squared for this search
+           ! not
+           uvw(4) = uvw(5)
         end if
         
-        elemFound: if (intInfo(1) >= 0) then 
+     end if
+     
+     elemFound: if (intInfo(1) >= 0) then 
 
+        ! Donor and block and index information for this donor. 
+        donorQual = uvw(4)
+        elemID = intInfo(3) - 1 ! Make it zero based
+        ii = mod(elemID, oBlock%il) + 1
+        jj = mod(elemID/oBlock%il, oBlock%jl) + 1
+        kk = elemID/(oBlock%il*oBlock%jl) + 1
 
-           ! Donor and block and index information for this donor. 
-           donorQual = uvw(4)
-           elemID = intInfo(3) - 1 ! Make it zero based
-           ii = mod(elemID, oBlock%il) + 1
-           jj = mod(elemID/oBlock%il, oBlock%jl) + 1
-           kk = elemID/(oBlock%il*oBlock%jl) + 1
-
-           ! If we found a donor and our fringe is a wall, we will
-           ! record if only if it is also not "near" another wall (on
-           ! the oBlock)
-
-           if ((oFringe%isWall(i) > 0) .and.&
-                .not. (oBlock%nearWall(ii, jj, kk) == 1)) then 
-              nLocalWallFringe = nLocalWallFringe + 1
-              
-              ! Check if we still have enough room in our
-              ! localWallFringe array and realloc if necessary
-              ! necessary
-              
-              if (nLocalWallFringe > size(localWallFringes)) then 
-                 nn = size(localWallFringes)
-                 tmpFringePtr => localWallFringes            ! Pointer to existing data
-                 allocate(localWallFringes(2*nn))            ! Allocate new space
-                 localWallFringes(1:nn) = tmpFringePtr(1:nn) ! Copy exsitng values
-                 deallocate(tmpFringePtr)                    ! Free original memory 
-              end if
-              
-              ! Now record the information
-              localWallFringes(nLocalWallFringe)%donorProc = oBlock%proc
-              localWallFringes(nLocalWallFringe)%donorBlock = oBlock%block
-
-               if (uvw(1) < half) then 
-                  localWallFringes(nLocalWallFringe)%dI = ii
-               else
-                  localWallFringes(nLocalWallFringe)%dI = ii +1 
-               end if
-
-               if (uvw(2) < half) then 
-                  localWallFringes(nLocalWallFringe)%dJ = jj
-               else
-                  localWallFringes(nLocalWallFringe)%dJ = jj +1 
-               end if
-
-               if (uvw(3) < half) then 
-                  localWallFringes(nLocalWallFringe)%dK = kk
-               else
-                  localWallFringes(nLocalWallFringe)%dK = kk +1 
-               end if
-                 
-           end if
-
-           ! This check is for the actual donors. The '<' is really
-           ! the 'implicit hole' method where we take the best quality
-           ! donor.
-           
-           if ( donorQual < overlapFactor*oFringe%origQuality(i) .and. &
-              donorQual < oFringe%quality(i)) then 
-
-              invalid = .False.
-              do kkk=0,1
-                 do jjj=0,1
-                    do iii=0,1
-                       if (oBlock%invalidDonor(ii+iii, jj+jjj, kk+kkk)  .ne. 0) then 
-                          invalid = .True.
-                       end if
-                    end do
-                 end do
-              end do
-
-              if (.not. invalid) then 
-
-                 oFringe%donorProc(i) = oBlock%proc
-                 oFringe%donorBlock(i) = oBlock%block
-                 oFringe%dI(i) = ii
-                 oFringe%dJ(i) = jj
-                 oFringe%dK(i) = kk
-                 oFringe%donorFrac(:, i) = uvw(1:3)
-                 oFringe%offset(:, i) = offset(:, i)
-                 ! This is important: We need to reset the quality of
-                 ! this fringe to the donorQuality. This is necessary
-                 ! since we may be searching these same fringes local
-                 ! against another oBlock and we will only accept a
-                 ! different donor if it is better than the best one
-                 ! so far.
-                 oFringe%quality(i) = donorQual
-
-                 ! Save the global indices as well. 
-                 oFringe%gInd(1, i) = oBlock%globalCell(ii  , jj  , kk  )
-                 oFringe%gInd(2, i) = oBlock%globalCell(ii+1, jj  , kk  )
-                 oFringe%gInd(3, i) = oBlock%globalCell(ii  , jj+1, kk  )
-                 oFringe%gInd(4, i) = oBlock%globalCell(ii+1, jj+1, kk  )
-                 oFringe%gInd(5, i) = oBlock%globalCell(ii  , jj  , kk+1)
-                 oFringe%gInd(6, i) = oBlock%globalCell(ii+1, jj  , kk+1)
-                 oFringe%gInd(7, i) = oBlock%globalCell(ii  , jj+1, kk+1)
-                 oFringe%gInd(8, i) = oBlock%globalCell(ii+1, jj+1, kk+1)
+        ! If we found a donor and our fringe is a wall, we will
+        ! record if only if it is also not "near" another wall (on
+        ! the oBlock)
+        
+        ! Now record the information onto the fringe
+        fringe%donorProc = oBlock%proc
+        fringe%donorBlock= oBlock%block
+        fringe%dI        = ii
+        fringe%dJ        = jj
+        fringe%dK        = kk 
+        fringe%donorFrac = uvw(1:3)
+        fringe%quality = donorQual
+        fringe%gInd(1) = oBlock%globalCell(ii  , jj  , kk  )
+        fringe%gInd(2) = oBlock%globalCell(ii+1, jj  , kk  )
+        fringe%gInd(3) = oBlock%globalCell(ii  , jj+1, kk  )
+        fringe%gInd(4) = oBlock%globalCell(ii+1, jj+1, kk  )
+        fringe%gInd(5) = oBlock%globalCell(ii  , jj  , kk+1)
+        fringe%gInd(6) = oBlock%globalCell(ii+1, jj  , kk+1)
+        fringe%gInd(7) = oBlock%globalCell(ii  , jj+1, kk+1)
+        fringe%gInd(8) = oBlock%globalCell(ii+1, jj+1, kk+1)
                 
-              end if
+        ! Also save the information about where it came from,
+        ! we need this to combine everything together at the end. 
+        fringe%myBlock = oFringe%block
+        fringe%myI = mod((i-1), oFringe%nx) + 2
+        fringe%myJ = mod((i-1)/oFringe%nx, oFringe%ny) + 2
+        fringe%myK = (i-1)/(oFringe%nx*oFringe%ny) + 2
+
+        ! Store the donor in the big flat list if it isn't invalid
+        invalid = .False.
+        do kkk=0,1
+           do jjj=0,1
+              do iii=0,1
+                 if (oBlock%invalidDonor(ii+iii, jj+jjj, kk+kkk)  .ne. 0) then 
+                    invalid = .True.
+                 end if
+              end do
+           end do
+        end do
+             
+        if (.not. invalid) then 
+           call addToFringeList(oFringe%fringes, oFringe%nDonor, fringe)
+        end if
+
+        ! Save the fringe to the wallList. Note that we have to do
+        ! this *after* the actual fringeList becuase we may modify the
+        ! dI, dJ, dK here.
+        if ((oFringe%isWall(i) > 0) .and. .not. (oBlock%nearWall(ii, jj, kk) == 1)) then 
+           if (uvw(1) >= half) then 
+              fringe%dI = ii +1 
            end if
-        end if elemFound
-     end if shortCut
+           
+           if (uvw(2) >= half) then 
+              fringe%dJ = jj +1 
+           end if
+           
+           if (uvw(3) >= half) then 
+              fringe%dK = kk +1 
+           end if
+
+           call addToFringeList(localWallFringes, nLocalWallFringe, fringe)
+        end if
+     end if elemFound
   end do
   deallocate(offset, BB, BB2, frontLeaves, frontLeavesNew, stack)
 

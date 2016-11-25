@@ -1,32 +1,6 @@
 module oversetUtilities
 contains
 #ifndef USE_TAPENADE
-  subroutine emptyFringe(fringe)
-    use constants
-    use block, only : fringeType
-    implicit none
-    ! Input/Output
-    type(fringeType), intent(inout) :: fringe
-
-    ! Initialize data in empty fringe
-    fringe%quality = large
-    fringe%origQuality = large
-    fringe%donorProc = -1
-    fringe%donorBlock = -1
-    fringe%dI = -1
-    fringe%dJ = -1
-    fringe%dK = -1
-    fringe%offset = zero
-    fringe%myBlock = -1
-    fringe%myI = -1
-    fringe%myJ = -1
-    fringe%myK = -1
-    fringe%donorFrac = -one
-    fringe%gInd = -1
-    fringe%status = 0
-
-    call setIsCompute(fringe%status, .True.)
-  end subroutine emptyFringe
 
   subroutine printOverlapMatrix(overlap)
 
@@ -263,21 +237,10 @@ contains
        if (oFringes(i)%allocated) then 
           deallocate(&
                oFringes(i)%x, &
-               oFringes(i)%quality, &
-               oFringes(i)%origQuality, &
-               oFringes(i)%myBlock, &
-               oFringes(i)%myIndex, &
-               oFringes(i)%donorProc, &
-               oFringes(i)%donorBlock, &
-               oFringes(i)%dI, &
-               oFringes(i)%dJ, &
-               oFringes(i)%dK, &
-               oFringes(i)%donorFrac, &
-               oFringes(i)%offset, &
-               oFringes(i)%gInd, &
                oFringes(i)%isWall, &
                oFringes(i)%xSeed, &
-               oFringes(i)%wallInd)
+               oFringes(i)%wallInd, &
+               oFringes(i)%fringes)
           if (allocated(oFringes(i)%rbuffer)) then 
              deallocate(oFringes(i)%rBuffer,&
                   oFringes(i)%iBuffer)
@@ -345,10 +308,11 @@ contains
     
     use constants
     use blockPointers, only : nx, ny, nz, ie, je, ke, BCData, BCFaceID, nBocos, BCType, &
-         forcedRecv, flowDoms, nDom
+         forcedRecv, flowDoms, nDom, il, jl, kl, iBlank
     use utils, only : setPointers
     use communication
     use haloExchange, only : whalo1to1IntGeneric, whalo1to1IntGeneric_b
+    use stencils
     implicit none
 
     ! This is generic routine for filling up a 3D array of 1st level halos
@@ -356,6 +320,7 @@ contains
     ! receivers. BlockPointers must have already been set.
 
     integer(kind=intType) :: nn, i, j, k, mm, iStart, iEnd, jStart, jEnd, kStart, kEnd
+    integer(kind=intType) :: ii, jj, kk, i_stencil
 
     do nn=1,nDom
        call setPointers(nn, 1, 1)
@@ -405,6 +370,27 @@ contains
              end do
           end if
        end do
+
+       ! Add to the invalid donor list if it got flooded with iblank of -2 or -3:
+       do k=2, kl
+          do j=2, jl
+             do i=2, il
+                ! Flooded or explictly blanked cell
+                if (iblank(i, j, k) <=-2) then 
+                   stencilLoop: do i_stencil=1, N_visc_drdw
+                      ii = visc_drdw_stencil(i_stencil, 1) + i
+                      jj = visc_drdw_stencil(i_stencil, 2) + j
+                      kk = visc_drdw_stencil(i_stencil, 3) + k
+                      ! Flag as a forced reciver if it *isn't* flooded
+                      ! or explictly blanked
+                      if (iblank(ii, jj, kk) > -2) then 
+                         forcedRecv(ii, jj, kk) = 1
+                      end if
+                   end do stencilLoop
+                end if
+             end do
+          end do
+       end do
     end do
 
     ! Update the info across block boundaries
@@ -441,8 +427,6 @@ contains
     ! sure any halos on other procs are set correctly that may be part of a stencil
     call wHalo1to1IntGeneric(1, 1, 1, commPatternCell_2nd, internalCell_2nd)
     
-
-
   end subroutine flagForcedRecv
 
   ! Utility function for unpacking/accessing the status variable
@@ -450,128 +434,145 @@ contains
   function isDonor(i)
     use constants
     implicit none
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver
     integer(kind=intType), intent(in) :: i
-    call getStatus(i, isDonor, isDonor, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+    call getStatus(i, isDonor, isDonor, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
   end function isDonor
 
   function isHole(i)
     use constants
     implicit none
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver
     integer(kind=intType), intent(in) :: i
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
   end function isHole
 
   function isCompute(i)
     use constants
     implicit none
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver
     integer(kind=intType), intent(in) :: i
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
   end function isCompute
 
   function isFloodSeed(i)
     use constants
     implicit none
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver
     integer(kind=intType), intent(in) :: i
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
   end function isFloodSeed
 
   function isFlooded(i)
     use constants
     implicit none
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver
     integer(kind=intType), intent(in) :: i
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
   end function isFlooded
 
   function isWall(i)
     use constants
     implicit none
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver
     integer(kind=intType), intent(in) :: i
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
   end function isWall
 
   function isWallDonor(i)
     use constants
     implicit none
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver
     integer(kind=intType), intent(in) :: i
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
   end function isWallDonor
+
+  function isReceiver(i)
+    use constants
+    implicit none
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver
+    integer(kind=intType), intent(in) :: i
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
+  end function isReceiver
 
   subroutine setIsDonor(i, flag)
     use constants
     implicit none
     integer(kind=intType), intent(inout) :: i
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
-    call setStatus(i, flag   , isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver, flag
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
+    call setStatus(i, flag   , isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isREceiver)
   end subroutine setIsDonor
 
   subroutine setIsHole(i, flag)
     use constants
     implicit none
     integer(kind=intType), intent(inout) :: i
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
-    call setStatus(i, isDonor, flag  , isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver, flag
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
+    call setStatus(i, isDonor, flag  , isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
   end subroutine setIsHole
 
   subroutine setIsCompute(i, flag)
     use constants
     implicit none
     integer(kind=intType), intent(inout) :: i
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
-    call setStatus(i, isDonor, isHole, flag     , isFloodSeed, isFlooded, isWall, isWallDonor)
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver, flag
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
+    call setStatus(i, isDonor, isHole, flag     , isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
   end subroutine setIsCompute
 
   subroutine setIsFloodSeed(i, flag)
     use constants
     implicit none
     integer(kind=intType), intent(inout) :: i
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
-    call setStatus(i, isDonor, isHole, isCompute, flag       , isFlooded, isWall, isWallDonor)
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver, flag
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
+    call setStatus(i, isDonor, isHole, isCompute, flag       , isFlooded, isWall, isWallDonor, isReceiver)
   end subroutine setIsFloodSeed
 
   subroutine setIsFlooded(i, flag)
     use constants
     implicit none
     integer(kind=intType), intent(inout) :: i
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
-    call setStatus(i, isDonor, isHole, isCompute, isFloodSeed, flag     , isWall, isWallDonor)
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver, flag
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
+    call setStatus(i, isDonor, isHole, isCompute, isFloodSeed, flag     , isWall, isWallDonor, isReceiver)
   end subroutine setIsFlooded
 
   subroutine setIsWall(i, flag)
     use constants
     implicit none
     integer(kind=intType), intent(inout) :: i
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
-    call setStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, flag  , isWallDonor)
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver, flag
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
+    call setStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, flag  , isWallDonor, isReceiver)
   end subroutine setIsWall
 
   subroutine setIsWallDonor(i, flag)
     use constants
     implicit none
     integer(kind=intType), intent(inout) :: i
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
-    call setStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, flag)
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver, flag
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
+    call setStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, flag,        isReceiver)
   end subroutine setIsWallDonor
 
-  subroutine setStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+  subroutine setIsReceiver(i, flag)
+    use constants
+    implicit none
+    integer(kind=intType), intent(inout) :: i
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver, flag
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
+    call setStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag)
+  end subroutine setIsReceiver
+
+  subroutine setStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
 
     use constants
     implicit none
     integer(kind=intType), intent(out) :: i
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver
     i = 0
 
     if (isDonor  )   i = i + 1
@@ -581,14 +582,14 @@ contains
     if (isFlooded  ) i = i + 16
     if (isWall     ) i = i + 32
     if (isWallDonor) i = i + 64
-
+    if (isReceiver)  i = i + 128
   end subroutine setStatus
 
-  subroutine getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+  subroutine getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
 
     use constants
     implicit none
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver
     integer(kind=intType) :: i, j
     j = i
 
@@ -599,6 +600,12 @@ contains
     isFlooded = .False.
     isWall = .False.
     isWallDonor = .False.
+    isReceiver = .False. 
+
+    if (j/128 > 0) then 
+       isReceiver = .True. 
+       j = j -128
+    end if
 
     if (j/64 > 0) then 
        isWallDonor = .True. 
@@ -943,7 +950,7 @@ contains
 
   end subroutine qsortEdgeType
 
-  subroutine qsortFringeType(arr, nn)
+  subroutine qsortFringeType(arr, nn, sortType)
     !
     !       qsortFringeListTy sorts the given number of fringes            
     !       increasing order based on the <= operator for this derived     
@@ -956,7 +963,7 @@ contains
     !
     !      Subroutine arguments.
     !
-    integer(kind=intType), intent(in) :: nn
+    integer(kind=intType), intent(in) :: nn, sortType
 
     type(fringeType), dimension(*), intent(inout) :: arr
     !
@@ -973,6 +980,15 @@ contains
 
     integer(kind=intType), allocatable, dimension(:) :: stack
     integer(kind=intType), allocatable, dimension(:) :: tmpStack
+
+    if (sortType == sortByDonor) then 
+       fringeSortType = sortByDonor
+    else if (sortType == sortByReceiver) then 
+       fringeSortType = sortByReceiver 
+    else
+       call terminate("qsortfringeType", &
+            "Uuknown sort type")
+    end if
 
     ! Allocate the memory for stack.
 
@@ -1160,7 +1176,52 @@ contains
 
   end subroutine qsortFringeType
 
-  !
+  subroutine addToFringeList(fringeList, n, fringe)
+
+    ! Generic subroutine to add to a fringe "List". This isn't
+    ! actually a list but rather an allocatable (pointer) array that
+    ! is periodically resized as necessary. n is the current size
+    ! which is automatically incremented by this routine. This
+    ! operation occurs multiple times throughout the overset code. 
+
+    use constants
+    use block, only : fringeType
+
+    implicit none
+
+    ! Input Params
+    type(fringeType), dimension(:), pointer :: fringeList
+    type(fringeType) :: fringe
+    integer(kind=intType), intent(inout) :: n
+
+    ! Working Paramters
+    integer(kind=intType) :: fSize
+    type(fringeType), dimension(:), pointer :: tmpFringePtr
+    fSize = size(fringeList)
+    
+    ! Increment n for next item
+    n = n + 1
+
+    if (n > fSize) then 
+
+       ! Pointer to existing data:
+       tmpFringePtr => fringeList
+
+       ! Allocate new space
+       allocate(fringeList(2*fSize))
+
+       ! Copy exsitng values
+       fringeList(1:fSize) = tmpFringePtr(1:fSize)
+
+       ! Free original memory 
+       deallocate(tmpFringePtr)    
+
+    end if
+
+    fringeList(n) = fringe
+    
+  end subroutine addToFringeList
+
   subroutine qsortPocketEdgeType(arr, nn)
     !
     !       qsortPocketEdgeType sorts the given number of oversetString    
@@ -1874,7 +1935,7 @@ contains
   subroutine fringeReduction(level, sps)
 
     use constants
-    use blockPointers, only : nDom, il, jl, kl, fringes
+    use blockPointers, only : nDom, il, jl, kl, status, fringePtr
     use stencils, only : visc_drdw_stencil, n_visc_drdw
     use utils, only : setPointers
     implicit none
@@ -1894,7 +1955,7 @@ contains
              do i=2, il
 
                 ! Check if this cell is a fringe:
-                if (fringes(i, j, k)%donorProc /= -1) then 
+                if (isReceiver(status(i, j, k))) then 
 
                    computeCellFound = .False.
 
@@ -1902,8 +1963,8 @@ contains
                       ii = visc_drdw_stencil(i_stencil, 1) + i
                       jj = visc_drdw_stencil(i_stencil, 2) + j
                       kk = visc_drdw_stencil(i_stencil, 3) + k
-
-                      if (isCompute(fringes(ii, jj, kk)%status)) then 
+                      
+                      if (isCompute(status(ii, jj, kk))) then 
                          ! This is a compute cell
                          computeCellFound = .True.
                       end if
@@ -1912,9 +1973,11 @@ contains
                    if (.not. computeCellFound) then 
                       ! This cell is a hole no compute cell
                       ! surrounding a fringe, we can hard iblank it.
-                      call emptyFringe(fringes(i, j, k))
-                      call setIsHole(fringes(i, j, k)%status, .True.)
-                      call setIsCompute(fringes(i, j, k)%status, .False.)
+                      call setIsHole(status(i, j, k), .True.)
+                      call setIsCompute(status(i, j, k), .False.)
+                      call setIsReceiver(status(i, j, k), .False.)
+                      fringePtr(1, i, j, k) = 0
+
                    end if
                 end if
              end do
@@ -1927,7 +1990,7 @@ contains
   subroutine irregularCellCorrection(level, sps)
 
     use constants
-    use blockPointers, only : nDom, il, jl, kl, fringes, ie, je, ke, forcedRecv
+    use blockPointers, only : nDom, il, jl, kl, status, ie, je, ke, forcedRecv
     use utils, only : setPointers
     implicit none
 
@@ -1937,18 +2000,19 @@ contains
     ! Working
     integer(kind=intType) :: i, j, k, nn
 
-    call flagForcedRecv()
     do nn=1, nDom
        call setPointers(nn, level, sps)
 
        do k=2, kl
           do j=2, jl
              do i=2, il
-                if (isDonor(fringes(i, j, k)%status) .and. &
-                     fringes(i, j, k)%donorProc /= -1 .and. &
-                     forcedRecv(i,j,k) == 0) then 
-                   ! Clear this fringe
-                   call emptyFringe(fringes(i, j, k))
+                if (isDonor(status(i, j, k)) .and. &
+                     isReceiver(status(i, j, k))) then
+
+                   ! Clear the fringe
+                   call setIsDonor(status(i, j, k), .False.)
+                   call setIsReceiver(status(i, j, k), .False.)
+                   call setIsCompute(status(i, j, k), .True.)
                 end if
              end do
           end do
@@ -1994,7 +2058,8 @@ contains
   subroutine setIblankArray(level, sps)
 
     use constants
-    use blockPointers, only : nDom, il, jl, kl, fringes, iblank, flowDoms, ie, je, ke, forcedRecv
+    use block
+    use blockPointers, only : nDom, il, jl, kl, status, iblank, flowDoms, ie, je, ke, forcedRecv
     use communication, only : myid, commPatternCell_2nd, internalCell_2nd,&
          adflow_comm_world
     use utils, only : setPointers, EChk
@@ -2008,6 +2073,7 @@ contains
     integer(kind=intType) :: i, j, k, nn
     integer(kind=intType) :: nCompute, nFringe, nBlank, nFloodSeed, nFlooded, nExplicitBlanked
     integer(kind=intType) :: counts(6), ierr
+    type(fringeType) :: fringe
     nCompute = 0
     nFringe = 0
     nBlank = 0
@@ -2022,20 +2088,21 @@ contains
        do k=2, kl
           do j=2, jl
              do i=2, il
-
-                if (fringes(i, j, k)%donorProc /= -1) then
+                
+                
+                if (isReceiver(status(i, j, k))) then 
                    iblank(i, j, k) = -1
                    nFringe = nFringe + 1
 
-                else if (isFloodSeed(fringes(i, j, k)%status)) then
+                else if (isFloodSeed(status(i, j, k))) then
                    iBlank(i, j, k) = -3
                    nFloodSeed = nFloodSeed + 1
 
-                else if (isFlooded(fringes(i, j, k)%status)) then
+                else if (isFlooded(status(i, j, k))) then
                    iBlank(i, j, k) = -2
                    nFlooded = nFlooded + 1
 
-                else if (isHole(fringes(i, j, k)%status)) then 
+                else if (isHole(status(i,j, k))) then 
                    iBlank(i, j, k) = 0
                    nBlank = nBlank + 1
 
@@ -2058,8 +2125,6 @@ contains
                       end if
                    end if
                 end if
-
-
              end do
           end do
        end do
@@ -2286,6 +2351,9 @@ contains
                      (indy-1)*nx_cg       + &
                      (indx-1)
                 vals(1) = real(iblank(i,j,k))
+                if (vals(1) <= -2) then 
+                   vals(1) = 0
+                end if
                 vals(2) = real(nbkGlobal)
                 vals(3) = real(indx)
                 vals(4) = real(indy)

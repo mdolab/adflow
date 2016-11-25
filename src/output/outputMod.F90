@@ -1266,7 +1266,7 @@ contains
           do j=jBeg,jEnd
              do i=iBeg,iEnd
                 if (oversetPresent) then 
-                   wIO(i,j,k,1) = real(fringes(i,j,k)%status)
+                   wIO(i,j,k,1) = real(status(i, j, k))
                 else
                    wIO(i,j,k,1) = 0
                 end if
