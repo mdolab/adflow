@@ -346,9 +346,8 @@ contains
   subroutine getOFringeBufferSizes(il, jl, kl, iSize, rSize)
 
     ! Subroutine to get the required buffer sizes. This one is pretty
-    ! easy, but we use a routine to make it look the same as for hte
-    ! oBlock. Note that these bufer sizes are over-estimates. They are
-    ! the maximum possible amount of data to send. 
+    ! easy, but we use a routine to make it look the same as for the 
+    ! oBlock. 
 
     use constants
     implicit none
@@ -364,8 +363,8 @@ contains
     mm = (il-1)*(jl-1)*(kl-1) ! nx*ny*nz
 
     ! Initializeation
-    iSize = mm * 3 + 4! We need wallInd, isWall and myIndex plus 4 for the sizes
-    rSize = mm * 8 ! Need to send x, quality, origQuality and xSeed
+    iSize = mm * 5 + 5 ! We need wallInd, isWall, myI, myJ, myK plus 5 for the sizes
+    rSize = mm * 6 ! Need to send x and xSeed (3 each)
 
   end subroutine getOFringeBufferSizes
 
@@ -397,19 +396,17 @@ contains
     ! Allocate the buffers
     allocate(oFringe%rBuffer(rSize), oFringe%iBuffer(iSize))
 
-    mm = (oFringe%il-1)*(oFringe%jl-1)*(oFringe%kl-1)
+    mm = (oFringe%nx)*(oFringe%ny)*(oFringe%nz)
 
     oFringe%iBuffer(1) = oFringe%il
     oFringe%iBuffer(2) = oFringe%jl
     oFringe%iBuffer(3) = oFringe%kl
     oFringe%iBuffer(4) = oFringe%cluster
+    oFringe%iBuffer(5) = oFringe%block
+    ii = 5
 
-    ii = 4
-
-    ! Copy the integers. Just myIndex  and wallInd for sending.
+    ! Copy the integers. Just wallInd and isWall
     do i=1, mm
-       ii = ii +1
-       oFringe%iBuffer(ii) = oFringe%myIndex(i)
 
        ii = ii +1
        oFringe%iBuffer(ii) = oFringe%wallInd(i)
@@ -417,23 +414,27 @@ contains
        ii = ii +1
        oFringe%iBuffer(ii) = oFringe%isWall(i)
 
+       ii = ii +1
+       oFringe%iBuffer(ii) = oFringe%fringes(i)%myI
+
+       ii = ii +1
+       oFringe%iBuffer(ii) = oFringe%fringes(i)%myJ
+
+       ii = ii +1
+       oFringe%iBuffer(ii) = oFringe%fringes(i)%myK
+
     end do
 
-    ! Copy the reals
+    ! Copy the reals. Reset the buffer here.
     ii = 0
     do i=1, mm
        oFringe%rBuffer(ii+1) = oFringe%x(1, i)
        oFringe%rBuffer(ii+2) = oFringe%x(2, i)
        oFringe%rBuffer(ii+3) = oFringe%x(3, i)
-
-       oFringe%rBuffer(ii+4) = oFringe%quality(i)
-
-       oFringe%rBuffer(ii+5) = oFringe%xSeed(1, i)
-       oFringe%rBuffer(ii+6) = oFringe%xSeed(2, i)
-       oFringe%rBuffer(ii+7) = oFringe%xSeed(3, i)
-
-       oFringe%rBuffer(ii+8) = oFringe%origQuality(i)
-       ii = ii + 8
+       oFringe%rBuffer(ii+4) = oFringe%xSeed(1, i)
+       oFringe%rBuffer(ii+5) = oFringe%xSeed(2, i)
+       oFringe%rBuffer(ii+6) = oFringe%xSeed(3, i)
+       ii = ii + 6
     end do
 
   end subroutine packOFringe
@@ -457,68 +458,59 @@ contains
     oFringe%il = oFringe%iBuffer(1)
     oFringe%jl = oFringe%iBuffer(2)
     oFringe%kl = oFringe%iBuffer(3)
+    oFringe%nx = oFringe%il-1
+    oFringe%ny = oFringe%jl-1
+    oFringe%nz = oFringe%kl-1
     oFringe%cluster = oFringe%iBuffer(4)
+    oFringe%block = oFringe%ibuffer(5)
 
-    mm = (oFringe%il-1)*(oFringe%jl-1)*(oFringe%kl-1)
+    mm = (oFringe%nx)*(oFringe%ny)*(oFringe%nz)
 
     allocate(& 
          oFringe%x(3, mm), &
-         oFringe%quality(mm), &
-         oFringe%origQuality(mm), &
-         oFringe%myBlock(mm), &
-         oFringe%myIndex(mm), &
-         oFringe%donorProc(mm), &
-         oFringe%donorBlock(mm), &
-         oFringe%dI(mm), &
-         oFringe%dJ(mm), &
-         oFringe%dK(mm), &
-         oFringe%donorFrac(3, mm), &
-         oFringe%offset(3, mm), &
-         oFringe%gInd(8, mm), &    
          oFringe%xSeed(3, mm), &
          oFringe%wallInd(mm), &
          oFringe%isWall(mm))
 
-    ! Initialzize default values
-    oFringe%donorProc = -1
-    oFringe%dI = -1
-    oFringe%dJ = -1
-    oFringe%dK = -1
-    oFringe%donorFrac = -one
-    oFringe%offset = zero
-    oFringe%gInd = -1
-    oFringe%wallInd = 0
-    oFringe%xSeed = large
+    ! Assume each cell will get just one donor. It's just a guess, it
+    ! will be expanded if necessary so the exact value doesn't matter.
+    allocate(oFringe%fringes(mm))
+    oFringe%nDonor = 0
 
-    ii = 4 ! Already copied out the sizes
+    ii = 5 ! Already copied out the sizes
+
+    ! Copy out integers
     do i=1, mm
-       ii = ii + 1
-       oFringe%myIndex(i) = oFringe%iBuffer(ii)
-
        ii = ii + 1
        oFringe%wallInd(i) = oFringe%iBuffer(ii)
 
        ii = ii + 1
        oFringe%isWall(i) = oFringe%iBuffer(ii)
 
+       ii = ii + 1
+       oFringe%fringes(i)%myI = oFringe%iBuffer(ii)
+
+       ii = ii + 1
+       oFringe%fringes(i)%myJ = oFringe%iBuffer(ii)
+
+       ii = ii + 1
+       oFringe%fringes(i)%myK = oFringe%iBuffer(ii)
+
+       oFringe%fringes(i)%myBlock = oFringe%block
     end do
 
-    ! Copy the reals
+    ! Copy the reals. Reset the counter ii counter here.
     ii = 0
     do i=1, mm
        oFringe%x(1, i) = oFringe%rBuffer(ii+1)
        oFringe%x(2, i) = oFringe%rBuffer(ii+2)
        oFringe%x(3, i) = oFringe%rBuffer(ii+3)
 
-       oFringe%quality(i) = oFringe%rBuffer(ii+4)
+       oFringe%xSeed(1, i) = oFringe%rBuffer(ii+4)
+       oFringe%xSeed(2, i) = oFringe%rBuffer(ii+5)
+       oFringe%xSeed(3, i) = oFringe%rBuffer(ii+6)
 
-       oFringe%xSeed(1, i) = oFringe%rBuffer(ii+5)
-       oFringe%xSeed(2, i) = oFringe%rBuffer(ii+6)
-       oFringe%xSeed(3, i) = oFringe%rBuffer(ii+7)
-
-       oFringe%origQuality(i) = oFringe%rBuffer(ii+8)
-
-       ii = ii + 8
+       ii = ii + 6
     end do
 
     ! Flag this oFringe as being allocated:

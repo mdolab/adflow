@@ -2337,6 +2337,7 @@ end subroutine cross_prod
     nullify(flowDoms(nn,level,sps)%groupNum)
 
     nullify(flowDoms(nn,level,sps)%iblank)
+    nullify(flowDoms(nn,level,sps)%status)
     nullify(flowDoms(nn,level,sps)%fringes)
     nullify(flowDoms(nn,level,sps)%orphans)
 
@@ -3045,8 +3046,13 @@ end subroutine cross_prod
 
     ! Overset boundary and hole info.
     iblank => flowDoms(nn,mm,ll)%iblank
+    status => flowDoms(nn,mm,ll)%status
     forcedRecv => flowDoms(nn,mm,ll)%forcedRecv
+
     fringes => flowDoms(nn,mm,ll)%fringes
+    fringePtr => flowDoms(nn,mm,ll)%fringePtr
+    nDonors => flowDoms(nn,mm,ll)%nDonors
+
     orphans => flowDoms(nn,mm,ll)%orphans
     nOrphans = flowDoms(nn,mm,ll)%nOrphans
 
@@ -5074,6 +5080,10 @@ end subroutine cross_prod
 
     if( associated(flowDoms(nn,level,sps)%iblank) ) &
          deallocate(flowDoms(nn,level,sps)%iblank, stat=ierr)
+    if(ierr /= 0) deallocationFailure = .true.
+
+    if( associated(flowDoms(nn,level,sps)%status) ) &
+         deallocate(flowDoms(nn,level,sps)%status, stat=ierr)
     if(ierr /= 0) deallocationFailure = .true.
 
     if( associated(flowDoms(nn,level,sps)%BCData) ) &

@@ -2,11 +2,12 @@ subroutine floodInteriorCells(level, sps)
   use constants
   use communication, only : commPatternCell_1st, internalCell_1st, adflow_comm_world, myid
   use blockPointers, only : il, jl, kl, nx, ny, nz, ie, je, ke, ib, jb, kb,  &
-       nDom, flowDoms, iBlank, fringes
+       nDom, flowDoms, iBlank, status
   use utils, only : setPointers, EChk
   use haloExchange, only : whalo1to1intGeneric
   use oversetUtilities, only :  isCompute, isWallDonor, isFloodSeed, isHole, setIsFlooded, &
-       setIsHole, setIsCompute, setIsFloodSeed, setIsHole, emptyFringe
+       setIsHole, setIsCompute, setIsFloodSeed, setIsHole, isReceiver, setIsReceiver, &
+       setIsDonor
 
   implicit none
 
@@ -65,8 +66,8 @@ subroutine floodInteriorCells(level, sps)
               do j=2, jl
                  do i=2, il
                     if (iblank(i, j, k) == -3 .or. iblank(i, j, k) == -2) then 
-                       call setIsCompute(fringes(i, j, k)%status, .True.)
-                       fringes(i, j, k)%donorProc = -1
+                       call setIsCompute(status(i, j, k), .True.)
+                       call setIsReceiver(status(i, j, k), .False.)
                     end if
                  end do
               end do
@@ -75,7 +76,7 @@ subroutine floodInteriorCells(level, sps)
            do k=2, kl
               do j=2, jl
                  do i=2, il
-                    if (isWallDonor(fringes(i, j, k)%status)) then
+                    if (isWallDonor(status(i, j, k))) then
                        call addSeed(i,j ,k)
                     end if
                  end do
@@ -141,9 +142,9 @@ subroutine floodInteriorCells(level, sps)
               i = stack(1, stackPointer)
               j = stack(2, stackPointer)
               k = stack(3, stackPointer)
-              call setIsFloodSeed(fringes(i, j, k)%status, .True. )
-              fringes(i, j, k)%donorProc = -1 ! Remove the status of
-                                              ! this cell as a fringe
+              call setIsFloodSeed(status(i, j, k), .True.)
+              call setIsDonor(status(i, j, k), .False.)
+              call setIsReceiver(status(i,j,k), .False.)
            end if
 
            ! Start the flooding (stacked based, not recursive)
@@ -155,7 +156,7 @@ subroutine floodInteriorCells(level, sps)
               k = stack(3, stackPointer)
               stackPointer = stackPointer - 1
 
-              if (isCompute(fringes(i, j, k)%status) .and. fringes(i, j, k)%donorProc == -1 .and. iblank(i,j,k)/=-4) then 
+              if (isCompute(status(i, j, k)) .and. .not. isReceiver(status(i, j, k)) .and. iblank(i,j,k)/=-4) then 
                  ! Flag the cell (using changed) as being changed
                  changed(i+1, j+1, k+1) = 1
 
@@ -166,14 +167,11 @@ subroutine floodInteriorCells(level, sps)
                     nChangedLocal = nChangedLocal + 1
                  end if
 
-                 ! Pure compute cell, convert to hole
-                 tmpSave = isFloodSeed(fringes(i, j, k)%status)
-                 call emptyFringe(fringes(i, j, k))
-                 call setIsHole(fringes(i, j, k)%status, .True.)
-                 call setIsFlooded(fringes(i, j, k)%status, .True.)
-                 call setIsCompute(fringes(i, j, k)%status, .False.)
-                 call setIsFloodSeed(fringes(i, j, k)%status, tmpSave)
-                 
+                 ! pure compute cell, convert to hole
+                 call setIsHole(status(i, j, k), .True.)
+                 call setIsFlooded(status(i, j, k), .True.)
+                 call setIsCompute(status(i, j, k), .False.)
+                            
                  ! Now add the six nearest neighbours to the stack
                  ! provided they are in the owned cell range:
 

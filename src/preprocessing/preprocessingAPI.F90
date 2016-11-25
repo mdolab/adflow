@@ -815,7 +815,7 @@ contains
 
        ! Complete any of the requests.
 
-       call mpi_waitany(size, recvRequests, index, status, ierr)
+       call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
 
        ! Copy the data just arrived in the halo's.
 
@@ -843,7 +843,7 @@ contains
 
     size = commPattern(level)%nProcSend
     do i=1,commPattern(level)%nProcSend
-       call mpi_waitany(size, sendRequests, index, status, ierr)
+       call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
     enddo
 
     ! Deallocate the memory for the sending and receiving buffers.
@@ -1712,7 +1712,7 @@ contains
     integer(kind=intType), dimension(:), allocatable :: link, startIndices, endIndices
     integer(kind=intType), dimension(:), allocatable :: nNodesProc, cumNodesProc
     real(kind=realType) :: tol
-    integer(kind=intType) :: status(MPI_STATUS_SIZE)
+    integer(kind=intType) :: mpiStatus(MPI_STATUS_SIZE)
 
     ! Save the family list. 
     nFam = size(famList)
@@ -1818,7 +1818,7 @@ contains
        else if(myid == iProc+1) then 
 
           ! Receive the value from the proc below me:
-          call mpi_recv(iEnd, 1, adflow_integer, iProc, iProc, adflow_comm_world, status, ierr)
+          call mpi_recv(iEnd, 1, adflow_integer, iProc, iProc, adflow_comm_world, mpiStatus, ierr)
           call EChk(ierr,__FILE__,__LINE__)
 
           ! On this proc, the start index is the 
