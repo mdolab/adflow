@@ -1679,7 +1679,7 @@ contains
     integer(kind=intType) :: iSurf, ierr, nInterpol, iProc
     integer(kind=intType) :: nHexa, nAdt, planeOffset, elemID, nPts
     real(kind=realType) :: xc(4), weight(8)
-    integer status(MPI_STATUS_SIZE) 
+    integer mpiStatus(MPI_STATUS_SIZE) 
 
     real(kind=realType) :: uvw(5), uvw2(5), donorQual, xcheck(3)
     integer(kind=intType) :: intInfo(3), intInfo2(3)
@@ -1878,11 +1878,11 @@ contains
           if (procSizes(iProc) /= 0) then 
              
              call MPI_recv(intSend, 6*nPts, adflow_integer, iProc, iProc,&
-                  adflow_comm_world, status, ierr)
+                  adflow_comm_world, mpiStatus, ierr)
              call EChk(ierr,__FILE__,__LINE__)
              
              call MPI_recv(realSend, 4*nPts, adflow_real, iProc, iProc,&
-                  adflow_comm_world, status, ierr)
+                  adflow_comm_world, mpiStatus, ierr)
              call EChk(ierr,__FILE__,__LINE__)
              
              ! Now process the data (intSend and realSend) that we
@@ -1920,7 +1920,7 @@ contains
        end do
        
        ! Perform the actual sort. 
-       call qsortFringeType(surfFringes, nPts)
+       call qsortFringeType(surfFringes, nPts, sortByDonor)
        
        ! We will reuse-proc sizes to now mean the number of elements
        ! that the processor *actually* has to send. We will include
@@ -1982,11 +1982,11 @@ contains
           ! final data structure. 
           
           call MPI_recv(intSend, 6*comm%nDonor, adflow_integer, 0, myid, &
-               adflow_comm_world, status, ierr)
+               adflow_comm_world, mpiStatus, ierr)
           call EChk(ierr,__FILE__,__LINE__)
           
           call MPI_recv(realSend, 4*comm%nDonor, adflow_real, 0, myID, &
-               adflow_comm_world, status, ierr)
+               adflow_comm_world, mpiStatus, ierr)
           call EChk(ierr,__FILE__,__LINE__)
 
           ! Copy into final structure

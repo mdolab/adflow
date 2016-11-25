@@ -5,12 +5,13 @@ subroutine finalOversetCommStructures(level, sps)
   ! sendProc, nProcSend, nSend, and sendList for each proc
   ! recvProc, nProcRecv, nRecv, and recvList for each proc
   use constants
-  use blockPointers, only : nDom, fringes, ib, jb, kb
+  use blockPointers, only : nDom, fringes, ib, jb, kb, status, fringePtr
   use overset, only: fringeType
   use communication, only : adflow_comm_world, myid, nProc, sendRequests, recvRequests, &
        commPatternOverset, internalOverset
   use utils, only : setPointers, terminate, EChk
-  use oversetUtilities, only : fracToWeights, qsortFringeType, getCumulativeForm, computeFringeProcArray
+  use oversetUtilities, only : fracToWeights, qsortFringeType, getCumulativeForm, computeFringeProcArray, &
+       isReceiver
   implicit none
 
   ! Input Parameters
@@ -29,7 +30,7 @@ subroutine finalOversetCommStructures(level, sps)
   integer(kind=intType), dimension(:), allocatable :: fringeProc, cumFringeProc
   integer(kind=intType), dimension(:), allocatable :: intSendBuf, intRecvBuf
   real(kind=realType), dimension(:), allocatable :: realSendBuf, realRecvBuf
-  integer status(MPI_STATUS_SIZE) 
+  integer mpiStatus(MPI_STATUS_SIZE) 
 
   ! We need to fill in the following information in the comm patterns:
   ! sendProc, nProcSend, nSend, and sendList for each proc
@@ -42,9 +43,8 @@ subroutine finalOversetCommStructures(level, sps)
      do k=0, kb
         do j=0, jb
            do i=0, ib
-              if (fringes(i, j, k)%donorProc /= -1) then 
+              if (isReceiver(status(i, j, k))) then 
                  nLocalFringe = nLocalFringe + 1
-
               end if
            end do
         end do
@@ -59,9 +59,10 @@ subroutine finalOversetCommStructures(level, sps)
      do k=0, kb
         do j=0, jb
            do i=0, ib
-              if (fringes(i, j, k)%donorProc /= -1) then 
+              if (isReceiver(status(i, j, k))) then 
                  nLocalFringe = nLocalFringe + 1
-                 localFringes(nLocalFringe) = fringes(i, j, k)
+                 ii = fringePtr(1, i, j, k)
+                 localFringes(nLocalFringe) = fringes(ii)
               end if
            end do
         end do
@@ -69,7 +70,7 @@ subroutine finalOversetCommStructures(level, sps)
   end do
 
   ! Sort the actual fringes
-  call qsortFringeType(localFringes, nLocalFringe)
+  call qsortFringeType(localFringes, nLocalFringe, sortByDonor)
 
   ! On the first pass with our local data we can determine the
   ! internal nCopy as well as the nProcRecv. We also increment
@@ -266,12 +267,12 @@ subroutine finalOversetCommStructures(level, sps)
   ! like the frist comm for the fringes/blocks. 
 
   do i=1, recvCount
-     call mpi_waitany(recvCount, recvRequests, index, status, ierr)
+     call mpi_waitany(recvCount, recvRequests, index, mpiStatus, ierr)
      call EChk(ierr,__FILE__,__LINE__)
   enddo
 
   do i=1, sendCount
-     call mpi_waitany(sendCount, sendRequests, index, status, ierr)
+     call mpi_waitany(sendCount, sendRequests, index, mpiStatus, ierr)
      call EChk(ierr,__FILE__,__LINE__)
   enddo
 

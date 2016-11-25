@@ -1,209 +1,44 @@
 module oversetInitialization
 
 contains
-  subroutine initializeFringes(nn, level, sps)
 
-    ! This subroutine initializes the fringe information for the given
-    ! block, level and spectral instance. It is assumed that
-    ! blockPointers are already set. 
+  subroutine initializeStatus(level, sps)
+
+    ! This subroutine initializes the status variable for use in the
+    ! overset process
+
     use constants
-    use communication, only : myid
-    use blockPointers, only : nDom, ib, jb, kb, il, jl, kl, fringes, BCData, &
-         nBocos, BCFaceID, vol, ie, je, ke, flowDoms, x, iBlank, BCType, forcedRecv
-    use overset, only : cumDomProc, clusters
-    use stencils, only : visc_drdw_stencil, N_visc_drdw
-    use inputOverset, only : backgroundVolScale
-    use oversetUtilities, only : flagForcedRecv, emptyFringe, setIsCompute, &
-         wallsOnBlock
+    use blockPointers, only : nDom, il, jl, kl, ib, jb, kb, status
+    use oversetUtilities, only : setIsCompute
+    use utils, only : setPointers
     implicit none
 
-    ! Input Params
-    integer(kind=intType), intent(in) :: nn, level, sps
+    ! Input params
+    integer(kind=intType), intent(in) :: level, sps
 
-    ! Working Params
-    integer(kind=intTYpe) :: i, j, k, mm, iDim, ii, jj, kk, iii, jjj
-    integer(kind=intTYpe) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
-    logical :: wallsPresent
-    integer(kind=intType) :: i_stencil, clusterID
-    real(kind=realType) :: frac, dist, xp(3)
-    ! Allocate space for the double halo fringes. 
-    if (.not. associated(flowDoms(nn, level, sps)%fringes)) then 
-       allocate(flowDoms(nn, level, sps)%fringes(0:ib, 0:jb, 0:kb))
-    end if
+    ! Working parameters
+    integer(kind=intType) :: nn, i, j, k
 
-    clusterID = clusters(cumDomProc(myid) + nn)
+    do nn=1, nDom
+       call setPointers(nn, level, sps)
 
-    ! Check if we have walls:
-    call wallsOnBLock(wallsPresent)
+       ! Initialize status to zero. That is all the status flags are
+       ! false.
+       status = 0
 
-    ! Manually set the pointer to fringes we (possibly) just allocated
-    ! instead of calling setPointers again
-    fringes => flowDoms(nn, level, sps)%fringes
-
-    ! Loop over all cells, including halos, setting all isCompute to
-    ! false. This is important. Halos cells on boundaries are *not*
-    ! considered compute cells. 
-
-    do k=0, kb
-       do j=0, jb
-          do i=0, ib
-             call emptyFringe(fringes(i, j, k))
-             fringes(i, j, k)%myI = i
-             fringes(i, j, k)%myJ = j
-             fringes(i, j, k)%myK = k
-             fringes(i, j, k)%myBlock = nn
-             call setIsCompute(fringes(i, j, k)%status, .False.)
-          end do
-       end do
-    end do
-
-    ii = 0
-    do k=2, kl
-       do j=2, jl
-          do i=2, il
-             call setIsCompute(fringes(i, j, k)%status, .True.)
-             ii = ii + 1
-             if (wallsPresent) then 
-
-                xp = eighth*(&
-                     x(i-1, j-1, k-1, :) + &
-                     x(i  , j-1, k-1, :) + &
-                     x(i-1, j  , k-1, :) + &
-                     x(i  , j  , k-1, :) + &
-                     x(i-1, j-1, k  , :) + &
-                     x(i  , j-1, k  , :) + &
-                     x(i-1, j  , k  , :) + &
-                     x(i  , j  , k  , :))
-
-                ! dist = norm2(xp - xSeed(i, j, k, :))
-                ! frac = dist/clusterMarchDist(clusterID)
-                frac = one
-
-                fringes(i, j, k)%quality = frac*vol(i, j, k)**third
-             else
-                fringes(i, j, k)%quality = (backgroundVolScale*vol(i, j, k))**third
-             end if
-          end do
-       end do
-    end do
-
-    ! Now loop over this block's boundary condiitons and we need to set
-    ! a litle info: We need to flag the two levels next to an overset
-    ! outer boundary as being a "forced receiver'. To implement this, we
-    ! set the volume of these cells to "large".  We use the generic
-    ! flagForcedReceiver routine for this since the same information is
-    ! used elsewhere.
-
-    do k=2, kl
-       do j=2, jl
-          do i=2, il
-             if (forcedRecv(i,j,k) .ne. 0) then
-                fringes(i, j, k)%quality = large
-             end if
-          end do
-       end do
-    end do
-    
-    ! Flag all the interior hole cells with a *negative* quality since
-    ! this means it won't try to get a stencil:
-
-    do k=2, kl
-       do j=2, jl
-          do i=2, il
-
-             if (iBlank(i, j, k) == -2 .or. iblank(i, j, k)==-3 .or. &
-                iblank(i, j, k) == -4) then 
-                fringes(i, j, k)%quality = -large
-             end if
-          end do
-       end do
-    end do
-
-    ! Flag the cells *surrounding* the hold cells with large
-    ! quality. That forces them to get a donor. Note that we *don't*
-    ! overwrite the exisitng -2 and -3 cells. 
-
-    do k=0, kb
-       do j=0, jb
-          do i=0, ib
-             if (iBlank(i,j,k) == -2 .or. iblank(i,j,k)==-3 .or. iblank(i,j,k) == -4) then 
-
-                stencilLoop: do i_stencil=1, N_visc_drdw
-                   ii = visc_drdw_stencil(i_stencil, 1) + i
-                   jj = visc_drdw_stencil(i_stencil, 2) + j
-                   kk = visc_drdw_stencil(i_stencil, 3) + k
-
-                   ! Make sure we're on-block
-                   if (ii >=2 .and. ii <= il .and. jj >= 2 .and. jj<= jl .and. &
-                        kk >=2 .and. kk <= kl) then 
-                      if (iblank(ii, jj, kk) /= -3 .and. iblank(ii, jj, kk) /=-2 .and. &
-                         iblank(ii, jj, kk) /= -4) then 
-                         fringes(ii, jj, kk)%quality = large
-                      end if
-                   end if
-                end do stencilLoop
-             end if
-          end do
-       end do
-    end do
-
-    ! Flag the actual halo cells behind an overset outer boundary as
-    ! holes. We must *NEVER EVER EVER* use these cells in a stencil. 
-    do mm=1,nBocos
-
-       select case (BCFaceID(mm))
-       case (iMin)
-          iStart=0; iEnd=1;
-          jStart=BCData(mm)%inBeg+1; jEnd=BCData(mm)%inEnd
-          kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
-       case (iMax)
-          iStart=ie; iEnd=ib;
-          jStart=BCData(mm)%inBeg+1; jEnd=BCData(mm)%inEnd
-          kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
-       case (jMin)
-          iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-          jStart=0; jEnd=1;
-          kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
-       case (jMax)
-          iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-          jStart=je; jEnd=jb;
-          kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
-       case (kMin)
-          iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-          jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
-          kStart=0; kEnd=1;
-       case (kMax)
-          iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-          jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
-          kStart=ke; kEnd=kb;
-       end select
-
-       if (BCType(mm) == OversetOuterBound) then
-          do k=kStart, kEnd
-             do j=jStart, jEnd
-                do i=iStart, iEnd
-                   ! Set these to 0 if they are not already explictly blanked (-4)
-                   if (.not. iblank(i,j,k) == -4) then 
-                      iblank(i,j,k) = 0
-                   end if
-                end do
+       ! Now loop over the owned cells and set the isCompute flag to
+       ! true. 
+       
+       do k=2, kl
+          do j=2, jl
+             do i=2, il
+                call setIsCompute(status(i, j, k), .True. )
              end do
           end do
-       end if
-    end do
-
-    ! Set the original quality
-    do k=2, kl
-       do j=2, jl
-          do i=2, il
-             fringes(i, j, k)%origQuality = fringes(i, j, k)%quality
-          end do
        end do
     end do
 
-  
-
-  end subroutine initializeFringes
+  end subroutine initializeStatus
 
   subroutine initializeOBlock(oBlock, nn, level, sps)
 
@@ -249,8 +84,8 @@ contains
          oBlock%globalCell(0:ib, 0:jb, 0:kb), &
          oBlock%invalidDonor(1:ie, 1:je, 1:ke))
 
-    oBlock%invalidDonor = 0
-    !call flagForcedReceivers(oBlock%invalidDonor)
+    ! Invalid Donor array is simply if the cell is a forced receiver
+    ! or not.
     do k=1,ke
        do j=1,je
           do i=1,ie
@@ -259,72 +94,17 @@ contains
        end do
     end do
 
-    ! Add to the invalid donor list if it got flooded with iblank of -2 or -3:
-    do k=0, kb
-       do j=0, jb
-          do i=0, ib
-             ! This is a hard interior cell. Flag EVERY cell it it's
-             ! stencil as a invalid donor. 
-             if (iblank(i, j, k) ==-3 .or. iBlank(i, j,k) == -2 .or. iblank(i,j,k)== -4) then 
-
-                stencilLoop: do i_stencil=1, N_visc_drdw
-                   ii = visc_drdw_stencil(i_stencil, 1) + i
-                   jj = visc_drdw_stencil(i_stencil, 2) + j
-                   kk = visc_drdw_stencil(i_stencil, 3) + k
-
-                   ! Make sure we're at least at 1-level halos
-                   if (ii >= 1 .and. ii <= ie .and. jj >= 1 .and. jj<= je .and. &
-                        kk >= 1 .and. kk <= ke) then 
-                      oBlock%invalidDonor(ii, jj, kk) = 1
-
-                   end if
-                end do stencilLoop
-             end if
-          end do
-       end do
-    end do
-
-    ! Copy Volume to qualDonor and do minVol while we're at it
-    oBlock%minVol = Large
+    ! Compute the qualDonor depending on if we have a wall block or not. 
     mm = 0
-
     do k=1,ke
        do j=1,je
           do i=1,ie
              mm = mm + 1
              if (wallsPresent) then 
-
-                ii = i
-                jj = j
-                kk = k
-                ! If the cell is a boundary halo, use the real cell
-                if (globalCell(i, j, k) < 0) then 
-
-                   ii = min(max(2, i), il)
-                   jj = min(max(2, j), jl)
-                   kk = min(max(2, k), kl)
-                end if
-
-                xp = eighth*(&
-                     x(ii-1, jj-1, kk-1, :) + &
-                     x(ii  , jj-1, kk-1, :) + &
-                     x(ii-1, jj  , kk-1, :) + &
-                     x(ii  , jj  , kk-1, :) + &
-                     x(ii-1, jj-1, kk  , :) + &
-                     x(ii  , jj-1, kk  , :) + &
-                     x(ii-1, jj  , kk  , :) + &
-                     x(ii  , jj  , kk  , :))
-
-                ! dist = mynorm2(xp - xSeed(i, j, k, :))
-                ! frac = dist/clusterMarchDist(oBlock%cluster)
-                frac = one
-                oBlock%qualDonor(1, mm) = frac*vol(i, j, k)**third 
-
+                oBlock%qualDonor(1, mm) = vol(i, j, k)**third 
              else
                 oBlock%qualDonor(1, mm) = (backGroundVolScale*vol(i, j, k))**third
              end if
-
-             oBlock%minVol = min(oBlock%minVol,  oBlock%qualDonor(1, mm))
           end do
        end do
     end do
@@ -459,39 +239,26 @@ contains
     oFringe%il = il
     oFringe%jl = jl
     oFringe%kl = kl
-    oFringe%cluster = clusters(cumDomProc(myid) + nn)
+    oFringe%nx = nx
+    oFringe%ny = ny
+    oFringe%nz = nz
+    oFringe%block = nn
+    oFringe%cluster = clusters(cumDomProc(myid) + nn) 
+    oFringe%proc = myid
 
     mm = nx*ny*nz
     allocate(oFringe%x(3, mm))
-    allocate(oFringe%quality(mm))
-    allocate(oFringe%origQuality(mm))
-    allocate(oFringe%myBlock(mm))
-    allocate(oFringe%myIndex(mm))
-    allocate(oFringe%donorProc(mm))
-    allocate(oFringe%donorBlock(mm))
-    allocate(oFringe%dI(mm))
-    allocate(oFringe%dJ(mm))
-    allocate(oFringe%dK(mm))
-    allocate(oFringe%donorFrac(3, mm))
-    allocate(oFringe%offset(3, mm))
-    allocate(oFringe%gInd(8, mm))
     allocate(oFringe%xSeed(3, mm))
     allocate(oFringe%wallInd(mm))
     allocate(oFringe%isWall(mm))
-
-    ! These default set the entire array
-    oFringe%myBlock = nn
-    oFringe%donorProc = -1
-    oFringe%dI = -1
-    oFringe%dJ = -1
-    oFringe%dK = -1
-    oFringe%donorFrac = -one
-    ofringe%offset = zero
-    oFringe%gInd = -1
     oFringe%isWall = 0
     oFringe%xSeed = large
     oFringe%wallInd = 0
 
+    ! Assume each cell will get just one donor. It's just a guess, it
+    ! will be expanded if necessary so the exact value doesn't matter.
+    allocate(oFringe%fringes(mm))
+    oFringe%nDonor = 0
     ! Now loop over the actual compute cells, setting the cell center
     ! value 'x', the volume and flag these cells as compute
     ii = 0
@@ -510,95 +277,22 @@ contains
                      x(i-1, j  , k  , iDim) + &
                      x(i  , j  , k  , iDim))
              end do
-
-             if (wallsPresent) then 
-
-                ! dist = norm2(oFringe%x(:, ii) - xSeed(i, j, k, :))
-                ! frac = dist/clusterMarchDist(oFringe%cluster)
-                frac = one
-                oFringe%quality(ii) = frac*vol(i, j, k)**third
-             else
-                oFringe%quality(ii) = (backgroundVolScale*vol(i, j, k))**third
-             end if
-
-             oFringe%myIndex(ii) = ii
-
              oFringe%xSeed(:, ii) = xSeed(i, j, k, :)
              oFringe%wallInd(ii) = wallInd(i, j, k)
 
-          end do
-       end do
-    end do
-
-    ! Now loop over this block's boundary condiitons and we need to set
-    ! a litle info: We need to flag the two levels next to an overset
-    ! outer boundary as being a "forced receiver'. To implement this, we
-    ! set the volume of these cells to "large".  We use the generic
-    ! flagForcedReceiver routine for this since the same information is
-    ! used elsewhere.
-
-    do k=2, kl
-       do j=2, jl
-          do i=2, il
-             if (forcedRecv(i,j,k) .ne. 0) then
-                ii = (k-2)*nx*ny + (j-2)*nx + (i-2) + 1
-                oFringe%quality(ii) = large
-             end if
+             oFringe%fringes(ii)%myI = i
+             oFringe%fringes(ii)%myJ = j
+             oFringe%fringes(ii)%myK = k
+             oFringe%fringes(ii)%myBLock = nn
 
           end do
        end do
-    end do
-
-    ! Flag all the interior hole cells with a *negative* quality since
-    ! this means it won't try to get a stencil:
-
-    do k=2, kl
-       do j=2, jl
-          do i=2, il
-             if (iblank(i,j,k)==-3 .or. iblank(i,j,k)==-2 .or. iblank(i,j,k) == -4) then 
-                iii = (k-2)*nx*ny + (j-2)*nx + (i-2) + 1
-                oFringe%quality(iii) = -large
-             end if
-          end do
-       end do
-    end do
-
-    ! Flag the cells *surrounding* the hold cells with large
-    ! quality. That forces them to get a donor. 
-
-    do k=0, kb
-       do j=0, jb
-          do i=0, ib
-             if (iblank(i,j,k)==-3 .or. iblank(i,j,k)==-2 .or. iblank(i,j,k)==-4) then 
-
-                stencilLoop: do i_stencil=1, N_visc_drdw
-                   ii = visc_drdw_stencil(i_stencil, 1) + i
-                   jj = visc_drdw_stencil(i_stencil, 2) + j
-                   kk = visc_drdw_stencil(i_stencil, 3) + k
-
-                   ! Make sure we're on-block
-                   if (ii >=2 .and. ii <= il .and. jj >= 2 .and. jj<= jl .and. &
-                        kk >=2 .and. kk <= kl) then 
-                      if (iblank(ii, jj, kk) /= -3 .and. iblank(ii,jj,kk) /= -2 .and. iblank(ii,jj,kk) /= -4) then 
-                         iii = (kk-2)*nx*ny + (jj-2)*nx + (ii-2) + 1
-                         oFringe%quality(iii) = large
-                      end if
-                   end if
-                end do stencilLoop
-             end if
-          end do
-       end do
-    end do
-
-    ! Set the original quality. 
-    do ii=1, mm
-       oFringe%origQuality(ii) = oFringe%quality(ii)
     end do
 
     ! We also need to flag a single layer of cells next a wall
-    ! boundary condition as being "isWall". Knowing the fringes
-    ! next to walls will be necessary for determine the overap
-    ! wall distance correction as well as the flooding procedure.
+    ! boundary condition as being "isWall". This information is
+    ! necessary to be able to determine the "wall donors" which are
+    ! the flood seeds.
 
     do mm=1, nBocos
        select case(BCFaceID(mm))

@@ -654,10 +654,10 @@ contains
              size   = 6*nMessages(i)
 
              call mpi_recv(rangeNode(1,1,mm), size, adflow_integer,   &
-                  source, source, ADflow_comm_world, status, &
+                  source, source, ADflow_comm_world, mpiStatus, &
                   ierr)
              call mpi_recv(rangeCell(1,1,mm), size, adflow_integer,     &
-                  source, source+1, ADflow_comm_world, status, &
+                  source, source+1, ADflow_comm_world, mpiStatus, &
                   ierr)
 
              ! Update mm.
@@ -1112,12 +1112,12 @@ contains
                   size   = il*jl - jj
                   source = ll -1
                   call mpi_recv(buffer(jj+1), size, adflow_real, source, &
-                       source, ADflow_comm_world, status, ierr)
+                       source, ADflow_comm_world, mpiStatus, ierr)
 
                   ! Determine the true size of the message and update
                   ! the counter jj accordingly.
 
-                  call mpi_get_count(status, adflow_real, size, ierr)
+                  call mpi_get_count(mpiStatus, adflow_real, size, ierr)
                   jj = jj + size
                endif
             enddo
@@ -1348,12 +1348,12 @@ contains
                   size   = (il+1)*(jl+1) - jj
                   source = ll -1
                   call mpi_recv(buffer(jj+1), size, adflow_real, source, &
-                       source, ADflow_comm_world, status, ierr)
+                       source, ADflow_comm_world, mpiStatus, ierr)
 
                   ! Determine the true size of the message and update
                   ! the counter jj accordingly.
 
-                  call mpi_get_count(status, adflow_real, size, ierr)
+                  call mpi_get_count(mpiStatus, adflow_real, size, ierr)
                   jj = jj + size
                endif
             enddo
@@ -1471,7 +1471,7 @@ contains
     real(kind=realType) :: f(8)
 
     logical :: logic1
-    integer, dimension(mpi_status_size) :: status
+    integer, dimension(mpi_status_size) :: mpiStatus
     integer(kind=intType) :: cgnsInd, cgnsBase, cgnsZOne, coordID, secID, solID, fieldID
     real(kind=realType) :: tol=1e-8 ! Node tol for isosurf pointReduce
 
@@ -1678,7 +1678,7 @@ contains
              allocate(buffer(3*nPtsProc(iProc+1)))
 
              call mpi_recv(buffer, nPtsProc(iProc+1)*3, adflow_real, iProc, tag, &
-                  adflow_comm_world, status, ierr)
+                  adflow_comm_world, mpiStatus, ierr)
              call EChk(ierr, __FILE__, __LINE__)
           end if
 
@@ -1752,7 +1752,7 @@ contains
              ! allocate space for the recv
              allocate(connBuffer(3,nConnProc(iProc+1)))
              call mpi_recv(connBuffer, nConnProc(iProc+1)*3, adflow_integer, iProc, tag, &
-                  adflow_comm_world, status, ierr)
+                  adflow_comm_world, mpiStatus, ierr)
              call EChk(ierr, __FILE__, __LINE__)
           end if
 
@@ -1852,7 +1852,7 @@ contains
              tag = 13
              if (myid == 0) then
                 call mpi_recv(buffer, nPtsProc(iProc+1), adflow_real, iProc, tag, &
-                     adflow_comm_world, status, ierr)
+                     adflow_comm_world, mpiStatus, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
              end if
 

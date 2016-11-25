@@ -85,8 +85,14 @@ module overset
 
   type oversetFringe
 
+     ! The processor where this set of fringes came from
+     integer(kind=intType) :: proc
+
+     ! The block number of these fringes on processor 'proc'
+     integer(kind=intType) :: block
+
      ! Sizes
-     integer(kind=intType) :: il, jl ,kl
+     integer(kind=intType) :: il, jl, kl, nx, ny, nz
 
      ! Cluster this set of fringes belongs to
      integer(kind=intType) :: cluster
@@ -95,39 +101,23 @@ module overset
      real(kind=realType), dimension(:), allocatable :: rBuffer
      integer(kind=intType), dimension(:), allocatable :: iBuffer
 
-     ! These are the coordinate of what we are searching
+     ! These are the coordinates of the points we are searching for
      real(kind=realType), dimension(:, :), allocatable :: x
 
-     ! These are the coordinate of its wall surface if applicable
+     ! These are the coordinate of its wall surface pt if applicable
      real(kind=realType), dimension(:, :), allocatable :: xSeed
 
-     ! These are the indices of the wall surfaces if applicable
-     integer(kind=intType), dimension( :), allocatable :: wallInd
+     ! These are the indices of the wall surfaces
+     integer(kind=intType), dimension(:), allocatable :: wallInd
 
-     ! qualaity is the best quality that has been found from a
-     ! DONOR cell. It is initialized to large. 
-     real(kind=realType), dimension(:), allocatable :: quality
-
-     real(kind=realType), dimension(:), allocatable :: origQuality
-
-     ! This is the information regarding where the cell came from. 
-     integer(kind=intType), dimension(:), allocatable :: myBlock
-     integer(kind=intType), dimension(:), allocatable :: myIndex
-
-     ! This is the information about the donor that was found. Note we
-     ! use dI, dJ, dK, short for donorI, etc.
-     integer(kind=intType), dimension(:), allocatable :: donorProc
-     integer(kind=intType), dimension(:), allocatable :: donorBlock
-     integer(kind=intType), dimension(:), allocatable :: dI, dJ, dK
-     real(kind=realType), dimension(:, :), allocatable  :: donorFrac
-     real(kind=realType), dimension(:, :), allocatable :: offset
-
-     ! gInd are the global indices of the donor cells. We will need
-     ! these for forming the PC for the Newton Krylov solver
-     integer(kind=intType), dimension(:, :), allocatable :: gInd
-
-     ! Flag specifying if this cell is next to a wall
+     ! Flag specifying if this cell is next to a wall or not. 1 for
+     ! next to wall, 0 otherwise. 
      integer(kind=intType), dimension(:), allocatable  :: isWall
+
+     ! This is where we will store all the potential donors that have
+     ! been found for this set of fringes
+     integer(kind=intType) :: nDonor=0
+     type(fringeType), dimension(:), pointer :: fringes
 
      ! Flag if this set of fringes got allocated
      logical :: allocated = .False.

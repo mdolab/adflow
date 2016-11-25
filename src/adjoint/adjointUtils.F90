@@ -58,7 +58,7 @@ contains
     integer(kind=intType) :: ierr, nn, sps, sps2, i, j, k, l, ll, ii, jj, kk
     integer(kind=intType) :: nColor, iColor, jColor, irow, icol, fmDim, frow
     integer(kind=intType) :: nTransfer, nState, tmp, icount, cols(8), nCol
-    integer(kind=intType) :: n_stencil, i_stencil, m
+    integer(kind=intType) :: n_stencil, i_stencil, m, iFringe, fInd
     integer(kind=intType), dimension(:, :), pointer :: stencil
     real(kind=alwaysRealType) :: delta_x, one_over_dx
     real(kind=realType) :: weights(8)
@@ -385,7 +385,8 @@ contains
              kLoop: do k=0, kb
                 jLoop: do j=0, jb
                    iLoop: do i=0, ib
-                      colBlank: if (flowDoms(nn, level, sps)%iblank(i, j, k) /= 0) then 
+                      colBlank: if (flowDoms(nn, level, sps)%iblank(i, j, k) == 1 .or. &
+                           flowDoms(nn, level, sps)%iBlank(i, j, k) == -1) then 
 
                          ! If the cell we perturned ('iCol') is an
                          ! interpolated cell, we don't actually use
@@ -395,17 +396,16 @@ contains
                             cols(1) = flowDoms(nn, level, sps)%globalCell(i, j, k)
                             nCol = 1
                          else
+                            fInd = fringePtr(1, i, j, k)
                             do m=1,8
-                               cols(m) = flowDoms(nn, level, sps)%fringes(i, j, k)%gInd(m)
+                               cols(m) = flowDoms(nn, level, sps)%fringes(fInd)%gInd(m)
                             end do
-                            call fracToWeights(flowDoms(nn, level, sps)%fringes(i, j, k)%donorFrac, &
+                            call fracToWeights(flowDoms(nn, level, sps)%fringes(fInd)%donorFrac, &
                                  weights)
                             nCol = 8
                          end if
 
-                         colorCheck: if (flowdoms(nn, 1, sps)%color(i, j, k) == icolor) then! &
-                            !.and. icol >= 0) then
-                            !colorCheck: if (flowdomsd(nn, 1, 1)%color(i, j, k) == icolor) then
+                         colorCheck: if (flowdoms(nn, 1, sps)%color(i, j, k) == icolor) then
 
                             ! i, j, k are now the "Center" cell that we
                             ! actually petrubed. From knowledge of the
@@ -1447,7 +1447,8 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
   ! conversions. 
 
   use constants
-  use blockPointers, only : nDom, il, jl, kl, fringes, flowDoms, globalCell, iBlank
+  use blockPointers, only : nDom, il, jl, kl, fringes, flowDoms, globalCell, &
+       iBlank, fringePtr
   use communication, only : adflow_comm_world
   use inputTimeSpectral , only : nTimeIntervalsSpectral
   use utils, only : setPointers, EChk
@@ -1469,7 +1470,7 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
 
   ! Local Variables
   integer(kind=intType) :: nn, i, j, k, sps, ii, jj, kk, iii, jjj, kkk, n, m, gc
-  integer(kind=intType) :: iRowStart, iRowEnd, ierr
+  integer(kind=intType) :: iRowStart, iRowEnd, ierr, fInd
   integer(kind=intType), dimension((N_stencil-1)*8) :: cellBuffer, dummy
   Vec offProcVec
   logical :: overset
@@ -1540,8 +1541,9 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
                           ! the donors for this cell and add any
                           ! entries that are real cells
                           overset = .True.
+                          fInd = fringePtr(1, iii, jjj, kkk)
                           do kk=1,8
-                             gc = fringes(iii, jjj, kkk)%gInd(kk)
+                             gc = fringes(fInd)%gInd(kk)
                              if (gc >= 0) then 
                                 n = n + 1
                                 cellBuffer(n) = gc
