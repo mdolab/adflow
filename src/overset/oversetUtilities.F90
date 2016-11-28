@@ -2,6 +2,23 @@ module oversetUtilities
 contains
 #ifndef USE_TAPENADE
 
+  subroutine tic(index)
+    use constants
+    use overset, only : tStart
+    implicit none
+    integer(kind=intType), intent(in) :: index
+    tStart(index) = mpi_wtime()
+
+  end subroutine tic
+
+  subroutine toc(index)
+    use constants
+    use overset, only : tStart, oversetTimes
+    implicit none
+    integer(kind=intType), intent(in) :: index
+    oversetTimes(index) = oversetTimes(index) + mpi_wtime()- tStart(index)
+  end subroutine toc
+
   subroutine printOverlapMatrix(overlap)
 
     ! This is a debugging routine to print out the overlap matrix.

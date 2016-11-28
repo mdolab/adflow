@@ -316,5 +316,28 @@ module constants
   integer(kind=intType), parameter :: sortByDonor=1
   integer(kind=intType), parameter :: sortByReceiver=2
 
-
+  ! Task breakdown for overset connectivity. Note that iComm1
+  ! *includes* the surfaceCorrection and donor search times.
+  integer(kind=intType), parameter :: iBoundingBox=1
+  integer(kind=intType), parameter :: iBuildOverlap=2
+  integer(kind=intType), parameter :: iLoadBalance=3
+  integer(kind=intType), parameter :: iBuildClusterWalls=4
+  integer(kind=intType), parameter :: iComputeCellWallPoint=5
+  integer(kind=intType), parameter :: iBuildADT=6
+  integer(kind=intType), parameter :: iBuildSearchPoints=7
+  integer(kind=intType), parameter :: iComm1=8
+  integer(kind=intType), parameter :: iSurfaceCorrection=9
+  integer(kind=intType), parameter :: iDonorSearch=10
+  integer(kind=intType), parameter :: iComm2=11
+  integer(kind=intType), parameter :: iStatusExchange=12
+  integer(kind=intType), parameter :: iCheckDonors=13
+  integer(kind=intType), parameter :: iDetermineDonors=14
+  integer(kind=intType), parameter :: iIrregularCellCorrection=15
+  integer(kind=intType), parameter :: iFlooding=16
+  integer(kind=intType), parameter :: iFinalCommStructures=17
+  integer(kind=intType), parameter :: iFlagForcedRecv=18
+  integer(kind=intType), parameter :: iFlagInvalidDonors=19
+  integer(kind=intType), parameter :: iFringeReduction=20
+  integer(kind=intType), parameter :: iTotal=21
+  
 end module constants
