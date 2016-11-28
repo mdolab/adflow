@@ -1015,8 +1015,8 @@ contains
     integer(kind=intType) :: i, j, k, ii, jj
     integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
     integer(kind=intType), dimension(:), allocatable :: sendBuf, recvBuf
-    logical :: CisDonor, CisHole, CisCompute, CisFloodSeed, CisFlooded, CisWall, CisWallDonor, CisReceiver
-    logical :: DisDonor, DisHole, DisCompute, DisFloodSeed, DisFlooded, DisWall, DisWallDonor, DisReceiver
+    logical :: CisDonor, CisHole, CisCompute, CisFloodSeed, CisFlooded, CisWallDonor, CisReceiver
+    logical :: DisDonor, DisHole, DisCompute, DisFloodSeed, DisFlooded, DisWallDonor, DisReceiver
     integer(kind=intType) :: cellStatus, donorStatus
 
 
@@ -1114,11 +1114,11 @@ contains
        ! which are now receivers because of the transpose operation.
        cellStatus = flowDoms(d1, level, sps)%status(i1, j1, k1)
        call getStatus(cellStatus, CisDonor, CisHole, CisCompute, &
-            CisFloodSeed, CisFlooded, CisWall, CisWallDonor, CisReceiver)
+            CisFloodSeed, CisFlooded, CisWallDonor, CisReceiver)
 
        donorStatus = flowDoms(d2, level, sps)%status(i2, j2, k2)
        call getStatus(donorStatus, DisDonor, DisHole, DisCompute, &
-            DisFloodSeed, DisFlooded, DisWall, DisWallDonor, DisReceiver)
+            DisFloodSeed, DisFlooded, DisWallDonor, DisReceiver)
 
        call setIsDonor(flowDoms(d1, level, sps)%status(i1, j1, k1), &
             CIsDonor .or. DisDonor)
@@ -1156,11 +1156,11 @@ contains
 
           cellStatus = flowDoms(d1, level, sps)%status(i1, j1, k1)
           call getStatus(cellStatus, CisDonor, CisHole, CisCompute, &
-               CisFloodSeed, CisFlooded, CisWall, CisWallDonor, CisReceiver)
+               CisFloodSeed, CisFlooded, CisWallDonor, CisReceiver)
           jj = jj + 1
           donorStatus = sendBuf(jj)
           call getStatus(donorStatus, DisDonor, DisHole, DisCompute, &
-               DisFloodSeed, DisFlooded, DisWall, DisWallDonor, DisReceiver)
+               DisFloodSeed, DisFlooded, DisWallDonor, DisReceiver)
 
           call setIsDonor(flowDoms(d1, level, sps)%status(i1, j1, k1), &
                CIsDonor .or. DisDonor)
