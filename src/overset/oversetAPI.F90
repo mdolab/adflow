@@ -17,7 +17,7 @@ contains
     use overset, only : CSRMatrix, oversetBlock, oversetFringe, &
          oversetWall, nClusters, cumDomProc, localWallFringes, nDomTotal, &
          nLocalWallFringe, clusterWalls, oversetPresent, nDomProc, &
-         overlapMatrix, tmpFringePtr
+         overlapMatrix, tmpFringePtr, oversetTimes
     use stencils, only : N_visc_drdw, visc_drdw_stencil
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use adtBuild, only : destroySerialQuad
@@ -32,7 +32,8 @@ contains
     use oversetUtilities, only : isCompute, checkOverset, irregularCellCorrection, &
          fringeReduction, transposeOverlap, setIBlankArray, deallocateOFringes, deallocateoBlocks, &
          deallocateOSurfs, deallocateCSRMatrix, setIsCompute, getWorkArray, flagForcedRecv, &
-         qsortFringeType, isReceiver, setIsReceiver, addToFringeList
+         qsortFringeType, isReceiver, setIsReceiver, addToFringeList, printOverlapMatrix, &
+         tic, toc
     use oversetPackingRoutines, only : packOFringe, packOBlock, unpackOFringe, unpackOBlock, &
          getOFringeBufferSizes, getOBlockBufferSizes, getOSurfBufferSizes
     implicit none
@@ -45,10 +46,10 @@ contains
     ! Local Variables
     integer(kind=intType) :: i, ii, j, jj, k, kk, i_stencil, curI, curJ, curK
     integer(kind=intType) :: m, iSize, iStart, iEnd, index, rSize, fSize
-    integer(kind=intType) :: iDom, jDom, iDim, iCnt, rCnt, nInt, nReal
+    integer(kind=intType) :: iDom, jDom, iDim, iCnt, rCnt, nInt, nReal, iCol
     integer(kind=intType) :: nn, mm, n, ierr, iProc, myIndex, iRefine, nRefine
     integer(kind=intType) :: iWork, nWork, nFringeProc, nLocalFringe
-    real(kind=realType) :: startTime, endTime, quality, xp(3), curQuality
+    real(kind=realType) :: startTime, endTime, quality, xp(3), curQuality, timeA, timeB
     logical :: computeCellFound, localChanged, globalChanged 
 
     type(CSRMatrix), pointer :: overlap
@@ -125,6 +126,10 @@ contains
     ! make sure they do not overlap. 
     MAGIC = nDomTotal
 
+    ! Zero out all the timers
+    oversetTimes = zero
+
+    call tic(iTotal)
     ! Master SPS loop
     spectralLoop: do sps=1,nTimeIntervalsSpectral
 
@@ -137,18 +142,22 @@ contains
        ! minimum volume for each block to everyone.  (Routine below)
        ! -----------------------------------------------------------------
 
+       call tic(iBoundingBox)
        allocate(xMin(3, nDomTotal), xMax(3, nDomTotal))
        call computeDomainBoundingBoxes
+       call toc(iBoundingBox)
 
        ! -----------------------------------------------------------------
        ! Step 8: Build a global sparse matrix representation of the overlap
        ! matrix.  Every processor will have the same sparse matrix
        ! representation when it is finished. (Routine below)
        ! -----------------------------------------------------------------
+       call tic(iBuildOverlap)
        if (firstTime) then 
           call deallocateCSRMatrix(overlap)
           call buildGlobalSparseOverlap(overlap)
        end if
+       call toc(iBuildOverlap)
 
        ! -----------------------------------------------------------------
        ! Step 8: This is going to put the number of searches (coordinates)
@@ -166,7 +175,7 @@ contains
        ! we need to do as well. Specifically we want to tell all the
        ! processors the size of the int Buffer, real Buffer and the
        ! number of fringes we can expect to receive.
-
+       call tic(iLoadBalance)
        allocate(bufSizes(nDomTotal, 6), tmpInt2D(nDomTotal, 6), &
             tmpReal(size(overlap%data)))
 
@@ -177,16 +186,38 @@ contains
        do nn=1, nDom
           call setPointers(nn, level, sps)
           iDom = cumDomProc(myid) + nn
-          if (firstTime) then 
-             do jj=overlap%rowPtr(iDom), overlap%rowPtr(iDom+1)-1
-                tmpReal(jj) = real(nx*ny*nz)
-             end do
-          end if
+          ! ------------------------------
+          ! Old Code for setting the data
+          ! if (firstTime) then
+          !    do jj=overlap%rowPtr(iDom), overlap%rowPtr(iDom+1)-1
+          !       tmpReal(jj) = real(nx*ny*nz)
+          !    end do
+          ! end if
+          ! ------------------------------
+
           ! Sizes
           call getOBlockBufferSizes (il, jl, kl, tmpInt2D(iDom, 1), tmpInt2D(iDom, 2))
           call getOFringeBufferSizes(il, jl, kl, tmpInt2D(iDom, 3), tmpInt2D(iDom, 4))
           call getOSurfBufferSizes  (wallFamList, il, jl, kl, tmpInt2D(iDom, 5), tmpInt2D(iDom, 6), .True.)
        end do
+
+       ! Set the tmpReal variable to to be the number of fringes we
+       ! need to search for. This is inefficient becuase we loop over
+       ! the all the matrix rows:
+       if (firstTime) then 
+          do i=1, overlap%nrow
+             do jj=overlap%rowPtr(i), overlap%rowPtr(i+1)-1
+                iCol = overlap%colInd(jj)
+                if (iCol > cumDomProc(myid) .and. iCol <= cumDomProc(myid+1)) then 
+                   nn = iCol - cumDomProc(myid)
+                   tmpReal(jj) = &
+                        flowDoms(nn, level, sps)%nx * &
+                        flowDoms(nn, level, sps)%ny * &
+                        flowDoms(nn, level, sps)%nz 
+                end if
+             end do
+          end do
+       end if
 
        if (.not. firstTime) then 
           tmpReal = overlap%data
@@ -217,6 +248,7 @@ contains
           call oversetLoadBalance(overlap)
        end if
        call transposeOverlap(overlap, overlapTranspose)
+       call toc(iLoadBalance)
 
        ! -----------------------------------------------------------------
        !  Step 8: Section out just the intersections we have to
@@ -332,11 +364,14 @@ contains
        allocate(localWallFringes(1000))
        nLocalWallFringe = 0
 
+       call tic(iBuildClusterWalls)
        allocate(clusterWalls(nClusters))
        call buildClusterWalls(level, sps, .True., clusterWalls, wallFamList, size(wallFamList))
+       call toc(iBuildClusterWalls)
 
        ! Determine the cells that are near wall. We have a special
        ! routine for this.
+       call tic(iComputeCellWallPoint)
        call computeCellWallPoint(level, sps, clusterWalls)
 
        ! We need a couple of extra things that buildCluster wall
@@ -362,9 +397,12 @@ contains
              end do
           end do
        end do
+       call toc(iComputeCellWallPoint)
 
        ! Flag all the cells that we know are forced receivers. 
+       call tic(iFlagForcedRecv)
        call flagForcedRecv()
+       call toc(iFlagForcedRecv)
 
        ! Initialize the overset-specific data structures for
        ! performing searches. 
@@ -372,14 +410,18 @@ contains
           call setPointers(nn, level, sps)
           iDom = cumDomProc(myid) + nn
           
+          call tic(iBuildADT)
           call initializeOBlock(oBlocks(iDom), nn, level, sps)
           oBlockReady(iDom) = .True.
-          
+          call toc(iBuildADT)
+
+          call tic(iBuildSearchPoints)
           call initializeOFringes(oFringes(iDom), nn)
-          oFringeReady(iDom) = .True. 
-          
+          oFringeReady(iDom) = .True.  
+          call toc(iBuildSearchPoints)         
        end do
 
+       call tic(iComm1)
        ! Post all the oBlock/oFringe iSends
        sendCount = 0
        do jj=1, nOblockSend
@@ -497,12 +539,14 @@ contains
                   oFringes(iDom)%rBuffer)
           end if
        end do
-       
+       call toc(iComm1)
+
        ! -----------------------------------------------------------------
        ! Step 9: Well, all the searches are done, so now we can now send
        ! the fringes back to where they came from. 
        ! -----------------------------------------------------------------
-       
+       call tic(iComm2)
+
        nReal = 4
        nInt = 17
        do iDom=1, nDomTotal
@@ -589,7 +633,6 @@ contains
        end do
 
        ! Last thing to do wait for all the sends and receives to finish 
-       ! Last thing to do wait for all the sends to finish 
        do i=1,sendCount
           call mpi_waitany(sendCount, sendRequests, index, mpiStatus, ierr)
           call ECHK(ierr, __FILE__, __LINE__)
@@ -687,7 +730,7 @@ contains
        end do
 
 
-      ! We can do some useful work while the fringes are
+       ! We can do some useful work while the fringes are
        ! communicating. All we're doing is dumping the
        ! oFringes%fringes into the data in flowdoms. 
        
@@ -711,7 +754,7 @@ contains
           call mpi_waitany(recvCount, recvRequests, index, mpiStatus, ierr)
           call ECHK(ierr, __FILE__, __LINE__)
        end do
-       
+
        ! Process the data we just received. 
        do kk=1, nOfringeSend
 
@@ -833,6 +876,7 @@ contains
           allocate(flowDoms(nn, level, sps)%iBlankLast(2:il, 2:jl, 2:kl))
           flowDoms(nn, level, sps)%iBlankLast = 1
        end do
+       call toc(iComm2)
 
        ! Start the refinement loop:
        nRefine = 10
@@ -842,10 +886,12 @@ contains
           call initializeStatus(level, sps)
           
           ! Exchange the status so that the halos get the right 
+          call tic(iStatusExchange)
           call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
-          
+          call toc(iStatusExchange)          
+
+          call tic(iCheckDonors)
           nLocalFringe = 0
-          
           do nn=1, nDom
              call setPointers(nn, level, sps)
 
@@ -920,9 +966,12 @@ contains
                 end do
              end do
           end do
-          
+          call toc(iCheckDonors)
+
           ! Update the status so we know if halo cells are donors
+          call tic(iStatusExchange)
           call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
+          call toc(iStatusExchange)
           
           ! -----------------------------------------------------------------
           ! Step 9: We now have computed all the fringes that we can. Some of
@@ -977,8 +1026,10 @@ contains
           ! fringes we actually have on our local blocks. Then we also do
           ! it for the "wallFringes" which is used to determine if a cell
           ! is a donor to a cell that is immediately next to a solid wall. 
+          call tic(iDetermineDonors)
           call determineDonors(level, sps, localFringes, nLocalFringe, .False.)
           call determineDonors(level, sps, localWallFringes, nLocalWallFringe, .True.)
+          call toc(iDetermineDonors)
 
           ! After the determine donors operation, we need to exchanage
           ! the status again. However, we have to be really careful here:
@@ -990,10 +1041,11 @@ contains
           ! and then combines (or accumulates) that information. In this
           ! particular case the accumulation is actually a logical or
           ! operation. 
-
+          call tic(iStatusExchange)
           call exchangeStatusTranspose(level, sps, commPatternCell_2nd, internalCell_2nd)
           call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
-          
+          call toc(iStatusExchange)
+
           !=================================================================================
           ! -----------------------------------------------------------------
           ! Step 10: We can now locally perform the irregular cell correction
@@ -1004,8 +1056,13 @@ contains
           ! -----------------------------------------------------------------
           
           if (irefine > 1) then 
+             call tic(iIrregularCellCorrection)
              call irregularCellCorrection(level, sps)
+             call toc(iIrregularCellCorrection)
+
+             call tic(iStatusExchange)
              call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
+             call toc(iStatusExchange)
           end if
 
           ! Next we have to perfrom the interior cell flooding. We already
@@ -1013,20 +1070,23 @@ contains
           ! the fringes as well as knowing if a cell is a compute. We
           ! should probably only flood compute cells that are not also
           ! donors, since that would get a little complicated. 
-
+          call tic(iFlooding)
           call floodInteriorCells(level, sps)
-
+          call toc(iFlooding)
+          
           ! The fringeReduction just needs to be isCompute flag so exchange
           ! the status this as these may have been changed by the flooding
-          
+          call tic(iStatusExchange)
           call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)       
-          
-               ! Before we can do the final comm structures, we need to make
+          call toc(iStatusExchange)
+
+          ! Before we can do the final comm structures, we need to make
           ! sure that every processor's halo have any donor information
           ! necessary to build its own comm pattern. For this will need to
           ! send donorProc, donorBlock, dI, dJ, dK and donorFrac. 
-          
+          call tic(iStatusExchange)
           call exchangeFringes(level, sps, commPatternCell_2nd, internalCell_2nd)
+          call toc(iStatusExchange)
           
           ! -----------------------------------------------------------------
           ! Step 17: We can now create the final required comm structures
@@ -1037,14 +1097,21 @@ contains
           ! internal copy is formed from the part that is on-processor. 
           ! -----------------------------------------------------------------
 
+          call tic(iFinalCommStructures)
           call finalOversetCommStructures(level, sps)
 
           ! VERY last thing is to update iBlank based on the status of our local fringes. 
           call setIblankArray(level, sps)
+          call toc(iFinalCommStructures)
 
           ! Determine the invalid donors for the next pass:
+          call tic(iFlagForcedRecv)
           call flagForcedRecv()
+          call toc(iFlagForcedRecv)
+
+          call tic(iFlagInvalidDonors)
           call flagInvalidDonors(level, sps)
+          call toc(iFlagInvalidDonors)
           
           ! -----------------------------------------------------------------
           ! Step 16: The algorithm is now complete. Run the checkOverset
@@ -1085,13 +1152,21 @@ contains
        end do refineLoop
 
        ! Final operations after the interpolations have stabilized
+       call tic(iFringeReduction)
        call fringeReduction(level, sps)
+       call toc(iFringeReduction)
+
+       call tic(iStatusExchange)
        call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
        call exchangeFringes(level, sps, commPatternCell_2nd, internalCell_2nd)
+       call tic(iStatusExchange)
+       
+       call tic(iFinalCommStructures)
        call finalOversetCommStructures(level, sps)
        call setIblankArray(level, sps)
        call checkOverset(level, sps, i, .True.)
-       
+       call toc(iFinalCommStructures)
+
        ! Setup the buffer sizes
        call setBufferSizes(level, sps, .false., .True.)
 
@@ -1107,6 +1182,8 @@ contains
     ! for the overset comm
     deallocate(sendBuffer, recvBuffer)
     allocate(sendBuffer(sendBufferSize), recvBuffer(recvBufferSize))
+
+    call toc(iTotal)
 
   contains
 
@@ -1424,9 +1501,9 @@ contains
           sizes(8) = 0
           sizes(9) = 0
 
-999       FORMAT('domain.', I5.5)
+999       FORMAT('domain.', I5.5,'proc.'I3.3)
           zoneCounter = zoneCounter + 1
-          write(zonename, 999) zoneCounter 
+          write(zonename, 999) zoneCounter, myid
 
           call cg_zone_write_f(cg, base, zonename, sizes, Structured, zoneID, ier)
 
@@ -1458,7 +1535,7 @@ contains
                   adflow_comm_world, mpiStatus, ierr)
 
              zoneCounter = zoneCounter + 1
-             write(zonename, 999) zoneCounter 
+             write(zonename, 999) zoneCounter, iProc
              sizes(1) = dims(1, iDom)
              sizes(2) = dims(2, iDom)
              sizes(3) = dims(3, iDom)

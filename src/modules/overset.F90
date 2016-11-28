@@ -351,7 +351,6 @@ module overset
 #endif
   end type zipperMesh
 
-
   ! This is the flattened list of the fringes next to the wall that we
   !  have actually found donors for.
   ! tmpFringePtr is only used if we need to realloc. 
@@ -375,6 +374,10 @@ module overset
 
   ! Zipper meshes
   type(zipperMesh), dimension(nFamExchange), target :: zipperMeshes
+
+  ! Static arrays for doing timings
+  real(kind=realType), dimension(iTotal) :: tStart
+  real(kind=realType), dimension(iTotal) :: oversetTimes
 
   contains
   ! ==============================
