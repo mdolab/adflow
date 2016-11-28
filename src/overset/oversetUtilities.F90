@@ -451,145 +451,128 @@ contains
   function isDonor(i)
     use constants
     implicit none
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver
     integer(kind=intType), intent(in) :: i
-    call getStatus(i, isDonor, isDonor, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
+    call getStatus(i, isDonor, isDonor, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver)
   end function isDonor
 
   function isHole(i)
     use constants
     implicit none
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver
     integer(kind=intType), intent(in) :: i
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver)
   end function isHole
 
   function isCompute(i)
     use constants
     implicit none
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver
     integer(kind=intType), intent(in) :: i
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver)
   end function isCompute
 
   function isFloodSeed(i)
     use constants
     implicit none
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver
     integer(kind=intType), intent(in) :: i
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver)
   end function isFloodSeed
 
   function isFlooded(i)
     use constants
     implicit none
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver
     integer(kind=intType), intent(in) :: i
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver)
   end function isFlooded
-
-  function isWall(i)
-    use constants
-    implicit none
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver
-    integer(kind=intType), intent(in) :: i
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
-  end function isWall
 
   function isWallDonor(i)
     use constants
     implicit none
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver
     integer(kind=intType), intent(in) :: i
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver)
   end function isWallDonor
 
   function isReceiver(i)
     use constants
     implicit none
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver
     integer(kind=intType), intent(in) :: i
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver)
   end function isReceiver
 
   subroutine setIsDonor(i, flag)
     use constants
     implicit none
     integer(kind=intType), intent(inout) :: i
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver, flag
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
-    call setStatus(i, flag   , isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isREceiver)
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver, flag
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver)
+    call setStatus(i, flag   , isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isREceiver)
   end subroutine setIsDonor
 
   subroutine setIsHole(i, flag)
     use constants
     implicit none
     integer(kind=intType), intent(inout) :: i
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver, flag
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
-    call setStatus(i, isDonor, flag  , isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver, flag
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver)
+    call setStatus(i, isDonor, flag  , isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver)
   end subroutine setIsHole
 
   subroutine setIsCompute(i, flag)
     use constants
     implicit none
     integer(kind=intType), intent(inout) :: i
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver, flag
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
-    call setStatus(i, isDonor, isHole, flag     , isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver, flag
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver)
+    call setStatus(i, isDonor, isHole, flag     , isFloodSeed, isFlooded, isWallDonor, isReceiver)
   end subroutine setIsCompute
 
   subroutine setIsFloodSeed(i, flag)
     use constants
     implicit none
     integer(kind=intType), intent(inout) :: i
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver, flag
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
-    call setStatus(i, isDonor, isHole, isCompute, flag       , isFlooded, isWall, isWallDonor, isReceiver)
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver, flag
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver)
+    call setStatus(i, isDonor, isHole, isCompute, flag       , isFlooded, isWallDonor, isReceiver)
   end subroutine setIsFloodSeed
 
   subroutine setIsFlooded(i, flag)
     use constants
     implicit none
     integer(kind=intType), intent(inout) :: i
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver, flag
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
-    call setStatus(i, isDonor, isHole, isCompute, isFloodSeed, flag     , isWall, isWallDonor, isReceiver)
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver, flag
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver)
+    call setStatus(i, isDonor, isHole, isCompute, isFloodSeed, flag     , isWallDonor, isReceiver)
   end subroutine setIsFlooded
-
-  subroutine setIsWall(i, flag)
-    use constants
-    implicit none
-    integer(kind=intType), intent(inout) :: i
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver, flag
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
-    call setStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, flag  , isWallDonor, isReceiver)
-  end subroutine setIsWall
 
   subroutine setIsWallDonor(i, flag)
     use constants
     implicit none
     integer(kind=intType), intent(inout) :: i
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver, flag
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
-    call setStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, flag,        isReceiver)
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver, flag
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver)
+    call setStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, flag,        isReceiver)
   end subroutine setIsWallDonor
 
   subroutine setIsReceiver(i, flag)
     use constants
     implicit none
     integer(kind=intType), intent(inout) :: i
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver, flag
-    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
-    call setStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag)
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver, flag
+    call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver)
+    call setStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, flag)
   end subroutine setIsReceiver
 
-  subroutine setStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
+  subroutine setStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver)
 
     use constants
     implicit none
     integer(kind=intType), intent(out) :: i
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver
     i = 0
 
     if (isDonor  )   i = i + 1
@@ -597,16 +580,15 @@ contains
     if (isCompute)   i = i + 4
     if (isFloodSeed) i = i + 8
     if (isFlooded  ) i = i + 16
-    if (isWall     ) i = i + 32
-    if (isWallDonor) i = i + 64
-    if (isReceiver)  i = i + 128
+    if (isWallDonor) i = i + 32
+    if (isReceiver)  i = i + 64
   end subroutine setStatus
 
-  subroutine getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver)
+  subroutine getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver)
 
     use constants
     implicit none
-    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, isReceiver
+    logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWallDonor, isReceiver
     integer(kind=intType) :: i, j
     j = i
 
@@ -615,22 +597,16 @@ contains
     isCompute = .False.
     isFloodSeed = .False.
     isFlooded = .False.
-    isWall = .False.
     isWallDonor = .False.
     isReceiver = .False. 
 
-    if (j/128 > 0) then 
-       isReceiver = .True. 
-       j = j -128
-    end if
-
     if (j/64 > 0) then 
-       isWallDonor = .True. 
+       isReceiver = .True. 
        j = j - 64
     end if
 
     if (j/32 > 0) then 
-       isWall = .True. 
+       isWallDonor = .True. 
        j = j - 32
     end if
 
