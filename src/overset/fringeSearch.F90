@@ -10,7 +10,7 @@ subroutine fringeSearch(oBlock, oFringe)
   use adtData, only : adtBBoxTargetType
   use adtUtils, only : stack
   use utils, only : mynorm2
-  use oversetUtilities, only : fracToWeights2, addToFringeList
+  use oversetUtilities, only : fracToWeights2, addToFringeList, tic, toc
   implicit none
 
   type(oversetBlock), intent(inout) :: oBlock
@@ -45,9 +45,11 @@ subroutine fringeSearch(oBlock, oFringe)
   ! Offset vector:
   allocate(offset(3, n))
   offset = zero
-
+  call tic(iSurfaceCorrection)
   call surfaceCorrection(oBlock, oFringe, offset, n)
-  
+  call toc(iSurfaceCorrection)
+
+  call tic(iDonorSearch)
   ! Search the cells one at a time:
   do i=1, n
 
@@ -170,5 +172,5 @@ subroutine fringeSearch(oBlock, oFringe)
      end if elemFound
   end do
   deallocate(offset, BB, BB2, frontLeaves, frontLeavesNew, stack)
-
+  call toc(iDonorSearch)
 end subroutine fringeSearch
