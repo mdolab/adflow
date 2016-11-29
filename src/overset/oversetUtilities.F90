@@ -1201,7 +1201,7 @@ contains
        tmpFringePtr => fringeList
 
        ! Allocate new space
-       allocate(fringeList(2*fSize))
+       allocate(fringeList(int(1.5*fSize)))
 
        ! Copy exsitng values
        fringeList(1:fSize) = tmpFringePtr(1:fSize)
