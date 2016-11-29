@@ -530,9 +530,9 @@ contains
           deallocate(wall%x, wall%conn, wall%ind, wall%nte)
        end do
        deallocate(clusterWalls)
-
-       ! Make sure all oFringe buffers are dellocated before we
-       ! allocate space for the large fringe arraay
+       
+       ! Done with all the oFringe buffers used for sending search
+       ! points out. 
        do iDom=1, nDomTotal
           if (allocated(oFringes(iDom)%iBuffer)) then 
              deallocate(oFringes(iDom)%iBuffer, &
@@ -589,8 +589,49 @@ contains
                 rCnt = rCnt + nReal
              end do
              oFringes(iDom)%fringeReturnSize = rCnt/nReal
+
+             ! Check if this domain is one I own. If so, we just copy
+             ! the the fringes into the block-based list:
+             
+             nn = iDom - cumDomProc(myid)
+             if (nn >= 1 .and. nn <= nDom) then 
+                call setPointers(nn, level, sps)
+                if (associated(flowDoms(nn, level, sps)%fringes)) then 
+                   deallocate(flowDoms(nn, level, sps)%fringes)
+                   deallocate(flowDoms(nn, level, sps)%fringePtr)
+                   deallocate(flowDoms(nn, level, sps)%nDonors)
+                end if
+                
+                ! Estimate about 1 donors for every cell. 
+                mm = nx*ny*nz
+                allocate(flowDoms(nn, level, sps)%fringes(mm), &
+                     flowDoms(nn, level, sps)%fringePtr(3, 0:ib, 0:jb, 0:kb), &
+                     flowDoms(nn, level, sps)%nDonors)
+                flowDoms(nn, level, sps)%fringePtr = 0
+                flowDoms(nn, level, sps)%nDonors = 0
+
+                ! Reset the pointers due to the allocation
+                call setPointers(nn, level, sps)
+
+                ! Copy over the data from oFringes and then nuke the oFringe
+                do ii=1, oFringes(iDom)%nDonor
+                   call addToFringeList(flowDoms(nn, level, sps)%fringes, nDonors, &
+                        oFringes(iDom)%fringes(ii))
+                end do
+             end if
+
+             ! Either way we're done with this OFringe except for the
+             ! buffers. Nuke this to save memory. 
+             deallocate(&
+                  oFringes(iDom)%x, &
+                  oFringes(iDom)%isWall, &
+                  oFringes(iDom)%xSeed, &
+                  oFringes(iDom)%wallInd, &
+                  oFringes(iDom)%fringes)
           end if
        end do
+
+
 
        ! -----------------------------------------------------------------
        ! For this data exchange we use the exact *reverse* of fringe
@@ -710,40 +751,6 @@ contains
           end if
        end do
 
-       ! Initialize the flat fringe array for each of the local
-       ! blocks.
-       do nn=1, nDom
-          call setPointers(nn, level, sps)
-          if (associated(flowDoms(nn, level, sps)%fringes)) then 
-             deallocate(flowDoms(nn, level, sps)%fringes)
-             deallocate(flowDoms(nn, level, sps)%fringePtr)
-             deallocate(flowDoms(nn, level, sps)%nDonors)
-          end if
-
-          ! Estimate about 2 donors for every cell. 
-          mm = nx*ny*nz*2
-          allocate(flowDoms(nn, level, sps)%fringes(mm), &
-               flowDoms(nn, level, sps)%fringePtr(3, 0:ib, 0:jb, 0:kb), &
-               flowDoms(nn, level, sps)%nDonors)
-          flowDoms(nn, level, sps)%fringePtr = 0
-          flowDoms(nn, level, sps)%nDonors = 0
-       end do
-
-
-       ! We can do some useful work while the fringes are
-       ! communicating. All we're doing is dumping the
-       ! oFringes%fringes into the data in flowdoms. 
-       
-       do nn=1,nDom
-          call setPointers(nn, level, sps)
-          iDom = cumDomProc(myid) + nn
-          
-          do ii=1, oFringes(iDom)%nDonor
-             call addToFringeList(flowDoms(nn, level, sps)%fringes, nDonors, &
-                  oFringes(iDom)%fringes(ii))
-          end do
-       end do
-
        ! Now wait for the sends and receives to finish
        do i=1,sendCount
           call mpi_waitany(sendCount, sendRequests, index, mpiStatus, ierr)
@@ -754,7 +761,7 @@ contains
           call mpi_waitany(recvCount, recvRequests, index, mpiStatus, ierr)
           call ECHK(ierr, __FILE__, __LINE__)
        end do
-
+       
        ! Process the data we just received. 
        do kk=1, nOfringeSend
 
@@ -797,10 +804,11 @@ contains
              call addToFringeList(flowDoms(nn, level, sps)%fringes, nDonors, fringe)
           end do
        end do
-       
-       ! ------------------------------------------------------------------
-       ! We are now completely finished with oFringes and the receiving buffers. 
+
+       ! We are now completely finished with oFringe send/recv buffers. 
        call deallocateOFringes(oFringes, size(oFringes))
+
+       ! Ditch the temporary receiving memory and the oFringe array itself.
        deallocate(oFringes, intRecvBuf, realRecvBuf)
        deallocate(fringeRecvSizes, cumFringeRecv)
 
@@ -814,7 +822,7 @@ contains
        ! to be completed once. 
 
        do nn=1, nDom
-          call setPointers(nn, level, sps)
+          call setPointers(nn, level, sps) 
           
           ! First we need to sort the fringes by RECEIVER. That will
           ! put all the cells in order. 

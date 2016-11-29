@@ -251,17 +251,17 @@ contains
     integer(kind=intType) :: i
 
     do i=1, n
-       if (oFringes(i)%allocated) then 
+       if (allocated(oFringes(i)%x)) then 
           deallocate(&
                oFringes(i)%x, &
                oFringes(i)%isWall, &
                oFringes(i)%xSeed, &
                oFringes(i)%wallInd, &
                oFringes(i)%fringes)
-          if (allocated(oFringes(i)%rbuffer)) then 
-             deallocate(oFringes(i)%rBuffer,&
-                  oFringes(i)%iBuffer)
-          end if
+       end if
+       if (allocated(oFringes(i)%rbuffer)) then 
+          deallocate(oFringes(i)%rBuffer,&
+               oFringes(i)%iBuffer)
        end if
        oFringes(i)%allocated = .False. 
     end do
