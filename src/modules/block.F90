@@ -319,7 +319,7 @@ module block
      integer(kind=intType), dimension(:,:,:), pointer :: forcedRecv
      type(fringeType) , dimension(:), pointer :: fringes=>null()
      integer(kind=intType), dimension(:, :, :, :), pointer :: fringePtr=>null()
-     integer(kind=intType), dimension(:, :, :, :), pointer :: gInd
+     integer(kind=intType), dimension(:, :, :, :), pointer :: gInd=>null()
      integer(kind=intType), pointer :: nDonors
      integer(kind=intType) :: nDonorsOnOwnedCells
 
