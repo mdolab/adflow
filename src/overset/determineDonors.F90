@@ -14,7 +14,7 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
   use utils, only : Echk, setPointers
   use overset, only : clusters, nDomTotal, nClusters
   use oversetUtilities, only : qsortFringeType, setIsDonor, setIsWallDonor, &
-       computeFringeProcArray
+       computeFringeProcArray, unwindIndex
   implicit none
 
   ! Input Params
@@ -28,6 +28,7 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
   integer(kind=intType), dimension(:), allocatable :: recvSizes
   integer(kind=intType), dimension(:), allocatable :: intSendBuf, intRecvBuf
   integer(kind=intType) :: i, j, k, ii, jj, kk, iii, jjj,  kkk, nn, index
+  integer(kind=intType) :: il, jl, kl, dIndex
   integer(kind=intType) :: iStart, iEnd, iProc, iSize, nFringeProc
   integer(kind=intType) :: sendCount, recvCount, ierr, totalRecvSize
   integer mpiStatus(MPI_STATUS_SIZE) 
@@ -61,7 +62,7 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
   do j=1, nFringeProc
      iProc = fringeProc(j)
      if (iProc /= myid) then 
-        tmpInt(iProc) = (cumFringeProc(j+1) - cumFringeProc(j))*4
+        tmpInt(iProc) = (cumFringeProc(j+1) - cumFringeProc(j))*2
      end if
   end do
 
@@ -70,19 +71,17 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
        adflow_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
 
-  ! We will need to send 4 integers to the donor processor:
-  ! donorBlock, dI, dJ and dK. 
+  ! We will need to send 2 integers to the donor processor:
+  ! donorBlock, dIndex
   
   ! Allocate space for the sending and receiving buffers
   totalRecvSize = sum(recvSizes)
-  allocate(intSendBuf(4*nFringe), intRecvBuf(totalRecvSize))
+  allocate(intSendBuf(2*nFringe), intRecvBuf(totalRecvSize))
   
      ! Pack the full buffer with donorBlock, dI, dJ, and dK
   do j=1, nFringe
-     intSendBuf(4*j-3) = fringeList(j)%donorBlock
-     intSendbuf(4*j-2) = fringeList(j)%dI
-     intSendBuf(4*j-1) = fringeList(j)%dJ
-     intSendBuf(4*j  ) = fringeList(j)%dK
+     intSendBuf(2*j-1) = fringeList(j)%donorBlock
+     intSendbuf(2*j  ) = fringeList(j)%dIndex
   end do
 
   ! Send the donors back to their own processors.
@@ -90,8 +89,8 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
   do j=1, nFringeProc
      
      iProc = fringeProc(j)
-     iStart = (cumFringeProc(j)-1)*4 + 1
-     iSize = (cumFringeProc(j+1) - cumFringeProc(j))*4
+     iStart = (cumFringeProc(j)-1)*2 + 1
+     iSize = (cumFringeProc(j+1) - cumFringeProc(j))*2
      
      if (iProc /= myid) then 
         sendCount = sendCount + 1
@@ -126,27 +125,22 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
      if (iProc == myid) then 
         do i=iStart, iEnd
            nn = fringeList(i)%donorBlock
-          
+           il = flowDoms(nn, level, sps)%il
+           jl = flowDoms(nn, level, sps)%jl
+           kl = flowDoms(nn, level, sps)%kl
+           dIndex = fringeList(i)%dIndex
+           call unwindIndex(dIndex, il, jl, kl, iii, jjj, kkk)
+
            ! For the wall donors, we just flag the 1 cell that was
            ! identified in the fringe search based on the octant. 
            if (useWall) then 
-
-              iii = fringeList(i)%dI
-              jjj = fringeList(i)%dJ
-              kkk = fringeList(i)%dK
-              
               call setIsWallDonor(flowDoms(nn, level, sps)%status(iii, jjj, kkk), .True. )
-
            else
-              
               do kk=0, 1
                  do jj=0, 1
                     do ii=0, 1
-                       
-                       iii = ii + fringeList(i)%dI
-                       jjj = jj + fringeList(i)%dJ
-                       kkk = kk + fringeList(i)%dK
-                       call setIsDonor(flowDoms(nn, level, sps)%status(iii, jjj, kkk), .True. )
+                       call setIsDonor(&
+                            flowDoms(nn, level, sps)%status(iii+ii, jjj+jj, kkk+kk), .True. )
                     end do
                  end do
               end do
@@ -168,23 +162,23 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
   enddo
   
   ! Loop over the full receive buffer that should now be full. 
-  do j=1, totalRecvSize/4
+  do j=1, totalRecvSize/2
 
-     nn = intRecvBuf(4*j-3)
-     
+     nn = intRecvBuf(2*j-1)
+     il = flowDoms(nn, level, sps)%il
+     jl = flowDoms(nn, level, sps)%jl
+     kl = flowDoms(nn, level, sps)%kl
+
+     dIndex = intRecvBuf(2*j)
+     call unwindIndex(dIndex, il, jl, kl, iii, jjj, kkk)
+
      if (useWall) Then 
-        iii = intRecvBuf(4*j-2)
-        jjj = intRecvBuf(4*j-1)
-        kkk = intRecvBuf(4*j  )
         call setIsWallDonor(flowDoms(nn, level, sps)%status(iii, jjj, kkk), .True. )
      else
         do kk=0, 1
            do jj=0, 1
               do ii=0, 1
-                 iii = ii + intRecvBuf(4*j-2)
-                 jjj = jj + intRecvBuf(4*j-1)
-                 kkk = kk + intRecvBuf(4*j  )
-                 call setIsDonor(flowDoms(nn, level, sps)%status(iii, jjj, kkk), .True. )
+                 call setIsDonor(flowDoms(nn, level, sps)%status(iii+ii, jjj+jj, kkk+kk), .True. )
               end do
            end do
         end do

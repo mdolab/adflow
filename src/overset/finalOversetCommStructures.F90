@@ -5,13 +5,14 @@ subroutine finalOversetCommStructures(level, sps)
   ! sendProc, nProcSend, nSend, and sendList for each proc
   ! recvProc, nProcRecv, nRecv, and recvList for each proc
   use constants
+  use block, only : flowDoms
   use blockPointers, only : nDom, fringes, ib, jb, kb, status, fringePtr
   use overset, only: fringeType
   use communication, only : adflow_comm_world, myid, nProc, sendRequests, recvRequests, &
        commPatternOverset, internalOverset
   use utils, only : setPointers, terminate, EChk
   use oversetUtilities, only : fracToWeights, qsortFringeType, getCumulativeForm, computeFringeProcArray, &
-       isReceiver
+       isReceiver, unwindIndex
   implicit none
 
   ! Input Parameters
@@ -19,6 +20,7 @@ subroutine finalOversetCommStructures(level, sps)
 
   ! Working Parameters
   integer(kind=intType) :: i, j, k, ii, jj, kk, nn, tag, ierr, nLocalFringe
+  integer(kind=intType) :: myI, myJ, myK, dI, dJ, dK, il, jl, kl, myBlock, dBlock
   integer(kind=intType) :: n, nFringeProc, sendCount, recvCount, iProc
   integer(kind=intType) :: iSize, iStart, iEnd, iProcRecv, iSendProc, iRecvProc
   integer(kind=intType) :: nProcSend, nProcRecv, nCopy, totalRecvSize, index
@@ -99,17 +101,15 @@ subroutine finalOversetCommStructures(level, sps)
 
   ! Allocate space for the sending and receiving buffers
   totalRecvSize = sum(recvSizes)
-  allocate(intSendBuf(4*nLocalFringe), intRecvBuf(totalRecvSize*4), &
+  allocate(intSendBuf(2*nLocalFringe), intRecvBuf(totalRecvSize*2), &
        realSendBuf(3*nLocalFringe), realRecvBuf(totalRecvSize*3))
   
-  ! Pack the real and integer buffers with donorBlock, dI, dJ, dK and
+  ! Pack the real and integer buffers with donorBlock, dIndex and
   ! donorFrac. We are putting everything in here, including our
   ! own. That's ok.
   do j=1, nLocalFringe
-     intSendBuf(4*j-3) = localFringes(j)%donorBlock
-     intSendbuf(4*j-2) = localFringes(j)%dI
-     intSendBuf(4*j-1) = localFringes(j)%dJ
-     intSendBuf(4*j  ) = localFringes(j)%dK
+     intSendBuf(2*j-1) = localFringes(j)%donorBlock
+     intSendbuf(2*j  ) = localFringes(j)%dindex
      realSendBuf(3*j-2:3*j) = localFringes(j)%donorFrac
   end do
 
@@ -183,7 +183,7 @@ subroutine finalOversetCommStructures(level, sps)
      
      if (iProc /= myid) then 
         sendCount = sendCount + 1
-        call mpi_isend(intSendBuf(iStart*4+1), 4*iSize, adflow_integer, iProc, myid, &
+        call mpi_isend(intSendBuf(iStart*2+1), 2*iSize, adflow_integer, iProc, myid, &
              adflow_comm_world, sendRequests(sendCount), ierr)
         call ECHK(ierr, __FILE__, __LINE__)
 
@@ -202,11 +202,11 @@ subroutine finalOversetCommStructures(level, sps)
      
      if (recvSizes(iProc) > 0) then
         recvCount = recvCount + 1
-        call mpi_irecv(intRecvBuf(ii), 4*recvSizes(iProc), adflow_integer, &
+        call mpi_irecv(intRecvBuf(ii), 2*recvSizes(iProc), adflow_integer, &
              iProc, iProc, adflow_comm_world, recvRequests(recvCount), ierr) 
         call ECHK(ierr, __FILE__, __LINE__) 
        
-        ii = ii + recvSizes(iProc)*4
+        ii = ii + recvSizes(iProc)*2
 
         recvCount = recvCount + 1
         call mpi_irecv(realRecvBuf(jj), 3*recvSizes(iProc), adflow_real, &
@@ -228,19 +228,27 @@ subroutine finalOversetCommStructures(level, sps)
         do j=iStart,iEnd
            ii = ii + 1
            ! This is the donor information
-           internalOverset(level, sps)%donorBlock(ii) = localFringes(j)%donorBlock
-           internalOverset(level, sps)%donorIndices(ii, 1) = localFringes(j)%dI
-           internalOverset(level, sps)%donorIndices(ii, 2) = localFringes(j)%dJ
-           internalOverset(level, sps)%donorIndices(ii, 3) = localFringes(j)%dK
+           dBlock = localFringes(j)%donorBlock
+           internalOverset(level, sps)%donorBlock(ii) = dBlock
+           il = flowDoms(dBlock, level, sps)%il
+           jl = flowDoms(dBlock, level, sps)%jl
+           kl = flowDoms(dBlock, level, sps)%kl
+           call unwindIndex(localFringes(j)%dIndex, il, jl, kl, dI, dJ, dK)
+
+           internalOverset(level, sps)%donorIndices(ii, :) = (/dI, dJ, dk/)
            call fracToWeights(localFringes(j)%donorFrac, internalOverset(level, sps)%donorInterp(ii, :))
            internalOverset(level, sps)%donorInterpd(ii, :) = zero
            internalOverset(level, sps)%xCen(ii, :) = zero
 
            ! And the receiver (halo) information
-           internalOverset(level, sps)%haloBlock(ii) = localFringes(j)%myBlock
-           internalOverset(level, sps)%haloIndices(ii, 1) = localFringes(j)%myI
-           internalOverset(level, sps)%haloIndices(ii, 2) = localFringes(j)%myJ
-           internalOverset(level, sps)%haloIndices(ii, 3) = localFringes(j)%myK
+           myBlock = localFringes(j)%myBlock
+           internalOverset(level, sps)%haloBlock(ii) = myBlock
+
+           il = flowDoms(myBlock, level, sps)%il
+           jl = flowDoms(myBlock, level, sps)%jl
+           kl = flowDoms(myBlock, level, sps)%kl
+           call unwindIndex(localFringes(j)%myIndex, il, jl, kl, myI, myJ, myK)
+           internalOverset(level, sps)%haloIndices(ii, :) = (/myI, myJ, myK/)
         end do
      else
 
@@ -255,10 +263,14 @@ subroutine finalOversetCommStructures(level, sps)
         ii = 0
         do j=iStart, iEnd
            ii = ii + 1
-           commPatternOverset(level, sps)%recvList(iRecvProc)%block(ii) = localFringes(j)%myBlock
-           commPatternOverset(level, sps)%recvList(iRecvProc)%indices(ii,1) = localFringes(j)%myI
-           commPatternOverset(level, sps)%recvList(iRecvProc)%indices(ii,2) = localFringes(j)%myJ
-           commPatternOverset(level, sps)%recvList(iRecvProc)%indices(ii,3) = localFringes(j)%myK
+           myBlock = localFringes(j)%myBlock
+           commPatternOverset(level, sps)%recvList(iRecvProc)%block(ii) = myBlock
+
+           il = flowDoms(myBlock, level, sps)%il
+           jl = flowDoms(myBlock, level, sps)%jl
+           kl = flowDoms(myBlock, level, sps)%kl
+           call unwindIndex(localFringes(j)%myIndex, il, jl, kl, myI, myJ, myK)
+           commPatternOverset(level, sps)%recvList(iRecvProc)%indices(ii,:) = (/myI, myJ, myK/)
         end do
      end if
   end do
@@ -291,20 +303,26 @@ subroutine finalOversetCommStructures(level, sps)
              commPatternOverset(level, sps)%sendList(iSendProc)%block(n), &
              commPatternOverset(level, sps)%sendList(iSendProc)%indices(n, 3), &
              commPatternOverset(level, sps)%sendList(iSendProc)%interp(n, 8), &
-             commPatternOverset(level, sps)%sendList(iSendProc)%interpd(n, 8), &
-             commPatternOverset(level, sps)%sendList(iSendProc)%xCen(n, 3))
+             commPatternOverset(level, sps)%sendList(iSendProc)%interpd(n, 8))
 
         ! Now set the data
         do i=1, n
-           commPatternOverset(level, sps)%sendList(iSendProc)%block(i) = intRecvBuf(ii+1)
+           myBlock = intRecvBuf(ii+1)
+           commPatternOverset(level, sps)%sendList(iSendProc)%block(i) = myBlock
+
+           il = flowDoms(myBlock, level, sps)%il
+           jl = flowDoms(myBlock, level, sps)%jl
+           kl = flowDoms(myBlock, level, sps)%kl
+
+           index = intRecvBuf(ii+2)
+           call unWindIndex(index, il, jl, kl, dI, dJ, dK)
            commPatternOverset(level, sps)%sendList(iSendProc)%indices(i, :) = &
-                intRecvBuf(ii+2:ii+4)
-           ii = ii + 4
+                (/dI, dJ, dK/)
+           ii = ii + 2
 
            call fracToWeights(realRecvBuf(jj+1:jj+3), &
                 commPatternOverset(level, sps)%sendList(iSendProc)%interp(i, :))
            commPatternOverset(level, sps)%sendList(iSendProc)%interpd(i, :) = zero
-           commPatternOverset(level, sps)%sendList(iSendProc)%xCen(i, :) = zero
            jj = jj + 3
         end do
      end if

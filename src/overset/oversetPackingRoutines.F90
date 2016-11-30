@@ -363,7 +363,7 @@ contains
     mm = (il-1)*(jl-1)*(kl-1) ! nx*ny*nz
 
     ! Initializeation
-    iSize = mm * 5 + 5 ! We need wallInd, isWall, myI, myJ, myK plus 5 for the sizes
+    iSize = mm * 3 + 5 ! We need wallInd, isWall, myIndex plus 5 for the sizes
     rSize = mm * 6 ! Need to send x and xSeed (3 each)
 
   end subroutine getOFringeBufferSizes
@@ -415,13 +415,7 @@ contains
        oFringe%iBuffer(ii) = oFringe%isWall(i)
 
        ii = ii +1
-       oFringe%iBuffer(ii) = oFringe%fringes(i)%myI
-
-       ii = ii +1
-       oFringe%iBuffer(ii) = oFringe%fringes(i)%myJ
-
-       ii = ii +1
-       oFringe%iBuffer(ii) = oFringe%fringes(i)%myK
+       oFringe%iBuffer(ii) = oFringe%fringes(i)%myIndex
 
     end do
 
@@ -488,13 +482,7 @@ contains
        oFringe%isWall(i) = oFringe%iBuffer(ii)
 
        ii = ii + 1
-       oFringe%fringes(i)%myI = oFringe%iBuffer(ii)
-
-       ii = ii + 1
-       oFringe%fringes(i)%myJ = oFringe%iBuffer(ii)
-
-       ii = ii + 1
-       oFringe%fringes(i)%myK = oFringe%iBuffer(ii)
+       oFringe%fringes(i)%myIndex = oFringe%iBuffer(ii)
 
        oFringe%fringes(i)%myBlock = oFringe%block
     end do

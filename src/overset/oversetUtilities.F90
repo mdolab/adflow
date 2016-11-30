@@ -19,6 +19,39 @@ contains
     oversetTimes(index) = oversetTimes(index) + mpi_wtime()- tStart(index)
   end subroutine toc
 
+  subroutine unwindIndex(index, il, jl, kl, i, j, k)
+    ! Unwind a 1-based index based on the double halo size of 0:ib,
+    ! 0:jb, 0:kb
+    use constants
+    implicit none
+    integer(kind=intType), intent(in) ::index, il, jl, kl
+    integer(kind=intType), intent(out) :: i, j, k
+    integer(kind=intType) :: ID, isize, jsize, ksize
+    ID = index - 1
+    iSize = il+3
+    jSize = jl+3
+    kSize = kl+3
+    i = mod(ID, iSize) 
+    j = mod(ID/iSize, jSize) 
+    k = ID/(iSize*jSize)
+
+  end subroutine unwindIndex
+
+  function windIndex(i, j, k, il, jl, kl)
+
+    use constants
+    implicit none
+    integer(kind=intType),intent(in) :: i, j, k, il, jl, kl
+    integer(kind=intType) :: iSize, jSize, kSize, windIndex
+
+    iSize = il+3
+    jSize = jl+3
+    kSize = kl+3
+
+    windIndex = k*iSize*jSize + j*iSize + i +1
+    
+  end function windIndex
+
   subroutine printOverlapMatrix(overlap)
 
     ! This is a debugging routine to print out the overlap matrix.
