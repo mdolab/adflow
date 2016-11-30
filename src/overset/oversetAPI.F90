@@ -589,7 +589,10 @@ contains
                    deallocate(flowDoms(nn, level, sps)%fringePtr)
                    deallocate(flowDoms(nn, level, sps)%nDonors)
                 end if
-                
+                if (associated(flowDoms(nn, level, sps)%gInd)) then 
+                   deallocate(flowDoms(nn, level, sps)%gInd)
+                end if
+
                 ! Estimate about 1 donors for every cell. 
                 mm = nx*ny*nz
                 allocate(flowDoms(nn, level, sps)%fringes(mm), &
@@ -1152,19 +1155,17 @@ contains
        do nn=1, nDom
           call setPointers(nn, level, sps)
           deallocate(flowDoms(nn, level, sps)%fringes, &
-               flowDoms(nn, level, sps)%fringePtr)
-          if (associated(flowDoms(nn, level, sps)%gInd)) then 
-             deallocate(flowDoms(nn, level, sps)%gInd)
-          end if
+               flowDoms(nn, level, sps)%fringePtr, &
+               flowDoms(nn, level, sps)%nDonors)
           allocate(flowDoms(nn, level, sps)%gInd(8, 0:ib, 0:jb, 0:kb))
           flowDoms(nn, level, sps)%gInd = -1
        end do
 
-       ! Set up the gInd using the final overset comm structure. 
-       call setupFringeGlobalInd(level, sps)
-
        ! Setup the buffer sizes
        call setBufferSizes(level, sps, .false., .True.)
+
+       ! Set up the gInd using the final overset comm structure. 
+       call setupFringeGlobalInd(level, sps)
 
        ! Deallocate some data we no longer need
        deallocate(Xmin, Xmax, work, localWallFringes)
