@@ -28,7 +28,7 @@ contains
     use oversetInitialization, only : initializeOBlock, initializeOFringes, initializeStatus
     use oversetCommUtilities , only : recvOBlock, recvOFringe, getCommPattern, getOSurfCommPattern, &
          emptyOversetComm, exchangeStatusTranspose, exchangeStatus, oversetLoadBalance, &
-         exchangeFringes, sendOFringe, sendOBlock, flagInvalidDonors
+         exchangeFringes, sendOFringe, sendOBlock, flagInvalidDonors, setupFringeGlobalInd
     use oversetUtilities, only : isCompute, checkOverset, irregularCellCorrection, &
          fringeReduction, transposeOverlap, setIBlankArray, deallocateOFringes, deallocateoBlocks, &
          deallocateOSurfs, deallocateCSRMatrix, setIsCompute, getWorkArray, flagForcedRecv, &
@@ -1150,10 +1150,18 @@ contains
        ! are no longer necessary. All the required info is in the comm
        ! structure. 
        do nn=1, nDom
+          call setPointers(nn, level, sps)
           deallocate(flowDoms(nn, level, sps)%fringes, &
                flowDoms(nn, level, sps)%fringePtr)
+          if (associated(flowDoms(nn, level, sps)%gInd)) then 
+             deallocate(flowDoms(nn, level, sps)%gInd)
+          end if
+          allocate(flowDoms(nn, level, sps)%gInd(8, 0:ib, 0:jb, 0:kb))
+          flowDoms(nn, level, sps)%gInd = -1
        end do
 
+       ! Set up the gInd using the final overset comm structure. 
+       call setupFringeGlobalInd(level, sps)
 
        ! Setup the buffer sizes
        call setBufferSizes(level, sps, .false., .True.)

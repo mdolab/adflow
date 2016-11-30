@@ -74,7 +74,7 @@ module block
      ! Generic pointers for performing a globalized reduction. 
      real(kind=realType), dimension(:, :), pointer :: nodeVal
      real(kind=realType), dimension(:, :), pointer :: cellVal
-
+     
      ! symNorm is the normal for (symmertry) boundary conditions.
      ! symNormSet is set to false until symNorm is computed at the
      ! beginning of a simulation. symNorm then remains constant for
@@ -319,7 +319,7 @@ module block
      integer(kind=intType), dimension(:,:,:), pointer :: forcedRecv
      type(fringeType) , dimension(:), pointer :: fringes=>null()
      integer(kind=intType), dimension(:, :, :, :), pointer :: fringePtr=>null()
-     integer(kind=intType), dimension(:, :), pointer :: fringeGInd=>null()
+     integer(kind=intType), dimension(:, :, :, :), pointer :: gInd
      integer(kind=intType), pointer :: nDonors
      integer(kind=intType) :: nDonorsOnOwnedCells
 
