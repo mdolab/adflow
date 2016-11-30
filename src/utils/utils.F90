@@ -3051,6 +3051,7 @@ end subroutine cross_prod
 
     fringes => flowDoms(nn,mm,ll)%fringes
     fringePtr => flowDoms(nn,mm,ll)%fringePtr
+    gind => flowDoms(nn, mm, ll)%gInd
     nDonors => flowDoms(nn,mm,ll)%nDonors
 
     orphans => flowDoms(nn,mm,ll)%orphans
