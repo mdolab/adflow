@@ -447,6 +447,11 @@ python module libadflow
          subroutine writepartitionedmesh(filename)
            character*(*) intent(in) :: filename
          end subroutine writepartitionedmesh
+         subroutine oversetcomm(level, firstime, coarselevel)
+           integer(kind=inttype), intent(in) :: level
+           logical, intent(in) :: firsttime
+           logical, intent(in) :: coarselevel
+         end subroutine oversetcomm
        end module oversetapi
 
        module oversetutilities
@@ -563,7 +568,7 @@ python module libadflow
        
        module overset
          use constants
-         real(kind=realtype) dimension(21) :: oversettimes
+         real(kind=realtype) dimension(16) :: oversettimes
        end module overset
        
 ! ================ bare subroutines =============

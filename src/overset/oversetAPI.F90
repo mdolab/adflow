@@ -129,6 +129,7 @@ contains
     ! Zero out all the timers
     oversetTimes = zero
 
+    call MPI_barrier(adflow_comm_world, ierr)
     call tic(iTotal)
     ! Master SPS loop
     spectralLoop: do sps=1,nTimeIntervalsSpectral
@@ -157,7 +158,6 @@ contains
           call deallocateCSRMatrix(overlap)
           call buildGlobalSparseOverlap(overlap)
        end if
-       call toc(iBuildOverlap)
 
        ! -----------------------------------------------------------------
        ! Step 8: This is going to put the number of searches (coordinates)
@@ -175,7 +175,7 @@ contains
        ! we need to do as well. Specifically we want to tell all the
        ! processors the size of the int Buffer, real Buffer and the
        ! number of fringes we can expect to receive.
-       call tic(iLoadBalance)
+
        allocate(bufSizes(nDomTotal, 6), tmpInt2D(nDomTotal, 6), &
             tmpReal(size(overlap%data)))
 
@@ -248,7 +248,6 @@ contains
           call oversetLoadBalance(overlap)
        end if
        call transposeOverlap(overlap, overlapTranspose)
-       call toc(iLoadBalance)
 
        ! -----------------------------------------------------------------
        !  Step 8: Section out just the intersections we have to
@@ -364,6 +363,8 @@ contains
        allocate(localWallFringes(1000))
        nLocalWallFringe = 0
 
+       call toc(iBuildOverlap)
+
        call tic(iBuildClusterWalls)
        allocate(clusterWalls(nClusters))
        call buildClusterWalls(level, sps, .True., clusterWalls, wallFamList, size(wallFamList))
@@ -400,9 +401,7 @@ contains
        call toc(iComputeCellWallPoint)
 
        ! Flag all the cells that we know are forced receivers. 
-       call tic(iFlagForcedRecv)
        call flagForcedRecv()
-       call toc(iFlagForcedRecv)
 
        ! Initialize the overset-specific data structures for
        ! performing searches. 
@@ -421,7 +420,6 @@ contains
           call toc(iBuildSearchPoints)         
        end do
 
-       call tic(iComm1)
        ! Post all the oBlock/oFringe iSends
        sendCount = 0
        do jj=1, nOblockSend
@@ -539,14 +537,12 @@ contains
                   oFringes(iDom)%rBuffer)
           end if
        end do
-       call toc(iComm1)
 
        ! -----------------------------------------------------------------
        ! Step 9: Well, all the searches are done, so now we can now send
        ! the fringes back to where they came from. 
        ! -----------------------------------------------------------------
-       call tic(iComm2)
-
+       call tic(iFringeProcessing)
        nReal = 4
        nInt = 5
        do iDom=1, nDomTotal
@@ -621,6 +617,7 @@ contains
                   oFringes(iDom)%fringes)
           end if
        end do
+       call toc(iFringeProcessing)
 
        ! -----------------------------------------------------------------
        ! For this data exchange we use the exact *reverse* of fringe
@@ -751,6 +748,8 @@ contains
           call ECHK(ierr, __FILE__, __LINE__)
        end do
 
+       call tic(iFringeProcessing)
+
        ! Process the data we just received. 
        do kk=1, nOfringeSend
 
@@ -858,7 +857,7 @@ contains
           flowDoms(nn, level, sps)%iBlankLast = 1
        end do
 
-       call toc(iComm2)
+       call toc(iFringeProcessing)
 
        ! Start the refinement loop:
        nRefine = 10
@@ -868,9 +867,7 @@ contains
           call initializeStatus(level, sps)
           
           ! Exchange the status so that the halos get the right 
-          call tic(iStatusExchange)
           call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
-          call toc(iStatusExchange)          
 
           call tic(iCheckDonors)
           nLocalFringe = 0
@@ -951,9 +948,7 @@ contains
           call toc(iCheckDonors)
 
           ! Update the status so we know if halo cells are donors
-          call tic(iStatusExchange)
           call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
-          call toc(iStatusExchange)
           
           ! -----------------------------------------------------------------
           ! Step 9: We now have computed all the fringes that we can. Some of
@@ -1023,10 +1018,8 @@ contains
           ! and then combines (or accumulates) that information. In this
           ! particular case the accumulation is actually a logical or
           ! operation. 
-          call tic(iStatusExchange)
           call exchangeStatusTranspose(level, sps, commPatternCell_2nd, internalCell_2nd)
           call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
-          call toc(iStatusExchange)
 
           !=================================================================================
           ! -----------------------------------------------------------------
@@ -1042,9 +1035,7 @@ contains
              call irregularCellCorrection(level, sps)
              call toc(iIrregularCellCorrection)
 
-             call tic(iStatusExchange)
              call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
-             call toc(iStatusExchange)
           end if
 
           ! Next we have to perfrom the interior cell flooding. We already
@@ -1058,17 +1049,13 @@ contains
           
           ! The fringeReduction just needs to be isCompute flag so exchange
           ! the status this as these may have been changed by the flooding
-          call tic(iStatusExchange)
           call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)       
-          call toc(iStatusExchange)
 
           ! Before we can do the final comm structures, we need to make
           ! sure that every processor's halo have any donor information
           ! necessary to build its own comm pattern. For this will need to
           ! send donorProc, donorBlock, dIndex and donorFrac. 
-          call tic(iStatusExchange)
           call exchangeFringes(level, sps, commPatternCell_2nd, internalCell_2nd)
-          call toc(iStatusExchange)
           
           ! -----------------------------------------------------------------
           ! Step 17: We can now create the final required comm structures
@@ -1087,13 +1074,8 @@ contains
           call toc(iFinalCommStructures)
 
           ! Determine the invalid donors for the next pass:
-          call tic(iFlagForcedRecv)
           call flagForcedRecv()
-          call toc(iFlagForcedRecv)
-
-          call tic(iFlagInvalidDonors)
           call flagInvalidDonors(level, sps)
-          call toc(iFlagInvalidDonors)
           
           ! -----------------------------------------------------------------
           ! Step 16: The algorithm is now complete. Run the checkOverset
@@ -1138,16 +1120,13 @@ contains
        call fringeReduction(level, sps)
        call toc(iFringeReduction)
 
-       call tic(iStatusExchange)
        call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
        call exchangeFringes(level, sps, commPatternCell_2nd, internalCell_2nd)
-       call tic(iStatusExchange)
-       
-       call tic(iFinalCommStructures)
+
+       call tic(iFringeReduction)
        call finalOversetCommStructures(level, sps)
        call setIblankArray(level, sps)
        call checkOverset(level, sps, i, .True.)
-       call toc(iFinalCommStructures)
        
        ! We can ditch the blocked based fringes/fringePtr since they
        ! are no longer necessary. All the required info is in the comm
@@ -1172,6 +1151,7 @@ contains
        do nn=1, nDom
           deallocate(flowDoms(nn, level, sps)%iBlankLast)
        end do
+       call toc(iFinalCommStructures)
 
     end do spectralLoop
 
@@ -1180,6 +1160,8 @@ contains
     deallocate(sendBuffer, recvBuffer)
     allocate(sendBuffer(sendBufferSize), recvBuffer(recvBufferSize))
 
+    call MPI_barrier(adflow_comm_world, ierr)
+    call ECHK(ierr, __FILE__, __LINE__)
     call toc(iTotal)
 
   contains
