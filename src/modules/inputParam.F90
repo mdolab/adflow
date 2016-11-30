@@ -830,7 +830,7 @@ module inputOverset
   !
   !       Definition of parameters for the overset implementation        
   !
-  logical :: lowOversetMemory=.False.
+  logical :: useoversetLoadBalance=.True.
   real(kind=realType) :: overlapFactor=0.9
   real(kind=realType) :: nearWallDist=0.1
   real(kind=realType) :: oversetProjTol=1e-12

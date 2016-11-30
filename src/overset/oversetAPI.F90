@@ -21,7 +21,7 @@ contains
     use stencils, only : N_visc_drdw, visc_drdw_stencil
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use adtBuild, only : destroySerialQuad
-    use inputOverset, onlY : lowOversetMemory, overlapFactor
+    use inputOverset, onlY : useoversetLoadBalance, overlapFactor
     use utils, only : EChk, setPointers, setBufferSizes, terminate
     use surfaceFamilies, only : BCFamGroups
     use kdtree2_module, onlY : kdtree2_create, kdtree2destroy
@@ -244,7 +244,7 @@ contains
        ! transpose of the matrix which is useful to use for the fringe
        ! sending operation (it is transpose of the block sending)
        ! -----------------------------------------------------------------
-       if (.not. lowOversetMemory) then 
+       if (useOversetLoadBalance) then 
           call oversetLoadBalance(overlap)
        end if
        call transposeOverlap(overlap, overlapTranspose)
