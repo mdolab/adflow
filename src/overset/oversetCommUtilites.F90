@@ -1180,6 +1180,195 @@ contains
 
   end subroutine exchangeStatusTranspose
 
+  subroutine setupFringeGlobalInd(level, sps)
+    
+    use constants
+    use blockPointers
+    use communication
+    use utils, only : EChk
+    implicit none
+    
+    ! This subroutine is used to record the global index of each of
+    ! the donors for overset fringes. It has the same comm structure
+    ! as  wOverset and flagInvalidDonors. 
+
+    !
+    !      Subroutine arguments.
+    !
+    integer(kind=intType), intent(in) :: level, sps
+
+    !
+    !      Local variables.
+    !
+    integer :: size, procId, ierr, index
+    integer, dimension(mpi_status_size) :: mpiStatus
+
+    integer(kind=intType) :: nVar
+    integer(kind=intType) :: i, j, k, ii, jj, iii, jjj, kkk, iFringe
+    integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2, ind
+    integer(kind=intType), dimension(:), allocatable :: sendBufInt
+    integer(kind=intType), dimension(:), allocatable :: recvBufInt
+    logical :: invalid
+    type(commType), pointer :: commPattern
+    type(internalCommType), pointer :: internal
+
+    commPattern => commPatternOverset(level, sps)
+    internal => internalOverset(level, sps)
+    
+    ii = commPattern%nProcSend
+    ii = commPattern%nsendCum(ii)
+    jj = commPattern%nProcRecv
+    jj = commPattern%nrecvCum(jj)
+    nVar = 8
+    allocate(sendBufInt(ii*nVar), recvBufInt(jj*nVar), stat=ierr)
+    
+    ! Send the variables. The data is first copied into
+    ! the send buffer after which the buffer is sent asap.
+
+    ii = 1
+    sends: do i=1,commPattern%nProcSend
+
+       ! Store the processor id and the size of the message
+       ! a bit easier.
+
+       procID = commPattern%sendProc(i)
+       size    = nVar*commPattern%nsend(i)
+
+       ! Copy the data in the correct part of the send buffer.
+
+       jj = ii
+       do j=1,commPattern%nsend(i)
+
+          ! Store the block id and the indices of the donor
+          ! a bit easier.
+
+          d1 = commPattern%sendList(i)%block(j)
+          i1 = commPattern%sendList(i)%indices(j,1)
+          j1 = commPattern%sendList(i)%indices(j,2)
+          k1 = commPattern%sendList(i)%indices(j,3)
+
+          ! Loop over the 8 donors:
+          do kkk=k1, k1+1
+             do jjj=j1, j1+1
+                do iii=i1, i1+1
+                   sendBufInt(jj) = flowDoms(d1, level, sps)%globalCell(iii,jjj,kkk)
+                   jj =jj + 1
+                end do
+             end do
+          end do
+       enddo
+
+       ! Send the data.
+
+       call mpi_isend(sendBufInt(ii), size, adflow_integer, procId,  &
+            procId, ADflow_comm_world, sendRequests(i), &
+            ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! Set ii to jj for the next processor.
+
+       ii = jj
+
+    enddo sends
+
+    ! Post the nonblocking receives.
+
+    ii = 1
+    receives: do i=1,commPattern%nProcRecv
+
+       ! Store the processor id and the size of the message
+       ! a bit easier.
+
+       procID = commPattern%recvProc(i)
+       size    = nVar*commPattern%nrecv(i)
+
+       ! Post the receive.
+
+       call mpi_irecv(recvBufInt(ii), size, adflow_integer, procId, &
+            myId, ADflow_comm_world, recvRequests(i), ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! And update ii.
+
+       ii = ii + size
+
+    enddo receives
+
+    ! Do the local interpolation.
+    localInterp: do i=1,internal%ncopy
+
+       ! Store the block and the indices of the donor a bit easier.
+
+       d1 = internal%donorBlock(i)
+       i1 = internal%donorIndices(i, 1)
+       j1 = internal%donorIndices(i, 2)
+       k1 = internal%donorIndices(i, 3)
+
+       ! Idem for the halo's.
+
+       d2 = internal%haloBlock(i)
+       i2 = internal%haloIndices(i, 1)
+       j2 = internal%haloIndices(i, 2)
+       k2 = internal%haloIndices(i, 3)
+
+       ! Loop over the 8 donors:
+       ind = 0
+       do kkk=k1, k1+1
+          do jjj=j1, j1+1
+             do iii=i1, i1+1
+                ind = ind + 1
+                flowDoms(d2, level, sps)%gInd(ind, i2, j2, k2) = & 
+                     flowDoms(d1, level, sps)%globalCell(iii,jjj,kkk)
+             end do
+          end do
+       end do
+    enddo localInterp
+
+    ! Complete the nonblocking receives in an arbitrary sequence and
+    ! copy the variables from the buffer into the halo's.
+
+    size = commPattern%nProcRecv
+    completeRecvs: do i=1,commPattern%nProcRecv
+
+       ! Complete any of the requests.
+
+       call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! Copy the data just arrived in the halo's.
+
+       ii = index
+       jj = nVar*commPattern%nrecvCum(ii-1)
+       do j=1,commPattern%nrecv(ii)
+
+          ! Store the block and the indices of the halo a bit easier.
+
+          d2 = commPattern%recvList(ii)%block(j)
+          i2 = commPattern%recvList(ii)%indices(j,1)
+          j2 = commPattern%recvList(ii)%indices(j,2)
+          k2 = commPattern%recvList(ii)%indices(j,3)
+
+          ! Just set the 8 values
+          do ind=1,8
+             flowDoms(d2, level, sps)%gInd(ind, i2, j2, k2) = &
+                  recvBufInt(jj+ind)
+          end do
+
+          jj = jj + 8
+       enddo
+    end do completeRecvs
+
+    ! Complete the nonblocking sends.
+
+    size = commPattern%nProcSend
+    do i=1,commPattern%nProcSend
+       call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+    enddo
+    deallocate(sendBufInt, recvBufInt)
+
+  end subroutine setupFringeGlobalInd
+
   subroutine exchangeSurfaceDelta(zipperFamList, level, sps, commPattern, internal)
     !
     !       ExchangeSurfaceDelta exchanges surface delta to fill up halo   

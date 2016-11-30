@@ -74,6 +74,7 @@ module blockPointers
   type(fringeType), dimension(:), pointer :: fringes
   integer(kind=intType), pointer :: nDonors
   integer(kind=intType), dimension(:, :, :, :), pointer :: fringePtr
+  integer(kind=intType), dimension(:, :, :, :), pointer :: gInd
   integer(kind=intType), dimension(:, :), pointer :: orphans
   integer(kind=intType) :: nOrphans
 

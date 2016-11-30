@@ -396,9 +396,8 @@ contains
                             cols(1) = flowDoms(nn, level, sps)%globalCell(i, j, k)
                             nCol = 1
                          else
-                            fInd = fringePtr(1, i, j, k)
                             do m=1,8
-                               !cols(m) = flowDoms(nn, level, sps)%fringes(fInd)%gInd(m)
+                               cols(m) = flowDoms(nn, level, sps)%gInd(m, i, j, k)
                             end do
                             call fracToWeights(flowDoms(nn, level, sps)%fringes(fInd)%donorFrac, &
                                  weights)
@@ -1448,7 +1447,7 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
 
   use constants
   use blockPointers, only : nDom, il, jl, kl, fringes, flowDoms, globalCell, &
-       iBlank, fringePtr
+       iBlank, gInd
   use communication, only : adflow_comm_world
   use inputTimeSpectral , only : nTimeIntervalsSpectral
   use utils, only : setPointers, EChk
@@ -1541,9 +1540,8 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
                           ! the donors for this cell and add any
                           ! entries that are real cells
                           overset = .True.
-                          fInd = fringePtr(1, iii, jjj, kkk)
                           do kk=1,8
-                             !gc = fringes(fInd)%gInd(kk)
+                             gc = gInd(kk, iii, jjj, kkk)
                              if (gc >= 0) then 
                                 n = n + 1
                                 cellBuffer(n) = gc
