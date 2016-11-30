@@ -949,7 +949,7 @@ python module libadflow
          real(kind=realtype) allocatable,dimension(:,:,:) :: rotmatrixspectral
        end module inputtimespectral
        module inputoverset
-         logical :: lowoversetmemory
+         logical :: useoversetloadbalance
          real(kind=realtype) :: nearwalldist
          real(kind=realtype) :: backgroundvolscale
          real(kind=realtype) :: oversetprojtol
