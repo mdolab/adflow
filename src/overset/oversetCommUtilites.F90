@@ -579,7 +579,7 @@ contains
   subroutine exchangeFringes(level, sps, commPattern, internal)
     !
     !       ExchangeFringes exchanges the donorInformation of the fringes: 
-    !       donorProc, donorBlock, dI, dJ, dK and donorFrac. It does this  
+    !       donorProc, donorBlock, dIndex and donorFrac. It does this  
     !       the 1:1 halos for the given level and spectral instance. Since 
     !       we have real values and integer values we will do all the ints 
     !       first and then the reals.                                      
@@ -589,7 +589,7 @@ contains
     use blockPointers, only : flowDoms
     use communication, only : commType, internalCommType, recvBuffer, sendBuffer, myid, &
          adflow_comm_world, sendRequests, recvRequests
-    use oversetUtilities, only : addToFringeList
+    use oversetUtilities, only : addToFringeList, windIndex
     implicit none
     !
     !      Subroutine arguments.
@@ -606,12 +606,13 @@ contains
 
     integer(kind=intType) :: i, j, ii, jj, nVar, iFringe, jFringe
     integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
+    integer(kind=intType) :: il, jl, kl, myIndex
     type(fringeType) :: fringe
     integer(kind=intType), dimension(:), allocatable :: sendBufInt
     integer(kind=intType), dimension(:), allocatable :: recvBufInt
 
     ! Allocate the memory for the sending and receiving buffers.
-    nVar = 5
+    nVar = 3
     ii = commPattern(level)%nProcSend
     ii = commPattern(level)%nsendCum(ii)
     jj = commPattern(level)%nProcRecv
@@ -649,15 +650,11 @@ contains
           if (iFringe > 0) then 
              sendBufInt(jj  ) = flowDoms(d1,level,sps)%fringes(iFringe)%donorProc
              sendBufInt(jj+1) = flowDoms(d1,level,sps)%fringes(iFringe)%donorBlock
-             sendBufInt(jj+2) = flowDoms(d1,level,sps)%fringes(iFringe)%dI
-             sendBufInt(jj+3) = flowDoms(d1,level,sps)%fringes(iFringe)%dJ
-             sendBufInt(jj+4) = flowDoms(d1,level,sps)%fringes(iFringe)%dK
+             sendBufInt(jj+2) = flowDoms(d1,level,sps)%fringes(iFringe)%dIndex
           else
              sendBufInt(jj  ) = -1
              sendBufInt(jj+1) = 0
              sendBufInt(jj+2) = 0
-             sendBufInt(jj+3) = 0
-             sendBufInt(jj+4) = 0
           end if
 
           jj = jj + nVar
@@ -726,14 +723,15 @@ contains
 
           ! Setup the new fringe:
           fringe%myBlock = d2
-          fringe%myI = i2
-          fringe%myJ = j2
-          fringe%myK = k2
+
+          il = flowDoms(d2, level, sps)%il
+          jl = flowDoms(d2, level, sps)%jl
+          kl = flowDoms(d2, level, sps)%kl
+          fringe%myIndex = windIndex(i2, j2, k2, il, jl, kl)
+
           fringe%donorProc = flowDoms(d1, level, sps)%fringes(iFringe)%donorProc
           fringe%donorBlock= flowDoms(d1, level, sps)%fringes(iFringe)%donorBlock
-          fringe%dI        = flowDoms(d1, level, sps)%fringes(iFringe)%dI
-          fringe%dJ        = flowDoms(d1, level, sps)%fringes(iFringe)%dJ
-          fringe%dK        = flowDoms(d1, level, sps)%fringes(iFringe)%dK
+          fringe%dIndex    = flowDoms(d1, level, sps)%fringes(iFringe)%dIndex
           fringe%donorFrac = flowDoms(d1, level, sps)%fringes(iFringe)%donorFrac
           
           if (jFringe > 0) then 
@@ -787,14 +785,15 @@ contains
           k2 = commPattern(level)%recvList(ii)%indices(j,3)
 
           fringe%myBlock = d2
-          fringe%myI = i2
-          fringe%myJ = j2
-          fringe%myK = k2
+          ! Recompute my Index:
+          il = flowDoms(d2, level, sps)%il
+          jl = flowDoms(d2, level, sps)%jl
+          kl = flowDoms(d2, level, sps)%kl
+          fringe%myIndex = windIndex(i2, j2, k2, il, jl, kl)
+
           fringe%donorProc  = recvBufInt(jj+1)
           fringe%donorBlock = recvBufInt(jj+2)
-          fringe%dI         = recvBufInt(jj+3)       
-          fringe%dJ         = recvBufInt(jj+4)
-          fringe%dK         = recvBufInt(jj+5)
+          fringe%dIndex     = recvBufInt(jj+3)       
 
           iFringe = flowDoms(d2, level, sps)%fringePtr(1, i2, j2, k2)
           if (iFringe > 0) then 

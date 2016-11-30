@@ -169,16 +169,11 @@ module block
     real(kind=realType) :: quality
 
     ! This is the information regarding where the cell came from.
-    integer(kind=intType) :: myBlock, myI, myJ, myK
+    integer(kind=intType) :: myBlock, myIndex
 
-    ! This is the information about the donor that was found. Note we
-    ! use dI, dJ, dK, short for donorI, etc. 
-    integer(kind=intType) :: donorProc, donorBlock, dI, dJ, dK
+    ! This is the information about the donor that was found
+    integer(kind=intType) :: donorProc, donorBlock, dIndex
     real(kind=realType) :: donorFrac(3)
-
-    ! gInd are the global indices of the donor cells. We will need
-    ! these for forming the PC for the Newton Krylov solver
-    integer(kind=intType), dimension(8) :: gInd
 
   end type fringeType
 
@@ -189,6 +184,20 @@ module block
   interface operator(<)
      module procedure lessFringeType
   end interface operator(<)
+
+  type interpPtType
+     integer(kind=intType) :: donorProc, donorBlock, dI, dJ, dK, myBlock
+     real(kind=realType) :: donorFrac(3)
+  end type interpPtType
+
+  interface operator(<=)
+     module procedure lessEqualinterpPtType
+  end interface operator(<=)
+
+  interface operator(<)
+     module procedure lessInterpPtType
+  end interface operator(<)
+
 
 
   !       The definition of the derived data type block_type, which
@@ -310,6 +319,7 @@ module block
      integer(kind=intType), dimension(:,:,:), pointer :: forcedRecv
      type(fringeType) , dimension(:), pointer :: fringes=>null()
      integer(kind=intType), dimension(:, :, :, :), pointer :: fringePtr=>null()
+     integer(kind=intType), dimension(:, :), pointer :: fringeGInd=>null()
      integer(kind=intType), pointer :: nDonors
      integer(kind=intType) :: nDonorsOnOwnedCells
 
@@ -819,59 +829,27 @@ module block
        ! Compare the indices of the halo. First k, then j and
        ! finally i.
        
-       if(g1%dK < g2%dK) then
+       if(g1%dIndex < g2%dIndex) then
           lessEqualfringeType = .true.
           return
-       else if(g1%dK > g2%dK) then
+       else if(g1%dindex > g2%dIndex) then
           lessEqualfringeType = .false.
           return
        endif
        
-       if(g1%dJ < g2%dJ) then
-          lessEqualfringeType = .true.
-          return
-       else if(g1%dJ > g2%dJ) then
-          lessEqualfringeType = .false.
-          return
-       endif
-       
-       if(g1%dI < g2%dI) then
-          lessEqualfringeType = .true.
-          return
-       else if(g1%dI > g2%dI) then
-          lessEqualfringeType = .false.
-          return
-       endif
-
     else if (fringeSortType == sortByReceiver) then 
 
       
        ! Compare my indices
        
-       if(g1%myK < g2%myK) then
+       if(g1%myIndex < g2%myIndex) then
           lessEqualfringeType = .true.
           return
-       else if(g1%myK > g2%myK) then
+       else if(g1%myIndex > g2%myIndex) then
           lessEqualfringeType = .false.
           return
        endif
        
-       if(g1%myJ < g2%myJ) then
-          lessEqualfringeType = .true.
-          return
-       else if(g1%myJ > g2%myJ) then
-          lessEqualfringeType = .false.
-          return
-       endif
-       
-       if(g1%myI < g2%myI) then
-          lessEqualfringeType = .true.
-          return
-       else if(g1%myI > g2%myI) then
-          lessEqualfringeType = .false.
-          return
-       endif       
-
        ! Now compare the donor information:
         
        if(g1%donorProc < g2%donorProc) then
@@ -895,26 +873,10 @@ module block
        ! Compare the indices of the halo. First k, then j and
        ! finally i.
        
-       if(g1%dK < g2%dK) then
+       if(g1%dIndex < g2%dIndex) then
           lessEqualfringeType = .true.
           return
-       else if(g1%dK > g2%dK) then
-          lessEqualfringeType = .false.
-          return
-       endif
-       
-       if(g1%dJ < g2%dJ) then
-          lessEqualfringeType = .true.
-          return
-       else if(g1%dJ > g2%dJ) then
-          lessEqualfringeType = .false.
-          return
-       endif
-       
-       if(g1%dI < g2%dI) then
-          lessEqualfringeType = .true.
-          return
-       else if(g1%dI > g2%dI) then
+       else if(g1%dIndex > g2%dIndex) then
           lessEqualfringeType = .false.
           return
        endif
@@ -962,59 +924,26 @@ module block
        ! Compare the indices of the halo. First k, then j and
        ! finally i.
        
-       if(g1%dK < g2%dK) then
+       if(g1%dIndex < g2%dIndex) then
           lessfringeType = .true.
           return
-       else if(g1%dK > g2%dK) then
-          lessfringeType = .false.
-          return
-       endif
-
-       if(g1%dJ < g2%dJ) then
-          lessfringeType = .true.
-          return
-       else if(g1%dJ > g2%dJ) then
-          lessfringeType = .false.
-          return
-       endif
-
-       if(g1%dI < g2%dI) then
-          lessfringeType = .true.
-          return
-       else if(g1%dI > g2%dI) then
+       else if(g1%dIndex > g2%dIndex) then
           lessfringeType = .false.
           return
        endif
        
     else if (fringeSortType == sortByReceiver) then 
-
        
        ! Compare my indices
        
-       if(g1%myK < g2%myK) then
+       if(g1%myIndex < g2%myIndex) then
           lessfringeType = .true.
           return
-       else if(g1%myK > g2%myK) then
+       else if(g1%myIndex > g2%myIndex) then
           lessfringeType = .false.
           return
        endif
        
-       if(g1%myJ < g2%myJ) then
-          lessfringeType = .true.
-          return
-       else if(g1%myJ > g2%myJ) then
-          lessfringeType = .false.
-          return
-       endif
-       
-       if(g1%myI < g2%myI) then
-          lessfringeType = .true.
-          return
-       else if(g1%myI > g2%myI) then
-          lessfringeType = .false.
-          return
-       endif       
-
        ! Now compare the donor information:
         
        if(g1%donorProc < g2%donorProc) then
@@ -1038,26 +967,10 @@ module block
        ! Compare the indices of the halo. First k, then j and
        ! finally i.
        
-       if(g1%dK < g2%dK) then
+       if(g1%dIndex < g2%dIndex) then
           lessfringeType = .true.
           return
-       else if(g1%dK > g2%dK) then
-          lessfringeType = .false.
-          return
-       endif
-       
-       if(g1%dJ < g2%dJ) then
-          lessfringeType = .true.
-          return
-       else if(g1%dJ > g2%dJ) then
-          lessfringeType = .false.
-          return
-       endif
-       
-       if(g1%dI < g2%dI) then
-          lessfringeType = .true.
-          return
-       else if(g1%dI > g2%dI) then
+       else if(g1%dIndex > g2%dIndex) then
           lessfringeType = .false.
           return
        endif
@@ -1068,5 +981,130 @@ module block
     lessFringeType = .False.
 
   end function lessFringeType
+
+
+  logical function lessEqualInterpPtType(g1, g2)
+
+    !         lessEqual returns .true. if g1 <= g2 and .false. otherwise.
+    !         The comparison is firstly based on the processor ID of the
+    !         donor, then the block, then then the I, J, K
+    !
+    implicit none
+    !
+    !        Function arguments.
+    !
+    type(interpPtType), intent(in) :: g1, g2
+    !
+
+    if(g1%donorProc < g2%donorProc) then
+       lessEqualinterpPtType = .true.
+       return
+    else if(g1%donorProc > g2%donorProc) then
+       lessEqualinterpPtType = .false.
+       return
+    endif
+    
+    ! Donor processors are identical. Now we check the block
+    
+    if(g1%donorBlock < g2%donorBlock) then
+       lessEqualinterpPtType = .true.
+       return
+    else if(g1%donorBlock > g2%donorBlock) then
+       lessEqualinterpPtType = .false.
+       return
+    endif
+       
+    ! Compare the indices of the halo. First k, then j and
+    ! finally i.
+    
+    if(g1%dK < g2%dK) then
+       lessEqualinterpPtType = .true.
+       return
+    else if(g1%dK > g2%dK) then
+       lessEqualinterpPtType = .false.
+       return
+    endif
+ 
+   if(g1%dJ < g2%dJ) then
+       lessEqualinterpPtType = .true.
+       return
+    else if(g1%dJ > g2%dJ) then
+       lessEqualinterpPtType = .false.
+       return
+    endif
+ 
+    if(g1%dI < g2%dI) then
+       lessEqualinterpPtType = .true.
+       return
+    else if(g1%dI > g2%dI) then
+       lessEqualinterpPtType = .false.
+       return
+    endif
+       
+    ! Both entities are identical. So set lessEqual to .true.
+
+    lessEqualinterpPtType = .true.
+
+  end function lessEqualInterpPtType
+
+  logical function lessInterpPtType(g1, g2)
+
+    implicit none
+    !
+    !        Function arguments.
+    !
+    type(interpPtType), intent(in) :: g1, g2
+    !
+    if(g1%donorProc < g2%donorProc) then
+       lessInterpPtType = .true.
+       return
+    else if(g1%donorProc > g2%donorProc) then
+       lessInterpPtType = .false.
+       return
+    endif
+    
+    ! Donor processors are identical. Now we check the block
+    
+    if(g1%donorBlock < g2%donorBlock) then
+       lessInterpPtType = .true.
+       return
+    else if(g1%donorBlock > g2%donorBlock) then
+       lessInterpPtType = .false.
+       return
+    endif
+       
+    ! Compare the indices of the halo. First k, then j and
+    ! finally i.
+    
+    if(g1%dK < g2%dK) then
+       lessInterpPtType = .true.
+       return
+    else if(g1%dK > g2%dK) then
+       lessInterpPtType = .false.
+       return
+    endif
+ 
+   if(g1%dJ < g2%dJ) then
+       lessInterpPtType = .true.
+       return
+    else if(g1%dJ > g2%dJ) then
+       lessInterpPtType = .false.
+       return
+    endif
+ 
+    if(g1%dI < g2%dI) then
+       lessInterpPtType = .true.
+       return
+    else if(g1%dI > g2%dI) then
+       lessInterpPtType = .false.
+       return
+    endif
+
+    ! Both entities are identical. So set less to .False.
+
+    lessInterpPtType = .False.
+
+  end function lessInterpPtType
+
 
 end module block

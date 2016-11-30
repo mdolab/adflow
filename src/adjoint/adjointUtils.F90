@@ -398,7 +398,7 @@ contains
                          else
                             fInd = fringePtr(1, i, j, k)
                             do m=1,8
-                               cols(m) = flowDoms(nn, level, sps)%fringes(fInd)%gInd(m)
+                               !cols(m) = flowDoms(nn, level, sps)%fringes(fInd)%gInd(m)
                             end do
                             call fracToWeights(flowDoms(nn, level, sps)%fringes(fInd)%donorFrac, &
                                  weights)
@@ -1543,7 +1543,7 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
                           overset = .True.
                           fInd = fringePtr(1, iii, jjj, kkk)
                           do kk=1,8
-                             gc = fringes(fInd)%gInd(kk)
+                             !gc = fringes(fInd)%gInd(kk)
                              if (gc >= 0) then 
                                 n = n + 1
                                 cellBuffer(n) = gc
