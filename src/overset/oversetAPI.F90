@@ -33,7 +33,7 @@ contains
          fringeReduction, transposeOverlap, setIBlankArray, deallocateOFringes, deallocateoBlocks, &
          deallocateOSurfs, deallocateCSRMatrix, setIsCompute, getWorkArray, flagForcedRecv, &
          qsortFringeType, isReceiver, setIsReceiver, addToFringeList, printOverlapMatrix, &
-         tic, toc
+         tic, toc, unwindIndex, windIndex
     use oversetPackingRoutines, only : packOFringe, packOBlock, unpackOFringe, unpackOBlock, &
          getOFringeBufferSizes, getOBlockBufferSizes, getOSurfBufferSizes
     implicit none
@@ -548,7 +548,7 @@ contains
        call tic(iComm2)
 
        nReal = 4
-       nInt = 17
+       nInt = 5
        do iDom=1, nDomTotal
           if (oFringes(iDom)%allocated) then 
              ! Fringe is allocated so check it
@@ -565,21 +565,9 @@ contains
                 ! buffer
                 oFringes(iDom)%iBuffer(iCnt+1) = oFringes(iDom)%fringes(i)%donorProc
                 oFringes(iDom)%iBuffer(iCnt+2) = oFringes(iDom)%fringes(i)%donorBlock
-                oFringes(iDom)%iBuffer(iCnt+3) = oFringes(iDom)%fringes(i)%dI
-                oFringes(iDom)%iBuffer(iCnt+4) = oFringes(iDom)%fringes(i)%dJ
-                oFringes(iDom)%iBuffer(iCnt+5) = oFringes(iDom)%fringes(i)%dK
-                oFringes(iDom)%iBuffer(iCnt+6) = oFringes(iDom)%fringes(i)%gInd(1)
-                oFringes(iDom)%iBuffer(iCnt+7) = oFringes(iDom)%fringes(i)%gInd(2)
-                oFringes(iDom)%iBuffer(iCnt+8) = oFringes(iDom)%fringes(i)%gInd(3)
-                oFringes(iDom)%iBuffer(iCnt+9) = oFringes(iDom)%fringes(i)%gInd(4)
-                oFringes(iDom)%iBuffer(iCnt+10) = oFringes(iDom)%fringes(i)%gInd(5)
-                oFringes(iDom)%iBuffer(iCnt+11) = oFringes(iDom)%fringes(i)%gInd(6)
-                oFringes(iDom)%iBuffer(iCnt+12) = oFringes(iDom)%fringes(i)%gInd(7)
-                oFringes(iDom)%iBuffer(iCnt+13) = oFringes(iDom)%fringes(i)%gInd(8)
-                oFringes(iDom)%iBuffer(iCnt+14) = oFringes(iDom)%fringes(i)%myBlock
-                oFringes(iDom)%iBuffer(iCnt+15) = oFringes(iDom)%fringes(i)%myI
-                oFringes(iDom)%iBuffer(iCnt+16) = oFringes(iDom)%fringes(i)%myJ
-                oFringes(iDom)%iBuffer(iCnt+17) = oFringes(iDom)%fringes(i)%myK
+                oFringes(iDom)%iBuffer(iCnt+3) = oFringes(iDom)%fringes(i)%dIndex
+                oFringes(iDom)%iBuffer(iCnt+4) = oFringes(iDom)%fringes(i)%myBlock
+                oFringes(iDom)%iBuffer(iCnt+5) = oFringes(iDom)%fringes(i)%myIndex
                 iCnt = iCnt + nInt
                    
                 oFringes(iDom)%rBuffer(rCnt+1) = oFringes(iDom)%fringes(i)%donorFrac(1)
@@ -630,8 +618,6 @@ contains
                   oFringes(iDom)%fringes)
           end if
        end do
-
-
 
        ! -----------------------------------------------------------------
        ! For this data exchange we use the exact *reverse* of fringe
@@ -761,7 +747,7 @@ contains
           call mpi_waitany(recvCount, recvRequests, index, mpiStatus, ierr)
           call ECHK(ierr, __FILE__, __LINE__)
        end do
-       
+
        ! Process the data we just received. 
        do kk=1, nOfringeSend
 
@@ -780,22 +766,9 @@ contains
              iStart = nInt*(jj-1)
              fringe%donorProc  = intRecvBuf(iStart + 1)
              fringe%donorBlock = intRecvBuf(iStart + 2)
-             fringe%dI =         intRecvBuf(iStart + 3)
-             fringe%dJ =         intRecvBuf(iStart + 4)
-             fringe%dK =         intRecvBuf(iStart + 5)
-             
-             fringe%gInd(1)    = intRecvBuf(iStart + 6)
-             fringe%gInd(2)    = intRecvBuf(iStart + 7)
-             fringe%gInd(3)    = intRecvBuf(iStart + 8)
-             fringe%gInd(4)    = intRecvBuf(iStart + 9)
-             fringe%gInd(5)    = intRecvBuf(iStart + 10)
-             fringe%gInd(6)    = intRecvBuf(iStart + 11)
-             fringe%gInd(7)    = intRecvBuf(iStart + 12)
-             fringe%gInd(8)    = intRecvBuf(iStart + 13)
-             fringe%myBlock    = intRecvBuf(iStart + 14)
-             fringe%myI        = intRecvBuf(iStart + 15)
-             fringe%myJ        = intRecvBuf(iStart + 16)
-             fringe%myK        = intRecvBuf(iStart + 17)
+             fringe%dIndex     = intRecvBuf(iStart + 3)
+             fringe%myBlock    = intRecvBuf(iStart + 4)
+             fringe%myIndex    = intRecvBuf(iStart + 5)
              iStart = nReal*(jj-1)
              fringe%donorFrac = realRecvBuf(iStart+1:iStart+3)
              fringe%quality   = realRecvBuf(iStart + 4)
@@ -823,7 +796,7 @@ contains
 
        do nn=1, nDom
           call setPointers(nn, level, sps) 
-          
+
           ! First we need to sort the fringes by RECEIVER. That will
           ! put all the cells in order. 
           call qsortFringeType(fringes, nDonors, sortByReceiver)
@@ -852,11 +825,8 @@ contains
              
              ! 3: The end index into fringes of all of this cell's
              ! fringes. 0 if cell has no fringes. 
-             
-             i = fringes(ii)%myI
-             j = fringes(ii)%MyJ
-             k = fringes(ii)%myK
-             
+
+             call unwindIndex(fringes(ii)%myIndex, il, jl, kl, i, j, k)
              ! Set the start and end to the current index
              if (curI /= i .or. curJ /= j .or. curK /= k) then 
                 
@@ -884,6 +854,7 @@ contains
           allocate(flowDoms(nn, level, sps)%iBlankLast(2:il, 2:jl, 2:kl))
           flowDoms(nn, level, sps)%iBlankLast = 1
        end do
+
        call toc(iComm2)
 
        ! Start the refinement loop:
@@ -1091,7 +1062,7 @@ contains
           ! Before we can do the final comm structures, we need to make
           ! sure that every processor's halo have any donor information
           ! necessary to build its own comm pattern. For this will need to
-          ! send donorProc, donorBlock, dI, dJ, dK and donorFrac. 
+          ! send donorProc, donorBlock, dIndex and donorFrac. 
           call tic(iStatusExchange)
           call exchangeFringes(level, sps, commPatternCell_2nd, internalCell_2nd)
           call toc(iStatusExchange)
@@ -1174,6 +1145,15 @@ contains
        call setIblankArray(level, sps)
        call checkOverset(level, sps, i, .True.)
        call toc(iFinalCommStructures)
+       
+       ! We can ditch the blocked based fringes/fringePtr since they
+       ! are no longer necessary. All the required info is in the comm
+       ! structure. 
+       do nn=1, nDom
+          deallocate(flowDoms(nn, level, sps)%fringes, &
+               flowDoms(nn, level, sps)%fringePtr)
+       end do
+
 
        ! Setup the buffer sizes
        call setBufferSizes(level, sps, .false., .True.)

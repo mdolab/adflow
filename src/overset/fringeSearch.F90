@@ -10,7 +10,7 @@ subroutine fringeSearch(oBlock, oFringe)
   use adtData, only : adtBBoxTargetType
   use adtUtils, only : stack
   use utils, only : mynorm2
-  use oversetUtilities, only : fracToWeights2, addToFringeList, tic, toc
+  use oversetUtilities, only : fracToWeights2, addToFringeList, tic, toc, windIndex
   implicit none
 
   type(oversetBlock), intent(inout) :: oBlock
@@ -20,11 +20,11 @@ subroutine fringeSearch(oBlock, oFringe)
 
   ! Working Varaibles
   integer(kind=intType) :: nInterpol, elemID, nalloc, intInfo(3), intInfo2(3)
-  integer(kind=intType) :: i, ii, jj, kk, j, nn
+  integer(kind=intType) :: i, ii, jj, kk, j, nn, myI, myJ, myK
   integer(kind=intTYpe) :: iii, jjj, kkk, n, myind,  nx, ny, nz, myindex
   logical :: invalid, failed
   real(kind=realType) :: uu, vv, ww, err1, err2
-  real(kind=realType) :: uvw(5), uvw2(5), donorQual, xx(4), pt(3), xcheck(3)
+  real(kind=realType) :: uvw(5), uvw2(5), xx(4), pt(3), xcheck(3)
   real(kind=realType), dimension(:, :), allocatable :: offset
   real(kind=realType) :: oneMinusU, oneMinusV, oneMinusW, weight(8)
   ! Variables we have to pass the ADT search routine
@@ -100,41 +100,28 @@ subroutine fringeSearch(oBlock, oFringe)
      
      elemFound: if (intInfo(1) >= 0) then 
 
-        ! Donor and block and index information for this donor. 
-        donorQual = uvw(4)
-        elemID = intInfo(3) - 1 ! Make it zero based
+        ! Recompute the i,j,k indices on the donor
+        elemID = intInfo(3) - 1 ! Make it zero based for the modding. 
         ii = mod(elemID, oBlock%il) + 1
         jj = mod(elemID/oBlock%il, oBlock%jl) + 1
         kk = elemID/(oBlock%il*oBlock%jl) + 1
-
-        ! If we found a donor and our fringe is a wall, we will
-        ! record if only if it is also not "near" another wall (on
-        ! the oBlock)
         
         ! Now record the information onto the fringe
         fringe%donorProc = oBlock%proc
         fringe%donorBlock= oBlock%block
-        fringe%dI        = ii
-        fringe%dJ        = jj
-        fringe%dK        = kk 
+        fringe%dIndex    = windIndex(ii, jj, kk, oBlock%il, oBlock%jl, oBlock%kl)
         fringe%donorFrac = uvw(1:3)
-        fringe%quality = donorQual
-        fringe%gInd(1) = oBlock%globalCell(ii  , jj  , kk  )
-        fringe%gInd(2) = oBlock%globalCell(ii+1, jj  , kk  )
-        fringe%gInd(3) = oBlock%globalCell(ii  , jj+1, kk  )
-        fringe%gInd(4) = oBlock%globalCell(ii+1, jj+1, kk  )
-        fringe%gInd(5) = oBlock%globalCell(ii  , jj  , kk+1)
-        fringe%gInd(6) = oBlock%globalCell(ii+1, jj  , kk+1)
-        fringe%gInd(7) = oBlock%globalCell(ii  , jj+1, kk+1)
-        fringe%gInd(8) = oBlock%globalCell(ii+1, jj+1, kk+1)
+        fringe%quality   = uvw(4)
                 
         ! Also save the information about where it came from,
         ! we need this to combine everything together at the end. 
         fringe%myBlock = oFringe%block
-        fringe%myI = mod((i-1), oFringe%nx) + 2
-        fringe%myJ = mod((i-1)/oFringe%nx, oFringe%ny) + 2
-        fringe%myK = (i-1)/(oFringe%nx*oFringe%ny) + 2
 
+        myI = mod((i-1), oFringe%nx) + 2
+        myJ = mod((i-1)/oFringe%nx, oFringe%ny) + 2
+        myK = (i-1)/(oFringe%nx*oFringe%ny) + 2
+        fringe%myIndex = windIndex(myI, myJ, myK, oFringe%il, oFringe%jl, oFringe%kl)
+       
         ! Store the donor in the big flat list if it isn't invalid
         invalid = .False.
         do kkk=0,1
@@ -154,18 +141,26 @@ subroutine fringeSearch(oBlock, oFringe)
         ! Save the fringe to the wallList. Note that we have to do
         ! this *after* the actual fringeList becuase we may modify the
         ! dI, dJ, dK here.
+
         if ((oFringe%isWall(i) > 0) .and. .not. (oBlock%nearWall(ii, jj, kk) == 1)) then 
+ 
+           ! Here we have to recompute the i,j,k indices since we may
+           ! need to modify them based on the frac. 
+           
            if (uvw(1) >= half) then 
-              fringe%dI = ii +1 
+              ii = ii + 1
            end if
            
            if (uvw(2) >= half) then 
-              fringe%dJ = jj +1 
+              jj =jj + 1
            end if
            
            if (uvw(3) >= half) then 
-              fringe%dK = kk +1 
+              kk =kk + 1
            end if
+
+           ! Recompute the full index for the wall. 
+           fringe%dIndex = windIndex(ii, jj, kk, oBlock%il, oBlock%jl, oBlock%kl)
 
            call addToFringeList(localWallFringes, nLocalWallFringe, fringe)
         end if

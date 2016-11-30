@@ -219,7 +219,7 @@ contains
     use stencils, only : visc_drdw_stencil, N_visc_drdw
     use inputOverset, only :  backgroundVolScale
     use utils, only : isWallType
-    use oversetUtilities, only :  wallsOnBlock
+    use oversetUtilities, only :  wallsOnBlock, windIndex, unwindindex
     implicit none
 
     ! Input Params
@@ -227,7 +227,7 @@ contains
     integer(kind=intType), intent(in) :: nn
 
     ! Working Params
-    integer(kind=intTYpe) :: i, j, k, mm, iDim, ii, jj, kk, iii, jjj
+    integer(kind=intTYpe) :: i, j, k, mm, iDim, ii, jj, kk, iii, jjj, myI, myJ, myK
     integer(kind=intTYpe) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
     logical :: wallsPresent
     integer(kind=intType) :: i_stencil
@@ -279,11 +279,8 @@ contains
              end do
              oFringe%xSeed(:, ii) = xSeed(i, j, k, :)
              oFringe%wallInd(ii) = wallInd(i, j, k)
-
-             oFringe%fringes(ii)%myI = i
-             oFringe%fringes(ii)%myJ = j
-             oFringe%fringes(ii)%myK = k
-             oFringe%fringes(ii)%myBLock = nn
+             oFringe%fringes(ii)%myIndex = windIndex(i, j, k, il, jl, kl)
+             oFringe%fringes(ii)%myBlock = nn
 
           end do
        end do
