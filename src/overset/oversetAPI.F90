@@ -25,7 +25,8 @@ contains
     use utils, only : EChk, setPointers, setBufferSizes, terminate
     use surfaceFamilies, only : BCFamGroups
     use kdtree2_module, onlY : kdtree2_create, kdtree2destroy
-    use oversetInitialization, only : initializeOBlock, initializeOFringes, initializeStatus
+    use oversetInitialization, only : initializeOBlock, initializeOFringes, initializeStatus, &
+         reInitializeStatus
     use oversetCommUtilities , only : recvOBlock, recvOFringe, getCommPattern, getOSurfCommPattern, &
          emptyOversetComm, exchangeStatusTranspose, exchangeStatus, oversetLoadBalance, &
          exchangeFringes, sendOFringe, sendOBlock, flagInvalidDonors, setupFringeGlobalInd
@@ -835,12 +836,24 @@ contains
 
        call toc(iFringeProcessing)
 
+       ! Wall donors are now set. So we can do them once before the
+       ! loop starts and then ditch the memory. Status must be
+       ! initialized first.
+       call initializeStatus(level, sps)
+       call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
+       call determineDonors(level, sps, localWallFringes, nLocalWallFringe, .True.)
+
+       call toc(iDetermineDonors)
+       call exchangeStatusTranspose(level, sps, commPatternCell_2nd, internalCell_2nd)
+       call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
+       deallocate(localWallFringes)
+
        ! Start the refinement loop:
        nRefine = 10
        refineLoop: do iRefine=1, nRefine
 
-          ! Initialize the status array. 
-          call initializeStatus(level, sps)
+          ! re-Initialize the status array. 
+          call reInitializeStatus(level, sps)
           
           ! Exchange the status so that the halos get the right 
           call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
@@ -981,7 +994,6 @@ contains
           ! is a donor to a cell that is immediately next to a solid wall. 
           call tic(iDetermineDonors)
           call determineDonors(level, sps, localFringes, nLocalFringe, .False.)
-          call determineDonors(level, sps, localWallFringes, nLocalWallFringe, .True.)
           call toc(iDetermineDonors)
 
           ! After the determine donors operation, we need to exchanage
@@ -1123,7 +1135,7 @@ contains
        call setupFringeGlobalInd(level, sps)
 
        ! Deallocate some data we no longer need
-       deallocate(Xmin, Xmax, work, localWallFringes)
+       deallocate(Xmin, Xmax, work)
        do nn=1, nDom
           deallocate(flowDoms(nn, level, sps)%iBlankLast)
        end do
