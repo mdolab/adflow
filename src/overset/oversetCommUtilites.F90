@@ -1832,6 +1832,74 @@ contains
 
   end subroutine flagInvalidDonors
 
+  subroutine flagInvalidDonorsSerial(level, sps)
+
+    ! Temp routine
+
+
+    ! This subroutine is used to determine if the existing overset
+    ! donors have become invlaid. We takes all the possible fringes
+    ! for all owned cells, send them off to the donor processor. It
+    ! checks them invalid donors and then fires them back to the
+    ! owning process. The two forwrad-reverse comms are done in this
+    ! routine.
+
+
+    use constants
+    use blockPointers
+    use communication
+    use oversetUtilities, only : unwindIndex
+    use utils, only : EChk, setPointers
+    implicit none
+     
+
+    !
+    !      Subroutine arguments.
+    !
+    integer(kind=intType), intent(in) :: level, sps
+
+    ! Working Parameters
+    integer(kind=intType) :: nn, iFringe, donorBlock, donorIndex, dI, dJ, dK
+    integer(kind=intType) :: donoril, donorjl, donorkl, i, j, k
+    logical :: invalid
+
+    
+    do nn=1, nDom
+       call setPointers(nn, level, sps)
+
+       do iFringe=1, flowDOms(nn, level, sps)%nDonors
+          
+          donorBlock = fringes(iFringe)%donorBlock
+          donorIndex = fringes(iFringe)%dIndex
+          
+          donoril = flowDoms(donorBlock, level, sps)%il
+          donorjl = flowDoms(donorBlock, level, sps)%jl
+          donorkl = flowDoms(donorBlock, level, sps)%kl 
+
+          call unwindIndex(donorIndex, donorIl, donorjl, donorkl, dI, dJ, dK)
+          
+          invalid = .False. 
+          
+          do k=dK, dK+1
+             do j=dJ, dJ+1
+                do i=dI, dI+1
+
+                   if (flowDoms(donorBLock, level, sps)%iblank(i,j,k) <= -2 .or.  &
+                        flowDoms(donorBlock, level, sps)%forcedRecv(i, j, k) > 0) then 
+                      invalid = .True. 
+                   end if
+                end do
+             end do
+          end do
+          
+          if (invalid) then 
+             fringes(ifringe)%quality = 2*large
+          end if
+       end do
+    end do
+
+  end subroutine flagInvalidDonorsSerial
+
   subroutine emptyOversetComm(level, sps)
 
     !  Short cut function to make empty overset comm structure for
