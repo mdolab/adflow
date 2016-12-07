@@ -10,7 +10,8 @@ subroutine fringeSearch(oBlock, oFringe)
   use adtData, only : adtBBoxTargetType
   use adtUtils, only : stack
   use utils, only : mynorm2
-  use oversetUtilities, only : fracToWeights2, addToFringeList, tic, toc, windIndex
+  use oversetUtilities, only : fracToWeights2, addToFringeList, addToFringeBuffer, &
+       tic, toc, windIndex
   implicit none
 
   type(oversetBlock), intent(inout) :: oBlock
@@ -135,7 +136,8 @@ subroutine fringeSearch(oBlock, oFringe)
         end do
              
         if (.not. invalid) then 
-           call addToFringeList(oFringe%fringes, oFringe%nDonor, fringe)
+           call addToFringeBuffer(oFringe%fringeIntBuffer, ofringe%fringeRealBuffer, &
+                oFringe%nDonor, fringe)
         end if
 
         ! Save the fringe to the wallList. Note that we have to do

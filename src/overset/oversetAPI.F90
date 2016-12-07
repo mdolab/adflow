@@ -528,15 +528,6 @@ contains
           deallocate(wall%x, wall%conn, wall%ind, wall%nte)
        end do
        deallocate(clusterWalls)
-       
-       ! Done with all the oFringe buffers used for sending search
-       ! points out. 
-       do iDom=1, nDomTotal
-          if (allocated(oFringes(iDom)%iBuffer)) then 
-             deallocate(oFringes(iDom)%iBuffer, &
-                  oFringes(iDom)%rBuffer)
-          end if
-       end do
 
        ! -----------------------------------------------------------------
        ! Step 9: Well, all the searches are done, so now we can now send
@@ -548,31 +539,7 @@ contains
        do iDom=1, nDomTotal
           if (oFringes(iDom)%allocated) then 
              ! Fringe is allocated so check it
-
-             iCnt = oFringes(iDom)%nDonor * nInt
-             rCnt = oFringes(iDom)%nDonor * nReal
-             allocate(oFringes(iDom)%iBuffer(iCnt), oFringes(iDom)%rBuffer(rCnt))
-             iCnt = 0
-
-             rCnt = 0
-             ! Second pass add the values
-             do i=1, oFringes(iDom)%nDonor
-                ! Copy the values for this fringe into the fringe's
-                ! buffer
-                oFringes(iDom)%iBuffer(iCnt+1) = oFringes(iDom)%fringes(i)%donorProc
-                oFringes(iDom)%iBuffer(iCnt+2) = oFringes(iDom)%fringes(i)%donorBlock
-                oFringes(iDom)%iBuffer(iCnt+3) = oFringes(iDom)%fringes(i)%dIndex
-                oFringes(iDom)%iBuffer(iCnt+4) = oFringes(iDom)%fringes(i)%myBlock
-                oFringes(iDom)%iBuffer(iCnt+5) = oFringes(iDom)%fringes(i)%myIndex
-                iCnt = iCnt + nInt
-                   
-                oFringes(iDom)%rBuffer(rCnt+1) = oFringes(iDom)%fringes(i)%donorFrac(1)
-                oFringes(iDom)%rBuffer(rCnt+2) = oFringes(iDom)%fringes(i)%donorFrac(2)
-                oFringes(iDom)%rBuffer(rCnt+3) = oFringes(iDom)%fringes(i)%donorFrac(3)
-                oFringes(iDom)%rBuffer(rCnt+4) = oFringes(iDom)%fringes(i)%quality
-                rCnt = rCnt + nReal
-             end do
-             oFringes(iDom)%fringeReturnSize = rCnt/nReal
+             oFringes(iDom)%fringeReturnSize = oFringes(iDom)%nDonor
 
              ! Check if this domain is one I own. If so, we just copy
              ! the the fringes into the block-based list:
@@ -602,8 +569,17 @@ contains
 
                 ! Copy over the data from oFringes and then nuke the oFringe
                 do ii=1, oFringes(iDom)%nDonor
+                   ! Reconsitute the fringe itself.
+                   fringe%donorProc = oFringes(iDom)%fringeIntBuffer(1, ii)
+                   fringe%donorBlock= oFringes(iDom)%fringeIntBuffer(2, ii)
+                   fringe%dIndex    = oFringes(iDom)%fringeIntBuffer(3, ii)
+                   fringe%myBlock   = oFringes(iDom)%fringeIntBuffer(4, ii)
+                   fringe%myIndex   = oFringes(iDom)%fringeIntBuffer(5, ii)
+                   fringe%donorFrac = oFringes(iDom)%fringeRealBuffer(1:3, ii)
+                   fringe%quality   = oFringes(iDom)%fringeRealBuffer(4, ii)
+
                    call addToFringeList(flowDoms(nn, level, sps)%fringes, nDonors, &
-                        oFringes(iDom)%fringes(ii))
+                        fringe)
                 end do
              end if
 
@@ -613,8 +589,8 @@ contains
                   oFringes(iDom)%x, &
                   oFringes(iDom)%isWall, &
                   oFringes(iDom)%xSeed, &
-                  oFringes(iDom)%wallInd, &
-                  oFringes(iDom)%fringes)
+                  oFringes(iDom)%wallInd)
+             
           end if
        end do
        call toc(iFringeProcessing)
@@ -698,13 +674,13 @@ contains
           if (iSize > 0) then 
              tag = iDom + MAGIC
              sendCount = sendCount + 1
-             call mpi_isend(oFringes(iDom)%rBuffer, iSize*nReal, adflow_real, &
+             call mpi_isend(oFringes(iDom)%fringeRealBuffer, iSize*nReal, adflow_real, &
                   iproc, tag, adflow_comm_world, sendRequests(sendCount), ierr)
              call ECHK(ierr, __FILE__, __LINE__)
              
              tag = iDom + 2*MAGIC
              sendCount = sendCount + 1
-             call mpi_isend(oFringes(iDom)%iBuffer, iSize*nInt, adflow_integer, &
+             call mpi_isend(oFringes(iDom)%fringeIntBuffer, iSize*nInt, adflow_integer, &
                   iproc, tag, adflow_comm_world, sendRequests(sendCount), ierr)
              call ECHK(ierr, __FILE__, __LINE__)
           end if
