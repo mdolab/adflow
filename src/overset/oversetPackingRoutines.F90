@@ -415,7 +415,7 @@ contains
        oFringe%iBuffer(ii) = oFringe%isWall(i)
 
        ii = ii +1
-       oFringe%iBuffer(ii) = oFringe%fringes(i)%myIndex
+       oFringe%iBuffer(ii) = oFringe%fringeIntBuffer(5, i) ! myIndex
 
     end do
 
@@ -468,7 +468,7 @@ contains
 
     ! Assume each cell will get just one donor. It's just a guess, it
     ! will be expanded if necessary so the exact value doesn't matter.
-    allocate(oFringe%fringes(mm))
+    allocate(oFringe%fringeIntBuffer(5, mm), oFringe%fringeRealBuffer(4, mm))
     oFringe%nDonor = 0
 
     ii = 5 ! Already copied out the sizes
@@ -482,9 +482,9 @@ contains
        oFringe%isWall(i) = oFringe%iBuffer(ii)
 
        ii = ii + 1
-       oFringe%fringes(i)%myIndex = oFringe%iBuffer(ii)
+       oFringe%fringeIntBuffer(5, i) = oFringe%iBuffer(ii)
 
-       oFringe%fringes(i)%myBlock = oFringe%block
+       oFringe%fringeIntBuffer(4, i) = oFringe%block
     end do
 
     ! Copy the reals. Reset the counter ii counter here.
