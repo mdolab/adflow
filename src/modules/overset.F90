@@ -117,7 +117,8 @@ module overset
      ! This is where we will store all the potential donors that have
      ! been found for this set of fringes
      integer(kind=intType) :: nDonor=0
-     type(fringeType), dimension(:), pointer :: fringes
+     integer(kind=intType), dimension(:,:), pointer :: fringeIntBuffer=>null()
+     real(kind=realType), dimension(:,:), pointer :: fringeRealBuffer=>null()
 
      ! Flag if this set of fringes got allocated
      logical :: allocated = .False.

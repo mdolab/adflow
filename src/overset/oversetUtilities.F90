@@ -289,13 +289,20 @@ contains
                oFringes(i)%x, &
                oFringes(i)%isWall, &
                oFringes(i)%xSeed, &
-               oFringes(i)%wallInd, &
-               oFringes(i)%fringes)
+               oFringes(i)%wallInd)
        end if
        if (allocated(oFringes(i)%rbuffer)) then 
           deallocate(oFringes(i)%rBuffer,&
                oFringes(i)%iBuffer)
        end if
+       if (associated(oFringes(i)%fringeIntBuffer)) then 
+          deallocate(oFringes(i)%fringeIntBuffer)
+       end if
+
+       if (associated(oFringes(i)%fringeRealBuffer)) then 
+          deallocate(oFringes(i)%fringeRealBuffer)
+       end if
+       
        oFringes(i)%allocated = .False. 
     end do
   end subroutine deallocateOFringes
@@ -1247,6 +1254,67 @@ contains
     fringeList(n) = fringe
     
   end subroutine addToFringeList
+
+
+  subroutine addToFringeBuffer(intBuffer, realBuffer, n, fringe)
+
+    ! Generic subroutine to add to a fringe "List". It isn't actually
+    ! a list of fringe types but rather a real array and an int array.
+
+    use constants
+    use block, only : fringeType
+
+    implicit none
+
+    ! Input Params
+    integer(kind=intType), dimension(:,:), pointer :: intBuffer
+    real(kind=realType), dimension(:,:), pointer :: realBuffer
+    type(fringeType) :: fringe
+    integer(kind=intType), intent(inout) :: n
+
+    ! Working Paramters
+    integer(kind=intType) :: fSize
+    integer(kind=intType), dimension(:,:), pointer :: tmpInt
+    real(kind=realType), dimension(:,:), pointer :: tmpReal
+    fSize = size(intBuffer, 2)
+    
+    ! Increment n for next item
+    n = n + 1
+
+    if (n > fSize) then 
+
+       ! Pointers to existing data:
+       tmpInt => intBuffer
+       tmpReal => realBuffer
+
+       ! Allocate new space
+       allocate(intBuffer(5, int(1.5*fSize)))
+       allocate(realBuffer(4, int(1.5*fSize)))
+
+       ! Copy exsitng values
+       intBuffer(:, 1:fSize) = tmpInt(:, 1:fSize)
+       realBuffer(:, 1:fSize) = tmpReal(:, 1:fSize)
+
+       ! Free original memory 
+       deallocate(tmpInt, tmpReal)
+
+    end if
+
+    ! Now we can safely add the information:
+    intBuffer(1, n) = fringe%donorProc
+    intBuffer(2, n) = fringe%donorBlock
+    intBuffer(3, n) = fringe%dIndex
+    intBuffer(4, n) = fringe%myBlock
+    intBuffer(5, n) = fringe%myIndex
+    
+    realBuffer(1:3, n) = fringe%donorFrac
+    realBuffer(4, n) = fringe%quality
+
+  end subroutine addToFringeBuffer
+
+
+
+
 
   subroutine qsortPocketEdgeType(arr, nn)
     !

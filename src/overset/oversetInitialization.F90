@@ -257,7 +257,8 @@ contains
 
     ! Assume each cell will get just one donor. It's just a guess, it
     ! will be expanded if necessary so the exact value doesn't matter.
-    allocate(oFringe%fringes(mm))
+    allocate(oFringe%fringeIntBuffer(5, mm), ofringe%fringeRealBuffer(4, mm))
+    
     oFringe%nDonor = 0
     ! Now loop over the actual compute cells, setting the cell center
     ! value 'x', the volume and flag these cells as compute
@@ -279,8 +280,8 @@ contains
              end do
              oFringe%xSeed(:, ii) = xSeed(i, j, k, :)
              oFringe%wallInd(ii) = wallInd(i, j, k)
-             oFringe%fringes(ii)%myIndex = windIndex(i, j, k, il, jl, kl)
-             oFringe%fringes(ii)%myBlock = nn
+             oFringe%fringeIntBuffer(4, ii) = nn 
+             oFringe%fringeIntBuffer(5, ii) = windIndex(i, j, k, il, jl, kl)
 
           end do
        end do
