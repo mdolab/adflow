@@ -22,16 +22,13 @@ contains
     do nn=1, nDom
        call setPointers(nn, level, sps)
 
-       ! Initialize status to zero. That is all the status flags are
-       ! false.
-       status = 0
-
        ! Now loop over the owned cells and set the isCompute flag to
        ! true. 
        
        do k=2, kl
           do j=2, jl
              do i=2, il
+                status(i,j,k) = 0
                 call setIsCompute(status(i, j, k), .True. )
              end do
           end do
@@ -39,6 +36,43 @@ contains
     end do
 
   end subroutine initializeStatus
+  
+  subroutine reInitializeStatus(level, sps)
+
+    ! This subroutine reinitializes the status variable. However, if
+    ! cell is a wallDonor, that information is kept. 
+
+    use constants
+    use blockPointers, only : nDom, il, jl, kl, ib, jb, kb, status
+    use oversetUtilities, only : setIsCompute, isWallDonor, setIsWallDonor
+    use utils, only : setPointers
+    implicit none
+
+    ! Input params
+    integer(kind=intType), intent(in) :: level, sps
+
+    ! Working parameters
+    integer(kind=intType) :: nn, i, j, k
+    logical :: wDonor
+    do nn=1, nDom
+       call setPointers(nn, level, sps)
+
+       ! Now loop over the owned cells and set the isCompute flag to
+       ! true. 
+       
+       do k=2, kl
+          do j=2, jl
+             do i=2, il
+                wDonor = isWallDonor(status(i, j, k))
+                status(i, j, k) = 0
+                call setIsCompute(status(i, j, k), .True. )
+                call setIsWallDonor(status(i, j, k), wDonor)
+             end do
+          end do
+       end do
+    end do
+  end subroutine reInitializeStatus
+
 
   subroutine initializeOBlock(oBlock, nn, level, sps)
 
