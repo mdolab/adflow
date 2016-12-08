@@ -284,24 +284,29 @@ contains
     integer(kind=intType) :: i
 
     do i=1, n
-       if (allocated(oFringes(i)%x)) then 
-          deallocate(&
-               oFringes(i)%x, &
-               oFringes(i)%isWall, &
-               oFringes(i)%xSeed, &
-               oFringes(i)%wallInd)
-       end if
-       if (allocated(oFringes(i)%rbuffer)) then 
-          deallocate(oFringes(i)%rBuffer,&
-               oFringes(i)%iBuffer)
-       end if
-       if (associated(oFringes(i)%fringeIntBuffer)) then 
-          deallocate(oFringes(i)%fringeIntBuffer)
-       end if
+       if (allocated(oFringes(i)%x)) &
+            deallocate(oFringes(i)%x)
 
-       if (associated(oFringes(i)%fringeRealBuffer)) then 
+       if (allocated(oFringes(i)%isWall)) &
+            deallocate(oFringes(i)%isWall)
+
+       if (allocated(oFringes(i)%xSeed)) &
+            deallocate(oFringes(i)%xSeed)
+
+       if (allocated(oFringes(i)%wallInd)) &
+            deallocate(oFringes(i)%wallInd)
+
+       if (allocated(oFringes(i)%rbuffer)) &
+            deallocate(oFringes(i)%rBuffer) 
+
+       if (allocated(oFringes(i)%ibuffer)) &
+            deallocate(oFringes(i)%iBuffer) 
+
+       if (associated(oFringes(i)%fringeIntBuffer)) &
+          deallocate(oFringes(i)%fringeIntBuffer)
+
+       if (associated(oFringes(i)%fringeRealBuffer)) & 
           deallocate(oFringes(i)%fringeRealBuffer)
-       end if
        
        oFringes(i)%allocated = .False. 
     end do
