@@ -773,7 +773,7 @@ contains
        end do
 
        ! Allocate space for iblankLast which is used to keep track of
-       ! the previous iblank values to determine when we can stop the
+       ! the previous iblank values to determine when we can sto pcd the
        ! loop. It is initialized to 1 such that at least 2 iteations
        ! will always be done. 
        do nn=1, nDom
@@ -1186,14 +1186,8 @@ contains
        call setIblankArray(level, sps)
        call checkOverset(level, sps, i, .True.)
        
-       ! We can ditch the blocked based fringes/fringePtr since they
-       ! are no longer necessary. All the required info is in the comm
-       ! structure. 
        do nn=1, nDom
           call setPointers(nn, level, sps)
-          deallocate(flowDoms(nn, level, sps)%fringes, &
-               flowDoms(nn, level, sps)%fringePtr, &
-               flowDoms(nn, level, sps)%nDonors)
           allocate(flowDoms(nn, level, sps)%gInd(8, 0:ib, 0:jb, 0:kb))
           flowDoms(nn, level, sps)%gInd = -1
        end do
