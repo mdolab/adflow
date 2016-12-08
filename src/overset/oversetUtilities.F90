@@ -365,7 +365,7 @@ contains
     
     use constants
     use blockPointers, only : nx, ny, nz, ie, je, ke, BCData, BCFaceID, nBocos, BCType, &
-         forcedRecv, flowDoms, nDom, il, jl, kl, iBlank
+         forcedRecv, flowDoms, nDom, il, jl, kl, iBlank, status
     use utils, only : setPointers
     use communication
     use haloExchange, only : whalo1to1IntGeneric, whalo1to1IntGeneric_b
@@ -378,7 +378,7 @@ contains
 
     integer(kind=intType) :: nn, i, j, k, mm, iStart, iEnd, jStart, jEnd, kStart, kEnd
     integer(kind=intType) :: ii, jj, kk, i_stencil
-
+    logical :: floodOrBlank, floodOrBlank2
     do nn=1,nDom
        call setPointers(nn, 1, 1)
        forcedRecv = 0
@@ -433,14 +433,22 @@ contains
           do j=2, jl
              do i=2, il
                 ! Flooded or explictly blanked cell
-                if (iblank(i, j, k) <=-2) then 
+                floodOrBlank = isFlooded(status(i,j,k)) .or. &
+                     isFloodSeed(status(i,j,k)) .or.&
+                     iblank(i,j,k) == -4
+                if (floodOrBlank) then 
                    stencilLoop: do i_stencil=1, N_visc_drdw
                       ii = visc_drdw_stencil(i_stencil, 1) + i
                       jj = visc_drdw_stencil(i_stencil, 2) + j
                       kk = visc_drdw_stencil(i_stencil, 3) + k
                       ! Flag as a forced reciver if it *isn't* flooded
                       ! or explictly blanked
-                      if (iblank(ii, jj, kk) > -2) then 
+                      
+                      floodOrBlank2 = isFlooded(status(ii,jj,kk)) .or. &
+                           isFloodSeed(status(ii,jj,kk)) .or.&
+                           iblank(ii,jj,kk) == -4
+                      
+                      if (.not. floodOrBlank2) then 
                          forcedRecv(ii, jj, kk) = 1
                       end if
                    end do stencilLoop
@@ -2175,7 +2183,6 @@ contains
     nFlooded = 0
     nExplicitBlanked = 0
 
-    call flagForcedRecv()
     do nn=1, nDom
        call setPointers(nn, level, sps)
 
