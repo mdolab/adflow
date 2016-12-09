@@ -18,7 +18,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
 
   ! Input Variables
   integer(kind=intType), intent(in) :: level, sps, nFamList
-  logical :: useDual
+  logical, intent(in) :: useDual
   type(oversetWall), intent(inout), dimension(nClusters), target :: walls
   integer(Kind=intType), intent(in) :: famList(nFamList)
 
@@ -34,10 +34,10 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
   integer(kind=intType), dimension(:), allocatable :: clusterNodeLocal
   integer(kind=intType), dimension(:), allocatable :: clusterCellLocal
   real(kind=realType), dimension(:, :), allocatable :: nodesLocal
-  real(kind=realType), dimension(:,:,:), pointer :: xx, xx1, xx2, xx3, xx4
-  integer(kind=intType), dimension(:,:,:), pointer :: globalCGNSNode
-  integer(kind=intType), dimension(:,:), pointer :: ind, indCGNS
-  integer(kind=intType), dimension(:,:), pointer :: indCell
+  real(kind=realType), dimension(:,:,:), pointer :: xx, xx1, xx2, xx3, xx4=>null()
+  integer(kind=intType), dimension(:,:,:), pointer :: globalCGNSNode=>null()
+  integer(kind=intType), dimension(:,:), pointer :: ind, indCGNS=>null()
+  integer(kind=intType), dimension(:,:), pointer :: indCell=>null()
   logical :: regularOrdering
 
   ! Data for global surface
