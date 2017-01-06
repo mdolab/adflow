@@ -620,7 +620,7 @@ class ADFLOW(AeroSolver):
             # By Default set all the blocks:
             cgnsBlocks = numpy.arange(1, self.adflow.cgnsgrid.cgnsndom+1)
 
-        self.adflow.updaterotationrate(rotCenter, rotations, cgnsBlocks)
+        self.adflow.preprocessingapi.updaterotationrate(rotCenter, rotations, cgnsBlocks)
         self._updateVelInfo = True
 
     def checkPartitioning(self, nprocs):
