@@ -634,6 +634,7 @@ contains
     ! Local variables
     integer(kind=intType) :: sps,ierr,i,j,k,l, mm, nn
     integer(kind=intType) :: iBeg, jBeg, iStop, jStop, isizemax, jsizemax
+    integer(kind=intType) :: inBeg, jnBeg, inStop, jnStop
     integer(kind=intType) :: massShape(2), max_face_size
 
     ! First create the derivative flowdoms structure flowDomsd. Note we
@@ -742,13 +743,15 @@ contains
              iBeg = BCData(mm)%icbeg; iStop = BCData(mm)%icend
              jBeg = BCData(mm)%jcbeg; jStop = BCData(mm)%jcend
 
+             inBeg = BCData(mm)%inBeg; inStop = BCData(mm)%inEnd
+             jnBeg = BCdata(mm)%jnBeg; jnStop = BCData(mm)%jnEnd
              allocate(&
                   flowDomsd(nn, level, sps)%BCData(mm)%norm(iBeg:iStop,jBeg:jStop,3), &
                   flowDomsd(nn, level, sps)%BCData(mm)%rface(iBeg:iStop,jBeg:jStop), &
-                  flowDomsd(nn, level, sps)%BCData(mm)%Fp(iBeg:iStop, jBeg:jStop, 3),&
-                  flowDomsd(nn, level, sps)%BCData(mm)%Fv(iBeg:iStop, jBeg:jStop, 3),&
-                  flowDomsd(nn, level, sps)%BCData(mm)%Tp(iBeg:iStop, jBeg:jStop, 3),&
-                  flowDomsd(nn, level, sps)%BCData(mm)%Tv(iBeg:iStop, jBeg:jStop, 3),&
+                  flowDomsd(nn, level, sps)%BCData(mm)%Fp(inBeg:inStop, jnBeg:jnStop, 3),&
+                  flowDomsd(nn, level, sps)%BCData(mm)%Fv(inBeg:inStop, jnBeg:jnStop, 3),&
+                  flowDomsd(nn, level, sps)%BCData(mm)%Tp(inBeg:inStop, jnBeg:jnStop, 3),&
+                  flowDomsd(nn, level, sps)%BCData(mm)%Tv(inBeg:inStop, jnBeg:jnStop, 3),&
                   flowDomsd(nn, level, sps)%BCData(mm)%F(iBeg:iStop, jBeg:jStop, 3),&
                   flowDomsd(nn, level, sps)%BCData(mm)%T(iBeg:iStop, jBeg:jStop, 3),&
                   flowDomsd(nn, level, sps)%BCData(mm)%area(iBeg:iStop, jBeg:jStop), &
