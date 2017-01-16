@@ -620,7 +620,7 @@ class ADFLOW(AeroSolver):
             # By Default set all the blocks:
             cgnsBlocks = numpy.arange(1, self.adflow.cgnsgrid.cgnsndom+1)
 
-        self.adflow.updaterotationrate(rotCenter, rotations, cgnsBlocks)
+        self.adflow.preprocessingapi.updaterotationrate(rotCenter, rotations, cgnsBlocks)
         self._updateVelInfo = True
 
     def checkPartitioning(self, nprocs):
@@ -1968,7 +1968,8 @@ class ADFLOW(AeroSolver):
 
         # First get the surface coordinates of the meshFamily in case
         # the groupName is a subset, those values will remain unchanged.
-        meshSurfCoords = self.getSurfaceCoordinates(self.meshFamilyGroup)
+        meshSurfCoords = self.getSurfaceCoordinates(self.meshFamilyGroup, 
+                                                    includeZipper=False)
         meshSurfCoords = self.mapVector(coordinates, groupName,
                                         self.meshFamilyGroup, meshSurfCoords, 
                                         includeZipper=False)
@@ -2423,8 +2424,7 @@ class ADFLOW(AeroSolver):
         npts, ncell = self._getSurfaceSize(groupName, includeZipper)
         pts = numpy.zeros((npts, 3), self.dtype)
         famList = self._getFamilyList(groupName)
-        if npts > 0:
-            self.adflow.surfaceutils.getsurfacepoints(pts.T, TS+1, famList, includeZipper)
+        self.adflow.surfaceutils.getsurfacepoints(pts.T, TS+1, famList, includeZipper)
 
         return pts
 
@@ -3249,9 +3249,14 @@ class ADFLOW(AeroSolver):
             raise Error("'%s' or '%s' is not a family in the CGNS file or has not been added"
                         " as a combination of families"%(groupName1, groupName2))
 
-        # Shortcut:
-        if groupName1 == groupName2:
-            return vec1
+        # Why can't we do the short-cut listed below? Well, it may
+        # happen that we have the same family group but one has the
+        # zipper nodes and the other doesn't. In that case, vec2 must
+        # be a differnet size and thus we can't immediately return
+        # vec1 as being vec2. 
+
+        # if groupName1 == groupName2:
+        #     return vec1
 
         if vec2 is None:
             npts, ncell = self._getSurfaceSize(groupName2, includeZipper)
