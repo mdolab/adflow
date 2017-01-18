@@ -610,7 +610,7 @@ contains
        if (fam1Included .and. fam2Included) then
           ! The two lists overlap so copy:
           do k=1, iSize
-             if (k+ii < n1) then 
+             if (k+ii <= n1) then 
                 vec2(:, k+jj) = vec1(:, k+ii)
              end if
           end do
