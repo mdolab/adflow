@@ -955,6 +955,7 @@ python module libadflow
          real(kind=realtype) :: oversetprojtol
          real(kind=realtype) :: overlapfactor
          integer(kind=inttype) :: oversetupdatemode
+         integer(kind=inttype)::nrefine
          logical :: debugzipper
        end module inputoverset
 
