@@ -21,7 +21,7 @@ contains
     use stencils, only : N_visc_drdw, visc_drdw_stencil
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use adtBuild, only : destroySerialQuad
-    use inputOverset, onlY : useoversetLoadBalance, overlapFactor
+    use inputOverset, onlY : useoversetLoadBalance, overlapFactor, nRefine
     use utils, only : EChk, setPointers, setBufferSizes, terminate
     use surfaceFamilies, only : BCFamGroups
     use kdtree2_module, onlY : kdtree2_create, kdtree2destroy
@@ -49,7 +49,7 @@ contains
     integer(kind=intType) :: i, ii, j, jj, k, kk, i_stencil, curI, curJ, curK
     integer(kind=intType) :: m, iSize, iStart, iEnd, index, rSize, iFringe
     integer(kind=intType) :: iDom, jDom, iDim, nInt, nReal, iCol
-    integer(kind=intType) :: nn, mm, n, ierr, iProc, iRefine, nRefine
+    integer(kind=intType) :: nn, mm, n, ierr, iProc, iRefine
     integer(kind=intType) :: iWork, nWork, nLocalFringe
     integer(kind=intType) :: myBlock, myINdex, dIndex, donorBlock, donorProc, absDBlock
     real(kind=realType) :: startTime, endTime, curQuality
@@ -802,7 +802,6 @@ contains
        ! ---------------------------
        ! Start the refinement loop:
        ! ---------------------------
-       nRefine = 10
        refineLoop: do iRefine=1, nRefine
 
           ! re-Initialize the status array. 
@@ -1170,6 +1169,15 @@ contains
 
        end do refineLoop
 
+       if (globalChanged) then
+          if(myID == 0) then
+             print 100,   nRefine
+             print "(a)", "         Increase the number of iterations by setting nRefine."
+          end if
+       end if
+100    format("Warning: The overset connectivity loop exited ", &
+            "before the connectivity was complete after running:",&
+            1x,I4,1x, "iterations.")
        ! Final operations after the interpolations have
        ! stabilized. Status must be exchanged due to the last
        ! irregular cell correction.
