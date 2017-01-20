@@ -995,6 +995,17 @@ contains
        allocate(NKLSFuncEvals(nMGCycles))
     end if
 
+   
+
+    ! Only compute the free stream resisudal once for efficiency on the
+    ! fine grid only. 
+    if (groundLevel == 1)  then
+       if (.not. freeStreamResSet)  then
+          call getFreeStreamResidual(rhoRes0, totalR0)
+          freeStreamResSet = .True.
+       end if
+    end if
+
     ! Write a message. Only done by processor 0.
 
     if(myID == 0) then
@@ -1006,26 +1017,21 @@ contains
        numberString = adjustl(numberString)
        numberString = trim(numberString)
        if (printIterations) then
+          print *,NK_switchTol * totalR0
           print "(a)", "#"
-          print 102, groundLevel, trim(numberString)
+          print 102, groundLevel, trim(numberString),minIterNum,(NK_switchTol * totalR0)
           print "(a)", "#"
        end if
 102    format("# Grid",1X,I1,": Performing",1X,A,1X, &
-            "iterations, unless converged earlier")
+            "iterations, unless converged earlier.",&
+            " Minimum required iteration before NK switch: ",&
+            I6,". Switch to NK at totalR of:",1X,e10.2)
 
        if (printIterations)  then
           call convergenceHeader
        end if
     end if
 
-    ! Only compute the free stream resisudal once for efficiency on the
-    ! fine grid only. 
-    if (groundLevel == 1)  then
-       if (.not. freeStreamResSet)  then
-          call getFreeStreamResidual(rhoRes0, totalR0)
-          freeStreamResSet = .True.
-       end if
-    end if
 
     ! Initialize the approxiate iteration count. We won't count this
     ! first residual evaluation. This way on the first convergence info

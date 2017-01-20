@@ -3791,6 +3791,7 @@ class ADFLOW(AeroSolver):
             'zippersurfacefamily':[object, None],
             'cutcallback':[object, None],
             'oversetupdatemode':[str, 'frozen'],
+            'nrefine':[int,10],
 
             # Unsteady Paramters
             'timeintegrationscheme':[str, 'bdf'],
@@ -4066,6 +4067,8 @@ class ADFLOW(AeroSolver):
                                  'fast':self.adflow.constants.updatefast,
                                  'full':self.adflow.constants.updatefull,
                                  'location':['overset', 'oversetupdatemode']},
+            'nrefine':['overset','nrefine'],
+
             # Unsteady Params
             'timeintegrationscheme':{'bdf':self.adflow.constants.bdf,
                                      'explicitrk':self.adflow.constants.explicitrk,
