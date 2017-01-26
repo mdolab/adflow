@@ -1341,6 +1341,9 @@ module stringOps
           curOtherID = s1%otherID(1, iStart)
 
           if (curOtherID == -1) then 
+             print *,'*************************************************************************'
+             print *,'Error during makeCrossZip: Point ', iStart, 'does not have a matching point'
+             print *,'*************************************************************************'
              stop
           end if
 
@@ -1948,6 +1951,19 @@ module stringOps
 
     outerZiploop: do 
 
+       ! No choice for the last triangle:
+       if (N==3) then 
+          ii = 1
+          im1 = prevNode(ii)
+          ip1 = nextNode(ii)
+          ! We don't call addPotentialTriangle because we don't have a
+          ! choice anymore. Just call the raw addTri command
+          call addTri(ip1, s, ii, s, im1, s)
+          ! and flag the node as gone
+          nodeMap(ii) = 0
+          exit outerZipLoop
+       end if
+
        ! Find min angled ear
        costhetaMax = -Large 
        nodeloop: do ii=1, N
@@ -1985,6 +2001,7 @@ module stringOps
        ii = iimin
        ip1 = nextNode(ii)
        im1 = prevNode(ii)
+
        call addPotentialTriangle(s, ip1, ii, im1, nodeMap, results, added)
        if (added) then 
           ! This triangle was good!
@@ -2219,6 +2236,7 @@ module stringOps
     ! length of xip1 to xim1)
     ! 
     added = .False.
+
     c = half*(s%x(:, ip1) + s%x(:, im1))
     r2 = (c(1) - s%x(1, ii))**2 +  (c(2) - s%x(2, ii))**2 +  (c(3) - s%x(3, ii))**2
 
@@ -2328,7 +2346,7 @@ module stringOps
     type(oversetString), dimension(nstrings), target :: strings
     integer(kind=intType), intent(in) :: nStrings
 
-    integer(kind=intType) :: i, j, k, idx
+    integer(kind=intType) :: i, j, k, idx, oid(4)
     integer(kind=intType) ::  nAlloc, nUnique, nSearch
     type(kdtree2_result), allocatable, dimension(:) :: results
     type(oversetString), pointer ::  str, master
@@ -2542,6 +2560,44 @@ module stringOps
              end if
           end do outerLoop
        end do nodeLoop
+       
+       ! Do a sanity check to fix some extraordinary cases. If a node
+       ! hasn't found a neighbouring string but each of the two nodes
+       ! either side have, and they found the *same* string, just
+       ! accept that. 
+       
+       do j=3, str%nNodes-2
+          if (str%otherID(1, j) == -1) then 
+             ! Bad node:
+             oid(1) = str%otherID(1, j-2)
+             oid(2) = str%otherID(1, j-1)
+             oid(3) = str%otherID(1, j+1)   
+             oid(4) = str%otherID(1, j+2)   
+
+             if (oid(1) /= -1 .and. & 
+                  oid(1) == oid(2) .and. &
+                  oid(1) == oid(3) .and. &
+                  oid(1) == oid(4)) then 
+             
+                if (debugZipper) then 
+                   print *,'****************************************************************'
+                   print *,'Warning: Fixing a bad association on string ', i, 'at index', j
+                   print *,'****************************************************************'
+                end if
+   
+                ! We have a '-1' surrounded by the same gap string
+
+                ! Set the stringID
+                str%otherID(1, j) = oid(1)
+
+                ! Estimate what the other index should be. Since this
+                ! is in the middle of the string, the exact index
+                ! shouldn't matter. 
+                str%otherID(2, j) = str%otherID(2, j-1)
+             end if
+          end if
+       end do
+
     end do
   end subroutine stringMatch
 
