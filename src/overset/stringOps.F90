@@ -2341,6 +2341,7 @@ module stringOps
     use kdtree2_priority_queue_module
     use kdtree2_module
     use utils, only : mynorm2
+    use inputOverset, only : debugZipper
     implicit none
 
     type(oversetString), dimension(nstrings), target :: strings
