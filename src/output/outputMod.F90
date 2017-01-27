@@ -1855,18 +1855,18 @@ contains
 
        do j=rangeFace(2,1), rangeFace(2,2)
           if(j == rangeFace(2,1)) then
-             jj = j + offVis
+             jj = min(j + offVis, rangeFace(2,2))
           else if(j == rangeFace(2,2)) then
-             jj = j - offVis
+             jj = max(j - offVis, rangeFace(2, 1))
           else
              jj = j
           endif
 
           do i=rangeFace(1,1), rangeFace(1,2)
              if(i == rangeFace(1,1)) then
-                ii = i + offVis
+                ii = min(i + offVis, rangeFace(1,2))
              else if(i == rangeFace(1,2)) then
-                ii = i - offVis
+                ii = max(i - offVis, rangeFace(1,1))
              else
                 ii = i
              endif
@@ -1951,21 +1951,20 @@ contains
        ! only present in the owned faces, the values of the halo's
        ! are set equal to the nearest physical face. Therefore the
        ! working indices are ii and jj.
-
        do j=rangeFace(2,1), rangeFace(2,2)
           if(j == rangeFace(2,1)) then
-             jj = j + offVis
+             jj = min(j + offVis, rangeFace(2,2))
           else if(j == rangeFace(2,2)) then
-             jj = j - offVis
+             jj = max(j - offVis, rangeFace(2, 1))
           else
              jj = j
           endif
 
           do i=rangeFace(1,1), rangeFace(1,2)
              if(i == rangeFace(1,1)) then
-                ii = i + offVis
+                ii = min(i + offVis, rangeFace(1,2))
              else if(i == rangeFace(1,2)) then
-                ii = i - offVis
+                ii = max(i - offVis, rangeFace(1,1))
              else
                 ii = i
              endif
