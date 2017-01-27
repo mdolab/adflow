@@ -354,7 +354,8 @@ contains
           kStart=kl; kEnd=kl;
        end select
 
-       if (isWallType(BCType(mm))) then 
+       if (isWallType(BCType(mm)) .or. BCType(mm) == SubsonicOutflow & 
+            .or. BCType(mm) == SubSonicInflow) then 
           do k=kStart, kEnd
              do j=jStart, jEnd
                 do i=iStart, iEnd
