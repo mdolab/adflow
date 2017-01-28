@@ -174,10 +174,10 @@ contains
           
           isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
                BCType(mm) == SupersonicInflow) then 
-               call flowIntegrationFace(.true., localValues, mm)
+               call flowIntegrationFace_b(.true., localValues, localValuesd, mm)
             else if (BCType(mm) == SubsonicOutflow .or. &
                BCType(mm) == SupersonicOutflow) then 
-               call flowIntegrationFace(.false., localValues, mm)
+               call flowIntegrationFace_b(.false., localValues, localValuesd, mm)
           end if isInflowOutflow
        end if famInclude
     end do
