@@ -1728,13 +1728,14 @@ class ADFLOW(AeroSolver):
             # Compute everything and update into the dictionary
             dXs = self.computeJacobianVectorProductBwd(
                 resBar=psi, funcsBar=funcsBar, xSDeriv=True)
+            dXs = self.mapVector(dXs, groupName, groupName, includeZipper=True)
         else:
             raise Error("The adjoint for '%s' is not computed for the current "
                         "aeroProblem. cannot write surface sensitivity."%(func))
 
         # Be careful with conn...need to increment by the offset from
         # the points.
-        pts = self.getSurfacePoints(groupName, includeZipper=False)
+        pts = self.getSurfacePoints(groupName, includeZipper=True)
 
         ptSizes = self.comm.allgather(len(pts))
         offsets = numpy.zeros(len(ptSizes), 'intc')
@@ -1743,7 +1744,7 @@ class ADFLOW(AeroSolver):
         # Now we need to gather the data to the root proc
         pts = self.comm.gather(pts)
         dXs = self.comm.gather(dXs)
-        conn, faceSize = self.getSurfaceConnectivity(groupName, includeZipper=False)
+        conn, faceSize =  self.getSurfaceConnectivity(groupName, includeZipper=True)
         conn = self.comm.gather(conn + offsets[self.comm.rank])
 
         # Write out Data only on root proc:
