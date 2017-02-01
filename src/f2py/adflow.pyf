@@ -1116,7 +1116,8 @@ python module libadflow
             integer(kind=inttype) parameter,optional :: costfuncmavgptot=44
             integer(kind=inttype) parameter,optional :: costfuncmavgttot=45
             integer(kind=inttype) parameter,optional :: costfuncmavgps=46
-            real(kind=realtype) dimension(46) :: funcvalues
+            integer(kind=inttype) parameter,optional :: costfuncmavgmn=47
+            real(kind=realtype) dimension(47) :: funcvalues
             real(kind=realtype) sepsensoroffset
             real(kind=realtype) sepsensorsharpness
        end module costfunctions

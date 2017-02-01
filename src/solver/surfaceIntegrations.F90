@@ -507,12 +507,12 @@ contains
     use constants
     use costFunctions
     use blockPointers, only : BCType, BCFaceID, BCData, addGridVelocities
-    use costFunctions, onlY : nLocalValues, iMassFlow, iMassPtot, iMassTtot, iMassPs
+    use costFunctions, onlY : nLocalValues, iMassFlow, iMassPtot, iMassTtot, iMassPs, iMassMN
     use sorting, only : bsearchIntegers
     use flowVarRefState, only : pRef, pInf, rhoRef, timeRef, LRef, TRef, RGas
     use inputPhysics, only : pointRef, flowType
     use flowUtils, only : computePtot, computeTtot
-    use BCPointers, only : ssi, sFace, ww1, ww2, pp1, pp2, xx
+    use BCPointers, only : ssi, sFace, ww1, ww2, pp1, pp2, xx, gamma1, gamma2
     use utils, only : mynorm2
     implicit none
 
@@ -522,17 +522,18 @@ contains
     integer(kind=intType), intent(in) :: mm
 
     ! Local variables
-    real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps
+    real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN
     integer(kind=intType) :: i, j, ii, blk
     real(kind=realType) :: internalFlowFact, fact, xc, yc, zc, cellArea, mx, my, mz
     real(kind=realType) :: sF, vnm, vxm, vym, vzm, mReDim, Fx, Fy, Fz
-    real(kind=realType) :: pm, Ptot, Ttot, rhom, massFlowRateLocal
+    real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, a2, MNm, massFlowRateLocal
     real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint
 
     massFlowRate = zero
     mass_Ptot = zero
     mass_Ttot = zero
     mass_Ps = zero
+    mass_MN = zero
 
     refPoint(1) = LRef*pointRef(1)
     refPoint(2) = LRef*pointRef(2)
@@ -591,8 +592,13 @@ contains
       vzm = half*(ww1(i,j,ivz) + ww2(i,j,ivz))
       rhom = half*(ww1(i,j,irho) + ww2(i,j,irho))
       pm = half*(pp1(i,j)+ pp2(i,j))
+      gammam = half*(gamma1(i,j) + gamma2(i,j))
+
 
       vnm = vxm*ssi(i,j,1) + vym*ssi(i,j,2) + vzm*ssi(i,j,3)  - sF
+
+      ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
+      MNm = sqrt((vxm**2 + vym**2 + vzm**2)*rhom/(gammam*pm)) 
 
       call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
       call computeTtot(rhom, vxm, vym, vzm, pm, Ttot)
@@ -605,6 +611,7 @@ contains
       mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
       mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
       mass_Ps = mass_Ps + pm*massFlowRateLocal
+      mass_MN = mass_MN + MNm*massFlowRateLocal
 
       xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
           +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
@@ -617,7 +624,6 @@ contains
       ! the reference pressure sign to be consistent with the force 
       ! computation on the walls. 
       pm = -(pm-pInf*pRef)*fact*blk
-      ! print *, "foo", mm, pm, pinf*pref
 
       fx = pm*ssi(i,j,1)
       fy = pm*ssi(i,j,2)
@@ -671,6 +677,7 @@ contains
     localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
     localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
     localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
+    localValues(iMassMN)   = localValues(iMassMN)   + mass_MN
     localValues(iFlowFp:iFlowFp+2)   = localValues(iFlowFp:iFlowFp+2) + Fp
     localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
     localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
@@ -683,7 +690,7 @@ contains
 
     use constants
     use costFunctions, only : nLocalValues, iMassFlow, iMassPtot, iMassTtot, iMassPs, &
-         iFlowMm, iFlowMp, iFlowFm, iFlowFp
+         iFlowMm, iFlowMp, iFlowFm, iFlowFp, iMassMN
     use blockPointers, only : BCType
     use sorting, only : bsearchIntegers
     use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas
@@ -706,8 +713,8 @@ contains
     integer(kind=intType) :: i, j
     real(kind=realType) :: sF, vnm, vxm, vym, vzm, mReDim, Fx, Fy, Fz
     real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint, ss, x1, x2, x3, norm
-    real(kind=realType) :: pm, Ptot, Ttot, rhom, massFlowRateLocal
-    real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps
+    real(kind=realType) :: pm, Ptot, Ttot, rhom, MNm, massFlowRateLocal
+    real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN
     real(kind=realType) :: internalFlowFact, inflowFact, xc, yc, zc, cellArea, mx, my, mz
 
     real(kind=realType), dimension(:), pointer :: localPtr
@@ -774,12 +781,16 @@ contains
           pm = pm*pRef
           vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3)  - sF
           
+          ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
+          MNm = sqrt((vxm**2 + vym**2 + vzm**2)*rhom/(gammam*pm)) 
+
           massFlowRateLocal = rhom*vnm*mReDim
           massFlowRate = massFlowRate + massFlowRateLocal
           
           mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
           mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
           mass_Ps = mass_Ps + pm*massFlowRateLocal
+          mass_MN = mass_MN + MNm*massFlowRateLocal
           
           ! Compute the average cell center. 
           xc = zero
@@ -848,6 +859,7 @@ contains
     localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
     localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
     localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
+    localValues(iMassMN)   = localValues(iMassMN)   + mass_MN
     localValues(iFlowFp:iFlowFp+2)   = localValues(iFlowFp:iFlowFp+2) + Fp
     localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
     localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
@@ -1325,6 +1337,8 @@ contains
     localCFVals(costFuncMavgPtot) = localValues(iMassPtot)
     localCFVals(costFuncMavgTtot) = localValues(iMassTtot)
     localCFVals(costFuncMavgPs) = localValues(iMassPs)
+    localCFVals(costFuncMavgMN) = localValues(iMassMN)
+
 
     ! Now we will mpi_allReduce them into globalCFVals
     call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, adflow_real, &
@@ -1333,7 +1347,9 @@ contains
     globalCFVals(costFuncMavgPtot) = globalCFVals(costFuncMavgPtot)/globalCFVals(costFuncMdot)
     globalCFVals(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)/globalCFVals(costFuncMdot)
     globalCFVals(costFuncMavgPs) = globalCFVals(costFuncMavgPs)/globalCFVals(costFuncMdot)
+    globalCFVals(costFuncMavgMN) = globalCFVals(costFuncMavgMN)/globalCFVals(costFuncMdot)
     globalCFVals(costFuncMdot) = globalCFVals(costFuncMdot)
+
 
   end subroutine computeAeroCoef
 
@@ -1415,6 +1431,7 @@ contains
     funcValues(costFuncMavgPtot) = globalCFVals(costFuncMavgPtot)
     funcValues(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)
     funcValues(costFuncMavgPs) = globalCFVals(costFuncMavgPs)
+    funcValues(costFuncMavgMN) = globalCFVals(costFuncMavgMN)
 
     if(TSStability)then
 
