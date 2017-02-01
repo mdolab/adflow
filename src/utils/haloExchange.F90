@@ -3064,7 +3064,7 @@ contains
     use constants
     use blockPointers, only : BCFaceID, BCData, addGridVelocities, nDom, nBocos, BCType
     use sorting, only : bsearchIntegers
-    use BCPointers, only : sFace, ww1, ww2, pp1, pp2, xx
+    use BCPointers, only : sFace, ww1, ww2, pp1, pp2, gamma1, gamma2, xx
     use overset, only : zipperMeshes, zipperMesh
     use surfaceFamilies, only : familyExchange, BCFamExchange
     use utils, only : setPointers, setBCPointers, EChk
@@ -3131,6 +3131,12 @@ contains
                               pp2(i, j  ) + pp2(i+1, j  ) + &
                               pp2(i, j+1) + pp2(i+1, j+1))
                       case (6)
+                         localPtr(ii) = eighth*(&
+                              gamma1(i, j  ) + gamma1(i+1, j  ) + &
+                              gamma1(i, j+1) + gamma1(i+1, j+1) + &
+                              gamma2(i, j  ) + gamma2(i+1, j  ) + &
+                              gamma2(i, j+1) + gamma2(i+1, j+1))
+                      case (7)
                          if (addGridVelocities) then 
                             localPtr(ii) = fourth*(&
                                  sface(i, j  ) + sface(i+1, j  ) + &
@@ -3138,7 +3144,7 @@ contains
                          else
                             localPtr(ii) = zero
                          end if
-                      case (7, 8, 9)
+                      case (8, 9, 10)
                          localPtr(ii) = xx(i+1, j+1, iVar-6)
                       end select
                    end do
