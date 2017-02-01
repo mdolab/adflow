@@ -2162,8 +2162,9 @@ loopbocos:do mm=1,nbocos
 &   moment, cforce, cmoment
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: forced&
 &   , momentd, cforced, cmomentd
-    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow
-    real(kind=realtype) :: mavgptotd, mavgttotd, mavgpsd, mflowd
+    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mavgmn
+    real(kind=realtype) :: mavgptotd, mavgttotd, mavgpsd, mflowd, &
+&   mavgmnd
     integer(kind=inttype) :: sps
     intrinsic sqrt
     real(kind=realtype) :: tmp
@@ -2238,11 +2239,13 @@ loopbocos:do mm=1,nbocos
         mavgptot = globalvals(imassptot, sps)/mflow
         mavgttot = globalvals(imassttot, sps)/mflow
         mavgps = globalvals(imassps, sps)/mflow
+        mavgmn = globalvals(imassmn, sps)/mflow
         mflow = globalvals(imassflow, sps)*sqrt(pref/rhoref)
       else
         mavgptot = zero
         mavgttot = zero
         mavgps = zero
+        mavgmn = zero
       end if
       funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
       funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &
@@ -2251,6 +2254,8 @@ loopbocos:do mm=1,nbocos
 &       ovrnts*mavgttot
       funcvalues(costfuncmavgps) = funcvalues(costfuncmavgps) + ovrnts*&
 &       mavgps
+      funcvalues(costfuncmavgmn) = funcvalues(costfuncmavgmn) + ovrnts*&
+&       mavgmn
     end do
 ! bending moment calc - also broken. 
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
@@ -2353,6 +2358,7 @@ loopbocos:do mm=1,nbocos
         else
           call pushcontrol1b(1)
         end if
+        mavgmnd = ovrnts*funcvaluesd(costfuncmavgmn)
         mavgpsd = ovrnts*funcvaluesd(costfuncmavgps)
         tmpd3 = funcvaluesd(costfuncmavgptot)
         funcvaluesd(costfuncmavgptot) = 0.0_8
@@ -2375,11 +2381,14 @@ loopbocos:do mm=1,nbocos
 &           temp2*mflowd
           prefd = prefd + tempd0
           rhorefd = rhorefd - temp1*tempd0
+          globalvalsd(imassmn, sps) = globalvalsd(imassmn, sps) + &
+&           mavgmnd/mflow
+          mflowd = -(globalvals(imassps, sps)*mavgpsd/mflow**2) - &
+&           globalvals(imassptot, sps)*mavgptotd/mflow**2 - globalvals(&
+&           imassttot, sps)*mavgttotd/mflow**2 - globalvals(imassmn, sps&
+&           )*mavgmnd/mflow**2
           globalvalsd(imassps, sps) = globalvalsd(imassps, sps) + &
 &           mavgpsd/mflow
-          mflowd = -(globalvals(imassttot, sps)*mavgttotd/mflow**2) - &
-&           globalvals(imassptot, sps)*mavgptotd/mflow**2 - globalvals(&
-&           imassps, sps)*mavgpsd/mflow**2
           globalvalsd(imassttot, sps) = globalvalsd(imassttot, sps) + &
 &           mavgttotd/mflow
           globalvalsd(imassptot, sps) = globalvalsd(imassptot, sps) + &
@@ -2455,7 +2464,7 @@ loopbocos:do mm=1,nbocos
     real(kind=realtype) :: fact, factmoment, ovrnts
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: force, &
 &   moment, cforce, cmoment
-    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow
+    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mavgmn
     integer(kind=inttype) :: sps
     intrinsic sqrt
 ! factor used for time-averaged quantities.
@@ -2512,11 +2521,13 @@ loopbocos:do mm=1,nbocos
         mavgptot = globalvals(imassptot, sps)/mflow
         mavgttot = globalvals(imassttot, sps)/mflow
         mavgps = globalvals(imassps, sps)/mflow
+        mavgmn = globalvals(imassmn, sps)/mflow
         mflow = globalvals(imassflow, sps)*sqrt(pref/rhoref)
       else
         mavgptot = zero
         mavgttot = zero
         mavgps = zero
+        mavgmn = zero
       end if
       funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
       funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &
@@ -2525,6 +2536,8 @@ loopbocos:do mm=1,nbocos
 &       ovrnts*mavgttot
       funcvalues(costfuncmavgps) = funcvalues(costfuncmavgps) + ovrnts*&
 &       mavgps
+      funcvalues(costfuncmavgmn) = funcvalues(costfuncmavgmn) + ovrnts*&
+&       mavgmn
     end do
 ! bending moment calc - also broken. 
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
