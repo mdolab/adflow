@@ -1487,8 +1487,9 @@ loopbocos:do mm=1,nbocos
 &   moment, cforce, cmoment
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: forced&
 &   , momentd, cforced, cmomentd
-    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow
-    real(kind=realtype) :: mavgptotd, mavgttotd, mavgpsd, mflowd
+    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mavgmn
+    real(kind=realtype) :: mavgptotd, mavgttotd, mavgpsd, mflowd, &
+&   mavgmnd
     integer(kind=inttype) :: sps
     intrinsic sqrt
     real(kind=realtype) :: arg1
@@ -1599,6 +1600,9 @@ loopbocos:do mm=1,nbocos
         mavgpsd = (globalvalsd(imassps, sps)*mflow-globalvals(imassps, &
 &         sps)*mflowd)/mflow**2
         mavgps = globalvals(imassps, sps)/mflow
+        mavgmnd = (globalvalsd(imassmn, sps)*mflow-globalvals(imassmn, &
+&         sps)*mflowd)/mflow**2
+        mavgmn = globalvals(imassmn, sps)/mflow
         arg1d = (prefd*rhoref-pref*rhorefd)/rhoref**2
         arg1 = pref/rhoref
         if (arg1 .eq. 0.0_8) then
@@ -1614,8 +1618,10 @@ loopbocos:do mm=1,nbocos
         mavgptot = zero
         mavgttot = zero
         mavgps = zero
+        mavgmn = zero
         mavgttotd = 0.0_8
         mavgpsd = 0.0_8
+        mavgmnd = 0.0_8
         mavgptotd = 0.0_8
       end if
       funcvaluesd(costfuncmdot) = funcvaluesd(costfuncmdot) + ovrnts*&
@@ -1633,6 +1639,10 @@ loopbocos:do mm=1,nbocos
 &       *mavgpsd
       funcvalues(costfuncmavgps) = funcvalues(costfuncmavgps) + ovrnts*&
 &       mavgps
+      funcvaluesd(costfuncmavgmn) = funcvaluesd(costfuncmavgmn) + ovrnts&
+&       *mavgmnd
+      funcvalues(costfuncmavgmn) = funcvalues(costfuncmavgmn) + ovrnts*&
+&       mavgmn
     end do
 ! bending moment calc - also broken. 
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
@@ -1696,7 +1706,7 @@ loopbocos:do mm=1,nbocos
     real(kind=realtype) :: fact, factmoment, ovrnts
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: force, &
 &   moment, cforce, cmoment
-    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow
+    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mavgmn
     integer(kind=inttype) :: sps
     intrinsic sqrt
     real(kind=realtype) :: arg1
@@ -1755,6 +1765,7 @@ loopbocos:do mm=1,nbocos
         mavgptot = globalvals(imassptot, sps)/mflow
         mavgttot = globalvals(imassttot, sps)/mflow
         mavgps = globalvals(imassps, sps)/mflow
+        mavgmn = globalvals(imassmn, sps)/mflow
         arg1 = pref/rhoref
         result1 = sqrt(arg1)
         mflow = globalvals(imassflow, sps)*result1
@@ -1762,6 +1773,7 @@ loopbocos:do mm=1,nbocos
         mavgptot = zero
         mavgttot = zero
         mavgps = zero
+        mavgmn = zero
       end if
       funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
       funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &
@@ -1770,6 +1782,8 @@ loopbocos:do mm=1,nbocos
 &       ovrnts*mavgttot
       funcvalues(costfuncmavgps) = funcvalues(costfuncmavgps) + ovrnts*&
 &       mavgps
+      funcvalues(costfuncmavgmn) = funcvalues(costfuncmavgmn) + ovrnts*&
+&       mavgmn
     end do
 ! bending moment calc - also broken. 
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
