@@ -266,9 +266,12 @@ class ADFLOW(AeroSolver):
 
         # Set the closed surface families if given. Otherwise
         # default to all walls. 
-        self.closedFamilyGroup = self.getOption('closedSurfaceFamily')
-        if self.closedFamilyGroup is None:
+        famList = self.getOption('closedSurfaceFamilies')
+        if famList is None:
             self.closedFamilyGroup = self.allWallsGroup
+        else:
+            self.addFamilyGroup('closedSurface', famList)
+            self.closedFamilyGroup = 'closedSurface'
 
         famList = self._getFamilyList(self.closedFamilyGroup)
         self.adflow.preprocessingapi.preprocessingoverset(flag, famList)
@@ -276,8 +279,6 @@ class ADFLOW(AeroSolver):
         self.adflow.tecplotio.initializeliftdistributiondata()
         self.adflow.initializeflow.updatebcdataalllevels()
         self.adflow.initializeflow.initflow()
-
-
 
         self.coords0 = self.getSurfaceCoordinates(self.allFamilies)
 
@@ -3733,7 +3734,7 @@ class ADFLOW(AeroSolver):
             # Surface definition parameters:
             'meshsurfacefamily':[object, None],
             'designsurfacefamily':[object, None],
-            'closedsurfacefamily':[object, None],
+            'closedsurfacefamilies':[object, None],
             
             # Output Parameters
             'storerindlayer':[bool, True],
@@ -3938,7 +3939,7 @@ class ADFLOW(AeroSolver):
                 'mgstartlevel', 'timeintegrationscheme', 'timeaccuracy',
                 'useale', 'timeintervals', 'blocksplitting',
                 'loadimbalance', 'loadbalanceiter', 'partitiononly',
-                'meshsurfacefamily', 'designsurfacefamily', 'closedsurfaceFamily',
+                'meshsurfacefamily', 'designsurfacefamily', 'closedsurfacefamilies',
                 'zippersurfacefamily', 'cutcallback')
 
     def _getOptionMap(self):
@@ -4236,7 +4237,7 @@ class ADFLOW(AeroSolver):
                              'liftindex',
                              'meshsurfacefamily',
                              'designsurfacefamily',
-                             'closedsurfacefamily',
+                             'closedsurfacefamilies',
                              'zippersurfacefamily',
                              'outputsurfacefamily',
                              'cutcallback',
