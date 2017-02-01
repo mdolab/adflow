@@ -4,7 +4,7 @@ module oversetAPI
   !       overset grid connectivitiies. It operates on a given multigrid 
   !       level and spectral instance                                    
 contains
-  subroutine oversetComm(level, firstTime, coarseLevel)
+  subroutine oversetComm(level, firstTime, coarseLevel, closedFamList)
 
     use constants
     use communication, only : adflow_comm_world, sendRequests, &
@@ -44,11 +44,12 @@ contains
     integer(kind=intType), intent(in) :: level
     logical :: firstTime, coarseLevel
     integer(kind=intType) :: sps
+    integer(kind=intType), intent(in) :: closedFamList(:)
 
     ! Local Variables
-    integer(kind=intType) :: i, ii, j, jj, k, kk, i_stencil, curI, curJ, curK
+    integer(kind=intType) :: i, ii, j, jj, k, kk, i_stencil, curI, curJ, curK, mInt
     integer(kind=intType) :: m, iSize, iStart, iEnd, index, rSize, iFringe
-    integer(kind=intType) :: iDom, jDom, iDim, nInt, nReal, iCol
+    integer(kind=intType) :: iDom, jDom, iDim, nReal, iCol
     integer(kind=intType) :: nn, mm, n, ierr, iProc, iRefine
     integer(kind=intType) :: iWork, nWork, nLocalFringe
     integer(kind=intType) :: myBlock, myINdex, dIndex, donorBlock, donorProc, absDBlock
@@ -412,7 +413,7 @@ contains
           call toc(iBuildADT)
 
           call tic(iBuildSearchPoints)
-          call initializeOFringes(oFringes(iDom), nn)
+          call initializeOFringes(oFringes(iDom), nn, closedFamList)
           oFringeReady(iDom) = .True.  
           call toc(iBuildSearchPoints)         
        end do
@@ -550,7 +551,7 @@ contains
        
        call tic(iFringeProcessing)
        nReal = 4
-       nInt = 5
+       mInt = 5
        do iDom=1, nDomTotal
           if (oFringes(iDom)%allocated) then 
              ! Fringe is allocated so check it
@@ -607,9 +608,9 @@ contains
             nOFringeSend, nOFringeRecv, oFringes, fringeRecvSizes, cumFringeRecv)
 
        ! Now alocate the integer and real space. Note we are receiving nReal real
-       ! values and nInt int values:
+       ! values and mInt int values:
        ii = cumFringeRecv(nOfringeSend+1)-1
-       allocate(intRecvBuf(ii*nInt), realRecvBuf(ii*nReal))   
+       allocate(intRecvBuf(ii*mInt), realRecvBuf(ii*nReal))   
 
        ! We are now ready to actually send and receive our fringes
        sendCount = 0
@@ -627,7 +628,7 @@ contains
              
              tag = iDom + 2*MAGIC
              sendCount = sendCount + 1
-             call mpi_isend(oFringes(iDom)%fringeIntBuffer, iSize*nInt, adflow_integer, &
+             call mpi_isend(oFringes(iDom)%fringeIntBuffer, iSize*mInt, adflow_integer, &
                   iproc, tag, adflow_comm_world, sendRequests(sendCount), ierr)
              call ECHK(ierr, __FILE__, __LINE__)
           end if
@@ -650,10 +651,10 @@ contains
              call ECHK(ierr, __FILE__, __LINE__)
              recvInfo(:, recvCount) = (/iDom, 1/) ! 1 for real recv
              
-             iStart = (cumFringeRecv(jj  )-1)*nInt + 1
+             iStart = (cumFringeRecv(jj  )-1)*mInt + 1
              tag = iDom + 2*MAGIC
              recvCount = recvCount + 1                
-             call mpi_irecv(intRecvBuf(iStart), iSize*nInt, adflow_integer, &
+             call mpi_irecv(intRecvBuf(iStart), iSize*mInt, adflow_integer, &
                   iProc, tag, adflow_comm_world, recvRequests(recvCount), ierr)
              call ECHK(ierr, __FILE__, __LINE__)
              recvInfo(:, recvCount) = (/iDom, 2/) ! 2 for int recv
@@ -696,7 +697,7 @@ contains
           do jj=cumFringeRecv(kk), cumFringeRecv(kk+1)-1
              
              ! Recreate the fringe type
-             iStart = nInt*(jj-1)
+             iStart = mInt*(jj-1)
              fringe%donorProc  = intRecvBuf(iStart + 1)
              fringe%donorBlock = intRecvBuf(iStart + 2)
              fringe%dIndex     = intRecvBuf(iStart + 3)
@@ -990,7 +991,7 @@ contains
              if (iSize > 0) then 
                 tag = iDom + 2*MAGIC
                 sendCount = sendCount + 1
-                call mpi_isend(oFringes(iDom)%fringeIntBuffer, iSize*nInt, adflow_integer, &
+                call mpi_isend(oFringes(iDom)%fringeIntBuffer, iSize*mInt, adflow_integer, &
                      iproc, tag, adflow_comm_world, sendRequests(sendCount), ierr)
                 call ECHK(ierr, __FILE__, __LINE__)
              end if
@@ -1005,10 +1006,10 @@ contains
              iSize = cumFringeRecv(jj+1) - cumFringeRecv(jj) 
              if (iSize > 0) then 
              
-                iStart = (cumFringeRecv(jj  )-1)*nInt + 1
+                iStart = (cumFringeRecv(jj  )-1)*mInt + 1
                 tag = iDom + 2*MAGIC
                 recvCount = recvCount + 1                
-                call mpi_irecv(intRecvBuf(iStart), iSize*nInt, adflow_integer, &
+                call mpi_irecv(intRecvBuf(iStart), iSize*mInt, adflow_integer, &
                      iProc, tag, adflow_comm_world, recvRequests(recvCount), ierr)
                 call ECHK(ierr, __FILE__, __LINE__)
                 recvInfo(:, recvCount) = (/iDom, 2/) ! 2 for int recv
@@ -1082,7 +1083,7 @@ contains
              ! This is the range of fringes that are now ready. 
              do jj=cumFringeRecv(kk), cumFringeRecv(kk+1)-1
                 
-                iStart = nInt*(jj-1)
+                iStart = mInt*(jj-1)
                 donorProc  = intRecvBuf(iStart + 1)
                 donorBlock = intRecvBuf(iStart + 2)
                 dIndex     = intRecvBuf(iStart + 3)
@@ -2039,7 +2040,7 @@ contains
 
   end subroutine setExplicitHoleCut
 
-  subroutine updateOverset(flag, n)
+  subroutine updateOverset(flag, n, closedFamList, nFam)
 
     ! This is the main gateway routine for updating the overset
     ! connecitivty during a solution. It is wrapped and intended to be
@@ -2066,7 +2067,8 @@ contains
 
     ! Input/Output
     integer(kind=intType), dimension(n) :: flag
-    integer(kind=intType), intent(in) :: n
+    integer(kind=intType), dimension(nFam) :: closedFamList
+    integer(kind=intType), intent(in) :: n, nFam
 
     ! Working
     integer(kind=intType) :: nLevels, level, sps
@@ -2096,9 +2098,9 @@ contains
        do level=1,nLevels
           if (level == 1) then 
              call setExplicitHoleCut(flag)
-             call oversetComm(level, .False., .false.)
+             call oversetComm(level, .False., .false., closedFamList)
           else
-             call oversetComm(level, .False., .True.)
+             call oversetComm(level, .False., .True., closedFamList)
           end if
        end do
        
