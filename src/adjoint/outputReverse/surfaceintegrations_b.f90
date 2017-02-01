@@ -835,14 +835,12 @@ bocos:do mm=1,nbocos
 !   gradient     of useful results: pointref timeref tref rgas
 !                pref rhoref *xx *pp1 *pp2 *ssi *ww1 *ww2 localvalues
 !   with respect to varying inputs: pointref timeref tref rgas
-!                pref rhoref *gamma1 *gamma2 *xx *pp1 *pp2 *ssi
-!                *ww1 *ww2 localvalues
+!                pref rhoref *xx *pp1 *pp2 *ssi *ww1 *ww2 localvalues
 !   rw status of diff variables: pointref:incr timeref:incr tref:incr
-!                rgas:incr pref:incr rhoref:incr *gamma1:out *gamma2:out
-!                *xx:incr *pp1:incr *pp2:incr *ssi:incr *ww1:incr
-!                *ww2:incr localvalues:in-out
-!   plus diff mem management of: gamma1:in gamma2:in xx:in pp1:in
-!                pp2:in ssi:in ww1:in ww2:in
+!                rgas:incr pref:incr rhoref:incr *xx:incr *pp1:incr
+!                *pp2:incr *ssi:incr *ww1:incr *ww2:incr localvalues:in-out
+!   plus diff mem management of: xx:in pp1:in pp2:in ssi:in ww1:in
+!                ww2:in
   subroutine flowintegrationface_b(isinflow, localvalues, localvaluesd, &
 &   mm)
     use constants
@@ -858,7 +856,7 @@ bocos:do mm=1,nbocos
     use flowutils_b, only : computeptot, computeptot_b, computettot, &
 &   computettot_b
     use bcpointers_b, only : ssi, ssid, sface, ww1, ww1d, ww2, ww2d, pp1&
-&   , pp1d, pp2, pp2d, xx, xxd, gamma1, gamma1d, gamma2, gamma2d
+&   , pp1d, pp2, pp2d, xx, xxd, gamma1, gamma2
     use utils_b, only : mynorm2, mynorm2_b
     implicit none
 ! input/output variables
@@ -882,7 +880,7 @@ bocos:do mm=1,nbocos
 &   fzd
     real(kind=realtype) :: pm, ptot, ttot, rhom, gammam, a2, mnm, &
 &   massflowratelocal
-    real(kind=realtype) :: pmd, ptotd, ttotd, rhomd, gammamd, mnmd, &
+    real(kind=realtype) :: pmd, ptotd, ttotd, rhomd, mnmd, &
 &   massflowratelocald
     real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint
     real(kind=realtype), dimension(3) :: fpd, mpd, fmomd, mmomd, &
@@ -910,7 +908,6 @@ bocos:do mm=1,nbocos
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: temp
-    real(kind=realtype) :: tempd15
     refpoint(1) = lref*pointref(1)
     refpoint(2) = lref*pointref(2)
     refpoint(3) = lref*pointref(3)
@@ -951,8 +948,6 @@ bocos:do mm=1,nbocos
     mass_ttotd = localvaluesd(imassttot)
     mass_ptotd = localvaluesd(imassptot)
     massflowrated = localvaluesd(imassflow)
-    gamma1d = 0.0_8
-    gamma2d = 0.0_8
     mredimd = 0.0_8
     ptotd = 0.0_8
     refpointd = 0.0_8
@@ -1029,35 +1024,35 @@ bocos:do mm=1,nbocos
       fxd = zc*myd + fmomd(1) - yc*mzd
       zcd = fx*myd - fy*mxd
       fzd = yc*mxd + fmomd(3) - xc*myd
-      tempd13 = ssi(i, j, 3)*fzd
+      tempd12 = ssi(i, j, 3)*fzd
       ssid(i, j, 3) = ssid(i, j, 3) + massflowratelocal*vzm*fzd
-      vzmd = massflowratelocal*tempd13
-      tempd14 = ssi(i, j, 2)*fyd
+      vzmd = massflowratelocal*tempd12
+      tempd13 = ssi(i, j, 2)*fyd
       ssid(i, j, 2) = ssid(i, j, 2) + massflowratelocal*vym*fyd
-      vymd = massflowratelocal*tempd14
-      tempd15 = ssi(i, j, 1)*fxd
-      massflowratelocald = vym*tempd14 + vxm*tempd15 + vzm*tempd13
+      vymd = massflowratelocal*tempd13
+      tempd14 = ssi(i, j, 1)*fxd
+      massflowratelocald = vym*tempd13 + vxm*tempd14 + vzm*tempd12
       ssid(i, j, 1) = ssid(i, j, 1) + massflowratelocal*vxm*fxd
-      vxmd = massflowratelocal*tempd15
+      vxmd = massflowratelocal*tempd14
       call popcontrol2b(branch)
       if (branch .eq. 0) then
         cellaread = 0.0_8
       else if (branch .eq. 1) then
         call popreal8(massflowratelocal)
-        tempd11 = -(fact*blk*internalflowfact*massflowratelocald/(&
+        tempd10 = -(fact*blk*internalflowfact*massflowratelocald/(&
 &         timeref*cellarea))
-        tempd12 = -(massflowratelocal*tempd11/(timeref*cellarea))
-        timerefd = timerefd + cellarea*tempd12
-        cellaread = timeref*tempd12
-        massflowratelocald = tempd11
+        tempd11 = -(massflowratelocal*tempd10/(timeref*cellarea))
+        timerefd = timerefd + cellarea*tempd11
+        cellaread = timeref*tempd11
+        massflowratelocald = tempd10
       else
         call popreal8(massflowratelocal)
-        tempd9 = fact*blk*internalflowfact*massflowratelocald/(timeref*&
+        tempd8 = fact*blk*internalflowfact*massflowratelocald/(timeref*&
 &         cellarea)
-        tempd10 = -(massflowratelocal*tempd9/(timeref*cellarea))
-        timerefd = timerefd + cellarea*tempd10
-        cellaread = timeref*tempd10
-        massflowratelocald = tempd9
+        tempd9 = -(massflowratelocal*tempd8/(timeref*cellarea))
+        timerefd = timerefd + cellarea*tempd9
+        cellaread = timeref*tempd9
+        massflowratelocald = tempd8
       end if
       fz = pm*ssi(i, j, 3)
       call mynorm2_b(ssi(i, j, :), ssid(i, j, :), cellaread)
@@ -1125,18 +1120,14 @@ bocos:do mm=1,nbocos
       end if
       tempd6 = temp0*tempd5
       tempd7 = temp*tempd5/temp1
-      tempd8 = -(temp0*tempd7)
       vxmd = vxmd + ssi(i, j, 1)*vnmd + 2*vxm*tempd6
       vymd = vymd + ssi(i, j, 2)*vnmd + 2*vym*tempd6
       vzmd = vzmd + ssi(i, j, 3)*vnmd + 2*vzm*tempd6
       rhomd = rhomd + tempd7
-      gammamd = pm*tempd8
-      pmd = pmd + gammam*tempd8
+      pmd = pmd - temp0*gammam*tempd7
       ssid(i, j, 1) = ssid(i, j, 1) + vxm*vnmd
       ssid(i, j, 2) = ssid(i, j, 2) + vym*vnmd
       ssid(i, j, 3) = ssid(i, j, 3) + vzm*vnmd
-      gamma1d(i, j) = gamma1d(i, j) + half*gammamd
-      gamma2d(i, j) = gamma2d(i, j) + half*gammamd
       pp1d(i, j) = pp1d(i, j) + half*pmd
       pp2d(i, j) = pp2d(i, j) + half*pmd
       ww1d(i, j, irho) = ww1d(i, j, irho) + half*rhomd
@@ -1371,12 +1362,14 @@ bocos:do mm=1,nbocos
 &   ss, x1, x2, x3, norm
     real(kind=realtype), dimension(3) :: fpd, mpd, fmomd, mmomd, &
 &   refpointd, ssd, x1d, x2d, x3d, normd
-    real(kind=realtype) :: pm, ptot, ttot, rhom, mnm, massflowratelocal
-    real(kind=realtype) :: pmd, ptotd, ttotd, rhomd, massflowratelocald
+    real(kind=realtype) :: pm, ptot, ttot, rhom, gammam, mnm, &
+&   massflowratelocal
+    real(kind=realtype) :: pmd, ptotd, ttotd, rhomd, gammamd, mnmd, &
+&   massflowratelocald
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps, &
 &   mass_mn
     real(kind=realtype) :: massflowrated, mass_ptotd, mass_ttotd, &
-&   mass_psd
+&   mass_psd, mass_mnd
     real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, &
 &   cellarea, mx, my, mz
     real(kind=realtype) :: xcd, ycd, zcd, mxd, myd, mzd
@@ -1390,14 +1383,21 @@ bocos:do mm=1,nbocos
     real(kind=realtype) :: result1
     real(kind=realtype) :: result1d
     integer(kind=inttype) :: res
+    real(kind=realtype) :: temp3
+    real(kind=realtype) :: temp2
     real(kind=realtype) :: temp1
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tempd
+    real(kind=realtype) :: tempd7
+    real(kind=realtype) :: tempd6
+    real(kind=realtype) :: tempd5
+    real(kind=realtype) :: tempd4
     real(kind=realtype) :: tempd3
     real(kind=realtype) :: tempd2
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: temp
+    real(kind=realtype) :: temp4
     refpoint(1) = lref*pointref(1)
     refpoint(2) = lref*pointref(2)
     refpoint(3) = lref*pointref(3)
@@ -1414,6 +1414,7 @@ bocos:do mm=1,nbocos
     fmomd = localvaluesd(iflowfm:iflowfm+2)
     fpd = 0.0_8
     fpd = localvaluesd(iflowfp:iflowfp+2)
+    mass_mnd = localvaluesd(imassmn)
     mass_psd = localvaluesd(imassps)
     mass_ttotd = localvaluesd(imassttot)
     mass_ptotd = localvaluesd(imassptot)
@@ -1422,6 +1423,7 @@ bocos:do mm=1,nbocos
     normd = 0.0_8
     ptotd = 0.0_8
     refpointd = 0.0_8
+    gammamd = 0.0_8
     ttotd = 0.0_8
     do i=1,size(zipper%conn, 2)
       res = bsearchintegers(zipper%fam(i), famlist)
@@ -1439,7 +1441,8 @@ bocos:do mm=1,nbocos
           vym = vym + vars(zipper%conn(j, i), ivy)
           vzm = vzm + vars(zipper%conn(j, i), ivz)
           pm = pm + vars(zipper%conn(j, i), irhoe)
-          sf = sf + vars(zipper%conn(j, i), 6)
+          gammam = gammam + vars(zipper%conn(j, i), 6)
+          sf = sf + vars(zipper%conn(j, i), 7)
         end do
 ! divide by 3 due to the summation above:
         rhom = third*rhom
@@ -1447,6 +1450,7 @@ bocos:do mm=1,nbocos
         vym = third*vym
         vzm = third*vzm
         pm = third*pm
+        gammam = third*gammam
         sf = third*sf
 ! get the nodes of triangle.
         x1 = vars(zipper%conn(1, i), 7:9)
@@ -1462,9 +1466,8 @@ bocos:do mm=1,nbocos
         pm = pm*pref
         vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3) - sf
 ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
-! mnm = sqrt((vxm**2 + vym**2 + vzm**2)*rhom/(gammam*pm)) 
+        mnm = sqrt((vxm**2+vym**2+vzm**2)*rhom/(gammam*pm))
         massflowratelocal = rhom*vnm*mredim
-! mass_mn = mass_mn + mnm*massflowratelocal
 ! compute the average cell center. 
         xc = zero
         yc = zero
@@ -1496,8 +1499,8 @@ bocos:do mm=1,nbocos
         fy = massflowratelocal*ss(2)*vym/timeref
         fz = massflowratelocal*ss(3)*vzm/timeref
 ! note: momentum forces have opposite sign to pressure forces
-        temp = ss(1)/timeref
-        temp0 = ss(2)/timeref
+        temp2 = ss(1)/timeref
+        temp3 = ss(2)/timeref
         mzd = mmomd(3)
         myd = mmomd(2)
         mxd = mmomd(1)
@@ -1508,23 +1511,23 @@ bocos:do mm=1,nbocos
         zcd = fx*myd - fy*mxd
         fzd = yc*mxd - fmomd(3) - xc*myd
         ssd = 0.0_8
-        tempd0 = massflowratelocal*vzm*fzd/timeref
-        temp1 = ss(3)/timeref
-        ssd(3) = ssd(3) + tempd0
-        massflowratelocald = temp0*vym*fyd + temp*vxm*fxd + temp1*vzm*&
+        tempd4 = massflowratelocal*vzm*fzd/timeref
+        temp4 = ss(3)/timeref
+        ssd(3) = ssd(3) + tempd4
+        massflowratelocald = temp3*vym*fyd + temp2*vxm*fxd + temp4*vzm*&
 &         fzd
-        vzmd = temp1*massflowratelocal*fzd
-        tempd1 = massflowratelocal*vym*fyd/timeref
-        ssd(2) = ssd(2) + tempd1
-        vymd = temp0*massflowratelocal*fyd
-        tempd3 = massflowratelocal*vxm*fxd/timeref
-        ssd(1) = ssd(1) + tempd3
-        vxmd = temp*massflowratelocal*fxd
+        vzmd = temp4*massflowratelocal*fzd
+        tempd5 = massflowratelocal*vym*fyd/timeref
+        ssd(2) = ssd(2) + tempd5
+        vymd = temp3*massflowratelocal*fyd
+        tempd7 = massflowratelocal*vxm*fxd/timeref
+        ssd(1) = ssd(1) + tempd7
+        vxmd = temp2*massflowratelocal*fxd
         call popreal8(massflowratelocal)
-        tempd2 = internalflowfact*inflowfact*massflowratelocald/timeref
-        timerefd = timerefd - temp0*tempd1 - massflowratelocal*tempd2/&
-&         timeref - temp*tempd3 - temp1*tempd0
-        massflowratelocald = tempd2
+        tempd6 = internalflowfact*inflowfact*massflowratelocald/timeref
+        timerefd = timerefd - temp3*tempd5 - massflowratelocal*tempd6/&
+&         timeref - temp2*tempd7 - temp4*tempd4
+        massflowratelocald = tempd6
         call popreal8array(ss, 3)
         result1d = sum(-(ss*ssd/result1))/result1
         ssd = ssd/result1
@@ -1562,20 +1565,34 @@ bocos:do mm=1,nbocos
           varsd(zipper%conn(1, i), 7) = varsd(zipper%conn(1, i), 7) + &
 &           xcd
         end do
-        pmd = pmd + massflowratelocal*mass_psd
-        massflowratelocald = massflowratelocald + tref*ttot*mass_ttotd +&
-&         massflowrated + pref*ptot*mass_ptotd + pm*mass_psd
+        mnmd = massflowratelocal*mass_mnd
+        massflowratelocald = massflowratelocald + pm*mass_psd + pref*&
+&         ptot*mass_ptotd + massflowrated + tref*ttot*mass_ttotd + mnm*&
+&         mass_mnd
         ttotd = ttotd + tref*massflowratelocal*mass_ttotd
         trefd = trefd + ttot*massflowratelocal*mass_ttotd
         ptotd = ptotd + pref*massflowratelocal*mass_ptotd
-        rhomd = mredim*vnm*massflowratelocald
         vnmd = mredim*rhom*massflowratelocald
         mredimd = mredimd + rhom*vnm*massflowratelocald
-        vxmd = vxmd + ss(1)*vnmd
+        temp1 = gammam*pm
+        temp0 = rhom/temp1
+        temp = vxm**2 + vym**2 + vzm**2
+        if (temp*temp0 .eq. 0.0_8) then
+          tempd2 = 0.0
+        else
+          tempd2 = mnmd/(2.0*sqrt(temp*temp0))
+        end if
+        tempd3 = temp0*tempd2
+        tempd1 = temp*tempd2/temp1
+        rhomd = tempd1 + mredim*vnm*massflowratelocald
+        tempd0 = -(temp0*tempd1)
+        pmd = pmd + gammam*tempd0 + massflowratelocal*mass_psd
+        vxmd = vxmd + ss(1)*vnmd + 2*vxm*tempd3
+        vymd = vymd + ss(2)*vnmd + 2*vym*tempd3
+        vzmd = vzmd + ss(3)*vnmd + 2*vzm*tempd3
+        gammamd = gammamd + pm*tempd0
         ssd(1) = ssd(1) + vxm*vnmd
-        vymd = vymd + ss(2)*vnmd
         ssd(2) = ssd(2) + vym*vnmd
-        vzmd = vzmd + ss(3)*vnmd
         ssd(3) = ssd(3) + vzm*vnmd
         sfd = -vnmd
         call popreal8(pm)
@@ -1601,14 +1618,17 @@ bocos:do mm=1,nbocos
         varsd(zipper%conn(1, i), 7:9) = varsd(zipper%conn(1, i), 7:9) + &
 &         x1d
         sfd = third*sfd
+        gammamd = third*gammamd
         pmd = third*pmd
         vzmd = third*vzmd
         vymd = third*vymd
         vxmd = third*vxmd
         rhomd = third*rhomd
         do j=3,1,-1
-          varsd(zipper%conn(j, i), 6) = varsd(zipper%conn(j, i), 6) + &
+          varsd(zipper%conn(j, i), 7) = varsd(zipper%conn(j, i), 7) + &
 &           sfd
+          varsd(zipper%conn(j, i), 6) = varsd(zipper%conn(j, i), 6) + &
+&           gammamd
           varsd(zipper%conn(j, i), irhoe) = varsd(zipper%conn(j, i), &
 &           irhoe) + pmd
           varsd(zipper%conn(j, i), ivz) = varsd(zipper%conn(j, i), ivz) &
@@ -1664,7 +1684,8 @@ bocos:do mm=1,nbocos
     real(kind=realtype) :: sf, vnm, vxm, vym, vzm, mredim, fx, fy, fz
     real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint, &
 &   ss, x1, x2, x3, norm
-    real(kind=realtype) :: pm, ptot, ttot, rhom, mnm, massflowratelocal
+    real(kind=realtype) :: pm, ptot, ttot, rhom, gammam, mnm, &
+&   massflowratelocal
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps, &
 &   mass_mn
     real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, &
@@ -1699,6 +1720,7 @@ bocos:do mm=1,nbocos
         vzm = zero
         rhom = zero
         pm = zero
+        mnm = zero
         sf = zero
         do j=1,3
           rhom = rhom + vars(zipper%conn(j, i), irho)
@@ -1706,7 +1728,8 @@ bocos:do mm=1,nbocos
           vym = vym + vars(zipper%conn(j, i), ivy)
           vzm = vzm + vars(zipper%conn(j, i), ivz)
           pm = pm + vars(zipper%conn(j, i), irhoe)
-          sf = sf + vars(zipper%conn(j, i), 6)
+          gammam = gammam + vars(zipper%conn(j, i), 6)
+          sf = sf + vars(zipper%conn(j, i), 7)
         end do
 ! divide by 3 due to the summation above:
         rhom = third*rhom
@@ -1714,6 +1737,7 @@ bocos:do mm=1,nbocos
         vym = third*vym
         vzm = third*vzm
         pm = third*pm
+        gammam = third*gammam
         sf = third*sf
 ! get the nodes of triangle.
         x1 = vars(zipper%conn(1, i), 7:9)
@@ -1728,13 +1752,13 @@ bocos:do mm=1,nbocos
         pm = pm*pref
         vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3) - sf
 ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
-! mnm = sqrt((vxm**2 + vym**2 + vzm**2)*rhom/(gammam*pm)) 
+        mnm = sqrt((vxm**2+vym**2+vzm**2)*rhom/(gammam*pm))
         massflowratelocal = rhom*vnm*mredim
         massflowrate = massflowrate + massflowratelocal
         mass_ptot = mass_ptot + ptot*massflowratelocal*pref
         mass_ttot = mass_ttot + ttot*massflowratelocal*tref
         mass_ps = mass_ps + pm*massflowratelocal
-! mass_mn = mass_mn + mnm*massflowratelocal
+        mass_mn = mass_mn + mnm*massflowratelocal
 ! compute the average cell center. 
         xc = zero
         yc = zero
