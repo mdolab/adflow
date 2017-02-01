@@ -432,17 +432,21 @@ python module libadflow
            integer(kind=inttype), optional,intent(in),check(len(blocks)>=nblocks),depend(blocks) :: nblocks=len(blocks)
          end subroutine updaterotationrate
 
-         subroutine preprocessingoverset(flag,n) ! in :test:preprocessingAPI.F90:preprocessingapi
+         subroutine preprocessingoverset(flag,n, closedfamlist, nfam) ! in :test:preprocessingAPI.F90:preprocessingapi
            integer(kind=inttype) dimension(n) :: flag
            integer(kind=inttype), optional,intent(in),check(len(flag)>=n),depend(flag) :: n=len(flag)
+           integer(kind=inttype) dimension(nfam) :: closedfamlist
+           integer(kind=inttype), optional,intent(in),check(len(closedfamlist)>=nfam),depend(closedfamlist) :: nfam=len(closedfamlist)
          end subroutine preprocessingoverset
 
        end module preprocessingapi
 
        module oversetapi
-         subroutine updateoverset(flag, n)
+         subroutine updateoverset(flag, n, closedfamlist, nfam)
            integer(kind=inttype) dimension(n) :: flag
            integer(kind=inttype), optional,intent(in),check(len(flag)>=n),depend(flag) :: n=len(flag)
+           integer(kind=inttype) dimension(nfam) :: closedfamlist
+           integer(kind=inttype), optional,intent(in),check(len(closedfamlist)>=nfam),depend(closedfamlist) :: nfam=len(closedfamlist)
          end subroutine updateoverset
          subroutine writepartitionedmesh(filename)
            character*(*) intent(in) :: filename

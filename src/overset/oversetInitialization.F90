@@ -241,7 +241,7 @@ contains
 
   end subroutine initializeOBlock
 
-  subroutine initializeOFringes(oFringe, nn)
+  subroutine initializeOFringes(oFringe, nn, famList)
 
     ! This subroutine initializes the fringe information for the given
     ! block, level and spectral instance. It is assumed that
@@ -252,14 +252,14 @@ contains
     use overset, only : oversetFringe, clusters, cumDomProc
     use stencils, only : visc_drdw_stencil, N_visc_drdw
     use inputOverset, only :  backgroundVolScale
-    use utils, only : isWallType
+    use sorting, only : bsearchIntegers
     use oversetUtilities, only :  wallsOnBlock, windIndex, unwindindex
     implicit none
 
     ! Input Params
     type(oversetFringe), intent(inout) :: oFringe
     integer(kind=intType), intent(in) :: nn
-
+    integer(kind=intType), intent(in), dimension(:) :: famList
     ! Working Params
     integer(kind=intTYpe) :: i, j, k, mm, iDim, ii, jj, kk, iii, jjj, myI, myJ, myK
     integer(kind=intTYpe) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
@@ -354,8 +354,7 @@ contains
           kStart=kl; kEnd=kl;
        end select
 
-       if (isWallType(BCType(mm)) .or. BCType(mm) == SubsonicOutflow & 
-            .or. BCType(mm) == SubSonicInflow) then 
+       famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then 
           do k=kStart, kEnd
              do j=jStart, jEnd
                 do i=iStart, iEnd
@@ -365,7 +364,7 @@ contains
                 end do
              end do
           end do
-       end if
+       end if famInclude
     end do ! BocoLoop
 
     ! Flag this set of fringes as being allocated
