@@ -222,19 +222,6 @@ class ADFLOW(AeroSolver):
         ntime  = self.adflow.inputtimespectral.ntimeintervalsspectral
         n  = ncells*ntime
 
-        # Call the user supplied callback if necessary
-
-        cutCallBack = self.getOption('cutCallBack')
-        flag = numpy.zeros(n)
-        if cutCallBack is not None:
-            xCen = self.adflow.utils.getcellcenters(1, n).T
-            cutCallBack(xCen, flag)
-        self.adflow.preprocessingapi.preprocessingoverset(flag)
-
-        self.adflow.tecplotio.initializeliftdistributiondata()
-        self.adflow.initializeflow.updatebcdataalllevels()
-        self.adflow.initializeflow.initflow()
-
         famList = self._processFortranStringArray(
             self.adflow.surfacefamilies.famnames)
 
@@ -269,6 +256,28 @@ class ADFLOW(AeroSolver):
         self.meshFamilyGroup = self.getOption('meshSurfaceFamily')
         if self.meshFamilyGroup is None:
             self.meshFamilyGroup = self.allWallsGroup
+
+        # Call the user supplied callback if necessary
+        cutCallBack = self.getOption('cutCallBack')
+        flag = numpy.zeros(n)
+        if cutCallBack is not None:
+            xCen = self.adflow.utils.getcellcenters(1, n).T
+            cutCallBack(xCen, flag)
+
+        # Set the closed surface families if given. Otherwise
+        # default to all walls. 
+        self.closedFamilyGroup = self.getOption('closedSurfaceFamily')
+        if self.closedFamilyGroup is None:
+            self.closedFamilyGroup = self.allWallsGroup
+
+        famList = self._getFamilyList(self.closedFamilyGroup)
+        self.adflow.preprocessingapi.preprocessingoverset(flag, famList)
+
+        self.adflow.tecplotio.initializeliftdistributiondata()
+        self.adflow.initializeflow.updatebcdataalllevels()
+        self.adflow.initializeflow.initflow()
+
+
 
         self.coords0 = self.getSurfaceCoordinates(self.allFamilies)
 
@@ -2804,7 +2813,8 @@ class ADFLOW(AeroSolver):
                         xCen = self.adflow.utils.getcellcenters(1, n).T
                         cutCallBack(xCen, flag)
 
-                self.adflow.oversetapi.updateoverset(flag)
+                famList = self._getFamilyList(self.closedFamilyGroup)
+                self.adflow.oversetapi.updateoverset(flag, famList)
 
             # Update flags
             self._updateGeomInfo = False
@@ -3723,7 +3733,8 @@ class ADFLOW(AeroSolver):
             # Surface definition parameters:
             'meshsurfacefamily':[object, None],
             'designsurfacefamily':[object, None],
-
+            'closedsurfacefamily':[object, None],
+            
             # Output Parameters
             'storerindlayer':[bool, True],
             'outputdirectory':[str, './'],
@@ -3927,7 +3938,7 @@ class ADFLOW(AeroSolver):
                 'mgstartlevel', 'timeintegrationscheme', 'timeaccuracy',
                 'useale', 'timeintervals', 'blocksplitting',
                 'loadimbalance', 'loadbalanceiter', 'partitiononly',
-                'meshSurfaceFamily', 'designSurfaceFamily', 
+                'meshsurfacefamily', 'designsurfacefamily', 'closedsurfaceFamily',
                 'zippersurfacefamily', 'cutcallback')
 
     def _getOptionMap(self):
@@ -4225,6 +4236,7 @@ class ADFLOW(AeroSolver):
                              'liftindex',
                              'meshsurfacefamily',
                              'designsurfacefamily',
+                             'closedsurfacefamily',
                              'zippersurfacefamily',
                              'outputsurfacefamily',
                              'cutcallback',

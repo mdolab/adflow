@@ -236,7 +236,7 @@ contains
 
   end subroutine preprocessing
   
-  subroutine preprocessingoverset(flag, n)
+  subroutine preprocessingoverset(flag, n, closedFamList, nFam)
 
     use constants
     use block, only : flowDoms
@@ -246,7 +246,8 @@ contains
 
     ! Input/Output
     integer(kind=intType), dimension(n) :: flag
-    integer(kind=intType), intent(in) :: n
+    integer(kind=intType), dimension(nFam) :: closedFamList
+    integer(kind=intType), intent(in) :: n, nFam
 
     ! Working 
     integer(kind=intType) :: level, nLevels
@@ -256,9 +257,9 @@ contains
     do level=1,nLevels
        if (level == 1) then 
           call setExplicitHoleCut(flag)
-          call oversetComm(level, .true., .false.)
+          call oversetComm(level, .true., .false., closedFamList)
        else
-          call oversetComm(level, .True., .True.)
+          call oversetComm(level, .True., .True., closedFamList)
        end if
     end do
   end subroutine preprocessingoverset
