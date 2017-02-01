@@ -679,7 +679,7 @@ contains
     ! Working
     real(kind=realType) :: fact, factMoment, ovrNTS
     real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, cForce, cMoment
-    real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgPs, mFlow
+    real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgPs, mFlow, mAvgMn
     integer(kind=intType) :: sps
 
     ! Factor used for time-averaged quantities.
@@ -731,17 +731,21 @@ contains
           mAvgPtot = globalVals(iMassPtot, sps)/mFlow
           mAvgTtot = globalVals(iMassTtot, sps)/mFlow
           mAvgPs   = globalVals(iMassPs, sps)/mFlow
+          mAvgMn   = globalVals(iMassMn, sps)/mFlow
           mFlow = globalVals(iMassFlow, sps)*sqrt(Pref/rhoRef)
+
        else
           mAvgPtot = zero
           mAvgTtot = zero
           mAvgPs = zero
+          mAvgMn = zero
        end if
 
        funcValues(costFuncMdot)      = funcValues(costFuncMdot) + ovrNTS*mFlow
        funcValues(costFuncMavgPtot ) = funcValues(costFuncMavgPtot) + ovrNTS*mAvgPtot
        funcValues(costFuncMavgPtot)  = funcValues(costFuncMavgTtot) + ovrNTS*mAvgTtot
        funcValues(costFuncMavgPs)    = funcValues(costFuncMAvgPs) + ovrNTS*mAvgPs
+       funcValues(costFuncMavgMn)    = funcValues(costFuncMAvgMn) + ovrNTS*mAvgMn
 
        ! Bending moment calc - also broken. 
        ! call computeRootBendingMoment(cForce, cMoment, liftIndex, bendingMoment)
