@@ -749,7 +749,7 @@ contains
     do i=1, size(zipper%conn, 2)
        if (bsearchIntegers(zipper%fam(i) , famList) > 0) then 
           ! Compute the averaged values for this trianlge
-          vxm = zero; vym = zero; vzm = zero; rhom = zero; pm = zero;
+          vxm = zero; vym = zero; vzm = zero; rhom = zero; pm = zero; MNm = zero;
           sF = zero
           do j=1,3
              rhom = rhom + vars(zipper%conn(j, i), iRho)
@@ -782,7 +782,7 @@ contains
           vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3)  - sF
           
           ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
-          MNm = sqrt((vxm**2 + vym**2 + vzm**2)*rhom/(gammam*pm)) 
+          ! MNm = sqrt((vxm**2 + vym**2 + vzm**2)*rhom/(gammam*pm)) 
 
           massFlowRateLocal = rhom*vnm*mReDim
           massFlowRate = massFlowRate + massFlowRateLocal
@@ -790,7 +790,7 @@ contains
           mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
           mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
           mass_Ps = mass_Ps + pm*massFlowRateLocal
-          mass_MN = mass_MN + MNm*massFlowRateLocal
+          ! mass_MN = mass_MN + MNm*massFlowRateLocal
           
           ! Compute the average cell center. 
           xc = zero
