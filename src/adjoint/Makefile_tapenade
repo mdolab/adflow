@@ -177,7 +177,7 @@ adjointExtra%resScale(dw) > (dw) \
 surfaceIntegrations%wallIntegrationFace(Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues, BCData%Fp, bcData%Fv, BCData%area, localValues) > \
                                        (Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues, BCdata%Fp, bcData%Fv, BCData%area, localValues)\
 \
-surfaceIntegrations%flowIntegrationFace(Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues) > \
+surfaceIntegrations%flowIntegrationFace(Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, gamma1, gamma2 xx, ssi, pointRef, localValues) > \
                                        (Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues)\
 \
 surfaceIntegrations%wallIntegrationZipper(vars, pointRef, localValues) > \

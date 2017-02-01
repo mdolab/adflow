@@ -171,9 +171,9 @@ contains
     use constants
     use blockpointers, only : bcdata, bcdatad
     use flowvarrefstate, only : viscous, eddymodel
-    use bcpointers_b, only : gamma1, gamma2, ww1, ww1d, ww2, ww2d, pp1, &
-&   pp1d, pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, istart, jstart, isize, &
-&   jsize, rev1, rev1d, rev2, rev2d
+    use bcpointers_b, only : gamma1, gamma1d, gamma2, gamma2d, ww1, ww1d&
+&   , ww2, ww2d, pp1, pp1d, pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, istart,&
+&   jstart, isize, jsize, rev1, rev1d, rev2, rev2d
     implicit none
 ! subroutine arguments.
     integer(kind=inttype), intent(in) :: nn
@@ -2077,8 +2077,8 @@ contains
 &   winfd, pinfcorr, pinfcorrd
     use bcpointers_b, only : ww0, ww0d, ww1, ww1d, ww2, ww2d, pp0, pp0d,&
 &   pp1, pp1d, pp2, pp2d, rlv0, rlv0d, rlv1, rlv1d, rlv2, rlv2d, rev0, &
-&   rev0d, rev1, rev1d, rev2, rev2d, gamma2, istart, jstart, isize, &
-&   jsize
+&   rev0d, rev1, rev1d, rev2, rev2d, gamma2, gamma2d, istart, jstart, &
+&   isize, jsize
     implicit none
 ! subroutine arguments.
     logical, intent(in) :: secondhalo, correctfork
