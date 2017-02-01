@@ -94,6 +94,7 @@
  'nkswitchtol': 0.01,
  'nkuseew': True,
  'nkviscpc': False,
+ 'nrefine': 10,
  'nrkreset': 5,
  'nsavesurface': 1,
  'nsavevolume': 1,
@@ -106,7 +107,9 @@
  'outputdirectory': './',
  'outputsurfacefamily': 'allSurfaces',
  'overlapfactor': 0.9,
+ 'oversetloadbalance': True,
  'oversetprojtol': 1e-12,
+ 'oversetupdatemode': 'frozen',
  'partitionlikenproc': -1,
  'partitiononly': False,
  'pmode': False,
@@ -232,14 +235,15 @@
   CGNS Surface Families by Boundary Condition Type
 +--------------------------------------------------+
 | Wall Types           : wall 
-| Inflow/Outflow Types : inflow outflow 
+| Inflow Types : inflow 
+| Outflow Types : outflow 
 | Symmetry Types       : sym 
 | Farfield Types       : 
 | Oveset Types         : 
-| Other Types          : 
 +--------------------------------------------------+
+   0.0000000000000000     
 #
-# Grid 2: Performing 500 iterations, unless converged earlier
+# Grid 2: Performing 500 iterations, unless converged earlier. Minimum required iteration before NK switch:      5. Switch to NK at totalR of:   0.00E+00
 #
 #------------------------------------------------------------------------------------------
 #  Grid  | Iter | Iter | Iter |   CFL   |        Res rho         |        totalRes        |
@@ -635,8 +639,9 @@
 #
 # Going down to grid level 1
 #
+  0.74362809980799749     
 #
-# Grid 1: Performing 2500 iterations, unless converged earlier
+# Grid 1: Performing 2500 iterations, unless converged earlier. Minimum required iteration before NK switch:      5. Switch to NK at totalR of:   0.74E+00
 #
 #------------------------------------------------------------------------------------------
 #  Grid  | Iter | Iter | Iter |   CFL   |        Res rho         |        totalRes        |
@@ -673,10 +678,7 @@
       1      28     28   DADI   0.30E+01   0.6996583540980436E-02   0.1153129309843731E+01 
       1      29     29   DADI   0.30E+01   0.6691649628396242E-02   0.1100956387753969E+01 
       1      30     30   DADI   0.30E+01   0.6426067064437225E-02   0.1054415213009112E+01 
-      1      31     31   DADI   0.30E+01   0.6173954681097279E-02   0.1009409135792262E+01 
-      1      32     32   DADI   0.30E+01   0.5903773197140149E-02   0.9608531684949695E+00 
-      1      33     33   DADI   0.30E+01   0.5607576565473033E-02   0.9075149642638232E+00 
-Solution Time:      1.251 sec
+      1      31     31   DADI   0.30E+01   0.6173954681097279E-02   0.1009409135792262E+01 Solution Time:      1.241 sec
 -> Alpha... 0.000000 
 Norm of residual
 @value  9.4335086953433e-15 1e-10 1e-10
@@ -684,6 +686,10 @@ Norm of state vector
 @value  1.4641998475137e+02 1e-10 1e-10
 -> Alpha... 0.000000 
 Eval Functions:
+Dictionary Key: conv_nozzle_mavgmn_down
+@value  5.7637019081625e-01 1e-10 1e-10
+Dictionary Key: conv_nozzle_mavgmn_up
+@value  2.4639215369572e-01 1e-10 1e-10
 Dictionary Key: conv_nozzle_mavgps_down
 @value  7.9893628992574e+04 1e-10 1e-10
 Dictionary Key: conv_nozzle_mavgps_up
@@ -704,6 +710,9 @@ Dictionary Key: conv_nozzle_mdot_up
 @value  7.4004620391894e+01 1e-10 1e-10
 Dictionary Key: conv_nozzle_thrust
 @value -2.6696313274900e+04 1e-10 1e-10
+
+      1      32     32   DADI   0.30E+01   0.5903773197140149E-02   0.9608531684949695E+00 
+      1      33     33   DADI   0.30E+01   0.5607576565473033E-02   0.9075149642638232E+00 
       1      34     34   DADI   0.30E+01   0.5303991429338052E-02   0.8526123082774980E+00 
       1      35     35   DADI   0.30E+01   0.5016404081431623E-02   0.8002991863525685E+00 
       1      36     36   DADI   0.30E+01   0.4757090170618968E-02   0.7529602313002222E+00 
