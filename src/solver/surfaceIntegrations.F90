@@ -713,7 +713,7 @@ contains
     integer(kind=intType) :: i, j
     real(kind=realType) :: sF, vnm, vxm, vym, vzm, mReDim, Fx, Fy, Fz
     real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint, ss, x1, x2, x3, norm
-    real(kind=realType) :: pm, Ptot, Ttot, rhom, MNm, massFlowRateLocal
+    real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, MNm, massFlowRateLocal
     real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN
     real(kind=realType) :: internalFlowFact, inflowFact, xc, yc, zc, cellArea, mx, my, mz
 
@@ -757,7 +757,8 @@ contains
              vym = vym + vars(zipper%conn(j, i), iVy)
              vzm = vzm + vars(zipper%conn(j, i), iVz)
              pm = pm + vars(zipper%conn(j, i), iRhoE)
-             sF = sF + vars(zipper%conn(j, i), 6)
+             gammam = gammam + vars(zipper%conn(j, i), 6)
+             sF = sF + vars(zipper%conn(j, i), 7)
           end do
 
           ! Divide by 3 due to the summation above:
@@ -766,6 +767,7 @@ contains
           vym = third*vym
           vzm = third*vzm
           pm = third*pm
+          gammam = third*gammam
           sF = third*sF
 
           ! Get the nodes of triangle.
@@ -782,7 +784,7 @@ contains
           vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3)  - sF
           
           ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
-          ! MNm = sqrt((vxm**2 + vym**2 + vzm**2)*rhom/(gammam*pm)) 
+          MNm = sqrt((vxm**2 + vym**2 + vzm**2)*rhom/(gammam*pm)) 
 
           massFlowRateLocal = rhom*vnm*mReDim
           massFlowRate = massFlowRate + massFlowRateLocal
@@ -790,7 +792,7 @@ contains
           mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
           mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
           mass_Ps = mass_Ps + pm*massFlowRateLocal
-          ! mass_MN = mass_MN + MNm*massFlowRateLocal
+          mass_MN = mass_MN + MNm*massFlowRateLocal
           
           ! Compute the average cell center. 
           xc = zero
