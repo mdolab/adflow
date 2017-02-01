@@ -805,7 +805,7 @@ bocos:do mm=1,nbocos
     use blockpointers, only : bctype, bcfaceid, bcdata, bcdatad, &
 &   addgridvelocities
     use costfunctions, only : nlocalvalues, imassflow, imassptot, &
-&   imassttot, imassps
+&   imassttot, imassps, imassmn
     use sorting, only : bsearchintegers
     use flowvarrefstate, only : pref, prefd, pinf, pinfd, rhoref, &
 &   rhorefd, timeref, timerefd, lref, tref, trefd, rgas, rgasd
@@ -813,7 +813,7 @@ bocos:do mm=1,nbocos
     use flowutils_d, only : computeptot, computeptot_d, computettot, &
 &   computettot_d
     use bcpointers_d, only : ssi, ssid, sface, ww1, ww1d, ww2, ww2d, pp1&
-&   , pp1d, pp2, pp2d, xx, xxd
+&   , pp1d, pp2, pp2d, xx, xxd, gamma1, gamma2
     use utils_d, only : mynorm2, mynorm2_d
     implicit none
 ! input/output variables
@@ -824,9 +824,10 @@ bocos:do mm=1,nbocos
 &   localvaluesd
     integer(kind=inttype), intent(in) :: mm
 ! local variables
-    real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps
+    real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps, &
+&   mass_mn
     real(kind=realtype) :: massflowrated, mass_ptotd, mass_ttotd, &
-&   mass_psd
+&   mass_psd, mass_mnd
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: internalflowfact, fact, xc, yc, zc, cellarea&
 &   , mx, my, mz
@@ -834,18 +835,23 @@ bocos:do mm=1,nbocos
     real(kind=realtype) :: sf, vnm, vxm, vym, vzm, mredim, fx, fy, fz
     real(kind=realtype) :: vnmd, vxmd, vymd, vzmd, mredimd, fxd, fyd, &
 &   fzd
-    real(kind=realtype) :: pm, ptot, ttot, rhom, massflowratelocal
-    real(kind=realtype) :: pmd, ptotd, ttotd, rhomd, massflowratelocald
+    real(kind=realtype) :: pm, ptot, ttot, rhom, gammam, a2, mnm, &
+&   massflowratelocal
+    real(kind=realtype) :: pmd, ptotd, ttotd, rhomd, mnmd, &
+&   massflowratelocald
     real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint
     real(kind=realtype), dimension(3) :: fpd, mpd, fmomd, mmomd, &
 &   refpointd
     intrinsic sqrt
     intrinsic mod
     intrinsic max
+    real(kind=realtype) :: arg1
+    real(kind=realtype) :: arg1d
     massflowrate = zero
     mass_ptot = zero
     mass_ttot = zero
     mass_ps = zero
+    mass_mn = zero
     refpointd = 0.0_8
     refpointd(1) = lref*pointrefd(1)
     refpoint(1) = lref*pointref(1)
@@ -890,6 +896,7 @@ bocos:do mm=1,nbocos
     mmomd = 0.0_8
     ptotd = 0.0_8
     mass_psd = 0.0_8
+    mass_mnd = 0.0_8
     mass_ttotd = 0.0_8
     fpd = 0.0_8
     fmomd = 0.0_8
@@ -921,9 +928,21 @@ bocos:do mm=1,nbocos
       rhom = half*(ww1(i, j, irho)+ww2(i, j, irho))
       pmd = half*(pp1d(i, j)+pp2d(i, j))
       pm = half*(pp1(i, j)+pp2(i, j))
+      gammam = half*(gamma1(i, j)+gamma2(i, j))
       vnmd = vxmd*ssi(i, j, 1) + vxm*ssid(i, j, 1) + vymd*ssi(i, j, 2) +&
 &       vym*ssid(i, j, 2) + vzmd*ssi(i, j, 3) + vzm*ssid(i, j, 3)
       vnm = vxm*ssi(i, j, 1) + vym*ssi(i, j, 2) + vzm*ssi(i, j, 3) - sf
+! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
+      arg1d = (((2*vxm*vxmd+2*vym*vymd+2*vzm*vzmd)*rhom+(vxm**2+vym**2+&
+&       vzm**2)*rhomd)*gammam*pm-(vxm**2+vym**2+vzm**2)*rhom*gammam*pmd)&
+&       /(gammam*pm)**2
+      arg1 = (vxm**2+vym**2+vzm**2)*rhom/(gammam*pm)
+      if (arg1 .eq. 0.0_8) then
+        mnmd = 0.0_8
+      else
+        mnmd = arg1d/(2.0*sqrt(arg1))
+      end if
+      mnm = sqrt(arg1)
       call computeptot_d(rhom, rhomd, vxm, vxmd, vym, vymd, vzm, vzmd, &
 &                  pm, pmd, ptot, ptotd)
       call computettot_d(rhom, rhomd, vxm, vxmd, vym, vymd, vzm, vzmd, &
@@ -944,6 +963,9 @@ bocos:do mm=1,nbocos
       mass_psd = mass_psd + pmd*massflowratelocal + pm*&
 &       massflowratelocald
       mass_ps = mass_ps + pm*massflowratelocal
+      mass_mnd = mass_mnd + mnmd*massflowratelocal + mnm*&
+&       massflowratelocald
+      mass_mn = mass_mn + mnm*massflowratelocal
       xcd = fourth*(xxd(i, j, 1)+xxd(i+1, j, 1)+xxd(i, j+1, 1)+xxd(i+1, &
 &       j+1, 1)) - refpointd(1)
       xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
@@ -961,7 +983,6 @@ bocos:do mm=1,nbocos
 ! computation on the walls. 
       pmd = -(fact*blk*(pmd-pinf*prefd))
       pm = -((pm-pinf*pref)*fact*blk)
-! print *, "foo", mm, pm, pinf*pref
       fxd = pmd*ssi(i, j, 1) + pm*ssid(i, j, 1)
       fx = pm*ssi(i, j, 1)
       fyd = pmd*ssi(i, j, 2) + pm*ssid(i, j, 2)
@@ -1045,6 +1066,8 @@ bocos:do mm=1,nbocos
     localvalues(imassttot) = localvalues(imassttot) + mass_ttot
     localvaluesd(imassps) = localvaluesd(imassps) + mass_psd
     localvalues(imassps) = localvalues(imassps) + mass_ps
+    localvaluesd(imassmn) = localvaluesd(imassmn) + mass_mnd
+    localvalues(imassmn) = localvalues(imassmn) + mass_mn
     localvaluesd(iflowfp:iflowfp+2) = localvaluesd(iflowfp:iflowfp+2) + &
 &     fpd
     localvalues(iflowfp:iflowfp+2) = localvalues(iflowfp:iflowfp+2) + fp
@@ -1066,13 +1089,14 @@ bocos:do mm=1,nbocos
     use blockpointers, only : bctype, bcfaceid, bcdata, &
 &   addgridvelocities
     use costfunctions, only : nlocalvalues, imassflow, imassptot, &
-&   imassttot, imassps
+&   imassttot, imassps, imassmn
     use sorting, only : bsearchintegers
     use flowvarrefstate, only : pref, pinf, rhoref, timeref, lref, &
 &   tref, rgas
     use inputphysics, only : pointref, flowtype
     use flowutils_d, only : computeptot, computettot
-    use bcpointers_d, only : ssi, sface, ww1, ww2, pp1, pp2, xx
+    use bcpointers_d, only : ssi, sface, ww1, ww2, pp1, pp2, xx, gamma1,&
+&   gamma2
     use utils_d, only : mynorm2
     implicit none
 ! input/output variables
@@ -1081,20 +1105,24 @@ bocos:do mm=1,nbocos
 &   localvalues
     integer(kind=inttype), intent(in) :: mm
 ! local variables
-    real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps
+    real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps, &
+&   mass_mn
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: internalflowfact, fact, xc, yc, zc, cellarea&
 &   , mx, my, mz
     real(kind=realtype) :: sf, vnm, vxm, vym, vzm, mredim, fx, fy, fz
-    real(kind=realtype) :: pm, ptot, ttot, rhom, massflowratelocal
+    real(kind=realtype) :: pm, ptot, ttot, rhom, gammam, a2, mnm, &
+&   massflowratelocal
     real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint
     intrinsic sqrt
     intrinsic mod
     intrinsic max
+    real(kind=realtype) :: arg1
     massflowrate = zero
     mass_ptot = zero
     mass_ttot = zero
     mass_ps = zero
+    mass_mn = zero
     refpoint(1) = lref*pointref(1)
     refpoint(2) = lref*pointref(2)
     refpoint(3) = lref*pointref(3)
@@ -1146,7 +1174,11 @@ bocos:do mm=1,nbocos
       vzm = half*(ww1(i, j, ivz)+ww2(i, j, ivz))
       rhom = half*(ww1(i, j, irho)+ww2(i, j, irho))
       pm = half*(pp1(i, j)+pp2(i, j))
+      gammam = half*(gamma1(i, j)+gamma2(i, j))
       vnm = vxm*ssi(i, j, 1) + vym*ssi(i, j, 2) + vzm*ssi(i, j, 3) - sf
+! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
+      arg1 = (vxm**2+vym**2+vzm**2)*rhom/(gammam*pm)
+      mnm = sqrt(arg1)
       call computeptot(rhom, vxm, vym, vzm, pm, ptot)
       call computettot(rhom, vxm, vym, vzm, pm, ttot)
       pm = pm*pref
@@ -1155,6 +1187,7 @@ bocos:do mm=1,nbocos
       mass_ptot = mass_ptot + ptot*massflowratelocal*pref
       mass_ttot = mass_ttot + ttot*massflowratelocal*tref
       mass_ps = mass_ps + pm*massflowratelocal
+      mass_mn = mass_mn + mnm*massflowratelocal
       xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
 &       1)) - refpoint(1)
       yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
@@ -1165,7 +1198,6 @@ bocos:do mm=1,nbocos
 ! the reference pressure sign to be consistent with the force 
 ! computation on the walls. 
       pm = -((pm-pinf*pref)*fact*blk)
-! print *, "foo", mm, pm, pinf*pref
       fx = pm*ssi(i, j, 1)
       fy = pm*ssi(i, j, 2)
       fz = pm*ssi(i, j, 3)
@@ -1210,6 +1242,7 @@ bocos:do mm=1,nbocos
     localvalues(imassptot) = localvalues(imassptot) + mass_ptot
     localvalues(imassttot) = localvalues(imassttot) + mass_ttot
     localvalues(imassps) = localvalues(imassps) + mass_ps
+    localvalues(imassmn) = localvalues(imassmn) + mass_mn
     localvalues(iflowfp:iflowfp+2) = localvalues(iflowfp:iflowfp+2) + fp
     localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
 &     fmom
@@ -1228,7 +1261,7 @@ bocos:do mm=1,nbocos
 ! integrate over the trianges for the inflow/outflow conditions. 
     use constants
     use costfunctions, only : nlocalvalues, imassflow, imassptot, &
-&   imassttot, imassps, iflowmm, iflowmp, iflowfm, iflowfp
+&   imassttot, imassps, iflowmm, iflowmp, iflowfm, iflowfp, imassmn
     use blockpointers, only : bctype
     use sorting, only : bsearchintegers
     use flowvarrefstate, only : pref, prefd, pinf, pinfd, rhoref, &
@@ -1261,17 +1294,22 @@ bocos:do mm=1,nbocos
 &   ss, x1, x2, x3, norm
     real(kind=realtype), dimension(3) :: fpd, mpd, fmomd, mmomd, &
 &   refpointd, ssd, x1d, x2d, x3d, normd
-    real(kind=realtype) :: pm, ptot, ttot, rhom, massflowratelocal
-    real(kind=realtype) :: pmd, ptotd, ttotd, rhomd, massflowratelocald
-    real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps
+    real(kind=realtype) :: pm, ptot, ttot, rhom, gammam, mnm, &
+&   massflowratelocal
+    real(kind=realtype) :: pmd, ptotd, ttotd, rhomd, gammamd, mnmd, &
+&   massflowratelocald
+    real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps, &
+&   mass_mn
     real(kind=realtype) :: massflowrated, mass_ptotd, mass_ttotd, &
-&   mass_psd
+&   mass_psd, mass_mnd
     real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, &
 &   cellarea, mx, my, mz
     real(kind=realtype) :: xcd, ycd, zcd, mxd, myd, mzd
     real(kind=realtype), dimension(:), pointer :: localptr
     intrinsic sqrt
     intrinsic size
+    real(kind=realtype) :: arg1
+    real(kind=realtype) :: arg1d
     real(kind=realtype) :: result1
     real(kind=realtype) :: result1d
     massflowrate = zero
@@ -1305,8 +1343,10 @@ bocos:do mm=1,nbocos
       normd = 0.0_8
       ptotd = 0.0_8
       mass_psd = 0.0_8
+      mass_mnd = 0.0_8
       mass_ttotd = 0.0_8
       fpd = 0.0_8
+      gammamd = 0.0_8
       fmomd = 0.0_8
       ttotd = 0.0_8
       massflowrated = 0.0_8
@@ -1317,8 +1357,10 @@ bocos:do mm=1,nbocos
       normd = 0.0_8
       ptotd = 0.0_8
       mass_psd = 0.0_8
+      mass_mnd = 0.0_8
       mass_ttotd = 0.0_8
       fpd = 0.0_8
+      gammamd = 0.0_8
       fmomd = 0.0_8
       ttotd = 0.0_8
       massflowrated = 0.0_8
@@ -1332,6 +1374,7 @@ bocos:do mm=1,nbocos
         vzm = zero
         rhom = zero
         pm = zero
+        mnm = zero
         sf = zero
         vxmd = 0.0_8
         vymd = 0.0_8
@@ -1350,8 +1393,10 @@ bocos:do mm=1,nbocos
           vzm = vzm + vars(zipper%conn(j, i), ivz)
           pmd = pmd + varsd(zipper%conn(j, i), irhoe)
           pm = pm + vars(zipper%conn(j, i), irhoe)
-          sfd = sfd + varsd(zipper%conn(j, i), 6)
-          sf = sf + vars(zipper%conn(j, i), 6)
+          gammamd = gammamd + varsd(zipper%conn(j, i), 6)
+          gammam = gammam + vars(zipper%conn(j, i), 6)
+          sfd = sfd + varsd(zipper%conn(j, i), 7)
+          sf = sf + vars(zipper%conn(j, i), 7)
         end do
 ! divide by 3 due to the summation above:
         rhomd = third*rhomd
@@ -1364,6 +1409,8 @@ bocos:do mm=1,nbocos
         vzm = third*vzm
         pmd = third*pmd
         pm = third*pm
+        gammamd = third*gammamd
+        gammam = third*gammam
         sfd = third*sfd
         sf = third*sf
 ! get the nodes of triangle.
@@ -1386,6 +1433,17 @@ bocos:do mm=1,nbocos
         vnmd = vxmd*ss(1) + vxm*ssd(1) + vymd*ss(2) + vym*ssd(2) + vzmd*&
 &         ss(3) + vzm*ssd(3) - sfd
         vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3) - sf
+! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
+        arg1d = (((2*vxm*vxmd+2*vym*vymd+2*vzm*vzmd)*rhom+(vxm**2+vym**2&
+&         +vzm**2)*rhomd)*gammam*pm-(vxm**2+vym**2+vzm**2)*rhom*(gammamd&
+&         *pm+gammam*pmd))/(gammam*pm)**2
+        arg1 = (vxm**2+vym**2+vzm**2)*rhom/(gammam*pm)
+        if (arg1 .eq. 0.0_8) then
+          mnmd = 0.0_8
+        else
+          mnmd = arg1d/(2.0*sqrt(arg1))
+        end if
+        mnm = sqrt(arg1)
         massflowratelocald = (rhomd*vnm+rhom*vnmd)*mredim + rhom*vnm*&
 &         mredimd
         massflowratelocal = rhom*vnm*mredim
@@ -1400,6 +1458,9 @@ bocos:do mm=1,nbocos
         mass_psd = mass_psd + pmd*massflowratelocal + pm*&
 &         massflowratelocald
         mass_ps = mass_ps + pm*massflowratelocal
+        mass_mnd = mass_mnd + mnmd*massflowratelocal + mnm*&
+&         massflowratelocald
+        mass_mn = mass_mn + mnm*massflowratelocal
 ! compute the average cell center. 
         xc = zero
         yc = zero
@@ -1507,6 +1568,8 @@ bocos:do mm=1,nbocos
     localvalues(imassttot) = localvalues(imassttot) + mass_ttot
     localvaluesd(imassps) = localvaluesd(imassps) + mass_psd
     localvalues(imassps) = localvalues(imassps) + mass_ps
+    localvaluesd(imassmn) = localvaluesd(imassmn) + mass_mnd
+    localvalues(imassmn) = localvalues(imassmn) + mass_mn
     localvaluesd(iflowfp:iflowfp+2) = localvaluesd(iflowfp:iflowfp+2) + &
 &     fpd
     localvalues(iflowfp:iflowfp+2) = localvalues(iflowfp:iflowfp+2) + fp
@@ -1527,7 +1590,7 @@ bocos:do mm=1,nbocos
 ! integrate over the trianges for the inflow/outflow conditions. 
     use constants
     use costfunctions, only : nlocalvalues, imassflow, imassptot, &
-&   imassttot, imassps, iflowmm, iflowmp, iflowfm, iflowfp
+&   imassttot, imassps, iflowmm, iflowmp, iflowfm, iflowfp, imassmn
     use blockpointers, only : bctype
     use sorting, only : bsearchintegers
     use flowvarrefstate, only : pref, pinf, rhoref, pref, timeref, &
@@ -1551,13 +1614,16 @@ bocos:do mm=1,nbocos
     real(kind=realtype) :: sf, vnm, vxm, vym, vzm, mredim, fx, fy, fz
     real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint, &
 &   ss, x1, x2, x3, norm
-    real(kind=realtype) :: pm, ptot, ttot, rhom, massflowratelocal
-    real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps
+    real(kind=realtype) :: pm, ptot, ttot, rhom, gammam, mnm, &
+&   massflowratelocal
+    real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps, &
+&   mass_mn
     real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, &
 &   cellarea, mx, my, mz
     real(kind=realtype), dimension(:), pointer :: localptr
     intrinsic sqrt
     intrinsic size
+    real(kind=realtype) :: arg1
     real(kind=realtype) :: result1
     massflowrate = zero
     mass_ptot = zero
@@ -1583,6 +1649,7 @@ bocos:do mm=1,nbocos
         vzm = zero
         rhom = zero
         pm = zero
+        mnm = zero
         sf = zero
         do j=1,3
           rhom = rhom + vars(zipper%conn(j, i), irho)
@@ -1590,7 +1657,8 @@ bocos:do mm=1,nbocos
           vym = vym + vars(zipper%conn(j, i), ivy)
           vzm = vzm + vars(zipper%conn(j, i), ivz)
           pm = pm + vars(zipper%conn(j, i), irhoe)
-          sf = sf + vars(zipper%conn(j, i), 6)
+          gammam = gammam + vars(zipper%conn(j, i), 6)
+          sf = sf + vars(zipper%conn(j, i), 7)
         end do
 ! divide by 3 due to the summation above:
         rhom = third*rhom
@@ -1598,6 +1666,7 @@ bocos:do mm=1,nbocos
         vym = third*vym
         vzm = third*vzm
         pm = third*pm
+        gammam = third*gammam
         sf = third*sf
 ! get the nodes of triangle.
         x1 = vars(zipper%conn(1, i), 7:9)
@@ -1609,11 +1678,15 @@ bocos:do mm=1,nbocos
         call computettot(rhom, vxm, vym, vzm, pm, ttot)
         pm = pm*pref
         vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3) - sf
+! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
+        arg1 = (vxm**2+vym**2+vzm**2)*rhom/(gammam*pm)
+        mnm = sqrt(arg1)
         massflowratelocal = rhom*vnm*mredim
         massflowrate = massflowrate + massflowratelocal
         mass_ptot = mass_ptot + ptot*massflowratelocal*pref
         mass_ttot = mass_ttot + ttot*massflowratelocal*tref
         mass_ps = mass_ps + pm*massflowratelocal
+        mass_mn = mass_mn + mnm*massflowratelocal
 ! compute the average cell center. 
         xc = zero
         yc = zero
@@ -1670,6 +1743,7 @@ bocos:do mm=1,nbocos
     localvalues(imassptot) = localvalues(imassptot) + mass_ptot
     localvalues(imassttot) = localvalues(imassttot) + mass_ttot
     localvalues(imassps) = localvalues(imassps) + mass_ps
+    localvalues(imassmn) = localvalues(imassmn) + mass_mn
     localvalues(iflowfp:iflowfp+2) = localvalues(iflowfp:iflowfp+2) + fp
     localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
 &     fmom
