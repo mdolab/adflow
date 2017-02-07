@@ -97,6 +97,60 @@ contains
 
   end subroutine integrateSurfaces
 
+  subroutine integrateSurfacesWithGathered(globalCFValues, localValues, famList) 
+    ! This is a shell routine that calls the specific surface
+    ! integration routines, which need access to gethered values. This routine
+    ! takes care of setting pointers, while the actual computational
+    ! routine just acts on a specific fast pointed to by pointers. 
+
+    use constants
+    use costFunctions
+    use blockPointers, only : nBocos, BCData, BCType, sk, sj, si, x, rlv, &
+         sfacei, sfacej, sfacek, gamma, rev, p, viscSubface
+    use utils, only : setBCPointers, isWallType
+    use sorting, only : bsearchIntegers
+    use costFunctions, only : nLocalValues
+    ! Tapenade needs to see these modules that the callees use.
+    use BCPointers 
+    use flowVarRefState
+    use inputPhysics
+
+    implicit none
+
+    ! Input/output Variables
+    real(kind=realType), dimension(nCostFunction), intent(in) :: globalCFValues
+    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
+    integer(kind=intType), dimension(:), intent(in) :: famList
+    ! Working variables
+    integer(kind=intType) :: mm
+
+    ! Loop over all possible boundary conditions
+    bocos: do mm=1, nBocos
+       
+       ! Determine if this boundary condition is to be incldued in the
+       ! currently active group
+       famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then
+          
+          ! Set a bunch of pointers depending on the face id to make
+          ! a generic treatment possible. 
+          call setBCPointers(mm, .True.)
+
+          ! no wall functions yet
+          ! isWall: if( isWallType(BCType(mm))) then 
+          !    call wallIntegrationFace(localvalues, mm)
+          ! end if isWall
+
+          isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
+               BCType(mm) == SupersonicInflow) then 
+               call flowIntegrationFaceWithGathered(.true., globalCFValues, localValues, mm)
+            else if (BCType(mm) == SubsonicOutflow .or. &
+               BCType(mm) == SupersonicOutflow) then 
+               call flowIntegrationFaceWithGathered(.false., globalCFValues, localValues, mm)
+          end if isInflowOutflow
+       end if famInclude
+    end do bocos
+  end subroutine integrateSurfacesWithGathered
+
 #ifndef USE_TAPENADE
 #ifndef USE_COMPLEX
   subroutine integrateSurfaces_d(localValues, localValuesd, famList)
@@ -524,8 +578,8 @@ contains
     ! Local variables
     real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN
     integer(kind=intType) :: i, j, ii, blk
-    real(kind=realType) :: internalFlowFact, fact, xc, yc, zc, cellArea, mx, my, mz
-    real(kind=realType) :: sF, vnm, vxm, vym, vzm, mReDim, Fx, Fy, Fz
+    real(kind=realType) :: internalFlowFact, inFlowFact, fact, xc, yc, zc, cellArea, mx, my, mz
+    real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, Fx, Fy, Fz
     real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, a2, MNm, massFlowRateLocal
     real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint
 
@@ -557,6 +611,11 @@ contains
       internalFlowFact = -one
     end if
 
+    inFlowFact = one
+    if (isInflow) then 
+      inflowFact=-one
+    end if
+
     ! Loop over the quadrilateral faces of the subface. Note that
     ! the nodal range of BCData must be used and not the cell
     ! range, because the latter may include the halo's in i and
@@ -567,7 +626,6 @@ contains
     ! do j=(BCData(mm)%jnBeg+1),BCData(mm)%jnEnd
     !    do i=(BCData(mm)%inBeg+1),BCData(mm)%inEnd
     
-    mReDim = sqrt(pRef*rhoRef)
     Fp = zero
     Mp = zero
     FMom = zero
@@ -596,16 +654,16 @@ contains
 
 
       vnm = vxm*ssi(i,j,1) + vym*ssi(i,j,2) + vzm*ssi(i,j,3)  - sF
-
+      vmag = sqrt((vxm**2 + vym**2 + vzm**2)) - sF
       ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
-      MNm = sqrt((vxm**2 + vym**2 + vzm**2)*rhom/(gammam*pm)) 
+      MNm = vmag/sqrt(gammam*pm/rhom)
 
       call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
       call computeTtot(rhom, vxm, vym, vzm, pm, Ttot)
 
       pm = pm*pRef
 
-      massFlowRateLocal = rhom*vnm*mReDim*blk*fact
+      massFlowRateLocal = rhom*vnm*blk*fact/timeRef
       massFlowRate = massFlowRate + massFlowRateLocal
 
       mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
@@ -629,7 +687,6 @@ contains
       fy = pm*ssi(i,j,2)
       fz = pm*ssi(i,j,3)
 
-
       ! Update the pressure force and moment coefficients.
       Fp(1) = Fp(1) + fx
       Fp(2) = Fp(2) + fy
@@ -648,12 +705,8 @@ contains
       ! we need the signed behavior of ssi to get the momentum forces correct. 
       ! Also, the sign is flipped between inflow and outflow types 
       cellArea = mynorm2(ssi(i,j,:))
-      select case (BCType(mm))
-        case (SubsonicInflow, SupersonicInflow)
-          massFlowRateLocal = -massFlowRateLocal*fact/timeRef*blk/cellArea*internalFlowFact
-        case (SubsonicOutflow, SupersonicOutflow)
-          massFlowRateLocal = massFlowRateLocal*fact/timeRef*blk/cellArea*internalFlowFact
-      end select
+      massFlowRateLocal = massFlowRateLocal*fact/timeRef*blk/cellArea*internalFlowFact*inFlowFact
+
       fx = massFlowRateLocal * ssi(i,j,1)*vxm
       fy = massFlowRateLocal * ssi(i,j,2)*vym
       fz = massFlowRateLocal * ssi(i,j,3)*vzm
@@ -684,6 +737,99 @@ contains
     localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
 
   end subroutine flowIntegrationFace
+
+  subroutine flowIntegrationFaceWithGathered(isInflow, globalCFVals, localValues, mm)
+    use constants
+    use costFunctions
+    use blockPointers, only : BCType, BCFaceID, BCData, addGridVelocities
+    use costFunctions, onlY : nLocalValues, iMassFlow, iMassPtot, iMassTtot, iMassPs, iMassMN
+    use sorting, only : bsearchIntegers
+    use flowVarRefState, only : pRef, pInf, rhoRef, timeRef, LRef, TRef, RGas
+    use inputPhysics, only : pointRef, flowType
+    use flowUtils, only : computePtot, computeTtot
+    use BCPointers, only : ssi, sFace, ww1, ww2, pp1, pp2, xx, gamma1, gamma2
+    use utils, only : mynorm2
+    implicit none
+
+    ! Input/Output variables
+    logical, intent(in) :: isInflow
+    real(kind=realType), dimension(nCostFunction), intent(in) :: globalCFVals
+    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
+    integer(kind=intType), intent(in) :: mm
+
+    ! Local variables
+    integer(kind=intType) :: i, j, ii, blk
+    real(kind=realType) :: internalFlowFact, fact, xc, yc, zc, cellArea, mx, my, mz
+    real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, mReDim
+    real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, a2
+    real(kind=realType) :: MNm, massFlowRateLocal, massAvgMN
+
+    ! Note that these are *opposite* of force integrations. The reason
+    ! is that we want positive mass flow into the domain and negative
+    ! mass flow out of the domain. Since the low faces have ssi
+    ! vectors pointining into the domain, this is correct. The high
+    ! end faces need to flip this. 
+    select case (BCFaceID(mm))
+    case (iMin, jMin, kMin)
+       fact = one
+    case (iMax, jMax, kMax)
+       fact = -one
+    end select
+
+    ! the sign of momentum forces are flipped for internal flows
+    internalFlowFact = one
+    if (flowType == internalFlow) then 
+      internalFlowFact = -one
+    end if
+
+    ! Loop over the quadrilateral faces of the subface. Note that
+    ! the nodal range of BCData must be used and not the cell
+    ! range, because the latter may include the halo's in i and
+    ! j-direction. The offset +1 is there, because inBeg and jnBeg
+    ! refer to nodal ranges and not to cell ranges. The loop
+    ! (without the AD stuff) would look like:
+    !
+    ! do j=(BCData(mm)%jnBeg+1),BCData(mm)%jnEnd
+    !    do i=(BCData(mm)%inBeg+1),BCData(mm)%inEnd
+    
+    mReDim = sqrt(pRef*rhoRef)
+
+    massAvgMN = globalCFVals(costFuncMavgMN)
+
+    !$AD II-LOOP
+    do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
+      i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
+      j = ii/(bcData(mm)%inEnd-bcData(mm)%inBeg) + bcData(mm)%jnBeg + 1
+
+      if( addGridVelocities ) then 
+        sF = sFace(i,j)
+      else
+        sF = zero
+      end if
+
+      ! Compute the force components.
+      blk = max(BCData(mm)%iblank(i,j), 0) ! iBlank forces for overset stuff
+
+      vxm = half*(ww1(i,j,ivx) + ww2(i,j,ivx))
+      vym = half*(ww1(i,j,ivy) + ww2(i,j,ivy))
+      vzm = half*(ww1(i,j,ivz) + ww2(i,j,ivz))
+      rhom = half*(ww1(i,j,irho) + ww2(i,j,irho))
+      pm = half*(pp1(i,j)+ pp2(i,j))
+      gammam = half*(gamma1(i,j) + gamma2(i,j))
+
+
+      vnm = vxm*ssi(i,j,1) + vym*ssi(i,j,2) + vzm*ssi(i,j,3)  - sF
+      vmag = sqrt((vxm**2 + vym**2 + vzm**2)) - sF
+      ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
+      MNm = vmag/sqrt(gammam*pm/rhom)
+
+      massFlowRateLocal = rhom*vnm*mReDim*blk*fact
+
+      localValues(iDistortion) = localValues(iDistortion) + massFlowRateLocal*(MNm - massAvgMN)**2
+    end do
+
+  end subroutine flowIntegrationFaceWithGathered
+
   subroutine flowIntegrationZipper(isInflow, zipper, vars, localValues, famList, sps)
 
     ! Integrate over the trianges for the inflow/outflow conditions. 
@@ -868,6 +1014,84 @@ contains
     localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
 
   end subroutine flowIntegrationZipper
+
+  ! subroutine flowIntegrationZipperwithGathered(isInflow, zipper, vars, globalCFVals, localValues, famList, sps)
+
+  !   ! Integrate over the trianges for the inflow/outflow conditions. 
+
+  !   use constants
+  !   use costFunctions, only : nLocalValues, iMassFlow, iMassPtot, iMassTtot, iMassPs, &
+  !        iFlowMm, iFlowMp, iFlowFm, iFlowFp, iMassMN
+  !   use blockPointers, only : BCType
+  !   use sorting, only : bsearchIntegers
+  !   use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas
+  !   use inputPhysics, only : pointRef, flowType
+  !   use flowUtils, only : computePtot, computeTtot
+  !   use overset, only : zipperMeshes, zipperMesh
+  !   use surfaceFamilies, only : familyExchange, BCFamExchange
+  !   use utils, only : mynorm2, cross_prod
+  !   implicit none
+
+  !   ! Input/output Variables
+  !   logical, intent(in) :: isInflow
+  !   type(zipperMesh), intent(in) :: zipper
+  !   real(kind=realType), dimension(:, :), intent(in) :: vars
+  !   real(kind=realType), dimension(nCostFunction), intent(in) :: globalCFVals
+  !   real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
+  !   integer(kind=intType), dimension(:), intent(in) :: famList
+  !   integer(kind=intType), intent(in) :: sps
+
+  !   ! Working variables
+  !   integer(kind=intType) :: i, j
+  !   real(kind=realType) :: sF, vnm, vxm, vym, vzm, mReDim
+  !   real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, MNm, massFlowRateLocal
+  !   real(kind=realType) :: internalFlowFact, inflowFact
+
+  !   real(kind=realType), dimension(:), pointer :: localPtr
+
+  !   internalFlowFact = one
+  !   if (flowType == internalFlow) then 
+  !     internalFlowFact = -one
+  !   end if
+
+  !   inFlowFact = one
+  !   if (isInflow) then 
+  !     inflowFact=-one
+  !   end if
+
+
+  !   !$AD II-LOOP
+  !   do i=1, size(zipper%conn, 2)
+  !      if (bsearchIntegers(zipper%fam(i) , famList) > 0) then 
+  !         ! Compute the averaged values for this trianlge
+  !         vxm = zero; vym = zero; vzm = zero; rhom = zero; pm = zero; MNm = zero;
+  !         sF = zero
+  !         do j=1,3
+  !            rhom = rhom + vars(zipper%conn(j, i), iRho)
+  !            vxm = vxm + vars(zipper%conn(j, i), iVx)
+  !            vym = vym + vars(zipper%conn(j, i), iVy)
+  !            vzm = vzm + vars(zipper%conn(j, i), iVz)
+  !            pm = pm + vars(zipper%conn(j, i), iRhoE)
+  !            gammam = gammam + vars(zipper%conn(j, i), 6)
+  !            sF = sF + vars(zipper%conn(j, i), 7)
+  !         end do
+
+  !         ! Divide by 3 due to the summation above:
+  !         rhom = third*rhom
+  !         vxm = third*vxm
+  !         vym = third*vym
+  !         vzm = third*vzm
+  !         pm = third*pm
+  !         gammam = third*gammam
+  !         sF = third*sF
+
+  !         vnm = vxm*ssi(i,j,1) + vym*ssi(i,j,2) + vzm*ssi(i,j,3)  - sF
+  !         vmag = sqrt((vxm**2 + vym**2 + vzm**2)) - sF
+  !         MNm = sqrt((vxm**2 + vym**2 + vzm**2)*rhom/(gammam*pm)) 
+
+  !         massFlowRateLocal = rhom*vnm*mReDim*blk*fact
+
+  ! end subroutine flowIntegrationZipperwithGathered
 
   subroutine wallIntegrationZipper(zipper, vars, localValues, famList, sps)
 
@@ -1341,7 +1565,6 @@ contains
     localCFVals(costFuncMavgPs) = localValues(iMassPs)
     localCFVals(costFuncMavgMN) = localValues(iMassMN)
 
-
     ! Now we will mpi_allReduce them into globalCFVals
     call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, adflow_real, &
          mpi_sum, ADflow_comm_world, ierr)
@@ -1350,8 +1573,26 @@ contains
     globalCFVals(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)/globalCFVals(costFuncMdot)
     globalCFVals(costFuncMavgPs) = globalCFVals(costFuncMavgPs)/globalCFVals(costFuncMdot)
     globalCFVals(costFuncMavgMN) = globalCFVals(costFuncMavgMN)/globalCFVals(costFuncMdot)
-    globalCFVals(costFuncMdot) = globalCFVals(costFuncMdot)
 
+    ! redo the loop over the blocks so we can compute the distortion
+    domainAgain: do nn=1,nDom
+       call setPointers(nn,1_intType,sps)
+       call integrateSurfacesWithGathered(globalCFVals, localValues, famList)
+    end do domainAgain
+
+    localCFVals(costFuncDistortion) = localValues(iDistortion)
+    
+    ! Now reduce only the new values into the array
+    ! call mpi_allreduce(localCFVals(costFuncDistortion), globalCFVals(costFuncDistortion), 1, adflow_real, &
+    !      mpi_sum, ADflow_comm_world, ierr)
+    call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, adflow_real, &
+         mpi_sum, ADflow_comm_world, ierr)
+
+    globalCFVals(costFuncMavgPtot) = globalCFVals(costFuncMavgPtot)/globalCFVals(costFuncMdot)
+    globalCFVals(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)/globalCFVals(costFuncMdot)
+    globalCFVals(costFuncMavgPs) = globalCFVals(costFuncMavgPs)/globalCFVals(costFuncMdot)
+    globalCFVals(costFuncMavgMN) = globalCFVals(costFuncMavgMN)/globalCFVals(costFuncMdot)
+    globalCFVals(costFuncDistortion) = sqrt(globalCFVals(costFuncDistortion)/globalCFVals(costFuncMdot))
 
   end subroutine computeAeroCoef
 
@@ -1376,6 +1617,8 @@ contains
     real(kind=realType), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realType), dimension(8) :: Coef0
     real(kind=realType), dimension(nCostFunction)::globalCFVals
+    real(kind=realType) :: localValues(nLocalValues)
+
     real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment
     real(kind=realType)::bendingMoment,bendingSum, cf(3), cm(3)
     integer(kind=intType) :: i
@@ -1405,6 +1648,7 @@ contains
     end do
 
     call computeAeroCoef(globalCFVals, sps, famList)
+
     funcValues(costFuncBendingCoef)=bendingSum/nTimeIntervalsSpectral
 
     funcValues(costFuncLift) = globalCFVals(costFuncLift)
@@ -1434,6 +1678,7 @@ contains
     funcValues(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)
     funcValues(costFuncMavgPs) = globalCFVals(costFuncMavgPs)
     funcValues(costFuncMavgMN) = globalCFVals(costFuncMavgMN)
+    funcValues(costFuncDistortion) = globalCFVals(costFuncDistortion)
 
     if(TSStability)then
 
