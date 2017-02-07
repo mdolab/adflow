@@ -2561,7 +2561,6 @@ contains
     !      Local variables.
     !
     integer(kind=intType) :: nLevels, sps, nn, mm, i
-    real(kind=realType)   :: hRef, uRef
 
     type(BCDataType), dimension(:), pointer :: BCData
 
