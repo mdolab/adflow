@@ -1908,7 +1908,8 @@ class ADFLOW(AeroSolver):
             'mavgttot':funcVals[self.adflow.costfunctions.costfuncmavgttot-1],
             'mavgps':funcVals[self.adflow.costfunctions.costfuncmavgps-1],
             'mavgmn':funcVals[self.adflow.costfunctions.costfuncmavgmn-1],
-            'distortion':funcVals[self.adflow.costfunctions.costfuncdistortion-1]
+            'distortion':funcVals[self.adflow.costfunctions.costfuncdistortion-1], 
+            'pk':funcVals[self.adflow.costfunctions.costfuncpk-1]
             }
 
         return ADflowsolution
@@ -4330,7 +4331,8 @@ class ADFLOW(AeroSolver):
             'mavgttot':self.adflow.costfunctions.costfuncmavgttot,
             'mavgps':self.adflow.costfunctions.costfuncmavgps,
             'mavgmn':self.adflow.costfunctions.costfuncmavgmn,
-            'distortion':self.adflow.costfunctions.costfuncdistortion
+            'distortion':self.adflow.costfunctions.costfuncdistortion, 
+            'pk':self.adflow.costfunctions.costfuncpk, 
             }
 
         return iDV, adflowCostFunctions

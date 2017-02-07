@@ -563,7 +563,7 @@ contains
     use blockPointers, only : BCType, BCFaceID, BCData, addGridVelocities
     use costFunctions, onlY : nLocalValues, iMassFlow, iMassPtot, iMassTtot, iMassPs, iMassMN
     use sorting, only : bsearchIntegers
-    use flowVarRefState, only : pRef, pInf, rhoRef, timeRef, LRef, TRef, RGas
+    use flowVarRefState, only : pRef, pInf, rhoRef, timeRef, LRef, TRef, RGas, uRef, uInf
     use inputPhysics, only : pointRef, flowType
     use flowUtils, only : computePtot, computeTtot
     use BCPointers, only : ssi, sFace, ww1, ww2, pp1, pp2, xx, gamma1, gamma2
@@ -576,7 +576,7 @@ contains
     integer(kind=intType), intent(in) :: mm
 
     ! Local variables
-    real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN, mReDim
+    real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN, mReDim, pk
     integer(kind=intType) :: i, j, ii, blk
     real(kind=realType) :: internalFlowFact, inFlowFact, fact, xc, yc, zc, cellArea, mx, my, mz
     real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, Fx, Fy, Fz
@@ -630,6 +630,7 @@ contains
     Mp = zero
     FMom = zero
     MMom = zero
+    pk = zero
     mReDim = sqrt(pRef*rhoRef)
 
     !$AD II-LOOP
@@ -662,10 +663,15 @@ contains
       call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
       call computeTtot(rhom, vxm, vym, vzm, pm, Ttot)
 
-      pm = pm*pRef
-
       massFlowRateLocal = rhom*vnm*blk*fact*mReDim
       massFlowRate = massFlowRate + massFlowRateLocal
+
+      ! re-dimentionalize quantities
+      pm = pm*pRef
+      vmag = vmag*uRef
+      rhom = rhom*rhoRef
+
+      pk = pk - ((pm-pInf) + half*rhom*(vmag**2 - uInf**2)) * vnm
 
       mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
       mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
@@ -732,6 +738,7 @@ contains
     localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
     localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
     localValues(iMassMN)   = localValues(iMassMN)   + mass_MN
+    localValues(iPk)   = localValues(iPk)   + pk
     localValues(iFlowFp:iFlowFp+2)   = localValues(iFlowFp:iFlowFp+2) + Fp
     localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
     localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
@@ -988,7 +995,6 @@ contains
           fy = massFlowRateLocal*ss(2) * vym/timeRef
           fz = massFlowRateLocal*ss(3) * vzm/timeRef
 
-          ! Note: momentum forces have opposite sign to pressure forces
           FMom(1) = FMom(1) - fx
           FMom(2) = FMom(2) - fy
           FMom(3) = FMom(3) - fz
@@ -1016,83 +1022,100 @@ contains
 
   end subroutine flowIntegrationZipper
 
-  ! subroutine flowIntegrationZipperwithGathered(isInflow, zipper, vars, globalCFVals, localValues, famList, sps)
+  subroutine flowIntegrationZipperwithGathered(isInflow, zipper, vars, globalCFVals, localValues, famList, sps)
 
-  !   ! Integrate over the trianges for the inflow/outflow conditions. 
+    ! Integrate over the trianges for the inflow/outflow conditions. 
 
-  !   use constants
-  !   use costFunctions, only : nLocalValues, iMassFlow, iMassPtot, iMassTtot, iMassPs, &
-  !        iFlowMm, iFlowMp, iFlowFm, iFlowFp, iMassMN
-  !   use blockPointers, only : BCType
-  !   use sorting, only : bsearchIntegers
-  !   use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas
-  !   use inputPhysics, only : pointRef, flowType
-  !   use flowUtils, only : computePtot, computeTtot
-  !   use overset, only : zipperMeshes, zipperMesh
-  !   use surfaceFamilies, only : familyExchange, BCFamExchange
-  !   use utils, only : mynorm2, cross_prod
-  !   implicit none
+    use constants
+    use costFunctions, only : nLocalValues, iDistortion, costFuncMAvgMN, nCostFunction
+    use blockPointers, only : BCType
+    use sorting, only : bsearchIntegers
+    use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas
+    use inputPhysics, only : pointRef, flowType
+    use flowUtils, only : computePtot, computeTtot
+    use overset, only : zipperMeshes, zipperMesh
+    use surfaceFamilies, only : familyExchange, BCFamExchange
+    use utils, only : mynorm2, cross_prod
+    implicit none
 
-  !   ! Input/output Variables
-  !   logical, intent(in) :: isInflow
-  !   type(zipperMesh), intent(in) :: zipper
-  !   real(kind=realType), dimension(:, :), intent(in) :: vars
-  !   real(kind=realType), dimension(nCostFunction), intent(in) :: globalCFVals
-  !   real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
-  !   integer(kind=intType), dimension(:), intent(in) :: famList
-  !   integer(kind=intType), intent(in) :: sps
+    ! Input/output Variables
+    logical, intent(in) :: isInflow
+    type(zipperMesh), intent(in) :: zipper
+    real(kind=realType), dimension(:, :), intent(in) :: vars
+    real(kind=realType), dimension(nCostFunction), intent(in) :: globalCFVals
+    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
+    integer(kind=intType), dimension(:), intent(in) :: famList
+    integer(kind=intType), intent(in) :: sps
 
-  !   ! Working variables
-  !   integer(kind=intType) :: i, j
-  !   real(kind=realType) :: sF, vnm, vxm, vym, vzm, mReDim
-  !   real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, MNm, massFlowRateLocal
-  !   real(kind=realType) :: internalFlowFact, inflowFact
+    ! Working variables
+    integer(kind=intType) :: i, j
+    real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, mReDim
+    real(kind=realType), dimension(3) :: ss, x1, x2, x3, norm
+    real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, MNm, massFlowRateLocal, distortion, massAvgMN
+    real(kind=realType) :: internalFlowFact, inflowFact
 
-  !   real(kind=realType), dimension(:), pointer :: localPtr
+    real(kind=realType), dimension(:), pointer :: localPtr
 
-  !   internalFlowFact = one
-  !   if (flowType == internalFlow) then 
-  !     internalFlowFact = -one
-  !   end if
+    internalFlowFact = one
+    if (flowType == internalFlow) then 
+      internalFlowFact = -one
+    end if
 
-  !   inFlowFact = one
-  !   if (isInflow) then 
-  !     inflowFact=-one
-  !   end if
+    inFlowFact = one
+    if (isInflow) then 
+      inflowFact=-one
+    end if
 
+    mReDim = sqrt(pRef*rhoRef)
+    massAvgMN = globalCFVals(costFuncMavgMN)
 
-  !   !$AD II-LOOP
-  !   do i=1, size(zipper%conn, 2)
-  !      if (bsearchIntegers(zipper%fam(i) , famList) > 0) then 
-  !         ! Compute the averaged values for this trianlge
-  !         vxm = zero; vym = zero; vzm = zero; rhom = zero; pm = zero; MNm = zero;
-  !         sF = zero
-  !         do j=1,3
-  !            rhom = rhom + vars(zipper%conn(j, i), iRho)
-  !            vxm = vxm + vars(zipper%conn(j, i), iVx)
-  !            vym = vym + vars(zipper%conn(j, i), iVy)
-  !            vzm = vzm + vars(zipper%conn(j, i), iVz)
-  !            pm = pm + vars(zipper%conn(j, i), iRhoE)
-  !            gammam = gammam + vars(zipper%conn(j, i), 6)
-  !            sF = sF + vars(zipper%conn(j, i), 7)
-  !         end do
+    distortion = zero
 
-  !         ! Divide by 3 due to the summation above:
-  !         rhom = third*rhom
-  !         vxm = third*vxm
-  !         vym = third*vym
-  !         vzm = third*vzm
-  !         pm = third*pm
-  !         gammam = third*gammam
-  !         sF = third*sF
+    !$AD II-LOOP
+    do i=1, size(zipper%conn, 2)
+      if (bsearchIntegers(zipper%fam(i) , famList) > 0) then 
+          ! Compute the averaged values for this trianlge
+          vxm = zero; vym = zero; vzm = zero; rhom = zero; pm = zero; MNm = zero;
+          sF = zero
+          do j=1,3
+             rhom = rhom + vars(zipper%conn(j, i), iRho)
+             vxm = vxm + vars(zipper%conn(j, i), iVx)
+             vym = vym + vars(zipper%conn(j, i), iVy)
+             vzm = vzm + vars(zipper%conn(j, i), iVz)
+             pm = pm + vars(zipper%conn(j, i), iRhoE)
+             gammam = gammam + vars(zipper%conn(j, i), 6)
+             sF = sF + vars(zipper%conn(j, i), 7)
+          end do
 
-  !         vnm = vxm*ssi(i,j,1) + vym*ssi(i,j,2) + vzm*ssi(i,j,3)  - sF
-  !         vmag = sqrt((vxm**2 + vym**2 + vzm**2)) - sF
-  !         MNm = sqrt((vxm**2 + vym**2 + vzm**2)*rhom/(gammam*pm)) 
+          ! Divide by 3 due to the summation above:
+          rhom = third*rhom
+          vxm = third*vxm
+          vym = third*vym
+          vzm = third*vzm
+          pm = third*pm
+          gammam = third*gammam
+          sF = third*sF
 
-  !         massFlowRateLocal = rhom*vnm*mReDim*blk*fact
+          ! Get the nodes of triangle.
+          x1 = vars(zipper%conn(1, i), 7:9)
+          x2 = vars(zipper%conn(2, i), 7:9)
+          x3 = vars(zipper%conn(3, i), 7:9)
+          call cross_prod(x2-x1, x3-x1, norm)
+          ss = -half*norm
 
-  ! end subroutine flowIntegrationZipperwithGathered
+          vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3)  - sF
+          vmag = sqrt((vxm**2 + vym**2 + vzm**2)) - sF
+          MNm = sqrt((vxm**2 + vym**2 + vzm**2)*rhom/(gammam*pm)) 
+
+          massFlowRateLocal = rhom*vnm*mReDim
+          distortion = distortion + massFlowRateLocal*(MNm - massAvgMN)**2
+
+      end if
+    end do 
+
+    localValues(iDistortion) = localValues(iDistortion) + distortion
+
+  end subroutine flowIntegrationZipperwithGathered
 
   subroutine wallIntegrationZipper(zipper, vars, localValues, famList, sps)
 
@@ -1294,6 +1317,68 @@ contains
        deallocate(vars)
     end if
   end subroutine integrateZippers
+
+  subroutine integrateZippersWithGathered(globalCFvals, localValues, famList, sps)
+
+    ! Integrate over the triangles formed by the zipper mesh. This
+    ! will perform both all necesasry zipper integrations. Currently
+    ! this includes the wall force integrations as well as the
+    ! flow-though surface integration. 
+
+    use constants
+    use costFunctions, only : nLocalValues, nCostFunction
+    use overset, only : zipperMeshes, zipperMesh
+    use haloExchange, only : wallIntegrationZipperComm, flowIntegrationZipperComm
+    implicit none
+
+    ! Input Variables
+    real(kind=realType), dimension(nCostFunction), intent(in) :: globalCFVals
+    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
+    integer(kind=intType), dimension(:), intent(in) :: famList
+    integer(kind=intType), intent(in) :: sps
+    real(kind=realType), dimension(:, :), allocatable :: vars
+    type(zipperMesh), pointer :: zipper
+
+    ! NOTE: No wall zipper with global calcs yet
+
+    zipper => zipperMeshes(iBCGroupInflow)
+    ! Determine if we have a flowthrough Zipper:
+    if (zipper%allocated) then 
+
+       ! Allocate space necessary to store variables. Only non-zero on
+       ! root proc. 
+       allocate(vars(size(zipper%indices), 9))
+       
+       ! Gather up the required variables in "vars" on the root
+       ! proc. This routine is differientated by hand. 
+       call flowIntegrationZipperComm(.true., vars, sps)
+
+       ! Perform actual integration. Tapenade ADs this routine.
+       call flowIntegrationZipperwithGathered(.true., zipper, vars, GlobalCFVals, localValues, famList, sps)
+
+       ! Cleanup vars
+       deallocate(vars)
+    end if
+
+    zipper => zipperMeshes(iBCGroupOutflow)
+    ! Determine if we have a flowthrough Zipper:
+    if (zipper%allocated) then 
+
+       ! Allocate space necessary to store variables. Only non-zero on
+       ! root proc. 
+       allocate(vars(size(zipper%indices), 9))
+       
+       ! Gather up the required variables in "vars" on the root
+       ! proc. This routine is differientated by hand. 
+       call flowIntegrationZipperComm(.false., vars, sps)
+
+       ! Perform actual integration. Tapenade ADs this routine.
+       call flowIntegrationZipperwithGathered(.false., zipper, vars, GlobalCFVals, localValues, famList, sps)
+
+       ! Cleanup vars
+       deallocate(vars)
+    end if
+  end subroutine integrateZippersWithGathered
 #ifndef USE_COMPLEX
   subroutine integrateZippers_d(localValues, localValuesd, famList, sps)
 
@@ -1565,6 +1650,7 @@ contains
     localCFVals(costFuncMavgTtot) = localValues(iMassTtot)
     localCFVals(costFuncMavgPs) = localValues(iMassPs)
     localCFVals(costFuncMavgMN) = localValues(iMassMN)
+    localCFVals(costFuncPk) = localValues(iPk)
 
     ! Now we will mpi_allReduce them into globalCFVals
     call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, adflow_real, &
@@ -1576,23 +1662,29 @@ contains
     globalCFVals(costFuncMavgMN) = globalCFVals(costFuncMavgMN)/globalCFVals(costFuncMdot)
 
     ! redo the loop over the blocks so we can compute the distortion
-    domainAgain: do nn=1,nDom
+    domainsAgain: do nn=1,nDom
        call setPointers(nn,1_intType,sps)
        call integrateSurfacesWithGathered(globalCFVals, localValues, famList)
-    end do domainAgain
+    end do domainsAgain
+
+
+    if (oversetPresent) then
+       call integrateZippersWithGathered(globalCFVals, localValues, famList, sps)
+    end if
 
     localCFVals(costFuncDistortion) = localValues(iDistortion)
     
     ! Now reduce only the new values into the array
-    ! call mpi_allreduce(localCFVals(costFuncDistortion), globalCFVals(costFuncDistortion), 1, adflow_real, &
-    !      mpi_sum, ADflow_comm_world, ierr)
-    call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, adflow_real, &
+    call mpi_allreduce(localCFVals(costFuncDistortion), globalCFVals(costFuncDistortion), 1, adflow_real, &
          mpi_sum, ADflow_comm_world, ierr)
+    ! call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, adflow_real, &
+    !      mpi_sum, ADflow_comm_world, ierr)
 
-    globalCFVals(costFuncMavgPtot) = globalCFVals(costFuncMavgPtot)/globalCFVals(costFuncMdot)
-    globalCFVals(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)/globalCFVals(costFuncMdot)
-    globalCFVals(costFuncMavgPs) = globalCFVals(costFuncMavgPs)/globalCFVals(costFuncMdot)
-    globalCFVals(costFuncMavgMN) = globalCFVals(costFuncMavgMN)/globalCFVals(costFuncMdot)
+    ! redo all the final calcs on the global values after the second allgather
+    ! globalCFVals(costFuncMavgPtot) = globalCFVals(costFuncMavgPtot)/globalCFVals(costFuncMdot)
+    ! globalCFVals(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)/globalCFVals(costFuncMdot)
+    ! globalCFVals(costFuncMavgPs) = globalCFVals(costFuncMavgPs)/globalCFVals(costFuncMdot)
+    ! globalCFVals(costFuncMavgMN) = globalCFVals(costFuncMavgMN)/globalCFVals(costFuncMdot)
     globalCFVals(costFuncDistortion) = sqrt(globalCFVals(costFuncDistortion)/globalCFVals(costFuncMdot))
 
   end subroutine computeAeroCoef
@@ -1680,6 +1772,7 @@ contains
     funcValues(costFuncMavgPs) = globalCFVals(costFuncMavgPs)
     funcValues(costFuncMavgMN) = globalCFVals(costFuncMavgMN)
     funcValues(costFuncDistortion) = globalCFVals(costFuncDistortion)
+    funcValues(costFuncPk) = globalCFVals(costFuncPk)
 
     if(TSStability)then
 
