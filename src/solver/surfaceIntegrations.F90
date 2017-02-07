@@ -576,7 +576,7 @@ contains
     integer(kind=intType), intent(in) :: mm
 
     ! Local variables
-    real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN
+    real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN, mReDim
     integer(kind=intType) :: i, j, ii, blk
     real(kind=realType) :: internalFlowFact, inFlowFact, fact, xc, yc, zc, cellArea, mx, my, mz
     real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, Fx, Fy, Fz
@@ -630,6 +630,7 @@ contains
     Mp = zero
     FMom = zero
     MMom = zero
+    mReDim = sqrt(pRef*rhoRef)
 
     !$AD II-LOOP
     do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
@@ -663,7 +664,7 @@ contains
 
       pm = pm*pRef
 
-      massFlowRateLocal = rhom*vnm*blk*fact/timeRef
+      massFlowRateLocal = rhom*vnm*blk*fact*mReDim
       massFlowRate = massFlowRate + massFlowRateLocal
 
       mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
