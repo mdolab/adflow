@@ -670,8 +670,9 @@ contains
       pm = pm*pRef
       vmag = vmag*uRef
       rhom = rhom*rhoRef
+      vnm = vnm*uRef
 
-      pk = pk - ((pm-pInf) + half*rhom*(vmag**2 - uInf**2)) * vnm
+      pk = pk + ((pm-pref) + half*rhom*(vmag**2 - (uInf*uRef)**2)) * vnm * fact
 
       mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
       mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
@@ -844,10 +845,10 @@ contains
 
     use constants
     use costFunctions, only : nLocalValues, iMassFlow, iMassPtot, iMassTtot, iMassPs, &
-         iFlowMm, iFlowMp, iFlowFm, iFlowFp, iMassMN
+         iFlowMm, iFlowMp, iFlowFm, iFlowFp, iMassMN, iPk
     use blockPointers, only : BCType
     use sorting, only : bsearchIntegers
-    use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas
+    use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas, uRef, uInf
     use inputPhysics, only : pointRef, flowType
     use flowUtils, only : computePtot, computeTtot
     use overset, only : zipperMeshes, zipperMesh
@@ -865,10 +866,10 @@ contains
 
     ! Working variables
     integer(kind=intType) :: i, j
-    real(kind=realType) :: sF, vnm, vxm, vym, vzm, mReDim, Fx, Fy, Fz
+    real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, mReDim, Fx, Fy, Fz
     real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint, ss, x1, x2, x3, norm
     real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, MNm, massFlowRateLocal
-    real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN
+    real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN, pk
     real(kind=realType) :: internalFlowFact, inflowFact, xc, yc, zc, cellArea, mx, my, mz
 
     real(kind=realType), dimension(:), pointer :: localPtr
@@ -934,14 +935,21 @@ contains
           call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
           call computeTtot(rhom, vxm, vym, vzm, pm, Ttot)
           
-          pm = pm*pRef
           vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3)  - sF
           
+          vmag = sqrt((vxm**2 + vym**2 + vzm**2)) - sF
           ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
-          MNm = sqrt((vxm**2 + vym**2 + vzm**2)*rhom/(gammam*pm)) 
+          MNm = vmag/sqrt(gammam*pm/rhom)
 
           massFlowRateLocal = rhom*vnm*mReDim
           massFlowRate = massFlowRate + massFlowRateLocal
+
+          pm = pm*pRef
+          vmag = vmag*uRef
+          rhom = rhom*rhoRef
+          vnm = vnm*uRef
+
+          pk = pk + ((pm-pref) + half*rhom*(vmag**2 - (uInf*uRef)**2)) * vnm
           
           mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
           mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
@@ -1015,6 +1023,7 @@ contains
     localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
     localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
     localValues(iMassMN)   = localValues(iMassMN)   + mass_MN
+    localValues(iPk)   = localValues(iPk)   + Pk
     localValues(iFlowFp:iFlowFp+2)   = localValues(iFlowFp:iFlowFp+2) + Fp
     localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
     localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
