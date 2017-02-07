@@ -37,6 +37,7 @@
  'cfl': 3.0,
  'cflcoarse': 1.5,
  'cfllimit': 1.5,
+ 'closedsurfacefamilies': None,
  'coarsediscretization': 'central plus scalar dissipation',
  'coupledsolution': False,
  'cutcallback': None,
@@ -678,7 +679,7 @@
       1      28     28   DADI   0.30E+01   0.6996583540980436E-02   0.1153129309843731E+01 
       1      29     29   DADI   0.30E+01   0.6691649628396242E-02   0.1100956387753969E+01 
       1      30     30   DADI   0.30E+01   0.6426067064437225E-02   0.1054415213009112E+01 
-      1      31     31   DADI   0.30E+01   0.6173954681097279E-02   0.1009409135792262E+01 Solution Time:      1.241 sec
+      1      31     31   DADI   0.30E+01   0.6173954681097279E-02   0.1009409135792262E+01 Solution Time:      1.231 sec
 -> Alpha... 0.000000 
 Norm of residual
 @value  9.4335086953433e-15 1e-10 1e-10
@@ -703,13 +704,13 @@ Dictionary Key: conv_nozzle_mavgttot_down
 Dictionary Key: conv_nozzle_mavgttot_up
 @value  4.9999791485001e+02 1e-10 1e-10
 Dictionary Key: conv_nozzle_mdot
-@value  2.8923081439856e-02 1e-10 1e-10
+@value  5.2479729108114e-02 1e-10 1e-10
 Dictionary Key: conv_nozzle_mdot_down
-@value -7.3975697310454e+01 1e-10 1e-10
+@value -1.3422582802991e+02 1e-10 1e-10
 Dictionary Key: conv_nozzle_mdot_up
-@value  7.4004620391894e+01 1e-10 1e-10
+@value  1.3427830775902e+02 1e-10 1e-10
 Dictionary Key: conv_nozzle_thrust
-@value -2.6696313274900e+04 1e-10 1e-10
+@value -3.5128502760420e+04 1e-10 1e-10
 
       1      32     32   DADI   0.30E+01   0.5903773197140149E-02   0.9608531684949695E+00 
       1      33     33   DADI   0.30E+01   0.5607576565473033E-02   0.9075149642638232E+00 
