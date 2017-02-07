@@ -34,7 +34,7 @@ contains
          rGasDim, SSuthDim, eddyVisInfRatio, turbModel, turbIntensityInf
     use flowVarRefState, only : pInfDim, TinfDim, rhoInfDim,  &
          muInfDim, &
-         pRef, rhoRef, Tref, muRef, timeRef, uRef, hRef &
+         pRef, rhoRef, Tref, muRef, timeRef, uRef, hRef, &
          pInf, pInfCorr, rhoInf, uInf, rGas, muInf, gammaInf, wInf, &
          nw, nwf, kPresent, wInf
     use flowUtils, only : computeGamma, eTot
