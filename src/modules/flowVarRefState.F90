@@ -31,9 +31,13 @@
        !           nondimensionalization of unsteady problems.
        !           timeRef = sqrt(rhoRef/pRef); for the reference
        !           length, see the comments for muRef.
+       ! uRef:     velocity scale; 
+       !           uRef = sqrt(pRef/rhoRef);
+       ! hRef:     enthalpy scale; 
+       !           hRef = pRef/rhoRef;
 
        real(kind=realType) :: pRef, rhoRef, TRef
-       real(kind=realType) :: muRef, timeRef
+       real(kind=realType) :: muRef, timeRef, uRef, href
 
 
        ! LRef:          Conversion factor of the length unit of the

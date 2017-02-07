@@ -34,7 +34,7 @@ contains
          rGasDim, SSuthDim, eddyVisInfRatio, turbModel, turbIntensityInf
     use flowVarRefState, only : pInfDim, TinfDim, rhoInfDim,  &
          muInfDim, &
-         pRef, rhoRef, Tref, muRef, timeRef, &
+         pRef, rhoRef, Tref, muRef, timeRef, uRef, hRef &
          pInf, pInfCorr, rhoInf, uInf, rGas, muInf, gammaInf, wInf, &
          nw, nwf, kPresent, wInf
     use flowUtils, only : computeGamma, eTot
@@ -72,6 +72,8 @@ contains
     ! concerning the reference length.
 
     timeRef = sqrt(rhoRef/pRef)
+    hRef = pRef/rhoRef
+    uRef = sqrt(hRef)
 
     ! Compute the nonDimensional pressure, density, velocity,
     ! viscosity and gas constant.

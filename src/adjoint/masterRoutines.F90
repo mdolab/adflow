@@ -30,7 +30,7 @@ contains
     use utils, only : setPointers, EChk
     use turbUtils, only : turbAdvection, computeEddyViscosity
     use residuals, only : initRes_block
-    use surfaceIntegrations, only : integrateSurfaces, integrateZippers
+    use surfaceIntegrations, only : integrateSurfaces, integrateZippers, integrateSurfacesWithGathered
     use adjointExtra, only : volume_block, metric_block, boundaryNormals,&
          xhalo_block, sumdwandfw, resScale, getCostFunctions
     use overset, only : oversetPresent
@@ -215,6 +215,20 @@ contains
     ! Call the final routine that will comptue all of our functions of
     ! interest.
     call getCostFunctions(globalVal)
+
+    ! Secondary loop over the blocks for calculations that require gathered values
+    do sps=1, nTimeIntervalsSpectral
+      do nn=1, nDom
+        call setPointers(nn, 1, sps)
+          ! Now compute the forces and moments for this block. 
+          call integrateSurfacesWithGathered(globalVal(:,sps), localval(:, sps), famList)
+      end do 
+
+       ! Integrate any zippers we have
+       ! call integrateZippersWithGathered(globalVal(:,sps), localval(:, sps), famList, sps)
+    end do 
+
+
 
   end subroutine master
 #ifndef USE_COMPLEX

@@ -2553,7 +2553,7 @@ contains
     !
     use constants
     use block, only : flowDoms, BCDataType, nDom
-    use flowVarRefState, only : pRef, rhoRef, tRef, muRef, rhoRef, nt1, nt2
+    use flowVarRefState, only : pRef, rhoRef, tRef, muRef, rhoRef, nt1, nt2, uRef, hRef
     use inputPhysics, only : turbModel
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     implicit none
@@ -2569,8 +2569,6 @@ contains
     ! and uRef.
 
     nLevels = ubound(flowDoms,2)
-    hRef    = pRef/rhoRef
-    uRef    = sqrt(hRef)
 
     ! Loop over the number of multigrid levels, spectral solutions
     ! and local blocks.
