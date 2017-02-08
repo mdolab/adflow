@@ -704,8 +704,9 @@ end subroutine applyAllBC
 
     use constants
     use blockPointers, only : BCData
-    use BCPointers, only : gamma2, rev2, rlv2, pp2, ww2, &
-         rlv1, rev1, pp1, ww1, iSize, jSize, iStart, jStart
+    use BCPointers, only : ww0, ww1, ww2, pp0, pp1, pp2, &
+         rlv0, rlv1, rlv2, rev0, rev1, rev2, gamma2, & 
+         iSize, jSize, iStart, jStart
     use flowVarRefState, only : eddyModel, viscous
     implicit none
 
@@ -814,8 +815,9 @@ end subroutine applyAllBC
     use blockPointers, only : BCData
     use flowVarRefState, only : viscous, eddyModel, RGas
     use inputDiscretization, only : hScalingInlet
-    use BCPointers, only : gamma2, ww2, pp2, rlv1, rlv2, rev1, rev2, &
-         ww1, pp1, iSize, jSize, iStart, jStart
+    use BCPointers, only : ww0, ww1, ww2, pp0, pp1, pp2, &
+         rlv0, rlv1, rlv2, rev0, rev1, rev2, gamma2, & 
+         iSize, jSize, iStart, jStart
     implicit none
 
     ! Subroutine arguments.
