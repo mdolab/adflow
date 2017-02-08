@@ -58,7 +58,7 @@ module costFunctions
        costFuncMavgPs = 46, & 
        costFuncMavgMN = 47, &
        costFuncSigmaMN = 48, &
-       costFuncSigmaPt = 49, &
+       costFuncSigmaPtot = 49, &
        costFuncPk = 50, &
        costFuncEdot = 51
 
@@ -81,7 +81,7 @@ module costFunctions
        iFlowMm   = 32, & 
        iMassMN   = 35, &
        isigmaMN = 36, &
-       isigmaPt = 37, &
+       isigmaPtot = 37, &
        iPk = 38
 
 
