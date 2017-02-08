@@ -754,7 +754,7 @@ contains
     use sorting, only : bsearchIntegers
     use flowVarRefState, only : pRef, pInf, rhoRef, timeRef, LRef, TRef, RGas
     use inputPhysics, only : pointRef, flowType
-    use flowUtils, only : computePtot, computeTtot
+    use flowUtils, only : computePtot
     use BCPointers, only : ssi, sFace, ww1, ww2, pp1, pp2, xx, gamma1, gamma2
     use utils, only : mynorm2
     implicit none
@@ -769,8 +769,8 @@ contains
     integer(kind=intType) :: i, j, ii, blk
     real(kind=realType) :: internalFlowFact, fact, xc, yc, zc, cellArea, mx, my, mz
     real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, mReDim
-    real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, a2
-    real(kind=realType) :: MNm, massFlowRateLocal, massAvgMN
+    real(kind=realType) :: pm, Ptot, rhom, gammam, a2
+    real(kind=realType) :: MNm, massFlowRateLocal, massAvgMN, massAvgPtot
 
     ! Note that these are *opposite* of force integrations. The reason
     ! is that we want positive mass flow into the domain and negative
@@ -803,6 +803,7 @@ contains
     mReDim = sqrt(pRef*rhoRef)
 
     massAvgMN = globalCFVals(costFuncMavgMN)
+    massAvgPtot = globalCFVals(costFuncMavgPtot)
 
     !$AD II-LOOP
     do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
@@ -825,6 +826,8 @@ contains
       pm = half*(pp1(i,j)+ pp2(i,j))
       gammam = half*(gamma1(i,j) + gamma2(i,j))
 
+      call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
+      Ptot = Ptot * pref
 
       vnm = vxm*ssi(i,j,1) + vym*ssi(i,j,2) + vzm*ssi(i,j,3)  - sF
       vmag = sqrt((vxm**2 + vym**2 + vzm**2)) - sF
@@ -834,6 +837,8 @@ contains
       massFlowRateLocal = rhom*vnm*mReDim*blk*fact
 
       localValues(iSigmaMN) = localValues(iSigmaMN) + massFlowRateLocal*(MNm - massAvgMN)**2
+      localValues(iSigmaPtot) = localValues(iSigmaPtot) + massFlowRateLocal*(Ptot - massAvgPtot)**2
+
     end do
 
   end subroutine flowIntegrationFaceWithGathered
@@ -1681,6 +1686,7 @@ contains
     end if
 
     localCFVals(costFuncSigmaMN) = localValues(iSigmaMN)
+    localCFVals(costFuncSigmaPtot) = localValues(iSigmaPtot)
     
     ! Now reduce only the new values into the array
     call mpi_allreduce(localCFVals(costFuncSigmaMN), globalCFVals(costFuncSigmaMN), 1, adflow_real, &
@@ -1695,6 +1701,7 @@ contains
     ! globalCFVals(costFuncMavgMN) = globalCFVals(costFuncMavgMN)/globalCFVals(costFuncMdot)
     
     globalCFVals(costFuncSigmaMN) = sqrt(globalCFVals(costFuncSigmaMN)/globalCFVals(costFuncMdot))
+    globalCFVals(costFuncSigmaPtot) = sqrt(globalCFVals(costFuncSigmaPtot)/globalCFVals(costFuncMdot))
 
   end subroutine computeAeroCoef
 
@@ -1781,6 +1788,7 @@ contains
     funcValues(costFuncMavgPs) = globalCFVals(costFuncMavgPs)
     funcValues(costFuncMavgMN) = globalCFVals(costFuncMavgMN)
     funcValues(costFuncSigmaMN) = globalCFVals(costFuncSigmaMN)
+    funcValues(costFuncSigmaPtot) = globalCFVals(costFuncSigmaPtot)
     funcValues(costFuncPk) = globalCFVals(costFuncPk)
 
     if(TSStability)then
