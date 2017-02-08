@@ -1909,6 +1909,7 @@ class ADFLOW(AeroSolver):
             'mavgps':funcVals[self.adflow.costfunctions.costfuncmavgps-1],
             'mavgmn':funcVals[self.adflow.costfunctions.costfuncmavgmn-1],
             'sigmamn':funcVals[self.adflow.costfunctions.costfuncsigmamn-1], 
+            'sigmaptot':funcVals[self.adflow.costfunctions.costfuncsigmaptot-1], 
             'pk':funcVals[self.adflow.costfunctions.costfuncpk-1],
             'edot':funcVals[self.adflow.costfunctions.costfuncedot-1]
             }
@@ -4333,6 +4334,7 @@ class ADFLOW(AeroSolver):
             'mavgps':self.adflow.costfunctions.costfuncmavgps,
             'mavgmn':self.adflow.costfunctions.costfuncmavgmn,
             'sigmamn':self.adflow.costfunctions.costfuncsigmamn, 
+            'sigmaptot':self.adflow.costfunctions.costfuncsigmaptot, 
             'pk':self.adflow.costfunctions.costfuncpk, 
             'edot':self.adflow.costfunctions.costfuncedot, 
             }

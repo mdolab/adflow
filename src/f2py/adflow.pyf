@@ -1122,7 +1122,7 @@ python module libadflow
             integer(kind=inttype) parameter,optional :: costfuncmavgps=46
             integer(kind=inttype) parameter,optional :: costfuncmavgmn=47
             integer(kind=inttype) parameter,optional :: costfuncsigmamn=48
-            integer(kind=inttype) parameter,optional :: costfuncsigmapt=49
+            integer(kind=inttype) parameter,optional :: costfuncsigmaptot=49
             integer(kind=inttype) parameter,optional :: costfuncpk=50
             integer(kind=inttype) parameter,optional :: costfuncedot=51
             real(kind=realtype) dimension(51) :: funcvalues
