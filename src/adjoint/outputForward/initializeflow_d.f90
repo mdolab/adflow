@@ -49,9 +49,10 @@ contains
 &   rgasdim, ssuthdim, eddyvisinfratio, turbmodel, turbintensityinf
     use flowvarrefstate, only : pinfdim, pinfdimd, tinfdim, tinfdimd, &
 &   rhoinfdim, rhoinfdimd, muinfdim, muinfdimd, pref, prefd, rhoref, &
-&   rhorefd, tref, trefd, muref, murefd, timeref, timerefd, pinf, pinfd,&
-&   pinfcorr, pinfcorrd, rhoinf, rhoinfd, uinf, uinfd, rgas, rgasd, &
-&   muinf, muinfd, gammainf, winf, winfd, nw, nwf, kpresent, winf, winfd
+&   rhorefd, tref, trefd, muref, murefd, timeref, timerefd, uref, href, &
+&   pinf, pinfd, pinfcorr, pinfcorrd, rhoinf, rhoinfd, uinf, uinfd, rgas&
+&   , rgasd, muinf, muinfd, gammainf, winf, winfd, nw, nwf, kpresent, &
+&   winf, winfd
     use flowutils_d, only : computegamma, etot, etot_d
     use turbutils_d, only : sanuknowneddyratio, sanuknowneddyratio_d
     implicit none
@@ -104,6 +105,8 @@ contains
 &       pref))
     end if
     timeref = sqrt(rhoref/pref)
+    href = pref/rhoref
+    uref = sqrt(href)
 ! compute the nondimensional pressure, density, velocity,
 ! viscosity and gas constant.
     pinfd = (pinfdimd*pref-pinfdim*prefd)/pref**2
@@ -248,8 +251,8 @@ contains
 &   tsuthdim, veldirfreestream, rgasdim, ssuthdim, eddyvisinfratio, &
 &   turbmodel, turbintensityinf
     use flowvarrefstate, only : pinfdim, tinfdim, rhoinfdim, muinfdim,&
-&   pref, rhoref, tref, muref, timeref, pinf, pinfcorr, rhoinf, uinf, &
-&   rgas, muinf, gammainf, winf, nw, nwf, kpresent, winf
+&   pref, rhoref, tref, muref, timeref, uref, href, pinf, pinfcorr, &
+&   rhoinf, uinf, rgas, muinf, gammainf, winf, nw, nwf, kpresent, winf
     use flowutils_d, only : computegamma, etot
     use turbutils_d, only : sanuknowneddyratio
     implicit none
@@ -280,6 +283,8 @@ contains
 ! unsteady equations. some story as for the reference viscosity
 ! concerning the reference length.
     timeref = sqrt(rhoref/pref)
+    href = pref/rhoref
+    uref = sqrt(href)
 ! compute the nondimensional pressure, density, velocity,
 ! viscosity and gas constant.
     pinf = pinfdim/pref

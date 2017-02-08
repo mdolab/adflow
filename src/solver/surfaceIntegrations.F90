@@ -727,22 +727,24 @@ contains
       MMom(2) = MMom(2) + my
       MMom(3) = MMom(3) + mz
 
+      ! ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
+      ! VcoordRef(1) = vxm
+      ! VcoordRef(2) = vym
+      ! VcoordRef(3) = vzm
 
-      ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
-      VcoordRef = (/ vxm, vym, vzm /)
-      call getDirVector(VcoordRef, -alpha, -beta, VFreestreamRef, liftIndex)
-      VFreestreamRef = VFreestreamRef * vmag
+      ! call getDirVector(VcoordRef, -alpha, -beta, VFreestreamRef, liftIndex)
+      ! VFreestreamRef = VFreestreamRef * vmag
 
-      !project the face normal into the freestream velocity and scale by the face
-      call getDirVector(ssi(i,j,:), -alpha, -beta, sFaceFreestreamRef, liftIndex)
-      sFaceFreestreamRef = sFaceFreestreamRef * sF
+      ! !project the face normal into the freestream velocity and scale by the face
+      ! call getDirVector(ssi(i,j,:), -alpha, -beta, sFaceFreestreamRef, liftIndex)
+      ! sFaceFreestreamRef = sFaceFreestreamRef * sF
 
-      ! compute the pertubations of the flow from the free-stream velocity
-      u = VFreestreamRef(1) - sFaceFreestreamRef(1) - uInf
-      v = VFreestreamRef(2) - sFaceFreestreamRef(2)
-      w = VFreestreamRef(3) - sFaceFreestreamRef(3)
+      ! ! compute the pertubations of the flow from the free-stream velocity
+      ! u = VFreestreamRef(1) - sFaceFreestreamRef(1) - uInf
+      ! v = VFreestreamRef(2) - sFaceFreestreamRef(2)
+      ! w = VFreestreamRef(3) - sFaceFreestreamRef(3)
 
-      edota = edota + half*(rhom)
+      ! !edota = edota + half*(rhom)
        
     enddo
 

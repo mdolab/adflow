@@ -1487,9 +1487,10 @@ loopbocos:do mm=1,nbocos
 &   moment, cforce, cmoment
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: forced&
 &   , momentd, cforced, cmomentd
-    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mavgmn
+    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mavgmn, &
+&   sigmamn, sigmaptot
     real(kind=realtype) :: mavgptotd, mavgttotd, mavgpsd, mflowd, &
-&   mavgmnd
+&   mavgmnd, sigmamnd, sigmaptotd
     integer(kind=inttype) :: sps
     intrinsic sqrt
     real(kind=realtype) :: arg1
@@ -1587,6 +1588,10 @@ loopbocos:do mm=1,nbocos
 &       costfuncsepsensoravgz) + ovrnts*globalvalsd(isepavg+2, sps)
       funcvalues(costfuncsepsensoravgz) = funcvalues(&
 &       costfuncsepsensoravgz) + ovrnts*globalvals(isepavg+2, sps)
+      funcvaluesd(costfuncpk) = funcvaluesd(costfuncpk) + ovrnts*&
+&       globalvalsd(ipk, sps)
+      funcvalues(costfuncpk) = funcvalues(costfuncpk) + ovrnts*&
+&       globalvals(ipk, sps)
 ! mass flow like objective
       mflowd = globalvalsd(imassflow, sps)
       mflow = globalvals(imassflow, sps)
@@ -1614,15 +1619,35 @@ loopbocos:do mm=1,nbocos
         mflowd = globalvalsd(imassflow, sps)*result1 + globalvals(&
 &         imassflow, sps)*result1d
         mflow = globalvals(imassflow, sps)*result1
+        if (globalvals(isigmamn, sps)/mflow .eq. 0.0_8) then
+          sigmamnd = 0.0_8
+        else
+          sigmamnd = (globalvalsd(isigmamn, sps)*mflow-globalvals(&
+&           isigmamn, sps)*mflowd)/(mflow**2*2.0*sqrt(globalvals(&
+&           isigmamn, sps)/mflow))
+        end if
+        sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
+        if (globalvals(isigmaptot, sps)/mflow .eq. 0.0_8) then
+          sigmaptotd = 0.0_8
+        else
+          sigmaptotd = (globalvalsd(isigmaptot, sps)*mflow-globalvals(&
+&           isigmaptot, sps)*mflowd)/(mflow**2*2.0*sqrt(globalvals(&
+&           isigmaptot, sps)/mflow))
+        end if
+        sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
       else
         mavgptot = zero
         mavgttot = zero
         mavgps = zero
         mavgmn = zero
+        sigmamn = zero
+        sigmaptot = zero
         mavgttotd = 0.0_8
         mavgpsd = 0.0_8
         mavgmnd = 0.0_8
         mavgptotd = 0.0_8
+        sigmamnd = 0.0_8
+        sigmaptotd = 0.0_8
       end if
       funcvaluesd(costfuncmdot) = funcvaluesd(costfuncmdot) + ovrnts*&
 &       mflowd
@@ -1643,6 +1668,18 @@ loopbocos:do mm=1,nbocos
 &       *mavgmnd
       funcvalues(costfuncmavgmn) = funcvalues(costfuncmavgmn) + ovrnts*&
 &       mavgmn
+      funcvaluesd(costfuncsigmamn) = funcvaluesd(costfuncsigmamn) + &
+&       ovrnts*sigmamnd
+      funcvalues(costfuncsigmamn) = funcvalues(costfuncsigmamn) + ovrnts&
+&       *sigmamn
+      funcvaluesd(costfuncsigmaptot) = funcvaluesd(costfuncsigmaptot) + &
+&       ovrnts*sigmaptotd
+      funcvalues(costfuncsigmaptot) = funcvalues(costfuncsigmaptot) + &
+&       ovrnts*sigmaptot
+      funcvaluesd(costfuncpk) = funcvaluesd(costfuncpk) + ovrnts*&
+&       globalvalsd(ipk, sps)
+      funcvalues(costfuncpk) = funcvalues(costfuncpk) + ovrnts*&
+&       globalvals(ipk, sps)
     end do
 ! bending moment calc - also broken. 
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
@@ -1706,7 +1743,8 @@ loopbocos:do mm=1,nbocos
     real(kind=realtype) :: fact, factmoment, ovrnts
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: force, &
 &   moment, cforce, cmoment
-    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mavgmn
+    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mavgmn, &
+&   sigmamn, sigmaptot
     integer(kind=inttype) :: sps
     intrinsic sqrt
     real(kind=realtype) :: arg1
@@ -1759,6 +1797,8 @@ loopbocos:do mm=1,nbocos
 &       costfuncsepsensoravgy) + ovrnts*globalvals(isepavg+1, sps)
       funcvalues(costfuncsepsensoravgz) = funcvalues(&
 &       costfuncsepsensoravgz) + ovrnts*globalvals(isepavg+2, sps)
+      funcvalues(costfuncpk) = funcvalues(costfuncpk) + ovrnts*&
+&       globalvals(ipk, sps)
 ! mass flow like objective
       mflow = globalvals(imassflow, sps)
       if (mflow .ne. zero) then
@@ -1769,11 +1809,15 @@ loopbocos:do mm=1,nbocos
         arg1 = pref/rhoref
         result1 = sqrt(arg1)
         mflow = globalvals(imassflow, sps)*result1
+        sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
+        sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
       else
         mavgptot = zero
         mavgttot = zero
         mavgps = zero
         mavgmn = zero
+        sigmamn = zero
+        sigmaptot = zero
       end if
       funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
       funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &
@@ -1784,6 +1828,12 @@ loopbocos:do mm=1,nbocos
 &       mavgps
       funcvalues(costfuncmavgmn) = funcvalues(costfuncmavgmn) + ovrnts*&
 &       mavgmn
+      funcvalues(costfuncsigmamn) = funcvalues(costfuncsigmamn) + ovrnts&
+&       *sigmamn
+      funcvalues(costfuncsigmaptot) = funcvalues(costfuncsigmaptot) + &
+&       ovrnts*sigmaptot
+      funcvalues(costfuncpk) = funcvalues(costfuncpk) + ovrnts*&
+&       globalvals(ipk, sps)
     end do
 ! bending moment calc - also broken. 
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
