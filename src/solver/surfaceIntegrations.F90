@@ -564,8 +564,8 @@ contains
     use costFunctions, onlY : nLocalValues, iMassFlow, iMassPtot, iMassTtot, iMassPs, iMassMN
     use sorting, only : bsearchIntegers
     use flowVarRefState, only : pRef, pInf, rhoRef, timeRef, LRef, TRef, RGas, uRef, uInf
-    use inputPhysics, only : pointRef, flowType
-    use flowUtils, only : computePtot, computeTtot
+    use inputPhysics, only : pointRef, flowType, velDirFreeStream, alpha, beta, liftIndex
+    use flowUtils, only : computePtot, computeTtot, getDirVector
     use BCPointers, only : ssi, sFace, ww1, ww2, pp1, pp2, xx, gamma1, gamma2
     use utils, only : mynorm2
     implicit none
@@ -579,9 +579,9 @@ contains
     real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN, mReDim, pk
     integer(kind=intType) :: i, j, ii, blk
     real(kind=realType) :: internalFlowFact, inFlowFact, fact, xc, yc, zc, cellArea, mx, my, mz
-    real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, Fx, Fy, Fz
+    real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, Fx, Fy, Fz, u, v, w
     real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, a2, MNm, massFlowRateLocal
-    real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint
+    real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint, VcoordRef, VFreestreamRef,sFaceFreestreamRef
 
     massFlowRate = zero
     mass_Ptot = zero
@@ -665,13 +665,10 @@ contains
       massFlowRateLocal = rhom*vnm*blk*fact*mReDim
       massFlowRate = massFlowRate + massFlowRateLocal
 
+      pk = pk + ((pm-pInf) + half*rhom*(vmag**2 - (uInf)**2)) * vnm * pRef* uRef * fact
+
       ! re-dimentionalize quantities
       pm = pm*pRef
-      vmag = vmag*uRef
-      rhom = rhom*rhoRef
-      vnm = vnm*uRef
-
-      pk = pk + ((pm-pref) + half*rhom*(vmag**2 - (uInf*uRef)**2)) * vnm * fact
 
       mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
       mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
@@ -729,6 +726,23 @@ contains
       MMom(1) = MMom(1) + mx
       MMom(2) = MMom(2) + my
       MMom(3) = MMom(3) + mz
+
+
+      ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
+      VcoordRef = (/ vxm, vym, vzm /)
+      call getDirVector(VcoordRef, -alpha, -beta, VFreestreamRef, liftIndex)
+      VFreestreamRef = VFreestreamRef * vmag
+
+      !project the face normal into the freestream velocity and scale by the face
+      call getDirVector(ssi(i,j,:), -alpha, -beta, sFaceFreestreamRef, liftIndex)
+      sFaceFreestreamRef = sFaceFreestreamRef * sF
+
+      ! compute the pertubations of the flow from the free-stream velocity
+      u = VFreestreamRef(1) - sFaceFreestreamRef(1) - uInf
+      v = VFreestreamRef(2) - sFaceFreestreamRef(2)
+      w = VFreestreamRef(3) - sFaceFreestreamRef(3)
+
+      edota = edota + half*(rhom)
        
     enddo
 
@@ -948,12 +962,9 @@ contains
           massFlowRateLocal = rhom*vnm*mReDim
           massFlowRate = massFlowRate + massFlowRateLocal
 
-          pm = pm*pRef
-          vmag = vmag*uRef
-          rhom = rhom*rhoRef
-          vnm = vnm*uRef
+          pk = pk + ((pm-pInf) + half*rhom*(vmag**2 - uInf**2)) * vnm * pRef * uRef
 
-          pk = pk + ((pm-pref) + half*rhom*(vmag**2 - (uInf*uRef)**2)) * vnm
+          pm = pm*pRef
           
           mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
           mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
@@ -1697,17 +1708,13 @@ contains
     localCFVals(costFuncSigmaPtot) = localValues(iSigmaPtot)
     
     ! Now reduce only the new values into the array
-    call mpi_allreduce(localCFVals(costFuncSigmaMN), globalCFVals(costFuncSigmaMN), 1, adflow_real, &
+    call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, adflow_real, &
          mpi_sum, ADflow_comm_world, ierr)
-    
-    ! call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, adflow_real, &
-    !      mpi_sum, ADflow_comm_world, ierr)
     ! redo all the final calcs on the global values after the second allgather
-    ! globalCFVals(costFuncMavgPtot) = globalCFVals(costFuncMavgPtot)/globalCFVals(costFuncMdot)
-    ! globalCFVals(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)/globalCFVals(costFuncMdot)
-    ! globalCFVals(costFuncMavgPs) = globalCFVals(costFuncMavgPs)/globalCFVals(costFuncMdot)
-    ! globalCFVals(costFuncMavgMN) = globalCFVals(costFuncMavgMN)/globalCFVals(costFuncMdot)
-    
+    globalCFVals(costFuncMavgPtot) = globalCFVals(costFuncMavgPtot)/globalCFVals(costFuncMdot)
+    globalCFVals(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)/globalCFVals(costFuncMdot)
+    globalCFVals(costFuncMavgPs) = globalCFVals(costFuncMavgPs)/globalCFVals(costFuncMdot)
+    globalCFVals(costFuncMavgMN) = globalCFVals(costFuncMavgMN)/globalCFVals(costFuncMdot)
     globalCFVals(costFuncSigmaMN) = sqrt(globalCFVals(costFuncSigmaMN)/globalCFVals(costFuncMdot))
     globalCFVals(costFuncSigmaPtot) = sqrt(globalCFVals(costFuncSigmaPtot)/globalCFVals(costFuncMdot))
 
