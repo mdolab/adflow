@@ -8,7 +8,7 @@ module costFunctions
   !
   !      Cost functions.
 
-  integer(kind=intType), parameter :: nCostFunction = 49
+  integer(kind=intType), parameter :: nCostFunction = 51
   integer(kind=intType), parameter :: &
        costFuncLift       = 1,&
        costFuncDrag       = 2,&
@@ -57,8 +57,10 @@ module costFunctions
        costFuncMavgTtot = 45, &
        costFuncMavgPs = 46, & 
        costFuncMavgMN = 47, &
-       costFuncDistortion = 48, &
-       costFuncPk = 49
+       costFuncSigmaMN = 48, &
+       costFuncSigmaPt = 49, &
+       costFuncPk = 50, &
+       costFuncEdot = 51
 
   integer(kind=intType), parameter :: &
        iFp =  1, &
@@ -78,11 +80,12 @@ module costFunctions
        iFlowFm   = 29, & 
        iFlowMm   = 32, & 
        iMassMN   = 35, &
-       iDistortion = 36, &
-       iPk = 37
+       isigmaMN = 36, &
+       isigmaPt = 37, &
+       iPk = 38
 
 
-  integer(kind=intType), parameter :: nLocalValues=38
+  integer(kind=intType), parameter :: nLocalValues=39
 
   real(kind=realType), dimension(nCostFunction) ::  funcValues
 #ifndef USE_TAPENADE

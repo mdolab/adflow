@@ -654,9 +654,6 @@ contains
       pm = half*(pp1(i,j)+ pp2(i,j))
       gammam = half*(gamma1(i,j) + gamma2(i,j))
 
-      print *, gammam
-
-
       vnm = vxm*ssi(i,j,1) + vym*ssi(i,j,2) + vzm*ssi(i,j,3)  - sF
       vmag = sqrt((vxm**2 + vym**2 + vzm**2)) - sF
       ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
@@ -836,7 +833,7 @@ contains
 
       massFlowRateLocal = rhom*vnm*mReDim*blk*fact
 
-      localValues(iDistortion) = localValues(iDistortion) + massFlowRateLocal*(MNm - massAvgMN)**2
+      localValues(iSigmaMN) = localValues(iSigmaMN) + massFlowRateLocal*(MNm - massAvgMN)**2
     end do
 
   end subroutine flowIntegrationFaceWithGathered
@@ -1038,7 +1035,7 @@ contains
     ! Integrate over the trianges for the inflow/outflow conditions. 
 
     use constants
-    use costFunctions, only : nLocalValues, iDistortion, costFuncMAvgMN, nCostFunction
+    use costFunctions, only : nLocalValues, iSigmaMN, costFuncMAvgMN, nCostFunction
     use blockPointers, only : BCType
     use sorting, only : bsearchIntegers
     use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas
@@ -1124,7 +1121,7 @@ contains
       end if
     end do 
 
-    localValues(iDistortion) = localValues(iDistortion) + distortion
+    localValues(iSigmaMN) = localValues(iSigmaMN) + distortion
 
   end subroutine flowIntegrationZipperwithGathered
 
@@ -1683,10 +1680,10 @@ contains
        call integrateZippersWithGathered(globalCFVals, localValues, famList, sps)
     end if
 
-    localCFVals(costFuncDistortion) = localValues(iDistortion)
+    localCFVals(costFuncSigmaMN) = localValues(iSigmaMN)
     
     ! Now reduce only the new values into the array
-    call mpi_allreduce(localCFVals(costFuncDistortion), globalCFVals(costFuncDistortion), 1, adflow_real, &
+    call mpi_allreduce(localCFVals(costFuncSigmaMN), globalCFVals(costFuncSigmaMN), 1, adflow_real, &
          mpi_sum, ADflow_comm_world, ierr)
     
     ! call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, adflow_real, &
@@ -1697,7 +1694,7 @@ contains
     ! globalCFVals(costFuncMavgPs) = globalCFVals(costFuncMavgPs)/globalCFVals(costFuncMdot)
     ! globalCFVals(costFuncMavgMN) = globalCFVals(costFuncMavgMN)/globalCFVals(costFuncMdot)
     
-    globalCFVals(costFuncDistortion) = sqrt(globalCFVals(costFuncDistortion)/globalCFVals(costFuncMdot))
+    globalCFVals(costFuncSigmaMN) = sqrt(globalCFVals(costFuncSigmaMN)/globalCFVals(costFuncMdot))
 
   end subroutine computeAeroCoef
 
@@ -1783,7 +1780,7 @@ contains
     funcValues(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)
     funcValues(costFuncMavgPs) = globalCFVals(costFuncMavgPs)
     funcValues(costFuncMavgMN) = globalCFVals(costFuncMavgMN)
-    funcValues(costFuncDistortion) = globalCFVals(costFuncDistortion)
+    funcValues(costFuncSigmaMN) = globalCFVals(costFuncSigmaMN)
     funcValues(costFuncPk) = globalCFVals(costFuncPk)
 
     if(TSStability)then
