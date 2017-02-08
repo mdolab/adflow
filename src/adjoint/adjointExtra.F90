@@ -733,7 +733,7 @@ contains
           mAvgPs   = globalVals(iMassPs, sps)/mFlow
           mAvgMn   = globalVals(iMassMn, sps)/mFlow
           mFlow = globalVals(iMassFlow, sps)*sqrt(Pref/rhoRef)
-          distortion = sqrt(globalvals(iDistortion, sps)/mFlow)
+          distortion = sqrt(globalvals(iSigmaMN, sps)/mFlow)
 
        else
           mAvgPtot = zero
@@ -748,7 +748,7 @@ contains
        funcValues(costFuncMavgPtot)  = funcValues(costFuncMavgTtot) + ovrNTS*mAvgTtot
        funcValues(costFuncMavgPs)    = funcValues(costFuncMAvgPs) + ovrNTS*mAvgPs
        funcValues(costFuncMavgMn)    = funcValues(costFuncMAvgMn) + ovrNTS*mAvgMn
-       funcValues(costFuncDistortion) = funcValues(costFuncDistortion) + ovrNTS*distortion
+       funcValues(costFuncSigmaMN) = funcValues(costFuncSigmaMN) + ovrNTS*distortion
 
        ! Bending moment calc - also broken. 
        ! call computeRootBendingMoment(cForce, cMoment, liftIndex, bendingMoment)
