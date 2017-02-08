@@ -679,7 +679,7 @@ contains
     ! Working
     real(kind=realType) :: fact, factMoment, ovrNTS
     real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, cForce, cMoment
-    real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgPs, mFlow, mAvgMn, distortion
+    real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgPs, mFlow, mAvgMn, sigmaMN, sigmaPtot
     integer(kind=intType) :: sps
 
     ! Factor used for time-averaged quantities.
@@ -724,6 +724,7 @@ contains
        funcValues(costFuncSepSensorAvgX) = funcValues(costFuncSepSensorAvgX) + ovrNTS*globalVals(iSepAvg  , sps)
        funcValues(costFuncSepSensorAvgY) = funcValues(costFuncSepSensorAvgY) + ovrNTS*globalVals(iSepAvg+1, sps)
        funcValues(costFuncSepSensorAvgZ) = funcValues(costFuncSepSensorAvgZ) + ovrNTS*globalVals(iSepAvg+2, sps)
+       funcValues(costFuncPk) = funcValues(costFuncPk) + ovrNTS*globalVals(iPk, sps)
 
        ! Mass flow like objective
        mFlow = globalVals(iMassFlow, sps)
@@ -733,14 +734,16 @@ contains
           mAvgPs   = globalVals(iMassPs, sps)/mFlow
           mAvgMn   = globalVals(iMassMn, sps)/mFlow
           mFlow = globalVals(iMassFlow, sps)*sqrt(Pref/rhoRef)
-          distortion = sqrt(globalvals(iSigmaMN, sps)/mFlow)
+          sigmaMN = sqrt(globalvals(iSigmaMN, sps)/mFlow)
+          sigmaPtot = sqrt(globalvals(iSigmaPtot, sps)/mFlow)
 
        else
           mAvgPtot = zero
           mAvgTtot = zero
           mAvgPs = zero
           mAvgMn = zero
-          distortion = zero
+          sigmaMN = zero
+          sigmaPtot = zero
        end if
 
        funcValues(costFuncMdot)      = funcValues(costFuncMdot) + ovrNTS*mFlow
@@ -748,7 +751,9 @@ contains
        funcValues(costFuncMavgPtot)  = funcValues(costFuncMavgTtot) + ovrNTS*mAvgTtot
        funcValues(costFuncMavgPs)    = funcValues(costFuncMAvgPs) + ovrNTS*mAvgPs
        funcValues(costFuncMavgMn)    = funcValues(costFuncMAvgMn) + ovrNTS*mAvgMn
-       funcValues(costFuncSigmaMN) = funcValues(costFuncSigmaMN) + ovrNTS*distortion
+       funcValues(costFuncSigmaMN) = funcValues(costFuncSigmaMN) + ovrNTS*sigmaMN
+       funcValues(costFuncSigmaPtot) = funcValues(costFuncSigmaPtot) + ovrNTS*sigmaPtot
+       funcValues(costFuncPk) = funcValues(costFuncPk) + ovrNTS*globalVals(iPk, sps)
 
        ! Bending moment calc - also broken. 
        ! call computeRootBendingMoment(cForce, cMoment, liftIndex, bendingMoment)
