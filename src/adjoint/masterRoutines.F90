@@ -30,7 +30,8 @@ contains
     use utils, only : setPointers, EChk
     use turbUtils, only : turbAdvection, computeEddyViscosity
     use residuals, only : initRes_block
-    use surfaceIntegrations, only : integrateSurfaces, integrateZippers, integrateSurfacesWithGathered
+    use surfaceIntegrations, only : integrateSurfaces, integrateZippers, & 
+        integrateSurfacesWithGathered, integrateZippersWithGathered
     use adjointExtra, only : volume_block, metric_block, boundaryNormals,&
          xhalo_block, sumdwandfw, resScale, getCostFunctions
     use overset, only : oversetPresent
@@ -225,10 +226,16 @@ contains
       end do 
 
        ! Integrate any zippers we have
-       ! call integrateZippersWithGathered(globalVal(:,sps), localval(:, sps), famList, sps)
+       call integrateZippersWithGathered(globalVal(:,sps), localval(:, sps), famList, sps)
     end do 
 
+     ! Now we need to reduce all the cost functions
+    call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
+         MPI_SUM, adflow_comm_world, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
 
+    ! second pass through this so distortion is computed correctly
+    call getCostFunctions(globalVal)
 
   end subroutine master
 #ifndef USE_COMPLEX
