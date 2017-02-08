@@ -756,7 +756,12 @@ contains
                   flowDomsd(nn, level, sps)%BCData(mm)%T(iBeg:iStop, jBeg:jStop, 3),&
                   flowDomsd(nn, level, sps)%BCData(mm)%area(iBeg:iStop, jBeg:jStop), &
                   flowDomsd(nn, level, sps)%BCData(mm)%uSlip(iBeg:iStop,jBeg:jStop,3), &
-                  flowDomsd(nn, level, sps)%BCData(mm)%TNS_Wall(iBeg:iStop,jBeg:jStop), stat=ierr)
+                  flowDomsd(nn, level, sps)%BCData(mm)%TNS_Wall(iBeg:iStop,jBeg:jStop, & 
+                  flowDomsd(nn, level, sps)%BCData(mm)%ptInlet(iBeg:iStop,jBeg:jStop), & 
+                  flowDomsd(nn, level, sps)%BCData(mm)%htInlet(iBeg:iStop,jBeg:jStop), & 
+                  flowDomsd(nn, level, sps)%BCData(mm)%ttInlet(iBeg:iStop,jBeg:jStop), & 
+                  flowDomsd(nn, level, sps)%BCData(mm)%ps(iBeg:iStop,jBeg:jStop), stat=ierr)
+                  
              call EChk(ierr,__FILE__,__LINE__)
           end do bocoLoop
 
@@ -858,6 +863,10 @@ contains
        flowDomsd(nn, level, sps)%bcData(mm)%area = zero
        flowDomsd(nn, level, sps)%BCData(mm)%uSlip = zero
        flowDomsd(nn, level, sps)%BCData(mm)%TNS_Wall = zero
+       flowDomsd(nn, level, sps)%BCData(mm)%ptInlet = zero
+       flowDomsd(nn, level, sps)%BCData(mm)%htInlet = zero
+       flowDomsd(nn, level, sps)%BCData(mm)%ttInlet = zero
+       flowDomsd(nn, level, sps)%BCData(mm)%ps = zero
     end do bocoLoop
 
 

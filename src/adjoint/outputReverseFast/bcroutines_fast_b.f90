@@ -520,8 +520,8 @@ contains
 !  bleed outflow.
     use constants
     use blockpointers, only : bcdata
-    use bcpointers_fast_b, only : gamma2, rev2, rlv2, pp2, ww2, rlv1, rev1, &
-&   pp1, ww1, isize, jsize, istart, jstart
+    use bcpointers_fast_b, only : ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, &
+&   rlv1, rlv2, rev0, rev1, rev2, gamma2, isize, jsize, istart, jstart
     use flowvarrefstate, only : eddymodel, viscous
     implicit none
 ! subroutine arguments.
@@ -600,8 +600,8 @@ contains
     use blockpointers, only : bcdata
     use flowvarrefstate, only : viscous, eddymodel, rgas
     use inputdiscretization, only : hscalinginlet
-    use bcpointers_fast_b, only : gamma2, ww2, pp2, rlv1, rlv2, rev1, rev2, &
-&   ww1, pp1, isize, jsize, istart, jstart
+    use bcpointers_fast_b, only : ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, &
+&   rlv1, rlv2, rev0, rev1, rev2, gamma2, isize, jsize, istart, jstart
     implicit none
 ! subroutine arguments.
     logical, intent(in) :: secondhalo, correctfork

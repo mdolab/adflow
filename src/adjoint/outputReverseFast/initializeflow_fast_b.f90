@@ -38,8 +38,8 @@ contains
 &   tsuthdim, veldirfreestream, rgasdim, ssuthdim, eddyvisinfratio, &
 &   turbmodel, turbintensityinf
     use flowvarrefstate, only : pinfdim, tinfdim, rhoinfdim, muinfdim,&
-&   pref, rhoref, tref, muref, timeref, pinf, pinfcorr, rhoinf, uinf, &
-&   rgas, muinf, gammainf, winf, nw, nwf, kpresent, winf
+&   pref, rhoref, tref, muref, timeref, uref, href, pinf, pinfcorr, &
+&   rhoinf, uinf, rgas, muinf, gammainf, winf, nw, nwf, kpresent, winf
     use flowutils_fast_b, only : computegamma, etot
     use turbutils_fast_b, only : sanuknowneddyratio
     implicit none
@@ -68,6 +68,8 @@ contains
 ! unsteady equations. some story as for the reference viscosity
 ! concerning the reference length.
     timeref = sqrt(rhoref/pref)
+    href = pref/rhoref
+    uref = sqrt(href)
 ! compute the nondimensional pressure, density, velocity,
 ! viscosity and gas constant.
     pinf = pinfdim/pref
