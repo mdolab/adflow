@@ -178,10 +178,6 @@ contains
     ! for the interpolation and set the cgns names.
 
     call setBCVarNamesIsothermalWall ! sets bcVarNames and nbcVar
-    allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVar), stat=ierr)
-    if(ierr /= 0)                            &
-         call terminate("BCDataIsothermalWall", &
-         "Memory allocation failure for bcVarArray")
 
     ! Try to determine the temperature from the data set.
 
@@ -211,13 +207,6 @@ contains
           BCData(boco)%TNS_Wall(i,j) = mult*bcVarArray(i,j,1) + trans
        enddo
     enddo
-
-    ! Release the memory of the bcVarArray.
-
-    deallocate(bcVarArray, stat=ierr)
-    if(ierr /= 0)                            &
-         call terminate("BCDataIsothermalWall", &
-         "Deallocation failure for bcVarArray")
 
   end subroutine BCDataIsothermalWall
 
@@ -317,16 +306,7 @@ contains
 
     character(len=maxStringLen) :: errorMessage
 
-    ! Allocate the memory for the buffer bcVarArray, which is used
-    ! for the interpolation and set the cgns names.
-
-    call setBCVarNamesSubsonicInflow ! sets bcVarNames and nbcVar
-
-
-    allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVar), stat=ierr)
-    if(ierr /= 0)                            &
-         call terminate("BCDataSubsonicInflow", &
-         "Memory allocation failure for bcVarArray")
+      call setBCVarNamesSubsonicInflow ! sets bcVarNames and nbcVar
 
     ! Try to determine these variables.
 
@@ -417,14 +397,7 @@ contains
 
     if(.not. allTurbSubface) allTurbPresent = .false.
 
-    ! Release the memory of the bcVarArray.
-
-    deallocate(bcVarArray, stat=ierr)
-    if(ierr /= 0)                            &
-         call terminate("BCDataSubsonicInflow", &
-         "Deallocation failure for bcVarArray")
-
-    !=================================================================
+     !=================================================================
 
     contains
 
@@ -1004,11 +977,6 @@ contains
 
     call setBCVarNamesSubsonicOutflow ! sets bcVarNames and nbcVar
 
-    allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVar), stat=ierr)
-    if(ierr /= 0)                             &
-         call terminate("BCDataSubsonicOutflow", &
-         "Memory allocation failure for bcVarArray")
-
     ! Try to determine the static pressure from the data set.
 
     call extractFromDataSet
@@ -1037,13 +1005,6 @@ contains
           BCData(boco)%ps(i,j) = mult*bcVarArray(i,j,1) + trans
        enddo
     enddo
-
-    ! Release the memory of the bcVarArray.
-
-    deallocate(bcVarArray, stat=ierr)
-    if(ierr /= 0)                               &
-         call terminate("BCDataSubsonicOutflow", &
-         "Deallocation failure for bcVarArray")
 
   end subroutine BCDataSubsonicOutflow
 
@@ -1131,11 +1092,6 @@ contains
     ! for the interpolation and set the cgns names.
 
     call setBCVarNamesSupersonicInflow
-
-    allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVar), stat=ierr)
-    if(ierr /= 0)                                &
-         call terminate("BCDataSupersonicInflow", &
-         "Memory allocation failure for bcVarArray")
 
     ! Try to determine these variables.
 
@@ -1232,13 +1188,6 @@ contains
        end select
 
     endif testPresent
-
-    ! Release the memory of the bcVarArray.
-
-    deallocate(bcVarArray, stat=ierr)
-    if(ierr /= 0)                              &
-         call terminate("BCDataSupersonicInflow", &
-         "Deallocation failure for bcVarArray")
 
     ! Check if the prescribed velocity is an inflow. No halo's
     ! should be included here and therefore the nodal range
@@ -3310,11 +3259,14 @@ contains
              iBeg = BCData(j)%icBeg; iEnd = BCData(j)%icEnd
              jBeg = BCData(j)%jcBeg; jEnd = BCData(j)%jcEnd
 
+             ! Allocate the bcVarArray to the maximum size it could
+             ! possibly be *in the last dimension*. 
+             allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVarMax))
+
              ! Determine the boundary condition we are having here and
              ! call the appropriate routine.
 
              select case (BCType(j))
-
 
              case (NSWallIsothermal)
                 call BCDataIsothermalWall(j)
@@ -3335,6 +3287,8 @@ contains
                 call terminate('setBCDataFineGrid', &
                      'Domain interface BCs are not fully implemented')
              end select
+             
+             deallocate(bcVarArray)
 
           enddo bocoLoop
        enddo domainsLoop
