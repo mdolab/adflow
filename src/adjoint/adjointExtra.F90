@@ -679,7 +679,7 @@ contains
     ! Working
     real(kind=realType) :: fact, factMoment, ovrNTS
     real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, cForce, cMoment
-    real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgPs, mFlow, mAvgMn
+    real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgPs, mFlow, mAvgMn, distortion
     integer(kind=intType) :: sps
 
     ! Factor used for time-averaged quantities.
@@ -733,12 +733,14 @@ contains
           mAvgPs   = globalVals(iMassPs, sps)/mFlow
           mAvgMn   = globalVals(iMassMn, sps)/mFlow
           mFlow = globalVals(iMassFlow, sps)*sqrt(Pref/rhoRef)
+          distortion = sqrt(globalvals(iDistortion, sps)/mFlow)
 
        else
           mAvgPtot = zero
           mAvgTtot = zero
           mAvgPs = zero
           mAvgMn = zero
+          distortion = zero
        end if
 
        funcValues(costFuncMdot)      = funcValues(costFuncMdot) + ovrNTS*mFlow
@@ -746,12 +748,15 @@ contains
        funcValues(costFuncMavgPtot)  = funcValues(costFuncMavgTtot) + ovrNTS*mAvgTtot
        funcValues(costFuncMavgPs)    = funcValues(costFuncMAvgPs) + ovrNTS*mAvgPs
        funcValues(costFuncMavgMn)    = funcValues(costFuncMAvgMn) + ovrNTS*mAvgMn
+       funcValues(costFuncDistortion) = funcValues(costFuncDistortion) + ovrNTS*distortion
 
        ! Bending moment calc - also broken. 
        ! call computeRootBendingMoment(cForce, cMoment, liftIndex, bendingMoment)
        ! funcValues(costFuncBendingCoef) = funcValues(costFuncBendingCoef) + ovrNTS*bendingMoment
 
     end do
+
+
 
     ! Lift and Drag (coefficients): Dot product with the lift/drag direction.
     funcValues(costFuncLift) = &
