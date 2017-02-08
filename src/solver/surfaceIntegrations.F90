@@ -769,8 +769,8 @@ contains
     integer(kind=intType) :: i, j, ii, blk
     real(kind=realType) :: internalFlowFact, fact, xc, yc, zc, cellArea, mx, my, mz
     real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, mReDim
-    real(kind=realType) :: pm, Ptot, rhom, gammam, a2
-    real(kind=realType) :: MNm, massFlowRateLocal, massAvgMN, massAvgPtot
+    real(kind=realType) :: pm, Ptot, rhom, gammam, massAvgPtot
+    real(kind=realType) :: MNm, massFlowRateLocal, massAvgMN
 
     ! Note that these are *opposite* of force integrations. The reason
     ! is that we want positive mass flow into the domain and negative
@@ -1040,12 +1040,12 @@ contains
     ! Integrate over the trianges for the inflow/outflow conditions. 
 
     use constants
-    use costFunctions, only : nLocalValues, iSigmaMN, costFuncMAvgMN, nCostFunction
+    use costFunctions, only : nLocalValues, iSigmaMN, iSigmaPtot, costFuncMAvgMN, costFuncMAvgPtot, nCostFunction
     use blockPointers, only : BCType
     use sorting, only : bsearchIntegers
     use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas
     use inputPhysics, only : pointRef, flowType
-    use flowUtils, only : computePtot, computeTtot
+    use flowUtils, only : computePtot
     use overset, only : zipperMeshes, zipperMesh
     use surfaceFamilies, only : familyExchange, BCFamExchange
     use utils, only : mynorm2, cross_prod
@@ -1064,7 +1064,8 @@ contains
     integer(kind=intType) :: i, j
     real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, mReDim
     real(kind=realType), dimension(3) :: ss, x1, x2, x3, norm
-    real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, MNm, massFlowRateLocal, distortion, massAvgMN
+    real(kind=realType) :: pm, Ptot, rhom, gammam, massAvgPtot, sigmaPtot
+    real(kind=realType) :: MNm, massFlowRateLocal, sigmaMN, massAvgMN
     real(kind=realType) :: internalFlowFact, inflowFact
 
     real(kind=realType), dimension(:), pointer :: localPtr
@@ -1081,8 +1082,10 @@ contains
 
     mReDim = sqrt(pRef*rhoRef)
     massAvgMN = globalCFVals(costFuncMavgMN)
+    massAvgPtot = globalCFVals(costFuncMavgPtot)
 
-    distortion = zero
+    sigmaMN = zero
+    sigmaPtot = zero
 
     !$AD II-LOOP
     do i=1, size(zipper%conn, 2)
@@ -1120,13 +1123,18 @@ contains
           vmag = sqrt((vxm**2 + vym**2 + vzm**2)) - sF
           MNm = sqrt((vxm**2 + vym**2 + vzm**2)*rhom/(gammam*pm)) 
 
+          call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
+          Ptot = Ptot * pref
+
           massFlowRateLocal = rhom*vnm*mReDim
-          distortion = distortion + massFlowRateLocal*(MNm - massAvgMN)**2
+          sigmaMN = sigmaMN + massFlowRateLocal*(MNm - massAvgMN)**2
+          sigmaPtot = sigmaPtot + massFlowRateLocal*(Ptot - massAvgPtot)**2
 
       end if
     end do 
 
-    localValues(iSigmaMN) = localValues(iSigmaMN) + distortion
+    localValues(iSigmaMN) = localValues(iSigmaMN) + sigmaMN
+    localValues(iSigmaPtot) = localValues(iSigmaPtot) + sigmaPtot
 
   end subroutine flowIntegrationZipperwithGathered
 
