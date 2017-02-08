@@ -654,6 +654,8 @@ contains
       pm = half*(pp1(i,j)+ pp2(i,j))
       gammam = half*(gamma1(i,j) + gamma2(i,j))
 
+      print *, gammam
+
 
       vnm = vxm*ssi(i,j,1) + vym*ssi(i,j,2) + vzm*ssi(i,j,3)  - sF
       vmag = sqrt((vxm**2 + vym**2 + vzm**2)) - sF
@@ -1686,14 +1688,15 @@ contains
     ! Now reduce only the new values into the array
     call mpi_allreduce(localCFVals(costFuncDistortion), globalCFVals(costFuncDistortion), 1, adflow_real, &
          mpi_sum, ADflow_comm_world, ierr)
+    
     ! call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, adflow_real, &
     !      mpi_sum, ADflow_comm_world, ierr)
-
     ! redo all the final calcs on the global values after the second allgather
     ! globalCFVals(costFuncMavgPtot) = globalCFVals(costFuncMavgPtot)/globalCFVals(costFuncMdot)
     ! globalCFVals(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)/globalCFVals(costFuncMdot)
     ! globalCFVals(costFuncMavgPs) = globalCFVals(costFuncMavgPs)/globalCFVals(costFuncMdot)
     ! globalCFVals(costFuncMavgMN) = globalCFVals(costFuncMavgMN)/globalCFVals(costFuncMdot)
+    
     globalCFVals(costFuncDistortion) = sqrt(globalCFVals(costFuncDistortion)/globalCFVals(costFuncMdot))
 
   end subroutine computeAeroCoef
