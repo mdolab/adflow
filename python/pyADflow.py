@@ -3218,7 +3218,7 @@ class ADFLOW(AeroSolver):
         A little ascii art might help. Consider the following "mesh"
         . Family 'fam1' has 9 points, 'fam2' has 10 pts and 'fam3' has
         5 points.  Consider that we have also also added two
-        additional groups: 'f12' containing 'fam1' and 'fma2' and a
+        additional groups: 'f12' containing 'fam1' and 'fam2' and a
         group 'f23' that contains families 'fam2' and 'fam3'. The vector
         we want to map is 'vec1'. It is length 9+10. All the 'x's are
         significant values.
@@ -3238,7 +3238,7 @@ class ADFLOW(AeroSolver):
 
         It is also possible to pass in vec2 into this routine. For
         that case, the existing values in the array will not be
-        kept. In the previous examples, the values cooresponding to
+        kept. In the previous examples, the values corresponding to
         fam3 will retain their original values.
 
         Parameters
