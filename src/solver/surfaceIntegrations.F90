@@ -1695,16 +1695,16 @@ contains
     globalCFVals(costFuncMavgPs) = globalCFVals(costFuncMavgPs)/globalCFVals(costFuncMdot)
     globalCFVals(costFuncMavgMN) = globalCFVals(costFuncMavgMN)/globalCFVals(costFuncMdot)
 
-    ! redo the loop over the blocks so we can compute the distortion
-    domainsAgain: do nn=1,nDom
-       call setPointers(nn,1_intType,sps)
-       call integrateSurfacesWithGathered(globalCFVals, localValues, famList)
-    end do domainsAgain
+    ! ! redo the loop over the blocks so we can compute the distortion
+    ! domainsAgain: do nn=1,nDom
+    !    call setPointers(nn,1_intType,sps)
+    !    call integrateSurfacesWithGathered(globalCFVals, localValues, famList)
+    ! end do domainsAgain
 
 
-    if (oversetPresent) then
-       call integrateZippersWithGathered(globalCFVals, localValues, famList, sps)
-    end if
+    ! if (oversetPresent) then
+    !    call integrateZippersWithGathered(globalCFVals, localValues, famList, sps)
+    ! end if
 
     localCFVals(costFuncSigmaMN) = localValues(iSigmaMN)
     localCFVals(costFuncSigmaPtot) = localValues(iSigmaPtot)
