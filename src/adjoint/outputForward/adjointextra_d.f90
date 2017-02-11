@@ -1461,9 +1461,9 @@ loopbocos:do mm=1,nbocos
 !  differentiation of getcostfunctions in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: funcvalues
 !   with respect to varying inputs: machcoef dragdirection liftdirection
-!                pref rhoref globalvals
+!                pref globalvals
 !   rw status of diff variables: machcoef:in dragdirection:in liftdirection:in
-!                pref:in rhoref:in funcvalues:out globalvals:in
+!                pref:in funcvalues:out globalvals:in
   subroutine getcostfunctions_d(globalvals, globalvalsd)
     use constants
     use costfunctions
@@ -1487,16 +1487,14 @@ loopbocos:do mm=1,nbocos
 &   moment, cforce, cmoment
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: forced&
 &   , momentd, cforced, cmomentd
-    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mavgmn, &
-&   sigmamn, sigmaptot
+    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mflow2, &
+&   mavgmn, sigmamn, sigmaptot
     real(kind=realtype) :: mavgptotd, mavgttotd, mavgpsd, mflowd, &
 &   mavgmnd, sigmamnd, sigmaptotd
     integer(kind=inttype) :: sps
     intrinsic sqrt
     real(kind=realtype) :: arg1
-    real(kind=realtype) :: arg1d
     real(kind=realtype) :: result1
-    real(kind=realtype) :: result1d
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
 ! sum pressure and viscous contributions
@@ -1608,17 +1606,9 @@ loopbocos:do mm=1,nbocos
         mavgmnd = (globalvalsd(imassmn, sps)*mflow-globalvals(imassmn, &
 &         sps)*mflowd)/mflow**2
         mavgmn = globalvals(imassmn, sps)/mflow
-        arg1d = (prefd*rhoref-pref*rhorefd)/rhoref**2
         arg1 = pref/rhoref
-        if (arg1 .eq. 0.0_8) then
-          result1d = 0.0_8
-        else
-          result1d = arg1d/(2.0*sqrt(arg1))
-        end if
         result1 = sqrt(arg1)
-        mflowd = globalvalsd(imassflow, sps)*result1 + globalvals(&
-&         imassflow, sps)*result1d
-        mflow = globalvals(imassflow, sps)*result1
+        mflow2 = globalvals(imassflow, sps)*result1
         if (globalvals(isigmamn, sps)/mflow .eq. 0.0_8) then
           sigmamnd = 0.0_8
         else
@@ -1642,6 +1632,7 @@ loopbocos:do mm=1,nbocos
         mavgmn = zero
         sigmamn = zero
         sigmaptot = zero
+        mflow2 = zero
         mavgttotd = 0.0_8
         mavgpsd = 0.0_8
         mavgmnd = 0.0_8
@@ -1743,8 +1734,8 @@ loopbocos:do mm=1,nbocos
     real(kind=realtype) :: fact, factmoment, ovrnts
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: force, &
 &   moment, cforce, cmoment
-    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mavgmn, &
-&   sigmamn, sigmaptot
+    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mflow2, &
+&   mavgmn, sigmamn, sigmaptot
     integer(kind=inttype) :: sps
     intrinsic sqrt
     real(kind=realtype) :: arg1
@@ -1808,7 +1799,7 @@ loopbocos:do mm=1,nbocos
         mavgmn = globalvals(imassmn, sps)/mflow
         arg1 = pref/rhoref
         result1 = sqrt(arg1)
-        mflow = globalvals(imassflow, sps)*result1
+        mflow2 = globalvals(imassflow, sps)*result1
         sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
         sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
       else
@@ -1818,6 +1809,7 @@ loopbocos:do mm=1,nbocos
         mavgmn = zero
         sigmamn = zero
         sigmaptot = zero
+        mflow2 = zero
       end if
       funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
       funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &

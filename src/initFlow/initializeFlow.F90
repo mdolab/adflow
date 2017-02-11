@@ -197,8 +197,7 @@ contains
 
     use constants
     use iteration, only : groundLevel
-    use bcdata, only : setSupersonicInletFreeStream, setbcdataFineGrid, &
-         setBCDataCoarseGrid, nonDimBoundData, setInletFreeStreamTurb
+    use bcdata, only : setbcdataFineGrid, setBCDataCoarseGrid
     implicit none
     
     ! Allocate the memory for the prescribed boundary data at the
@@ -206,31 +205,16 @@ contains
 
     groundLevel = 1
 
-    call setBCDataFineGrid(.true.)
-
     ! Determine the reference state.
     call referenceState
+ 
+    call setBCDataFineGrid(.true.)
 
     ! Determine the prescribed data on the coarse grid levels
     ! by interpolation.
-
+#ifndef USE_TAPENADE
     call setBCDataCoarseGrid
-
-    ! Non-dimensionalize the boundary data.
-
-    call nonDimBoundData
-
-    ! Set the primitive variables to the free stream values for
-    ! the supersonic inflow faces for which this data has not
-    ! been prescribed.
-
-    call setSupersonicInletFreeStream
-
-    ! Set the turbulent quantities to the free stream values for
-    ! the inflow faces for which this data has not been prescribed.
-    ! These can be both subsonic and supersonic inflow faces.
-
-    call setInletFreestreamTurb
+#endif
 
   end subroutine updateBCDataAllLevels
 

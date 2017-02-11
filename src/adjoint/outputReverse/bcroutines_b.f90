@@ -147,15 +147,15 @@ contains
     end do
   end subroutine applyallbc_block
 !  differentiation of bcsymm1sthalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *(*bcdata.norm) *rev1 *rev2
-!                *pp1 *pp2 *rlv1 *rlv2 *ww1 *ww2
-!   with respect to varying inputs: *(*bcdata.norm) *rev1 *rev2
-!                *pp1 *pp2 *rlv1 *rlv2 *ww1 *ww2
-!   rw status of diff variables: *(*bcdata.norm):incr *rev1:in-out
-!                *rev2:incr *pp1:in-out *pp2:incr *rlv1:in-out
-!                *rlv2:incr *ww1:in-out *ww2:incr
-!   plus diff mem management of: bcdata:in *bcdata.norm:in rev1:in
-!                rev2:in pp1:in pp2:in rlv1:in rlv2:in ww1:in ww2:in
+!   gradient     of useful results: *rev1 *rev2 *pp1 *pp2 *rlv1
+!                *rlv2 *ww1 *ww2 *(*bcdata.norm)
+!   with respect to varying inputs: *rev1 *rev2 *pp1 *pp2 *rlv1
+!                *rlv2 *ww1 *ww2 *(*bcdata.norm)
+!   rw status of diff variables: *rev1:in-out *rev2:incr *pp1:in-out
+!                *pp2:incr *rlv1:in-out *rlv2:incr *ww1:in-out
+!                *ww2:incr *(*bcdata.norm):incr
+!   plus diff mem management of: rev1:in rev2:in pp1:in pp2:in
+!                rlv1:in rlv2:in ww1:in ww2:in bcdata:in *bcdata.norm:in
 ! ===================================================================
 !   actual implementation of each of the boundary condition routines
 ! ===================================================================
@@ -293,15 +293,15 @@ contains
     end do
   end subroutine bcsymm1sthalo
 !  differentiation of bcsymm2ndhalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *(*bcdata.norm) *rev0 *rev3
-!                *pp0 *pp3 *rlv0 *rlv3 *ww0 *ww3
-!   with respect to varying inputs: *(*bcdata.norm) *rev0 *rev3
-!                *pp0 *pp3 *rlv0 *rlv3 *ww0 *ww3
-!   rw status of diff variables: *(*bcdata.norm):incr *rev0:in-out
-!                *rev3:incr *pp0:in-out *pp3:incr *rlv0:in-out
-!                *rlv3:incr *ww0:in-out *ww3:incr
-!   plus diff mem management of: bcdata:in *bcdata.norm:in rev0:in
-!                rev3:in pp0:in pp3:in rlv0:in rlv3:in ww0:in ww3:in
+!   gradient     of useful results: *rev0 *rev3 *pp0 *pp3 *rlv0
+!                *rlv3 *ww0 *ww3 *(*bcdata.norm)
+!   with respect to varying inputs: *rev0 *rev3 *pp0 *pp3 *rlv0
+!                *rlv3 *ww0 *ww3 *(*bcdata.norm)
+!   rw status of diff variables: *rev0:in-out *rev3:incr *pp0:in-out
+!                *pp3:incr *rlv0:in-out *rlv3:incr *ww0:in-out
+!                *ww3:incr *(*bcdata.norm):incr
+!   plus diff mem management of: rev0:in rev3:in pp0:in pp3:in
+!                rlv0:in rlv3:in ww0:in ww3:in bcdata:in *bcdata.norm:in
   subroutine bcsymm2ndhalo_b(nn)
 !  bcsymm2ndhalo applies the symmetry boundary conditions to a
 !  block for the 2nd halo. this routine is separate as it makes
@@ -759,19 +759,17 @@ contains
     if (secondhalo) call extrapolate2ndhalo(correctfork)
   end subroutine bcnswalladiabatic
 !  differentiation of bcnswallisothermal in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *(*bcdata.tns_wall) rgas *rev0
-!                *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0
-!                *ww1 *ww2
-!   with respect to varying inputs: *(*bcdata.tns_wall) rgas *rev0
-!                *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0
-!                *ww1 *ww2
-!   rw status of diff variables: *(*bcdata.tns_wall):incr rgas:incr
-!                *rev0:in-out *rev1:in-out *rev2:incr *pp0:in-out
-!                *pp1:in-out *pp2:incr *rlv0:in-out *rlv1:in-out
-!                *rlv2:incr *ww0:in-out *ww1:in-out *ww2:incr
-!   plus diff mem management of: bcdata:in *bcdata.tns_wall:in
-!                rev0:in rev1:in rev2:in pp0:in pp1:in pp2:in rlv0:in
-!                rlv1:in rlv2:in ww0:in ww1:in ww2:in
+!   gradient     of useful results: rgas *rev0 *rev1 *rev2 *pp0
+!                *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.tns_wall)
+!   with respect to varying inputs: rgas *rev0 *rev1 *rev2 *pp0
+!                *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.tns_wall)
+!   rw status of diff variables: rgas:incr *rev0:in-out *rev1:in-out
+!                *rev2:incr *pp0:in-out *pp1:in-out *pp2:incr *rlv0:in-out
+!                *rlv1:in-out *rlv2:incr *ww0:in-out *ww1:in-out
+!                *ww2:incr *(*bcdata.tns_wall):incr
+!   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
+!                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
+!                ww2:in bcdata:in *bcdata.tns_wall:in
   subroutine bcnswallisothermal_b(nn, secondhalo, correctfork)
 ! bcnswalladiabatic applies the viscous isothermal wall boundary
 ! condition to a block. it is assumed that the bcpointers are
@@ -1085,19 +1083,19 @@ contains
     if (secondhalo) call extrapolate2ndhalo(correctfork)
   end subroutine bcnswallisothermal
 !  differentiation of bcsubsonicoutflow in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *(*bcdata.norm) *(*bcdata.ps)
-!                *rev0 *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2
-!                *ww0 *ww1 *ww2
-!   with respect to varying inputs: *(*bcdata.norm) *(*bcdata.ps)
-!                *rev0 *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2
-!                *ww0 *ww1 *ww2
-!   rw status of diff variables: *(*bcdata.norm):incr *(*bcdata.ps):incr
-!                *rev0:in-out *rev1:in-out *rev2:incr *pp0:in-out
-!                *pp1:in-out *pp2:incr *rlv0:in-out *rlv1:in-out
-!                *rlv2:incr *ww0:in-out *ww1:in-out *ww2:incr
-!   plus diff mem management of: bcdata:in *bcdata.norm:in *bcdata.ps:in
-!                rev0:in rev1:in rev2:in pp0:in pp1:in pp2:in rlv0:in
-!                rlv1:in rlv2:in ww0:in ww1:in ww2:in
+!   gradient     of useful results: *rev0 *rev1 *rev2 *pp0 *pp1
+!                *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.norm)
+!                *(*bcdata.ps)
+!   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
+!                *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.norm)
+!                *(*bcdata.ps)
+!   rw status of diff variables: *rev0:in-out *rev1:in-out *rev2:incr
+!                *pp0:in-out *pp1:in-out *pp2:incr *rlv0:in-out
+!                *rlv1:in-out *rlv2:incr *ww0:in-out *ww1:in-out
+!                *ww2:incr *(*bcdata.norm):incr *(*bcdata.ps):incr
+!   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
+!                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
+!                ww2:in bcdata:in *bcdata.norm:in *bcdata.ps:in
   subroutine bcsubsonicoutflow_b(nn, secondhalo, correctfork)
 !  bcsubsonicoutflow applies the subsonic outflow boundary
 !  condition, static pressure prescribed, to a block. it is
@@ -1425,23 +1423,21 @@ contains
     if (secondhalo) call extrapolate2ndhalo(correctfork)
   end subroutine bcsubsonicoutflow
 !  differentiation of bcsubsonicinflow in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *(*bcdata.norm) *(*bcdata.ptinlet)
-!                *(*bcdata.ttinlet) *(*bcdata.htinlet) *rev0 *rev1
-!                *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1
-!                *ww2
-!   with respect to varying inputs: *(*bcdata.norm) *(*bcdata.ptinlet)
-!                *(*bcdata.ttinlet) *(*bcdata.htinlet) *rev0 *rev1
-!                *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1
-!                *ww2
-!   rw status of diff variables: *(*bcdata.norm):incr *(*bcdata.ptinlet):incr
+!   gradient     of useful results: *rev0 *rev1 *rev2 *pp0 *pp1
+!                *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.norm)
+!                *(*bcdata.ptinlet) *(*bcdata.ttinlet) *(*bcdata.htinlet)
+!   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
+!                *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.norm)
+!                *(*bcdata.ptinlet) *(*bcdata.ttinlet) *(*bcdata.htinlet)
+!   rw status of diff variables: *rev0:in-out *rev1:in-out *rev2:incr
+!                *pp0:in-out *pp1:in-out *pp2:incr *rlv0:in-out
+!                *rlv1:in-out *rlv2:incr *ww0:in-out *ww1:in-out
+!                *ww2:incr *(*bcdata.norm):incr *(*bcdata.ptinlet):incr
 !                *(*bcdata.ttinlet):incr *(*bcdata.htinlet):incr
-!                *rev0:in-out *rev1:in-out *rev2:incr *pp0:in-out
-!                *pp1:in-out *pp2:incr *rlv0:in-out *rlv1:in-out
-!                *rlv2:incr *ww0:in-out *ww1:in-out *ww2:incr
-!   plus diff mem management of: bcdata:in *bcdata.norm:in *bcdata.ptinlet:in
-!                *bcdata.ttinlet:in *bcdata.htinlet:in rev0:in
-!                rev1:in rev2:in pp0:in pp1:in pp2:in rlv0:in rlv1:in
-!                rlv2:in ww0:in ww1:in ww2:in
+!   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
+!                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
+!                ww2:in bcdata:in *bcdata.norm:in *bcdata.ptinlet:in
+!                *bcdata.ttinlet:in *bcdata.htinlet:in
   subroutine bcsubsonicinflow_b(nn, secondhalo, correctfork)
 !  bcsubsonicinflow applies the subsonic outflow boundary
 !  condition, total pressure, total density and flow direction
@@ -1456,12 +1452,15 @@ contains
 &   pp1, pp1d, pp2, pp2d, rlv0, rlv0d, rlv1, rlv1d, rlv2, rlv2d, rev0, &
 &   rev0d, rev1, rev1d, rev2, rev2d, gamma2, isize, jsize, istart, &
 &   jstart
+    use inputphysics, only : cpmodel, gammaconstant
+    use utils_b, only : terminate
     implicit none
 ! subroutine arguments.
     logical, intent(in) :: secondhalo, correctfork
     integer(kind=inttype), intent(in) :: nn
 ! local variables.
     integer(kind=inttype) :: i, j, l, ii
+    real(kind=realtype), parameter :: twothird=two*third
     real(kind=realtype) :: gm1, ovgm1
     real(kind=realtype) :: ptot, ttot, htot, a2tot, r, alpha, beta
     real(kind=realtype) :: ptotd, ttotd, htotd, a2totd, rd, alphad, &
@@ -1471,7 +1470,8 @@ contains
 &   scalefactd
     real(kind=realtype) :: ssx, ssy, ssz, nnx, nny, nnz
     real(kind=realtype) :: nnxd, nnyd, nnzd
-    real(kind=realtype) :: rho, velx, vely, velz
+    real(kind=realtype) :: rho, velx, vely, velz, ratio, ts, govgm1
+    real(kind=realtype) :: ratiod, tsd
     intrinsic mod
     intrinsic sqrt
     intrinsic max
@@ -1481,6 +1481,8 @@ contains
     real(kind=realtype) :: temp0
     real(kind=realtype) :: max1d
     real(kind=realtype) :: tempd
+    real(kind=realtype) :: tempd7
+    real(kind=realtype) :: tempd6
     real(kind=realtype) :: tempd5
     real(kind=realtype) :: tempd4
     real(kind=realtype) :: tempd3
@@ -1490,8 +1492,10 @@ contains
     real(kind=realtype) :: temp
     real(kind=realtype) :: max1
 ! determine the boundary treatment to be used.
+    govgm1 = gammaconstant/(gammaconstant-one)
     select case  (bcdata(nn)%subsonicinlettreatment) 
     case (totalconditions) 
+      call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
 ! the total conditions have been prescribed.
 ! loop over the generic subface to set the state in the
 ! halo cells.
@@ -1585,18 +1589,28 @@ contains
         ww1(i, j, ivx) = q*ssx
         ww1(i, j, ivy) = q*ssy
         ww1(i, j, ivz) = q*ssz
-        ww1(i, j, irho) = ttot
-        pp1(i, j) = ptot
-        ww1(i, j, irhoe) = a2/(gamma2(i, j)*rgas)
+! this should call prhosubsonicinlet, but it doesnt' ad
+! correctly, so just the constant cp model is used here. 
+! compute the pressure and density for these halo's.
+        select case  (cpmodel) 
+        case (cpconstant) 
+! compute the static pressure from the total pressure
+! and the temperature ratio. compute the density using
+! the gas law.
+          ts = a2/(gamma2(i, j)*rgas)
+          ratio = (ts/ttot)**govgm1
+          pp1(i, j) = ptot*ratio
+          ww1(i, j, irho) = ptot*ratio/(rgas*ts)
+          if (correctfork) pp1(i, j) = pp1(i, j) + twothird*ww1(i, j, &
+&             irho)*ww1(i, j, itu1)
+        case (cptempcurvefits) 
+          call terminate('bcroutines', 'not curve fits not implemented')
+        end select
 ! set the viscosities in the halo to the viscosities
 ! in the donor cell.
         if (viscous) rlv1(i, j) = rlv2(i, j)
         if (eddymodel) rev1(i, j) = rev2(i, j)
       end do
-! compute the pressure and density for these halo's.
-      call pushreal8array(pp1, size(pp1, 1)*size(pp1, 2))
-      call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
-      call prhosubsonicinlet(ww1, pp1, correctfork)
       call pushcontrol2b(1)
     case (massflow) 
 !===========================================================
@@ -1661,14 +1675,14 @@ contains
     if (branch .ne. 0) then
       if (branch .eq. 1) then
         call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
-        call popreal8array(pp1, size(pp1, 1)*size(pp1, 2))
-        call prhosubsonicinlet_b(ww1, ww1d, pp1, pp1d, correctfork)
         do ii=0,isize*jsize-1
           i = mod(ii, isize) + istart
           j = ii/isize + jstart
 ! store a couple of variables, such as the total
 ! pressure, total temperature, total enthalpy, flow
 ! direction and grid unit outward normal, a bit easier.
+          ptot = bcdata(nn)%ptinlet(i, j)
+          ttot = bcdata(nn)%ttinlet(i, j)
           htot = bcdata(nn)%htinlet(i, j)
           ssx = bcdata(nn)%flowxdirinlet(i, j)
           ssy = bcdata(nn)%flowydirinlet(i, j)
@@ -1754,9 +1768,37 @@ contains
             call pushcontrol1b(1)
           end if
           q2 = m2*a2
+          call pushreal8(q)
+          q = sqrt(q2)
+          call pushreal8(a2)
+          a2 = a2tot - half*gm1*q2
 ! compute the velocities in the halo cell and use rho,
 ! rhoe and p as temporary buffers to store the total
 ! temperature, total pressure and static temperature.
+          ww1(i, j, ivx) = q*ssx
+          ww1(i, j, ivy) = q*ssy
+          ww1(i, j, ivz) = q*ssz
+! this should call prhosubsonicinlet, but it doesnt' ad
+! correctly, so just the constant cp model is used here. 
+! compute the pressure and density for these halo's.
+          select case  (cpmodel) 
+          case (cpconstant) 
+! compute the static pressure from the total pressure
+! and the temperature ratio. compute the density using
+! the gas law.
+            ts = a2/(gamma2(i, j)*rgas)
+            ratio = (ts/ttot)**govgm1
+            ww1(i, j, irho) = ptot*ratio/(rgas*ts)
+            if (correctfork) then
+              call pushcontrol2b(1)
+            else
+              call pushcontrol2b(2)
+            end if
+          case (cptempcurvefits) 
+            call pushcontrol2b(3)
+          case default
+            call pushcontrol2b(0)
+          end select
 ! set the viscosities in the halo to the viscosities
 ! in the donor cell.
           if (viscous) then
@@ -1773,24 +1815,53 @@ contains
             rlv2d(i, j) = rlv2d(i, j) + rlv1d(i, j)
             rlv1d(i, j) = 0.0_8
           end if
-          a2d = ww1d(i, j, irhoe)/(gamma2(i, j)*rgas)
-          ww1d(i, j, irhoe) = 0.0_8
-          ptotd = pp1d(i, j)
-          pp1d(i, j) = 0.0_8
-          ttotd = ww1d(i, j, irho)
+          call popcontrol2b(branch)
+          if (branch .lt. 2) then
+            if (branch .eq. 0) then
+              ptotd = 0.0_8
+              a2d = 0.0_8
+              ttotd = 0.0_8
+              goto 100
+            else
+              ww1d(i, j, irho) = ww1d(i, j, irho) + twothird*ww1(i, j, &
+&               itu1)*pp1d(i, j)
+              ww1d(i, j, itu1) = ww1d(i, j, itu1) + twothird*ww1(i, j, &
+&               irho)*pp1d(i, j)
+            end if
+          else if (branch .ne. 2) then
+            ptotd = 0.0_8
+            a2d = 0.0_8
+            ttotd = 0.0_8
+            goto 100
+          end if
+          tempd4 = ww1d(i, j, irho)/(rgas*ts)
           ww1d(i, j, irho) = 0.0_8
-          qd = ssz*ww1d(i, j, ivz)
+          ptotd = ratio*pp1d(i, j) + ratio*tempd4
+          ratiod = ptot*pp1d(i, j) + ptot*tempd4
+          pp1d(i, j) = 0.0_8
+          if (ts/ttot .le. 0.0_8 .and. (govgm1 .eq. 0.0_8 .or. govgm1 &
+&             .ne. int(govgm1))) then
+            tempd5 = 0.0
+          else
+            tempd5 = govgm1*(ts/ttot)**(govgm1-1)*ratiod/ttot
+          end if
+          tsd = tempd5 - ptot*ratio*tempd4/ts
+          ttotd = -(ts*tempd5/ttot)
+          a2d = tsd/(gamma2(i, j)*rgas)
+ 100      qd = ssz*ww1d(i, j, ivz)
           ww1d(i, j, ivz) = 0.0_8
           qd = qd + ssy*ww1d(i, j, ivy)
           ww1d(i, j, ivy) = 0.0_8
           qd = qd + ssx*ww1d(i, j, ivx)
           ww1d(i, j, ivx) = 0.0_8
+          call popreal8(a2)
           a2totd = a2d
           if (q2 .eq. 0.0_8) then
             q2d = -(half*gm1*a2d)
           else
             q2d = qd/(2.0*sqrt(q2)) - half*gm1*a2d
           end if
+          call popreal8(q)
           m2d = a2*q2d
           a2d = m2*q2d
           q2 = q*q
@@ -1935,11 +2006,11 @@ contains
           a2d = 2*a2*a2d
           call popcontrol1b(branch)
           if (branch .ne. 0) a2d = 0.0_8
-          tempd4 = half*gm1*a2d
-          betad = tempd4
-          nnxd = ww2(i, j, ivx)*betad - velx*tempd4
-          nnyd = ww2(i, j, ivy)*betad - vely*tempd4
-          nnzd = ww2(i, j, ivz)*betad - velz*tempd4
+          tempd6 = half*gm1*a2d
+          betad = tempd6
+          nnxd = ww2(i, j, ivx)*betad - velx*tempd6
+          nnyd = ww2(i, j, ivy)*betad - vely*tempd6
+          nnzd = ww2(i, j, ivz)*betad - velz*tempd6
           a2 = gamma2(i, j)*pp2(i, j)*r
           ww2d(i, j, ivx) = ww2d(i, j, ivx) + nnx*betad
           ww2d(i, j, ivy) = ww2d(i, j, ivy) + nny*betad
@@ -1949,9 +2020,9 @@ contains
           else
             a2d = two*ovgm1*betad/(2.0*sqrt(a2))
           end if
-          tempd5 = gamma2(i, j)*a2d
-          pp2d(i, j) = pp2d(i, j) + r*tempd5
-          rd = pp2(i, j)*tempd5
+          tempd7 = gamma2(i, j)*a2d
+          pp2d(i, j) = pp2d(i, j) + r*tempd7
+          rd = pp2(i, j)*tempd7
           ww2d(i, j, irho) = ww2d(i, j, irho) - one*rd/ww2(i, j, irho)**&
 &           2
           bcdatad(nn)%norm(i, j, 3) = bcdatad(nn)%norm(i, j, 3) + nnzd
@@ -1973,23 +2044,27 @@ contains
     use inputdiscretization, only : hscalinginlet
     use bcpointers_b, only : ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, &
 &   rlv2, rev0, rev1, rev2, gamma2, isize, jsize, istart, jstart
+    use inputphysics, only : cpmodel, gammaconstant
+    use utils_b, only : terminate
     implicit none
 ! subroutine arguments.
     logical, intent(in) :: secondhalo, correctfork
     integer(kind=inttype), intent(in) :: nn
 ! local variables.
     integer(kind=inttype) :: i, j, l, ii
+    real(kind=realtype), parameter :: twothird=two*third
     real(kind=realtype) :: gm1, ovgm1
     real(kind=realtype) :: ptot, ttot, htot, a2tot, r, alpha, beta
     real(kind=realtype) :: aa2, bb, cc, dd, q, q2, a2, m2, scalefact
     real(kind=realtype) :: ssx, ssy, ssz, nnx, nny, nnz
-    real(kind=realtype) :: rho, velx, vely, velz
+    real(kind=realtype) :: rho, velx, vely, velz, ratio, ts, govgm1
     intrinsic mod
     intrinsic sqrt
     intrinsic max
     intrinsic min
     real(kind=realtype) :: max1
 ! determine the boundary treatment to be used.
+    govgm1 = gammaconstant/(gammaconstant-one)
     select case  (bcdata(nn)%subsonicinlettreatment) 
     case (totalconditions) 
 ! the total conditions have been prescribed.
@@ -2085,16 +2160,28 @@ contains
         ww1(i, j, ivx) = q*ssx
         ww1(i, j, ivy) = q*ssy
         ww1(i, j, ivz) = q*ssz
-        ww1(i, j, irho) = ttot
-        pp1(i, j) = ptot
-        ww1(i, j, irhoe) = a2/(gamma2(i, j)*rgas)
+! this should call prhosubsonicinlet, but it doesnt' ad
+! correctly, so just the constant cp model is used here. 
+! compute the pressure and density for these halo's.
+        select case  (cpmodel) 
+        case (cpconstant) 
+! compute the static pressure from the total pressure
+! and the temperature ratio. compute the density using
+! the gas law.
+          ts = a2/(gamma2(i, j)*rgas)
+          ratio = (ts/ttot)**govgm1
+          pp1(i, j) = ptot*ratio
+          ww1(i, j, irho) = ptot*ratio/(rgas*ts)
+          if (correctfork) pp1(i, j) = pp1(i, j) + twothird*ww1(i, j, &
+&             irho)*ww1(i, j, itu1)
+        case (cptempcurvefits) 
+          call terminate('bcroutines', 'not curve fits not implemented')
+        end select
 ! set the viscosities in the halo to the viscosities
 ! in the donor cell.
         if (viscous) rlv1(i, j) = rlv2(i, j)
         if (eddymodel) rev1(i, j) = rev2(i, j)
       end do
-! compute the pressure and density for these halo's.
-      call prhosubsonicinlet(ww1, pp1, correctfork)
     case (massflow) 
 !===========================================================
 ! density and velocity vector prescribed.
@@ -2150,21 +2237,20 @@ contains
     if (secondhalo) call extrapolate2ndhalo(correctfork)
   end subroutine bcsubsonicinflow
 !  differentiation of bceulerwall in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *(*bcdata.norm) *rev0 *rev1
-!                *rev2 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ss
-!                *ssi *ssj *ssk *ww0 *ww1 *ww2
-!   with respect to varying inputs: *(*bcdata.norm) *rev0 *rev1
-!                *rev2 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ss
-!                *ssi *ssj *ssk *ww0 *ww1 *ww2
-!   rw status of diff variables: *(*bcdata.norm):incr *rev0:in-out
-!                *rev1:in-out *rev2:incr *pp0:in-out *pp1:in-out
-!                *pp2:incr *pp3:incr *rlv0:in-out *rlv1:in-out
-!                *rlv2:incr *ss:incr *ssi:incr *ssj:incr *ssk:incr
-!                *ww0:in-out *ww1:in-out *ww2:incr
-!   plus diff mem management of: bcdata:in *bcdata.norm:in rev0:in
-!                rev1:in rev2:in pp0:in pp1:in pp2:in pp3:in rlv0:in
-!                rlv1:in rlv2:in ss:in ssi:in ssj:in ssk:in ww0:in
-!                ww1:in ww2:in
+!   gradient     of useful results: *rev0 *rev1 *rev2 *pp0 *pp1
+!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ss *ssi *ssj *ssk
+!                *ww0 *ww1 *ww2 *(*bcdata.norm)
+!   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
+!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ss *ssi *ssj *ssk
+!                *ww0 *ww1 *ww2 *(*bcdata.norm)
+!   rw status of diff variables: *rev0:in-out *rev1:in-out *rev2:incr
+!                *pp0:in-out *pp1:in-out *pp2:incr *pp3:incr *rlv0:in-out
+!                *rlv1:in-out *rlv2:incr *ss:incr *ssi:incr *ssj:incr
+!                *ssk:incr *ww0:in-out *ww1:in-out *ww2:incr *(*bcdata.norm):incr
+!   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
+!                pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in ss:in
+!                ssi:in ssj:in ssk:in ww0:in ww1:in ww2:in bcdata:in
+!                *bcdata.norm:in
   subroutine bceulerwall_b(nn, secondhalo, correctfork)
 !  bceulerwall applies the inviscid wall boundary condition to a
 !  block. it is assumed that the bcpointers are already set to the
@@ -2862,20 +2948,19 @@ contains
     if (secondhalo) call extrapolate2ndhalo(correctfork)
   end subroutine bceulerwall
 !  differentiation of bcfarfield in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *(*bcdata.norm) winf pinfcorr
-!                *rev0 *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2
-!                *ww0 *ww1 *ww2
-!   with respect to varying inputs: *(*bcdata.norm) winf pinfcorr
-!                *rev0 *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2
-!                *ww0 *ww1 *ww2
-!   rw status of diff variables: *(*bcdata.norm):incr winf:incr
-!                pinfcorr:incr *rev0:in-out *rev1:in-out *rev2:incr
-!                *pp0:in-out *pp1:in-out *pp2:incr *rlv0:in-out
-!                *rlv1:in-out *rlv2:incr *ww0:in-out *ww1:in-out
-!                *ww2:incr
-!   plus diff mem management of: bcdata:in *bcdata.norm:in rev0:in
-!                rev1:in rev2:in pp0:in pp1:in pp2:in rlv0:in rlv1:in
-!                rlv2:in ww0:in ww1:in ww2:in
+!   gradient     of useful results: winf pinfcorr *rev0 *rev1 *rev2
+!                *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
+!                *(*bcdata.norm)
+!   with respect to varying inputs: winf pinfcorr *rev0 *rev1 *rev2
+!                *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
+!                *(*bcdata.norm)
+!   rw status of diff variables: winf:incr pinfcorr:incr *rev0:in-out
+!                *rev1:in-out *rev2:incr *pp0:in-out *pp1:in-out
+!                *pp2:incr *rlv0:in-out *rlv1:in-out *rlv2:incr
+!                *ww0:in-out *ww1:in-out *ww2:incr *(*bcdata.norm):incr
+!   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
+!                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
+!                ww2:in bcdata:in *bcdata.norm:in
   subroutine bcfarfield_b(nn, secondhalo, correctfork)
 ! bcfarfield applies the farfield boundary condition to a block.
 ! it is assumed that the bcpointers are already set *
@@ -3570,175 +3655,6 @@ interval:do
  100  continue
     end subroutine cportintegrant
   end subroutine prhosubsonicinlet
-!  differentiation of prhosubsonicinlet in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: ww pp
-!   with respect to varying inputs: ww pp
-  subroutine prhosubsonicinlet_b(ww, wwd, pp, ppd, correctfork)
-!  prhosubsonicinlet computes the pressure and density for the
-!  given range of the block to which the pointers in blockpointers
-!  currently point.
-    use constants
-    use cpcurvefits
-    use flowvarrefstate, only : rgas, rgasd, tref, trefd
-    use inputphysics, only : cpmodel, gammaconstant
-    use bcpointers_b, only : isize, jsize, istart, jstart
-    implicit none
-! local parameter.
-    real(kind=realtype), parameter :: twothird=two*third
-! subroutine arguments.
-    real(kind=realtype), dimension(:, :, :) :: ww
-    real(kind=realtype), dimension(:, :, :) :: wwd
-    real(kind=realtype), dimension(:, :) :: pp
-    real(kind=realtype), dimension(:, :) :: ppd
-    logical, intent(in) :: correctfork
-! local variables.
-    integer(kind=inttype) :: i, j, ii, mm, nns, nnt, iii
-    real(kind=realtype) :: govgm1, tt, ts, pt, ratio
-    real(kind=realtype) :: ttd, tsd, ptd, ratiod
-    real(kind=realtype) :: intts, inttt, val
-    intrinsic mod
-    integer :: branch
-    real(kind=realtype) :: tempd
-    real(kind=realtype) :: tempd0
-! determine the cp model used in the computation.
-    select case  (cpmodel) 
-    case (cpconstant) 
-! constant cp and thus constant gamma. compute the coefficient
-! gamma/(gamma-1), which occurs in the isentropic expression
-! for the total pressure.
-      govgm1 = gammaconstant/(gammaconstant-one)
-      call pushreal8array(ww, size(ww, 1)*size(ww, 2)*size(ww, 3))
-      call pushreal8array(pp, size(pp, 1)*size(pp, 2))
-! loop over the pointer range
-      do ii=0,isize*jsize-1
-        i = mod(ii, isize) + istart
-        j = ii/isize + jstart
-! store the total temperature, total pressure and
-! static temperature a bit easier.
-        tt = ww(i, j, irho)
-        pt = pp(i, j)
-        ts = ww(i, j, irhoe)
-! compute the static pressure from the total pressure
-! and the temperature ratio. compute the density using
-! the gas law.
-        ratio = (ts/tt)**govgm1
-        pp(i, j) = pt*ratio
-        ww(i, j, irho) = pp(i, j)/(rgas*ts)
-      end do
-      call pushcontrol1b(1)
-    case default
-      call pushcontrol1b(0)
-    end select
-! add 2*rho*k/3 to the pressure if a k-equation is present.
-    if (correctfork) then
-      call pushinteger4(i)
-      do ii=0,isize*jsize-1
-        i = mod(ii, isize) + istart
-        j = ii/isize + jstart
-        wwd(i, j, irho) = wwd(i, j, irho) + twothird*ww(i, j, itu1)*ppd(&
-&         i, j)
-        wwd(i, j, itu1) = wwd(i, j, itu1) + twothird*ww(i, j, irho)*ppd(&
-&         i, j)
-      end do
-      call popinteger4(i)
-    end if
-    call popcontrol1b(branch)
-    if (branch .ne. 0) then
-      call popreal8array(pp, size(pp, 1)*size(pp, 2))
-      call popreal8array(ww, size(ww, 1)*size(ww, 2)*size(ww, 3))
-      do ii=0,isize*jsize-1
-        i = mod(ii, isize) + istart
-        j = ii/isize + jstart
-! store the total temperature, total pressure and
-! static temperature a bit easier.
-        tt = ww(i, j, irho)
-        pt = pp(i, j)
-        ts = ww(i, j, irhoe)
-! compute the static pressure from the total pressure
-! and the temperature ratio. compute the density using
-! the gas law.
-        ratio = (ts/tt)**govgm1
-        pp(i, j) = pt*ratio
-        tempd = wwd(i, j, irho)/(rgas*ts)
-        ppd(i, j) = ppd(i, j) + tempd
-        wwd(i, j, irho) = 0.0_8
-        ptd = ratio*ppd(i, j)
-        ratiod = pt*ppd(i, j)
-        ppd(i, j) = ptd
-        if (ts/tt .le. 0.0_8 .and. (govgm1 .eq. 0.0_8 .or. govgm1 .ne. &
-&           int(govgm1))) then
-          tempd0 = 0.0
-        else
-          tempd0 = govgm1*(ts/tt)**(govgm1-1)*ratiod/tt
-        end if
-        tsd = tempd0 - pp(i, j)*tempd/ts
-        ttd = -(ts*tempd0/tt)
-        wwd(i, j, irhoe) = wwd(i, j, irhoe) + tsd
-        wwd(i, j, irho) = wwd(i, j, irho) + ttd
-      end do
-    end if
-
-  contains
-    subroutine cportintegrant(t, nn, int)
-      implicit none
-! subroutine arguments.
-      integer(kind=inttype), intent(out) :: nn
-      real(kind=realtype), intent(in) :: t
-      real(kind=realtype), intent(out) :: int
-! local variables.
-      integer(kind=inttype) :: mm, ii, start
-      real(kind=realtype) :: t2
-      intrinsic log
-! determine the situation we are having here for the temperature.
-      if (t .le. cptrange(0)) then
-! temperature is less than the smallest temperature of the
-! curve fits. use extrapolation using constant cp.
-! set nn to 0 to indicate this.
-        nn = 0
-        int = (cv0+one)*log(t)
-      else if (t .ge. cptrange(cpnparts)) then
-! temperature is larger than the largest temperature of the
-! curve fits. use extrapolation using constant cp.
-! set nn to cpnparts+1 to indicate this.
-        nn = cpnparts + 1
-        int = (cvn+one)*log(t)
-      else
-! temperature is within the curve fit range. determine
-! the correct interval.
-        ii = cpnparts
-        start = 1
-interval:do 
-! next guess for the interval.
-          nn = start + ii/2
-! determine the situation we are having here.
-          if (t .gt. cptrange(nn)) then
-! temperature is larger than the upper boundary of
-! the current interval. update the lower boundary.
-            start = nn + 1
-            ii = ii - 1
-          else if (t .ge. cptrange(nn-1)) then
-! nn contains the correct curve fit interval.
-! compute the value of the integrant.
-            int = zero
-            do ii=1,cptempfit(nn)%nterm
-              mm = cptempfit(nn)%exponents(ii)
-              if (mm .eq. 0_inttype) then
-                int = int + cptempfit(nn)%constants(ii)*log(t)
-              else
-                t2 = t**mm
-                int = int + cptempfit(nn)%constants(ii)*t2/mm
-              end if
-            end do
-            goto 100
-          end if
-! this is the correct range. exit the do-loop.
-! modify ii for the next branch to search.
-          ii = ii/2
-        end do interval
-      end if
- 100  continue
-    end subroutine cportintegrant
-  end subroutine prhosubsonicinlet_b
 !  differentiation of extrapolate2ndhalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev0 *rev1 *pp0 *pp1 *pp2
 !                *rlv0 *rlv1 *ww0 *ww1 *ww2

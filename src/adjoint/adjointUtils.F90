@@ -610,7 +610,6 @@ contains
     end subroutine setBlock
   end subroutine setupStateResidualMatrix
 
-
   subroutine allocDerivativeValues(level)
 
     use constants
@@ -626,6 +625,7 @@ contains
     use BCPointers_b
     use adjointVars, only : derivVarsAllocated
     use utils, only : EChk, setPointers, getDirAngle
+    use cgnsGrid, only : cgnsDoms, cgnsDomsd, cgnsNDom
     implicit none
 
     ! Input parameters
@@ -636,7 +636,7 @@ contains
     integer(kind=intType) :: iBeg, jBeg, iStop, jStop, isizemax, jsizemax
     integer(kind=intType) :: inBeg, jnBeg, inStop, jnStop
     integer(kind=intType) :: massShape(2), max_face_size
-
+    integer(kind=intType) :: iBoco, nDataset, iData, nDirichlet, iDirichlet, nArray
     ! First create the derivative flowdoms structure flowDomsd. Note we
     ! only allocate information for the finest grid. 
 
@@ -756,7 +756,7 @@ contains
                   flowDomsd(nn, level, sps)%BCData(mm)%T(iBeg:iStop, jBeg:jStop, 3),&
                   flowDomsd(nn, level, sps)%BCData(mm)%area(iBeg:iStop, jBeg:jStop), &
                   flowDomsd(nn, level, sps)%BCData(mm)%uSlip(iBeg:iStop,jBeg:jStop,3), &
-                  flowDomsd(nn, level, sps)%BCData(mm)%TNS_Wall(iBeg:iStop,jBeg:jStop, & 
+                  flowDomsd(nn, level, sps)%BCData(mm)%TNS_Wall(iBeg:iStop,jBeg:jStop), & 
                   flowDomsd(nn, level, sps)%BCData(mm)%ptInlet(iBeg:iStop,jBeg:jStop), & 
                   flowDomsd(nn, level, sps)%BCData(mm)%htInlet(iBeg:iStop,jBeg:jStop), & 
                   flowDomsd(nn, level, sps)%BCData(mm)%ttInlet(iBeg:iStop,jBeg:jStop), & 
@@ -779,6 +779,32 @@ contains
        end do
     end do
 
+    ! Allocate the derivatives values for the CGNS data structure used
+    ! to store boundary condition values
+    do nn=1, cgnsNDom
+       nBocos = cgnsDoms(nn)%nBocos
+       allocate(cgnsDomsd(nn)%bocoInfo(nBocos))
+       do iBoco = 1,nBocos
+          if (associated(cgnsDoms(nn)%bocoInfo(iBoco)%dataSet)) then 
+             nDataSet = size(cgnsDoms(nn)%bocoInfo(iBoco)%dataSet)
+             allocate(cgnsDomsd(nn)%bocoInfo(iBoco)%dataSet(nDataSet))
+       
+             do iData=1, nDataSet
+                if (associated(cgnsDoms(nn)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays)) then 
+                   nDirichlet = size(cgnsDoms(nn)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays)
+                   allocate(cgnsDomsd(nn)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(nDirichlet))
+                   
+                   do iDirichlet = 1, nDirichlet
+                      nArray = size(cgnsDoms(nn)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(iDirichlet)%dataArr)
+                      allocate(cgnsDomsd(nn)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(iDirichlet)%dataArr(nArray))
+                      cgnsDomsd(nn)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(iDirichlet)%dataArr(nArray) = zero
+                   end do
+                end if
+             end do
+          end if
+       end do
+    end do
+    
     derivVarsAllocated = .True. 
   end subroutine allocDerivativeValues
 
@@ -793,14 +819,15 @@ contains
     use BCPointers_b
     use communication
     use overset, only : oversetPresent
+    use cgnsGrid, only : cgnsDoms, cgnsDomsd, cgnsNDom
     implicit none
 
     ! Input parameters
     integer(kind=intType) :: nn, level, sps
 
     ! Working parameters
-    integer(kind=intType) :: mm, i
-
+    integer(kind=intType) :: mm, i, iDom
+    integer(kind=intType) :: iBoco, iData, iDirichlet
     flowDomsd(nn, level, sps)%d2wall = zero
     flowDomsd(nn, level, sps)%x = zero
     flowDomsd(nn, level, sps)%si = zero
@@ -885,7 +912,6 @@ contains
        internalOverset(level, sps)%donorInterpd = zero
     end if
 
-
     alphad = zero
     betad = zero
     machd = zero
@@ -900,6 +926,8 @@ contains
     rhoRefd = zero
     Trefd = zero
     murefd = zero
+    urefd = zero
+    hrefd = zero
     timerefd = zero
     pinfd = zero
     pinfCorrd = zero
@@ -912,6 +940,21 @@ contains
     veldirfreestreamd = zero
     liftdirectiond = zero
     dragdirectiond = zero
+
+    ! Zero all the reverse seeds in the dirichlet input arrays
+    do iDom=1, cgnsNDom
+       do iBoco=1, cgnsDoms(iDom)%nBocos
+          if (associated(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet)) then 
+             do iData=1, size(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet)
+                if (associated(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays)) then 
+                   do iDirichlet = 1, size(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays)
+                      cgnsDomsd(iDom)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(iDirichlet)%dataArr(:) = zero
+                   end do
+                end if
+             end do
+          end if
+       end do
+    end do
 
   end subroutine zeroADSeeds
   ! This is a special function that is sued to dealloc derivative values

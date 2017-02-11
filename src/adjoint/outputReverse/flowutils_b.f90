@@ -654,9 +654,9 @@ contains
     end select
   end subroutine eint
 !  differentiation of computepressuresimple in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *p *w pinfcorr
-!   with respect to varying inputs: *p *w pinfcorr
-!   rw status of diff variables: *p:in-out *w:incr pinfcorr:incr
+!   gradient     of useful results: pinfcorr *p *w
+!   with respect to varying inputs: pinfcorr *p *w
+!   rw status of diff variables: pinfcorr:incr *p:in-out *w:incr
 !   plus diff mem management of: p:in w:in
   subroutine computepressuresimple_b(includehalos)
 ! compute the pressure on a block with the pointers already set. this
@@ -978,10 +978,10 @@ contains
     end select
   end subroutine computepressure
 !  differentiation of computelamviscosity in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *p *w *rlv muref tref rgas
-!   with respect to varying inputs: *p *w *rlv muref tref rgas
-!   rw status of diff variables: *p:incr *w:incr *rlv:in-out muref:incr
-!                tref:incr rgas:incr
+!   gradient     of useful results: muref tref rgas *p *w *rlv
+!   with respect to varying inputs: muref tref rgas *p *w *rlv
+!   rw status of diff variables: muref:incr tref:incr rgas:incr
+!                *p:incr *w:incr *rlv:in-out
 !   plus diff mem management of: p:in w:in rlv:in
   subroutine computelamviscosity_b(includehalos)
 !

@@ -109,7 +109,6 @@ contains
           ! order scheme.
 
           nOldSolAvail = 1
-
        endif
 
     enddo
@@ -175,8 +174,7 @@ contains
     !
     use ALEUtils, only : storeCoor, interpCoor, recoverCoor, setLevelALE, &
          slipVelocitiesFineLevel_ALE
-    use bcdata, only : setbcdataFineGrid, setBCDataCoarseGrid, &
-         nonDimBoundData, setInletFreeStreamTurb
+    use bcdata, only : setbcdataFineGrid, setBCDataCoarseGrid
     use constants
     use inputMotion, only : gridMotionSpecified
     use inputUnsteady, only : deltaT, updateWallDistanceUnsteady, useALE
@@ -311,17 +309,6 @@ contains
 
        call setBCDataFineGrid(.false.)
        call setBCDataCoarseGrid
-
-       ! Non-dimensionalize the boundary data.
-
-       call nonDimBoundData
-
-       ! Set the turbulent quantities to the free stream values for
-       ! the inflow faces for which this data has not been
-       ! prescribed. As the free stream values are nonDimensional,
-       ! this call must be after the nonDimensionalization.
-
-       call setInletFreestreamTurb
 
     endif testChanging
 
@@ -515,7 +502,6 @@ contains
     use utils, only : setPointers
     use flowUtils, only : computePressure
     use haloExchange, only : whalo1, whalo2
-    use bcdata, only : setSupersonicInletFreeStream
     use turbutils, only : computeeddyviscosity    
     use turbAPI, only : turbResidual
     use turbBCRoutines, only : applyAllTurbBC 
@@ -815,8 +801,7 @@ contains
     use iteration
     use monitor
     use section
-    use BCData, only : setBCDataFineGrid, nonDimBoundData, &
-         setSupersonicInletFreeStream, setInletFreeStreamTurb
+    use BCData, only : setBCDataFineGrid
     use wallDistance, only : updateWallDistanceAllLevels
     use solverUtils
     use ALEUtils
@@ -899,22 +884,6 @@ contains
     ! boundary subfaces for the (currently) finest grid.
 
     call setBCDataFineGrid(.false.)
-
-    ! Non-dimensionalize the boundary data.
-
-    call nonDimBoundData
-
-    ! Set the primitive variables to the free stream values for
-    ! the supersonic inflow faces for which this data has not
-    ! been prescribed.
-
-    call setSupersonicInletFreeStream
-
-    ! Set the turbulent quantities to the free stream values for
-    ! the inflow faces for which this data has not been prescribed.
-    ! These can be both subsonic and supersonic inflow faces.
-
-    call setInletFreestreamTurb
 
   end subroutine initStageRK
 
@@ -1005,7 +974,6 @@ contains
           freeStreamResSet = .True.
        end if
     end if
-
     ! Write a message. Only done by processor 0.
 
     if(myID == 0) then
@@ -1017,7 +985,6 @@ contains
        numberString = adjustl(numberString)
        numberString = trim(numberString)
        if (printIterations) then
-          print *,NK_switchTol * totalR0
           print "(a)", "#"
           print 102, groundLevel, trim(numberString),minIterNum,(NK_switchTol * totalR0)
           print "(a)", "#"

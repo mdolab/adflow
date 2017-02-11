@@ -11,13 +11,13 @@ module solverutils_b
 
 contains
 !  differentiation of timestep_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *p *w *si *sj *sk *radi *radj
-!                *radk rhoinf pinfcorr
-!   with respect to varying inputs: *p *w *si *sj *sk *radi *radj
-!                *radk rhoinf pinfcorr
-!   rw status of diff variables: *p:incr *w:incr *si:incr *sj:incr
-!                *sk:incr *radi:in-out *radj:in-out *radk:in-out
-!                rhoinf:incr pinfcorr:incr
+!   gradient     of useful results: rhoinf pinfcorr *p *w *si *sj
+!                *sk *radi *radj *radk
+!   with respect to varying inputs: rhoinf pinfcorr *p *w *si *sj
+!                *sk *radi *radj *radk
+!   rw status of diff variables: rhoinf:incr pinfcorr:incr *p:incr
+!                *w:incr *si:incr *sj:incr *sk:incr *radi:in-out
+!                *radj:in-out *radk:in-out
 !   plus diff mem management of: p:in w:in si:in sj:in sk:in radi:in
 !                radj:in radk:in
   subroutine timestep_block_b(onlyradii)

@@ -12,10 +12,10 @@ module fluxes_d
 contains
 !  differentiation of inviscidcentralflux in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *dw
-!   with respect to varying inputs: *p *dw *w *vol *si *sj *sk
-!                timeref
-!   rw status of diff variables: *p:in *dw:in-out *w:in *vol:in
-!                *si:in *sj:in *sk:in timeref:in
+!   with respect to varying inputs: timeref *p *dw *w *vol *si
+!                *sj *sk
+!   rw status of diff variables: timeref:in *p:in *dw:in-out *w:in
+!                *vol:in *si:in *sj:in *sk:in
 !   plus diff mem management of: p:in dw:in w:in vol:in si:in sj:in
 !                sk:in
   subroutine inviscidcentralflux_d()
@@ -677,9 +677,10 @@ contains
   end subroutine inviscidcentralflux
 !  differentiation of invisciddissfluxmatrix in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *fw
-!   with respect to varying inputs: *p *w *si *sj *sk *fw pinfcorr
-!   rw status of diff variables: *p:in *w:in *si:in *sj:in *sk:in
-!                *fw:in-out pinfcorr:in
+!   with respect to varying inputs: pinfcorr *p *w *si *sj *sk
+!                *fw
+!   rw status of diff variables: pinfcorr:in *p:in *w:in *si:in
+!                *sj:in *sk:in *fw:in-out
 !   plus diff mem management of: p:in w:in si:in sj:in sk:in fw:in
   subroutine invisciddissfluxmatrix_d()
 !
@@ -2449,10 +2450,10 @@ contains
   end subroutine invisciddissfluxmatrix
 !  differentiation of invisciddissfluxscalar in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *fw
-!   with respect to varying inputs: *p *w *fw *radi *radj *radk
-!                rhoinf pinfcorr
-!   rw status of diff variables: *p:in *w:in *fw:in-out *radi:in
-!                *radj:in *radk:in rhoinf:in pinfcorr:in
+!   with respect to varying inputs: rhoinf pinfcorr *p *w *fw *radi
+!                *radj *radk
+!   rw status of diff variables: rhoinf:in pinfcorr:in *p:in *w:in
+!                *fw:in-out *radi:in *radj:in *radk:in
 !   plus diff mem management of: p:in w:in fw:in radi:in radj:in
 !                radk:in
   subroutine invisciddissfluxscalar_d()
