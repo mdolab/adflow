@@ -1725,6 +1725,313 @@ subroutine cross_prod(a,b,c)
 
 end subroutine cross_prod
 
+ subroutine siAngle(angle, mult, trans)
+
+    use constants
+    use su_cgns, only : Radian, Degree
+    implicit none
+    !
+    !      Subroutine arguments.
+    !
+    integer, intent(in)              :: angle
+    real(kind=realType), intent(out) :: mult, trans
+
+    ! Determine the situation we are having here.
+
+    if(angle == Radian) then
+
+       ! Angle is already given in radIans. No need for a conversion.
+
+       mult  = one
+       trans = zero
+
+    else if(angle == Degree) then
+
+       ! Angle is given in degrees. A multiplication must be performed.
+
+       mult  = pi/180.0_realType
+       trans = zero
+
+    else
+
+       call terminate("siAngle", &
+            "No idea how to convert this to SI units")
+
+    endif
+
+  end subroutine siAngle
+
+
+  subroutine siDensity(mass, len, mult, trans)
+    !
+    !       siDensity computes the conversion from the given density       
+    !       unit, which can be constructed from mass and length, to the    
+    !       SI-unit kg/m^3. The conversion will look like:                 
+    !       density in kg/m^3 = mult*(density in NCU) + trans.             
+    !       NCU means non-christian units, i.e. everything that is not SI. 
+    !
+    use constants
+    use su_cgns, only : Kilogram, meter
+    implicit none
+    !
+    !      Subroutine arguments.
+    !
+    integer, intent(in)              :: mass, len
+    real(kind=realType), intent(out) :: mult, trans
+
+    ! Determine the situation we are having here.
+
+    if(mass == Kilogram .and. len == Meter) then
+
+       ! Density is given in kg/m^3, i.e. no need for a conversion.
+
+       mult  = one
+       trans = zero
+
+    else
+
+       call terminate("siDensity", &
+            "No idea how to convert this to SI units")
+
+    endif
+
+  end subroutine siDensity
+
+  subroutine siLen(len, mult, trans)
+    !
+    !       siLen computes the conversion from the given length unit to    
+    !       the SI-unit meter. The conversion will look like:              
+    !       length in meter = mult*(length in NCU) + trans.                
+    !       NCU means non-christian units, i.e. everything that is not SI. 
+    !
+    use constants
+    use su_cgns, only: Meter, Centimeter, millimeter, Foot, Inch
+    implicit none
+    !
+    !      Subroutine arguments.
+    !
+    integer, intent(in)              :: len
+    real(kind=realType), intent(out) :: mult, trans
+
+    ! Determine the situation we are having here.
+
+    select case (len)
+
+    case (Meter)
+       mult = one; trans = zero
+
+    case (CenTimeter)
+       mult = 0.01_realType; trans = zero
+
+    case (Millimeter)
+       mult = 0.001_realType; trans = zero
+
+    case (Foot)
+       mult = 0.3048_realType; trans = zero
+
+    case (Inch)
+       mult = 0.0254_realType; trans = zero
+
+    case default
+       call terminate("siLen", &
+            "No idea how to convert this to SI units")
+
+    end select
+
+  end subroutine siLen
+
+  subroutine siPressure(mass, len, time, mult, trans)
+    !
+    !       siPressure computes the conversion from the given pressure     
+    !       unit, which can be constructed from mass, length and time, to  
+    !       the SI-unit Pa. The conversion will look like:                 
+    !       pressure in Pa = mult*(pressure in NCU) + trans.               
+    !       NCU means non-christian units, i.e. everything that is not SI. 
+    !
+    use constants
+    use su_cgns, only : Kilogram, Meter, Second
+    implicit none
+    !
+    !      Subroutine arguments.
+    !
+    integer, intent(in)              :: mass, len, time
+    real(kind=realType), intent(out) :: mult, trans
+
+    ! Determine the situation we are having here.
+
+    if(mass == Kilogram .and. len == Meter .and. time == Second) then
+
+       ! Pressure is given in Pa, i.e. no need for a conversion.
+
+       mult  = one
+       trans = zero
+
+    else
+
+       call terminate("siPressure", &
+            "No idea how to convert this to SI units")
+
+    endif
+
+  end subroutine siPressure
+
+  subroutine siTemperature(temp, mult, trans)
+    !
+    !       siTemperature computes the conversion from the given           
+    !       temperature unit to the SI-unit kelvin. The conversion will    
+    !       look like:                                                     
+    !       temperature in K = mult*(temperature in NCU) + trans.          
+    !       NCU means non-christian units, i.e. everything that is not SI. 
+    !
+    use constants
+    use su_cgns, only : Kelvin, Celsius, Rankine, Fahrenheit
+    implicit none
+    !
+    !      Subroutine arguments.
+    !
+    integer, intent(in)              :: temp
+    real(kind=realType), intent(out) :: mult, trans
+
+    ! Determine the situation we are having here.
+
+    select case (temp)
+
+    case (Kelvin)
+
+       ! Temperature is already given in Kelvin. No need to convert.
+
+       mult  = one
+       trans = zero
+
+    case (Celsius)      ! is it Celcius or Celsius?
+
+       ! Temperature is in Celsius. Only an offset must be applied.
+
+       mult  = one
+       trans = 273.16_realType
+
+    case (Rankine)
+
+       ! Temperature is in Rankine. Only a multiplication needs to
+       ! be performed.
+
+       mult  = 5.0_realType/9.0_realType
+       trans = zero
+
+    case (Fahrenheit)
+
+       ! Temperature is in Fahrenheit. Both a multiplication and an
+       ! offset must be applied.
+
+       mult  = 5.0_realType/9.0_realType
+       trans = 255.382
+
+    case default
+
+       ! Unknown temperature unit.
+
+       call terminate("siTemperature", &
+            "No idea how to convert this to SI units")
+
+    end select
+
+  end subroutine siTemperature
+  subroutine siTurb(mass, len, time, temp, turbName, mult, trans)
+    !
+    !       siTurb computes the conversion from the given turbulence       
+    !       unit, which can be constructed from mass, len, time and temp,  
+    !       to the SI-unit for the given variable. The conversion will     
+    !       look like: var in SI = mult*(var in NCU) + trans.              
+    !       NCU means non-christian units, i.e. everything that is not SI. 
+    !
+    use constants
+    use su_cgns, only : Kilogram, Meter, Second, Kelvin
+    implicit none
+    !
+    !      Subroutine arguments.
+    !
+    integer, intent(in)              :: mass, len, time, temp
+    character(len=*), intent(in)     :: turbName
+    real(kind=realType), intent(out) :: mult, trans
+
+    ! Determine the situation we are having here.
+
+    if(mass == Kilogram .and. len  == Meter .and. &
+         time == Second   .and. temp == Kelvin) then
+
+       ! Everthing is already in SI units. No conversion needed.
+
+       mult  = one
+       trans = zero
+
+    else
+
+       call terminate("siTurb", &
+            "No idea how to convert this to SI units")
+
+    endif
+
+  end subroutine siTurb
+
+  subroutine siVelocity(length, time, mult, trans)
+    !
+    !       siVelocity computes the conversion from the given velocity     
+    !       unit, which can be constructed from length and time, to the    
+    !       SI-unit m/s. The conversion will look like:                    
+    !       velocity in m/s = mult*(velocity in ncu) + trans.              
+    !       Ncu means non-christian units, i.e. everything that is not SI. 
+    !
+    use constants
+    use su_cgns, only : Meter, CentiMeter, Millimeter, Foot, Inch, Second
+    implicit none
+    !
+    !      Subroutine arguments.
+    !
+    integer, intent(in)              :: length, time
+    real(kind=realType), intent(out) :: mult, trans
+
+    ! Determine the situation we are having here.
+    ! First the length.
+
+    select case (length)
+
+    case (Meter)
+       mult = one; trans = zero
+
+    case (CenTimeter)
+       mult = 0.01_realType; trans = zero
+
+    case (Millimeter)
+       mult = 0.001_realType; trans = zero
+
+    case (Foot)
+       mult = 0.3048_realType; trans = zero
+
+    case (Inch)
+       mult = 0.0254_realType; trans = zero
+
+    case default
+       call terminate("siVelocity", &
+            "No idea how to convert this length to SI units")
+
+    end select
+
+    ! And the time.
+
+    select case (time)
+
+    case (Second)
+       mult = mult
+
+    case default
+       call terminate("siVelocity", &
+            "No idea how to convert this time to SI units")
+
+    end select
+
+  end subroutine siVelocity
+
+
   ! ----------------------------------------------------------------------
   !                                                                      |
   !                    No Tapenade Routine below this line               |
@@ -3363,314 +3670,7 @@ end subroutine cross_prod
 
   end subroutine setPointers_d
 
-  subroutine siAngle(angle, mult, trans)
-
-    use constants
-    use su_cgns, only : Radian, Degree
-    implicit none
-    !
-    !      Subroutine arguments.
-    !
-    integer, intent(in)              :: angle
-    real(kind=realType), intent(out) :: mult, trans
-
-    ! Determine the situation we are having here.
-
-    if(angle == Radian) then
-
-       ! Angle is already given in radIans. No need for a conversion.
-
-       mult  = one
-       trans = zero
-
-    else if(angle == Degree) then
-
-       ! Angle is given in degrees. A multiplication must be performed.
-
-       mult  = pi/180.0_realType
-       trans = zero
-
-    else
-
-       call terminate("siAngle", &
-            "No idea how to convert this to SI units")
-
-    endif
-
-  end subroutine siAngle
-
-
-  subroutine siDensity(mass, len, mult, trans)
-    !
-    !       siDensity computes the conversion from the given density       
-    !       unit, which can be constructed from mass and length, to the    
-    !       SI-unit kg/m^3. The conversion will look like:                 
-    !       density in kg/m^3 = mult*(density in NCU) + trans.             
-    !       NCU means non-christian units, i.e. everything that is not SI. 
-    !
-    use constants
-    use su_cgns, only : Kilogram, meter
-    implicit none
-    !
-    !      Subroutine arguments.
-    !
-    integer, intent(in)              :: mass, len
-    real(kind=realType), intent(out) :: mult, trans
-
-    ! Determine the situation we are having here.
-
-    if(mass == Kilogram .and. len == Meter) then
-
-       ! Density is given in kg/m^3, i.e. no need for a conversion.
-
-       mult  = one
-       trans = zero
-
-    else
-
-       call terminate("siDensity", &
-            "No idea how to convert this to SI units")
-
-    endif
-
-  end subroutine siDensity
-
-  subroutine siLen(len, mult, trans)
-    !
-    !       siLen computes the conversion from the given length unit to    
-    !       the SI-unit meter. The conversion will look like:              
-    !       length in meter = mult*(length in NCU) + trans.                
-    !       NCU means non-christian units, i.e. everything that is not SI. 
-    !
-    use constants
-    use su_cgns, only: Meter, Centimeter, millimeter, Foot, Inch
-    implicit none
-    !
-    !      Subroutine arguments.
-    !
-    integer, intent(in)              :: len
-    real(kind=realType), intent(out) :: mult, trans
-
-    ! Determine the situation we are having here.
-
-    select case (len)
-
-    case (Meter)
-       mult = one; trans = zero
-
-    case (CenTimeter)
-       mult = 0.01_realType; trans = zero
-
-    case (Millimeter)
-       mult = 0.001_realType; trans = zero
-
-    case (Foot)
-       mult = 0.3048_realType; trans = zero
-
-    case (Inch)
-       mult = 0.0254_realType; trans = zero
-
-    case default
-       call terminate("siLen", &
-            "No idea how to convert this to SI units")
-
-    end select
-
-  end subroutine siLen
-
-  subroutine siPressure(mass, len, time, mult, trans)
-    !
-    !       siPressure computes the conversion from the given pressure     
-    !       unit, which can be constructed from mass, length and time, to  
-    !       the SI-unit Pa. The conversion will look like:                 
-    !       pressure in Pa = mult*(pressure in NCU) + trans.               
-    !       NCU means non-christian units, i.e. everything that is not SI. 
-    !
-    use constants
-    use su_cgns, only : Kilogram, Meter, Second
-    implicit none
-    !
-    !      Subroutine arguments.
-    !
-    integer, intent(in)              :: mass, len, time
-    real(kind=realType), intent(out) :: mult, trans
-
-    ! Determine the situation we are having here.
-
-    if(mass == Kilogram .and. len == Meter .and. time == Second) then
-
-       ! Pressure is given in Pa, i.e. no need for a conversion.
-
-       mult  = one
-       trans = zero
-
-    else
-
-       call terminate("siPressure", &
-            "No idea how to convert this to SI units")
-
-    endif
-
-  end subroutine siPressure
-
-  subroutine siTemperature(temp, mult, trans)
-    !
-    !       siTemperature computes the conversion from the given           
-    !       temperature unit to the SI-unit kelvin. The conversion will    
-    !       look like:                                                     
-    !       temperature in K = mult*(temperature in NCU) + trans.          
-    !       NCU means non-christian units, i.e. everything that is not SI. 
-    !
-    use constants
-    use su_cgns, only : Kelvin, Celsius, Rankine, Fahrenheit
-    implicit none
-    !
-    !      Subroutine arguments.
-    !
-    integer, intent(in)              :: temp
-    real(kind=realType), intent(out) :: mult, trans
-
-    ! Determine the situation we are having here.
-
-    select case (temp)
-
-    case (Kelvin)
-
-       ! Temperature is already given in Kelvin. No need to convert.
-
-       mult  = one
-       trans = zero
-
-    case (Celsius)      ! is it Celcius or Celsius?
-
-       ! Temperature is in Celsius. Only an offset must be applied.
-
-       mult  = one
-       trans = 273.16_realType
-
-    case (Rankine)
-
-       ! Temperature is in Rankine. Only a multiplication needs to
-       ! be performed.
-
-       mult  = 5.0_realType/9.0_realType
-       trans = zero
-
-    case (Fahrenheit)
-
-       ! Temperature is in Fahrenheit. Both a multiplication and an
-       ! offset must be applied.
-
-       mult  = 5.0_realType/9.0_realType
-       trans = 255.382
-
-    case default
-
-       ! Unknown temperature unit.
-
-       call terminate("siTemperature", &
-            "No idea how to convert this to SI units")
-
-    end select
-
-  end subroutine siTemperature
-  subroutine siTurb(mass, len, time, temp, turbName, mult, trans)
-    !
-    !       siTurb computes the conversion from the given turbulence       
-    !       unit, which can be constructed from mass, len, time and temp,  
-    !       to the SI-unit for the given variable. The conversion will     
-    !       look like: var in SI = mult*(var in NCU) + trans.              
-    !       NCU means non-christian units, i.e. everything that is not SI. 
-    !
-    use constants
-    use su_cgns, only : Kilogram, Meter, Second, Kelvin
-    implicit none
-    !
-    !      Subroutine arguments.
-    !
-    integer, intent(in)              :: mass, len, time, temp
-    character(len=*), intent(in)     :: turbName
-    real(kind=realType), intent(out) :: mult, trans
-
-    ! Determine the situation we are having here.
-
-    if(mass == Kilogram .and. len  == Meter .and. &
-         time == Second   .and. temp == Kelvin) then
-
-       ! Everthing is already in SI units. No conversion needed.
-
-       mult  = one
-       trans = zero
-
-    else
-
-       call terminate("siTurb", &
-            "No idea how to convert this to SI units")
-
-    endif
-
-  end subroutine siTurb
-
-  subroutine siVelocity(length, time, mult, trans)
-    !
-    !       siVelocity computes the conversion from the given velocity     
-    !       unit, which can be constructed from length and time, to the    
-    !       SI-unit m/s. The conversion will look like:                    
-    !       velocity in m/s = mult*(velocity in ncu) + trans.              
-    !       Ncu means non-christian units, i.e. everything that is not SI. 
-    !
-    use constants
-    use su_cgns, only : Meter, CentiMeter, Millimeter, Foot, Inch, Second
-    implicit none
-    !
-    !      Subroutine arguments.
-    !
-    integer, intent(in)              :: length, time
-    real(kind=realType), intent(out) :: mult, trans
-
-    ! Determine the situation we are having here.
-    ! First the length.
-
-    select case (length)
-
-    case (Meter)
-       mult = one; trans = zero
-
-    case (CenTimeter)
-       mult = 0.01_realType; trans = zero
-
-    case (Millimeter)
-       mult = 0.001_realType; trans = zero
-
-    case (Foot)
-       mult = 0.3048_realType; trans = zero
-
-    case (Inch)
-       mult = 0.0254_realType; trans = zero
-
-    case default
-       call terminate("siVelocity", &
-            "No idea how to convert this length to &
-            &SI units")
-
-    end select
-
-    ! And the time.
-
-    select case (time)
-
-    case (Second)
-       mult = mult
-
-    case default
-       call terminate("siVelocity", &
-            "No idea how to convert this time to &
-            &SI units")
-
-    end select
-
-  end subroutine siVelocity
-
+ 
   subroutine spectralInterpolCoef(nsps, t, alpScal, alpMat)
     !
     !       spectralInterpolCoef determines the scalar and matrix          
