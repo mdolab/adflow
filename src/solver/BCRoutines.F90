@@ -818,6 +818,8 @@ end subroutine applyAllBC
     use BCPointers, only : ww0, ww1, ww2, pp0, pp1, pp2, &
          rlv0, rlv1, rlv2, rev0, rev1, rev2, gamma2, & 
          iSize, jSize, iStart, jStart
+    use inputPhysics, only : cpModel, gammaConstant
+    use utils, only : terminate
     implicit none
 
     ! Subroutine arguments.
@@ -826,14 +828,15 @@ end subroutine applyAllBC
 
     ! Local variables.
     integer(kind=intType) :: i, j, l, ii
-
+    real(kind=realType), parameter :: twoThird = two*third
     real(kind=realType) :: gm1, ovgm1
     real(kind=realType) :: ptot, ttot, htot, a2tot, r, alpha, beta
     real(kind=realType) :: aa2, bb, cc, dd, q, q2, a2, m2, scaleFact
     real(kind=realType) :: ssx, ssy, ssz, nnx, nny, nnz
-    real(kind=realType) :: rho, velx, vely, velz
+    real(kind=realType) :: rho, velx, vely, velz, ratio, ts, govgm1
 
     ! Determine the boundary treatment to be used.
+    govgm1 = gammaConstant/(gammaConstant - one)
 
     select case (BCData(nn)%subsonicInletTreatment)
 
@@ -949,10 +952,29 @@ end subroutine applyAllBC
           ww1(i,j,ivx)  = q*ssx
           ww1(i,j,ivy)  = q*ssy
           ww1(i,j,ivz)  = q*ssz
+          
+          ! This should call prhosubsonicInlet, but it doesnt' AD
+          ! correctly, so just the constant CP model is used here. 
 
-          ww1(i,j,irho)  = ttot
-          pp1(i,j)       = ptot
-          ww1(i,j,irhoE) = a2/(gamma2(i,j)*RGas)
+          ! Compute the pressure and density for these halo's.
+          select case (cpModel)
+          case (cpConstant)
+             ! Compute the static pressure from the total pressure
+             ! and the temperature ratio. Compute the density using
+             ! the gas law.
+             
+             ts = a2/(gamma2(i,j)*RGas)
+             ratio        = (ts/ttot)**govgm1
+             pp1(i,j)      = ptot*ratio
+             ww1(i,j,irho) = (ptot*ratio)/(RGas*ts)
+             if( correctForK ) then
+                pp1(i,j) = pp1(i,j) &
+                     + twoThird*ww1(i,j,irho)*ww1(i,j,itu1)
+             end if
+
+          case (cpTempCurveFits)
+             call terminate('BCRoutines', "not curve fits not implemented")
+          end select
 
           ! Set the viscosities in the halo to the viscosities
           ! in the donor cell.
@@ -961,10 +983,6 @@ end subroutine applyAllBC
           if( eddyModel ) rev1(i,j) = rev2(i,j)
 
        enddo
-
-       ! Compute the pressure and density for these halo's.
-
-       call pRhoSubsonicInlet(ww1, pp1, correctForK)
 
        !===========================================================
 

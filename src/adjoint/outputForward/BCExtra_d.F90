@@ -106,6 +106,27 @@ contains
     end do
 
     ! ------------------------------------
+    !  Subsonic Outflow Boundary Condition
+    ! ------------------------------------
+    do nn=1,nBocos
+       if (BCType(nn) == subSonicOutFlow .or. &
+            BCType(nn) == MassBleedOutflow) then
+          call setBCPointers_d(nn, .False.)
+          call bcSubSonicOutFlow_d(nn, secondHalo, correctForK)
+       end if
+    end do
+
+    ! ------------------------------------
+    !  Subsonic Inflow Boundary Condition
+    ! ------------------------------------
+    do nn=1,nBocos
+       if (BCType(nn) == subSonicInFlow) then
+          call setBCPointers_d(nn, .False.)
+          call bcSubSonicInflow_d(nn, secondHalo, correctForK)
+       end if
+    end do
+
+    ! ------------------------------------
     !  Euler Wall Boundary Condition 
     ! ------------------------------------
     do nn=1,nBocos

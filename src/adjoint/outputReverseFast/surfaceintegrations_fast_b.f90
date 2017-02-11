@@ -441,7 +441,6 @@ bocos:do mm=1,nbocos
     intrinsic sqrt
     intrinsic mod
     intrinsic max
-    real*8 :: edota
     massflowrate = zero
     mass_ptot = zero
     mass_ttot = zero
@@ -559,21 +558,21 @@ bocos:do mm=1,nbocos
       mmom(1) = mmom(1) + mx
       mmom(2) = mmom(2) + my
       mmom(3) = mmom(3) + mz
-! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
-      vcoordref = (/vxm, vym, vzm/)
-      call getdirvector(vcoordref, -alpha, -beta, vfreestreamref, &
-&                 liftindex)
-      vfreestreamref = vfreestreamref*vmag
-!project the face normal into the freestream velocity and scale by the face
-      call getdirvector(ssi(i, j, :), -alpha, -beta, sfacefreestreamref&
-&                 , liftindex)
-      sfacefreestreamref = sfacefreestreamref*sf
-! compute the pertubations of the flow from the free-stream velocity
-      u = vfreestreamref(1) - sfacefreestreamref(1) - uinf
-      v = vfreestreamref(2) - sfacefreestreamref(2)
-      w = vfreestreamref(3) - sfacefreestreamref(3)
-      edota = edota + half*rhom
     end do
+! ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
+! vcoordref(1) = vxm
+! vcoordref(2) = vym
+! vcoordref(3) = vzm
+! call getdirvector(vcoordref, -alpha, -beta, vfreestreamref, liftindex)
+! vfreestreamref = vfreestreamref * vmag
+! !project the face normal into the freestream velocity and scale by the face
+! call getdirvector(ssi(i,j,:), -alpha, -beta, sfacefreestreamref, liftindex)
+! sfacefreestreamref = sfacefreestreamref * sf
+! ! compute the pertubations of the flow from the free-stream velocity
+! u = vfreestreamref(1) - sfacefreestreamref(1) - uinf
+! v = vfreestreamref(2) - sfacefreestreamref(2)
+! w = vfreestreamref(3) - sfacefreestreamref(3)
+! !edota = edota + half*(rhom)
 ! increment the local values array with what we computed here
     localvalues(imassflow) = localvalues(imassflow) + massflowrate
     localvalues(imassptot) = localvalues(imassptot) + mass_ptot

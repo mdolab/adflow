@@ -138,17 +138,16 @@ bocos:do mm=1,nbocos
 !  differentiation of wallintegrationface in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *(*bcdata.fv) *(*bcdata.fp)
 !                *(*bcdata.area) localvalues
-!   with respect to varying inputs: *(*viscsubface.tau) *(*bcdata.fv)
-!                *(*bcdata.fp) *(*bcdata.area) veldirfreestream
-!                machcoef pointref pinf pref *xx *pp1 *pp2 *ssi
-!                *ww2 localvalues
-!   rw status of diff variables: *(*viscsubface.tau):in *(*bcdata.fv):in-out
-!                *(*bcdata.fp):in-out *(*bcdata.area):in-out veldirfreestream:in
-!                machcoef:in pointref:in pinf:in pref:in *xx:in
-!                *pp1:in *pp2:in *ssi:in *ww2:in localvalues:in-out
-!   plus diff mem management of: viscsubface:in *viscsubface.tau:in
-!                bcdata:in *bcdata.fv:in *bcdata.fp:in *bcdata.area:in
-!                xx:in pp1:in pp2:in ssi:in ww2:in
+!   with respect to varying inputs: veldirfreestream machcoef pointref
+!                pinf pref *xx *pp1 *pp2 *ssi *ww2 *(*viscsubface.tau)
+!                *(*bcdata.fv) *(*bcdata.fp) *(*bcdata.area) localvalues
+!   rw status of diff variables: veldirfreestream:in machcoef:in
+!                pointref:in pinf:in pref:in *xx:in *pp1:in *pp2:in
+!                *ssi:in *ww2:in *(*viscsubface.tau):in *(*bcdata.fv):in-out
+!                *(*bcdata.fp):in-out *(*bcdata.area):in-out localvalues:in-out
+!   plus diff mem management of: xx:in pp1:in pp2:in ssi:in ww2:in
+!                viscsubface:in *viscsubface.tau:in bcdata:in *bcdata.fv:in
+!                *bcdata.fp:in *bcdata.area:in
   subroutine wallintegrationface_d(localvalues, localvaluesd, mm)
 !
 !       wallintegrations computes the contribution of the block
@@ -859,7 +858,7 @@ bocos:do mm=1,nbocos
     use sorting, only : bsearchintegers
     use flowvarrefstate, only : pref, prefd, pinf, pinfd, rhoref, &
 &   rhorefd, timeref, timerefd, lref, tref, trefd, rgas, rgasd, uref, &
-&   uinf, uinfd
+&   urefd, uinf, uinfd
     use inputphysics, only : pointref, pointrefd, flowtype, &
 &   veldirfreestream, veldirfreestreamd, alpha, alphad, beta, betad, &
 &   liftindex
@@ -904,7 +903,6 @@ bocos:do mm=1,nbocos
     real(kind=realtype) :: arg1d
     real(kind=realtype) :: result1
     real(kind=realtype) :: result1d
-    real*8 :: edota
     massflowrate = zero
     mass_ptot = zero
     mass_ttot = zero
@@ -1123,21 +1121,21 @@ bocos:do mm=1,nbocos
       mmom(2) = mmom(2) + my
       mmomd(3) = mmomd(3) + mzd
       mmom(3) = mmom(3) + mz
-! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
-      vcoordref = (/vxm, vym, vzm/)
-      call getdirvector(vcoordref, -alpha, -beta, vfreestreamref, &
-&                 liftindex)
-      vfreestreamref = vfreestreamref*vmag
-!project the face normal into the freestream velocity and scale by the face
-      call getdirvector(ssi(i, j, :), -alpha, -beta, sfacefreestreamref&
-&                 , liftindex)
-      sfacefreestreamref = sfacefreestreamref*sf
-! compute the pertubations of the flow from the free-stream velocity
-      u = vfreestreamref(1) - sfacefreestreamref(1) - uinf
-      v = vfreestreamref(2) - sfacefreestreamref(2)
-      w = vfreestreamref(3) - sfacefreestreamref(3)
-      edota = edota + half*rhom
     end do
+! ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
+! vcoordref(1) = vxm
+! vcoordref(2) = vym
+! vcoordref(3) = vzm
+! call getdirvector(vcoordref, -alpha, -beta, vfreestreamref, liftindex)
+! vfreestreamref = vfreestreamref * vmag
+! !project the face normal into the freestream velocity and scale by the face
+! call getdirvector(ssi(i,j,:), -alpha, -beta, sfacefreestreamref, liftindex)
+! sfacefreestreamref = sfacefreestreamref * sf
+! ! compute the pertubations of the flow from the free-stream velocity
+! u = vfreestreamref(1) - sfacefreestreamref(1) - uinf
+! v = vfreestreamref(2) - sfacefreestreamref(2)
+! w = vfreestreamref(3) - sfacefreestreamref(3)
+! !edota = edota + half*(rhom)
 ! increment the local values array with what we computed here
     localvaluesd(imassflow) = localvaluesd(imassflow) + massflowrated
     localvalues(imassflow) = localvalues(imassflow) + massflowrate
@@ -1205,7 +1203,6 @@ bocos:do mm=1,nbocos
     intrinsic max
     real(kind=realtype) :: arg1
     real(kind=realtype) :: result1
-    real*8 :: edota
     massflowrate = zero
     mass_ptot = zero
     mass_ttot = zero
@@ -1327,21 +1324,21 @@ bocos:do mm=1,nbocos
       mmom(1) = mmom(1) + mx
       mmom(2) = mmom(2) + my
       mmom(3) = mmom(3) + mz
-! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
-      vcoordref = (/vxm, vym, vzm/)
-      call getdirvector(vcoordref, -alpha, -beta, vfreestreamref, &
-&                 liftindex)
-      vfreestreamref = vfreestreamref*vmag
-!project the face normal into the freestream velocity and scale by the face
-      call getdirvector(ssi(i, j, :), -alpha, -beta, sfacefreestreamref&
-&                 , liftindex)
-      sfacefreestreamref = sfacefreestreamref*sf
-! compute the pertubations of the flow from the free-stream velocity
-      u = vfreestreamref(1) - sfacefreestreamref(1) - uinf
-      v = vfreestreamref(2) - sfacefreestreamref(2)
-      w = vfreestreamref(3) - sfacefreestreamref(3)
-      edota = edota + half*rhom
     end do
+! ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
+! vcoordref(1) = vxm
+! vcoordref(2) = vym
+! vcoordref(3) = vzm
+! call getdirvector(vcoordref, -alpha, -beta, vfreestreamref, liftindex)
+! vfreestreamref = vfreestreamref * vmag
+! !project the face normal into the freestream velocity and scale by the face
+! call getdirvector(ssi(i,j,:), -alpha, -beta, sfacefreestreamref, liftindex)
+! sfacefreestreamref = sfacefreestreamref * sf
+! ! compute the pertubations of the flow from the free-stream velocity
+! u = vfreestreamref(1) - sfacefreestreamref(1) - uinf
+! v = vfreestreamref(2) - sfacefreestreamref(2)
+! w = vfreestreamref(3) - sfacefreestreamref(3)
+! !edota = edota + half*(rhom)
 ! increment the local values array with what we computed here
     localvalues(imassflow) = localvalues(imassflow) + massflowrate
     localvalues(imassptot) = localvalues(imassptot) + mass_ptot
@@ -1472,7 +1469,7 @@ bocos:do mm=1,nbocos
     use sorting, only : bsearchintegers
     use flowvarrefstate, only : pref, prefd, pinf, pinfd, rhoref, &
 &   rhorefd, pref, prefd, timeref, timerefd, lref, tref, trefd, rgas, &
-&   rgasd, uref, uinf, uinfd
+&   rgasd, uref, urefd, uinf, uinfd
     use inputphysics, only : pointref, pointrefd, flowtype
     use flowutils_d, only : computeptot, computeptot_d, computettot, &
 &   computettot_d

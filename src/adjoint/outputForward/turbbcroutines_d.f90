@@ -635,10 +635,10 @@ bocos:do nn=1,nbocos
 !  differentiation of bcturbtreatment in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *bvtj1 *bvtj2 *bvtk1 *bvtk2
 !                *bvti1 *bvti2
-!   with respect to varying inputs: *w *rlv *d2wall winf
-!   rw status of diff variables: *bvtj1:out *bvtj2:out *w:in *rlv:in
-!                *bvtk1:out *bvtk2:out *d2wall:in *bvti1:out *bvti2:out
-!                winf:in
+!   with respect to varying inputs: winf *w *rlv *d2wall
+!   rw status of diff variables: winf:in *bvtj1:out *bvtj2:out
+!                *w:in *rlv:in *bvtk1:out *bvtk2:out *d2wall:in
+!                *bvti1:out *bvti2:out
 !   plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
 !                bvtk1:in bvtk2:in d2wall:in bvti1:in bvti2:in
   subroutine bcturbtreatment_d()
@@ -747,8 +747,8 @@ bocos:do nn=1,nbocos
 !  differentiation of bcturbfarfield in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *bvtj1 *bvtj2 *bvtk1 *bvtk2
 !                *bvti1 *bvti2
-!   with respect to varying inputs: *bvtj1 *bvtj2 *bvtk1 *bvtk2
-!                *bvti1 *bvti2 winf
+!   with respect to varying inputs: winf *bvtj1 *bvtj2 *bvtk1 *bvtk2
+!                *bvti1 *bvti2
 !   plus diff mem management of: bvtj1:in bvtj2:in bvtk1:in bvtk2:in
 !                bvti1:in bvti2:in
   subroutine bcturbfarfield_d(nn)

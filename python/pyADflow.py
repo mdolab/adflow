@@ -945,7 +945,6 @@ class ADFLOW(AeroSolver):
         # getSolution, there may be just one. No need for error
         # checking here.
         for group in groupMap:
-
             # Call the lower level getSolution() function
             res = self.getSolution(groupName=group)
 
@@ -956,6 +955,7 @@ class ADFLOW(AeroSolver):
                 self.curAP.funcNames[g[1]] = key
                 funcs[key] = res[g[0]]
 
+        return
     def evalFunctionsSens(self, aeroProblem, funcsSens, evalFuncs=None):
         """
         Evaluate the sensitivity of the desired functions given in
@@ -2308,10 +2308,35 @@ class ADFLOW(AeroSolver):
             self.adflow.inputmotion.coscoeffouryrot = AP.cosCoefFourier
             self.adflow.inputmotion.sincoeffouryrot = AP.sinCoefFourier
 
+        # Set any possible BC Data coming out of the aeroProblem
+        nameArray, dataArray, groupArray, empty = self._getBCDataFromAeroProblem(AP)
+        if not empty:
+            self.adflow.bcdata.setbcdata(nameArray, dataArray, groupArray, 1)
+            
         if not firstCall:
             self.adflow.initializeflow.updatebcdataalllevels()
             self.adflow.preprocessingapi.updateperiodicinfoalllevels()
             self.adflow.preprocessingapi.updategridvelocitiesalllevels()
+
+    def _getBCDataFromAeroProblem(self, AP):
+        
+        variables = []
+        dataArray = []
+        groupNames = []
+
+        for (varName, family), value in AP.bcVarData.iteritems():
+            variables.append(varName)
+            dataArray.append(value)
+            groupNames.append(family)
+        
+        nameArray = self._createFortranStringArray(variables)
+        groupArray = self._expandGroupName(groupNames)
+        if len(nameArray) > 0:
+            return nameArray, dataArray, groupArray, False
+        else:
+            # dummy data that doesn't matter
+            return (self._createFortranStringArray(['Pressure']), [0.0],
+                    [[1,1]], True)
 
     def getForces(self, groupName=None, TS=0):
         """ Return the forces on this processor on the families defined by groupName.
@@ -2475,30 +2500,34 @@ class ADFLOW(AeroSolver):
         # Conver to 0-based ordering becuase we are in python
         return conn-1, faceSizes
 
-    def setBCData(self, data, groupName=None, sps=1):
+    def _expandGroupName(self, groupNames):
+        """Take a list of family (group) names and return a 2D array of the
+        fortran group numbers of the following form:
+        
+        [ 2 | y y x x x ]
+        [ 1 | y x x x x ]
+        [ 5 | y y y y y ]
+
+        The first column is the number of significant family entries.
+         The 'y' variables are the actual group numbers and the 'x'
+         values are irrelevant.
         """
-        Take in the data for a bc and set it into the solver
 
-        Data is a dictionary of the form:
+        nMax = 0
+        for groupName in groupNames:
+            nMax = max(nMax, len(self._getFamilyList(groupName)))
+        
+        groupArray = numpy.zeros((len(groupNames), nMax + 1))
+        for i in range(len(groupNames)):
+            famList = self._getFamilyList(groupNames[i])
+            groupArray[i, 0] = len(famList)
+            groupArray[i, 1:1+len(famList)] = famList
 
-        {'variable1':value1, 'variable2':value2 , ...}
-        """
-
-        if groupName is None:
-            raise Error("Cannot set BCdata without specifying a group")
-
-        nameList = []
-        valList = []
-        for k,v in iteritems(data):
-            nameList.append(k)
-            valList.append(v)
-
-        nameArray = self._createFortranStringArray(nameList)
-        bcInArray = numpy.array(valList, dtype=self.dtype)
-        self.adflow.bcdata.setbcdata(nameArray,bcInArray, self._getFamilyList(groupName), sps)
-
+        return groupArray
+        
 
     def globalNKPreCon(self, inVec, outVec):
+
         """This function is ONLY used as a preconditioner to the
         global Aero-Structural system. This computes outVec =
         M^(-1)*inVec where M^(-1) is the approximate inverse
@@ -2991,8 +3020,13 @@ class ADFLOW(AeroSolver):
         # Get the famList from the groupName
         famList = self._getFamilyList(groupName)
         
-        dwdot,tmp,fdot = self.adflow.adjointapi.computematrixfreeproductfwd(
-            xvdot, extradot, wdot, useSpatial, useState, costSize,  max(1, fSize), nTime, famList)
+        # Extract any possibly BC daa
+        bcDataNames, bcDataValues, bcDataFamLists, bcVarsEmpty = (
+            self._getBCDataFromAeroProblem(self.curAP))
+        bcDataValuesdot = numpy.zeros_like(bcDataValues)
+        dwdot, tmp, fdot = self.adflow.adjointapi.computematrixfreeproductfwd(
+            xvdot, extradot, wdot, useSpatial, useState, costSize,  max(1, fSize), nTime, famList, 
+            bcDataNames, bcDataValues, bcDataValuesdot, bcDataFamLists, bcVarsEmpty)
 
         # Explictly put fdot to nothing if size is zero
         if fSize==0:
@@ -3145,10 +3179,15 @@ class ADFLOW(AeroSolver):
         if xDvDeriv or xVDeriv or xSDeriv or xDvDerivAero:
             useSpatial = True
 
+        # Extract any possibly BC daa
+        bcDataNames, bcDataValues, bcDataFamLists, bcVarsEmpty = (
+            self._getBCDataFromAeroProblem(self.curAP))
+
         # Do actual Fortran call.
-        xvbar, extrabar, wbar = self.adflow.adjointapi.computematrixfreeproductbwd(
+        xvbar, extrabar, wbar, bcdatavaluesbar = self.adflow.adjointapi.computematrixfreeproductbwd(
             resBar, funcsBar, fBar.T, useSpatial, useState, self.getSpatialSize(),
-            self.adflow.adjointvars.ndesignextra, famList)
+            self.adflow.adjointvars.ndesignextra, famList, bcDataNames, bcDataValues, 
+            bcDataFamLists, bcVarsEmpty)
 
         # Assemble the possible returns the user has requested:
         returns = []
@@ -4283,6 +4322,11 @@ class ADFLOW(AeroSolver):
         iDV['xref'] = self.adflow.adjointvars.ipointrefx
         iDV['yref'] = self.adflow.adjointvars.ipointrefy
         iDV['zref'] = self.adflow.adjointvars.ipointrefz
+
+        # Extra DVs for the Boundary condition variables
+        iDV['pressure'] = -1
+        iDV['pressurestagnation'] = -1
+        iDV['temperaturestagnation'] = -1
 
         # Convert to python indexing
         for key in iDV:

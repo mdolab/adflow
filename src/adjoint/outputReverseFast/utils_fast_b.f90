@@ -1227,20 +1227,6 @@ contains
       call terminate('getdirangle', 'invalid lift direction')
     end if
   end subroutine getdirangle
-  subroutine terminate(routinename, errormessage)
-!
-!       terminate writes an error message to standard output and       
-!       terminates the execution of the program.                       
-!
-    use constants
-    use communication, only : adflow_comm_world, myid
-    implicit none
-!
-!      subroutine arguments
-!
-    character(len=*), intent(in) :: routinename
-    character(len=*), intent(in) :: errormessage
-  end subroutine terminate
   subroutine stabilityderivativedriver()
 !
 !      runs the time spectral stability derivative routines from the  
@@ -1412,4 +1398,249 @@ contains
     c(2) = a(3)*b(1) - a(1)*b(3)
     c(3) = a(1)*b(2) - a(2)*b(1)
   end subroutine cross_prod
+  subroutine siangle(angle, mult, trans)
+    use constants
+    use su_cgns, only : radian, degree
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer, intent(in) :: angle
+    real(kind=realtype), intent(out) :: mult, trans
+! determine the situation we are having here.
+    if (angle .eq. radian) then
+! angle is already given in radians. no need for a conversion.
+      mult = one
+      trans = zero
+    else if (angle .eq. degree) then
+! angle is given in degrees. a multiplication must be performed.
+      mult = pi/180.0_realtype
+      trans = zero
+    else
+      call terminate('siangle', &
+&              'no idea how to convert this to si units')
+    end if
+  end subroutine siangle
+  subroutine sidensity(mass, len, mult, trans)
+!
+!       sidensity computes the conversion from the given density       
+!       unit, which can be constructed from mass and length, to the    
+!       si-unit kg/m^3. the conversion will look like:                 
+!       density in kg/m^3 = mult*(density in ncu) + trans.             
+!       ncu means non-christian units, i.e. everything that is not si. 
+!
+    use constants
+    use su_cgns, only : kilogram, meter
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer, intent(in) :: mass, len
+    real(kind=realtype), intent(out) :: mult, trans
+! determine the situation we are having here.
+    if (mass .eq. kilogram .and. len .eq. meter) then
+! density is given in kg/m^3, i.e. no need for a conversion.
+      mult = one
+      trans = zero
+    else
+      call terminate('sidensity', &
+&              'no idea how to convert this to si units')
+    end if
+  end subroutine sidensity
+  subroutine silen(len, mult, trans)
+!
+!       silen computes the conversion from the given length unit to    
+!       the si-unit meter. the conversion will look like:              
+!       length in meter = mult*(length in ncu) + trans.                
+!       ncu means non-christian units, i.e. everything that is not si. 
+!
+    use constants
+    use su_cgns, only : meter, centimeter, millimeter, foot, inch
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer, intent(in) :: len
+    real(kind=realtype), intent(out) :: mult, trans
+! determine the situation we are having here.
+    select case  (len) 
+    case (meter) 
+      mult = one
+      trans = zero
+    case (centimeter) 
+      mult = 0.01_realtype
+      trans = zero
+    case (millimeter) 
+      mult = 0.001_realtype
+      trans = zero
+    case (foot) 
+      mult = 0.3048_realtype
+      trans = zero
+    case (inch) 
+      mult = 0.0254_realtype
+      trans = zero
+    case default
+      call terminate('silen', 'no idea how to convert this to si units')
+    end select
+  end subroutine silen
+  subroutine sipressure(mass, len, time, mult, trans)
+!
+!       sipressure computes the conversion from the given pressure     
+!       unit, which can be constructed from mass, length and time, to  
+!       the si-unit pa. the conversion will look like:                 
+!       pressure in pa = mult*(pressure in ncu) + trans.               
+!       ncu means non-christian units, i.e. everything that is not si. 
+!
+    use constants
+    use su_cgns, only : kilogram, meter, second
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer, intent(in) :: mass, len, time
+    real(kind=realtype), intent(out) :: mult, trans
+! determine the situation we are having here.
+    if (mass .eq. kilogram .and. len .eq. meter .and. time .eq. second) &
+&   then
+! pressure is given in pa, i.e. no need for a conversion.
+      mult = one
+      trans = zero
+    else
+      call terminate('sipressure', &
+&              'no idea how to convert this to si units')
+    end if
+  end subroutine sipressure
+  subroutine sitemperature(temp, mult, trans)
+!
+!       sitemperature computes the conversion from the given           
+!       temperature unit to the si-unit kelvin. the conversion will    
+!       look like:                                                     
+!       temperature in k = mult*(temperature in ncu) + trans.          
+!       ncu means non-christian units, i.e. everything that is not si. 
+!
+    use constants
+    use su_cgns, only : kelvin, celsius, rankine, fahrenheit
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer, intent(in) :: temp
+    real(kind=realtype), intent(out) :: mult, trans
+! determine the situation we are having here.
+    select case  (temp) 
+    case (kelvin) 
+! temperature is already given in kelvin. no need to convert.
+      mult = one
+      trans = zero
+    case (celsius) 
+! is it celcius or celsius?
+! temperature is in celsius. only an offset must be applied.
+      mult = one
+      trans = 273.16_realtype
+    case (rankine) 
+! temperature is in rankine. only a multiplication needs to
+! be performed.
+      mult = 5.0_realtype/9.0_realtype
+      trans = zero
+    case (fahrenheit) 
+! temperature is in fahrenheit. both a multiplication and an
+! offset must be applied.
+      mult = 5.0_realtype/9.0_realtype
+      trans = 255.382
+    case default
+! unknown temperature unit.
+      call terminate('sitemperature', &
+&              'no idea how to convert this to si units')
+    end select
+  end subroutine sitemperature
+  subroutine siturb(mass, len, time, temp, turbname, mult, trans)
+!
+!       siturb computes the conversion from the given turbulence       
+!       unit, which can be constructed from mass, len, time and temp,  
+!       to the si-unit for the given variable. the conversion will     
+!       look like: var in si = mult*(var in ncu) + trans.              
+!       ncu means non-christian units, i.e. everything that is not si. 
+!
+    use constants
+    use su_cgns, only : kilogram, meter, second, kelvin
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer, intent(in) :: mass, len, time, temp
+    character(len=*), intent(in) :: turbname
+    real(kind=realtype), intent(out) :: mult, trans
+! determine the situation we are having here.
+    if (mass .eq. kilogram .and. len .eq. meter .and. time .eq. second &
+&       .and. temp .eq. kelvin) then
+! everthing is already in si units. no conversion needed.
+      mult = one
+      trans = zero
+    else
+      call terminate('siturb', 'no idea how to convert this to si units'&
+&             )
+    end if
+  end subroutine siturb
+  subroutine sivelocity(length, time, mult, trans)
+!
+!       sivelocity computes the conversion from the given velocity     
+!       unit, which can be constructed from length and time, to the    
+!       si-unit m/s. the conversion will look like:                    
+!       velocity in m/s = mult*(velocity in ncu) + trans.              
+!       ncu means non-christian units, i.e. everything that is not si. 
+!
+    use constants
+    use su_cgns, only : meter, centimeter, millimeter, foot, inch, &
+&   second
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer, intent(in) :: length, time
+    real(kind=realtype), intent(out) :: mult, trans
+! determine the situation we are having here.
+! first the length.
+    select case  (length) 
+    case (meter) 
+      mult = one
+      trans = zero
+    case (centimeter) 
+      mult = 0.01_realtype
+      trans = zero
+    case (millimeter) 
+      mult = 0.001_realtype
+      trans = zero
+    case (foot) 
+      mult = 0.3048_realtype
+      trans = zero
+    case (inch) 
+      mult = 0.0254_realtype
+      trans = zero
+    case default
+      call terminate('sivelocity', &
+&              'no idea how to convert this length to si units')
+    end select
+! and the time.
+    select case  (time) 
+    case (second) 
+      mult = mult
+    case default
+      call terminate('sivelocity', &
+&              'no idea how to convert this time to si units')
+    end select
+  end subroutine sivelocity
+  subroutine terminate(routinename, errormessage)
+!
+!       terminate writes an error message to standard output and       
+!       terminates the execution of the program.                       
+!
+    use constants
+    use communication, only : adflow_comm_world, myid
+    implicit none
+!
+!      subroutine arguments
+!
+    character(len=*), intent(in) :: routinename
+    character(len=*), intent(in) :: errormessage
+  end subroutine terminate
 end module utils_fast_b

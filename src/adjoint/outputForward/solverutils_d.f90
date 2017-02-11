@@ -12,9 +12,10 @@ module solverutils_d
 contains
 !  differentiation of timestep_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *radi *radj *radk
-!   with respect to varying inputs: *p *w *si *sj *sk rhoinf pinfcorr
-!   rw status of diff variables: *p:in *w:in *si:in *sj:in *sk:in
-!                *radi:out *radj:out *radk:out rhoinf:in pinfcorr:in
+!   with respect to varying inputs: rhoinf pinfcorr *p *w *si *sj
+!                *sk
+!   rw status of diff variables: rhoinf:in pinfcorr:in *p:in *w:in
+!                *si:in *sj:in *sk:in *radi:out *radj:out *radk:out
 !   plus diff mem management of: p:in w:in si:in sj:in sk:in radi:in
 !                radj:in radk:in
   subroutine timestep_block_d(onlyradii)

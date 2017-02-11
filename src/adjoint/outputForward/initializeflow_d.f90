@@ -49,10 +49,10 @@ contains
 &   rgasdim, ssuthdim, eddyvisinfratio, turbmodel, turbintensityinf
     use flowvarrefstate, only : pinfdim, pinfdimd, tinfdim, tinfdimd, &
 &   rhoinfdim, rhoinfdimd, muinfdim, muinfdimd, pref, prefd, rhoref, &
-&   rhorefd, tref, trefd, muref, murefd, timeref, timerefd, uref, href, &
-&   pinf, pinfd, pinfcorr, pinfcorrd, rhoinf, rhoinfd, uinf, uinfd, rgas&
-&   , rgasd, muinf, muinfd, gammainf, winf, winfd, nw, nwf, kpresent, &
-&   winf, winfd
+&   rhorefd, tref, trefd, muref, murefd, timeref, timerefd, uref, urefd,&
+&   href, hrefd, pinf, pinfd, pinfcorr, pinfcorrd, rhoinf, rhoinfd, uinf&
+&   , uinfd, rgas, rgasd, muinf, muinfd, gammainf, winf, winfd, nw, nwf,&
+&   kpresent, winf, winfd
     use flowutils_d, only : computegamma, etot, etot_d
     use turbutils_d, only : sanuknowneddyratio, sanuknowneddyratio_d
     implicit none

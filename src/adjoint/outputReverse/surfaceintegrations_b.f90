@@ -136,22 +136,20 @@ bocos:do mm=1,nbocos
     end do bocos
   end subroutine integratesurfaceswithgathered
 !  differentiation of wallintegrationface in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *(*viscsubface.tau) *(*bcdata.fv)
-!                *(*bcdata.fp) *(*bcdata.area) veldirfreestream
-!                machcoef pointref pinf pref *xx *pp1 *pp2 *ssi
-!                *ww2 localvalues
-!   with respect to varying inputs: *(*viscsubface.tau) *(*bcdata.fv)
-!                *(*bcdata.fp) *(*bcdata.area) veldirfreestream
-!                machcoef pointref pinf pref *xx *pp1 *pp2 *ssi
-!                *ww2 localvalues
-!   rw status of diff variables: *(*viscsubface.tau):incr *(*bcdata.fv):in-out
-!                *(*bcdata.fp):in-out *(*bcdata.area):in-out veldirfreestream:incr
-!                machcoef:incr pointref:incr pinf:incr pref:incr
-!                *xx:incr *pp1:incr *pp2:incr *ssi:incr *ww2:incr
+!   gradient     of useful results: veldirfreestream machcoef pointref
+!                pinf pref *xx *pp1 *pp2 *ssi *ww2 *(*viscsubface.tau)
+!                *(*bcdata.fv) *(*bcdata.fp) *(*bcdata.area) localvalues
+!   with respect to varying inputs: veldirfreestream machcoef pointref
+!                pinf pref *xx *pp1 *pp2 *ssi *ww2 *(*viscsubface.tau)
+!                *(*bcdata.fv) *(*bcdata.fp) *(*bcdata.area) localvalues
+!   rw status of diff variables: veldirfreestream:incr machcoef:incr
+!                pointref:incr pinf:incr pref:incr *xx:incr *pp1:incr
+!                *pp2:incr *ssi:incr *ww2:incr *(*viscsubface.tau):incr
+!                *(*bcdata.fv):in-out *(*bcdata.fp):in-out *(*bcdata.area):in-out
 !                localvalues:in-out
-!   plus diff mem management of: viscsubface:in *viscsubface.tau:in
-!                bcdata:in *bcdata.fv:in *bcdata.fp:in *bcdata.area:in
-!                xx:in pp1:in pp2:in ssi:in ww2:in
+!   plus diff mem management of: xx:in pp1:in pp2:in ssi:in ww2:in
+!                viscsubface:in *viscsubface.tau:in bcdata:in *bcdata.fv:in
+!                *bcdata.fp:in *bcdata.area:in
   subroutine wallintegrationface_b(localvalues, localvaluesd, mm)
 !
 !       wallintegrations computes the contribution of the block
@@ -902,7 +900,7 @@ bocos:do mm=1,nbocos
     use sorting, only : bsearchintegers
     use flowvarrefstate, only : pref, prefd, pinf, pinfd, rhoref, &
 &   rhorefd, timeref, timerefd, lref, tref, trefd, rgas, rgasd, uref, &
-&   uinf, uinfd
+&   urefd, uinf, uinfd
     use inputphysics, only : pointref, pointrefd, flowtype, &
 &   veldirfreestream, veldirfreestreamd, alpha, alphad, beta, betad, &
 &   liftindex
@@ -1488,7 +1486,7 @@ bocos:do mm=1,nbocos
     use sorting, only : bsearchintegers
     use flowvarrefstate, only : pref, prefd, pinf, pinfd, rhoref, &
 &   rhorefd, pref, prefd, timeref, timerefd, lref, tref, trefd, rgas, &
-&   rgasd, uref, uinf, uinfd
+&   rgasd, uref, urefd, uinf, uinfd
     use inputphysics, only : pointref, pointrefd, flowtype
     use flowutils_b, only : computeptot, computeptot_b, computettot, &
 &   computettot_b

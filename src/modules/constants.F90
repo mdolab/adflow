@@ -292,10 +292,10 @@ module constants
   integer(kind=intType) :: myIntPtr = 0
 
   ! BC specific input variable counts
-  real(kind=realType), parameter :: nbcVarSubsonicInflow = 17
-  real(kind=realType), parameter :: nbcVarSubsonicOutflow = 1
-  real(kind=realType), parameter :: nbcVarSupersonicInflow = 7
-  real(kind=realType), parameter :: nbcVarIsothermalWall = 1
+  integer(kind=intType), parameter :: nbcVarSubsonicInflow = 17
+  integer(kind=intType), parameter :: nbcVarSubsonicOutflow = 1
+  integer(kind=intType), parameter :: nbcVarSupersonicInflow = 7
+  integer(kind=intType), parameter :: nbcVarIsothermalWall = 1
 
   ! Indices of specific familyExcahnge groups based on BC
   integer(kind=intType), parameter :: iBCGroupWalls=1
@@ -334,5 +334,10 @@ module constants
   integer(kind=intType), parameter :: iFinalCommStructures=14
   integer(kind=intType), parameter :: iFringeReduction=15
   integer(kind=intType), parameter :: iTotal=16
+
+  ! Flags for hand-differeniated codes
+  integer(kind=intType), parameter :: AD_NONLINEAR=0
+  integer(kind=intType), parameter :: AD_FORWARD=1
+  integer(kind=intType), parameter :: AD_REVERSE=2
   
 end module constants

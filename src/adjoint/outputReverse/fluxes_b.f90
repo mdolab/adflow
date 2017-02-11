@@ -11,12 +11,12 @@ module fluxes_b
 
 contains
 !  differentiation of inviscidcentralflux in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *p *dw *w *vol *si *sj *sk
-!                timeref
-!   with respect to varying inputs: *p *dw *w *vol *si *sj *sk
-!                timeref
-!   rw status of diff variables: *p:incr *dw:in-out *w:incr *vol:incr
-!                *si:incr *sj:incr *sk:incr timeref:incr
+!   gradient     of useful results: timeref *p *dw *w *vol *si
+!                *sj *sk
+!   with respect to varying inputs: timeref *p *dw *w *vol *si
+!                *sj *sk
+!   rw status of diff variables: timeref:incr *p:incr *dw:in-out
+!                *w:incr *vol:incr *si:incr *sj:incr *sk:incr
 !   plus diff mem management of: p:in dw:in w:in vol:in si:in sj:in
 !                sk:in
   subroutine inviscidcentralflux_b()
@@ -719,10 +719,12 @@ contains
     end if
   end subroutine inviscidcentralflux
 !  differentiation of invisciddissfluxmatrix in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *p *w *si *sj *sk *fw pinfcorr
-!   with respect to varying inputs: *p *w *si *sj *sk *fw pinfcorr
-!   rw status of diff variables: *p:incr *w:incr *si:incr *sj:incr
-!                *sk:incr *fw:in-out pinfcorr:incr
+!   gradient     of useful results: pinfcorr *p *w *si *sj *sk
+!                *fw
+!   with respect to varying inputs: pinfcorr *p *w *si *sj *sk
+!                *fw
+!   rw status of diff variables: pinfcorr:incr *p:incr *w:incr
+!                *si:incr *sj:incr *sk:incr *fw:in-out
 !   plus diff mem management of: p:in w:in si:in sj:in sk:in fw:in
   subroutine invisciddissfluxmatrix_b()
 !
@@ -3586,11 +3588,11 @@ contains
     end if
   end subroutine invisciddissfluxmatrix
 !  differentiation of invisciddissfluxscalar in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *p *w *fw rhoinf pinfcorr
-!   with respect to varying inputs: *p *w *fw *radi *radj *radk
-!                rhoinf pinfcorr
-!   rw status of diff variables: *p:incr *w:incr *fw:in-out *radi:out
-!                *radj:out *radk:out rhoinf:incr pinfcorr:incr
+!   gradient     of useful results: rhoinf pinfcorr *p *w *fw
+!   with respect to varying inputs: rhoinf pinfcorr *p *w *fw *radi
+!                *radj *radk
+!   rw status of diff variables: rhoinf:incr pinfcorr:incr *p:incr
+!                *w:incr *fw:in-out *radi:out *radj:out *radk:out
 !   plus diff mem management of: p:in w:in fw:in radi:in radj:in
 !                radk:in
   subroutine invisciddissfluxscalar_b()

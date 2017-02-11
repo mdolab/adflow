@@ -616,8 +616,8 @@ contains
   end subroutine eint
 !  differentiation of computepressuresimple in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *p
-!   with respect to varying inputs: *w pinfcorr
-!   rw status of diff variables: *p:out *w:in pinfcorr:in
+!   with respect to varying inputs: pinfcorr *w
+!   rw status of diff variables: pinfcorr:in *p:out *w:in
 !   plus diff mem management of: p:in w:in
   subroutine computepressuresimple_d(includehalos)
 ! compute the pressure on a block with the pointers already set. this
@@ -935,9 +935,9 @@ contains
   end subroutine computepressure
 !  differentiation of computelamviscosity in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rlv
-!   with respect to varying inputs: *p *w muref tref rgas
-!   rw status of diff variables: *p:in *w:in *rlv:out muref:in
-!                tref:in rgas:in
+!   with respect to varying inputs: muref tref rgas *p *w
+!   rw status of diff variables: muref:in tref:in rgas:in *p:in
+!                *w:in *rlv:out
 !   plus diff mem management of: p:in w:in rlv:in
   subroutine computelamviscosity_d(includehalos)
 !

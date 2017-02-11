@@ -79,15 +79,15 @@ python module libadflow
        end module initializeflow
 
        module bcdata
-         subroutine setbcdata(bcdatanamesin,bcdatain,famlist, sps, nbcdatanamesin, nbcdatain, nfams)
-            character, dimension(nbcdatanamesin,32), intent(in) :: bcdatanamesin
-            real(kind=realtype) dimension(nbcdatain),intent(in) :: bcdatain
-            integer(kind=inttype) dimension(nfams),intent(in) :: famlist
-            integer(kind=inttype) intent(in) :: sps
-            integer(kind=inttype), optional,intent(in),check(len(bcdatanamesin)>=nbcdatanamesin),depend(bcdatanamesin) :: nbcdatanamesin=len(bcdatanamesin)
-            integer(kind=inttype), optional,intent(in),check(len(bcdatain)>=nbcdatain),depend(bcdatain) :: nbcdatain=len(bcdatain)
-            integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfams),depend(famlist) :: nfams=len(famlist)
+         subroutine setbcdata(bcdatanamesin,bcdatain,famlists,sps,nvar,nfammax) ! in :test:BCData.F90:bcdata
+           character dimension(nvar,32),intent(in) :: bcdatanamesin
+           real(kind=realtype) dimension(nvar),intent(in),depend(nvar) :: bcdatain
+           integer(kind=inttype) dimension(nvar,nfammax),depend(nvar) :: famlists
+           integer(kind=inttype) intent(in) :: sps
+           integer(kind=inttype), optional,intent(in),check(shape(bcdatanamesin,0)==nvar),depend(bcdatanamesin) :: nvar=shape(bcdatanamesin,0)
+           integer(kind=inttype), optional,intent(in),check(shape(famlists,1)==nfammax),depend(famlists) :: nfammax=shape(famlists,1)
          end subroutine setbcdata
+
        end module bcdata
 
        module flowutils
@@ -516,7 +516,7 @@ python module libadflow
          end subroutine createpetscvars
 
 #ifndef USE_COMPLEX
-            subroutine computematrixfreeproductfwd(xvdot,extradot,wdot,usespatial,usestate,dwdot,funcsdot,fdot,spatialsize,extrasize,statesize,costsize,fsize,ntime,famlist,nfamlist) ! in :test:adjointAPI.F90:adjointapi
+            subroutine computematrixfreeproductfwd(xvdot,extradot,wdot,usespatial,usestate,dwdot,funcsdot,fdot,spatialsize,extrasize,statesize,costsize,fsize,ntime,famlist,nfamlist,bcdatanames,bcdatavalues,bcdatavaluesdot,bcdatafamlists,nvar,nfammax,bcvarsempty) ! in :test:adjointAPI.F90:adjointapi
                 real(kind=realtype) dimension(spatialsize),intent(in) :: xvdot
                 real(kind=realtype) dimension(extrasize),intent(in) :: extradot
                 real(kind=realtype) dimension(statesize),intent(in) :: wdot
@@ -533,8 +533,15 @@ python module libadflow
                 integer(kind=inttype) intent(in) :: ntime
                 integer(kind=inttype) dimension(nfamlist),intent(in) :: famlist
                 integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
+                character dimension(nvar,32),intent(in) :: bcdatanames
+                real(kind=realtype) dimension(nvar),intent(in),depend(nvar) :: bcdatavalues
+                real(kind=realtype) dimension(nvar),intent(in),depend(nvar) :: bcdatavaluesdot
+                integer(kind=inttype) dimension(nvar,nfammax),depend(nvar) :: bcdatafamlists
+                integer(kind=inttype), optional,intent(in),check(shape(bcdatanames,0)==nvar),depend(bcdatanames) :: nvar=shape(bcdatanames,0)
+                integer(kind=inttype), optional,intent(in),check(shape(bcdatafamlists,1)==nfammax),depend(bcdatafamlists) :: nfammax=shape(bcdatafamlists,1)
+                logical intent(in) :: bcvarsempty
             end subroutine computematrixfreeproductfwd
-            subroutine computematrixfreeproductbwd(dwbar,funcsbar,fbar,usespatial,usestate,xvbar,extrabar,wbar,spatialsize,extrasize,statesize,costsize,fsize,ntime,famlist,nfamlist) ! in :test:adjointAPI.F90:adjointapi
+            subroutine computematrixfreeproductbwd(dwbar,funcsbar,fbar,usespatial,usestate,xvbar,extrabar,wbar,spatialsize,extrasize,statesize,costsize,fsize,ntime,famlist,nfamlist,bcdatanames,bcdatavalues,bcdatavaluesbar,bcdatafamlists,nvar,nfammax,bcvarsempty) ! in :test:adjointAPI.F90:adjointapi
                 real(kind=realtype) dimension(statesize),intent(in) :: dwbar
                 real(kind=realtype) dimension(costsize),intent(in) :: funcsbar
                 real(kind=realtype) dimension(3,fsize,ntime),intent(in) :: fbar
@@ -551,7 +558,14 @@ python module libadflow
                 integer(kind=inttype), optional,intent(in),check(shape(fbar,2)==ntime),depend(fbar) :: ntime=shape(fbar,2)
                 integer(kind=inttype) dimension(nfamlist),intent(in) :: famlist
                 integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
-              end subroutine computematrixfreeproductbwd
+                character dimension(nvar,32),intent(in) :: bcdatanames
+                real(kind=realtype) dimension(nvar),intent(in),depend(nvar) :: bcdatavalues
+                real(kind=realtype) dimension(1),intent(out) :: bcdatavaluesbar
+                integer(kind=inttype) dimension(nvar,nfammax),depend(nvar) :: bcdatafamlists
+                integer(kind=inttype), optional,intent(in),check(shape(bcdatanames,0)==nvar),depend(bcdatanames) :: nvar=shape(bcdatanames,0)
+                integer(kind=inttype), optional,intent(in),check(shape(bcdatafamlists,1)==nfammax),depend(bcdatafamlists) :: nfammax=shape(bcdatafamlists,1)
+                logical intent(in) :: bcvarsempty
+            end subroutine computematrixfreeproductbwd
 #endif
        end module adjointapi
        module adjointutils

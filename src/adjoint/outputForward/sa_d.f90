@@ -16,10 +16,10 @@ module sa_d
 contains
 !  differentiation of sasource in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *scratch
-!   with respect to varying inputs: *w *rlv *vol *d2wall *si *sj
-!                *sk timeref
-!   rw status of diff variables: *w:in *rlv:in *scratch:out *vol:in
-!                *d2wall:in *si:in *sj:in *sk:in timeref:in
+!   with respect to varying inputs: timeref *w *rlv *vol *d2wall
+!                *si *sj *sk
+!   rw status of diff variables: timeref:in *w:in *rlv:in *scratch:out
+!                *vol:in *d2wall:in *si:in *sj:in *sk:in
 !   plus diff mem management of: w:in rlv:in scratch:in vol:in
 !                d2wall:in si:in sj:in sk:in
   subroutine sasource_d()

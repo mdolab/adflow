@@ -1,10 +1,12 @@
 module masterRoutines
 contains
-  subroutine master(useSpatial, famList, forces)
+  subroutine master(useSpatial, famList, forces, &
+       bcDataNames, bcDataValues, bcDataFamLists)
 
     use constants
     use communication, only : adflow_comm_world
     use BCRoutines, only : applyallBC_block
+    use bcdata, only : setBCData, setBCDataFineGrid
     use turbbcRoutines, only : applyallTurbBCthisblock, bcTurbTreatment
     use iteration, only : currentLevel
     use inputAdjoint,  only : viscPC
@@ -42,6 +44,9 @@ contains
     ! Input Arguments:
     logical, intent(in) :: useSpatial
     integer(kind=intType), dimension(:), intent(in) :: famList
+    character, optional, dimension(:, :), intent(in) :: bcDataNames
+    real(kind=realType), optional, dimension(:), intent(in) :: bcDataValues
+    integer(kind=intType), optional, dimension(:, :) :: bcDataFamLists
 
     ! Output Variables
     real(kind=realType), intent(out), optional, dimension(:, :, :) :: forces
@@ -56,9 +61,18 @@ contains
 
     if (useSpatial) then 
        call adjustInflowAngle()
-       call referenceState
        
-       do sps=1,nTimeIntervalsSpectral
+       ! Update all the BCData
+       call referenceState
+       if (present(bcDataNames)) then 
+          do sps=1,nTimeIntervalsSpectral
+             call setBCData(bcDataNames, bcDataValues, bcDataFamLists, sps, & 
+                  size(bcDataValues), size(bcDataFamLIsts, 2))
+          end do
+          call setBCDataFineGrid(.true.)
+       end if
+
+        do sps=1,nTimeIntervalsSpectral
           do nn=1,nDom
              call setPointers(nn, 1, sps)
              call xhalo_block()
@@ -217,17 +231,17 @@ contains
     ! interest.
     call getCostFunctions(globalVal)
 
-    ! Secondary loop over the blocks for calculations that require gathered values
-    do sps=1, nTimeIntervalsSpectral
-      do nn=1, nDom
-        call setPointers(nn, 1, sps)
-          ! Now compute the forces and moments for this block. 
-          call integrateSurfacesWithGathered(globalVal(:,sps), localval(:, sps), famList)
-      end do 
+    ! ! Secondary loop over the blocks for calculations that require gathered values
+    ! do sps=1, nTimeIntervalsSpectral
+    !   do nn=1, nDom
+    !     call setPointers(nn, 1, sps)
+    !       ! Now compute the forces and moments for this block. 
+    !     call integrateSurfacesWithGathered(globalVal(:,sps), localval(:, sps), famList)
+    !   end do 
 
-       ! Integrate any zippers we have
-       call integrateZippersWithGathered(globalVal(:,sps), localval(:, sps), famList, sps)
-    end do 
+    !    ! Integrate any zippers we have
+    !    call integrateZippersWithGathered(globalVal(:,sps), localval(:, sps), famList, sps)
+    ! end do 
 
      ! Now we need to reduce all the cost functions
     call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
@@ -239,7 +253,9 @@ contains
 
   end subroutine master
 #ifndef USE_COMPLEX
-  subroutine master_d(wdot, xdot, forcesDot, dwDot, famList)
+  subroutine master_d(wdot, xdot, forcesDot, dwDot, famList, &
+       bcDataNames, bcDataValues, bcDataValuesd, bcDataFamLists)
+
     use constants
     use costFunctions
     use diffsizes, only :  ISIZE1OFDrfbcdata, ISIZE1OFDrfviscsubface
@@ -275,6 +291,7 @@ contains
     use sorting, only : bsearchIntegers
     use adjointExtra_d, only : xhalo_block_d, volume_block_d, metric_BLock_d, boundarynormals_d
     use adjointextra_d, only : getcostfunctions_D, resscale_D, sumdwandfw_d
+    use bcdata, only : setBCData_d, setBCDataFineGrid_d
     use overset, only : oversetPresent
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity_d
@@ -287,6 +304,9 @@ contains
     ! Input Arguments:
     real(kind=realType), intent(in), dimension(:) :: wDot, xDot
     integer(kind=intType), dimension(:), intent(in) :: famList
+    character, optional, dimension(:, :), intent(in) :: bcDataNames
+    real(kind=realType), optional, dimension(:), intent(in) :: bcDataValues, bcDataValuesd
+    integer(kind=intType), optional, dimension(:, :) :: bcDataFamLists
 
     ! Output variables:
     real(kind=realType), intent(out), dimension(:) :: dwDot
@@ -374,6 +394,13 @@ contains
 
     call adjustInflowAngle_d
     call referenceState_d
+    if (present(bcDataNames)) then 
+       do sps=1,nTimeIntervalsSpectral
+          call setBCData_d(bcDataNames, bcDataValues, bcDataValuesd, &
+               bcDataFamLists, sps, size(bcDataValues), size(bcDataFamLIsts, 2))
+       end do
+       call setBCDataFineGrid_d(.true.)
+    end if
 
     do sps=1,nTimeIntervalsSpectral
        do nn=1,nDom
@@ -551,8 +578,9 @@ contains
     deallocate(forces)
   end subroutine master_d
 
-  subroutine master_b(wbar, xbar, extraBar, forcesBar, dwBar, nState, famList)
-
+  subroutine master_b(wbar, xbar, extraBar, forcesBar, dwBar, nState, famList, &
+       bcDataNames, bcDataValues, bcDataValuesd, bcDataFamLists)
+    
     ! This is the main reverse mode differentiaion of master. It
     ! compute the reverse mode sensitivity of *all* outputs with
     ! respect to *all* inputs. Anything that needs to be
@@ -597,6 +625,7 @@ contains
     use fluxes_b, only :inviscidUpwindFlux_b, inviscidDissFluxScalar_b, &
          inviscidDissFluxMatrix_b, viscousFlux_b, inviscidCentralFlux_b
     use BCExtra_b, only : applyAllBC_Block_b
+    use bcdata, only : setBCData_b, setBCDataFineGrid_b
     use overset, only : oversetPresent
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity_b
@@ -611,15 +640,20 @@ contains
     real(kind=realType), intent(in), dimension(:, :, :) :: forcesBar
     integer(kind=intType), intent(in) :: nState
     integer(kind=intType), dimension(:), intent(in) :: famList
+    character, optional, dimension(:, :), intent(in) :: bcDataNames
+    real(kind=realType), optional, dimension(:), intent(in) :: bcDataValues
+    integer(kind=intType), optional, dimension(:, :) :: bcDataFamLists
 
-    ! Input Arguments:
-    real(kind=realType), intent(out), dimension(:) :: wBar, xBar, extraBar
+    ! Output Arguments:
+    real(kind=realType), optional, intent(out), dimension(:) :: wBar, xBar, extraBar
+    real(kind=realType), optional, dimension(:), intent(out) :: bcDataValuesd
 
     ! Working Variables
     integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj,  level
     real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVal, globalVal
     real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVald, globalVald, tmp
-    real(kind=realType), dimension(:), allocatable :: extraLocalBar
+    real(kind=realType), dimension(:), allocatable :: extraLocalBar, bcDataValuesdLocal
+
     logical ::resetToRans
 
     ! extraLocalBar accumulates the seeds onto the extra variables
@@ -664,7 +698,7 @@ contains
           call setPointers_d(nn, 1, sps)
           call integrateSurfaces(localval(:, sps), famList)
        end do
-       !call integrateZippers(localVal(:, sps), famList, sps)
+       call integrateZippers(localVal(:, sps), famList, sps)
     end do
 
     call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
@@ -839,7 +873,21 @@ contains
           call EChk(ierr,__FILE__,__LINE__)
        end if
     end do spsLoop2
+
     
+    if (present(bcDataNames)) then 
+       allocate(bcDataValuesdLocal(size(bcDataValuesd)))
+       bcDataValuesdLocal = zero
+       call setBCDataFineGrid_b(.true.)
+       do sps=1, nTimeIntervalsSpectral
+          call setBCData_b(bcDataNames, bcDataValues, bcDataValuesdLocal, bcDataFamLists, &
+               sps, size(bcDataValues), size(bcDataFamLIsts, 2))
+       end do
+       ! Reverse seeds need to accumulated across all processors:
+       call mpi_allreduce(bcDataValuesdLocal, bcDataValuesd, size(bcDataValuesd), adflow_real, &
+            mpi_sum, ADflow_comm_world, ierr)
+       deallocate(bcDataValuesdLocal)
+    end if
     call referenceState_b
     call adjustInflowAngle_b
 
