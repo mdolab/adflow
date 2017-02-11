@@ -50,7 +50,7 @@ options = {
     'flowtype':'internal'
 }
 
-ap = AeroProblem(name='conv_nozzle', alpha=30.0,  mach=0.25, T=500, P=79326.7,
+ap = AeroProblem(name='conv_nozzle', alpha=00.0,  mach=0.25, T=500, P=79326.7,
                  areaRef=1., chordRef=2.,
                  evalFuncs=['mdot', 'mdot_up', 'mdot_down',
                             'mavgptot_up', 'mavgptot_down',
