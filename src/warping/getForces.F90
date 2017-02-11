@@ -1406,8 +1406,8 @@ subroutine computeNodalForces_b(sps)
   domains: do nn=1,nDom
      call setPointers_d(nn, 1_intType, sps)
      do mm=1, nBocos
-        iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
-        jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
+        iBeg = BCdata(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
+        jBeg = BCdata(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
         if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
              BCType(mm) == NSWallIsothermal) then
            BCDatad(mm)%F = zero
