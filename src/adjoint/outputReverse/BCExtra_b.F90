@@ -26,6 +26,36 @@ contains
     correctForK = getCorrectForK()
 
     ! ------------------------------------
+    !  Euler Wall
+    ! ------------------------------------
+    do mm=1,nBocos
+       if (bcType(mm) == eulerWall) then
+          call setBCPointers_d(mm, .False.)
+          call bcEulerWall_b(mm, secondHalo, correctForK)
+       end if
+    end do
+
+    ! ------------------------------------
+    !  Subsonic Inflow Boundary Condition
+    ! ------------------------------------
+    do mm=1,nBocos
+       if (bcType(mm) == subsonicInflow) then 
+          call setBCPointers_d(mm, .False.)
+          call bcSubsonicInflow_b(mm, secondHalo, correctForK)
+       end if
+    end do
+
+    ! ------------------------------------
+    !  Subsonic Outflow Boundary Condition
+    ! ------------------------------------
+    do mm=1,nBocos
+       if (bcType(mm) == subsonicOutflow) then 
+          call setBCPointers_d(mm, .False.)
+          call bcSubsonicOutflow_b(mm, secondHalo, correctForK)
+       end if
+    end do
+
+    ! ------------------------------------
     !  Farfield Boundary Condition 
     ! ------------------------------------
     do mm=1,nBocos
@@ -35,13 +65,16 @@ contains
        end if
     end do
 
-    do mm=1,nBocos
-       if (bcType(mm) == eulerWall) then
-          call setBCPointers_d(mm, .False.)
-          call bcEulerWall_b(mm, secondHalo, correctForK)
-       end if
-    end do
-
+    ! ------------------------------------
+    !  Isothermal Wall Boundary Condition 
+    ! ------------------------------------
+    DO mm=1,nviscbocos
+       IF (bctype(mm) .EQ. nswallisothermal) THEN
+          CALL setBCPointers_d(mm, .false.)
+          CALL BCNSWALLISOTHERMAL_B(mm, secondhalo, correctfork)
+       END IF
+    END DO
+   
     ! ------------------------------------
     !  Adibatic Wall Boundary Condition 
     ! ------------------------------------

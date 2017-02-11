@@ -15,13 +15,13 @@ module sa_b
 
 contains
 !  differentiation of sasource in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *w *rlv *scratch *vol *si *sj
-!                *sk timeref
-!   with respect to varying inputs: *w *rlv *scratch *vol *d2wall
-!                *si *sj *sk timeref
-!   rw status of diff variables: *w:incr *rlv:incr *scratch:in-out
-!                *vol:incr *d2wall:out *si:incr *sj:incr *sk:incr
-!                timeref:incr
+!   gradient     of useful results: timeref *w *rlv *scratch *vol
+!                *si *sj *sk
+!   with respect to varying inputs: timeref *w *rlv *scratch *vol
+!                *d2wall *si *sj *sk
+!   rw status of diff variables: timeref:incr *w:incr *rlv:incr
+!                *scratch:in-out *vol:incr *d2wall:out *si:incr
+!                *sj:incr *sk:incr
 !   plus diff mem management of: w:in rlv:in scratch:in vol:in
 !                d2wall:in si:in sj:in sk:in
   subroutine sasource_b()

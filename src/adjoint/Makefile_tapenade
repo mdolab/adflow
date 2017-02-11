@@ -46,6 +46,9 @@ ALL_RES_FILES =	$(SRC)/adjoint/adjointExtra.F90\
 		$(SRC)/modules/costFunctions.F90\
 		$(SRC)/modules/wallDistanceData.F90\
 		$(SRC)/modules/overset.F90\
+		$(SRC)/modules/cgnsNames.f90\
+		$(SRC)/modules/su_cgns.F90\
+		$(SRC)/modules/BCDataMod.F90\
 		$(SRC)/solver/BCRoutines.F90\
 		$(SRC)/solver/fluxes.F90\
 		$(SRC)/solver/solverUtils.F90\
@@ -62,6 +65,9 @@ ALL_RES_FILES =	$(SRC)/adjoint/adjointExtra.F90\
 		$(SRC)/utils/sorting.F90\
 		$(SRC)/overset/oversetUtilities.F90\
 		$(SRC)/wallDistance/wallDistance.F90\
+		$(SRC)/bcdata/BCData.F90\
+
+
 
 # intermediate preprocessed files.
 I_RES_FILES := $(ALL_RES_FILES:%=%.f90)
@@ -75,6 +81,18 @@ flowUtils%adjustInflowAngle(alpha, beta)>(veldirfreestream, dragdirection, liftd
 initializeFlow%referenceState(mach, machcoef, pInfDim, TinfDim, rhoInfDim, velDirFreestream) > \
               (mach, machcoef, pInfDim, TinfDim, rhoInfDim, velDirFreeStream, \
                pRef, rhoRef, Tref, muRef, timeRef, pInf, pinfCorr, rhoInf, uInf, rGas, muInf,  winf) \
+\
+bcData%BCDataIsoThermalwall(bcVarArray, Tref) > \
+                           (BCData%TNS_wall, Tref) \
+\
+bcData%BCDataSubsonicInflow(bcVarArray, muRef, Pref, rhoRef, Tref, Href, wInf) > \
+	                   (bcData%PtInlet, bcData%ttInlet, bcData%htInlet, bcData%turbInlet, muRef, Pref, rhoRef, Tref, Href, wInf) \
+\
+bcData%BCDataSubsonicOutflow(bcVarArray, Pref) > \
+	                    (bcData%Ps,  Pref) \
+\
+bcData%BCDataSupersonicInflow(bcVarArray, muRef, rhoRef, Pref, uRef, wInf, pInfCorr) > \
+	                     (bcData%rho, bcData%velx, bcData%vely, bcData%velz, bcData%ps, bcData%turbInlet, muRef, rhoRef, Pref, uRef, wInf, pInfCorr) \
 \
 adjointExtra%xhalo_block(x) > \
                         (x) \

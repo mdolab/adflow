@@ -796,13 +796,13 @@ bocos:do nn=1,nbocos
     end do
   end subroutine bcturboutflow
 !  differentiation of bcturbtreatment in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *bvtj1 *bvtj2 *w *rlv *bvtk1
-!                *bvtk2 *d2wall *bvti1 *bvti2 winf
-!   with respect to varying inputs: *bvtj1 *bvtj2 *w *rlv *bvtk1
-!                *bvtk2 *d2wall *bvti1 *bvti2 winf
-!   rw status of diff variables: *bvtj1:in-out *bvtj2:in-out *w:incr
-!                *rlv:incr *bvtk1:in-out *bvtk2:in-out *d2wall:incr
-!                *bvti1:in-out *bvti2:in-out winf:incr
+!   gradient     of useful results: winf *bvtj1 *bvtj2 *w *rlv
+!                *bvtk1 *bvtk2 *d2wall *bvti1 *bvti2
+!   with respect to varying inputs: winf *bvtj1 *bvtj2 *w *rlv
+!                *bvtk1 *bvtk2 *d2wall *bvti1 *bvti2
+!   rw status of diff variables: winf:incr *bvtj1:in-out *bvtj2:in-out
+!                *w:incr *rlv:incr *bvtk1:in-out *bvtk2:in-out
+!                *d2wall:incr *bvti1:in-out *bvti2:in-out
 !   plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
 !                bvtk1:in bvtk2:in d2wall:in bvti1:in bvti2:in
   subroutine bcturbtreatment_b()
@@ -883,10 +883,10 @@ bocos:do nn=1,nbocos
     end do
   end subroutine bcturbtreatment_b
 !  differentiation of bcturbfarfield in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *bvtj1 *bvtj2 *bvtk1 *bvtk2
-!                *bvti1 *bvti2 winf
-!   with respect to varying inputs: *bvtj1 *bvtj2 *bvtk1 *bvtk2
-!                *bvti1 *bvti2 winf
+!   gradient     of useful results: winf *bvtj1 *bvtj2 *bvtk1 *bvtk2
+!                *bvti1 *bvti2
+!   with respect to varying inputs: winf *bvtj1 *bvtj2 *bvtk1 *bvtk2
+!                *bvti1 *bvti2
 !   plus diff mem management of: bvtj1:in bvtj2:in bvtk1:in bvtk2:in
 !                bvti1:in bvti2:in
   subroutine bcturbfarfield_b(nn)

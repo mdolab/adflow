@@ -3,7 +3,8 @@ module adjointAPI
 contains
 #ifndef USE_COMPLEX
   subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useState, dwdot, funcsDot, &
-       fDot, spatialSize, extraSize, stateSize, costSize, fSize, nTime, famList, nFamList)
+       fDot, spatialSize, extraSize, stateSize, costSize, fSize, nTime, famList, nFamList, &
+       bcDataNames, bcDataValues, bcDataValuesdot, bcDataFamLists, nVar, nFamMax, bcVarsEmpty)
 
     ! This is the main matrix-free forward mode computation
     use constants
@@ -27,6 +28,11 @@ contains
     real(kind=realType), dimension(stateSize), intent(in) :: wdot
     logical, intent(in) :: useSpatial, useState
     integer(kind=intType), intent(in) :: famList(nFamlist), nFamList
+    character, dimension(nVar, maxCGNSNameLen), intent(in) :: bcDataNames
+    real(kind=realType), dimension(nVar), intent(in) :: bcDataValues, bcDataValuesDot
+    integer(kind=intType), dimension(nVar, nFamMax) :: bcDataFamLists
+    integer(kind=intType), intent(in) ::  nVar, nFamMax
+    logical, intent(in) :: BCVarsEmpty
 
     ! Ouput Variables
     real(kind=realType), dimension(stateSize), intent(out) :: dwDot
@@ -73,7 +79,13 @@ contains
     rgasdimd = zero
 
     ! Run the super-dee-duper master forward rotuine
-    call master_d(wDot, xVDot, fDot, dwDot, famList)
+   if (bcVarsEmpty) then 
+      call master_d(wDot, xVDot, fDot, dwDot, famList)
+   else
+      call master_d(wDot, xVDot, fDot, dwDot, &
+           famList, bcDataNames, bcDataValues, bcDataValuesdot, bcDataFamLists)
+    end if
+
 
     ! Copy over the derivative of the function values
     funcsDot = funcValuesd
@@ -81,7 +93,8 @@ contains
   end subroutine computeMatrixFreeProductFwd
 
   subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useState, xvbar, &
-       extrabar, wbar, spatialSize, extraSize, stateSize, costSize, fSize, nTime, famList, nFamList)
+       extrabar, wbar, spatialSize, extraSize, stateSize, costSize, fSize, nTime, famList, nFamList, &
+       bcDataNames, bcDataValues, bcDataValuesbar, bcDataFamLists, nVar, nFamMax, BCVarsEmpty)
     use constants
     use costFunctions, only : funcValuesd
     use communication, only : adflow_comm_world
@@ -105,11 +118,16 @@ contains
     real(kind=realType), dimension(3, fSize, nTime), intent(in) :: fBar
     logical, intent(in) :: useSpatial, useState
     integer(kind=intType), intent(in) :: famList(nFamlist), nFamList
-
+    character, dimension(nVar, maxCGNSNameLen), intent(in) :: bcDataNames
+    real(kind=realType), dimension(nVar), intent(in) :: bcDataValues
+    integer(kind=intType), dimension(nVar, nFamMax) :: bcDataFamLists
+    integer(kind=intType), intent(in) ::  nVar, nFamMax
+    logical, intent(in) :: BCVarsEmpty
     ! Ouput Variables
     real(kind=realType), dimension(stateSize), intent(out) :: wbar
     real(kind=realType), dimension(extraSize), intent(out) :: extrabar
     real(kind=realType), dimension(spatialSize), intent(out) :: xvbar
+    real(kind=realType), dimension(nVar), intent(out) :: bcDataValuesbar
 
     ! Working variables
     integer(kind=intType) :: nn, sps, i, j, k, l, ii, level, nState
@@ -149,8 +167,12 @@ contains
     ! Set the function seeds
     funcValuesd= funcsBar
 
-    call master_b(wbar, xvbar, extraBar, fBar, dwbar, nstate, famList)
-
+    if (bcVarsEmpty) then 
+       call master_b(wbar, xvbar, extraBar, fBar, dwbar, nstate, famList)
+    else
+       call master_b(wbar, xvbar, extraBar, fBar, dwbar, nstate, famList, &
+            bcDataNames, bcDataValues, bcDataValuesbar, bcDataFamLists)
+    end if
     ! Reset the correct equation parameters if we were useing the frozen
     ! Turbulent 
     if (resetToRANS) then
@@ -1020,6 +1042,10 @@ contains
     real(kind=realType) :: extraDot(nDesignExtra)
     real(kind=realType) ::funcsDot(nCostFunction)
     integer(kind=intType), dimension(:), pointer :: walLFamList
+    character, dimension(0, maxCGNSNameLen) :: bcDataNames
+    real(kind=realType), dimension(0) :: bcDataValues, bcDataValuesDot
+    integer(kind=intType), dimension(0, 0) :: bcDataFamLists
+
 #ifndef USE_COMPLEX
 
     call VecGetArrayReadF90(vecX, wd_pointer, ierr)
@@ -1047,7 +1073,10 @@ contains
     call computeMatrixFreeProductFwd(xvdot, extradot, wd_pointer, &
          useSpatial, useState, dwd_pointer, funcsDot, fDot, &
          spatialSize, extraSize, stateSize, costSize, fSize, nTimeIntervalsSpectral, &
-         fullFamList, size(fullFamList))
+         fullFamList, size(fullFamList), &
+         bcDataNames, bcDataValues, bcDataValuesdot, bcDataFamLists, 0, 0, .True.)
+
+
     deallocate(xvdot)
 
     call VecRestoreArrayReadF90(vecX, wd_pointer, ierr)

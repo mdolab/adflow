@@ -520,8 +520,8 @@ contains
 !  bleed outflow.
     use constants
     use blockpointers, only : bcdata
-    use bcpointers_fast_b, only : ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, &
-&   rlv1, rlv2, rev0, rev1, rev2, gamma2, isize, jsize, istart, jstart
+    use bcpointers_fast_b, only : ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, &
+&   rlv2, rev0, rev1, rev2, gamma2, isize, jsize, istart, jstart
     use flowvarrefstate, only : eddymodel, viscous
     implicit none
 ! subroutine arguments.
@@ -600,25 +600,29 @@ contains
     use blockpointers, only : bcdata
     use flowvarrefstate, only : viscous, eddymodel, rgas
     use inputdiscretization, only : hscalinginlet
-    use bcpointers_fast_b, only : ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, &
-&   rlv1, rlv2, rev0, rev1, rev2, gamma2, isize, jsize, istart, jstart
+    use bcpointers_fast_b, only : ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, &
+&   rlv2, rev0, rev1, rev2, gamma2, isize, jsize, istart, jstart
+    use inputphysics, only : cpmodel, gammaconstant
+    use utils_fast_b, only : terminate
     implicit none
 ! subroutine arguments.
     logical, intent(in) :: secondhalo, correctfork
     integer(kind=inttype), intent(in) :: nn
 ! local variables.
     integer(kind=inttype) :: i, j, l, ii
+    real(kind=realtype), parameter :: twothird=two*third
     real(kind=realtype) :: gm1, ovgm1
     real(kind=realtype) :: ptot, ttot, htot, a2tot, r, alpha, beta
     real(kind=realtype) :: aa2, bb, cc, dd, q, q2, a2, m2, scalefact
     real(kind=realtype) :: ssx, ssy, ssz, nnx, nny, nnz
-    real(kind=realtype) :: rho, velx, vely, velz
+    real(kind=realtype) :: rho, velx, vely, velz, ratio, ts, govgm1
     intrinsic mod
     intrinsic sqrt
     intrinsic max
     intrinsic min
     real(kind=realtype) :: max1
 ! determine the boundary treatment to be used.
+    govgm1 = gammaconstant/(gammaconstant-one)
     select case  (bcdata(nn)%subsonicinlettreatment) 
     case (totalconditions) 
 ! the total conditions have been prescribed.
@@ -714,16 +718,28 @@ contains
         ww1(i, j, ivx) = q*ssx
         ww1(i, j, ivy) = q*ssy
         ww1(i, j, ivz) = q*ssz
-        ww1(i, j, irho) = ttot
-        pp1(i, j) = ptot
-        ww1(i, j, irhoe) = a2/(gamma2(i, j)*rgas)
+! this should call prhosubsonicinlet, but it doesnt' ad
+! correctly, so just the constant cp model is used here. 
+! compute the pressure and density for these halo's.
+        select case  (cpmodel) 
+        case (cpconstant) 
+! compute the static pressure from the total pressure
+! and the temperature ratio. compute the density using
+! the gas law.
+          ts = a2/(gamma2(i, j)*rgas)
+          ratio = (ts/ttot)**govgm1
+          pp1(i, j) = ptot*ratio
+          ww1(i, j, irho) = ptot*ratio/(rgas*ts)
+          if (correctfork) pp1(i, j) = pp1(i, j) + twothird*ww1(i, j, &
+&             irho)*ww1(i, j, itu1)
+        case (cptempcurvefits) 
+          call terminate('bcroutines', 'not curve fits not implemented')
+        end select
 ! set the viscosities in the halo to the viscosities
 ! in the donor cell.
         if (viscous) rlv1(i, j) = rlv2(i, j)
         if (eddymodel) rev1(i, j) = rev2(i, j)
       end do
-! compute the pressure and density for these halo's.
-      call prhosubsonicinlet(ww1, pp1, correctfork)
     case (massflow) 
 !===========================================================
 ! density and velocity vector prescribed.

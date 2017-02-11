@@ -2135,9 +2135,9 @@ loopbocos:do mm=1,nbocos
 !  differentiation of getcostfunctions in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: funcvalues
 !   with respect to varying inputs: machcoef dragdirection liftdirection
-!                pref rhoref funcvalues globalvals
+!                pref funcvalues globalvals
 !   rw status of diff variables: machcoef:out dragdirection:out
-!                liftdirection:out pref:out rhoref:out funcvalues:in-zero
+!                liftdirection:out pref:out funcvalues:in-zero
 !                globalvals:out
   subroutine getcostfunctions_b(globalvals, globalvalsd)
     use constants
@@ -2162,8 +2162,8 @@ loopbocos:do mm=1,nbocos
 &   moment, cforce, cmoment
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: forced&
 &   , momentd, cforced, cmomentd
-    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mavgmn, &
-&   sigmamn, sigmaptot
+    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mflow2, &
+&   mavgmn, sigmamn, sigmaptot
     real(kind=realtype) :: mavgptotd, mavgttotd, mavgpsd, mflowd, &
 &   mavgmnd, sigmamnd, sigmaptotd
     integer(kind=inttype) :: sps
@@ -2174,13 +2174,11 @@ loopbocos:do mm=1,nbocos
     real(kind=realtype) :: tmp2
     real(kind=realtype) :: tmp3
     integer :: branch
-    real(kind=realtype) :: temp3
     real(kind=realtype) :: temp2
     real(kind=realtype) :: temp1
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tmpd
     real(kind=realtype) :: tempd
-    real(kind=realtype) :: tempd2
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: tmpd3
@@ -2188,7 +2186,6 @@ loopbocos:do mm=1,nbocos
     real(kind=realtype) :: tmpd1
     real(kind=realtype) :: tmpd0
     real(kind=realtype) :: temp
-    real(kind=realtype) :: temp4
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
 ! sum pressure and viscous contributions
@@ -2247,7 +2244,7 @@ loopbocos:do mm=1,nbocos
         mavgttot = globalvals(imassttot, sps)/mflow
         mavgps = globalvals(imassps, sps)/mflow
         mavgmn = globalvals(imassmn, sps)/mflow
-        mflow = globalvals(imassflow, sps)*sqrt(pref/rhoref)
+        mflow2 = globalvals(imassflow, sps)*sqrt(pref/rhoref)
         sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
         sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
       else
@@ -2257,6 +2254,7 @@ loopbocos:do mm=1,nbocos
         mavgmn = zero
         sigmamn = zero
         sigmaptot = zero
+        mflow2 = zero
       end if
       funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
       funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &
@@ -2360,8 +2358,6 @@ loopbocos:do mm=1,nbocos
 &       liftdirection(3)*tmpd2
       liftdirectiond(3) = liftdirectiond(3) + funcvalues(costfuncforcez)&
 &       *tmpd2
-      prefd = 0.0_8
-      rhorefd = 0.0_8
       globalvalsd = 0.0_8
       momentd = 0.0_8
       cforced = 0.0_8
@@ -2371,7 +2367,6 @@ loopbocos:do mm=1,nbocos
 ! mass flow like objective
         mflow = globalvals(imassflow, sps)
         if (mflow .ne. zero) then
-          mflow = globalvals(imassflow, sps)*sqrt(pref/rhoref)
           call pushcontrol1b(0)
         else
           call pushcontrol1b(1)
@@ -2391,42 +2386,28 @@ loopbocos:do mm=1,nbocos
         mflowd = ovrnts*funcvaluesd(costfuncmdot)
         call popcontrol1b(branch)
         if (branch .eq. 0) then
-          temp3 = globalvals(isigmamn, sps)/mflow
-          if (temp3 .eq. 0.0_8) then
+          temp1 = globalvals(isigmamn, sps)/mflow
+          if (temp1 .eq. 0.0_8) then
             tempd1 = 0.0
           else
-            tempd1 = sigmamnd/(2.0*sqrt(temp3)*mflow)
+            tempd1 = sigmamnd/(2.0*sqrt(temp1)*mflow)
           end if
-          temp4 = globalvals(isigmaptot, sps)/mflow
-          if (temp4 .eq. 0.0_8) then
+          temp2 = globalvals(isigmaptot, sps)/mflow
+          if (temp2 .eq. 0.0_8) then
             tempd0 = 0.0
           else
-            tempd0 = sigmaptotd/(2.0*sqrt(temp4)*mflow)
+            tempd0 = sigmaptotd/(2.0*sqrt(temp2)*mflow)
           end if
           globalvalsd(isigmaptot, sps) = globalvalsd(isigmaptot, sps) + &
 &           tempd0
-          mflowd = mflowd - temp3*tempd1 - temp4*tempd0
+          mflowd = mflowd - temp1*tempd1 - globalvals(imassps, sps)*&
+&           mavgpsd/mflow**2 - globalvals(imassptot, sps)*mavgptotd/&
+&           mflow**2 - globalvals(imassttot, sps)*mavgttotd/mflow**2 - &
+&           globalvals(imassmn, sps)*mavgmnd/mflow**2 - temp2*tempd0
           globalvalsd(isigmamn, sps) = globalvalsd(isigmamn, sps) + &
 &           tempd1
-          temp1 = pref/rhoref
-          temp2 = sqrt(temp1)
-          if (temp1 .eq. 0.0_8) then
-            tempd2 = 0.0
-          else
-            tempd2 = globalvals(imassflow, sps)*mflowd/(2.0*temp2*rhoref&
-&             )
-          end if
-          globalvalsd(imassflow, sps) = globalvalsd(imassflow, sps) + &
-&           temp2*mflowd
-          prefd = prefd + tempd2
-          rhorefd = rhorefd - temp1*tempd2
-          mflow = globalvals(imassflow, sps)
           globalvalsd(imassmn, sps) = globalvalsd(imassmn, sps) + &
 &           mavgmnd/mflow
-          mflowd = -(globalvals(imassps, sps)*mavgpsd/mflow**2) - &
-&           globalvals(imassptot, sps)*mavgptotd/mflow**2 - globalvals(&
-&           imassttot, sps)*mavgttotd/mflow**2 - globalvals(imassmn, sps&
-&           )*mavgmnd/mflow**2
           globalvalsd(imassps, sps) = globalvalsd(imassps, sps) + &
 &           mavgpsd/mflow
           globalvalsd(imassttot, sps) = globalvalsd(imassttot, sps) + &
@@ -2482,7 +2463,7 @@ loopbocos:do mm=1,nbocos
       temp = temp0*machcoef**2*pref
       tempd = -(two*temp0*factd/temp**2)
       machcoefd = pref*2*machcoef*tempd
-      prefd = prefd + machcoef**2*tempd
+      prefd = machcoef**2*tempd
       globalvalsd(imp:imp+2, :) = globalvalsd(imp:imp+2, :) + momentd
       globalvalsd(imv:imv+2, :) = globalvalsd(imv:imv+2, :) + momentd
       globalvalsd(ifp:ifp+2, :) = globalvalsd(ifp:ifp+2, :) + forced
@@ -2506,8 +2487,8 @@ loopbocos:do mm=1,nbocos
     real(kind=realtype) :: fact, factmoment, ovrnts
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: force, &
 &   moment, cforce, cmoment
-    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mavgmn, &
-&   sigmamn, sigmaptot
+    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mflow2, &
+&   mavgmn, sigmamn, sigmaptot
     integer(kind=inttype) :: sps
     intrinsic sqrt
 ! factor used for time-averaged quantities.
@@ -2567,7 +2548,7 @@ loopbocos:do mm=1,nbocos
         mavgttot = globalvals(imassttot, sps)/mflow
         mavgps = globalvals(imassps, sps)/mflow
         mavgmn = globalvals(imassmn, sps)/mflow
-        mflow = globalvals(imassflow, sps)*sqrt(pref/rhoref)
+        mflow2 = globalvals(imassflow, sps)*sqrt(pref/rhoref)
         sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
         sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
       else
@@ -2577,6 +2558,7 @@ loopbocos:do mm=1,nbocos
         mavgmn = zero
         sigmamn = zero
         sigmaptot = zero
+        mflow2 = zero
       end if
       funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
       funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &

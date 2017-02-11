@@ -76,7 +76,7 @@
 #endif
 
 #ifndef USE_TAPENADE
-       REAL(kind=realtype) :: prefd, rhorefd, trefd
+       REAL(kind=realtype) :: prefd, rhorefd, trefd, uRefd, Hrefd
        REAL(kind=realtype) :: murefd, timerefd
        REAL(kind=realtype) :: pinfdimd, rhoinfdimd, tinfdimd
        real(kind=realtype) :: mudimd, muinfdimd

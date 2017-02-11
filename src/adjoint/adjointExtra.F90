@@ -679,7 +679,7 @@ contains
     ! Working
     real(kind=realType) :: fact, factMoment, ovrNTS
     real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, cForce, cMoment
-    real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgPs, mFlow, mAvgMn, sigmaMN, sigmaPtot
+    real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgPs, mFlow, mFlow2, mAvgMn, sigmaMN, sigmaPtot
     integer(kind=intType) :: sps
 
     ! Factor used for time-averaged quantities.
@@ -733,7 +733,7 @@ contains
           mAvgTtot = globalVals(iMassTtot, sps)/mFlow
           mAvgPs   = globalVals(iMassPs, sps)/mFlow
           mAvgMn   = globalVals(iMassMn, sps)/mFlow
-          mFlow = globalVals(iMassFlow, sps)*sqrt(Pref/rhoRef)
+          mFlow2 = globalVals(iMassFlow, sps)*sqrt(Pref/rhoRef)
           sigmaMN = sqrt(globalvals(iSigmaMN, sps)/mFlow)
           sigmaPtot = sqrt(globalvals(iSigmaPtot, sps)/mFlow)
 
@@ -744,6 +744,7 @@ contains
           mAvgMn = zero
           sigmaMN = zero
           sigmaPtot = zero
+          mFlow2 = zero
        end if
 
        funcValues(costFuncMdot)      = funcValues(costFuncMdot) + ovrNTS*mFlow

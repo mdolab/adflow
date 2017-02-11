@@ -43,6 +43,26 @@
          real(kind=realType), pointer, dimension(:) :: dataArr
 
        end type cgnsBCDataArray
+
+#ifndef USE_TAPENADE
+       TYPE CGNSBCDATASETTYPE_D
+          TYPE(CGNSBCDATAARRAY_D), DIMENSION(:), POINTER :: dirichletarrays
+       END TYPE CGNSBCDATASETTYPE_D
+
+       TYPE CGNSBCDATAARRAY_D
+          REAL(kind=realtype), DIMENSION(:), POINTER :: dataarr
+       END TYPE CGNSBCDATAARRAY_D
+
+       TYPE CGNSBCDATASETTYPE_B
+          TYPE(CGNSBCDATAARRAY_B), DIMENSION(:), POINTER :: dirichletarrays
+       END TYPE CGNSBCDATASETTYPE_B
+
+       TYPE CGNSBCDATAARRAY_B
+          REAL(kind=realtype), DIMENSION(:), POINTER :: dataarr
+       END TYPE CGNSBCDATAARRAY_B
+
+#endif
+
 !
 !       The definition of the derived datatype to store the prescribed 
 !       boundary data for a boundary subface.                          
@@ -308,8 +328,8 @@
 
          ! The corresponding nodal ranges of the subblocks.
 
-         integer, dimension(:), pointer :: iBegOr, jBegOr, kBegOr
-         integer, dimension(:), pointer :: iEndOr, jEndOr, kEndOr
+         integer, dimension(:), pointer :: iBegOr, jBegOr, kBegOr 
+         integer, dimension(:), pointer :: iEndOr, jEndOr, kEndOr 
 
          ! The units in which the grid is specified.
 
