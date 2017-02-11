@@ -580,7 +580,7 @@ contains
     integer(kind=intType) :: i, j, ii, blk
     real(kind=realType) :: internalFlowFact, inFlowFact, fact, xc, yc, zc, cellArea, mx, my, mz
     real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, Fx, Fy, Fz, u, v, w
-    real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, a2, MNm, massFlowRateLocal
+    real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, a2, MNm, massFlowRateLocal, edota
     real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint, VcoordRef, VFreestreamRef,sFaceFreestreamRef
 
     massFlowRate = zero
