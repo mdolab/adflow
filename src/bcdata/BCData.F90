@@ -2833,7 +2833,7 @@ contains
     endif checkInit
 #endif
   end subroutine setBCDataFineGrid
-
+#ifndef USE_COMPLEX
 subroutine setBCDataFineGrid_d(initializationPart)
     !
     !       setBCDataFineGrid extracts the boundary condition data from    
@@ -3024,7 +3024,7 @@ subroutine setBCDataFineGrid_b(initializationPart)
        enddo domainsLoop
     enddo spectralLoop
   end subroutine setBCDataFineGrid_b
-
+#endif
   subroutine setBCDataCoarseGrid
     !
     !       setBCDataCoarseGrid determines the boundary condition info     
@@ -3322,10 +3322,7 @@ subroutine setBCDataFineGrid_b(initializationPart)
       enddo
 
     end subroutine interpolateBCVecData
-
   end subroutine setBCDataCoarseGrid
-
-
 
   subroutine errorCheckbcDataNamesIn(setSubroutineName, bcDataNamesIn)
     use constants
@@ -3357,7 +3354,5 @@ subroutine setBCDataFineGrid_b(initializationPart)
     end do
 
   end subroutine errorCheckbcDataNamesIn
-
-
 #endif
 end module BCData

@@ -1511,11 +1511,20 @@ contains
                 write(*,"(i6,1x)",advance="no") iterTot
                 write(*,"(i6,1x)",advance="no") approxTotalIts
                 write(*,"(a,1x)", advance="no") iterType
+#ifndef USE_COMPLEX
                 write(*,"(e10.2,1x)",advance="no") CFLMonitor
+#else
+                write(*,"(e10.2,1x)",advance="no") real(CFLMonitor)
+#endif
              end if
 
-             if( showCPU ) &
+             if( showCPU ) then 
+#ifndef USE_COMPLEX
                   write(*,"(e12.5,1x)",advance="no") mpi_wtime() - t0Solver
+#else
+                  write(*,"(e12.5,1x)",advance="no") real(mpi_wtime() - t0Solver)
+#endif
+               end if
           end if
        end if testRootProc
 
