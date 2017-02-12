@@ -264,7 +264,7 @@ contains
     use BCExtra_d, only : applyAllBC_Block_d
     use inputAdjoint,  only : viscPC
     use flowVarRefState, only : nw, nwf
-    use blockPointers, only : nDom, il, jl, kl, wd, xd, dw, dwd, nBocos, BCType, nViscBocos, BCData, iblank
+    use blockPointers, only : nDom, il, jl, kl, wd, xd, dw, dwd, nBocos, nViscBocos
     use flowVarRefState, only : viscous, timerefd
     use inputPhysics , only : turbProd, equationMode, equations, turbModel, wallDistanceNeeded
     use inputDiscretization, only : lowSpeedPreconditioner, lumpedDiss, spaceDiscr, useAPproxWallDistance
@@ -597,7 +597,7 @@ contains
     use inputAdjoint,  only : viscPC
     use fluxes, only : viscousFlux
     use flowVarRefState, only : nw, nwf, viscous,pInfDimd, rhoInfDimd, TinfDimd
-    use blockPointers, only : nDom, il, jl, kl, wd, xd, dw, dwd, nBocos, BCType, nViscBocos, BCData, iblank
+    use blockPointers, only : nDom, il, jl, kl, wd, xd, dw, dwd
     use inputPhysics, only :pointRefd, alphad, betad, equations, machCoefd, &
          machd, machGridd, rgasdimd, equationMode, turbModel, wallDistanceNeeded
     use inputDiscretization, only : lowSpeedPreconditioner, lumpedDiss, spaceDiscr, useAPproxWallDistance
