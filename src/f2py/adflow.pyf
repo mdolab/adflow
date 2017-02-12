@@ -560,7 +560,7 @@ python module libadflow
                 integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
                 character dimension(nvar,32),intent(in) :: bcdatanames
                 real(kind=realtype) dimension(nvar),intent(in),depend(nvar) :: bcdatavalues
-                real(kind=realtype) dimension(1),intent(out) :: bcdatavaluesbar
+                real(kind=realtype) dimension(nvar),intent(out),depend(nvar) :: bcdatavaluesbar
                 integer(kind=inttype) dimension(nvar,nfammax),depend(nvar) :: bcdatafamlists
                 integer(kind=inttype), optional,intent(in),check(shape(bcdatanames,0)==nvar),depend(bcdatanames) :: nvar=shape(bcdatanames,0)
                 integer(kind=inttype), optional,intent(in),check(shape(bcdatafamlists,1)==nfammax),depend(bcdatafamlists) :: nfammax=shape(bcdatafamlists,1)
