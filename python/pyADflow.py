@@ -115,7 +115,7 @@ class ADFLOW(AeroSolver):
                            self._getSpecialOptionLists()
         self.imOptions = self._getImmutableOptions()
 
-        self.possibleAeroDVs, self.basicCostFunctions = (
+        self.possibleAeroDVs, self.possibleBCDvs, self.basicCostFunctions = (
             self._getObjectivesAndDVs())
 
         # Now add the group for each of the "basic" cost functions:
@@ -2309,7 +2309,8 @@ class ADFLOW(AeroSolver):
             self.adflow.inputmotion.sincoeffouryrot = AP.sinCoefFourier
 
         # Set any possible BC Data coming out of the aeroProblem
-        nameArray, dataArray, groupArray, empty = self._getBCDataFromAeroProblem(AP)
+        nameArray, dataArray, groupArray, groupNames, empty = (
+            self._getBCDataFromAeroProblem(AP))
         if not empty:
             self.adflow.bcdata.setbcdata(nameArray, dataArray, groupArray, 1)
             
@@ -2332,11 +2333,11 @@ class ADFLOW(AeroSolver):
         nameArray = self._createFortranStringArray(variables)
         groupArray = self._expandGroupName(groupNames)
         if len(nameArray) > 0:
-            return nameArray, dataArray, groupArray, False
+            return nameArray, dataArray, groupArray, groupNames, False
         else:
             # dummy data that doesn't matter
-            return (self._createFortranStringArray(['Pressure']), [0.0],
-                    [[1,1]], True)
+            return (self._createFortranStringArray(['Pressure']), [0.0], 
+                    [[1,1]], groupNames, True)
 
     def getForces(self, groupName=None, TS=0):
         """ Return the forces on this processor on the families defined by groupName.
@@ -2657,60 +2658,68 @@ class ADFLOW(AeroSolver):
             self.curAP.adflowData.adjoints[objective] = psi
             self.adjointFailed = False
 
-    def _processAeroDerivatives(self, dIda):
+    def _processAeroDerivatives(self, dIda, dIdBC):
         """This internal furncion is used to convert the raw array ouput from
         the matrix-free product bwd routine into the required
         dictionary format."""
 
 	funcsSens = {}
 
-        DVsRequired = list(self.curAP.DVNames.keys())
-        for dv in DVsRequired:
-            dvl = dv.lower()
-            tmp = {}
-            if dvl in ['altitude']:
-                # This design variable is special. It combines changes
-                # in temperature, pressure and density into a single
-                # variable. Since we have derivatives for T, P and
-                # rho, we simply chain rule it back to the the
-                # altitude variable.
-	        self.curAP.evalFunctionsSens(tmp, ['P', 'T', 'rho'])
+        for dvName in self.curAP.DVs:
+            key = self.curAP.DVs[dvName].key.lower()
+            dvFam = self.curAP.DVs[dvName].key.lower()
+            if key in self.possibleAeroDVs:
+                tmp = {}
+                if key in ['altitude']:
+                    # This design variable is special. It combines changes
+                    # in temperature, pressure and density into a single
+                    # variable. Since we have derivatives for T, P and
+                    # rho, we simply chain rule it back to the the
+                    # altitude variable.
+                    self.curAP.evalFunctionsSens(tmp, ['P', 'T', 'rho'])
 
-                # Extract the derivatives wrt the independent
-                # parameters in ADflow
-                dIdP = dIda[self.possibleAeroDVs['p']]
-                dIdT = dIda[self.possibleAeroDVs['t']]
-                dIdrho = dIda[self.possibleAeroDVs['rho']]
+                    # Extract the derivatives wrt the independent
+                    # parameters in ADflow
+                    dIdP = dIda[self.possibleAeroDVs['p']]
+                    dIdT = dIda[self.possibleAeroDVs['t']]
+                    dIdrho = dIda[self.possibleAeroDVs['rho']]
 
-                # Chain-rule to get the final derivative:
-                funcsSens[self.curAP.DVNames[dv]] = (
-                    tmp[self.curAP['P']][self.curAP.DVNames[dv]]*dIdP +
-                    tmp[self.curAP['T']][self.curAP.DVNames[dv]]*dIdT +
-                    tmp[self.curAP['rho']][self.curAP.DVNames[dv]]*dIdrho)
-            elif dv.lower() in ['mach']:
-                self.curAP.evalFunctionsSens(tmp, ['P', 'rho'])
-                # Simular story for Mach: It is technically possible
-                # to use a mach number for a fixed RE simulation. For
-                # the RE to stay fixed and change the mach number, the
-                # 'P' and 'rho' must also change. We have to chain run
-                # this dependence back through to the final mach
-                # derivative. When Mach number is used with altitude
-                # or P and T, this calc is unnecessary, but won't do
-                # any harm.
-                dIdP = dIda[self.possibleAeroDVs['p']]
-                dIdrho = dIda[self.possibleAeroDVs['rho']]
+                    # Chain-rule to get the final derivative:
+                    funcsSens[dvName] = (
+                        tmp[self.curAP['P']][key]*dIdP +
+                        tmp[self.curAP['T']][key]*dIdT +
+                        tmp[self.curAP['rho']][key]*dIdrho)
+                elif key in ['mach']:
+                    self.curAP.evalFunctionsSens(tmp, ['P', 'rho'])
+                    # Simular story for Mach: It is technically possible
+                    # to use a mach number for a fixed RE simulation. For
+                    # the RE to stay fixed and change the mach number, the
+                    # 'P' and 'rho' must also change. We have to chain run
+                    # this dependence back through to the final mach
+                    # derivative. When Mach number is used with altitude
+                    # or P and T, this calc is unnecessary, but won't do
+                    # any harm.
+                    dIdP = dIda[self.possibleAeroDVs['p']]
+                    dIdrho = dIda[self.possibleAeroDVs['rho']]
 
-                # Chain-rule to get the final derivative:
-                funcsSens[self.curAP.DVNames[dv]] = (
-                    tmp[self.curAP['P']][self.curAP.DVNames[dv]]*dIdP +
-                    tmp[self.curAP['rho']][self.curAP.DVNames[dv]]*dIdrho +
-                    dIda[self.possibleAeroDVs['mach']])
+                    # Chain-rule to get the final derivative:
+                    funcsSens[dvName] = (
+                        tmp[self.curAP['P']][key]*dIdP +
+                        tmp[self.curAP['rho']][key]*dIdrho +
+                        dIda[self.possibleAeroDVs['mach']])
 
-            elif dvl in self.possibleAeroDVs:
-                funcsSens[self.curAP.DVNames[dv]] = (
-                    dIda[self.possibleAeroDVs[dvl]])
-                if dvl == 'alpha':
-                    funcsSens[self.curAP.DVNames[dv]] *= numpy.pi/180.0
+                else:
+                    funcsSens[dvName] = dIda[self.possibleAeroDVs[key]]
+                    if key == 'alpha':
+                        funcsSens[dvName] *= numpy.pi/180.0
+            elif key in self.possibleBCDvs:
+                # We need to determine what the index is in dIdBC. For
+                # now just do an efficient linear search:
+                i = 0
+                for (varName, family), value in self.curAP.bcVarData.iteritems():
+                    if varName.lower() == key and family.lower() == dvFam.lower():
+                        funcsSens[dvName] = dIdBC[i]
+                    i += 1
 
 	return funcsSens
 
@@ -2719,25 +2728,27 @@ class ADFLOW(AeroSolver):
         """ Do everything that is required to deal with aerodynamic
         design variables in ADflow"""
 
-        DVsRequired = list(self.curAP.DVNames.keys())
+        DVsRequired = list(self.curAP.DVs.keys())
         DVMap = {}
         for dv in DVsRequired:
-            dv = dv.lower()
-            if dv in ['altitude']:
+            key = self.curAP.DVs[dv].key.lower()
+            if key in ['altitude']:
                 # All these variables need to be compined
                 self._addAeroDV('P')
                 self._addAeroDV('T')
                 self._addAeroDV('rho')
-            elif dv in ['mach']:
+            elif key in ['mach']:
                 self._addAeroDV('mach')
                 self._addAeroDV('P')
                 self._addAeroDV('rho')
 
-            elif dv in self.possibleAeroDVs:
-                self._addAeroDV(dv)
+            elif key in self.possibleAeroDVs:
+                self._addAeroDV(key)
+            elif key in self.possibleBCDvs:
+                pass
             else:
                 raise Error("The design variable '%s' as specified in the"
-                            " aeroProblem cannot be used with ADflow."% dv)
+                            " aeroProblem cannot be used with ADflow."% key)
 
     def solveAdjointForRHS(self, inVec, relTol=None):
         """
@@ -2996,13 +3007,32 @@ class ADFLOW(AeroSolver):
         # Process the extra variable perturbation....this comes from
         # xDvDot
         extradot = numpy.zeros(self.adflow.adjointvars.ndesignextra)
+        bcDataNames, bcDataValues, bcDataFamLists, bcDataFams, bcVarsEmpty = (
+            self._getBCDataFromAeroProblem(self.curAP))
+        bcDataValuesdot = numpy.zeros_like(bcDataValues)
+
         if xDvDot is not None:
             useSpatial = True
-            for key in xDvDot:
-                val = xDvDot[key]
-                if key.lower() == 'alpha':
-                    val *= numpy.pi/180
-                extradot[self.possibleAeroDVs[key.lower()]] = val
+            for xKey in xDvDot:
+                # We need to split out the family from the key.
+                key = xKey.split('_')
+                if len(key) == 1:
+                    key = key[0].lower()
+                    if key in self.possibleAeroDVs:
+                        val = xDvDot[xKey]
+                        if key.lower() == 'alpha':
+                            val *= numpy.pi/180
+                        extradot[self.possibleAeroDVs[key.lower()]] = val
+
+                elif len(key) == 2:
+                    fam = key[1].lower()
+                    key = key[0].lower()
+                    if key in self.possibleBCDVs and not bcVarsEmpty:
+                        # Figure out what index this should be:
+                        for i in range(len(bcDataNames)):
+                            if key.lower() == bcDataNames[i].lower() and \
+                               fam.lower() == bcDataFams[i]:
+                                bcDataValuesdot[i] = xDvDot[xKey]
                     
         # For the geometric xDvDot perturbation we accumulate into the
         # already existing (and possibly nonzero) xsdot and xvdot
@@ -3021,9 +3051,7 @@ class ADFLOW(AeroSolver):
         famList = self._getFamilyList(groupName)
         
         # Extract any possibly BC daa
-        bcDataNames, bcDataValues, bcDataFamLists, bcVarsEmpty = (
-            self._getBCDataFromAeroProblem(self.curAP))
-        bcDataValuesdot = numpy.zeros_like(bcDataValues)
+      
         dwdot, tmp, fdot = self.adflow.adjointapi.computematrixfreeproductfwd(
             xvdot, extradot, wdot, useSpatial, useState, costSize,  max(1, fSize), nTime, famList, 
             bcDataNames, bcDataValues, bcDataValuesdot, bcDataFamLists, bcVarsEmpty)
@@ -3180,9 +3208,9 @@ class ADFLOW(AeroSolver):
             useSpatial = True
 
         # Extract any possibly BC daa
-        bcDataNames, bcDataValues, bcDataFamLists, bcVarsEmpty = (
+        bcDataNames, bcDataValues, bcDataFamLists, bcDataFams, bcVarsEmpty = (
             self._getBCDataFromAeroProblem(self.curAP))
-
+      
         # Do actual Fortran call.
         xvbar, extrabar, wbar, bcdatavaluesbar = self.adflow.adjointapi.computematrixfreeproductbwd(
             resBar, funcsBar, fBar.T, useSpatial, useState, self.getSpatialSize(),
@@ -3234,14 +3262,14 @@ class ADFLOW(AeroSolver):
                                     "derivatives computed.")
 
                 # Include aero derivatives here:
-                xdvbar.update(self._processAeroDerivatives(extrabar))
+                xdvbar.update(self._processAeroDerivatives(extrabar, bcdatavaluesbar))
                 returns.append(xdvbar)
 
 
         # Include the aerodynamic variables if requested to do so.
         if xDvDerivAero:
             xdvaerobar = {}
-            xdvaerobar.update(self._processAeroDerivatives(extrabar))
+            xdvaerobar.update(self._processAeroDerivatives(extrabar, bcdatavaluesbar))
             returns.append(xdvaerobar)
 
         # Single return (most frequent) is 'clean', otherwise a tuple.
@@ -4323,14 +4351,12 @@ class ADFLOW(AeroSolver):
         iDV['yref'] = self.adflow.adjointvars.ipointrefy
         iDV['zref'] = self.adflow.adjointvars.ipointrefz
 
-        # Extra DVs for the Boundary condition variables
-        iDV['pressure'] = -1
-        iDV['pressurestagnation'] = -1
-        iDV['temperaturestagnation'] = -1
-
         # Convert to python indexing
         for key in iDV:
             iDV[key] = iDV[key] - 1 
+
+            # Extra DVs for the Boundary condition variables
+        BCDV = ['pressure', 'pressurestagnation', 'temperaturestagnation']
 
         # This is ADflow's internal mapping for cost functions
         adflowCostFunctions = {
@@ -4383,7 +4409,7 @@ class ADFLOW(AeroSolver):
             'edot':self.adflow.costfunctions.costfuncedot, 
             }
 
-        return iDV, adflowCostFunctions
+        return iDV, BCDV, adflowCostFunctions
 
     def _updateTurbResScale(self):
         # If turbresscale is None it has not been set by the user in script
