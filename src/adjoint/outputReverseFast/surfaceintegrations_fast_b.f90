@@ -171,8 +171,10 @@ bocos:do mm=1,nbocos
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
 ! sum pressure and viscous contributions
-    force = globalvals(ifp:ifp+2, :) + globalvals(ifv:ifv+2, :)
-    moment = globalvals(imp:imp+2, :) + globalvals(imv:imv+2, :)
+    force = globalvals(ifp:ifp+2, :) + globalvals(ifv:ifv+2, :) + &
+&     globalvals(iflowfm:iflowfm+2, :)
+    moment = globalvals(imp:imp+2, :) + globalvals(imv:imv+2, :) + &
+&     globalvals(iflowmm:iflowmm+2, :)
     fact = two/(gammainf*machcoef*machcoef*surfaceref*lref*lref*pref)
     cforce = fact*force
 ! moment factor has an extra lengthref
@@ -722,7 +724,7 @@ bocos:do mm=1,nbocos
     localvalues(imassps) = localvalues(imassps) + mass_ps
     localvalues(imassmn) = localvalues(imassmn) + mass_mn
     localvalues(ipk) = localvalues(ipk) + pk
-    localvalues(iflowfp:iflowfp+2) = localvalues(iflowfp:iflowfp+2) + fp
+    localvalues(ifp:ifp+2) = localvalues(ifp:ifp+2) + fp
     localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
 &     fmom
     localvalues(iflowmp:iflowmp+2) = localvalues(iflowmp:iflowmp+2) + mp
@@ -828,7 +830,7 @@ bocos:do mm=1,nbocos
 ! integrate over the trianges for the inflow/outflow conditions. 
     use constants
     use costfunctions, only : nlocalvalues, imassflow, imassptot, &
-&   imassttot, imassps, iflowmm, iflowmp, iflowfm, iflowfp, imassmn, ipk
+&   imassttot, imassps, iflowmm, iflowmp, iflowfm, ifp, imassmn, ipk
     use blockpointers, only : bctype
     use sorting, only : bsearchintegers
     use flowvarrefstate, only : pref, pinf, rhoref, pref, timeref, &
@@ -987,7 +989,7 @@ bocos:do mm=1,nbocos
     localvalues(imassps) = localvalues(imassps) + mass_ps
     localvalues(imassmn) = localvalues(imassmn) + mass_mn
     localvalues(ipk) = localvalues(ipk) + pk
-    localvalues(iflowfp:iflowfp+2) = localvalues(iflowfp:iflowfp+2) + fp
+    localvalues(ifp:ifp+2) = localvalues(ifp:ifp+2) + fp
     localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
 &     fmom
     localvalues(iflowmp:iflowmp+2) = localvalues(iflowmp:iflowmp+2) + mp
