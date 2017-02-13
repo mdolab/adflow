@@ -1540,7 +1540,7 @@ contains
     use blockPointers, only : BCData, nDom, nBocos, nBKGlobal, & 
          cgnsSubFace, BCType
     use sorting, only : bsearchIntegers
-    use utils, only : setPointers_d, terminate
+    use utils, only : setPointers_b, terminate
     !
     !      Subroutine arguments.
     !
@@ -1560,7 +1560,7 @@ contains
        ! Set the pointers to this block on groundLevel to make
        ! the code readable.
 
-       call setPointers_d(i, 1_intType, sps)
+       call setPointers_b(i, 1_intType, sps)
 
        varLoop: do iVar=1, nVar
 
@@ -2975,7 +2975,7 @@ contains
     use communication, only : adflow_comm_world, myid
     use inputTimeSpectral, only :nTimeIntervalsSpectral
     use iteration, only : groundLevel
-    use utils, only : setPointers_d, terminate
+    use utils, only : setPointers_b, terminate
     use bcdata_b , only : BCDataIsothermalWall_b, BCDataSupersonicInflow_b, &
          BCDataSubsonicInflow_b, BCDataSubsonicOutflow_b
     implicit none
@@ -3000,7 +3000,7 @@ contains
           ! Set the pointers to this block on groundLevel to make
           ! the code readable.
 
-          call setPointers_d(i,groundLevel,sps)
+          call setPointers_b(i,groundLevel,sps)
 
           ! Loop over the number of boundary condition subfaces.
 

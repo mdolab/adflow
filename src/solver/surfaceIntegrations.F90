@@ -1969,7 +1969,7 @@ contains
     use inputTimeSpectral , only : nTimeIntervalsSpectral
     use communication, only : adflow_comm_world
     use blockPointers, only : nDom
-    use utils, only : setPointers_d, EChk, setPointers
+    use utils, only : setPointers_b, EChk, setPointers
     use surfaceIntegrations_b, only : getCostFunctions_b
          
     implicit none
@@ -2002,7 +2002,7 @@ contains
     ! ! Now we run the secondary gathered functions loop
     ! do sps=1, nTimeIntervalsSpectral
     !    do nn=1, nDom
-    !       call setPointers_d(nn, 1, sps)
+    !       call setPointers_b(nn, 1, sps)
     !       !call integrateSurfacesWithGathered_b(globalVal(:, sps), localVal(:, sps), famList)
     !    end do
     !    !call integrateZippersWithGathered_b(globalVal(:, sps), globalVald(:, sps), & 
@@ -2024,7 +2024,7 @@ contains
     do sps=1, nTimeIntervalsSpectral
        ! Integrate the normal block surfaces. 
        do nn=1, nDom
-          call setPointers_d(nn, 1, sps)
+          call setPointers_b(nn, 1, sps)
           call integrateSurfaces_b(localval(:, sps), localVald(:, sps), famList)
        end do
 
