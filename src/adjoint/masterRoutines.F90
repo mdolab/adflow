@@ -11,7 +11,6 @@ contains
     use iteration, only : currentLevel
     use inputAdjoint,  only : viscPC
     use flowVarRefState, only : nwf, nw
-    use costFunctions, only : nLocalValues
     use blockPointers, only : nDom, il, jl, kl
     use flowVarRefState, only : viscous
     use inputPhysics , only : turbProd, equationMode, equations, turbModel
@@ -32,10 +31,9 @@ contains
     use utils, only : setPointers, EChk
     use turbUtils, only : turbAdvection, computeEddyViscosity
     use residuals, only : initRes_block
-    use surfaceIntegrations, only : integrateSurfaces, integrateZippers, & 
-        integrateSurfacesWithGathered, integrateZippersWithGathered
+    use surfaceIntegrations, only : getSolution
     use adjointExtra, only : volume_block, metric_block, boundaryNormals,&
-         xhalo_block, sumdwandfw, resScale, getCostFunctions
+         xhalo_block, sumdwandfw, resScale
     use overset, only : oversetPresent
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity
@@ -54,10 +52,6 @@ contains
     ! Working Variables
     integer(kind=intType) :: ierr, nn, sps, fSize
     real(kind=realType), dimension(nSections) :: t
-    real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVal, globalVal
-
-    ! Zero out the accumulation array for forces and other integrated quantities
-    localVal = zero
 
     if (useSpatial) then 
        call adjustInflowAngle()
@@ -205,51 +199,19 @@ contains
           !    call applyLowSpeedPreconditioner
           ! end if
           call resScale
-
-          ! Now compute the forces and moments for this block. 
-          call integrateSurfaces(localval(:, sps), famList)
-
        end do
-       
+    end do
+
+    ! Compute the final solution values
+    call getSolution(famList)
+
+    do sps=1, nTimeIntervalsSpectral
        if (present(forces)) then 
           ! Now we can retrieve the forces/tractions for this spectral instance
           fSize = size(forces, 2)
           call getForces(forces(:, :, sps), fSize, sps)
        end if
-
-       ! Integrate any zippers we have
-       call integrateZippers(localval(:, sps), famList, sps)
-
     end do
-
-    ! Now we need to reduce all the cost functions
-    call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
-         MPI_SUM, adflow_comm_world, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-
-    ! Call the final routine that will comptue all of our functions of
-    ! interest.
-    call getCostFunctions(globalVal)
-
-    ! ! Secondary loop over the blocks for calculations that require gathered values
-    ! do sps=1, nTimeIntervalsSpectral
-    !   do nn=1, nDom
-    !     call setPointers(nn, 1, sps)
-    !       ! Now compute the forces and moments for this block. 
-    !     call integrateSurfacesWithGathered(globalVal(:,sps), localval(:, sps), famList)
-    !   end do 
-
-    !    ! Integrate any zippers we have
-    !    call integrateZippersWithGathered(globalVal(:,sps), localval(:, sps), famList, sps)
-    ! end do 
-
-     ! Now we need to reduce all the cost functions
-    call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
-         MPI_SUM, adflow_comm_world, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-
-    ! second pass through this so distortion is computed correctly
-    call getCostFunctions(globalVal)
 
   end subroutine master
 #ifndef USE_COMPLEX
@@ -287,10 +249,10 @@ contains
     use solverutils_d, only : timeStep_Block_d
     use turbbcroutines_d, only : applyAllTurbBCthisblock_d,  bcTurbTreatment_d
     use initializeflow_d, only : referenceState_d
-    use surfaceIntegrations, only : integrateSurfaces_d, integrateZippers_d
+    use surfaceIntegrations, only : getSolution_d
     use sorting, only : bsearchIntegers
     use adjointExtra_d, only : xhalo_block_d, volume_block_d, metric_BLock_d, boundarynormals_d
-    use adjointextra_d, only : getcostfunctions_D, resscale_D, sumdwandfw_d
+    use adjointextra_d, only : resscale_D, sumdwandfw_d
     use bcdata, only : setBCData_d, setBCDataFineGrid_d
     use overset, only : oversetPresent
     use inputOverset, only : oversetUpdateMode
@@ -316,8 +278,6 @@ contains
     real(kind=realType), dimension(:, :, :), allocatable :: forces
     integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj
     real(kind=realType), dimension(nSections) :: t
-    real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVal, globalVal
-    real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVald, globalVald
 
     fSize = size(forcesDot, 2)
     allocate(forces(3, fSize, nTimeIntervalsSpectral))
@@ -353,9 +313,6 @@ contains
           end do
        end do spectalLoop1
     end do domainLoop1
-
-    localVal = zero
-    localVald = zero
 
     do sps=1,nTimeIntervalsSpectral
        do nn=1,nDom
@@ -530,31 +487,15 @@ contains
           ! end if
           call sumDwAndFw_d
           call resscale_d
-
-          ! Perform the block-based surface integrations
-          call integrateSurfaces_d(localVal(:, sps), localVald(:, sps), famList)
        end do
-
-       ! Now we can retrieve the forces/tractions for this spectral instance
-       call getForces_d(forces(:, :, sps), forcesDot(:, :, sps), fSize, sps)
-
-       ! Do any zipper integration
-       call integrateZippers_d(localVal(:, sps), localVald(:, sps), famList, sps)
-       
     end do
 
-    ! Now we need to reduce all the cost functions
-    call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
-         MPI_SUM, adflow_comm_world, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-
-    call mpi_allreduce(localvald, globalVald, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
-         MPI_SUM, adflow_comm_world, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-
-    ! Call the final routine that will comptue all of our functions of
-    ! interest.
-    call getCostFunctions_d(globalVal, globalVald)
+    ! Compute final solution values
+    call getSolution_d(famList)
+  
+    do sps=1, nTimeIntervalsSpectral
+       call getForces_d(forces(:, :, sps), forcesDot(:, :, sps), fSize, sps)
+    end do
 
     ! Copy out the residual derivative into the provided dwDot
     ii =0 
@@ -607,12 +548,10 @@ contains
     use adjointPETSc, only : x_like
     use haloExchange, only : whalo2_b, exchangeCoor_b, exchangeCoor, whalo2
     use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
-    use surfaceIntegrations, only : integrateSurfaces, integrateZippers, integrateSurfaces_b, &
-         integrateZippers_b
+    use surfaceIntegrations, only : getSolution_b
     use sorting, only : bsearchIntegers
-    use adjointExtra, only : getCostFunctions
     use flowUtils, only : fixAllNodalGradientsFromAD
-    use adjointextra_b, only : getcostfunctions_B, resscale_B, sumdwandfw_b
+    use adjointextra_b, only : resscale_B, sumdwandfw_b
     use adjointExtra_b, only : xhalo_block_b, volume_block_b, metric_block_b, boundarynormals_b
     use flowutils_b, only : computePressureSimple_b, computeLamViscosity_b, &
          computeSpeedOfSoundSquared_b, allNodalGradients_b, adjustInflowAngle_b
@@ -650,8 +589,6 @@ contains
 
     ! Working Variables
     integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj,  level
-    real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVal, globalVal
-    real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVald, globalVald, tmp
     real(kind=realType), dimension(:), allocatable :: extraLocalBar, bcDataValuesdLocal
 
     logical ::resetToRans
@@ -688,59 +625,18 @@ contains
        end do
     end do
 
-    ! Call the final integration routine that will comptue all of our
-    ! functions of interest. We need to recompute globalVal for the
-    ! linearization, so just call the required part of the forward-mode
-    ! code.
-    localVal = zero
-    do sps=1, nTimeIntervalsSpectral
-       do nn=1, nDom
-          call setPointers_d(nn, 1, sps)
-          call integrateSurfaces(localval(:, sps), famList)
-       end do
-       call integrateZippers(localVal(:, sps), famList, sps)
-    end do
-
-    call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
-         MPI_SUM, adflow_comm_world, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-    call getCostFunctions(globalVal)
-
-    ! ============================================
-    !  reverse the order of calls from master
-    ! ============================================
-
-    ! Now start doing the reverse chain. We *must* only need to run on
-    ! this on the root processor. The reason is that the explict
-    ! sensitivities like liftDirection, Pref, etc, must be only
-    ! accounted for once, and not nProc times.
-
-    if (myid == 0) then 
-       call getCostFunctions_b(globalVal, globalVald)
-       localVald = globalVald
-    end if
-
-    ! Now we need to bast out the localValues to all procs. 
-    call mpi_bcast(localVald, nLocalValues*nTimeIntervalsSpectral, &
-         adflow_real, 0, adflow_comm_world, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-
-    spsLoop1: do sps=1, nTimeIntervalsSpectral
-
-       ! Accumulate zipper contribution
-       call integrateZippers_b(localVal(:, sps), localVald(:, sps), famList, sps)
-
-       ! First set the force seeds using the custom getForces_b() for
-       ! each time instance. This set the bcDatad%Fp, bcDatad%Fv and
-       ! bcData%area seeds.
+    forceSpsLoop: do sps=1, nTimeIntervalsSpectral
        fSize = size(forcesBar, 2)
        call getForces_b(forcesBar(:, :, sps), fSize, sps)
+    end do forceSpsLoop
 
+    ! Call the final getSolution_b routine
+    call getSolution_b(famList)
+
+    spsLoop1: do sps=1, nTimeIntervalsSpectral
+  
        domainLoop1: do nn=1, nDom
           call setPointers_d(nn, 1, sps)
-
-          ! Perform the surface integration
-          call integrateSurfaces_b(localVal(:, sps), localVald(:, sps), famList)
 
           ! Now we start running back through the main residual code:
           call resScale_b
