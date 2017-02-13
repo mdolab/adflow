@@ -187,11 +187,9 @@ contains
     ovrNTS = one/nTimeIntervalsSpectral
 
     ! Sum pressure and viscous contributions
-    Force = globalvals(iFp:iFp+2, :) + globalvals(iFv:iFv+2, :) + &
-         globalvals(iFlowFp:iFlowFp+2, :) + globalvals(iFlowFm:iFlowFm+2, :)
+    Force = globalvals(iFp:iFp+2, :) + globalvals(iFv:iFv+2, :) + globalvals(iFlowFm:iFlowFm+2, :)
 
-    Moment = globalvals(iMp:iMp+2, :) + globalvals(iMv:iMv+2, :)  + &
-         globalvals(iFlowMp:iFlowMp+2, :) + globalvals(iFlowMm:iFlowMm+2, :)
+    Moment = globalvals(iMp:iMp+2, :) + globalvals(iMv:iMv+2, :) + globalvals(iFlowMm:iFlowMm+2, :)
 
     fact = two/(gammaInf*MachCoef*MachCoef &
          *surfaceRef*LRef*LRef*pRef)
@@ -935,7 +933,7 @@ contains
     localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
     localValues(iMassMN)   = localValues(iMassMN)   + mass_MN
     localValues(iPk)   = localValues(iPk)   + pk
-    localValues(iFlowFp:iFlowFp+2)   = localValues(iFlowFp:iFlowFp+2) + Fp
+    localValues(iFp:iFp+2)   = localValues(iFp:iFp+2) + Fp
     localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
     localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
     localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
@@ -1045,7 +1043,7 @@ contains
 
     use constants
     use costFunctions, only : nLocalValues, iMassFlow, iMassPtot, iMassTtot, iMassPs, &
-         iFlowMm, iFlowMp, iFlowFm, iFlowFp, iMassMN, iPk
+         iFlowMm, iFlowMp, iFlowFm, iFp, iMassMN, iPk
     use blockPointers, only : BCType
     use sorting, only : bsearchIntegers
     use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas, uRef, uInf
@@ -1221,7 +1219,7 @@ contains
     localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
     localValues(iMassMN)   = localValues(iMassMN)   + mass_MN
     localValues(iPk)   = localValues(iPk)   + Pk
-    localValues(iFlowFp:iFlowFp+2)   = localValues(iFlowFp:iFlowFp+2) + Fp
+    localValues(iFp:iFp+2)   = localValues(iFp:iFp+2) + Fp
     localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
     localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
     localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
