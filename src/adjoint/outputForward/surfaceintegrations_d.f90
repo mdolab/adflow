@@ -43,6 +43,11 @@ module surfaceintegrations_d
 
 contains
   subroutine integratesurfaces(localvalues, famlist)
+!--------------------------------------------------------------
+! manual differentiation warning: modifying this routine requires
+! modifying the hand-written forward and reverse routines. 
+! --------------------------------------------------------------
+!
 ! this is a shell routine that calls the specific surface
 ! integration routines. currently we have have the forceandmoment
 ! routine as well as the flow properties routine. this routine
@@ -87,6 +92,11 @@ bocos:do mm=1,nbocos
   end subroutine integratesurfaces
   subroutine integratesurfaceswithgathered(globalcfvalues, localvalues, &
 &   famlist)
+!--------------------------------------------------------------
+! manual differentiation warning: modifying this routine requires
+! modifying the hand-written forward and reverse routines. 
+! --------------------------------------------------------------
+!
 ! this is a shell routine that calls the specific surface
 ! integration routines, which need access to gethered values. this routine
 ! takes care of setting pointers, while the actual computational
@@ -135,6 +145,405 @@ bocos:do mm=1,nbocos
       end if
     end do bocos
   end subroutine integratesurfaceswithgathered
+!  differentiation of getcostfunctions in forward (tangent) mode (with options i4 dr8 r8):
+!   variations   of useful results: funcvalues
+!   with respect to varying inputs: machcoef dragdirection liftdirection
+!                pref globalvals
+!   rw status of diff variables: machcoef:in dragdirection:in liftdirection:in
+!                pref:in funcvalues:out globalvals:in
+  subroutine getcostfunctions_d(globalvals, globalvalsd)
+    use constants
+    use costfunctions
+    use inputtimespectral, only : ntimeintervalsspectral
+    use flowvarrefstate, only : pref, prefd, rhoref, rhorefd, tref, &
+&   trefd, lref, gammainf
+    use inputphysics, only : liftdirection, liftdirectiond, &
+&   dragdirection, dragdirectiond, surfaceref, machcoef, machcoefd, &
+&   lengthref
+    use inputtsstabderiv, only : tsstability
+    implicit none
+! input 
+    real(kind=realtype), dimension(nlocalvalues, ntimeintervalsspectral)&
+&   , intent(in) :: globalvals
+    real(kind=realtype), dimension(nlocalvalues, ntimeintervalsspectral)&
+&   , intent(in) :: globalvalsd
+! working
+    real(kind=realtype) :: fact, factmoment, ovrnts
+    real(kind=realtype) :: factd
+    real(kind=realtype), dimension(3, ntimeintervalsspectral) :: force, &
+&   moment, cforce, cmoment
+    real(kind=realtype), dimension(3, ntimeintervalsspectral) :: forced&
+&   , momentd, cforced, cmomentd
+    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mflow2, &
+&   mavgmn, sigmamn, sigmaptot
+    real(kind=realtype) :: mavgptotd, mavgttotd, mavgpsd, mflowd, &
+&   mavgmnd, sigmamnd, sigmaptotd
+    integer(kind=inttype) :: sps
+    real(kind=realtype), dimension(8) :: dcdq, dcdqdot
+    real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
+    real(kind=realtype), dimension(8) :: coef0
+    intrinsic sqrt
+    real(kind=realtype) :: arg1
+    real(kind=realtype) :: result1
+! factor used for time-averaged quantities.
+    ovrnts = one/ntimeintervalsspectral
+! sum pressure and viscous contributions
+    forced = globalvalsd(ifp:ifp+2, :) + globalvalsd(ifv:ifv+2, :)
+    force = globalvals(ifp:ifp+2, :) + globalvals(ifv:ifv+2, :)
+    momentd = globalvalsd(imp:imp+2, :) + globalvalsd(imv:imv+2, :)
+    moment = globalvals(imp:imp+2, :) + globalvals(imv:imv+2, :)
+    factd = -(two*gammainf*surfaceref*lref**2*((machcoefd*machcoef+&
+&     machcoef*machcoefd)*pref+machcoef**2*prefd)/(gammainf*machcoef*&
+&     machcoef*surfaceref*lref*lref*pref)**2)
+    fact = two/(gammainf*machcoef*machcoef*surfaceref*lref*lref*pref)
+    cforced = factd*force + fact*forced
+    cforce = fact*force
+! moment factor has an extra lengthref
+    factd = factd/(lengthref*lref)
+    fact = fact/(lengthref*lref)
+    cmomentd = factd*moment + fact*momentd
+    cmoment = fact*moment
+! zero values since we are summing.
+    funcvalues = zero
+    funcvaluesd = 0.0_8
+! here we finally assign the final function values
+    do sps=1,ntimeintervalsspectral
+      funcvaluesd(costfuncforcex) = funcvaluesd(costfuncforcex) + ovrnts&
+&       *forced(1, sps)
+      funcvalues(costfuncforcex) = funcvalues(costfuncforcex) + ovrnts*&
+&       force(1, sps)
+      funcvaluesd(costfuncforcey) = funcvaluesd(costfuncforcey) + ovrnts&
+&       *forced(2, sps)
+      funcvalues(costfuncforcey) = funcvalues(costfuncforcey) + ovrnts*&
+&       force(2, sps)
+      funcvaluesd(costfuncforcez) = funcvaluesd(costfuncforcez) + ovrnts&
+&       *forced(3, sps)
+      funcvalues(costfuncforcez) = funcvalues(costfuncforcez) + ovrnts*&
+&       force(3, sps)
+      funcvaluesd(costfuncforcexcoef) = funcvaluesd(costfuncforcexcoef) &
+&       + ovrnts*cforced(1, sps)
+      funcvalues(costfuncforcexcoef) = funcvalues(costfuncforcexcoef) + &
+&       ovrnts*cforce(1, sps)
+      funcvaluesd(costfuncforceycoef) = funcvaluesd(costfuncforceycoef) &
+&       + ovrnts*cforced(2, sps)
+      funcvalues(costfuncforceycoef) = funcvalues(costfuncforceycoef) + &
+&       ovrnts*cforce(2, sps)
+      funcvaluesd(costfuncforcezcoef) = funcvaluesd(costfuncforcezcoef) &
+&       + ovrnts*cforced(3, sps)
+      funcvalues(costfuncforcezcoef) = funcvalues(costfuncforcezcoef) + &
+&       ovrnts*cforce(3, sps)
+      funcvaluesd(costfuncmomx) = funcvaluesd(costfuncmomx) + ovrnts*&
+&       momentd(1, sps)
+      funcvalues(costfuncmomx) = funcvalues(costfuncmomx) + ovrnts*&
+&       moment(1, sps)
+      funcvaluesd(costfuncmomy) = funcvaluesd(costfuncmomy) + ovrnts*&
+&       momentd(2, sps)
+      funcvalues(costfuncmomy) = funcvalues(costfuncmomy) + ovrnts*&
+&       moment(2, sps)
+      funcvaluesd(costfuncmomz) = funcvaluesd(costfuncmomz) + ovrnts*&
+&       momentd(3, sps)
+      funcvalues(costfuncmomz) = funcvalues(costfuncmomz) + ovrnts*&
+&       moment(3, sps)
+      funcvaluesd(costfuncmomxcoef) = funcvaluesd(costfuncmomxcoef) + &
+&       ovrnts*cmomentd(1, sps)
+      funcvalues(costfuncmomxcoef) = funcvalues(costfuncmomxcoef) + &
+&       ovrnts*cmoment(1, sps)
+      funcvaluesd(costfuncmomycoef) = funcvaluesd(costfuncmomycoef) + &
+&       ovrnts*cmomentd(2, sps)
+      funcvalues(costfuncmomycoef) = funcvalues(costfuncmomycoef) + &
+&       ovrnts*cmoment(2, sps)
+      funcvaluesd(costfuncmomzcoef) = funcvaluesd(costfuncmomzcoef) + &
+&       ovrnts*cmomentd(3, sps)
+      funcvalues(costfuncmomzcoef) = funcvalues(costfuncmomzcoef) + &
+&       ovrnts*cmoment(3, sps)
+      funcvaluesd(costfuncsepsensor) = funcvaluesd(costfuncsepsensor) + &
+&       ovrnts*globalvalsd(isepsensor, sps)
+      funcvalues(costfuncsepsensor) = funcvalues(costfuncsepsensor) + &
+&       ovrnts*globalvals(isepsensor, sps)
+      funcvaluesd(costfunccavitation) = funcvaluesd(costfunccavitation) &
+&       + ovrnts*globalvalsd(icavitation, sps)
+      funcvalues(costfunccavitation) = funcvalues(costfunccavitation) + &
+&       ovrnts*globalvals(icavitation, sps)
+      funcvaluesd(costfuncsepsensoravgx) = funcvaluesd(&
+&       costfuncsepsensoravgx) + ovrnts*globalvalsd(isepavg, sps)
+      funcvalues(costfuncsepsensoravgx) = funcvalues(&
+&       costfuncsepsensoravgx) + ovrnts*globalvals(isepavg, sps)
+      funcvaluesd(costfuncsepsensoravgy) = funcvaluesd(&
+&       costfuncsepsensoravgy) + ovrnts*globalvalsd(isepavg+1, sps)
+      funcvalues(costfuncsepsensoravgy) = funcvalues(&
+&       costfuncsepsensoravgy) + ovrnts*globalvals(isepavg+1, sps)
+      funcvaluesd(costfuncsepsensoravgz) = funcvaluesd(&
+&       costfuncsepsensoravgz) + ovrnts*globalvalsd(isepavg+2, sps)
+      funcvalues(costfuncsepsensoravgz) = funcvalues(&
+&       costfuncsepsensoravgz) + ovrnts*globalvals(isepavg+2, sps)
+      funcvaluesd(costfuncpk) = funcvaluesd(costfuncpk) + ovrnts*&
+&       globalvalsd(ipk, sps)
+      funcvalues(costfuncpk) = funcvalues(costfuncpk) + ovrnts*&
+&       globalvals(ipk, sps)
+! mass flow like objective
+      mflowd = globalvalsd(imassflow, sps)
+      mflow = globalvals(imassflow, sps)
+      if (mflow .ne. zero) then
+        mavgptotd = (globalvalsd(imassptot, sps)*mflow-globalvals(&
+&         imassptot, sps)*mflowd)/mflow**2
+        mavgptot = globalvals(imassptot, sps)/mflow
+        mavgttotd = (globalvalsd(imassttot, sps)*mflow-globalvals(&
+&         imassttot, sps)*mflowd)/mflow**2
+        mavgttot = globalvals(imassttot, sps)/mflow
+        mavgpsd = (globalvalsd(imassps, sps)*mflow-globalvals(imassps, &
+&         sps)*mflowd)/mflow**2
+        mavgps = globalvals(imassps, sps)/mflow
+        mavgmnd = (globalvalsd(imassmn, sps)*mflow-globalvals(imassmn, &
+&         sps)*mflowd)/mflow**2
+        mavgmn = globalvals(imassmn, sps)/mflow
+        arg1 = pref/rhoref
+        result1 = sqrt(arg1)
+        mflow2 = globalvals(imassflow, sps)*result1
+        if (globalvals(isigmamn, sps)/mflow .eq. 0.0_8) then
+          sigmamnd = 0.0_8
+        else
+          sigmamnd = (globalvalsd(isigmamn, sps)*mflow-globalvals(&
+&           isigmamn, sps)*mflowd)/(mflow**2*2.0*sqrt(globalvals(&
+&           isigmamn, sps)/mflow))
+        end if
+        sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
+        if (globalvals(isigmaptot, sps)/mflow .eq. 0.0_8) then
+          sigmaptotd = 0.0_8
+        else
+          sigmaptotd = (globalvalsd(isigmaptot, sps)*mflow-globalvals(&
+&           isigmaptot, sps)*mflowd)/(mflow**2*2.0*sqrt(globalvals(&
+&           isigmaptot, sps)/mflow))
+        end if
+        sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
+      else
+        mavgptot = zero
+        mavgttot = zero
+        mavgps = zero
+        mavgmn = zero
+        sigmamn = zero
+        sigmaptot = zero
+        mflow2 = zero
+        mavgttotd = 0.0_8
+        mavgpsd = 0.0_8
+        mavgmnd = 0.0_8
+        mavgptotd = 0.0_8
+        sigmamnd = 0.0_8
+        sigmaptotd = 0.0_8
+      end if
+      funcvaluesd(costfuncmdot) = funcvaluesd(costfuncmdot) + ovrnts*&
+&       mflowd
+      funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
+      funcvaluesd(costfuncmavgptot) = funcvaluesd(costfuncmavgptot) + &
+&       ovrnts*mavgptotd
+      funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &
+&       ovrnts*mavgptot
+      funcvaluesd(costfuncmavgptot) = funcvaluesd(costfuncmavgttot) + &
+&       ovrnts*mavgttotd
+      funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgttot) + &
+&       ovrnts*mavgttot
+      funcvaluesd(costfuncmavgps) = funcvaluesd(costfuncmavgps) + ovrnts&
+&       *mavgpsd
+      funcvalues(costfuncmavgps) = funcvalues(costfuncmavgps) + ovrnts*&
+&       mavgps
+      funcvaluesd(costfuncmavgmn) = funcvaluesd(costfuncmavgmn) + ovrnts&
+&       *mavgmnd
+      funcvalues(costfuncmavgmn) = funcvalues(costfuncmavgmn) + ovrnts*&
+&       mavgmn
+      funcvaluesd(costfuncsigmamn) = funcvaluesd(costfuncsigmamn) + &
+&       ovrnts*sigmamnd
+      funcvalues(costfuncsigmamn) = funcvalues(costfuncsigmamn) + ovrnts&
+&       *sigmamn
+      funcvaluesd(costfuncsigmaptot) = funcvaluesd(costfuncsigmaptot) + &
+&       ovrnts*sigmaptotd
+      funcvalues(costfuncsigmaptot) = funcvalues(costfuncsigmaptot) + &
+&       ovrnts*sigmaptot
+      funcvaluesd(costfuncpk) = funcvaluesd(costfuncpk) + ovrnts*&
+&       globalvalsd(ipk, sps)
+      funcvalues(costfuncpk) = funcvalues(costfuncpk) + ovrnts*&
+&       globalvals(ipk, sps)
+    end do
+! bending moment calc - also broken. 
+! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
+! funcvalues(costfuncbendingcoef) = funcvalues(costfuncbendingcoef) + ovrnts*bendingmoment
+! lift and drag (coefficients): dot product with the lift/drag direction.
+    funcvaluesd(costfunclift) = funcvaluesd(costfuncforcex)*&
+&     liftdirection(1) + funcvalues(costfuncforcex)*liftdirectiond(1) + &
+&     funcvaluesd(costfuncforcey)*liftdirection(2) + funcvalues(&
+&     costfuncforcey)*liftdirectiond(2) + funcvaluesd(costfuncforcez)*&
+&     liftdirection(3) + funcvalues(costfuncforcez)*liftdirectiond(3)
+    funcvalues(costfunclift) = funcvalues(costfuncforcex)*liftdirection(&
+&     1) + funcvalues(costfuncforcey)*liftdirection(2) + funcvalues(&
+&     costfuncforcez)*liftdirection(3)
+    funcvaluesd(costfuncdrag) = funcvaluesd(costfuncforcex)*&
+&     dragdirection(1) + funcvalues(costfuncforcex)*dragdirectiond(1) + &
+&     funcvaluesd(costfuncforcey)*dragdirection(2) + funcvalues(&
+&     costfuncforcey)*dragdirectiond(2) + funcvaluesd(costfuncforcez)*&
+&     dragdirection(3) + funcvalues(costfuncforcez)*dragdirectiond(3)
+    funcvalues(costfuncdrag) = funcvalues(costfuncforcex)*dragdirection(&
+&     1) + funcvalues(costfuncforcey)*dragdirection(2) + funcvalues(&
+&     costfuncforcez)*dragdirection(3)
+    funcvaluesd(costfuncliftcoef) = funcvaluesd(costfuncforcexcoef)*&
+&     liftdirection(1) + funcvalues(costfuncforcexcoef)*liftdirectiond(1&
+&     ) + funcvaluesd(costfuncforceycoef)*liftdirection(2) + funcvalues(&
+&     costfuncforceycoef)*liftdirectiond(2) + funcvaluesd(&
+&     costfuncforcezcoef)*liftdirection(3) + funcvalues(&
+&     costfuncforcezcoef)*liftdirectiond(3)
+    funcvalues(costfuncliftcoef) = funcvalues(costfuncforcexcoef)*&
+&     liftdirection(1) + funcvalues(costfuncforceycoef)*liftdirection(2)&
+&     + funcvalues(costfuncforcezcoef)*liftdirection(3)
+    funcvaluesd(costfuncdragcoef) = funcvaluesd(costfuncforcexcoef)*&
+&     dragdirection(1) + funcvalues(costfuncforcexcoef)*dragdirectiond(1&
+&     ) + funcvaluesd(costfuncforceycoef)*dragdirection(2) + funcvalues(&
+&     costfuncforceycoef)*dragdirectiond(2) + funcvaluesd(&
+&     costfuncforcezcoef)*dragdirection(3) + funcvalues(&
+&     costfuncforcezcoef)*dragdirectiond(3)
+    funcvalues(costfuncdragcoef) = funcvalues(costfuncforcexcoef)*&
+&     dragdirection(1) + funcvalues(costfuncforceycoef)*dragdirection(2)&
+&     + funcvalues(costfuncforcezcoef)*dragdirection(3)
+! -------------------- time spectral objectives ------------------
+    if (tsstability) then
+      print*, &
+&     'error: tsstabilityderivatives are *broken*. they need to be ', &
+&     'completely verifed from scratch'
+      stop
+    end if
+  end subroutine getcostfunctions_d
+  subroutine getcostfunctions(globalvals)
+    use constants
+    use costfunctions
+    use inputtimespectral, only : ntimeintervalsspectral
+    use flowvarrefstate, only : pref, rhoref, tref, lref, gammainf
+    use inputphysics, only : liftdirection, dragdirection, surfaceref,&
+&   machcoef, lengthref
+    use inputtsstabderiv, only : tsstability
+    implicit none
+! input 
+    real(kind=realtype), dimension(nlocalvalues, ntimeintervalsspectral)&
+&   , intent(in) :: globalvals
+! working
+    real(kind=realtype) :: fact, factmoment, ovrnts
+    real(kind=realtype), dimension(3, ntimeintervalsspectral) :: force, &
+&   moment, cforce, cmoment
+    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mflow2, &
+&   mavgmn, sigmamn, sigmaptot
+    integer(kind=inttype) :: sps
+    real(kind=realtype), dimension(8) :: dcdq, dcdqdot
+    real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
+    real(kind=realtype), dimension(8) :: coef0
+    intrinsic sqrt
+    real(kind=realtype) :: arg1
+    real(kind=realtype) :: result1
+! factor used for time-averaged quantities.
+    ovrnts = one/ntimeintervalsspectral
+! sum pressure and viscous contributions
+    force = globalvals(ifp:ifp+2, :) + globalvals(ifv:ifv+2, :)
+    moment = globalvals(imp:imp+2, :) + globalvals(imv:imv+2, :)
+    fact = two/(gammainf*machcoef*machcoef*surfaceref*lref*lref*pref)
+    cforce = fact*force
+! moment factor has an extra lengthref
+    fact = fact/(lengthref*lref)
+    cmoment = fact*moment
+! zero values since we are summing.
+    funcvalues = zero
+! here we finally assign the final function values
+    do sps=1,ntimeintervalsspectral
+      funcvalues(costfuncforcex) = funcvalues(costfuncforcex) + ovrnts*&
+&       force(1, sps)
+      funcvalues(costfuncforcey) = funcvalues(costfuncforcey) + ovrnts*&
+&       force(2, sps)
+      funcvalues(costfuncforcez) = funcvalues(costfuncforcez) + ovrnts*&
+&       force(3, sps)
+      funcvalues(costfuncforcexcoef) = funcvalues(costfuncforcexcoef) + &
+&       ovrnts*cforce(1, sps)
+      funcvalues(costfuncforceycoef) = funcvalues(costfuncforceycoef) + &
+&       ovrnts*cforce(2, sps)
+      funcvalues(costfuncforcezcoef) = funcvalues(costfuncforcezcoef) + &
+&       ovrnts*cforce(3, sps)
+      funcvalues(costfuncmomx) = funcvalues(costfuncmomx) + ovrnts*&
+&       moment(1, sps)
+      funcvalues(costfuncmomy) = funcvalues(costfuncmomy) + ovrnts*&
+&       moment(2, sps)
+      funcvalues(costfuncmomz) = funcvalues(costfuncmomz) + ovrnts*&
+&       moment(3, sps)
+      funcvalues(costfuncmomxcoef) = funcvalues(costfuncmomxcoef) + &
+&       ovrnts*cmoment(1, sps)
+      funcvalues(costfuncmomycoef) = funcvalues(costfuncmomycoef) + &
+&       ovrnts*cmoment(2, sps)
+      funcvalues(costfuncmomzcoef) = funcvalues(costfuncmomzcoef) + &
+&       ovrnts*cmoment(3, sps)
+      funcvalues(costfuncsepsensor) = funcvalues(costfuncsepsensor) + &
+&       ovrnts*globalvals(isepsensor, sps)
+      funcvalues(costfunccavitation) = funcvalues(costfunccavitation) + &
+&       ovrnts*globalvals(icavitation, sps)
+      funcvalues(costfuncsepsensoravgx) = funcvalues(&
+&       costfuncsepsensoravgx) + ovrnts*globalvals(isepavg, sps)
+      funcvalues(costfuncsepsensoravgy) = funcvalues(&
+&       costfuncsepsensoravgy) + ovrnts*globalvals(isepavg+1, sps)
+      funcvalues(costfuncsepsensoravgz) = funcvalues(&
+&       costfuncsepsensoravgz) + ovrnts*globalvals(isepavg+2, sps)
+      funcvalues(costfuncpk) = funcvalues(costfuncpk) + ovrnts*&
+&       globalvals(ipk, sps)
+! mass flow like objective
+      mflow = globalvals(imassflow, sps)
+      if (mflow .ne. zero) then
+        mavgptot = globalvals(imassptot, sps)/mflow
+        mavgttot = globalvals(imassttot, sps)/mflow
+        mavgps = globalvals(imassps, sps)/mflow
+        mavgmn = globalvals(imassmn, sps)/mflow
+        arg1 = pref/rhoref
+        result1 = sqrt(arg1)
+        mflow2 = globalvals(imassflow, sps)*result1
+        sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
+        sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
+      else
+        mavgptot = zero
+        mavgttot = zero
+        mavgps = zero
+        mavgmn = zero
+        sigmamn = zero
+        sigmaptot = zero
+        mflow2 = zero
+      end if
+      funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
+      funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &
+&       ovrnts*mavgptot
+      funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgttot) + &
+&       ovrnts*mavgttot
+      funcvalues(costfuncmavgps) = funcvalues(costfuncmavgps) + ovrnts*&
+&       mavgps
+      funcvalues(costfuncmavgmn) = funcvalues(costfuncmavgmn) + ovrnts*&
+&       mavgmn
+      funcvalues(costfuncsigmamn) = funcvalues(costfuncsigmamn) + ovrnts&
+&       *sigmamn
+      funcvalues(costfuncsigmaptot) = funcvalues(costfuncsigmaptot) + &
+&       ovrnts*sigmaptot
+      funcvalues(costfuncpk) = funcvalues(costfuncpk) + ovrnts*&
+&       globalvals(ipk, sps)
+    end do
+! bending moment calc - also broken. 
+! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
+! funcvalues(costfuncbendingcoef) = funcvalues(costfuncbendingcoef) + ovrnts*bendingmoment
+! lift and drag (coefficients): dot product with the lift/drag direction.
+    funcvalues(costfunclift) = funcvalues(costfuncforcex)*liftdirection(&
+&     1) + funcvalues(costfuncforcey)*liftdirection(2) + funcvalues(&
+&     costfuncforcez)*liftdirection(3)
+    funcvalues(costfuncdrag) = funcvalues(costfuncforcex)*dragdirection(&
+&     1) + funcvalues(costfuncforcey)*dragdirection(2) + funcvalues(&
+&     costfuncforcez)*dragdirection(3)
+    funcvalues(costfuncliftcoef) = funcvalues(costfuncforcexcoef)*&
+&     liftdirection(1) + funcvalues(costfuncforceycoef)*liftdirection(2)&
+&     + funcvalues(costfuncforcezcoef)*liftdirection(3)
+    funcvalues(costfuncdragcoef) = funcvalues(costfuncforcexcoef)*&
+&     dragdirection(1) + funcvalues(costfuncforceycoef)*dragdirection(2)&
+&     + funcvalues(costfuncforcezcoef)*dragdirection(3)
+! -------------------- time spectral objectives ------------------
+    if (tsstability) then
+      print*, &
+&     'error: tsstabilityderivatives are *broken*. they need to be ', &
+&     'completely verifed from scratch'
+      stop
+    end if
+  end subroutine getcostfunctions
 !  differentiation of wallintegrationface in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *(*bcdata.fv) *(*bcdata.fp)
 !                *(*bcdata.area) localvalues
@@ -889,7 +1298,7 @@ bocos:do mm=1,nbocos
     real(kind=realtype) :: vmagd, vnmd, vxmd, vymd, vzmd, fxd, fyd, fzd&
 &   , wd
     real(kind=realtype) :: pm, ptot, ttot, rhom, gammam, a2, mnm, &
-&   massflowratelocal
+&   massflowratelocal, edota
     real(kind=realtype) :: pmd, ptotd, ttotd, rhomd, mnmd, &
 &   massflowratelocald
     real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint, &
@@ -1195,7 +1604,7 @@ bocos:do mm=1,nbocos
     real(kind=realtype) :: sf, vmag, vnm, vxm, vym, vzm, fx, fy, fz, u, &
 &   v, w
     real(kind=realtype) :: pm, ptot, ttot, rhom, gammam, a2, mnm, &
-&   massflowratelocal
+&   massflowratelocal, edota
     real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint, &
 &   vcoordref, vfreestreamref, sfacefreestreamref
     intrinsic sqrt
