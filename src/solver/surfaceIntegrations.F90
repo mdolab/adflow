@@ -187,8 +187,11 @@ contains
     ovrNTS = one/nTimeIntervalsSpectral
 
     ! Sum pressure and viscous contributions
-    Force = globalvals(iFp:iFp+2, :) + globalvals(iFv:iFv+2, :)
-    Moment = globalvals(iMp:iMp+2, :) + globalvals(iMv:iMv+2, :)
+    Force = globalvals(iFp:iFp+2, :) + globalvals(iFv:iFv+2, :) + &
+         globalvals(iFlowFp:iFlowFp+2, :) + globalvals(iFlowFm:iFlowFm+2, :)
+
+    Moment = globalvals(iMp:iMp+2, :) + globalvals(iMv:iMv+2, :)  + &
+         globalvals(iFlowMp:iFlowMp+2, :) + globalvals(iFlowMm:iFlowMm+2, :)
 
     fact = two/(gammaInf*MachCoef*MachCoef &
          *surfaceRef*LRef*LRef*pRef)
