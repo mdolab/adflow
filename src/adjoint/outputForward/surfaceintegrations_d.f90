@@ -188,10 +188,14 @@ bocos:do mm=1,nbocos
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
 ! sum pressure and viscous contributions
-    forced = globalvalsd(ifp:ifp+2, :) + globalvalsd(ifv:ifv+2, :)
-    force = globalvals(ifp:ifp+2, :) + globalvals(ifv:ifv+2, :)
-    momentd = globalvalsd(imp:imp+2, :) + globalvalsd(imv:imv+2, :)
-    moment = globalvals(imp:imp+2, :) + globalvals(imv:imv+2, :)
+    forced = globalvalsd(ifp:ifp+2, :) + globalvalsd(ifv:ifv+2, :) + &
+&     globalvalsd(iflowfm:iflowfm+2, :)
+    force = globalvals(ifp:ifp+2, :) + globalvals(ifv:ifv+2, :) + &
+&     globalvals(iflowfm:iflowfm+2, :)
+    momentd = globalvalsd(imp:imp+2, :) + globalvalsd(imv:imv+2, :) + &
+&     globalvalsd(iflowmm:iflowmm+2, :)
+    moment = globalvals(imp:imp+2, :) + globalvals(imv:imv+2, :) + &
+&     globalvals(iflowmm:iflowmm+2, :)
     factd = -(two*gammainf*surfaceref*lref**2*((machcoefd*machcoef+&
 &     machcoef*machcoefd)*pref+machcoef**2*prefd)/(gammainf*machcoef*&
 &     machcoef*surfaceref*lref*lref*pref)**2)
@@ -436,8 +440,10 @@ bocos:do mm=1,nbocos
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
 ! sum pressure and viscous contributions
-    force = globalvals(ifp:ifp+2, :) + globalvals(ifv:ifv+2, :)
-    moment = globalvals(imp:imp+2, :) + globalvals(imv:imv+2, :)
+    force = globalvals(ifp:ifp+2, :) + globalvals(ifv:ifv+2, :) + &
+&     globalvals(iflowfm:iflowfm+2, :)
+    moment = globalvals(imp:imp+2, :) + globalvals(imv:imv+2, :) + &
+&     globalvals(iflowmm:iflowmm+2, :)
     fact = two/(gammainf*machcoef*machcoef*surfaceref*lref*lref*pref)
     cforce = fact*force
 ! moment factor has an extra lengthref
@@ -1558,9 +1564,8 @@ bocos:do mm=1,nbocos
     localvalues(imassmn) = localvalues(imassmn) + mass_mn
     localvaluesd(ipk) = localvaluesd(ipk) + pkd
     localvalues(ipk) = localvalues(ipk) + pk
-    localvaluesd(iflowfp:iflowfp+2) = localvaluesd(iflowfp:iflowfp+2) + &
-&     fpd
-    localvalues(iflowfp:iflowfp+2) = localvalues(iflowfp:iflowfp+2) + fp
+    localvaluesd(ifp:ifp+2) = localvaluesd(ifp:ifp+2) + fpd
+    localvalues(ifp:ifp+2) = localvalues(ifp:ifp+2) + fp
     localvaluesd(iflowfm:iflowfm+2) = localvaluesd(iflowfm:iflowfm+2) + &
 &     fmomd
     localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
@@ -1755,7 +1760,7 @@ bocos:do mm=1,nbocos
     localvalues(imassps) = localvalues(imassps) + mass_ps
     localvalues(imassmn) = localvalues(imassmn) + mass_mn
     localvalues(ipk) = localvalues(ipk) + pk
-    localvalues(iflowfp:iflowfp+2) = localvalues(iflowfp:iflowfp+2) + fp
+    localvalues(ifp:ifp+2) = localvalues(ifp:ifp+2) + fp
     localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
 &     fmom
     localvalues(iflowmp:iflowmp+2) = localvalues(iflowmp:iflowmp+2) + mp
@@ -1873,7 +1878,7 @@ bocos:do mm=1,nbocos
 ! integrate over the trianges for the inflow/outflow conditions. 
     use constants
     use costfunctions, only : nlocalvalues, imassflow, imassptot, &
-&   imassttot, imassps, iflowmm, iflowmp, iflowfm, iflowfp, imassmn, ipk
+&   imassttot, imassps, iflowmm, iflowmp, iflowfm, ifp, imassmn, ipk
     use blockpointers, only : bctype
     use sorting, only : bsearchintegers
     use flowvarrefstate, only : pref, prefd, pinf, pinfd, rhoref, &
@@ -2200,9 +2205,8 @@ bocos:do mm=1,nbocos
     localvalues(imassmn) = localvalues(imassmn) + mass_mn
     localvaluesd(ipk) = localvaluesd(ipk) + pkd
     localvalues(ipk) = localvalues(ipk) + pk
-    localvaluesd(iflowfp:iflowfp+2) = localvaluesd(iflowfp:iflowfp+2) + &
-&     fpd
-    localvalues(iflowfp:iflowfp+2) = localvalues(iflowfp:iflowfp+2) + fp
+    localvaluesd(ifp:ifp+2) = localvaluesd(ifp:ifp+2) + fpd
+    localvalues(ifp:ifp+2) = localvalues(ifp:ifp+2) + fp
     localvaluesd(iflowfm:iflowfm+2) = localvaluesd(iflowfm:iflowfm+2) + &
 &     fmomd
     localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
@@ -2220,7 +2224,7 @@ bocos:do mm=1,nbocos
 ! integrate over the trianges for the inflow/outflow conditions. 
     use constants
     use costfunctions, only : nlocalvalues, imassflow, imassptot, &
-&   imassttot, imassps, iflowmm, iflowmp, iflowfm, iflowfp, imassmn, ipk
+&   imassttot, imassps, iflowmm, iflowmp, iflowfm, ifp, imassmn, ipk
     use blockpointers, only : bctype
     use sorting, only : bsearchintegers
     use flowvarrefstate, only : pref, pinf, rhoref, pref, timeref, &
@@ -2380,7 +2384,7 @@ bocos:do mm=1,nbocos
     localvalues(imassps) = localvalues(imassps) + mass_ps
     localvalues(imassmn) = localvalues(imassmn) + mass_mn
     localvalues(ipk) = localvalues(ipk) + pk
-    localvalues(iflowfp:iflowfp+2) = localvalues(iflowfp:iflowfp+2) + fp
+    localvalues(ifp:ifp+2) = localvalues(ifp:ifp+2) + fp
     localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
 &     fmom
     localvalues(iflowmp:iflowmp+2) = localvalues(iflowmp:iflowmp+2) + mp
