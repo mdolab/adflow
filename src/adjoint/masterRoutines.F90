@@ -234,7 +234,6 @@ contains
     use section, only: sections, nSections
     use monitor, only : timeUnsteadyRestart
     use utils, only : isWallType, setPointers, setPointers_d, EChk
-    use utils, only : setBCPointers_d
     use sa_d, only : saSource_d, saViscous_d, saResScale_d, qq
     use turbutils_d, only : turbAdvection_d, computeEddyViscosity_d
     use fluxes_d, only :inviscidDissFluxScalarApprox_d, inviscidDissFluxMatrixApprox_d, &
@@ -544,7 +543,7 @@ contains
     use inputDiscretization, only : lowSpeedPreconditioner, lumpedDiss, spaceDiscr, useAPproxWallDistance
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputAdjoint, only : frozenTurbulence
-    use utils, only : isWallType, setPointers_d, EChk, setBCPointers_d
+    use utils, only : isWallType, setPointers_b, EChk
     use adjointPETSc, only : x_like
     use haloExchange, only : whalo2_b, exchangeCoor_b, exchangeCoor, whalo2
     use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
@@ -609,7 +608,7 @@ contains
        do sps=1,nTimeIntervalsSpectral
 
           ! Set pointers and derivative pointers
-          call setPointers_d(nn, 1, sps)
+          call setPointers_b(nn, 1, sps)
 
           ! Set the dw seeds
           do k=2, kl
@@ -636,7 +635,7 @@ contains
     spsLoop1: do sps=1, nTimeIntervalsSpectral
   
        domainLoop1: do nn=1, nDom
-          call setPointers_d(nn, 1, sps)
+          call setPointers_b(nn, 1, sps)
 
           ! Now we start running back through the main residual code:
           call resScale_b
@@ -699,7 +698,7 @@ contains
     if (oversetPresent) then 
        do sps=1, nTimeIntervalsSpectral
           do nn=1,nDom
-             call setPointers_d(nn, 1, sps)
+             call setPointers_b(nn, 1, sps)
              call applyAllBC_block_b(.True.)
              
              if (equations == RANSequations) then 
@@ -729,7 +728,7 @@ contains
        xSurfd = zero
        
        domainLoop2: do nn=1,nDom
-          call setPointers_d(nn, 1, sps)
+          call setPointers_b(nn, 1, sps)
           call applyAllBC_block_b(.True.)
           
           if (equations == RANSequations) then 
@@ -799,7 +798,7 @@ contains
     call exchangecoor_b(1)
     do nn=1,nDom
        do sps=1,nTimeIntervalsSpectral
-          call setPointers_d(nn, 1, sps)
+          call setPointers_b(nn, 1, sps)
           call xhalo_block_b()
        end do
     end do
@@ -830,7 +829,7 @@ contains
        do sps=1,nTimeIntervalsSpectral
 
           ! Set pointers and derivative pointers
-          call setPointers_d(nn, 1, sps)
+          call setPointers_b(nn, 1, sps)
           ! Set the wbar accumulation
           do k=2, kl
              do j=2, jl

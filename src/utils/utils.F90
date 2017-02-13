@@ -3567,6 +3567,16 @@ end subroutine cross_prod
 
   end subroutine setPointers
 
+  subroutine setPointers_b(nn, level, sps)
+    use constants
+    implicit none
+    integer(kind=intType), intent(in) :: nn,level,sps
+
+    ! Alias for setPonters_d
+    call setPointers_d(nn, level, sps)
+
+  end subroutine setPointers_b
+
   ! Set the pointers for the derivative values AND the normal pointers
   subroutine setPointers_d(nn, level, sps)
 

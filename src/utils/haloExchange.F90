@@ -2046,7 +2046,7 @@ contains
     use inputTimeSpectral
     use iteration
     use flowUtils_b, only : computeETotBlock_b
-    use utils, only : setPointers_d, getCorrectForK
+    use utils, only : setPointers_b, getCorrectForK
     implicit none
     !
     !      Subroutine arguments.
@@ -2089,7 +2089,7 @@ contains
           ! setup here correctly to only update the overset cells,
           ! just do the whole block, for every block
           do ll=1, nTimeIntervalsSpectral
-             call setPointers_d(nn, level, ll)
+             call setPointers_b(nn, level, ll)
              call computeETotBlock_b(2, il, 2, jl, 2, kl, correctForK)
           end do
        enddo domains
@@ -3305,7 +3305,7 @@ contains
     use BCPointers, only : sFaced, ww1d, ww2d, pp1d, pp2d, xxd
     use overset, only : zipperMeshes, zipperMesh
     use surfaceFamilies, only : familyExchange, BCFamExchange
-    use utils, only : setPointers_d, setBCPointers_d, EChk
+    use utils, only : setPointers_b, setBCPointers_d, EChk
     implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -3368,7 +3368,7 @@ contains
 
        ii = 0
        domainLoop: do nn=1, nDom
-          call setPointers_d(nn, 1, sps)
+          call setPointers_b(nn, 1, sps)
           bocoLoop: do mm=1, nBocos
              if (BCType(mm) == SubsonicInflow .or. &
                   BCType(mm) == SubsonicOutflow .or. &
@@ -3623,7 +3623,7 @@ contains
     use BCPointers, only : xxd
     use overset, only : zipperMeshes, zipperMesh
     use surfaceFamilies, only : familyExchange, BCFamExchange
-    use utils, only : setPointers_d, setBCPointers_d, EChk, isWallType
+    use utils, only : setPointers_b, setBCPointers_d, EChk, isWallType
     implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -3679,7 +3679,7 @@ contains
 
        ii = 0
        domainLoop: do nn=1, nDom
-          call setPointers_d(nn, 1, sps)
+          call setPointers_b(nn, 1, sps)
           bocoLoop: do mm=1, nBocos
              if (isWallType(BCType(mm))) then  
                 call setBCPointers_d(mm, .True.)
