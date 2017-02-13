@@ -956,6 +956,7 @@ class ADFLOW(AeroSolver):
                 funcs[key] = res[g[0]]
 
         return
+
     def evalFunctionsSens(self, aeroProblem, funcsSens, evalFuncs=None):
         """
         Evaluate the sensitivity of the desired functions given in
@@ -1861,7 +1862,7 @@ class ADFLOW(AeroSolver):
 
         # We should return the list of results that is the same as the
         # possibleObjectives list
-        self.adflow.surfaceintegrations.getsolution(1, famList)
+        self.adflow.surfaceintegrations.getsolutionwrap(famList)
 
         funcVals = self.adflow.costfunctions.funcvalues
         ADflowsolution = {

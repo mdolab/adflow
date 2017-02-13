@@ -45,6 +45,11 @@ module surfaceIntegrations
 contains
 
   subroutine integrateSurfaces(localValues, famList)
+    !--------------------------------------------------------------
+    ! Manual Differentiation Warning: Modifying this routine requires
+    ! modifying the hand-written forward and reverse routines. 
+    ! --------------------------------------------------------------
+    !
     ! This is a shell routine that calls the specific surface
     ! integration routines. Currently we have have the forceAndMoment
     ! routine as well as the flow properties routine. This routine
@@ -98,6 +103,11 @@ contains
   end subroutine integrateSurfaces
 
   subroutine integrateSurfacesWithGathered(globalCFValues, localValues, famList) 
+    !--------------------------------------------------------------
+    ! Manual Differentiation Warning: Modifying this routine requires
+    ! modifying the hand-written forward and reverse routines. 
+    ! --------------------------------------------------------------
+    !
     ! This is a shell routine that calls the specific surface
     ! integration routines, which need access to gethered values. This routine
     ! takes care of setting pointers, while the actual computational
@@ -151,10 +161,174 @@ contains
     end do bocos
   end subroutine integrateSurfacesWithGathered
 
+  subroutine getCostFunctions(globalVals)
+
+    use constants
+    use costFunctions
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use flowVarRefState, only : pRef, rhoRef, tRef, LRef, gammaInf
+    use inputPhysics, only : liftDirection, dragDirection, surfaceRef, machCoef, lengthRef
+    use inputTSStabDeriv, only : TSstability
+    implicit none
+
+    ! Input 
+    real(kind=realType), intent(in), dimension(nLocalValues, nTimeIntervalsSpectral) :: globalVals
+
+    ! Working
+    real(kind=realType) :: fact, factMoment, ovrNTS
+    real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, cForce, cMoment
+    real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgPs, mFlow, mFlow2, mAvgMn, sigmaMN, sigmaPtot
+    integer(kind=intType) :: sps
+    real(kind=realType), dimension(8):: dcdq, dcdqdot
+    real(kind=realType), dimension(8):: dcdalpha,dcdalphadot
+    real(kind=realType), dimension(8):: Coef0
+
+    ! Factor used for time-averaged quantities.
+    ovrNTS = one/nTimeIntervalsSpectral
+
+    ! Sum pressure and viscous contributions
+    Force = globalvals(iFp:iFp+2, :) + globalvals(iFv:iFv+2, :)
+    Moment = globalvals(iMp:iMp+2, :) + globalvals(iMv:iMv+2, :)
+
+    fact = two/(gammaInf*MachCoef*MachCoef &
+         *surfaceRef*LRef*LRef*pRef)
+    cForce = fact*force
+
+    ! Moment factor has an extra lengthRef
+    fact = fact/(lengthRef*LRef)
+    cMoment = fact*Moment
+
+    ! Zero values since we are summing.
+    funcValues = zero
+
+    ! Here we finally assign the final function values
+    !$AD II-LOOP
+    do sps=1, nTimeIntervalsSpectral
+       funcValues(costFuncForceX) = funcValues(costFuncForceX) + ovrNTS*force(1, sps)
+       funcValues(costFuncForceY) = funcValues(costFuncForceY) + ovrNTS*force(2, sps)
+       funcValues(costFuncForceZ) = funcValues(costFuncForceZ) + ovrNTS*force(3, sps)
+
+       funcValues(costFuncForceXCoef) = funcValues(costFuncForceXCoef) + ovrNTS*cForce(1, sps)
+       funcValues(costFuncForceYCoef) = funcValues(costFuncForceYCoef) + ovrNTS*cForce(2, sps)
+       funcValues(costFuncForceZCoef) = funcValues(costFuncForceZCoef) + ovrNTS*cForce(3, sps)
+
+       funcValues(costFuncMomX) = funcValues(costFuncMomX) + ovrNTS*moment(1, sps)
+       funcValues(costFuncMomY) = funcValues(costFuncMomY) + ovrNTS*moment(2, sps)
+       funcValues(costFuncMomZ) = funcValues(costFuncMomZ) + ovrNTS*moment(3, sps)
+
+       funcValues(costFuncMomXCoef) = funcValues(costFuncMomXCoef) + ovrNTS*cMoment(1, sps)
+       funcValues(costFuncMomYCoef) = funcValues(costFuncMomYCoef) + ovrNTS*cMoment(2, sps)
+       funcValues(costFuncMomZCoef) = funcValues(costFuncMomZCoef) + ovrNTS*cMoment(3, sps)
+
+       funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + ovrNTS*globalVals(iSepSensor, sps)
+       funcValues(costFuncCavitation) = funcValues(costFuncCavitation) + ovrNTS*globalVals(iCavitation, sps)
+       funcValues(costFuncSepSensorAvgX) = funcValues(costFuncSepSensorAvgX) + ovrNTS*globalVals(iSepAvg  , sps)
+       funcValues(costFuncSepSensorAvgY) = funcValues(costFuncSepSensorAvgY) + ovrNTS*globalVals(iSepAvg+1, sps)
+       funcValues(costFuncSepSensorAvgZ) = funcValues(costFuncSepSensorAvgZ) + ovrNTS*globalVals(iSepAvg+2, sps)
+       funcValues(costFuncPk) = funcValues(costFuncPk) + ovrNTS*globalVals(iPk, sps)
+
+       ! Mass flow like objective
+       mFlow = globalVals(iMassFlow, sps)
+       if (mFlow /= zero) then 
+          mAvgPtot = globalVals(iMassPtot, sps)/mFlow
+          mAvgTtot = globalVals(iMassTtot, sps)/mFlow
+          mAvgPs   = globalVals(iMassPs, sps)/mFlow
+          mAvgMn   = globalVals(iMassMn, sps)/mFlow
+          mFlow2 = globalVals(iMassFlow, sps)*sqrt(Pref/rhoRef)
+          sigmaMN = sqrt(globalvals(iSigmaMN, sps)/mFlow)
+          sigmaPtot = sqrt(globalvals(iSigmaPtot, sps)/mFlow)
+
+       else
+          mAvgPtot = zero
+          mAvgTtot = zero
+          mAvgPs = zero
+          mAvgMn = zero
+          sigmaMN = zero
+          sigmaPtot = zero
+          mFlow2 = zero
+       end if
+
+       funcValues(costFuncMdot)      = funcValues(costFuncMdot) + ovrNTS*mFlow
+       funcValues(costFuncMavgPtot ) = funcValues(costFuncMavgPtot) + ovrNTS*mAvgPtot
+       funcValues(costFuncMavgPtot)  = funcValues(costFuncMavgTtot) + ovrNTS*mAvgTtot
+       funcValues(costFuncMavgPs)    = funcValues(costFuncMAvgPs) + ovrNTS*mAvgPs
+       funcValues(costFuncMavgMn)    = funcValues(costFuncMAvgMn) + ovrNTS*mAvgMn
+       funcValues(costFuncSigmaMN) = funcValues(costFuncSigmaMN) + ovrNTS*sigmaMN
+       funcValues(costFuncSigmaPtot) = funcValues(costFuncSigmaPtot) + ovrNTS*sigmaPtot
+       funcValues(costFuncPk) = funcValues(costFuncPk) + ovrNTS*globalVals(iPk, sps)
+
+       ! Bending moment calc - also broken. 
+       ! call computeRootBendingMoment(cForce, cMoment, liftIndex, bendingMoment)
+       ! funcValues(costFuncBendingCoef) = funcValues(costFuncBendingCoef) + ovrNTS*bendingMoment
+
+    end do
+
+    ! Lift and Drag (coefficients): Dot product with the lift/drag direction.
+    funcValues(costFuncLift) = &
+         funcValues(costFuncForceX)*liftDirection(1) + &
+         funcValues(costFuncForceY)*liftDirection(2) + &
+         funcValues(costFuncForceZ)*liftDirection(3)
+
+    funcValues(costFuncDrag) = &
+         funcValues(costFuncForceX)*dragDirection(1) + &
+         funcValues(costFuncForceY)*dragDirection(2) + &
+         funcValues(costFuncForceZ)*dragDirection(3)
+
+    funcValues(costFuncLiftCoef) = &
+         funcValues(costFuncForceXCoef)*liftDirection(1) + &
+         funcValues(costFuncForceYCoef)*liftDirection(2) + &
+         funcValues(costFuncForceZCoef)*liftDirection(3)
+
+    funcValues(costFuncDragCoef) = &
+         funcValues(costFuncForceXCoef)*dragDirection(1) + &
+         funcValues(costFuncForceYCoef)*dragDirection(2) + &
+         funcValues(costFuncForceZCoef)*dragDirection(3)
+
+    ! -------------------- Time Spectral Objectives ------------------
+
+    if (TSSTability) then 
+       print *,'Error: TSStabilityDerivatives are *BROKEN*. They need to be '&
+            &'completely verifed from scratch'
+       stop
+
+       call computeTSDerivatives(force, moment, coef0, dcdalpha, &
+            dcdalphadot, dcdq, dcdqdot)
+
+       funcValues( costFuncCl0  )       = coef0(1)
+       funcValues( costFuncCd0 )        = coef0(2)
+       funcValues( costFuncCFy0 )       = coef0(4)
+       funcValues( costFuncCm0 )        = coef0(8)
+
+       funcValues( costFuncClAlpha)     = dcdalpha(1)
+       funcValues( costFuncCdAlpha)     = dcdalpha(2)
+       funcValues( costFuncCFyAlpha)    = dcdalpha(4)
+       funcValues( costFuncCmzAlpha)    = dcdalpha(8)
+
+       funcValues( costFuncClAlphaDot)     = dcdalphadot(1)
+       funcValues( costFuncCdAlphaDot)     = dcdalphadot(2)
+       funcValues( costFuncCFyAlphaDot)    = dcdalphadot(4)
+       funcValues( costFuncCmzAlphaDot)    = dcdalphadot(8)
+
+       funcValues( costFuncClq)         = dcdq(1)
+       funcValues( costFuncCdq)         = dcdq(2)
+       funcValues( costFuncCfyq)        = dcdq(4)
+       funcValues( costFuncCmzq)        = dcdq(8)
+
+       funcValues( costFuncClqDot)         = dcdqdot(1)
+       funcValues( costFuncCdqDot)         = dcdqdot(2)
+       funcValues( costFuncCfyqDot)        = dcdqdot(4)
+       funcValues( costFuncCmzqDot)        = dcdqdot(8)
+    end if
+
+  end subroutine getCostFunctions
+
 #ifndef USE_TAPENADE
 #ifndef USE_COMPLEX
   subroutine integrateSurfaces_d(localValues, localValuesd, famList)
-
+    !------------------------------------------------------------------------
+    ! Manual Differentiation Warning: This routine is differentiated by hand.
+    ! -----------------------------------------------------------------------
+ 
     ! Forward mode linearization of integrateSurfaces
     use constants
     use blockPointers, only : nBocos, BCData, BCType
@@ -196,8 +370,11 @@ contains
   end subroutine integrateSurfaces_d
 
   subroutine integrateSurfaces_b(localValues, localValuesd, famList)
+    !------------------------------------------------------------------------
+    ! Manual Differentiation Warning: This routine is differentiated by hand.
+    ! -----------------------------------------------------------------------
 
-    ! Forward mode linearization of integrateSurfaces
+    ! Reverse mode linearization of integrateSurfaces
     use constants
     use blockPointers, only : nBocos, BCData, BCType
     use utils, only : setBCPointers_d, isWallType
@@ -1275,6 +1452,10 @@ contains
 #ifndef USE_TAPENADE
 
   subroutine integrateZippers(localValues, famList, sps)
+    !--------------------------------------------------------------
+    ! Manual Differentiation Warning: Modifying this routine requires
+    ! modifying the hand-written forward and reverse routines. 
+    ! --------------------------------------------------------------
 
     ! Integrate over the triangles formed by the zipper mesh. This
     ! will perform both all necesasry zipper integrations. Currently
@@ -1353,6 +1534,10 @@ contains
   end subroutine integrateZippers
 
   subroutine integrateZippersWithGathered(globalCFvals, localValues, famList, sps)
+    !--------------------------------------------------------------
+    ! Manual Differentiation Warning: Modifying this routine requires
+    ! modifying the hand-written forward and reverse routines. 
+    ! --------------------------------------------------------------
 
     ! Integrate over the triangles formed by the zipper mesh. This
     ! will perform both all necesasry zipper integrations. Currently
@@ -1415,6 +1600,9 @@ contains
   end subroutine integrateZippersWithGathered
 #ifndef USE_COMPLEX
   subroutine integrateZippers_d(localValues, localValuesd, famList, sps)
+    !------------------------------------------------------------------------
+    ! Manual Differentiation Warning: This routine is differentiated by hand.
+    ! -----------------------------------------------------------------------
 
     ! Forward mode linearization of the zipper integration. 
 
@@ -1490,6 +1678,9 @@ contains
   end subroutine integrateZippers_d
 
   subroutine integrateZippers_b(localValues, localValuesd, famList, sps)
+    !------------------------------------------------------------------------
+    ! Manual Differentiation Warning: This routine is differentiated by hand.
+    ! -----------------------------------------------------------------------
 
     ! Reverse mode linearization of the zipper integration. 
 
@@ -1581,265 +1772,271 @@ contains
     end if
   end subroutine integrateZippers_b
 #endif
-  subroutine computeAeroCoef(globalCFVals,sps, famList)
-    !
-    !      Compute the aerodynamic coefficients from the force and moment
-    !      produced by the pressure and shear stresses on the body walls:
-    !
+
+  subroutine getSolutionWrap(famList)
+
     use constants
-    use blockPointers
-    use communication, only : adflow_comm_world, myid
-    use inputPhysics
-    use iteration
     use costFunctions
-    use inputTimeSpectral
-    use flowVarRefState
-    use costFunctions, only : nLocalValues
-    use overset, only : oversetPresent
-    use utils, only : EChk, setPointers
+    use inputTimeSpectral , only : nTimeIntervalsSpectral
+
+    ! Input/output Variables
+    integer(kind=intType), dimension(:), intent(in) :: famList
+    real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: globalVal
+
+    call getSolution(famList)
+
+  end subroutine getSolutionWrap
+
+  subroutine getSolution(famList, globalValues)
+    !--------------------------------------------------------------
+    ! Manual Differentiation Warning: Modifying this routine requires
+    ! modifying the hand-written forward and reverse routines. 
+    ! --------------------------------------------------------------
+
+    use constants
+    use costFunctions
+    use inputTimeSpectral , only : nTimeIntervalsSpectral
+    use communication, only : adflow_comm_world
+    use blockPointers, only : nDom
+    use utils, only : setPointers, EChk
     implicit none
 
-    ! Input/Ouput Variables
-    integer(kind=intType), intent(in) :: sps
-    real(kind=realType), intent(out), dimension(nCostFunction)::globalCFVals
+    ! Input/Output Variables
     integer(kind=intType), dimension(:), intent(in) :: famList
+    real(kind=realType), optional, intent(out), &
+         dimension(nLocalValues, nTimeIntervalsSpectral) :: globalValues
 
-    !      Local variables.
-    integer(kind=intType) :: nn, ierr
-    real(kind=realType), dimension(3) :: force, moment, cForce, cMoment
-    real(kind=realType) :: fact, cd, cl, lift, drag
-    real(kind=realType) ::localValues(nLocalValues)
-    real(kind=realType), dimension(nCostFunction)::localCFVals
+    ! Working
+    real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVal, globalVal
+    integer(kind=intType) :: nn, sps, ierr
 
-    localValues = zero
-    domains: do nn=1,nDom
-       call setPointers(nn,1_intType,sps)
-       call integrateSurfaces(localValues, famList)
+    localVal = zero
+    do sps=1, nTimeIntervalsSpectral
+       ! Integrate the normal block surfaces. 
+       do nn=1, nDom
+          call setPointers(nn, 1, sps)
+          call integrateSurfaces(localval(:, sps), famList)
+       end do
 
-    end do domains
+       ! Integrate any zippers we have
+       call integrateZippers(localVal(:, sps), famList, sps)
 
-    if (oversetPresent) then
-       call integrateZippers(localValues, famList, sps)
+       ! Integrate any user-supplied planes as have as well. 
+       !call integrateUserSurfaces(localVal(:, sps), famList, sps)
+    end do
+
+    ! Now we need to reduce all the cost functions
+    call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
+         MPI_SUM, adflow_comm_world, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    ! Call the final routine that will comptue all of our functions of
+    ! interest.
+    call getCostFunctions(globalVal)
+
+    ! ! Secondary loop over the blocks/zippers/planes for calculations
+    ! ! that require pre-computed gathered values in the computation itself.
+    ! do sps=1, nTimeIntervalsSpectral
+    !   do nn=1, nDom
+    !     call setPointers(nn, 1, sps)
+    !     call integrateSurfacesWithGathered(globalVal(:, sps), localVal(:, sps), famList)
+    !   end do 
+
+    !    ! Integrate any zippers we have
+    !    call integrateZippersWithGathered(globalVal(:, sps), localVal(:, sps), famList, sps)
+
+    !    ! Integrate any user-supplied planes as have as well. 
+    !    !call integrateUserSurfacesWithGathered(globalVal(:, sps), localVal(:, sps), famList, sps)
+    ! end do 
+
+     ! All reduce again. Technially just need the additionally
+     ! computed gathered values, but do all anyway.
+    call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
+         MPI_SUM, adflow_comm_world, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    ! second pass through so the gathered computations are correct.
+    call getCostFunctions(globalVal)
+
+    if (present(globalValues)) then 
+       globalValues = globalVal
     end if
 
-    ! Integrate any user-supplied planes as well:
-    call evalUserIntegrationSurfaces(localvalues, famList, sps)
+  end subroutine getSolution
 
-    ! Sum pressure and viscous contributions from the walls, and
-    ! pressure and momentum contributions from the inflow/outflow
-    ! conditions. 
-    Force = localValues(iFp:iFp+2) + localValues(iFv:iFv+2) + &
-         localValues(iFlowFp:iFlowFp+2) + localValues(iFlowFm:iFlowFm+2)
-    Moment = localValues(iMp:iMp+2) + localValues(iMv:iMv+2) + &
-         localValues(iFlowMp:iFlowMp+2) + localValues(iFlowMm:iFlowMm+2)
+#ifndef USE_TAPENADE
+  subroutine getSolution_d(famList)
+    !------------------------------------------------------------------------
+    ! Manual Differentiation Warning: This routine is differentiated by hand.
+    ! -----------------------------------------------------------------------
 
-    fact = two/(gammaInf*MachCoef*MachCoef &
-         *surfaceRef*LRef*LRef*pRef)
-    cForce = fact*force
-
-    ! Moment factor has an extra lengthRef
-    fact = fact/(lengthRef*LRef)
-    cMoment = fact*Moment
-
-    ! Get Lift coef and Drag coef
-    CD =  cForce(1)*dragDirection(1) &
-         + cForce(2)*dragDirection(2) &
-         + cForce(3)*dragDirection(3)
-
-    CL =  cForce(1)*liftDirection(1) &
-         + cForce(2)*liftDirection(2) &
-         + cForce(3)*liftDirection(3)
-
-    Drag = Force(1)*dragDirection(1) &
-         + Force(2)*dragDirection(2) &
-         + Force(3)*dragDirection(3)
-
-    Lift=  Force(1)*liftDirection(1) &
-         + Force(2)*liftDirection(2) &
-         + Force(3)*liftDirection(3)
-
-    localCFVals(costFuncLift) = Lift
-    localCFVals(costFuncDrag) = Drag
-    localCFVals(costFuncLiftCoef) = Cl
-    localCFVals(costFuncDragCoef) = Cd
-    localCFVals(costFuncForceX) = Force(1)
-    localCFVals(costFuncForceY) = Force(2)
-    localCFVals(costFuncForceZ) = Force(3)
-    localCFVals(costFuncForceXCoef) = cForce(1)
-    localCFVals(costFuncForceYCoef) = cForce(2)
-    localCFVals(costFuncForceZCoef) = cForce(3)
-    localCFVals(costFuncMomX) = moment(1)
-    localCFVals(costFuncMomY) = moment(2)
-    localCFVals(costFuncMomZ) = moment(3)
-    localCFVals(costFuncMomXCoef) = cmoment(1)
-    localCFVals(costFuncMomYCoef) = cmoment(2)
-    localCFVals(costFuncMomZCoef) = cmoment(3)
-    localCFVals(costFuncSepSensor) = localValues(iSepSensor)
-    localCFVals(costFuncSepSensorAvgX) = localValues(iSepAvg+0)
-    localCFVals(costFuncSepSensorAvgY) = localValues(iSepAvg+1)
-    localCFVals(costFuncSepSensorAvgZ) = localValues(iSepAvg+2)
-    localCFVals(costFuncCavitation) = localValues(iCavitation)
-    localCFVals(costFuncMdot) = localValues(iMassFlow)
-    localCFVals(costFuncMavgPtot) = localValues(iMassPtot)
-    localCFVals(costFuncMavgTtot) = localValues(iMassTtot)
-    localCFVals(costFuncMavgPs) = localValues(iMassPs)
-    localCFVals(costFuncMavgMN) = localValues(iMassMN)
-    localCFVals(costFuncPk) = localValues(iPk)
-
-    ! Now we will mpi_allReduce them into globalCFVals
-    call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, adflow_real, &
-         mpi_sum, ADflow_comm_world, ierr)
-
-    globalCFVals(costFuncMavgPtot) = globalCFVals(costFuncMavgPtot)/globalCFVals(costFuncMdot)
-    globalCFVals(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)/globalCFVals(costFuncMdot)
-    globalCFVals(costFuncMavgPs) = globalCFVals(costFuncMavgPs)/globalCFVals(costFuncMdot)
-    globalCFVals(costFuncMavgMN) = globalCFVals(costFuncMavgMN)/globalCFVals(costFuncMdot)
-
-    ! ! redo the loop over the blocks so we can compute the distortion
-    ! domainsAgain: do nn=1,nDom
-    !    call setPointers(nn,1_intType,sps)
-    !    call integrateSurfacesWithGathered(globalCFVals, localValues, famList)
-    ! end do domainsAgain
-
-
-    ! if (oversetPresent) then
-    !    call integrateZippersWithGathered(globalCFVals, localValues, famList, sps)
-    ! end if
-
-    localCFVals(costFuncSigmaMN) = localValues(iSigmaMN)
-    localCFVals(costFuncSigmaPtot) = localValues(iSigmaPtot)
-    
-    ! Now reduce only the new values into the array
-    call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, adflow_real, &
-         mpi_sum, ADflow_comm_world, ierr)
-    ! redo all the final calcs on the global values after the second allgather
-    globalCFVals(costFuncMavgPtot) = globalCFVals(costFuncMavgPtot)/globalCFVals(costFuncMdot)
-    globalCFVals(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)/globalCFVals(costFuncMdot)
-    globalCFVals(costFuncMavgPs) = globalCFVals(costFuncMavgPs)/globalCFVals(costFuncMdot)
-    globalCFVals(costFuncMavgMN) = globalCFVals(costFuncMavgMN)/globalCFVals(costFuncMdot)
-    globalCFVals(costFuncSigmaMN) = sqrt(globalCFVals(costFuncSigmaMN)/globalCFVals(costFuncMdot))
-    globalCFVals(costFuncSigmaPtot) = sqrt(globalCFVals(costFuncSigmaPtot)/globalCFVals(costFuncMdot))
-
-  end subroutine computeAeroCoef
-
-  subroutine getSolution(sps, famList)
     use constants
     use costFunctions
     use inputTSStabDeriv, only : TSSTability
     use inputTimeSpectral , only : nTimeIntervalsSpectral
     use communication, only : adflow_comm_world
     use blockPointers, only : nDom
-    use utils, only : computeTSDerivatives, computeRootBendingMoment, getDirAngle
-    use inputPhysics, only : velDirFreeStream, liftDirection, dragDirection
+    use utils, only : setPointers_d, EChk
+    use surfaceIntegrations_d, only : getCostFunctions_d
+         
     implicit none
 
     ! Input Variables
-    integer(kind=intType) :: sps
     integer(kind=intType), dimension(:), intent(in) :: famList
 
-    !  Local variables.
-    real(kind=realType)   :: alpha, beta
-    real(kind=realType), dimension(8) ::  dcdq, dcdqdot
-    real(kind=realType), dimension(8) :: dcdalpha, dcdalphadot
-    real(kind=realType), dimension(8) :: Coef0
-    real(kind=realType), dimension(nCostFunction)::globalCFVals
-    real(kind=realType) :: localValues(nLocalValues)
+    ! Working
+    real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVal, globalVal
+    real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVald, globalVald
+    integer(kind=intType) :: nn, sps, ierr
 
-    real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment
-    real(kind=realType)::bendingMoment,bendingSum, cf(3), cm(3)
-    integer(kind=intType) :: i
+    localVal = zero
+    localVald = zero
 
-    funcValues(:) = 0.0
+    do sps=1, nTimeIntervalsSpectral
+       ! Integrate the normal block surfaces. 
+       do nn=1, nDom
+          call setPointers_d(nn, 1, sps)
+          call integrateSurfaces_d(localval(:, sps), localVald(:, sps), famList)
+       end do
 
-    bendingSum = 0.0
-    do i =1,nTimeIntervalsSpectral
-       call computeAeroCoef(globalCFVals,i, famList)
+       ! Integrate any zippers we have
+       call integrateZippers_d(localval(:, sps), localVald(:, sps), famList, sps)
 
-       force(1, i) = globalCFVals(costFuncForceX)
-       force(2, i) = globalCFVals(costFuncForceY)
-       force(3, i) = globalCFVals(costFuncForceZ)
-       moment(1, i) = globalCFVals(costFuncMomX)
-       moment(2, i) = globalCFVals(costFuncMomY)
-       moment(3, i) = globalCFVals(costFuncMomZ)
-
-       cf = (/globalCFVals(costFuncForceXCoef), &
-            globalCFVals(costFuncForceYCoef), &
-            globalCFVals(costFuncForceZCoef)/)
-
-       cm = (/globalCFVals(costFuncMomXCoef), &
-            globalCFVals(costFuncMomYCoef), &
-            globalCFVals(costFuncMomZCoef)/)
-       call computeRootBendingMoment(cf, cm, bendingMoment)
-       bendingsum = bendingsum+bendingMoment
+       ! Integrate any user-supplied planes as have as well. 
+       !call integrateUserSurfaces_d(localVal(:, sps), localVald(:, sps), famList, sps)
     end do
 
-    call computeAeroCoef(globalCFVals, sps, famList)
+    ! Now we need to reduce all the cost functions
+    call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
+         MPI_SUM, adflow_comm_world, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
 
-    funcValues(costFuncBendingCoef)=bendingSum/nTimeIntervalsSpectral
+    ! Now we need to reduce all the cost functions
+    call mpi_allreduce(localvald, globalVald, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
+         MPI_SUM, adflow_comm_world, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
 
-    funcValues(costFuncLift) = globalCFVals(costFuncLift)
-    funcValues(costFuncDrag) = globalCFVals(costFuncDrag)
-    funcValues(costFuncLiftCoef) = globalCFVals(costFuncLiftCoef)
-    funcValues(costFuncDragCoef) = globalCFVals(costFuncDragCoef)
-    funcValues(costFuncForceX) = globalCFVals(costFuncForceX)
-    funcValues(costFuncForceY) = globalCFVals(costFuncForceY)
-    funcValues(costFuncForceZ) = globalCFVals(costFuncForceZ)
-    funcValues(costFuncForceXCoef) = globalCFVals(costFuncForceXCoef)
-    funcValues(costFuncForceYCoef) = globalCFVals(costFuncForceYCoef)
-    funcValues(costFuncForceZCoef) = globalCFVals(costFuncForceZCoef)
-    funcValues(costFuncMomX) = globalCFVals(costFuncMomX)
-    funcValues(costFuncMomY) = globalCFVals(costFuncMomY)
-    funcValues(costFuncMomZ) = globalCFVals(costFuncMomZ)
-    funcValues(costFuncMomXCoef) = globalCFVals(costFuncMomXCoef)
-    funcValues(costFuncMomYCoef) = globalCFVals(costFuncMomYCoef)
-    funcValues(costFuncMomZCoef) = globalCFVals(costFuncMomZCoef)
-    funcValues(costFuncSepSensor) = globalCFVals(costFuncSepSensor)
-    funcValues(costFuncSepSensorAvgX) = globalCFVals(costFuncSepSensorAvgX)
-    funcValues(costFuncSepSensorAvgY) = globalCFVals(costFuncSepSensorAvgY)
-    funcValues(costFuncSepSensorAvgZ) = globalCFVals(costFuncSepSensorAvgZ)
+    ! Call the final routine that will comptue all of our functions of
+    ! interest.
+    call getCostFunctions_d(globalVal, globalVald)
 
-    funcValues(costFuncCavitation) = globalCFVals(costFuncCavitation)
-    funcValues(costFuncMdot) = globalCFVals(costFuncMdot)
-    funcValues(costFuncMavgPtot) = globalCFVals(costFuncMavgPtot)
-    funcValues(costFuncMavgTtot) = globalCFVals(costFuncMavgTtot)
-    funcValues(costFuncMavgPs) = globalCFVals(costFuncMavgPs)
-    funcValues(costFuncMavgMN) = globalCFVals(costFuncMavgMN)
-    funcValues(costFuncSigmaMN) = globalCFVals(costFuncSigmaMN)
-    funcValues(costFuncSigmaPtot) = globalCFVals(costFuncSigmaPtot)
-    funcValues(costFuncPk) = globalCFVals(costFuncPk)
+    ! Secondary loop over the blocks/zippers/planes for calculations
+    ! that require pre-computed gathered values in the computation itself.
+    do sps=1, nTimeIntervalsSpectral
+      do nn=1, nDom
+        call setPointers_d(nn, 1, sps)
+        ! call integrateSurfacesWithGathered_d(globalVal(:, sps), globalVald(:, sps), &
+        !      localval(:, sps), localVald(:, sps), famList)
+      end do 
 
-    if(TSStability)then
+       ! Integrate any zippers we have
+       ! call integrateZippersWithGathered_d(globalVal(:, sps), globalVald(:, sps), & 
+       !      localVal(:, sps), localVald(:, sps), famList, sps)
 
-       call computeTSDerivatives(force, moment, coef0, dcdalpha, &
-            dcdalphadot, dcdq, dcdqdot)
+       ! Integrate any user-supplied planes as have as well. 
+       !call integrateUserSurfacesWithGathered_d(globalVal(:, sps), globalVald(:, sps), & 
+       ! localVal(:, sps), localVald(:, sps), famList, sps)
+    end do 
 
-       funcValues( costFuncCl0  )       = coef0(1)
-       funcValues( costFuncCd0 )        = coef0(2)
-       funcValues( costFuncCFy0 )       = coef0(4)
-       funcValues( costFuncCm0 )        = coef0(8)
+    ! Call the final routine that will comptue all of our functions of
+    ! interest.
+    call getCostFunctions_d(globalVal, globalVald)
 
-       funcValues( costFuncClAlpha)     = dcdalpha(1)
-       funcValues( costFuncCdAlpha)     = dcdalpha(2)
-       funcValues( costFuncCFyAlpha)    = dcdalpha(4)
-       funcValues( costFuncCmzAlpha)    = dcdalpha(8)
+     ! All reduce again. Technially just need the additionally
+     ! computed gathered values, but do all anyway.
+    call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
+         MPI_SUM, adflow_comm_world, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+    
+    call mpi_allreduce(localvald, globalVald, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
+         MPI_SUM, adflow_comm_world, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
 
-       funcValues( costFuncClAlphaDot)     = dcdalphadot(1)
-       funcValues( costFuncCdAlphaDot)     = dcdalphadot(2)
-       funcValues( costFuncCFyAlphaDot)    = dcdalphadot(4)
-       funcValues( costFuncCmzAlphaDot)    = dcdalphadot(8)
+    ! second pass through so the gathered computations are correct.
+    call getCostFunctions_d(globalVal, globalVald)
 
-       funcValues( costFuncClq)         = dcdq(1)
-       funcValues( costFuncCdq)         = dcdq(2)
-       funcValues( costFuncCfyq)        = dcdq(4)
-       funcValues( costFuncCmzq)        = dcdq(8)
+  end subroutine getSolution_d
 
-       funcValues( costFuncClqDot)         = dcdqdot(1)
-       funcValues( costFuncCdqDot)         = dcdqdot(2)
-       funcValues( costFuncCfyqDot)        = dcdqdot(4)
-       funcValues( costFuncCmzqDot)        = dcdqdot(8)
+  subroutine getSolution_b(famList)
+    ! -----------------------------------------------------------------------
+    ! Manual Differentiation Warning: This routine is differentiated by hand.
+    ! -----------------------------------------------------------------------
+    
+    use constants
+    use costFunctions
+    use communication, only : myid
+    use inputTSStabDeriv, only : TSSTability
+    use inputTimeSpectral , only : nTimeIntervalsSpectral
+    use communication, only : adflow_comm_world
+    use blockPointers, only : nDom
+    use utils, only : setPointers_d, EChk, setPointers
+    use surfaceIntegrations_b, only : getCostFunctions_b
+         
+    implicit none
+
+    ! Input Variables
+    integer(kind=intType), dimension(:), intent(in) :: famList
+
+    ! Working
+    real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVal, globalVal
+    real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVald, globalVald
+    integer(kind=intType) :: nn, sps, ierr
+
+
+    call getSolution(famList, globalVal)
+
+    ! ! Start the reverse chain. We *must* only run this on the root
+    ! ! processor. The reason is that the explict sensitivities like
+    ! ! liftDirection, Pref, etc, must be accounted for once, and not
+    ! ! nProc times. 
+    ! if (myid == 0) then 
+    !    call getCostFunctions_b(globalVal, globalVald)
+    !    localVald = globalVald
+    ! end if
+    
+    ! ! Now we need to bcast out the localValues to all procs. 
+    ! call mpi_bcast(localVald, nLocalValues*nTimeIntervalsSpectral, &
+    !      adflow_real, 0, adflow_comm_world, ierr)
+    ! call EChk(ierr, __FILE__, __LINE__)
+
+    ! ! Now we run the secondary gathered functions loop
+    ! do sps=1, nTimeIntervalsSpectral
+    !    do nn=1, nDom
+    !       call setPointers_d(nn, 1, sps)
+    !       !call integrateSurfacesWithGathered_b(globalVal(:, sps), localVal(:, sps), famList)
+    !    end do
+    !    !call integrateZippersWithGathered_b(globalVal(:, sps), globalVald(:, sps), & 
+    !    ! localVal(:, sps), localVald(:, sps), famList, sps)
+    !    !call integrateUserSurfacesWithGathered_b(globalVal(:, sps), globalVal(:, sps), & 
+    !    ! localVal(:, sps), localVal(:, sps), famList, sps)
+    ! end do 
+
+    if (myid == 0) then 
+       call getCostFunctions_b(globalVal, globalVald)
+       localVald = globalVald
     end if
-  end subroutine getSolution
+    
+    ! Now we need to bcast out the localValues to all procs. 
+    call mpi_bcast(localVald, nLocalValues*nTimeIntervalsSpectral, &
+         adflow_real, 0, adflow_comm_world, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
 
+    do sps=1, nTimeIntervalsSpectral
+       ! Integrate the normal block surfaces. 
+       do nn=1, nDom
+          call setPointers_d(nn, 1, sps)
+          call integrateSurfaces_b(localval(:, sps), localVald(:, sps), famList)
+       end do
+
+       ! Integrate any zippers we have
+       call integrateZippers_b(localVal(:, sps), localVald(:, sps), famList, sps)
+
+       ! Integrate any user-supplied planes as have as well. 
+       !call integrateUserSurfaces_b(localVal(:, sps), localVald(:, sps), famList, sps)
+    end do
+
+  end subroutine getSolution_b
+#endif
 
   subroutine addIntegrationSurface(pts, conn, famName, famID, nPts, nConn)
     ! Add a user-supplied integration surface. 
@@ -2532,7 +2729,7 @@ contains
     end do primalDualLoop
   end subroutine interpolateIntegrationSurfaces
 
-  subroutine commUsetIntegrationSurfaceVars(recvBuffer, varStart, varEnd, comm)
+  subroutine commUserIntegrationSurfaceVars(recvBuffer, varStart, varEnd, comm)
 
     use constants
     use block, onlY : flowDoms, nDom
@@ -2596,9 +2793,9 @@ contains
     call EChk(ierr,__FILE__,__LINE__)
     deallocate(sendBuffer)
 
-  end subroutine commUsetIntegrationSurfaceVars
+  end subroutine commUserIntegrationSurfaceVars
 
-  subroutine evalUserIntegrationSurfaces(localValues, famList, sps)
+  subroutine integrateUserSurfaces(localValues, famList, sps)
 
     use constants
     use block, onlY : flowDoms, nDom
@@ -2628,14 +2825,14 @@ contains
     ! vx, vy, vz, P and the x-coordinates
     
     domainLoop:do nn=1, nDom
-       flowDoms(nn, 1, 1)%realCommVars(1)%var => flowDoms(nn, 1, 1)%w(:, :, :, 1)
-       flowDoms(nn, 1, 1)%realCommVars(2)%var => flowDoms(nn, 1, 1)%w(:, :, :, 2)
-       flowDoms(nn, 1, 1)%realCommVars(3)%var => flowDoms(nn, 1, 1)%w(:, :, :, 3)
-       flowDoms(nn, 1, 1)%realCommVars(4)%var => flowDoms(nn, 1, 1)%w(:, :, :, 4)
-       flowDoms(nn, 1, 1)%realCommVars(5)%var => flowDoms(nn, 1, 1)%P(:, :, :)
-       flowDoms(nn, 1, 1)%realCommVars(6)%var => flowDoms(nn, 1, 1)%x(:, :, :, 1)
-       flowDoms(nn, 1, 1)%realCommVars(7)%var => flowDoms(nn, 1, 1)%x(:, :, :, 2)
-       flowDoms(nn, 1, 1)%realCommVars(8)%var => flowDoms(nn, 1, 1)%x(:, :, :, 3)
+       flowDoms(nn, 1, sps)%realCommVars(1)%var => flowDoms(nn, 1, sps)%w(:, :, :, 1)
+       flowDoms(nn, 1, sps)%realCommVars(2)%var => flowDoms(nn, 1, sps)%w(:, :, :, 2)
+       flowDoms(nn, 1, sps)%realCommVars(3)%var => flowDoms(nn, 1, sps)%w(:, :, :, 3)
+       flowDoms(nn, 1, sps)%realCommVars(4)%var => flowDoms(nn, 1, sps)%w(:, :, :, 4)
+       flowDoms(nn, 1, sps)%realCommVars(5)%var => flowDoms(nn, 1, sps)%P(:, :, :)
+       flowDoms(nn, 1, sps)%realCommVars(6)%var => flowDoms(nn, 1, sps)%x(:, :, :, 1)
+       flowDoms(nn, 1, sps)%realCommVars(7)%var => flowDoms(nn, 1, sps)%x(:, :, :, 2)
+       flowDoms(nn, 1, sps)%realCommVars(8)%var => flowDoms(nn, 1, sps)%x(:, :, :, 3)
     end do domainLoop
 
     masterLoop: do iSurf=1, nUserIntSurfs
@@ -2655,8 +2852,8 @@ contains
              allocate(recvBuffer2(0))
           end if
           
-          call commUsetIntegrationSurfaceVars(recvBuffer1, 1, 5, surf%faceComm)
-          call commUsetIntegrationSurfaceVars(recvBuffer2, 6, 8, surf%nodeComm)
+          call commUserIntegrationSurfaceVars(recvBuffer1, 1, 5, surf%faceComm)
+          call commUserIntegrationSurfaceVars(recvBuffer2, 6, 8, surf%nodeComm)
           
           ! *Finally* we can do the actual integrations
           if (myid == 0)  then 
@@ -2741,7 +2938,7 @@ contains
        end if famInclude
     end do masterLoop
 
-  end subroutine evalUserIntegrationSurfaces
+  end subroutine integrateUserSurfaces
 
   subroutine qsortInterpPtType(arr, nn)
 

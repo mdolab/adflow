@@ -358,8 +358,7 @@ python module libadflow
        end subroutine tecplotio
 
        module surfaceintegrations
-         subroutine getsolution(sps,famlist) ! in :test:surfaceIntegrations.F90:surfaceintegrations
-           integer(kind=inttype) :: sps
+         subroutine getsolutionwrap(famlist) ! in :test:surfaceIntegrations.F90:surfaceintegrations
            integer(kind=inttype) dimension(:),intent(in) :: famlist
          end subroutine getsolution
          
@@ -374,9 +373,6 @@ python module libadflow
 
          subroutine interpolateintegrationsurfaces
          end subroutine interpolateintegrationsurfaces
-
-         subroutine evaluserintegrationsurfaces()
-         end subroutine evaluserintegrationsurfaces
 
        end module surfaceintegrations
 
