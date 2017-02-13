@@ -2212,7 +2212,7 @@ contains
          ie, je, ke, fringes, scratch, flowDomsd, xd
     use haloExchange, only : whalo1to1RealGeneric_b
     use oversetUtilities_b, only : newtonUpdate_b, fracToWeights_b, newtonUpdate, fracToWeights
-    use utils, only : setPointers_d
+    use utils, only : setPointers_b
 
     implicit none
 
@@ -2423,7 +2423,7 @@ contains
 
     ! Finaly we can push back to the local x
     do nn=1, nDom
-       call setPointers_d(nn, level, sps)
+       call setPointers_b(nn, level, sps)
 
        do k=2,kl
           do j=2, jl
