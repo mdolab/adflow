@@ -1,9 +1,9 @@
 module BCData
   use constants
   use BCDataMod
-  
+
 contains
- ! ---------------------------------------------------------------
+  ! ---------------------------------------------------------------
   ! Routines that set the appropriate variable names for BCs with
   ! BCdata. 
 
@@ -942,7 +942,7 @@ contains
     real(kind=realType) :: mult, trans
 
     character(len=maxStringLen) :: errorMessage
-    
+
     ! Write an error message and terminate if it was not
     ! possible to determine the static pressure.
 
@@ -1067,7 +1067,7 @@ contains
                 BCData(boco)%ps(i,j)   = PinfCorr
              enddo
           enddo
-          
+
           ! Set the turbulence values
           allTurbPresent = setBCVarTurb(7_intType, boco, bcVarArray, &
                iBeg, iEnd, jBeg, jEnd, BCData(boco)%turbInlet)
@@ -1317,24 +1317,24 @@ contains
 
     nuRef = muRef/rhoRef
     select case (turbModel)
-       
+
     case (spalartAllmaras, spalartAllmarasEdwards)
        ref(itu1) = nuRef
 
     case (komegaWilcox, komegaModified, menterSST)
        ref(itu1) = pRef/rhoRef
        ref(itu2) = ref(itu1)/nuRef
-       
+
     case (ktau)
        ref(itu1) = pRef/rhoRef
        ref(itu2) = nuRef/ref(itu1)
-       
+
     case (v2f)
        ref(itu1) = pRef/rhoRef
        ref(itu4) = ref(itu1)/nuRef
        ref(itu2) = ref(itu1)*ref(itu4)
        ref(itu3) = ref(itu1)
-       
+
     end select
 
     ! Loop over the number of turbulent variables. mm is the counter
@@ -1384,7 +1384,10 @@ contains
 
   subroutine setBCData(bcDataNamesIn, bcDataIn, famLists, sps, &
        nVar, nFamMax)
-
+    !--------------------------------------------------------------
+    ! Manual Differentiation Warning: Modifying this routine requires
+    ! modifying the hand-written forward and reverse routines. 
+    ! --------------------------------------------------------------
     use constants
     use cgnsNames
     use blockPointers, only : BCData, nDom, nBocos, nBKGlobal, & 
@@ -1446,7 +1449,7 @@ contains
                         'This is not a valid boundary condtion for setBCData')
                 end select
                 call insertToDataSet(bcDataNamesIn, bcDataIn)
-                
+
              end if famInclude
           end do bocoLoop
        end do varLoop
@@ -1455,7 +1458,9 @@ contains
 
   subroutine setBCData_d(bcDataNamesIn, bcDataIn, bcDataInd, famLists, sps, &
        nVar, nFamMax)
-
+    !------------------------------------------------------------------------
+    ! Manual Differentiation Warning: This routine is differentiated by hand.
+    ! -----------------------------------------------------------------------
     use constants
     use cgnsNames
     use blockPointers, only : BCData, nDom, nBocos, nBKGlobal, & 
@@ -1525,9 +1530,11 @@ contains
     end do domainsLoop
   end subroutine setBCData_d
 
- subroutine setBCData_b(bcDataNamesIn, bcDataIn, bcDataInd, famLists, sps, &
-      nVar, nFamMax)
-
+  subroutine setBCData_b(bcDataNamesIn, bcDataIn, bcDataInd, famLists, sps, &
+       nVar, nFamMax)
+    !------------------------------------------------------------------------
+    ! Manual Differentiation Warning: This routine is differentiated by hand.
+    ! -----------------------------------------------------------------------
     use constants
     use cgnsNames
     use blockPointers, only : BCData, nDom, nBocos, nBKGlobal, & 
@@ -1547,7 +1554,7 @@ contains
     !      Local variables.
     !
     integer(kind=intType) :: i, j, k, iVar, nFam
-    
+
     domainsLoop: do i=1, nDom
 
        ! Set the pointers to this block on groundLevel to make
@@ -1600,6 +1607,10 @@ contains
   end subroutine setBCData_b
 
   subroutine extractFromDataSet(bcVarArray)
+    !--------------------------------------------------------------
+    ! Manual Differentiation Warning: Modifying this routine requires
+    ! modifying the hand-written forward and reverse routines. 
+    ! --------------------------------------------------------------
     !
     !       extractFromDataSet tries to extract and interpolate the        
     !       variables in bcVarNames from the cgns data set.                
@@ -1700,6 +1711,9 @@ contains
   end subroutine extractFromDataSet
 
   subroutine extractFromDataSet_d(bcVarArray, bcVarArrayd)
+    !------------------------------------------------------------------------
+    ! Manual Differentiation Warning: This routine is differentiated by hand.
+    ! -----------------------------------------------------------------------
     !
     !       extractFromDataSet tries to extract and interpolate the        
     !       variables in bcVarNames from the cgns data set.                
@@ -1790,6 +1804,9 @@ contains
   end subroutine extractFromDataSet_d
 
   subroutine extractFromDataSet_b(bcVarArray, bcVarArrayd)
+    !------------------------------------------------------------------------
+    ! Manual Differentiation Warning: This routine is differentiated by hand.
+    ! -----------------------------------------------------------------------
     !
     !       extractFromDataSet tries to extract and interpolate the        
     !       variables in bcVarNames from the cgns data set.                
@@ -1878,7 +1895,11 @@ contains
 
   end subroutine extractFromDataSet_b
 
- subroutine insertToDataSet(bcDataNamesIn, bcDataIn)
+  subroutine insertToDataSet(bcDataNamesIn, bcDataIn)
+    !--------------------------------------------------------------
+    ! Manual Differentiation Warning: Modifying this routine requires
+    ! modifying the hand-written forward and reverse routines. 
+    ! --------------------------------------------------------------
     use constants
     use utils, only: char2str
     implicit none
@@ -1937,7 +1958,10 @@ contains
     enddo
   end subroutine insertToDataSet
 
- subroutine insertToDataSet_d(bcDataNamesIn, bcDataIn, bcDataInd)
+  subroutine insertToDataSet_d(bcDataNamesIn, bcDataIn, bcDataInd)
+    !------------------------------------------------------------------------
+    ! Manual Differentiation Warning: This routine is differentiated by hand.
+    ! -----------------------------------------------------------------------
     use constants
     use utils, only: char2str
     implicit none
@@ -1997,7 +2021,10 @@ contains
     enddo
   end subroutine insertToDataSet_d
 
- subroutine insertToDataSet_b(bcDataNamesIn, bcDataIn, bcDataInd)
+  subroutine insertToDataSet_b(bcDataNamesIn, bcDataIn, bcDataInd)
+    !------------------------------------------------------------------------
+    ! Manual Differentiation Warning: This routine is differentiated by hand.
+    ! -----------------------------------------------------------------------
     use constants
     use utils, only: char2str
     implicit none
@@ -2568,6 +2595,10 @@ contains
 
 
   subroutine setBCDataFineGrid(initializationPart)
+    !--------------------------------------------------------------
+    ! Manual Differentiation Warning: Modifying this routine requires
+    ! modifying the hand-written forward and reverse routines. 
+    ! --------------------------------------------------------------
     !
     !       setBCDataFineGrid extracts the boundary condition data from    
     !       the cgnsGrid and stores it in useable form in the BCData       
@@ -2833,7 +2864,10 @@ contains
 #endif
   end subroutine setBCDataFineGrid
 #ifndef USE_COMPLEX
-subroutine setBCDataFineGrid_d(initializationPart)
+  subroutine setBCDataFineGrid_d(initializationPart)
+    !------------------------------------------------------------------------
+    ! Manual Differentiation Warning: This routine is differentiated by hand.
+    ! -----------------------------------------------------------------------
     !
     !       setBCDataFineGrid extracts the boundary condition data from    
     !       the cgnsGrid and stores it in useable form in the BCData       
@@ -2902,7 +2936,7 @@ subroutine setBCDataFineGrid_d(initializationPart)
                 call setBCVarNamesIsothermalWall ! sets bcVarNames and nbcVar
                 call extractFromDataSet_d(bcVarArray, bcVarArrayd)
                 call BCDataIsothermalWall_d(j, bcVarArray, bcVarArrayd, iBeg, iEnd, jBeg, jEnd)
-                
+
              case (SupersonicInflow)
                 call setBCVarNamesSupersonicInflow
                 call extractFromDataSet_d(bcVarArray, bcVarArrayd)
@@ -2927,7 +2961,10 @@ subroutine setBCDataFineGrid_d(initializationPart)
     enddo spectralLoop
   end subroutine setBCDataFineGrid_d
 
-subroutine setBCDataFineGrid_b(initializationPart)
+  subroutine setBCDataFineGrid_b(initializationPart)
+    !------------------------------------------------------------------------
+    ! Manual Differentiation Warning: This routine is differentiated by hand.
+    ! -----------------------------------------------------------------------
     !
     !       setBCDataFineGrid extracts the boundary condition data from    
     !       the cgnsGrid and stores it in useable form in the BCData       
@@ -3062,7 +3099,7 @@ subroutine setBCDataFineGrid_b(initializationPart)
        ! Store the fine grid level a bit easier.
 
        levm1 = level - 1
-    
+
        ! Loop over the number of spectral solutions and local blocks.
 
        spectralLoop: do sps=1,nTimeIntervalsSpectral
