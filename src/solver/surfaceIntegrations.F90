@@ -1616,7 +1616,7 @@ contains
       end do 
 
        ! Integrate any zippers we have
-       ! call integrateZippersWithGathered(globalVal(:, sps), localVal(:, sps), famList, sps)
+       call integrateZippers(localVal(:, sps), famList, sps, .true.) ! set the withGathered flag to .true.
 
        ! Integrate any user-supplied planes as have as well. 
        !call integrateUserSurfacesWithGathered(globalVal(:, sps), localVal(:, sps), famList, sps)
