@@ -93,7 +93,8 @@ contains
           ! a generic treatment possible. 
           call setBCPointers(mm, .True.)
 
-          isWall: if( isWallType(BCType(mm))) then 
+          ! not post gathered integrations currently
+          isWall: if( isWallType(BCType(mm)) .and. .not. withGatheredFlag) then 
              call wallIntegrationFace(localvalues, mm)
           end if isWall
 
@@ -311,7 +312,8 @@ contains
           ! a generic treatment possible. 
           call setBCPointers_d(mm, .True.)
           
-          isWall: if( isWallType(BCType(mm))) then 
+          ! not post gathered integrations currently
+          isWall: if( isWallType(BCType(mm)) .and. .not. withGatheredFlag) then 
              call wallIntegrationFace_d(localValues, localValuesd, mm)
           end if isWall
           
@@ -363,7 +365,8 @@ contains
           ! a generic treatment possible. 
           call setBCPointers_d(mm, .True.)
           
-          isWall: if( isWallType(BCType(mm))) then 
+          ! not post gathered integrations currently
+          isWall: if( isWallType(BCType(mm)) .and. .not. withGatheredFlag) then 
              call wallIntegrationFace_b(localValues, localValuesd, mm)
           end if isWall
           
@@ -931,7 +934,8 @@ contains
 
     use constants
     use costFunctions, only : nLocalValues, iMassFlow, iMassPtot, iMassTtot, iMassPs, &
-         iFlowMm, iFlowMp, iFlowFm, iFp, iMassMN, iPk, funcValues
+         iFlowMm, iFlowMp, iFlowFm, iFp, iMassMN, iPk, funcValues, costFuncMavgMN, & 
+         costFuncMavgPtot, isigmaMN, isigmaPtot
     use blockPointers, only : BCType
     use sorting, only : bsearchIntegers
     use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas, uRef, uInf
@@ -1252,7 +1256,7 @@ contains
 
 #ifndef USE_TAPENADE
 
-  subroutine integrateZippers(localValues, famList, sps)
+  subroutine integrateZippers(localValues, famList, sps, withGathered)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
     ! modifying the hand-written forward and reverse routines. 
@@ -1275,6 +1279,15 @@ contains
     integer(kind=intType), intent(in) :: sps
     real(kind=realType), dimension(:, :), allocatable :: vars
     type(zipperMesh), pointer :: zipper
+    logical, optional, intent(in) :: withGathered
+
+    ! Working variables 
+    logical :: withGatheredFlag
+    
+    withGatheredFlag = .false. 
+    if (present(withGathered)) then 
+      withGatheredFlag = withGathered 
+    end if 
 
     ! Determine if we have a wall Zipper:
     zipper => zipperMeshes(iBCGroupWalls)
@@ -1308,7 +1321,7 @@ contains
        call flowIntegrationZipperComm(.true., vars, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper(.true., zipper, vars, localValues, famList, sps)
+       call flowIntegrationZipper(.true., withGatheredFlag, zipper, vars, localValues, famList, sps)
 
        ! Cleanup vars
        deallocate(vars)
@@ -1327,79 +1340,16 @@ contains
        call flowIntegrationZipperComm(.false., vars, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper(.false., zipper, vars, localValues, famList, sps)
+       call flowIntegrationZipper(.false., withGathered, zipper, vars, localValues, famList, sps)
 
        ! Cleanup vars
        deallocate(vars)
     end if
   end subroutine integrateZippers
 
-  subroutine integrateZippersWithGathered(localValues, famList, sps)
-    !--------------------------------------------------------------
-    ! Manual Differentiation Warning: Modifying this routine requires
-    ! modifying the hand-written forward and reverse routines. 
-    ! --------------------------------------------------------------
 
-    ! Integrate over the triangles formed by the zipper mesh. This
-    ! will perform both all necesasry zipper integrations. Currently
-    ! this includes the wall force integrations as well as the
-    ! flow-though surface integration. 
-
-    use constants
-    use costFunctions, only : nLocalValues, nCostFunction
-    use overset, only : zipperMeshes, zipperMesh
-    use haloExchange, only : wallIntegrationZipperComm, flowIntegrationZipperComm
-    implicit none
-
-    ! Input Variables
-    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
-    integer(kind=intType), dimension(:), intent(in) :: famList
-    integer(kind=intType), intent(in) :: sps
-    real(kind=realType), dimension(:, :), allocatable :: vars
-    type(zipperMesh), pointer :: zipper
-
-    ! NOTE: No wall zipper with global calcs yet
-
-    zipper => zipperMeshes(iBCGroupInflow)
-    ! Determine if we have a flowthrough Zipper:
-    if (zipper%allocated) then 
-
-       ! Allocate space necessary to store variables. Only non-zero on
-       ! root proc. 
-       allocate(vars(size(zipper%indices), 9))
-       
-       ! Gather up the required variables in "vars" on the root
-       ! proc. This routine is differientated by hand. 
-       call flowIntegrationZipperComm(.true., vars, sps)
-
-       ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipperwithGathered(.true., zipper, vars, localValues, famList, sps)
-
-       ! Cleanup vars
-       deallocate(vars)
-    end if
-
-    zipper => zipperMeshes(iBCGroupOutflow)
-    ! Determine if we have a flowthrough Zipper:
-    if (zipper%allocated) then 
-
-       ! Allocate space necessary to store variables. Only non-zero on
-       ! root proc. 
-       allocate(vars(size(zipper%indices), 9))
-       
-       ! Gather up the required variables in "vars" on the root
-       ! proc. This routine is differientated by hand. 
-       call flowIntegrationZipperComm(.false., vars, sps)
-
-       ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipperwithGathered(.false., zipper, vars, localValues, famList, sps)
-
-       ! Cleanup vars
-       deallocate(vars)
-    end if
-  end subroutine integrateZippersWithGathered
 #ifndef USE_COMPLEX
-  subroutine integrateZippers_d(localValues, localValuesd, famList, sps)
+  subroutine integrateZippers_d(localValues, localValuesd, famList, sps, withGathered)
     !------------------------------------------------------------------------
     ! Manual Differentiation Warning: This routine is differentiated by hand.
     ! -----------------------------------------------------------------------
@@ -1419,6 +1369,16 @@ contains
     integer(kind=intType), intent(in) :: sps
     real(kind=realType), dimension(:, :), allocatable :: vars, varsd
     type(zipperMesh), pointer :: zipper
+    logical, optional, intent(in) :: withGathered
+
+    ! Working variables 
+    logical :: withGatheredFlag
+    
+    withGatheredFlag = .false. 
+    if (present(withGathered)) then 
+      withGatheredFlag = withGathered 
+    end if 
+
 
     zipper => zipperMeshes(iBCGroupWalls)
     if (zipper%allocated) then 
@@ -1451,7 +1411,7 @@ contains
        call flowIntegrationZipperComm_d(.true., vars, varsd, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper_d(.true., zipper, vars, varsd, localValues, localValuesd, famList, sps)
+       call flowIntegrationZipper_d(.true., withGatheredFlag, zipper, vars, varsd, localValues, localValuesd, famList, sps)
 
        ! Cleanup vars
        deallocate(vars, varsd)
@@ -1470,14 +1430,14 @@ contains
        call flowIntegrationZipperComm_d(.false., vars, varsd, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper_d(.false., zipper, vars, varsd, localValues, localValuesd, famList, sps)
+       call flowIntegrationZipper_d(.false., withGathered, zipper, vars, varsd, localValues, localValuesd, famList, sps)
 
        ! Cleanup vars
        deallocate(vars, varsd)
     end if
   end subroutine integrateZippers_d
 
-  subroutine integrateZippers_b(localValues, localValuesd, famList, sps)
+  subroutine integrateZippers_b(localValues, localValuesd, famList, sps, withGathered)
     !------------------------------------------------------------------------
     ! Manual Differentiation Warning: This routine is differentiated by hand.
     ! -----------------------------------------------------------------------
@@ -1498,6 +1458,16 @@ contains
     integer(kind=intType), intent(in) :: sps
     real(kind=realType), dimension(:, :), allocatable :: vars, varsd
     type(zipperMesh), pointer :: zipper
+    logical, optional, intent(in) :: withGathered
+
+    ! Working variables 
+    logical :: withGatheredFlag
+    
+    withGatheredFlag = .false. 
+    if (present(withGathered)) then 
+      withGatheredFlag = withGathered 
+    end if 
+
 
     ! Determine if we have a wall Zipper:
     zipper => zipperMeshes(iBCGroupWalls)
@@ -1536,7 +1506,7 @@ contains
   
        ! Perform actual integration. Tapenade ADs this routine.
        varsd = zero
-       call flowIntegrationZipper_b(.true., zipper, vars, varsd, localValues, localValuesd, famList, sps)
+       call flowIntegrationZipper_b(.true., withGathered, zipper, vars, varsd, localValues, localValuesd, famList, sps)
        
        ! Scatter (becuase we are reverse) the values from the root
        ! back out to all necessary procs.  This routine is
@@ -1560,7 +1530,7 @@ contains
   
        ! Perform actual integration. Tapenade ADs this routine.
        varsd = zero
-       call flowIntegrationZipper_b(.false., zipper, vars, varsd, localValues, localValuesd, famList, sps)
+       call flowIntegrationZipper_b(.false., withGatheredFlag, zipper, vars, varsd, localValues, localValuesd, famList, sps)
        
        ! Scatter (becuase we are reverse) the values from the root
        ! back out to all necessary procs.  This routine is

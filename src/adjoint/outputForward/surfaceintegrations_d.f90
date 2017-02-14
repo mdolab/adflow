@@ -1779,7 +1779,8 @@ bocos:do mm=1,nbocos
     use constants
     use costfunctions, only : nlocalvalues, imassflow, imassptot, &
 &   imassttot, imassps, iflowmm, iflowmp, iflowfm, ifp, imassmn, ipk, &
-&   funcvalues, funcvaluesd
+&   funcvalues, funcvaluesd, costfuncmavgmn, costfuncmavgptot, isigmamn,&
+&   isigmaptot
     use blockpointers, only : bctype
     use sorting, only : bsearchintegers
     use flowvarrefstate, only : pref, prefd, pinf, pinfd, rhoref, &
@@ -1833,10 +1834,6 @@ bocos:do mm=1,nbocos
     real(kind=realtype) :: arg1d
     real(kind=realtype) :: result1
     real(kind=realtype) :: result1d
-    type(unknowntype) :: costfuncmavgmn
-    type(unknowntype) :: costfuncmavgptot
-    type(unknowntype) :: isigmaptot
-    type(unknowntype) :: isigmamn
     massflowrate = zero
     mass_ptot = zero
     mass_ttot = zero
@@ -2157,7 +2154,7 @@ bocos:do mm=1,nbocos
     use constants
     use costfunctions, only : nlocalvalues, imassflow, imassptot, &
 &   imassttot, imassps, iflowmm, iflowmp, iflowfm, ifp, imassmn, ipk, &
-&   funcvalues
+&   funcvalues, costfuncmavgmn, costfuncmavgptot, isigmamn, isigmaptot
     use blockpointers, only : bctype
     use sorting, only : bsearchintegers
     use flowvarrefstate, only : pref, pinf, rhoref, pref, timeref, &
@@ -2194,10 +2191,6 @@ bocos:do mm=1,nbocos
     intrinsic size
     real(kind=realtype) :: arg1
     real(kind=realtype) :: result1
-    type(unknowntype) :: costfuncmavgmn
-    type(unknowntype) :: costfuncmavgptot
-    type(unknowntype) :: isigmaptot
-    type(unknowntype) :: isigmamn
     massflowrate = zero
     mass_ptot = zero
     mass_ttot = zero
