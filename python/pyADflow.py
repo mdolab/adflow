@@ -122,7 +122,10 @@ class ADFLOW(AeroSolver):
         self.adflowCostFunctions = {}
         for key in self.basicCostFunctions:
             self.adflowCostFunctions[key] = [None, key]
-
+            
+        # Separate list of the suplied supplied functions
+        self.adflowUserCostFunctions = {}
+            
         # This is the real solver so dtype is 'd'
         self.dtype = dtype
 
@@ -521,7 +524,38 @@ class ADFLOW(AeroSolver):
         self.adflow.surfaceintegrations.addintegrationsurface(
             pts.T, conn.T, familyName, famID)
 
+    def addUserFunction(self, funcName, functions, callBack):
+        """Add a new function to ADflow by combining existing functions in a
+        user-supplied way. The allows the user to define a function
+        such as L/D while only requiring a single adjoint solution. 
+
+        Parameters
+        ----------
+        funcName : str
+            The name of user-supplied function 
+        functions : list of strings
+            The exisitng function strings which are the input to the
+            callBack function
+        callBack : python function handle
+            The user supplied function that will produce the user function. 
+            This routine must be complex-step safe for the purpose of 
+            computing sensitivities. 
+        """
+
+        # First check if the function name supplied is already used:
+        if funcName.lower() in self.adflowCostFunctions:
+            raise Error("The supplied funcName %s, is already used"% funcName)
+
+        # Now check that we've supplied at least 2 or more functions
+        if len(functions) == 1:
+            raise Error("addUserFunction requries at least 2 existing functions"
+                        " to be provided")
+            
+        self.adflowUserCostFunctions[funcName] = (
+            adflowUserFunc(funcName, functions, callBack))
+            
     def addFunction(self, funcName, groupName, name=None):
+
         """Add a "new" function to ADflow by restricting the integration of an
         existing ADflow function by a section of the mesh defined by
         'groupName'. The function will be named 'funcName_groupName'
@@ -929,14 +963,29 @@ class ADFLOW(AeroSolver):
         # since we will have to call getSolution for each *unique*
         # function grouping. We can also do the error checking
         groupMap = {}
+        
+        def addToGroup(f):
+            group = self.adflowCostFunctions[f][0]
+            basicFunc = self.adflowCostFunctions[f][1]
+            if group not in groupMap:
+                groupMap[group] = [[basicFunc, f]]
+            else:
+                groupMap[group].append([basicFunc, f])
+
+        callBackFuncs = {}
         for f in evalFuncs:
+            # Standard functions
             if f.lower() in self.adflowCostFunctions:
-                group = self.adflowCostFunctions[f][0]
-                basicFunc = self.adflowCostFunctions[f][1]
-                if group not in groupMap:
-                    groupMap[group] = [[basicFunc, f]]
-                else:
-                    groupMap[group].append([basicFunc, f])
+                addToGroup(f.lower())
+
+            # User supplied functions
+            elif f in self.adflowUserCostFunctions:
+                for uf in self.adflowUserCostFunctions[f].functions:
+                    if uf.lower() in self.adflowCostFunctions:
+                        addToGroup(uf.lower())
+                        callBackFuncs[uf] = 0.0
+                    else:
+                        raise Error('Supplied %s function is not known to ADflow.'%uf)
             else:
                 if not ignoreMissing:
                     raise Error('Supplied function %s is not known to ADflow.'%f)
@@ -955,7 +1004,28 @@ class ADFLOW(AeroSolver):
                 self.curAP.funcNames[g[1]] = key
                 funcs[key] = res[g[0]]
 
-        return
+                if g[1] in callBackFuncs:
+                    callBackFuncs[g[1]] = res[g[0]]
+
+        # Execute the user supplied functions if there are any
+        for f in self.adflowUserCostFunctions:
+            self.adflowUserCostFunctions[f].evalFunctions(callBackFuncs)
+            key = self.adflowUserCostFunctions[f].funcName
+            value = callBackFuncs[key]
+            funcs[self.curAP.name + '_%s'%key] = value
+
+    def _getFuncsBar(self, f):
+        # Internal routine to return the funcsBar dictionary for the
+        # given objective. For regular functions this just sets a 1.0
+        # for f. For the user-supplied functions, it linearizes the
+        # user-supplied function and sets all required seeds. 
+        if f.lower() in self.adflowCostFunctions:
+            funcsBar = {f.lower():1.0}
+        elif f in self.adflowUserCostFunctions:
+            # Need to get the funcs-bar derivative from the
+            # user-supplied function
+            funcsBar = self.adflowUserCostFunctions[f].evalFunctionsSens()
+        return funcsBar
 
     def evalFunctionsSens(self, aeroProblem, funcsSens, evalFuncs=None):
         """
@@ -995,7 +1065,11 @@ class ADFLOW(AeroSolver):
 
         # Do the functions one at a time:
         for f in evalFuncs:
-            if f.lower() not in self.adflowCostFunctions:
+            if f.lower() in self.adflowCostFunctions:
+                pass 
+            elif f in self.adflowUserCostFunctions:
+                pass
+            else:
                 raise Error('Supplied %s function is not known to ADflow.'%f)
 
             if self.comm.rank == 0:
@@ -1021,11 +1095,10 @@ class ADFLOW(AeroSolver):
 
             # These are the reverse mode seeds
             psi = -self.getAdjoint(f)
-            funcsBar = {f.lower():1.0}
-
+      
             # Compute everything and update into the dictionary
             funcsSens[key].update(self.computeJacobianVectorProductBwd(
-                resBar=psi, funcsBar=funcsBar, xDvDeriv=True))
+                resBar=psi, funcsBar=self._getFuncsBar(f), xDvDeriv=True))
 
     def solveCL(self, aeroProblem, CLStar, alpha0=None,
                 delta=0.5, tol=1e-3, autoReset=True, CLalphaGuess=None,
@@ -1734,11 +1807,10 @@ class ADFLOW(AeroSolver):
         if func in self.curAP.adflowData.adjoints:
             # These are the reverse mode seeds
             psi = -self.getAdjoint(func)
-            funcsBar = {func:1.0}
 
             # Compute everything and update into the dictionary
             dXs = self.computeJacobianVectorProductBwd(
-                resBar=psi, funcsBar=funcsBar, xSDeriv=True)
+                resBar=psi, funcsBar=self._getFuncsBar(func), xSDeriv=True)
             dXs = self.mapVector(dXs, groupName, groupName, includeZipper=True)
         else:
             raise Error("The adjoint for '%s' is not computed for the current "
@@ -2332,7 +2404,7 @@ class ADFLOW(AeroSolver):
             groupNames.append(family)
         
         nameArray = self._createFortranStringArray(variables)
-        groupArray = self._expandGroupName(groupNames)
+        groupArray = self._expandGroupNames(groupNames)
         if len(nameArray) > 0:
             return nameArray, dataArray, groupArray, groupNames, False
         else:
@@ -2502,7 +2574,7 @@ class ADFLOW(AeroSolver):
         # Conver to 0-based ordering becuase we are in python
         return conn-1, faceSizes
 
-    def _expandGroupName(self, groupNames):
+    def _expandGroupNames(self, groupNames):
         """Take a list of family (group) names and return a 2D array of the
         fortran group numbers of the following form:
         
@@ -2624,7 +2696,7 @@ class ADFLOW(AeroSolver):
         # # Check to see if the RHS Partials have been computed
         if objective not in self.curAP.adflowData.adjointRHS:
             RHS = self.computeJacobianVectorProductBwd(
-                funcsBar={objective.lower():1.0}, wDeriv=True)
+                funcsBar=self._getFuncsBar(objective), wDeriv=True)
             self.curAP.adflowData.adjointRHS[objective] = RHS.copy()
         else:
             RHS = self.curAP.adflowData.adjointRHS[objective].copy()
@@ -4634,3 +4706,30 @@ class adflowFlowCase(object):
         self.coords = None
         self.callCounter = -1
         self.disp = None
+
+
+class adflowUserFunc(object):
+    """Class containing the user-supplied function information"""
+    def __init__(self, funcName, functions, callBack):
+        self.funcName = funcName
+        self.functions = functions
+        self.callBack = callBack
+        self.funcs = None
+
+    def evalFunctions(self, funcs):
+        # Cache the input funcs for reference
+        self.funcs = funcs
+        self.callBack(funcs)
+
+    def evalFunctionsSens(self):
+        # We need to get the derivative of 'self.funcName' as a
+        # function of the 'self.functions'
+        refFuncs = copy.deepcopy(self.funcs)
+        deriv = {}
+        for f in self.functions:
+            funcs = refFuncs.copy()
+            funcs[f] += 1e-40j
+            self.callBack(funcs)
+            deriv[f] = numpy.imag(funcs[self.funcName])/1e-40
+
+        return deriv
