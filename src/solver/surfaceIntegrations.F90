@@ -102,7 +102,7 @@ contains
 
   end subroutine integrateSurfaces
 
-  subroutine integrateSurfacesWithGathered(globalCFValues, localValues, famList) 
+  subroutine integrateSurfacesWithGathered(localValues, famList) 
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
     ! modifying the hand-written forward and reverse routines. 
@@ -128,7 +128,6 @@ contains
     implicit none
 
     ! Input/output Variables
-    real(kind=realType), dimension(nCostFunction), intent(in) :: globalCFValues
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
     integer(kind=intType), dimension(:), intent(in) :: famList
     ! Working variables
@@ -152,10 +151,10 @@ contains
 
           isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
                BCType(mm) == SupersonicInflow) then 
-               call flowIntegrationFaceWithGathered(.true., globalCFValues, localValues, mm)
+               call flowIntegrationFaceWithGathered(.true., localValues, mm)
             else if (BCType(mm) == SubsonicOutflow .or. &
                BCType(mm) == SupersonicOutflow) then 
-               call flowIntegrationFaceWithGathered(.false., globalCFValues, localValues, mm)
+               call flowIntegrationFaceWithGathered(.false., localValues, mm)
           end if isInflowOutflow
        end if famInclude
     end do bocos
@@ -251,7 +250,7 @@ contains
 
        funcValues(costFuncMdot)      = funcValues(costFuncMdot) + ovrNTS*mFlow
        funcValues(costFuncMavgPtot ) = funcValues(costFuncMavgPtot) + ovrNTS*mAvgPtot
-       funcValues(costFuncMavgPtot)  = funcValues(costFuncMavgTtot) + ovrNTS*mAvgTtot
+       funcValues(costFuncMavgTtot)  = funcValues(costFuncMavgTtot) + ovrNTS*mAvgTtot
        funcValues(costFuncMavgPs)    = funcValues(costFuncMAvgPs) + ovrNTS*mAvgPs
        funcValues(costFuncMavgMn)    = funcValues(costFuncMAvgMn) + ovrNTS*mAvgMn
        funcValues(costFuncSigmaMN) = funcValues(costFuncSigmaMN) + ovrNTS*sigmaMN
@@ -761,12 +760,6 @@ contains
     real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, a2, MNm, massFlowRateLocal, edota
     real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint, VcoordRef, VFreestreamRef,sFaceFreestreamRef
 
-    massFlowRate = zero
-    mass_Ptot = zero
-    mass_Ttot = zero
-    mass_Ps = zero
-    mass_MN = zero
-
     refPoint(1) = LRef*pointRef(1)
     refPoint(2) = LRef*pointRef(2)
     refPoint(3) = LRef*pointRef(3)
@@ -811,6 +804,12 @@ contains
     pk = zero
     mReDim = sqrt(pRef*rhoRef)
 
+    massFlowRate = zero
+    mass_Ptot = zero
+    mass_Ttot = zero
+    mass_Ps = zero
+    mass_MN = zero
+
     !$AD II-LOOP
     do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
       i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
@@ -850,6 +849,7 @@ contains
 
       mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
       mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
+
       mass_Ps = mass_Ps + pm*massFlowRateLocal
       mass_MN = mass_MN + MNm*massFlowRateLocal
 
@@ -940,7 +940,7 @@ contains
 
   end subroutine flowIntegrationFace
 
-  subroutine flowIntegrationFaceWithGathered(isInflow, globalCFVals, localValues, mm)
+  subroutine flowIntegrationFaceWithGathered(isInflow, localValues, mm)
     use constants
     use costFunctions
     use blockPointers, only : BCType, BCFaceID, BCData, addGridVelocities
@@ -955,7 +955,6 @@ contains
 
     ! Input/Output variables
     logical, intent(in) :: isInflow
-    real(kind=realType), dimension(nCostFunction), intent(in) :: globalCFVals
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
     integer(kind=intType), intent(in) :: mm
 
@@ -996,8 +995,10 @@ contains
     
     mReDim = sqrt(pRef*rhoRef)
 
-    massAvgMN = globalCFVals(costFuncMavgMN)
-    massAvgPtot = globalCFVals(costFuncMavgPtot)
+    massAvgMN = funcValues(costFuncMavgMN)
+    massAvgPtot = funcValues(costFuncMavgPtot)
+
+    print *, "foobar", massAvgMN, massAvgPtot
 
     !$AD II-LOOP
     do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
@@ -1226,12 +1227,12 @@ contains
 
   end subroutine flowIntegrationZipper
 
-  subroutine flowIntegrationZipperwithGathered(isInflow, zipper, vars, globalCFVals, localValues, famList, sps)
+  subroutine flowIntegrationZipperwithGathered(isInflow, zipper, vars, localValues, famList, sps)
 
     ! Integrate over the trianges for the inflow/outflow conditions. 
 
     use constants
-    use costFunctions, only : nLocalValues, iSigmaMN, iSigmaPtot, costFuncMAvgMN, costFuncMAvgPtot, nCostFunction
+    use costFunctions, only : nLocalValues, iSigmaMN, iSigmaPtot, costFuncMAvgMN, costFuncMAvgPtot, nCostFunction, funcValues
     use blockPointers, only : BCType
     use sorting, only : bsearchIntegers
     use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas
@@ -1246,7 +1247,6 @@ contains
     logical, intent(in) :: isInflow
     type(zipperMesh), intent(in) :: zipper
     real(kind=realType), dimension(:, :), intent(in) :: vars
-    real(kind=realType), dimension(nCostFunction), intent(in) :: globalCFVals
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
     integer(kind=intType), dimension(:), intent(in) :: famList
     integer(kind=intType), intent(in) :: sps
@@ -1272,8 +1272,8 @@ contains
     end if
 
     mReDim = sqrt(pRef*rhoRef)
-    massAvgMN = globalCFVals(costFuncMavgMN)
-    massAvgPtot = globalCFVals(costFuncMavgPtot)
+    massAvgMN = funcValues(costFuncMavgMN)
+    massAvgPtot = funcValues(costFuncMavgPtot)
 
     sigmaMN = zero
     sigmaPtot = zero
@@ -1534,7 +1534,7 @@ contains
     end if
   end subroutine integrateZippers
 
-  subroutine integrateZippersWithGathered(globalCFvals, localValues, famList, sps)
+  subroutine integrateZippersWithGathered(localValues, famList, sps)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
     ! modifying the hand-written forward and reverse routines. 
@@ -1552,7 +1552,6 @@ contains
     implicit none
 
     ! Input Variables
-    real(kind=realType), dimension(nCostFunction), intent(in) :: globalCFVals
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
     integer(kind=intType), dimension(:), intent(in) :: famList
     integer(kind=intType), intent(in) :: sps
@@ -1574,7 +1573,7 @@ contains
        call flowIntegrationZipperComm(.true., vars, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipperwithGathered(.true., zipper, vars, GlobalCFVals, localValues, famList, sps)
+       call flowIntegrationZipperwithGathered(.true., zipper, vars, localValues, famList, sps)
 
        ! Cleanup vars
        deallocate(vars)
@@ -1593,7 +1592,7 @@ contains
        call flowIntegrationZipperComm(.false., vars, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipperwithGathered(.false., zipper, vars, GlobalCFVals, localValues, famList, sps)
+       call flowIntegrationZipperwithGathered(.false., zipper, vars, localValues, famList, sps)
 
        ! Cleanup vars
        deallocate(vars)
@@ -1782,6 +1781,8 @@ contains
 
     ! Input/output Variables
     integer(kind=intType), dimension(:), intent(in) :: famList
+
+    ! Local variable 
     real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: globalVal
 
     call getSolution(famList)
@@ -1824,7 +1825,10 @@ contains
 
        ! Integrate any user-supplied planes as have as well. 
        !call integrateUserSurfaces(localVal(:, sps), famList, sps)
+
     end do
+
+    
 
     ! Now we need to reduce all the cost functions
     call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
@@ -1835,20 +1839,20 @@ contains
     ! interest.
     call getCostFunctions(globalVal)
 
-    ! ! Secondary loop over the blocks/zippers/planes for calculations
-    ! ! that require pre-computed gathered values in the computation itself.
-    ! do sps=1, nTimeIntervalsSpectral
-    !   do nn=1, nDom
-    !     call setPointers(nn, 1, sps)
-    !     call integrateSurfacesWithGathered(globalVal(:, sps), localVal(:, sps), famList)
-    !   end do 
+    ! Secondary loop over the blocks/zippers/planes for calculations
+    ! that require pre-computed gathered values in the computation itself.
+    do sps=1, nTimeIntervalsSpectral
+      do nn=1, nDom
+        call setPointers(nn, 1, sps)
+        call integrateSurfacesWithGathered(localVal(:, sps), famList)
+      end do 
 
-    !    ! Integrate any zippers we have
-    !    call integrateZippersWithGathered(globalVal(:, sps), localVal(:, sps), famList, sps)
+       ! Integrate any zippers we have
+       ! call integrateZippersWithGathered(globalVal(:, sps), localVal(:, sps), famList, sps)
 
-    !    ! Integrate any user-supplied planes as have as well. 
-    !    !call integrateUserSurfacesWithGathered(globalVal(:, sps), localVal(:, sps), famList, sps)
-    ! end do 
+       ! Integrate any user-supplied planes as have as well. 
+       !call integrateUserSurfacesWithGathered(globalVal(:, sps), localVal(:, sps), famList, sps)
+    end do 
 
      ! All reduce again. Technially just need the additionally
      ! computed gathered values, but do all anyway.
