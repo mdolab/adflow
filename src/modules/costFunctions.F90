@@ -84,7 +84,7 @@ module costFunctions
        iPk = 35
 
 
-  integer(kind=intType), parameter :: nLocalValues=35
+  integer(kind=intType), parameter :: nLocalValues=36
 
   real(kind=realType), dimension(nCostFunction) ::  funcValues
 #ifndef USE_TAPENADE
