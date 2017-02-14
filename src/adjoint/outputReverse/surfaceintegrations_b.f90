@@ -1892,12 +1892,13 @@ bocos:do mm=1,nbocos
 !                pref rhoref vars localvalues
 !   rw status of diff variables: pointref:incr timeref:incr tref:incr
 !                rgas:incr pref:incr rhoref:incr vars:incr localvalues:in-out
-  subroutine flowintegrationzipper_b(isinflow, zipper, vars, varsd, &
-&   localvalues, localvaluesd, famlist, sps)
+  subroutine flowintegrationzipper_b(isinflow, withgathered, zipper, &
+&   vars, varsd, localvalues, localvaluesd, famlist, sps)
 ! integrate over the trianges for the inflow/outflow conditions. 
     use constants
     use costfunctions, only : nlocalvalues, imassflow, imassptot, &
-&   imassttot, imassps, iflowmm, iflowmp, iflowfm, ifp, imassmn, ipk
+&   imassttot, imassps, iflowmm, iflowmp, iflowfm, ifp, imassmn, ipk, &
+&   funcvalues, funcvaluesd
     use blockpointers, only : bctype
     use sorting, only : bsearchintegers
     use flowvarrefstate, only : pref, prefd, pinf, pinfd, rhoref, &
@@ -1912,6 +1913,7 @@ bocos:do mm=1,nbocos
     implicit none
 ! input/output variables
     logical, intent(in) :: isinflow
+    logical, intent(in) :: withgathered
     type(zippermesh), intent(in) :: zipper
     real(kind=realtype), dimension(:, :), intent(in) :: vars
     real(kind=realtype), dimension(:, :) :: varsd
@@ -1923,10 +1925,9 @@ bocos:do mm=1,nbocos
     integer(kind=inttype), intent(in) :: sps
 ! working variables
     integer(kind=inttype) :: i, j
-    real(kind=realtype) :: sf, vmag, vnm, vxm, vym, vzm, mredim, fx, fy&
-&   , fz
-    real(kind=realtype) :: sfd, vmagd, vnmd, vxmd, vymd, vzmd, mredimd, &
-&   fxd, fyd, fzd
+    real(kind=realtype) :: sf, vmag, vnm, vxm, vym, vzm, fx, fy, fz
+    real(kind=realtype) :: sfd, vmagd, vnmd, vxmd, vymd, vzmd, fxd, fyd&
+&   , fzd
     real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint, &
 &   ss, x1, x2, x3, norm
     real(kind=realtype), dimension(3) :: fpd, mpd, fmomd, mmomd, &
@@ -1936,9 +1937,11 @@ bocos:do mm=1,nbocos
     real(kind=realtype) :: pmd, ptotd, ttotd, rhomd, gammamd, mnmd, &
 &   massflowratelocald
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps, &
-&   mass_mn, pk
+&   mass_mn
     real(kind=realtype) :: massflowrated, mass_ptotd, mass_ttotd, &
-&   mass_psd, mass_mnd, pkd
+&   mass_psd, mass_mnd
+    real(kind=realtype) :: mredim, pk, sigma_mn, sigma_ptot
+    real(kind=realtype) :: mredimd, pkd, sigma_mnd, sigma_ptotd
     real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, &
 &   cellarea, mx, my, mz
     real(kind=realtype) :: xcd, ycd, zcd, mxd, myd, mzd
@@ -1956,6 +1959,7 @@ bocos:do mm=1,nbocos
     real(kind=realtype) :: temp2
     real(kind=realtype) :: temp1
     real(kind=realtype) :: temp0
+    type(unknowntype) :: costfuncmavgmn
     real(kind=realtype) :: tempd
     real(kind=realtype) :: tempd7
     real(kind=realtype) :: tempd6
@@ -1965,7 +1969,10 @@ bocos:do mm=1,nbocos
     real(kind=realtype) :: tempd2
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
+    type(unknowntype) :: costfuncmavgptot
+    type(unknowntype) :: isigmaptot
     real(kind=realtype) :: temp
+    type(unknowntype) :: isigmamn
     real(kind=realtype) :: temp4
     refpoint(1) = lref*pointref(1)
     refpoint(2) = lref*pointref(2)
@@ -1975,20 +1982,37 @@ bocos:do mm=1,nbocos
     if (flowtype .eq. internalflow) internalflowfact = -one
     inflowfact = one
     if (isinflow) inflowfact = -one
-    mmomd = 0.0_8
-    mmomd = localvaluesd(iflowmm:iflowmm+2)
-    mpd = 0.0_8
-    mpd = localvaluesd(iflowmp:iflowmp+2)
-    fmomd = 0.0_8
-    fmomd = localvaluesd(iflowfm:iflowfm+2)
-    fpd = 0.0_8
-    fpd = localvaluesd(ifp:ifp+2)
-    pkd = localvaluesd(ipk)
-    mass_mnd = localvaluesd(imassmn)
-    mass_psd = localvaluesd(imassps)
-    mass_ttotd = localvaluesd(imassttot)
-    mass_ptotd = localvaluesd(imassptot)
-    massflowrated = localvaluesd(imassflow)
+    if (withgathered) then
+      sigma_ptotd = localvaluesd(isigmaptot)
+      sigma_mnd = localvaluesd(isigmamn)
+      mass_ptotd = 0.0_8
+      mmomd = 0.0_8
+      mass_psd = 0.0_8
+      mass_mnd = 0.0_8
+      mass_ttotd = 0.0_8
+      fpd = 0.0_8
+      pkd = 0.0_8
+      fmomd = 0.0_8
+      massflowrated = 0.0_8
+      mpd = 0.0_8
+    else
+      mmomd = 0.0_8
+      mmomd = localvaluesd(iflowmm:iflowmm+2)
+      mpd = 0.0_8
+      mpd = localvaluesd(iflowmp:iflowmp+2)
+      fmomd = 0.0_8
+      fmomd = localvaluesd(iflowfm:iflowfm+2)
+      fpd = 0.0_8
+      fpd = localvaluesd(ifp:ifp+2)
+      pkd = localvaluesd(ipk)
+      mass_mnd = localvaluesd(imassmn)
+      mass_psd = localvaluesd(imassps)
+      mass_ttotd = localvaluesd(imassttot)
+      mass_ptotd = localvaluesd(imassptot)
+      massflowrated = localvaluesd(imassflow)
+      sigma_mnd = 0.0_8
+      sigma_ptotd = 0.0_8
+    end if
     mredimd = 0.0_8
     normd = 0.0_8
     ptotd = 0.0_8
@@ -2037,140 +2061,162 @@ bocos:do mm=1,nbocos
 ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
         mnm = vmag/sqrt(gammam*pm/rhom)
         massflowratelocal = rhom*vnm*mredim
-        call pushreal8(pm)
-        pm = pm*pref
+        if (withgathered) then
+          massflowratelocald = (mnm-funcvalues(costfuncmavgmn))**2*&
+&           sigma_mnd + (ptot-funcvalues(costfuncmavgptot))**2*&
+&           sigma_ptotd
+          ptotd = ptotd + massflowratelocal*2*(ptot-funcvalues(&
+&           costfuncmavgptot))*sigma_ptotd
+          mnmd = massflowratelocal*2*(mnm-funcvalues(costfuncmavgmn))*&
+&           sigma_mnd
+          vnmd = 0.0_8
+          vxmd = 0.0_8
+          vymd = 0.0_8
+          rhomd = 0.0_8
+          ssd = 0.0_8
+          pmd = 0.0_8
+          vzmd = 0.0_8
+          vmagd = 0.0_8
+        else
+          call pushreal8(pm)
+          pm = pm*pref
 ! compute the average cell center. 
-        xc = zero
-        yc = zero
-        zc = zero
-        do j=1,3
-          xc = xc + vars(zipper%conn(1, i), 7)
-          yc = yc + vars(zipper%conn(2, i), 8)
-          zc = zc + vars(zipper%conn(3, i), 9)
-        end do
+          xc = zero
+          yc = zero
+          zc = zero
+          do j=1,3
+            xc = xc + vars(zipper%conn(1, i), 7)
+            yc = yc + vars(zipper%conn(2, i), 8)
+            zc = zc + vars(zipper%conn(3, i), 9)
+          end do
 ! finish average for cell center
-        xc = third*xc
-        yc = third*yc
-        zc = third*zc
-        xc = xc - refpoint(1)
-        yc = yc - refpoint(2)
-        zc = zc - refpoint(3)
-        call pushreal8(pm)
-        pm = -(pm-pinf*pref)
+          xc = third*xc
+          yc = third*yc
+          zc = third*zc
+          xc = xc - refpoint(1)
+          yc = yc - refpoint(2)
+          zc = zc - refpoint(3)
+          call pushreal8(pm)
+          pm = -(pm-pinf*pref)
 ! update the pressure force and moment coefficients.
 ! momentum forces
 ! get unit normal vector. 
-        result1 = mynorm2(ss)
-        call pushreal8array(ss, 3)
-        ss = ss/result1
-        call pushreal8(massflowratelocal)
-        massflowratelocal = massflowratelocal/timeref*internalflowfact*&
-&         inflowfact
-        fx = massflowratelocal*ss(1)*vxm/timeref
-        fy = massflowratelocal*ss(2)*vym/timeref
-        fz = massflowratelocal*ss(3)*vzm/timeref
-        temp2 = ss(1)/timeref
-        temp3 = ss(2)/timeref
-        mzd = mmomd(3)
-        myd = mmomd(2)
-        mxd = mmomd(1)
-        xcd = fy*mzd - fz*myd
-        fyd = xc*mzd - fmomd(2) - zc*mxd
-        ycd = fz*mxd - fx*mzd
-        fxd = zc*myd - fmomd(1) - yc*mzd
-        zcd = fx*myd - fy*mxd
-        fzd = yc*mxd - fmomd(3) - xc*myd
-        ssd = 0.0_8
-        tempd4 = massflowratelocal*vzm*fzd/timeref
-        temp4 = ss(3)/timeref
-        ssd(3) = ssd(3) + tempd4
-        massflowratelocald = temp3*vym*fyd + temp2*vxm*fxd + temp4*vzm*&
-&         fzd
-        vzmd = temp4*massflowratelocal*fzd
-        tempd5 = massflowratelocal*vym*fyd/timeref
-        ssd(2) = ssd(2) + tempd5
-        vymd = temp3*massflowratelocal*fyd
-        tempd7 = massflowratelocal*vxm*fxd/timeref
-        ssd(1) = ssd(1) + tempd7
-        vxmd = temp2*massflowratelocal*fxd
-        call popreal8(massflowratelocal)
-        tempd6 = internalflowfact*inflowfact*massflowratelocald/timeref
-        timerefd = timerefd - temp3*tempd5 - massflowratelocal*tempd6/&
-&         timeref - temp2*tempd7 - temp4*tempd4
-        massflowratelocald = tempd6
-        call popreal8array(ss, 3)
-        result1d = sum(-(ss*ssd/result1))/result1
-        ssd = ssd/result1
-        call mynorm2_b(ss, ssd, result1d)
-        mzd = mpd(3)
-        myd = mpd(2)
-        mxd = mpd(1)
-        fx = pm*ss(1)
-        fy = pm*ss(2)
-        fyd = fpd(2) - zc*mxd + xc*mzd
-        fxd = zc*myd + fpd(1) - yc*mzd
-        fz = pm*ss(3)
-        xcd = xcd + fy*mzd - fz*myd
-        ycd = ycd + fz*mxd - fx*mzd
-        zcd = zcd + fx*myd - fy*mxd
-        fzd = yc*mxd + fpd(3) - xc*myd
-        pmd = ss(2)*fyd + ss(1)*fxd + ss(3)*fzd
-        ssd(3) = ssd(3) + pm*fzd
-        ssd(2) = ssd(2) + pm*fyd
-        ssd(1) = ssd(1) + pm*fxd
-        call popreal8(pm)
-        prefd = prefd + pinf*pmd
-        pmd = -pmd
-        refpointd(3) = refpointd(3) - zcd
-        refpointd(2) = refpointd(2) - ycd
-        refpointd(1) = refpointd(1) - xcd
-        zcd = third*zcd
-        ycd = third*ycd
-        xcd = third*xcd
-        do j=3,1,-1
-          varsd(zipper%conn(3, i), 9) = varsd(zipper%conn(3, i), 9) + &
-&           zcd
-          varsd(zipper%conn(2, i), 8) = varsd(zipper%conn(2, i), 8) + &
-&           ycd
-          varsd(zipper%conn(1, i), 7) = varsd(zipper%conn(1, i), 7) + &
-&           xcd
-        end do
-        mnmd = massflowratelocal*mass_mnd
-        massflowratelocald = massflowratelocald + pm*mass_psd + pref*&
-&         ptot*mass_ptotd + massflowrated + tref*ttot*mass_ttotd + mnm*&
-&         mass_mnd
-        pmd = pmd + massflowratelocal*mass_psd
-        ttotd = ttotd + tref*massflowratelocal*mass_ttotd
-        trefd = trefd + ttot*massflowratelocal*mass_ttotd
-        ptotd = ptotd + pref*massflowratelocal*mass_ptotd
-        call popreal8(pm)
-        temp1 = vmag**2 - uinf**2
-        tempd1 = uref*vnm*pref*pkd
-        tempd0 = uref*(pm-pinf+half*(rhom*temp1))*pkd
-        prefd = prefd + pm*pmd + vnm*tempd0 + ptot*massflowratelocal*&
-&         mass_ptotd
-        vnmd = mredim*rhom*massflowratelocald + pref*tempd0
-        mredimd = mredimd + rhom*vnm*massflowratelocald
+          result1 = mynorm2(ss)
+          call pushreal8array(ss, 3)
+          ss = ss/result1
+          call pushreal8(massflowratelocal)
+          massflowratelocal = massflowratelocal/timeref*internalflowfact&
+&           *inflowfact
+          fx = massflowratelocal*ss(1)*vxm/timeref
+          fy = massflowratelocal*ss(2)*vym/timeref
+          fz = massflowratelocal*ss(3)*vzm/timeref
+          temp2 = ss(1)/timeref
+          temp3 = ss(2)/timeref
+          mzd = mmomd(3)
+          myd = mmomd(2)
+          mxd = mmomd(1)
+          xcd = fy*mzd - fz*myd
+          fyd = xc*mzd - fmomd(2) - zc*mxd
+          ycd = fz*mxd - fx*mzd
+          fxd = zc*myd - fmomd(1) - yc*mzd
+          zcd = fx*myd - fy*mxd
+          fzd = yc*mxd - fmomd(3) - xc*myd
+          ssd = 0.0_8
+          tempd4 = massflowratelocal*vzm*fzd/timeref
+          temp4 = ss(3)/timeref
+          ssd(3) = ssd(3) + tempd4
+          massflowratelocald = temp3*vym*fyd + temp2*vxm*fxd + temp4*vzm&
+&           *fzd
+          vzmd = temp4*massflowratelocal*fzd
+          tempd5 = massflowratelocal*vym*fyd/timeref
+          ssd(2) = ssd(2) + tempd5
+          vymd = temp3*massflowratelocal*fyd
+          tempd7 = massflowratelocal*vxm*fxd/timeref
+          ssd(1) = ssd(1) + tempd7
+          vxmd = temp2*massflowratelocal*fxd
+          call popreal8(massflowratelocal)
+          tempd6 = internalflowfact*inflowfact*massflowratelocald/&
+&           timeref
+          timerefd = timerefd - temp3*tempd5 - massflowratelocal*tempd6/&
+&           timeref - temp2*tempd7 - temp4*tempd4
+          massflowratelocald = tempd6
+          call popreal8array(ss, 3)
+          result1d = sum(-(ss*ssd/result1))/result1
+          ssd = ssd/result1
+          call mynorm2_b(ss, ssd, result1d)
+          mzd = mpd(3)
+          myd = mpd(2)
+          mxd = mpd(1)
+          fx = pm*ss(1)
+          fy = pm*ss(2)
+          fyd = fpd(2) - zc*mxd + xc*mzd
+          fxd = zc*myd + fpd(1) - yc*mzd
+          fz = pm*ss(3)
+          xcd = xcd + fy*mzd - fz*myd
+          ycd = ycd + fz*mxd - fx*mzd
+          zcd = zcd + fx*myd - fy*mxd
+          fzd = yc*mxd + fpd(3) - xc*myd
+          pmd = ss(2)*fyd + ss(1)*fxd + ss(3)*fzd
+          ssd(3) = ssd(3) + pm*fzd
+          ssd(2) = ssd(2) + pm*fyd
+          ssd(1) = ssd(1) + pm*fxd
+          call popreal8(pm)
+          prefd = prefd + pinf*pmd
+          pmd = -pmd
+          refpointd(3) = refpointd(3) - zcd
+          refpointd(2) = refpointd(2) - ycd
+          refpointd(1) = refpointd(1) - xcd
+          zcd = third*zcd
+          ycd = third*ycd
+          xcd = third*xcd
+          do j=3,1,-1
+            varsd(zipper%conn(3, i), 9) = varsd(zipper%conn(3, i), 9) + &
+&             zcd
+            varsd(zipper%conn(2, i), 8) = varsd(zipper%conn(2, i), 8) + &
+&             ycd
+            varsd(zipper%conn(1, i), 7) = varsd(zipper%conn(1, i), 7) + &
+&             xcd
+          end do
+          mnmd = massflowratelocal*mass_mnd
+          massflowratelocald = massflowratelocald + pm*mass_psd + pref*&
+&           ptot*mass_ptotd + massflowrated + tref*ttot*mass_ttotd + mnm&
+&           *mass_mnd
+          pmd = pmd + massflowratelocal*mass_psd
+          ttotd = ttotd + tref*massflowratelocal*mass_ttotd
+          trefd = trefd + ttot*massflowratelocal*mass_ttotd
+          ptotd = ptotd + pref*massflowratelocal*mass_ptotd
+          call popreal8(pm)
+          temp1 = vmag**2 - uinf**2
+          tempd3 = uref*vnm*pref*pkd
+          tempd2 = uref*(pm-pinf+half*(rhom*temp1))*pkd
+          prefd = prefd + pm*pmd + vnm*tempd2 + ptot*massflowratelocal*&
+&           mass_ptotd
+          pmd = tempd3 + pref*pmd
+          rhomd = half*temp1*tempd3
+          vmagd = rhom*half*2*vmag*tempd3
+          vnmd = pref*tempd2
+        end if
         temp = gammam*pm/rhom
         temp0 = sqrt(temp)
-        vmagd = mnmd/temp0 + rhom*half*2*vmag*tempd1
         if (temp .eq. 0.0_8) then
-          tempd2 = 0.0
+          tempd0 = 0.0
         else
-          tempd2 = -(vmag*mnmd/(2.0*temp0**3*rhom))
+          tempd0 = -(vmag*mnmd/(2.0*temp0**3*rhom))
         end if
-        pmd = tempd1 + gammam*tempd2 + pref*pmd
-        rhomd = mredim*vnm*massflowratelocald - temp*tempd2 + half*temp1&
-&         *tempd1
-        gammamd = gammamd + pm*tempd2
+        rhomd = rhomd + mredim*vnm*massflowratelocald - temp*tempd0
+        vnmd = vnmd + mredim*rhom*massflowratelocald
+        mredimd = mredimd + rhom*vnm*massflowratelocald
+        vmagd = vmagd + mnmd/temp0
+        gammamd = gammamd + pm*tempd0
+        pmd = pmd + gammam*tempd0
         if (vxm**2 + vym**2 + vzm**2 .eq. 0.0_8) then
-          tempd3 = 0.0
+          tempd1 = 0.0
         else
-          tempd3 = vmagd/(2.0*sqrt(vxm**2+vym**2+vzm**2))
+          tempd1 = vmagd/(2.0*sqrt(vxm**2+vym**2+vzm**2))
         end if
-        vxmd = vxmd + ss(1)*vnmd + 2*vxm*tempd3
-        vymd = vymd + ss(2)*vnmd + 2*vym*tempd3
-        vzmd = vzmd + ss(3)*vnmd + 2*vzm*tempd3
+        vxmd = vxmd + ss(1)*vnmd + 2*vxm*tempd1
+        vymd = vymd + ss(2)*vnmd + 2*vym*tempd1
+        vzmd = vzmd + ss(3)*vnmd + 2*vzm*tempd1
         sfd = -vnmd - vmagd
         ssd(1) = ssd(1) + vxm*vnmd
         ssd(2) = ssd(2) + vym*vnmd
@@ -2232,12 +2278,13 @@ bocos:do mm=1,nbocos
     refpointd(2) = 0.0_8
     pointrefd(1) = pointrefd(1) + lref*refpointd(1)
   end subroutine flowintegrationzipper_b
-  subroutine flowintegrationzipper(isinflow, zipper, vars, localvalues, &
-&   famlist, sps)
+  subroutine flowintegrationzipper(isinflow, withgathered, zipper, vars&
+&   , localvalues, famlist, sps)
 ! integrate over the trianges for the inflow/outflow conditions. 
     use constants
     use costfunctions, only : nlocalvalues, imassflow, imassptot, &
-&   imassttot, imassps, iflowmm, iflowmp, iflowfm, ifp, imassmn, ipk
+&   imassttot, imassps, iflowmm, iflowmp, iflowfm, ifp, imassmn, ipk, &
+&   funcvalues
     use blockpointers, only : bctype
     use sorting, only : bsearchintegers
     use flowvarrefstate, only : pref, pinf, rhoref, pref, timeref, &
@@ -2250,6 +2297,7 @@ bocos:do mm=1,nbocos
     implicit none
 ! input/output variables
     logical, intent(in) :: isinflow
+    logical, intent(in) :: withgathered
     type(zippermesh), intent(in) :: zipper
     real(kind=realtype), dimension(:, :), intent(in) :: vars
     real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
@@ -2258,14 +2306,14 @@ bocos:do mm=1,nbocos
     integer(kind=inttype), intent(in) :: sps
 ! working variables
     integer(kind=inttype) :: i, j
-    real(kind=realtype) :: sf, vmag, vnm, vxm, vym, vzm, mredim, fx, fy&
-&   , fz
+    real(kind=realtype) :: sf, vmag, vnm, vxm, vym, vzm, fx, fy, fz
     real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint, &
 &   ss, x1, x2, x3, norm
     real(kind=realtype) :: pm, ptot, ttot, rhom, gammam, mnm, &
 &   massflowratelocal
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps, &
-&   mass_mn, pk
+&   mass_mn
+    real(kind=realtype) :: mredim, pk, sigma_mn, sigma_ptot
     real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, &
 &   cellarea, mx, my, mz
     real(kind=realtype), dimension(:), pointer :: localptr
@@ -2274,6 +2322,10 @@ bocos:do mm=1,nbocos
     real(kind=realtype), dimension(3) :: arg1
     real(kind=realtype), dimension(3) :: arg2
     real(kind=realtype) :: result1
+    type(unknowntype) :: costfuncmavgmn
+    type(unknowntype) :: costfuncmavgptot
+    type(unknowntype) :: isigmaptot
+    type(unknowntype) :: isigmamn
     massflowrate = zero
     mass_ptot = zero
     mass_ttot = zero
@@ -2332,171 +2384,90 @@ bocos:do mm=1,nbocos
 ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
         mnm = vmag/sqrt(gammam*pm/rhom)
         massflowratelocal = rhom*vnm*mredim
-        massflowrate = massflowrate + massflowratelocal
-        pk = pk + (pm-pinf+half*rhom*(vmag**2-uinf**2))*vnm*pref*uref
-        pm = pm*pref
-        mass_ptot = mass_ptot + ptot*massflowratelocal*pref
-        mass_ttot = mass_ttot + ttot*massflowratelocal*tref
-        mass_ps = mass_ps + pm*massflowratelocal
-        mass_mn = mass_mn + mnm*massflowratelocal
+        if (withgathered) then
+          sigma_mn = sigma_mn + massflowratelocal*(mnm-funcvalues(&
+&           costfuncmavgmn))**2
+          sigma_ptot = sigma_ptot + massflowratelocal*(ptot-funcvalues(&
+&           costfuncmavgptot))**2
+        else
+          massflowrate = massflowrate + massflowratelocal
+          pk = pk + (pm-pinf+half*rhom*(vmag**2-uinf**2))*vnm*pref*uref
+          pm = pm*pref
+          mass_ptot = mass_ptot + ptot*massflowratelocal*pref
+          mass_ttot = mass_ttot + ttot*massflowratelocal*tref
+          mass_ps = mass_ps + pm*massflowratelocal
+          mass_mn = mass_mn + mnm*massflowratelocal
 ! compute the average cell center. 
-        xc = zero
-        yc = zero
-        zc = zero
-        do j=1,3
-          xc = xc + vars(zipper%conn(1, i), 7)
-          yc = yc + vars(zipper%conn(2, i), 8)
-          zc = zc + vars(zipper%conn(3, i), 9)
-        end do
+          xc = zero
+          yc = zero
+          zc = zero
+          do j=1,3
+            xc = xc + vars(zipper%conn(1, i), 7)
+            yc = yc + vars(zipper%conn(2, i), 8)
+            zc = zc + vars(zipper%conn(3, i), 9)
+          end do
 ! finish average for cell center
-        xc = third*xc
-        yc = third*yc
-        zc = third*zc
-        xc = xc - refpoint(1)
-        yc = yc - refpoint(2)
-        zc = zc - refpoint(3)
-        pm = -(pm-pinf*pref)
-        fx = pm*ss(1)
-        fy = pm*ss(2)
-        fz = pm*ss(3)
+          xc = third*xc
+          yc = third*yc
+          zc = third*zc
+          xc = xc - refpoint(1)
+          yc = yc - refpoint(2)
+          zc = zc - refpoint(3)
+          pm = -(pm-pinf*pref)
+          fx = pm*ss(1)
+          fy = pm*ss(2)
+          fz = pm*ss(3)
 ! update the pressure force and moment coefficients.
-        fp(1) = fp(1) + fx
-        fp(2) = fp(2) + fy
-        fp(3) = fp(3) + fz
-        mx = yc*fz - zc*fy
-        my = zc*fx - xc*fz
-        mz = xc*fy - yc*fx
-        mp(1) = mp(1) + mx
-        mp(2) = mp(2) + my
-        mp(3) = mp(3) + mz
+          fp(1) = fp(1) + fx
+          fp(2) = fp(2) + fy
+          fp(3) = fp(3) + fz
+          mx = yc*fz - zc*fy
+          my = zc*fx - xc*fz
+          mz = xc*fy - yc*fx
+          mp(1) = mp(1) + mx
+          mp(2) = mp(2) + my
+          mp(3) = mp(3) + mz
 ! momentum forces
 ! get unit normal vector. 
-        result1 = mynorm2(ss)
-        ss = ss/result1
-        massflowratelocal = massflowratelocal/timeref*internalflowfact*&
-&         inflowfact
-        fx = massflowratelocal*ss(1)*vxm/timeref
-        fy = massflowratelocal*ss(2)*vym/timeref
-        fz = massflowratelocal*ss(3)*vzm/timeref
-        fmom(1) = fmom(1) - fx
-        fmom(2) = fmom(2) - fy
-        fmom(3) = fmom(3) - fz
-        mx = yc*fz - zc*fy
-        my = zc*fx - xc*fz
-        mz = xc*fy - yc*fx
-        mmom(1) = mmom(1) + mx
-        mmom(2) = mmom(2) + my
-        mmom(3) = mmom(3) + mz
+          result1 = mynorm2(ss)
+          ss = ss/result1
+          massflowratelocal = massflowratelocal/timeref*internalflowfact&
+&           *inflowfact
+          fx = massflowratelocal*ss(1)*vxm/timeref
+          fy = massflowratelocal*ss(2)*vym/timeref
+          fz = massflowratelocal*ss(3)*vzm/timeref
+          fmom(1) = fmom(1) - fx
+          fmom(2) = fmom(2) - fy
+          fmom(3) = fmom(3) - fz
+          mx = yc*fz - zc*fy
+          my = zc*fx - xc*fz
+          mz = xc*fy - yc*fx
+          mmom(1) = mmom(1) + mx
+          mmom(2) = mmom(2) + my
+          mmom(3) = mmom(3) + mz
+        end if
       end if
     end do
+    if (withgathered) then
+      localvalues(isigmamn) = localvalues(isigmamn) + sigma_mn
+      localvalues(isigmaptot) = localvalues(isigmaptot) + sigma_ptot
+    else
 ! increment the local values array with what we computed here
-    localvalues(imassflow) = localvalues(imassflow) + massflowrate
-    localvalues(imassptot) = localvalues(imassptot) + mass_ptot
-    localvalues(imassttot) = localvalues(imassttot) + mass_ttot
-    localvalues(imassps) = localvalues(imassps) + mass_ps
-    localvalues(imassmn) = localvalues(imassmn) + mass_mn
-    localvalues(ipk) = localvalues(ipk) + pk
-    localvalues(ifp:ifp+2) = localvalues(ifp:ifp+2) + fp
-    localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
-&     fmom
-    localvalues(iflowmp:iflowmp+2) = localvalues(iflowmp:iflowmp+2) + mp
-    localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
-&     mmom
+      localvalues(imassflow) = localvalues(imassflow) + massflowrate
+      localvalues(imassptot) = localvalues(imassptot) + mass_ptot
+      localvalues(imassttot) = localvalues(imassttot) + mass_ttot
+      localvalues(imassps) = localvalues(imassps) + mass_ps
+      localvalues(imassmn) = localvalues(imassmn) + mass_mn
+      localvalues(ipk) = localvalues(ipk) + pk
+      localvalues(ifp:ifp+2) = localvalues(ifp:ifp+2) + fp
+      localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
+&       fmom
+      localvalues(iflowmp:iflowmp+2) = localvalues(iflowmp:iflowmp+2) + &
+&       mp
+      localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
+&       mmom
+    end if
   end subroutine flowintegrationzipper
-  subroutine flowintegrationzipperwithgathered(isinflow, zipper, vars, &
-&   localvalues, famlist, sps)
-! integrate over the trianges for the inflow/outflow conditions. 
-    use constants
-    use costfunctions, only : nlocalvalues, isigmamn, isigmaptot, &
-&   costfuncmavgmn, costfuncmavgptot, ncostfunction, funcvalues
-    use blockpointers, only : bctype
-    use sorting, only : bsearchintegers
-    use flowvarrefstate, only : pref, pinf, rhoref, pref, timeref, &
-&   lref, tref, rgas
-    use inputphysics, only : pointref, flowtype
-    use flowutils_b, only : computeptot
-    use overset, only : zippermeshes, zippermesh
-    use surfacefamilies, only : familyexchange, bcfamexchange
-    use utils_b, only : mynorm2, cross_prod
-    implicit none
-! input/output variables
-    logical, intent(in) :: isinflow
-    type(zippermesh), intent(in) :: zipper
-    real(kind=realtype), dimension(:, :), intent(in) :: vars
-    real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
-&   localvalues
-    integer(kind=inttype), dimension(:), intent(in) :: famlist
-    integer(kind=inttype), intent(in) :: sps
-! working variables
-    integer(kind=inttype) :: i, j
-    real(kind=realtype) :: sf, vmag, vnm, vxm, vym, vzm, mredim
-    real(kind=realtype), dimension(3) :: ss, x1, x2, x3, norm
-    real(kind=realtype) :: pm, ptot, rhom, gammam, massavgptot, &
-&   sigmaptot
-    real(kind=realtype) :: mnm, massflowratelocal, sigmamn, massavgmn
-    real(kind=realtype) :: internalflowfact, inflowfact
-    real(kind=realtype), dimension(:), pointer :: localptr
-    intrinsic sqrt
-    intrinsic size
-    real(kind=realtype), dimension(3) :: arg1
-    real(kind=realtype), dimension(3) :: arg2
-    internalflowfact = one
-    if (flowtype .eq. internalflow) internalflowfact = -one
-    inflowfact = one
-    if (isinflow) inflowfact = -one
-    mredim = sqrt(pref*rhoref)
-    massavgmn = funcvalues(costfuncmavgmn)
-    massavgptot = funcvalues(costfuncmavgptot)
-    sigmamn = zero
-    sigmaptot = zero
-    do i=1,size(zipper%conn, 2)
-      if (bsearchintegers(zipper%fam(i), famlist) .gt. 0) then
-! compute the averaged values for this trianlge
-        vxm = zero
-        vym = zero
-        vzm = zero
-        rhom = zero
-        pm = zero
-        mnm = zero
-        sf = zero
-        do j=1,3
-          rhom = rhom + vars(zipper%conn(j, i), irho)
-          vxm = vxm + vars(zipper%conn(j, i), ivx)
-          vym = vym + vars(zipper%conn(j, i), ivy)
-          vzm = vzm + vars(zipper%conn(j, i), ivz)
-          pm = pm + vars(zipper%conn(j, i), irhoe)
-          gammam = gammam + vars(zipper%conn(j, i), 6)
-          sf = sf + vars(zipper%conn(j, i), 7)
-        end do
-! divide by 3 due to the summation above:
-        rhom = third*rhom
-        vxm = third*vxm
-        vym = third*vym
-        vzm = third*vzm
-        pm = third*pm
-        gammam = third*gammam
-        sf = third*sf
-! get the nodes of triangle.
-        x1 = vars(zipper%conn(1, i), 7:9)
-        x2 = vars(zipper%conn(2, i), 7:9)
-        x3 = vars(zipper%conn(3, i), 7:9)
-        arg1(:) = x2 - x1
-        arg2(:) = x3 - x1
-        call cross_prod(arg1(:), arg2(:), norm)
-        ss = -(half*norm)
-        vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3) - sf
-        vmag = sqrt(vxm**2 + vym**2 + vzm**2) - sf
-        mnm = sqrt((vxm**2+vym**2+vzm**2)*rhom/(gammam*pm))
-        call computeptot(rhom, vxm, vym, vzm, pm, ptot)
-        ptot = ptot*pref
-        massflowratelocal = rhom*vnm*mredim
-        sigmamn = sigmamn + massflowratelocal*(mnm-massavgmn)**2
-        sigmaptot = sigmaptot + massflowratelocal*(ptot-massavgptot)**2
-      end if
-    end do
-    localvalues(isigmamn) = localvalues(isigmamn) + sigmamn
-    localvalues(isigmaptot) = localvalues(isigmaptot) + sigmaptot
-  end subroutine flowintegrationzipperwithgathered
 !  differentiation of wallintegrationzipper in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: pointref vars localvalues
 !   with respect to varying inputs: pointref vars localvalues

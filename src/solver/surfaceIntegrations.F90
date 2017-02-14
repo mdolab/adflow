@@ -925,13 +925,13 @@ contains
 
   end subroutine flowIntegrationFace
 
-  subroutine flowIntegrationZipper(isInflow, zipper, vars, localValues, famList, sps)
+  subroutine flowIntegrationZipper(isInflow, withGathered, zipper, vars, localValues, famList, sps)
 
     ! Integrate over the trianges for the inflow/outflow conditions. 
 
     use constants
     use costFunctions, only : nLocalValues, iMassFlow, iMassPtot, iMassTtot, iMassPs, &
-         iFlowMm, iFlowMp, iFlowFm, iFp, iMassMN, iPk
+         iFlowMm, iFlowMp, iFlowFm, iFp, iMassMN, iPk, funcValues
     use blockPointers, only : BCType
     use sorting, only : bsearchIntegers
     use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas, uRef, uInf
@@ -944,6 +944,7 @@ contains
 
     ! Input/output Variables
     logical, intent(in) :: isInflow
+    logical, intent(in) :: withGathered
     type(zipperMesh), intent(in) :: zipper
     real(kind=realType), dimension(:, :), intent(in) :: vars
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
@@ -952,10 +953,11 @@ contains
 
     ! Working variables
     integer(kind=intType) :: i, j
-    real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, mReDim, Fx, Fy, Fz
+    real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, Fx, Fy, Fz
     real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint, ss, x1, x2, x3, norm
     real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, MNm, massFlowRateLocal
-    real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN, pk
+    real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN
+    real(kind=realType) ::  mReDim, pk, sigma_MN, sigma_Ptot
     real(kind=realType) :: internalFlowFact, inflowFact, xc, yc, zc, cellArea, mx, my, mz
 
     real(kind=realType), dimension(:), pointer :: localPtr
@@ -1028,194 +1030,105 @@ contains
           MNm = vmag/sqrt(gammam*pm/rhom)
 
           massFlowRateLocal = rhom*vnm*mReDim
-          massFlowRate = massFlowRate + massFlowRateLocal
 
-          pk = pk + ((pm-pInf) + half*rhom*(vmag**2 - uInf**2)) * vnm * pRef * uRef
+          checkGathered: if (withGathered) then
 
-          pm = pm*pRef
-          
-          mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
-          mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
-          mass_Ps = mass_Ps + pm*massFlowRateLocal
-          mass_MN = mass_MN + MNm*massFlowRateLocal
-          
-          ! Compute the average cell center. 
-          xc = zero
-          yc = zero
-          zc = zero
-          do j=1,3
-             xc = xc + (vars(zipper%conn(1, i), 7)) 
-             yc = yc + (vars(zipper%conn(2, i), 8)) 
-             zc = zc + (vars(zipper%conn(3, i), 9)) 
-          end do
+            sigma_Mn = sigma_Mn  + massFlowRateLocal*(MNm - funcValues(costFuncMavgMN))**2
+            sigma_Ptot = sigma_Ptot + massFlowRateLocal*(Ptot - funcValues(costFuncMavgPtot))**2
 
-          ! Finish average for cell center
-          xc = third*xc
-          yc = third*yc
-          zc = third*zc
+          else 
+            massFlowRate = massFlowRate + massFlowRateLocal
 
-          xc = xc - refPoint(1)
-          yc = yc - refPoint(2)
-          zc = zc - refPoint(3)
+            pk = pk + ((pm-pInf) + half*rhom*(vmag**2 - uInf**2)) * vnm * pRef * uRef
 
-          pm = -(pm-pInf*pRef)
-          fx = pm*ss(1)
-          fy = pm*ss(2)
-          fz = pm*ss(3)
+            pm = pm*pRef
+            
+            mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
+            mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
+            mass_Ps = mass_Ps + pm*massFlowRateLocal
+            mass_MN = mass_MN + MNm*massFlowRateLocal
+            
+            ! Compute the average cell center. 
+            xc = zero
+            yc = zero
+            zc = zero
+            do j=1,3
+               xc = xc + (vars(zipper%conn(1, i), 7)) 
+               yc = yc + (vars(zipper%conn(2, i), 8)) 
+               zc = zc + (vars(zipper%conn(3, i), 9)) 
+            end do
 
-          ! Update the pressure force and moment coefficients.
-          Fp(1) = Fp(1) + fx
-          Fp(2) = Fp(2) + fy
-          Fp(3) = Fp(3) + fz
-                 
-          mx = yc*fz - zc*fy
-          my = zc*fx - xc*fz
-          mz = xc*fy - yc*fx
-       
-          Mp(1) = Mp(1) + mx
-          Mp(2) = Mp(2) + my
-          Mp(3) = Mp(3) + mz
+            ! Finish average for cell center
+            xc = third*xc
+            yc = third*yc
+            zc = third*zc
 
-          ! Momentum forces
+            xc = xc - refPoint(1)
+            yc = yc - refPoint(2)
+            zc = zc - refPoint(3)
 
-          ! Get unit normal vector. 
-          ss = ss/mynorm2(ss)
-          massFlowRateLocal = massFlowRateLocal/timeRef*internalFlowFact*inflowFact
+            pm = -(pm-pInf*pRef)
+            fx = pm*ss(1)
+            fy = pm*ss(2)
+            fz = pm*ss(3)
 
-          fx = massFlowRateLocal*ss(1) * vxm/timeRef
-          fy = massFlowRateLocal*ss(2) * vym/timeRef
-          fz = massFlowRateLocal*ss(3) * vzm/timeRef
+            ! Update the pressure force and moment coefficients.
+            Fp(1) = Fp(1) + fx
+            Fp(2) = Fp(2) + fy
+            Fp(3) = Fp(3) + fz
+                   
+            mx = yc*fz - zc*fy
+            my = zc*fx - xc*fz
+            mz = xc*fy - yc*fx
+         
+            Mp(1) = Mp(1) + mx
+            Mp(2) = Mp(2) + my
+            Mp(3) = Mp(3) + mz
 
-          FMom(1) = FMom(1) - fx
-          FMom(2) = FMom(2) - fy
-          FMom(3) = FMom(3) - fz
+            ! Momentum forces
 
-          mx = yc*fz - zc*fy
-          my = zc*fx - xc*fz
-          mz = xc*fy - yc*fx
-          
-          MMom(1) = MMom(1) + mx
-          MMom(2) = MMom(2) + my
-          MMom(3) = MMom(3) + mz
+            ! Get unit normal vector. 
+            ss = ss/mynorm2(ss)
+            massFlowRateLocal = massFlowRateLocal/timeRef*internalFlowFact*inflowFact
+
+            fx = massFlowRateLocal*ss(1) * vxm/timeRef
+            fy = massFlowRateLocal*ss(2) * vym/timeRef
+            fz = massFlowRateLocal*ss(3) * vzm/timeRef
+
+            FMom(1) = FMom(1) - fx
+            FMom(2) = FMom(2) - fy
+            FMom(3) = FMom(3) - fz
+
+            mx = yc*fz - zc*fy
+            my = zc*fx - xc*fz
+            mz = xc*fy - yc*fx
+            
+            MMom(1) = MMom(1) + mx
+            MMom(2) = MMom(2) + my
+            MMom(3) = MMom(3) + mz
+          end if checkGathered
        end if
     enddo
     
-    ! Increment the local values array with what we computed here
-    localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate
-    localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
-    localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
-    localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
-    localValues(iMassMN)   = localValues(iMassMN)   + mass_MN
-    localValues(iPk)   = localValues(iPk)   + Pk
-    localValues(iFp:iFp+2)   = localValues(iFp:iFp+2) + Fp
-    localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
-    localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
-    localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
+    if (withGathered) then 
+      localValues(isigmaMN) = localValues(isigmaMN) + sigma_Mn
+      localValues(isigmaPtot) = localValues(isigmaPtot) + sigma_Ptot
+    else
+      ! Increment the local values array with what we computed here
+      localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate
+      localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
+      localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
+      localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
+      localValues(iMassMN)   = localValues(iMassMN)   + mass_MN
+      localValues(iPk)   = localValues(iPk)   + Pk
+      localValues(iFp:iFp+2)   = localValues(iFp:iFp+2) + Fp
+      localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
+      localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
+      localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
+    end if
 
   end subroutine flowIntegrationZipper
-
-  subroutine flowIntegrationZipperwithGathered(isInflow, zipper, vars, localValues, famList, sps)
-
-    ! Integrate over the trianges for the inflow/outflow conditions. 
-
-    use constants
-    use costFunctions, only : nLocalValues, iSigmaMN, iSigmaPtot, costFuncMAvgMN, costFuncMAvgPtot, nCostFunction, funcValues
-    use blockPointers, only : BCType
-    use sorting, only : bsearchIntegers
-    use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas
-    use inputPhysics, only : pointRef, flowType
-    use flowUtils, only : computePtot
-    use overset, only : zipperMeshes, zipperMesh
-    use surfaceFamilies, only : familyExchange, BCFamExchange
-    use utils, only : mynorm2, cross_prod
-    implicit none
-
-    ! Input/output Variables
-    logical, intent(in) :: isInflow
-    type(zipperMesh), intent(in) :: zipper
-    real(kind=realType), dimension(:, :), intent(in) :: vars
-    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
-    integer(kind=intType), dimension(:), intent(in) :: famList
-    integer(kind=intType), intent(in) :: sps
-
-    ! Working variables
-    integer(kind=intType) :: i, j
-    real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, mReDim
-    real(kind=realType), dimension(3) :: ss, x1, x2, x3, norm
-    real(kind=realType) :: pm, Ptot, rhom, gammam, massAvgPtot, sigmaPtot
-    real(kind=realType) :: MNm, massFlowRateLocal, sigmaMN, massAvgMN
-    real(kind=realType) :: internalFlowFact, inflowFact
-
-    real(kind=realType), dimension(:), pointer :: localPtr
-
-    internalFlowFact = one
-    if (flowType == internalFlow) then 
-      internalFlowFact = -one
-    end if
-
-    inFlowFact = one
-    if (isInflow) then 
-      inflowFact=-one
-    end if
-
-    mReDim = sqrt(pRef*rhoRef)
-    massAvgMN = funcValues(costFuncMavgMN)
-    massAvgPtot = funcValues(costFuncMavgPtot)
-
-    sigmaMN = zero
-    sigmaPtot = zero
-
-    !$AD II-LOOP
-    do i=1, size(zipper%conn, 2)
-      if (bsearchIntegers(zipper%fam(i) , famList) > 0) then 
-          ! Compute the averaged values for this trianlge
-          vxm = zero; vym = zero; vzm = zero; rhom = zero; pm = zero; MNm = zero;
-          sF = zero
-          do j=1,3
-             rhom = rhom + vars(zipper%conn(j, i), iRho)
-             vxm = vxm + vars(zipper%conn(j, i), iVx)
-             vym = vym + vars(zipper%conn(j, i), iVy)
-             vzm = vzm + vars(zipper%conn(j, i), iVz)
-             pm = pm + vars(zipper%conn(j, i), iRhoE)
-             gammam = gammam + vars(zipper%conn(j, i), 6)
-             sF = sF + vars(zipper%conn(j, i), 7)
-          end do
-
-          ! Divide by 3 due to the summation above:
-          rhom = third*rhom
-          vxm = third*vxm
-          vym = third*vym
-          vzm = third*vzm
-          pm = third*pm
-          gammam = third*gammam
-          sF = third*sF
-
-          ! Get the nodes of triangle.
-          x1 = vars(zipper%conn(1, i), 7:9)
-          x2 = vars(zipper%conn(2, i), 7:9)
-          x3 = vars(zipper%conn(3, i), 7:9)
-          call cross_prod(x2-x1, x3-x1, norm)
-          ss = -half*norm
-
-          vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3)  - sF
-          vmag = sqrt((vxm**2 + vym**2 + vzm**2)) - sF
-          MNm = sqrt((vxm**2 + vym**2 + vzm**2)*rhom/(gammam*pm)) 
-
-          call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
-          Ptot = Ptot * pref
-
-          massFlowRateLocal = rhom*vnm*mReDim
-          sigmaMN = sigmaMN + massFlowRateLocal*(MNm - massAvgMN)**2
-          sigmaPtot = sigmaPtot + massFlowRateLocal*(Ptot - massAvgPtot)**2
-
-      end if
-    end do 
-
-    localValues(iSigmaMN) = localValues(iSigmaMN) + sigmaMN
-    localValues(iSigmaPtot) = localValues(iSigmaPtot) + sigmaPtot
-
-  end subroutine flowIntegrationZipperwithGathered
-
+  
   subroutine wallIntegrationZipper(zipper, vars, localValues, famList, sps)
 
     use constants
