@@ -75,17 +75,16 @@ module costFunctions
        iMassPTot = 20, &
        iMassTtot = 21, &
        iMassPs   = 22, &
-       iFlowFp   = 23, & 
-       iFlowMp   = 26, & 
-       iFlowFm   = 29, & 
-       iFlowMm   = 32, & 
-       iMassMN   = 35, &
-       isigmaMN = 36, &
-       isigmaPtot = 37, &
-       iPk = 38
+       iFlowMp   = 23, & 
+       iFlowFm   = 26, & 
+       iFlowMm   = 29, & 
+       iMassMN   = 32, &
+       isigmaMN = 33, &
+       isigmaPtot = 34, &
+       iPk = 35
 
 
-  integer(kind=intType), parameter :: nLocalValues=39
+  integer(kind=intType), parameter :: nLocalValues=36
 
   real(kind=realType), dimension(nCostFunction) ::  funcValues
 #ifndef USE_TAPENADE
