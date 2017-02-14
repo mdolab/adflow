@@ -44,7 +44,7 @@ module surfaceIntegrations
 
 contains
 
-  subroutine integrateSurfaces(localValues, famList, withGathered)
+  subroutine integrateSurfaces(localValues, famList, withGathered, funcValues)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
     ! modifying the hand-written forward and reverse routines. 
@@ -61,7 +61,6 @@ contains
          sfacei, sfacej, sfacek, gamma, rev, p, viscSubface
     use utils, only : setBCPointers, isWallType
     use sorting, only : bsearchIntegers
-    use costFunctions, only : nLocalValues
     ! Tapenade needs to see these modules that the callees use.
     use BCPointers 
     use flowVarRefState
@@ -72,15 +71,11 @@ contains
     ! Input/output Variables
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
     integer(kind=intType), dimension(:), intent(in) :: famList
-    logical, optional, intent(in) :: withGathered
+    logical, intent(in) :: withGathered
+    real(kind=realType),  dimension(:), intent(in) :: funcValues
+
     ! Working variables
     integer(kind=intType) :: mm
-    logical :: withGatheredFlag
-
-    withGatheredFlag = .false. 
-    if (present(withGathered)) then 
-      withGatheredFlag = withGathered 
-    end if 
 
     ! Loop over all possible boundary conditions
     bocos: do mm=1, nBocos
@@ -93,35 +88,36 @@ contains
           ! a generic treatment possible. 
           call setBCPointers(mm, .True.)
 
-          ! not post gathered integrations currently
-          isWall: if( isWallType(BCType(mm)) .and. .not. withGatheredFlag) then 
+          ! no post gathered integrations currently
+          isWall: if( isWallType(BCType(mm)) .and. .not. withGathered) then 
              call wallIntegrationFace(localvalues, mm)
           end if isWall
 
           isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
                BCType(mm) == SupersonicInflow) then 
-               call flowIntegrationFace(.true., withGatheredFlag, localValues, mm)
-            else if (BCType(mm) == SubsonicOutflow .or. &
+             call flowIntegrationFace(.true., localValues, mm, withGathered, funcValues)
+          else if (BCType(mm) == SubsonicOutflow .or. &
                BCType(mm) == SupersonicOutflow) then 
-               call flowIntegrationFace(.false., withGatheredFlag, localValues, mm)
+             call flowIntegrationFace(.false., localValues, mm, withGathered, funcValues)
           end if isInflowOutflow
+
        end if famInclude
     end do bocos
-
+    
   end subroutine integrateSurfaces
 
-  subroutine getCostFunctions(globalVals)
+  subroutine getCostFunctions(globalVals, funcValues)
 
     use constants
-    use costFunctions
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use flowVarRefState, only : pRef, rhoRef, tRef, LRef, gammaInf
     use inputPhysics, only : liftDirection, dragDirection, surfaceRef, machCoef, lengthRef
     use inputTSStabDeriv, only : TSstability
     implicit none
-
-    ! Input 
-    real(kind=realType), intent(in), dimension(nLocalValues, nTimeIntervalsSpectral) :: globalVals
+    
+    ! Input/Output
+    real(kind=realType), intent(in), dimension(:, :) :: globalVals
+    real(Kind=realType), intent(out), dimension(:) :: funcValues
 
     ! Working
     real(kind=realType) :: fact, factMoment, ovrNTS
@@ -274,7 +270,8 @@ contains
 
 #ifndef USE_TAPENADE
 #ifndef USE_COMPLEX
-  subroutine integrateSurfaces_d(localValues, localValuesd, famList, withGathered)
+  subroutine integrateSurfaces_d(localValues, localValuesd, famList, withGathered, &
+       funcValues, funcValuesd)
     !------------------------------------------------------------------------
     ! Manual Differentiation Warning: This routine is differentiated by hand.
     ! -----------------------------------------------------------------------
@@ -284,24 +281,18 @@ contains
     use blockPointers, only : nBocos, BCData, BCType
     use utils, only : setBCPointers_d, isWallType
     use sorting, only : bsearchIntegers
-    use costFunctions, only : nLocalValues
     use surfaceIntegrations_d, only : wallIntegrationFace_d, flowIntegrationFace_d
     implicit none
     
     ! Input/output Variables
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
     integer(kind=intType), dimension(:), intent(in) :: famList
-    logical, optional, intent(in) :: withGathered
-    
+    logical, intent(in) :: withGathered
+    real(kind=realType),  dimension(:), intent(in) :: funcValues, funcValuesd
+
     ! Working variables
     integer(kind=intType) :: mm
-    logical :: withGatheredFlag
-
-    withGatheredFlag = .false. 
-    if (present(withGathered)) then 
-      withGatheredFlag = withGathered 
-    end if 
-
+  
     ! Loop over all possible boundary conditions
     do mm=1, nBocos
        ! Determine if this boundary condition is to be incldued in the
@@ -313,47 +304,46 @@ contains
           call setBCPointers_d(mm, .True.)
           
           ! not post gathered integrations currently
-          isWall: if( isWallType(BCType(mm)) .and. .not. withGatheredFlag) then 
+          isWall: if( isWallType(BCType(mm)) .and. .not. withGathered) then 
              call wallIntegrationFace_d(localValues, localValuesd, mm)
           end if isWall
           
           isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
                BCType(mm) == SupersonicInflow) then 
-               call flowIntegrationFace(.true., withGatheredFlag, localValues, mm)
+             call flowIntegrationFace_d(.true., localValues, localValuesd, mm, &
+                    withGathered, funcValues, funcValuesd)
             else if (BCType(mm) == SubsonicOutflow .or. &
                BCType(mm) == SupersonicOutflow) then 
-               call flowIntegrationFace(.false., withGatheredFlag, localValues, mm)
+
+               call flowIntegrationFace_d(.false., localValues, localValuesd, mm, &
+                    withGathered, funcValues, funcValuesd)
+
           end if isInflowOutflow
        end if famInclude
     end do
   end subroutine integrateSurfaces_d
 
-  subroutine integrateSurfaces_b(localValues, localValuesd, famList, withGathered)
+  subroutine integrateSurfaces_b(localValues, localValuesd, famList, withGathered, & 
+       funcValues, funcValuesd)
     !------------------------------------------------------------------------
     ! Manual Differentiation Warning: This routine is differentiated by hand.
     ! -----------------------------------------------------------------------
 
     ! Reverse mode linearization of integrateSurfaces
     use constants
-    use blockPointers, only : nBocos, BCData, BCType
+    use blockPointers, only : nBocos, BCData, BCType, bcDatad
     use utils, only : setBCPointers_d, isWallType
     use sorting, only : bsearchIntegers
-    use costFunctions, only : nLocalValues
     use surfaceIntegrations_b, only : wallIntegrationFace_b, flowIntegrationFace_b
     implicit none
 
     ! Input/output Variables
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
     integer(kind=intType), dimension(:), intent(in) :: famList
-    logical, optional, intent(in) :: withGathered
+    logical, intent(in) :: withGathered
+    real(kind=realType), dimension(:) :: funcValues, funcValuesd
     ! Working variables
     integer(kind=intType) :: mm
-    logical :: withGatheredFlag
-
-    withGatheredFlag = .false. 
-    if (present(withGathered)) then 
-      withGatheredFlag = withGathered 
-    end if 
 
     ! Call the individual integration routines. 
     do mm=1, nBocos
@@ -366,21 +356,23 @@ contains
           call setBCPointers_d(mm, .True.)
           
           ! not post gathered integrations currently
-          isWall: if( isWallType(BCType(mm)) .and. .not. withGatheredFlag) then 
+          isWall: if( isWallType(BCType(mm)) .and. (.not. withGathered)) then 
              call wallIntegrationFace_b(localValues, localValuesd, mm)
           end if isWall
           
           isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
                BCType(mm) == SupersonicInflow) then 
-               call flowIntegrationFace_b(.true., withGatheredFlag, localValues, localValuesd, mm)
-            else if (BCType(mm) == SubsonicOutflow .or. &
+             call flowIntegrationFace_b(.true., localValues, localValuesd, mm, withGathered, &
+                  funcValues, funcValuesd)
+          else if (BCType(mm) == SubsonicOutflow .or. &
                BCType(mm) == SupersonicOutflow) then 
-               call flowIntegrationFace_b(.false., withGatheredFlag, localValues, localValuesd, mm)
+             call flowIntegrationFace_b(.false., localValues, localValuesd, mm, withGathered, &
+                  funcValues, funcValuesd)
           end if isInflowOutflow
        end if famInclude
     end do
   end subroutine integrateSurfaces_b
-
+  
 #endif
 #endif
 
@@ -396,13 +388,11 @@ contains
     !       here.
     !
     use constants
-    use costFunctions
     use communication
     use blockPointers
     use flowVarRefState
+    use inputCostFunctions
     use inputPhysics, only : MachCoef, pointRef, velDirFreeStream, equations
-    use costFunctions, only : nLocalValues, iFp, iFv, iMp, iMv, iSepSensor, &
-         iSepAvg, iCavitation, sepSensorSharpness, sepSensorOffset, iYplus
     use sorting, only :bsearchIntegers
     use BCPointers
     implicit none
@@ -521,6 +511,7 @@ contains
        bcData(mm)%Fp(i, j, 2) = fy
        bcData(mm)%Fp(i, j, 3) = fz
        cellArea = sqrt(ssi(i,j,1)**2 + ssi(i,j,2)**2 + ssi(i,j,3)**2)
+
        bcData(mm)%area(i, j) = cellArea
        
        ! Get normalized surface velocity:
@@ -700,12 +691,10 @@ contains
 #endif
   end subroutine wallIntegrationFace
 
-  subroutine flowIntegrationFace(isInflow, withGathered, localValues, mm)
+  subroutine flowIntegrationFace(isInflow, localValues, mm, withGathered,funcValues)
 
     use constants
-    use costFunctions
     use blockPointers, only : BCType, BCFaceID, BCData, addGridVelocities
-    use costFunctions, onlY : nLocalValues, iMassFlow, iMassPtot, iMassTtot, iMassPs, iMassMN
     use sorting, only : bsearchIntegers
     use flowVarRefState, only : pRef, pInf, rhoRef, timeRef, LRef, TRef, RGas, uRef, uInf
     use inputPhysics, only : pointRef, flowType, velDirFreeStream, alpha, beta, liftIndex
@@ -719,6 +708,7 @@ contains
     logical, intent(in) :: withGathered
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
     integer(kind=intType), intent(in) :: mm
+    real(kind=realType), optional, dimension(:), intent(in) :: funcValues
 
     ! Local variables
     real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN
@@ -814,7 +804,7 @@ contains
 
       massFlowRateLocal = rhom*vnm*blk*fact*mReDim
 
-      checkGathered: if (withGathered) then
+      if (withGathered) then 
 
         sigma_Mn = sigma_Mn  + massFlowRateLocal*(MNm - funcValues(costFuncMavgMN))**2
         sigma_Ptot = sigma_Ptot + massFlowRateLocal*(Ptot - funcValues(costFuncMavgPtot))**2
@@ -905,7 +895,7 @@ contains
 
         ! !edota = edota + half*(rhom)
 
-      end if checkGathered
+     end if
        
     enddo
 
@@ -928,14 +918,12 @@ contains
 
   end subroutine flowIntegrationFace
 
-  subroutine flowIntegrationZipper(isInflow, withGathered, zipper, vars, localValues, famList, sps)
+  subroutine flowIntegrationZipper(isInflow, zipper, vars, localValues, famList, sps, &
+       withGathered, funcValues)
 
     ! Integrate over the trianges for the inflow/outflow conditions. 
 
     use constants
-    use costFunctions, only : nLocalValues, iMassFlow, iMassPtot, iMassTtot, iMassPs, &
-         iFlowMm, iFlowMp, iFlowFm, iFp, iMassMN, iPk, funcValues, costFuncMavgMN, & 
-         costFuncMavgPtot, isigmaMN, isigmaPtot
     use blockPointers, only : BCType
     use sorting, only : bsearchIntegers
     use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas, uRef, uInf
@@ -948,12 +936,13 @@ contains
 
     ! Input/output Variables
     logical, intent(in) :: isInflow
-    logical, intent(in) :: withGathered
     type(zipperMesh), intent(in) :: zipper
     real(kind=realType), dimension(:, :), intent(in) :: vars
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
     integer(kind=intType), dimension(:), intent(in) :: famList
     integer(kind=intType), intent(in) :: sps
+    logical, intent(in) :: withGathered
+    real(kind=realType), optional, dimension(:), intent(in) :: funcValues
 
     ! Working variables
     integer(kind=intType) :: i, j
@@ -1035,7 +1024,7 @@ contains
 
           massFlowRateLocal = rhom*vnm*mReDim
 
-          checkGathered: if (withGathered) then
+          if (withGathered) then 
 
             sigma_Mn = sigma_Mn  + massFlowRateLocal*(MNm - funcValues(costFuncMavgMN))**2
             sigma_Ptot = sigma_Ptot + massFlowRateLocal*(Ptot - funcValues(costFuncMavgPtot))**2
@@ -1110,7 +1099,7 @@ contains
             MMom(1) = MMom(1) + mx
             MMom(2) = MMom(2) + my
             MMom(3) = MMom(3) + mz
-          end if checkGathered
+         end if
        end if
     enddo
     
@@ -1136,8 +1125,6 @@ contains
   subroutine wallIntegrationZipper(zipper, vars, localValues, famList, sps)
 
     use constants
-    use costFunctions
-
     use sorting, only : bsearchIntegers
     use flowVarRefState, only : LRef
     use inputPhysics, only : pointRef
@@ -1256,7 +1243,7 @@ contains
 
 #ifndef USE_TAPENADE
 
-  subroutine integrateZippers(localValues, famList, sps, withGathered)
+  subroutine integrateZippers(localValues, famList, sps, withGathered, funcValues)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
     ! modifying the hand-written forward and reverse routines. 
@@ -1268,7 +1255,6 @@ contains
     ! flow-though surface integration. 
 
     use constants
-    use costFunctions, only : nLocalValues
     use overset, only : zipperMeshes, zipperMesh
     use haloExchange, only : wallIntegrationZipperComm, flowIntegrationZipperComm
     implicit none
@@ -1279,19 +1265,12 @@ contains
     integer(kind=intType), intent(in) :: sps
     real(kind=realType), dimension(:, :), allocatable :: vars
     type(zipperMesh), pointer :: zipper
-    logical, optional, intent(in) :: withGathered
-
-    ! Working variables 
-    logical :: withGatheredFlag
-    
-    withGatheredFlag = .false. 
-    if (present(withGathered)) then 
-      withGatheredFlag = withGathered 
-    end if 
+    logical, intent(in) :: withGathered
+    real(kind=realType), intent(in), dimension(:) :: funcValues
 
     ! Determine if we have a wall Zipper:
     zipper => zipperMeshes(iBCGroupWalls)
-    if (zipper%allocated) then 
+    if (zipper%allocated .and. (withGathered .eqv. .False.)) then 
 
        ! Allocate space necessary to store variables. Only non-zero on
        ! root proc. 
@@ -1303,6 +1282,7 @@ contains
 
        ! Perform actual integration. Tapenade ADs this routine.
        call wallIntegrationZipper(zipper, vars, localValues, famList, sps)
+
 
        ! Cleanup vars
        deallocate(vars)
@@ -1321,7 +1301,8 @@ contains
        call flowIntegrationZipperComm(.true., vars, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper(.true., withGatheredFlag, zipper, vars, localValues, famList, sps)
+       call flowIntegrationZipper(.true., zipper, vars, localValues, famList, sps, & 
+            withGathered, funcValues)
 
        ! Cleanup vars
        deallocate(vars)
@@ -1340,7 +1321,8 @@ contains
        call flowIntegrationZipperComm(.false., vars, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper(.false., withGathered, zipper, vars, localValues, famList, sps)
+       call flowIntegrationZipper(.false., zipper, vars, localValues, famList, sps, &
+            withGathered, funcValues)
 
        ! Cleanup vars
        deallocate(vars)
@@ -1349,7 +1331,8 @@ contains
 
 
 #ifndef USE_COMPLEX
-  subroutine integrateZippers_d(localValues, localValuesd, famList, sps, withGathered)
+  subroutine integrateZippers_d(localValues, localValuesd, famList, sps, withGathered, &
+       funcValues, funcValuesd)
     !------------------------------------------------------------------------
     ! Manual Differentiation Warning: This routine is differentiated by hand.
     ! -----------------------------------------------------------------------
@@ -1357,7 +1340,6 @@ contains
     ! Forward mode linearization of the zipper integration. 
 
     use constants
-    use costFunctions, only : nLocalValues
     use overset, only : zipperMeshes, zipperMesh
     use haloExchange, only : wallIntegrationZipperComm_d, flowIntegrationZipperComm_d
     use surfaceIntegrations_d, only : flowIntegrationZipper_d, wallIntegrationZipper_d
@@ -1370,18 +1352,10 @@ contains
     real(kind=realType), dimension(:, :), allocatable :: vars, varsd
     type(zipperMesh), pointer :: zipper
     logical, optional, intent(in) :: withGathered
-
-    ! Working variables 
-    logical :: withGatheredFlag
-    
-    withGatheredFlag = .false. 
-    if (present(withGathered)) then 
-      withGatheredFlag = withGathered 
-    end if 
-
+    real(kind=realType), intent(in), dimension(:) :: funcValues, funcValuesd
 
     zipper => zipperMeshes(iBCGroupWalls)
-    if (zipper%allocated) then 
+    if (zipper%allocated .and. (withGathered .eqv. .False.)) then 
 
        ! Allocate space necessary to store variables. Only non-zero on
        ! root proc. 
@@ -1411,7 +1385,8 @@ contains
        call flowIntegrationZipperComm_d(.true., vars, varsd, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper_d(.true., withGatheredFlag, zipper, vars, varsd, localValues, localValuesd, famList, sps)
+       call flowIntegrationZipper_d(.true., zipper, vars, varsd, localValues, localValuesd, &
+            famList, sps, withGathered, funcValues, funcValuesd)
 
        ! Cleanup vars
        deallocate(vars, varsd)
@@ -1430,14 +1405,16 @@ contains
        call flowIntegrationZipperComm_d(.false., vars, varsd, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper_d(.false., withGathered, zipper, vars, varsd, localValues, localValuesd, famList, sps)
+       call flowIntegrationZipper_d(.false., zipper, vars, varsd, localValues, localValuesd, &
+            famList, sps, withGathered, funcValues, funcValuesd)
 
        ! Cleanup vars
        deallocate(vars, varsd)
     end if
   end subroutine integrateZippers_d
 
-  subroutine integrateZippers_b(localValues, localValuesd, famList, sps, withGathered)
+  subroutine integrateZippers_b(localValues, localValuesd, famList, sps, withGathered, &
+       funcValues, funcValuesd)
     !------------------------------------------------------------------------
     ! Manual Differentiation Warning: This routine is differentiated by hand.
     ! -----------------------------------------------------------------------
@@ -1445,7 +1422,6 @@ contains
     ! Reverse mode linearization of the zipper integration. 
 
     use constants
-    use costFunctions, only : nLocalValues
     use overset, only : zipperMeshes, zipperMesh
     use haloExchange, only : wallIntegrationZipperComm_b, flowIntegrationZipperComm_b, &
          wallIntegrationZipperComm, flowIntegrationZipperComm
@@ -1458,20 +1434,12 @@ contains
     integer(kind=intType), intent(in) :: sps
     real(kind=realType), dimension(:, :), allocatable :: vars, varsd
     type(zipperMesh), pointer :: zipper
-    logical, optional, intent(in) :: withGathered
-
-    ! Working variables 
-    logical :: withGatheredFlag
-    
-    withGatheredFlag = .false. 
-    if (present(withGathered)) then 
-      withGatheredFlag = withGathered 
-    end if 
-
+    logical,  intent(in) :: withGathered
+    real(kind=realType), dimension(:) :: funcValues, funcValuesd
 
     ! Determine if we have a wall Zipper:
     zipper => zipperMeshes(iBCGroupWalls)
-    if (zipper%allocated) then 
+    if (zipper%allocated .and. (withGathered .eqv. .False.)) then 
   
        ! Allocate space necessary to store variables. Only non-zero on
        ! root proc. 
@@ -1506,7 +1474,8 @@ contains
   
        ! Perform actual integration. Tapenade ADs this routine.
        varsd = zero
-       call flowIntegrationZipper_b(.true., withGathered, zipper, vars, varsd, localValues, localValuesd, famList, sps)
+       call flowIntegrationZipper_b(.true., zipper, vars, varsd, localValues, localValuesd, &
+            famList, sps, withGathered, funcValues, funcValuesd)
        
        ! Scatter (becuase we are reverse) the values from the root
        ! back out to all necessary procs.  This routine is
@@ -1530,7 +1499,8 @@ contains
   
        ! Perform actual integration. Tapenade ADs this routine.
        varsd = zero
-       call flowIntegrationZipper_b(.false., withGatheredFlag, zipper, vars, varsd, localValues, localValuesd, famList, sps)
+       call flowIntegrationZipper_b(.false., zipper, vars, varsd, localValues, localValuesd, & 
+            famList, sps, withGathered, funcValues, funcValuesd)
        
        ! Scatter (becuase we are reverse) the values from the root
        ! back out to all necessary procs.  This routine is
@@ -1543,30 +1513,29 @@ contains
   end subroutine integrateZippers_b
 #endif
 
-  subroutine getSolutionWrap(famList)
+  subroutine getSolutionWrap(famLists, funcValues, nCost, nGroups, nFamMax)
 
     use constants
-    use costFunctions
     use inputTimeSpectral , only : nTimeIntervalsSpectral
-
+    implicit none
     ! Input/output Variables
-    integer(kind=intType), dimension(:), intent(in) :: famList
+    integer(kind=intType), dimension(nGroups, nFamMax) :: famLists
+    real(kind=realType), dimension(nCost, nGroups), intent(out)  :: funcValues
+    integer(kind=intType) :: nGroups, nCost, nFamMax
 
     ! Local variable 
-    real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: globalVal
 
-    call getSolution(famList)
+    call getSolution(famLists, funcValues)
 
   end subroutine getSolutionWrap
 
-  subroutine getSolution(famList, globalValues)
+  subroutine getSolution(famLists, funcValues, globalValues)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
     ! modifying the hand-written forward and reverse routines. 
     ! --------------------------------------------------------------
 
     use constants
-    use costFunctions
     use inputTimeSpectral , only : nTimeIntervalsSpectral
     use communication, only : adflow_comm_world
     use blockPointers, only : nDom
@@ -1574,169 +1543,193 @@ contains
     implicit none
 
     ! Input/Output Variables
-    integer(kind=intType), dimension(:), intent(in) :: famList
-    real(kind=realType), optional, intent(out), &
-         dimension(nLocalValues, nTimeIntervalsSpectral) :: globalValues
+    integer(kind=intType), dimension(:, :), intent(in), target :: famLists
+    real(kind=realType), dimension(:, :), intent(out) :: funcValues
+    real(kind=realType), optional, intent(out), dimension(:, :, :) :: globalValues
 
     ! Working
     real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVal, globalVal
-    integer(kind=intType) :: nn, sps, ierr
+    integer(kind=intType) :: nn, sps, ierr, iGroup, nFam
+    integer(kind=intType), dimension(:), pointer :: famList
+    ! Master loop over the each of the groups we have
 
-    localVal = zero
-    do sps=1, nTimeIntervalsSpectral
-       ! Integrate the normal block surfaces. 
-       do nn=1, nDom
-          call setPointers(nn, 1, sps)
-          call integrateSurfaces(localval(:, sps), famList)
+    groupLoop: do iGroup=1, size(famLists, 1)
+
+       ! Extract the current family list
+       nFam = famLists(iGroup, 1)
+       famList => famLists(iGroup, 2:2+nFam-1)
+
+       localVal = zero
+       do sps=1, nTimeIntervalsSpectral
+          ! Integrate the normal block surfaces. 
+          do nn=1, nDom
+             call setPointers(nn, 1, sps)
+             call integrateSurfaces(localval(:, sps), famList, .False., funcValues(:, iGroup))
+          end do
+          
+          ! Integrate any zippers we have
+          call integrateZippers(localVal(:, sps), famList, sps, .False., funcValues(:, iGroup))
+          
+          ! Integrate any user-supplied planes as have as well. 
+          !call integrateUserSurfaces(localVal(:, sps), famList, sps, .False., funcValues(:, iGroup)))
+          
        end do
+       
+       ! Now we need to reduce all the cost functions
+       call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
+            MPI_SUM, adflow_comm_world, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+       
+       ! Call the final routine that will comptue all of our functions of
+       ! interest.
+       call getCostFunctions(globalVal, funcValues(:, iGroup))
 
-       ! Integrate any zippers we have
-       call integrateZippers(localVal(:, sps), famList, sps)
+       ! Secondary loop over the blocks/zippers/planes for
+       ! calculations that require pre-computed gathered values in the
+       ! computation itself. The withGathered flag is now true. 
+       do sps=1, nTimeIntervalsSpectral
+          do nn=1, nDom
+             call setPointers(nn, 1, sps)
+             call integrateSurfaces(localval(:, sps), famList, .True.,  funcValues(:, iGroup))
+          end do
+          
+          ! Integrate any zippers we have
+          call integrateZippers(localVal(:, sps), famList, sps, .True., funcValues(:, iGroup))
+          
+          ! Integrate any user-supplied planes as have as well. 
+          !call integrateUserSurfacesWithGathered(globalVal(:, sps), localVal(:, sps), famList, sps, .True., & 
+          ! funcValues)
+       end do
+       
+       ! All reduce again. Technially just need the additionally
+       ! computed gathered values, but do all anyway.
+       call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
+            MPI_SUM, adflow_comm_world, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+       
+       ! second pass through so the gathered computations are correct.
+       call getCostFunctions(globalVal, funcValues(:, iGroup))
 
-       ! Integrate any user-supplied planes as have as well. 
-       !call integrateUserSurfaces(localVal(:, sps), famList, sps)
-
-    end do
-
-    ! Now we need to reduce all the cost functions
-    call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
-         MPI_SUM, adflow_comm_world, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-
-    ! Call the final routine that will comptue all of our functions of
-    ! interest.
-    call getCostFunctions(globalVal)
-
-    ! Secondary loop over the blocks/zippers/planes for calculations
-    ! that require pre-computed gathered values in the computation itself.
-    do sps=1, nTimeIntervalsSpectral
-      do nn=1, nDom
-        call setPointers(nn, 1, sps)
-        call integrateSurfaces(localval(:, sps), famList, .true.) ! set the withGathered flag to .true.
-      end do 
-
-       ! Integrate any zippers we have
-       call integrateZippers(localVal(:, sps), famList, sps, .true.) ! set the withGathered flag to .true.
-
-       ! Integrate any user-supplied planes as have as well. 
-       !call integrateUserSurfacesWithGathered(globalVal(:, sps), localVal(:, sps), famList, sps)
-    end do 
-
-     ! All reduce again. Technially just need the additionally
-     ! computed gathered values, but do all anyway.
-    call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
-         MPI_SUM, adflow_comm_world, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-
-    ! second pass through so the gathered computations are correct.
-    call getCostFunctions(globalVal)
-
-    if (present(globalValues)) then 
-       globalValues = globalVal
-    end if
-
+       if (present(globalValues)) then 
+          globalValues(:, :, iGroup) = globalVal
+       end if
+    end do groupLoop
   end subroutine getSolution
 
 #ifndef USE_TAPENADE
-  subroutine getSolution_d(famList)
+  subroutine getSolution_d(famLists, funcValues, funcValuesd)
     !------------------------------------------------------------------------
     ! Manual Differentiation Warning: This routine is differentiated by hand.
     ! -----------------------------------------------------------------------
 
     use constants
-    use costFunctions
     use inputTSStabDeriv, only : TSSTability
     use inputTimeSpectral , only : nTimeIntervalsSpectral
     use communication, only : adflow_comm_world
     use blockPointers, only : nDom
     use utils, only : setPointers_d, EChk
     use surfaceIntegrations_d, only : getCostFunctions_d
-         
     implicit none
 
-    ! Input Variables
-    integer(kind=intType), dimension(:), intent(in) :: famList
+    ! Input/Output Variables
+    integer(kind=intType), dimension(:, :), target, intent(in) :: famLists
+    real(kind=realType), dimension(:, :), intent(out) :: funcValues, funcValuesd
 
     ! Working
     real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVal, globalVal
     real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVald, globalVald
-    integer(kind=intType) :: nn, sps, ierr
+    integer(kind=intType) :: nn, sps, ierr, iGroup, nFam
+    integer(kind=intType), dimension(:), pointer :: famList
 
-    localVal = zero
-    localVald = zero
+    groupLoop: do iGroup=1, size(famLists, 1)
 
-    do sps=1, nTimeIntervalsSpectral
-       ! Integrate the normal block surfaces. 
-       do nn=1, nDom
-          call setPointers_d(nn, 1, sps)
-          call integrateSurfaces_d(localval(:, sps), localVald(:, sps), famList)
+       ! Extract the current family list
+       nFam = famLists(iGroup, 1)
+       famList => famLists(iGroup, 2:2+nFam-1)
+
+       localVal = zero
+       localVald = zero
+       do sps=1, nTimeIntervalsSpectral
+          ! Integrate the normal block surfaces. 
+          do nn=1, nDom
+             call setPointers_d(nn, 1, sps)
+             call integrateSurfaces_d(localval(:, sps), localvald(:, sps), famList, .False., &
+                  funcValues(:, iGroup), funcValuesd(:, iGroup))
+          end do
+          
+          ! Integrate any zippers we have
+          call integrateZippers_d(localVal(:, sps), localVald(:, sps), famList, sps, .False., &
+               funcValues(:, iGroup), funcValuesd(:, iGroup))
+          
+          ! Integrate any user-supplied planes as have as well. 
+          !call integrateUserSurfaces(localVal(:, sps), famList, sps, .False., funcValues(:, iGroup)))
+          
        end do
+       
+       ! Now we need to reduce all the cost functions
+       call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
+            MPI_SUM, adflow_comm_world, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
 
-       ! Integrate any zippers we have
-       call integrateZippers_d(localval(:, sps), localVald(:, sps), famList, sps)
+       ! Now we need to reduce all the cost functions
+       call mpi_allreduce(localvald, globalVald, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
+            MPI_SUM, adflow_comm_world, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+       
+       ! Call the final routine that will comptue all of our functions of
+       ! interest.
 
-       ! Integrate any user-supplied planes as have as well. 
-       !call integrateUserSurfaces_d(localVal(:, sps), localVald(:, sps), famList, sps)
-    end do
+       call getCostFunctions_d(globalVal, globalVald, funcValues(:, iGroup), funcValuesd(:, iGroup))
 
-    ! Now we need to reduce all the cost functions
-    call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
-         MPI_SUM, adflow_comm_world, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
+       ! Secondary loop over the blocks/zippers/planes for
+       ! calculations that require pre-computed gathered values in the
+       ! computation itself. The withGathered flag is now true. 
+       do sps=1, nTimeIntervalsSpectral
+          do nn=1, nDom
+             call setPointers_d(nn, 1, sps)
+             call integrateSurfaces_d(localval(:, sps), localVald(:, sps), famList, .True.,  &
+                  funcValues(:, iGroup), funcValuesd(:, iGroup))
+          end do
+          
+          ! Integrate any zippers we have
+          call integrateZippers_d(localVal(:, sps), localVald(:, sps), famList, sps, .True., &
+               funcValues(:, iGroup), funcValuesd(:, iGroup))
+          
+          ! Integrate any user-supplied planes as have as well. 
+          !call integrateUserSurfacesWithGathered(globalVal(:, sps), localVal(:, sps), famList, sps, .True., & 
+          ! funcValues)
+       end do
+       
+       ! All reduce again. Technially just need the additionally
+       ! computed gathered values, but do all anyway.
+       call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
+            MPI_SUM, adflow_comm_world, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
 
-    ! Now we need to reduce all the cost functions
-    call mpi_allreduce(localvald, globalVald, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
-         MPI_SUM, adflow_comm_world, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
+       ! All reduce again. Technially just need the additionally
+       ! computed gathered values, but do all anyway.
+       call mpi_allreduce(localVald, globalVald, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
+            MPI_SUM, adflow_comm_world, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+       
+       ! Call the final routine that will comptue all of our functions of
+       ! interest.
+       call getCostFunctions_d(globalVal, globalVald, funcValues(:, iGroup), funcValuesd(:, iGroup))
 
-    ! Call the final routine that will comptue all of our functions of
-    ! interest.
-    call getCostFunctions_d(globalVal, globalVald)
-
-    ! Secondary loop over the blocks/zippers/planes for calculations
-    ! that require pre-computed gathered values in the computation itself.
-    do sps=1, nTimeIntervalsSpectral
-      do nn=1, nDom
-        call setPointers_d(nn, 1, sps)
-        ! call integrateSurfacesWithGathered_d(globalVal(:, sps), globalVald(:, sps), &
-        !      localval(:, sps), localVald(:, sps), famList)
-      end do 
-
-       ! Integrate any zippers we have
-       ! call integrateZippersWithGathered_d(globalVal(:, sps), globalVald(:, sps), & 
-       !      localVal(:, sps), localVald(:, sps), famList, sps)
-
-       ! Integrate any user-supplied planes as have as well. 
-       !call integrateUserSurfacesWithGathered_d(globalVal(:, sps), globalVald(:, sps), & 
-       ! localVal(:, sps), localVald(:, sps), famList, sps)
-    end do 
-
-    ! Call the final routine that will comptue all of our functions of
-    ! interest.
-    call getCostFunctions_d(globalVal, globalVald)
-
-     ! All reduce again. Technially just need the additionally
-     ! computed gathered values, but do all anyway.
-    call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
-         MPI_SUM, adflow_comm_world, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-    
-    call mpi_allreduce(localvald, globalVald, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
-         MPI_SUM, adflow_comm_world, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-
-    ! second pass through so the gathered computations are correct.
-    call getCostFunctions_d(globalVal, globalVald)
+       ! if (present(globalValues)) then 
+       !    globalValues = globalVal
+       !    globalValuesd = globalVald
+       ! end if
+    end do groupLoop
 
   end subroutine getSolution_d
 
-  subroutine getSolution_b(famList)
+  subroutine getSolution_b(famLists, funcValues, funcValuesd)
     ! -----------------------------------------------------------------------
     ! Manual Differentiation Warning: This routine is differentiated by hand.
     ! -----------------------------------------------------------------------
     
     use constants
-    use costFunctions
     use communication, only : myid
     use inputTSStabDeriv, only : TSSTability
     use inputTimeSpectral , only : nTimeIntervalsSpectral
@@ -1747,66 +1740,83 @@ contains
          
     implicit none
 
-    ! Input Variables
-    integer(kind=intType), dimension(:), intent(in) :: famList
+    ! Input/Output Variables
+    integer(kind=intType), dimension(:, :), target, intent(in) :: famLists
+    real(kind=realType), dimension(:, :) :: funcValues, funcValuesd
 
     ! Working
     real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVal, globalVal
     real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVald, globalVald
-    integer(kind=intType) :: nn, sps, ierr
+    real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral, size(famLists, 1)) :: globalValues
+    integer(kind=intType) :: nn, sps, ierr, iGroup, nFam
+    integer(kind=intType), dimension(:), pointer :: famList
 
+    call getSolution(famLists, funcValues, globalValues)
 
-    call getSolution(famList, globalVal)
+    groupLoop: do iGroup=1, size(famLists, 1)
 
-    ! ! Start the reverse chain. We *must* only run this on the root
-    ! ! processor. The reason is that the explict sensitivities like
-    ! ! liftDirection, Pref, etc, must be accounted for once, and not
-    ! ! nProc times. 
-    ! if (myid == 0) then 
-    !    call getCostFunctions_b(globalVal, globalVald)
-    !    localVald = globalVald
-    ! end if
-    
-    ! ! Now we need to bcast out the localValues to all procs. 
-    ! call mpi_bcast(localVald, nLocalValues*nTimeIntervalsSpectral, &
-    !      adflow_real, 0, adflow_comm_world, ierr)
-    ! call EChk(ierr, __FILE__, __LINE__)
+       ! Extract the current family list
+       nFam = famLists(iGroup, 1)
+       famList => famLists(iGroup, 2:2+nFam-1)
 
-    ! ! Now we run the secondary gathered functions loop
-    ! do sps=1, nTimeIntervalsSpectral
-    !    do nn=1, nDom
-    !       call setPointers_b(nn, 1, sps)
-    !       !call integrateSurfacesWithGathered_b(globalVal(:, sps), localVal(:, sps), famList)
-    !    end do
-    !    !call integrateZippersWithGathered_b(globalVal(:, sps), globalVald(:, sps), & 
-    !    ! localVal(:, sps), localVald(:, sps), famList, sps)
-    !    !call integrateUserSurfacesWithGathered_b(globalVal(:, sps), globalVal(:, sps), & 
-    !    ! localVal(:, sps), localVal(:, sps), famList, sps)
-    ! end do 
+       localVal = zero
+       localVald = zero
+     
+       ! Retrive the forward pass values from getSolution
+       globalVal = globalValues(:, :, iGroup)
 
-    if (myid == 0) then 
-       call getCostFunctions_b(globalVal, globalVald)
-       localVald = globalVald
-    end if
-    
-    ! Now we need to bcast out the localValues to all procs. 
-    call mpi_bcast(localVald, nLocalValues*nTimeIntervalsSpectral, &
-         adflow_real, 0, adflow_comm_world, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
+       ! Start the reverse chain. We *must* only run this on the root
+       ! processor. The reason is that the explict sensitivities like
+       ! liftDirection, Pref, etc, must be accounted for once, and not
+       ! nProc times. 
+       ! if (myid == 0) then 
+       !    call getCostFunctions_b(globalVal, globalVald, funcValues(:, iGroup), funcValuesd(:, iGroup))
+       !    localVald = globalVald
+       ! end if
+       
+       ! ! Now we need to bcast out the localValues to all procs. 
+       ! call mpi_bcast(localVald, nLocalValues*nTimeIntervalsSpectral, &
+       !      adflow_real, 0, adflow_comm_world, ierr)
+       ! call EChk(ierr, __FILE__, __LINE__)
+       
+       ! ! ! Now we run the secondary gathered functions loop
+       ! ! do sps=1, nTimeIntervalsSpectral
+       ! !    do nn=1, nDom
+       ! !       call setPointers_b(nn, 1, sps)
+       ! !       !call integrateSurfacesWithGathered_b(globalVal(:, sps), localVal(:, sps), famList)
+       ! !    end do
+       ! !    !call integrateZippersWithGathered_b(globalVal(:, sps), globalVald(:, sps), & 
+       ! !    ! localVal(:, sps), localVald(:, sps), famList, sps)
+       ! !    !call integrateUserSurfacesWithGathered_b(globalVal(:, sps), globalVal(:, sps), & 
+       ! !    ! localVal(:, sps), localVal(:, sps), famList, sps)
+       ! ! end do 
+       
+       if (myid == 0) then 
+          call getCostFunctions_b(globalVal, globalVald, funcValues(:, iGroup), funcValuesd(:, iGroup))
+          localVald = globalVald
+       end if
+       
+       ! Now we need to bcast out the localValues to all procs. 
+       call mpi_bcast(localVald, nLocalValues*nTimeIntervalsSpectral, &
+            adflow_real, 0, adflow_comm_world, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
 
-    do sps=1, nTimeIntervalsSpectral
-       ! Integrate the normal block surfaces. 
-       do nn=1, nDom
-          call setPointers_b(nn, 1, sps)
-          call integrateSurfaces_b(localval(:, sps), localVald(:, sps), famList)
+       do sps=1, nTimeIntervalsSpectral
+          ! Integrate the normal block surfaces. 
+          do nn=1, nDom
+             call setPointers_b(nn, 1, sps)
+             call integrateSurfaces_b(localval(:, sps), localVald(:, sps), famList, & 
+             .False., funcValues(:, iGroup), funcValuesd(:, iGroup))
+          end do
+          
+          ! Integrate any zippers we have
+          call integrateZippers_b(localVal(:, sps), localVald(:, sps), famList, sps, & 
+               .False., funcValues(:, iGroup), funcValuesd(:, iGroup))
+          
+          ! Integrate any user-supplied planes as have as well. 
+          !call integrateUserSurfaces_b(localVal(:, sps), localVald(:, sps), famList, sps)
        end do
-
-       ! Integrate any zippers we have
-       call integrateZippers_b(localVal(:, sps), localVald(:, sps), famList, sps)
-
-       ! Integrate any user-supplied planes as have as well. 
-       !call integrateUserSurfaces_b(localVal(:, sps), localVald(:, sps), famList, sps)
-    end do
+    end do groupLoop
 
   end subroutine getSolution_b
 #endif
@@ -2575,7 +2585,6 @@ contains
     use flowVarRefState, only : pRef, rhoRef, pRef, timeRef, LRef, TRef
     use communication, only : myid, adflow_comm_world
     use utils, only : EChk, mynorm2
-    use costFunctions, only : nLocalValues, iMassFlow, iMassPs, iMassPTot, iMassTtot
     use flowUtils, only : computePtot, computeTtot
     use sorting, only : bsearchIntegers
     implicit none

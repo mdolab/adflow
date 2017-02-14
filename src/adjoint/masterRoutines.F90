@@ -1,6 +1,6 @@
 module masterRoutines
 contains
-  subroutine master(useSpatial, famList, forces, &
+  subroutine master(useSpatial, famLists, funcValues, forces, &
        bcDataNames, bcDataValues, bcDataFamLists)
 
     use constants
@@ -41,7 +41,8 @@ contains
 
     ! Input Arguments:
     logical, intent(in) :: useSpatial
-    integer(kind=intType), dimension(:), intent(in) :: famList
+    integer(kind=intType), optional, dimension(:, :), intent(in) :: famLists
+    real(kind=realType), optional, dimension(:, :), intent(out) :: funcValues
     character, optional, dimension(:, :), intent(in) :: bcDataNames
     real(kind=realType), optional, dimension(:), intent(in) :: bcDataValues
     integer(kind=intType), optional, dimension(:, :) :: bcDataFamLists
@@ -203,7 +204,9 @@ contains
     end do
 
     ! Compute the final solution values
-    call getSolution(famList)
+    if (present(famLists)) then 
+       call getSolution(famLists, funcValues)
+    end if
 
     do sps=1, nTimeIntervalsSpectral
        if (present(forces)) then 
@@ -215,11 +218,10 @@ contains
 
   end subroutine master
 #ifndef USE_COMPLEX
-  subroutine master_d(wdot, xdot, forcesDot, dwDot, famList, &
+  subroutine master_d(wdot, xdot, forcesDot, dwDot, famLists, funcValues, funcValuesd, &
        bcDataNames, bcDataValues, bcDataValuesd, bcDataFamLists)
 
     use constants
-    use costFunctions
     use diffsizes, only :  ISIZE1OFDrfbcdata, ISIZE1OFDrfviscsubface
     use communication, only : adflow_comm_world
     use iteration, only : currentLevel
@@ -257,6 +259,7 @@ contains
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity_d
 
+    use inputPhysics
     implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
@@ -264,7 +267,8 @@ contains
 
     ! Input Arguments:
     real(kind=realType), intent(in), dimension(:) :: wDot, xDot
-    integer(kind=intType), dimension(:), intent(in) :: famList
+    integer(kind=intType), optional, dimension(:, :), intent(in) :: famLists
+    real(kind=realType), optional, dimension(:, :), intent(out) :: funcValues, funcValuesd
     character, optional, dimension(:, :), intent(in) :: bcDataNames
     real(kind=realType), optional, dimension(:), intent(in) :: bcDataValues, bcDataValuesd
     integer(kind=intType), optional, dimension(:, :) :: bcDataFamLists
@@ -353,7 +357,7 @@ contains
     if (present(bcDataNames)) then 
        do sps=1,nTimeIntervalsSpectral
           call setBCData_d(bcDataNames, bcDataValues, bcDataValuesd, &
-               bcDataFamLists, sps, size(bcDataValues), size(bcDataFamLIsts, 2))
+               bcDataFamLists, sps, size(bcDataValues), size(bcDataFamLists, 2))
        end do
        call setBCDataFineGrid_d(.true.)
     end if
@@ -490,8 +494,10 @@ contains
     end do
 
     ! Compute final solution values
-    call getSolution_d(famList)
-  
+    if (present(famLists)) then 
+       call getSolution_d(famLists, funcValues, funcValuesd)
+    end if
+
     do sps=1, nTimeIntervalsSpectral
        call getForces_d(forces(:, :, sps), forcesDot(:, :, sps), fSize, sps)
     end do
@@ -518,8 +524,8 @@ contains
     deallocate(forces)
   end subroutine master_d
 
-  subroutine master_b(wbar, xbar, extraBar, forcesBar, dwBar, nState, famList, &
-       bcDataNames, bcDataValues, bcDataValuesd, bcDataFamLists)
+  subroutine master_b(wbar, xbar, extraBar, forcesBar, dwBar, nState, famLists, &
+       funcValues, funcValuesd, bcDataNames, bcDataValues, bcDataValuesd, bcDataFamLists)
     
     ! This is the main reverse mode differentiaion of master. It
     ! compute the reverse mode sensitivity of *all* outputs with
@@ -529,7 +535,6 @@ contains
     ! individually differentiated tapenade routines. 
 
     use constants
-    use costFunctions
     use adjointVars, only : iAlpha, iBeta, iMach, iMachGrid, iTemperature, iDensity, &
          iPointrefX, iPointRefY, iPointRefZ, iPressure
     use communication, only : adflow_comm_world, myid
@@ -537,13 +542,13 @@ contains
     use inputAdjoint,  only : viscPC
     use fluxes, only : viscousFlux
     use flowVarRefState, only : nw, nwf, viscous,pInfDimd, rhoInfDimd, TinfDimd
-    use blockPointers, only : nDom, il, jl, kl, wd, xd, dw, dwd
+    use blockPointers!, only : nDom, il, jl, kl, wd, xd, dw, dwd
     use inputPhysics, only :pointRefd, alphad, betad, equations, machCoefd, &
          machd, machGridd, rgasdimd, equationMode, turbModel, wallDistanceNeeded
     use inputDiscretization, only : lowSpeedPreconditioner, lumpedDiss, spaceDiscr, useAPproxWallDistance
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputAdjoint, only : frozenTurbulence
-    use utils, only : isWallType, setPointers_b, EChk
+    use utils!, only : isWallType, setPointers_b, EChk
     use adjointPETSc, only : x_like
     use haloExchange, only : whalo2_b, exchangeCoor_b, exchangeCoor, whalo2
     use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
@@ -577,7 +582,8 @@ contains
     real(kind=realType), intent(in), dimension(:) :: dwBar
     real(kind=realType), intent(in), dimension(:, :, :) :: forcesBar
     integer(kind=intType), intent(in) :: nState
-    integer(kind=intType), dimension(:), intent(in) :: famList
+    integer(kind=intType), optional, dimension(:, :), intent(in) :: famLists
+    real(kind=realType), optional, dimension(:, :) :: funcValues, funcValuesd
     character, optional, dimension(:, :), intent(in) :: bcDataNames
     real(kind=realType), optional, dimension(:), intent(in) :: bcDataValues
     integer(kind=intType), optional, dimension(:, :) :: bcDataFamLists
@@ -630,7 +636,9 @@ contains
     end do forceSpsLoop
 
     ! Call the final getSolution_b routine
-    call getSolution_b(famList)
+    if (present(famLists)) then 
+       call getSolution_b(famLists, funcValues, funcValuesd)
+    end if
 
     spsLoop1: do sps=1, nTimeIntervalsSpectral
   
@@ -879,7 +887,6 @@ contains
     ! master_b. This routine has to be fast!
 
     use constants
-    use costFunctions
     use iteration, only : currentLevel
     use flowVarRefState, only : nw, viscous
     use blockPointers, only : nDom, il, jl, kl, wd, dwd, iblank
@@ -1157,7 +1164,6 @@ contains
     ! This is a special state-only forward mode linearization
     ! computation used to assemble the jacobian. 
     use constants
-    use costFunctions
     use BCExtra_d, only : applyAllBC_Block_d
     use inputAdjoint,  only : viscPC
     use blockPointers, only : nDom, wd, xd, dw, dwd

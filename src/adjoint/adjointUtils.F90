@@ -535,7 +535,7 @@ contains
     ! We must run the residual computation to make sure that all
     ! intermediate variables are up to date. We can just call master
     ! for this. No need to recompute spatial terms.
-    call master(.false., fullFamList)
+    call master(.false.)
 
   contains
 
@@ -887,6 +887,8 @@ contains
        flowDomsd(nn, level, sps)%bcData(mm)%rface = zero
        flowDomsd(nn, level, sps)%bcData(mm)%Fv = zero
        flowDomsd(nn, level, sps)%bcData(mm)%Fp = zero
+       flowDomsd(nn, level, sps)%bcData(mm)%Tv = zero
+       flowDomsd(nn, level, sps)%bcData(mm)%Tp = zero
        flowDomsd(nn, level, sps)%bcData(mm)%area = zero
        flowDomsd(nn, level, sps)%BCData(mm)%uSlip = zero
        flowDomsd(nn, level, sps)%BCData(mm)%TNS_Wall = zero

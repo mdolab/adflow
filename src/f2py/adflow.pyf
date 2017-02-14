@@ -358,9 +358,13 @@ python module libadflow
        end subroutine tecplotio
 
        module surfaceintegrations
-         subroutine getsolutionwrap(famlist) ! in :test:surfaceIntegrations.F90:surfaceintegrations
-           integer(kind=inttype) dimension(:),intent(in) :: famlist
-         end subroutine getsolution
+         subroutine getsolutionwrap(famlists,funcvalues,ncost,ngroups,nfammax) ! in :test:surfaceIntegrations.F90:surfaceintegrations
+           integer(kind=inttype) dimension(ngroups,nfammax) :: famlists
+           real(kind=realtype) dimension(ncost,ngroups),intent(out),depend(ncost,ngroups) :: funcvalues
+           integer(kind=inttype) :: ncost
+           integer(kind=inttype), optional,check(shape(famlists,0)==ngroups),depend(famlists) :: ngroups=shape(famlists,0)
+           integer(kind=inttype), optional,check(shape(famlists,1)==nfammax),depend(famlists) :: nfammax=shape(famlists,1)
+         end subroutine getsolutionwrap
          
          subroutine addintegrationsurface(pts,conn,famname,famid,npts,nconn) ! in :test:surfaceIntegrations.F90:surfaceintegrations
            real(kind=realtype) dimension(3,npts),intent(in) :: pts
@@ -512,35 +516,29 @@ python module libadflow
          end subroutine createpetscvars
 
 #ifndef USE_COMPLEX
-            subroutine computematrixfreeproductfwd(xvdot,extradot,wdot,usespatial,usestate,dwdot,funcsdot,fdot,spatialsize,extrasize,statesize,costsize,fsize,ntime,famlist,nfamlist,bcdatanames,bcdatavalues,bcdatavaluesdot,bcdatafamlists,nvar,nfammax,bcvarsempty) ! in :test:adjointAPI.F90:adjointapi
-                real(kind=realtype) dimension(spatialsize),intent(in) :: xvdot
-                real(kind=realtype) dimension(extrasize),intent(in) :: extradot
-                real(kind=realtype) dimension(statesize),intent(in) :: wdot
+            subroutine computematrixfreeproductfwd(xvdot,extradot,wdot,bcdatavaluesdot,usespatial,usestate,famlists,bcdatanames,bcdatavalues,bcdatafamlists,bcvarsempty,dwdot,funcsdot,fdot,costsize,fsize,ntime) ! in :test:adjointAPI.F90:adjointapi
+                real(kind=realtype) dimension(:),intent(in) :: xvdot
+                real(kind=realtype) dimension(:),intent(in) :: extradot
+                real(kind=realtype) dimension(:),intent(in) :: wdot
+                real(kind=realtype) dimension(:),intent(in) :: bcdatavaluesdot
                 logical intent(in) :: usespatial
                 logical intent(in) :: usestate
-                real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: dwdot
-                real(kind=realtype) dimension(costsize),intent(out),depend(costsize) :: funcsdot
-                real(kind=realtype) dimension(3,fsize,ntime),intent(out),depend(fsize,ntime) :: fdot
-                integer(kind=inttype), optional,intent(in),check(len(xvdot)>=spatialsize),depend(xvdot) :: spatialsize=len(xvdot)
-                integer(kind=inttype), optional,intent(in),check(len(extradot)>=extrasize),depend(extradot) :: extrasize=len(extradot)
-                integer(kind=inttype), optional,intent(in),check(len(wdot)>=statesize),depend(wdot) :: statesize=len(wdot)
-                integer(kind=inttype) intent(in) :: costsize
-                integer(kind=inttype) intent(in) :: fsize
-                integer(kind=inttype) intent(in) :: ntime
-                integer(kind=inttype) dimension(nfamlist),intent(in) :: famlist
-                integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
-                character dimension(nvar,32),intent(in) :: bcdatanames
-                real(kind=realtype) dimension(nvar),intent(in),depend(nvar) :: bcdatavalues
-                real(kind=realtype) dimension(nvar),intent(in),depend(nvar) :: bcdatavaluesdot
-                integer(kind=inttype) dimension(nvar,nfammax),depend(nvar) :: bcdatafamlists
-                integer(kind=inttype), optional,intent(in),check(shape(bcdatanames,0)==nvar),depend(bcdatanames) :: nvar=shape(bcdatanames,0)
-                integer(kind=inttype), optional,intent(in),check(shape(bcdatafamlists,1)==nfammax),depend(bcdatafamlists) :: nfammax=shape(bcdatafamlists,1)
+                integer(kind=inttype) dimension(:,:) :: famlists
+                character dimension(:,:),intent(in) :: bcdatanames
+                real(kind=realtype) dimension(:),intent(in) :: bcdatavalues
+                integer(kind=inttype) dimension(:,:) :: bcdatafamlists
                 logical intent(in) :: bcvarsempty
+                real(kind=realtype) dimension(size(wdot)),intent(out),depend(wdot) :: dwdot
+                real(kind=realtype) dimension(size(famlists,1),costsize),intent(out),depend(famlists,costsize) :: funcsdot
+                real(kind=realtype) dimension(3,fsize,ntime),intent(out),depend(fsize,ntime) :: fdot
+                integer(kind=inttype) :: costsize
+                integer(kind=inttype) :: fsize
+                integer(kind=inttype) :: ntime
             end subroutine computematrixfreeproductfwd
-            subroutine computematrixfreeproductbwd(dwbar,funcsbar,fbar,usespatial,usestate,xvbar,extrabar,wbar,spatialsize,extrasize,statesize,costsize,fsize,ntime,famlist,nfamlist,bcdatanames,bcdatavalues,bcdatavaluesbar,bcdatafamlists,nvar,nfammax,bcvarsempty) ! in :test:adjointAPI.F90:adjointapi
-                real(kind=realtype) dimension(statesize),intent(in) :: dwbar
-                real(kind=realtype) dimension(costsize),intent(in) :: funcsbar
-                real(kind=realtype) dimension(3,fsize,ntime),intent(in) :: fbar
+           subroutine computematrixfreeproductbwd(dwbar,funcsbar,fbar,usespatial,usestate,xvbar,extrabar,wbar,spatialsize,extrasize,statesize,famlists,bcdatanames,bcdatavalues,bcdatavaluesbar,bcdatafamlists,bcvarsempty) ! in :test:adjointAPI.F90:adjointapi
+                real(kind=realtype) dimension(:),intent(in) :: dwbar
+                real(kind=realtype) dimension(:,:),intent(in) :: funcsbar
+                real(kind=realtype) dimension(:,:,:) :: fbar
                 logical intent(in) :: usespatial
                 logical intent(in) :: usestate
                 real(kind=realtype) dimension(spatialsize),intent(out),depend(spatialsize) :: xvbar
@@ -548,21 +546,15 @@ python module libadflow
                 real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: wbar
                 integer(kind=inttype) intent(in) :: spatialsize
                 integer(kind=inttype) intent(in) :: extrasize
-                integer(kind=inttype), optional,intent(in),check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
-                integer(kind=inttype), optional,intent(in),check(len(funcsbar)>=costsize),depend(funcsbar) :: costsize=len(funcsbar)
-                integer(kind=inttype), optional,intent(in),check(shape(fbar,1)==fsize),depend(fbar) :: fsize=shape(fbar,1)
-                integer(kind=inttype), optional,intent(in),check(shape(fbar,2)==ntime),depend(fbar) :: ntime=shape(fbar,2)
-                integer(kind=inttype) dimension(nfamlist),intent(in) :: famlist
-                integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
-                character dimension(nvar,32),intent(in) :: bcdatanames
-                real(kind=realtype) dimension(nvar),intent(in),depend(nvar) :: bcdatavalues
-                real(kind=realtype) dimension(nvar),intent(out),depend(nvar) :: bcdatavaluesbar
-                integer(kind=inttype) dimension(nvar,nfammax),depend(nvar) :: bcdatafamlists
-                integer(kind=inttype), optional,intent(in),check(shape(bcdatanames,0)==nvar),depend(bcdatanames) :: nvar=shape(bcdatanames,0)
-                integer(kind=inttype), optional,intent(in),check(shape(bcdatafamlists,1)==nfammax),depend(bcdatafamlists) :: nfammax=shape(bcdatafamlists,1)
+                integer(kind=inttype) intent(in) :: statesize
+                integer(kind=inttype) dimension(:,:),intent(in) :: famlists
+                character dimension(:,:),intent(in) :: bcdatanames
+                real(kind=realtype) dimension(:),intent(in) :: bcdatavalues
+                real(kind=realtype) dimension(size(bcdatavalues)),intent(out),depend(bcdatavalues) :: bcdatavaluesbar
+                integer(kind=inttype) dimension(:,:) :: bcdatafamlists
                 logical intent(in) :: bcvarsempty
             end subroutine computematrixfreeproductbwd
-#endif
+ endif
        end module adjointapi
        module adjointutils
 
@@ -707,7 +699,61 @@ python module libadflow
          integer(kind=inttype) :: updatefrozen = 0_inttype
          integer(kind=inttype) :: updatefast = 1_inttype
          integer(kind=inttype) :: updatefull = 2_inttype
-         
+
+         ! Cost functions
+         integer(kind=inttype) :: ncostfunction
+         integer(kind=inttype) parameter,optional :: costfunccdq=30
+         integer(kind=inttype) parameter,optional :: costfuncforcezcoef=10
+         integer(kind=inttype) parameter,optional :: costfuncmomzcoef=16
+         integer(kind=inttype) parameter,optional :: costfunccm0=17
+         integer(kind=inttype) parameter,optional :: costfuncforcex=5
+         integer(kind=inttype) parameter,optional :: costfuncclq=25
+         integer(kind=inttype) parameter,optional :: costfuncdrag=2
+         integer(kind=inttype) parameter,optional :: costfunccl0=22
+         integer(kind=inttype) parameter,optional :: costfunccmzqdot=21
+         integer(kind=inttype) parameter,optional :: costfuncforcexcoef=8
+         integer(kind=inttype) parameter,optional :: costfunccmzq=20
+         integer(kind=inttype) parameter,optional :: costfunccmzalphadot=19
+         integer(kind=inttype) parameter,optional :: costfunclift=1
+         integer(kind=inttype) parameter,optional :: costfunccd0=27
+         integer(kind=inttype) parameter,optional :: costfuncclqdot=26
+         integer(kind=inttype) parameter,optional :: costfuncforcey=6
+         integer(kind=inttype) parameter,optional :: costfuncforcez=7
+         integer(kind=inttype) parameter,optional :: costfuncmomz=13
+         integer(kind=inttype) parameter,optional :: costfunccdqdot=31
+         integer(kind=inttype) parameter,optional :: costfuncmomx=11
+         integer(kind=inttype) parameter,optional :: costfuncmomy=12
+         integer(kind=inttype) parameter,optional :: costfunccdalphadot=29
+         integer(kind=inttype) parameter,optional :: costfuncmomxcoef=14
+         integer(kind=inttype) parameter,optional :: costfunccdalpha=28
+         integer(kind=inttype) parameter,optional :: costfuncliftcoef=3
+         integer(kind=inttype) parameter,optional :: costfunccmzalpha=18
+         integer(kind=inttype) parameter,optional :: costfuncdragcoef=4
+         integer(kind=inttype) parameter,optional :: costfuncclalphadot=24
+         integer(kind=inttype) parameter,optional :: costfuncforceycoef=9
+         integer(kind=inttype) parameter,optional :: costfuncclalpha=23
+         integer(kind=inttype) parameter,optional :: costfuncmomycoef=15
+         integer(kind=inttype) parameter,optional :: costfunccfy0=32	
+         integer(kind=inttype) parameter,optional :: costfunccfyalpha=33 
+         integer(kind=inttype) parameter,optional :: costfunccfyalphadot=34
+         integer(kind=inttype) parameter,optional :: costfunccfyq=35
+         integer(kind=inttype) parameter,optional :: costfunccfyqdot=36
+         integer(kind=inttype) parameter,optional :: costfuncbendingcoef=37
+         integer(kind=inttype) parameter,optional :: costfuncsepsensor=38
+         integer(kind=inttype) parameter,optional :: costfuncsepsensoravgx=39
+         integer(kind=inttype) parameter,optional :: costfuncsepsensoravgy=40
+         integer(kind=inttype) parameter,optional :: costfuncsepsensoravgz=41
+         integer(kind=inttype) parameter,optional :: costfunccavitation=42
+         integer(kind=inttype) parameter,optional :: costfuncmdot=43
+         integer(kind=inttype) parameter,optional :: costfuncmavgptot=44
+         integer(kind=inttype) parameter,optional :: costfuncmavgttot=45
+         integer(kind=inttype) parameter,optional :: costfuncmavgps=46
+         integer(kind=inttype) parameter,optional :: costfuncmavgmn=47
+         integer(kind=inttype) parameter,optional :: costfuncsigmamn=48
+         integer(kind=inttype) parameter,optional :: costfuncsigmaptot=49
+         integer(kind=inttype) parameter,optional :: costfuncpk=50
+         integer(kind=inttype) parameter,optional :: costfuncedot=51
+
        end module constants
 
        module communication ! in :adflow:../../modules/communication.f90
@@ -1081,68 +1127,14 @@ python module libadflow
          logical :: adjointfailed
        end module killsignals
 
-       module costfunctions ! in :test:costFunctions.F90
-          use constants
-            integer(kind=inttype) :: ncostfunction
-            integer(kind=inttype) parameter,optional :: costfunccdq=30
-            integer(kind=inttype) parameter,optional :: costfuncforcezcoef=10
-            integer(kind=inttype) parameter,optional :: costfuncmomzcoef=16
-            integer(kind=inttype) parameter,optional :: costfunccm0=17
-            integer(kind=inttype) parameter,optional :: costfuncforcex=5
-            integer(kind=inttype) parameter,optional :: costfuncclq=25
-            integer(kind=inttype) parameter,optional :: costfuncdrag=2
-            integer(kind=inttype) parameter,optional :: costfunccl0=22
-            integer(kind=inttype) parameter,optional :: costfunccmzqdot=21
-            integer(kind=inttype) parameter,optional :: costfuncforcexcoef=8
-            integer(kind=inttype) parameter,optional :: costfunccmzq=20
-            integer(kind=inttype) parameter,optional :: costfunccmzalphadot=19
-            integer(kind=inttype) parameter,optional :: costfunclift=1
-            integer(kind=inttype) parameter,optional :: costfunccd0=27
-            integer(kind=inttype) parameter,optional :: costfuncclqdot=26
-            integer(kind=inttype) parameter,optional :: costfuncforcey=6
-            integer(kind=inttype) parameter,optional :: costfuncforcez=7
-            integer(kind=inttype) parameter,optional :: costfuncmomz=13
-            integer(kind=inttype) parameter,optional :: costfunccdqdot=31
-            integer(kind=inttype) parameter,optional :: costfuncmomx=11
-            integer(kind=inttype) parameter,optional :: costfuncmomy=12
-            integer(kind=inttype) parameter,optional :: costfunccdalphadot=29
-            integer(kind=inttype) parameter,optional :: costfuncmomxcoef=14
-            integer(kind=inttype) parameter,optional :: costfunccdalpha=28
-            integer(kind=inttype) parameter,optional :: costfuncliftcoef=3
-            integer(kind=inttype) parameter,optional :: costfunccmzalpha=18
-            integer(kind=inttype) parameter,optional :: costfuncdragcoef=4
-            integer(kind=inttype) parameter,optional :: costfuncclalphadot=24
-            integer(kind=inttype) parameter,optional :: costfuncforceycoef=9
-            integer(kind=inttype) parameter,optional :: costfuncclalpha=23
-            integer(kind=inttype) parameter,optional :: costfuncmomycoef=15
-            integer(kind=inttype) parameter,optional :: costfunccfy0=32	
-            integer(kind=inttype) parameter,optional :: costfunccfyalpha=33 
-            integer(kind=inttype) parameter,optional :: costfunccfyalphadot=34
-            integer(kind=inttype) parameter,optional :: costfunccfyq=35
-            integer(kind=inttype) parameter,optional :: costfunccfyqdot=36
-            integer(kind=inttype) parameter,optional :: costfuncbendingcoef=37
-            integer(kind=inttype) parameter,optional :: costfuncsepsensor=38
-            integer(kind=inttype) parameter,optional :: costfuncsepsensoravgx=39
-            integer(kind=inttype) parameter,optional :: costfuncsepsensoravgy=40
-            integer(kind=inttype) parameter,optional :: costfuncsepsensoravgz=41
-            integer(kind=inttype) parameter,optional :: costfunccavitation=42
-            integer(kind=inttype) parameter,optional :: costfuncmdot=43
-            integer(kind=inttype) parameter,optional :: costfuncmavgptot=44
-            integer(kind=inttype) parameter,optional :: costfuncmavgttot=45
-            integer(kind=inttype) parameter,optional :: costfuncmavgps=46
-            integer(kind=inttype) parameter,optional :: costfuncmavgmn=47
-            integer(kind=inttype) parameter,optional :: costfuncsigmamn=48
-            integer(kind=inttype) parameter,optional :: costfuncsigmaptot=49
-            integer(kind=inttype) parameter,optional :: costfuncpk=50
-            integer(kind=inttype) parameter,optional :: costfuncedot=51
-            real(kind=realtype) dimension(51) :: funcvalues
-            real(kind=realtype) sepsensoroffset
-            real(kind=realtype) sepsensorsharpness
-       end module costfunctions
-      
+       module inputcostfunctions ! in :test:costFunctions.F90
+         use constants
+         real(kind=realtype) sepsensoroffset
+         real(kind=realtype) sepsensorsharpness
+       end module inputcostfunctions
+       
        module adjointvars ! in :test:ADjointVars.F90
          use constants
-         use costfunctions
             integer(kind=inttype) dimension(20) :: ncellslocal
             integer(kind=inttype) dimension(20) :: nnodeslocal
             integer(kind=inttype), parameter,optional :: ialpha=1

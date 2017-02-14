@@ -335,9 +335,81 @@ module constants
   integer(kind=intType), parameter :: iFringeReduction=15
   integer(kind=intType), parameter :: iTotal=16
 
-  ! Flags for hand-differeniated codes
-  integer(kind=intType), parameter :: AD_NONLINEAR=0
-  integer(kind=intType), parameter :: AD_FORWARD=1
-  integer(kind=intType), parameter :: AD_REVERSE=2
-  
+  ! Cost functions.
+  integer(kind=intType), parameter :: nCostFunction = 51
+  integer(kind=intType), parameter :: &
+       costFuncLift       = 1,&
+       costFuncDrag       = 2,&
+       costFuncLiftCoef   = 3,&
+       costFuncDragCoef   = 4,&
+       costFuncForceX     = 5,&
+       costFuncForceY     = 6,&
+       costFuncForceZ     = 7,&
+       costFuncForceXCoef = 8,&
+       costFuncForceYCoef = 9,&
+       costFuncForceZCoef = 10,&
+       costFuncMomX       = 11,&
+       costFuncMomY       = 12,&
+       costFuncMomZ       = 13,&
+       costFuncMomXCoef   = 14,&
+       costFuncMomYCoef   = 15,&
+       costFuncMomZCoef   = 16,&
+       costFuncCm0        = 17,&
+       costFuncCmzAlpha   = 18,&
+       costFuncCmzAlphaDot= 19,&
+       costFuncCmzq       = 20,&
+       costFuncCmzqDot    = 21,&
+       costFuncCl0        = 22,&
+       costFuncClAlpha    = 23,&
+       costFuncClAlphaDot = 24,&
+       costFuncClq        = 25,&
+       costFuncClqDot     = 26,&
+       costFuncCd0        = 27,&
+       costFuncCdAlpha    = 28,&
+       costFuncCdAlphadot = 29,&
+       costFuncCdq        = 30,&
+       costFuncCdqDot     = 31,&
+       costFuncCfy0       = 32,&
+       costFuncCfyAlpha   = 33,&
+       costFuncCfyAlphadot= 34,&
+       costFuncCfyq       = 35,&
+       costFuncCfyqDot    = 36,&
+       costFuncBendingCoef= 37,&
+       costFuncSepSensor  = 38,&
+       costFuncSepSensorAvgX = 39, &
+       costFuncSepSensorAvgY = 40, &
+       costFuncSepSensorAvgZ = 41, &
+       costFuncCavitation    = 42, &
+       costFuncMdot          = 43, &
+       costFuncMavgPtot      = 44, &
+       costFuncMavgTtot      = 45, &
+       costFuncMavgPs        = 46, & 
+       costFuncMavgMN        = 47, &
+       costFuncSigmaMN       = 48, &
+       costFuncSigmaPtot     = 49, &
+       costFuncPk            = 50, &
+       costFuncEdot          = 51
+
+  integer(kind=intType), parameter :: nLocalValues=36
+  integer(kind=intType), parameter :: &
+       iFp =  1, &
+       iFv =  4, &
+       iMp =  7, &
+       iMv = 10, &
+       iSepSensor  = 13, &
+       iSepAvg     = 14, &
+       iCavitation = 17, &
+       iyPlus      = 18, &
+       iMassFlow   = 19, &
+       iMassPTot   = 20, &
+       iMassTtot   = 21, &
+       iMassPs     = 22, &
+       iFlowMp     = 23, & 
+       iFlowFm     = 26, & 
+       iFlowMm     = 29, & 
+       iMassMN     = 32, &
+       isigmaMN    = 33, &
+       isigmaPtot  = 34, &
+       iPk         = 35
+ 
 end module constants
