@@ -1014,7 +1014,9 @@ contains
     use utils, only : EChk
     use surfaceUtils, only : getSurfaceSize
     use adjointUtils, only : allocDerivativeValues, zeroADSeeds
+#ifndef USE_COMPLEX
     use masterRoutines, only : master_d
+#endif
     implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"

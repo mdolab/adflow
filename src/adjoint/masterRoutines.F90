@@ -542,13 +542,13 @@ contains
     use inputAdjoint,  only : viscPC
     use fluxes, only : viscousFlux
     use flowVarRefState, only : nw, nwf, viscous,pInfDimd, rhoInfDimd, TinfDimd
-    use blockPointers!, only : nDom, il, jl, kl, wd, xd, dw, dwd
+    use blockPointers, only : nDom, il, jl, kl, wd, xd, dw, dwd
     use inputPhysics, only :pointRefd, alphad, betad, equations, machCoefd, &
          machd, machGridd, rgasdimd, equationMode, turbModel, wallDistanceNeeded
     use inputDiscretization, only : lowSpeedPreconditioner, lumpedDiss, spaceDiscr, useAPproxWallDistance
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputAdjoint, only : frozenTurbulence
-    use utils!, only : isWallType, setPointers_b, EChk
+    use utils, only : isWallType, setPointers_b, EChk
     use adjointPETSc, only : x_like
     use haloExchange, only : whalo2_b, exchangeCoor_b, exchangeCoor, whalo2
     use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
