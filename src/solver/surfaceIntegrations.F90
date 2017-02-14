@@ -44,7 +44,7 @@ module surfaceIntegrations
 
 contains
 
-  subroutine integrateSurfaces(localValues, famList)
+  subroutine integrateSurfaces(localValues, famList, withGathered)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
     ! modifying the hand-written forward and reverse routines. 
@@ -72,8 +72,15 @@ contains
     ! Input/output Variables
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
     integer(kind=intType), dimension(:), intent(in) :: famList
+    logical, optional, intent(in) :: withGathered
     ! Working variables
     integer(kind=intType) :: mm
+    logical :: withGatheredFlag
+
+    withGatheredFlag = .false. 
+    if (present(withGathered)) then 
+      withGatheredFlag = withGathered 
+    end if 
 
     ! Loop over all possible boundary conditions
     bocos: do mm=1, nBocos
@@ -86,80 +93,22 @@ contains
           ! a generic treatment possible. 
           call setBCPointers(mm, .True.)
 
-          isWall: if( isWallType(BCType(mm))) then 
+          ! not post gathered integrations currently
+          isWall: if( isWallType(BCType(mm)) .and. .not. withGatheredFlag) then 
              call wallIntegrationFace(localvalues, mm)
           end if isWall
 
           isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
                BCType(mm) == SupersonicInflow) then 
-               call flowIntegrationFace(.true., localValues, mm)
+               call flowIntegrationFace(.true., withGatheredFlag, localValues, mm)
             else if (BCType(mm) == SubsonicOutflow .or. &
                BCType(mm) == SupersonicOutflow) then 
-               call flowIntegrationFace(.false., localValues, mm)
+               call flowIntegrationFace(.false., withGatheredFlag, localValues, mm)
           end if isInflowOutflow
        end if famInclude
     end do bocos
 
   end subroutine integrateSurfaces
-
-  subroutine integrateSurfacesWithGathered(globalCFValues, localValues, famList) 
-    !--------------------------------------------------------------
-    ! Manual Differentiation Warning: Modifying this routine requires
-    ! modifying the hand-written forward and reverse routines. 
-    ! --------------------------------------------------------------
-    !
-    ! This is a shell routine that calls the specific surface
-    ! integration routines, which need access to gethered values. This routine
-    ! takes care of setting pointers, while the actual computational
-    ! routine just acts on a specific fast pointed to by pointers. 
-
-    use constants
-    use costFunctions
-    use blockPointers, only : nBocos, BCData, BCType, sk, sj, si, x, rlv, &
-         sfacei, sfacej, sfacek, gamma, rev, p, viscSubface
-    use utils, only : setBCPointers, isWallType
-    use sorting, only : bsearchIntegers
-    use costFunctions, only : nLocalValues
-    ! Tapenade needs to see these modules that the callees use.
-    use BCPointers 
-    use flowVarRefState
-    use inputPhysics
-
-    implicit none
-
-    ! Input/output Variables
-    real(kind=realType), dimension(nCostFunction), intent(in) :: globalCFValues
-    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
-    integer(kind=intType), dimension(:), intent(in) :: famList
-    ! Working variables
-    integer(kind=intType) :: mm
-
-    ! Loop over all possible boundary conditions
-    bocos: do mm=1, nBocos
-       
-       ! Determine if this boundary condition is to be incldued in the
-       ! currently active group
-       famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then
-          
-          ! Set a bunch of pointers depending on the face id to make
-          ! a generic treatment possible. 
-          call setBCPointers(mm, .True.)
-
-          ! no wall functions yet
-          ! isWall: if( isWallType(BCType(mm))) then 
-          !    call wallIntegrationFace(localvalues, mm)
-          ! end if isWall
-
-          isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
-               BCType(mm) == SupersonicInflow) then 
-               call flowIntegrationFaceWithGathered(.true., globalCFValues, localValues, mm)
-            else if (BCType(mm) == SubsonicOutflow .or. &
-               BCType(mm) == SupersonicOutflow) then 
-               call flowIntegrationFaceWithGathered(.false., globalCFValues, localValues, mm)
-          end if isInflowOutflow
-       end if famInclude
-    end do bocos
-  end subroutine integrateSurfacesWithGathered
 
   subroutine getCostFunctions(globalVals)
 
@@ -187,8 +136,9 @@ contains
     ovrNTS = one/nTimeIntervalsSpectral
 
     ! Sum pressure and viscous contributions
-    Force = globalvals(iFp:iFp+2, :) + globalvals(iFv:iFv+2, :)
-    Moment = globalvals(iMp:iMp+2, :) + globalvals(iMv:iMv+2, :)
+    Force = globalvals(iFp:iFp+2, :) + globalvals(iFv:iFv+2, :) + globalvals(iFlowFm:iFlowFm+2, :)
+
+    Moment = globalvals(iMp:iMp+2, :) + globalvals(iMv:iMv+2, :) + globalvals(iFlowMm:iFlowMm+2, :)
 
     fact = two/(gammaInf*MachCoef*MachCoef &
          *surfaceRef*LRef*LRef*pRef)
@@ -250,7 +200,7 @@ contains
 
        funcValues(costFuncMdot)      = funcValues(costFuncMdot) + ovrNTS*mFlow
        funcValues(costFuncMavgPtot ) = funcValues(costFuncMavgPtot) + ovrNTS*mAvgPtot
-       funcValues(costFuncMavgPtot)  = funcValues(costFuncMavgTtot) + ovrNTS*mAvgTtot
+       funcValues(costFuncMavgTtot)  = funcValues(costFuncMavgTtot) + ovrNTS*mAvgTtot
        funcValues(costFuncMavgPs)    = funcValues(costFuncMAvgPs) + ovrNTS*mAvgPs
        funcValues(costFuncMavgMn)    = funcValues(costFuncMAvgMn) + ovrNTS*mAvgMn
        funcValues(costFuncSigmaMN) = funcValues(costFuncSigmaMN) + ovrNTS*sigmaMN
@@ -324,7 +274,7 @@ contains
 
 #ifndef USE_TAPENADE
 #ifndef USE_COMPLEX
-  subroutine integrateSurfaces_d(localValues, localValuesd, famList)
+  subroutine integrateSurfaces_d(localValues, localValuesd, famList, withGathered)
     !------------------------------------------------------------------------
     ! Manual Differentiation Warning: This routine is differentiated by hand.
     ! -----------------------------------------------------------------------
@@ -341,8 +291,16 @@ contains
     ! Input/output Variables
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
     integer(kind=intType), dimension(:), intent(in) :: famList
+    logical, optional, intent(in) :: withGathered
+    
     ! Working variables
     integer(kind=intType) :: mm
+    logical :: withGatheredFlag
+
+    withGatheredFlag = .false. 
+    if (present(withGathered)) then 
+      withGatheredFlag = withGathered 
+    end if 
 
     ! Loop over all possible boundary conditions
     do mm=1, nBocos
@@ -354,22 +312,23 @@ contains
           ! a generic treatment possible. 
           call setBCPointers_d(mm, .True.)
           
-          isWall: if( isWallType(BCType(mm))) then 
+          ! not post gathered integrations currently
+          isWall: if( isWallType(BCType(mm)) .and. .not. withGatheredFlag) then 
              call wallIntegrationFace_d(localValues, localValuesd, mm)
           end if isWall
           
           isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
                BCType(mm) == SupersonicInflow) then 
-               call flowIntegrationFace(.true., localValues, mm)
+               call flowIntegrationFace(.true., withGatheredFlag, localValues, mm)
             else if (BCType(mm) == SubsonicOutflow .or. &
                BCType(mm) == SupersonicOutflow) then 
-               call flowIntegrationFace(.false., localValues, mm)
+               call flowIntegrationFace(.false., withGatheredFlag, localValues, mm)
           end if isInflowOutflow
        end if famInclude
     end do
   end subroutine integrateSurfaces_d
 
-  subroutine integrateSurfaces_b(localValues, localValuesd, famList)
+  subroutine integrateSurfaces_b(localValues, localValuesd, famList, withGathered)
     !------------------------------------------------------------------------
     ! Manual Differentiation Warning: This routine is differentiated by hand.
     ! -----------------------------------------------------------------------
@@ -386,8 +345,15 @@ contains
     ! Input/output Variables
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
     integer(kind=intType), dimension(:), intent(in) :: famList
+    logical, optional, intent(in) :: withGathered
     ! Working variables
     integer(kind=intType) :: mm
+    logical :: withGatheredFlag
+
+    withGatheredFlag = .false. 
+    if (present(withGathered)) then 
+      withGatheredFlag = withGathered 
+    end if 
 
     ! Call the individual integration routines. 
     do mm=1, nBocos
@@ -399,16 +365,17 @@ contains
           ! a generic treatment possible. 
           call setBCPointers_d(mm, .True.)
           
-          isWall: if( isWallType(BCType(mm))) then 
+          ! not post gathered integrations currently
+          isWall: if( isWallType(BCType(mm)) .and. .not. withGatheredFlag) then 
              call wallIntegrationFace_b(localValues, localValuesd, mm)
           end if isWall
           
           isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
                BCType(mm) == SupersonicInflow) then 
-               call flowIntegrationFace_b(.true., localValues, localValuesd, mm)
+               call flowIntegrationFace_b(.true., withGatheredFlag, localValues, localValuesd, mm)
             else if (BCType(mm) == SubsonicOutflow .or. &
                BCType(mm) == SupersonicOutflow) then 
-               call flowIntegrationFace_b(.false., localValues, localValuesd, mm)
+               call flowIntegrationFace_b(.false., withGatheredFlag, localValues, localValuesd, mm)
           end if isInflowOutflow
        end if famInclude
     end do
@@ -733,7 +700,7 @@ contains
 #endif
   end subroutine wallIntegrationFace
 
-  subroutine flowIntegrationFace(isInflow, localValues, mm)
+  subroutine flowIntegrationFace(isInflow, withGathered, localValues, mm)
 
     use constants
     use costFunctions
@@ -749,22 +716,19 @@ contains
 
     ! Input/Output variables
     logical, intent(in) :: isInflow
+    logical, intent(in) :: withGathered
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
     integer(kind=intType), intent(in) :: mm
 
     ! Local variables
-    real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN, mReDim, pk
+    real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN
+    real(kind=realType) ::  mReDim, pk, sigma_MN, sigma_Ptot
     integer(kind=intType) :: i, j, ii, blk
     real(kind=realType) :: internalFlowFact, inFlowFact, fact, xc, yc, zc, cellArea, mx, my, mz
     real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, Fx, Fy, Fz, u, v, w
-    real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, a2, MNm, massFlowRateLocal, edota
-    real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint, VcoordRef, VFreestreamRef,sFaceFreestreamRef
-
-    massFlowRate = zero
-    mass_Ptot = zero
-    mass_Ttot = zero
-    mass_Ps = zero
-    mass_MN = zero
+    real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, a2
+    real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint, VcoordRef, VFreestreamRef, sFaceFreestreamRef
+    real(kind=realType) :: MNm, massFlowRateLocal
 
     refPoint(1) = LRef*pointRef(1)
     refPoint(2) = LRef*pointRef(2)
@@ -810,6 +774,15 @@ contains
     pk = zero
     mReDim = sqrt(pRef*rhoRef)
 
+    massFlowRate = zero
+    mass_Ptot = zero
+    mass_Ttot = zero
+    mass_Ps = zero
+    mass_MN = zero
+
+    sigma_Mn = zero
+    sigma_Ptot = zero
+
     !$AD II-LOOP
     do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
       i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
@@ -840,209 +813,129 @@ contains
       call computeTtot(rhom, vxm, vym, vzm, pm, Ttot)
 
       massFlowRateLocal = rhom*vnm*blk*fact*mReDim
-      massFlowRate = massFlowRate + massFlowRateLocal
 
-      pk = pk + ((pm-pInf) + half*rhom*(vmag**2 - (uInf)**2)) * vnm * pRef* uRef * fact
+      checkGathered: if (withGathered) then
 
-      ! re-dimentionalize quantities
-      pm = pm*pRef
+        sigma_Mn = sigma_Mn  + massFlowRateLocal*(MNm - funcValues(costFuncMavgMN))**2
+        sigma_Ptot = sigma_Ptot + massFlowRateLocal*(Ptot - funcValues(costFuncMavgPtot))**2
 
-      mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
-      mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
-      mass_Ps = mass_Ps + pm*massFlowRateLocal
-      mass_MN = mass_MN + MNm*massFlowRateLocal
+      else 
 
-      xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
-          +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
-      yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
-          +         xx(i,j+1,2) + xx(i+1,j+1,2)) - refPoint(2)
-      zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
-          +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
+        massFlowRate = massFlowRate + massFlowRateLocal
 
-      ! Pressure forces. Note that these need a *negative* and to subtract 
-      ! the reference pressure sign to be consistent with the force 
-      ! computation on the walls. 
-      pm = -(pm-pInf*pRef)*fact*blk
+        pk = pk + ((pm-pInf) + half*rhom*(vmag**2 - (uInf)**2)) * vnm * pRef* uRef * fact
 
-      fx = pm*ssi(i,j,1)
-      fy = pm*ssi(i,j,2)
-      fz = pm*ssi(i,j,3)
+        ! re-dimentionalize quantities
+        pm = pm*pRef
 
-      ! Update the pressure force and moment coefficients.
-      Fp(1) = Fp(1) + fx
-      Fp(2) = Fp(2) + fy
-      Fp(3) = Fp(3) + fz
-               
-      mx = yc*fz - zc*fy
-      my = zc*fx - xc*fz
-      mz = xc*fy - yc*fx
-       
-      Mp(1) = Mp(1) + mx
-      Mp(2) = Mp(2) + my
-      Mp(3) = Mp(3) + mz
+        mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
+        mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
 
-      ! Momentum forces are a little tricky.  We negate because 
-      ! have to re-apply fact to massFlowRateLocal to undoo it, because 
-      ! we need the signed behavior of ssi to get the momentum forces correct. 
-      ! Also, the sign is flipped between inflow and outflow types 
-      cellArea = mynorm2(ssi(i,j,:))
-      massFlowRateLocal = massFlowRateLocal*fact/timeRef*blk/cellArea*internalFlowFact*inFlowFact
+        mass_Ps = mass_Ps + pm*massFlowRateLocal
+        mass_MN = mass_MN + MNm*massFlowRateLocal
 
-      fx = massFlowRateLocal * ssi(i,j,1)*vxm
-      fy = massFlowRateLocal * ssi(i,j,2)*vym
-      fz = massFlowRateLocal * ssi(i,j,3)*vzm
+        xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+            +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
+        yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+            +         xx(i,j+1,2) + xx(i+1,j+1,2)) - refPoint(2)
+        zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+            +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
 
-      FMom(1) = FMom(1) + fx
-      FMom(2) = FMom(2) + fy
-      FMom(3) = FMom(3) + fz
+        ! Pressure forces. Note that these need a *negative* and to subtract 
+        ! the reference pressure sign to be consistent with the force 
+        ! computation on the walls. 
+        pm = -(pm-pInf*pRef)*fact*blk
 
-      mx = yc*fz - zc*fy
-      my = zc*fx - xc*fz
-      mz = xc*fy - yc*fx
+        fx = pm*ssi(i,j,1)
+        fy = pm*ssi(i,j,2)
+        fz = pm*ssi(i,j,3)
 
-      MMom(1) = MMom(1) + mx
-      MMom(2) = MMom(2) + my
-      MMom(3) = MMom(3) + mz
+        ! Update the pressure force and moment coefficients.
+        Fp(1) = Fp(1) + fx
+        Fp(2) = Fp(2) + fy
+        Fp(3) = Fp(3) + fz
+                 
+        mx = yc*fz - zc*fy
+        my = zc*fx - xc*fz
+        mz = xc*fy - yc*fx
+         
+        Mp(1) = Mp(1) + mx
+        Mp(2) = Mp(2) + my
+        Mp(3) = Mp(3) + mz
 
-      ! ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
-      ! VcoordRef(1) = vxm
-      ! VcoordRef(2) = vym
-      ! VcoordRef(3) = vzm
+        ! Momentum forces are a little tricky.  We negate because 
+        ! have to re-apply fact to massFlowRateLocal to undoo it, because 
+        ! we need the signed behavior of ssi to get the momentum forces correct. 
+        ! Also, the sign is flipped between inflow and outflow types 
+        cellArea = mynorm2(ssi(i,j,:))
+        massFlowRateLocal = massFlowRateLocal*fact/timeRef*blk/cellArea*internalFlowFact*inFlowFact
 
-      ! call getDirVector(VcoordRef, -alpha, -beta, VFreestreamRef, liftIndex)
-      ! VFreestreamRef = VFreestreamRef * vmag
+        fx = massFlowRateLocal * ssi(i,j,1)*vxm
+        fy = massFlowRateLocal * ssi(i,j,2)*vym
+        fz = massFlowRateLocal * ssi(i,j,3)*vzm
 
-      ! !project the face normal into the freestream velocity and scale by the face
-      ! call getDirVector(ssi(i,j,:), -alpha, -beta, sFaceFreestreamRef, liftIndex)
-      ! sFaceFreestreamRef = sFaceFreestreamRef * sF
+        FMom(1) = FMom(1) + fx
+        FMom(2) = FMom(2) + fy
+        FMom(3) = FMom(3) + fz
 
-      ! ! compute the pertubations of the flow from the free-stream velocity
-      ! u = VFreestreamRef(1) - sFaceFreestreamRef(1) - uInf
-      ! v = VFreestreamRef(2) - sFaceFreestreamRef(2)
-      ! w = VFreestreamRef(3) - sFaceFreestreamRef(3)
+        mx = yc*fz - zc*fy
+        my = zc*fx - xc*fz
+        mz = xc*fy - yc*fx
 
-      ! !edota = edota + half*(rhom)
+        MMom(1) = MMom(1) + mx
+        MMom(2) = MMom(2) + my
+        MMom(3) = MMom(3) + mz
+
+        ! ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
+        ! VcoordRef(1) = vxm
+        ! VcoordRef(2) = vym
+        ! VcoordRef(3) = vzm
+
+        ! call getDirVector(VcoordRef, -alpha, -beta, VFreestreamRef, liftIndex)
+        ! VFreestreamRef = VFreestreamRef * vmag
+
+        ! !project the face normal into the freestream velocity and scale by the face
+        ! call getDirVector(ssi(i,j,:), -alpha, -beta, sFaceFreestreamRef, liftIndex)
+        ! sFaceFreestreamRef = sFaceFreestreamRef * sF
+
+        ! ! compute the pertubations of the flow from the free-stream velocity
+        ! u = VFreestreamRef(1) - sFaceFreestreamRef(1) - uInf
+        ! v = VFreestreamRef(2) - sFaceFreestreamRef(2)
+        ! w = VFreestreamRef(3) - sFaceFreestreamRef(3)
+
+        ! !edota = edota + half*(rhom)
+
+      end if checkGathered
        
     enddo
 
-   ! Increment the local values array with what we computed here
-    localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate
-    localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
-    localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
-    localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
-    localValues(iMassMN)   = localValues(iMassMN)   + mass_MN
-    localValues(iPk)   = localValues(iPk)   + pk
-    localValues(iFlowFp:iFlowFp+2)   = localValues(iFlowFp:iFlowFp+2) + Fp
-    localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
-    localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
-    localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
+    if (withGathered) then 
+      localValues(isigmaMN) = localValues(isigmaMN) + sigma_Mn
+      localValues(isigmaPtot) = localValues(isigmaPtot) + sigma_Ptot
+    else 
+      ! Increment the local values array with what we computed here
+      localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate
+      localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
+      localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
+      localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
+      localValues(iMassMN)   = localValues(iMassMN)   + mass_MN
+      localValues(iPk)   = localValues(iPk)   + pk
+      localValues(iFp:iFp+2)   = localValues(iFp:iFp+2) + Fp
+      localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
+      localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
+      localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
+    end if
 
   end subroutine flowIntegrationFace
 
-  subroutine flowIntegrationFaceWithGathered(isInflow, globalCFVals, localValues, mm)
-    use constants
-    use costFunctions
-    use blockPointers, only : BCType, BCFaceID, BCData, addGridVelocities
-    use costFunctions, onlY : nLocalValues, iMassFlow, iMassPtot, iMassTtot, iMassPs, iMassMN
-    use sorting, only : bsearchIntegers
-    use flowVarRefState, only : pRef, pInf, rhoRef, timeRef, LRef, TRef, RGas
-    use inputPhysics, only : pointRef, flowType
-    use flowUtils, only : computePtot
-    use BCPointers, only : ssi, sFace, ww1, ww2, pp1, pp2, xx, gamma1, gamma2
-    use utils, only : mynorm2
-    implicit none
-
-    ! Input/Output variables
-    logical, intent(in) :: isInflow
-    real(kind=realType), dimension(nCostFunction), intent(in) :: globalCFVals
-    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
-    integer(kind=intType), intent(in) :: mm
-
-    ! Local variables
-    integer(kind=intType) :: i, j, ii, blk
-    real(kind=realType) :: internalFlowFact, fact, xc, yc, zc, cellArea, mx, my, mz
-    real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, mReDim
-    real(kind=realType) :: pm, Ptot, rhom, gammam, massAvgPtot
-    real(kind=realType) :: MNm, massFlowRateLocal, massAvgMN
-
-    ! Note that these are *opposite* of force integrations. The reason
-    ! is that we want positive mass flow into the domain and negative
-    ! mass flow out of the domain. Since the low faces have ssi
-    ! vectors pointining into the domain, this is correct. The high
-    ! end faces need to flip this. 
-    select case (BCFaceID(mm))
-    case (iMin, jMin, kMin)
-       fact = one
-    case (iMax, jMax, kMax)
-       fact = -one
-    end select
-
-    ! the sign of momentum forces are flipped for internal flows
-    internalFlowFact = one
-    if (flowType == internalFlow) then 
-      internalFlowFact = -one
-    end if
-
-    ! Loop over the quadrilateral faces of the subface. Note that
-    ! the nodal range of BCData must be used and not the cell
-    ! range, because the latter may include the halo's in i and
-    ! j-direction. The offset +1 is there, because inBeg and jnBeg
-    ! refer to nodal ranges and not to cell ranges. The loop
-    ! (without the AD stuff) would look like:
-    !
-    ! do j=(BCData(mm)%jnBeg+1),BCData(mm)%jnEnd
-    !    do i=(BCData(mm)%inBeg+1),BCData(mm)%inEnd
-    
-    mReDim = sqrt(pRef*rhoRef)
-
-    massAvgMN = globalCFVals(costFuncMavgMN)
-    massAvgPtot = globalCFVals(costFuncMavgPtot)
-
-    !$AD II-LOOP
-    do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
-      i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
-      j = ii/(bcData(mm)%inEnd-bcData(mm)%inBeg) + bcData(mm)%jnBeg + 1
-
-      if( addGridVelocities ) then 
-        sF = sFace(i,j)
-      else
-        sF = zero
-      end if
-
-      ! Compute the force components.
-      blk = max(BCData(mm)%iblank(i,j), 0) ! iBlank forces for overset stuff
-
-      vxm = half*(ww1(i,j,ivx) + ww2(i,j,ivx))
-      vym = half*(ww1(i,j,ivy) + ww2(i,j,ivy))
-      vzm = half*(ww1(i,j,ivz) + ww2(i,j,ivz))
-      rhom = half*(ww1(i,j,irho) + ww2(i,j,irho))
-      pm = half*(pp1(i,j)+ pp2(i,j))
-      gammam = half*(gamma1(i,j) + gamma2(i,j))
-
-      call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
-      Ptot = Ptot * pref
-
-      vnm = vxm*ssi(i,j,1) + vym*ssi(i,j,2) + vzm*ssi(i,j,3)  - sF
-      vmag = sqrt((vxm**2 + vym**2 + vzm**2)) - sF
-      ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
-      MNm = vmag/sqrt(gammam*pm/rhom)
-
-      massFlowRateLocal = rhom*vnm*mReDim*blk*fact
-
-      localValues(iSigmaMN) = localValues(iSigmaMN) + massFlowRateLocal*(MNm - massAvgMN)**2
-      localValues(iSigmaPtot) = localValues(iSigmaPtot) + massFlowRateLocal*(Ptot - massAvgPtot)**2
-
-    end do
-
-  end subroutine flowIntegrationFaceWithGathered
-
-  subroutine flowIntegrationZipper(isInflow, zipper, vars, localValues, famList, sps)
+  subroutine flowIntegrationZipper(isInflow, withGathered, zipper, vars, localValues, famList, sps)
 
     ! Integrate over the trianges for the inflow/outflow conditions. 
 
     use constants
     use costFunctions, only : nLocalValues, iMassFlow, iMassPtot, iMassTtot, iMassPs, &
-         iFlowMm, iFlowMp, iFlowFm, iFlowFp, iMassMN, iPk
+         iFlowMm, iFlowMp, iFlowFm, iFp, iMassMN, iPk, funcValues, costFuncMavgMN, & 
+         costFuncMavgPtot, isigmaMN, isigmaPtot
     use blockPointers, only : BCType
     use sorting, only : bsearchIntegers
     use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas, uRef, uInf
@@ -1055,6 +948,7 @@ contains
 
     ! Input/output Variables
     logical, intent(in) :: isInflow
+    logical, intent(in) :: withGathered
     type(zipperMesh), intent(in) :: zipper
     real(kind=realType), dimension(:, :), intent(in) :: vars
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
@@ -1063,10 +957,11 @@ contains
 
     ! Working variables
     integer(kind=intType) :: i, j
-    real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, mReDim, Fx, Fy, Fz
+    real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, Fx, Fy, Fz
     real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint, ss, x1, x2, x3, norm
     real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, MNm, massFlowRateLocal
-    real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN, pk
+    real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN
+    real(kind=realType) ::  mReDim, pk, sigma_MN, sigma_Ptot
     real(kind=realType) :: internalFlowFact, inflowFact, xc, yc, zc, cellArea, mx, my, mz
 
     real(kind=realType), dimension(:), pointer :: localPtr
@@ -1139,195 +1034,105 @@ contains
           MNm = vmag/sqrt(gammam*pm/rhom)
 
           massFlowRateLocal = rhom*vnm*mReDim
-          massFlowRate = massFlowRate + massFlowRateLocal
 
-          pk = pk + ((pm-pInf) + half*rhom*(vmag**2 - uInf**2)) * vnm * pRef * uRef
+          checkGathered: if (withGathered) then
 
-          pm = pm*pRef
-          
-          mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
-          mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
-          mass_Ps = mass_Ps + pm*massFlowRateLocal
-          mass_MN = mass_MN + MNm*massFlowRateLocal
-          
-          ! Compute the average cell center. 
-          xc = zero
-          yc = zero
-          zc = zero
-          do j=1,3
-             xc = xc + (vars(zipper%conn(1, i), 7)) 
-             yc = yc + (vars(zipper%conn(2, i), 8)) 
-             zc = zc + (vars(zipper%conn(3, i), 9)) 
-          end do
+            sigma_Mn = sigma_Mn  + massFlowRateLocal*(MNm - funcValues(costFuncMavgMN))**2
+            sigma_Ptot = sigma_Ptot + massFlowRateLocal*(Ptot - funcValues(costFuncMavgPtot))**2
 
-          ! Finish average for cell center
-          xc = third*xc
-          yc = third*yc
-          zc = third*zc
+          else 
+            massFlowRate = massFlowRate + massFlowRateLocal
 
-          xc = xc - refPoint(1)
-          yc = yc - refPoint(2)
-          zc = zc - refPoint(3)
+            pk = pk + ((pm-pInf) + half*rhom*(vmag**2 - uInf**2)) * vnm * pRef * uRef
 
-          pm = -(pm-pInf*pRef)
-          fx = pm*ss(1)
-          fy = pm*ss(2)
-          fz = pm*ss(3)
+            pm = pm*pRef
+            
+            mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
+            mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
+            mass_Ps = mass_Ps + pm*massFlowRateLocal
+            mass_MN = mass_MN + MNm*massFlowRateLocal
+            
+            ! Compute the average cell center. 
+            xc = zero
+            yc = zero
+            zc = zero
+            do j=1,3
+               xc = xc + (vars(zipper%conn(1, i), 7)) 
+               yc = yc + (vars(zipper%conn(2, i), 8)) 
+               zc = zc + (vars(zipper%conn(3, i), 9)) 
+            end do
 
-          ! Update the pressure force and moment coefficients.
-          Fp(1) = Fp(1) + fx
-          Fp(2) = Fp(2) + fy
-          Fp(3) = Fp(3) + fz
-                 
-          mx = yc*fz - zc*fy
-          my = zc*fx - xc*fz
-          mz = xc*fy - yc*fx
-       
-          Mp(1) = Mp(1) + mx
-          Mp(2) = Mp(2) + my
-          Mp(3) = Mp(3) + mz
+            ! Finish average for cell center
+            xc = third*xc
+            yc = third*yc
+            zc = third*zc
 
-          ! Momentum forces
+            xc = xc - refPoint(1)
+            yc = yc - refPoint(2)
+            zc = zc - refPoint(3)
 
-          ! Get unit normal vector. 
-          ss = ss/mynorm2(ss)
-          massFlowRateLocal = massFlowRateLocal/timeRef*internalFlowFact*inflowFact
+            pm = -(pm-pInf*pRef)
+            fx = pm*ss(1)
+            fy = pm*ss(2)
+            fz = pm*ss(3)
 
-          fx = massFlowRateLocal*ss(1) * vxm/timeRef
-          fy = massFlowRateLocal*ss(2) * vym/timeRef
-          fz = massFlowRateLocal*ss(3) * vzm/timeRef
+            ! Update the pressure force and moment coefficients.
+            Fp(1) = Fp(1) + fx
+            Fp(2) = Fp(2) + fy
+            Fp(3) = Fp(3) + fz
+                   
+            mx = yc*fz - zc*fy
+            my = zc*fx - xc*fz
+            mz = xc*fy - yc*fx
+         
+            Mp(1) = Mp(1) + mx
+            Mp(2) = Mp(2) + my
+            Mp(3) = Mp(3) + mz
 
-          FMom(1) = FMom(1) - fx
-          FMom(2) = FMom(2) - fy
-          FMom(3) = FMom(3) - fz
+            ! Momentum forces
 
-          mx = yc*fz - zc*fy
-          my = zc*fx - xc*fz
-          mz = xc*fy - yc*fx
-          
-          MMom(1) = MMom(1) + mx
-          MMom(2) = MMom(2) + my
-          MMom(3) = MMom(3) + mz
+            ! Get unit normal vector. 
+            ss = ss/mynorm2(ss)
+            massFlowRateLocal = massFlowRateLocal/timeRef*internalFlowFact*inflowFact
+
+            fx = massFlowRateLocal*ss(1) * vxm/timeRef
+            fy = massFlowRateLocal*ss(2) * vym/timeRef
+            fz = massFlowRateLocal*ss(3) * vzm/timeRef
+
+            FMom(1) = FMom(1) - fx
+            FMom(2) = FMom(2) - fy
+            FMom(3) = FMom(3) - fz
+
+            mx = yc*fz - zc*fy
+            my = zc*fx - xc*fz
+            mz = xc*fy - yc*fx
+            
+            MMom(1) = MMom(1) + mx
+            MMom(2) = MMom(2) + my
+            MMom(3) = MMom(3) + mz
+          end if checkGathered
        end if
     enddo
     
-    ! Increment the local values array with what we computed here
-    localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate
-    localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
-    localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
-    localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
-    localValues(iMassMN)   = localValues(iMassMN)   + mass_MN
-    localValues(iPk)   = localValues(iPk)   + Pk
-    localValues(iFlowFp:iFlowFp+2)   = localValues(iFlowFp:iFlowFp+2) + Fp
-    localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
-    localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
-    localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
+    if (withGathered) then 
+      localValues(isigmaMN) = localValues(isigmaMN) + sigma_Mn
+      localValues(isigmaPtot) = localValues(isigmaPtot) + sigma_Ptot
+    else
+      ! Increment the local values array with what we computed here
+      localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate
+      localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
+      localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
+      localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
+      localValues(iMassMN)   = localValues(iMassMN)   + mass_MN
+      localValues(iPk)   = localValues(iPk)   + Pk
+      localValues(iFp:iFp+2)   = localValues(iFp:iFp+2) + Fp
+      localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
+      localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
+      localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
+    end if
 
   end subroutine flowIntegrationZipper
-
-  subroutine flowIntegrationZipperwithGathered(isInflow, zipper, vars, globalCFVals, localValues, famList, sps)
-
-    ! Integrate over the trianges for the inflow/outflow conditions. 
-
-    use constants
-    use costFunctions, only : nLocalValues, iSigmaMN, iSigmaPtot, costFuncMAvgMN, costFuncMAvgPtot, nCostFunction
-    use blockPointers, only : BCType
-    use sorting, only : bsearchIntegers
-    use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas
-    use inputPhysics, only : pointRef, flowType
-    use flowUtils, only : computePtot
-    use overset, only : zipperMeshes, zipperMesh
-    use surfaceFamilies, only : familyExchange, BCFamExchange
-    use utils, only : mynorm2, cross_prod
-    implicit none
-
-    ! Input/output Variables
-    logical, intent(in) :: isInflow
-    type(zipperMesh), intent(in) :: zipper
-    real(kind=realType), dimension(:, :), intent(in) :: vars
-    real(kind=realType), dimension(nCostFunction), intent(in) :: globalCFVals
-    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
-    integer(kind=intType), dimension(:), intent(in) :: famList
-    integer(kind=intType), intent(in) :: sps
-
-    ! Working variables
-    integer(kind=intType) :: i, j
-    real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, mReDim
-    real(kind=realType), dimension(3) :: ss, x1, x2, x3, norm
-    real(kind=realType) :: pm, Ptot, rhom, gammam, massAvgPtot, sigmaPtot
-    real(kind=realType) :: MNm, massFlowRateLocal, sigmaMN, massAvgMN
-    real(kind=realType) :: internalFlowFact, inflowFact
-
-    real(kind=realType), dimension(:), pointer :: localPtr
-
-    internalFlowFact = one
-    if (flowType == internalFlow) then 
-      internalFlowFact = -one
-    end if
-
-    inFlowFact = one
-    if (isInflow) then 
-      inflowFact=-one
-    end if
-
-    mReDim = sqrt(pRef*rhoRef)
-    massAvgMN = globalCFVals(costFuncMavgMN)
-    massAvgPtot = globalCFVals(costFuncMavgPtot)
-
-    sigmaMN = zero
-    sigmaPtot = zero
-
-    !$AD II-LOOP
-    do i=1, size(zipper%conn, 2)
-      if (bsearchIntegers(zipper%fam(i) , famList) > 0) then 
-          ! Compute the averaged values for this trianlge
-          vxm = zero; vym = zero; vzm = zero; rhom = zero; pm = zero; MNm = zero;
-          sF = zero
-          do j=1,3
-             rhom = rhom + vars(zipper%conn(j, i), iRho)
-             vxm = vxm + vars(zipper%conn(j, i), iVx)
-             vym = vym + vars(zipper%conn(j, i), iVy)
-             vzm = vzm + vars(zipper%conn(j, i), iVz)
-             pm = pm + vars(zipper%conn(j, i), iRhoE)
-             gammam = gammam + vars(zipper%conn(j, i), 6)
-             sF = sF + vars(zipper%conn(j, i), 7)
-          end do
-
-          ! Divide by 3 due to the summation above:
-          rhom = third*rhom
-          vxm = third*vxm
-          vym = third*vym
-          vzm = third*vzm
-          pm = third*pm
-          gammam = third*gammam
-          sF = third*sF
-
-          ! Get the nodes of triangle.
-          x1 = vars(zipper%conn(1, i), 7:9)
-          x2 = vars(zipper%conn(2, i), 7:9)
-          x3 = vars(zipper%conn(3, i), 7:9)
-          call cross_prod(x2-x1, x3-x1, norm)
-          ss = -half*norm
-
-          vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3)  - sF
-          vmag = sqrt((vxm**2 + vym**2 + vzm**2)) - sF
-          MNm = sqrt((vxm**2 + vym**2 + vzm**2)*rhom/(gammam*pm)) 
-
-          call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
-          Ptot = Ptot * pref
-
-          massFlowRateLocal = rhom*vnm*mReDim
-          sigmaMN = sigmaMN + massFlowRateLocal*(MNm - massAvgMN)**2
-          sigmaPtot = sigmaPtot + massFlowRateLocal*(Ptot - massAvgPtot)**2
-
-      end if
-    end do 
-
-    localValues(iSigmaMN) = localValues(iSigmaMN) + sigmaMN
-    localValues(iSigmaPtot) = localValues(iSigmaPtot) + sigmaPtot
-
-  end subroutine flowIntegrationZipperwithGathered
-
+  
   subroutine wallIntegrationZipper(zipper, vars, localValues, famList, sps)
 
     use constants
@@ -1451,7 +1256,7 @@ contains
 
 #ifndef USE_TAPENADE
 
-  subroutine integrateZippers(localValues, famList, sps)
+  subroutine integrateZippers(localValues, famList, sps, withGathered)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
     ! modifying the hand-written forward and reverse routines. 
@@ -1474,6 +1279,15 @@ contains
     integer(kind=intType), intent(in) :: sps
     real(kind=realType), dimension(:, :), allocatable :: vars
     type(zipperMesh), pointer :: zipper
+    logical, optional, intent(in) :: withGathered
+
+    ! Working variables 
+    logical :: withGatheredFlag
+    
+    withGatheredFlag = .false. 
+    if (present(withGathered)) then 
+      withGatheredFlag = withGathered 
+    end if 
 
     ! Determine if we have a wall Zipper:
     zipper => zipperMeshes(iBCGroupWalls)
@@ -1507,7 +1321,7 @@ contains
        call flowIntegrationZipperComm(.true., vars, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper(.true., zipper, vars, localValues, famList, sps)
+       call flowIntegrationZipper(.true., withGatheredFlag, zipper, vars, localValues, famList, sps)
 
        ! Cleanup vars
        deallocate(vars)
@@ -1526,80 +1340,16 @@ contains
        call flowIntegrationZipperComm(.false., vars, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper(.false., zipper, vars, localValues, famList, sps)
+       call flowIntegrationZipper(.false., withGathered, zipper, vars, localValues, famList, sps)
 
        ! Cleanup vars
        deallocate(vars)
     end if
   end subroutine integrateZippers
 
-  subroutine integrateZippersWithGathered(globalCFvals, localValues, famList, sps)
-    !--------------------------------------------------------------
-    ! Manual Differentiation Warning: Modifying this routine requires
-    ! modifying the hand-written forward and reverse routines. 
-    ! --------------------------------------------------------------
 
-    ! Integrate over the triangles formed by the zipper mesh. This
-    ! will perform both all necesasry zipper integrations. Currently
-    ! this includes the wall force integrations as well as the
-    ! flow-though surface integration. 
-
-    use constants
-    use costFunctions, only : nLocalValues, nCostFunction
-    use overset, only : zipperMeshes, zipperMesh
-    use haloExchange, only : wallIntegrationZipperComm, flowIntegrationZipperComm
-    implicit none
-
-    ! Input Variables
-    real(kind=realType), dimension(nCostFunction), intent(in) :: globalCFVals
-    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
-    integer(kind=intType), dimension(:), intent(in) :: famList
-    integer(kind=intType), intent(in) :: sps
-    real(kind=realType), dimension(:, :), allocatable :: vars
-    type(zipperMesh), pointer :: zipper
-
-    ! NOTE: No wall zipper with global calcs yet
-
-    zipper => zipperMeshes(iBCGroupInflow)
-    ! Determine if we have a flowthrough Zipper:
-    if (zipper%allocated) then 
-
-       ! Allocate space necessary to store variables. Only non-zero on
-       ! root proc. 
-       allocate(vars(size(zipper%indices), 9))
-       
-       ! Gather up the required variables in "vars" on the root
-       ! proc. This routine is differientated by hand. 
-       call flowIntegrationZipperComm(.true., vars, sps)
-
-       ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipperwithGathered(.true., zipper, vars, GlobalCFVals, localValues, famList, sps)
-
-       ! Cleanup vars
-       deallocate(vars)
-    end if
-
-    zipper => zipperMeshes(iBCGroupOutflow)
-    ! Determine if we have a flowthrough Zipper:
-    if (zipper%allocated) then 
-
-       ! Allocate space necessary to store variables. Only non-zero on
-       ! root proc. 
-       allocate(vars(size(zipper%indices), 9))
-       
-       ! Gather up the required variables in "vars" on the root
-       ! proc. This routine is differientated by hand. 
-       call flowIntegrationZipperComm(.false., vars, sps)
-
-       ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipperwithGathered(.false., zipper, vars, GlobalCFVals, localValues, famList, sps)
-
-       ! Cleanup vars
-       deallocate(vars)
-    end if
-  end subroutine integrateZippersWithGathered
 #ifndef USE_COMPLEX
-  subroutine integrateZippers_d(localValues, localValuesd, famList, sps)
+  subroutine integrateZippers_d(localValues, localValuesd, famList, sps, withGathered)
     !------------------------------------------------------------------------
     ! Manual Differentiation Warning: This routine is differentiated by hand.
     ! -----------------------------------------------------------------------
@@ -1619,6 +1369,16 @@ contains
     integer(kind=intType), intent(in) :: sps
     real(kind=realType), dimension(:, :), allocatable :: vars, varsd
     type(zipperMesh), pointer :: zipper
+    logical, optional, intent(in) :: withGathered
+
+    ! Working variables 
+    logical :: withGatheredFlag
+    
+    withGatheredFlag = .false. 
+    if (present(withGathered)) then 
+      withGatheredFlag = withGathered 
+    end if 
+
 
     zipper => zipperMeshes(iBCGroupWalls)
     if (zipper%allocated) then 
@@ -1651,7 +1411,7 @@ contains
        call flowIntegrationZipperComm_d(.true., vars, varsd, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper_d(.true., zipper, vars, varsd, localValues, localValuesd, famList, sps)
+       call flowIntegrationZipper_d(.true., withGatheredFlag, zipper, vars, varsd, localValues, localValuesd, famList, sps)
 
        ! Cleanup vars
        deallocate(vars, varsd)
@@ -1670,14 +1430,14 @@ contains
        call flowIntegrationZipperComm_d(.false., vars, varsd, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper_d(.false., zipper, vars, varsd, localValues, localValuesd, famList, sps)
+       call flowIntegrationZipper_d(.false., withGathered, zipper, vars, varsd, localValues, localValuesd, famList, sps)
 
        ! Cleanup vars
        deallocate(vars, varsd)
     end if
   end subroutine integrateZippers_d
 
-  subroutine integrateZippers_b(localValues, localValuesd, famList, sps)
+  subroutine integrateZippers_b(localValues, localValuesd, famList, sps, withGathered)
     !------------------------------------------------------------------------
     ! Manual Differentiation Warning: This routine is differentiated by hand.
     ! -----------------------------------------------------------------------
@@ -1698,6 +1458,16 @@ contains
     integer(kind=intType), intent(in) :: sps
     real(kind=realType), dimension(:, :), allocatable :: vars, varsd
     type(zipperMesh), pointer :: zipper
+    logical, optional, intent(in) :: withGathered
+
+    ! Working variables 
+    logical :: withGatheredFlag
+    
+    withGatheredFlag = .false. 
+    if (present(withGathered)) then 
+      withGatheredFlag = withGathered 
+    end if 
+
 
     ! Determine if we have a wall Zipper:
     zipper => zipperMeshes(iBCGroupWalls)
@@ -1736,7 +1506,7 @@ contains
   
        ! Perform actual integration. Tapenade ADs this routine.
        varsd = zero
-       call flowIntegrationZipper_b(.true., zipper, vars, varsd, localValues, localValuesd, famList, sps)
+       call flowIntegrationZipper_b(.true., withGathered, zipper, vars, varsd, localValues, localValuesd, famList, sps)
        
        ! Scatter (becuase we are reverse) the values from the root
        ! back out to all necessary procs.  This routine is
@@ -1760,7 +1530,7 @@ contains
   
        ! Perform actual integration. Tapenade ADs this routine.
        varsd = zero
-       call flowIntegrationZipper_b(.false., zipper, vars, varsd, localValues, localValuesd, famList, sps)
+       call flowIntegrationZipper_b(.false., withGatheredFlag, zipper, vars, varsd, localValues, localValuesd, famList, sps)
        
        ! Scatter (becuase we are reverse) the values from the root
        ! back out to all necessary procs.  This routine is
@@ -1781,6 +1551,8 @@ contains
 
     ! Input/output Variables
     integer(kind=intType), dimension(:), intent(in) :: famList
+
+    ! Local variable 
     real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: globalVal
 
     call getSolution(famList)
@@ -1823,6 +1595,7 @@ contains
 
        ! Integrate any user-supplied planes as have as well. 
        !call integrateUserSurfaces(localVal(:, sps), famList, sps)
+
     end do
 
     ! Now we need to reduce all the cost functions
@@ -1834,20 +1607,20 @@ contains
     ! interest.
     call getCostFunctions(globalVal)
 
-    ! ! Secondary loop over the blocks/zippers/planes for calculations
-    ! ! that require pre-computed gathered values in the computation itself.
-    ! do sps=1, nTimeIntervalsSpectral
-    !   do nn=1, nDom
-    !     call setPointers(nn, 1, sps)
-    !     call integrateSurfacesWithGathered(globalVal(:, sps), localVal(:, sps), famList)
-    !   end do 
+    ! Secondary loop over the blocks/zippers/planes for calculations
+    ! that require pre-computed gathered values in the computation itself.
+    do sps=1, nTimeIntervalsSpectral
+      do nn=1, nDom
+        call setPointers(nn, 1, sps)
+        call integrateSurfaces(localval(:, sps), famList, .true.) ! set the withGathered flag to .true.
+      end do 
 
-    !    ! Integrate any zippers we have
-    !    call integrateZippersWithGathered(globalVal(:, sps), localVal(:, sps), famList, sps)
+       ! Integrate any zippers we have
+       call integrateZippers(localVal(:, sps), famList, sps, .true.) ! set the withGathered flag to .true.
 
-    !    ! Integrate any user-supplied planes as have as well. 
-    !    !call integrateUserSurfacesWithGathered(globalVal(:, sps), localVal(:, sps), famList, sps)
-    ! end do 
+       ! Integrate any user-supplied planes as have as well. 
+       !call integrateUserSurfacesWithGathered(globalVal(:, sps), localVal(:, sps), famList, sps)
+    end do 
 
      ! All reduce again. Technially just need the additionally
      ! computed gathered values, but do all anyway.
