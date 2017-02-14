@@ -1617,6 +1617,7 @@ contains
   end subroutine getSolution
 
 #ifndef USE_TAPENADE
+#ifndef USE_COMPLEX
   subroutine getSolution_d(famLists, funcValues, funcValuesd)
     !------------------------------------------------------------------------
     ! Manual Differentiation Warning: This routine is differentiated by hand.
@@ -1642,7 +1643,7 @@ contains
     integer(kind=intType), dimension(:), pointer :: famList
 
     groupLoop: do iGroup=1, size(famLists, 1)
-
+       
        ! Extract the current family list
        nFam = famLists(iGroup, 1)
        famList => famLists(iGroup, 2:2+nFam-1)
@@ -1819,6 +1820,7 @@ contains
     end do groupLoop
 
   end subroutine getSolution_b
+#endif
 #endif
 
   subroutine addIntegrationSurface(pts, conn, famName, famID, nPts, nConn)
