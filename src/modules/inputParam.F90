@@ -282,6 +282,13 @@ module inputIteration
 
 end module inputIteration
 
+module inputCostFunctions
+  use constants
+  real(kind=realtype) :: sepSensorOffset= zero
+  real(kind=realtype) ::sepSensorSharpness=10.0_realType
+
+end module inputCostFunctions
+
 !      ==================================================================
 
 module inputMotion

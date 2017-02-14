@@ -1361,9 +1361,9 @@ contains
     use inputPhysics
     use inputIO
     use communication 
-    use costFunctions
     use utils, only : setPointers
     use flowUtils, only : computePtot
+    use inputCostFunctions
     implicit none
     !
     !      Subroutine arguments.

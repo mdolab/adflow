@@ -43,7 +43,6 @@ ALL_RES_FILES =	$(SRC)/adjoint/adjointExtra.F90\
 		$(SRC)/modules/blockPointers.F90 \
 		$(SRC)/modules/BCPointers.F90 \
 		$(SRC)/modules/flowVarRefState.F90 \
-		$(SRC)/modules/costFunctions.F90\
 		$(SRC)/modules/wallDistanceData.F90\
 		$(SRC)/modules/overset.F90\
 		$(SRC)/modules/cgnsNames.f90\
@@ -201,14 +200,14 @@ adjointExtra%resScale(dw) > (dw) \
 surfaceIntegrations%wallIntegrationFace(Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues, BCData%Fp, bcData%Fv, BCData%area, localValues) > \
                                        (Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues, BCdata%Fp, bcData%Fv, BCData%area, localValues)\
 \
-surfaceIntegrations%flowIntegrationFace(Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues) > \
-                                       (Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues)\
+surfaceIntegrations%flowIntegrationFace(Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues, funcValues) > \
+                                       (Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues, funcValues)\
 \
 surfaceIntegrations%wallIntegrationZipper(vars, pointRef, localValues) > \
                                          (vars, pointRef, localValues)\
 \
-surfaceIntegrations%flowIntegrationZipper(vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues) > \
-                                         (vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues)\
+surfaceIntegrations%flowIntegrationZipper(vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues, funcValues) > \
+                                         (vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues, funcValues)\
 \
 surfaceIntegrations%getCostFunctions(globalVals, liftDirection, dragDirection, pRef, rhoRef, machCoef) > \
 	                            (funcValues) \

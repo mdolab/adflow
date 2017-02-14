@@ -4,7 +4,6 @@ subroutine getForces(forces, npts, sps)
   use communication, only : myid
   use blockPointers, only : BCData, nDom, nBocos, BCType
   use inputPhysics, only : forcesAsTractions
-  use costFunctions, only : nLocalValues
   use utils, only : setPointers, terminate, EChk
   use sorting, only : bsearchIntegers
   use surfaceIntegrations, only : integrateSurfaces
@@ -29,14 +28,14 @@ subroutine getForces(forces, npts, sps)
   type(zipperMesh), pointer :: zipper
   type(familyexchange), pointer :: exch
   real(kind=realType), dimension(:), pointer :: localPtr
-
+  real(kind=realType), dimension(nCostFunction) :: funcValues
   ! Make sure *all* forces are computed. Sectioning will be done
   ! else-where.
 
   domains: do nn=1,nDom
      call setPointers(nn, 1_intType, sps)
      localValues = zero
-     call integrateSurfaces(localValues, fullFamList)
+     call integrateSurfaces(localValues, fullFamList, .False., funcValues)
   end do domains
 
   if (forcesAsTractions) then 
@@ -271,6 +270,11 @@ subroutine getForces_b(forcesd, npts, sps)
   type(zipperMesh), pointer :: zipper
   type(familyexchange), pointer :: exch
   real(kind=realType), dimension(:), pointer :: localPtr
+  real(kind=realType), dimension(3, npts) :: forces
+
+  ! Run nonlinear code to make sure that all intermediate values are
+  ! updated.
+  call getForces(forces, npts, sps)
 
   ! We know must consider additional forces that are required by the
   ! zipper mesh triangles on the root proc. 
