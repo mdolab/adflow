@@ -113,6 +113,7 @@ contains
     use flowVarRefState, only : pRef, rhoRef, tRef, LRef, gammaInf
     use inputPhysics, only : liftDirection, dragDirection, surfaceRef, machCoef, lengthRef
     use inputTSStabDeriv, only : TSstability
+    use utils, only : computeTSDerivatives
     implicit none
     
     ! Input/Output
