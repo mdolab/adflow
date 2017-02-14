@@ -708,7 +708,7 @@ bocos:do mm=1,nbocos
     use constants
     use costfunctions, only : nlocalvalues, imassflow, imassptot, &
 &   imassttot, imassps, iflowmm, iflowmp, iflowfm, ifp, imassmn, ipk, &
-&   funcvalues
+&   funcvalues, costfuncmavgmn, costfuncmavgptot, isigmamn, isigmaptot
     use blockpointers, only : bctype
     use sorting, only : bsearchintegers
     use flowvarrefstate, only : pref, pinf, rhoref, pref, timeref, &
@@ -746,10 +746,6 @@ bocos:do mm=1,nbocos
     real(kind=realtype), dimension(3) :: arg1
     real(kind=realtype), dimension(3) :: arg2
     real(kind=realtype) :: result1
-    type(unknowntype) :: costfuncmavgmn
-    type(unknowntype) :: costfuncmavgptot
-    type(unknowntype) :: isigmaptot
-    type(unknowntype) :: isigmamn
     massflowrate = zero
     mass_ptot = zero
     mass_ttot = zero
