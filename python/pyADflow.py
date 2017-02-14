@@ -1937,57 +1937,11 @@ class ADFLOW(AeroSolver):
         self.adflow.surfaceintegrations.getsolutionwrap(famList)
 
         funcVals = self.adflow.costfunctions.funcvalues
-        ADflowsolution = {
-            'lift':funcVals[self.adflow.costfunctions.costfunclift-1],
-            'drag':funcVals[self.adflow.costfunctions.costfuncdrag-1],
-            'cl'  :funcVals[self.adflow.costfunctions.costfuncliftcoef-1],
-            'cd'  :funcVals[self.adflow.costfunctions.costfuncdragcoef-1],
-            'fx'  :funcVals[self.adflow.costfunctions.costfuncforcex-1],
-            'fy'  :funcVals[self.adflow.costfunctions.costfuncforcey-1],
-            'fz'  :funcVals[self.adflow.costfunctions.costfuncforcez-1],
-            'cfx' :funcVals[self.adflow.costfunctions.costfuncforcexcoef-1],
-            'cfy' :funcVals[self.adflow.costfunctions.costfuncforceycoef-1],
-            'cfz' :funcVals[self.adflow.costfunctions.costfuncforcezcoef-1],
-            'mx'  :funcVals[self.adflow.costfunctions.costfuncmomx-1],
-            'my'  :funcVals[self.adflow.costfunctions.costfuncmomy-1],
-            'mz'  :funcVals[self.adflow.costfunctions.costfuncmomz-1],
-            'cmx' :funcVals[self.adflow.costfunctions.costfuncmomxcoef-1],
-            'cmy' :funcVals[self.adflow.costfunctions.costfuncmomycoef-1],
-            'cmz' :funcVals[self.adflow.costfunctions.costfuncmomzcoef-1],
-            'cmzalphadot':funcVals[self.adflow.costfunctions.costfunccmzalphadot-1],
-            'cmzalpha'   :funcVals[self.adflow.costfunctions.costfunccmzalpha-1],
-            'cm0'        :funcVals[self.adflow.costfunctions.costfunccm0-1],
-            'clalphadot' :funcVals[self.adflow.costfunctions.costfuncclalphadot-1],
-            'clalpha'    :funcVals[self.adflow.costfunctions.costfuncclalpha-1],
-            'cl0'        :funcVals[self.adflow.costfunctions.costfunccl0-1],
-            'cfyalphadot':funcVals[self.adflow.costfunctions.costfunccfyalphadot-1],
-            'cfyalpha'   :funcVals[self.adflow.costfunctions.costfunccfyalpha-1],
-            'cfy0'       :funcVals[self.adflow.costfunctions.costfunccfy0-1],
-            'cdalphadot' :funcVals[self.adflow.costfunctions.costfunccdalphadot-1],
-            'cdalpha'    :funcVals[self.adflow.costfunctions.costfunccdalpha-1],
-            'cd0'        :funcVals[self.adflow.costfunctions.costfunccd0-1],
-            'cmzqdot'    :funcVals[self.adflow.costfunctions.costfunccmzqdot-1],
-            'cmzq'       :funcVals[self.adflow.costfunctions.costfunccmzq-1],
-            'clqdot'     :funcVals[self.adflow.costfunctions.costfuncclqdot-1],
-            'clq'        :funcVals[self.adflow.costfunctions.costfuncclq-1],
-            'cbend'      :funcVals[self.adflow.costfunctions.costfuncbendingcoef-1],
-            'sepsensor'  :funcVals[self.adflow.costfunctions.costfuncsepsensor-1],
-            'sepsensoravgx'  :funcVals[self.adflow.costfunctions.costfuncsepsensoravgx-1],
-            'sepsensoravgy'  :funcVals[self.adflow.costfunctions.costfuncsepsensoravgy-1],
-            'sepsensoravgz'  :funcVals[self.adflow.costfunctions.costfuncsepsensoravgz-1],
-            'cavitation' :funcVals[self.adflow.costfunctions.costfunccavitation-1],
-            'mdot' :funcVals[self.adflow.costfunctions.costfuncmdot-1],
-            'mavgptot':funcVals[self.adflow.costfunctions.costfuncmavgptot-1],
-            'mavgttot':funcVals[self.adflow.costfunctions.costfuncmavgttot-1],
-            'mavgps':funcVals[self.adflow.costfunctions.costfuncmavgps-1],
-            'mavgmn':funcVals[self.adflow.costfunctions.costfuncmavgmn-1],
-            'sigmamn':funcVals[self.adflow.costfunctions.costfuncsigmamn-1], 
-            'sigmaptot':funcVals[self.adflow.costfunctions.costfuncsigmaptot-1], 
-            'pk':funcVals[self.adflow.costfunctions.costfuncpk-1],
-            'edot':funcVals[self.adflow.costfunctions.costfuncedot-1]
-            }
+        sol = {}
+        for key in self.basicCostFunctions:
+            sol[key] = funcVals[self.basicCostFunctions[key]-1]
 
-        return ADflowsolution
+        return sol
 
     def getIblankCheckSum(self, fileName=None):
 
