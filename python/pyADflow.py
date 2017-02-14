@@ -550,7 +550,12 @@ class ADFLOW(AeroSolver):
         if len(functions) == 1:
             raise Error("addUserFunction requries at least 2 existing functions"
                         " to be provided")
-            
+        # Check that each of the functions are valid:
+        for func in functions:
+            if func.lower() not in self.adflowCostFunctions:
+                raise Error('Supplied  function %s to addUserFunction '
+                            'not know to ADflow'%func)
+
         self.adflowUserCostFunctions[funcName] = (
             adflowUserFunc(funcName, functions, callBack))
             
@@ -926,7 +931,7 @@ class ADFLOW(AeroSolver):
         """
         Evaluate the desired functions given in iterable object,
         'evalFuncs' and add them to the dictionary 'funcs'. The keys
-        in the funcs dictioary will be have an _<ap.name> appended to
+        in the funcs dictionary will be have an _<ap.name> appended to
         them.
 
         Parameters
@@ -980,12 +985,11 @@ class ADFLOW(AeroSolver):
 
             # User supplied functions
             elif f in self.adflowUserCostFunctions:
-                for uf in self.adflowUserCostFunctions[f].functions:
-                    if uf.lower() in self.adflowCostFunctions:
-                        addToGroup(uf.lower())
-                        callBackFuncs[uf] = 0.0
-                    else:
-                        raise Error('Supplied %s function is not known to ADflow.'%uf)
+                for sf in self.adflowUserCostFunctions[f].functions:
+                    addToGroup(sf.lower())
+                    # This just flags the sub-function 'sf' as being
+                    # required for callBacks. 
+                    callBackFuncs[sf] = 0.0
             else:
                 if not ignoreMissing:
                     raise Error('Supplied function %s is not known to ADflow.'%f)
@@ -1925,21 +1929,31 @@ class ADFLOW(AeroSolver):
         self.adflow.nksolver.freestreamresset = False
 
     def getSolution(self, groupName=None):
-        """ Retrieve the solution variables from the solver. Note this
-        is a collective function and must be called on all processors
+        """Retrieve the basic solution variables from the solver. This will
+        return all variables defined in basicCostFunctions for the
+        specified group. This is a lower level function than
+        evalFunctions() which should be used for optimization. 
+
+        Paramters
+        ---------
+        groupName : str
+            The family group on which to evaluate the functions.
+
         """
 
-        # Extract the familiy list we want to use for evaluation
-        famList = self._getFamilyList(groupName)
+        # Extract the familiy list we want to use for evaluation. We
+        # explictly have just the one group in the call. 
+        famLists = self._expandGroupNames([groupName])
+        
+        # Run the underlying fortran routine
+        costSize = self.adflow.constants.ncostfunction
+        funcVals = self.adflow.surfaceintegrations.getsolutionwrap(
+            famLists, costSize)
 
-        # We should return the list of results that is the same as the
-        # possibleObjectives list
-        self.adflow.surfaceintegrations.getsolutionwrap(famList)
-
-        funcVals = self.adflow.costfunctions.funcvalues
+        # Build up the dictionary
         sol = {}
         for key in self.basicCostFunctions:
-            sol[key] = funcVals[self.basicCostFunctions[key]-1]
+            sol[key] = funcVals[self.basicCostFunctions[key]-1, 0]
 
         return sol
 
@@ -3071,17 +3085,17 @@ class ADFLOW(AeroSolver):
             useSpatial = True
 
         # Sizes for output arrays
-        costSize = self.adflow.costfunctions.ncostfunction
+        costSize = self.adflow.constants.ncostfunction
         fSize, nCell = self._getSurfaceSize(self.allWallsGroup, includeZipper=True)
 
-        # Get the famList from the groupName
-        famList = self._getFamilyList(groupName)
-        
+        # ============== TEMPORARY ====================
+        famLists = self._expandGroupNames([groupName])
+        # ==============================================
+
         # Extract any possibly BC daa
-      
         dwdot, tmp, fdot = self.adflow.adjointapi.computematrixfreeproductfwd(
-            xvdot, extradot, wdot, useSpatial, useState, costSize,  max(1, fSize), nTime, famList, 
-            bcDataNames, bcDataValues, bcDataValuesdot, bcDataFamLists, bcVarsEmpty)
+            xvdot, extradot, wdot, bcDataValuesdot, useSpatial, useState, famLists, bcDataNames, 
+            bcDataValues, bcDataFamLists, bcVarsEmpty, costSize, max(1, fSize), nTime)
 
         # Explictly put fdot to nothing if size is zero
         if fSize==0:
@@ -3092,7 +3106,7 @@ class ADFLOW(AeroSolver):
         for f in self.curAP.evalFuncs:
             basicFunc = self.adflowCostFunctions[f.lower()][1]
             mapping = self.basicCostFunctions[basicFunc]
-            funcsDot[f] = tmp[mapping - 1]
+            funcsDot[f] = tmp[0, mapping - 1]
 
         # Assemble the returns
         returns = []
@@ -3187,10 +3201,13 @@ class ADFLOW(AeroSolver):
         # ---------------------
 
         if funcsBar is None:
-            funcsBar = numpy.zeros(self.adflow.costfunctions.ncostfunction)
-            famList = self._getFamilyList(self.allWallsGroup)
+            funcsBar = numpy.zeros(self.adflow.constants.ncostfunction)
+            # ============== TEMPORARY ====================
+            famLists = self._expandGroupNames([self.allWallsGroup])
+            # ==============================================
+
         else:
-            tmp = numpy.zeros(self.adflow.costfunctions.ncostfunction)
+            tmp = numpy.zeros(self.adflow.constants.ncostfunction)
 
             # We have to make sure that the user has supplied
             # functions that have the same group, otherwise, we can't
@@ -3221,6 +3238,10 @@ class ADFLOW(AeroSolver):
                             "with multiple functions that have different "
                             "groups. This is not allowed.")
 
+            # ============== TEMPORARY ====================
+            famLists = self._expandGroupNames([groupName])
+            # ==============================================
+
             # If there wasn't any actual funcsBar, then tmp is still
             # just zeros
             funcsBar = tmp
@@ -3240,9 +3261,9 @@ class ADFLOW(AeroSolver):
       
         # Do actual Fortran call.
         xvbar, extrabar, wbar, bcdatavaluesbar = self.adflow.adjointapi.computematrixfreeproductbwd(
-            resBar, funcsBar, fBar.T, useSpatial, useState, self.getSpatialSize(),
-            self.adflow.adjointvars.ndesignextra, famList, bcDataNames, bcDataValues, 
-            bcDataFamLists, bcVarsEmpty)
+            resBar, funcsBar, fBar.T, useSpatial, useState, self.getSpatialSize(), 
+            self.adflow.adjointvars.ndesignextra, self.getStateSize(), famLists, 
+            bcDataNames, bcDataValues, bcDataFamLists, bcVarsEmpty)
 
         # Assemble the possible returns the user has requested:
         returns = []
@@ -4051,7 +4072,7 @@ class ADFLOW(AeroSolver):
                      'nk': self.adflow.nksolver,
                      'ank': self.adflow.anksolver,
                      'adjoint': self.adflow.inputadjoint,
-                     'cost': self.adflow.costfunctions,
+                     'cost': self.adflow.inputcostfunctions,
                      'unsteady':self.adflow.inputunsteady,
                      'motion':self.adflow.inputmotion,
                      'parallel':self.adflow.inputparallel,
@@ -4387,53 +4408,53 @@ class ADFLOW(AeroSolver):
 
         # This is ADflow's internal mapping for cost functions
         adflowCostFunctions = {
-            'lift':self.adflow.costfunctions.costfunclift,
-            'drag':self.adflow.costfunctions.costfuncdrag,
-            'cl'  :self.adflow.costfunctions.costfuncliftcoef,
-            'cd'  :self.adflow.costfunctions.costfuncdragcoef,
-            'fx'  :self.adflow.costfunctions.costfuncforcex,
-            'fy'  :self.adflow.costfunctions.costfuncforcey,
-            'fz'  :self.adflow.costfunctions.costfuncforcez,
-            'cfx' :self.adflow.costfunctions.costfuncforcexcoef,
-            'cfy' :self.adflow.costfunctions.costfuncforceycoef,
-            'cfz' :self.adflow.costfunctions.costfuncforcezcoef,
-            'mx'  :self.adflow.costfunctions.costfuncmomx,
-            'my'  :self.adflow.costfunctions.costfuncmomy,
-            'mz'  :self.adflow.costfunctions.costfuncmomz,
-            'cmx':self.adflow.costfunctions.costfuncmomxcoef,
-            'cmy':self.adflow.costfunctions.costfuncmomycoef,
-            'cmz':self.adflow.costfunctions.costfuncmomzcoef,
-            'cm0':self.adflow.costfunctions.costfunccm0,
-            'cmzalpha':self.adflow.costfunctions.costfunccmzalpha,
-            'cmzalphadot':self.adflow.costfunctions.costfunccmzalphadot,
-            'cl0':self.adflow.costfunctions.costfunccl0,
-            'clalpha':self.adflow.costfunctions.costfuncclalpha,
-            'clalphadot':self.adflow.costfunctions.costfuncclalphadot,
-            'cfy0':self.adflow.costfunctions.costfunccfy0,
-            'cfyalpha':self.adflow.costfunctions.costfunccfyalpha,
-            'cfyalphdDot':self.adflow.costfunctions.costfunccfyalphadot,
-            'cd0':self.adflow.costfunctions.costfunccd0,
-            'cdalpha':self.adflow.costfunctions.costfunccdalpha,
-            'cdalphadot':self.adflow.costfunctions.costfunccdalphadot,
-            'cmzq':self.adflow.costfunctions.costfunccmzq,
-            'cmzqdot':self.adflow.costfunctions.costfunccmzqdot,
-            'clq':self.adflow.costfunctions.costfuncclq,
-            'clqdot':self.adflow.costfunctions.costfuncclqdot,
-            'cbend':self.adflow.costfunctions.costfuncbendingcoef,
-            'sepsensor':self.adflow.costfunctions.costfuncsepsensor,
-            'sepsensoravgx':self.adflow.costfunctions.costfuncsepsensoravgx,
-            'sepsensoravgy':self.adflow.costfunctions.costfuncsepsensoravgy,
-            'sepsensoravgz':self.adflow.costfunctions.costfuncsepsensoravgz,
-            'cavitation':self.adflow.costfunctions.costfunccavitation,
-            'mdot':self.adflow.costfunctions.costfuncmdot,
-            'mavgptot':self.adflow.costfunctions.costfuncmavgptot,
-            'mavgttot':self.adflow.costfunctions.costfuncmavgttot,
-            'mavgps':self.adflow.costfunctions.costfuncmavgps,
-            'mavgmn':self.adflow.costfunctions.costfuncmavgmn,
-            'sigmamn':self.adflow.costfunctions.costfuncsigmamn, 
-            'sigmaptot':self.adflow.costfunctions.costfuncsigmaptot, 
-            'pk':self.adflow.costfunctions.costfuncpk, 
-            'edot':self.adflow.costfunctions.costfuncedot, 
+            'lift':self.adflow.constants.costfunclift,
+            'drag':self.adflow.constants.costfuncdrag,
+            'cl'  :self.adflow.constants.costfuncliftcoef,
+            'cd'  :self.adflow.constants.costfuncdragcoef,
+            'fx'  :self.adflow.constants.costfuncforcex,
+            'fy'  :self.adflow.constants.costfuncforcey,
+            'fz'  :self.adflow.constants.costfuncforcez,
+            'cfx' :self.adflow.constants.costfuncforcexcoef,
+            'cfy' :self.adflow.constants.costfuncforceycoef,
+            'cfz' :self.adflow.constants.costfuncforcezcoef,
+            'mx'  :self.adflow.constants.costfuncmomx,
+            'my'  :self.adflow.constants.costfuncmomy,
+            'mz'  :self.adflow.constants.costfuncmomz,
+            'cmx':self.adflow.constants.costfuncmomxcoef,
+            'cmy':self.adflow.constants.costfuncmomycoef,
+            'cmz':self.adflow.constants.costfuncmomzcoef,
+            'cm0':self.adflow.constants.costfunccm0,
+            'cmzalpha':self.adflow.constants.costfunccmzalpha,
+            'cmzalphadot':self.adflow.constants.costfunccmzalphadot,
+            'cl0':self.adflow.constants.costfunccl0,
+            'clalpha':self.adflow.constants.costfuncclalpha,
+            'clalphadot':self.adflow.constants.costfuncclalphadot,
+            'cfy0':self.adflow.constants.costfunccfy0,
+            'cfyalpha':self.adflow.constants.costfunccfyalpha,
+            'cfyalphdDot':self.adflow.constants.costfunccfyalphadot,
+            'cd0':self.adflow.constants.costfunccd0,
+            'cdalpha':self.adflow.constants.costfunccdalpha,
+            'cdalphadot':self.adflow.constants.costfunccdalphadot,
+            'cmzq':self.adflow.constants.costfunccmzq,
+            'cmzqdot':self.adflow.constants.costfunccmzqdot,
+            'clq':self.adflow.constants.costfuncclq,
+            'clqdot':self.adflow.constants.costfuncclqdot,
+            'cbend':self.adflow.constants.costfuncbendingcoef,
+            'sepsensor':self.adflow.constants.costfuncsepsensor,
+            'sepsensoravgx':self.adflow.constants.costfuncsepsensoravgx,
+            'sepsensoravgy':self.adflow.constants.costfuncsepsensoravgy,
+            'sepsensoravgz':self.adflow.constants.costfuncsepsensoravgz,
+            'cavitation':self.adflow.constants.costfunccavitation,
+            'mdot':self.adflow.constants.costfuncmdot,
+            'mavgptot':self.adflow.constants.costfuncmavgptot,
+            'mavgttot':self.adflow.constants.costfuncmavgttot,
+            'mavgps':self.adflow.constants.costfuncmavgps,
+            'mavgmn':self.adflow.constants.costfuncmavgmn,
+            'sigmamn':self.adflow.constants.costfuncsigmamn, 
+            'sigmaptot':self.adflow.constants.costfuncsigmaptot, 
+            'pk':self.adflow.constants.costfuncpk, 
+            'edot':self.adflow.constants.costfuncedot, 
             }
 
         return iDV, BCDV, adflowCostFunctions

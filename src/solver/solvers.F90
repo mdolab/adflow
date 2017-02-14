@@ -1211,7 +1211,6 @@ contains
          sumResiduals, sumAllResiduals
     use surfaceIntegrations, only : integrateSurfaces, integrateZippers
     use surfaceFamilies, only : fullFamLIst
-    use costFunctions, only : nLocalValues, iFp, iFv, iMv, iMp, iYplus
     implicit none
     !
     !      Local variables.
@@ -1229,6 +1228,7 @@ contains
     logical :: nanOccurred, writeIterations
     logical :: absConv, relConv
     real(kind=realType) :: localValues(nLocalValues)
+    real(kind=realType) :: funcValues(nCostFunction)
     ! Determine whether or not the iterations must be written.
 
     writeIterations = .true.
@@ -1264,7 +1264,7 @@ contains
           ! we zero localValues before each call becuase we are
           ! summing into momLocal. 
           localvalues = zero
-          call integrateSurfaces(localValues, fullFamList)
+          call integrateSurfaces(localValues, fullFamList, .False., funcValues)
 
           ! Convert to coefficients for monitoring:
           fact = two/(gammaInf*MachCoef*MachCoef &
@@ -1394,7 +1394,7 @@ contains
        ! Add the corrections from zipper meshes from proc 0
        if (oversetPresent) then 
           localValues = zero
-          call integrateZippers(localValues, fullFamList, sps)
+          call integrateZippers(localValues, fullFamList, sps, .False., funcValues)
 
           fact = two/(gammaInf*MachCoef*MachCoef &
                *surfaceRef*LRef*LRef*pRef)

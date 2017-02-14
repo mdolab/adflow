@@ -26,7 +26,6 @@ fortranFiles=	ADT/adtUtils.F90\
 		modules/blockPointers.F90\
 		modules/kd_tree.f90\
 		modules/IOModule.f90\
-		modules/costFunctions.F90\
 		modules/surfaceFamilies.F90\
 		modules/adtData.F90\
 		modules/BCPointers.F90\

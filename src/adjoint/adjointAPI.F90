@@ -2,9 +2,9 @@ module adjointAPI
 
 contains
 #ifndef USE_COMPLEX
-  subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useState, dwdot, funcsDot, &
-       fDot, spatialSize, extraSize, stateSize, costSize, fSize, nTime, famList, nFamList, &
-       bcDataNames, bcDataValues, bcDataValuesdot, bcDataFamLists, nVar, nFamMax, bcVarsEmpty)
+  subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, bcDataValuesdot, useSpatial, &
+       useState, famLists, bcDataNames, bcDataValues, bcDataFamLists, bcVarsEmpty, dwdot, funcsDot, fDot, &
+       costSize, fSize, nTime)
 
     ! This is the main matrix-free forward mode computation
     use constants
@@ -17,30 +17,30 @@ contains
     use iteration, only : currentLevel, groundLevel
     use flowVarRefState, only : pInfDimd, rhoInfDimd, TinfDimd
     use adjointUtils, only : allocDerivativeValues, zeroADSeeds
-    use costfunctions, onlY : funcValuesd
     use masterRoutines, only : master_d
     implicit none
 
     ! Input Variables
-    integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize, fSize, nTime
-    real(kind=realType), dimension(spatialSize), intent(in) :: xvdot
-    real(kind=realType), dimension(extraSize), intent(in) :: extradot
-    real(kind=realType), dimension(stateSize), intent(in) :: wdot
+    real(kind=realType), dimension(:), intent(in) :: xvdot
+    real(kind=realType), dimension(:), intent(in) :: extradot
+    real(kind=realType), dimension(:), intent(in) :: wdot
     logical, intent(in) :: useSpatial, useState
-    integer(kind=intType), intent(in) :: famList(nFamlist), nFamList
-    character, dimension(nVar, maxCGNSNameLen), intent(in) :: bcDataNames
-    real(kind=realType), dimension(nVar), intent(in) :: bcDataValues, bcDataValuesDot
-    integer(kind=intType), dimension(nVar, nFamMax) :: bcDataFamLists
-    integer(kind=intType), intent(in) ::  nVar, nFamMax
+    integer(kind=intType), dimension(:, :) :: famLists
+    integer(kind=intType) :: costSize, fSize, nTime
+
+    character, dimension(:, :), intent(in) :: bcDataNames
+    real(kind=realType), dimension(:), intent(in) :: bcDataValues, bcDataValuesDot
+    integer(kind=intType), dimension(:, :) :: bcDataFamLists
     logical, intent(in) :: BCVarsEmpty
 
     ! Ouput Variables
-    real(kind=realType), dimension(stateSize), intent(out) :: dwDot
-    real(kind=realType), dimension(costSize), intent(out) :: funcsDot
+    real(kind=realType), dimension(size(wdot)), intent(out) :: dwDot
+    real(kind=realType), dimension(costSize, size(famLists,1)), intent(out) :: funcsDot
     real(kind=realType), dimension(3, fSize, nTime), intent(out) :: fDot
 
     ! Working Variables
     integer(kind=intType) :: nn,sps, level
+    real(kind=realType), dimension(costSize, size(famLists,1)) :: funcs
 
     ! Need to trick the residual evalution to use coupled (mean flow and
     ! turbulent) together.
@@ -80,23 +80,18 @@ contains
 
     ! Run the super-dee-duper master forward rotuine
    if (bcVarsEmpty) then 
-      call master_d(wDot, xVDot, fDot, dwDot, famList)
+      call master_d(wDot, xVDot, fDot, dwDot, famLists, funcs, funcsDot)
    else
       call master_d(wDot, xVDot, fDot, dwDot, &
-           famList, bcDataNames, bcDataValues, bcDataValuesdot, bcDataFamLists)
+           famLists, funcs, funcsDot, bcDataNames, bcDataValues, bcDataValuesdot, bcDataFamLists)
     end if
-
-
-    ! Copy over the derivative of the function values
-    funcsDot = funcValuesd
            
   end subroutine computeMatrixFreeProductFwd
 
-  subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useState, xvbar, &
-       extrabar, wbar, spatialSize, extraSize, stateSize, costSize, fSize, nTime, famList, nFamList, &
-       bcDataNames, bcDataValues, bcDataValuesbar, bcDataFamLists, nVar, nFamMax, BCVarsEmpty)
+  subroutine computeMatrixFreeProductBwd(dwbar, funcsBar, fbar, useSpatial, useState, xvbar, &
+       extrabar, wbar, spatialSize, extraSize, stateSize, famLists, &
+       bcDataNames, bcDataValues, bcDataValuesbar, bcDataFamLists, BCVarsEmpty)
     use constants
-    use costFunctions, only : funcValuesd
     use communication, only : adflow_comm_world
     use blockPointers, only : nDom, dwd, il, jl, kl
     use inputTimeSpectral, only : nTimeIntervalsSpectral
@@ -112,28 +107,28 @@ contains
     implicit none
 
     ! Input Variables
-    integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize, fSize, nTime
-    real(kind=realType), dimension(stateSize), intent(in) :: dwbar
-    real(kind=realType), dimension(costSize), intent(in) :: funcsbar
-    real(kind=realType), dimension(3, fSize, nTime), intent(in) :: fBar
+    integer(kind=intType), intent(in) :: stateSize, extraSize, spatialSize
+    real(kind=realType), dimension(:), intent(in) :: dwbar
+    real(kind=realType), dimension(:, :), intent(in) :: funcsBar
+    real(kind=realType), dimension(:, :, :) :: fBar
     logical, intent(in) :: useSpatial, useState
-    integer(kind=intType), intent(in) :: famList(nFamlist), nFamList
-    character, dimension(nVar, maxCGNSNameLen), intent(in) :: bcDataNames
-    real(kind=realType), dimension(nVar), intent(in) :: bcDataValues
-    integer(kind=intType), dimension(nVar, nFamMax) :: bcDataFamLists
-    integer(kind=intType), intent(in) ::  nVar, nFamMax
+    integer(kind=intType), intent(in) :: famLists(:, :)
+    character, dimension(:, :), intent(in) :: bcDataNames
+    real(kind=realType), dimension(:), intent(in) :: bcDataValues
+    integer(kind=intType), dimension(:, :) :: bcDataFamLists
     logical, intent(in) :: BCVarsEmpty
+
     ! Ouput Variables
     real(kind=realType), dimension(stateSize), intent(out) :: wbar
     real(kind=realType), dimension(extraSize), intent(out) :: extrabar
     real(kind=realType), dimension(spatialSize), intent(out) :: xvbar
-    real(kind=realType), dimension(nVar), intent(out) :: bcDataValuesbar
+    real(kind=realType), dimension(size(bcDataValues)), intent(out) :: bcDataValuesbar
 
     ! Working variables
-    integer(kind=intType) :: nn, sps, i, j, k, l, ii, level, nState
+    integer(kind=intType) :: nn, sps, i, j, k, l, ii, level, nState, mm
     logical :: resetToRans
+    real(kind=realType), dimension(size(funcsBar,1), size(funcsBar, 2)) :: funcs
 
-    ! Setup number of state variable based on turbulence assumption
     ! Setup number of state variable based on turbulence assumption
     if ( frozenTurbulence ) then
        nState = nwf
@@ -160,19 +155,18 @@ contains
     end if
     do nn=1,nDom
        do sps=1,nTimeIntervalsSpectral
-          call zeroADSeeds(nn,level, sps)
+         call zeroADSeeds(nn,level, sps)
        end do
     end do
 
-    ! Set the function seeds
-    funcValuesd= funcsBar
-
     if (bcVarsEmpty) then 
-       call master_b(wbar, xvbar, extraBar, fBar, dwbar, nstate, famList)
+       call master_b(wbar, xvbar, extraBar, fBar, dwbar, nState, famLists, & 
+            funcs, funcsBar)
     else
-       call master_b(wbar, xvbar, extraBar, fBar, dwbar, nstate, famList, &
-            bcDataNames, bcDataValues, bcDataValuesbar, bcDataFamLists)
+       call master_b(wbar, xvbar, extraBar, fBar, dwbar, nState, famLists, & 
+            funcs, funcsBar, bcDataNames, bcDataValues, bcDataValuesbar, bcDataFamLists)
     end if
+
     ! Reset the correct equation parameters if we were useing the frozen
     ! Turbulent 
     if (resetToRANS) then
@@ -1019,7 +1013,8 @@ contains
     use surfaceFamilies, only : fullFamList, BCFamGroups
     use utils, only : EChk
     use surfaceUtils, only : getSurfaceSize
-    use costFunctions
+    use adjointUtils, only : allocDerivativeValues, zeroADSeeds
+    use masterRoutines, only : master_d
     implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
@@ -1032,19 +1027,11 @@ contains
 
     real(kind=realType), pointer :: wd_pointer(:)
     real(kind=realType), pointer :: dwd_pointer(:)
-    real(kind=realType) :: funcsBar(nCostFunction)
-    logical :: useState, useSpatial
-    real(kind=realType) :: extraBarDummy
-    integer(kind=intType) :: spatialSize, extraSize
-    integer(kind=intType) :: stateSize, costSize, fSize, fSIzeCell
+    integer(kind=intType) :: stateSize, costSize, fSize, fSIzeCell, spatialSize
     real(kind=realType), dimension(:), allocatable :: Xvdot
     real(kind=realType), dimension(:, :, :), allocatable :: fDot
-    real(kind=realType) :: extraDot(nDesignExtra)
-    real(kind=realType) ::funcsDot(nCostFunction)
+    integer(kind=intType) :: nn, sps
     integer(kind=intType), dimension(:), pointer :: walLFamList
-    character, dimension(0, maxCGNSNameLen) :: bcDataNames
-    real(kind=realType), dimension(0) :: bcDataValues, bcDataValuesDot
-    integer(kind=intType), dimension(0, 0) :: bcDataFamLists
 
 #ifndef USE_COMPLEX
 
@@ -1053,31 +1040,31 @@ contains
 
     call VecGetArrayF90(VecY, dwd_pointer, ierr)
     call EChk(ierr,__FILE__,__LINE__)
-
-    funcsBar = zero
-    useSpatial  = .False.
-    useState    = .True.
-    spatialSize =  3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
-    extraSize   = size(extraDot)
-    stateSize   = size(wd_pointer)
-    costSize    = nCostFunction
     
+    if (.not. derivVarsAllocated) then 
+       call allocDerivativeValues(1)
+    end if
+    
+    ! Zero all AD seesd. 
+    do nn=1,nDom
+       do sps=1,nTimeIntervalsSpectral
+          call zeroADSeeds(nn, 1, sps)
+       end do
+    end do
+
     wallFamList => BCFamGroups(iBCGroupWalls)%famList
     call getSurfaceSize(fSize, fSizeCell, wallFamList, size(wallFamList), .True.)
+    spatialSize =  3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
+
     allocate(xvdot(spatialSize))
     allocate(fdot(3, fSize, nTimeIntervalsSpectral))
-
+   
     xvdot = zero
-    extradot = zero
     fdot = zero
-    call computeMatrixFreeProductFwd(xvdot, extradot, wd_pointer, &
-         useSpatial, useState, dwd_pointer, funcsDot, fDot, &
-         spatialSize, extraSize, stateSize, costSize, fSize, nTimeIntervalsSpectral, &
-         fullFamList, size(fullFamList), &
-         bcDataNames, bcDataValues, bcDataValuesdot, bcDataFamLists, 0, 0, .True.)
 
+    call master_d(wd_pointer, xvDot, fDot, dwd_pointer)
 
-    deallocate(xvdot)
+    deallocate(xvDot, Fdot)
 
     call VecRestoreArrayReadF90(vecX, wd_pointer, ierr)
     call EChk(ierr,__FILE__,__LINE__)

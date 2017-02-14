@@ -3707,7 +3707,7 @@ contains
     use monitor, only : monMassSliding, nTimeStepsRestart, timeUnsteadyRestart
     use killSignals, only : fatalFail, routineFailed
     use ADjointPETSc, only : adjointPETScVarsAllocated
-    use costFunctions, only : sepSensorOffset, sepSensorSharpNess
+    use inputCostFunctions
     implicit none
 
     ! Initialize monitoring the turbulent residuals as well as the
