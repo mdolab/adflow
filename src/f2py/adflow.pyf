@@ -554,7 +554,7 @@ python module libadflow
                 integer(kind=inttype) dimension(:,:) :: bcdatafamlists
                 logical intent(in) :: bcvarsempty
             end subroutine computematrixfreeproductbwd
- endif
+#endif
        end module adjointapi
        module adjointutils
 
