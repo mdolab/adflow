@@ -3262,7 +3262,7 @@ class ADFLOW(AeroSolver):
         # Do actual Fortran call.
         xvbar, extrabar, wbar, bcdatavaluesbar = self.adflow.adjointapi.computematrixfreeproductbwd(
             resBar, funcsBar, fBar.T, useSpatial, useState, self.getSpatialSize(), 
-            self.adflow.adjointvars.ndesignextra, self.getStateSize(), famLists, 
+            self.adflow.adjointvars.ndesignextra, self.getAdjointStateSize(), famLists, 
             bcDataNames, bcDataValues, bcDataFamLists, bcVarsEmpty)
 
         # Assemble the possible returns the user has requested:
