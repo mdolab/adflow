@@ -356,7 +356,7 @@ python module libadflow
          subroutine initializeliftdistributiondata
          end subroutine initializeliftdistributiondata
        end subroutine tecplotio
-
+       
        module surfaceintegrations
          subroutine getsolutionwrap(famlists,funcvalues,ncost,ngroups,nfammax) ! in :test:surfaceIntegrations.F90:surfaceintegrations
            integer(kind=inttype) dimension(ngroups,nfammax) :: famlists
@@ -365,7 +365,9 @@ python module libadflow
            integer(kind=inttype), optional,check(shape(famlists,0)==ngroups),depend(famlists) :: ngroups=shape(famlists,0)
            integer(kind=inttype), optional,check(shape(famlists,1)==nfammax),depend(famlists) :: nfammax=shape(famlists,1)
          end subroutine getsolutionwrap
-         
+       end module surfaceintegrations
+
+       module usersurfaceintegrations
          subroutine addintegrationsurface(pts,conn,famname,famid,npts,nconn) ! in :test:surfaceIntegrations.F90:surfaceintegrations
            real(kind=realtype) dimension(3,npts),intent(in) :: pts
            integer(kind=inttype) dimension(4,nconn),intent(in) :: conn
@@ -378,7 +380,7 @@ python module libadflow
          subroutine interpolateintegrationsurfaces
          end subroutine interpolateintegrationsurfaces
 
-       end module surfaceintegrations
+       end module usersurfaceintegrations
 
        module solvers
 

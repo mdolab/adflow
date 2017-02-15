@@ -1209,7 +1209,8 @@ contains
     use overset, only: oversetPresent
     use utils, only : setPointers, myisnan, returnFail, maxHDiffMach, maxEddyv, &
          sumResiduals, sumAllResiduals
-    use surfaceIntegrations, only : integrateSurfaces, integrateZippers
+    use surfaceIntegrations, only : integrateSurfaces
+    use zipperIntegrations, only : integrateZippers
     use surfaceFamilies, only : fullFamLIst
     implicit none
     !
