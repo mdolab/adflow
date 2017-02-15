@@ -53,6 +53,7 @@ ALL_RES_FILES =	$(SRC)/adjoint/adjointExtra.F90\
 		$(SRC)/solver/solverUtils.F90\
 		$(SRC)/solver/residuals.F90\
 		$(SRC)/solver/surfaceIntegrations.F90\
+		$(SRC)/solver/zipperIntegrations.F90\
 		$(SRC)/solver/ALEUtils.F90\
 		$(SRC)/initFlow/initializeFlow.F90\
 		$(SRC)/turbulence/turbUtils.F90\
@@ -203,10 +204,10 @@ surfaceIntegrations%wallIntegrationFace(Pinf, Pref, ww2, pp1, pp2, xx, ssi, velD
 surfaceIntegrations%flowIntegrationFace(Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues, funcValues) > \
                                        (Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues, funcValues)\
 \
-surfaceIntegrations%wallIntegrationZipper(vars, pointRef, localValues) > \
+zipperIntegrations%wallIntegrationZipper(vars, pointRef, localValues) > \
                                          (vars, pointRef, localValues)\
 \
-surfaceIntegrations%flowIntegrationZipper(vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues, funcValues) > \
+zipperIntegrations%flowIntegrationZipper(vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues, funcValues) > \
                                          (vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues, funcValues)\
 \
 surfaceIntegrations%getCostFunctions(globalVals, liftDirection, dragDirection, pRef, rhoRef, machCoef) > \
