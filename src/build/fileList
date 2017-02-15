@@ -46,6 +46,7 @@ fortranFiles=	ADT/adtUtils.F90\
 		modules/diffSizes.f90\
 		modules/overset.F90\
 		modules/BCDataMod.F90\
+		modules/userSurfaceIntegrationData.F90\
 		\
 		NKSolver/NKSolvers.F90\
 		\
