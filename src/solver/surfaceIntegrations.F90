@@ -1,111 +1,7 @@
 module surfaceIntegrations
 
-  use constants
-  use communication, only : commType, internalCommType
-
-  type userSurfCommType
-     ! Data required on each proc:
-
-     ! nDonor: The number of donor points the proc will provide
-     ! frac (3, nDonor) : The uvw coordinates of the interpolation point
-     ! donorInfo(4, nDonor) : Donor information. 1 is the local block ID and 2-4 is the 
-     !    starting i,j,k indices for the interpolation. 
-     ! procSizes(0:nProc-1) : The number of donors on each proc
-     ! procDisps(0:nProc) : Cumulative form of procSizes
-
-     ! inv(nConn) : Array allocated only on root processor used to
-     ! reorder the nodes or elements back to the original order. 
-
-     integer(kind=intType) :: nDonor
-     real(kind=realType), dimension(:,:), allocatable :: frac
-     integer(kind=intType), dimension(:, :), allocatable :: donorInfo
-     integer(kind=intTYpe), dimension(:), allocatable :: procSizes, procDisps
-     integer(kind=intTYpe), dimension(:), allocatable :: inv
-     logical, dimension(:), allocatable :: valid
-
-  end type userSurfCommType
-
-  type userIntSurf
-
-     character(len=maxStringLen) :: famName
-     integer(Kind=intType) :: famID
-     real(kind=realType), dimension(:, :), allocatable :: pts
-     integer(kind=intType), dimension(:, :), allocatable :: conn
-     
-     ! Two separate commes: One for the nodes (based on the primal
-     ! mesh) and one for the variables (based on the dual mesh)
-     type(userSurfCommType) :: nodeComm, faceComm
-
-  end type userIntSurf
-
-  integer(kind=intType), parameter :: nUserIntSurfsMax=25
-  type(userIntSurf), dimension(nUserIntSurfsMax), target :: userIntSurfs
-  integer(kind=intTYpe) :: nUserIntSurfs=0
-
 contains
-
-  subroutine integrateSurfaces(localValues, famList, withGathered, funcValues)
-    !--------------------------------------------------------------
-    ! Manual Differentiation Warning: Modifying this routine requires
-    ! modifying the hand-written forward and reverse routines. 
-    ! --------------------------------------------------------------
-    !
-    ! This is a shell routine that calls the specific surface
-    ! integration routines. Currently we have have the forceAndMoment
-    ! routine as well as the flow properties routine. This routine
-    ! takes care of setting pointers, while the actual computational
-    ! routine just acts on a specific fast pointed to by pointers. 
-
-    use constants
-    use blockPointers, only : nBocos, BCData, BCType, sk, sj, si, x, rlv, &
-         sfacei, sfacej, sfacek, gamma, rev, p, viscSubface
-    use utils, only : setBCPointers, isWallType
-    use sorting, only : bsearchIntegers
-    ! Tapenade needs to see these modules that the callees use.
-    use BCPointers 
-    use flowVarRefState
-    use inputPhysics
-
-    implicit none
-
-    ! Input/output Variables
-    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
-    integer(kind=intType), dimension(:), intent(in) :: famList
-    logical, intent(in) :: withGathered
-    real(kind=realType),  dimension(:), intent(in) :: funcValues
-
-    ! Working variables
-    integer(kind=intType) :: mm
-
-    ! Loop over all possible boundary conditions
-    bocos: do mm=1, nBocos
-       
-       ! Determine if this boundary condition is to be incldued in the
-       ! currently active group
-       famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then
-          
-          ! Set a bunch of pointers depending on the face id to make
-          ! a generic treatment possible. 
-          call setBCPointers(mm, .True.)
-
-          ! no post gathered integrations currently
-          isWall: if( isWallType(BCType(mm)) .and. .not. withGathered) then 
-             call wallIntegrationFace(localvalues, mm)
-          end if isWall
-
-          isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
-               BCType(mm) == SupersonicInflow) then 
-             call flowIntegrationFace(.true., localValues, mm, withGathered, funcValues)
-          else if (BCType(mm) == SubsonicOutflow .or. &
-               BCType(mm) == SupersonicOutflow) then 
-             call flowIntegrationFace(.false., localValues, mm, withGathered, funcValues)
-          end if isInflowOutflow
-
-       end if famInclude
-    end do bocos
-    
-  end subroutine integrateSurfaces
-
+  
   subroutine getCostFunctions(globalVals, funcValues)
 
     use constants
@@ -268,114 +164,6 @@ contains
     end if
 
   end subroutine getCostFunctions
-
-#ifndef USE_TAPENADE
-#ifndef USE_COMPLEX
-  subroutine integrateSurfaces_d(localValues, localValuesd, famList, withGathered, &
-       funcValues, funcValuesd)
-    !------------------------------------------------------------------------
-    ! Manual Differentiation Warning: This routine is differentiated by hand.
-    ! -----------------------------------------------------------------------
- 
-    ! Forward mode linearization of integrateSurfaces
-    use constants
-    use blockPointers, only : nBocos, BCData, BCType
-    use utils, only : setBCPointers_d, isWallType
-    use sorting, only : bsearchIntegers
-    use surfaceIntegrations_d, only : wallIntegrationFace_d, flowIntegrationFace_d
-    implicit none
-    
-    ! Input/output Variables
-    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
-    integer(kind=intType), dimension(:), intent(in) :: famList
-    logical, intent(in) :: withGathered
-    real(kind=realType),  dimension(:), intent(in) :: funcValues, funcValuesd
-
-    ! Working variables
-    integer(kind=intType) :: mm
-  
-    ! Loop over all possible boundary conditions
-    do mm=1, nBocos
-       ! Determine if this boundary condition is to be incldued in the
-       ! currently active group
-       famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then 
-          
-          ! Set a bunch of pointers depending on the face id to make
-          ! a generic treatment possible. 
-          call setBCPointers_d(mm, .True.)
-          
-          ! not post gathered integrations currently
-          isWall: if( isWallType(BCType(mm)) .and. .not. withGathered) then 
-             call wallIntegrationFace_d(localValues, localValuesd, mm)
-          end if isWall
-          
-          isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
-               BCType(mm) == SupersonicInflow) then 
-             call flowIntegrationFace_d(.true., localValues, localValuesd, mm, &
-                    withGathered, funcValues, funcValuesd)
-            else if (BCType(mm) == SubsonicOutflow .or. &
-               BCType(mm) == SupersonicOutflow) then 
-
-               call flowIntegrationFace_d(.false., localValues, localValuesd, mm, &
-                    withGathered, funcValues, funcValuesd)
-
-          end if isInflowOutflow
-       end if famInclude
-    end do
-  end subroutine integrateSurfaces_d
-
-  subroutine integrateSurfaces_b(localValues, localValuesd, famList, withGathered, & 
-       funcValues, funcValuesd)
-    !------------------------------------------------------------------------
-    ! Manual Differentiation Warning: This routine is differentiated by hand.
-    ! -----------------------------------------------------------------------
-
-    ! Reverse mode linearization of integrateSurfaces
-    use constants
-    use blockPointers, only : nBocos, BCData, BCType, bcDatad
-    use utils, only : setBCPointers_d, isWallType
-    use sorting, only : bsearchIntegers
-    use surfaceIntegrations_b, only : wallIntegrationFace_b, flowIntegrationFace_b
-    implicit none
-
-    ! Input/output Variables
-    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
-    integer(kind=intType), dimension(:), intent(in) :: famList
-    logical, intent(in) :: withGathered
-    real(kind=realType), dimension(:) :: funcValues, funcValuesd
-    ! Working variables
-    integer(kind=intType) :: mm
-
-    ! Call the individual integration routines. 
-    do mm=1, nBocos
-       ! Determine if this boundary condition is to be incldued in the
-       ! currently active group
-       famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then
-          
-          ! Set a bunch of pointers depending on the face id to make
-          ! a generic treatment possible. 
-          call setBCPointers_d(mm, .True.)
-          
-          ! not post gathered integrations currently
-          isWall: if( isWallType(BCType(mm)) .and. (.not. withGathered)) then 
-             call wallIntegrationFace_b(localValues, localValuesd, mm)
-          end if isWall
-          
-          isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
-               BCType(mm) == SupersonicInflow) then 
-             call flowIntegrationFace_b(.true., localValues, localValuesd, mm, withGathered, &
-                  funcValues, funcValuesd)
-          else if (BCType(mm) == SubsonicOutflow .or. &
-               BCType(mm) == SupersonicOutflow) then 
-             call flowIntegrationFace_b(.false., localValues, localValuesd, mm, withGathered, &
-                  funcValues, funcValuesd)
-          end if isInflowOutflow
-       end if famInclude
-    end do
-  end subroutine integrateSurfaces_b
-  
-#endif
-#endif
 
   subroutine wallIntegrationFace(localValues, mm)
     !
@@ -919,322 +707,6 @@ contains
 
   end subroutine flowIntegrationFace
 
-  subroutine flowIntegrationZipper(isInflow, zipper, vars, localValues, famList, sps, &
-       withGathered, funcValues)
-
-    ! Integrate over the trianges for the inflow/outflow conditions. 
-
-    use constants
-    use blockPointers, only : BCType
-    use sorting, only : bsearchIntegers
-    use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas, uRef, uInf
-    use inputPhysics, only : pointRef, flowType
-    use flowUtils, only : computePtot, computeTtot
-    use overset, only : zipperMeshes, zipperMesh
-    use surfaceFamilies, only : familyExchange, BCFamExchange
-    use utils, only : mynorm2, cross_prod
-    implicit none
-
-    ! Input/output Variables
-    logical, intent(in) :: isInflow
-    type(zipperMesh), intent(in) :: zipper
-    real(kind=realType), dimension(:, :), intent(in) :: vars
-    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
-    integer(kind=intType), dimension(:), intent(in) :: famList
-    integer(kind=intType), intent(in) :: sps
-    logical, intent(in) :: withGathered
-    real(kind=realType), optional, dimension(:), intent(in) :: funcValues
-
-    ! Working variables
-    integer(kind=intType) :: i, j
-    real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, Fx, Fy, Fz
-    real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint, ss, x1, x2, x3, norm
-    real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, MNm, massFlowRateLocal
-    real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN
-    real(kind=realType) ::  mReDim, pk, sigma_MN, sigma_Ptot
-    real(kind=realType) :: internalFlowFact, inflowFact, xc, yc, zc, cellArea, mx, my, mz
-
-    real(kind=realType), dimension(:), pointer :: localPtr
-
-    massFlowRate = zero
-    mass_Ptot = zero
-    mass_Ttot = zero
-    mass_Ps = zero
-
-    refPoint(1) = LRef*pointRef(1)
-    refPoint(2) = LRef*pointRef(2)
-    refPoint(3) = LRef*pointRef(3)
-
-    mReDim = sqrt(pRef*rhoRef)
-    Fp = zero
-    Mp = zero
-    FMom = zero
-    MMom = zero
-
-    internalFlowFact = one
-    if (flowType == internalFlow) then 
-      internalFlowFact = -one
-    end if
-
-    inFlowFact = one
-    if (isInflow) then 
-      inflowFact=-one
-    end if
-
-
-    !$AD II-LOOP
-    do i=1, size(zipper%conn, 2)
-       if (bsearchIntegers(zipper%fam(i) , famList) > 0) then 
-          ! Compute the averaged values for this trianlge
-          vxm = zero; vym = zero; vzm = zero; rhom = zero; pm = zero; MNm = zero;
-          sF = zero
-          do j=1,3
-             rhom = rhom + vars(zipper%conn(j, i), iRho)
-             vxm = vxm + vars(zipper%conn(j, i), iVx)
-             vym = vym + vars(zipper%conn(j, i), iVy)
-             vzm = vzm + vars(zipper%conn(j, i), iVz)
-             pm = pm + vars(zipper%conn(j, i), iRhoE)
-             gammam = gammam + vars(zipper%conn(j, i), 6)
-             sF = sF + vars(zipper%conn(j, i), 7)
-          end do
-
-          ! Divide by 3 due to the summation above:
-          rhom = third*rhom
-          vxm = third*vxm
-          vym = third*vym
-          vzm = third*vzm
-          pm = third*pm
-          gammam = third*gammam
-          sF = third*sF
-
-          ! Get the nodes of triangle.
-          x1 = vars(zipper%conn(1, i), 7:9)
-          x2 = vars(zipper%conn(2, i), 7:9)
-          x3 = vars(zipper%conn(3, i), 7:9)
-          call cross_prod(x2-x1, x3-x1, norm)
-          ss = -half*norm
-
-          call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
-          call computeTtot(rhom, vxm, vym, vzm, pm, Ttot)
-          
-          vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3)  - sF
-          
-          vmag = sqrt((vxm**2 + vym**2 + vzm**2)) - sF
-          ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
-          MNm = vmag/sqrt(gammam*pm/rhom)
-
-          massFlowRateLocal = rhom*vnm*mReDim
-
-          if (withGathered) then 
-
-            sigma_Mn = sigma_Mn  + massFlowRateLocal*(MNm - funcValues(costFuncMavgMN))**2
-            sigma_Ptot = sigma_Ptot + massFlowRateLocal*(Ptot - funcValues(costFuncMavgPtot))**2
-
-          else 
-            massFlowRate = massFlowRate + massFlowRateLocal
-
-            pk = pk + ((pm-pInf) + half*rhom*(vmag**2 - uInf**2)) * vnm * pRef * uRef
-
-            pm = pm*pRef
-            
-            mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
-            mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
-            mass_Ps = mass_Ps + pm*massFlowRateLocal
-            mass_MN = mass_MN + MNm*massFlowRateLocal
-            
-            ! Compute the average cell center. 
-            xc = zero
-            yc = zero
-            zc = zero
-            do j=1,3
-               xc = xc + (vars(zipper%conn(1, i), 7)) 
-               yc = yc + (vars(zipper%conn(2, i), 8)) 
-               zc = zc + (vars(zipper%conn(3, i), 9)) 
-            end do
-
-            ! Finish average for cell center
-            xc = third*xc
-            yc = third*yc
-            zc = third*zc
-
-            xc = xc - refPoint(1)
-            yc = yc - refPoint(2)
-            zc = zc - refPoint(3)
-
-            pm = -(pm-pInf*pRef)
-            fx = pm*ss(1)
-            fy = pm*ss(2)
-            fz = pm*ss(3)
-
-            ! Update the pressure force and moment coefficients.
-            Fp(1) = Fp(1) + fx
-            Fp(2) = Fp(2) + fy
-            Fp(3) = Fp(3) + fz
-                   
-            mx = yc*fz - zc*fy
-            my = zc*fx - xc*fz
-            mz = xc*fy - yc*fx
-         
-            Mp(1) = Mp(1) + mx
-            Mp(2) = Mp(2) + my
-            Mp(3) = Mp(3) + mz
-
-            ! Momentum forces
-
-            ! Get unit normal vector. 
-            ss = ss/mynorm2(ss)
-            massFlowRateLocal = massFlowRateLocal/timeRef*internalFlowFact*inflowFact
-
-            fx = massFlowRateLocal*ss(1) * vxm/timeRef
-            fy = massFlowRateLocal*ss(2) * vym/timeRef
-            fz = massFlowRateLocal*ss(3) * vzm/timeRef
-
-            FMom(1) = FMom(1) - fx
-            FMom(2) = FMom(2) - fy
-            FMom(3) = FMom(3) - fz
-
-            mx = yc*fz - zc*fy
-            my = zc*fx - xc*fz
-            mz = xc*fy - yc*fx
-            
-            MMom(1) = MMom(1) + mx
-            MMom(2) = MMom(2) + my
-            MMom(3) = MMom(3) + mz
-         end if
-       end if
-    enddo
-    
-    if (withGathered) then 
-      localValues(isigmaMN) = localValues(isigmaMN) + sigma_Mn
-      localValues(isigmaPtot) = localValues(isigmaPtot) + sigma_Ptot
-    else
-      ! Increment the local values array with what we computed here
-      localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate
-      localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
-      localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
-      localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
-      localValues(iMassMN)   = localValues(iMassMN)   + mass_MN
-      localValues(iPk)   = localValues(iPk)   + Pk
-      localValues(iFp:iFp+2)   = localValues(iFp:iFp+2) + Fp
-      localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
-      localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
-      localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
-    end if
-
-  end subroutine flowIntegrationZipper
-  
-  subroutine wallIntegrationZipper(zipper, vars, localValues, famList, sps)
-
-    use constants
-    use sorting, only : bsearchIntegers
-    use flowVarRefState, only : LRef
-    use inputPhysics, only : pointRef
-    use overset, only : zipperMeshes, zipperMesh
-    use utils, only : mynorm2, cross_prod
-    implicit none
-
-    ! Input/Output
-    type(zipperMesh), intent(in) :: zipper
-    real(kind=realType), intent(in), dimension(:, :) :: vars
-    real(kind=realType), intent(inout) :: localValues(nLocalValues)
-    integer(kind=intType), dimension(:), intent(in) :: famList
-    integer(kind=intType), intent(in) :: sps
-
-    ! Working
-    real(kind=realType), dimension(3) :: Fp, Fv, Mp, Mv
-
-
-    integer(kind=intType) :: i, j
-    real(kind=realType), dimension(3) :: ss, norm, refPoint
-    real(kind=realType), dimension(3) :: p1, p2, p3, v1, v2, v3, x1, x2, x3
-    real(kind=realType) :: fact, triArea, fx, fy, fz, mx, my, mz, xc, yc, zc
-
-    ! Determine the reference point for the moment computation in
-    ! meters.
-    refPoint(1) = LRef*pointRef(1)
-    refPoint(2) = LRef*pointRef(2)
-    refPoint(3) = LRef*pointRef(3)
-    Fp = zero
-    Fv = zero
-    Mp = zero
-    Mv = zero
-
-    !$AD II-LOOP
-    do i=1, size(zipper%conn, 2)
-       if (bsearchIntegers(zipper%fam(i), famList) > 0) then 
-
-          ! Get the nodes of triangle. The *3 is becuase of the
-          ! blanket third above. 
-          x1 = vars(zipper%conn(1, i), 7:9)
-          x2 = vars(zipper%conn(2, i), 7:9)
-          x3 = vars(zipper%conn(3, i), 7:9)
-          call cross_prod(x2-x1, x3-x1, norm)
-          ss = half*norm
-          ! The third here is to account for the summation of P1, p2
-          ! and P3
-          triArea = mynorm2(ss)*third
-
-          ! Compute the average cell center. 
-          xc = third*(x1(1)+x2(1)+x3(1))
-          yc = third*(x1(2)+x2(2)+x3(2))
-          zc = third*(x1(3)+x2(3)+x3(3))
-
-          xc = xc - refPoint(1)
-          yc = yc - refPoint(2)
-          zc = zc - refPoint(3)
-
-          ! Update the pressure force and moment coefficients.
-          p1 = vars(zipper%conn(1, i), 1:3) 
-          p2 = vars(zipper%conn(2, i), 1:3)
-          p3 = vars(zipper%conn(3, i), 1:3)
-
-          fx = (p1(1) + p2(1) + p3(1))*triArea
-          fy = (p1(2) + p2(2) + p3(2))*triArea
-          fz = (p1(3) + p2(3) + p3(3))*triArea
-
-          Fp(1) = Fp(1) + fx
-          Fp(2) = Fp(2) + fy
-          Fp(3) = Fp(3) + fz
-                 
-          mx = yc*fz - zc*fy
-          my = zc*fx - xc*fz
-          mz = xc*fy - yc*fx
-       
-          Mp(1) = Mp(1) + mx
-          Mp(2) = Mp(2) + my
-          Mp(3) = Mp(3) + mz
-
-          ! Update the viscous force and moment coefficients
-          v1 = vars(zipper%conn(1, i), 4:6) 
-          v2 = vars(zipper%conn(2, i), 4:6)
-          v3 = vars(zipper%conn(3, i), 4:6)
-
-          fx = (v1(1) + v2(1) + v3(1))*triArea
-          fy = (v1(2) + v2(2) + v3(2))*triArea
-          fz = (v1(3) + v2(3) + v3(3))*triArea
-
-          ! Note: momentum forces have opposite sign to pressure forces
-          Fv(1) = Fv(1) + fx
-          Fv(2) = Fv(2) + fy
-          Fv(3) = Fv(3) + fz
-
-          mx = yc*fz - zc*fy
-          my = zc*fx - xc*fz
-          mz = xc*fy - yc*fx
-          
-          Mv(1) = Mv(1) + mx
-          Mv(2) = Mv(2) + my
-          Mv(3) = Mv(3) + mz
-       end if
-    enddo
-
-    ! Increment into the local vector
-    localValues(iFp:iFp+2) = localValues(iFp:iFp+2) + Fp
-    localValues(iFv:iFv+2) = localValues(iFv:iFv+2) + Fv
-    localValues(iMp:iMp+2) = localValues(iMp:iMp+2) + Mp
-    localValues(iMv:iMv+2) = localValues(iMv:iMv+2) + Mv
-    
-  end subroutine wallIntegrationZipper
 
   ! ----------------------------------------------------------------------
   !                                                                      |
@@ -1243,276 +715,6 @@ contains
   ! ----------------------------------------------------------------------
 
 #ifndef USE_TAPENADE
-
-  subroutine integrateZippers(localValues, famList, sps, withGathered, funcValues)
-    !--------------------------------------------------------------
-    ! Manual Differentiation Warning: Modifying this routine requires
-    ! modifying the hand-written forward and reverse routines. 
-    ! --------------------------------------------------------------
-
-    ! Integrate over the triangles formed by the zipper mesh. This
-    ! will perform both all necesasry zipper integrations. Currently
-    ! this includes the wall force integrations as well as the
-    ! flow-though surface integration. 
-
-    use constants
-    use overset, only : zipperMeshes, zipperMesh
-    use haloExchange, only : wallIntegrationZipperComm, flowIntegrationZipperComm
-    implicit none
-
-    ! Input Variables
-    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
-    integer(kind=intType), dimension(:), intent(in) :: famList
-    integer(kind=intType), intent(in) :: sps
-    real(kind=realType), dimension(:, :), allocatable :: vars
-    type(zipperMesh), pointer :: zipper
-    logical, intent(in) :: withGathered
-    real(kind=realType), intent(in), dimension(:) :: funcValues
-
-    ! Determine if we have a wall Zipper:
-    zipper => zipperMeshes(iBCGroupWalls)
-    if (zipper%allocated .and. (withGathered .eqv. .False.)) then 
-
-       ! Allocate space necessary to store variables. Only non-zero on
-       ! root proc. 
-       allocate(vars(size(zipper%indices), 9))
-       
-       ! Gather up the required variables in "vars" on the root
-       ! proc. This routine is differientated by hand. 
-       call wallIntegrationZipperComm(vars, sps)
-
-       ! Perform actual integration. Tapenade ADs this routine.
-       call wallIntegrationZipper(zipper, vars, localValues, famList, sps)
-
-
-       ! Cleanup vars
-       deallocate(vars)
-    end if
-
-    zipper => zipperMeshes(iBCGroupInflow)
-    ! Determine if we have a flowthrough Zipper:
-    if (zipper%allocated) then 
-
-       ! Allocate space necessary to store variables. Only non-zero on
-       ! root proc. 
-       allocate(vars(size(zipper%indices), 9))
-       
-       ! Gather up the required variables in "vars" on the root
-       ! proc. This routine is differientated by hand. 
-       call flowIntegrationZipperComm(.true., vars, sps)
-
-       ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper(.true., zipper, vars, localValues, famList, sps, & 
-            withGathered, funcValues)
-
-       ! Cleanup vars
-       deallocate(vars)
-    end if
-
-    zipper => zipperMeshes(iBCGroupOutflow)
-    ! Determine if we have a flowthrough Zipper:
-    if (zipper%allocated) then 
-
-       ! Allocate space necessary to store variables. Only non-zero on
-       ! root proc. 
-       allocate(vars(size(zipper%indices), 9))
-       
-       ! Gather up the required variables in "vars" on the root
-       ! proc. This routine is differientated by hand. 
-       call flowIntegrationZipperComm(.false., vars, sps)
-
-       ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper(.false., zipper, vars, localValues, famList, sps, &
-            withGathered, funcValues)
-
-       ! Cleanup vars
-       deallocate(vars)
-    end if
-  end subroutine integrateZippers
-
-
-#ifndef USE_COMPLEX
-  subroutine integrateZippers_d(localValues, localValuesd, famList, sps, withGathered, &
-       funcValues, funcValuesd)
-    !------------------------------------------------------------------------
-    ! Manual Differentiation Warning: This routine is differentiated by hand.
-    ! -----------------------------------------------------------------------
-
-    ! Forward mode linearization of the zipper integration. 
-
-    use constants
-    use overset, only : zipperMeshes, zipperMesh
-    use haloExchange, only : wallIntegrationZipperComm_d, flowIntegrationZipperComm_d
-    use surfaceIntegrations_d, only : flowIntegrationZipper_d, wallIntegrationZipper_d
-    implicit none
-
-    ! Input Variables
-    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
-    integer(kind=intType), dimension(:), intent(in) :: famList
-    integer(kind=intType), intent(in) :: sps
-    real(kind=realType), dimension(:, :), allocatable :: vars, varsd
-    type(zipperMesh), pointer :: zipper
-    logical, optional, intent(in) :: withGathered
-    real(kind=realType), intent(in), dimension(:) :: funcValues, funcValuesd
-
-    zipper => zipperMeshes(iBCGroupWalls)
-    if (zipper%allocated .and. (withGathered .eqv. .False.)) then 
-
-       ! Allocate space necessary to store variables. Only non-zero on
-       ! root proc. 
-       allocate(vars(size(zipper%indices), 9), varsd(size(zipper%indices), 9))
-   
-       ! Gather up the required variables in "vars" on the root
-       ! proc. This routine is differientated by hand. 
-       call wallIntegrationZipperComm_d(vars, varsd, sps)
-
-       ! Perform actual integration. Tapenade ADs this routine.
-       call wallIntegrationZipper_d(zipper, vars, varsd, localValues, localValuesd, famList, sps)
-
-       ! Cleanup vars
-       deallocate(vars, varsd)
-    end if
-
-    zipper => zipperMeshes(iBCGroupInflow)
-    ! Determine if we have a flowthrough Zipper:
-    if (zipper%allocated) then 
-
-       ! Allocate space necessary to store variables. Only non-zero on
-       ! root proc. 
-       allocate(vars(size(zipper%indices), 9), varsd(size(zipper%indices), 9))
-  
-       ! Gather up the required variables in "vars" on the root
-       ! proc. This routine is differientated by hand. 
-       call flowIntegrationZipperComm_d(.true., vars, varsd, sps)
-
-       ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper_d(.true., zipper, vars, varsd, localValues, localValuesd, &
-            famList, sps, withGathered, funcValues, funcValuesd)
-
-       ! Cleanup vars
-       deallocate(vars, varsd)
-    end if
-
-    zipper => zipperMeshes(iBCGroupOutflow)
-    ! Determine if we have a flowthrough Zipper:
-    if (zipper%allocated) then 
-
-       ! Allocate space necessary to store variables. Only non-zero on
-       ! root proc. 
-       allocate(vars(size(zipper%indices), 9), varsd(size(zipper%indices), 9))
-  
-       ! Gather up the required variables in "vars" on the root
-       ! proc. This routine is differientated by hand. 
-       call flowIntegrationZipperComm_d(.false., vars, varsd, sps)
-
-       ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper_d(.false., zipper, vars, varsd, localValues, localValuesd, &
-            famList, sps, withGathered, funcValues, funcValuesd)
-
-       ! Cleanup vars
-       deallocate(vars, varsd)
-    end if
-  end subroutine integrateZippers_d
-
-  subroutine integrateZippers_b(localValues, localValuesd, famList, sps, withGathered, &
-       funcValues, funcValuesd)
-    !------------------------------------------------------------------------
-    ! Manual Differentiation Warning: This routine is differentiated by hand.
-    ! -----------------------------------------------------------------------
-
-    ! Reverse mode linearization of the zipper integration. 
-
-    use constants
-    use overset, only : zipperMeshes, zipperMesh
-    use haloExchange, only : wallIntegrationZipperComm_b, flowIntegrationZipperComm_b, &
-         wallIntegrationZipperComm, flowIntegrationZipperComm
-    use surfaceIntegrations_b, only : wallIntegrationZipper_b, flowIntegrationZipper_b
-    implicit none
-
-    ! Input Variables
-    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
-    integer(kind=intType), dimension(:), intent(in) :: famList
-    integer(kind=intType), intent(in) :: sps
-    real(kind=realType), dimension(:, :), allocatable :: vars, varsd
-    type(zipperMesh), pointer :: zipper
-    logical,  intent(in) :: withGathered
-    real(kind=realType), dimension(:) :: funcValues, funcValuesd
-
-    ! Determine if we have a wall Zipper:
-    zipper => zipperMeshes(iBCGroupWalls)
-    if (zipper%allocated .and. (withGathered .eqv. .False.)) then 
-  
-       ! Allocate space necessary to store variables. Only non-zero on
-       ! root proc. 
-       allocate(vars(size(zipper%indices), 9), varsd(size(zipper%indices), 9))
-   
-       ! Set the forward variables
-       call wallIntegrationZipperComm(vars, sps)
-  
-       ! Perform actual integration. Tapenade ADs this routine.
-       varsd = zero
-       call wallIntegrationZipper_b(zipper, vars, varsd, localValues, localValuesd, famList, sps)
-       
-       ! Scatter (becuase we are reverse) the values from the root
-       ! back out to all necessary procs.  This routine is
-       ! differientated by hand.
-       call wallIntegrationZipperComm_b(vars, varsd, sps)
-
-       ! Cleanup vars
-       deallocate(vars, varsd)
-    end if
-
-    zipper => zipperMeshes(iBCGroupInflow)
-    ! Determine if we have a flowthrough Zipper:
-    if (zipper%allocated) then 
-
-       ! Allocate space necessary to store variables. Only non-zero on
-       ! root proc. 
-       allocate(vars(size(zipper%indices), 9), varsd(size(zipper%indices), 9))
-   
-       ! Set the forward variables
-       call flowIntegrationZipperComm(.true., vars, sps)
-  
-       ! Perform actual integration. Tapenade ADs this routine.
-       varsd = zero
-       call flowIntegrationZipper_b(.true., zipper, vars, varsd, localValues, localValuesd, &
-            famList, sps, withGathered, funcValues, funcValuesd)
-       
-       ! Scatter (becuase we are reverse) the values from the root
-       ! back out to all necessary procs.  This routine is
-       ! differientated by hand.
-       call flowIntegrationZipperComm_b(.true., vars, varsd, sps)
-
-       ! Cleanup vars
-       deallocate(vars, varsd)
-    end if
-
-    zipper => zipperMeshes(iBCGroupOutflow)
-    ! Determine if we have a flowthrough Zipper:
-    if (zipper%allocated) then 
-
-       ! Allocate space necessary to store variables. Only non-zero on
-       ! root proc. 
-       allocate(vars(size(zipper%indices), 9), varsd(size(zipper%indices), 9))
-   
-       ! Set the forward variables
-       call flowIntegrationZipperComm(.false., vars, sps)
-  
-       ! Perform actual integration. Tapenade ADs this routine.
-       varsd = zero
-       call flowIntegrationZipper_b(.false., zipper, vars, varsd, localValues, localValuesd, & 
-            famList, sps, withGathered, funcValues, funcValuesd)
-       
-       ! Scatter (becuase we are reverse) the values from the root
-       ! back out to all necessary procs.  This routine is
-       ! differientated by hand.
-       call flowIntegrationZipperComm_b(.false., vars, varsd, sps)
-
-       ! Cleanup vars
-       deallocate(vars, varsd)
-    end if
-  end subroutine integrateZippers_b
-#endif
 
   subroutine getSolutionWrap(famLists, funcValues, nCost, nGroups, nFamMax)
 
@@ -1527,7 +729,6 @@ contains
     ! Local variable 
 
     call getSolution(famLists, funcValues)
-
   end subroutine getSolutionWrap
 
   subroutine getSolution(famLists, funcValues, globalValues)
@@ -1541,6 +742,7 @@ contains
     use communication, only : adflow_comm_world
     use blockPointers, only : nDom
     use utils, only : setPointers, EChk
+    use zipperIntegrations, only :integrateZippers
     implicit none
 
     ! Input/Output Variables
@@ -1617,8 +819,172 @@ contains
     end do groupLoop
   end subroutine getSolution
 
-#ifndef USE_TAPENADE
+  subroutine integrateSurfaces(localValues, famList, withGathered, funcValues)
+    !--------------------------------------------------------------
+    ! Manual Differentiation Warning: Modifying this routine requires
+    ! modifying the hand-written forward and reverse routines. 
+    ! --------------------------------------------------------------
+    !
+    ! This is a shell routine that calls the specific surface
+    ! integration routines. Currently we have have the forceAndMoment
+    ! routine as well as the flow properties routine. This routine
+    ! takes care of setting pointers, while the actual computational
+    ! routine just acts on a specific fast pointed to by pointers. 
+
+    use constants
+    use blockPointers, only : nBocos, BCData, BCType, sk, sj, si, x, rlv, &
+         sfacei, sfacej, sfacek, gamma, rev, p, viscSubface
+    use utils, only : setBCPointers, isWallType
+    use sorting, only : bsearchIntegers
+    ! Tapenade needs to see these modules that the callees use.
+    use BCPointers 
+    use flowVarRefState
+    use inputPhysics
+
+    implicit none
+
+    ! Input/output Variables
+    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
+    integer(kind=intType), dimension(:), intent(in) :: famList
+    logical, intent(in) :: withGathered
+    real(kind=realType),  dimension(:), intent(in) :: funcValues
+
+    ! Working variables
+    integer(kind=intType) :: mm
+
+    ! Loop over all possible boundary conditions
+    bocos: do mm=1, nBocos
+       
+       ! Determine if this boundary condition is to be incldued in the
+       ! currently active group
+       famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then
+          
+          ! Set a bunch of pointers depending on the face id to make
+          ! a generic treatment possible. 
+          call setBCPointers(mm, .True.)
+
+          ! no post gathered integrations currently
+          isWall: if( isWallType(BCType(mm)) .and. .not. withGathered) then 
+             call wallIntegrationFace(localvalues, mm)
+          end if isWall
+
+          isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
+               BCType(mm) == SupersonicInflow) then 
+             call flowIntegrationFace(.true., localValues, mm, withGathered, funcValues)
+          else if (BCType(mm) == SubsonicOutflow .or. &
+               BCType(mm) == SupersonicOutflow) then 
+             call flowIntegrationFace(.false., localValues, mm, withGathered, funcValues)
+          end if isInflowOutflow
+
+       end if famInclude
+    end do bocos
+    
+  end subroutine integrateSurfaces
+
 #ifndef USE_COMPLEX
+  subroutine integrateSurfaces_d(localValues, localValuesd, famList, withGathered, &
+       funcValues, funcValuesd)
+    !------------------------------------------------------------------------
+    ! Manual Differentiation Warning: This routine is differentiated by hand.
+    ! -----------------------------------------------------------------------
+ 
+    ! Forward mode linearization of integrateSurfaces
+    use constants
+    use blockPointers, only : nBocos, BCData, BCType
+    use utils, only : setBCPointers_d, isWallType
+    use sorting, only : bsearchIntegers
+    use surfaceIntegrations_d, only : wallIntegrationFace_d, flowIntegrationFace_d
+    implicit none
+    
+    ! Input/output Variables
+    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
+    integer(kind=intType), dimension(:), intent(in) :: famList
+    logical, intent(in) :: withGathered
+    real(kind=realType),  dimension(:), intent(in) :: funcValues, funcValuesd
+
+    ! Working variables
+    integer(kind=intType) :: mm
+  
+    ! Loop over all possible boundary conditions
+    do mm=1, nBocos
+       ! Determine if this boundary condition is to be incldued in the
+       ! currently active group
+       famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then 
+          
+          ! Set a bunch of pointers depending on the face id to make
+          ! a generic treatment possible. 
+          call setBCPointers_d(mm, .True.)
+          
+          ! not post gathered integrations currently
+          isWall: if( isWallType(BCType(mm)) .and. .not. withGathered) then 
+             call wallIntegrationFace_d(localValues, localValuesd, mm)
+          end if isWall
+          
+          isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
+               BCType(mm) == SupersonicInflow) then 
+             call flowIntegrationFace_d(.true., localValues, localValuesd, mm, &
+                    withGathered, funcValues, funcValuesd)
+            else if (BCType(mm) == SubsonicOutflow .or. &
+               BCType(mm) == SupersonicOutflow) then 
+
+               call flowIntegrationFace_d(.false., localValues, localValuesd, mm, &
+                    withGathered, funcValues, funcValuesd)
+
+          end if isInflowOutflow
+       end if famInclude
+    end do
+  end subroutine integrateSurfaces_d
+
+  subroutine integrateSurfaces_b(localValues, localValuesd, famList, withGathered, & 
+       funcValues, funcValuesd)
+    !------------------------------------------------------------------------
+    ! Manual Differentiation Warning: This routine is differentiated by hand.
+    ! -----------------------------------------------------------------------
+
+    ! Reverse mode linearization of integrateSurfaces
+    use constants
+    use blockPointers, only : nBocos, BCData, BCType, bcDatad
+    use utils, only : setBCPointers_d, isWallType
+    use sorting, only : bsearchIntegers
+    use surfaceIntegrations_b, only : wallIntegrationFace_b, flowIntegrationFace_b
+    implicit none
+
+    ! Input/output Variables
+    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
+    integer(kind=intType), dimension(:), intent(in) :: famList
+    logical, intent(in) :: withGathered
+    real(kind=realType), dimension(:) :: funcValues, funcValuesd
+    ! Working variables
+    integer(kind=intType) :: mm
+
+    ! Call the individual integration routines. 
+    do mm=1, nBocos
+       ! Determine if this boundary condition is to be incldued in the
+       ! currently active group
+       famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then
+          
+          ! Set a bunch of pointers depending on the face id to make
+          ! a generic treatment possible. 
+          call setBCPointers_d(mm, .True.)
+          
+          ! not post gathered integrations currently
+          isWall: if( isWallType(BCType(mm)) .and. (.not. withGathered)) then 
+             call wallIntegrationFace_b(localValues, localValuesd, mm)
+          end if isWall
+          
+          isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
+               BCType(mm) == SupersonicInflow) then 
+             call flowIntegrationFace_b(.true., localValues, localValuesd, mm, withGathered, &
+                  funcValues, funcValuesd)
+          else if (BCType(mm) == SubsonicOutflow .or. &
+               BCType(mm) == SupersonicOutflow) then 
+             call flowIntegrationFace_b(.false., localValues, localValuesd, mm, withGathered, &
+                  funcValues, funcValuesd)
+          end if isInflowOutflow
+       end if famInclude
+    end do
+  end subroutine integrateSurfaces_b
+
   subroutine getSolution_d(famLists, funcValues, funcValuesd)
     !------------------------------------------------------------------------
     ! Manual Differentiation Warning: This routine is differentiated by hand.
@@ -1631,6 +997,7 @@ contains
     use blockPointers, only : nDom
     use utils, only : setPointers_d, EChk
     use surfaceIntegrations_d, only : getCostFunctions_d
+    use zipperIntegrations, only :integrateZippers_d
     implicit none
 
     ! Input/Output Variables
@@ -1739,7 +1106,7 @@ contains
     use blockPointers, only : nDom
     use utils, only : setPointers_b, EChk, setPointers
     use surfaceIntegrations_b, only : getCostFunctions_b
-         
+    use zipperIntegrations, only :integrateZippers_b 
     implicit none
 
     ! Input/Output Variables
@@ -1822,1122 +1189,5 @@ contains
 
   end subroutine getSolution_b
 #endif
-#endif
-
-  subroutine addIntegrationSurface(pts, conn, famName, famID, nPts, nConn)
-    ! Add a user-supplied integration surface. 
-
-    use communication, only : myID
-    use constants
-
-    implicit none
-
-    ! Input variables
-    real(kind=realType), dimension(3, nPts), intent(in) :: pts
-    integer(kind=intType), dimension(4, nConn), intent(in) :: conn
-    integer(kind=intType), intent(in) :: nPts, nConn, famID
-    character(len=*) :: famName
-    type(userIntSurf), pointer :: surf
-
-    ! Not really much to do here...we just have to save the data
-    ! into the data structure untilly we actual have to do the
-    ! search.
-    nUserIntSurfs = nUserIntSurfs + 1
-    if (nUserIntSurfs > nUserIntSurfsMax) then 
-       print *,"Error: Exceeded the maximum number of user-supplied "&
-            &"integration slices. Increase nUserIntSurfsMax"
-       stop
-    end if
-    
-    if (myid == 0) then 
-       surf => userIntSurfs(nUserIntSurfs)
-
-       allocate(surf%pts(3, nPts), surf%conn(4, nConn))
-       surf%pts = pts
-       surf%conn = conn
-       surf%famName = famName
-       surf%famID = famID
-    end if
-
-  end subroutine addIntegrationSurface
-
-  subroutine buildVolumeADTs(oBlocks, useDual)
-
-    ! This builds volume ADTs for the the owned blocks. It will build
-    ! either the dual mesh or the primal mesh depening on the flag
-    ! useDual. 
-
-    use constants
-    use overset, only : oversetBlock
-    use blockPointers, only : nDom, x, ie, je, ke, il, jl, kl,  vol, ib, jb, kb
-    use adtBuild, only : buildSerialHex
-    use utils, only : setPointers, EChk
-    implicit none
-
-    ! Input/Output Parameters
-    type(oversetBlock), dimension(:), target :: oBlocks
-    logical :: useDual
-
-    ! Working Parameters
-    integer(kind=intType) :: nInterpol, nn, i, j, k, iii, jjj, kkk
-    integer(kind=intType) :: ii, jj, kk, mm, nADT, nHexa, planeOffset
-    type(oversetBlock), pointer :: oBlock
-
-    nInterpol = 1 ! we get the ADT to compute the interpolated volume for us. 
-
-    domainLoop: do nn=1, nDom
-
-       call setPointers(nn, 1, 1)
-       oBlock => oBlocks(nn)
-
-       primalOrDual: if (useDual) then 
-
-          ! Now setup the data for the ADT
-          nHexa = il * jl * kl
-          nADT = ie * je * ke
-          oBlock%il = il
-          oBlock%jl = jl
-          oBlock%kl = kl
-          
-          allocate(oBlock%xADT(3, nADT), oBlock%hexaConn(8, nHexa), &
-               oBlock%qualDonor(1, nADT))
-          ! Fill up the xADT using cell centers (dual mesh)
-          mm = 0
-          do k=1, ke
-             do j=1, je
-                do i=1, ie
-                   mm = mm + 1
-                   oBlock%xADT(:, mm) = eighth*(&
-                        x(i-1, j-1, k-1, :) + &
-                        x(i  , j-1, k-1, :) + &
-                        x(i-1, j  , k-1, :) + &
-                        x(i  , j  , k-1, :) + &
-                        x(i-1, j-1, k  , :) + &
-                        x(i  , j-1, k  , :) + &
-                        x(i-1, j  , k  , :) + &
-                        x(i  , j  , k  , :))
-                   oBlock%qualDonor(1, mm) = vol(i, j, k)
-                end do
-             end do
-          end do
-          
-          mm = 0
-          ! These are the 'elements' of the dual mesh.
-          planeOffset = ie * je
-          do k=2, ke
-             do j=2, je
-                do i=2, ie
-                   mm = mm + 1
-                   oBlock%hexaConn(1, mm) = (k-2)*planeOffset + (j-2)*ie + (i-2) + 1
-                   oBlock%hexaConn(2, mm) = oBlock%hexaConn(1, mm) + 1 
-                   oBlock%hexaConn(3, mm) = oBlock%hexaConn(2, mm) + ie
-                   oBlock%hexaConn(4, mm) = oBlock%hexaConn(3, mm) - 1 
-                   
-                   oBlock%hexaConn(5, mm) = oBlock%hexaConn(1, mm) + planeOffset
-                   oBlock%hexaConn(6, mm) = oBlock%hexaConn(2, mm) + planeOffset
-                   oBlock%hexaConn(7, mm) = oBlock%hexaConn(3, mm) + planeOffset
-                   oBlock%hexaConn(8, mm) = oBlock%hexaConn(4, mm) + planeOffset
-                end do
-             end do
-          end do
-       else
-          ! Note that we will be including the halo primal cells. This
-          ! should slightly increase robusness for viscous off-wall
-          ! spacing. This means the primal mesh has 1 MORE node/cell
-          ! in each direction. 
-
-          ! Now setup the data for the ADT
-          nHexa = ie * je * ke
-          nADT = ib * jb * kb
-          oBlock%il = ie
-          oBlock%jl = je
-          oBlock%kl = ke
-
-          allocate(oBlock%xADT(3, nADT), oBlock%hexaConn(8, nHexa), &
-               oBlock%qualDonor(1, nADT))
-
-          oBlock%qualDonor = zero
-          ! Fill up the xADT using the primal nodes
-          mm = 0
-          do k=0, ke
-             do j=0, je
-                do i=0, ie
-                   mm = mm + 1
-                   oBlock%xADT(:, mm) = x(i, j, k, :)
-
-                   ! Since we don't have all 8 volumes surrounding the
-                   ! halo nodes, clip the volumes to be between 0 and ib etc.
-                   do iii=0,1
-                      do jjj=0,1
-                         do kkk=0,1
-                            ii = min(max(0, iii+i), ib)
-                            jj = min(max(0, jjj+j), jb)
-                            kk = min(max(0, kkk+k), kb)
-                            
-                            oBlock%qualDonor(1, mm) = oBlock%qualDonor(1, mm) + &
-                                 vol(ii, jj, kk)
-                         end do
-                      end do
-                   end do
-
-                   ! Dividing by 8 isn't strictly necessary but we'll
-                   ! do it anyway.
-                   oBlock%qualDonor(1, mm) = oBlock%qualDonor(1, mm) * eighth
-                end do
-             end do
-          end do
-          
-          mm = 0
-          ! These are the 'elements' of the dual mesh.
-          planeOffset = ib * jb
-          do k=1, ke
-             do j=1, je
-                do i=1, ie
-                   mm = mm + 1
-                   oBlock%hexaConn(1, mm) = (k-1)*planeOffset + (j-1)*ib + (i-1) + 1
-                   oBlock%hexaConn(2, mm) = oBlock%hexaConn(1, mm) + 1 
-                   oBlock%hexaConn(3, mm) = oBlock%hexaConn(2, mm) + ib
-                   oBlock%hexaConn(4, mm) = oBlock%hexaConn(3, mm) - 1 
-                   
-                   oBlock%hexaConn(5, mm) = oBlock%hexaConn(1, mm) + planeOffset
-                   oBlock%hexaConn(6, mm) = oBlock%hexaConn(2, mm) + planeOffset
-                   oBlock%hexaConn(7, mm) = oBlock%hexaConn(3, mm) + planeOffset
-                   oBlock%hexaConn(8, mm) = oBlock%hexaConn(4, mm) + planeOffset
-                end do
-             end do
-          end do
-       end if primalOrDual
-
-       ! Call the custom build routine -- Serial only, only Hexa volumes,
-       ! we supply our own ADT Type
-
-       call buildSerialHex(nHexa, nADT, oBlock%xADT, oBlock%hexaConn, oBlock%ADT)
-    end do domainLoop
-
-  end subroutine buildVolumeADTs
-
-  subroutine performInterpolation(pts, oBlocks, useDual, comm)
-
-    ! This routine performs the actual searches for the slices. It is
-    ! generic in the sense that it will search an arbtitrary set of
-    ! points on either the primal or dual meshes. The final required
-    ! communication data is then written into the supplied comm. 
-    
-    use constants
-    use block, only : interpPtType
-    use communication, only : adflow_comm_world, myid, nProc
-    use overset, only : oversetBlock
-    use blockPointers, only : nDom, x, ie, je, ke, il, jl, kl, x, iBlank, vol
-    use adtLocalSearch, only :  mindistancetreesearchsinglepoint, &
-         containmenttreesearchsinglepoint
-    use adtUtils, only : stack
-    use adtData, only : adtBBoxTargetType
-    use utils, only : setPointers, mynorm2, EChk
-    use inputOverset, only : oversetProjTol
-    use oversetUtilities, only : fracToWeights2, getCumulativeForm
-    
-    implicit none
-
-    ! Input parameters:
-    real(kind=realType), dimension(:, :), intent(in) :: pts
-    type(userIntSurf) :: surf
-    type(oversetBlock), dimension(:), target, intent(in) :: oBlocks
-    logical, intent(in) :: useDual
-    !type(oversetSurf), dimension(:), intent(in) :: oSurfs
-    type(userSurfCommType) :: comm
-
-    ! Working parameters
-    type(oversetBlock), pointer :: oBlock
-    type(interpPtType), dimension(:), allocatable :: surfFringes
-
-    integer(Kind=intType) :: i, j, k, ii, jj, kk, iii, jjj, kkk, nn, mm 
-    integer(kind=intType) :: iSurf, ierr, nInterpol, iProc
-    integer(kind=intType) :: nHexa, nAdt, planeOffset, elemID, nPts
-    real(kind=realType) :: xc(4), weight(8)
-    integer mpiStatus(MPI_STATUS_SIZE) 
-
-    real(kind=realType) :: uvw(5), uvw2(5), donorQual, xcheck(3)
-    integer(kind=intType) :: intInfo(3), intInfo2(3)
-    logical :: failed, invalid
-
-    integer(kind=intType), dimension(:, :), allocatable :: donorInfo, intSend
-    integer(kind=intType), dimension(:), allocatable :: procSizes
-    real(kind=realType), dimension(:, :), allocatable :: donorFrac, realSend
-
-    ! Variables we have to pass the ADT search routine
-    integer(kind=intType), dimension(:), pointer :: BB
-    type(adtBBoxTargetType), dimension(:), pointer :: BB2
-    integer(kind=intType), dimension(:), pointer :: frontLeaves
-    integer(kind=intType), dimension(:), pointer :: frontLeavesNew
-   
-    ! Data for the search
-    allocate(BB(20), frontLeaves(25), frontLeavesNew(25), stack(100))
-
-    nPts = size(pts, 2)
-              
-    ! Allocate donor information arrays
-    allocate(donorFrac(4, nPts), donorInfo(5, nPts))
-    donorInfo = -1
-    donorFrac(4, :) = large
-    nInterpol = 1
-    domainSearch: do nn=1, nDom
-       oBlock => oBlocks(nn)
-       call setPointers(nn, 1, 1)
-
-       ! Search the supplied pts one at a time
-       elemLoop: do i=1, nPts
-
-          xc(1:3) = pts(:, i)
-             
-          ! Call the standard tree search
-          call containmentTreeSearchSinglePoint(oBlock%ADT, xc, intInfo, uvw, &
-               oBlock%qualDonor, nInterpol, BB, frontLeaves, frontLeavesNew, failed)
-          
-          ! Make sure this point is not garbage.
-          if (intInfo(1) >= 0) then 
-             call fracToWeights2(uvw(1:3), weight)
-             xcheck = zero
-             do j=1,8
-                xcheck = xcheck + weight(j)*oBlock%xADT(:, oBlock%hexaConn(j, intInfo(3)))
-             end do
-             
-             if (mynorm2(xcheck - xc(1:3)) > oversetProjTol) then 
-                failed = .True.
-             end if
-          end if
-             
-          if (intInfo(1) >= 0 .and. failed) then 
-             ! we "found" a point but it is garbage. Do the failsafe search
-             xc(4) = large
-             call minDistanceTreeSearchSinglePoint(oBlock%ADT, xc, intInfo, uvw, &
-                  oBlock%qualDonor, nInterpol, BB2, frontLeaves, frontLeavesNew)
-             
-             ! Check this one:
-             call fracToWeights2(uvw(1:3), weight)
-             xcheck = zero
-             do j=1,8
-                xcheck = xcheck + weight(j)*oBlock%xADT(:, oBlock%hexaConn(j, intInfo(3)))
-             end do
-             
-             ! Since this is the last line of defence, relax the tolerance a bit
-             if (mynorm2(xcheck - xc(1:3)) > 100*oversetProjTol) then 
-                ! This fringe has not found a donor
-                intInfo(1) = -1
-             else
-                ! This one has now passed.
-                
-                ! Important! uvw(4) is the distance squared for this search
-                ! not
-                uvw(4) = uvw(5)
-             end if
-          end if
-             
-          elemFound: if (intInfo(1) >= 0) then 
-
-             ! Donor and block and index information for this donor. 
-             donorQual = uvw(4)
-             elemID = intInfo(3) - 1 ! Make it zero based
-
-             ! The dual mesh needs an offset of 1 becuase it only used
-             ! 1:ie values. This is not necessary for the primal. 
-             if (useDual) then 
-                ii = mod(elemID, oBlock%il) + 1
-                jj = mod(elemID/oBlock%il, oBlock%jl) + 1
-                kk = elemID/(oBlock%il*oBlock%jl) + 1
-             else
-                ii = mod(elemID, oBlock%il) 
-                jj = mod(elemID/oBlock%il, oBlock%jl) 
-                kk = elemID/(oBlock%il*oBlock%jl) 
-             end if
-             ! Rememebr donorFrac(4, i) is the current best quality 
-             if ( donorQual < donorFrac(4, i)) then 
-                
-                invalid = .False.
-
-                ! For the dual mesh search, we have to make sure the
-                ! potential donors are valid. Such a check is not
-                ! necessary for the primal search since all nodes are
-                ! considered valid. 
-
-                if (useDual) then 
-                   ! Check if the point is invalid. We can do this
-                   ! with i-blank array. We can only accept compute
-                   ! cells (iblank=1) or interpolated
-                   ! cells(iblank=-1).
-                   do kkk=0,1
-                      do jjj=0,1
-                         do iii=0,1
-                            if (.not. (iblank(ii+iii, jj+jjj, kk+kkk) == 1 .or. &
-                                 iblank(ii+iii, jj+jjj, kk+kkk) == -1)) then 
-                               invalid = .True.
-                            end if
-                         end do
-                      end do
-                   end do
-                end if
-                
-                if (.not. invalid) then 
-                   
-                   ! Set the quality of the donor to the one we
-                   ! just found. Save the rest of the necessary
-                   ! information. 
-                   donorInfo(1, i) = myid
-                   donorInfo(2, i) = nn
-                   donorInfo(3, i) = ii
-                   donorInfo(4, i) = jj
-                   donorInfo(5, i) = kk
-                   donorFrac(1:3, i) = uvw(1:3)
-                   donorFrac(4, i) = donorQual
-                end if
-             end if
-          end if elemFound
-       end do elemLoop
-    end do domainSearch
-      
-    ! Next count up the number of valid donors we've found and compact
-    ! the info back to that length.
-    if (myid /=0) then 
-       j = 0
-       do i=1, nPts
-          if (donorInfo(1, i) /= -1) then 
-             j = j + 1
-          end if
-       end do
-       allocate(intSend(6, j), realSend(4, i))
-       if (j > 0) then 
-          j = 0
-          do i=1, nPts
-             if (donorInfo(1, i) /= -1) then 
-                j = j + 1
-                intSend(1:5, j) = donorInfo(:, i)
-                intSend(6, j) = i
-                realSend(:, j) = donorFrac(:, i)
-             end if
-          end do
-       end if
-    else
-       ! On the root proc, use intSend and realSend as the receiver
-       ! buffer. These can be at most nPts sized.
-       allocate(intSend(6, nPts), realSend(4, nPts))
-    end if
-       
-    ! Gather up the sizes (j) to the root processor so he know who to
-    ! expect data from.
-    allocate(procSizes(0:nProc-1))
-    
-    call mpi_gather(j, 1, adflow_integer, procSizes, 1, &
-         adflow_integer, 0, adflow_comm_world, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-    
-    ! Next all the procs need to send all the information back to the
-    ! root processor where we will determine the proper donors for
-    ! each of the cells
-    
-    ! All procs except root fire off their data.
-    if (myid >= 1) then 
-       if (j > 0) then 
-          call mpi_send(intSend, j*6, adflow_integer, 0, myid, &
-               adflow_comm_world, ierr)
-          call EChk(ierr,__FILE__,__LINE__)
-          
-          call mpi_send(realSend, j*4, adflow_real, 0, myid, &
-               adflow_comm_world, ierr)
-          call EChk(ierr,__FILE__,__LINE__)
-       end if
-    end if
-    
-    ! And the root processor recieves it...
-    if (myid == 0) then 
-       do iProc=1, nProc-1
-          ! Determine if this proc has sent anything:
-          if (procSizes(iProc) /= 0) then 
-             
-             call MPI_recv(intSend, 6*nPts, adflow_integer, iProc, iProc,&
-                  adflow_comm_world, mpiStatus, ierr)
-             call EChk(ierr,__FILE__,__LINE__)
-             
-             call MPI_recv(realSend, 4*nPts, adflow_real, iProc, iProc,&
-                  adflow_comm_world, mpiStatus, ierr)
-             call EChk(ierr,__FILE__,__LINE__)
-             
-             ! Now process the data (intSend and realSend) that we
-             ! just received. We don't need to check the status for
-             ! the sizes becuase we already know the sizes from the
-             ! initial gather we did. 
-                
-             do i=1, procSizes(iProc)
-                ii = intSend(6, i)
-                
-                if (realSend(4, i) < donorFrac(4, ii)) then 
-                   ! The incoming quality is better. Accept it. 
-                   donorInfo(1:5, ii) = intSend(1:5, i)
-                   donorFrac(:, ii) = realSend(:, i)
-                end if
-             end do
-          end if
-       end do
-          
-       ! To make this easier, convert the information we have to a
-       ! 'fringeType' array so we can use the pre-existing sorting
-       ! routine.
-       allocate(surfFringes(nPts))
-       do i=1, nPts
-          surfFringes(i)%donorProc = donorInfo(1, i)
-          surfFringes(i)%donorBlock = donorInfo(2, i)
-          surfFringes(i)%dI = donorInfo(3, i)
-          surfFringes(i)%dJ = donorInfo(4, i)
-          surfFringes(i)%dK = donorInfo(5, i)
-          surfFringes(i)%donorFrac = donorFrac(1:3, i)
-          ! Use the myBlock attribute to keep track of the original
-          ! index. When we sort the fringes, they will no longer be
-          ! in the same order
-          surfFringes(i)%myBlock = i
-       end do
-       
-       ! Perform the actual sort. 
-       call qsortInterpPtType(surfFringes, nPts)
-       
-       ! We will reuse-proc sizes to now mean the number of elements
-       ! that the processor *actually* has to send. We will include
-       ! the root proc itself in the calc becuase that will tell us
-       ! the size of the internal comm structure. 
-       
-       procSizes = 0
-       allocate(comm%valid(nPts))
-       comm%valid = .True.
-       do i=1, nPts
-          if (surfFringes(i)%donorProc < 0) then 
-             ! We dont have a donor. Flag this point as invalid
-             comm%valid(i) = .False.
-          end if
-
-          ! Dump the points without donors on the root proc by making
-          ! sure j is at least 0 for the root proc. These will just
-          ! simply be ignored during the comm. 
-          j = max(surfFringes(i)%donorProc, 0)
-          procSizes(j) = procSizes(j) + 1
-       end do
-    end if
-       
-    ! Simply broadcast out the the proc sizes back to everyone so all
-    ! processors know if they are to receive anything back. 
-    call mpi_bcast(procSizes, nProc, adflow_Integer, 0, adflow_comm_world, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-       
-    ! We can now save some of the final comm data required on the
-    ! root proc for this surf. 
-    allocate(comm%procSizes(0:nProc-1), comm%procDisps(0:nProc))
-    
-    ! Copy over procSizes and generate the cumulative form of
-    ! the size array, procDisps
-    comm%procSizes = procSizes
-    call getCumulativeForm(comm%procSizes, nProc, comm%procDisps)
-
-    ! Record the elemInverse which is necessary to index into
-    ! the original conn array. 
-    if (myid == 0) then 
-       allocate(comm%Inv(nPts))
-       do i=1, nPts
-          comm%Inv(i) = surfFringes(i)%myBlock
-       end do
-    end if
-
-    ! Now we can send out the final donor information to the
-    ! processors that must supply it. 
-    comm%nDonor = procSizes(myID)
-    allocate(comm%frac(3, comm%nDonor), comm%donorInfo(4, comm%nDonor))
-    
-    if (myid >= 1) then 
-       if (comm%nDonor > 0) then 
-          ! We are responible for at least 1 donor. We have to make
-          ! use of the intSend and realSend buffers again (which
-          ! are guaranteed to be big enough). The reason we can't
-          ! dump the data in directlyis that intSend and realSend
-          ! have a different leading index than we need on the
-          ! final data structure. 
-          
-          call MPI_recv(intSend, 6*comm%nDonor, adflow_integer, 0, myid, &
-               adflow_comm_world, mpiStatus, ierr)
-          call EChk(ierr,__FILE__,__LINE__)
-          
-          call MPI_recv(realSend, 4*comm%nDonor, adflow_real, 0, myID, &
-               adflow_comm_world, mpiStatus, ierr)
-          call EChk(ierr,__FILE__,__LINE__)
-
-          ! Copy into final structure
-          do i=1, comm%nDonor
-             comm%donorInfo(:, i) = intSend(1:4, i)
-             comm%frac(:, i) = realSend(1:3, i)
-          end do
-       end if
-    else
-       ! We are the root processor.
-       if (comm%nDonor > 0) then 
-          ! We need to copy out our donor info on the root proc if we have any
-          do i= comm%procDisps(myID)+1, comm%procDisps(myID+1)
-             comm%donorInfo(1, i) = surfFringes(i)%donorBlock
-             comm%donorInfo(2, i) = surfFringes(i)%dI
-             comm%donorInfo(3, i) = surfFringes(i)%dJ
-             comm%donorInfo(4, i) = surfFringes(i)%dK
-             comm%frac(1:3, i)    = surfFringes(i)%donorFrac
-          end do
-       end if
-          
-       ! Now loop over the rest of the procs and send out the info we
-       ! need. We have to temporarily copy the data back out of
-       ! fringes to the intSend and realSend arrays
-       do iProc=1, nProc-1
-          
-          if (comm%procSizes(iProc) > 0) then 
-             ! Have something to send here:
-             j = 0
-             do i=comm%procDisps(iProc)+1, comm%procDisps(iProc+1)
-                j = j + 1
-                
-                intSend(1, j) = surfFringes(i)%donorBlock
-                intSend(2, j) = surfFringes(i)%dI      
-                intSend(3, j) = surfFringes(i)%dJ
-                intSend(4, j) = surfFringes(i)%dK
-                realSend(1:3, j) = surfFringes(i)%donorFrac
-             end do
-             
-             call mpi_send(intSend, j*6, adflow_integer, iProc, iProc, &
-                  adflow_comm_world, ierr)
-             call EChk(ierr,__FILE__,__LINE__)
-             
-             call mpi_send(realSend, j*4, adflow_real, iProc, iProc, &
-                  adflow_comm_world, ierr)
-             call EChk(ierr,__FILE__,__LINE__)
-          end if
-       end do
-       
-       ! Deallocate data allocatd only on root proc
-       deallocate(surfFringes)
-    end if
-       
-    ! Nuke rest of allocated on all procs
-    deallocate(intSend, realSend, procSizes, donorInfo, donorFrac)
- 
-  end subroutine performInterpolation
-
-  subroutine interpolateIntegrationSurfaces
-
-    ! This routine performs the actual searches for the slices. We
-    ! reuse much of the same machinery as is used in the overset code.
-
-    use constants
-    use communication, only : adflow_comm_world, myid
-    use overset, only : oversetBlock
-    use blockPointers, only : nDom, ie, je, ke, il, jl, kl
-    use adtBuild, only : buildSerialHex, destroySerialHex
-    use utils, only : setPointers, EChk
-
-    implicit none
-
-    ! Working parameters
-    type(oversetBlock), dimension(nDom), target :: oBlocks
-    type(userIntSurf), pointer :: surf
-
-    integer(Kind=intType) :: iSurf, ii, i, nn, nPts, ierr
-    real(kind=realType), dimension(:, :), allocatable :: pts
-    logical :: useDual
-    if (nUserIntSurfs == 0) then 
-       return
-    end if
-    primalDualLoop: do ii=1, 2
-       if (ii==1) then 
-          useDual = .True.
-       else
-          useDual = .False.
-       end if
-
-       call buildVolumeADTs(oBlocks, useDual)
-       
-       masterLoop: do iSurf=1, nUserIntSurfs
-
-          surf => userIntSurfs(iSurf)
-
-          if (myid == 0) then 
-
-             if (ii==1) then 
-                nPts = size(surf%conn, 2)
-                allocate(pts(3, nPts))
-                ! Use the dual (cell center values)
-                elemLoop: do i=1, nPts
-
-                   ! Compute the center of the cell. 
-                   pts(:, i) = fourth*( & 
-                        surf%pts(:, surf%conn(1, i)) + &
-                        surf%pts(:, surf%conn(2, i)) + &
-                        surf%pts(:, surf%conn(3, i)) + &
-                        surf%pts(:, surf%conn(4, i)))
-                end do elemLoop
-             else if (ii==2) then 
-                nPts = size(surf%pts, 2)
-                allocate(pts(3, nPts))
-
-                ! Use the primal nodal values
-                nodeLoop: do i=1, nPts
-                   ! Compute the center of the cell. 
-                   pts(:, i) = surf%pts(:, i)
-                end do nodeLoop
-             end if
-          end if
-
-          ! Send the number of points back to all procs:
-          call mpi_bcast(nPts, 1, adflow_integer, 0, adflow_comm_world, ierr)
-          call EChk(ierr,__FILE__,__LINE__)
-           
-          ! All other procs except the root allocate space and receive
-          ! the pt array. 
-          if (myid /= 0) then 
-             allocate(pts(3, nPts))
-          end if
-          
-          call mpi_bcast(pts, 3*nPts, adflow_real, 0, adflow_comm_world, ierr)
-          call EChk(ierr,__FILE__,__LINE__)
-          
-          ! Call the actual interpolation routine
-          if (ii==1) then 
-             call performInterpolation(pts, oBlocks, .True., surf%faceComm)
-          else
-             call performInterpolation(pts, oBlocks, .False., surf%nodeComm)
-          end if
-          
-          deallocate(pts)
-       end do masterLoop
-
-       ! Destroy the ADT Data and allocated values
-       do nn=1, nDom
-          call destroySerialHex(oBlocks(nn)%ADT)
-          deallocate(oBlocks(nn)%xADT, oBlocks(nn)%hexaConn, oBlocks(nn)%qualDonor)
-       end do
-    end do primalDualLoop
-  end subroutine interpolateIntegrationSurfaces
-
-  subroutine commUserIntegrationSurfaceVars(recvBuffer, varStart, varEnd, comm)
-
-    use constants
-    use block, onlY : flowDoms, nDom
-    use communication, only : myid, adflow_comm_world
-    use utils, only : EChk
-    use oversetUtilities, only :fracToWeights
-    
-    implicit none
-
-    ! Input/Output
-    real(kind=realType), dimension(:) :: recvBuffer
-    integer(kind=intType), intent(in) :: varStart, varEnd
-    type(userSurfCommType) :: comm
-
-    ! Working
-    real(kind=realType), dimension(:), allocatable :: sendBuffer
-    integer(Kind=intType) :: d1, i1, j1, k1, jj, k, nvar, i, ierr
-    real(kind=realType), dimension(8) :: weight
-
-    ! The number of variables we are transferring:
-    nVar = varEnd - varStart + 1
-    
-    ! We assume that the pointers to the realCommVars have already been set. 
-    
-    allocate(sendBuffer(nVar*comm%nDonor))
-
-    ! First generate the interpolated data necessary
-    jj = 0
-    donorLoop: do i=1, comm%nDonor
-       ! Convert the frac to weights
-       call fracToWeights(comm%frac(:, i), weight)
-       
-       ! Block and indices for easier reading. The +1 is due to the
-       ! pointer offset on realCommVars.
-
-       d1 = comm%donorInfo(1, i) ! Block Index
-       i1 = comm%donorInfo(2, i)+1 ! donor I index
-       j1 = comm%donorInfo(3, i)+1 ! donor J index
-       k1 = comm%donorInfo(4, i)+1 ! donor K index
-       
-       ! We are interpolating nVar variables
-       do k=varStart, varEnd
-          jj = jj + 1
-          if (d1 > 0) then ! Is this pt valid?
-             sendBuffer(jj) = &
-                  weight(1)*flowDoms(d1,1,1)%realCommVars(k)%var(i1  ,j1  ,k1  ) + &
-                  weight(2)*flowDoms(d1,1,1)%realCommVars(k)%var(i1+1,j1  ,k1  ) + &
-                  weight(3)*flowDoms(d1,1,1)%realCommVars(k)%var(i1  ,j1+1,k1  ) + &
-                  weight(4)*flowDoms(d1,1,1)%realCommVars(k)%var(i1+1,j1+1,k1  ) + &
-                  weight(5)*flowDoms(d1,1,1)%realCommVars(k)%var(i1  ,j1  ,k1+1) + &
-                  weight(6)*flowDoms(d1,1,1)%realCommVars(k)%var(i1+1,j1  ,k1+1) + &
-                  weight(7)*flowDoms(d1,1,1)%realCommVars(k)%var(i1  ,j1+1,k1+1) + &
-                  weight(8)*flowDoms(d1,1,1)%realCommVars(k)%var(i1+1,j1+1,k1+1)
-          end if
-       end do
-    end do donorLoop
-    
-    ! Now we can do an mpi_gatherv to the root proc:
-    call mpi_gatherv(sendBuffer, nVar*comm%nDonor, adflow_real, recvBuffer, &
-         nVar*comm%procSizes, nVar*comm%procDisps, adflow_real, 0, adflow_comm_world, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-    deallocate(sendBuffer)
-
-  end subroutine commUserIntegrationSurfaceVars
-
-  subroutine integrateUserSurfaces(localValues, famList, sps)
-
-    use constants
-    use block, onlY : flowDoms, nDom
-    use flowVarRefState, only : pRef, rhoRef, pRef, timeRef, LRef, TRef
-    use communication, only : myid, adflow_comm_world
-    use utils, only : EChk, mynorm2
-    use flowUtils, only : computePtot, computeTtot
-    use sorting, only : bsearchIntegers
-    implicit none
-
-    ! Input Parameters
-    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
-    integer(kind=intType), dimension(:), intent(in) :: famList
-    integer(kind=intType), intent(in) :: sps
-
-    ! Working parameters
-    integer(kind=intType) :: iSurf, i, j, k, jj, ierr, nn, iDim
-    real(kind=realType), dimension(:), allocatable :: recvBuffer1, recvBuffer2
-    type(userIntSurf), pointer :: surf
-    real(kind=realType) :: mReDim, rho, vx, vy, vz, PP, massFLowRate, vn
-    real(Kind=realType) :: pTot, Ttot, mass_Ptot, mass_Ttot, mass_ps, massFlowRateLocal
-    real(kind=realType), dimension(3) :: v1, v2, x1, x2, x3, x4, n
-    logical :: valid
-    logical, dimension(:), allocatable :: ptValid
-    ! Set the pointers for the required communication variables: rho,
-    ! vx, vy, vz, P and the x-coordinates
-    
-    domainLoop:do nn=1, nDom
-       flowDoms(nn, 1, sps)%realCommVars(1)%var => flowDoms(nn, 1, sps)%w(:, :, :, 1)
-       flowDoms(nn, 1, sps)%realCommVars(2)%var => flowDoms(nn, 1, sps)%w(:, :, :, 2)
-       flowDoms(nn, 1, sps)%realCommVars(3)%var => flowDoms(nn, 1, sps)%w(:, :, :, 3)
-       flowDoms(nn, 1, sps)%realCommVars(4)%var => flowDoms(nn, 1, sps)%w(:, :, :, 4)
-       flowDoms(nn, 1, sps)%realCommVars(5)%var => flowDoms(nn, 1, sps)%P(:, :, :)
-       flowDoms(nn, 1, sps)%realCommVars(6)%var => flowDoms(nn, 1, sps)%x(:, :, :, 1)
-       flowDoms(nn, 1, sps)%realCommVars(7)%var => flowDoms(nn, 1, sps)%x(:, :, :, 2)
-       flowDoms(nn, 1, sps)%realCommVars(8)%var => flowDoms(nn, 1, sps)%x(:, :, :, 3)
-    end do domainLoop
-
-    masterLoop: do iSurf=1, nUserIntSurfs
-
-       ! Pointer for easier reading
-       surf => userIntSurfs(iSurf)
-       
-       ! Do we need to include this surface?
-       famInclude: if (bsearchIntegers(surf%famID, famList) > 0) then
-          
-          ! Communicate the face values and the nodal values
-          if (myid == 0) then 
-             allocate(recvBuffer1(5*size(surf%conn, 2)))
-             allocate(recvBuffer2(3*size(surf%pts, 2)))
-          else
-             allocate(recvBuffer1(0))
-             allocate(recvBuffer2(0))
-          end if
-          
-          call commUserIntegrationSurfaceVars(recvBuffer1, 1, 5, surf%faceComm)
-          call commUserIntegrationSurfaceVars(recvBuffer2, 6, 8, surf%nodeComm)
-          
-          ! *Finally* we can do the actual integrations
-          if (myid == 0)  then 
-             allocate(ptValid(size(surf%pts, 2)))
-             
-             ! Before we do the integration, update the pts array from
-             ! the values in recvBuffer2
-             do i=1, size(surf%pts, 2)
-                j = surf%nodeComm%inv(i)
-                surf%pts(:, j) = recvBuffer2(3*i-2:3*i)
-                ptValid(j) = surf%nodeComm%valid(i)
-             end do
-             
-             massFlowRate = zero
-             mass_Ptot = zero
-             mass_Ttot = zero
-             mass_Ps = zero
-             
-             mReDim = sqrt(pRef*rhoRef)
-             
-             elemLoop: do i=1, size(surf%conn, 2)
-                
-                ! First check if this cell is valid to integrate. Both
-                ! the cell center *and* all nodes must be valid
-                
-                ! j is now the element index into the original conn array. 
-                j = surf%faceComm%Inv(i)
-                
-                valid = surf%faceComm%valid(i) .and. &
-                     ptValid(surf%conn(1, j)) .and. ptValid(surf%conn(2, j)) .and. &
-                     ptValid(surf%conn(3, j)) .and. ptValid(surf%conn(4, j))
-                if (valid) then 
-                   ! Extract out the interpolated quantities
-                   rho = recvBuffer1(5*i-4)
-                   vx  = recvBuffer1(5*i-3)
-                   vy  = recvBuffer1(5*i-2)
-                   vz  = recvBuffer1(5*i-1)
-                   PP  = recvBuffer1(5*i  )
-                   
-                   call computePtot(rho, vx, vy, vz, pp, Ptot)
-                   call computeTtot(rho, vx, vy, vz, pp, Ttot)
-                   
-                   ! Get the coordinates of the quad
-                   x1 = surf%pts(:, surf%conn(1, j))
-                   x2 = surf%pts(:, surf%conn(2, j))
-                   x3 = surf%pts(:, surf%conn(3, j))
-                   x4 = surf%pts(:, surf%conn(4, j))
-                   
-                   ! Diagonal vectors
-                   v1 = x3 - x1
-                   v2 = x4 - x2
-                   
-                   ! Take the cross product of the two diagaonal vectors.
-                   n(1) = half*(v1(2)*v2(3) - v1(3)*v2(2))
-                   n(2) = half*(v1(3)*v2(1) - v1(1)*v2(3))
-                   n(3) = half*(v1(1)*v2(2) - v1(2)*v2(1))
-                
-                   ! Normal face velocity
-                   vn = vx*n(1) + vy*n(2) + vz*n(3)
-                   
-                   ! Finally the mass flow rate
-                   massFlowRateLocal = rho*vn*mReDim
-                   massFlowRate = massFlowRate + massFlowRateLocal
-                   mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
-                   mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
-                   mass_Ps = mass_Ps + pp*massFlowRateLocal*Pref
-                end if
-                
-             end do elemLoop
-             deallocate(ptValid)
-          end if
-
-          ! Accumulate the final values
-          localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate
-          localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
-          localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
-          localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
-                    
-          deallocate(recvBuffer1, recvBuffer2)
-
-
-       end if famInclude
-    end do masterLoop
-
-  end subroutine integrateUserSurfaces
-
-  subroutine qsortInterpPtType(arr, nn)
-
-    use constants
-    use block ! Cannot use-only becuase of <= operator
-    use utils, only : terminate
-    implicit none
-    !
-    !      Subroutine arguments.
-    !
-    integer(kind=intType), intent(in) :: nn
-
-    type(interpPtType), dimension(*), intent(inout) :: arr
-    !
-    !      Local variables.
-    !
-    integer(kind=intType), parameter :: m = 7
-
-    integer(kind=intType) :: nStack
-    integer(kind=intType) :: i, j, k, r, l, jStack, ii
-
-    integer :: ierr
-
-    type(interpPtType) :: a, tmp
-
-    integer(kind=intType), allocatable, dimension(:) :: stack
-    integer(kind=intType), allocatable, dimension(:) :: tmpStack
-
-    ! Allocate the memory for stack.
-
-    nStack = 100
-    allocate(stack(nStack), stat=ierr)
-    if(ierr /= 0)                         &
-         call terminate("qsortinterpPt", &
-         "Memory allocation failure for stack")
-
-    ! Initialize the variables that control the sorting.
-
-    jStack = 0
-    l      = 1
-    r      = nn
-
-    ! Start of the algorithm
-
-    do
-
-       ! Check for the size of the subarray.
-
-       if((r-l) < m) then
-
-          ! Perform insertion sort
-
-          do j=l+1,r
-             a = arr(j)
-             do i=(j-1),l,-1
-                if(arr(i) <= a) exit
-                arr(i+1) = arr(i)
-             enddo
-             arr(i+1) = a
-          enddo
-
-          ! In case there are no more elements on the stack, exit from
-          ! the outermost do-loop. Algorithm has finished.
-
-          if(jStack == 0) exit
-
-          ! Pop stack and begin a new round of partitioning.
-
-          r = stack(jStack)
-          l = stack(jStack-1)
-          jStack = jStack - 2
-
-       else
-
-          ! Subarray is larger than the threshold for a linear sort.
-          ! Choose median of left, center and right elements as
-          ! partitioning element a.
-          ! Also rearrange so that (l) <= (l+1) <= (r).
-
-          k = (l+r)/2
-          tmp      = arr(k)             ! Swap the elements
-          arr(k)   = arr(l+1)           ! k and l+1.
-          arr(l+1) = tmp
-
-          if(arr(r) < arr(l)) then
-             tmp    = arr(l)             ! Swap the elements
-             arr(l) = arr(r)             ! r and l.
-             arr(r) = tmp
-          endif
-
-          if(arr(r) < arr(l+1)) then
-             tmp      = arr(l+1)         ! Swap the elements
-             arr(l+1) = arr(r)           ! r and l+1.
-             arr(r)   = tmp
-          endif
-
-          if(arr(l+1) < arr(l)) then
-             tmp      = arr(l+1)         ! Swap the elements
-             arr(l+1) = arr(l)           ! l and l+1.
-             arr(l)   = tmp
-          endif
-
-          ! Initialize the pointers for partitioning.
-
-          i = l+1
-          j = r
-          a = arr(l+1)
-
-          ! The innermost loop
-
-          do
-
-             ! Scan up to find element >= a.
-             do
-                i = i+1
-                if(a <= arr(i)) exit
-             enddo
-
-             ! Scan down to find element <= a.
-             do
-                j = j-1
-                if(arr(j) <= a) exit
-             enddo
-
-             ! Exit the loop in case the pointers i and j crossed.
-
-             if(j < i) exit
-
-             ! Swap the element i and j.
-
-             tmp    = arr(i)
-             arr(i) = arr(j)
-             arr(j) = tmp
-          enddo
-
-          ! Swap the entries j and l+1. Remember that a equals
-          ! arr(l+1).
-
-          arr(l+1) = arr(j)
-          arr(j)   = a
-
-          ! Push pointers to larger subarray on stack,
-          ! process smaller subarray immediately.
-
-          jStack = jStack + 2
-          if(jStack > nStack) then
-
-             ! Storage of the stack is too small. Reallocate.
-
-             allocate(tmpStack(nStack), stat=ierr)
-             if(ierr /= 0)                         &
-                  call terminate("qsortinterpPt", &
-                  "Memory allocation error for tmpStack")
-             tmpStack = stack
-
-             ! Free the memory of stack, store the old value of nStack
-             ! in tmp and increase nStack.
-
-             deallocate(stack, stat=ierr)
-             if(ierr /= 0)                         &
-                  call terminate("qsortinterpPt", &
-                  "Deallocation error for stack")
-             ii = nStack
-             nStack = nStack + 100
-
-             ! Allocate the memory for stack and copy the old values
-             ! from tmpStack.
-
-             allocate(stack(nStack), stat=ierr)
-             if(ierr /= 0)                         &
-                  call terminate("qsortinterpPt", &
-                  "Memory reallocation error for stack")
-             stack(1:ii) = tmpStack(1:ii)
-
-             ! And finally release the memory of tmpStack.
-
-             deallocate(tmpStack, stat=ierr)
-             if(ierr /= 0)                         &
-                  call terminate("qsortinterpPt", &
-                  "Deallocation error for tmpStack")
-          endif
-
-          if((r-i+1) >= (j-l)) then
-             stack(jStack)   = r
-             r               = j-1
-             stack(jStack-1) = j
-          else
-             stack(jStack)   = j-1
-             stack(jStack-1) = l
-             l               = j
-          endif
-
-       endif
-    enddo
-
-    ! Release the memory of stack.
-
-    deallocate(stack, stat=ierr)
-    if(ierr /= 0)                         &
-         call terminate("qsortinterpPt", &
-         "Deallocation error for stack")
-
-    ! Check in debug mode whether the array is really sorted.
-
-    if( debug ) then
-       do i=1,(nn-1)
-          if(arr(i+1) < arr(i))                 &
-               call terminate("qsortinterpPt", &
-               "Array is not sorted correctly")
-       enddo
-    endif
-
-  end subroutine qsortInterpPtType
-
-
 #endif
 end module surfaceIntegrations

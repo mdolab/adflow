@@ -521,7 +521,7 @@ class ADFLOW(AeroSolver):
         # small that we do not have to worry about parallelization. 
 
         pts, conn = self._readPlot3DSurfFile(fileName)
-        self.adflow.surfaceintegrations.addintegrationsurface(
+        self.adflow.usersurfaceintegrations.addintegrationsurface(
             pts.T, conn.T, familyName, famID)
 
     def addUserFunction(self, funcName, functions, callBack):
@@ -4587,7 +4587,7 @@ class ADFLOW(AeroSolver):
         self.zipperCreated = True
 
         # We can also do the surface plane integrations here if necessary
-        self.adflow.surfaceintegrations.interpolateintegrationsurfaces()
+        self.adflow.usersurfaceintegrations.interpolateintegrationsurfaces()
         self.coords0 = self.getSurfaceCoordinates(self.allFamilies)
 
     def _processFortranStringArray(self, strArray):
