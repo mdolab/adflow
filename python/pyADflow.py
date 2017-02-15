@@ -2135,7 +2135,7 @@ class ADFLOW(AeroSolver):
             self.adflow.anksolver.destroyanksolver()
             if releaseAdjointMemory:
                 self.releaseAdjointMemory()
-
+                
     def _setAeroProblemData(self, aeroProblem, firstCall=False):
         """
         After an aeroProblem has been associated with self.cuAP, set
@@ -3088,15 +3088,29 @@ class ADFLOW(AeroSolver):
         costSize = self.adflow.constants.ncostfunction
         fSize, nCell = self._getSurfaceSize(self.allWallsGroup, includeZipper=True)
 
-        # ============== TEMPORARY ====================
-        famLists = self._expandGroupNames([groupName])
-        # ==============================================
+        # Generate the list of families we need for the functions in curAP
+        groupNames = set()
+        for f in self.curAP.evalFuncs:
+            fl = f.lower()
+            if fl in self.adflowCostFunctions:
+                groupName = self.adflowCostFunctions[fl][0]
+                groupNames.add(groupName)
+            if f in self.adflowUserCostFunctions:
+                for sf in self.adflowUserCostFunctions[f].functions:
+                    groupName = self.adflowCostFunctions[sf.lower()][0]  
+                    groupNames.add(groupName)
+
+        groupNames = list(groupNames)
+        if len(groupNames) == 0:
+            famLists = self._expandGroupNames([self.allWallsGroup])
+        else:
+            famLists = self._expandGroupNames(groupNames)
 
         # Extract any possibly BC daa
         dwdot, tmp, fdot = self.adflow.adjointapi.computematrixfreeproductfwd(
             xvdot, extradot, wdot, bcDataValuesdot, useSpatial, useState, famLists, bcDataNames, 
             bcDataValues, bcDataFamLists, bcVarsEmpty, costSize, max(1, fSize), nTime)
-
+        print (tmp.shape)
         # Explictly put fdot to nothing if size is zero
         if fSize==0:
             fdot = numpy.zeros((0, 3))
@@ -3104,10 +3118,27 @@ class ADFLOW(AeroSolver):
         # Process the derivative of the functions
         funcsDot = {}
         for f in self.curAP.evalFuncs:
-            basicFunc = self.adflowCostFunctions[f.lower()][1]
-            mapping = self.basicCostFunctions[basicFunc]
-            funcsDot[f] = tmp[0, mapping - 1]
+            fl = f.lower()
+            if fl in self.adflowCostFunctions:
+                groupName = self.adflowCostFunctions[fl][0]
+                basicFunc = self.adflowCostFunctions[fl][1]
+                mapping = self.basicCostFunctions[basicFunc]
+                # Get the group index:
+                ind = groupNames.index(groupName)
+                funcsDot[f] = tmp[mapping - 1, ind]
+            elif f in self.adflowUserCostFunctions:
+                # We must linearize the user-supplied function
+                sens = self.adflowUserCostFunctions.evalFunctionsSens()
+                funcsDot[f] = 0.0
+                for sf in self.adflowUserCostFunctions[f].functions:
+                    groupName = self.adflowCostFunctions[sf][0]
+                    basicFunc = self.adflowCostFunctions[sf][1]
+                    mapping = self.basicCostFunctions[basicFunc]
+                    # Get the group index:
+                    ind = groupNames.index(groupName)
+                    funcsDot[f] += sens[sf]*tmp[mapping -1, ind]
 
+                    
         # Assemble the returns
         returns = []
         if residualDeriv:
@@ -3201,50 +3232,35 @@ class ADFLOW(AeroSolver):
         # ---------------------
 
         if funcsBar is None:
-            funcsBar = numpy.zeros(self.adflow.constants.ncostfunction)
-            # ============== TEMPORARY ====================
+            funcsBar = {}
+
+        # Generate the list of families:
+        groupNames = []
+        tmp = []
+
+        for f in funcsBar:
+            fl = f.lower()
+            if fl in self.adflowCostFunctions:
+                groupName = self.adflowCostFunctions[fl][0]
+                basicFunc = self.adflowCostFunctions[fl][1]
+
+                if groupName in groupNames:
+                    ind = groupNames.index(groupName)
+                else:
+                    groupNames.append(groupName)
+                    tmp.append(numpy.zeros(self.adflow.constants.ncostfunction))
+                    ind = -1
+                mapping = self.basicCostFunctions[basicFunc]
+                tmp[ind][mapping-1] += funcsBar[f]
+
+        if len(tmp) == 0:
+            # No adflow-functions given. Just set zeros. Same as
+            # if funcsBar was None
+            funcsBar = numpy.zeros((self.adflow.constants.ncostfunction, 1))
             famLists = self._expandGroupNames([self.allWallsGroup])
-            # ==============================================
-
         else:
-            tmp = numpy.zeros(self.adflow.constants.ncostfunction)
-
-            # We have to make sure that the user has supplied
-            # functions that have the same group, otherwise, we can't
-            # do it
-            groups = set()
-
-            for f in funcsBar:
-                if f.lower() in self.adflowCostFunctions:
-
-                    groupName = self.adflowCostFunctions[f][0]
-                    basicFunc = self.adflowCostFunctions[f][1]
-                    groups.add(groupName)
-
-                    mapping = self.basicCostFunctions[basicFunc]
-                    tmp[mapping-1] = funcsBar[f]
-
-            if len(groups) == 1:
-                # We're ok..there was only one group from the
-                # functions..
-                famList = self._getFamilyList(list(groups)[0])
-            elif len(groups)==0:
-                # this is probably an aerostructural function
-                # take the self.allFamilies group
-                famList = self._getFamilyList(self.allFamilies)
-
-            elif len(groups) > 1:
-                raise Error("Attemping to compute a jacobian vector product "
-                            "with multiple functions that have different "
-                            "groups. This is not allowed.")
-
-            # ============== TEMPORARY ====================
-            famLists = self._expandGroupNames([groupName])
-            # ==============================================
-
-            # If there wasn't any actual funcsBar, then tmp is still
-            # just zeros
-            funcsBar = tmp
+            famLists = self._expandGroupNames(groupNames)
+            funcsBar = numpy.array(tmp).T
 
         # Determine if we can do a cheaper state-variable only
         # computation or if we need to include the spatial terms:

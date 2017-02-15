@@ -529,7 +529,7 @@ python module libadflow
                 integer(kind=inttype) dimension(:,:) :: bcdatafamlists
                 logical intent(in) :: bcvarsempty
                 real(kind=realtype) dimension(size(wdot)),intent(out),depend(wdot) :: dwdot
-                real(kind=realtype) dimension(size(famlists,1),costsize),intent(out),depend(famlists,costsize) :: funcsdot
+                real(kind=realtype) dimension(costsize, size(famlists,1)),intent(out),depend(famlists,costsize) :: funcsdot
                 real(kind=realtype) dimension(3,fsize,ntime),intent(out),depend(fsize,ntime) :: fdot
                 integer(kind=inttype) :: costsize
                 integer(kind=inttype) :: fsize
