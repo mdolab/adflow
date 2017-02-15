@@ -2,47 +2,165 @@ module userSurfaceIntegrations
 
   use constants
   use communication, only : commType, internalCommType
-
-  type userSurfCommType
-     ! Data required on each proc:
-
-     ! nDonor: The number of donor points the proc will provide
-     ! frac (3, nDonor) : The uvw coordinates of the interpolation point
-     ! donorInfo(4, nDonor) : Donor information. 1 is the local block ID and 2-4 is the 
-     !    starting i,j,k indices for the interpolation. 
-     ! procSizes(0:nProc-1) : The number of donors on each proc
-     ! procDisps(0:nProc) : Cumulative form of procSizes
-
-     ! inv(nConn) : Array allocated only on root processor used to
-     ! reorder the nodes or elements back to the original order. 
-
-     integer(kind=intType) :: nDonor
-     real(kind=realType), dimension(:,:), allocatable :: frac
-     integer(kind=intType), dimension(:, :), allocatable :: donorInfo
-     integer(kind=intTYpe), dimension(:), allocatable :: procSizes, procDisps
-     integer(kind=intTYpe), dimension(:), allocatable :: inv
-     logical, dimension(:), allocatable :: valid
-
-  end type userSurfCommType
-
-  type userIntSurf
-
-     character(len=maxStringLen) :: famName
-     integer(Kind=intType) :: famID
-     real(kind=realType), dimension(:, :), allocatable :: pts
-     integer(kind=intType), dimension(:, :), allocatable :: conn
-
-     ! Two separate commes: One for the nodes (based on the primal
-     ! mesh) and one for the variables (based on the dual mesh)
-     type(userSurfCommType) :: nodeComm, faceComm
-
-  end type userIntSurf
-
-  integer(kind=intType), parameter :: nUserIntSurfsMax=25
-  type(userIntSurf), dimension(nUserIntSurfsMax), target :: userIntSurfs
-  integer(kind=intTYpe) :: nUserIntSurfs=0
+  use userSurfaceIntegrationData
+  
 
 contains
+
+
+  subroutine integrateUserSurfaces(localValues, famList, sps)
+
+    use constants
+    use block, onlY : flowDoms, nDom
+    use flowVarRefState, only : pRef, rhoRef, pRef, timeRef, LRef, TRef
+    use communication, only : myid, adflow_comm_world
+    use utils, only : EChk, mynorm2
+    use flowUtils, only : computePtot, computeTtot
+    use sorting, only : bsearchIntegers
+    implicit none
+
+    ! Input Parameters
+    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
+    integer(kind=intType), dimension(:), intent(in) :: famList
+    integer(kind=intType), intent(in) :: sps
+
+    ! Working parameters
+    integer(kind=intType) :: iSurf, i, j, k, jj, ierr, nn, iDim
+    real(kind=realType), dimension(:), allocatable :: recvBuffer1, recvBuffer2
+    type(userIntSurf), pointer :: surf
+    real(kind=realType) :: mReDim, rho, vx, vy, vz, PP, massFLowRate, vn
+    real(Kind=realType) :: pTot, Ttot, mass_Ptot, mass_Ttot, mass_ps, massFlowRateLocal
+    real(kind=realType), dimension(3) :: v1, v2, x1, x2, x3, x4, n
+    logical :: valid
+    logical, dimension(:), allocatable :: ptValid
+    ! Set the pointers for the required communication variables: rho,
+    ! vx, vy, vz, P and the x-coordinates
+
+    domainLoop:do nn=1, nDom
+       flowDoms(nn, 1, sps)%realCommVars(1)%var => flowDoms(nn, 1, sps)%w(:, :, :, 1)
+       flowDoms(nn, 1, sps)%realCommVars(2)%var => flowDoms(nn, 1, sps)%w(:, :, :, 2)
+       flowDoms(nn, 1, sps)%realCommVars(3)%var => flowDoms(nn, 1, sps)%w(:, :, :, 3)
+       flowDoms(nn, 1, sps)%realCommVars(4)%var => flowDoms(nn, 1, sps)%w(:, :, :, 4)
+       flowDoms(nn, 1, sps)%realCommVars(5)%var => flowDoms(nn, 1, sps)%P(:, :, :)
+       flowDoms(nn, 1, sps)%realCommVars(6)%var => flowDoms(nn, 1, sps)%x(:, :, :, 1)
+       flowDoms(nn, 1, sps)%realCommVars(7)%var => flowDoms(nn, 1, sps)%x(:, :, :, 2)
+       flowDoms(nn, 1, sps)%realCommVars(8)%var => flowDoms(nn, 1, sps)%x(:, :, :, 3)
+    end do domainLoop
+
+    masterLoop: do iSurf=1, nUserIntSurfs
+
+       ! Pointer for easier reading
+       surf => userIntSurfs(iSurf)
+
+       ! Do we need to include this surface?
+       famInclude: if (bsearchIntegers(surf%famID, famList) > 0) then
+
+          ! Communicate the face values and the nodal values
+          if (myid == 0) then 
+             allocate(recvBuffer1(5*size(surf%conn, 2)))
+             allocate(recvBuffer2(3*size(surf%pts, 2)))
+          else
+             allocate(recvBuffer1(0))
+             allocate(recvBuffer2(0))
+          end if
+
+          call commUserIntegrationSurfaceVars(recvBuffer1, 1, 5, surf%faceComm)
+          call commUserIntegrationSurfaceVars(recvBuffer2, 6, 8, surf%nodeComm)
+
+          ! *Finally* we can do the actual integrations
+          if (myid == 0)  then 
+             allocate(ptValid(size(surf%pts, 2)))
+
+             ! Before we do the integration, update the pts array from
+             ! the values in recvBuffer2
+             do i=1, size(surf%pts, 2)
+                j = surf%nodeComm%inv(i)
+                surf%pts(:, j) = recvBuffer2(3*i-2:3*i)
+                ptValid(j) = surf%nodeComm%valid(i)
+             end do
+
+             !call integrateUserSurfFlow(surf, 
+
+
+             massFlowRate = zero
+             mass_Ptot = zero
+             mass_Ttot = zero
+             mass_Ps = zero
+
+             mReDim = sqrt(pRef*rhoRef)
+
+             elemLoop: do i=1, size(surf%conn, 2)
+
+                ! First check if this cell is valid to integrate. Both
+                ! the cell center *and* all nodes must be valid
+
+                ! j is now the element index into the original conn array. 
+                j = surf%faceComm%Inv(i)
+
+                valid = surf%faceComm%valid(i) .and. &
+                     ptValid(surf%conn(1, j)) .and. ptValid(surf%conn(2, j)) .and. &
+                     ptValid(surf%conn(3, j)) .and. ptValid(surf%conn(4, j))
+                if (valid) then 
+                   ! Extract out the interpolated quantities
+                   rho = recvBuffer1(5*i-4)
+                   vx  = recvBuffer1(5*i-3)
+                   vy  = recvBuffer1(5*i-2)
+                   vz  = recvBuffer1(5*i-1)
+                   PP  = recvBuffer1(5*i  )
+
+                   call computePtot(rho, vx, vy, vz, pp, Ptot)
+                   call computeTtot(rho, vx, vy, vz, pp, Ttot)
+
+                   ! Get the coordinates of the quad
+                   x1 = surf%pts(:, surf%conn(1, j))
+                   x2 = surf%pts(:, surf%conn(2, j))
+                   x3 = surf%pts(:, surf%conn(3, j))
+                   x4 = surf%pts(:, surf%conn(4, j))
+
+                   ! Diagonal vectors
+                   v1 = x3 - x1
+                   v2 = x4 - x2
+
+                   ! Take the cross product of the two diagaonal vectors.
+                   n(1) = half*(v1(2)*v2(3) - v1(3)*v2(2))
+                   n(2) = half*(v1(3)*v2(1) - v1(1)*v2(3))
+                   n(3) = half*(v1(1)*v2(2) - v1(2)*v2(1))
+
+                   ! Normal face velocity
+                   vn = vx*n(1) + vy*n(2) + vz*n(3)
+
+                   ! Finally the mass flow rate
+                   massFlowRateLocal = rho*vn*mReDim
+                   massFlowRate = massFlowRate + massFlowRateLocal
+                   mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
+                   mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
+                   mass_Ps = mass_Ps + pp*massFlowRateLocal*Pref
+                end if
+
+             end do elemLoop
+             deallocate(ptValid)
+          end if
+
+          ! Accumulate the final values
+          localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate
+          localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
+          localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
+          localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
+
+          deallocate(recvBuffer1, recvBuffer2)
+
+
+       end if famInclude
+    end do masterLoop
+
+  end subroutine integrateUserSurfaces
+
+  ! ----------------------------------------------------------------------
+  !                                                                      |
+  !                    No Tapenade Routine below this line               |
+  !                                                                      |
+  ! ----------------------------------------------------------------------
+#ifndef USE_TAPENADE
 
 
   subroutine addIntegrationSurface(pts, conn, famName, famID, nPts, nConn)
@@ -802,149 +920,170 @@ contains
 
   end subroutine commUserIntegrationSurfaceVars
 
-  subroutine integrateUserSurfaces(localValues, famList, sps)
+ subroutine commUserIntegrationSurfaceVars_d(recvBuffer, recvBufferd, varStart, varEnd, comm)
 
     use constants
     use block, onlY : flowDoms, nDom
-    use flowVarRefState, only : pRef, rhoRef, pRef, timeRef, LRef, TRef
     use communication, only : myid, adflow_comm_world
-    use utils, only : EChk, mynorm2
-    use flowUtils, only : computePtot, computeTtot
-    use sorting, only : bsearchIntegers
+    use utils, only : EChk
+    use oversetUtilities, only :fracToWeights
+
     implicit none
 
-    ! Input Parameters
-    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
-    integer(kind=intType), dimension(:), intent(in) :: famList
-    integer(kind=intType), intent(in) :: sps
+    ! Input/Output
+    real(kind=realType), dimension(:) :: recvBuffer, recvBufferd
+    integer(kind=intType), intent(in) :: varStart, varEnd
+    type(userSurfCommType) :: comm
 
-    ! Working parameters
-    integer(kind=intType) :: iSurf, i, j, k, jj, ierr, nn, iDim
-    real(kind=realType), dimension(:), allocatable :: recvBuffer1, recvBuffer2
-    type(userIntSurf), pointer :: surf
-    real(kind=realType) :: mReDim, rho, vx, vy, vz, PP, massFLowRate, vn
-    real(Kind=realType) :: pTot, Ttot, mass_Ptot, mass_Ttot, mass_ps, massFlowRateLocal
-    real(kind=realType), dimension(3) :: v1, v2, x1, x2, x3, x4, n
-    logical :: valid
-    logical, dimension(:), allocatable :: ptValid
-    ! Set the pointers for the required communication variables: rho,
-    ! vx, vy, vz, P and the x-coordinates
+    ! Working
+    real(kind=realType), dimension(:), allocatable :: sendBuffer, sendBufferd
+    integer(Kind=intType) :: d1, i1, j1, k1, jj, k, nvar, i, ierr
+    real(kind=realType), dimension(8) :: weight
 
-    domainLoop:do nn=1, nDom
-       flowDoms(nn, 1, sps)%realCommVars(1)%var => flowDoms(nn, 1, sps)%w(:, :, :, 1)
-       flowDoms(nn, 1, sps)%realCommVars(2)%var => flowDoms(nn, 1, sps)%w(:, :, :, 2)
-       flowDoms(nn, 1, sps)%realCommVars(3)%var => flowDoms(nn, 1, sps)%w(:, :, :, 3)
-       flowDoms(nn, 1, sps)%realCommVars(4)%var => flowDoms(nn, 1, sps)%w(:, :, :, 4)
-       flowDoms(nn, 1, sps)%realCommVars(5)%var => flowDoms(nn, 1, sps)%P(:, :, :)
-       flowDoms(nn, 1, sps)%realCommVars(6)%var => flowDoms(nn, 1, sps)%x(:, :, :, 1)
-       flowDoms(nn, 1, sps)%realCommVars(7)%var => flowDoms(nn, 1, sps)%x(:, :, :, 2)
-       flowDoms(nn, 1, sps)%realCommVars(8)%var => flowDoms(nn, 1, sps)%x(:, :, :, 3)
-    end do domainLoop
+    ! The number of variables we are transferring:
+    nVar = varEnd - varStart + 1
 
-    masterLoop: do iSurf=1, nUserIntSurfs
+    ! We assume that the pointers to the realCommVars have already been set. 
 
-       ! Pointer for easier reading
-       surf => userIntSurfs(iSurf)
+    allocate(sendBuffer(nVar*comm%nDonor), &
+         sendBufferd(nVar*comm%nDonor))
 
-       ! Do we need to include this surface?
-       famInclude: if (bsearchIntegers(surf%famID, famList) > 0) then
+    ! First generate the interpolated data necessary
+    jj = 0
+    donorLoop: do i=1, comm%nDonor
+       ! Convert the frac to weights
+       call fracToWeights(comm%frac(:, i), weight)
 
-          ! Communicate the face values and the nodal values
-          if (myid == 0) then 
-             allocate(recvBuffer1(5*size(surf%conn, 2)))
-             allocate(recvBuffer2(3*size(surf%pts, 2)))
-          else
-             allocate(recvBuffer1(0))
-             allocate(recvBuffer2(0))
+       ! Block and indices for easier reading. The +1 is due to the
+       ! pointer offset on realCommVars.
+
+       d1 = comm%donorInfo(1, i) ! Block Index
+       i1 = comm%donorInfo(2, i)+1 ! donor I index
+       j1 = comm%donorInfo(3, i)+1 ! donor J index
+       k1 = comm%donorInfo(4, i)+1 ! donor K index
+
+       ! We are interpolating nVar variables
+       do k=varStart, varEnd
+          jj = jj + 1
+          if (d1 > 0) then ! Is this pt valid?
+             sendBuffer(jj) = &
+                  weight(1)*flowDoms(d1,1,1)%realCommVars(k)%var(i1  ,j1  ,k1  ) + &
+                  weight(2)*flowDoms(d1,1,1)%realCommVars(k)%var(i1+1,j1  ,k1  ) + &
+                  weight(3)*flowDoms(d1,1,1)%realCommVars(k)%var(i1  ,j1+1,k1  ) + &
+                  weight(4)*flowDoms(d1,1,1)%realCommVars(k)%var(i1+1,j1+1,k1  ) + &
+                  weight(5)*flowDoms(d1,1,1)%realCommVars(k)%var(i1  ,j1  ,k1+1) + &
+                  weight(6)*flowDoms(d1,1,1)%realCommVars(k)%var(i1+1,j1  ,k1+1) + &
+                  weight(7)*flowDoms(d1,1,1)%realCommVars(k)%var(i1  ,j1+1,k1+1) + &
+                  weight(8)*flowDoms(d1,1,1)%realCommVars(k)%var(i1+1,j1+1,k1+1)
+             sendBufferd(jj) = &
+                  weight(1)*flowDoms(d1,1,1)%realCommVars(k+varEnd)%var(i1  ,j1  ,k1  ) + &
+                  weight(2)*flowDoms(d1,1,1)%realCommVars(k+varEnd)%var(i1+1,j1  ,k1  ) + &
+                  weight(3)*flowDoms(d1,1,1)%realCommVars(k+varEnd)%var(i1  ,j1+1,k1  ) + &
+                  weight(4)*flowDoms(d1,1,1)%realCommVars(k+varEnd)%var(i1+1,j1+1,k1  ) + &
+                  weight(5)*flowDoms(d1,1,1)%realCommVars(k+varEnd)%var(i1  ,j1  ,k1+1) + &
+                  weight(6)*flowDoms(d1,1,1)%realCommVars(k+varEnd)%var(i1+1,j1  ,k1+1) + &
+                  weight(7)*flowDoms(d1,1,1)%realCommVars(k+varEnd)%var(i1  ,j1+1,k1+1) + &
+                  weight(8)*flowDoms(d1,1,1)%realCommVars(k+varEnd)%var(i1+1,j1+1,k1+1)
           end if
+       end do
+    end do donorLoop
 
-          call commUserIntegrationSurfaceVars(recvBuffer1, 1, 5, surf%faceComm)
-          call commUserIntegrationSurfaceVars(recvBuffer2, 6, 8, surf%nodeComm)
+    ! Now we can do an mpi_gatherv to the root proc:
+    call mpi_gatherv(sendBuffer, nVar*comm%nDonor, adflow_real, recvBuffer, &
+         nVar*comm%procSizes, nVar*comm%procDisps, adflow_real, 0, adflow_comm_world, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
 
-          ! *Finally* we can do the actual integrations
-          if (myid == 0)  then 
-             allocate(ptValid(size(surf%pts, 2)))
+    call mpi_gatherv(sendBufferd, nVar*comm%nDonor, adflow_real, recvBufferd, &
+         nVar*comm%procSizes, nVar*comm%procDisps, adflow_real, 0, adflow_comm_world, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
 
-             ! Before we do the integration, update the pts array from
-             ! the values in recvBuffer2
-             do i=1, size(surf%pts, 2)
-                j = surf%nodeComm%inv(i)
-                surf%pts(:, j) = recvBuffer2(3*i-2:3*i)
-                ptValid(j) = surf%nodeComm%valid(i)
-             end do
+    deallocate(sendBuffer, sendBufferd)
 
-             massFlowRate = zero
-             mass_Ptot = zero
-             mass_Ttot = zero
-             mass_Ps = zero
+  end subroutine commUserIntegrationSurfaceVars_d
 
-             mReDim = sqrt(pRef*rhoRef)
+subroutine commUserIntegrationSurfaceVars_b(recvBuffer, recvBufferd, varStart, varEnd, comm)
 
-             elemLoop: do i=1, size(surf%conn, 2)
+    use constants
+    use block, onlY : flowDoms, nDom
+    use communication, only : myid, adflow_comm_world
+    use utils, only : EChk
+    use oversetUtilities, only :fracToWeights
 
-                ! First check if this cell is valid to integrate. Both
-                ! the cell center *and* all nodes must be valid
+    implicit none
 
-                ! j is now the element index into the original conn array. 
-                j = surf%faceComm%Inv(i)
+    ! Input/Output
+    real(kind=realType), dimension(:) :: recvBuffer, recvBufferd
+    integer(kind=intType), intent(in) :: varStart, varEnd
+    type(userSurfCommType) :: comm
 
-                valid = surf%faceComm%valid(i) .and. &
-                     ptValid(surf%conn(1, j)) .and. ptValid(surf%conn(2, j)) .and. &
-                     ptValid(surf%conn(3, j)) .and. ptValid(surf%conn(4, j))
-                if (valid) then 
-                   ! Extract out the interpolated quantities
-                   rho = recvBuffer1(5*i-4)
-                   vx  = recvBuffer1(5*i-3)
-                   vy  = recvBuffer1(5*i-2)
-                   vz  = recvBuffer1(5*i-1)
-                   PP  = recvBuffer1(5*i  )
+    ! Working
+    real(kind=realType), dimension(:), allocatable :: sendBuffer, sendBufferd
+    integer(Kind=intType) :: d1, i1, j1, k1, jj, k, nvar, i, ierr
+    real(kind=realType), dimension(8) :: weight
 
-                   call computePtot(rho, vx, vy, vz, pp, Ptot)
-                   call computeTtot(rho, vx, vy, vz, pp, Ttot)
+    ! The number of variables we are transferring:
+    nVar = varEnd - varStart + 1
 
-                   ! Get the coordinates of the quad
-                   x1 = surf%pts(:, surf%conn(1, j))
-                   x2 = surf%pts(:, surf%conn(2, j))
-                   x3 = surf%pts(:, surf%conn(3, j))
-                   x4 = surf%pts(:, surf%conn(4, j))
+    allocate(sendBufferd(nVar*comm%nDonor))
 
-                   ! Diagonal vectors
-                   v1 = x3 - x1
-                   v2 = x4 - x2
+    ! Adjoint of a gatherv is a scatterv. Flip the send/recv relative
+    ! to the forward call. 
+    call mpi_scatterv(recvBufferd, nVar*comm%procSizes, nVar*comm%procDisps, adflow_real, &
+         sendBufferd, nVar*comm%nDonor, adflow_real, 0, adflow_comm_world, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
 
-                   ! Take the cross product of the two diagaonal vectors.
-                   n(1) = half*(v1(2)*v2(3) - v1(3)*v2(2))
-                   n(2) = half*(v1(3)*v2(1) - v1(1)*v2(3))
-                   n(3) = half*(v1(1)*v2(2) - v1(2)*v2(1))
+    ! First generate the interpolated data necessary
+    jj = 0
+    donorLoop: do i=1, comm%nDonor
+       ! Convert the frac to weights
+       call fracToWeights(comm%frac(:, i), weight)
 
-                   ! Normal face velocity
-                   vn = vx*n(1) + vy*n(2) + vz*n(3)
+       ! Block and indices for easier reading. The +1 is due to the
+       ! pointer offset on realCommVars.
 
-                   ! Finally the mass flow rate
-                   massFlowRateLocal = rho*vn*mReDim
-                   massFlowRate = massFlowRate + massFlowRateLocal
-                   mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
-                   mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
-                   mass_Ps = mass_Ps + pp*massFlowRateLocal*Pref
-                end if
+       d1 = comm%donorInfo(1, i) ! Block Index
+       i1 = comm%donorInfo(2, i)+1 ! donor I index
+       j1 = comm%donorInfo(3, i)+1 ! donor J index
+       k1 = comm%donorInfo(4, i)+1 ! donor K index
 
-             end do elemLoop
-             deallocate(ptValid)
+       ! We are interpolating nVar variables
+       do k=varStart, varEnd
+          jj = jj + 1
+          if (d1 > 0) then ! Is this pt valid?
+
+             ! Accumulate back onto the derivative variables. 
+             flowDoms(d1,1,1)%realCommVars(k+nVar)%var(i1  , j1  , k1) = & 
+                  flowDoms(d1,1,1)%realCommVars(k+nVar)%var(i1  , j1  , k1) + weight(1)*sendBufferd(jj)
+
+             flowDoms(d1,1,1)%realCommVars(k+nVar)%var(i1+1, j1  , k1) = & 
+                  flowDoms(d1,1,1)%realCommVars(k+nVar)%var(i1+1, j1  , k1) + weight(2)*sendBufferd(jj)
+
+             flowDoms(d1,1,1)%realCommVars(k+nVar)%var(i1  , j1+1, k1) = & 
+                  flowDoms(d1,1,1)%realCommVars(k+nVar)%var(i1  , j1+1, k1) + weight(3)*sendBufferd(jj)
+
+             flowDoms(d1,1,1)%realCommVars(k+nVar)%var(i1+1, j1+1, k1) = & 
+                  flowDoms(d1,1,1)%realCommVars(k+nVar)%var(i1+1, j1+1, k1) + weight(4)*sendBufferd(jj)
+
+             flowDoms(d1,1,1)%realCommVars(k+nVar)%var(i1  , j1  , k1+1) = & 
+                  flowDoms(d1,1,1)%realCommVars(k+nVar)%var(i1  , j1  , k1+1) + weight(5)*sendBufferd(jj)
+
+             flowDoms(d1,1,1)%realCommVars(k+nVar)%var(i1+1, j1  , k1+1) = & 
+                  flowDoms(d1,1,1)%realCommVars(k+nVar)%var(i1+1, j1  , k1+1) + weight(6)*sendBufferd(jj)
+
+             flowDoms(d1,1,1)%realCommVars(k+nVar)%var(i1  , j1+1, k1+1) = & 
+                  flowDoms(d1,1,1)%realCommVars(k+nVar)%var(i1  , j1+1, k1+1) + weight(7)*sendBufferd(jj)
+
+             flowDoms(d1,1,1)%realCommVars(k+nVar)%var(i1+1, j1+1, k1+1) = & 
+                  flowDoms(d1,1,1)%realCommVars(k+nVar)%var(i1+1, j1+1, k1+1) + weight(8)*sendBufferd(jj)
           end if
+       end do
+    end do donorLoop
+   
+    deallocate(sendBuffer, sendBufferd)
 
-          ! Accumulate the final values
-          localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate
-          localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
-          localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
-          localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
-
-          deallocate(recvBuffer1, recvBuffer2)
+  end subroutine commUserIntegrationSurfaceVars_b
 
 
-       end if famInclude
-    end do masterLoop
-
-  end subroutine integrateUserSurfaces
 
   subroutine qsortInterpPtType(arr, nn)
 
@@ -1158,4 +1297,5 @@ contains
     endif
 
   end subroutine qsortInterpPtType
+#endif
 end module userSurfaceIntegrations
