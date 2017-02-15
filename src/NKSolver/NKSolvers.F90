@@ -522,8 +522,8 @@ contains
     rtolLast = rtol
 
     ! Set all tolerances for linear solver. 
-
-    ! The half requires some explaination: The linear residual is
+    
+    ! The 0.01 requires some explaination: The linear residual is
     ! roughly the same magnitude as the non-linear one. However, it
     ! very rare situations, it can happen that the non-linear residual
     ! is *just* above the convergence criteria, while the linear
@@ -532,7 +532,7 @@ contains
     ! convergnce check can't do anything either. By multiplying by
     ! 0.5, we make sure that the linear solver actually has to do
     ! *something* and not just kick out immediately.
-    atol = totalR0*L2Conv*half
+    atol = totalR0*L2Conv*0.01_realType
     maxIt = NK_subspace
 
     call KSPSetTolerances(NK_KSP, real(rtol), &
