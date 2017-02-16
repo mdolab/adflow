@@ -748,13 +748,13 @@ contains
              allocate(&
                   flowDomsd(nn, level, sps)%BCData(mm)%norm(iBeg:iStop,jBeg:jStop,3), &
                   flowDomsd(nn, level, sps)%BCData(mm)%rface(iBeg:iStop,jBeg:jStop), &
-                  flowDomsd(nn, level, sps)%BCData(mm)%Fp(inBeg:inStop, jnBeg:jnStop, 3),&
-                  flowDomsd(nn, level, sps)%BCData(mm)%Fv(inBeg:inStop, jnBeg:jnStop, 3),&
+                  flowDomsd(nn, level, sps)%BCData(mm)%Fp(inBeg+1:inStop, jnBeg+1:jnStop, 3),&
+                  flowDomsd(nn, level, sps)%BCData(mm)%Fv(inBeg+1:inStop, jnBeg+1:jnStop, 3),&
                   flowDomsd(nn, level, sps)%BCData(mm)%Tp(inBeg:inStop, jnBeg:jnStop, 3),&
                   flowDomsd(nn, level, sps)%BCData(mm)%Tv(inBeg:inStop, jnBeg:jnStop, 3),&
-                  flowDomsd(nn, level, sps)%BCData(mm)%F(iBeg:iStop, jBeg:jStop, 3),&
-                  flowDomsd(nn, level, sps)%BCData(mm)%T(iBeg:iStop, jBeg:jStop, 3),&
-                  flowDomsd(nn, level, sps)%BCData(mm)%area(iBeg:iStop, jBeg:jStop), &
+                  flowDomsd(nn, level, sps)%BCData(mm)%F(inBeg:inStop, jnBeg:jnStop, 3),&
+                  flowDomsd(nn, level, sps)%BCData(mm)%T(inBeg:inStop, jnBeg:jnStop, 3),&
+                  flowDomsd(nn, level, sps)%BCData(mm)%area(inBeg+1:inStop, jnBeg+1:jnStop), &
                   flowDomsd(nn, level, sps)%BCData(mm)%uSlip(iBeg:iStop,jBeg:jStop,3), &
                   flowDomsd(nn, level, sps)%BCData(mm)%TNS_Wall(iBeg:iStop,jBeg:jStop), & 
                   flowDomsd(nn, level, sps)%BCData(mm)%ptInlet(iBeg:iStop,jBeg:jStop), & 
