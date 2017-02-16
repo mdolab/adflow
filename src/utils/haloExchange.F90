@@ -3107,10 +3107,12 @@ contains
        domainLoop: do nn=1, nDom
           call setPointers(nn, 1, sps)
           bocoLoop: do mm=1, nBocos
-             if (BCType(mm) == SubsonicInflow .or. &
-                  BCType(mm) == SubsonicOutflow .or. &
-                  BCType(mm) == SupersonicInflow .or. &
-                  BCType(mm) == SupersonicOutflow) then 
+             if (((BCType(mm) == SubsonicInflow .or. & 
+                  BCType(mm) == SupersonicInflow) .and. (isInflow)) & 
+                  .or. & 
+                  (BCType(mm) == SubsonicOutflow .or. &
+                  BCType(mm) == SupersonicOutflow) .and. (.not. isInflow)) then 
+
                 call setBCPointers(mm, .True.)
                 iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
                 jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
@@ -3232,10 +3234,12 @@ contains
        domainLoop: do nn=1, nDom
           call setPointers_d(nn, 1, sps)
           bocoLoop: do mm=1, nBocos
-             if (BCType(mm) == SubsonicInflow .or. &
-                  BCType(mm) == SubsonicOutflow .or. &
-                  BCType(mm) == SupersonicInflow .or. &
-                  BCType(mm) == SupersonicOutflow) then 
+             if (((BCType(mm) == SubsonicInflow .or. & 
+                  BCType(mm) == SupersonicInflow) .and. isInflow) & 
+                  .or. & 
+                  (BCType(mm) == SubsonicOutflow .or. &
+                  BCType(mm) == SupersonicOutflow) .and. (.not. isInflow)) then 
+
                 call setBCPointers_d(mm, .True.)
                 iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
                 jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
@@ -3370,10 +3374,12 @@ contains
        domainLoop: do nn=1, nDom
           call setPointers_b(nn, 1, sps)
           bocoLoop: do mm=1, nBocos
-             if (BCType(mm) == SubsonicInflow .or. &
-                  BCType(mm) == SubsonicOutflow .or. &
-                  BCType(mm) == SupersonicInflow .or. &
-                  BCType(mm) == SupersonicOutflow) then 
+             if (((BCType(mm) == SubsonicInflow .or. & 
+                  BCType(mm) == SupersonicInflow) .and. isInflow) & 
+                  .or. & 
+                  (BCType(mm) == SubsonicOutflow .or. &
+                  BCType(mm) == SupersonicOutflow) .and. (.not. isInflow)) then 
+
                 call setBCPointers_d(mm, .True.)
                 iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
                 jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd

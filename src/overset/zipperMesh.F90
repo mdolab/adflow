@@ -827,7 +827,6 @@ contains
              deallocate(toFlip)
           end if famInclude
        end do bocoLoop
-       deallocate(forcedRecv)
     end do domainLoop
 
   contains

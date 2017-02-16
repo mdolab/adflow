@@ -407,7 +407,7 @@ subroutine surfaceCellCenterToNode(exch)
               do i=0,ni-2
                  ! Note: No +iBeg, and +jBeg becuase cellVal is a pointer
                  ! and always starts at one
-                 qv = fourth * BCData(mm)%cellVal(i+2, j+2)
+                 qv = fourth * BCData(mm)%cellVal(i+1, j+1)
                  ind(1) = ii + (j  )*ni + i + 1
                  ind(2) = ii + (j  )*ni + i + 2 
                  ind(3) = ii + (j+1)*ni + i + 2 
@@ -523,7 +523,7 @@ subroutine computeWeighting(exch)
                  ! Scatter a quarter of the face value to each node:
                  ! Note: No +iBeg, and +jBeg becuase cellVal is a pointer
                  ! and always starts at one
-                 qa = fourth*BCData(mm)%cellVal(i+2, j+2)
+                 qa = fourth*BCData(mm)%cellVal(i+1, j+1)
                  ind(1) = ii + (j  )*ni + i + 1
                  ind(2) = ii + (j  )*ni + i + 2 
                  ind(3) = ii + (j+1)*ni + i + 2 

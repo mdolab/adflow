@@ -36,8 +36,6 @@ contains
     real(kind=realType) ::  mReDim, pk, sigma_MN, sigma_Ptot
     real(kind=realType) :: internalFlowFact, inflowFact, xc, yc, zc, cellArea, mx, my, mz
 
-    real(kind=realType), dimension(:), pointer :: localPtr
-
     massFlowRate = zero
     mass_Ptot = zero
     mass_Ttot = zero

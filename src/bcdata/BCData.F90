@@ -2163,12 +2163,9 @@ contains
                         BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &                         
                         BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), & 
-                        
-                                ! These are cell based but guaranteed to have
-                                ! a halo. iBeg, ind, jBeg, jEnd may not have halo. 
-                        BCData(mm)%Fp(iNodeBeg:iNodeEnd+1, jNodeBeg:jNodeEnd+1, 3), &
-                        BCData(mm)%Fv(iNodeBeg:iNodeEnd+1, jNodeBeg:jNodeEnd+1, 3), &
-                        BCData(mm)%area(iNodeBeg:iNodeEnd+1, jNodeBeg:jNodeEnd+1), &
+                        BCData(mm)%Fp(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd, 3), &
+                        BCData(mm)%Fv(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd, 3), &
+                        BCData(mm)%area(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd), &
                         stat=ierr)
                    if(ierr /= 0)                      &
                         call terminate("allocMemBCData", &
@@ -2188,11 +2185,9 @@ contains
                         BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), & 
                         BCData(mm)%cellHeatFlux(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%nodeHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
-                                ! These are cell based but guaranteed to have
-                                ! a halo. iBeg, ind, jBeg, jEnd may not have halo. 
-                        BCData(mm)%Fp(iNodeBeg:iNodeEnd+1, jNodeBeg:jNodeEnd+1, 3), &
-                        BCData(mm)%Fv(iNodeBeg:iNodeEnd+1, jNodeBeg:jNodeEnd+1, 3), &
-                        BCData(mm)%area(iNodeBeg:iNodeEnd+1, jNodeBeg:jNodeEnd+1), &
+                        BCData(mm)%Fp(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd, 3), &
+                        BCData(mm)%Fv(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd, 3), &
+                        BCData(mm)%area(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd), &
                         
                         stat=ierr)
                    if(ierr /= 0)                      &
@@ -2210,11 +2205,9 @@ contains
                         BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &                         
                         BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), & 
-                                ! These are cell based but guaranteed to have
-                                ! a halo. iBeg, ind, jBeg, jEnd may not have halo. 
-                        BCData(mm)%Fp(iNodeBeg:iNodeEnd+1, jNodeBeg:jNodeEnd+1, 3), &
-                        BCData(mm)%Fv(iNodeBeg:iNodeEnd+1, jNodeBeg:jNodeEnd+1, 3), &
-                        BCData(mm)%area(iNodeBeg:iNodeEnd+1, jNodeBeg:jNodeEnd+1), &
+                        BCData(mm)%Fp(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd, 3), &
+                        BCData(mm)%Fv(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd, 3), &
+                        BCData(mm)%area(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd), &
                         stat=ierr)
                    if(ierr /= 0)                      &
                         call terminate("allocMemBCData", &
