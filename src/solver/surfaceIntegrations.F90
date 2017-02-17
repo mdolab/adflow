@@ -777,9 +777,8 @@ contains
           ! Integrate any zippers we have
           call integrateZippers(localVal(:, sps), famList, sps, .False., funcValues(:, iGroup))
           
-          ! Integrate any user-supplied planes as have as well. 
+          ! Integrate any user-supplied surfaces as have as well. 
           call integrateUserSurfaces(localVal(:, sps), famList, sps, .False., funcValues(:, iGroup))
-          
        end do
        
        ! Now we need to reduce all the cost functions
@@ -1001,6 +1000,7 @@ contains
     use utils, only : setPointers_d, EChk
     use surfaceIntegrations_d, only : getCostFunctions_d
     use zipperIntegrations, only :integrateZippers_d
+    use userSurfaceIntegrations, only : integrateUserSurfaces_d
     implicit none
 
     ! Input/Output Variables
@@ -1033,8 +1033,9 @@ contains
           call integrateZippers_d(localVal(:, sps), localVald(:, sps), famList, sps, .False., &
                funcValues(:, iGroup), funcValuesd(:, iGroup))
           
-          ! Integrate any user-supplied planes as have as well. 
-          !call integrateUserSurfaces(localVal(:, sps), famList, sps, .False., funcValues(:, iGroup)))
+          ! Integrate any user-supplied surface as have as well. 
+          call integrateUserSurfaces_d(localVal(:, sps), localVald(:, sps), famList, sps, .False., &
+               funcValues(:, iGroup), funcValuesd(:, iGroup))
           
        end do
        
@@ -1066,10 +1067,10 @@ contains
           ! Integrate any zippers we have
           call integrateZippers_d(localVal(:, sps), localVald(:, sps), famList, sps, .True., &
                funcValues(:, iGroup), funcValuesd(:, iGroup))
-          
-          ! Integrate any user-supplied planes as have as well. 
-          !call integrateUserSurfacesWithGathered(globalVal(:, sps), localVal(:, sps), famList, sps, .True., & 
-          ! funcValues)
+
+          ! Integrate any user-supplied surfaces as have as well. 
+          call integrateUserSurfaces_d(localVal(:, sps), localVald(:, sps), famList, sps, .True., & 
+               funcValues(:, iGroup), funcValuesd(:, iGroup))
        end do
        
        ! All reduce again. Technially just need the additionally

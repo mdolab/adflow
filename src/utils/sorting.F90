@@ -5,6 +5,7 @@ contains
 
   function famInList(famID, famList)
     use constants
+    implicit none
      integer(kind=intType), intent(in) :: famID, famList(:)
      logical :: famInList 
      famInLIst = .False.

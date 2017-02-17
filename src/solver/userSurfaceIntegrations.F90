@@ -51,8 +51,6 @@ contains
        flowDoms(nn, 1, sps)%realCommVars(iZippFlowX)%var => flowDoms(nn, 1, sps)%x(:, :, :, 1)
        flowDoms(nn, 1, sps)%realCommVars(iZippFlowY)%var => flowDoms(nn, 1, sps)%x(:, :, :, 2)
        flowDoms(nn, 1, sps)%realCommVars(iZippFlowZ)%var => flowDoms(nn, 1, sps)%x(:, :, :, 3)
-
-       flowDoms(nn, 1, sps)%intCommVars(1)%var => flowDoms(nn, 1, sps)%iBlank
     end do domainLoop
 
     masterLoop: do iSurf=1, nUserIntSurfs
@@ -91,13 +89,8 @@ contains
 
                 ! Flow Variables
                 j = surf%flowComm%inv(i)
+                vars(j, iRho:iZippFlowGamma) = recvBuffer1(6*(i-1) + iRho : 6*(i-1) + iZippFlowGamma)
 
-                vars(j, iRho) = recvBuffer1(6*(i-1) + iRho)
-                vars(j, iVx)  = recvBuffer1(6*(i-1) + iVx)
-                vars(j, iVy)  = recvBuffer1(6*(i-1) + iVy)
-                vars(j, iVz)  = recvBuffer1(6*(i-1) + iVz)
-                vars(j, iZippFlowP)  = recvBuffer1(6*(i-1) + iZippFlowP)
-                vars(j, iZippFlowGamma)  = recvBuffer1(6*(i-1) + iZippFlowGamma)
                 ! Sface is not implemented. To correctly do this,
                 ! interpolate the three components of 's', do the dot
                 ! product with the local normal to get the sFace value. 
@@ -123,14 +116,142 @@ contains
        end if famInclude
     end do masterLoop
   end subroutine integrateUserSurfaces
+#ifndef USE_COMPLEX
+  subroutine integrateUserSurfaces_d(localValues, localValuesd, famList, sps, withGathered, &
+       funcValues, funcValuesd)
 
-  ! ----------------------------------------------------------------------
-  !                                                                      |
-  !                    No Tapenade Routine below this line               |
-  !                                                                      |
-  ! ----------------------------------------------------------------------
-#ifndef USE_TAPENADE
+    use constants
+    use block, onlY : flowDoms, flowDomsd, nDom
+    use flowVarRefState, only : pRef, rhoRef, pRef, timeRef, LRef, TRef
+    use communication, only : myid, adflow_comm_world
+    use utils, only : EChk, mynorm2
+    use flowUtils, only : computePtot, computeTtot
+    use sorting, only : famInList
+    use zipperIntegrations_d, only : flowIntegrationZipper_d
+    use utils, only : terminate
+    implicit none
 
+    ! Input Parameters
+    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
+    integer(kind=intType), dimension(:), intent(in) :: famList
+    integer(kind=intType), intent(in) :: sps
+    logical, intent(in) :: withGathered
+    real(kind=realType), intent(in), dimension(:) :: funcValues, funcValuesd
+
+    ! Working parameters
+    integer(kind=intType) :: iSurf, i, j, k, jj, ierr, nn, iDim, nPts
+    real(kind=realType), dimension(:), allocatable :: recvBuffer1, recvBuffer2
+    real(kind=realType), dimension(:), allocatable :: recvBuffer1d, recvBuffer2d
+    real(kind=realType), dimension(:, :), allocatable :: vars, varsd 
+    integer(kind=intType), dimension(:), allocatable :: fams
+    logical, dimension(:), allocatable :: ptValid
+    type(userIntSurf), pointer :: surf
+
+    ! Set the pointers for the required communication variables
+    domainLoop:do nn=1, nDom
+       if (flowDoms(nn, 1, sps)%addGridVelocities) then 
+          call terminate("userSurfaceIntegrations", "Cannot use user-supplied surface integrations"& 
+               &"on with moving grids")
+       end if
+       
+       flowDoms(nn, 1, sps)%realCommVars(iRho)%var => flowDoms(nn, 1, sps)%w(:, :, :, iRho)
+       flowDoms(nn, 1, sps)%realCommVars(iVx)%var => flowDoms(nn, 1, sps)%w(:, :, :, iVx)
+       flowDoms(nn, 1, sps)%realCommVars(iVy)%var => flowDoms(nn, 1, sps)%w(:, :, :, iVy)
+       flowDoms(nn, 1, sps)%realCommVars(iVz)%var => flowDoms(nn, 1, sps)%w(:, :, :, iVz)
+       flowDoms(nn, 1, sps)%realCommVars(iZippFlowP)%var => flowDoms(nn, 1, sps)%P(:, :, :)
+       flowDoms(nn, 1, sps)%realCommVars(iZippFlowGamma)%var => flowDoms(nn, 1, sps)%gamma(:, :, :)
+       ! flowDoms(nn, 1, sps)%realCommVars(iZippFlowSface)%var => Not Implemented
+    
+       flowDoms(nn, 1, sps)%realCommVars(iZippFlowX)%var => flowDoms(nn, 1, sps)%x(:, :, :, 1)
+       flowDoms(nn, 1, sps)%realCommVars(iZippFlowY)%var => flowDoms(nn, 1, sps)%x(:, :, :, 2)
+       flowDoms(nn, 1, sps)%realCommVars(iZippFlowZ)%var => flowDoms(nn, 1, sps)%x(:, :, :, 3)
+
+       flowDoms(nn, 1, sps)%realCommVars(iRho+nZippFlowComm)%var => flowDomsd(nn, 1, sps)%w(:, :, :, iRho)
+       flowDoms(nn, 1, sps)%realCommVars(iVx+nZippFlowComm)%var => flowDomsd(nn, 1, sps)%w(:, :, :, iVx)
+       flowDoms(nn, 1, sps)%realCommVars(iVy+nZippFlowComm)%var => flowDomsd(nn, 1, sps)%w(:, :, :, iVy)
+       flowDoms(nn, 1, sps)%realCommVars(iVz+nZippFlowComm)%var => flowDomsd(nn, 1, sps)%w(:, :, :, iVz)
+       flowDoms(nn, 1, sps)%realCommVars(iZippFlowP+nZippFlowComm)%var => flowDomsd(nn, 1, sps)%P(:, :, :)
+       flowDoms(nn, 1, sps)%realCommVars(iZippFlowGamma+nZippFlowComm)%var => flowDomsd(nn, 1, sps)%gamma(:, :, :)
+       ! flowDoms(nn, 1, sps)%realCommVars(iZippFlowSface+nZippFlowComm)%var => Not Implemented
+    
+       flowDoms(nn, 1, sps)%realCommVars(iZippFlowX+nZippFlowComm)%var => flowDomsd(nn, 1, sps)%x(:, :, :, 1)
+       flowDoms(nn, 1, sps)%realCommVars(iZippFlowY+nZippFlowComm)%var => flowDomsd(nn, 1, sps)%x(:, :, :, 2)
+       flowDoms(nn, 1, sps)%realCommVars(iZippFlowZ+nZippFlowComm)%var => flowDomsd(nn, 1, sps)%x(:, :, :, 3)
+
+    end do domainLoop
+
+    masterLoop: do iSurf=1, nUserIntSurfs
+
+       ! Pointer for easier reading
+       surf => userIntSurfs(iSurf)
+
+       ! We will make a short-cut here: By definition user supplied
+       ! surfaces have a fixed family, we won't do anything if we
+       ! are not told to deal with this surface. 
+
+       famInclude: if (famInList(surf%famID, famList)) then 
+          nPts = size(surf%pts, 2)
+             
+          ! Communicate the face values and the nodal values
+          if (myid == 0) then 
+             allocate(recvBuffer1(6*nPts), recvBuffer2(3*nPts))
+             allocate(recvBuffer1d(6*nPts), recvBuffer2d(3*nPts))
+          else
+             allocate(recvBuffer1(0), recvBuffer2(0))
+          end if
+
+          call commUserIntegrationSurfaceVars_d(recvBuffer1, recvBuffer1d, iRho, iZippFlowGamma, surf%flowComm)
+          call commUserIntegrationSurfaceVars_d(recvBuffer2, recvBuffer2d, iZippFlowX, iZippFlowZ, surf%nodeComm)
+
+          ! *Finally* we can do the actual integrations
+          if (myid == 0)  then 
+
+             ! Allocate some temporary data needed to supply to the
+             ! zipper integration routine. 
+             allocate(ptValid(npts), vars(npts, nZippFlowComm), &
+                  varsd(npts, nZippFlowComm), fams(size(surf%conn, 2)))
+
+             ! Prepare for the "zipper" integration call. We have to
+             ! re-order the data according to the "inv" array in each
+             ! of the two comms. 
+             do i=1, nPts
+
+                ! Flow Variables
+                j = surf%flowComm%inv(i)
+
+                vars(j, iRho:iZippFlowGamma) = recvBuffer1(6*(i-1) + iRho : 6*(i-1) + iZippFlowGamma)
+                varsd(j, iRho:iZippFlowGamma) = recvBuffer1d(6*(i-1) + iRho : 6*(i-1) + iZippFlowGamma)
+
+                ! Sface is not implemented. To correctly do this,
+                ! interpolate the three components of 's', do the dot
+                ! product with the local normal to get the sFace value. 
+                vars(j, iZippFlowSface)  = zero
+                varsd(j, iZippFlowSface)  = zero
+
+                ! Node Comm Values
+                j = surf%nodeComm%inv(i)
+                vars(j, iZippFlowX:iZippFlowZ) = recvBuffer2(3*i-2:3*i)
+                varsd(j, iZippFlowX:iZippFlowZ) = recvBuffer2d(3*i-2:3*i)
+                      
+                ! The additional pt-valid array
+                ptValid(j) = surf%nodeComm%valid(i)
+             end do
+             
+             ! The family array is all the same value:
+             fams = surf%famID
+
+             ! Perform the actual integration
+             call flowIntegrationZipper_d(.True., surf%conn, fams, vars, varsd, localValues, localValuesd, & 
+                  famList, sps, withGathered, funcValues, funcValuesd, surf%nodeComm%Valid)
+             deallocate(ptValid, vars, varsd, fams)
+          end if
+          deallocate(recvBuffer1, recvBuffer2, recvBuffer1d, recvBuffer2d)
+       end if famInclude
+    end do masterLoop
+  end subroutine integrateUserSurfaces_d
+
+
+#endif 
 
   subroutine addIntegrationSurface(pts, conn, famName, famID, nPts, nConn)
     ! Add a user-supplied integration surface. 
@@ -1300,5 +1421,5 @@ subroutine commUserIntegrationSurfaceVars_b(recvBuffer, recvBufferd, varStart, v
     endif
 
   end subroutine qsortInterpPtType
-#endif
+
 end module userSurfaceIntegrations
