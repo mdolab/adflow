@@ -15,7 +15,7 @@ contains
 !                vars:incr localvalues:in-out
   subroutine flowintegrationzipper_b(isinflow, conn, fams, vars, varsd, &
 &   localvalues, localvaluesd, famlist, sps, withgathered, funcvalues, &
-&   funcvaluesd)
+&   funcvaluesd, ptvalid)
 ! integrate over the trianges for the inflow/outflow conditions. 
     use constants
     use blockpointers, only : bctype
@@ -45,6 +45,7 @@ contains
     real(kind=realtype), dimension(:), optional, intent(in) :: &
 &   funcvalues
     real(kind=realtype), dimension(:), optional :: funcvaluesd
+    logical(kind=inttype), dimension(:), optional, intent(in) :: ptvalid
 ! working variables
     integer(kind=inttype) :: i, j
     real(kind=realtype) :: sf, vmag, vnm, vxm, vym, vzm, fx, fy, fz
@@ -64,11 +65,13 @@ contains
 &   mass_psd, mass_mnd
     real(kind=realtype) :: mredim, pk, sigma_mn, sigma_ptot
     real(kind=realtype) :: mredimd, pkd, sigma_mnd, sigma_ptotd
-    real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, &
-&   cellarea, mx, my, mz
+    real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, mx&
+&   , my, mz
     real(kind=realtype) :: xcd, ycd, zcd, mxd, myd, mzd
+    logical :: triisvalid
     intrinsic sqrt
     intrinsic size
+    intrinsic present
     real(kind=realtype), dimension(3) :: arg1
     real(kind=realtype), dimension(3) :: arg1d
     real(kind=realtype), dimension(3) :: arg2
@@ -136,253 +139,264 @@ contains
     normd = 0.0_8
     ptotd = 0.0_8
     refpointd = 0.0_8
-    gammamd = 0.0_8
     ttotd = 0.0_8
     do i=1,size(conn, 2)
       res = faminlist(fams(i), famlist)
       if (res) then
-! compute the averaged values for this trianlge
-        vxm = zero
-        vym = zero
-        vzm = zero
-        rhom = zero
-        pm = zero
-        sf = zero
-        do j=1,3
-          rhom = rhom + vars(conn(j, i), irho)
-          vxm = vxm + vars(conn(j, i), ivx)
-          vym = vym + vars(conn(j, i), ivy)
-          vzm = vzm + vars(conn(j, i), ivz)
-          pm = pm + vars(conn(j, i), irhoe)
-          gammam = gammam + vars(conn(j, i), izippflowgamma)
-          sf = sf + vars(conn(j, i), izippflowsface)
-        end do
-! divide by 3 due to the summation above:
-        rhom = third*rhom
-        vxm = third*vxm
-        vym = third*vym
-        vzm = third*vzm
-        pm = third*pm
-        gammam = third*gammam
-        sf = third*sf
-! get the nodes of triangle.
-        x1 = vars(conn(1, i), izippflowx:izippflowz)
-        x2 = vars(conn(2, i), izippflowx:izippflowz)
-        x3 = vars(conn(3, i), izippflowx:izippflowz)
-        arg1(:) = x2 - x1
-        arg2(:) = x3 - x1
-        call cross_prod(arg1(:), arg2(:), norm)
-        ss = half*norm
-        call computeptot(rhom, vxm, vym, vzm, pm, ptot)
-        call computettot(rhom, vxm, vym, vzm, pm, ttot)
-        vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3) - sf
-        vmag = sqrt(vxm**2 + vym**2 + vzm**2) - sf
-! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
-        mnm = vmag/sqrt(gammam*pm/rhom)
-        massflowratelocal = rhom*vnm*mredim
-        if (withgathered) then
-          tempd2 = massflowratelocal*2*(ptot-funcvalues(costfuncmavgptot&
-&           ))*sigma_ptotd
-          massflowratelocald = (mnm-funcvalues(costfuncmavgmn))**2*&
-&           sigma_mnd + (ptot-funcvalues(costfuncmavgptot))**2*&
-&           sigma_ptotd
-          ptotd = ptotd + tempd2
-          funcvaluesd(costfuncmavgptot) = funcvaluesd(costfuncmavgptot) &
-&           - tempd2
-          tempd3 = massflowratelocal*2*(mnm-funcvalues(costfuncmavgmn))*&
-&           sigma_mnd
-          mnmd = tempd3
-          funcvaluesd(costfuncmavgmn) = funcvaluesd(costfuncmavgmn) - &
-&           tempd3
-          vnmd = 0.0_8
-          vxmd = 0.0_8
-          vymd = 0.0_8
-          rhomd = 0.0_8
-          ssd = 0.0_8
-          pmd = 0.0_8
-          vzmd = 0.0_8
-          vmagd = 0.0_8
-        else
-          call pushreal8(pm)
-          pm = pm*pref
-! compute the average cell center. 
-          xc = zero
-          yc = zero
-          zc = zero
+! if the ptvalid list is given, check if we should integrate
+! this triangle.
+        triisvalid = .true.
+        if (present(ptvalid)) then
+! check if each of the three nodes are valid
+          if (((ptvalid(conn(1, i)) .eqv. .false.) .or. (ptvalid(conn(2&
+&             , i)) .eqv. .false.)) .or. (ptvalid(conn(3, i)) .eqv. &
+&             .false.)) triisvalid = .false.
+        end if
+        if (triisvalid) then
+! compute the averaged values for this triangle
+          vxm = zero
+          vym = zero
+          vzm = zero
+          rhom = zero
+          pm = zero
+          gammam = zero
+          sf = zero
           do j=1,3
-            xc = xc + vars(conn(1, i), izippflowx)
-            yc = yc + vars(conn(2, i), izippflowy)
-            zc = zc + vars(conn(3, i), izippflowz)
+            rhom = rhom + vars(conn(j, i), irho)
+            vxm = vxm + vars(conn(j, i), ivx)
+            vym = vym + vars(conn(j, i), ivy)
+            vzm = vzm + vars(conn(j, i), ivz)
+            pm = pm + vars(conn(j, i), irhoe)
+            gammam = gammam + vars(conn(j, i), izippflowgamma)
+            sf = sf + vars(conn(j, i), izippflowsface)
           end do
+! divide by 3 due to the summation above:
+          rhom = third*rhom
+          vxm = third*vxm
+          vym = third*vym
+          vzm = third*vzm
+          pm = third*pm
+          gammam = third*gammam
+          sf = third*sf
+! get the nodes of triangle.
+          x1 = vars(conn(1, i), izippflowx:izippflowz)
+          x2 = vars(conn(2, i), izippflowx:izippflowz)
+          x3 = vars(conn(3, i), izippflowx:izippflowz)
+          arg1(:) = x2 - x1
+          arg2(:) = x3 - x1
+          call cross_prod(arg1(:), arg2(:), norm)
+          ss = half*norm
+          call computeptot(rhom, vxm, vym, vzm, pm, ptot)
+          call computettot(rhom, vxm, vym, vzm, pm, ttot)
+          vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3) - sf
+          vmag = sqrt(vxm**2 + vym**2 + vzm**2) - sf
+! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
+          mnm = vmag/sqrt(gammam*pm/rhom)
+          massflowratelocal = rhom*vnm*mredim
+          if (withgathered) then
+            tempd2 = massflowratelocal*2*(ptot-funcvalues(&
+&             costfuncmavgptot))*sigma_ptotd
+            massflowratelocald = (mnm-funcvalues(costfuncmavgmn))**2*&
+&             sigma_mnd + (ptot-funcvalues(costfuncmavgptot))**2*&
+&             sigma_ptotd
+            ptotd = ptotd + tempd2
+            funcvaluesd(costfuncmavgptot) = funcvaluesd(costfuncmavgptot&
+&             ) - tempd2
+            tempd3 = massflowratelocal*2*(mnm-funcvalues(costfuncmavgmn)&
+&             )*sigma_mnd
+            mnmd = tempd3
+            funcvaluesd(costfuncmavgmn) = funcvaluesd(costfuncmavgmn) - &
+&             tempd3
+            vnmd = 0.0_8
+            vxmd = 0.0_8
+            vymd = 0.0_8
+            rhomd = 0.0_8
+            ssd = 0.0_8
+            pmd = 0.0_8
+            vzmd = 0.0_8
+            vmagd = 0.0_8
+          else
+            call pushreal8(pm)
+            pm = pm*pref
+! compute the average cell center. 
+            xc = zero
+            yc = zero
+            zc = zero
+            do j=1,3
+              xc = xc + vars(conn(1, i), izippflowx)
+              yc = yc + vars(conn(2, i), izippflowy)
+              zc = zc + vars(conn(3, i), izippflowz)
+            end do
 ! finish average for cell center
-          xc = third*xc
-          yc = third*yc
-          zc = third*zc
-          xc = xc - refpoint(1)
-          yc = yc - refpoint(2)
-          zc = zc - refpoint(3)
-          call pushreal8(pm)
-          pm = -(pm-pinf*pref)
+            xc = third*xc
+            yc = third*yc
+            zc = third*zc
+            xc = xc - refpoint(1)
+            yc = yc - refpoint(2)
+            zc = zc - refpoint(3)
+            call pushreal8(pm)
+            pm = -(pm-pinf*pref)
 ! update the pressure force and moment coefficients.
 ! momentum forces
 ! get unit normal vector. 
-          result1 = mynorm2(ss)
-          call pushreal8array(ss, 3)
-          ss = ss/result1
-          call pushreal8(massflowratelocal)
-          massflowratelocal = massflowratelocal/timeref*internalflowfact&
-&           *inflowfact
-          fx = massflowratelocal*ss(1)*vxm/timeref
-          fy = massflowratelocal*ss(2)*vym/timeref
-          fz = massflowratelocal*ss(3)*vzm/timeref
-          temp2 = ss(1)/timeref
-          temp3 = ss(2)/timeref
-          mzd = mmomd(3)
-          myd = mmomd(2)
-          mxd = mmomd(1)
-          xcd = fy*mzd - fz*myd
-          fyd = xc*mzd - fmomd(2) - zc*mxd
-          ycd = fz*mxd - fx*mzd
-          fxd = zc*myd - fmomd(1) - yc*mzd
-          zcd = fx*myd - fy*mxd
-          fzd = yc*mxd - fmomd(3) - xc*myd
-          ssd = 0.0_8
-          tempd6 = massflowratelocal*vzm*fzd/timeref
-          temp4 = ss(3)/timeref
-          ssd(3) = ssd(3) + tempd6
-          massflowratelocald = temp3*vym*fyd + temp2*vxm*fxd + temp4*vzm&
-&           *fzd
-          vzmd = temp4*massflowratelocal*fzd
-          tempd7 = massflowratelocal*vym*fyd/timeref
-          ssd(2) = ssd(2) + tempd7
-          vymd = temp3*massflowratelocal*fyd
-          tempd9 = massflowratelocal*vxm*fxd/timeref
-          ssd(1) = ssd(1) + tempd9
-          vxmd = temp2*massflowratelocal*fxd
-          call popreal8(massflowratelocal)
-          tempd8 = internalflowfact*inflowfact*massflowratelocald/&
-&           timeref
-          timerefd = timerefd - temp3*tempd7 - massflowratelocal*tempd8/&
-&           timeref - temp2*tempd9 - temp4*tempd6
-          massflowratelocald = tempd8
-          call popreal8array(ss, 3)
-          result1d = sum(-(ss*ssd/result1))/result1
-          ssd = ssd/result1
-          call mynorm2_b(ss, ssd, result1d)
-          mzd = mpd(3)
-          myd = mpd(2)
-          mxd = mpd(1)
-          fx = pm*ss(1)
-          fy = pm*ss(2)
-          fyd = fpd(2) - zc*mxd + xc*mzd
-          fxd = zc*myd + fpd(1) - yc*mzd
-          fz = pm*ss(3)
-          xcd = xcd + fy*mzd - fz*myd
-          ycd = ycd + fz*mxd - fx*mzd
-          zcd = zcd + fx*myd - fy*mxd
-          fzd = yc*mxd + fpd(3) - xc*myd
-          pmd = ss(2)*fyd + ss(1)*fxd + ss(3)*fzd
-          ssd(3) = ssd(3) + pm*fzd
-          ssd(2) = ssd(2) + pm*fyd
-          ssd(1) = ssd(1) + pm*fxd
-          call popreal8(pm)
-          prefd = prefd + pinf*pmd
-          pmd = -pmd
-          refpointd(3) = refpointd(3) - zcd
-          refpointd(2) = refpointd(2) - ycd
-          refpointd(1) = refpointd(1) - xcd
-          zcd = third*zcd
-          ycd = third*ycd
-          xcd = third*xcd
+            result1 = mynorm2(ss)
+            call pushreal8array(ss, 3)
+            ss = ss/result1
+            call pushreal8(massflowratelocal)
+            massflowratelocal = massflowratelocal/timeref*&
+&             internalflowfact*inflowfact
+            fx = massflowratelocal*ss(1)*vxm/timeref
+            fy = massflowratelocal*ss(2)*vym/timeref
+            fz = massflowratelocal*ss(3)*vzm/timeref
+            temp2 = ss(1)/timeref
+            temp3 = ss(2)/timeref
+            mzd = mmomd(3)
+            myd = mmomd(2)
+            mxd = mmomd(1)
+            xcd = fy*mzd - fz*myd
+            fyd = xc*mzd - fmomd(2) - zc*mxd
+            ycd = fz*mxd - fx*mzd
+            fxd = zc*myd - fmomd(1) - yc*mzd
+            zcd = fx*myd - fy*mxd
+            fzd = yc*mxd - fmomd(3) - xc*myd
+            ssd = 0.0_8
+            tempd6 = massflowratelocal*vzm*fzd/timeref
+            temp4 = ss(3)/timeref
+            ssd(3) = ssd(3) + tempd6
+            massflowratelocald = temp3*vym*fyd + temp2*vxm*fxd + temp4*&
+&             vzm*fzd
+            vzmd = temp4*massflowratelocal*fzd
+            tempd7 = massflowratelocal*vym*fyd/timeref
+            ssd(2) = ssd(2) + tempd7
+            vymd = temp3*massflowratelocal*fyd
+            tempd9 = massflowratelocal*vxm*fxd/timeref
+            ssd(1) = ssd(1) + tempd9
+            vxmd = temp2*massflowratelocal*fxd
+            call popreal8(massflowratelocal)
+            tempd8 = internalflowfact*inflowfact*massflowratelocald/&
+&             timeref
+            timerefd = timerefd - temp3*tempd7 - massflowratelocal*&
+&             tempd8/timeref - temp2*tempd9 - temp4*tempd6
+            massflowratelocald = tempd8
+            call popreal8array(ss, 3)
+            result1d = sum(-(ss*ssd/result1))/result1
+            ssd = ssd/result1
+            call mynorm2_b(ss, ssd, result1d)
+            mzd = mpd(3)
+            myd = mpd(2)
+            mxd = mpd(1)
+            fx = pm*ss(1)
+            fy = pm*ss(2)
+            fyd = fpd(2) - zc*mxd + xc*mzd
+            fxd = zc*myd + fpd(1) - yc*mzd
+            fz = pm*ss(3)
+            xcd = xcd + fy*mzd - fz*myd
+            ycd = ycd + fz*mxd - fx*mzd
+            zcd = zcd + fx*myd - fy*mxd
+            fzd = yc*mxd + fpd(3) - xc*myd
+            pmd = ss(2)*fyd + ss(1)*fxd + ss(3)*fzd
+            ssd(3) = ssd(3) + pm*fzd
+            ssd(2) = ssd(2) + pm*fyd
+            ssd(1) = ssd(1) + pm*fxd
+            call popreal8(pm)
+            prefd = prefd + pinf*pmd
+            pmd = -pmd
+            refpointd(3) = refpointd(3) - zcd
+            refpointd(2) = refpointd(2) - ycd
+            refpointd(1) = refpointd(1) - xcd
+            zcd = third*zcd
+            ycd = third*ycd
+            xcd = third*xcd
+            do j=3,1,-1
+              varsd(conn(3, i), izippflowz) = varsd(conn(3, i), &
+&               izippflowz) + zcd
+              varsd(conn(2, i), izippflowy) = varsd(conn(2, i), &
+&               izippflowy) + ycd
+              varsd(conn(1, i), izippflowx) = varsd(conn(1, i), &
+&               izippflowx) + xcd
+            end do
+            mnmd = massflowratelocal*mass_mnd
+            massflowratelocald = massflowratelocald + pm*mass_psd + pref&
+&             *ptot*mass_ptotd + massflowrated + tref*ttot*mass_ttotd + &
+&             mnm*mass_mnd
+            pmd = pmd + massflowratelocal*mass_psd
+            ttotd = ttotd + tref*massflowratelocal*mass_ttotd
+            trefd = trefd + ttot*massflowratelocal*mass_ttotd
+            ptotd = ptotd + pref*massflowratelocal*mass_ptotd
+            call popreal8(pm)
+            temp1 = vmag**2 - uinf**2
+            tempd5 = uref*vnm*pref*pkd
+            tempd4 = uref*(pm-pinf+half*(rhom*temp1))*pkd
+            prefd = prefd + pm*pmd + vnm*tempd4 + ptot*massflowratelocal&
+&             *mass_ptotd
+            pmd = tempd5 + pref*pmd
+            rhomd = half*temp1*tempd5
+            vmagd = rhom*half*2*vmag*tempd5
+            vnmd = pref*tempd4
+          end if
+          temp = gammam*pm/rhom
+          temp0 = sqrt(temp)
+          if (temp .eq. 0.0_8) then
+            tempd0 = 0.0
+          else
+            tempd0 = -(vmag*mnmd/(2.0*temp0**3*rhom))
+          end if
+          rhomd = rhomd + mredim*vnm*massflowratelocald - temp*tempd0
+          vnmd = vnmd + mredim*rhom*massflowratelocald
+          mredimd = mredimd + rhom*vnm*massflowratelocald
+          vmagd = vmagd + mnmd/temp0
+          gammamd = pm*tempd0
+          pmd = pmd + gammam*tempd0
+          if (vxm**2 + vym**2 + vzm**2 .eq. 0.0_8) then
+            tempd1 = 0.0
+          else
+            tempd1 = vmagd/(2.0*sqrt(vxm**2+vym**2+vzm**2))
+          end if
+          vxmd = vxmd + ss(1)*vnmd + 2*vxm*tempd1
+          vymd = vymd + ss(2)*vnmd + 2*vym*tempd1
+          vzmd = vzmd + ss(3)*vnmd + 2*vzm*tempd1
+          sfd = -vnmd - vmagd
+          ssd(1) = ssd(1) + vxm*vnmd
+          ssd(2) = ssd(2) + vym*vnmd
+          ssd(3) = ssd(3) + vzm*vnmd
+          call computettot_b(rhom, rhomd, vxm, vxmd, vym, vymd, vzm, &
+&                      vzmd, pm, pmd, ttot, ttotd)
+          call computeptot_b(rhom, rhomd, vxm, vxmd, vym, vymd, vzm, &
+&                      vzmd, pm, pmd, ptot, ptotd)
+          normd = normd + half*ssd
+          call cross_prod_b(arg1(:), arg1d(:), arg2(:), arg2d(:), norm, &
+&                     normd)
+          x1d = 0.0_8
+          x3d = 0.0_8
+          x3d = arg2d(:)
+          x1d = -arg1d(:) - arg2d(:)
+          x2d = 0.0_8
+          x2d = arg1d(:)
+          varsd(conn(3, i), izippflowx:izippflowz) = varsd(conn(3, i), &
+&           izippflowx:izippflowz) + x3d
+          varsd(conn(2, i), izippflowx:izippflowz) = varsd(conn(2, i), &
+&           izippflowx:izippflowz) + x2d
+          varsd(conn(1, i), izippflowx:izippflowz) = varsd(conn(1, i), &
+&           izippflowx:izippflowz) + x1d
+          sfd = third*sfd
+          gammamd = third*gammamd
+          pmd = third*pmd
+          vzmd = third*vzmd
+          vymd = third*vymd
+          vxmd = third*vxmd
+          rhomd = third*rhomd
           do j=3,1,-1
-            varsd(conn(3, i), izippflowz) = varsd(conn(3, i), izippflowz&
-&             ) + zcd
-            varsd(conn(2, i), izippflowy) = varsd(conn(2, i), izippflowy&
-&             ) + ycd
-            varsd(conn(1, i), izippflowx) = varsd(conn(1, i), izippflowx&
-&             ) + xcd
+            varsd(conn(j, i), izippflowsface) = varsd(conn(j, i), &
+&             izippflowsface) + sfd
+            varsd(conn(j, i), izippflowgamma) = varsd(conn(j, i), &
+&             izippflowgamma) + gammamd
+            varsd(conn(j, i), irhoe) = varsd(conn(j, i), irhoe) + pmd
+            varsd(conn(j, i), ivz) = varsd(conn(j, i), ivz) + vzmd
+            varsd(conn(j, i), ivy) = varsd(conn(j, i), ivy) + vymd
+            varsd(conn(j, i), ivx) = varsd(conn(j, i), ivx) + vxmd
+            varsd(conn(j, i), irho) = varsd(conn(j, i), irho) + rhomd
           end do
-          mnmd = massflowratelocal*mass_mnd
-          massflowratelocald = massflowratelocald + pm*mass_psd + pref*&
-&           ptot*mass_ptotd + massflowrated + tref*ttot*mass_ttotd + mnm&
-&           *mass_mnd
-          pmd = pmd + massflowratelocal*mass_psd
-          ttotd = ttotd + tref*massflowratelocal*mass_ttotd
-          trefd = trefd + ttot*massflowratelocal*mass_ttotd
-          ptotd = ptotd + pref*massflowratelocal*mass_ptotd
-          call popreal8(pm)
-          temp1 = vmag**2 - uinf**2
-          tempd5 = uref*vnm*pref*pkd
-          tempd4 = uref*(pm-pinf+half*(rhom*temp1))*pkd
-          prefd = prefd + pm*pmd + vnm*tempd4 + ptot*massflowratelocal*&
-&           mass_ptotd
-          pmd = tempd5 + pref*pmd
-          rhomd = half*temp1*tempd5
-          vmagd = rhom*half*2*vmag*tempd5
-          vnmd = pref*tempd4
         end if
-        temp = gammam*pm/rhom
-        temp0 = sqrt(temp)
-        if (temp .eq. 0.0_8) then
-          tempd0 = 0.0
-        else
-          tempd0 = -(vmag*mnmd/(2.0*temp0**3*rhom))
-        end if
-        rhomd = rhomd + mredim*vnm*massflowratelocald - temp*tempd0
-        vnmd = vnmd + mredim*rhom*massflowratelocald
-        mredimd = mredimd + rhom*vnm*massflowratelocald
-        vmagd = vmagd + mnmd/temp0
-        gammamd = gammamd + pm*tempd0
-        pmd = pmd + gammam*tempd0
-        if (vxm**2 + vym**2 + vzm**2 .eq. 0.0_8) then
-          tempd1 = 0.0
-        else
-          tempd1 = vmagd/(2.0*sqrt(vxm**2+vym**2+vzm**2))
-        end if
-        vxmd = vxmd + ss(1)*vnmd + 2*vxm*tempd1
-        vymd = vymd + ss(2)*vnmd + 2*vym*tempd1
-        vzmd = vzmd + ss(3)*vnmd + 2*vzm*tempd1
-        sfd = -vnmd - vmagd
-        ssd(1) = ssd(1) + vxm*vnmd
-        ssd(2) = ssd(2) + vym*vnmd
-        ssd(3) = ssd(3) + vzm*vnmd
-        call computettot_b(rhom, rhomd, vxm, vxmd, vym, vymd, vzm, vzmd&
-&                    , pm, pmd, ttot, ttotd)
-        call computeptot_b(rhom, rhomd, vxm, vxmd, vym, vymd, vzm, vzmd&
-&                    , pm, pmd, ptot, ptotd)
-        normd = normd + half*ssd
-        call cross_prod_b(arg1(:), arg1d(:), arg2(:), arg2d(:), norm, &
-&                   normd)
-        x1d = 0.0_8
-        x3d = 0.0_8
-        x3d = arg2d(:)
-        x1d = -arg1d(:) - arg2d(:)
-        x2d = 0.0_8
-        x2d = arg1d(:)
-        varsd(conn(3, i), izippflowx:izippflowz) = varsd(conn(3, i), &
-&         izippflowx:izippflowz) + x3d
-        varsd(conn(2, i), izippflowx:izippflowz) = varsd(conn(2, i), &
-&         izippflowx:izippflowz) + x2d
-        varsd(conn(1, i), izippflowx:izippflowz) = varsd(conn(1, i), &
-&         izippflowx:izippflowz) + x1d
-        sfd = third*sfd
-        gammamd = third*gammamd
-        pmd = third*pmd
-        vzmd = third*vzmd
-        vymd = third*vymd
-        vxmd = third*vxmd
-        rhomd = third*rhomd
-        do j=3,1,-1
-          varsd(conn(j, i), izippflowsface) = varsd(conn(j, i), &
-&           izippflowsface) + sfd
-          varsd(conn(j, i), izippflowgamma) = varsd(conn(j, i), &
-&           izippflowgamma) + gammamd
-          varsd(conn(j, i), irhoe) = varsd(conn(j, i), irhoe) + pmd
-          varsd(conn(j, i), ivz) = varsd(conn(j, i), ivz) + vzmd
-          varsd(conn(j, i), ivy) = varsd(conn(j, i), ivy) + vymd
-          varsd(conn(j, i), ivx) = varsd(conn(j, i), ivx) + vxmd
-          varsd(conn(j, i), irho) = varsd(conn(j, i), irho) + rhomd
-        end do
       end if
     end do
     if (pref*rhoref .eq. 0.0_8) then
@@ -399,7 +413,7 @@ contains
     pointrefd(1) = pointrefd(1) + lref*refpointd(1)
   end subroutine flowintegrationzipper_b
   subroutine flowintegrationzipper(isinflow, conn, fams, vars, &
-&   localvalues, famlist, sps, withgathered, funcvalues)
+&   localvalues, famlist, sps, withgathered, funcvalues, ptvalid)
 ! integrate over the trianges for the inflow/outflow conditions. 
     use constants
     use blockpointers, only : bctype
@@ -423,6 +437,7 @@ contains
     logical, intent(in) :: withgathered
     real(kind=realtype), dimension(:), optional, intent(in) :: &
 &   funcvalues
+    logical(kind=inttype), dimension(:), optional, intent(in) :: ptvalid
 ! working variables
     integer(kind=inttype) :: i, j
     real(kind=realtype) :: sf, vmag, vnm, vxm, vym, vzm, fx, fy, fz
@@ -433,10 +448,12 @@ contains
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps, &
 &   mass_mn
     real(kind=realtype) :: mredim, pk, sigma_mn, sigma_ptot
-    real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, &
-&   cellarea, mx, my, mz
+    real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, mx&
+&   , my, mz
+    logical :: triisvalid
     intrinsic sqrt
     intrinsic size
+    intrinsic present
     real(kind=realtype), dimension(3) :: arg1
     real(kind=realtype), dimension(3) :: arg2
     real(kind=realtype) :: result1
@@ -458,107 +475,120 @@ contains
     if (isinflow) inflowfact = -one
     do i=1,size(conn, 2)
       if (faminlist(fams(i), famlist)) then
-! compute the averaged values for this trianlge
-        vxm = zero
-        vym = zero
-        vzm = zero
-        rhom = zero
-        pm = zero
-        mnm = zero
-        sf = zero
-        do j=1,3
-          rhom = rhom + vars(conn(j, i), irho)
-          vxm = vxm + vars(conn(j, i), ivx)
-          vym = vym + vars(conn(j, i), ivy)
-          vzm = vzm + vars(conn(j, i), ivz)
-          pm = pm + vars(conn(j, i), irhoe)
-          gammam = gammam + vars(conn(j, i), izippflowgamma)
-          sf = sf + vars(conn(j, i), izippflowsface)
-        end do
-! divide by 3 due to the summation above:
-        rhom = third*rhom
-        vxm = third*vxm
-        vym = third*vym
-        vzm = third*vzm
-        pm = third*pm
-        gammam = third*gammam
-        sf = third*sf
-! get the nodes of triangle.
-        x1 = vars(conn(1, i), izippflowx:izippflowz)
-        x2 = vars(conn(2, i), izippflowx:izippflowz)
-        x3 = vars(conn(3, i), izippflowx:izippflowz)
-        arg1(:) = x2 - x1
-        arg2(:) = x3 - x1
-        call cross_prod(arg1(:), arg2(:), norm)
-        ss = half*norm
-        call computeptot(rhom, vxm, vym, vzm, pm, ptot)
-        call computettot(rhom, vxm, vym, vzm, pm, ttot)
-        vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3) - sf
-        vmag = sqrt(vxm**2 + vym**2 + vzm**2) - sf
-! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
-        mnm = vmag/sqrt(gammam*pm/rhom)
-        massflowratelocal = rhom*vnm*mredim
-        if (withgathered) then
-          sigma_mn = sigma_mn + massflowratelocal*(mnm-funcvalues(&
-&           costfuncmavgmn))**2
-          sigma_ptot = sigma_ptot + massflowratelocal*(ptot-funcvalues(&
-&           costfuncmavgptot))**2
-        else
-          massflowrate = massflowrate + massflowratelocal
-          pk = pk + (pm-pinf+half*rhom*(vmag**2-uinf**2))*vnm*pref*uref
-          pm = pm*pref
-          mass_ptot = mass_ptot + ptot*massflowratelocal*pref
-          mass_ttot = mass_ttot + ttot*massflowratelocal*tref
-          mass_ps = mass_ps + pm*massflowratelocal
-          mass_mn = mass_mn + mnm*massflowratelocal
-! compute the average cell center. 
-          xc = zero
-          yc = zero
-          zc = zero
+! if the ptvalid list is given, check if we should integrate
+! this triangle.
+        triisvalid = .true.
+        if (present(ptvalid)) then
+! check if each of the three nodes are valid
+          if (((ptvalid(conn(1, i)) .eqv. .false.) .or. (ptvalid(conn(2&
+&             , i)) .eqv. .false.)) .or. (ptvalid(conn(3, i)) .eqv. &
+&             .false.)) triisvalid = .false.
+        end if
+        if (triisvalid) then
+! compute the averaged values for this triangle
+          vxm = zero
+          vym = zero
+          vzm = zero
+          rhom = zero
+          pm = zero
+          mnm = zero
+          gammam = zero
+          sf = zero
           do j=1,3
-            xc = xc + vars(conn(1, i), izippflowx)
-            yc = yc + vars(conn(2, i), izippflowy)
-            zc = zc + vars(conn(3, i), izippflowz)
+            rhom = rhom + vars(conn(j, i), irho)
+            vxm = vxm + vars(conn(j, i), ivx)
+            vym = vym + vars(conn(j, i), ivy)
+            vzm = vzm + vars(conn(j, i), ivz)
+            pm = pm + vars(conn(j, i), irhoe)
+            gammam = gammam + vars(conn(j, i), izippflowgamma)
+            sf = sf + vars(conn(j, i), izippflowsface)
           end do
+! divide by 3 due to the summation above:
+          rhom = third*rhom
+          vxm = third*vxm
+          vym = third*vym
+          vzm = third*vzm
+          pm = third*pm
+          gammam = third*gammam
+          sf = third*sf
+! get the nodes of triangle.
+          x1 = vars(conn(1, i), izippflowx:izippflowz)
+          x2 = vars(conn(2, i), izippflowx:izippflowz)
+          x3 = vars(conn(3, i), izippflowx:izippflowz)
+          arg1(:) = x2 - x1
+          arg2(:) = x3 - x1
+          call cross_prod(arg1(:), arg2(:), norm)
+          ss = half*norm
+          call computeptot(rhom, vxm, vym, vzm, pm, ptot)
+          call computettot(rhom, vxm, vym, vzm, pm, ttot)
+          vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3) - sf
+          vmag = sqrt(vxm**2 + vym**2 + vzm**2) - sf
+! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
+          mnm = vmag/sqrt(gammam*pm/rhom)
+          massflowratelocal = rhom*vnm*mredim
+          if (withgathered) then
+            sigma_mn = sigma_mn + massflowratelocal*(mnm-funcvalues(&
+&             costfuncmavgmn))**2
+            sigma_ptot = sigma_ptot + massflowratelocal*(ptot-funcvalues&
+&             (costfuncmavgptot))**2
+          else
+            massflowrate = massflowrate + massflowratelocal
+            pk = pk + (pm-pinf+half*rhom*(vmag**2-uinf**2))*vnm*pref*&
+&             uref
+            pm = pm*pref
+            mass_ptot = mass_ptot + ptot*massflowratelocal*pref
+            mass_ttot = mass_ttot + ttot*massflowratelocal*tref
+            mass_ps = mass_ps + pm*massflowratelocal
+            mass_mn = mass_mn + mnm*massflowratelocal
+! compute the average cell center. 
+            xc = zero
+            yc = zero
+            zc = zero
+            do j=1,3
+              xc = xc + vars(conn(1, i), izippflowx)
+              yc = yc + vars(conn(2, i), izippflowy)
+              zc = zc + vars(conn(3, i), izippflowz)
+            end do
 ! finish average for cell center
-          xc = third*xc
-          yc = third*yc
-          zc = third*zc
-          xc = xc - refpoint(1)
-          yc = yc - refpoint(2)
-          zc = zc - refpoint(3)
-          pm = -(pm-pinf*pref)
-          fx = pm*ss(1)
-          fy = pm*ss(2)
-          fz = pm*ss(3)
+            xc = third*xc
+            yc = third*yc
+            zc = third*zc
+            xc = xc - refpoint(1)
+            yc = yc - refpoint(2)
+            zc = zc - refpoint(3)
+            pm = -(pm-pinf*pref)
+            fx = pm*ss(1)
+            fy = pm*ss(2)
+            fz = pm*ss(3)
 ! update the pressure force and moment coefficients.
-          fp(1) = fp(1) + fx
-          fp(2) = fp(2) + fy
-          fp(3) = fp(3) + fz
-          mx = yc*fz - zc*fy
-          my = zc*fx - xc*fz
-          mz = xc*fy - yc*fx
-          mp(1) = mp(1) + mx
-          mp(2) = mp(2) + my
-          mp(3) = mp(3) + mz
+            fp(1) = fp(1) + fx
+            fp(2) = fp(2) + fy
+            fp(3) = fp(3) + fz
+            mx = yc*fz - zc*fy
+            my = zc*fx - xc*fz
+            mz = xc*fy - yc*fx
+            mp(1) = mp(1) + mx
+            mp(2) = mp(2) + my
+            mp(3) = mp(3) + mz
 ! momentum forces
 ! get unit normal vector. 
-          result1 = mynorm2(ss)
-          ss = ss/result1
-          massflowratelocal = massflowratelocal/timeref*internalflowfact&
-&           *inflowfact
-          fx = massflowratelocal*ss(1)*vxm/timeref
-          fy = massflowratelocal*ss(2)*vym/timeref
-          fz = massflowratelocal*ss(3)*vzm/timeref
-          fmom(1) = fmom(1) - fx
-          fmom(2) = fmom(2) - fy
-          fmom(3) = fmom(3) - fz
-          mx = yc*fz - zc*fy
-          my = zc*fx - xc*fz
-          mz = xc*fy - yc*fx
-          mmom(1) = mmom(1) + mx
-          mmom(2) = mmom(2) + my
-          mmom(3) = mmom(3) + mz
+            result1 = mynorm2(ss)
+            ss = ss/result1
+            massflowratelocal = massflowratelocal/timeref*&
+&             internalflowfact*inflowfact
+            fx = massflowratelocal*ss(1)*vxm/timeref
+            fy = massflowratelocal*ss(2)*vym/timeref
+            fz = massflowratelocal*ss(3)*vzm/timeref
+            fmom(1) = fmom(1) - fx
+            fmom(2) = fmom(2) - fy
+            fmom(3) = fmom(3) - fz
+            mx = yc*fz - zc*fy
+            my = zc*fx - xc*fz
+            mz = xc*fy - yc*fx
+            mmom(1) = mmom(1) + mx
+            mmom(2) = mmom(2) + my
+            mmom(3) = mmom(3) + mz
+          end if
         end if
       end if
     end do
@@ -652,8 +682,7 @@ contains
     do i=1,size(conn, 2)
       res = faminlist(fams(i), famlist)
       if (res) then
-! get the nodes of triangle. the *3 is becuase of the
-! blanket third above. 
+! get the nodes of triangle. 
         x1 = vars(conn(1, i), izippwallx:izippwallz)
         x2 = vars(conn(2, i), izippwallx:izippwallz)
         x3 = vars(conn(3, i), izippwallx:izippwallz)
@@ -830,8 +859,7 @@ contains
     mv = zero
     do i=1,size(conn, 2)
       if (faminlist(fams(i), famlist)) then
-! get the nodes of triangle. the *3 is becuase of the
-! blanket third above. 
+! get the nodes of triangle. 
         x1 = vars(conn(1, i), izippwallx:izippwallz)
         x2 = vars(conn(2, i), izippwallx:izippwallz)
         x3 = vars(conn(3, i), izippwallx:izippwallz)

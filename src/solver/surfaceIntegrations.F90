@@ -78,6 +78,8 @@ contains
           mAvgPs   = globalVals(iMassPs, sps)/mFlow
           mAvgMn   = globalVals(iMassMn, sps)/mFlow
           mFlow2 = globalVals(iMassFlow, sps)*sqrt(Pref/rhoRef)
+
+          ! JUSTIN FIX THIS! THIS IS NOT VALGRIND SAFE!
           sigmaMN = sqrt(globalvals(iSigmaMN, sps)/mFlow)
           sigmaPtot = sqrt(globalvals(iSigmaPtot, sps)/mFlow)
 
@@ -86,9 +88,10 @@ contains
           mAvgTtot = zero
           mAvgPs = zero
           mAvgMn = zero
+          mFlow2 = zero
           sigmaMN = zero
           sigmaPtot = zero
-          mFlow2 = zero
+
        end if
 
        funcValues(costFuncMdot)      = funcValues(costFuncMdot) + ovrNTS*mFlow
@@ -644,7 +647,8 @@ contains
         ! have to re-apply fact to massFlowRateLocal to undoo it, because 
         ! we need the signed behavior of ssi to get the momentum forces correct. 
         ! Also, the sign is flipped between inflow and outflow types 
-        cellArea = mynorm2(ssi(i,j,:))
+        cellArea = sqrt(ssi(i,j,1)**2 + ssi(i,j,2)**2 + ssi(i,j,3)**2)
+
         massFlowRateLocal = massFlowRateLocal*fact/timeRef*blk/cellArea*internalFlowFact*inFlowFact
 
         fx = massFlowRateLocal * ssi(i,j,1)*vxm
@@ -741,6 +745,8 @@ contains
     use blockPointers, only : nDom
     use utils, only : setPointers, EChk
     use zipperIntegrations, only :integrateZippers
+    use userSurfaceIntegrations, only : integrateUserSurfaces
+    
     implicit none
 
     ! Input/Output Variables
@@ -759,7 +765,7 @@ contains
        ! Extract the current family list
        nFam = famLists(iGroup, 1)
        famList => famLists(iGroup, 2:2+nFam-1)
-
+       funcValues = zero
        localVal = zero
        do sps=1, nTimeIntervalsSpectral
           ! Integrate the normal block surfaces. 
@@ -772,7 +778,7 @@ contains
           call integrateZippers(localVal(:, sps), famList, sps, .False., funcValues(:, iGroup))
           
           ! Integrate any user-supplied planes as have as well. 
-          !call integrateUserSurfaces(localVal(:, sps), famList, sps, .False., funcValues(:, iGroup)))
+          call integrateUserSurfaces(localVal(:, sps), famList, sps, .False., funcValues(:, iGroup))
           
        end do
        
@@ -798,8 +804,7 @@ contains
           call integrateZippers(localVal(:, sps), famList, sps, .True., funcValues(:, iGroup))
           
           ! Integrate any user-supplied planes as have as well. 
-          !call integrateUserSurfacesWithGathered(globalVal(:, sps), localVal(:, sps), famList, sps, .True., & 
-          ! funcValues)
+          call integrateUserSurfaces(localVal(:, sps), famList, sps, .True., funcValues(:, iGroup))
        end do
        
        ! All reduce again. Technially just need the additionally
