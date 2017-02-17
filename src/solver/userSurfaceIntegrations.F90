@@ -3,12 +3,9 @@ module userSurfaceIntegrations
   use constants
   use communication, only : commType, internalCommType
   use userSurfaceIntegrationData
-  
-
 contains
 
-
-  subroutine integrateUserSurfaces(localValues, famList, sps)
+  subroutine integrateUserSurfaces(localValues, famList, sps, withGathered, funcValues)
 
     use constants
     use block, onlY : flowDoms, nDom
@@ -17,34 +14,45 @@ contains
     use utils, only : EChk, mynorm2
     use flowUtils, only : computePtot, computeTtot
     use sorting, only : famInList
+    use zipperIntegrations, only : flowIntegrationZipper
+    use utils, only : terminate
     implicit none
 
     ! Input Parameters
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
     integer(kind=intType), dimension(:), intent(in) :: famList
     integer(kind=intType), intent(in) :: sps
+    logical, intent(in) :: withGathered
+    real(kind=realType), intent(in), dimension(:) :: funcValues
 
     ! Working parameters
-    integer(kind=intType) :: iSurf, i, j, k, jj, ierr, nn, iDim
+    integer(kind=intType) :: iSurf, i, j, k, jj, ierr, nn, iDim, nPts
     real(kind=realType), dimension(:), allocatable :: recvBuffer1, recvBuffer2
-    type(userIntSurf), pointer :: surf
-    real(kind=realType) :: mReDim, rho, vx, vy, vz, PP, massFLowRate, vn
-    real(Kind=realType) :: pTot, Ttot, mass_Ptot, mass_Ttot, mass_ps, massFlowRateLocal
-    real(kind=realType), dimension(3) :: v1, v2, x1, x2, x3, x4, n
-    logical :: valid
+    real(kind=realType), dimension(:, :), allocatable :: vars
+    integer(kind=intType), dimension(:), allocatable :: fams
     logical, dimension(:), allocatable :: ptValid
-    ! Set the pointers for the required communication variables: rho,
-    ! vx, vy, vz, P and the x-coordinates
+    type(userIntSurf), pointer :: surf
 
+    ! Set the pointers for the required communication variables
     domainLoop:do nn=1, nDom
-       flowDoms(nn, 1, sps)%realCommVars(1)%var => flowDoms(nn, 1, sps)%w(:, :, :, 1)
-       flowDoms(nn, 1, sps)%realCommVars(2)%var => flowDoms(nn, 1, sps)%w(:, :, :, 2)
-       flowDoms(nn, 1, sps)%realCommVars(3)%var => flowDoms(nn, 1, sps)%w(:, :, :, 3)
-       flowDoms(nn, 1, sps)%realCommVars(4)%var => flowDoms(nn, 1, sps)%w(:, :, :, 4)
-       flowDoms(nn, 1, sps)%realCommVars(5)%var => flowDoms(nn, 1, sps)%P(:, :, :)
-       flowDoms(nn, 1, sps)%realCommVars(6)%var => flowDoms(nn, 1, sps)%x(:, :, :, 1)
-       flowDoms(nn, 1, sps)%realCommVars(7)%var => flowDoms(nn, 1, sps)%x(:, :, :, 2)
-       flowDoms(nn, 1, sps)%realCommVars(8)%var => flowDoms(nn, 1, sps)%x(:, :, :, 3)
+       if (flowDoms(nn, 1, sps)%addGridVelocities) then 
+          call terminate("userSurfaceIntegrations", "Cannot use user-supplied surface integrations"& 
+               &"on with moving grids")
+       end if
+       
+       flowDoms(nn, 1, sps)%realCommVars(iRho)%var => flowDoms(nn, 1, sps)%w(:, :, :, iRho)
+       flowDoms(nn, 1, sps)%realCommVars(iVx)%var => flowDoms(nn, 1, sps)%w(:, :, :, iVx)
+       flowDoms(nn, 1, sps)%realCommVars(iVy)%var => flowDoms(nn, 1, sps)%w(:, :, :, iVy)
+       flowDoms(nn, 1, sps)%realCommVars(iVz)%var => flowDoms(nn, 1, sps)%w(:, :, :, iVz)
+       flowDoms(nn, 1, sps)%realCommVars(iZippFlowP)%var => flowDoms(nn, 1, sps)%P(:, :, :)
+       flowDoms(nn, 1, sps)%realCommVars(iZippFlowGamma)%var => flowDoms(nn, 1, sps)%gamma(:, :, :)
+       ! flowDoms(nn, 1, sps)%realCommVars(iZippFlowSface)%var => Not Implemented
+    
+       flowDoms(nn, 1, sps)%realCommVars(iZippFlowX)%var => flowDoms(nn, 1, sps)%x(:, :, :, 1)
+       flowDoms(nn, 1, sps)%realCommVars(iZippFlowY)%var => flowDoms(nn, 1, sps)%x(:, :, :, 2)
+       flowDoms(nn, 1, sps)%realCommVars(iZippFlowZ)%var => flowDoms(nn, 1, sps)%x(:, :, :, 3)
+
+       flowDoms(nn, 1, sps)%intCommVars(1)%var => flowDoms(nn, 1, sps)%iBlank
     end do domainLoop
 
     masterLoop: do iSurf=1, nUserIntSurfs
@@ -52,107 +60,68 @@ contains
        ! Pointer for easier reading
        surf => userIntSurfs(iSurf)
 
-       ! Do we need to include this surface?
-       famInclude: if (famInList(surf%famID, famList)) then 
+       ! We will make a short-cut here: By definition user supplied
+       ! surfaces have a fixed family, we won't do anything if we
+       ! are not told to deal with this surface. 
 
+       famInclude: if (famInList(surf%famID, famList)) then 
+          nPts = size(surf%pts, 2)
+             
           ! Communicate the face values and the nodal values
           if (myid == 0) then 
-             allocate(recvBuffer1(5*size(surf%conn, 2)))
-             allocate(recvBuffer2(3*size(surf%pts, 2)))
+             allocate(recvBuffer1(6*nPts), recvBuffer2(3*nPts))
           else
-             allocate(recvBuffer1(0))
-             allocate(recvBuffer2(0))
+             allocate(recvBuffer1(0), recvBuffer2(0))
           end if
 
-          call commUserIntegrationSurfaceVars(recvBuffer1, 1, 5, surf%faceComm)
-          call commUserIntegrationSurfaceVars(recvBuffer2, 6, 8, surf%nodeComm)
+          call commUserIntegrationSurfaceVars(recvBuffer1, iRho, iZippFlowGamma, surf%flowComm)
+          call commUserIntegrationSurfaceVars(recvBuffer2, iZippFlowX, iZippFlowZ, surf%nodeComm)
 
           ! *Finally* we can do the actual integrations
           if (myid == 0)  then 
-             allocate(ptValid(size(surf%pts, 2)))
 
-             ! Before we do the integration, update the pts array from
-             ! the values in recvBuffer2
-             do i=1, size(surf%pts, 2)
+             ! Allocate some temporary data needed to supply to the
+             ! zipper integration routine. 
+             allocate(ptValid(npts), vars(npts, nZippFlowComm), fams(size(surf%conn, 2)))
+
+             ! Prepare for the "zipper" integration call. We have to
+             ! re-order the data according to the "inv" array in each
+             ! of the two comms. 
+             do i=1, nPts
+
+                ! Flow Variables
+                j = surf%flowComm%inv(i)
+
+                vars(j, iRho) = recvBuffer1(6*(i-1) + iRho)
+                vars(j, iVx)  = recvBuffer1(6*(i-1) + iVx)
+                vars(j, iVy)  = recvBuffer1(6*(i-1) + iVy)
+                vars(j, iVz)  = recvBuffer1(6*(i-1) + iVz)
+                vars(j, iZippFlowP)  = recvBuffer1(6*(i-1) + iZippFlowP)
+                vars(j, iZippFlowGamma)  = recvBuffer1(6*(i-1) + iZippFlowGamma)
+                ! Sface is not implemented. To correctly do this,
+                ! interpolate the three components of 's', do the dot
+                ! product with the local normal to get the sFace value. 
+                vars(j, iZippFlowSface)  = zero
+
+                ! Node Comm Values
                 j = surf%nodeComm%inv(i)
-                surf%pts(:, j) = recvBuffer2(3*i-2:3*i)
+                vars(j, iZippFlowX:iZippFlowZ) = recvBuffer2(3*i-2:3*i)
+                      
+                ! The additional pt-valid array
                 ptValid(j) = surf%nodeComm%valid(i)
              end do
+             
+             ! The family array is all the same value:
+             fams = surf%famID
 
-             !call integrateUserSurfFlow(surf, 
-
-
-             massFlowRate = zero
-             mass_Ptot = zero
-             mass_Ttot = zero
-             mass_Ps = zero
-
-             mReDim = sqrt(pRef*rhoRef)
-
-             elemLoop: do i=1, size(surf%conn, 2)
-
-                ! First check if this cell is valid to integrate. Both
-                ! the cell center *and* all nodes must be valid
-
-                ! j is now the element index into the original conn array. 
-                j = surf%faceComm%Inv(i)
-
-                valid = surf%faceComm%valid(i) .and. &
-                     ptValid(surf%conn(1, j)) .and. ptValid(surf%conn(2, j)) .and. &
-                     ptValid(surf%conn(3, j)) .and. ptValid(surf%conn(4, j))
-                if (valid) then 
-                   ! Extract out the interpolated quantities
-                   rho = recvBuffer1(5*i-4)
-                   vx  = recvBuffer1(5*i-3)
-                   vy  = recvBuffer1(5*i-2)
-                   vz  = recvBuffer1(5*i-1)
-                   PP  = recvBuffer1(5*i  )
-
-                   call computePtot(rho, vx, vy, vz, pp, Ptot)
-                   call computeTtot(rho, vx, vy, vz, pp, Ttot)
-
-                   ! Get the coordinates of the quad
-                   x1 = surf%pts(:, surf%conn(1, j))
-                   x2 = surf%pts(:, surf%conn(2, j))
-                   x3 = surf%pts(:, surf%conn(3, j))
-                   x4 = surf%pts(:, surf%conn(4, j))
-
-                   ! Diagonal vectors
-                   v1 = x3 - x1
-                   v2 = x4 - x2
-
-                   ! Take the cross product of the two diagaonal vectors.
-                   n(1) = half*(v1(2)*v2(3) - v1(3)*v2(2))
-                   n(2) = half*(v1(3)*v2(1) - v1(1)*v2(3))
-                   n(3) = half*(v1(1)*v2(2) - v1(2)*v2(1))
-
-                   ! Normal face velocity
-                   vn = vx*n(1) + vy*n(2) + vz*n(3)
-
-                   ! Finally the mass flow rate
-                   massFlowRateLocal = rho*vn*mReDim
-                   massFlowRate = massFlowRate + massFlowRateLocal
-                   mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
-                   mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
-                   mass_Ps = mass_Ps + pp*massFlowRateLocal*Pref
-                end if
-
-             end do elemLoop
-             deallocate(ptValid)
+             ! Perform the actual integration
+             call flowIntegrationZipper(.True., surf%conn, fams, vars, localValues, famList, sps, &
+                  withGathered, funcValues, surf%nodeComm%Valid)
+             deallocate(ptValid, vars, fams)
           end if
-
-          ! Accumulate the final values
-          localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate
-          localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
-          localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
-          localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
-
           deallocate(recvBuffer1, recvBuffer2)
-
-
        end if famInclude
     end do masterLoop
-
   end subroutine integrateUserSurfaces
 
   ! ----------------------------------------------------------------------
@@ -173,7 +142,7 @@ contains
 
     ! Input variables
     real(kind=realType), dimension(3, nPts), intent(in) :: pts
-    integer(kind=intType), dimension(4, nConn), intent(in) :: conn
+    integer(kind=intType), dimension(3, nConn), intent(in) :: conn
     integer(kind=intType), intent(in) :: nPts, nConn, famID
     character(len=*) :: famName
     type(userIntSurf), pointer :: surf
@@ -191,7 +160,7 @@ contains
     if (myid == 0) then 
        surf => userIntSurfs(nUserIntSurfs)
 
-       allocate(surf%pts(3, nPts), surf%conn(4, nConn))
+       allocate(surf%pts(3, nPts), surf%conn(3, nConn))
        surf%pts = pts
        surf%conn = conn
        surf%famName = famName
@@ -208,7 +177,8 @@ contains
 
     use constants
     use overset, only : oversetBlock
-    use blockPointers, only : nDom, x, ie, je, ke, il, jl, kl,  vol, ib, jb, kb
+    use blockPointers, only : nDom, x, ie, je, ke, il, jl, kl,  vol, ib, jb, kb,& 
+         iBlank, BCData, nBocos, BCFaceID, BCType
     use adtBuild, only : buildSerialHex
     use utils, only : setPointers, EChk
     implicit none
@@ -219,6 +189,7 @@ contains
 
     ! Working Parameters
     integer(kind=intType) :: nInterpol, nn, i, j, k, iii, jjj, kkk
+    integer(kind=intType) :: iStart, jStart, kStart, iEnd, jEnd, kEnd
     integer(kind=intType) :: ii, jj, kk, mm, nADT, nHexa, planeOffset
     type(oversetBlock), pointer :: oBlock
 
@@ -259,6 +230,54 @@ contains
                 end do
              end do
           end do
+          
+          do mm=1,nBocos
+             ! We need to make sure that the interpolation does not
+             ! use a halo behind an overset outer bound. This could
+             ! happen because the last cell is interpolated (-1) and
+             ! the iblank on the halos are still 1. Just set the
+             ! quality very high so it is not accepted. 
+          
+             select case (BCFaceID(mm))
+             case (iMin)
+                iStart=1; iEnd=1;
+                jStart=BCData(mm)%icBeg; jEnd=BCData(mm)%icEnd
+                kStart=BCData(mm)%jcBeg; kEnd=BCData(mm)%jcEnd
+             case (iMax)
+                iStart=ie; iEnd=ie;
+                jStart=BCData(mm)%icBeg; jEnd=BCData(mm)%icEnd
+                kStart=BCData(mm)%jcBeg; kEnd=BCData(mm)%jcEnd
+             case (jMin)
+                iStart=BCData(mm)%icBeg; iEnd=BCData(mm)%icEnd
+                jStart=1; jEnd=1
+                kStart=BCData(mm)%jcBeg; kEnd=BCData(mm)%jcEnd
+             case (jMax)
+                iStart=BCData(mm)%icBeg; iEnd=BCData(mm)%icEnd
+                jStart=je; jEnd=je;
+                kStart=BCData(mm)%jcBeg; kEnd=BCData(mm)%jcEnd
+             case (kMin)
+                iStart=BCData(mm)%icBeg; iEnd=BCData(mm)%icEnd
+                jStart=BCData(mm)%jcBeg; jEnd=BCData(mm)%jcEnd
+                kStart=1; kEnd=1;
+             case (kMax)
+                iStart=BCData(mm)%icBeg; iEnd=BCData(mm)%icEnd
+                jStart=BCData(mm)%jcBeg; jEnd=BCData(mm)%jcEnd
+                kStart=ke; kEnd=ke;
+             end select
+             
+             if (BCType(mm) == OversetOuterBound) then
+                do k=kStart, kEnd
+                   do j=jStart, jEnd
+                      do i=iStart, iEnd
+                         ! recompute the index
+                         kk = (k-1)*ie*je + (j-1)*ie + i
+                         oBlock%qualDonor(1, kk) = large
+                      end do
+                   end do
+                end do
+             end if
+          end do
+       
 
           mm = 0
           ! These are the 'elements' of the dual mesh.
@@ -466,7 +485,7 @@ contains
                 ! This one has now passed.
 
                 ! Important! uvw(4) is the distance squared for this search
-                ! not
+                ! not interpolated value
                 uvw(4) = uvw(5)
              end if
           end if
@@ -798,29 +817,13 @@ contains
 
           if (myid == 0) then 
 
-             if (ii==1) then 
-                nPts = size(surf%conn, 2)
-                allocate(pts(3, nPts))
-                ! Use the dual (cell center values)
-                elemLoop: do i=1, nPts
-
-                   ! Compute the center of the cell. 
-                   pts(:, i) = fourth*( & 
-                        surf%pts(:, surf%conn(1, i)) + &
-                        surf%pts(:, surf%conn(2, i)) + &
-                        surf%pts(:, surf%conn(3, i)) + &
-                        surf%pts(:, surf%conn(4, i)))
-                end do elemLoop
-             else if (ii==2) then 
-                nPts = size(surf%pts, 2)
-                allocate(pts(3, nPts))
-
-                ! Use the primal nodal values
-                nodeLoop: do i=1, nPts
-                   ! Compute the center of the cell. 
-                   pts(:, i) = surf%pts(:, i)
-                end do nodeLoop
-             end if
+             ! We are interpolating the nodal values for both the
+             ! nodes and the solution variables. 
+             nPts = size(surf%pts, 2)
+             allocate(pts(3, nPts))
+             nodeLoop: do i=1, nPts
+                pts(:, i) = surf%pts(:, i)
+             end do nodeLoop
           end if
 
           ! Send the number of points back to all procs:
@@ -838,7 +841,7 @@ contains
 
           ! Call the actual interpolation routine
           if (ii==1) then 
-             call performInterpolation(pts, oBlocks, .True., surf%faceComm)
+             call performInterpolation(pts, oBlocks, .True., surf%flowComm)
           else
              call performInterpolation(pts, oBlocks, .False., surf%nodeComm)
           end if
