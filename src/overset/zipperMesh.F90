@@ -27,7 +27,7 @@ contains
     use wallDistanceData, only : xVolumeVec, IS1, IS2, PETSC_VIEWER_STDOUT_WORLD
     use utils, only : setPointers, EChk
     use adjointvars, only :nNodesLocal
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     use oversetUtilities, only : getWorkArray, deallocateOSurfs, transposeOverlap
     use oversetCommUtilities, only : exchangeSurfaceIBlanks, recvOSurf, sendOSurf, &
          getOSurfCommPattern
@@ -342,7 +342,7 @@ contains
           iDom = cumDomProc(myid) + nn
           ii = 0
           do mm=1, nBocos
-             if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
+             if (famInList(BCData(mm)%famID, famList)) then 
                 do j=BCData(mm)%jnBeg+1, BCData(mm)%jnEnd
                    do i=BCData(mm)%inBeg+1, BCData(mm)%inEnd
                       ii = ii +1
@@ -366,7 +366,7 @@ contains
            !with:
           call setPointers(nn, level, sps)
           do mm=1, nBocos
-             if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
+             if (famInList(BCData(mm)%famID, famList)) then 
                 do j=BCData(mm)%jnBeg+1, BCData(mm)%jnEnd
                    do i=BCData(mm)%inBeg+1, BCData(mm)%inEnd
                       ii = ii + 1
@@ -580,7 +580,6 @@ contains
     use overset, onlY : clusterAreas, nClusters, clusters, cumDomProc
     use utils, only : setPointers, EChk, setBCPointers, cross_prod
     use BCPointers, only : xx
-    use sorting, only : bsearchIntegers
     implicit none
 
     ! Working
@@ -662,7 +661,6 @@ contains
     use communication
     use utils, only : setPointers
     use oversetUtilities, only : flagForcedRecv
-    use sorting, only : bsearchIntegers
     implicit none
 
     ! Input Parameters
@@ -757,7 +755,7 @@ contains
     use communication
     use utils, only : setPointers
     use oversetUtilities, only : flagForcedRecv
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     implicit none
 
     ! Input Parameters
@@ -848,7 +846,7 @@ contains
 
           ! Only do the slit elimination if we actually care about
           ! this surface for the zipper
-          famInclude: if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
+          famInclude: if (famInList(BCData(mm)%famID, famList)) then 
 
              ! -------------------------------------------------
              ! Step 2: Slit elimination
@@ -944,7 +942,7 @@ contains
     use constants
     use blockPointers, only :BCdata, x, nBocos, nDom, BCType, il, jl, kl, BCFaceID
     use utils, only : setPointers, myNorm2, setBCPointers
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     use BCPointers, only : xx
     implicit none
 
@@ -961,7 +959,7 @@ contains
        call setPointers(nn, level, sps)
 
        bocoLoop: do mm=1, nBocos
-          famInclude: if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
+          famInclude: if (famInList(BCData(mm)%famID, famList)) then 
 
              call setBCPointers(mm, .True.)
              jBeg = BCdata(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
@@ -1049,7 +1047,7 @@ contains
        call setPointers(nn, level, sps)
 
        bocoLoop2: do mm=1, nBocos
-          famInclude2: if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
+          famInclude2: if (famInList(BCData(mm)%famID, famList)) then 
 
              jBeg = BCdata(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd  
@@ -1150,7 +1148,7 @@ contains
     use blockPointers
     use utils, only : setPointers, setBCPointers
     use BCPointers, only : xx
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     implicit none
     integer(kind=intType), intent(in), dimension(:) :: famList
     character(80) :: fileName, zoneName
@@ -1169,7 +1167,7 @@ contains
           do mm=1, nBocos
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
-             famInclude2: if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
+             famInclude2: if (famInList(BCData(mm)%famID, famList)) then 
                 call setBCPointers(mm, .True.)
 
                 write(zoneName, "(a,I5.5,a,I5.5)") "Zone", iDom, "_Proc_", myid
@@ -1210,7 +1208,7 @@ contains
     use communication
     use utils, only : setPointers
     use oversetCommUtilities, only : exchangeSurfaceIBlanks
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     implicit none
 
     ! Input Parameters
@@ -1236,7 +1234,7 @@ contains
           call setPointers(nn, level, sps)
 
           bocoLoop1: do mm=1, nBocos
-             famInclude1: if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
+             famInclude1: if (famInList(BCData(mm)%famID, famList)) then 
 
                 select case (BCFaceID(mm))
                 case (iMin)
@@ -1300,7 +1298,7 @@ contains
        call setPointers(nn, level, sps)
 
        bocoLoop2: do mm=1, nBocos
-          famInclude2: if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
+          famInclude2: if (famInList(BCData(mm)%famID, famList)) then 
 
              select case (BCFaceID(mm))
              case (iMin)

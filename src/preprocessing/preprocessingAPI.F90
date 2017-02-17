@@ -1314,7 +1314,7 @@ contains
     use surfaceFamilies, only : BCFamExchange, famNames, fullFamList, &
          zeroCellVal, zeroNodeVal, oneCellVal, BCFamgroups
     use utils, only : setPointers, EChk, pointReduce, terminate, convertToLowerCase
-    use sorting, only : qsortStrings, bsearchStrings, bSearchIntegers
+    use sorting, only : qsortStrings, bsearchStrings, famInList
     use surfaceUtils, only : getSurfaceSize
     implicit none
 
@@ -1630,7 +1630,7 @@ contains
           do nn=1, nDom
              call setPointers(nn, 1, sps)
              do mm=1, nBocos
-                famInclude: if (bsearchIntegers(BCData(mm)%famId, BCFamGroups(iBCGroup)%famList) >0) then 
+                famInclude: if (famInList(BCData(mm)%famId, BCFamGroups(iBCGroup)%famList)) then 
                    iBeg = BCData(mm)%inbeg; iEnd = BCData(mm)%inend
                    jBeg = BCData(mm)%jnbeg; jEnd = BCData(mm)%jnend
                    do j=jBeg, jEnd

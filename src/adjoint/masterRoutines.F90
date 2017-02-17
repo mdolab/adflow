@@ -251,7 +251,6 @@ contains
     use turbbcroutines_d, only : applyAllTurbBCthisblock_d,  bcTurbTreatment_d
     use initializeflow_d, only : referenceState_d
     use surfaceIntegrations, only : getSolution_d
-    use sorting, only : bsearchIntegers
     use adjointExtra_d, only : xhalo_block_d, volume_block_d, metric_BLock_d, boundarynormals_d
     use adjointextra_d, only : resscale_D, sumdwandfw_d
     use bcdata, only : setBCData_d, setBCDataFineGrid_d
@@ -553,7 +552,6 @@ contains
     use haloExchange, only : whalo2_b, exchangeCoor_b, exchangeCoor, whalo2
     use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
     use surfaceIntegrations, only : getSolution_b
-    use sorting, only : bsearchIntegers
     use flowUtils, only : fixAllNodalGradientsFromAD
     use adjointextra_b, only : resscale_B, sumdwandfw_b
     use adjointExtra_b, only : xhalo_block_b, volume_block_b, metric_block_b, boundarynormals_b

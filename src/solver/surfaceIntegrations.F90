@@ -182,7 +182,6 @@ contains
     use flowVarRefState
     use inputCostFunctions
     use inputPhysics, only : MachCoef, pointRef, velDirFreeStream, equations
-    use sorting, only :bsearchIntegers
     use BCPointers
     implicit none
   
@@ -484,7 +483,6 @@ contains
 
     use constants
     use blockPointers, only : BCType, BCFaceID, BCData, addGridVelocities
-    use sorting, only : bsearchIntegers
     use flowVarRefState, only : pRef, pInf, rhoRef, timeRef, LRef, TRef, RGas, uRef, uInf
     use inputPhysics, only : pointRef, flowType, velDirFreeStream, alpha, beta, liftIndex
     use flowUtils, only : computePtot, computeTtot, getDirVector
@@ -835,7 +833,7 @@ contains
     use blockPointers, only : nBocos, BCData, BCType, sk, sj, si, x, rlv, &
          sfacei, sfacej, sfacek, gamma, rev, p, viscSubface
     use utils, only : setBCPointers, isWallType
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     ! Tapenade needs to see these modules that the callees use.
     use BCPointers 
     use flowVarRefState
@@ -857,7 +855,7 @@ contains
        
        ! Determine if this boundary condition is to be incldued in the
        ! currently active group
-       famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then
+       famInclude: if (famInList(BCData(mm)%famID, famList)) then
           
           ! Set a bunch of pointers depending on the face id to make
           ! a generic treatment possible. 
@@ -892,7 +890,7 @@ contains
     use constants
     use blockPointers, only : nBocos, BCData, BCType
     use utils, only : setBCPointers_d, isWallType
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     use surfaceIntegrations_d, only : wallIntegrationFace_d, flowIntegrationFace_d
     implicit none
     
@@ -909,7 +907,7 @@ contains
     do mm=1, nBocos
        ! Determine if this boundary condition is to be incldued in the
        ! currently active group
-       famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then 
+       famInclude: if (famInList(BCData(mm)%famID, famList)) then 
           
           ! Set a bunch of pointers depending on the face id to make
           ! a generic treatment possible. 
@@ -945,7 +943,7 @@ contains
     use constants
     use blockPointers, only : nBocos, BCData, BCType, bcDatad
     use utils, only : setBCPointers_d, isWallType
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     use surfaceIntegrations_b, only : wallIntegrationFace_b, flowIntegrationFace_b
     implicit none
 
@@ -961,7 +959,7 @@ contains
     do mm=1, nBocos
        ! Determine if this boundary condition is to be incldued in the
        ! currently active group
-       famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then
+       famInclude: if (famInList(BCData(mm)%famID, famList)) then
           
           ! Set a bunch of pointers depending on the face id to make
           ! a generic treatment possible. 

@@ -11,6 +11,14 @@ module sorting_d
 ! ----------------------------------------------------------------------
 
 contains
+  function faminlist(famid, famlist)
+    use constants
+    implicit none
+    integer(kind=inttype), intent(in) :: famid, famlist(:)
+    logical :: faminlist
+    faminlist = .false.
+    if (bsearchintegers(famid, famlist) .gt. 0) faminlist = .true.
+  end function faminlist
   function bsearchintegers(key, base)
 !
 !       bsearchintegers returns the index in base where key is stored. 

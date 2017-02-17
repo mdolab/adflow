@@ -13,7 +13,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
   use inputOverset
   use utils, only : setPointers, EChk, pointReduce
   use warping, only : getCGNSMeshIndices
-  use sorting, only :bsearchIntegers
+  use sorting, only : famInList
   implicit none
 
   ! Input Variables
@@ -114,7 +114,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
      call setPointers(nn, level, sps)
 
      do mm=1, nBocos
-        if (bsearchIntegers(BCdata(mm)%famID, famlist) > 0) then 
+        if (famInList(BCdata(mm)%famID, famlist)) then 
            iBeg = bcData(mm)%inBeg
            iEnd = bcData(mm)%inEnd
            jBeg = bcData(mm)%jnBeg
@@ -172,7 +172,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
      c = clusters(cumDomProc(myid) + nn)
      globalCGNSNode => flowDoms(nn, level, sps)%globalCGNSNode
      do mm=1,nBocos
-        if (bsearchIntegers(BCdata(mm)%famID, famlist) > 0) then 
+        if (famInList(BCdata(mm)%famID, famlist)) then 
 
            jBeg = BCData(mm)%jnBeg-1 ; jEnd = BCData(mm)%jnEnd
            iBeg = BCData(mm)%inBeg-1 ; iEnd = BCData(mm)%inEnd

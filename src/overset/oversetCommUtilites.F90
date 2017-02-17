@@ -1456,7 +1456,7 @@ contains
          internalCell_1st
     use utils, only : setPointers
     use haloExchange, only : whalo1to1RealGeneric
-    use sorting, only : bSearchIntegers
+    use sorting, only : famInList
     implicit none
     !
     !      Subroutine arguments.
@@ -1483,7 +1483,7 @@ contains
 
        ! Push the surface iblank back to the generic volume variable rVar1
        bocoLoop: do mm=1, nBocos
-          famInclude: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
+          famInclude: if (famInList(BCData(mm)%famID, zipperFamList)) then 
 
              select case (BCFaceID(mm))
              case (iMin)
@@ -1523,7 +1523,7 @@ contains
 
        ! Extract the surface iblank from the volume. 
        bocoLoop2: do mm=1, nBocos
-          famInclude2: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
+          famInclude2: if (famInList(BCData(mm)%famID, zipperFamList)) then 
 
              select case (BCFaceID(mm))
              case (iMin)
@@ -1568,7 +1568,7 @@ contains
     use communication, only : commType, internalCommType
     use utils, only : setPointers
     use haloExchange, only : whalo1to1intgeneric
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     implicit none
     !
     !      Subroutine arguments.
@@ -1607,7 +1607,7 @@ contains
 
        ! Push the surface iblank back to the volume:
        bocoLoop: do mm=1, nBocos
-          famInclude: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
+          famInclude: if (famInList(BCData(mm)%famID, zipperFamList)) then 
 
              select case (BCFaceID(mm))
              case (iMin)
@@ -1652,7 +1652,7 @@ contains
 
        ! Extract the surface iblank from the volume. 
        bocoLoop2: do mm=1, nBocos
-          famInclude2: if (bsearchIntegers(BCData(mm)%famID, zipperFamList) > 0) then 
+          famInclude2: if (famInList(BCData(mm)%famID, zipperFamList)) then 
 
              select case (BCFaceID(mm))
              case (iMin)

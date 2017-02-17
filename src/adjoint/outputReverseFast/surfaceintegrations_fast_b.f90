@@ -162,7 +162,6 @@ contains
     use inputcostfunctions
     use inputphysics, only : machcoef, pointref, veldirfreestream, &
 &   equations
-    use sorting, only : bsearchintegers
     use bcpointers_fast_b
     implicit none
 ! input/output variables
@@ -415,7 +414,6 @@ contains
     use constants
     use blockpointers, only : bctype, bcfaceid, bcdata, &
 &   addgridvelocities
-    use sorting, only : bsearchintegers
     use flowvarrefstate, only : pref, pinf, rhoref, timeref, lref, &
 &   tref, rgas, uref, uinf
     use inputphysics, only : pointref, flowtype, veldirfreestream, &
