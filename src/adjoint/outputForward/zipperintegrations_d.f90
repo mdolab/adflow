@@ -12,7 +12,7 @@ contains
 !   rw status of diff variables: pointref:in timeref:in tref:in
 !                rgas:in pref:in rhoref:in funcvalues:in vars:in
 !                localvalues:in-out
-  subroutine flowintegrationzipper_d(isinflow, zipper, vars, varsd, &
+  subroutine flowintegrationzipper_d(isinflow, conn, fams, vars, varsd, &
 &   localvalues, localvaluesd, famlist, sps, withgathered, funcvalues, &
 &   funcvaluesd)
 ! integrate over the trianges for the inflow/outflow conditions. 
@@ -25,13 +25,13 @@ contains
     use inputphysics, only : pointref, pointrefd, flowtype
     use flowutils_d, only : computeptot, computeptot_d, computettot, &
 &   computettot_d
-    use overset, only : zippermeshes, zippermesh
     use surfacefamilies, only : familyexchange, bcfamexchange
     use utils_d, only : mynorm2, mynorm2_d, cross_prod, cross_prod_d
     implicit none
 ! input/output variables
     logical, intent(in) :: isinflow
-    type(zippermesh), intent(in) :: zipper
+    integer(kind=inttype), dimension(:, :), intent(in) :: conn
+    integer(kind=inttype), dimension(:), intent(in) :: fams
     real(kind=realtype), dimension(:, :), intent(in) :: vars
     real(kind=realtype), dimension(:, :), intent(in) :: varsd
     real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
@@ -133,8 +133,8 @@ contains
       massflowrated = 0.0_8
       mpd = 0.0_8
     end if
-    do i=1,size(zipper%conn, 2)
-      if (faminlist(zipper%fam(i), famlist)) then
+    do i=1,size(conn, 2)
+      if (faminlist(fams(i), famlist)) then
 ! compute the averaged values for this trianlge
         vxm = zero
         vym = zero
@@ -150,20 +150,20 @@ contains
         pmd = 0.0_8
         vzmd = 0.0_8
         do j=1,3
-          rhomd = rhomd + varsd(zipper%conn(j, i), irho)
-          rhom = rhom + vars(zipper%conn(j, i), irho)
-          vxmd = vxmd + varsd(zipper%conn(j, i), ivx)
-          vxm = vxm + vars(zipper%conn(j, i), ivx)
-          vymd = vymd + varsd(zipper%conn(j, i), ivy)
-          vym = vym + vars(zipper%conn(j, i), ivy)
-          vzmd = vzmd + varsd(zipper%conn(j, i), ivz)
-          vzm = vzm + vars(zipper%conn(j, i), ivz)
-          pmd = pmd + varsd(zipper%conn(j, i), irhoe)
-          pm = pm + vars(zipper%conn(j, i), irhoe)
-          gammamd = gammamd + varsd(zipper%conn(j, i), izippflowgamma)
-          gammam = gammam + vars(zipper%conn(j, i), izippflowgamma)
-          sfd = sfd + varsd(zipper%conn(j, i), izippflowsface)
-          sf = sf + vars(zipper%conn(j, i), izippflowsface)
+          rhomd = rhomd + varsd(conn(j, i), irho)
+          rhom = rhom + vars(conn(j, i), irho)
+          vxmd = vxmd + varsd(conn(j, i), ivx)
+          vxm = vxm + vars(conn(j, i), ivx)
+          vymd = vymd + varsd(conn(j, i), ivy)
+          vym = vym + vars(conn(j, i), ivy)
+          vzmd = vzmd + varsd(conn(j, i), ivz)
+          vzm = vzm + vars(conn(j, i), ivz)
+          pmd = pmd + varsd(conn(j, i), irhoe)
+          pm = pm + vars(conn(j, i), irhoe)
+          gammamd = gammamd + varsd(conn(j, i), izippflowgamma)
+          gammam = gammam + vars(conn(j, i), izippflowgamma)
+          sfd = sfd + varsd(conn(j, i), izippflowsface)
+          sf = sf + vars(conn(j, i), izippflowsface)
         end do
 ! divide by 3 due to the summation above:
         rhomd = third*rhomd
@@ -181,12 +181,12 @@ contains
         sfd = third*sfd
         sf = third*sf
 ! get the nodes of triangle.
-        x1d = varsd(zipper%conn(1, i), izippflowx:izippflowz)
-        x1 = vars(zipper%conn(1, i), izippflowx:izippflowz)
-        x2d = varsd(zipper%conn(2, i), izippflowx:izippflowz)
-        x2 = vars(zipper%conn(2, i), izippflowx:izippflowz)
-        x3d = varsd(zipper%conn(3, i), izippflowx:izippflowz)
-        x3 = vars(zipper%conn(3, i), izippflowx:izippflowz)
+        x1d = varsd(conn(1, i), izippflowx:izippflowz)
+        x1 = vars(conn(1, i), izippflowx:izippflowz)
+        x2d = varsd(conn(2, i), izippflowx:izippflowz)
+        x2 = vars(conn(2, i), izippflowx:izippflowz)
+        x3d = varsd(conn(3, i), izippflowx:izippflowz)
+        x3 = vars(conn(3, i), izippflowx:izippflowz)
         call cross_prod_d(x2 - x1, x2d - x1d, x3 - x1, x3d - x1d, norm, &
 &                   normd)
         ssd = half*normd
@@ -263,12 +263,12 @@ contains
           ycd = 0.0_8
           zcd = 0.0_8
           do j=1,3
-            xcd = xcd + varsd(zipper%conn(1, i), izippflowx)
-            xc = xc + vars(zipper%conn(1, i), izippflowx)
-            ycd = ycd + varsd(zipper%conn(2, i), izippflowy)
-            yc = yc + vars(zipper%conn(2, i), izippflowy)
-            zcd = zcd + varsd(zipper%conn(3, i), izippflowz)
-            zc = zc + vars(zipper%conn(3, i), izippflowz)
+            xcd = xcd + varsd(conn(1, i), izippflowx)
+            xc = xc + vars(conn(1, i), izippflowx)
+            ycd = ycd + varsd(conn(2, i), izippflowy)
+            yc = yc + vars(conn(2, i), izippflowy)
+            zcd = zcd + varsd(conn(3, i), izippflowz)
+            zc = zc + vars(conn(3, i), izippflowz)
           end do
 ! finish average for cell center
           xcd = third*xcd
@@ -388,8 +388,8 @@ contains
 &       mmom
     end if
   end subroutine flowintegrationzipper_d
-  subroutine flowintegrationzipper(isinflow, zipper, vars, localvalues, &
-&   famlist, sps, withgathered, funcvalues)
+  subroutine flowintegrationzipper(isinflow, conn, fams, vars, &
+&   localvalues, famlist, sps, withgathered, funcvalues)
 ! integrate over the trianges for the inflow/outflow conditions. 
     use constants
     use blockpointers, only : bctype
@@ -398,13 +398,13 @@ contains
 &   lref, tref, rgas, uref, uinf
     use inputphysics, only : pointref, flowtype
     use flowutils_d, only : computeptot, computettot
-    use overset, only : zippermeshes, zippermesh
     use surfacefamilies, only : familyexchange, bcfamexchange
     use utils_d, only : mynorm2, cross_prod
     implicit none
 ! input/output variables
     logical, intent(in) :: isinflow
-    type(zippermesh), intent(in) :: zipper
+    integer(kind=inttype), dimension(:, :), intent(in) :: conn
+    integer(kind=inttype), dimension(:), intent(in) :: fams
     real(kind=realtype), dimension(:, :), intent(in) :: vars
     real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
 &   localvalues
@@ -445,8 +445,8 @@ contains
     if (flowtype .eq. internalflow) internalflowfact = -one
     inflowfact = one
     if (isinflow) inflowfact = -one
-    do i=1,size(zipper%conn, 2)
-      if (faminlist(zipper%fam(i), famlist)) then
+    do i=1,size(conn, 2)
+      if (faminlist(fams(i), famlist)) then
 ! compute the averaged values for this trianlge
         vxm = zero
         vym = zero
@@ -456,13 +456,13 @@ contains
         mnm = zero
         sf = zero
         do j=1,3
-          rhom = rhom + vars(zipper%conn(j, i), irho)
-          vxm = vxm + vars(zipper%conn(j, i), ivx)
-          vym = vym + vars(zipper%conn(j, i), ivy)
-          vzm = vzm + vars(zipper%conn(j, i), ivz)
-          pm = pm + vars(zipper%conn(j, i), irhoe)
-          gammam = gammam + vars(zipper%conn(j, i), izippflowgamma)
-          sf = sf + vars(zipper%conn(j, i), izippflowsface)
+          rhom = rhom + vars(conn(j, i), irho)
+          vxm = vxm + vars(conn(j, i), ivx)
+          vym = vym + vars(conn(j, i), ivy)
+          vzm = vzm + vars(conn(j, i), ivz)
+          pm = pm + vars(conn(j, i), irhoe)
+          gammam = gammam + vars(conn(j, i), izippflowgamma)
+          sf = sf + vars(conn(j, i), izippflowsface)
         end do
 ! divide by 3 due to the summation above:
         rhom = third*rhom
@@ -473,9 +473,9 @@ contains
         gammam = third*gammam
         sf = third*sf
 ! get the nodes of triangle.
-        x1 = vars(zipper%conn(1, i), izippflowx:izippflowz)
-        x2 = vars(zipper%conn(2, i), izippflowx:izippflowz)
-        x3 = vars(zipper%conn(3, i), izippflowx:izippflowz)
+        x1 = vars(conn(1, i), izippflowx:izippflowz)
+        x2 = vars(conn(2, i), izippflowx:izippflowz)
+        x3 = vars(conn(3, i), izippflowx:izippflowz)
         call cross_prod(x2 - x1, x3 - x1, norm)
         ss = half*norm
         call computeptot(rhom, vxm, vym, vzm, pm, ptot)
@@ -507,9 +507,9 @@ contains
           yc = zero
           zc = zero
           do j=1,3
-            xc = xc + vars(zipper%conn(1, i), izippflowx)
-            yc = yc + vars(zipper%conn(2, i), izippflowy)
-            zc = zc + vars(zipper%conn(3, i), izippflowz)
+            xc = xc + vars(conn(1, i), izippflowx)
+            yc = yc + vars(conn(2, i), izippflowy)
+            zc = zc + vars(conn(3, i), izippflowz)
           end do
 ! finish average for cell center
           xc = third*xc
@@ -577,17 +577,17 @@ contains
 !   variations   of useful results: localvalues
 !   with respect to varying inputs: pointref vars localvalues
 !   rw status of diff variables: pointref:in vars:in localvalues:in-out
-  subroutine wallintegrationzipper_d(zipper, vars, varsd, localvalues, &
-&   localvaluesd, famlist, sps)
+  subroutine wallintegrationzipper_d(conn, fams, vars, varsd, &
+&   localvalues, localvaluesd, famlist, sps)
     use constants
     use sorting, only : faminlist
     use flowvarrefstate, only : lref
     use inputphysics, only : pointref, pointrefd
-    use overset, only : zippermeshes, zippermesh
     use utils_d, only : mynorm2, mynorm2_d, cross_prod, cross_prod_d
     implicit none
 ! input/output
-    type(zippermesh), intent(in) :: zipper
+    integer(kind=inttype), dimension(:, :), intent(in) :: conn
+    integer(kind=inttype), dimension(:), intent(in) :: fams
     real(kind=realtype), dimension(:, :), intent(in) :: vars
     real(kind=realtype), dimension(:, :), intent(in) :: varsd
     real(kind=realtype), intent(inout) :: localvalues(nlocalvalues)
@@ -629,16 +629,16 @@ contains
     fvd = 0.0_8
     mpd = 0.0_8
     mvd = 0.0_8
-    do i=1,size(zipper%conn, 2)
-      if (faminlist(zipper%fam(i), famlist)) then
+    do i=1,size(conn, 2)
+      if (faminlist(fams(i), famlist)) then
 ! get the nodes of triangle. the *3 is becuase of the
 ! blanket third above. 
-        x1d = varsd(zipper%conn(1, i), izippwallx:izippwallz)
-        x1 = vars(zipper%conn(1, i), izippwallx:izippwallz)
-        x2d = varsd(zipper%conn(2, i), izippwallx:izippwallz)
-        x2 = vars(zipper%conn(2, i), izippwallx:izippwallz)
-        x3d = varsd(zipper%conn(3, i), izippwallx:izippwallz)
-        x3 = vars(zipper%conn(3, i), izippwallx:izippwallz)
+        x1d = varsd(conn(1, i), izippwallx:izippwallz)
+        x1 = vars(conn(1, i), izippwallx:izippwallz)
+        x2d = varsd(conn(2, i), izippwallx:izippwallz)
+        x2 = vars(conn(2, i), izippwallx:izippwallz)
+        x3d = varsd(conn(3, i), izippwallx:izippwallz)
+        x3 = vars(conn(3, i), izippwallx:izippwallz)
         call cross_prod_d(x2 - x1, x2d - x1d, x3 - x1, x3d - x1d, norm, &
 &                   normd)
         ssd = half*normd
@@ -662,12 +662,12 @@ contains
         zcd = zcd - refpointd(3)
         zc = zc - refpoint(3)
 ! update the pressure force and moment coefficients.
-        p1d = varsd(zipper%conn(1, i), izippwalltpx:izippwalltpz)
-        p1 = vars(zipper%conn(1, i), izippwalltpx:izippwalltpz)
-        p2d = varsd(zipper%conn(2, i), izippwalltpx:izippwalltpz)
-        p2 = vars(zipper%conn(2, i), izippwalltpx:izippwalltpz)
-        p3d = varsd(zipper%conn(3, i), izippwalltpx:izippwalltpz)
-        p3 = vars(zipper%conn(3, i), izippwalltpx:izippwalltpz)
+        p1d = varsd(conn(1, i), izippwalltpx:izippwalltpz)
+        p1 = vars(conn(1, i), izippwalltpx:izippwalltpz)
+        p2d = varsd(conn(2, i), izippwalltpx:izippwalltpz)
+        p2 = vars(conn(2, i), izippwalltpx:izippwalltpz)
+        p3d = varsd(conn(3, i), izippwalltpx:izippwalltpz)
+        p3 = vars(conn(3, i), izippwalltpx:izippwalltpz)
         fxd = (p1d(1)+p2d(1)+p3d(1))*triarea + (p1(1)+p2(1)+p3(1))*&
 &         triaread
         fx = (p1(1)+p2(1)+p3(1))*triarea
@@ -696,12 +696,12 @@ contains
         mpd(3) = mpd(3) + mzd
         mp(3) = mp(3) + mz
 ! update the viscous force and moment coefficients
-        v1d = varsd(zipper%conn(1, i), izippwalltvx:izippwalltvz)
-        v1 = vars(zipper%conn(1, i), izippwalltvx:izippwalltvz)
-        v2d = varsd(zipper%conn(2, i), izippwalltvx:izippwalltvz)
-        v2 = vars(zipper%conn(2, i), izippwalltvx:izippwalltvz)
-        v3d = varsd(zipper%conn(3, i), izippwalltvx:izippwalltvz)
-        v3 = vars(zipper%conn(3, i), izippwalltvx:izippwalltvz)
+        v1d = varsd(conn(1, i), izippwalltvx:izippwalltvz)
+        v1 = vars(conn(1, i), izippwalltvx:izippwalltvz)
+        v2d = varsd(conn(2, i), izippwalltvx:izippwalltvz)
+        v2 = vars(conn(2, i), izippwalltvx:izippwalltvz)
+        v3d = varsd(conn(3, i), izippwalltvx:izippwalltvz)
+        v3 = vars(conn(3, i), izippwalltvx:izippwalltvz)
         fxd = (v1d(1)+v2d(1)+v3d(1))*triarea + (v1(1)+v2(1)+v3(1))*&
 &         triaread
         fx = (v1(1)+v2(1)+v3(1))*triarea
@@ -742,17 +742,17 @@ contains
     localvaluesd(imv:imv+2) = localvaluesd(imv:imv+2) + mvd
     localvalues(imv:imv+2) = localvalues(imv:imv+2) + mv
   end subroutine wallintegrationzipper_d
-  subroutine wallintegrationzipper(zipper, vars, localvalues, famlist, &
-&   sps)
+  subroutine wallintegrationzipper(conn, fams, vars, localvalues, &
+&   famlist, sps)
     use constants
     use sorting, only : faminlist
     use flowvarrefstate, only : lref
     use inputphysics, only : pointref
-    use overset, only : zippermeshes, zippermesh
     use utils_d, only : mynorm2, cross_prod
     implicit none
 ! input/output
-    type(zippermesh), intent(in) :: zipper
+    integer(kind=inttype), dimension(:, :), intent(in) :: conn
+    integer(kind=inttype), dimension(:), intent(in) :: fams
     real(kind=realtype), dimension(:, :), intent(in) :: vars
     real(kind=realtype), intent(inout) :: localvalues(nlocalvalues)
     integer(kind=inttype), dimension(:), intent(in) :: famlist
@@ -776,13 +776,13 @@ contains
     fv = zero
     mp = zero
     mv = zero
-    do i=1,size(zipper%conn, 2)
-      if (faminlist(zipper%fam(i), famlist)) then
+    do i=1,size(conn, 2)
+      if (faminlist(fams(i), famlist)) then
 ! get the nodes of triangle. the *3 is becuase of the
 ! blanket third above. 
-        x1 = vars(zipper%conn(1, i), izippwallx:izippwallz)
-        x2 = vars(zipper%conn(2, i), izippwallx:izippwallz)
-        x3 = vars(zipper%conn(3, i), izippwallx:izippwallz)
+        x1 = vars(conn(1, i), izippwallx:izippwallz)
+        x2 = vars(conn(2, i), izippwallx:izippwallz)
+        x3 = vars(conn(3, i), izippwallx:izippwallz)
         call cross_prod(x2 - x1, x3 - x1, norm)
         ss = half*norm
 ! the third here is to account for the summation of p1, p2
@@ -797,9 +797,9 @@ contains
         yc = yc - refpoint(2)
         zc = zc - refpoint(3)
 ! update the pressure force and moment coefficients.
-        p1 = vars(zipper%conn(1, i), izippwalltpx:izippwalltpz)
-        p2 = vars(zipper%conn(2, i), izippwalltpx:izippwalltpz)
-        p3 = vars(zipper%conn(3, i), izippwalltpx:izippwalltpz)
+        p1 = vars(conn(1, i), izippwalltpx:izippwalltpz)
+        p2 = vars(conn(2, i), izippwalltpx:izippwalltpz)
+        p3 = vars(conn(3, i), izippwalltpx:izippwalltpz)
         fx = (p1(1)+p2(1)+p3(1))*triarea
         fy = (p1(2)+p2(2)+p3(2))*triarea
         fz = (p1(3)+p2(3)+p3(3))*triarea
@@ -813,9 +813,9 @@ contains
         mp(2) = mp(2) + my
         mp(3) = mp(3) + mz
 ! update the viscous force and moment coefficients
-        v1 = vars(zipper%conn(1, i), izippwalltvx:izippwalltvz)
-        v2 = vars(zipper%conn(2, i), izippwalltvx:izippwalltvz)
-        v3 = vars(zipper%conn(3, i), izippwalltvx:izippwalltvz)
+        v1 = vars(conn(1, i), izippwalltvx:izippwalltvz)
+        v2 = vars(conn(2, i), izippwalltvx:izippwalltvz)
+        v3 = vars(conn(3, i), izippwalltvx:izippwalltvz)
         fx = (v1(1)+v2(1)+v3(1))*triarea
         fy = (v1(2)+v2(2)+v3(2))*triarea
         fz = (v1(3)+v2(3)+v3(3))*triarea
