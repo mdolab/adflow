@@ -16,7 +16,7 @@ contains
     use communication, only : myid, adflow_comm_world
     use utils, only : EChk, mynorm2
     use flowUtils, only : computePtot, computeTtot
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     implicit none
 
     ! Input Parameters
@@ -53,7 +53,7 @@ contains
        surf => userIntSurfs(iSurf)
 
        ! Do we need to include this surface?
-       famInclude: if (bsearchIntegers(surf%famID, famList) > 0) then
+       famInclude: if (famInList(surf%famID, famList)) then 
 
           ! Communicate the face values and the nodal values
           if (myid == 0) then 

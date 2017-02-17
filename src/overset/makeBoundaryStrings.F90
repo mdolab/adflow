@@ -8,11 +8,10 @@ contains
          il, jl, kl, nDom, rightHanded, BCFaceID, BCType
     use communication, only : adflow_comm_world, myid, nProc
     use overset, only : oversetString, oversetWall, nClusters, clusters, cumDomProc
-    use stringOps!, only : nullifyString, deallocateString, setStringPointers, &
-    !         reduceGapString
+    use stringOps
     use utils, only : setPointers, EChk, myNorm2, cross_prod
     use oversetPackingRoutines, only : getWallSize
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     implicit none
 
     ! Input Params
@@ -100,7 +99,7 @@ contains
 
        bocoLoop: do mm=1, nBocos
           famID = BCData(mm)%famID
-          if (bsearchIntegers(famID, zipperFamList) > 0) then 
+          if (famInList(famID, zipperFamList)) then 
 
              select case (BCFaceID(mm))
              case (iMin)

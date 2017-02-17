@@ -1392,7 +1392,7 @@ contains
     use cgnsNames
     use blockPointers, only : BCData, nDom, nBocos, nBKGlobal, & 
          cgnsSubFace, BCType
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     use utils, only : setPointers,terminate
     !
     !      Subroutine arguments.
@@ -1428,7 +1428,7 @@ contains
 
              ! Check if this surface should be included or not:
              nFam = famLists(iVar, 1)
-             famInclude: if (bsearchIntegers(BCdata(j)%famID, famLists(iVar, 2:2+nFam-1)) > 0) then 
+             famInclude: if (famInList(BCdata(j)%famID, famLists(iVar, 2:2+nFam-1))) then 
 
                 select case (BCType(j))
 
@@ -1465,7 +1465,7 @@ contains
     use cgnsNames
     use blockPointers, only : BCData, nDom, nBocos, nBKGlobal, & 
          cgnsSubFace, BCType
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     use utils, only : setPointers_d, terminate
     !
     !      Subroutine arguments.
@@ -1502,7 +1502,7 @@ contains
 
              ! Check if this surface should be included or not:
              nFam = famLists(iVar, 1)
-             famInclude: if (bsearchIntegers(BCdata(j)%famID, famLists(iVar, 2:2+nFam-1)) > 0) then 
+             famInclude: if (famInList(BCdata(j)%famID, famLists(iVar, 2:2+nFam-1))) then 
 
                 select case (BCType(j))
 
@@ -1539,7 +1539,7 @@ contains
     use cgnsNames
     use blockPointers, only : BCData, nDom, nBocos, nBKGlobal, & 
          cgnsSubFace, BCType
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     use utils, only : setPointers_b, terminate
     !
     !      Subroutine arguments.
@@ -1578,7 +1578,7 @@ contains
 
              ! Check if this surface should be included or not:
              nFam = famLists(iVar, 1)
-             famInclude: if (bsearchIntegers(BCdata(j)%famID, famLists(iVar, 2:2+nFam-1)) > 0) then 
+             famInclude: if (famInList(BCdata(j)%famID, famLists(iVar, 2:2+nFam-1))) then 
 
                 select case (BCType(j))
 

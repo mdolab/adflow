@@ -8,7 +8,7 @@ contains
     use constants
     use blockPointers, only : BCData, nDom, nBocos
     use utils, only : setPointers
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     use surfaceFamilies, only  : BCFamGroups
     use overset, only : zipperMeshes, zipperMesh, oversetPresent
 
@@ -28,7 +28,7 @@ contains
        call setPointers(nn,1_intType,1_intType)
        bocos: do mm=1,nBocos
           ! Check if this surface should be included or not:
-          famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then 
+          famInclude: if (famInList(BCData(mm)%famID, famList)) then 
 
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
@@ -64,7 +64,7 @@ contains
     do iBCGroup=1, nfamExchange
        BCGroupNeeded = .False.
        BCGroupFamLoop: do j=1, size(BCFamGroups(iBCGroup)%famList)
-          if (bsearchIntegers(BCFamGroups(iBCGroup)%famList(j), famList) > 0) then 
+          if (famInList(BCFamGroups(iBCGroup)%famList(j), famList)) then 
              BCGroupNeeded = .True.
              exit BCGroupFamLoop
           end if
@@ -90,7 +90,7 @@ contains
        ! are needed, but here we have to check indvidually. 
        
        do i=1,size(zipper%fam)
-          if (bsearchIntegers(zipper%fam(i), famList) > 0) then 
+          if (famInList(zipper%fam(i), famList)) then 
              sizeCell = sizeCell + 1
           end if
        end do
@@ -103,7 +103,7 @@ contains
     use constants
     use blockPointers, only : nDom, nBocos, BCData, BCFaceID, rightHanded
     use utils, only : setPointers
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     use surfaceFamilies, only : BCFamGroups
     use overset, only : zipperMeshes, zipperMesh, oversetPresent
 
@@ -126,7 +126,7 @@ contains
     domains: do nn=1,nDom
        call setPointers(nn, 1_intType, 1_intType)
        bocos: do mm=1,nBocos
-          famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then 
+          famInclude: if (famInList(BCData(mm)%famID, famList)) then 
 
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
@@ -221,7 +221,7 @@ contains
 
        BCGroupNeeded = .False.
        BCGroupFamLoop: do i=1, size(BCFamGroups(iBCGroup)%famList)
-          if (bsearchIntegers(BCFamGroups(iBCGroup)%famList(i), famList) > 0) then 
+          if (famInList(BCFamGroups(iBCGroup)%famList(i), famList)) then 
              BCGroupNeeded = .True.
              exit BCGroupFamLoop
           end if
@@ -243,7 +243,7 @@ contains
        ! are needed, but ehre we have to check indvidually. 
        
        do i=1,size(zipper%fam)
-          if (bsearchIntegers(zipper%fam(i), famList) > 0) then 
+          if (famInList(zipper%fam(i), famList)) then 
              ! This triangle should be included. Note that we use
              ! degenerate quads for the triangles.
              conn(4*cellCount+1) = nodeCount + zipper%conn(1, i)
@@ -262,7 +262,7 @@ contains
     use constants
     use blockPointers, only : nDom, nBocos, BCData
     use utils, only : setPointers
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     use surfaceFamilies, only : BCFamGroups
     use overset, only : zipperMeshes, zipperMesh, oversetPresent
     implicit none
@@ -285,7 +285,7 @@ contains
     domains: do nn=1,nDom
        call setPointers(nn, 1_intType, 1_intType)
        bocos: do mm=1,nBocos
-          famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then 
+          famInclude: if (famInList(BCData(mm)%famID, famList)) then 
 
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
@@ -319,7 +319,7 @@ contains
 
        BCGroupNeeded = .False.
        BCGroupFamLoop: do i=1, size(BCFamGroups(iBCGroup)%famList)
-          if (bsearchIntegers(BCFamGroups(iBCGroup)%famList(i), famList) > 0) then 
+          if (famInList(BCFamGroups(iBCGroup)%famList(i), famList)) then 
              BCGroupNeeded = .True.
              exit BCGroupFamLoop
           end if
@@ -341,7 +341,7 @@ contains
        ! are needed, but ehre we have to check indvidually. 
        
        do i=1, size(zipper%fam)
-          if (bsearchIntegers(zipper%fam(i), famList) > 0) then 
+          if (famInList(zipper%fam(i), famList)) then 
              ! This triangle should be included. Note that we use
              ! degenerate quads for the triangles.
              cellCount = cellCount + 1
@@ -358,7 +358,7 @@ contains
     use BCPointers, only : xx
     use surfaceFamilies, only : BCFamGroups, familyExchange, BCFamExchange
     use overset, only : zipperMeshes, zipperMesh, oversetPresent
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     use utils, only : setPointers, EChk, setBCPointers
     implicit none
 #define PETSC_AVOID_MPIF_H
@@ -389,7 +389,7 @@ contains
        ! Loop over the number of boundary subfaces of this block.
        bocos: do mm=1,nBocos
 
-          famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then 
+          famInclude: if (famInList(BCData(mm)%famID, famList)) then 
 
              ! NODE Based
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
@@ -437,7 +437,7 @@ contains
        exch => BCFamExchange(iBCGroup, sps)
        BCGroupNeeded = .False.
        BCGroupFamLoop: do i=1, size(BCFamGroups(iBCGroup)%famList)
-          if (bsearchIntegers(BCFamGroups(iBCGroup)%famList(i), famList) > 0) then 
+          if (famInList(BCFamGroups(iBCGroup)%famList(i), famList)) then 
              BCGroupNeeded = .True.
              exit BCGroupFamLoop
           end if
@@ -462,7 +462,7 @@ contains
           do nn=1, nDom
              call setPointers(nn, 1_intType, sps)
              do mm=1, nBocos
-                famInclude2: if (bsearchIntegers(BCData(mm)%famID, exch%famList) > 0) then 
+                famInclude2: if (famInList(BCData(mm)%famID, exch%famList)) then 
                    iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
                    jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
                    call setBCPointers(mm, .True.)
@@ -518,7 +518,7 @@ contains
     ! single copy of surface-based data. 
     use constants
     use blockPointers, onlY :nDom, flowDoms
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     use surfaceFamilies, only : BCFamGroups
     use overset, only : zipperMeshes, zipperMesh, oversetPresent
 
@@ -546,8 +546,8 @@ contains
        bocos: do mm=1,flowDoms(nn, 1, 1)%nBocos
           famId = flowDoms(nn, 1, 1)%BCdata(mm)%famID
 
-          fam1Included = bsearchIntegers(famID, famList1) > 0
-          fam2Included = bsearchIntegers(famID, famList2) > 0
+          fam1Included = famInList(famID, famList1)
+          fam2Included = famInList(famid, famList2)
 
           jBeg = flowDoms(nn, 1, 1)%bcData(mm)%jnBeg
           jEnd = flowDoms(nn, 1, 1)%bcData(mm)%jnEnd
@@ -595,10 +595,10 @@ contains
        fam1Included = .False.
        fam2Included = .False.
        BCGroupFamLoop: do i=1, size(BCFamGroups(iBCGroup)%famList)
-          if (bsearchIntegers(BCFamGroups(iBCGroup)%famList(i), famList1) > 0) then 
+          if (famInList(BCFamGroups(iBCGroup)%famList(i), famList1)) then 
              fam1Included = .True.
           end if
-          if (bsearchIntegers(BCFamGroups(iBCGroup)%famList(i), famList2) > 0) then 
+          if (famInList(BCFamGroups(iBCGroup)%famList(i), famList2)) then 
              fam2Included = .True.
           end if
        end do BCGroupFamLoop

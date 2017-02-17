@@ -8,7 +8,7 @@ contains
 
     use constants
     use blockPointers, only : BCType
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas, uRef, uInf
     use inputPhysics, only : pointRef, flowType
     use flowUtils, only : computePtot, computeTtot
@@ -64,7 +64,7 @@ contains
 
     !$AD II-LOOP
     do i=1, size(zipper%conn, 2)
-       if (bsearchIntegers(zipper%fam(i) , famList) > 0) then 
+       if (famInList(zipper%fam(i), famList)) then 
           ! Compute the averaged values for this trianlge
           vxm = zero; vym = zero; vzm = zero; rhom = zero; pm = zero; MNm = zero;
           sF = zero
@@ -206,7 +206,7 @@ contains
   subroutine wallIntegrationZipper(zipper, vars, localValues, famList, sps)
 
     use constants
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     use flowVarRefState, only : LRef
     use inputPhysics, only : pointRef
     use overset, only : zipperMeshes, zipperMesh
@@ -241,7 +241,7 @@ contains
 
     !$AD II-LOOP
     do i=1, size(zipper%conn, 2)
-       if (bsearchIntegers(zipper%fam(i), famList) > 0) then 
+       if (famInList(zipper%fam(i), famList)) then 
 
           ! Get the nodes of triangle. The *3 is becuase of the
           ! blanket third above. 

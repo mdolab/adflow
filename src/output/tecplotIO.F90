@@ -479,7 +479,7 @@ contains
     use surfaceFamilies, only : BCFamGroups, BCFamExchange
     use surfaceUtils
     use utils, only : EChk
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     implicit none
 
     ! Input parameters
@@ -517,7 +517,7 @@ contains
 
        ! Get the bounding box for the entire geometry we have been slicing.
        elemLoop: do i=1, size(conn, 2)
-          if (bSearchIntegers(elemFam(i), d%FamList) > 0) then 
+          if (famInList(elemFam(i), d%FamList)) then 
 
              ! Extract each of the 4 nodes on this quad:
              do jj=1,4
@@ -702,7 +702,7 @@ contains
     use surfaceFamilies, onlY : BCFamExchange, famNames, familyExchange
     use utils, only : EChk, setPointers, setBCPointers
     use BCPointers, only : xx
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     use extraOutput, only : surfWriteBlank
     use overset, only : zipperMesh, zipperMeshes
     use surfaceUtils 
@@ -809,7 +809,7 @@ contains
 
           BCGroupNeeded = .False.
           do i=1,size(famList)
-             if (bsearchIntegers(famList(i), exch%famList) > 0) then 
+             if (famInLIst(famList(i), exch%famList)) then 
                 BCGroupNeeded = .True.
              end if
           end do
@@ -855,7 +855,7 @@ contains
              do iFam=1, size(exch%famList)
                 
                 ! Check if we have to write this one:
-                famInclude: if (bsearchIntegers(exch%famList(iFam), famList) > 0) then 
+                famInclude: if (famInList(exch%famList(iFam), famList)) then 
                    nCellsToWrite = 0
                    do i=1, nCells
                       ! Check if this elem is to be included
@@ -908,7 +908,7 @@ contains
 
           BCGroupNeeded = .False.
           do i=1,size(famList)
-             if (bsearchIntegers(famList(i), exch%famList) > 0) then 
+             if (famInList(famList(i), exch%famList)) then 
                 BCGroupNeeded = .True.
              end if
           end do
@@ -1006,7 +1006,7 @@ contains
              do iFam=1, size(exch%famList)
                 
                 ! Check if we have to write this one:
-                famInclude2: if (bsearchIntegers(exch%famList(iFam), famList) > 0) then 
+                famInclude2: if (famInList(exch%famList(iFam), famList)) then 
 
                    ! Create a temporary mask
                    mask = 0
@@ -1266,7 +1266,7 @@ contains
          surfSolNames
     use surfaceUtils
     use utils, only : setPointers, EChk
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     use overset, only : zipperMesh
     implicit none
 
@@ -1314,7 +1314,7 @@ contains
              iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
              jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
 
-             if (bsearchIntegers(BCdata(mm)%famID, exch%famList) > 0) then 
+             if (famInList(BCdata(mm)%famID, exch%famList)) then 
                 do j=jBeg, jEnd
                    do i=iBeg, iEnd
                       ii = ii + 1
@@ -1399,7 +1399,7 @@ contains
           jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
           ni = iEnd - iBeg + 1
           nj = jEnd - jBeg + 1
-          if (bsearchIntegers(BCdata(mm)%famID, exch%FamList) > 0) then 
+          if (famInList(BCdata(mm)%famID, exch%FamList)) then 
              do j=0,nj-2
                 do i=0,ni-2
 
@@ -1458,7 +1458,7 @@ contains
           call setPointers(nn, 1, exch%sps)
 
           bocoLoop: do mm=1, nBocos
-             if (bsearchIntegers(BCdata(mm)%famID, exch%famList) > 0) then 
+             if (famInList(BCdata(mm)%famID, exch%famList)) then 
 
                 ! storeSurfSolInBuffer needs to know if the subface is
                 ! viscous or not. 
@@ -1622,7 +1622,7 @@ contains
     !
     use constants
     use utils, only : reallocatereal2, reallocateinteger2, pointReduce
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     implicit none
 
     ! Input param
@@ -1678,7 +1678,7 @@ contains
     ! Loop over all elements
     elemLoop: do i=1, size(conn, 2)
 
-       famInclude: if (bsearchIntegers(elemFam(i), famList) > 0) then 
+       famInclude: if (famInList(elemFam(i), famList)) then 
           
           ! Extract the indices and function values at each corner
           do jj=1,4
@@ -1809,7 +1809,6 @@ contains
     use flowVarRefState
     use communication
     use utils, only : EChk
-    use sorting, only : bsearchIntegers
     implicit none
 
     ! Input Variables
