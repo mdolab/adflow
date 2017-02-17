@@ -1111,6 +1111,7 @@ contains
     use utils, only : setPointers_b, EChk, setPointers
     use surfaceIntegrations_b, only : getCostFunctions_b
     use zipperIntegrations, only :integrateZippers_b 
+    use userSurfaceIntegrations, only : integrateUserSurfaces_b
     implicit none
 
     ! Input/Output Variables
@@ -1187,10 +1188,10 @@ contains
                .False., funcValues(:, iGroup), funcValuesd(:, iGroup))
           
           ! Integrate any user-supplied planes as have as well. 
-          !call integrateUserSurfaces_b(localVal(:, sps), localVald(:, sps), famList, sps)
+          call integrateUserSurfaces_b(localVal(:, sps), localVald(:, sps), famList, sps, & 
+               .False., funcValues(:, iGroup), funcValuesd(:, iGroup))
        end do
     end do groupLoop
-
   end subroutine getSolution_b
 #endif
 #endif
