@@ -1,7 +1,7 @@
 module zipperIntegrations
 contains
 
-  subroutine flowIntegrationZipper(isInflow, zipper, vars, localValues, famList, sps, &
+  subroutine flowIntegrationZipper(isInflow, conn, fams, vars, localValues, famList, sps, &
        withGathered, funcValues)
 
     ! Integrate over the trianges for the inflow/outflow conditions. 
@@ -12,14 +12,14 @@ contains
     use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas, uRef, uInf
     use inputPhysics, only : pointRef, flowType
     use flowUtils, only : computePtot, computeTtot
-    use overset, only : zipperMeshes, zipperMesh
     use surfaceFamilies, only : familyExchange, BCFamExchange
     use utils, only : mynorm2, cross_prod
     implicit none
 
     ! Input/output Variables
     logical, intent(in) :: isInflow
-    type(zipperMesh), intent(in) :: zipper
+    integer(kind=intType), intent(in), dimension(:, :) :: conn
+    integer(kind=intType), intent(in), dimension(:) :: fams
     real(kind=realType), dimension(:, :), intent(in) :: vars
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
     integer(kind=intType), dimension(:), intent(in) :: famList
@@ -63,19 +63,19 @@ contains
 
 
     !$AD II-LOOP
-    do i=1, size(zipper%conn, 2)
-       if (famInList(zipper%fam(i), famList)) then 
+    do i=1, size(conn, 2)
+       if (famInList(fams(i), famList)) then 
           ! Compute the averaged values for this trianlge
           vxm = zero; vym = zero; vzm = zero; rhom = zero; pm = zero; MNm = zero;
           sF = zero
           do j=1,3
-             rhom = rhom + vars(zipper%conn(j, i), iRho)
-             vxm = vxm + vars(zipper%conn(j, i), iVx)
-             vym = vym + vars(zipper%conn(j, i), iVy)
-             vzm = vzm + vars(zipper%conn(j, i), iVz)
-             pm = pm + vars(zipper%conn(j, i), iRhoE)
-             gammam = gammam + vars(zipper%conn(j, i), iZippFlowGamma)
-             sF = sF + vars(zipper%conn(j, i), iZippFlowSFace)
+             rhom = rhom + vars(conn(j, i), iRho)
+             vxm = vxm + vars(conn(j, i), iVx)
+             vym = vym + vars(conn(j, i), iVy)
+             vzm = vzm + vars(conn(j, i), iVz)
+             pm = pm + vars(conn(j, i), iRhoE)
+             gammam = gammam + vars(conn(j, i), iZippFlowGamma)
+             sF = sF + vars(conn(j, i), iZippFlowSFace)
           end do
 
           ! Divide by 3 due to the summation above:
@@ -88,9 +88,9 @@ contains
           sF = third*sF
 
           ! Get the nodes of triangle.
-          x1 = vars(zipper%conn(1, i), iZippFLowX:iZippFlowZ)
-          x2 = vars(zipper%conn(2, i), iZippFlowX:iZippFlowZ)
-          x3 = vars(zipper%conn(3, i), iZippFlowX:iZippFlowZ)
+          x1 = vars(conn(1, i), iZippFLowX:iZippFlowZ)
+          x2 = vars(conn(2, i), iZippFlowX:iZippFlowZ)
+          x3 = vars(conn(3, i), iZippFlowX:iZippFlowZ)
           call cross_prod(x2-x1, x3-x1, norm)
           ss = half*norm
 
@@ -127,9 +127,9 @@ contains
              yc = zero
              zc = zero
              do j=1,3
-                xc = xc + (vars(zipper%conn(1, i), iZippFlowX)) 
-                yc = yc + (vars(zipper%conn(2, i), iZippFlowY)) 
-                zc = zc + (vars(zipper%conn(3, i), iZippFlowZ)) 
+                xc = xc + (vars(conn(1, i), iZippFlowX)) 
+                yc = yc + (vars(conn(2, i), iZippFlowY)) 
+                zc = zc + (vars(conn(3, i), iZippFlowZ)) 
              end do
 
              ! Finish average for cell center
@@ -203,18 +203,18 @@ contains
 
   end subroutine flowIntegrationZipper
 
-  subroutine wallIntegrationZipper(zipper, vars, localValues, famList, sps)
+  subroutine wallIntegrationZipper(conn, fams, vars, localValues, famList, sps)
 
     use constants
     use sorting, only : famInList
     use flowVarRefState, only : LRef
     use inputPhysics, only : pointRef
-    use overset, only : zipperMeshes, zipperMesh
     use utils, only : mynorm2, cross_prod
     implicit none
 
     ! Input/Output
-    type(zipperMesh), intent(in) :: zipper
+    integer(kind=intType), intent(in), dimension(:, :) :: conn
+    integer(kind=intType), intent(in), dimension(:) :: fams
     real(kind=realType), intent(in), dimension(:, :) :: vars
     real(kind=realType), intent(inout) :: localValues(nLocalValues)
     integer(kind=intType), dimension(:), intent(in) :: famList
@@ -240,14 +240,14 @@ contains
     Mv = zero
 
     !$AD II-LOOP
-    do i=1, size(zipper%conn, 2)
-       if (famInList(zipper%fam(i), famList)) then 
+    do i=1, size(conn, 2)
+       if (famInList(fams(i), famList)) then 
 
           ! Get the nodes of triangle. The *3 is becuase of the
           ! blanket third above. 
-          x1 = vars(zipper%conn(1, i), iZippWallX:iZIppWallZ)
-          x2 = vars(zipper%conn(2, i), iZippWallX:iZIppWallZ)
-          x3 = vars(zipper%conn(3, i), iZippWallX:iZIppWallZ)
+          x1 = vars(conn(1, i), iZippWallX:iZIppWallZ)
+          x2 = vars(conn(2, i), iZippWallX:iZIppWallZ)
+          x3 = vars(conn(3, i), iZippWallX:iZIppWallZ)
           call cross_prod(x2-x1, x3-x1, norm)
           ss = half*norm
           ! The third here is to account for the summation of P1, p2
@@ -264,9 +264,9 @@ contains
           zc = zc - refPoint(3)
 
           ! Update the pressure force and moment coefficients.
-          p1 = vars(zipper%conn(1, i), iZippWallTpx:iZippWallTpz)
-          p2 = vars(zipper%conn(2, i), iZippWallTpx:iZippWallTpz)
-          p3 = vars(zipper%conn(3, i), iZippWallTpx:iZippWallTpz)
+          p1 = vars(conn(1, i), iZippWallTpx:iZippWallTpz)
+          p2 = vars(conn(2, i), iZippWallTpx:iZippWallTpz)
+          p3 = vars(conn(3, i), iZippWallTpx:iZippWallTpz)
 
           fx = (p1(1) + p2(1) + p3(1))*triArea
           fy = (p1(2) + p2(2) + p3(2))*triArea
@@ -285,9 +285,9 @@ contains
           Mp(3) = Mp(3) + mz
 
           ! Update the viscous force and moment coefficients
-          v1 = vars(zipper%conn(1, i), iZippWallTvx:iZippWallTvz)
-          v2 = vars(zipper%conn(2, i), iZippWallTvx:iZippWallTvz)
-          v3 = vars(zipper%conn(3, i), iZippWallTvx:iZippWallTvz)
+          v1 = vars(conn(1, i), iZippWallTvx:iZippWallTvz)
+          v2 = vars(conn(2, i), iZippWallTvx:iZippWallTvz)
+          v3 = vars(conn(3, i), iZippWallTvx:iZippWallTvz)
 
           fx = (v1(1) + v2(1) + v3(1))*triArea
           fy = (v1(2) + v2(2) + v3(2))*triArea
@@ -356,7 +356,7 @@ contains
        call wallIntegrationZipperComm(vars, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call wallIntegrationZipper(zipper, vars, localValues, famList, sps)
+       call wallIntegrationZipper(zipper%conn, zipper%fam, vars, localValues, famList, sps)
 
        ! Cleanup vars
        deallocate(vars)
@@ -375,8 +375,8 @@ contains
        call flowIntegrationZipperComm(.true., vars, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper(.true., zipper, vars, localValues, famList, sps, & 
-            withGathered, funcValues)
+       call flowIntegrationZipper(.true., zipper%conn, zipper%fam, vars, &
+            localValues, famList, sps, withGathered, funcValues)
 
        ! Cleanup vars
        deallocate(vars)
@@ -395,8 +395,8 @@ contains
        call flowIntegrationZipperComm(.false., vars, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper(.false., zipper, vars, localValues, famList, sps, &
-            withGathered, funcValues)
+       call flowIntegrationZipper(.false., zipper%conn, zipper%fam, vars, &
+            localValues, famList, sps, withGathered, funcValues)
 
        ! Cleanup vars
        deallocate(vars)
@@ -440,7 +440,8 @@ contains
        call wallIntegrationZipperComm_d(vars, varsd, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call wallIntegrationZipper_d(zipper, vars, varsd, localValues, localValuesd, famList, sps)
+       call wallIntegrationZipper_d(zipper%conn, zipper%fam, vars, varsd, &
+            localValues, localValuesd, famList, sps)
 
        ! Cleanup vars
        deallocate(vars, varsd)
@@ -459,8 +460,8 @@ contains
        call flowIntegrationZipperComm_d(.true., vars, varsd, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper_d(.true., zipper, vars, varsd, localValues, localValuesd, &
-            famList, sps, withGathered, funcValues, funcValuesd)
+       call flowIntegrationZipper_d(.true., zipper%conn, zipper%fam, vars, varsd, &
+            localValues, localValuesd, famList, sps, withGathered, funcValues, funcValuesd)
 
        ! Cleanup vars
        deallocate(vars, varsd)
@@ -479,8 +480,8 @@ contains
        call flowIntegrationZipperComm_d(.false., vars, varsd, sps)
 
        ! Perform actual integration. Tapenade ADs this routine.
-       call flowIntegrationZipper_d(.false., zipper, vars, varsd, localValues, localValuesd, &
-            famList, sps, withGathered, funcValues, funcValuesd)
+       call flowIntegrationZipper_d(.false., zipper%conn, zipper%fam, vars, varsd, &
+            localValues, localValuesd, famList, sps, withGathered, funcValues, funcValuesd)
 
        ! Cleanup vars
        deallocate(vars, varsd)
@@ -524,7 +525,8 @@ contains
 
        ! Perform actual integration. Tapenade ADs this routine.
        varsd = zero
-       call wallIntegrationZipper_b(zipper, vars, varsd, localValues, localValuesd, famList, sps)
+       call wallIntegrationZipper_b(zipper%conn, zipper%fam, vars, varsd, &
+            localValues, localValuesd, famList, sps)
 
        ! Scatter (becuase we are reverse) the values from the root
        ! back out to all necessary procs.  This routine is
@@ -548,8 +550,8 @@ contains
 
        ! Perform actual integration. Tapenade ADs this routine.
        varsd = zero
-       call flowIntegrationZipper_b(.true., zipper, vars, varsd, localValues, localValuesd, &
-            famList, sps, withGathered, funcValues, funcValuesd)
+       call flowIntegrationZipper_b(.true., zipper%conn, zipper%fam, vars, varsd, &
+            localValues, localValuesd, famList, sps, withGathered, funcValues, funcValuesd)
 
        ! Scatter (becuase we are reverse) the values from the root
        ! back out to all necessary procs.  This routine is
@@ -573,8 +575,8 @@ contains
 
        ! Perform actual integration. Tapenade ADs this routine.
        varsd = zero
-       call flowIntegrationZipper_b(.false., zipper, vars, varsd, localValues, localValuesd, & 
-            famList, sps, withGathered, funcValues, funcValuesd)
+       call flowIntegrationZipper_b(.false., zipper%conn, zipper%fam, vars, varsd, &
+            localValues, localValuesd, famList, sps, withGathered, funcValues, funcValuesd)
 
        ! Scatter (becuase we are reverse) the values from the root
        ! back out to all necessary procs.  This routine is
