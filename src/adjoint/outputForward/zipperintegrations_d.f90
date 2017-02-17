@@ -67,7 +67,6 @@ contains
     real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, &
 &   cellarea, mx, my, mz
     real(kind=realtype) :: xcd, ycd, zcd, mxd, myd, mzd
-    real(kind=realtype), dimension(:), pointer :: localptr
     intrinsic sqrt
     intrinsic size
     real(kind=realtype) :: arg1
@@ -161,10 +160,10 @@ contains
           vzm = vzm + vars(zipper%conn(j, i), ivz)
           pmd = pmd + varsd(zipper%conn(j, i), irhoe)
           pm = pm + vars(zipper%conn(j, i), irhoe)
-          gammamd = gammamd + varsd(zipper%conn(j, i), 6)
-          gammam = gammam + vars(zipper%conn(j, i), 6)
-          sfd = sfd + varsd(zipper%conn(j, i), 7)
-          sf = sf + vars(zipper%conn(j, i), 7)
+          gammamd = gammamd + varsd(zipper%conn(j, i), izippflowgamma)
+          gammam = gammam + vars(zipper%conn(j, i), izippflowgamma)
+          sfd = sfd + varsd(zipper%conn(j, i), izippflowsface)
+          sf = sf + vars(zipper%conn(j, i), izippflowsface)
         end do
 ! divide by 3 due to the summation above:
         rhomd = third*rhomd
@@ -182,16 +181,16 @@ contains
         sfd = third*sfd
         sf = third*sf
 ! get the nodes of triangle.
-        x1d = varsd(zipper%conn(1, i), 7:9)
-        x1 = vars(zipper%conn(1, i), 7:9)
-        x2d = varsd(zipper%conn(2, i), 7:9)
-        x2 = vars(zipper%conn(2, i), 7:9)
-        x3d = varsd(zipper%conn(3, i), 7:9)
-        x3 = vars(zipper%conn(3, i), 7:9)
+        x1d = varsd(zipper%conn(1, i), izippflowx:izippflowz)
+        x1 = vars(zipper%conn(1, i), izippflowx:izippflowz)
+        x2d = varsd(zipper%conn(2, i), izippflowx:izippflowz)
+        x2 = vars(zipper%conn(2, i), izippflowx:izippflowz)
+        x3d = varsd(zipper%conn(3, i), izippflowx:izippflowz)
+        x3 = vars(zipper%conn(3, i), izippflowx:izippflowz)
         call cross_prod_d(x2 - x1, x2d - x1d, x3 - x1, x3d - x1d, norm, &
 &                   normd)
-        ssd = -(half*normd)
-        ss = -(half*norm)
+        ssd = half*normd
+        ss = half*norm
         call computeptot_d(rhom, rhomd, vxm, vxmd, vym, vymd, vzm, vzmd&
 &                    , pm, pmd, ptot, ptotd)
         call computettot_d(rhom, rhomd, vxm, vxmd, vym, vymd, vzm, vzmd&
@@ -264,12 +263,12 @@ contains
           ycd = 0.0_8
           zcd = 0.0_8
           do j=1,3
-            xcd = xcd + varsd(zipper%conn(1, i), 7)
-            xc = xc + vars(zipper%conn(1, i), 7)
-            ycd = ycd + varsd(zipper%conn(2, i), 8)
-            yc = yc + vars(zipper%conn(2, i), 8)
-            zcd = zcd + varsd(zipper%conn(3, i), 9)
-            zc = zc + vars(zipper%conn(3, i), 9)
+            xcd = xcd + varsd(zipper%conn(1, i), izippflowx)
+            xc = xc + vars(zipper%conn(1, i), izippflowx)
+            ycd = ycd + varsd(zipper%conn(2, i), izippflowy)
+            yc = yc + vars(zipper%conn(2, i), izippflowy)
+            zcd = zcd + varsd(zipper%conn(3, i), izippflowz)
+            zc = zc + vars(zipper%conn(3, i), izippflowz)
           end do
 ! finish average for cell center
           xcd = third*xcd
@@ -426,7 +425,6 @@ contains
     real(kind=realtype) :: mredim, pk, sigma_mn, sigma_ptot
     real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, &
 &   cellarea, mx, my, mz
-    real(kind=realtype), dimension(:), pointer :: localptr
     intrinsic sqrt
     intrinsic size
     real(kind=realtype) :: arg1
@@ -463,8 +461,8 @@ contains
           vym = vym + vars(zipper%conn(j, i), ivy)
           vzm = vzm + vars(zipper%conn(j, i), ivz)
           pm = pm + vars(zipper%conn(j, i), irhoe)
-          gammam = gammam + vars(zipper%conn(j, i), 6)
-          sf = sf + vars(zipper%conn(j, i), 7)
+          gammam = gammam + vars(zipper%conn(j, i), izippflowgamma)
+          sf = sf + vars(zipper%conn(j, i), izippflowsface)
         end do
 ! divide by 3 due to the summation above:
         rhom = third*rhom
@@ -475,11 +473,11 @@ contains
         gammam = third*gammam
         sf = third*sf
 ! get the nodes of triangle.
-        x1 = vars(zipper%conn(1, i), 7:9)
-        x2 = vars(zipper%conn(2, i), 7:9)
-        x3 = vars(zipper%conn(3, i), 7:9)
+        x1 = vars(zipper%conn(1, i), izippflowx:izippflowz)
+        x2 = vars(zipper%conn(2, i), izippflowx:izippflowz)
+        x3 = vars(zipper%conn(3, i), izippflowx:izippflowz)
         call cross_prod(x2 - x1, x3 - x1, norm)
-        ss = -(half*norm)
+        ss = half*norm
         call computeptot(rhom, vxm, vym, vzm, pm, ptot)
         call computettot(rhom, vxm, vym, vzm, pm, ttot)
         vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3) - sf
@@ -509,9 +507,9 @@ contains
           yc = zero
           zc = zero
           do j=1,3
-            xc = xc + vars(zipper%conn(1, i), 7)
-            yc = yc + vars(zipper%conn(2, i), 8)
-            zc = zc + vars(zipper%conn(3, i), 9)
+            xc = xc + vars(zipper%conn(1, i), izippflowx)
+            yc = yc + vars(zipper%conn(2, i), izippflowy)
+            zc = zc + vars(zipper%conn(3, i), izippflowz)
           end do
 ! finish average for cell center
           xc = third*xc
@@ -635,12 +633,12 @@ contains
       if (bsearchintegers(zipper%fam(i), famlist) .gt. 0) then
 ! get the nodes of triangle. the *3 is becuase of the
 ! blanket third above. 
-        x1d = varsd(zipper%conn(1, i), 7:9)
-        x1 = vars(zipper%conn(1, i), 7:9)
-        x2d = varsd(zipper%conn(2, i), 7:9)
-        x2 = vars(zipper%conn(2, i), 7:9)
-        x3d = varsd(zipper%conn(3, i), 7:9)
-        x3 = vars(zipper%conn(3, i), 7:9)
+        x1d = varsd(zipper%conn(1, i), izippwallx:izippwallz)
+        x1 = vars(zipper%conn(1, i), izippwallx:izippwallz)
+        x2d = varsd(zipper%conn(2, i), izippwallx:izippwallz)
+        x2 = vars(zipper%conn(2, i), izippwallx:izippwallz)
+        x3d = varsd(zipper%conn(3, i), izippwallx:izippwallz)
+        x3 = vars(zipper%conn(3, i), izippwallx:izippwallz)
         call cross_prod_d(x2 - x1, x2d - x1d, x3 - x1, x3d - x1d, norm, &
 &                   normd)
         ssd = half*normd
@@ -664,12 +662,12 @@ contains
         zcd = zcd - refpointd(3)
         zc = zc - refpoint(3)
 ! update the pressure force and moment coefficients.
-        p1d = varsd(zipper%conn(1, i), 1:3)
-        p1 = vars(zipper%conn(1, i), 1:3)
-        p2d = varsd(zipper%conn(2, i), 1:3)
-        p2 = vars(zipper%conn(2, i), 1:3)
-        p3d = varsd(zipper%conn(3, i), 1:3)
-        p3 = vars(zipper%conn(3, i), 1:3)
+        p1d = varsd(zipper%conn(1, i), izippwalltpx:izippwalltpz)
+        p1 = vars(zipper%conn(1, i), izippwalltpx:izippwalltpz)
+        p2d = varsd(zipper%conn(2, i), izippwalltpx:izippwalltpz)
+        p2 = vars(zipper%conn(2, i), izippwalltpx:izippwalltpz)
+        p3d = varsd(zipper%conn(3, i), izippwalltpx:izippwalltpz)
+        p3 = vars(zipper%conn(3, i), izippwalltpx:izippwalltpz)
         fxd = (p1d(1)+p2d(1)+p3d(1))*triarea + (p1(1)+p2(1)+p3(1))*&
 &         triaread
         fx = (p1(1)+p2(1)+p3(1))*triarea
@@ -698,12 +696,12 @@ contains
         mpd(3) = mpd(3) + mzd
         mp(3) = mp(3) + mz
 ! update the viscous force and moment coefficients
-        v1d = varsd(zipper%conn(1, i), 4:6)
-        v1 = vars(zipper%conn(1, i), 4:6)
-        v2d = varsd(zipper%conn(2, i), 4:6)
-        v2 = vars(zipper%conn(2, i), 4:6)
-        v3d = varsd(zipper%conn(3, i), 4:6)
-        v3 = vars(zipper%conn(3, i), 4:6)
+        v1d = varsd(zipper%conn(1, i), izippwalltvx:izippwalltvz)
+        v1 = vars(zipper%conn(1, i), izippwalltvx:izippwalltvz)
+        v2d = varsd(zipper%conn(2, i), izippwalltvx:izippwalltvz)
+        v2 = vars(zipper%conn(2, i), izippwalltvx:izippwalltvz)
+        v3d = varsd(zipper%conn(3, i), izippwalltvx:izippwalltvz)
+        v3 = vars(zipper%conn(3, i), izippwalltvx:izippwalltvz)
         fxd = (v1d(1)+v2d(1)+v3d(1))*triarea + (v1(1)+v2(1)+v3(1))*&
 &         triaread
         fx = (v1(1)+v2(1)+v3(1))*triarea
@@ -782,9 +780,9 @@ contains
       if (bsearchintegers(zipper%fam(i), famlist) .gt. 0) then
 ! get the nodes of triangle. the *3 is becuase of the
 ! blanket third above. 
-        x1 = vars(zipper%conn(1, i), 7:9)
-        x2 = vars(zipper%conn(2, i), 7:9)
-        x3 = vars(zipper%conn(3, i), 7:9)
+        x1 = vars(zipper%conn(1, i), izippwallx:izippwallz)
+        x2 = vars(zipper%conn(2, i), izippwallx:izippwallz)
+        x3 = vars(zipper%conn(3, i), izippwallx:izippwallz)
         call cross_prod(x2 - x1, x3 - x1, norm)
         ss = half*norm
 ! the third here is to account for the summation of p1, p2
@@ -799,9 +797,9 @@ contains
         yc = yc - refpoint(2)
         zc = zc - refpoint(3)
 ! update the pressure force and moment coefficients.
-        p1 = vars(zipper%conn(1, i), 1:3)
-        p2 = vars(zipper%conn(2, i), 1:3)
-        p3 = vars(zipper%conn(3, i), 1:3)
+        p1 = vars(zipper%conn(1, i), izippwalltpx:izippwalltpz)
+        p2 = vars(zipper%conn(2, i), izippwalltpx:izippwalltpz)
+        p3 = vars(zipper%conn(3, i), izippwalltpx:izippwalltpz)
         fx = (p1(1)+p2(1)+p3(1))*triarea
         fy = (p1(2)+p2(2)+p3(2))*triarea
         fz = (p1(3)+p2(3)+p3(3))*triarea
@@ -815,9 +813,9 @@ contains
         mp(2) = mp(2) + my
         mp(3) = mp(3) + mz
 ! update the viscous force and moment coefficients
-        v1 = vars(zipper%conn(1, i), 4:6)
-        v2 = vars(zipper%conn(2, i), 4:6)
-        v3 = vars(zipper%conn(3, i), 4:6)
+        v1 = vars(zipper%conn(1, i), izippwalltvx:izippwalltvz)
+        v2 = vars(zipper%conn(2, i), izippwalltvx:izippwalltvz)
+        v3 = vars(zipper%conn(3, i), izippwalltvx:izippwalltvz)
         fx = (v1(1)+v2(1)+v3(1))*triarea
         fy = (v1(2)+v2(2)+v3(2))*triarea
         fz = (v1(3)+v2(3)+v3(3))*triarea

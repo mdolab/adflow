@@ -411,5 +411,32 @@ module constants
        isigmaMN    = 33, &
        isigmaPtot  = 34, &
        iPk         = 35
+
+  ! Constants for zipper comm
+
+  ! Flow-through conditions
+  integer(kind=intType), parameter :: nZippFlowComm=10
+
+  integer(kind=intType), parameter :: iZippFlowP=5
+  integer(kind=intType), parameter :: iZippFlowGamma=6
+  integer(kind=intType), parameter :: iZippFlowSface=7
+  integer(kind=intType), parameter :: iZippFlowX=8
+  integer(kind=intType), parameter :: iZippFlowY=9
+  integer(kind=intType), parameter :: iZippFlowZ=10
+
+  ! Wall Conditions
+  integer(kind=intType), parameter :: nZippWallComm=10
+
+  integer(kind=intType), parameter :: iZippWallTpx=1
+  integer(kind=intType), parameter :: iZippWallTpy=2
+  integer(kind=intType), parameter :: iZippWallTpz=3
+  integer(kind=intType), parameter :: iZippWallTvx=4
+  integer(kind=intType), parameter :: iZippWallTvy=5
+  integer(kind=intType), parameter :: iZippWallTvz=6
+
+  integer(kind=intType), parameter :: iZippWallX=7
+  integer(kind=intType), parameter :: iZippWallY=8
+  integer(kind=intType), parameter :: iZippWallZ=9
+
  
 end module constants

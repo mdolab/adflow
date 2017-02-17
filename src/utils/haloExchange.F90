@@ -3099,7 +3099,7 @@ contains
     ! using simple arithematic averaging since they are all flow
     ! properties. There is no need to use the cellToNodeScatter stuff
     ! here like for the forces. 
-    varLoop: do iVar=1,9
+    varLoop: do iVar=1, nZIppFlowComm
        call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
@@ -3107,6 +3107,7 @@ contains
        domainLoop: do nn=1, nDom
           call setPointers(nn, 1, sps)
           bocoLoop: do mm=1, nBocos
+             
              if (((BCType(mm) == SubsonicInflow .or. & 
                   BCType(mm) == SupersonicInflow) .and. (isInflow)) & 
                   .or. & 
@@ -3120,25 +3121,25 @@ contains
                    do i=iBeg, iEnd
                       ii = ii + 1
                       select case(iVar)
-                      case (1, 2, 3, 4)
+                      case (iRho, iVx, iVy, iVz)
                          localPtr(ii) = eighth*(&
                               ww1(i, j,   iVar) + ww1(i+1, j,   iVar) + &
                               ww1(i, j+1, ivar) + ww1(i+1, j+1, iVar) + &
                               ww2(i, j,   iVar) + ww2(i+1, j,   iVar) + &
                               ww2(i, j+1, ivar) + ww2(i+1, j+1, iVar))
-                      case (5)
+                      case (iZippFlowP)
                          localPtr(ii) = eighth*(&
                               pp1(i, j  ) + pp1(i+1, j  ) + &
                               pp1(i, j+1) + pp1(i+1, j+1) + &
                               pp2(i, j  ) + pp2(i+1, j  ) + &
                               pp2(i, j+1) + pp2(i+1, j+1))
-                      case (6)
+                      case (iZippFlowGamma)
                          localPtr(ii) = eighth*(&
                               gamma1(i, j  ) + gamma1(i+1, j  ) + &
                               gamma1(i, j+1) + gamma1(i+1, j+1) + &
                               gamma2(i, j  ) + gamma2(i+1, j  ) + &
                               gamma2(i, j+1) + gamma2(i+1, j+1))
-                      case (7)
+                      case (iZippFlowSface)
                          if (addGridVelocities) then 
                             localPtr(ii) = fourth*(&
                                  sface(i, j  ) + sface(i+1, j  ) + &
@@ -3146,8 +3147,8 @@ contains
                          else
                             localPtr(ii) = zero
                          end if
-                      case (8, 9, 10)
-                         localPtr(ii) = xx(i+1, j+1, iVar-6)
+                      case (iZippFlowX, iZippFlowY, iZippFlowZ)
+                         localPtr(ii) = xx(i+1, j+1, iVar-iZippFlowX+1)
                       end select
                    end do
                 end do
@@ -3226,7 +3227,7 @@ contains
     ! using simple arithematic averaging since they are all flow
     ! properties. There is no need to use the cellToNodeScatter stuff
     ! here like for the forces. 
-    varLoop: do iVar=1,9
+    varLoop: do iVar=1, nZIppFlowComm
        call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
@@ -3247,19 +3248,22 @@ contains
                    do i=iBeg, iEnd
                       ii = ii + 1
                       select case(iVar)
-                      case (1, 2, 3, 4)
+                      case (iRho, iVx, iVy, iVz)
                          localPtr(ii) = eighth*(&
                               ww1d(i, j,   iVar) + ww1d(i+1, j,   iVar) + &
                               ww1d(i, j+1, ivar) + ww1d(i+1, j+1, iVar) + &
                               ww2d(i, j,   iVar) + ww2d(i+1, j,   iVar) + &
                               ww2d(i, j+1, ivar) + ww2d(i+1, j+1, iVar))
-                      case (5)
+                      case (iZippFlowP)
                          localPtr(ii) = eighth*(&
                               pp1d(i, j  ) + pp1d(i+1, j  ) + &
                               pp1d(i, j+1) + pp1d(i+1, j+1) + &
                               pp2d(i, j  ) + pp2d(i+1, j  ) + &
                               pp2d(i, j+1) + pp2d(i+1, j+1))
-                      case (6)
+                      case (iZippFlowGamma)
+                         ! Gamma is not currently an active variable
+                         localPtr(ii) = zero
+                      case (iZippFlowSface)
                          if (addGridVelocities) then 
                             localPtr(ii) = fourth*(&
                                  sfaced(i, j  ) + sfaced(i+1, j  ) + &
@@ -3267,8 +3271,8 @@ contains
                          else
                             localPtr(ii) = zero
                          end if
-                      case (7, 8, 9)
-                         localPtr(ii) = xxd(i+1, j+1, iVar-6)
+                      case (iZippFlowX, iZippFlowY, iZippFlowZ)
+                         localPtr(ii) = xxd(i+1, j+1, iVar-iZippFlowX+1)
                       end select
                    end do
                 end do
@@ -3339,7 +3343,7 @@ contains
     end if
 
     ! Run the var exchange loop backwards:
-    varLoop: do iVar=1,9
+    varLoop: do iVar=1, nZIppFlowComm
 
        ! Zero the vector we are scatting into:
        call VecSet(exch%nodeValLocal, zero, ierr)
@@ -3387,7 +3391,7 @@ contains
                    do i=iBeg, iEnd
                       ii = ii + 1
                       select case(iVar)
-                      case (1, 2, 3, 4)
+                      case (iRho, iVx, iVy, iVz)
                          tmp = eighth * localPtr(ii) 
                          ww1d(i  , j  , iVar) = ww1d(i  , j  , iVar) + tmp
                          ww1d(i+1, j  , iVar) = ww1d(i+1, j  , iVar) + tmp
@@ -3398,7 +3402,7 @@ contains
                          ww2d(i+1, j  , iVar) = ww2d(i+1, j  , iVar) + tmp
                          ww2d(i  , j+1, iVar) = ww2d(i  , j+1, iVar) + tmp
                          ww2d(i+1, j+1, iVar) = ww2d(i+1, j+1, iVar) + tmp
-                      case (5)
+                      case (iZippFlowP)
                          tmp = eighth * localPtr(ii) 
                          pp1d(i  , j  ) = pp1d(i  , j  ) + tmp
                          pp1d(i+1, j  ) = pp1d(i+1, j  ) + tmp
@@ -3409,8 +3413,12 @@ contains
                          pp2d(i+1, j  ) = pp2d(i+1, j  ) + tmp
                          pp2d(i  , j+1) = pp2d(i  , j+1) + tmp
                          pp2d(i+1, j+1) = pp2d(i+1, j+1) + tmp
-                       
-                      case (6)
+
+                      case (iZippFlowGamma)
+                         ! gamma is not currently active
+
+
+                      case (iZippFlowSFace)
                          if (addGridVelocities) then 
                             tmp = fourth*localPtr(ii)
                             sfaced(i  , j  ) = sfaced(i  , j  ) + tmp
@@ -3420,8 +3428,8 @@ contains
                          else
                             localPtr(ii) = zero
                          end if
-                      case (7, 8, 9)
-                         xxd(i+1, j+1, iVar-6) = xxd(i+1, j+1, iVar-6) + localPtr(ii)
+                      case (iZippFlowX, iZippFlowY, iZippFlowZ)
+                         xxd(i+1, j+1, iVar-iZippFlowX+1) = xxd(i+1, j+1, iVar-iZippFlowX+1) + localPtr(ii)
                       end select
                    end do
                 end do
@@ -3475,7 +3483,7 @@ contains
     ! Make sure the nodal tractions are computed
     call computeNodalTractions(sps)
 
-    varLoop: do iVar=1,9
+    varLoop: do iVar=1, nZippWallComm
        call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
        call EChk(ierr,__FILE__,__LINE__)
     
@@ -3491,13 +3499,20 @@ contains
                    do i=iBeg, iEnd
                       ii = ii + 1
                       select case(iVar)
-                      case (1, 2, 3)
+
+                      case (iZippWallTpx, iZippWallTpy, iZippWallTpz)
+
                          localPtr(ii) = BCData(mm)%Tp(i, j, iVar)
-                      case (4, 5, 6)
-                         localPtr(ii) = BCData(mm)%Tv(i, j, iVar-3)
-                      case (7, 8, 9)
+
+                      case (iZippWallTvx, iZippWallTvy, iZippWallTvz)
+
+                         localPtr(ii) = BCData(mm)%Tv(i, j, iVar-iZippWallTvx+1)
+
+                      case (iZippWallX, iZippWallY, iZippWallZ)
+
                          ! The +1 is due to pointer offset
-                         localPtr(ii) = xx(i+1, j+1, iVar-6)
+                         localPtr(ii) = xx(i+1, j+1, iVar-iZippWallX+1)
+
                       end select
                    end do
                 end do
@@ -3566,7 +3581,7 @@ contains
     zipper => zipperMeshes(iBCGroupWalls)
     exch => BCFamExchange(iBCGroupWalls, sps)
 
-    varLoop: do iVar=1,9
+    varLoop: do iVar=1, nZippWallComm
        call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
        call EChk(ierr,__FILE__,__LINE__)
     
@@ -3582,13 +3597,20 @@ contains
                    do i=iBeg, iEnd
                       ii = ii + 1
                       select case(iVar)
-                      case (1, 2, 3)
+
+                      case (iZippWallTpx, iZippWallTpy, iZippWallTpz)
+
                          localPtr(ii) = BCDatad(mm)%Tp(i, j, iVar)
-                      case (4, 5, 6)
-                         localPtr(ii) = BCDatad(mm)%Tv(i, j, iVar-3)
-                      case (7, 8, 9)
+
+                      case (iZippWallTvx, iZippWallTvy, iZippWallTvz)
+
+                         localPtr(ii) = BCDatad(mm)%Tv(i, j, iVar-iZippWallTvx+1)
+
+                      case (iZippWallX, iZippWallY, iZippWallZ)
+
                          ! The +1 is due to pointer offset
-                         localPtr(ii) = xxd(i+1, j+1, iVar-6)
+                         localPtr(ii) = xxd(i+1, j+1, iVar-iZippWallX+1)
+
                       end select
                    end do
                 end do
@@ -3652,7 +3674,7 @@ contains
     exch => BCFamExchange(iBCGroupWalls, sps)
 
     ! Run the var exchange loop backwards:
-    varLoop: do iVar=1, 9
+    varLoop: do iVar=1, nZippWallComm
        
        ! Zero the vector we are scatting into:
        call VecSet(exch%nodeValLocal, zero, ierr)
@@ -3695,13 +3717,19 @@ contains
                    do i=iBeg, iEnd
                       ii = ii + 1
                       select case(iVar)
-                      case (1, 2, 3)
+                      case (iZippWallTpx, iZippWallTpy, iZippWallTpz)
+
                          BCDatad(mm)%Tp(i, j, iVar) = localPtr(ii)
-                      case (4, 5, 6)
-                         BCDatad(mm)%Tv(i, j, iVar-3) = localPtr(ii)
-                      case (7, 8, 9)
+
+                      case (iZippWallTvx, iZippWallTvy, iZippWallTvz)
+
+                         BCDatad(mm)%Tv(i, j, iVar-iZippWallTvx+1) = localPtr(ii)
+
+                      case (iZippWallX, iZippWallY, iZippWallZ)
+
                          ! The +1 is due to pointer offset
-                         xxd(i+1, j+1, iVar-6) = xxd(i+1, j+1, iVar-6) + localPtr(ii)
+                         xxd(i+1, j+1, iVar-iZippWallX+1) = xxd(i+1, j+1, iVar-iZippWallX+1) + localPtr(ii)
+
                       end select
                    end do
                 end do
