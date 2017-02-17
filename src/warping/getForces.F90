@@ -5,7 +5,6 @@ subroutine getForces(forces, npts, sps)
   use blockPointers, only : BCData, nDom, nBocos, BCType
   use inputPhysics, only : forcesAsTractions
   use utils, only : setPointers, terminate, EChk
-  use sorting, only : bsearchIntegers
   use surfaceIntegrations, only : integrateSurfaces
   use surfaceFamilies, only : fullfamList
   use overset, only : zipperMeshes, zipperMesh, oversetPresent
@@ -373,7 +372,7 @@ subroutine surfaceCellCenterToNode(exch)
   use blockPointers, only : BCData, nDom, nBocos, BCType
   use surfaceFamilies, only : familyExchange
   use utils, only : setPointers, EChk
-  use sorting, only : bsearchIntegers
+  use sorting, only : famInList
   implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -398,7 +397,7 @@ subroutine surfaceCellCenterToNode(exch)
   do nn=1, nDom
      call setPointers(nn, 1_intType, sps)
      do mm=1, nBocos
-        famInclude: if (bsearchIntegers(BCData(mm)%famID, exch%famList) > 0) then 
+        famInclude: if (famInList(BCData(mm)%famID, exch%famList)) then 
            iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
            jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
            ni = iEnd - iBeg + 1
@@ -458,7 +457,7 @@ subroutine surfaceCellCenterToNode(exch)
   do nn=1, nDom
      call setPointers(nn, 1_intType, sps)
      do mm=1, nBocos
-        famInclude2: if (bsearchIntegers(BCData(mm)%famID, exch%famList) > 0) then 
+        famInclude2: if (famInList(BCData(mm)%famID, exch%famList)) then 
            iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
            jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
 
@@ -487,7 +486,7 @@ subroutine computeWeighting(exch)
   use blockPointers, only : BCData, nDom, nBocos, BCType
   use surfaceFamilies, only : familyExchange
   use utils, only : setPointers, EChk
-  use sorting, only : bsearchIntegers
+  use sorting, only : famInList
   implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -512,7 +511,7 @@ subroutine computeWeighting(exch)
   do nn=1, nDom
      call setPointers(nn, 1_intType, sps)
      do mm=1, nBocos
-        famInclude: if (bsearchIntegers(BCData(mm)%famID, exch%famList) > 0) then 
+        famInclude: if (famInList(BCData(mm)%famID, exch%famList)) then 
            iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
            jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
            ni = iEnd - iBeg + 1
@@ -1572,7 +1571,6 @@ subroutine setTNSWall(tnsw, npts, sps)
   use constants
   use blockPointers, only : nDom, nBocos, BCData, BCType
   use flowVarRefState, only : TRef
-  use sorting, only : bsearchIntegers
   use utils, only : setPointers
   implicit none
 
@@ -1662,7 +1660,6 @@ subroutine getTNSWall(tnsw, npts, sps)
   use constants
   use blockPointers, only : nDom, nBocos, BCData, BCType
   use flowVarRefState, only : TRef
-  use sorting, only : bsearchIntegers
   use utils, only : setPointers
   implicit none
 

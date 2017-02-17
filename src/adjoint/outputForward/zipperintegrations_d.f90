@@ -18,7 +18,7 @@ contains
 ! integrate over the trianges for the inflow/outflow conditions. 
     use constants
     use blockpointers, only : bctype
-    use sorting, only : bsearchintegers
+    use sorting, only : faminlist
     use flowvarrefstate, only : pref, prefd, pinf, pinfd, rhoref, &
 &   rhorefd, pref, prefd, timeref, timerefd, lref, tref, trefd, rgas, &
 &   rgasd, uref, urefd, uinf, uinfd
@@ -134,7 +134,7 @@ contains
       mpd = 0.0_8
     end if
     do i=1,size(zipper%conn, 2)
-      if (bsearchintegers(zipper%fam(i), famlist) .gt. 0) then
+      if (faminlist(zipper%fam(i), famlist)) then
 ! compute the averaged values for this trianlge
         vxm = zero
         vym = zero
@@ -393,7 +393,7 @@ contains
 ! integrate over the trianges for the inflow/outflow conditions. 
     use constants
     use blockpointers, only : bctype
-    use sorting, only : bsearchintegers
+    use sorting, only : faminlist
     use flowvarrefstate, only : pref, pinf, rhoref, pref, timeref, &
 &   lref, tref, rgas, uref, uinf
     use inputphysics, only : pointref, flowtype
@@ -446,7 +446,7 @@ contains
     inflowfact = one
     if (isinflow) inflowfact = -one
     do i=1,size(zipper%conn, 2)
-      if (bsearchintegers(zipper%fam(i), famlist) .gt. 0) then
+      if (faminlist(zipper%fam(i), famlist)) then
 ! compute the averaged values for this trianlge
         vxm = zero
         vym = zero
@@ -580,7 +580,7 @@ contains
   subroutine wallintegrationzipper_d(zipper, vars, varsd, localvalues, &
 &   localvaluesd, famlist, sps)
     use constants
-    use sorting, only : bsearchintegers
+    use sorting, only : faminlist
     use flowvarrefstate, only : lref
     use inputphysics, only : pointref, pointrefd
     use overset, only : zippermeshes, zippermesh
@@ -630,7 +630,7 @@ contains
     mpd = 0.0_8
     mvd = 0.0_8
     do i=1,size(zipper%conn, 2)
-      if (bsearchintegers(zipper%fam(i), famlist) .gt. 0) then
+      if (faminlist(zipper%fam(i), famlist)) then
 ! get the nodes of triangle. the *3 is becuase of the
 ! blanket third above. 
         x1d = varsd(zipper%conn(1, i), izippwallx:izippwallz)
@@ -745,7 +745,7 @@ contains
   subroutine wallintegrationzipper(zipper, vars, localvalues, famlist, &
 &   sps)
     use constants
-    use sorting, only : bsearchintegers
+    use sorting, only : faminlist
     use flowvarrefstate, only : lref
     use inputphysics, only : pointref
     use overset, only : zippermeshes, zippermesh
@@ -777,7 +777,7 @@ contains
     mp = zero
     mv = zero
     do i=1,size(zipper%conn, 2)
-      if (bsearchintegers(zipper%fam(i), famlist) .gt. 0) then
+      if (faminlist(zipper%fam(i), famlist)) then
 ! get the nodes of triangle. the *3 is becuase of the
 ! blanket third above. 
         x1 = vars(zipper%conn(1, i), izippwallx:izippwallz)

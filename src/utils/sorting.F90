@@ -3,6 +3,17 @@ module sorting
   use utils, only : terminate
 contains
 
+  function famInList(famID, famList)
+    use constants
+     integer(kind=intType), intent(in) :: famID, famList(:)
+     logical :: famInList 
+     famInLIst = .False.
+     if (bsearchIntegers(famID, famList) > 0) then 
+        famInList = .True. 
+     end if
+   end function famInList
+
+
   function bsearchIntegers(key, base)
     !
     !       bsearchIntegers returns the index in base where key is stored. 

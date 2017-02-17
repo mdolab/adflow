@@ -513,7 +513,7 @@ contains
 
     use constants
     use blockPointers, only :BCType, nBocos, BCData
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     implicit none
 
     ! Input
@@ -530,7 +530,7 @@ contains
     nNodes = 0
     nCells = 0
     do mm=1, nBocos
-       famInclude: if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
+       famInclude: if (famInList(BCData(mm)%famID, famList)) then 
           if (dualMesh) then 
              jBeg = BCData(mm)%jnBeg-1 ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg-1 ; iEnd = BCData(mm)%inEnd

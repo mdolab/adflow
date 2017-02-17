@@ -269,7 +269,7 @@ contains
     use communication, only : adflow_comm_world, myid
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use utils, only : setPointers, EChk
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     use overset, only : zipperMeshes, zipperMesh, oversetPresent
     use surfaceFamilies, only : BCFamGroups, familyExchange, BCFamExchange
 
@@ -306,7 +306,7 @@ contains
           jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
           iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
 
-          famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then 
+          famInclude: if (famInList(BCdata(mm)%famID, famList)) then 
 
              do j=jBeg, jEnd ! This is a node loop
                 do i=iBeg, iEnd ! This is a node loop
@@ -371,7 +371,7 @@ contains
        exch => BCFamExchange(iBCGroup, sps)
        BCGroupNeeded = .False.
        BCGroupFamLoop: do i=1, size(BCFamGroups(iBCGroup)%famList)
-          if (bsearchIntegers(BCFamGroups(iBCGroup)%famList(i), famList) > 0) then 
+          if (famInList(BCFamGroups(iBCGroup)%famList(i), famList)) then 
              BCGroupNeeded = .True.
              exit BCGroupFamLoop
           end if

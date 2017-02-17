@@ -252,7 +252,7 @@ contains
     use overset, only : oversetFringe, clusters, cumDomProc
     use stencils, only : visc_drdw_stencil, N_visc_drdw
     use inputOverset, only :  backgroundVolScale
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     use oversetUtilities, only :  wallsOnBlock, windIndex, unwindindex
     implicit none
 
@@ -354,7 +354,7 @@ contains
           kStart=kl; kEnd=kl;
        end select
 
-       famInclude: if (bsearchIntegers(BCdata(mm)%famID, famList) > 0) then 
+       famInclude: if (famInList(BCdata(mm)%famID, famList)) then 
           do k=kStart, kEnd
              do j=jStart, jEnd
                 do i=iStart, iEnd
@@ -382,7 +382,7 @@ contains
     use adtBuild, only : buildSerialQuad
     use kdtree2_module, onlY : kdtree2_create
     use oversetPackingRoutines, only : getWallSize
-    use sorting, only : bsearchIntegers
+    use sorting, only : famInList
     implicit none 
 
     ! Input Params
@@ -418,7 +418,7 @@ contains
     nodeCount = 0
 
     do mm=1, nBocos
-       famInclude: if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
+       famInclude: if (famInList(BCData(mm)%famID, famList)) then 
 
           select case(BCFaceID(mm))
           case(iMin, jMax, kMin)
