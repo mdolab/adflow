@@ -337,6 +337,9 @@ contains
              allocate(recvBuffer1d(0), recvBuffer2d(0))
           end if
 
+          call commUserIntegrationSurfaceVars(recvBuffer1, iRho, iZippFlowGamma, surf%flowComm)
+          call commUserIntegrationSurfaceVars(recvBuffer2, iZippFlowX, iZippFlowZ, surf%nodeComm)
+
           ! *Finally* we can do the actual integrations
           if (myid == 0)  then 
 
@@ -344,7 +347,7 @@ contains
              ! zipper integration routine. 
              allocate(ptValid(npts), vars(npts, nZippFlowComm), &
                   varsd(npts, nZippFlowComm), fams(size(surf%conn, 2)))
-
+             varsd= zero
              ! Prepare for the "zipper" integration call. We have to
              ! re-order the data according to the "inv" array in each
              ! of the two comms. 
