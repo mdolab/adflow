@@ -74,8 +74,8 @@ contains
              vym = vym + vars(zipper%conn(j, i), iVy)
              vzm = vzm + vars(zipper%conn(j, i), iVz)
              pm = pm + vars(zipper%conn(j, i), iRhoE)
-             gammam = gammam + vars(zipper%conn(j, i), 6)
-             sF = sF + vars(zipper%conn(j, i), 7)
+             gammam = gammam + vars(zipper%conn(j, i), iZippFlowGamma)
+             sF = sF + vars(zipper%conn(j, i), iZippFlowSFace)
           end do
 
           ! Divide by 3 due to the summation above:
@@ -88,11 +88,11 @@ contains
           sF = third*sF
 
           ! Get the nodes of triangle.
-          x1 = vars(zipper%conn(1, i), 7:9)
-          x2 = vars(zipper%conn(2, i), 7:9)
-          x3 = vars(zipper%conn(3, i), 7:9)
+          x1 = vars(zipper%conn(1, i), iZippFLowX:iZippFlowZ)
+          x2 = vars(zipper%conn(2, i), iZippFlowX:iZippFlowZ)
+          x3 = vars(zipper%conn(3, i), iZippFlowX:iZippFlowZ)
           call cross_prod(x2-x1, x3-x1, norm)
-          ss = -half*norm
+          ss = half*norm
 
           call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
           call computeTtot(rhom, vxm, vym, vzm, pm, Ttot)
@@ -107,10 +107,10 @@ contains
 
           if (withGathered) then 
 
-             sigma_Mn = sigma_Mn  + massFlowRateLocal*(MNm - funcValues(costFuncMavgMN))**2
-             sigma_Ptot = sigma_Ptot + massFlowRateLocal*(Ptot - funcValues(costFuncMavgPtot))**2
+              sigma_Mn = sigma_Mn  + massFlowRateLocal*(MNm - funcValues(costFuncMavgMN))**2
+              sigma_Ptot = sigma_Ptot + massFlowRateLocal*(Ptot - funcValues(costFuncMavgPtot))**2
 
-          else 
+           else 
              massFlowRate = massFlowRate + massFlowRateLocal
 
              pk = pk + ((pm-pInf) + half*rhom*(vmag**2 - uInf**2)) * vnm * pRef * uRef
@@ -127,9 +127,9 @@ contains
              yc = zero
              zc = zero
              do j=1,3
-                xc = xc + (vars(zipper%conn(1, i), 7)) 
-                yc = yc + (vars(zipper%conn(2, i), 8)) 
-                zc = zc + (vars(zipper%conn(3, i), 9)) 
+                xc = xc + (vars(zipper%conn(1, i), iZippFlowX)) 
+                yc = yc + (vars(zipper%conn(2, i), iZippFlowY)) 
+                zc = zc + (vars(zipper%conn(3, i), iZippFlowZ)) 
              end do
 
              ! Finish average for cell center
@@ -185,9 +185,9 @@ contains
     enddo
 
     if (withGathered) then 
-       localValues(isigmaMN) = localValues(isigmaMN) + sigma_Mn
-       localValues(isigmaPtot) = localValues(isigmaPtot) + sigma_Ptot
-    else
+        localValues(isigmaMN) = localValues(isigmaMN) + sigma_Mn
+        localValues(isigmaPtot) = localValues(isigmaPtot) + sigma_Ptot
+     else
        ! Increment the local values array with what we computed here
        localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate
        localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
@@ -245,9 +245,9 @@ contains
 
           ! Get the nodes of triangle. The *3 is becuase of the
           ! blanket third above. 
-          x1 = vars(zipper%conn(1, i), 7:9)
-          x2 = vars(zipper%conn(2, i), 7:9)
-          x3 = vars(zipper%conn(3, i), 7:9)
+          x1 = vars(zipper%conn(1, i), iZippWallX:iZIppWallZ)
+          x2 = vars(zipper%conn(2, i), iZippWallX:iZIppWallZ)
+          x3 = vars(zipper%conn(3, i), iZippWallX:iZIppWallZ)
           call cross_prod(x2-x1, x3-x1, norm)
           ss = half*norm
           ! The third here is to account for the summation of P1, p2
@@ -264,9 +264,9 @@ contains
           zc = zc - refPoint(3)
 
           ! Update the pressure force and moment coefficients.
-          p1 = vars(zipper%conn(1, i), 1:3) 
-          p2 = vars(zipper%conn(2, i), 1:3)
-          p3 = vars(zipper%conn(3, i), 1:3)
+          p1 = vars(zipper%conn(1, i), iZippWallTpx:iZippWallTpz)
+          p2 = vars(zipper%conn(2, i), iZippWallTpx:iZippWallTpz)
+          p3 = vars(zipper%conn(3, i), iZippWallTpx:iZippWallTpz)
 
           fx = (p1(1) + p2(1) + p3(1))*triArea
           fy = (p1(2) + p2(2) + p3(2))*triArea
@@ -285,9 +285,9 @@ contains
           Mp(3) = Mp(3) + mz
 
           ! Update the viscous force and moment coefficients
-          v1 = vars(zipper%conn(1, i), 4:6) 
-          v2 = vars(zipper%conn(2, i), 4:6)
-          v3 = vars(zipper%conn(3, i), 4:6)
+          v1 = vars(zipper%conn(1, i), iZippWallTvx:iZippWallTvz)
+          v2 = vars(zipper%conn(2, i), iZippWallTvx:iZippWallTvz)
+          v3 = vars(zipper%conn(3, i), iZippWallTvx:iZippWallTvz)
 
           fx = (v1(1) + v2(1) + v3(1))*triArea
           fy = (v1(2) + v2(2) + v3(2))*triArea
@@ -349,7 +349,7 @@ contains
 
        ! Allocate space necessary to store variables. Only non-zero on
        ! root proc. 
-       allocate(vars(size(zipper%indices), 9))
+       allocate(vars(size(zipper%indices), nZippWallComm))
 
        ! Gather up the required variables in "vars" on the root
        ! proc. This routine is differientated by hand. 
@@ -357,7 +357,6 @@ contains
 
        ! Perform actual integration. Tapenade ADs this routine.
        call wallIntegrationZipper(zipper, vars, localValues, famList, sps)
-
 
        ! Cleanup vars
        deallocate(vars)
@@ -369,7 +368,7 @@ contains
 
        ! Allocate space necessary to store variables. Only non-zero on
        ! root proc. 
-       allocate(vars(size(zipper%indices), 9))
+       allocate(vars(size(zipper%indices), nZippFlowComm))
 
        ! Gather up the required variables in "vars" on the root
        ! proc. This routine is differientated by hand. 
@@ -389,7 +388,7 @@ contains
 
        ! Allocate space necessary to store variables. Only non-zero on
        ! root proc. 
-       allocate(vars(size(zipper%indices), 9))
+       allocate(vars(size(zipper%indices), nZippFlowComm))
 
        ! Gather up the required variables in "vars" on the root
        ! proc. This routine is differientated by hand. 
@@ -434,7 +433,7 @@ contains
 
        ! Allocate space necessary to store variables. Only non-zero on
        ! root proc. 
-       allocate(vars(size(zipper%indices), 9), varsd(size(zipper%indices), 9))
+       allocate(vars(size(zipper%indices), nZippWallComm), varsd(size(zipper%indices), nZippWallComm))
 
        ! Gather up the required variables in "vars" on the root
        ! proc. This routine is differientated by hand. 
@@ -453,7 +452,7 @@ contains
 
        ! Allocate space necessary to store variables. Only non-zero on
        ! root proc. 
-       allocate(vars(size(zipper%indices), 9), varsd(size(zipper%indices), 9))
+       allocate(vars(size(zipper%indices), nZippFlowComm), varsd(size(zipper%indices), nZippFlowComm))
 
        ! Gather up the required variables in "vars" on the root
        ! proc. This routine is differientated by hand. 
@@ -473,7 +472,7 @@ contains
 
        ! Allocate space necessary to store variables. Only non-zero on
        ! root proc. 
-       allocate(vars(size(zipper%indices), 9), varsd(size(zipper%indices), 9))
+       allocate(vars(size(zipper%indices), nZippFlowComm), varsd(size(zipper%indices), nZippFlowComm))
 
        ! Gather up the required variables in "vars" on the root
        ! proc. This routine is differientated by hand. 
@@ -518,7 +517,7 @@ contains
 
        ! Allocate space necessary to store variables. Only non-zero on
        ! root proc. 
-       allocate(vars(size(zipper%indices), 9), varsd(size(zipper%indices), 9))
+       allocate(vars(size(zipper%indices), nZippWallComm), varsd(size(zipper%indices), nZippWallComm))
 
        ! Set the forward variables
        call wallIntegrationZipperComm(vars, sps)
@@ -542,7 +541,7 @@ contains
 
        ! Allocate space necessary to store variables. Only non-zero on
        ! root proc. 
-       allocate(vars(size(zipper%indices), 9), varsd(size(zipper%indices), 9))
+       allocate(vars(size(zipper%indices), nZippFlowComm), varsd(size(zipper%indices), nZippFlowComm))
 
        ! Set the forward variables
        call flowIntegrationZipperComm(.true., vars, sps)
@@ -567,7 +566,7 @@ contains
 
        ! Allocate space necessary to store variables. Only non-zero on
        ! root proc. 
-       allocate(vars(size(zipper%indices), 9), varsd(size(zipper%indices), 9))
+       allocate(vars(size(zipper%indices), nZippFlowComm), varsd(size(zipper%indices), nZippFlowComm))
 
        ! Set the forward variables
        call flowIntegrationZipperComm(.false., vars, sps)
