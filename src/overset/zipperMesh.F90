@@ -83,6 +83,14 @@ contains
     level = 1
     sps = 1
 
+    call initBCDataIblank(level, sps)
+
+    ! Determine the average area of surfaces on each cluster. This
+    ! will be independent of any block splitting distribution. 
+    
+    call determineClusterAreas()
+
+
     ! We build the zipper meshes *independently* for each BCType. 
     BCGroupLoop: do iBCGroup=1, nFamExchange
 
@@ -149,20 +157,14 @@ contains
           print "(1x)"
        end if
 
-
        overlap => overlapMatrix(level, sps)
        call transposeOverlap(overlap, overlapTranspose)
        ! -------------------------------------------------------------------
        ! Step 1: Eliminate any gap overlaps between meshes
        ! -------------------------------------------------------------------
 
-       ! Determine the average area of surfaces on each cluster. This
-       ! will be independent of any block splitting distribution. 
-
-       call determineClusterAreas(famList)
-
        ! Set the boundary condition blank values
-       call initBCDataIBlank(famList, level, sps)
+       call slitElimination(famList, level, sps)
 
        ! Create the surface deltas
        call surfaceDeviation(famList, level, sps)
@@ -407,7 +409,6 @@ contains
        call makeGapBoundaryStrings(famList, level, sps, master)
   
        rootProc: if (myid == 0) then 
-
           if (debugZipper) then 
              call writeZipperDebug(master)
           end if
@@ -571,7 +572,7 @@ contains
   !       for all blocks in a particular cluster. This is used for       
   !       determine blanking preference for overlapping surface cells.   
 
-  subroutine determineClusterAreas(famList)
+  subroutine determineClusterAreas
 
     use constants
     use blockPointers, only : nDom, BCData, nBocos, BCType
@@ -581,9 +582,6 @@ contains
     use BCPointers, only : xx
     use sorting, only : bsearchIntegers
     implicit none
-
-    ! Input Parameters
-    integer(kind=intType), intent(in), dimension(:) :: famList
 
     ! Working
     integer(kind=intType) :: i, j, mm, nn, clusterID, ierr, nPts, nCells
@@ -611,35 +609,33 @@ contains
 
        ! Loop over the number of boundary subfaces of this block.
        bocos: do mm=1,nBocos
-          famInclude: if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
 
-             ! Store the cell range of the subfaces a bit easier.
-             ! As only owned faces must be considered the nodal range
-             ! in BCData must be used to obtain this data.
-
-             jBeg = BCData(mm)%jnBeg + 1; jEnd = BCData(mm)%jnEnd
-             iBeg = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
-
-             call setBCPointers(mm, .True.)
-
-             ! Compute the dual area at each node. Just store in first dof
-             do j=jBeg, jEnd ! This is a face loop
-                do i=iBeg, iEnd ! This is a face loop 
-
-                   v1(:) = xx(i+1, j+1, :) - xx(i,   j,  :)
-                   v2(:) = xx(i  , j+1, :) - xx(i+1, j,  :)
-
-                   ! Cross Product
-                   call cross_prod(v1, v2, sss)
-                   da = fourth*(sss(1)**2 + sss(2)**2 + sss(3)**2)
-                   localAreas(clusterID) = localAreas(clusterID) + da
-                   localCount(clusterID) = localCount(clusterID) + 1
-                end do
+          ! Store the cell range of the subfaces a bit easier.
+          ! As only owned faces must be considered the nodal range
+          ! in BCData must be used to obtain this data.
+          
+          jBeg = BCData(mm)%jnBeg + 1; jEnd = BCData(mm)%jnEnd
+          iBeg = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
+          
+          call setBCPointers(mm, .True.)
+          
+          ! Compute the dual area at each node. Just store in first dof
+          do j=jBeg, jEnd ! This is a face loop
+             do i=iBeg, iEnd ! This is a face loop 
+                
+                v1(:) = xx(i+1, j+1, :) - xx(i,   j,  :)
+                v2(:) = xx(i  , j+1, :) - xx(i+1, j,  :)
+                
+                ! Cross Product
+                call cross_prod(v1, v2, sss)
+                da = fourth*(sss(1)**2 + sss(2)**2 + sss(3)**2)
+                localAreas(clusterID) = localAreas(clusterID) + da
+                localCount(clusterID) = localCount(clusterID) + 1
              end do
-          end if famInclude
+          end do
        end do bocos
     end do domains
-
+    
     ! All reduce sum for the localAreas to get clusterAreas and
     ! localCount to get globalCount
 
@@ -659,7 +655,102 @@ contains
     deallocate(localAreas, localCount, globalCount)
   end subroutine determineClusterAreas
 
-  subroutine initBCDataiBlank(famList, level, sps)
+  subroutine initBCDataiBlank(level, sps)
+
+    use constants
+    use blockPointers
+    use communication
+    use utils, only : setPointers
+    use oversetUtilities, only : flagForcedRecv
+    use sorting, only : bsearchIntegers
+    implicit none
+
+    ! Input Parameters
+    integer(kind=intType), intent(in) :: level, sps
+
+    ! Local variables
+    integer(kind=intType) :: mm, nn, i, j, k, iBeg, iEnd, jBeg, jEnd
+    logical :: side(4)
+
+    integer(kind=intType), dimension(:, :), pointer :: ibp, gcp, frx
+    integer(kind=intType), dimension(:, :), allocatable :: toFlip
+
+    ! This routine initializes the surface cell iblank based on the
+    ! volume iblank. It is not a straight copy since we a little
+    ! preprocessing 
+
+    ! This is a little trickier than it seems. The reason is that we
+    ! will allow a limited number of interpolated cells to be used
+    ! directly in the integration provided the meet certain criteria.
+
+    ! Consider the following
+    !  +------+--------+-------+
+    !  |ib=1  |  ib=1  | ib= 1 |
+    !  |      |        |       |
+    !  |      |        |       |
+    !  +------+========+-------+
+    !  |ib=1  || ib=-1 || ib=1 |
+    !  |      ||       ||      |
+    !  |      ||       ||      |
+    !==+======+--------+=======+==
+    !  |ib=-1 |  ib=-1 | ib=-1 |
+    !  |      |        |       |
+    !  |      |        |       |
+    !  +------+--------+-------+
+    !
+    ! The boundary between real/interpolated cells is marked by double
+    ! lines. For zipper mesh purposes, it is generally going to be
+    ! better to treat the center cell, as a regular force integration
+    ! cell (ie surface iblank=1). The criteria for selection of these
+    ! cells is:
+
+    ! 1. The cell must not have been a forced receiver (ie at overset outer
+    ! bound)
+    ! 2. Any pair *opposite* sides of the cell must be compute cells.
+
+    ! This criterial allows one-cell wide 'slits' to be pre-eliminated.
+
+    domainLoop: do nn=1, nDom
+       call setPointers(nn, level, sps)
+
+       ! Setting the surface IBlank array is done for *all* bocos. 
+       bocoLoop: do mm=1, nBocos
+          select case (BCFaceID(mm))
+          case (iMin)
+             ibp => iblank(2, :, :)
+          case (iMax)
+             ibp => iblank(il, :, :)
+          case (jMin)
+             ibp => iblank(:, 2, :)
+          case (jMax)
+             ibp => iblank(:, jl, :)
+          case (kMin)
+             ibp => iblank(:, :, 2)
+          case (kMax)
+             ibp => iblank(:, :, kl)
+          end select
+
+          ! -------------------------------------------------
+          ! Step 1: Set the (haloed) cell iBlanks directly from
+          ! the volume iBlanks
+          ! -------------------------------------------------
+          jBeg = BCData(mm)%jnBeg+1 ; jEnd = BCData(mm)%jnEnd
+          iBeg = BCData(mm)%inBeg+1 ; iEnd = BCData(mm)%inEnd
+
+          ! Just set the cell iblank directly from the cell iblank
+          ! above it. Remember the +1 in ibp is for the pointer
+          ! offset. These ranges *ALWAYS* give 1 level of halos
+          do j=jBeg-1, jEnd+1
+             do i=iBeg-1, iEnd+1
+                BCData(mm)%iBlank(i,j) = ibp(i+1, j+1)
+             end do
+          end do
+       end do bocoLoop
+    end do domainLoop
+  end subroutine initBCDataiBlank
+
+
+  subroutine slitElimination(famList, level, sps)
 
     use constants
     use blockPointers
@@ -755,15 +846,6 @@ contains
           jBeg = BCData(mm)%jnBeg+1 ; jEnd = BCData(mm)%jnEnd
           iBeg = BCData(mm)%inBeg+1 ; iEnd = BCData(mm)%inEnd
 
-          ! Just set the cell iblank directly from the cell iblank
-          ! above it. Remember the +1 in ibp is for the pointer
-          ! offset. These ranges *ALWAYS* give 1 level of halos
-          do j=jBeg-1, jEnd+1
-             do i=iBeg-1, iEnd+1
-                BCData(mm)%iBlank(i,j) = ibp(i+1, j+1)
-             end do
-          end do
-
           ! Only do the slit elimination if we actually care about
           ! this surface for the zipper
           famInclude: if (bsearchIntegers(BCData(mm)%famID, famList) > 0) then 
@@ -786,6 +868,7 @@ contains
 
                    ! We *might* add it if the interpolated cell is
                    ! touching two real cell on opposite sides.
+
                    if (BCData(mm)%iBlank(i, j) == -1 .and. validCell(i, j)) then
 
                       ! Reset the side flag
@@ -824,6 +907,7 @@ contains
                    end if
                 end do
              end do
+
              deallocate(toFlip)
           end if famInclude
        end do bocoLoop
@@ -844,7 +928,8 @@ contains
          validCell = .True.
       end if
     end function validCell
-  end subroutine initBCDataiBlank
+  end subroutine slitElimination
+
 
   !
   !      surfaceDeviation computes an approximation of the maximum          
