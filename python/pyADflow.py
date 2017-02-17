@@ -2708,7 +2708,7 @@ class ADFLOW(AeroSolver):
 
         for dvName in self.curAP.DVs:
             key = self.curAP.DVs[dvName].key.lower()
-            dvFam = self.curAP.DVs[dvName].family.lower()
+            dvFam = self.curAP.DVs[dvName].family
             if key in self.possibleAeroDVs:
                 tmp = {}
                 if key in ['altitude']:
