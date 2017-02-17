@@ -93,6 +93,7 @@ contains
         mavgps = globalvals(imassps, sps)/mflow
         mavgmn = globalvals(imassmn, sps)/mflow
         mflow2 = globalvals(imassflow, sps)*sqrt(pref/rhoref)
+! justin fix this! this is not valgrind safe!
         sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
         sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
       else
@@ -100,9 +101,9 @@ contains
         mavgttot = zero
         mavgps = zero
         mavgmn = zero
+        mflow2 = zero
         sigmamn = zero
         sigmaptot = zero
-        mflow2 = zero
       end if
       funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
       funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &
@@ -558,7 +559,8 @@ contains
 ! have to re-apply fact to massflowratelocal to undoo it, because 
 ! we need the signed behavior of ssi to get the momentum forces correct. 
 ! also, the sign is flipped between inflow and outflow types 
-        cellarea = mynorm2(ssi(i, j, :))
+        cellarea = sqrt(ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)&
+&         **2)
         massflowratelocal = massflowratelocal*fact/timeref*blk/cellarea*&
 &         internalflowfact*inflowfact
         fx = massflowratelocal*ssi(i, j, 1)*vxm

@@ -169,6 +169,7 @@ contains
         arg1 = pref/rhoref
         result1 = sqrt(arg1)
         mflow2 = globalvals(imassflow, sps)*result1
+! justin fix this! this is not valgrind safe!
         if (globalvals(isigmamn, sps)/mflow .eq. 0.0_8) then
           sigmamnd = 0.0_8
         else
@@ -190,9 +191,9 @@ contains
         mavgttot = zero
         mavgps = zero
         mavgmn = zero
+        mflow2 = zero
         sigmamn = zero
         sigmaptot = zero
-        mflow2 = zero
         mavgttotd = 0.0_8
         mavgpsd = 0.0_8
         mavgmnd = 0.0_8
@@ -365,6 +366,7 @@ contains
         arg1 = pref/rhoref
         result1 = sqrt(arg1)
         mflow2 = globalvals(imassflow, sps)*result1
+! justin fix this! this is not valgrind safe!
         sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
         sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
       else
@@ -372,9 +374,9 @@ contains
         mavgttot = zero
         mavgps = zero
         mavgmn = zero
+        mflow2 = zero
         sigmamn = zero
         sigmaptot = zero
-        mflow2 = zero
       end if
       funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
       funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &
@@ -1381,7 +1383,15 @@ contains
 ! have to re-apply fact to massflowratelocal to undoo it, because 
 ! we need the signed behavior of ssi to get the momentum forces correct. 
 ! also, the sign is flipped between inflow and outflow types 
-        cellaread = mynorm2_d(ssi(i, j, :), ssid(i, j, :), cellarea)
+        arg1d = 2*ssi(i, j, 1)*ssid(i, j, 1) + 2*ssi(i, j, 2)*ssid(i, j&
+&         , 2) + 2*ssi(i, j, 3)*ssid(i, j, 3)
+        arg1 = ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**2
+        if (arg1 .eq. 0.0_8) then
+          cellaread = 0.0_8
+        else
+          cellaread = arg1d/(2.0*sqrt(arg1))
+        end if
+        cellarea = sqrt(arg1)
         massflowratelocald = internalflowfact*inflowfact*(blk*(fact*&
 &         massflowratelocald*timeref-massflowratelocal*fact*timerefd)*&
 &         cellarea/timeref**2-massflowratelocal*fact*blk*cellaread/&
@@ -1621,7 +1631,8 @@ contains
 ! have to re-apply fact to massflowratelocal to undoo it, because 
 ! we need the signed behavior of ssi to get the momentum forces correct. 
 ! also, the sign is flipped between inflow and outflow types 
-        cellarea = mynorm2(ssi(i, j, :))
+        arg1 = ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**2
+        cellarea = sqrt(arg1)
         massflowratelocal = massflowratelocal*fact/timeref*blk/cellarea*&
 &         internalflowfact*inflowfact
         fx = massflowratelocal*ssi(i, j, 1)*vxm

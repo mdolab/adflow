@@ -370,7 +370,7 @@ python module libadflow
        module usersurfaceintegrations
          subroutine addintegrationsurface(pts,conn,famname,famid,npts,nconn) ! in :test:surfaceIntegrations.F90:surfaceintegrations
            real(kind=realtype) dimension(3,npts),intent(in) :: pts
-           integer(kind=inttype) dimension(4,nconn),intent(in) :: conn
+           integer(kind=inttype) dimension(3,nconn),intent(in) :: conn
            character*maxstringlen :: famname
            integer(kind=inttype), intent(in) :: famid
            integer(kind=inttype), optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)

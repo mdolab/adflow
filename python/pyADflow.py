@@ -4678,6 +4678,15 @@ class ADFLOW(AeroSolver):
                     newConn[i, j] = link[conn[i, j]]
             conn = newConn
 
+            # Now convert the connectivity to triangles since we
+            # actually will be doing the integration on a triangles
+            newConn = numpy.zeros((len(conn)*2, 3))
+            for i in range(len(conn)):
+                newConn[2*i  , :] = [conn[i, 0], conn[i, 1], conn[i, 2]]
+                newConn[2*i+1, :] = [conn[i, 0], conn[i, 2], conn[i, 3]]
+
+            conn = newConn
+
         # Now bcast to everyone
         pts = self.comm.bcast(pts)
         conn = self.comm.bcast(conn)

@@ -32,7 +32,7 @@ module userSurfaceIntegrationData
 
      ! Two separate commes: One for the nodes (based on the primal
      ! mesh) and one for the variables (based on the dual mesh)
-     type(userSurfCommType) :: nodeComm, faceComm
+     type(userSurfCommType) :: nodeComm, flowComm
 
   end type userIntSurf
 

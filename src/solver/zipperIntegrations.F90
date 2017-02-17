@@ -2,7 +2,7 @@ module zipperIntegrations
 contains
 
   subroutine flowIntegrationZipper(isInflow, conn, fams, vars, localValues, famList, sps, &
-       withGathered, funcValues)
+       withGathered, funcValues, ptValid)
 
     ! Integrate over the trianges for the inflow/outflow conditions. 
 
@@ -26,7 +26,7 @@ contains
     integer(kind=intType), intent(in) :: sps
     logical, intent(in) :: withGathered
     real(kind=realType), optional, dimension(:), intent(in) :: funcValues
-
+    logical(kind=intType), dimension(:), optional, intent(in) :: ptValid
     ! Working variables
     integer(kind=intType) :: i, j
     real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, Fx, Fy, Fz
@@ -34,7 +34,8 @@ contains
     real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, MNm, massFlowRateLocal
     real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN
     real(kind=realType) ::  mReDim, pk, sigma_MN, sigma_Ptot
-    real(kind=realType) :: internalFlowFact, inflowFact, xc, yc, zc, cellArea, mx, my, mz
+    real(kind=realType) :: internalFlowFact, inflowFact, xc, yc, zc, mx, my, mz
+    logical :: triIsValid
 
     massFlowRate = zero
     mass_Ptot = zero
@@ -61,126 +62,141 @@ contains
        inflowFact=-one
     end if
 
-
     !$AD II-LOOP
     do i=1, size(conn, 2)
        if (famInList(fams(i), famList)) then 
-          ! Compute the averaged values for this trianlge
-          vxm = zero; vym = zero; vzm = zero; rhom = zero; pm = zero; MNm = zero;
-          sF = zero
-          do j=1,3
-             rhom = rhom + vars(conn(j, i), iRho)
-             vxm = vxm + vars(conn(j, i), iVx)
-             vym = vym + vars(conn(j, i), iVy)
-             vzm = vzm + vars(conn(j, i), iVz)
-             pm = pm + vars(conn(j, i), iRhoE)
-             gammam = gammam + vars(conn(j, i), iZippFlowGamma)
-             sF = sF + vars(conn(j, i), iZippFlowSFace)
-          end do
 
-          ! Divide by 3 due to the summation above:
-          rhom = third*rhom
-          vxm = third*vxm
-          vym = third*vym
-          vzm = third*vzm
-          pm = third*pm
-          gammam = third*gammam
-          sF = third*sF
-
-          ! Get the nodes of triangle.
-          x1 = vars(conn(1, i), iZippFLowX:iZippFlowZ)
-          x2 = vars(conn(2, i), iZippFlowX:iZippFlowZ)
-          x3 = vars(conn(3, i), iZippFlowX:iZippFlowZ)
-          call cross_prod(x2-x1, x3-x1, norm)
-          ss = half*norm
-
-          call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
-          call computeTtot(rhom, vxm, vym, vzm, pm, Ttot)
-
-          vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3)  - sF
-
-          vmag = sqrt((vxm**2 + vym**2 + vzm**2)) - sF
-          ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
-          MNm = vmag/sqrt(gammam*pm/rhom)
-
-          massFlowRateLocal = rhom*vnm*mReDim
-
-          if (withGathered) then 
-
-              sigma_Mn = sigma_Mn  + massFlowRateLocal*(MNm - funcValues(costFuncMavgMN))**2
-              sigma_Ptot = sigma_Ptot + massFlowRateLocal*(Ptot - funcValues(costFuncMavgPtot))**2
-
-           else 
-             massFlowRate = massFlowRate + massFlowRateLocal
-
-             pk = pk + ((pm-pInf) + half*rhom*(vmag**2 - uInf**2)) * vnm * pRef * uRef
-
-             pm = pm*pRef
-
-             mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
-             mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
-             mass_Ps = mass_Ps + pm*massFlowRateLocal
-             mass_MN = mass_MN + MNm*massFlowRateLocal
-
-             ! Compute the average cell center. 
-             xc = zero
-             yc = zero
-             zc = zero
-             do j=1,3
-                xc = xc + (vars(conn(1, i), iZippFlowX)) 
-                yc = yc + (vars(conn(2, i), iZippFlowY)) 
-                zc = zc + (vars(conn(3, i), iZippFlowZ)) 
-             end do
-
-             ! Finish average for cell center
-             xc = third*xc
-             yc = third*yc
-             zc = third*zc
-
-             xc = xc - refPoint(1)
-             yc = yc - refPoint(2)
-             zc = zc - refPoint(3)
-
-             pm = -(pm-pInf*pRef)
-             fx = pm*ss(1)
-             fy = pm*ss(2)
-             fz = pm*ss(3)
-
-             ! Update the pressure force and moment coefficients.
-             Fp(1) = Fp(1) + fx
-             Fp(2) = Fp(2) + fy
-             Fp(3) = Fp(3) + fz
-
-             mx = yc*fz - zc*fy
-             my = zc*fx - xc*fz
-             mz = xc*fy - yc*fx
-
-             Mp(1) = Mp(1) + mx
-             Mp(2) = Mp(2) + my
-             Mp(3) = Mp(3) + mz
-
-             ! Momentum forces
-
-             ! Get unit normal vector. 
-             ss = ss/mynorm2(ss)
-             massFlowRateLocal = massFlowRateLocal/timeRef*internalFlowFact*inflowFact
-
-             fx = massFlowRateLocal*ss(1) * vxm/timeRef
-             fy = massFlowRateLocal*ss(2) * vym/timeRef
-             fz = massFlowRateLocal*ss(3) * vzm/timeRef
-
-             FMom(1) = FMom(1) - fx
-             FMom(2) = FMom(2) - fy
-             FMom(3) = FMom(3) - fz
-
-             mx = yc*fz - zc*fy
-             my = zc*fx - xc*fz
-             mz = xc*fy - yc*fx
-
-             MMom(1) = MMom(1) + mx
-             MMom(2) = MMom(2) + my
-             MMom(3) = MMom(3) + mz
+          ! If the ptValid list is given, check if we should integrate
+          ! this triangle.
+          triIsValid = .True. 
+          if (present(ptValid)) then 
+             ! Check if each of the three nodes are valid
+             if ((ptValid(conn(1, i)) .eqv. .False.) .or. & 
+                 (ptValid(conn(2, i)) .eqv. .False.) .or. &
+                 (ptValid(conn(3, i)) .eqv. .False.)) then 
+                triIsValid = .False.
+             end if
           end if
+
+          validTrianlge: if (triIsValid) then 
+
+             ! Compute the averaged values for this triangle
+             vxm = zero; vym = zero; vzm = zero; rhom = zero; pm = zero; MNm = zero; gammam = zero;
+             sF = zero
+             do j=1,3
+                rhom = rhom + vars(conn(j, i), iRho)
+                vxm = vxm + vars(conn(j, i), iVx)
+                vym = vym + vars(conn(j, i), iVy)
+                vzm = vzm + vars(conn(j, i), iVz)
+                pm = pm + vars(conn(j, i), iRhoE)
+                gammam = gammam + vars(conn(j, i), iZippFlowGamma)
+                sF = sF + vars(conn(j, i), iZippFlowSFace)
+             end do
+             
+             ! Divide by 3 due to the summation above:
+             rhom = third*rhom
+             vxm = third*vxm
+             vym = third*vym
+             vzm = third*vzm
+             pm = third*pm
+             gammam = third*gammam
+             sF = third*sF
+             
+             ! Get the nodes of triangle.
+             x1 = vars(conn(1, i), iZippFLowX:iZippFlowZ)
+             x2 = vars(conn(2, i), iZippFlowX:iZippFlowZ)
+             x3 = vars(conn(3, i), iZippFlowX:iZippFlowZ)
+             call cross_prod(x2-x1, x3-x1, norm)
+             ss = half*norm
+
+             call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
+             call computeTtot(rhom, vxm, vym, vzm, pm, Ttot)
+             
+             vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3)  - sF
+             
+             vmag = sqrt((vxm**2 + vym**2 + vzm**2)) - sF
+             ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
+             MNm = vmag/sqrt(gammam*pm/rhom)
+             
+             massFlowRateLocal = rhom*vnm*mReDim
+             
+             if (withGathered) then 
+                
+                sigma_Mn = sigma_Mn  + massFlowRateLocal*(MNm - funcValues(costFuncMavgMN))**2
+                sigma_Ptot = sigma_Ptot + massFlowRateLocal*(Ptot - funcValues(costFuncMavgPtot))**2
+                
+             else 
+                massFlowRate = massFlowRate + massFlowRateLocal
+                
+                pk = pk + ((pm-pInf) + half*rhom*(vmag**2 - uInf**2)) * vnm * pRef * uRef
+                
+                pm = pm*pRef
+                
+                mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
+                mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
+                mass_Ps = mass_Ps + pm*massFlowRateLocal
+                mass_MN = mass_MN + MNm*massFlowRateLocal
+                
+                ! Compute the average cell center. 
+                xc = zero
+                yc = zero
+                zc = zero
+                do j=1,3
+                   xc = xc + (vars(conn(1, i), iZippFlowX)) 
+                   yc = yc + (vars(conn(2, i), iZippFlowY)) 
+                   zc = zc + (vars(conn(3, i), iZippFlowZ)) 
+                end do
+                
+                ! Finish average for cell center
+                xc = third*xc
+                yc = third*yc
+                zc = third*zc
+                
+                xc = xc - refPoint(1)
+                yc = yc - refPoint(2)
+                zc = zc - refPoint(3)
+                
+                pm = -(pm-pInf*pRef)
+                fx = pm*ss(1)
+                fy = pm*ss(2)
+                fz = pm*ss(3)
+
+                ! Update the pressure force and moment coefficients.
+                Fp(1) = Fp(1) + fx
+                Fp(2) = Fp(2) + fy
+                Fp(3) = Fp(3) + fz
+                
+                mx = yc*fz - zc*fy
+                my = zc*fx - xc*fz
+                mz = xc*fy - yc*fx
+                
+                Mp(1) = Mp(1) + mx
+                Mp(2) = Mp(2) + my
+                Mp(3) = Mp(3) + mz
+                
+                ! Momentum forces
+                
+                ! Get unit normal vector. 
+                ss = ss/mynorm2(ss)
+                massFlowRateLocal = massFlowRateLocal/timeRef*internalFlowFact*inflowFact
+                
+                fx = massFlowRateLocal*ss(1) * vxm/timeRef
+                fy = massFlowRateLocal*ss(2) * vym/timeRef
+                fz = massFlowRateLocal*ss(3) * vzm/timeRef
+                
+                FMom(1) = FMom(1) - fx
+                FMom(2) = FMom(2) - fy
+                FMom(3) = FMom(3) - fz
+                
+                mx = yc*fz - zc*fy
+                my = zc*fx - xc*fz
+                mz = xc*fy - yc*fx
+                
+                MMom(1) = MMom(1) + mx
+                MMom(2) = MMom(2) + my
+                MMom(3) = MMom(3) + mz
+             end if
+          end if validTrianlge
        end if
     enddo
 
@@ -228,7 +244,6 @@ contains
     real(kind=realType), dimension(3) :: ss, norm, refPoint
     real(kind=realType), dimension(3) :: p1, p2, p3, v1, v2, v3, x1, x2, x3
     real(kind=realType) :: fact, triArea, fx, fy, fz, mx, my, mz, xc, yc, zc
-
     ! Determine the reference point for the moment computation in
     ! meters.
     refPoint(1) = LRef*pointRef(1)
@@ -243,8 +258,7 @@ contains
     do i=1, size(conn, 2)
        if (famInList(fams(i), famList)) then 
 
-          ! Get the nodes of triangle. The *3 is becuase of the
-          ! blanket third above. 
+          ! Get the nodes of triangle. 
           x1 = vars(conn(1, i), iZippWallX:iZIppWallZ)
           x2 = vars(conn(2, i), iZippWallX:iZIppWallZ)
           x3 = vars(conn(3, i), iZippWallX:iZIppWallZ)
@@ -253,7 +267,7 @@ contains
           ! The third here is to account for the summation of P1, p2
           ! and P3
           triArea = mynorm2(ss)*third
-
+       
           ! Compute the average cell center. 
           xc = third*(x1(1)+x2(1)+x3(1))
           yc = third*(x1(2)+x2(2)+x3(2))

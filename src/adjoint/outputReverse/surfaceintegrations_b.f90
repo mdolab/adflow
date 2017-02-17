@@ -126,6 +126,7 @@ contains
         mavgps = globalvals(imassps, sps)/mflow
         mavgmn = globalvals(imassmn, sps)/mflow
         mflow2 = globalvals(imassflow, sps)*sqrt(pref/rhoref)
+! justin fix this! this is not valgrind safe!
         sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
         sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
       else
@@ -133,9 +134,9 @@ contains
         mavgttot = zero
         mavgps = zero
         mavgmn = zero
+        mflow2 = zero
         sigmamn = zero
         sigmaptot = zero
-        mflow2 = zero
       end if
       funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
       funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &
@@ -435,6 +436,7 @@ contains
         mavgps = globalvals(imassps, sps)/mflow
         mavgmn = globalvals(imassmn, sps)/mflow
         mflow2 = globalvals(imassflow, sps)*sqrt(pref/rhoref)
+! justin fix this! this is not valgrind safe!
         sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
         sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
       else
@@ -442,9 +444,9 @@ contains
         mavgttot = zero
         mavgps = zero
         mavgmn = zero
+        mflow2 = zero
         sigmamn = zero
         sigmaptot = zero
-        mflow2 = zero
       end if
       funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
       funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &
@@ -1308,6 +1310,7 @@ contains
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: temp
+    real(kind=realtype) :: tempd17
     real(kind=realtype) :: tempd16
     real(kind=realtype) :: tempd15
     refpoint(1) = lref*pointref(1)
@@ -1442,7 +1445,8 @@ contains
 ! have to re-apply fact to massflowratelocal to undoo it, because 
 ! we need the signed behavior of ssi to get the momentum forces correct. 
 ! also, the sign is flipped between inflow and outflow types 
-        cellarea = mynorm2(ssi(i, j, :))
+        cellarea = sqrt(ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)&
+&         **2)
         call pushreal8(massflowratelocal)
         massflowratelocal = massflowratelocal*fact/timeref*blk/cellarea*&
 &         internalflowfact*inflowfact
@@ -1488,7 +1492,16 @@ contains
         tempd9 = -(massflowratelocal*tempd8/(timeref*cellarea))
         timerefd = timerefd + cellarea*tempd9
         cellaread = timeref*tempd9
-        call mynorm2_b(ssi(i, j, :), ssid(i, j, :), cellaread)
+        if (ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**2 .eq. &
+&           0.0_8) then
+          tempd10 = 0.0
+        else
+          tempd10 = cellaread/(2.0*sqrt(ssi(i, j, 1)**2+ssi(i, j, 2)**2+&
+&           ssi(i, j, 3)**2))
+        end if
+        ssid(i, j, 1) = ssid(i, j, 1) + 2*ssi(i, j, 1)*tempd10
+        ssid(i, j, 2) = ssid(i, j, 2) + 2*ssi(i, j, 2)*tempd10
+        ssid(i, j, 3) = ssid(i, j, 3) + 2*ssi(i, j, 3)*tempd10
         mzd = mpd(3)
         myd = mpd(2)
         mxd = mpd(1)
@@ -1508,26 +1521,26 @@ contains
         call popreal8(pm)
         massflowratelocald = mnm*mass_mnd + tref*ttot*mass_ttotd + &
 &         massflowrated + pref*ptot*mass_ptotd + pm*mass_psd + tempd8
-        tempd10 = -(fact*blk*pmd)
-        prefd = prefd - pinf*tempd10
-        pmd = massflowratelocal*mass_psd + tempd10
-        tempd11 = fourth*zcd
-        xxd(i, j, 3) = xxd(i, j, 3) + tempd11
-        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd11
-        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd11
-        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd11
+        tempd11 = -(fact*blk*pmd)
+        prefd = prefd - pinf*tempd11
+        pmd = massflowratelocal*mass_psd + tempd11
+        tempd12 = fourth*zcd
+        xxd(i, j, 3) = xxd(i, j, 3) + tempd12
+        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd12
+        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd12
+        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd12
         refpointd(3) = refpointd(3) - zcd
-        tempd12 = fourth*ycd
-        xxd(i, j, 2) = xxd(i, j, 2) + tempd12
-        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd12
-        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd12
-        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd12
+        tempd13 = fourth*ycd
+        xxd(i, j, 2) = xxd(i, j, 2) + tempd13
+        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd13
+        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd13
+        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd13
         refpointd(2) = refpointd(2) - ycd
-        tempd13 = fourth*xcd
-        xxd(i, j, 1) = xxd(i, j, 1) + tempd13
-        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd13
-        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd13
-        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd13
+        tempd14 = fourth*xcd
+        xxd(i, j, 1) = xxd(i, j, 1) + tempd14
+        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd14
+        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd14
+        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd14
         refpointd(1) = refpointd(1) - xcd
         mnmd = massflowratelocal*mass_mnd
         ttotd = ttotd + tref*massflowratelocal*mass_ttotd
@@ -1535,15 +1548,15 @@ contains
         ptotd = ptotd + pref*massflowratelocal*mass_ptotd
         call popreal8(pm)
         temp1 = vmag**2 - uinf**2
-        tempd16 = uref*fact*pkd
-        tempd15 = vnm*pref*tempd16
-        tempd14 = (pm-pinf+half*(rhom*temp1))*tempd16
-        prefd = prefd + pm*pmd + vnm*tempd14 + ptot*massflowratelocal*&
+        tempd17 = uref*fact*pkd
+        tempd16 = vnm*pref*tempd17
+        tempd15 = (pm-pinf+half*(rhom*temp1))*tempd17
+        prefd = prefd + pm*pmd + vnm*tempd15 + ptot*massflowratelocal*&
 &         mass_ptotd
-        pmd = tempd15 + pref*pmd
-        rhomd = half*temp1*tempd15
-        vmagd = rhom*half*2*vmag*tempd15
-        vnmd = pref*tempd14
+        pmd = tempd16 + pref*pmd
+        rhomd = half*temp1*tempd16
+        vmagd = rhom*half*2*vmag*tempd16
+        vnmd = pref*tempd15
       end if
       tempd0 = blk*fact*massflowratelocald
       rhomd = rhomd + mredim*vnm*tempd0
@@ -1747,7 +1760,8 @@ contains
 ! have to re-apply fact to massflowratelocal to undoo it, because 
 ! we need the signed behavior of ssi to get the momentum forces correct. 
 ! also, the sign is flipped between inflow and outflow types 
-        cellarea = mynorm2(ssi(i, j, :))
+        cellarea = sqrt(ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)&
+&         **2)
         massflowratelocal = massflowratelocal*fact/timeref*blk/cellarea*&
 &         internalflowfact*inflowfact
         fx = massflowratelocal*ssi(i, j, 1)*vxm
