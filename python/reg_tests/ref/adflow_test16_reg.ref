@@ -678,7 +678,7 @@
       1      29     29   DADI   0.30E+01   0.6691649628396242E-02   0.1100956387753969E+01 
       1      30     30   DADI   0.30E+01   0.6426067064437225E-02   0.1054415213009112E+01 
       1      31     31   DADI   0.30E+01   0.6173954681097279E-02   0.1009409135792262E+01 
-      1      32     32   DADI Solution Time:      1.249 sec
+      1      32     32   DADI Solution Time:      1.244 sec
 -> Alpha... 0.000000 
 Norm of residual
 @value  1.0420053123053e-14 1e-10 1e-10
@@ -689,7 +689,7 @@ Eval Functions:
 Dictionary Key: conv_nozzle_distortionmn
 @value  1.1278281385253e-02 1e-10 1e-10
 Dictionary Key: conv_nozzle_distortionptot
-@value  1.0007911497558e+05 1e-10 1e-10
+@value  8.8655964127595e+01 1e-10 1e-10
 Dictionary Key: conv_nozzle_edot_down
 @value  7.5164020294980e+05 1e-10 1e-10
 Dictionary Key: conv_nozzle_edot_up
