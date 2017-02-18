@@ -26,8 +26,8 @@ contains
     real(kind=realtype) :: fact, factmoment, ovrnts
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: force, &
 &   moment, cforce, cmoment
-    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mflow2, &
-&   mavgmn, sigmamn, sigmaptot
+    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mavgmn, &
+&   sigmamn, sigmaptot
     integer(kind=inttype) :: sps
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
@@ -92,7 +92,6 @@ contains
         mavgttot = globalvals(imassttot, sps)/mflow
         mavgps = globalvals(imassps, sps)/mflow
         mavgmn = globalvals(imassmn, sps)/mflow
-        mflow2 = globalvals(imassflow, sps)*sqrt(pref/rhoref)
 ! justin fix this! this is not valgrind safe!
         sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
         sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
@@ -101,7 +100,6 @@ contains
         mavgttot = zero
         mavgps = zero
         mavgmn = zero
-        mflow2 = zero
         sigmamn = zero
         sigmaptot = zero
       end if
@@ -120,6 +118,8 @@ contains
 &       ovrnts*sigmaptot
       funcvalues(costfuncpk) = funcvalues(costfuncpk) + ovrnts*&
 &       globalvals(ipk, sps)
+      funcvalues(costfuncedot) = funcvalues(costfuncedot) + ovrnts*&
+&       globalvals(iedot, sps)
     end do
 ! bending moment calc - also broken. 
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
@@ -417,8 +417,8 @@ contains
 &   addgridvelocities
     use flowvarrefstate, only : pref, pinf, rhoref, timeref, lref, &
 &   tref, rgas, uref, uinf
-    use inputphysics, only : pointref, flowtype, veldirfreestream, &
-&   alpha, beta, liftindex
+    use inputphysics, only : pointref, flowtype, alpha, beta, &
+&   liftindex
     use flowutils_fast_b, only : computeptot, computettot, getdirvector
     use bcpointers_fast_b, only : ssi, sface, ww1, ww2, pp1, pp2, xx, gamma1,&
 &   gamma2
@@ -439,12 +439,13 @@ contains
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: internalflowfact, inflowfact, fact, xc, yc, &
 &   zc, cellarea, mx, my, mz
-    real(kind=realtype) :: sf, vmag, vnm, vxm, vym, vzm, fx, fy, fz, u, &
-&   v, w
+    real(kind=realtype) :: sf, vmag, vnm, vnmfreestreamref, vxm, vym, &
+&   vzm, fx, fy, fz, u, v, w
     real(kind=realtype) :: pm, ptot, ttot, rhom, gammam, a2
     real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint, &
-&   vcoordref, vfreestreamref, sfacefreestreamref
+&   vcoordref, vfreestreamref, sfacefreestreamref, normfreestreamref
     real(kind=realtype) :: mnm, massflowratelocal
+    real(kind=realtype) :: edota, edotv, edotp
     intrinsic sqrt
     intrinsic mod
     intrinsic max
@@ -487,6 +488,9 @@ contains
     mass_ttot = zero
     mass_ps = zero
     mass_mn = zero
+    edota = zero
+    edotv = zero
+    edotp = zero
     sigma_mn = zero
     sigma_ptot = zero
     do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
@@ -514,18 +518,46 @@ contains
       vmag = sqrt(vxm**2 + vym**2 + vzm**2) - sf
 ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
       mnm = vmag/sqrt(gammam*pm/rhom)
+      cellarea = sqrt(ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**&
+&       2)
       call computeptot(rhom, vxm, vym, vzm, pm, ptot)
       call computettot(rhom, vxm, vym, vzm, pm, ttot)
       massflowratelocal = rhom*vnm*blk*fact*mredim
       if (withgathered) then
         sigma_mn = sigma_mn + massflowratelocal*(mnm-funcvalues(&
 &         costfuncmavgmn))**2
+        ptot = ptot*pref
         sigma_ptot = sigma_ptot + massflowratelocal*(ptot-funcvalues(&
 &         costfuncmavgptot))**2
       else
         massflowrate = massflowrate + massflowratelocal
         pk = pk + (pm-pinf+half*rhom*(vmag**2-uinf**2))*vnm*pref*uref*&
-&         fact
+&         fact*internalflowfact*blk
+! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
+        vcoordref(1) = vxm
+        vcoordref(2) = vym
+        vcoordref(3) = vzm
+        call getdirvector(vcoordref, -alpha, -beta, vfreestreamref, &
+&                   liftindex)
+        vfreestreamref = vfreestreamref*vmag
+!project the face normal into the freestream velocity and scale by the face
+        call getdirvector(ssi(i, j, :), -alpha, -beta, normfreestreamref&
+&                   , liftindex)
+! note that normfreestreamref is of magnitude 1 now
+        sfacefreestreamref = normfreestreamref*sf
+! compute the pertubations of the flow from the free-stream velocity
+        u = vfreestreamref(1) - sfacefreestreamref(1) - uinf
+        v = vfreestreamref(2) - sfacefreestreamref(2)
+        w = vfreestreamref(3) - sfacefreestreamref(3)
+        vnmfreestreamref = (u+uinf)*normfreestreamref(1) + v*&
+&         normfreestreamref(2) + w*normfreestreamref(3)
+        vnmfreestreamref = vnmfreestreamref*cellarea
+        edota = edota + half*rhom*u**2*vnmfreestreamref*pref*uref*&
+&         internalflowfact*blk
+        edotv = edotv + half*rhom*(v**2+w**2)*vnmfreestreamref*pref*uref&
+&         *internalflowfact*blk
+        edotp = edotp + (pm-pinf)*(vnm-uinf*normfreestreamref(1)*&
+&         cellarea)*pref*uref*internalflowfact*blk
 ! re-dimentionalize quantities
         pm = pm*pref
         mass_ptot = mass_ptot + ptot*massflowratelocal*pref
@@ -559,8 +591,6 @@ contains
 ! have to re-apply fact to massflowratelocal to undoo it, because 
 ! we need the signed behavior of ssi to get the momentum forces correct. 
 ! also, the sign is flipped between inflow and outflow types 
-        cellarea = sqrt(ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)&
-&         **2)
         massflowratelocal = massflowratelocal*fact/timeref*blk/cellarea*&
 &         internalflowfact*inflowfact
         fx = massflowratelocal*ssi(i, j, 1)*vxm
@@ -575,20 +605,6 @@ contains
         mmom(1) = mmom(1) + mx
         mmom(2) = mmom(2) + my
         mmom(3) = mmom(3) + mz
-! ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
-! vcoordref(1) = vxm
-! vcoordref(2) = vym
-! vcoordref(3) = vzm
-! call getdirvector(vcoordref, -alpha, -beta, vfreestreamref, liftindex)
-! vfreestreamref = vfreestreamref * vmag
-! !project the face normal into the freestream velocity and scale by the face
-! call getdirvector(ssi(i,j,:), -alpha, -beta, sfacefreestreamref, liftindex)
-! sfacefreestreamref = sfacefreestreamref * sf
-! ! compute the pertubations of the flow from the free-stream velocity
-! u = vfreestreamref(1) - sfacefreestreamref(1) - uinf
-! v = vfreestreamref(2) - sfacefreestreamref(2)
-! w = vfreestreamref(3) - sfacefreestreamref(3)
-! !edota = edota + half*(rhom)
       end if
     end do
     if (withgathered) then
@@ -602,6 +618,7 @@ contains
       localvalues(imassps) = localvalues(imassps) + mass_ps
       localvalues(imassmn) = localvalues(imassmn) + mass_mn
       localvalues(ipk) = localvalues(ipk) + pk
+      localvalues(iedot) = localvalues(iedot) + edota + edotv + edotp
       localvalues(ifp:ifp+2) = localvalues(ifp:ifp+2) + fp
       localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
 &       fmom

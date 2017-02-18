@@ -201,14 +201,14 @@ adjointExtra%resScale(dw) > (dw) \
 surfaceIntegrations%wallIntegrationFace(Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues, BCData%Fp, bcData%Fv, BCData%area, localValues) > \
                                        (Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues, BCdata%Fp, bcData%Fv, BCData%area, localValues)\
 \
-surfaceIntegrations%flowIntegrationFace(Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues, funcValues) > \
-                                       (Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues, funcValues)\
+surfaceIntegrations%flowIntegrationFace(alpha, beta, Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues, funcValues) > \
+                                       (alpha, beta, Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues, funcValues)\
 \
 zipperIntegrations%wallIntegrationZipper(vars, pointRef, localValues) > \
                                          (vars, pointRef, localValues)\
 \
-zipperIntegrations%flowIntegrationZipper(vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues, funcValues) > \
-                                         (vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues, funcValues)\
+zipperIntegrations%flowIntegrationZipper(alpha, beta, vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues, funcValues) > \
+                                        (alpha, beta, vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues, funcValues)\
 \
 surfaceIntegrations%getCostFunctions(globalVals, liftDirection, dragDirection, pRef, rhoRef, machCoef) > \
 	                            (funcValues) \

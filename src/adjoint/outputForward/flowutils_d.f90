@@ -1147,19 +1147,24 @@ contains
     implicit none
 !local vars
     real(kind=realtype), dimension(3) :: refdir1, refdir2
+    real(kind=realtype), dimension(3) :: refdir1d, refdir2d
 ! velocity direction given by the rotation of a unit vector
 ! initially aligned along the positive x-direction (1,0,0)
 ! 1) rotate alpha radians cw about y or z-axis
 ! 2) rotate beta radians ccw about z or y-axis
     refdir1(:) = zero
     refdir1(1) = one
-    call getdirvector_d(refdir1, alpha, alphad, beta, betad, &
+    veldirfreestreamd = 0.0_8
+    refdir1d = 0.0_8
+    call getdirvector_d(refdir1, refdir1d, alpha, alphad, beta, betad, &
 &                 veldirfreestream, veldirfreestreamd, liftindex)
 ! drag direction given by the rotation of a unit vector
 ! initially aligned along the positive x-direction (1,0,0)
 ! 1) rotate alpha radians cw about y or z-axis
 ! 2) rotate beta radians ccw about z or y-axis
-    call getdirvector_d(refdir1, alpha, alphad, beta, betad, &
+    dragdirectiond = 0.0_8
+    refdir1d = 0.0_8
+    call getdirvector_d(refdir1, refdir1d, alpha, alphad, beta, betad, &
 &                 dragdirection, dragdirectiond, liftindex)
 ! lift direction given by the rotation of a unit vector
 ! initially aligned along the positive z-direction (0,0,1)
@@ -1167,7 +1172,9 @@ contains
 ! 2) rotate beta radians ccw about z or y-axis
     refdir2(:) = zero
     refdir2(liftindex) = one
-    call getdirvector_d(refdir2, alpha, alphad, beta, betad, &
+    liftdirectiond = 0.0_8
+    refdir2d = 0.0_8
+    call getdirvector_d(refdir2, refdir2d, alpha, alphad, beta, betad, &
 &                 liftdirection, liftdirectiond, liftindex)
   end subroutine adjustinflowangle_d
   subroutine adjustinflowangle()
@@ -1318,9 +1325,9 @@ contains
   end subroutine derivativerotmatrixrigid
 !  differentiation of getdirvector in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: winddirection
-!   with respect to varying inputs: alpha beta
-  subroutine getdirvector_d(refdirection, alpha, alphad, beta, betad, &
-&   winddirection, winddirectiond, liftindex)
+!   with respect to varying inputs: alpha beta refdirection winddirection
+  subroutine getdirvector_d(refdirection, refdirectiond, alpha, alphad, &
+&   beta, betad, winddirection, winddirectiond, liftindex)
 !(xb,yb,zb,alpha,beta,xw,yw,zw)
 !
 !      convert the angle of attack and side slip angle to wind axes.  
@@ -1346,6 +1353,7 @@ contains
 !     subroutine arguments.
 !
     real(kind=realtype), dimension(3), intent(in) :: refdirection
+    real(kind=realtype), dimension(3), intent(in) :: refdirectiond
     real(kind=realtype) :: alpha, beta
     real(kind=realtype) :: alphad, betad
     real(kind=realtype), dimension(3), intent(out) :: winddirection
@@ -1355,17 +1363,28 @@ contains
 !     local variables.
 !
     real(kind=realtype) :: rnorm, x1, y1, z1, xbn, ybn, zbn, xw, yw, zw
-    real(kind=realtype) :: x1d, y1d, z1d, xbnd, ybnd, zbnd, xwd, ywd, &
-&   zwd
+    real(kind=realtype) :: rnormd, x1d, y1d, z1d, xbnd, ybnd, zbnd, xwd&
+&   , ywd, zwd
     real(kind=realtype) :: tmp
     real(kind=realtype) :: tmpd
     intrinsic sqrt
     real(kind=realtype) :: arg1
+    real(kind=realtype) :: arg1d
 ! normalize the input vector.
+    arg1d = 2*refdirection(1)*refdirectiond(1) + 2*refdirection(2)*&
+&     refdirectiond(2) + 2*refdirection(3)*refdirectiond(3)
     arg1 = refdirection(1)**2 + refdirection(2)**2 + refdirection(3)**2
+    if (arg1 .eq. 0.0_8) then
+      rnormd = 0.0_8
+    else
+      rnormd = arg1d/(2.0*sqrt(arg1))
+    end if
     rnorm = sqrt(arg1)
+    xbnd = (refdirectiond(1)*rnorm-refdirection(1)*rnormd)/rnorm**2
     xbn = refdirection(1)/rnorm
+    ybnd = (refdirectiond(2)*rnorm-refdirection(2)*rnormd)/rnorm**2
     ybn = refdirection(2)/rnorm
+    zbnd = (refdirectiond(3)*rnorm-refdirection(3)*rnormd)/rnorm**2
     zbn = refdirection(3)/rnorm
 !!$      ! compute the wind direction vector.
 !!$
@@ -1384,9 +1403,6 @@ contains
 !    ( <=> rotate z-axis alpha radians ccw)
       tmpd = -alphad
       tmp = -alpha
-      zbnd = 0.0_8
-      ybnd = 0.0_8
-      xbnd = 0.0_8
       call vectorrotation_d(x1, x1d, y1, y1d, z1, z1d, 3, tmp, tmpd, xbn&
 &                     , xbnd, ybn, ybnd, zbn, zbnd)
 ! 2) rotate beta radians ccw about y-axis
@@ -1399,9 +1415,6 @@ contains
 ! compute the wind direction vector.aerosurf axes different!!
 ! 1) rotate alpha radians cw about z-axis
 !    ( <=> rotate z-axis alpha radians ccw)
-      zbnd = 0.0_8
-      ybnd = 0.0_8
-      xbnd = 0.0_8
       call vectorrotation_d(x1, x1d, y1, y1d, z1, z1d, 2, alpha, alphad&
 &                     , xbn, xbnd, ybn, ybnd, zbn, zbnd)
 ! 2) rotate beta radians ccw about y-axis
@@ -1414,7 +1427,6 @@ contains
       xwd = 0.0_8
       ywd = 0.0_8
     end if
-    winddirectiond = 0.0_8
     winddirectiond(1) = xwd
     winddirection(1) = xw
     winddirectiond(2) = ywd
