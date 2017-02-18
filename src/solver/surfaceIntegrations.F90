@@ -818,10 +818,10 @@ contains
           end do
           
           ! Integrate any zippers we have
-          ! call integrateZippers(localVal(:, sps), famList, sps, .True., funcValues(:, iGroup))
+          call integrateZippers(localVal(:, sps), famList, sps, .True., funcValues(:, iGroup))
           
           ! Integrate any user-supplied planes as have as well. 
-          ! call integrateUserSurfaces(localVal(:, sps), famList, sps, .True., funcValues(:, iGroup))
+          call integrateUserSurfaces(localVal(:, sps), famList, sps, .True., funcValues(:, iGroup))
        end do
        
        ! All reduce again. Technially just need the additionally
