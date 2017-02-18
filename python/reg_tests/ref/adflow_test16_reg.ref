@@ -678,18 +678,22 @@
       1      29     29   DADI   0.30E+01   0.6691649628396242E-02   0.1100956387753969E+01 
       1      30     30   DADI   0.30E+01   0.6426067064437225E-02   0.1054415213009112E+01 
       1      31     31   DADI   0.30E+01   0.6173954681097279E-02   0.1009409135792262E+01 
-      1      32     32   DADI Solution Time:      1.232 sec
+      1      32     32   DADI Solution Time:      1.249 sec
 -> Alpha... 0.000000 
 Norm of residual
-@value  9.4335086953433e-15 1e-10 1e-10
+@value  1.0420053123053e-14 1e-10 1e-10
 Norm of state vector
 @value  1.4641998475137e+02 1e-10 1e-10
 -> Alpha... 0.000000 
 Eval Functions:
 Dictionary Key: conv_nozzle_distortionmn
-@value  1.1278281385252e-02 1e-10 1e-10
+@value  1.1278281385253e-02 1e-10 1e-10
 Dictionary Key: conv_nozzle_distortionptot
 @value  1.0007911497558e+05 1e-10 1e-10
+Dictionary Key: conv_nozzle_edot_down
+@value  7.5164020294980e+05 1e-10 1e-10
+Dictionary Key: conv_nozzle_edot_up
+@value -4.3067650771742e+04 1e-10 1e-10
 Dictionary Key: conv_nozzle_mavgmn_down
 @value  5.7637019081625e-01 1e-10 1e-10
 Dictionary Key: conv_nozzle_mavgmn_up
@@ -707,7 +711,7 @@ Dictionary Key: conv_nozzle_mavgttot_down
 Dictionary Key: conv_nozzle_mavgttot_up
 @value  4.9999791485001e+02 1e-10 1e-10
 Dictionary Key: conv_nozzle_mdot
-@value  2.8923081439856e-02 1e-10 1e-10
+@value  2.8923081439885e-02 1e-10 1e-10
 Dictionary Key: conv_nozzle_mdot_down
 @value -7.3975697310454e+01 1e-10 1e-10
 Dictionary Key: conv_nozzle_mdot_up
@@ -730,11 +734,9 @@ Dictionary Key: conv_nozzle_thrust
       1      41     87     NK   0.11E+06   0.7015014408041653E-06   0.1178121849058270E-03 
       1      42    108     NK   0.11E+06   0.6213928313316865E-09   0.1087984097951674E-06 
       1      43    139     NK   0.11E+06   0.7058878218958373E-14   0.1494225019359036E-11 
-      1      44    145     NK   0.11E+06   0.3996871803180007E-14   0.9414216329949494E-12 
-      1      45    149     NK   0.11E+06   0.3598306441494987E-14   0.8819930874732353E-12 
-      1      46    153     NK   0.11E+06   0.3563176684771753E-14   0.8672260187629364E-12 
-      1      47    158     NK   0.11E+06   0.3039410063953198E-14   0.7488542511042828E-12 
-      1      48    162     NK   0.11E+06   0.2958156244620565E-14   0.6663643564719012E-12 
+      1      44    157     NK   0.11E+06   0.3421564862143677E-14   0.8930016258113793E-12 
+      1      45    161     NK   0.11E+06   0.3553447987735772E-14   0.8605648981413725E-12 
+      1      46    165     NK   0.11E+06   0.3162682068161080E-14   0.7353597512769800E-12 
 #
 # Writing grid file(s): ./conv_nozzle_000_vol.cgns
 # Grid file(s) written
