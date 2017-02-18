@@ -486,7 +486,7 @@ contains
     use constants
     use blockPointers, only : BCType, BCFaceID, BCData, addGridVelocities
     use flowVarRefState, only : pRef, pInf, rhoRef, timeRef, LRef, TRef, RGas, uRef, uInf
-    use inputPhysics, only : pointRef, flowType, velDirFreeStream, alpha, beta, liftIndex
+    use inputPhysics, only : pointRef, flowType, alpha, beta, liftIndex
     use flowUtils, only : computePtot, computeTtot, getDirVector
     use BCPointers, only : ssi, sFace, ww1, ww2, pp1, pp2, xx, gamma1, gamma2
     use utils, only : mynorm2

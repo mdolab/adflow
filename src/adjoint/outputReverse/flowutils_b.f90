@@ -1232,6 +1232,7 @@ contains
     implicit none
 !local vars
     real(kind=realtype), dimension(3) :: refdir1, refdir2
+    real(kind=realtype), dimension(3) :: refdir1d, refdir2d
 ! velocity direction given by the rotation of a unit vector
 ! initially aligned along the positive x-direction (1,0,0)
 ! 1) rotate alpha radians cw about y or z-axis
@@ -1248,13 +1249,16 @@ contains
 ! 2) rotate beta radians ccw about z or y-axis
     refdir2(:) = zero
     refdir2(liftindex) = one
+    refdir2d = 0.0_8
     alphad = 0.0_8
     betad = 0.0_8
-    call getdirvector_b(refdir2, alpha, alphad, beta, betad, &
+    call getdirvector_b(refdir2, refdir2d, alpha, alphad, beta, betad, &
 &                 liftdirection, liftdirectiond, liftindex)
-    call getdirvector_b(refdir1, alpha, alphad, beta, betad, &
+    refdir1d = 0.0_8
+    call getdirvector_b(refdir1, refdir1d, alpha, alphad, beta, betad, &
 &                 dragdirection, dragdirectiond, liftindex)
-    call getdirvector_b(refdir1, alpha, alphad, beta, betad, &
+    refdir1d = 0.0_8
+    call getdirvector_b(refdir1, refdir1d, alpha, alphad, beta, betad, &
 &                 veldirfreestream, veldirfreestreamd, liftindex)
   end subroutine adjustinflowangle_b
   subroutine adjustinflowangle()
@@ -1404,10 +1408,10 @@ contains
     rotationpoint(3) = lref*rotpoint(3)
   end subroutine derivativerotmatrixrigid
 !  differentiation of getdirvector in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: alpha beta winddirection
-!   with respect to varying inputs: alpha beta winddirection
-  subroutine getdirvector_b(refdirection, alpha, alphad, beta, betad, &
-&   winddirection, winddirectiond, liftindex)
+!   gradient     of useful results: alpha beta refdirection winddirection
+!   with respect to varying inputs: alpha beta refdirection winddirection
+  subroutine getdirvector_b(refdirection, refdirectiond, alpha, alphad, &
+&   beta, betad, winddirection, winddirectiond, liftindex)
 !(xb,yb,zb,alpha,beta,xw,yw,zw)
 !
 !      convert the angle of attack and side slip angle to wind axes.  
@@ -1433,6 +1437,7 @@ contains
 !     subroutine arguments.
 !
     real(kind=realtype), dimension(3), intent(in) :: refdirection
+    real(kind=realtype), dimension(3) :: refdirectiond
     real(kind=realtype) :: alpha, beta
     real(kind=realtype) :: alphad, betad
     real(kind=realtype), dimension(3) :: winddirection
@@ -1442,12 +1447,13 @@ contains
 !     local variables.
 !
     real(kind=realtype) :: rnorm, x1, y1, z1, xbn, ybn, zbn, xw, yw, zw
-    real(kind=realtype) :: x1d, y1d, z1d, xbnd, ybnd, zbnd, xwd, ywd, &
-&   zwd
+    real(kind=realtype) :: rnormd, x1d, y1d, z1d, xbnd, ybnd, zbnd, xwd&
+&   , ywd, zwd
     real(kind=realtype) :: tmp
     real(kind=realtype) :: tmpd
     intrinsic sqrt
     integer :: branch
+    real(kind=realtype) :: tempd
 ! normalize the input vector.
     rnorm = sqrt(refdirection(1)**2 + refdirection(2)**2 + refdirection(&
 &     3)**2)
@@ -1508,7 +1514,26 @@ contains
 &                     x1, x1d, y1, y1d, z1, z1d)
       call vectorrotation_b(x1, x1d, y1, y1d, z1, z1d, 2, alpha, alphad&
 &                     , xbn, xbnd, ybn, ybnd, zbn, zbnd)
+    else
+      ybnd = 0.0_8
+      xbnd = 0.0_8
+      zbnd = 0.0_8
     end if
+    refdirectiond(3) = refdirectiond(3) + zbnd/rnorm
+    rnormd = -(refdirection(2)*ybnd/rnorm**2) - refdirection(1)*xbnd/&
+&     rnorm**2 - refdirection(3)*zbnd/rnorm**2
+    refdirectiond(2) = refdirectiond(2) + ybnd/rnorm
+    if (refdirection(1)**2 + refdirection(2)**2 + refdirection(3)**2 &
+&       .eq. 0.0_8) then
+      tempd = 0.0
+    else
+      tempd = rnormd/(2.0*sqrt(refdirection(1)**2+refdirection(2)**2+&
+&       refdirection(3)**2))
+    end if
+    refdirectiond(1) = refdirectiond(1) + 2*refdirection(1)*tempd + xbnd&
+&     /rnorm
+    refdirectiond(2) = refdirectiond(2) + 2*refdirection(2)*tempd
+    refdirectiond(3) = refdirectiond(3) + 2*refdirection(3)*tempd
   end subroutine getdirvector_b
   subroutine getdirvector(refdirection, alpha, beta, winddirection, &
 &   liftindex)

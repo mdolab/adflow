@@ -1371,7 +1371,7 @@ contains
     end do
   end subroutine setcoeftimeintegrator
 !  differentiation of mynorm2 in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: x mynorm2
+!   gradient     of useful results: mynorm2
 !   with respect to varying inputs: x
   subroutine mynorm2_b(x, xd, mynorm2d)
     use constants
@@ -1382,6 +1382,7 @@ contains
     real(kind=realtype) :: mynorm2d
     intrinsic sqrt
     real(kind=realtype) :: tempd
+    xd = 0.0_8
     if (x(1)**2 + x(2)**2 + x(3)**2 .eq. 0.0_8) then
       tempd = 0.0
     else
