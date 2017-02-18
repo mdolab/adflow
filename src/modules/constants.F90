@@ -390,7 +390,7 @@ module constants
        costFuncPk            = 50, &
        costFuncEdot          = 51
 
-  integer(kind=intType), parameter :: nLocalValues=36
+  integer(kind=intType), parameter :: nLocalValues=37
   integer(kind=intType), parameter :: &
        iFp =  1, &
        iFv =  4, &
