@@ -19,7 +19,7 @@ contains
     ! Working
     real(kind=realType) :: fact, factMoment, ovrNTS
     real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, cForce, cMoment
-    real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgPs, mFlow, mAvgMn, sigmaMN, sigmaPtot
+    real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgPs, mFlow, mFlow2, mAvgMn, sigmaMN, sigmaPtot
     integer(kind=intType) :: sps
     real(kind=realType), dimension(8):: dcdq, dcdqdot
     real(kind=realType), dimension(8):: dcdalpha,dcdalphadot
@@ -77,16 +77,18 @@ contains
           mAvgTtot = globalVals(iMassTtot, sps)/mFlow
           mAvgPs   = globalVals(iMassPs, sps)/mFlow
           mAvgMn   = globalVals(iMassMn, sps)/mFlow
+          mFlow2 = globalVals(iMassFlow, sps)*sqrt(Pref/rhoRef)
 
           ! JUSTIN FIX THIS! THIS IS NOT VALGRIND SAFE!
-          sigmaMN = sqrt(globalVals(iSigmaMN, sps)/mFlow)
-          sigmaPtot = sqrt(globalVals(iSigmaPtot, sps)/mFlow)
+          sigmaMN = sqrt(globalvals(iSigmaMN, sps)/mFlow)
+          sigmaPtot = sqrt(globalvals(iSigmaPtot, sps)/mFlow)
 
        else
           mAvgPtot = zero
           mAvgTtot = zero
           mAvgPs = zero
           mAvgMn = zero
+          mFlow2 = zero
           sigmaMN = zero
           sigmaPtot = zero
 
@@ -100,7 +102,6 @@ contains
        funcValues(costFuncSigmaMN) = funcValues(costFuncSigmaMN) + ovrNTS*sigmaMN
        funcValues(costFuncSigmaPtot) = funcValues(costFuncSigmaPtot) + ovrNTS*sigmaPtot
        funcValues(costFuncPk) = funcValues(costFuncPk) + ovrNTS*globalVals(iPk, sps)
-       funcValues(costFuncEdot) = funcValues(costFuncEdot) + ovrNTS*globalVals(iEdot, sps)
 
        ! Bending moment calc - also broken. 
        ! call computeRootBendingMoment(cForce, cMoment, liftIndex, bendingMoment)
@@ -504,12 +505,10 @@ contains
     real(kind=realType) ::  mReDim, pk, sigma_MN, sigma_Ptot
     integer(kind=intType) :: i, j, ii, blk
     real(kind=realType) :: internalFlowFact, inFlowFact, fact, xc, yc, zc, cellArea, mx, my, mz
-    real(kind=realType) :: sF, vmag, vnm, vnmFreeStreamRef, vxm, vym, vzm, Fx, Fy, Fz, u, v, w
+    real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, Fx, Fy, Fz, u, v, w
     real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, a2
-    real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint, VcoordRef, VFreestreamRef, & 
-      sFaceFreestreamRef, normFreeStreamRef
+    real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint, VcoordRef, VFreestreamRef, sFaceFreestreamRef
     real(kind=realType) :: MNm, massFlowRateLocal
-    real(kind=realType) :: edotA, edotV, edotP
 
     refPoint(1) = LRef*pointRef(1)
     refPoint(2) = LRef*pointRef(2)
@@ -561,10 +560,6 @@ contains
     mass_Ps = zero
     mass_MN = zero
 
-    edotA = zero
-    edotV = zero
-    edotP = zero
-
     sigma_Mn = zero
     sigma_Ptot = zero
 
@@ -594,8 +589,6 @@ contains
       ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
       MNm = vmag/sqrt(gammam*pm/rhom)
 
-      cellArea = sqrt(ssi(i,j,1)**2 + ssi(i,j,2)**2 + ssi(i,j,3)**2)
-
       call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
       call computeTtot(rhom, vxm, vym, vzm, pm, Ttot)
 
@@ -604,7 +597,6 @@ contains
       if (withGathered) then 
 
         sigma_Mn = sigma_Mn  + massFlowRateLocal*(MNm - funcValues(costFuncMavgMN))**2
-        Ptot = Ptot * pRef
         sigma_Ptot = sigma_Ptot + massFlowRateLocal*(Ptot - funcValues(costFuncMavgPtot))**2
 
       else 
@@ -612,33 +604,6 @@ contains
         massFlowRate = massFlowRate + massFlowRateLocal
 
         pk = pk + ((pm-pInf) + half*rhom*(vmag**2 - (uInf)**2)) * vnm * pRef* uRef * fact
-
-        ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
-        VcoordRef(1) = vxm
-        VcoordRef(2) = vym
-        VcoordRef(3) = vzm
-
-        call getDirVector(VcoordRef, -alpha, -beta, VFreestreamRef, liftIndex)
-        VFreestreamRef = VFreestreamRef * vmag
-
-        !project the face normal into the freestream velocity and scale by the face
-        call getDirVector(ssi(i,j,:), -alpha, -beta, normFreeStreamRef, liftIndex)
-        ! note that normFreeStreamRef is of magnitude 1 now
-        sFaceFreestreamRef = normFreeStreamRef * sF
-
-        ! compute the pertubations of the flow from the free-stream velocity
-        u = VFreestreamRef(1) - sFaceFreestreamRef(1) - uInf
-        v = VFreestreamRef(2) - sFaceFreestreamRef(2)
-        w = VFreestreamRef(3) - sFaceFreestreamRef(3)
-
-        vnmFreeStreamRef =  (u+uInf)*normFreeStreamRef(1) + v*normFreeStreamRef(2) + w*normFreeStreamRef(3)
-        vnmFreeStreamRef = vnmFreeStreamRef * cellArea
-
-
-        edotA = edotA + half * rhom*u**2 * vnmFreeStreamRef * pref*uRef
-        edotV = edotV + half * rhom*(v**2+w**2) * vnmFreeStreamRef * pref*uRef
-        edotP = edotP + (pm-pInf) * (vnm - uInf*normFreeStreamRef(1)*cellArea) * pref*uRef
-
 
         ! re-dimentionalize quantities
         pm = pm*pRef
@@ -682,7 +647,8 @@ contains
         ! have to re-apply fact to massFlowRateLocal to undoo it, because 
         ! we need the signed behavior of ssi to get the momentum forces correct. 
         ! Also, the sign is flipped between inflow and outflow types 
-      
+        cellArea = sqrt(ssi(i,j,1)**2 + ssi(i,j,2)**2 + ssi(i,j,3)**2)
+
         massFlowRateLocal = massFlowRateLocal*fact/timeRef*blk/cellArea*internalFlowFact*inFlowFact
 
         fx = massFlowRateLocal * ssi(i,j,1)*vxm
@@ -701,6 +667,25 @@ contains
         MMom(2) = MMom(2) + my
         MMom(3) = MMom(3) + mz
 
+        ! ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
+        ! VcoordRef(1) = vxm
+        ! VcoordRef(2) = vym
+        ! VcoordRef(3) = vzm
+
+        ! call getDirVector(VcoordRef, -alpha, -beta, VFreestreamRef, liftIndex)
+        ! VFreestreamRef = VFreestreamRef * vmag
+
+        ! !project the face normal into the freestream velocity and scale by the face
+        ! call getDirVector(ssi(i,j,:), -alpha, -beta, sFaceFreestreamRef, liftIndex)
+        ! sFaceFreestreamRef = sFaceFreestreamRef * sF
+
+        ! ! compute the pertubations of the flow from the free-stream velocity
+        ! u = VFreestreamRef(1) - sFaceFreestreamRef(1) - uInf
+        ! v = VFreestreamRef(2) - sFaceFreestreamRef(2)
+        ! w = VFreestreamRef(3) - sFaceFreestreamRef(3)
+
+        ! !edota = edota + half*(rhom)
+
      end if
        
     enddo
@@ -716,7 +701,6 @@ contains
       localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
       localValues(iMassMN)   = localValues(iMassMN)   + mass_MN
       localValues(iPk)   = localValues(iPk)   + pk
-      localValues(iEdot)   = localValues(iEdot)   + edotA + edotV + edotP
       localValues(iFp:iFp+2)   = localValues(iFp:iFp+2) + Fp
       localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
       localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
@@ -783,22 +767,20 @@ contains
        famList => famLists(iGroup, 2:2+nFam-1)
        funcValues = zero
        localVal = zero
-
        do sps=1, nTimeIntervalsSpectral
           ! Integrate the normal block surfaces. 
           do nn=1, nDom
              call setPointers(nn, 1, sps)
              call integrateSurfaces(localval(:, sps), famList, .False., funcValues(:, iGroup))
           end do
-
+          
           ! Integrate any zippers we have
           call integrateZippers(localVal(:, sps), famList, sps, .False., funcValues(:, iGroup))
-
+          
           ! Integrate any user-supplied surfaces as have as well. 
           call integrateUserSurfaces(localVal(:, sps), famList, sps, .False., funcValues(:, iGroup))
        end do
        
-
        ! Now we need to reduce all the cost functions
        call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
             MPI_SUM, adflow_comm_world, ierr)
