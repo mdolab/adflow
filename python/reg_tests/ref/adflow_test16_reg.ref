@@ -711,7 +711,7 @@
       1      46    193     NK   0.10E+06   0.3543252044809590E-14   0.9181867117391557E-12 
       1      47    207     NK   0.10E+06   0.3420246887989301E-14   0.8638089826682807E-12 
       1      48    212     NK   0.10E+06   0.3128466543964559E-14   0.7433778785751633E-12 
-Solution Time:      0.829 sec
+Solution Time:      1.011 sec
 #
 # Writing grid file(s): ./conv_nozzle_000_vol.cgns
 # Grid file(s) written
@@ -735,6 +735,10 @@ Dictionary Key: conv_nozzle_distortionmn
 @value  1.1278281385253e-02 1e-10 1e-10
 Dictionary Key: conv_nozzle_distortionptot
 @value  8.8655964127604e+01 1e-10 1e-10
+Dictionary Key: conv_nozzle_edot_down
+@value -7.5164020294979e+05 1e-10 1e-10
+Dictionary Key: conv_nozzle_edot_up
+@value  4.3067650771742e+04 1e-10 1e-10
 Dictionary Key: conv_nozzle_mavgmn_down
 @value  5.7637019081625e-01 1e-10 1e-10
 Dictionary Key: conv_nozzle_mavgmn_up
