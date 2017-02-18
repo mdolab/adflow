@@ -611,7 +611,7 @@ contains
 
         massFlowRate = massFlowRate + massFlowRateLocal
 
-        pk = pk + ((pm-pInf) + half*rhom*(vmag**2 - (uInf)**2)) * vnm * pRef* uRef * fact
+        pk = pk + ((pm-pInf) + half*rhom*(vmag**2 - (uInf)**2)) * vnm * pRef* uRef * fact * internalFlowFact * blk
 
         ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
         VcoordRef(1) = vxm
@@ -635,9 +635,9 @@ contains
         vnmFreeStreamRef = vnmFreeStreamRef * cellArea
 
 
-        edotA = edotA + half * rhom*u**2 * vnmFreeStreamRef * pref*uRef
-        edotV = edotV + half * rhom*(v**2+w**2) * vnmFreeStreamRef * pref*uRef
-        edotP = edotP + (pm-pInf) * (vnm - uInf*normFreeStreamRef(1)*cellArea) * pref*uRef
+        edotA = edotA + half * rhom*u**2 * vnmFreeStreamRef * pref*uRef * internalFlowFact * blk
+        edotV = edotV + half * rhom*(v**2+w**2) * vnmFreeStreamRef * pref*uRef * internalFlowFact * blk
+        edotP = edotP + (pm-pInf) * (vnm - uInf*normFreeStreamRef(1)*cellArea) * pref*uRef * internalFlowFact * blk
 
 
         ! re-dimentionalize quantities
@@ -818,10 +818,10 @@ contains
           end do
           
           ! Integrate any zippers we have
-          call integrateZippers(localVal(:, sps), famList, sps, .True., funcValues(:, iGroup))
+          ! call integrateZippers(localVal(:, sps), famList, sps, .True., funcValues(:, iGroup))
           
           ! Integrate any user-supplied planes as have as well. 
-          call integrateUserSurfaces(localVal(:, sps), famList, sps, .True., funcValues(:, iGroup))
+          ! call integrateUserSurfaces(localVal(:, sps), famList, sps, .True., funcValues(:, iGroup))
        end do
        
        ! All reduce again. Technially just need the additionally
