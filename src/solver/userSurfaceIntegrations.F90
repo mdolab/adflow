@@ -33,6 +33,10 @@ contains
     logical, dimension(:), allocatable :: ptValid
     type(userIntSurf), pointer :: surf
 
+    if (nUserIntSurfs == 0) then 
+       return ! Nothing to do
+    end if
+
     ! Set the pointers for the required communication variables
     domainLoop:do nn=1, nDom
        if (flowDoms(nn, 1, sps)%addGridVelocities) then 
@@ -146,6 +150,10 @@ contains
     integer(kind=intType), dimension(:), allocatable :: fams
     logical, dimension(:), allocatable :: ptValid
     type(userIntSurf), pointer :: surf
+
+    if (nUserIntSurfs == 0) then 
+       return ! Nothing to do
+    end if
 
     ! Set the pointers for the required communication variables
     domainLoop:do nn=1, nDom
@@ -279,6 +287,10 @@ contains
     integer(kind=intType), dimension(:), allocatable :: fams
     logical, dimension(:), allocatable :: ptValid
     type(userIntSurf), pointer :: surf
+
+    if (nUserIntSurfs == 0) then 
+       return ! Nothing to do
+    end if
 
     ! Run the foward mode code pass:
     call IntegrateUserSurfaces(localValues, famLIst, sps, withGathered, funcValues)
