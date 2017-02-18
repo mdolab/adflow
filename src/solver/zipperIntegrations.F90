@@ -10,8 +10,8 @@ contains
     use blockPointers, only : BCType
     use sorting, only : famInList
     use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas, uRef, uInf
-    use inputPhysics, only : pointRef, flowType
-    use flowUtils, only : computePtot, computeTtot
+    use inputPhysics, only : pointRef, flowType, velDirFreeStream, alpha, beta, liftIndex
+    use flowUtils, only : computePtot, computeTtot, getDirVector
     use surfaceFamilies, only : familyExchange, BCFamExchange
     use utils, only : mynorm2, cross_prod
     implicit none
@@ -29,28 +29,39 @@ contains
     logical(kind=intType), dimension(:), optional, intent(in) :: ptValid
     ! Working variables
     integer(kind=intType) :: i, j
-    real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, Fx, Fy, Fz
-    real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint, ss, x1, x2, x3, norm
+    real(kind=realType) :: sF, vmag, vnm, vxm, vym, vzm, Fx, Fy, Fz, cellArea, u, v, w, vnmFreeStreamRef
+    real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint, ss, x1, x2, x3, & 
+      norm, VcoordRef, VFreestreamRef, sFaceFreestreamRef, normFreeStreamRef
     real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, MNm, massFlowRateLocal
     real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN
     real(kind=realType) ::  mReDim, pk, sigma_MN, sigma_Ptot
     real(kind=realType) :: internalFlowFact, inflowFact, xc, yc, zc, mx, my, mz
+    real(kind=realType) :: edotA, edotV, edotP
+
     logical :: triIsValid
-
-    massFlowRate = zero
-    mass_Ptot = zero
-    mass_Ttot = zero
-    mass_Ps = zero
-
-    refPoint(1) = LRef*pointRef(1)
-    refPoint(2) = LRef*pointRef(2)
-    refPoint(3) = LRef*pointRef(3)
 
     mReDim = sqrt(pRef*rhoRef)
     Fp = zero
     Mp = zero
     FMom = zero
     MMom = zero
+
+    massFlowRate = zero
+    mass_Ptot = zero
+    mass_Ttot = zero
+    mass_Ps = zero
+
+    edotA = zero
+    edotV = zero
+    edotP = zero
+
+    sigma_Mn = zero
+    sigma_Ptot = zero
+    pk = zero
+
+    refPoint(1) = LRef*pointRef(1)
+    refPoint(2) = LRef*pointRef(2)
+    refPoint(3) = LRef*pointRef(3)
 
     internalFlowFact = one
     if (flowType == internalFlow) then 
@@ -117,18 +128,47 @@ contains
              vmag = sqrt((vxm**2 + vym**2 + vzm**2)) - sF
              ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
              MNm = vmag/sqrt(gammam*pm/rhom)
-             
+
+             cellArea = sqrt(ss(1)**2 + ss(2)**2 + ss(3)**2)
+
              massFlowRateLocal = rhom*vnm*mReDim
              
              if (withGathered) then 
                 
                 sigma_Mn = sigma_Mn  + massFlowRateLocal*(MNm - funcValues(costFuncMavgMN))**2
+                Ptot = Ptot * pRef
                 sigma_Ptot = sigma_Ptot + massFlowRateLocal*(Ptot - funcValues(costFuncMavgPtot))**2
                 
              else 
                 massFlowRate = massFlowRate + massFlowRateLocal
                 
-                pk = pk + ((pm-pInf) + half*rhom*(vmag**2 - uInf**2)) * vnm * pRef * uRef
+                pk = pk + ((pm-pInf) + half*rhom*(vmag**2 - uInf**2)) * vnm * pRef * uRef * internalFlowFact
+
+                ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
+                VcoordRef(1) = vxm
+                VcoordRef(2) = vym
+                VcoordRef(3) = vzm
+
+                call getDirVector(VcoordRef, -alpha, -beta, VFreestreamRef, liftIndex)
+                VFreestreamRef = VFreestreamRef * vmag
+
+                !project the face normal into the freestream velocity and scale by the face
+                call getDirVector(ss, -alpha, -beta, normFreeStreamRef, liftIndex)
+                ! note that normFreeStreamRef is of magnitude 1 now
+                sFaceFreestreamRef = normFreeStreamRef * sF
+
+                ! compute the pertubations of the flow from the free-stream velocity
+                u = VFreestreamRef(1) - sFaceFreestreamRef(1) - uInf
+                v = VFreestreamRef(2) - sFaceFreestreamRef(2)
+                w = VFreestreamRef(3) - sFaceFreestreamRef(3)
+
+                vnmFreeStreamRef =  (u+uInf)*normFreeStreamRef(1) + v*normFreeStreamRef(2) + w*normFreeStreamRef(3)
+                vnmFreeStreamRef = vnmFreeStreamRef * cellArea
+
+
+                edotA = edotA + half * rhom*u**2 * vnmFreeStreamRef * pref*uRef * internalFlowFact
+                edotV = edotV + half * rhom*(v**2+w**2) * vnmFreeStreamRef * pref*uRef * internalFlowFact
+                edotP = edotP + (pm-pInf) * (vnm - uInf*normFreeStreamRef(1)*cellArea) * pref*uRef * internalFlowFact
                 
                 pm = pm*pRef
                 
@@ -177,7 +217,7 @@ contains
                 ! Momentum forces
                 
                 ! Get unit normal vector. 
-                ss = ss/mynorm2(ss)
+                ss = ss/cellArea
                 massFlowRateLocal = massFlowRateLocal/timeRef*internalFlowFact*inflowFact
                 
                 fx = massFlowRateLocal*ss(1) * vxm/timeRef
@@ -211,6 +251,7 @@ contains
        localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
        localValues(iMassMN)   = localValues(iMassMN)   + mass_MN
        localValues(iPk)   = localValues(iPk)   + Pk
+       localValues(iEdot)   = localValues(iEdot)   + edotA + edotV + edotP
        localValues(iFp:iFp+2)   = localValues(iFp:iFp+2) + Fp
        localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
        localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
