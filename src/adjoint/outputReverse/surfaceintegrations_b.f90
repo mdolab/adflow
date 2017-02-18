@@ -40,8 +40,8 @@ contains
 &   moment, cforce, cmoment
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: forced&
 &   , momentd, cforced, cmomentd
-    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mflow2, &
-&   mavgmn, sigmamn, sigmaptot
+    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mavgmn, &
+&   sigmamn, sigmaptot
     real(kind=realtype) :: mavgptotd, mavgttotd, mavgpsd, mflowd, &
 &   mavgmnd, sigmamnd, sigmaptotd
     integer(kind=inttype) :: sps
@@ -125,7 +125,6 @@ contains
         mavgttot = globalvals(imassttot, sps)/mflow
         mavgps = globalvals(imassps, sps)/mflow
         mavgmn = globalvals(imassmn, sps)/mflow
-        mflow2 = globalvals(imassflow, sps)*sqrt(pref/rhoref)
 ! justin fix this! this is not valgrind safe!
         sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
         sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
@@ -134,7 +133,6 @@ contains
         mavgttot = zero
         mavgps = zero
         mavgmn = zero
-        mflow2 = zero
         sigmamn = zero
         sigmaptot = zero
       end if
@@ -153,6 +151,8 @@ contains
 &       ovrnts*sigmaptot
       funcvalues(costfuncpk) = funcvalues(costfuncpk) + ovrnts*&
 &       globalvals(ipk, sps)
+      funcvalues(costfuncedot) = funcvalues(costfuncedot) + ovrnts*&
+&       globalvals(iedot, sps)
     end do
 ! bending moment calc - also broken. 
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
@@ -253,6 +253,8 @@ contains
         else
           call pushcontrol1b(1)
         end if
+        globalvalsd(iedot, sps) = globalvalsd(iedot, sps) + ovrnts*&
+&         funcvaluesd(costfuncedot)
         globalvalsd(ipk, sps) = globalvalsd(ipk, sps) + ovrnts*&
 &         funcvaluesd(costfuncpk)
         sigmaptotd = ovrnts*funcvaluesd(costfuncsigmaptot)
@@ -369,8 +371,8 @@ contains
     real(kind=realtype) :: fact, factmoment, ovrnts
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: force, &
 &   moment, cforce, cmoment
-    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mflow2, &
-&   mavgmn, sigmamn, sigmaptot
+    real(kind=realtype) :: mavgptot, mavgttot, mavgps, mflow, mavgmn, &
+&   sigmamn, sigmaptot
     integer(kind=inttype) :: sps
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
@@ -435,7 +437,6 @@ contains
         mavgttot = globalvals(imassttot, sps)/mflow
         mavgps = globalvals(imassps, sps)/mflow
         mavgmn = globalvals(imassmn, sps)/mflow
-        mflow2 = globalvals(imassflow, sps)*sqrt(pref/rhoref)
 ! justin fix this! this is not valgrind safe!
         sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
         sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
@@ -444,7 +445,6 @@ contains
         mavgttot = zero
         mavgps = zero
         mavgmn = zero
-        mflow2 = zero
         sigmamn = zero
         sigmaptot = zero
       end if
@@ -463,6 +463,8 @@ contains
 &       ovrnts*sigmaptot
       funcvalues(costfuncpk) = funcvalues(costfuncpk) + ovrnts*&
 &       globalvals(ipk, sps)
+      funcvalues(costfuncedot) = funcvalues(costfuncedot) + ovrnts*&
+&       globalvals(iedot, sps)
     end do
 ! bending moment calc - also broken. 
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
@@ -1225,16 +1227,16 @@ contains
 &     sepsensoravg
   end subroutine wallintegrationface
 !  differentiation of flowintegrationface in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: pointref timeref tref rgas
-!                pref rhoref *xx *pp1 *pp2 *ssi *ww1 *ww2 funcvalues
-!                localvalues
-!   with respect to varying inputs: pointref timeref tref rgas
-!                pref rhoref *xx *pp1 *pp2 *ssi *ww1 *ww2 funcvalues
-!                localvalues
-!   rw status of diff variables: pointref:incr timeref:incr tref:incr
-!                rgas:incr pref:incr rhoref:incr *xx:incr *pp1:incr
-!                *pp2:incr *ssi:incr *ww1:incr *ww2:incr funcvalues:incr
-!                localvalues:in-out
+!   gradient     of useful results: alpha beta pointref timeref
+!                tref rgas pref rhoref *xx *pp1 *pp2 *ssi *ww1
+!                *ww2 funcvalues localvalues
+!   with respect to varying inputs: alpha beta pointref timeref
+!                tref rgas pref rhoref *xx *pp1 *pp2 *ssi *ww1
+!                *ww2 funcvalues localvalues
+!   rw status of diff variables: alpha:incr beta:incr pointref:incr
+!                timeref:incr tref:incr rgas:incr pref:incr rhoref:incr
+!                *xx:incr *pp1:incr *pp2:incr *ssi:incr *ww1:incr
+!                *ww2:incr funcvalues:incr localvalues:in-out
 !   plus diff mem management of: xx:in pp1:in pp2:in ssi:in ww1:in
 !                ww2:in
   subroutine flowintegrationface_b(isinflow, localvalues, localvaluesd, &
@@ -1245,9 +1247,8 @@ contains
     use flowvarrefstate, only : pref, prefd, pinf, pinfd, rhoref, &
 &   rhorefd, timeref, timerefd, lref, tref, trefd, rgas, rgasd, uref, &
 &   urefd, uinf, uinfd
-    use inputphysics, only : pointref, pointrefd, flowtype, &
-&   veldirfreestream, veldirfreestreamd, alpha, alphad, beta, betad, &
-&   liftindex
+    use inputphysics, only : pointref, pointrefd, flowtype, alpha, &
+&   alphad, beta, betad, liftindex
     use flowutils_b, only : computeptot, computeptot_b, computettot, &
 &   computettot_b, getdirvector, getdirvector_b
     use bcpointers_b, only : ssi, ssid, sface, ww1, ww1d, ww2, ww2d, pp1&
@@ -1276,21 +1277,28 @@ contains
     real(kind=realtype) :: internalflowfact, inflowfact, fact, xc, yc, &
 &   zc, cellarea, mx, my, mz
     real(kind=realtype) :: xcd, ycd, zcd, cellaread, mxd, myd, mzd
-    real(kind=realtype) :: sf, vmag, vnm, vxm, vym, vzm, fx, fy, fz, u, &
-&   v, w
-    real(kind=realtype) :: vmagd, vnmd, vxmd, vymd, vzmd, fxd, fyd, fzd&
-&   , wd
+    real(kind=realtype) :: sf, vmag, vnm, vnmfreestreamref, vxm, vym, &
+&   vzm, fx, fy, fz, u, v, w
+    real(kind=realtype) :: vmagd, vnmd, vnmfreestreamrefd, vxmd, vymd, &
+&   vzmd, fxd, fyd, fzd, ud, vd, wd
     real(kind=realtype) :: pm, ptot, ttot, rhom, gammam, a2
     real(kind=realtype) :: pmd, ptotd, ttotd, rhomd
     real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint, &
-&   vcoordref, vfreestreamref, sfacefreestreamref
+&   vcoordref, vfreestreamref, sfacefreestreamref, normfreestreamref
     real(kind=realtype), dimension(3) :: fpd, mpd, fmomd, mmomd, &
-&   refpointd
+&   refpointd, vcoordrefd, vfreestreamrefd, sfacefreestreamrefd, &
+&   normfreestreamrefd
     real(kind=realtype) :: mnm, massflowratelocal
     real(kind=realtype) :: mnmd, massflowratelocald
+    real(kind=realtype) :: edota, edotv, edotp
+    real(kind=realtype) :: edotad, edotvd, edotpd
     intrinsic sqrt
     intrinsic mod
     intrinsic max
+    real(kind=realtype) :: arg2
+    real(kind=realtype) :: arg1
+    real(kind=realtype) :: arg20
+    real(kind=realtype) :: arg10
     real(kind=realtype) :: tempd14
     real(kind=realtype) :: tempd13
     real(kind=realtype) :: temp1
@@ -1298,6 +1306,7 @@ contains
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tempd11
     real(kind=realtype) :: tempd10
+    real(kind=realtype) :: arg1d0
     real(kind=realtype) :: tempd9
     real(kind=realtype) :: tempd
     real(kind=realtype) :: tempd8
@@ -1305,11 +1314,23 @@ contains
     real(kind=realtype) :: tempd6
     real(kind=realtype) :: tempd5
     real(kind=realtype) :: tempd4
+    real(kind=realtype) :: arg2d
     real(kind=realtype) :: tempd3
     real(kind=realtype) :: tempd2
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
+    real(kind=realtype) :: tempd26
+    real(kind=realtype) :: tempd25
+    real(kind=realtype) :: tempd24
+    real(kind=realtype) :: tempd23
+    real(kind=realtype) :: tempd22
+    real(kind=realtype) :: tempd21
+    real(kind=realtype) :: tempd20
+    real(kind=realtype) :: arg2d0
+    real(kind=realtype) :: arg1d
     real(kind=realtype) :: temp
+    real(kind=realtype) :: tempd19
+    real(kind=realtype) :: tempd18
     real(kind=realtype) :: tempd17
     real(kind=realtype) :: tempd16
     real(kind=realtype) :: tempd15
@@ -1345,7 +1366,9 @@ contains
     if (withgathered) then
       sigma_ptotd = localvaluesd(isigmaptot)
       sigma_mnd = localvaluesd(isigmamn)
+      edotpd = 0.0_8
       mass_ptotd = 0.0_8
+      edotvd = 0.0_8
       mmomd = 0.0_8
       mass_psd = 0.0_8
       mass_mnd = 0.0_8
@@ -1353,6 +1376,7 @@ contains
       fpd = 0.0_8
       pkd = 0.0_8
       fmomd = 0.0_8
+      edotad = 0.0_8
       massflowrated = 0.0_8
       mpd = 0.0_8
     else
@@ -1364,6 +1388,9 @@ contains
       fmomd = localvaluesd(iflowfm:iflowfm+2)
       fpd = 0.0_8
       fpd = localvaluesd(ifp:ifp+2)
+      edotad = localvaluesd(iedot)
+      edotvd = localvaluesd(iedot)
+      edotpd = localvaluesd(iedot)
       pkd = localvaluesd(ipk)
       mass_mnd = localvaluesd(imassmn)
       mass_psd = localvaluesd(imassps)
@@ -1374,8 +1401,11 @@ contains
       sigma_ptotd = 0.0_8
     end if
     mredimd = 0.0_8
+    vfreestreamrefd = 0.0_8
+    vcoordrefd = 0.0_8
     ptotd = 0.0_8
     refpointd = 0.0_8
+    normfreestreamrefd = 0.0_8
     ttotd = 0.0_8
     do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
 &       (mm)%inbeg)-1
@@ -1402,30 +1432,63 @@ contains
       vmag = sqrt(vxm**2 + vym**2 + vzm**2) - sf
 ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
       mnm = vmag/sqrt(gammam*pm/rhom)
+      cellarea = sqrt(ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**&
+&       2)
       call computeptot(rhom, vxm, vym, vzm, pm, ptot)
       call computettot(rhom, vxm, vym, vzm, pm, ttot)
       massflowratelocal = rhom*vnm*blk*fact*mredim
       if (withgathered) then
-        tempd3 = massflowratelocal*2*(ptot-funcvalues(costfuncmavgptot))&
+        call pushreal8(ptot)
+        ptot = ptot*pref
+        tempd4 = massflowratelocal*2*(ptot-funcvalues(costfuncmavgptot))&
 &         *sigma_ptotd
         massflowratelocald = (mnm-funcvalues(costfuncmavgmn))**2*&
 &         sigma_mnd + (ptot-funcvalues(costfuncmavgptot))**2*sigma_ptotd
-        ptotd = ptotd + tempd3
+        ptotd = ptotd + tempd4
         funcvaluesd(costfuncmavgptot) = funcvaluesd(costfuncmavgptot) - &
-&         tempd3
-        tempd4 = massflowratelocal*2*(mnm-funcvalues(costfuncmavgmn))*&
-&         sigma_mnd
-        mnmd = tempd4
-        funcvaluesd(costfuncmavgmn) = funcvaluesd(costfuncmavgmn) - &
 &         tempd4
+        call popreal8(ptot)
+        prefd = prefd + ptot*ptotd
+        ptotd = pref*ptotd
+        tempd5 = massflowratelocal*2*(mnm-funcvalues(costfuncmavgmn))*&
+&         sigma_mnd
+        mnmd = tempd5
+        funcvaluesd(costfuncmavgmn) = funcvaluesd(costfuncmavgmn) - &
+&         tempd5
         vnmd = 0.0_8
         vxmd = 0.0_8
         vymd = 0.0_8
         rhomd = 0.0_8
+        cellaread = 0.0_8
         pmd = 0.0_8
         vzmd = 0.0_8
         vmagd = 0.0_8
       else
+! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
+        vcoordref(1) = vxm
+        vcoordref(2) = vym
+        vcoordref(3) = vzm
+        arg2 = -beta
+        arg1 = -alpha
+        call getdirvector(vcoordref, arg1, arg2, vfreestreamref, &
+&                   liftindex)
+        call pushreal8array(vfreestreamref, 3)
+        vfreestreamref = vfreestreamref*vmag
+!project the face normal into the freestream velocity and scale by the face
+        arg20 = -beta
+        arg10 = -alpha
+        call getdirvector(ssi(i, j, :), arg10, arg20, normfreestreamref&
+&                   , liftindex)
+! note that normfreestreamref is of magnitude 1 now
+        sfacefreestreamref = normfreestreamref*sf
+! compute the pertubations of the flow from the free-stream velocity
+        u = vfreestreamref(1) - sfacefreestreamref(1) - uinf
+        v = vfreestreamref(2) - sfacefreestreamref(2)
+        w = vfreestreamref(3) - sfacefreestreamref(3)
+        vnmfreestreamref = (u+uinf)*normfreestreamref(1) + v*&
+&         normfreestreamref(2) + w*normfreestreamref(3)
+        call pushreal8(vnmfreestreamref)
+        vnmfreestreamref = vnmfreestreamref*cellarea
 ! re-dimentionalize quantities
         call pushreal8(pm)
         pm = pm*pref
@@ -1445,28 +1508,22 @@ contains
 ! have to re-apply fact to massflowratelocal to undoo it, because 
 ! we need the signed behavior of ssi to get the momentum forces correct. 
 ! also, the sign is flipped between inflow and outflow types 
-        cellarea = sqrt(ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)&
-&         **2)
         call pushreal8(massflowratelocal)
         massflowratelocal = massflowratelocal*fact/timeref*blk/cellarea*&
 &         internalflowfact*inflowfact
         fx = massflowratelocal*ssi(i, j, 1)*vxm
         fy = massflowratelocal*ssi(i, j, 2)*vym
         fz = massflowratelocal*ssi(i, j, 3)*vzm
-! ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
-! vcoordref(1) = vxm
-! vcoordref(2) = vym
-! vcoordref(3) = vzm
-! call getdirvector(vcoordref, -alpha, -beta, vfreestreamref, liftindex)
-! vfreestreamref = vfreestreamref * vmag
-! !project the face normal into the freestream velocity and scale by the face
-! call getdirvector(ssi(i,j,:), -alpha, -beta, sfacefreestreamref, liftindex)
-! sfacefreestreamref = sfacefreestreamref * sf
-! ! compute the pertubations of the flow from the free-stream velocity
-! u = vfreestreamref(1) - sfacefreestreamref(1) - uinf
-! v = vfreestreamref(2) - sfacefreestreamref(2)
-! w = vfreestreamref(3) - sfacefreestreamref(3)
-! !edota = edota + half*(rhom)
+        tempd26 = uref*fact*internalflowfact*blk*pkd
+        tempd19 = vnm*pref*tempd26
+        temp1 = vmag**2 - uinf**2
+        tempd25 = half*uref*internalflowfact*blk*edotad
+        tempd17 = rhom*vnmfreestreamref*tempd25
+        tempd24 = u**2*pref*tempd25
+        tempd22 = half*uref*internalflowfact*blk*edotvd
+        tempd16 = (v**2+w**2)*tempd22
+        tempd20 = uref*internalflowfact*blk*edotpd
+        tempd18 = (vnm-uinf*(normfreestreamref(1)*cellarea))*tempd20
         mzd = mmomd(3)
         myd = mmomd(2)
         mxd = mmomd(1)
@@ -1476,32 +1533,21 @@ contains
         fxd = zc*myd + fmomd(1) - yc*mzd
         zcd = fx*myd - fy*mxd
         fzd = yc*mxd + fmomd(3) - xc*myd
-        tempd5 = ssi(i, j, 3)*fzd
+        tempd6 = ssi(i, j, 3)*fzd
         ssid(i, j, 3) = ssid(i, j, 3) + massflowratelocal*vzm*fzd
-        vzmd = massflowratelocal*tempd5
-        tempd6 = ssi(i, j, 2)*fyd
+        vzmd = massflowratelocal*tempd6
+        tempd7 = ssi(i, j, 2)*fyd
         ssid(i, j, 2) = ssid(i, j, 2) + massflowratelocal*vym*fyd
-        vymd = massflowratelocal*tempd6
-        tempd7 = ssi(i, j, 1)*fxd
-        massflowratelocald = vym*tempd6 + vxm*tempd7 + vzm*tempd5
+        vymd = massflowratelocal*tempd7
+        tempd8 = ssi(i, j, 1)*fxd
+        massflowratelocald = vym*tempd7 + vxm*tempd8 + vzm*tempd6
         ssid(i, j, 1) = ssid(i, j, 1) + massflowratelocal*vxm*fxd
-        vxmd = massflowratelocal*tempd7
+        vxmd = massflowratelocal*tempd8
         call popreal8(massflowratelocal)
-        tempd8 = fact*blk*internalflowfact*inflowfact*massflowratelocald&
+        tempd9 = fact*blk*internalflowfact*inflowfact*massflowratelocald&
 &         /(timeref*cellarea)
-        tempd9 = -(massflowratelocal*tempd8/(timeref*cellarea))
-        timerefd = timerefd + cellarea*tempd9
-        cellaread = timeref*tempd9
-        if (ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**2 .eq. &
-&           0.0_8) then
-          tempd10 = 0.0
-        else
-          tempd10 = cellaread/(2.0*sqrt(ssi(i, j, 1)**2+ssi(i, j, 2)**2+&
-&           ssi(i, j, 3)**2))
-        end if
-        ssid(i, j, 1) = ssid(i, j, 1) + 2*ssi(i, j, 1)*tempd10
-        ssid(i, j, 2) = ssid(i, j, 2) + 2*ssi(i, j, 2)*tempd10
-        ssid(i, j, 3) = ssid(i, j, 3) + 2*ssi(i, j, 3)*tempd10
+        tempd10 = -(massflowratelocal*tempd9/(timeref*cellarea))
+        timerefd = timerefd + cellarea*tempd10
         mzd = mpd(3)
         myd = mpd(2)
         mxd = mpd(1)
@@ -1520,43 +1566,87 @@ contains
         ssid(i, j, 1) = ssid(i, j, 1) + pm*fxd
         call popreal8(pm)
         massflowratelocald = mnm*mass_mnd + tref*ttot*mass_ttotd + &
-&         massflowrated + pref*ptot*mass_ptotd + pm*mass_psd + tempd8
-        tempd11 = -(fact*blk*pmd)
-        prefd = prefd - pinf*tempd11
-        pmd = massflowratelocal*mass_psd + tempd11
-        tempd12 = fourth*zcd
-        xxd(i, j, 3) = xxd(i, j, 3) + tempd12
-        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd12
-        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd12
-        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd12
+&         massflowrated + pref*ptot*mass_ptotd + pm*mass_psd + tempd9
+        tempd12 = -(fact*blk*pmd)
+        prefd = prefd - pinf*tempd12
+        pmd = massflowratelocal*mass_psd + tempd12
+        tempd13 = fourth*zcd
+        xxd(i, j, 3) = xxd(i, j, 3) + tempd13
+        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd13
+        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd13
+        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd13
         refpointd(3) = refpointd(3) - zcd
-        tempd13 = fourth*ycd
-        xxd(i, j, 2) = xxd(i, j, 2) + tempd13
-        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd13
-        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd13
-        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd13
+        tempd14 = fourth*ycd
+        xxd(i, j, 2) = xxd(i, j, 2) + tempd14
+        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd14
+        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd14
+        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd14
         refpointd(2) = refpointd(2) - ycd
-        tempd14 = fourth*xcd
-        xxd(i, j, 1) = xxd(i, j, 1) + tempd14
-        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd14
-        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd14
-        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd14
+        tempd15 = fourth*xcd
+        xxd(i, j, 1) = xxd(i, j, 1) + tempd15
+        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd15
+        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd15
+        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd15
         refpointd(1) = refpointd(1) - xcd
         mnmd = massflowratelocal*mass_mnd
         ttotd = ttotd + tref*massflowratelocal*mass_ttotd
         trefd = trefd + ttot*massflowratelocal*mass_ttotd
         ptotd = ptotd + pref*massflowratelocal*mass_ptotd
         call popreal8(pm)
-        temp1 = vmag**2 - uinf**2
-        tempd17 = uref*fact*pkd
-        tempd16 = vnm*pref*tempd17
-        tempd15 = (pm-pinf+half*(rhom*temp1))*tempd17
-        prefd = prefd + pm*pmd + vnm*tempd15 + ptot*massflowratelocal*&
+        prefd = prefd + pm*pmd + rhom*vnmfreestreamref*tempd16 + u**2*&
+&         tempd17 + (pm-pinf)*tempd18 + ptot*massflowratelocal*&
 &         mass_ptotd
-        pmd = tempd16 + pref*pmd
-        rhomd = half*temp1*tempd16
-        vmagd = rhom*half*2*vmag*tempd16
-        vnmd = pref*tempd15
+        pmd = pref*tempd18 + tempd19 + pref*pmd
+        tempd11 = (pm-pinf)*pref*tempd20
+        tempd23 = rhom*vnmfreestreamref*pref*tempd22
+        rhomd = vnmfreestreamref*tempd24 + half*temp1*tempd19 + pref*&
+&         vnmfreestreamref*tempd16
+        vnmfreestreamrefd = rhom*tempd24 + pref*rhom*tempd16
+        call popreal8(vnmfreestreamref)
+        cellaread = vnmfreestreamref*vnmfreestreamrefd - uinf*&
+&         normfreestreamref(1)*tempd11 + timeref*tempd10
+        vnmfreestreamrefd = cellarea*vnmfreestreamrefd
+        normfreestreamrefd(1) = normfreestreamrefd(1) + (uinf+u)*&
+&         vnmfreestreamrefd - uinf*cellarea*tempd11
+        vd = normfreestreamref(2)*vnmfreestreamrefd + 2*v*tempd23
+        wd = normfreestreamref(3)*vnmfreestreamrefd + 2*w*tempd23
+        ud = normfreestreamref(1)*vnmfreestreamrefd + pref*2*u*tempd17
+        normfreestreamrefd(2) = normfreestreamrefd(2) + v*&
+&         vnmfreestreamrefd
+        normfreestreamrefd(3) = normfreestreamrefd(3) + w*&
+&         vnmfreestreamrefd
+        sfacefreestreamrefd = 0.0_8
+        vfreestreamrefd(3) = vfreestreamrefd(3) + wd
+        sfacefreestreamrefd(3) = sfacefreestreamrefd(3) - wd
+        vfreestreamrefd(2) = vfreestreamrefd(2) + vd
+        sfacefreestreamrefd(2) = sfacefreestreamrefd(2) - vd
+        vfreestreamrefd(1) = vfreestreamrefd(1) + ud
+        sfacefreestreamrefd(1) = sfacefreestreamrefd(1) - ud
+        normfreestreamrefd = normfreestreamrefd + sf*sfacefreestreamrefd
+        arg1d0 = 0.0_8
+        arg2d0 = 0.0_8
+        call getdirvector_b(ssi(i, j, :), ssid(i, j, :), arg10, arg1d0, &
+&                     arg20, arg2d0, normfreestreamref, &
+&                     normfreestreamrefd, liftindex)
+        call popreal8array(vfreestreamref, 3)
+        vmagd = rhom*half*2*vmag*tempd19 + sum(vfreestreamref*&
+&         vfreestreamrefd)
+        vfreestreamrefd = vmag*vfreestreamrefd
+        arg1d = 0.0_8
+        arg2d = 0.0_8
+        call getdirvector_b(vcoordref, vcoordrefd, arg1, arg1d, arg2, &
+&                     arg2d, vfreestreamref, vfreestreamrefd, liftindex)
+        alphad = alphad - arg1d - arg1d0
+        betad = betad - arg2d - arg2d0
+        vzmd = vzmd + vcoordrefd(3)
+        vcoordrefd(3) = 0.0_8
+        vymd = vymd + vcoordrefd(2)
+        vcoordrefd(2) = 0.0_8
+        vxmd = vxmd + vcoordrefd(1)
+        vcoordrefd(1) = 0.0_8
+        tempd21 = (pm-pinf+half*(rhom*temp1))*tempd26
+        vnmd = pref*tempd21 + tempd11
+        prefd = prefd + vnm*tempd21
       end if
       tempd0 = blk*fact*massflowratelocald
       rhomd = rhomd + mredim*vnm*tempd0
@@ -1566,24 +1656,34 @@ contains
 &                  pm, pmd, ttot, ttotd)
       call computeptot_b(rhom, rhomd, vxm, vxmd, vym, vymd, vzm, vzmd, &
 &                  pm, pmd, ptot, ptotd)
+      if (ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**2 .eq. 0.0_8&
+&     ) then
+        tempd1 = 0.0
+      else
+        tempd1 = cellaread/(2.0*sqrt(ssi(i, j, 1)**2+ssi(i, j, 2)**2+ssi&
+&         (i, j, 3)**2))
+      end if
+      ssid(i, j, 1) = ssid(i, j, 1) + 2*ssi(i, j, 1)*tempd1
+      ssid(i, j, 2) = ssid(i, j, 2) + 2*ssi(i, j, 2)*tempd1
+      ssid(i, j, 3) = ssid(i, j, 3) + 2*ssi(i, j, 3)*tempd1
       temp = pm/rhom
       temp0 = sqrt(gammam*temp)
       if (gammam*temp .eq. 0.0_8) then
-        tempd1 = 0.0
-      else
-        tempd1 = -(gammam*vmag*mnmd/(2.0*temp0**3*rhom))
-      end if
-      vmagd = vmagd + mnmd/temp0
-      pmd = pmd + tempd1
-      rhomd = rhomd - temp*tempd1
-      if (vxm**2 + vym**2 + vzm**2 .eq. 0.0_8) then
         tempd2 = 0.0
       else
-        tempd2 = vmagd/(2.0*sqrt(vxm**2+vym**2+vzm**2))
+        tempd2 = -(gammam*vmag*mnmd/(2.0*temp0**3*rhom))
       end if
-      vxmd = vxmd + ssi(i, j, 1)*vnmd + 2*vxm*tempd2
-      vymd = vymd + ssi(i, j, 2)*vnmd + 2*vym*tempd2
-      vzmd = vzmd + ssi(i, j, 3)*vnmd + 2*vzm*tempd2
+      vmagd = vmagd + mnmd/temp0
+      pmd = pmd + tempd2
+      rhomd = rhomd - temp*tempd2
+      if (vxm**2 + vym**2 + vzm**2 .eq. 0.0_8) then
+        tempd3 = 0.0
+      else
+        tempd3 = vmagd/(2.0*sqrt(vxm**2+vym**2+vzm**2))
+      end if
+      vxmd = vxmd + ssi(i, j, 1)*vnmd + 2*vxm*tempd3
+      vymd = vymd + ssi(i, j, 2)*vnmd + 2*vym*tempd3
+      vzmd = vzmd + ssi(i, j, 3)*vnmd + 2*vzm*tempd3
       ssid(i, j, 1) = ssid(i, j, 1) + vxm*vnmd
       ssid(i, j, 2) = ssid(i, j, 2) + vym*vnmd
       ssid(i, j, 3) = ssid(i, j, 3) + vzm*vnmd
@@ -1618,8 +1718,8 @@ contains
 &   addgridvelocities
     use flowvarrefstate, only : pref, pinf, rhoref, timeref, lref, &
 &   tref, rgas, uref, uinf
-    use inputphysics, only : pointref, flowtype, veldirfreestream, &
-&   alpha, beta, liftindex
+    use inputphysics, only : pointref, flowtype, alpha, beta, &
+&   liftindex
     use flowutils_b, only : computeptot, computettot, getdirvector
     use bcpointers_b, only : ssi, sface, ww1, ww2, pp1, pp2, xx, gamma1,&
 &   gamma2
@@ -1640,12 +1740,13 @@ contains
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: internalflowfact, inflowfact, fact, xc, yc, &
 &   zc, cellarea, mx, my, mz
-    real(kind=realtype) :: sf, vmag, vnm, vxm, vym, vzm, fx, fy, fz, u, &
-&   v, w
+    real(kind=realtype) :: sf, vmag, vnm, vnmfreestreamref, vxm, vym, &
+&   vzm, fx, fy, fz, u, v, w
     real(kind=realtype) :: pm, ptot, ttot, rhom, gammam, a2
     real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint, &
-&   vcoordref, vfreestreamref, sfacefreestreamref
+&   vcoordref, vfreestreamref, sfacefreestreamref, normfreestreamref
     real(kind=realtype) :: mnm, massflowratelocal
+    real(kind=realtype) :: edota, edotv, edotp
     intrinsic sqrt
     intrinsic mod
     intrinsic max
@@ -1688,6 +1789,9 @@ contains
     mass_ttot = zero
     mass_ps = zero
     mass_mn = zero
+    edota = zero
+    edotv = zero
+    edotp = zero
     sigma_mn = zero
     sigma_ptot = zero
     do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
@@ -1715,18 +1819,46 @@ contains
       vmag = sqrt(vxm**2 + vym**2 + vzm**2) - sf
 ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
       mnm = vmag/sqrt(gammam*pm/rhom)
+      cellarea = sqrt(ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**&
+&       2)
       call computeptot(rhom, vxm, vym, vzm, pm, ptot)
       call computettot(rhom, vxm, vym, vzm, pm, ttot)
       massflowratelocal = rhom*vnm*blk*fact*mredim
       if (withgathered) then
         sigma_mn = sigma_mn + massflowratelocal*(mnm-funcvalues(&
 &         costfuncmavgmn))**2
+        ptot = ptot*pref
         sigma_ptot = sigma_ptot + massflowratelocal*(ptot-funcvalues(&
 &         costfuncmavgptot))**2
       else
         massflowrate = massflowrate + massflowratelocal
         pk = pk + (pm-pinf+half*rhom*(vmag**2-uinf**2))*vnm*pref*uref*&
-&         fact
+&         fact*internalflowfact*blk
+! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
+        vcoordref(1) = vxm
+        vcoordref(2) = vym
+        vcoordref(3) = vzm
+        call getdirvector(vcoordref, -alpha, -beta, vfreestreamref, &
+&                   liftindex)
+        vfreestreamref = vfreestreamref*vmag
+!project the face normal into the freestream velocity and scale by the face
+        call getdirvector(ssi(i, j, :), -alpha, -beta, normfreestreamref&
+&                   , liftindex)
+! note that normfreestreamref is of magnitude 1 now
+        sfacefreestreamref = normfreestreamref*sf
+! compute the pertubations of the flow from the free-stream velocity
+        u = vfreestreamref(1) - sfacefreestreamref(1) - uinf
+        v = vfreestreamref(2) - sfacefreestreamref(2)
+        w = vfreestreamref(3) - sfacefreestreamref(3)
+        vnmfreestreamref = (u+uinf)*normfreestreamref(1) + v*&
+&         normfreestreamref(2) + w*normfreestreamref(3)
+        vnmfreestreamref = vnmfreestreamref*cellarea
+        edota = edota + half*rhom*u**2*vnmfreestreamref*pref*uref*&
+&         internalflowfact*blk
+        edotv = edotv + half*rhom*(v**2+w**2)*vnmfreestreamref*pref*uref&
+&         *internalflowfact*blk
+        edotp = edotp + (pm-pinf)*(vnm-uinf*normfreestreamref(1)*&
+&         cellarea)*pref*uref*internalflowfact*blk
 ! re-dimentionalize quantities
         pm = pm*pref
         mass_ptot = mass_ptot + ptot*massflowratelocal*pref
@@ -1760,8 +1892,6 @@ contains
 ! have to re-apply fact to massflowratelocal to undoo it, because 
 ! we need the signed behavior of ssi to get the momentum forces correct. 
 ! also, the sign is flipped between inflow and outflow types 
-        cellarea = sqrt(ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)&
-&         **2)
         massflowratelocal = massflowratelocal*fact/timeref*blk/cellarea*&
 &         internalflowfact*inflowfact
         fx = massflowratelocal*ssi(i, j, 1)*vxm
@@ -1776,20 +1906,6 @@ contains
         mmom(1) = mmom(1) + mx
         mmom(2) = mmom(2) + my
         mmom(3) = mmom(3) + mz
-! ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
-! vcoordref(1) = vxm
-! vcoordref(2) = vym
-! vcoordref(3) = vzm
-! call getdirvector(vcoordref, -alpha, -beta, vfreestreamref, liftindex)
-! vfreestreamref = vfreestreamref * vmag
-! !project the face normal into the freestream velocity and scale by the face
-! call getdirvector(ssi(i,j,:), -alpha, -beta, sfacefreestreamref, liftindex)
-! sfacefreestreamref = sfacefreestreamref * sf
-! ! compute the pertubations of the flow from the free-stream velocity
-! u = vfreestreamref(1) - sfacefreestreamref(1) - uinf
-! v = vfreestreamref(2) - sfacefreestreamref(2)
-! w = vfreestreamref(3) - sfacefreestreamref(3)
-! !edota = edota + half*(rhom)
       end if
     end do
     if (withgathered) then
@@ -1803,6 +1919,7 @@ contains
       localvalues(imassps) = localvalues(imassps) + mass_ps
       localvalues(imassmn) = localvalues(imassmn) + mass_mn
       localvalues(ipk) = localvalues(ipk) + pk
+      localvalues(iedot) = localvalues(iedot) + edota + edotv + edotp
       localvalues(ifp:ifp+2) = localvalues(ifp:ifp+2) + fp
       localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
 &       fmom
