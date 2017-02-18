@@ -410,7 +410,9 @@ module constants
        iMassMN     = 32, &
        isigmaMN    = 33, &
        isigmaPtot  = 34, &
-       iPk         = 35
+       iPk         = 35, &
+       iEdot       = 36
+
 
   ! Constants for zipper comm
 
