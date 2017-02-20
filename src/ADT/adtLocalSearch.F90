@@ -271,7 +271,7 @@ contains
                    ! bounding box in the list of possible candidates.
 
                    if(nBB == nAllocBB) &
-                        call reallocPlus(BB, nAllocBB, 10, ADT)
+                        call reallocPlus(BB, nAllocBB, 100, ADT)
 
                    nBB     = nBB + 1
                    BB(nBB) = kk
@@ -294,8 +294,8 @@ contains
 
                    if(nFrontLeavesNew == nAllocFront) then
                       i = nAllocFront
-                      call reallocPlus(frontLeavesNew, i, 25, ADT)
-                      call reallocPlus(frontLeaves, nAllocFront, 25, ADT)
+                      call reallocPlus(frontLeavesNew, i, 250, ADT)
+                      call reallocPlus(frontLeaves, nAllocFront, 250, ADT)
                    endif
 
                    nFrontLeavesNew = nFrontLeavesNew + 1
@@ -1273,7 +1273,7 @@ contains
 
                    if(nBB == nAllocBB) &
                         call reallocBBoxTargetTypePlus(BB, nAllocBB, &
-                        10, ADT)
+                        100, ADT)
 
                    ! Update the counter and store the data.
 
@@ -1346,8 +1346,8 @@ contains
 
                    if(nFrontLeavesNew == nAllocFront) then
                       i = nAllocFront
-                      call reallocPlus(frontLeavesNew, i, 25, ADT)
-                      call reallocPlus(frontLeaves, nAllocFront, 25, ADT)
+                      call reallocPlus(frontLeavesNew, i, 250, ADT)
+                      call reallocPlus(frontLeaves, nAllocFront, 250, ADT)
                    endif
 
                    nFrontLeavesNew = nFrontLeavesNew + 1
@@ -1845,8 +1845,8 @@ contains
 
                    if(nFrontLeavesNew == nAllocFront) then
                       i = nAllocFront
-                      call reallocPlus(frontLeavesNew, i, 25, ADT)
-                      call reallocPlus(frontLeaves, nAllocFront, 25, ADT)
+                      call reallocPlus(frontLeavesNew, i, 250, ADT)
+                      call reallocPlus(frontLeaves, nAllocFront, 250, ADT)
                    endif
 
                    nFrontLeavesNew = nFrontLeavesNew + 1
