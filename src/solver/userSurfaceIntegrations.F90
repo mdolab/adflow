@@ -719,7 +719,7 @@ contains
     integer(kind=intType), dimension(:), pointer :: frontLeavesNew
 
     ! Data for the search
-    allocate(BB(20), frontLeaves(25), frontLeavesNew(25), stack(100))
+    allocate(BB(20), frontLeaves(25), frontLeavesNew(25), stack(100), BB2(20))
 
     nPts = size(pts, 2)
 
@@ -1065,7 +1065,7 @@ contains
 
     ! Nuke rest of allocated on all procs
     deallocate(intSend, realSend, procSizes, donorInfo, donorFrac)
-
+    deallocate(BB, frontLeaves, frontLeavesNew, stack, BB2)
   end subroutine performInterpolation
 
   subroutine interpolateIntegrationSurfaces
