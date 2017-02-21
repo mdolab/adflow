@@ -251,20 +251,16 @@ contains
       fx = pm1*ssi(i, j, 1)
       fy = pm1*ssi(i, j, 2)
       fz = pm1*ssi(i, j, 3)
-! iblank forces
-      fx = fx*blk
-      fy = fy*blk
-      fz = fz*blk
-! update the inviscid force and moment coefficients.
-      fp(1) = fp(1) + fx
-      fp(2) = fp(2) + fy
-      fp(3) = fp(3) + fz
+! update the inviscid force and moment coefficients. iblank as we sum
+      fp(1) = fp(1) + fx*blk
+      fp(2) = fp(2) + fy*blk
+      fp(3) = fp(3) + fz*blk
       mx = yc*fz - zc*fy
       my = zc*fx - xc*fz
       mz = xc*fy - yc*fx
-      mp(1) = mp(1) + mx
-      mp(2) = mp(2) + my
-      mp(3) = mp(3) + mz
+      mp(1) = mp(1) + mx*blk
+      mp(2) = mp(2) + my*blk
+      mp(3) = mp(3) + mz*blk
 ! save the face-based forces and area
       bcdata(mm)%fp(i, j, 1) = fx
       bcdata(mm)%fp(i, j, 2) = fy
@@ -283,8 +279,8 @@ contains
 !now run through a smooth heaviside function:
       sensor = one/(one+exp(-(2*sepsensorsharpness*(sensor-&
 &       sepsensoroffset))))
-! and integrate over the area of this cell and save:
-      sensor = sensor*cellarea
+! and integrate over the area of this cell and save, blanking as we go.
+      sensor = sensor*cellarea*blk
       sepsensor = sepsensor + sensor
 ! also accumulate into the sepsensoravg
       xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
@@ -302,7 +298,7 @@ contains
       sigma = 1.4
       sensor1 = -cp - sigma
       sensor1 = one/(one+exp(-(2*10*sensor1)))
-      sensor1 = sensor1*cellarea
+      sensor1 = sensor1*cellarea*blk
       cavitation = cavitation + sensor1
     end do
 !
@@ -342,16 +338,6 @@ contains
 &         j, 3))*pref)
         fz = -(fact*(tauxz*ssi(i, j, 1)+tauyz*ssi(i, j, 2)+tauzz*ssi(i, &
 &         j, 3))*pref)
-! iblank forces after saving for zipper mesh
-        tauxx = tauxx*blk
-        tauyy = tauyy*blk
-        tauzz = tauzz*blk
-        tauxy = tauxy*blk
-        tauxz = tauxz*blk
-        tauyz = tauyz*blk
-        fx = fx*blk
-        fy = fy*blk
-        fz = fz*blk
 ! compute the coordinates of the centroid of the face
 ! relative from the moment reference point. due to the
 ! usage of pointers for xx and offset of 1 is present,
@@ -362,16 +348,16 @@ contains
 &         , 2)) - refpoint(2)
         zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
 &         , 3)) - refpoint(3)
-! update the viscous force and moment coefficients.
-        fv(1) = fv(1) + fx
-        fv(2) = fv(2) + fy
-        fv(3) = fv(3) + fz
+! update the viscous force and moment coefficients, blanking as we go.
+        fv(1) = fv(1) + fx*blk
+        fv(2) = fv(2) + fy*blk
+        fv(3) = fv(3) + fz*blk
         mx = yc*fz - zc*fy
         my = zc*fx - xc*fz
         mz = xc*fy - yc*fx
-        mv(1) = mv(1) + mx
-        mv(2) = mv(2) + my
-        mv(3) = mv(3) + mz
+        mv(1) = mv(1) + mx*blk
+        mv(2) = mv(2) + my*blk
+        mv(3) = mv(3) + mz*blk
 ! save the face based forces for the slice operations
         bcdata(mm)%fv(i, j, 1) = fx
         bcdata(mm)%fv(i, j, 2) = fy
