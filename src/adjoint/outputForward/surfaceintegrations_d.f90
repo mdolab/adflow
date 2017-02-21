@@ -567,32 +567,25 @@ contains
       fy = pm1*ssi(i, j, 2)
       fzd = pm1d*ssi(i, j, 3) + pm1*ssid(i, j, 3)
       fz = pm1*ssi(i, j, 3)
-! iblank forces
-      fxd = blk*fxd
-      fx = fx*blk
-      fyd = blk*fyd
-      fy = fy*blk
-      fzd = blk*fzd
-      fz = fz*blk
-! update the inviscid force and moment coefficients.
-      fpd(1) = fpd(1) + fxd
-      fp(1) = fp(1) + fx
-      fpd(2) = fpd(2) + fyd
-      fp(2) = fp(2) + fy
-      fpd(3) = fpd(3) + fzd
-      fp(3) = fp(3) + fz
+! update the inviscid force and moment coefficients. iblank as we sum
+      fpd(1) = fpd(1) + blk*fxd
+      fp(1) = fp(1) + fx*blk
+      fpd(2) = fpd(2) + blk*fyd
+      fp(2) = fp(2) + fy*blk
+      fpd(3) = fpd(3) + blk*fzd
+      fp(3) = fp(3) + fz*blk
       mxd = ycd*fz + yc*fzd - zcd*fy - zc*fyd
       mx = yc*fz - zc*fy
       myd = zcd*fx + zc*fxd - xcd*fz - xc*fzd
       my = zc*fx - xc*fz
       mzd = xcd*fy + xc*fyd - ycd*fx - yc*fxd
       mz = xc*fy - yc*fx
-      mpd(1) = mpd(1) + mxd
-      mp(1) = mp(1) + mx
-      mpd(2) = mpd(2) + myd
-      mp(2) = mp(2) + my
-      mpd(3) = mpd(3) + mzd
-      mp(3) = mp(3) + mz
+      mpd(1) = mpd(1) + blk*mxd
+      mp(1) = mp(1) + mx*blk
+      mpd(2) = mpd(2) + blk*myd
+      mp(2) = mp(2) + my*blk
+      mpd(3) = mpd(3) + blk*mzd
+      mp(3) = mp(3) + mz*blk
 ! save the face-based forces and area
       bcdatad(mm)%fp(i, j, 1) = fxd
       bcdata(mm)%fp(i, j, 1) = fx
@@ -639,9 +632,9 @@ contains
       arg1 = -(2*sepsensorsharpness*(sensor-sepsensoroffset))
       sensord = -(one*arg1d*exp(arg1)/(one+exp(arg1))**2)
       sensor = one/(one+exp(arg1))
-! and integrate over the area of this cell and save:
-      sensord = sensord*cellarea + sensor*cellaread
-      sensor = sensor*cellarea
+! and integrate over the area of this cell and save, blanking as we go.
+      sensord = blk*(sensord*cellarea+sensor*cellaread)
+      sensor = sensor*cellarea*blk
       sepsensord = sepsensord + sensord
       sepsensor = sepsensor + sensor
 ! also accumulate into the sepsensoravg
@@ -676,8 +669,8 @@ contains
       sensor1d = -((-(one*2*10*sensor1d*exp(-(2*10*sensor1))))/(one+exp(&
 &       -(2*10*sensor1)))**2)
       sensor1 = one/(one+exp(-(2*10*sensor1)))
-      sensor1d = sensor1d*cellarea + sensor1*cellaread
-      sensor1 = sensor1*cellarea
+      sensor1d = blk*(sensor1d*cellarea+sensor1*cellaread)
+      sensor1 = sensor1*cellarea*blk
       cavitationd = cavitationd + sensor1d
       cavitation = cavitation + sensor1
     end do
@@ -738,19 +731,6 @@ contains
 &         tauzz*ssi(i, j, 3))*prefd))
         fz = -(fact*(tauxz*ssi(i, j, 1)+tauyz*ssi(i, j, 2)+tauzz*ssi(i, &
 &         j, 3))*pref)
-! iblank forces after saving for zipper mesh
-        tauxx = tauxx*blk
-        tauyy = tauyy*blk
-        tauzz = tauzz*blk
-        tauxy = tauxy*blk
-        tauxz = tauxz*blk
-        tauyz = tauyz*blk
-        fxd = blk*fxd
-        fx = fx*blk
-        fyd = blk*fyd
-        fy = fy*blk
-        fzd = blk*fzd
-        fz = fz*blk
 ! compute the coordinates of the centroid of the face
 ! relative from the moment reference point. due to the
 ! usage of pointers for xx and offset of 1 is present,
@@ -767,25 +747,25 @@ contains
 &         , j+1, 3)) - refpointd(3)
         zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
 &         , 3)) - refpoint(3)
-! update the viscous force and moment coefficients.
-        fvd(1) = fvd(1) + fxd
-        fv(1) = fv(1) + fx
-        fvd(2) = fvd(2) + fyd
-        fv(2) = fv(2) + fy
-        fvd(3) = fvd(3) + fzd
-        fv(3) = fv(3) + fz
+! update the viscous force and moment coefficients, blanking as we go.
+        fvd(1) = fvd(1) + blk*fxd
+        fv(1) = fv(1) + fx*blk
+        fvd(2) = fvd(2) + blk*fyd
+        fv(2) = fv(2) + fy*blk
+        fvd(3) = fvd(3) + blk*fzd
+        fv(3) = fv(3) + fz*blk
         mxd = ycd*fz + yc*fzd - zcd*fy - zc*fyd
         mx = yc*fz - zc*fy
         myd = zcd*fx + zc*fxd - xcd*fz - xc*fzd
         my = zc*fx - xc*fz
         mzd = xcd*fy + xc*fyd - ycd*fx - yc*fxd
         mz = xc*fy - yc*fx
-        mvd(1) = mvd(1) + mxd
-        mv(1) = mv(1) + mx
-        mvd(2) = mvd(2) + myd
-        mv(2) = mv(2) + my
-        mvd(3) = mvd(3) + mzd
-        mv(3) = mv(3) + mz
+        mvd(1) = mvd(1) + blk*mxd
+        mv(1) = mv(1) + mx*blk
+        mvd(2) = mvd(2) + blk*myd
+        mv(2) = mv(2) + my*blk
+        mvd(3) = mvd(3) + blk*mzd
+        mv(3) = mv(3) + mz*blk
 ! save the face based forces for the slice operations
         bcdatad(mm)%fv(i, j, 1) = fxd
         bcdata(mm)%fv(i, j, 1) = fx
@@ -946,20 +926,16 @@ contains
       fx = pm1*ssi(i, j, 1)
       fy = pm1*ssi(i, j, 2)
       fz = pm1*ssi(i, j, 3)
-! iblank forces
-      fx = fx*blk
-      fy = fy*blk
-      fz = fz*blk
-! update the inviscid force and moment coefficients.
-      fp(1) = fp(1) + fx
-      fp(2) = fp(2) + fy
-      fp(3) = fp(3) + fz
+! update the inviscid force and moment coefficients. iblank as we sum
+      fp(1) = fp(1) + fx*blk
+      fp(2) = fp(2) + fy*blk
+      fp(3) = fp(3) + fz*blk
       mx = yc*fz - zc*fy
       my = zc*fx - xc*fz
       mz = xc*fy - yc*fx
-      mp(1) = mp(1) + mx
-      mp(2) = mp(2) + my
-      mp(3) = mp(3) + mz
+      mp(1) = mp(1) + mx*blk
+      mp(2) = mp(2) + my*blk
+      mp(3) = mp(3) + mz*blk
 ! save the face-based forces and area
       bcdata(mm)%fp(i, j, 1) = fx
       bcdata(mm)%fp(i, j, 2) = fy
@@ -980,8 +956,8 @@ contains
 !now run through a smooth heaviside function:
       arg1 = -(2*sepsensorsharpness*(sensor-sepsensoroffset))
       sensor = one/(one+exp(arg1))
-! and integrate over the area of this cell and save:
-      sensor = sensor*cellarea
+! and integrate over the area of this cell and save, blanking as we go.
+      sensor = sensor*cellarea*blk
       sepsensor = sepsensor + sensor
 ! also accumulate into the sepsensoravg
       xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
@@ -999,7 +975,7 @@ contains
       sigma = 1.4
       sensor1 = -cp - sigma
       sensor1 = one/(one+exp(-(2*10*sensor1)))
-      sensor1 = sensor1*cellarea
+      sensor1 = sensor1*cellarea*blk
       cavitation = cavitation + sensor1
     end do
 !
@@ -1039,16 +1015,6 @@ contains
 &         j, 3))*pref)
         fz = -(fact*(tauxz*ssi(i, j, 1)+tauyz*ssi(i, j, 2)+tauzz*ssi(i, &
 &         j, 3))*pref)
-! iblank forces after saving for zipper mesh
-        tauxx = tauxx*blk
-        tauyy = tauyy*blk
-        tauzz = tauzz*blk
-        tauxy = tauxy*blk
-        tauxz = tauxz*blk
-        tauyz = tauyz*blk
-        fx = fx*blk
-        fy = fy*blk
-        fz = fz*blk
 ! compute the coordinates of the centroid of the face
 ! relative from the moment reference point. due to the
 ! usage of pointers for xx and offset of 1 is present,
@@ -1059,16 +1025,16 @@ contains
 &         , 2)) - refpoint(2)
         zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
 &         , 3)) - refpoint(3)
-! update the viscous force and moment coefficients.
-        fv(1) = fv(1) + fx
-        fv(2) = fv(2) + fy
-        fv(3) = fv(3) + fz
+! update the viscous force and moment coefficients, blanking as we go.
+        fv(1) = fv(1) + fx*blk
+        fv(2) = fv(2) + fy*blk
+        fv(3) = fv(3) + fz*blk
         mx = yc*fz - zc*fy
         my = zc*fx - xc*fz
         mz = xc*fy - yc*fx
-        mv(1) = mv(1) + mx
-        mv(2) = mv(2) + my
-        mv(3) = mv(3) + mz
+        mv(1) = mv(1) + mx*blk
+        mv(2) = mv(2) + my*blk
+        mv(3) = mv(3) + mz*blk
 ! save the face based forces for the slice operations
         bcdata(mm)%fv(i, j, 1) = fx
         bcdata(mm)%fv(i, j, 2) = fy
