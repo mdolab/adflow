@@ -101,6 +101,9 @@ contains
        funcValues(costFuncSigmaPtot) = funcValues(costFuncSigmaPtot) + ovrNTS*sigmaPtot
        funcValues(costFuncPk) = funcValues(costFuncPk) + ovrNTS*globalVals(iPk, sps)
        funcValues(costFuncEdot) = funcValues(costFuncEdot) + ovrNTS*globalVals(iEdot, sps)
+       funcValues(costFuncEdotA) = funcValues(costFuncEdotA) + ovrNTS*globalVals(iEdotA, sps)
+       funcValues(costFuncEdotV) = funcValues(costFuncEdotV) + ovrNTS*globalVals(iEdotV, sps) 
+       funcValues(costFuncEdotP) = funcValues(costFuncEdotP) + ovrNTS*globalVals(iEdotP, sps)
 
        ! Bending moment calc - also broken. 
        ! call computeRootBendingMoment(cForce, cMoment, liftIndex, bendingMoment)
@@ -617,11 +620,9 @@ contains
         vnmFreeStreamRef =  (u+uInf)*normFreeStreamRef(1) + v*normFreeStreamRef(2) + w*normFreeStreamRef(3)
         vnmFreeStreamRef = vnmFreeStreamRef * cellArea
 
-
         edotA = edotA + half * rhom*u**2 * vnmFreeStreamRef * pref*uRef * internalFlowFact * blk
         edotV = edotV + half * rhom*(v**2+w**2) * vnmFreeStreamRef * pref*uRef * internalFlowFact * blk
         edotP = edotP + (pm-pInf) * (vnm - uInf*normFreeStreamRef(1)*cellArea) * pref*uRef * internalFlowFact * blk
-
 
         ! re-dimentionalize quantities
         pm = pm*pRef
@@ -699,6 +700,9 @@ contains
       localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
       localValues(iMassMN)   = localValues(iMassMN)   + mass_MN
       localValues(iPk)   = localValues(iPk)   + pk
+      localValues(iEdotA) = localValues(iEdotA) + edotA
+      localValues(iEdotV) = localValues(iEdotV) + edotV
+      localValues(iEdotP) = localValues(iEdotP) + edotP
       localValues(iEdot)   = localValues(iEdot)   + edotA + edotV + edotP
       localValues(iFp:iFp+2)   = localValues(iFp:iFp+2) + Fp
       localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom

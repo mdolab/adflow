@@ -120,6 +120,12 @@ contains
 &       globalvals(ipk, sps)
       funcvalues(costfuncedot) = funcvalues(costfuncedot) + ovrnts*&
 &       globalvals(iedot, sps)
+      funcvalues(costfuncedota) = funcvalues(costfuncedota) + ovrnts*&
+&       globalvals(iedota, sps)
+      funcvalues(costfuncedotv) = funcvalues(costfuncedotv) + ovrnts*&
+&       globalvals(iedotv, sps)
+      funcvalues(costfuncedotp) = funcvalues(costfuncedotp) + ovrnts*&
+&       globalvals(iedotp, sps)
     end do
 ! bending moment calc - also broken. 
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
@@ -604,6 +610,9 @@ contains
       localvalues(imassps) = localvalues(imassps) + mass_ps
       localvalues(imassmn) = localvalues(imassmn) + mass_mn
       localvalues(ipk) = localvalues(ipk) + pk
+      localvalues(iedota) = localvalues(iedota) + edota
+      localvalues(iedotv) = localvalues(iedotv) + edotv
+      localvalues(iedotp) = localvalues(iedotp) + edotp
       localvalues(iedot) = localvalues(iedot) + edota + edotv + edotp
       localvalues(ifp:ifp+2) = localvalues(ifp:ifp+2) + fp
       localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &

@@ -250,7 +250,10 @@ contains
        localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
        localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
        localValues(iMassMN)   = localValues(iMassMN)   + mass_MN
-       localValues(iPk)   = localValues(iPk)   + Pk
+       localValues(iPk)   = localValues(iPk)   + pk
+       localValues(iEdotA) = localValues(iEdotA) + edotA
+       localValues(iEdotV) = localValues(iEdotV) + edotV
+       localValues(iEdotP) = localValues(iEdotP) + edotP
        localValues(iEdot)   = localValues(iEdot)   + edotA + edotV + edotP
        localValues(iFp:iFp+2)   = localValues(iFp:iFp+2) + Fp
        localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
