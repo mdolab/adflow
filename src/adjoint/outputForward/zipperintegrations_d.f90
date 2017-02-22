@@ -475,6 +475,12 @@ contains
       localvalues(imassmn) = localvalues(imassmn) + mass_mn
       localvaluesd(ipk) = localvaluesd(ipk) + pkd
       localvalues(ipk) = localvalues(ipk) + pk
+      localvaluesd(iedota) = localvaluesd(iedota) + edotad
+      localvalues(iedota) = localvalues(iedota) + edota
+      localvaluesd(iedotv) = localvaluesd(iedotv) + edotvd
+      localvalues(iedotv) = localvalues(iedotv) + edotv
+      localvaluesd(iedotp) = localvaluesd(iedotp) + edotpd
+      localvalues(iedotp) = localvalues(iedotp) + edotp
       localvaluesd(iedot) = localvaluesd(iedot) + edotad + edotvd + &
 &       edotpd
       localvalues(iedot) = localvalues(iedot) + edota + edotv + edotp
@@ -723,6 +729,9 @@ contains
       localvalues(imassps) = localvalues(imassps) + mass_ps
       localvalues(imassmn) = localvalues(imassmn) + mass_mn
       localvalues(ipk) = localvalues(ipk) + pk
+      localvalues(iedota) = localvalues(iedota) + edota
+      localvalues(iedotv) = localvalues(iedotv) + edotv
+      localvalues(iedotp) = localvalues(iedotp) + edotp
       localvalues(iedot) = localvalues(iedot) + edota + edotv + edotp
       localvalues(ifp:ifp+2) = localvalues(ifp:ifp+2) + fp
       localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
