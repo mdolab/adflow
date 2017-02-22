@@ -491,7 +491,7 @@ contains
           end do outerLoop
 
           ! Clean up the reminder of the sting memory on the root proc
-          do i=1, nFullStrings
+          do i=1, nStrings
              call deallocateString(strings(i))
           end do
           deallocate(strings)
