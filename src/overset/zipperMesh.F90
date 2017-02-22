@@ -85,11 +85,6 @@ contains
 
     call initBCDataIblank(level, sps)
 
-    ! Determine the average area of surfaces on each cluster. This
-    ! will be independent of any block splitting distribution. 
-    
-    call determineClusterAreas()
-
 
     ! We build the zipper meshes *independently* for each BCType. 
     BCGroupLoop: do iBCGroup=1, nFamExchange
@@ -162,6 +157,12 @@ contains
        ! -------------------------------------------------------------------
        ! Step 1: Eliminate any gap overlaps between meshes
        ! -------------------------------------------------------------------
+
+       ! Determine the average area of surfaces on each cluster. This
+       ! will be independent of any block splitting distribution. 
+       
+       call determineClusterAreas(famList)
+
 
        ! Set the boundary condition blank values
        call slitElimination(famList, level, sps)
@@ -572,7 +573,7 @@ contains
   !       for all blocks in a particular cluster. This is used for       
   !       determine blanking preference for overlapping surface cells.   
 
-  subroutine determineClusterAreas
+  subroutine determineClusterAreas(famList)
 
     use constants
     use blockPointers, only : nDom, BCData, nBocos, BCType
@@ -580,7 +581,11 @@ contains
     use overset, onlY : clusterAreas, nClusters, clusters, cumDomProc
     use utils, only : setPointers, EChk, setBCPointers, cross_prod
     use BCPointers, only : xx
+    use sorting, only : famInList
     implicit none
+
+    ! Input Parameters
+    integer(kind=intType), intent(in), dimension(:) :: famList
 
     ! Working
     integer(kind=intType) :: i, j, mm, nn, clusterID, ierr, nPts, nCells
@@ -592,7 +597,7 @@ contains
 
     if (allocated(clusterAreas)) then 
        ! We only ever do this once!
-       return
+       deallocate(clusterAreas)
     end if
 
     allocate(clusterAreas(nClusters), localAreas(nClusters), &
@@ -608,30 +613,31 @@ contains
 
        ! Loop over the number of boundary subfaces of this block.
        bocos: do mm=1,nBocos
-
-          ! Store the cell range of the subfaces a bit easier.
-          ! As only owned faces must be considered the nodal range
-          ! in BCData must be used to obtain this data.
-          
-          jBeg = BCData(mm)%jnBeg + 1; jEnd = BCData(mm)%jnEnd
-          iBeg = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
-          
-          call setBCPointers(mm, .True.)
-          
-          ! Compute the dual area at each node. Just store in first dof
-          do j=jBeg, jEnd ! This is a face loop
-             do i=iBeg, iEnd ! This is a face loop 
-                
-                v1(:) = xx(i+1, j+1, :) - xx(i,   j,  :)
-                v2(:) = xx(i  , j+1, :) - xx(i+1, j,  :)
-                
-                ! Cross Product
-                call cross_prod(v1, v2, sss)
-                da = fourth*(sss(1)**2 + sss(2)**2 + sss(3)**2)
-                localAreas(clusterID) = localAreas(clusterID) + da
-                localCount(clusterID) = localCount(clusterID) + 1
+          famInclude: if (famInList(BCData(mm)%famID, famList)) then 
+             ! Store the cell range of the subfaces a bit easier.
+             ! As only owned faces must be considered the nodal range
+             ! in BCData must be used to obtain this data.
+             
+             jBeg = BCData(mm)%jnBeg + 1; jEnd = BCData(mm)%jnEnd
+             iBeg = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
+             
+             call setBCPointers(mm, .True.)
+             
+             ! Compute the dual area at each node. Just store in first dof
+             do j=jBeg, jEnd ! This is a face loop
+                do i=iBeg, iEnd ! This is a face loop 
+                   
+                   v1(:) = xx(i+1, j+1, :) - xx(i,   j,  :)
+                   v2(:) = xx(i  , j+1, :) - xx(i+1, j,  :)
+                   
+                   ! Cross Product
+                   call cross_prod(v1, v2, sss)
+                   da = fourth*(sss(1)**2 + sss(2)**2 + sss(3)**2)
+                   localAreas(clusterID) = localAreas(clusterID) + da
+                   localCount(clusterID) = localCount(clusterID) + 1
+                end do
              end do
-          end do
+          end if famInclude
        end do bocos
     end do domains
     
