@@ -153,6 +153,12 @@ contains
 &       globalvals(ipk, sps)
       funcvalues(costfuncedot) = funcvalues(costfuncedot) + ovrnts*&
 &       globalvals(iedot, sps)
+      funcvalues(costfuncedota) = funcvalues(costfuncedota) + ovrnts*&
+&       globalvals(iedota, sps)
+      funcvalues(costfuncedotv) = funcvalues(costfuncedotv) + ovrnts*&
+&       globalvals(iedotv, sps)
+      funcvalues(costfuncedotp) = funcvalues(costfuncedotp) + ovrnts*&
+&       globalvals(iedotp, sps)
     end do
 ! bending moment calc - also broken. 
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
@@ -253,6 +259,12 @@ contains
         else
           call pushcontrol1b(1)
         end if
+        globalvalsd(iedotp, sps) = globalvalsd(iedotp, sps) + ovrnts*&
+&         funcvaluesd(costfuncedotp)
+        globalvalsd(iedotv, sps) = globalvalsd(iedotv, sps) + ovrnts*&
+&         funcvaluesd(costfuncedotv)
+        globalvalsd(iedota, sps) = globalvalsd(iedota, sps) + ovrnts*&
+&         funcvaluesd(costfuncedota)
         globalvalsd(iedot, sps) = globalvalsd(iedot, sps) + ovrnts*&
 &         funcvaluesd(costfuncedot)
         globalvalsd(ipk, sps) = globalvalsd(ipk, sps) + ovrnts*&
@@ -465,6 +477,12 @@ contains
 &       globalvals(ipk, sps)
       funcvalues(costfuncedot) = funcvalues(costfuncedot) + ovrnts*&
 &       globalvals(iedot, sps)
+      funcvalues(costfuncedota) = funcvalues(costfuncedota) + ovrnts*&
+&       globalvals(iedota, sps)
+      funcvalues(costfuncedotv) = funcvalues(costfuncedotv) + ovrnts*&
+&       globalvals(iedotv, sps)
+      funcvalues(costfuncedotp) = funcvalues(costfuncedotp) + ovrnts*&
+&       globalvals(iedotp, sps)
     end do
 ! bending moment calc - also broken. 
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
@@ -1354,9 +1372,9 @@ contains
       fmomd = localvaluesd(iflowfm:iflowfm+2)
       fpd = 0.0_8
       fpd = localvaluesd(ifp:ifp+2)
-      edotad = localvaluesd(iedot)
-      edotvd = localvaluesd(iedot)
-      edotpd = localvaluesd(iedot)
+      edotad = localvaluesd(iedota) + localvaluesd(iedot)
+      edotvd = localvaluesd(iedotv) + localvaluesd(iedot)
+      edotpd = localvaluesd(iedotp) + localvaluesd(iedot)
       pkd = localvaluesd(ipk)
       mass_mnd = localvaluesd(imassmn)
       mass_psd = localvaluesd(imassps)
@@ -1885,6 +1903,9 @@ contains
       localvalues(imassps) = localvalues(imassps) + mass_ps
       localvalues(imassmn) = localvalues(imassmn) + mass_mn
       localvalues(ipk) = localvalues(ipk) + pk
+      localvalues(iedota) = localvalues(iedota) + edota
+      localvalues(iedotv) = localvalues(iedotv) + edotv
+      localvalues(iedotp) = localvalues(iedotp) + edotp
       localvalues(iedot) = localvalues(iedot) + edota + edotv + edotp
       localvalues(ifp:ifp+2) = localvalues(ifp:ifp+2) + fp
       localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &

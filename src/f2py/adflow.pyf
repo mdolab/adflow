@@ -755,6 +755,9 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfuncsigmaptot=49
          integer(kind=inttype) parameter,optional :: costfuncpk=50
          integer(kind=inttype) parameter,optional :: costfuncedot=51
+         integer(kind=inttype) parameter,optional :: costfuncedota=52
+         integer(kind=inttype) parameter,optional :: costfuncedotp=53
+         integer(kind=inttype) parameter,optional :: costfuncedotv=54
 
        end module constants
 
