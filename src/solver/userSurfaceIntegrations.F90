@@ -85,7 +85,12 @@ contains
              ! Allocate some temporary data needed to supply to the
              ! zipper integration routine. 
              allocate(ptValid(npts), vars(npts, nZippFlowComm), fams(size(surf%conn, 2)))
+             
+             ! Initialize ptValid to True. If we find that it isn't,
+             ! we'll permenantly set that point to false. This could
+             ! come from either the node or the flow comms. 
 
+             ptValid = .True.
              ! Prepare for the "zipper" integration call. We have to
              ! re-order the data according to the "inv" array in each
              ! of the two comms. 
@@ -94,6 +99,10 @@ contains
                 ! Flow Variables
                 j = surf%flowComm%inv(i)
                 vars(j, iRho:iZippFlowGamma) = recvBuffer1(6*(i-1) + iRho : 6*(i-1) + iZippFlowGamma)
+
+                if (.not. surf%flowComm%valid(i)) then 
+                   ptValid(j) = .False. 
+                end if
 
                 ! Sface is not implemented. To correctly do this,
                 ! interpolate the three components of 's', do the dot
@@ -105,7 +114,10 @@ contains
                 vars(j, iZippFlowX:iZippFlowZ) = recvBuffer2(3*i-2:3*i)
                       
                 ! The additional pt-valid array
-                ptValid(j) = surf%nodeComm%valid(i)
+                if (.not. surf%nodeComm%valid(i)) then 
+                   ptValid(j) = .False. 
+                end if
+
              end do
              
              ! The family array is all the same value:
