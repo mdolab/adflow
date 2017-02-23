@@ -1127,8 +1127,10 @@ contains
     real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVal, globalVal
     real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVald, globalVald
     real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral, size(famLists, 1)) :: globalValues
+    real(Kind=realType), dimension(nCostFunction) :: funcValuesdSave
     integer(kind=intType) :: nn, sps, ierr, iGroup, nFam
     integer(kind=intType), dimension(:), pointer :: famList
+    
 
     call getSolution(famLists, funcValues, globalValues)
 
@@ -1141,35 +1143,42 @@ contains
        localVal = zero
        localVald = zero
      
+       ! Save the input seeds
+       funcValuesdSave = funcValuesd(:, iGroup)
+
        ! Retrive the forward pass values from getSolution
        globalVal = globalValues(:, :, iGroup)
 
-       ! Start the reverse chain. We *must* only run this on the root
-       ! processor. The reason is that the explict sensitivities like
-       ! liftDirection, Pref, etc, must be accounted for once, and not
-       ! nProc times. 
-       ! if (myid == 0) then 
-       !    call getCostFunctions_b(globalVal, globalVald, funcValues(:, iGroup), funcValuesd(:, iGroup))
-       !    localVald = globalVald
-       ! end if
+       if (myid == 0) then 
+          call getCostFunctions_b(globalVal, globalVald, funcValues(:, iGroup), funcValuesd(:, iGroup))
+          localVald = globalVald
+       end if
        
-       ! ! Now we need to bcast out the localValues to all procs. 
-       ! call mpi_bcast(localVald, nLocalValues*nTimeIntervalsSpectral, &
-       !      adflow_real, 0, adflow_comm_world, ierr)
-       ! call EChk(ierr, __FILE__, __LINE__)
-       
-       ! ! ! Now we run the secondary gathered functions loop
-       ! ! do sps=1, nTimeIntervalsSpectral
-       ! !    do nn=1, nDom
-       ! !       call setPointers_b(nn, 1, sps)
-       ! !       !call integrateSurfacesWithGathered_b(globalVal(:, sps), localVal(:, sps), famList)
-       ! !    end do
-       ! !    !call integrateZippersWithGathered_b(globalVal(:, sps), globalVald(:, sps), & 
-       ! !    ! localVal(:, sps), localVald(:, sps), famList, sps)
-       ! !    !call integrateUserSurfacesWithGathered_b(globalVal(:, sps), globalVal(:, sps), & 
-       ! !    ! localVal(:, sps), localVal(:, sps), famList, sps)
-       ! ! end do 
-       
+       ! Now we need to bcast out the localValues to all procs. 
+       call mpi_bcast(localVald, nLocalValues*nTimeIntervalsSpectral, &
+            adflow_real, 0, adflow_comm_world, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+
+       do sps=1, nTimeIntervalsSpectral
+          ! Integrate the normal block surfaces. 
+          do nn=1, nDom
+             call setPointers_b(nn, 1, sps)
+             call integrateSurfaces_b(localval(:, sps), localVald(:, sps), famList, & 
+             .True., funcValues(:, iGroup), funcValuesd(:, iGroup))
+          end do
+          
+          ! Integrate any zippers we have
+          call integrateZippers_b(localVal(:, sps), localVald(:, sps), famList, sps, & 
+               .True., funcValues(:, iGroup), funcValuesd(:, iGroup))
+          
+          ! Integrate any user-supplied planes as have as well. 
+          call integrateUserSurfaces_b(localVal(:, sps), localVald(:, sps), famList, sps, & 
+               .True., funcValues(:, iGroup), funcValuesd(:, iGroup))
+       end do
+
+       ! Reset the funcValues here and do the second pass. 
+       funcValuesd(:, iGroup) = funcValuesdSave
+
        if (myid == 0) then 
           call getCostFunctions_b(globalVal, globalVald, funcValues(:, iGroup), funcValuesd(:, iGroup))
           localVald = globalVald
