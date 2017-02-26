@@ -760,8 +760,9 @@ contains
                   flowDomsd(nn, level, sps)%BCData(mm)%ptInlet(iBeg:iStop,jBeg:jStop), & 
                   flowDomsd(nn, level, sps)%BCData(mm)%htInlet(iBeg:iStop,jBeg:jStop), & 
                   flowDomsd(nn, level, sps)%BCData(mm)%ttInlet(iBeg:iStop,jBeg:jStop), & 
+                  flowDomsd(nn, level, sps)%BCData(mm)%turbInlet(iBeg:iStop,jBeg:jStop,nt1:nt2), & 
                   flowDomsd(nn, level, sps)%BCData(mm)%ps(iBeg:iStop,jBeg:jStop), stat=ierr)
-                  
+
              call EChk(ierr,__FILE__,__LINE__)
           end do bocoLoop
 
@@ -895,6 +896,7 @@ contains
        flowDomsd(nn, level, sps)%BCData(mm)%ptInlet = zero
        flowDomsd(nn, level, sps)%BCData(mm)%htInlet = zero
        flowDomsd(nn, level, sps)%BCData(mm)%ttInlet = zero
+       flowDomsd(nn, level, sps)%BCData(mm)%turbInlet = zero
        flowDomsd(nn, level, sps)%BCData(mm)%ps = zero
     end do bocoLoop
 
@@ -1528,7 +1530,7 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
   ! Local Variables
   integer(kind=intType) :: nn, i, j, k, sps, ii, jj, kk, iii, jjj, kkk, n, m, gc
   integer(kind=intType) :: iRowStart, iRowEnd, ierr, fInd
-  integer(kind=intType), dimension((N_stencil-1)*8) :: cellBuffer, dummy
+  integer(kind=intType), dimension((N_stencil-1)*8+1) :: cellBuffer, dummy
   Vec offProcVec
   logical :: overset
   real(kind=realType), pointer :: tmpPointer(:)
