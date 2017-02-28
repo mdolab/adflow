@@ -208,7 +208,7 @@
 | Farfield Types       : 
 | Oveset Types         : 
 +--------------------------------------------------+
-/home/jsgray/hg/adflow/python/pyADflow.py:4678: VisibleDeprecationWarning: using a non-integer number instead of an integer will result in an error in the future
+/home/jsgray/hg/adflow/python/pyADflow.py:4682: VisibleDeprecationWarning: using a non-integer number instead of an integer will result in an error in the future
   newConn[i, j] = link[conn[i, j]]
 +----------------------------------------------------------------------+
 |  Switching to Aero Problem: nozzle                                   |
@@ -255,9 +255,9 @@
 #  Grid  | Iter | Iter | Iter |   CFL   |    Wall    |        Res rho         |        totalRes        |
 #  level |      | Tot  | Type |         | Clock (s)  |                        |                        |
 #-------------------------------------------------------------------------------------------------------
-      1       0      0   None   0.00E+00  0.10267E+00   0.4044307328664265E-10   0.7251466858589091E-07 
-      1       1      2     NK   0.97E+28  0.69933E+01   0.3677221492792871E-10   0.6598192189812279E-07 
-Solution Time:      6.997 sec
+      1       0      0   None   0.00E+00  0.10691E+00   0.4044307328664265E-10   0.7251466858589091E-07 
+      1       1      2     NK   0.97E+28  0.69443E+01   0.3677221492792871E-10   0.6598192189812279E-07 
+Solution Time:      6.947 sec
 #
 # Writing grid file(s): ./nozzle_000_vol.cgns
 # Grid file(s) written
@@ -308,11 +308,11 @@ Dictionary Key: nozzle_mdot_plane
 Dictionary Key: nozzle_mdot_up
 @value  1.0496918257764e+00 1e-10 1e-10
 Dictionary Key: nozzle_pk_down
-@value -3.9522340381840e+04 1e-10 1e-10
+@value  1.9761170190920e+04 1e-10 1e-10
 Dictionary Key: nozzle_pk_plane
-@value -3.4156491871965e+04 1e-10 1e-10
+@value  1.7078245935982e+04 1e-10 1e-10
 Dictionary Key: nozzle_pk_up
-@value  3.4188445562009e+04 1e-10 1e-10
+@value -1.7094222781005e+04 1e-10 1e-10
 Dictionary Key: nozzle_sigmamn_plane
 @value  3.4840327359805e-02 1e-10 1e-10
 Dictionary Key: nozzle_sigmamn_up

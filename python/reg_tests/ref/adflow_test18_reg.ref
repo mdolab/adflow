@@ -284,9 +284,9 @@ Dictionary Key: nozzle_mdot_down
 Dictionary Key: nozzle_mdot_up
 @value  1.0496982236621e+00 1e-10 1e-10
 Dictionary Key: nozzle_pk_down
-@value -3.9527777834616e+04 1e-10 1e-10
+@value  1.9763888917308e+04 1e-10 1e-10
 Dictionary Key: nozzle_pk_up
-@value  3.4190372625193e+04 1e-10 1e-10
+@value -1.7095186312596e+04 1e-10 1e-10
 Dictionary Key: nozzle_sigmamn_up
 @value  2.9642726839777e-02 1e-10 1e-10
 Dictionary Key: nozzle_sigmaptot_up
