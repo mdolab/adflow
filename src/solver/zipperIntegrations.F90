@@ -50,6 +50,7 @@ contains
     mass_Ptot = zero
     mass_Ttot = zero
     mass_Ps = zero
+    mass_Mn = zero
 
     edotA = zero
     edotV = zero
