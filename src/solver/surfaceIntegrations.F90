@@ -78,7 +78,6 @@ contains
           mAvgPs   = globalVals(iMassPs, sps)/mFlow
           mAvgMn   = globalVals(iMassMn, sps)/mFlow
 
-          ! JUSTIN FIX THIS! THIS IS NOT VALGRIND SAFE!
           sigmaMN = sqrt(globalVals(iSigmaMN, sps)/abs(mFlow))
           sigmaPtot = sqrt(globalVals(iSigmaPtot, sps)/abs(mFlow))
 
