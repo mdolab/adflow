@@ -32,7 +32,10 @@ contains
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
+    intrinsic abs
     intrinsic sqrt
+    real(kind=realtype) :: abs1
+    real(kind=realtype) :: abs0
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
 ! sum pressure and viscous contributions
@@ -92,9 +95,19 @@ contains
         mavgttot = globalvals(imassttot, sps)/mflow
         mavgps = globalvals(imassps, sps)/mflow
         mavgmn = globalvals(imassmn, sps)/mflow
+        if (mflow .ge. 0.) then
+          abs0 = mflow
+        else
+          abs0 = -mflow
+        end if
 ! justin fix this! this is not valgrind safe!
-        sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
-        sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
+        sigmamn = sqrt(globalvals(isigmamn, sps)/abs0)
+        if (mflow .ge. 0.) then
+          abs1 = mflow
+        else
+          abs1 = -mflow
+        end if
+        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs1)
       else
         mavgptot = zero
         mavgttot = zero
@@ -441,6 +454,9 @@ contains
     intrinsic sqrt
     intrinsic mod
     intrinsic max
+    intrinsic abs
+    real(kind=realtype) :: abs1
+    real(kind=realtype) :: abs0
     refpoint(1) = lref*pointref(1)
     refpoint(2) = lref*pointref(2)
     refpoint(3) = lref*pointref(3)
@@ -516,11 +532,20 @@ contains
       call computettot(rhom, vxm, vym, vzm, pm, ttot)
       massflowratelocal = rhom*vnm*blk*fact*mredim
       if (withgathered) then
-        sigma_mn = sigma_mn + massflowratelocal*(mnm-funcvalues(&
-&         costfuncmavgmn))**2
+        if (massflowratelocal .ge. 0.) then
+          abs0 = massflowratelocal
+        else
+          abs0 = -massflowratelocal
+        end if
+        sigma_mn = sigma_mn + abs0*(mnm-funcvalues(costfuncmavgmn))**2
         ptot = ptot*pref
-        sigma_ptot = sigma_ptot + massflowratelocal*(ptot-funcvalues(&
-&         costfuncmavgptot))**2
+        if (massflowratelocal .ge. 0.) then
+          abs1 = massflowratelocal
+        else
+          abs1 = -massflowratelocal
+        end if
+        sigma_ptot = sigma_ptot + abs1*(ptot-funcvalues(costfuncmavgptot&
+&         ))**2
       else
         massflowrate = massflowrate + massflowratelocal
         pk = pk + (pm-pinf+half*rhom*(vmag**2-uinf**2))*vnm*pref*uref*&
