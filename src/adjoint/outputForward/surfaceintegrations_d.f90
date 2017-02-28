@@ -48,7 +48,12 @@ contains
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
+    intrinsic abs
     intrinsic sqrt
+    real(kind=realtype) :: abs1d
+    real(kind=realtype) :: abs0d
+    real(kind=realtype) :: abs1
+    real(kind=realtype) :: abs0
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
 ! sum pressure and viscous contributions
@@ -164,23 +169,37 @@ contains
         mavgmnd = (globalvalsd(imassmn, sps)*mflow-globalvals(imassmn, &
 &         sps)*mflowd)/mflow**2
         mavgmn = globalvals(imassmn, sps)/mflow
+        if (mflow .ge. 0.) then
+          abs0d = mflowd
+          abs0 = mflow
+        else
+          abs0d = -mflowd
+          abs0 = -mflow
+        end if
 ! justin fix this! this is not valgrind safe!
-        if (globalvals(isigmamn, sps)/mflow .eq. 0.0_8) then
+        if (globalvals(isigmamn, sps)/abs0 .eq. 0.0_8) then
           sigmamnd = 0.0_8
         else
-          sigmamnd = (globalvalsd(isigmamn, sps)*mflow-globalvals(&
-&           isigmamn, sps)*mflowd)/(mflow**2*2.0*sqrt(globalvals(&
-&           isigmamn, sps)/mflow))
+          sigmamnd = (globalvalsd(isigmamn, sps)*abs0-globalvals(&
+&           isigmamn, sps)*abs0d)/(abs0**2*2.0*sqrt(globalvals(isigmamn&
+&           , sps)/abs0))
         end if
-        sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
-        if (globalvals(isigmaptot, sps)/mflow .eq. 0.0_8) then
+        sigmamn = sqrt(globalvals(isigmamn, sps)/abs0)
+        if (mflow .ge. 0.) then
+          abs1d = mflowd
+          abs1 = mflow
+        else
+          abs1d = -mflowd
+          abs1 = -mflow
+        end if
+        if (globalvals(isigmaptot, sps)/abs1 .eq. 0.0_8) then
           sigmaptotd = 0.0_8
         else
-          sigmaptotd = (globalvalsd(isigmaptot, sps)*mflow-globalvals(&
-&           isigmaptot, sps)*mflowd)/(mflow**2*2.0*sqrt(globalvals(&
-&           isigmaptot, sps)/mflow))
+          sigmaptotd = (globalvalsd(isigmaptot, sps)*abs1-globalvals(&
+&           isigmaptot, sps)*abs1d)/(abs1**2*2.0*sqrt(globalvals(&
+&           isigmaptot, sps)/abs1))
         end if
-        sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
+        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs1)
       else
         mavgptot = zero
         mavgttot = zero
@@ -311,7 +330,10 @@ contains
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
+    intrinsic abs
     intrinsic sqrt
+    real(kind=realtype) :: abs1
+    real(kind=realtype) :: abs0
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
 ! sum pressure and viscous contributions
@@ -371,9 +393,19 @@ contains
         mavgttot = globalvals(imassttot, sps)/mflow
         mavgps = globalvals(imassps, sps)/mflow
         mavgmn = globalvals(imassmn, sps)/mflow
+        if (mflow .ge. 0.) then
+          abs0 = mflow
+        else
+          abs0 = -mflow
+        end if
 ! justin fix this! this is not valgrind safe!
-        sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
-        sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
+        sigmamn = sqrt(globalvals(isigmamn, sps)/abs0)
+        if (mflow .ge. 0.) then
+          abs1 = mflow
+        else
+          abs1 = -mflow
+        end if
+        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs1)
       else
         mavgptot = zero
         mavgttot = zero
