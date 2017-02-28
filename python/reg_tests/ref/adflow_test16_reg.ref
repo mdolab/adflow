@@ -734,9 +734,9 @@ Eval Functions:
 Dictionary Key: conv_nozzle_distortionmn
 @value  1.1278281385253e-02 1e-10 1e-10
 Dictionary Key: conv_nozzle_distortionptot
-@value  8.8655964127604e+01 1e-10 1e-10
+@value  8.8655964127595e+01 1e-10 1e-10
 Dictionary Key: conv_nozzle_edot_down
-@value -7.5164020294979e+05 1e-10 1e-10
+@value -7.5164020294980e+05 1e-10 1e-10
 Dictionary Key: conv_nozzle_edot_up
 @value  4.3067650771742e+04 1e-10 1e-10
 Dictionary Key: conv_nozzle_mavgmn_down
@@ -756,14 +756,14 @@ Dictionary Key: conv_nozzle_mavgttot_down
 Dictionary Key: conv_nozzle_mavgttot_up
 @value  4.9999791485001e+02 1e-10 1e-10
 Dictionary Key: conv_nozzle_mdot
-@value  2.8923081439899e-02 1e-10 1e-10
+@value  2.8923081439885e-02 1e-10 1e-10
 Dictionary Key: conv_nozzle_mdot_down
 @value -7.3975697310454e+01 1e-10 1e-10
 Dictionary Key: conv_nozzle_mdot_up
 @value  7.4004620391894e+01 1e-10 1e-10
 Dictionary Key: conv_nozzle_pk_down
-@value  3.8531189591423e+06 1e-10 1e-10
+@value -1.9265594795711e+06 1e-10 1e-10
 Dictionary Key: conv_nozzle_pk_up
-@value -3.6074373284303e+06 1e-10 1e-10
+@value  1.8037186642152e+06 1e-10 1e-10
 Dictionary Key: conv_nozzle_thrust
 @value -2.6696313274900e+04 1e-10 1e-10

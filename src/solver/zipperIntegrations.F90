@@ -142,7 +142,7 @@ contains
              else 
                 massFlowRate = massFlowRate + massFlowRateLocal
                 
-                pk = pk + ((pm-pInf) + half*rhom*(vmag**2 - uInf**2)) * vnm * pRef * uRef * internalFlowFact
+                pk = pk - ((pm-pInf) + half*rhom*(vmag**2 - uInf**2)) * vnm * pRef * uRef * internalFlowFact
 
                 ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
                 VcoordRef(1) = vxm
@@ -166,8 +166,8 @@ contains
                 vnmFreeStreamRef = vnmFreeStreamRef * cellArea
 
 
-                edotA = edotA + half * rhom*u**2 * vnmFreeStreamRef * pref*uRef * internalFlowFact
-                edotV = edotV + half * rhom*(v**2+w**2) * vnmFreeStreamRef * pref*uRef * internalFlowFact
+                edotA = edotA + half * rhom*u**2 * vnmFreeStreamRef * rhoRef * uRef**3 * internalFlowFact
+                edotV = edotV + half * rhom*(v**2+w**2) * vnmFreeStreamRef * rhoRef * uRef**3  * internalFlowFact
                 edotP = edotP + (pm-pInf) * (vnm - uInf*normFreeStreamRef(1)*cellArea) * pref*uRef * internalFlowFact
                 
                 pm = pm*pRef
