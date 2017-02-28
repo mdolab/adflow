@@ -69,6 +69,10 @@ contains
        funcValues(costFuncSepSensorAvgY) = funcValues(costFuncSepSensorAvgY) + ovrNTS*globalVals(iSepAvg+1, sps)
        funcValues(costFuncSepSensorAvgZ) = funcValues(costFuncSepSensorAvgZ) + ovrNTS*globalVals(iSepAvg+2, sps)
        funcValues(costFuncPk) = funcValues(costFuncPk) + ovrNTS*globalVals(iPk, sps)
+       funcValues(costFuncEdot) = funcValues(costFuncEdot) + ovrNTS*globalVals(iEdot, sps)
+       funcValues(costFuncEdotA) = funcValues(costFuncEdotA) + ovrNTS*globalVals(iEdotA, sps)
+       funcValues(costFuncEdotV) = funcValues(costFuncEdotV) + ovrNTS*globalVals(iEdotV, sps) 
+       funcValues(costFuncEdotP) = funcValues(costFuncEdotP) + ovrNTS*globalVals(iEdotP, sps)
 
        ! Mass flow like objective
        mFlow = globalVals(iMassFlow, sps)
@@ -78,7 +82,6 @@ contains
           mAvgPs   = globalVals(iMassPs, sps)/mFlow
           mAvgMn   = globalVals(iMassMn, sps)/mFlow
 
-          ! JUSTIN FIX THIS! THIS IS NOT VALGRIND SAFE!
           sigmaMN = sqrt(globalVals(iSigmaMN, sps)/mFlow)
           sigmaPtot = sqrt(globalVals(iSigmaPtot, sps)/mFlow)
 
@@ -99,11 +102,7 @@ contains
        funcValues(costFuncMavgMn)    = funcValues(costFuncMAvgMn) + ovrNTS*mAvgMn
        funcValues(costFuncSigmaMN) = funcValues(costFuncSigmaMN) + ovrNTS*sigmaMN
        funcValues(costFuncSigmaPtot) = funcValues(costFuncSigmaPtot) + ovrNTS*sigmaPtot
-       funcValues(costFuncPk) = funcValues(costFuncPk) + ovrNTS*globalVals(iPk, sps)
-       funcValues(costFuncEdot) = funcValues(costFuncEdot) + ovrNTS*globalVals(iEdot, sps)
-       funcValues(costFuncEdotA) = funcValues(costFuncEdotA) + ovrNTS*globalVals(iEdotA, sps)
-       funcValues(costFuncEdotV) = funcValues(costFuncEdotV) + ovrNTS*globalVals(iEdotV, sps) 
-       funcValues(costFuncEdotP) = funcValues(costFuncEdotP) + ovrNTS*globalVals(iEdotP, sps)
+
 
        ! Bending moment calc - also broken. 
        ! call computeRootBendingMoment(cForce, cMoment, liftIndex, bendingMoment)
@@ -471,7 +470,7 @@ contains
 
     use constants
     use blockPointers, only : BCType, BCFaceID, BCData, addGridVelocities
-    use flowVarRefState, only : pRef, pInf, rhoRef, timeRef, LRef, TRef, RGas, uRef, uInf
+    use flowVarRefState, only : pRef, pInf, rhoRef, timeRef, LRef, TRef, RGas, uRef, uInf, rhoInf 
     use inputPhysics, only : pointRef, flowType, alpha, beta, liftIndex
     use flowUtils, only : computePtot, computeTtot, getDirVector
     use BCPointers, only : ssi, sFace, ww1, ww2, pp1, pp2, xx, gamma1, gamma2
@@ -497,6 +496,8 @@ contains
     real(kind=realType) :: MNm, massFlowRateLocal
     real(kind=realType) :: edotA, edotV, edotP
 
+    real(kind=realType) :: totalArea
+
     refPoint(1) = LRef*pointRef(1)
     refPoint(2) = LRef*pointRef(2)
     refPoint(3) = LRef*pointRef(3)
@@ -521,7 +522,7 @@ contains
 
     inFlowFact = one
     if (isInflow) then 
-      inflowFact=-one
+      inflowFact= -one
     end if
 
     ! Loop over the quadrilateral faces of the subface. Note that
@@ -554,6 +555,9 @@ contains
     sigma_Mn = zero
     sigma_Ptot = zero
 
+    totalArea = zero
+
+
     !$AD II-LOOP
     do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
       i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
@@ -581,6 +585,7 @@ contains
       MNm = vmag/sqrt(gammam*pm/rhom)
 
       cellArea = sqrt(ssi(i,j,1)**2 + ssi(i,j,2)**2 + ssi(i,j,3)**2)
+      totalArea = totalArea + cellArea
 
       call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
       call computeTtot(rhom, vxm, vym, vzm, pm, Ttot)
@@ -597,7 +602,8 @@ contains
 
         massFlowRate = massFlowRate + massFlowRateLocal
 
-        pk = pk + ((pm-pInf) + half*rhom*(vmag**2 - (uInf)**2)) * vnm * pRef* uRef * fact * internalFlowFact * blk
+        ! note that we don't use fact here because we need the signed behavior from ssi
+        pk = pk - ((pm-pInf) + half*rhom*(vmag**2 - uInf**2)) * vnm * pRef* uRef * blk * inFlowFact
 
         ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
         VcoordRef(1) = vxm
@@ -620,9 +626,10 @@ contains
         vnmFreeStreamRef =  (u+uInf)*normFreeStreamRef(1) + v*normFreeStreamRef(2) + w*normFreeStreamRef(3)
         vnmFreeStreamRef = vnmFreeStreamRef * cellArea
 
-        edotA = edotA + half * rhom*u**2 * vnmFreeStreamRef * pref*uRef * internalFlowFact * blk
-        edotV = edotV + half * rhom*(v**2+w**2) * vnmFreeStreamRef * pref*uRef * internalFlowFact * blk
-        edotP = edotP + (pm-pInf) * (vnm - uInf*normFreeStreamRef(1)*cellArea) * pref*uRef * internalFlowFact * blk
+        edotA = edotA - half * rhom*u**2 * vnmFreeStreamRef * rhoRef * uRef**3 * internalFlowFact * blk * inFlowFact * fact
+        edotV = edotV - half * rhom*(v**2+w**2) * vnmFreeStreamRef * rhoRef * uRef**3 * internalFlowFact * blk * inFlowFact * fact 
+        edotP = edotP - (pm-pInf) * (vnmFreeStreamRef - uInf*normFreeStreamRef(1)*cellArea) * pRef * uRef * & 
+                internalFlowFact * blk * inFlowFact *fact
 
         ! re-dimentionalize quantities
         pm = pm*pRef
@@ -703,7 +710,7 @@ contains
       localValues(iEdotA) = localValues(iEdotA) + edotA
       localValues(iEdotV) = localValues(iEdotV) + edotV
       localValues(iEdotP) = localValues(iEdotP) + edotP
-      localValues(iEdot)   = localValues(iEdot)   + edotA + edotV + edotP
+      localValues(iEdot)   = localValues(iEdot) + edotA + edotV + edotP
       localValues(iFp:iFp+2)   = localValues(iFp:iFp+2) + Fp
       localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
       localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
