@@ -48,6 +48,7 @@ contains
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
+    intrinsic abs
     intrinsic sqrt
     real(kind=realtype) :: tmp
     real(kind=realtype) :: tmp0
@@ -57,13 +58,17 @@ contains
     real(kind=realtype) :: temp2
     real(kind=realtype) :: temp1
     real(kind=realtype) :: temp0
+    real(kind=realtype) :: abs1d
     real(kind=realtype) :: tmpd
+    real(kind=realtype) :: abs0d
     real(kind=realtype) :: tempd
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: tmpd2
     real(kind=realtype) :: tmpd1
     real(kind=realtype) :: tmpd0
+    real(kind=realtype) :: abs1
+    real(kind=realtype) :: abs0
     real(kind=realtype) :: temp
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
@@ -125,9 +130,19 @@ contains
         mavgttot = globalvals(imassttot, sps)/mflow
         mavgps = globalvals(imassps, sps)/mflow
         mavgmn = globalvals(imassmn, sps)/mflow
+        if (mflow .ge. 0.) then
+          abs0 = mflow
+        else
+          abs0 = -mflow
+        end if
 ! justin fix this! this is not valgrind safe!
-        sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
-        sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
+        sigmamn = sqrt(globalvals(isigmamn, sps)/abs0)
+        if (mflow .ge. 0.) then
+          abs1 = mflow
+        else
+          abs1 = -mflow
+        end if
+        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs1)
       else
         mavgptot = zero
         mavgttot = zero
@@ -255,6 +270,21 @@ contains
 ! mass flow like objective
         mflow = globalvals(imassflow, sps)
         if (mflow .ne. zero) then
+          if (mflow .ge. 0.) then
+            abs0 = mflow
+            call pushcontrol1b(0)
+          else
+            abs0 = -mflow
+            call pushcontrol1b(1)
+          end if
+! justin fix this! this is not valgrind safe!
+          if (mflow .ge. 0.) then
+            abs1 = mflow
+            call pushcontrol1b(0)
+          else
+            abs1 = -mflow
+            call pushcontrol1b(1)
+          end if
           call pushcontrol1b(0)
         else
           call pushcontrol1b(1)
@@ -278,28 +308,42 @@ contains
         mflowd = ovrnts*funcvaluesd(costfuncmdot)
         call popcontrol1b(branch)
         if (branch .eq. 0) then
-          temp1 = globalvals(isigmamn, sps)/mflow
-          if (temp1 .eq. 0.0_8) then
+          temp2 = globalvals(isigmaptot, sps)/abs1
+          if (temp2 .eq. 0.0_8) then
             tempd1 = 0.0
           else
-            tempd1 = sigmamnd/(2.0*sqrt(temp1)*mflow)
-          end if
-          temp2 = globalvals(isigmaptot, sps)/mflow
-          if (temp2 .eq. 0.0_8) then
-            tempd0 = 0.0
-          else
-            tempd0 = sigmaptotd/(2.0*sqrt(temp2)*mflow)
+            tempd1 = sigmaptotd/(2.0*sqrt(temp2)*abs1)
           end if
           globalvalsd(isigmaptot, sps) = globalvalsd(isigmaptot, sps) + &
-&           tempd0
-          mflowd = mflowd - temp1*tempd1 - globalvals(imassps, sps)*&
-&           mavgpsd/mflow**2 - globalvals(imassptot, sps)*mavgptotd/&
-&           mflow**2 - globalvals(imassttot, sps)*mavgttotd/mflow**2 - &
-&           globalvals(imassmn, sps)*mavgmnd/mflow**2 - temp2*tempd0
-          globalvalsd(isigmamn, sps) = globalvalsd(isigmamn, sps) + &
 &           tempd1
+          abs1d = -(temp2*tempd1)
+          call popcontrol1b(branch)
+          if (branch .eq. 0) then
+            mflowd = mflowd + abs1d
+          else
+            mflowd = mflowd - abs1d
+          end if
+          temp1 = globalvals(isigmamn, sps)/abs0
+          if (temp1 .eq. 0.0_8) then
+            tempd0 = 0.0
+          else
+            tempd0 = sigmamnd/(2.0*sqrt(temp1)*abs0)
+          end if
+          globalvalsd(isigmamn, sps) = globalvalsd(isigmamn, sps) + &
+&           tempd0
+          abs0d = -(temp1*tempd0)
+          call popcontrol1b(branch)
+          if (branch .eq. 0) then
+            mflowd = mflowd + abs0d
+          else
+            mflowd = mflowd - abs0d
+          end if
           globalvalsd(imassmn, sps) = globalvalsd(imassmn, sps) + &
 &           mavgmnd/mflow
+          mflowd = mflowd - globalvals(imassps, sps)*mavgpsd/mflow**2 - &
+&           globalvals(imassptot, sps)*mavgptotd/mflow**2 - globalvals(&
+&           imassttot, sps)*mavgttotd/mflow**2 - globalvals(imassmn, sps&
+&           )*mavgmnd/mflow**2
           globalvalsd(imassps, sps) = globalvalsd(imassps, sps) + &
 &           mavgpsd/mflow
           globalvalsd(imassttot, sps) = globalvalsd(imassttot, sps) + &
@@ -389,7 +433,10 @@ contains
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
+    intrinsic abs
     intrinsic sqrt
+    real(kind=realtype) :: abs1
+    real(kind=realtype) :: abs0
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
 ! sum pressure and viscous contributions
@@ -449,9 +496,19 @@ contains
         mavgttot = globalvals(imassttot, sps)/mflow
         mavgps = globalvals(imassps, sps)/mflow
         mavgmn = globalvals(imassmn, sps)/mflow
+        if (mflow .ge. 0.) then
+          abs0 = mflow
+        else
+          abs0 = -mflow
+        end if
 ! justin fix this! this is not valgrind safe!
-        sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
-        sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
+        sigmamn = sqrt(globalvals(isigmamn, sps)/abs0)
+        if (mflow .ge. 0.) then
+          abs1 = mflow
+        else
+          abs1 = -mflow
+        end if
+        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs1)
       else
         mavgptot = zero
         mavgttot = zero
