@@ -441,6 +441,9 @@ contains
     intrinsic sqrt
     intrinsic mod
     intrinsic max
+    intrinsic abs
+    real(kind=realtype) :: abs1
+    real(kind=realtype) :: abs0
     refpoint(1) = lref*pointref(1)
     refpoint(2) = lref*pointref(2)
     refpoint(3) = lref*pointref(3)
@@ -516,11 +519,20 @@ contains
       call computettot(rhom, vxm, vym, vzm, pm, ttot)
       massflowratelocal = rhom*vnm*blk*fact*mredim
       if (withgathered) then
-        sigma_mn = sigma_mn + massflowratelocal*(mnm-funcvalues(&
-&         costfuncmavgmn))**2
+        if (massflowratelocal .ge. 0.) then
+          abs0 = massflowratelocal
+        else
+          abs0 = -massflowratelocal
+        end if
+        sigma_mn = sigma_mn + abs0*(mnm-funcvalues(costfuncmavgmn))**2
         ptot = ptot*pref
-        sigma_ptot = sigma_ptot + massflowratelocal*(ptot-funcvalues(&
-&         costfuncmavgptot))**2
+        if (massflowratelocal .ge. 0.) then
+          abs1 = massflowratelocal
+        else
+          abs1 = -massflowratelocal
+        end if
+        sigma_ptot = sigma_ptot + abs1*(ptot-funcvalues(costfuncmavgptot&
+&         ))**2
       else
         massflowrate = massflowrate + massflowratelocal
         pk = pk + (pm-pinf+half*rhom*(vmag**2-uinf**2))*vnm*pref*uref*&
