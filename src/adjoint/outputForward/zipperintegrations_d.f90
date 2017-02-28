@@ -79,10 +79,15 @@ contains
     intrinsic sqrt
     intrinsic size
     intrinsic present
+    intrinsic abs
     real(kind=realtype) :: arg1
     real(kind=realtype) :: arg1d
     real(kind=realtype) :: result1
     real(kind=realtype) :: result1d
+    real(kind=realtype) :: abs1d
+    real(kind=realtype) :: abs0d
+    real(kind=realtype) :: abs1
+    real(kind=realtype) :: abs0
     if (pref*rhoref .eq. 0.0_8) then
       mredimd = 0.0_8
     else
@@ -269,19 +274,32 @@ contains
 &           mredimd
           massflowratelocal = rhom*vnm*mredim
           if (withgathered) then
-            sigma_mnd = sigma_mnd + massflowratelocald*(mnm-funcvalues(&
-&             costfuncmavgmn))**2 + massflowratelocal*2*(mnm-funcvalues(&
-&             costfuncmavgmn))*(mnmd-funcvaluesd(costfuncmavgmn))
-            sigma_mn = sigma_mn + massflowratelocal*(mnm-funcvalues(&
-&             costfuncmavgmn))**2
+            if (massflowratelocal .ge. 0.) then
+              abs0d = massflowratelocald
+              abs0 = massflowratelocal
+            else
+              abs0d = -massflowratelocald
+              abs0 = -massflowratelocal
+            end if
+            sigma_mnd = sigma_mnd + abs0d*(mnm-funcvalues(costfuncmavgmn&
+&             ))**2 + abs0*2*(mnm-funcvalues(costfuncmavgmn))*(mnmd-&
+&             funcvaluesd(costfuncmavgmn))
+            sigma_mn = sigma_mn + abs0*(mnm-funcvalues(costfuncmavgmn))&
+&             **2
             ptotd = ptotd*pref + ptot*prefd
             ptot = ptot*pref
-            sigma_ptotd = sigma_ptotd + massflowratelocald*(ptot-&
-&             funcvalues(costfuncmavgptot))**2 + massflowratelocal*2*(&
-&             ptot-funcvalues(costfuncmavgptot))*(ptotd-funcvaluesd(&
-&             costfuncmavgptot))
-            sigma_ptot = sigma_ptot + massflowratelocal*(ptot-funcvalues&
-&             (costfuncmavgptot))**2
+            if (massflowratelocal .ge. 0.) then
+              abs1d = massflowratelocald
+              abs1 = massflowratelocal
+            else
+              abs1d = -massflowratelocald
+              abs1 = -massflowratelocal
+            end if
+            sigma_ptotd = sigma_ptotd + abs1d*(ptot-funcvalues(&
+&             costfuncmavgptot))**2 + abs1*2*(ptot-funcvalues(&
+&             costfuncmavgptot))*(ptotd-funcvaluesd(costfuncmavgptot))
+            sigma_ptot = sigma_ptot + abs1*(ptot-funcvalues(&
+&             costfuncmavgptot))**2
           else
             massflowrated = massflowrated + massflowratelocald
             massflowrate = massflowrate + massflowratelocal
@@ -546,8 +564,11 @@ contains
     intrinsic sqrt
     intrinsic size
     intrinsic present
+    intrinsic abs
     real(kind=realtype) :: arg1
     real(kind=realtype) :: result1
+    real(kind=realtype) :: abs1
+    real(kind=realtype) :: abs0
     mredim = sqrt(pref*rhoref)
     fp = zero
     mp = zero
@@ -628,11 +649,21 @@ contains
           cellarea = sqrt(arg1)
           massflowratelocal = rhom*vnm*mredim
           if (withgathered) then
-            sigma_mn = sigma_mn + massflowratelocal*(mnm-funcvalues(&
-&             costfuncmavgmn))**2
+            if (massflowratelocal .ge. 0.) then
+              abs0 = massflowratelocal
+            else
+              abs0 = -massflowratelocal
+            end if
+            sigma_mn = sigma_mn + abs0*(mnm-funcvalues(costfuncmavgmn))&
+&             **2
             ptot = ptot*pref
-            sigma_ptot = sigma_ptot + massflowratelocal*(ptot-funcvalues&
-&             (costfuncmavgptot))**2
+            if (massflowratelocal .ge. 0.) then
+              abs1 = massflowratelocal
+            else
+              abs1 = -massflowratelocal
+            end if
+            sigma_ptot = sigma_ptot + abs1*(ptot-funcvalues(&
+&             costfuncmavgptot))**2
           else
             massflowrate = massflowrate + massflowratelocal
             pk = pk + (pm-pinf+half*rhom*(vmag**2-uinf**2))*vnm*pref*&

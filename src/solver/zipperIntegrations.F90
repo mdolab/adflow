@@ -50,6 +50,7 @@ contains
     mass_Ptot = zero
     mass_Ttot = zero
     mass_Ps = zero
+    mass_Mn = zero
 
     edotA = zero
     edotV = zero
@@ -135,9 +136,9 @@ contains
              
              if (withGathered) then 
                 
-                sigma_Mn = sigma_Mn  + massFlowRateLocal*(MNm - funcValues(costFuncMavgMN))**2
+                sigma_Mn = sigma_Mn  + abs(massFlowRateLocal)*(MNm - funcValues(costFuncMavgMN))**2
                 Ptot = Ptot * pRef
-                sigma_Ptot = sigma_Ptot + massFlowRateLocal*(Ptot - funcValues(costFuncMavgPtot))**2
+                sigma_Ptot = sigma_Ptot + abs(massFlowRateLocal)*(Ptot - funcValues(costFuncMavgPtot))**2
                 
              else 
                 massFlowRate = massFlowRate + massFlowRateLocal
