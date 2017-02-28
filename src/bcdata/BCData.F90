@@ -483,7 +483,7 @@ contains
     use flowVarRefState, only : Tref, Pref, Href, rhoRef, muRef, nwt, wInf
     use inputPhysics, only : equations
     use utils, only : siDensity, siVelocity, siPressure, siAngle, &
-         siTemperature, terminate
+         siTemperature, terminate, returnFail
     implicit none
     !
     !      Subroutine arguments.
@@ -595,6 +595,7 @@ contains
       !         conditions and velocity direction into a useable format.     
       !
       use constants
+      use communication, only : adflow_comm_world
       use inputPhysics, only : RGasDim
       use section, only : sections
       implicit none
@@ -607,6 +608,8 @@ contains
       real(kind=realType) :: ax, r1, r2, var, wax, wrad, wtheta
 
       real(kind=realType), dimension(3) :: xc, dir
+
+      integer :: ierr
 
       ! Set the subsonic inlet treatment to totalConditions.
 
@@ -907,7 +910,10 @@ contains
               ": Flow direction points out of the domain for &
               &some faces.")
 
-         call terminate("totalSubsonicInlet", errorMessage)
+          call returnFail("totalSubsonicInlet", errorMessage)
+          call mpi_barrier(ADflow_comm_world, ierr)
+
+         ! call terminate("totalSubsonicInlet", errorMessage)
       endif
 
     end subroutine totalSubsonicInlet
