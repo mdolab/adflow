@@ -48,6 +48,7 @@ contains
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
+    intrinsic abs
     intrinsic sqrt
     real(kind=realtype) :: tmp
     real(kind=realtype) :: tmp0
@@ -57,13 +58,17 @@ contains
     real(kind=realtype) :: temp2
     real(kind=realtype) :: temp1
     real(kind=realtype) :: temp0
+    real(kind=realtype) :: abs1d
     real(kind=realtype) :: tmpd
+    real(kind=realtype) :: abs0d
     real(kind=realtype) :: tempd
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: tmpd2
     real(kind=realtype) :: tmpd1
     real(kind=realtype) :: tmpd0
+    real(kind=realtype) :: abs1
+    real(kind=realtype) :: abs0
     real(kind=realtype) :: temp
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
@@ -125,9 +130,19 @@ contains
         mavgttot = globalvals(imassttot, sps)/mflow
         mavgps = globalvals(imassps, sps)/mflow
         mavgmn = globalvals(imassmn, sps)/mflow
+        if (mflow .ge. 0.) then
+          abs0 = mflow
+        else
+          abs0 = -mflow
+        end if
 ! justin fix this! this is not valgrind safe!
-        sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
-        sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
+        sigmamn = sqrt(globalvals(isigmamn, sps)/abs0)
+        if (mflow .ge. 0.) then
+          abs1 = mflow
+        else
+          abs1 = -mflow
+        end if
+        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs1)
       else
         mavgptot = zero
         mavgttot = zero
@@ -255,6 +270,21 @@ contains
 ! mass flow like objective
         mflow = globalvals(imassflow, sps)
         if (mflow .ne. zero) then
+          if (mflow .ge. 0.) then
+            abs0 = mflow
+            call pushcontrol1b(0)
+          else
+            abs0 = -mflow
+            call pushcontrol1b(1)
+          end if
+! justin fix this! this is not valgrind safe!
+          if (mflow .ge. 0.) then
+            abs1 = mflow
+            call pushcontrol1b(0)
+          else
+            abs1 = -mflow
+            call pushcontrol1b(1)
+          end if
           call pushcontrol1b(0)
         else
           call pushcontrol1b(1)
@@ -278,28 +308,42 @@ contains
         mflowd = ovrnts*funcvaluesd(costfuncmdot)
         call popcontrol1b(branch)
         if (branch .eq. 0) then
-          temp1 = globalvals(isigmamn, sps)/mflow
-          if (temp1 .eq. 0.0_8) then
+          temp2 = globalvals(isigmaptot, sps)/abs1
+          if (temp2 .eq. 0.0_8) then
             tempd1 = 0.0
           else
-            tempd1 = sigmamnd/(2.0*sqrt(temp1)*mflow)
-          end if
-          temp2 = globalvals(isigmaptot, sps)/mflow
-          if (temp2 .eq. 0.0_8) then
-            tempd0 = 0.0
-          else
-            tempd0 = sigmaptotd/(2.0*sqrt(temp2)*mflow)
+            tempd1 = sigmaptotd/(2.0*sqrt(temp2)*abs1)
           end if
           globalvalsd(isigmaptot, sps) = globalvalsd(isigmaptot, sps) + &
-&           tempd0
-          mflowd = mflowd - temp1*tempd1 - globalvals(imassps, sps)*&
-&           mavgpsd/mflow**2 - globalvals(imassptot, sps)*mavgptotd/&
-&           mflow**2 - globalvals(imassttot, sps)*mavgttotd/mflow**2 - &
-&           globalvals(imassmn, sps)*mavgmnd/mflow**2 - temp2*tempd0
-          globalvalsd(isigmamn, sps) = globalvalsd(isigmamn, sps) + &
 &           tempd1
+          abs1d = -(temp2*tempd1)
+          call popcontrol1b(branch)
+          if (branch .eq. 0) then
+            mflowd = mflowd + abs1d
+          else
+            mflowd = mflowd - abs1d
+          end if
+          temp1 = globalvals(isigmamn, sps)/abs0
+          if (temp1 .eq. 0.0_8) then
+            tempd0 = 0.0
+          else
+            tempd0 = sigmamnd/(2.0*sqrt(temp1)*abs0)
+          end if
+          globalvalsd(isigmamn, sps) = globalvalsd(isigmamn, sps) + &
+&           tempd0
+          abs0d = -(temp1*tempd0)
+          call popcontrol1b(branch)
+          if (branch .eq. 0) then
+            mflowd = mflowd + abs0d
+          else
+            mflowd = mflowd - abs0d
+          end if
           globalvalsd(imassmn, sps) = globalvalsd(imassmn, sps) + &
 &           mavgmnd/mflow
+          mflowd = mflowd - globalvals(imassps, sps)*mavgpsd/mflow**2 - &
+&           globalvals(imassptot, sps)*mavgptotd/mflow**2 - globalvals(&
+&           imassttot, sps)*mavgttotd/mflow**2 - globalvals(imassmn, sps&
+&           )*mavgmnd/mflow**2
           globalvalsd(imassps, sps) = globalvalsd(imassps, sps) + &
 &           mavgpsd/mflow
           globalvalsd(imassttot, sps) = globalvalsd(imassttot, sps) + &
@@ -389,7 +433,10 @@ contains
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
+    intrinsic abs
     intrinsic sqrt
+    real(kind=realtype) :: abs1
+    real(kind=realtype) :: abs0
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
 ! sum pressure and viscous contributions
@@ -449,9 +496,19 @@ contains
         mavgttot = globalvals(imassttot, sps)/mflow
         mavgps = globalvals(imassps, sps)/mflow
         mavgmn = globalvals(imassmn, sps)/mflow
+        if (mflow .ge. 0.) then
+          abs0 = mflow
+        else
+          abs0 = -mflow
+        end if
 ! justin fix this! this is not valgrind safe!
-        sigmamn = sqrt(globalvals(isigmamn, sps)/mflow)
-        sigmaptot = sqrt(globalvals(isigmaptot, sps)/mflow)
+        sigmamn = sqrt(globalvals(isigmamn, sps)/abs0)
+        if (mflow .ge. 0.) then
+          abs1 = mflow
+        else
+          abs1 = -mflow
+        end if
+        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs1)
       else
         mavgptot = zero
         mavgttot = zero
@@ -1279,10 +1336,12 @@ contains
     intrinsic sqrt
     intrinsic mod
     intrinsic max
+    intrinsic abs
     real(kind=realtype) :: arg2
     real(kind=realtype) :: arg1
     real(kind=realtype) :: arg20
     real(kind=realtype) :: arg10
+    integer :: branch
     real(kind=realtype) :: tempd14
     real(kind=realtype) :: tempd13
     real(kind=realtype) :: temp1
@@ -1290,6 +1349,8 @@ contains
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tempd11
     real(kind=realtype) :: tempd10
+    real(kind=realtype) :: abs1d
+    real(kind=realtype) :: abs0d
     real(kind=realtype) :: arg1d0
     real(kind=realtype) :: tempd9
     real(kind=realtype) :: tempd
@@ -1310,6 +1371,8 @@ contains
     real(kind=realtype) :: tempd22
     real(kind=realtype) :: tempd21
     real(kind=realtype) :: tempd20
+    real(kind=realtype) :: abs1
+    real(kind=realtype) :: abs0
     real(kind=realtype) :: arg2d0
     real(kind=realtype) :: arg1d
     real(kind=realtype) :: temp
@@ -1422,23 +1485,47 @@ contains
       call computettot(rhom, vxm, vym, vzm, pm, ttot)
       massflowratelocal = rhom*vnm*blk*fact*mredim
       if (withgathered) then
+        if (massflowratelocal .ge. 0.) then
+          abs0 = massflowratelocal
+          call pushcontrol1b(0)
+        else
+          abs0 = -massflowratelocal
+          call pushcontrol1b(1)
+        end if
         call pushreal8(ptot)
         ptot = ptot*pref
-        tempd4 = massflowratelocal*2*(ptot-funcvalues(costfuncmavgptot))&
-&         *sigma_ptotd
-        massflowratelocald = (mnm-funcvalues(costfuncmavgmn))**2*&
-&         sigma_mnd + (ptot-funcvalues(costfuncmavgptot))**2*sigma_ptotd
-        ptotd = ptotd + tempd4
+        if (massflowratelocal .ge. 0.) then
+          abs1 = massflowratelocal
+          call pushcontrol1b(0)
+        else
+          abs1 = -massflowratelocal
+          call pushcontrol1b(1)
+        end if
+        tempd5 = abs1*2*(ptot-funcvalues(costfuncmavgptot))*sigma_ptotd
+        abs1d = (ptot-funcvalues(costfuncmavgptot))**2*sigma_ptotd
+        ptotd = ptotd + tempd5
         funcvaluesd(costfuncmavgptot) = funcvaluesd(costfuncmavgptot) - &
-&         tempd4
+&         tempd5
+        call popcontrol1b(branch)
+        if (branch .eq. 0) then
+          massflowratelocald = abs1d
+        else
+          massflowratelocald = -abs1d
+        end if
         call popreal8(ptot)
         prefd = prefd + ptot*ptotd
         ptotd = pref*ptotd
-        tempd5 = massflowratelocal*2*(mnm-funcvalues(costfuncmavgmn))*&
-&         sigma_mnd
-        mnmd = tempd5
+        tempd4 = abs0*2*(mnm-funcvalues(costfuncmavgmn))*sigma_mnd
+        abs0d = (mnm-funcvalues(costfuncmavgmn))**2*sigma_mnd
+        mnmd = tempd4
         funcvaluesd(costfuncmavgmn) = funcvaluesd(costfuncmavgmn) - &
-&         tempd5
+&         tempd4
+        call popcontrol1b(branch)
+        if (branch .eq. 0) then
+          massflowratelocald = massflowratelocald + abs0d
+        else
+          massflowratelocald = massflowratelocald - abs0d
+        end if
         vnmd = 0.0_8
         vxmd = 0.0_8
         vymd = 0.0_8
@@ -1734,6 +1821,9 @@ contains
     intrinsic sqrt
     intrinsic mod
     intrinsic max
+    intrinsic abs
+    real(kind=realtype) :: abs1
+    real(kind=realtype) :: abs0
     refpoint(1) = lref*pointref(1)
     refpoint(2) = lref*pointref(2)
     refpoint(3) = lref*pointref(3)
@@ -1809,11 +1899,20 @@ contains
       call computettot(rhom, vxm, vym, vzm, pm, ttot)
       massflowratelocal = rhom*vnm*blk*fact*mredim
       if (withgathered) then
-        sigma_mn = sigma_mn + massflowratelocal*(mnm-funcvalues(&
-&         costfuncmavgmn))**2
+        if (massflowratelocal .ge. 0.) then
+          abs0 = massflowratelocal
+        else
+          abs0 = -massflowratelocal
+        end if
+        sigma_mn = sigma_mn + abs0*(mnm-funcvalues(costfuncmavgmn))**2
         ptot = ptot*pref
-        sigma_ptot = sigma_ptot + massflowratelocal*(ptot-funcvalues(&
-&         costfuncmavgptot))**2
+        if (massflowratelocal .ge. 0.) then
+          abs1 = massflowratelocal
+        else
+          abs1 = -massflowratelocal
+        end if
+        sigma_ptot = sigma_ptot + abs1*(ptot-funcvalues(costfuncmavgptot&
+&         ))**2
       else
         massflowrate = massflowrate + massflowratelocal
         pk = pk + (pm-pinf+half*rhom*(vmag**2-uinf**2))*vnm*pref*uref*&
