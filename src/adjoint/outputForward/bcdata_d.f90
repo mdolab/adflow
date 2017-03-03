@@ -540,6 +540,7 @@ contains
 !         conditions and velocity direction into a useable format.     
 !
       use constants
+      use communication, only : adflow_comm_world
       use inputphysics, only : rgasdim
       use section, only : sections
       implicit none
@@ -550,10 +551,10 @@ contains
       real(kind=realtype) :: rhot, mult, trans, hdim, tdim
       real(kind=realtype) :: ax, r1, r2, var, wax, wrad, wtheta
       real(kind=realtype), dimension(3) :: xc, dir
+      integer :: ierr
       intrinsic max
       intrinsic sqrt
       intrinsic cos
-      intrinsic trim
       real(kind=realtype) :: result1
       real(kind=realtype) :: arg1
       real(kind=realtype) :: max2
@@ -769,14 +770,6 @@ contains
           if (var .gt. zero) nn = nn + 1
         end do
       end do
-      if (nn .gt. 0) then
-        write(errormessage, 200) trim(cgnsdoms(nbkglobal)%zonename), &
-&       trim(cgnsdoms(nbkglobal)%bocoinfo(cgnsboco)%boconame)
-        call terminate('totalsubsonicinlet', errormessage)
-      end if
- 200  format('zone ',a,', subsonic inlet boundary subface ',a, &
-&            ': flow direction points out of the domain for ' &
-&            'some faces.')
     end subroutine totalsubsonicinlet
   end subroutine bcdatasubsonicinflow
 !  differentiation of bcdatasubsonicinflow in forward (tangent) mode (with options i4 dr8 r8):
@@ -919,6 +912,7 @@ contains
 !         conditions and velocity direction into a useable format.     
 !
       use constants
+      use communication, only : adflow_comm_world
       use inputphysics, only : rgasdim
       use section, only : sections
       use diffsizes
@@ -932,10 +926,10 @@ contains
       real(kind=realtype) :: rhotd, hdimd, tdimd
       real(kind=realtype) :: ax, r1, r2, var, wax, wrad, wtheta
       real(kind=realtype), dimension(3) :: xc, dir
+      integer :: ierr
       intrinsic max
       intrinsic sqrt
       intrinsic cos
-      intrinsic trim
       real(kind=realtype) :: result1
       real(kind=realtype) :: arg1
       integer :: ii1
@@ -1196,14 +1190,6 @@ contains
           if (var .gt. zero) nn = nn + 1
         end do
       end do
-      if (nn .gt. 0) then
-        write(errormessage, 200) trim(cgnsdoms(nbkglobal)%zonename), &
-&       trim(cgnsdoms(nbkglobal)%bocoinfo(cgnsboco)%boconame)
-        call terminate('totalsubsonicinlet', errormessage)
-      end if
- 200  format('zone ',a,', subsonic inlet boundary subface ',a, &
-&            ': flow direction points out of the domain for ' &
-&            'some faces.')
     end subroutine totalsubsonicinlet_d
 !=================================================================
 !===============================================================
@@ -1213,6 +1199,7 @@ contains
 !         conditions and velocity direction into a useable format.     
 !
       use constants
+      use communication, only : adflow_comm_world
       use inputphysics, only : rgasdim
       use section, only : sections
       implicit none
@@ -1223,10 +1210,10 @@ contains
       real(kind=realtype) :: rhot, mult, trans, hdim, tdim
       real(kind=realtype) :: ax, r1, r2, var, wax, wrad, wtheta
       real(kind=realtype), dimension(3) :: xc, dir
+      integer :: ierr
       intrinsic max
       intrinsic sqrt
       intrinsic cos
-      intrinsic trim
       real(kind=realtype) :: result1
       real(kind=realtype) :: arg1
       real(kind=realtype) :: max2
@@ -1442,14 +1429,6 @@ contains
           if (var .gt. zero) nn = nn + 1
         end do
       end do
-      if (nn .gt. 0) then
-        write(errormessage, 200) trim(cgnsdoms(nbkglobal)%zonename), &
-&       trim(cgnsdoms(nbkglobal)%bocoinfo(cgnsboco)%boconame)
-        call terminate('totalsubsonicinlet', errormessage)
-      end if
- 200  format('zone ',a,', subsonic inlet boundary subface ',a, &
-&            ': flow direction points out of the domain for ' &
-&            'some faces.')
     end subroutine totalsubsonicinlet
   end subroutine bcdatasubsonicinflow_d
 !  differentiation of bcdatasubsonicoutflow in forward (tangent) mode (with options i4 dr8 r8):

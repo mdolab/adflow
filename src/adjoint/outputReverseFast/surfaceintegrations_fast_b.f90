@@ -88,6 +88,14 @@ contains
 &       costfuncsepsensoravgz) + ovrnts*globalvals(isepavg+2, sps)
       funcvalues(costfuncpk) = funcvalues(costfuncpk) + ovrnts*&
 &       globalvals(ipk, sps)
+      funcvalues(costfuncedot) = funcvalues(costfuncedot) + ovrnts*&
+&       globalvals(iedot, sps)
+      funcvalues(costfuncedota) = funcvalues(costfuncedota) + ovrnts*&
+&       globalvals(iedota, sps)
+      funcvalues(costfuncedotv) = funcvalues(costfuncedotv) + ovrnts*&
+&       globalvals(iedotv, sps)
+      funcvalues(costfuncedotp) = funcvalues(costfuncedotp) + ovrnts*&
+&       globalvals(iedotp, sps)
 ! mass flow like objective
       mflow = globalvals(imassflow, sps)
       if (mflow .ne. zero) then
@@ -100,7 +108,6 @@ contains
         else
           abs0 = -mflow
         end if
-! justin fix this! this is not valgrind safe!
         sigmamn = sqrt(globalvals(isigmamn, sps)/abs0)
         if (mflow .ge. 0.) then
           abs1 = mflow
@@ -129,16 +136,6 @@ contains
 &       *sigmamn
       funcvalues(costfuncsigmaptot) = funcvalues(costfuncsigmaptot) + &
 &       ovrnts*sigmaptot
-      funcvalues(costfuncpk) = funcvalues(costfuncpk) + ovrnts*&
-&       globalvals(ipk, sps)
-      funcvalues(costfuncedot) = funcvalues(costfuncedot) + ovrnts*&
-&       globalvals(iedot, sps)
-      funcvalues(costfuncedota) = funcvalues(costfuncedota) + ovrnts*&
-&       globalvals(iedota, sps)
-      funcvalues(costfuncedotv) = funcvalues(costfuncedotv) + ovrnts*&
-&       globalvals(iedotv, sps)
-      funcvalues(costfuncedotp) = funcvalues(costfuncedotp) + ovrnts*&
-&       globalvals(iedotp, sps)
     end do
 ! bending moment calc - also broken. 
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
@@ -421,7 +418,7 @@ contains
     use blockpointers, only : bctype, bcfaceid, bcdata, &
 &   addgridvelocities
     use flowvarrefstate, only : pref, pinf, rhoref, timeref, lref, &
-&   tref, rgas, uref, uinf
+&   tref, rgas, uref, uinf, rhoinf
     use inputphysics, only : pointref, flowtype, alpha, beta, &
 &   liftindex
     use flowutils_fast_b, only : computeptot, computettot, getdirvector
@@ -451,6 +448,7 @@ contains
 &   vcoordref, vfreestreamref, sfacefreestreamref, normfreestreamref
     real(kind=realtype) :: mnm, massflowratelocal
     real(kind=realtype) :: edota, edotv, edotp
+    real(kind=realtype) :: totalarea
     intrinsic sqrt
     intrinsic mod
     intrinsic max
@@ -501,6 +499,7 @@ contains
     edotp = zero
     sigma_mn = zero
     sigma_ptot = zero
+    totalarea = zero
     do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
 &       (mm)%inbeg)-1
       i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&
@@ -528,6 +527,7 @@ contains
       mnm = vmag/sqrt(gammam*pm/rhom)
       cellarea = sqrt(ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**&
 &       2)
+      totalarea = totalarea + cellarea
       call computeptot(rhom, vxm, vym, vzm, pm, ptot)
       call computettot(rhom, vxm, vym, vzm, pm, ttot)
       massflowratelocal = rhom*vnm*blk*fact*mredim
@@ -548,8 +548,9 @@ contains
 &         ))**2
       else
         massflowrate = massflowrate + massflowratelocal
-        pk = pk + (pm-pinf+half*rhom*(vmag**2-uinf**2))*vnm*pref*uref*&
-&         fact*internalflowfact*blk
+! note that we don't use fact here because we need the signed behavior from ssi
+        pk = pk - (pm-pinf+half*rhom*(vmag**2-uinf**2))*vnm*pref*uref*&
+&         blk*inflowfact
 ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
         vcoordref(1) = vxm
         vcoordref(2) = vym
@@ -569,12 +570,13 @@ contains
         vnmfreestreamref = (u+uinf)*normfreestreamref(1) + v*&
 &         normfreestreamref(2) + w*normfreestreamref(3)
         vnmfreestreamref = vnmfreestreamref*cellarea
-        edota = edota + half*rhom*u**2*vnmfreestreamref*pref*uref*&
-&         internalflowfact*blk
-        edotv = edotv + half*rhom*(v**2+w**2)*vnmfreestreamref*pref*uref&
-&         *internalflowfact*blk
-        edotp = edotp + (pm-pinf)*(vnm-uinf*normfreestreamref(1)*&
-&         cellarea)*pref*uref*internalflowfact*blk
+        edota = edota - half*rhom*u**2*vnmfreestreamref*rhoref*uref**3*&
+&         internalflowfact*blk*inflowfact*fact
+        edotv = edotv - half*rhom*(v**2+w**2)*vnmfreestreamref*rhoref*&
+&         uref**3*internalflowfact*blk*inflowfact*fact
+        edotp = edotp - (pm-pinf)*(vnmfreestreamref-uinf*&
+&         normfreestreamref(1)*cellarea)*pref*uref*internalflowfact*blk*&
+&         inflowfact*fact
 ! re-dimentionalize quantities
         pm = pm*pref
         mass_ptot = mass_ptot + ptot*massflowratelocal*pref
