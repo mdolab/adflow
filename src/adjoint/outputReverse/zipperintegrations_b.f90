@@ -409,11 +409,12 @@ contains
               varsd(conn(1, i), izippflowx) = varsd(conn(1, i), &
 &               izippflowx) + xcd
             end do
-            tempd16 = uref*internalflowfact*pkd
-            tempd9 = vnm*pref*tempd16
+            tempd16 = -(uref*internalflowfact*pkd)
+            tempd7 = vnm*pref*tempd16
             temp1 = vmag**2 - uinf**2
-            tempd15 = half*uref*internalflowfact*edotad
-            tempd14 = u**2*pref*tempd15
+            tempd15 = uref**3*half*internalflowfact*edotad
+            tempd14 = rhom*vnmfreestreamref*tempd15
+            tempd13 = u**2*rhoref*tempd15
             mnmd = massflowratelocal*mass_mnd
             massflowratelocald = massflowratelocald + pm*mass_psd + pref&
 &             *ptot*mass_ptotd + massflowrated + tref*ttot*mass_ttotd + &
@@ -423,41 +424,32 @@ contains
             trefd = trefd + ttot*massflowratelocal*mass_ttotd
             ptotd = ptotd + pref*massflowratelocal*mass_ptotd
             call popreal8(pm)
-            tempd10 = uref*internalflowfact*edotpd
-            tempd8 = (vnm-uinf*(normfreestreamref(1)*cellarea))*tempd10
-            tempd11 = (pm-pinf)*pref*tempd10
-            tempd12 = half*uref*internalflowfact*edotvd
-            tempd13 = rhom*vnmfreestreamref*pref*tempd12
-            tempd5 = (v**2+w**2)*tempd12
-            rhomd = vnmfreestreamref*tempd14 + half*temp1*tempd9 + pref*&
-&             vnmfreestreamref*tempd5
-            vnmfreestreamrefd = rhom*tempd14 + pref*rhom*tempd5
-            tempd7 = rhom*vnmfreestreamref*tempd15
-            sfacefreestreamrefd = 0.0_8
-            arg1d1 = 0.0_8
-            arg2d1 = 0.0_8
-            arg1d0 = 0.0_8
-            arg2d0 = 0.0_8
-            tempd6 = (pm-pinf+half*(rhom*temp1))*tempd16
-            prefd = prefd + pm*pmd + rhom*vnmfreestreamref*tempd5 + vnm*&
-&             tempd6 + u**2*tempd7 + (pm-pinf)*tempd8 + ptot*&
-&             massflowratelocal*mass_ptotd
-            pmd = pref*tempd8 + tempd9 + pref*pmd
-            vnmd = pref*tempd6 + tempd11
+            tempd8 = uref*internalflowfact*edotpd
+            tempd6 = (vnm-uinf*(normfreestreamref(1)*cellarea))*tempd8
+            tempd9 = (pm-pinf)*pref*tempd8
+            tempd10 = uref**3*half*internalflowfact*edotvd
+            tempd11 = rhom*vnmfreestreamref*rhoref*tempd10
+            tempd12 = (v**2+w**2)*tempd10
+            rhomd = vnmfreestreamref*tempd13 + half*temp1*tempd7 + &
+&             rhoref*vnmfreestreamref*tempd12
+            vnmfreestreamrefd = rhom*tempd13 + rhoref*rhom*tempd12
+            rhorefd = rhorefd + u**2*tempd14 + rhom*vnmfreestreamref*&
+&             tempd12
             call popreal8(vnmfreestreamref)
             cellaread = cellaread + vnmfreestreamref*vnmfreestreamrefd -&
-&             uinf*normfreestreamref(1)*tempd11
+&             uinf*normfreestreamref(1)*tempd9
             vnmfreestreamrefd = cellarea*vnmfreestreamrefd
             normfreestreamrefd(1) = normfreestreamrefd(1) + (uinf+u)*&
-&             vnmfreestreamrefd - uinf*cellarea*tempd11
-            vd = normfreestreamref(2)*vnmfreestreamrefd + 2*v*tempd13
-            wd = normfreestreamref(3)*vnmfreestreamrefd + 2*w*tempd13
-            ud = normfreestreamref(1)*vnmfreestreamrefd + pref*2*u*&
-&             tempd7
+&             vnmfreestreamrefd - uinf*cellarea*tempd9
+            vd = normfreestreamref(2)*vnmfreestreamrefd + 2*v*tempd11
+            wd = normfreestreamref(3)*vnmfreestreamrefd + 2*w*tempd11
+            ud = normfreestreamref(1)*vnmfreestreamrefd + rhoref*2*u*&
+&             tempd14
             normfreestreamrefd(2) = normfreestreamrefd(2) + v*&
 &             vnmfreestreamrefd
             normfreestreamrefd(3) = normfreestreamrefd(3) + w*&
 &             vnmfreestreamrefd
+            sfacefreestreamrefd = 0.0_8
             vfreestreamrefd(3) = vfreestreamrefd(3) + wd
             sfacefreestreamrefd(3) = sfacefreestreamrefd(3) - wd
             vfreestreamrefd(2) = vfreestreamrefd(2) + vd
@@ -467,13 +459,17 @@ contains
             normfreestreamrefd = normfreestreamrefd + sf*&
 &             sfacefreestreamrefd
             sfd = sum(normfreestreamref*sfacefreestreamrefd)
+            arg1d1 = 0.0_8
+            arg2d1 = 0.0_8
             call getdirvector_b(ss, ssd, arg11, arg1d1, arg21, arg2d1, &
 &                         normfreestreamref, normfreestreamrefd, &
 &                         liftindex)
             call popreal8array(vfreestreamref, 3)
-            vmagd = rhom*half*2*vmag*tempd9 + sum(vfreestreamref*&
+            vmagd = rhom*half*2*vmag*tempd7 + sum(vfreestreamref*&
 &             vfreestreamrefd)
             vfreestreamrefd = vmag*vfreestreamrefd
+            arg1d0 = 0.0_8
+            arg2d0 = 0.0_8
             call getdirvector_b(vcoordref, vcoordrefd, arg10, arg1d0, &
 &                         arg20, arg2d0, vfreestreamref, vfreestreamrefd&
 &                         , liftindex)
@@ -485,6 +481,11 @@ contains
             vcoordrefd(2) = 0.0_8
             vxmd = vxmd + vcoordrefd(1)
             vcoordrefd(1) = 0.0_8
+            tempd5 = (pm-pinf+half*(rhom*temp1))*tempd16
+            prefd = prefd + pm*pmd + vnm*tempd5 + (pm-pinf)*tempd6 + &
+&             ptot*massflowratelocal*mass_ptotd
+            pmd = pref*tempd6 + tempd7 + pref*pmd
+            vnmd = pref*tempd5 + tempd9
           end if
           temp = gammam*pm/rhom
           temp0 = sqrt(temp)
@@ -632,6 +633,7 @@ contains
     mass_ptot = zero
     mass_ttot = zero
     mass_ps = zero
+    mass_mn = zero
     edota = zero
     edotv = zero
     edotp = zero
@@ -717,7 +719,7 @@ contains
 &             costfuncmavgptot))**2
           else
             massflowrate = massflowrate + massflowratelocal
-            pk = pk + (pm-pinf+half*rhom*(vmag**2-uinf**2))*vnm*pref*&
+            pk = pk - (pm-pinf+half*rhom*(vmag**2-uinf**2))*vnm*pref*&
 &             uref*internalflowfact
 ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
             vcoordref(1) = vxm
@@ -738,10 +740,10 @@ contains
             vnmfreestreamref = (u+uinf)*normfreestreamref(1) + v*&
 &             normfreestreamref(2) + w*normfreestreamref(3)
             vnmfreestreamref = vnmfreestreamref*cellarea
-            edota = edota + half*rhom*u**2*vnmfreestreamref*pref*uref*&
-&             internalflowfact
-            edotv = edotv + half*rhom*(v**2+w**2)*vnmfreestreamref*pref*&
-&             uref*internalflowfact
+            edota = edota + half*rhom*u**2*vnmfreestreamref*rhoref*uref&
+&             **3*internalflowfact
+            edotv = edotv + half*rhom*(v**2+w**2)*vnmfreestreamref*&
+&             rhoref*uref**3*internalflowfact
             edotp = edotp + (pm-pinf)*(vnm-uinf*normfreestreamref(1)*&
 &             cellarea)*pref*uref*internalflowfact
             pm = pm*pref

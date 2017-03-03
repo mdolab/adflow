@@ -483,7 +483,10 @@ contains
     use flowVarRefState, only : Tref, Pref, Href, rhoRef, muRef, nwt, wInf
     use inputPhysics, only : equations
     use utils, only : siDensity, siVelocity, siPressure, siAngle, &
-         siTemperature, terminate, returnFail
+         siTemperature, terminate
+#ifndef USE_TAPENADE
+    use utils, only: returnFail
+#endif
     implicit none
     !
     !      Subroutine arguments.
@@ -598,6 +601,9 @@ contains
       use communication, only : adflow_comm_world
       use inputPhysics, only : RGasDim
       use section, only : sections
+#ifndef USE_TAPENADE
+      use utils, only: returnFail
+#endif
       implicit none
       !
       !        Local variables.
@@ -901,7 +907,7 @@ contains
 
          enddo
       enddo
-
+#ifndef USE_TAPENADE
       if(nn > 0) then
          write(errorMessage,200)                   &
               trim(cgnsDoms(nbkGlobal)%zonename), &
@@ -915,7 +921,7 @@ contains
 
          ! call terminate("totalSubsonicInlet", errorMessage)
       endif
-
+#endif
     end subroutine totalSubsonicInlet
 
   end subroutine BCDataSubsonicInflow
