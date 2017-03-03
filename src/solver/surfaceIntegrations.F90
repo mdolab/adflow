@@ -82,8 +82,8 @@ contains
           mAvgPs   = globalVals(iMassPs, sps)/mFlow
           mAvgMn   = globalVals(iMassMn, sps)/mFlow
 
-          sigmaMN = sqrt(globalVals(iSigmaMN, sps)/mFlow)
-          sigmaPtot = sqrt(globalVals(iSigmaPtot, sps)/mFlow)
+          sigmaMN = sqrt(globalVals(iSigmaMN, sps)/abs(mFlow))
+          sigmaPtot = sqrt(globalVals(iSigmaPtot, sps)/abs(mFlow))
 
        else
           mAvgPtot = zero

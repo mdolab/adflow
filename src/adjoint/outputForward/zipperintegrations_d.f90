@@ -102,6 +102,7 @@ contains
     mass_ptot = zero
     mass_ttot = zero
     mass_ps = zero
+    mass_mn = zero
     edota = zero
     edotv = zero
     edotp = zero
@@ -303,10 +304,10 @@ contains
           else
             massflowrated = massflowrated + massflowratelocald
             massflowrate = massflowrate + massflowratelocal
-            pkd = pkd + uref*internalflowfact*((pmd+half*(rhomd*(vmag**2&
+            pkd = pkd - uref*internalflowfact*((pmd+half*(rhomd*(vmag**2&
 &             -uinf**2)+rhom*2*vmag*vmagd))*vnm*pref+(pm-pinf+half*rhom*&
 &             (vmag**2-uinf**2))*(vnmd*pref+vnm*prefd))
-            pk = pk + (pm-pinf+half*rhom*(vmag**2-uinf**2))*vnm*pref*&
+            pk = pk - (pm-pinf+half*rhom*(vmag**2-uinf**2))*vnm*pref*&
 &             uref*internalflowfact
 ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
             vcoordrefd(1) = vxmd
@@ -345,17 +346,17 @@ contains
             vnmfreestreamrefd = vnmfreestreamrefd*cellarea + &
 &             vnmfreestreamref*cellaread
             vnmfreestreamref = vnmfreestreamref*cellarea
-            edotad = edotad + half*uref*internalflowfact*((rhomd*&
-&             vnmfreestreamref+rhom*vnmfreestreamrefd)*u**2*pref+rhom*&
-&             vnmfreestreamref*(2*u*ud*pref+u**2*prefd))
-            edota = edota + half*rhom*u**2*vnmfreestreamref*pref*uref*&
-&             internalflowfact
-            edotvd = edotvd + half*uref*internalflowfact*(((rhomd*&
-&             vnmfreestreamref+rhom*vnmfreestreamrefd)*pref+rhom*&
-&             vnmfreestreamref*prefd)*(v**2+w**2)+rhom*vnmfreestreamref*&
-&             pref*(2*v*vd+2*w*wd))
-            edotv = edotv + half*rhom*(v**2+w**2)*vnmfreestreamref*pref*&
-&             uref*internalflowfact
+            edotad = edotad + half*uref**3*internalflowfact*((rhomd*&
+&             vnmfreestreamref+rhom*vnmfreestreamrefd)*u**2*rhoref+rhom*&
+&             vnmfreestreamref*(2*u*ud*rhoref+u**2*rhorefd))
+            edota = edota + half*rhom*u**2*vnmfreestreamref*rhoref*uref&
+&             **3*internalflowfact
+            edotvd = edotvd + half*uref**3*internalflowfact*(((rhomd*&
+&             vnmfreestreamref+rhom*vnmfreestreamrefd)*rhoref+rhom*&
+&             vnmfreestreamref*rhorefd)*(v**2+w**2)+rhom*&
+&             vnmfreestreamref*rhoref*(2*v*vd+2*w*wd))
+            edotv = edotv + half*rhom*(v**2+w**2)*vnmfreestreamref*&
+&             rhoref*uref**3*internalflowfact
             edotpd = edotpd + uref*internalflowfact*((pmd*pref+(pm-pinf)&
 &             *prefd)*(vnm-uinf*normfreestreamref(1)*cellarea)+(pm-pinf)&
 &             *pref*(vnmd-uinf*(normfreestreamrefd(1)*cellarea+&
@@ -578,6 +579,7 @@ contains
     mass_ptot = zero
     mass_ttot = zero
     mass_ps = zero
+    mass_mn = zero
     edota = zero
     edotv = zero
     edotp = zero
@@ -666,7 +668,7 @@ contains
 &             costfuncmavgptot))**2
           else
             massflowrate = massflowrate + massflowratelocal
-            pk = pk + (pm-pinf+half*rhom*(vmag**2-uinf**2))*vnm*pref*&
+            pk = pk - (pm-pinf+half*rhom*(vmag**2-uinf**2))*vnm*pref*&
 &             uref*internalflowfact
 ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
             vcoordref(1) = vxm
@@ -687,10 +689,10 @@ contains
             vnmfreestreamref = (u+uinf)*normfreestreamref(1) + v*&
 &             normfreestreamref(2) + w*normfreestreamref(3)
             vnmfreestreamref = vnmfreestreamref*cellarea
-            edota = edota + half*rhom*u**2*vnmfreestreamref*pref*uref*&
-&             internalflowfact
-            edotv = edotv + half*rhom*(v**2+w**2)*vnmfreestreamref*pref*&
-&             uref*internalflowfact
+            edota = edota + half*rhom*u**2*vnmfreestreamref*rhoref*uref&
+&             **3*internalflowfact
+            edotv = edotv + half*rhom*(v**2+w**2)*vnmfreestreamref*&
+&             rhoref*uref**3*internalflowfact
             edotp = edotp + (pm-pinf)*(vnm-uinf*normfreestreamref(1)*&
 &             cellarea)*pref*uref*internalflowfact
             pm = pm*pref

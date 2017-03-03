@@ -135,7 +135,6 @@ contains
              massFlowRateLocal = rhom*vnm*mReDim
              
              if (withGathered) then 
-                
                 sigma_Mn = sigma_Mn  + abs(massFlowRateLocal)*(MNm - funcValues(costFuncMavgMN))**2
                 Ptot = Ptot * pRef
                 sigma_Ptot = sigma_Ptot + abs(massFlowRateLocal)*(Ptot - funcValues(costFuncMavgPtot))**2

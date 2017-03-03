@@ -123,6 +123,14 @@ contains
 &       costfuncsepsensoravgz) + ovrnts*globalvals(isepavg+2, sps)
       funcvalues(costfuncpk) = funcvalues(costfuncpk) + ovrnts*&
 &       globalvals(ipk, sps)
+      funcvalues(costfuncedot) = funcvalues(costfuncedot) + ovrnts*&
+&       globalvals(iedot, sps)
+      funcvalues(costfuncedota) = funcvalues(costfuncedota) + ovrnts*&
+&       globalvals(iedota, sps)
+      funcvalues(costfuncedotv) = funcvalues(costfuncedotv) + ovrnts*&
+&       globalvals(iedotv, sps)
+      funcvalues(costfuncedotp) = funcvalues(costfuncedotp) + ovrnts*&
+&       globalvals(iedotp, sps)
 ! mass flow like objective
       mflow = globalvals(imassflow, sps)
       if (mflow .ne. zero) then
@@ -135,7 +143,6 @@ contains
         else
           abs0 = -mflow
         end if
-! justin fix this! this is not valgrind safe!
         sigmamn = sqrt(globalvals(isigmamn, sps)/abs0)
         if (mflow .ge. 0.) then
           abs1 = mflow
@@ -164,16 +171,6 @@ contains
 &       *sigmamn
       funcvalues(costfuncsigmaptot) = funcvalues(costfuncsigmaptot) + &
 &       ovrnts*sigmaptot
-      funcvalues(costfuncpk) = funcvalues(costfuncpk) + ovrnts*&
-&       globalvals(ipk, sps)
-      funcvalues(costfuncedot) = funcvalues(costfuncedot) + ovrnts*&
-&       globalvals(iedot, sps)
-      funcvalues(costfuncedota) = funcvalues(costfuncedota) + ovrnts*&
-&       globalvals(iedota, sps)
-      funcvalues(costfuncedotv) = funcvalues(costfuncedotv) + ovrnts*&
-&       globalvals(iedotv, sps)
-      funcvalues(costfuncedotp) = funcvalues(costfuncedotp) + ovrnts*&
-&       globalvals(iedotp, sps)
     end do
 ! bending moment calc - also broken. 
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
@@ -277,7 +274,6 @@ contains
             abs0 = -mflow
             call pushcontrol1b(1)
           end if
-! justin fix this! this is not valgrind safe!
           if (mflow .ge. 0.) then
             abs1 = mflow
             call pushcontrol1b(0)
@@ -289,16 +285,6 @@ contains
         else
           call pushcontrol1b(1)
         end if
-        globalvalsd(iedotp, sps) = globalvalsd(iedotp, sps) + ovrnts*&
-&         funcvaluesd(costfuncedotp)
-        globalvalsd(iedotv, sps) = globalvalsd(iedotv, sps) + ovrnts*&
-&         funcvaluesd(costfuncedotv)
-        globalvalsd(iedota, sps) = globalvalsd(iedota, sps) + ovrnts*&
-&         funcvaluesd(costfuncedota)
-        globalvalsd(iedot, sps) = globalvalsd(iedot, sps) + ovrnts*&
-&         funcvaluesd(costfuncedot)
-        globalvalsd(ipk, sps) = globalvalsd(ipk, sps) + ovrnts*&
-&         funcvaluesd(costfuncpk)
         sigmaptotd = ovrnts*funcvaluesd(costfuncsigmaptot)
         sigmamnd = ovrnts*funcvaluesd(costfuncsigmamn)
         mavgmnd = ovrnts*funcvaluesd(costfuncmavgmn)
@@ -353,6 +339,14 @@ contains
         end if
         globalvalsd(imassflow, sps) = globalvalsd(imassflow, sps) + &
 &         mflowd
+        globalvalsd(iedotp, sps) = globalvalsd(iedotp, sps) + ovrnts*&
+&         funcvaluesd(costfuncedotp)
+        globalvalsd(iedotv, sps) = globalvalsd(iedotv, sps) + ovrnts*&
+&         funcvaluesd(costfuncedotv)
+        globalvalsd(iedota, sps) = globalvalsd(iedota, sps) + ovrnts*&
+&         funcvaluesd(costfuncedota)
+        globalvalsd(iedot, sps) = globalvalsd(iedot, sps) + ovrnts*&
+&         funcvaluesd(costfuncedot)
         globalvalsd(ipk, sps) = globalvalsd(ipk, sps) + ovrnts*&
 &         funcvaluesd(costfuncpk)
         globalvalsd(isepavg+2, sps) = globalvalsd(isepavg+2, sps) + &
@@ -489,6 +483,14 @@ contains
 &       costfuncsepsensoravgz) + ovrnts*globalvals(isepavg+2, sps)
       funcvalues(costfuncpk) = funcvalues(costfuncpk) + ovrnts*&
 &       globalvals(ipk, sps)
+      funcvalues(costfuncedot) = funcvalues(costfuncedot) + ovrnts*&
+&       globalvals(iedot, sps)
+      funcvalues(costfuncedota) = funcvalues(costfuncedota) + ovrnts*&
+&       globalvals(iedota, sps)
+      funcvalues(costfuncedotv) = funcvalues(costfuncedotv) + ovrnts*&
+&       globalvals(iedotv, sps)
+      funcvalues(costfuncedotp) = funcvalues(costfuncedotp) + ovrnts*&
+&       globalvals(iedotp, sps)
 ! mass flow like objective
       mflow = globalvals(imassflow, sps)
       if (mflow .ne. zero) then
@@ -501,7 +503,6 @@ contains
         else
           abs0 = -mflow
         end if
-! justin fix this! this is not valgrind safe!
         sigmamn = sqrt(globalvals(isigmamn, sps)/abs0)
         if (mflow .ge. 0.) then
           abs1 = mflow
@@ -530,16 +531,6 @@ contains
 &       *sigmamn
       funcvalues(costfuncsigmaptot) = funcvalues(costfuncsigmaptot) + &
 &       ovrnts*sigmaptot
-      funcvalues(costfuncpk) = funcvalues(costfuncpk) + ovrnts*&
-&       globalvals(ipk, sps)
-      funcvalues(costfuncedot) = funcvalues(costfuncedot) + ovrnts*&
-&       globalvals(iedot, sps)
-      funcvalues(costfuncedota) = funcvalues(costfuncedota) + ovrnts*&
-&       globalvals(iedota, sps)
-      funcvalues(costfuncedotv) = funcvalues(costfuncedotv) + ovrnts*&
-&       globalvals(iedotv, sps)
-      funcvalues(costfuncedotp) = funcvalues(costfuncedotp) + ovrnts*&
-&       globalvals(iedotp, sps)
     end do
 ! bending moment calc - also broken. 
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
@@ -1287,7 +1278,7 @@ contains
 &   addgridvelocities
     use flowvarrefstate, only : pref, prefd, pinf, pinfd, rhoref, &
 &   rhorefd, timeref, timerefd, lref, tref, trefd, rgas, rgasd, uref, &
-&   urefd, uinf, uinfd
+&   urefd, uinf, uinfd, rhoinf, rhoinfd
     use inputphysics, only : pointref, pointrefd, flowtype, alpha, &
 &   alphad, beta, betad, liftindex
     use flowutils_b, only : computeptot, computeptot_b, computettot, &
@@ -1333,6 +1324,7 @@ contains
     real(kind=realtype) :: mnmd, massflowratelocald
     real(kind=realtype) :: edota, edotv, edotp
     real(kind=realtype) :: edotad, edotvd, edotpd
+    real(kind=realtype) :: totalarea
     intrinsic sqrt
     intrinsic mod
     intrinsic max
@@ -1535,6 +1527,7 @@ contains
         vzmd = 0.0_8
         vmagd = 0.0_8
       else
+! note that we don't use fact here because we need the signed behavior from ssi
 ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
         vcoordref(1) = vxm
         vcoordref(2) = vym
@@ -1585,16 +1578,19 @@ contains
         fx = massflowratelocal*ssi(i, j, 1)*vxm
         fy = massflowratelocal*ssi(i, j, 2)*vym
         fz = massflowratelocal*ssi(i, j, 3)*vzm
-        tempd26 = uref*fact*internalflowfact*blk*pkd
-        tempd19 = vnm*pref*tempd26
+        tempd25 = -(uref*blk*inflowfact*pkd)
+        tempd17 = vnm*pref*tempd25
         temp1 = vmag**2 - uinf**2
-        tempd25 = half*uref*internalflowfact*blk*edotad
-        tempd17 = rhom*vnmfreestreamref*tempd25
-        tempd24 = u**2*pref*tempd25
-        tempd22 = half*uref*internalflowfact*blk*edotvd
-        tempd16 = (v**2+w**2)*tempd22
-        tempd20 = uref*internalflowfact*blk*edotpd
-        tempd18 = (vnm-uinf*(normfreestreamref(1)*cellarea))*tempd20
+        tempd24 = -(uref**3*blk*inflowfact*half*internalflowfact*fact*&
+&         edotad)
+        tempd23 = rhom*vnmfreestreamref*tempd24
+        tempd20 = u**2*rhoref*tempd24
+        tempd21 = -(uref**3*blk*inflowfact*half*internalflowfact*fact*&
+&         edotvd)
+        tempd19 = (v**2+w**2)*tempd21
+        tempd18 = -(uref*internalflowfact*fact*blk*inflowfact*edotpd)
+        tempd16 = (vnmfreestreamref-uinf*(normfreestreamref(1)*cellarea)&
+&         )*tempd18
         mzd = mmomd(3)
         myd = mmomd(2)
         mxd = mmomd(1)
@@ -1664,24 +1660,24 @@ contains
         trefd = trefd + ttot*massflowratelocal*mass_ttotd
         ptotd = ptotd + pref*massflowratelocal*mass_ptotd
         call popreal8(pm)
-        prefd = prefd + pm*pmd + rhom*vnmfreestreamref*tempd16 + u**2*&
-&         tempd17 + (pm-pinf)*tempd18 + ptot*massflowratelocal*&
-&         mass_ptotd
-        pmd = pref*tempd18 + tempd19 + pref*pmd
-        tempd11 = (pm-pinf)*pref*tempd20
-        tempd23 = rhom*vnmfreestreamref*pref*tempd22
-        rhomd = vnmfreestreamref*tempd24 + half*temp1*tempd19 + pref*&
-&         vnmfreestreamref*tempd16
-        vnmfreestreamrefd = rhom*tempd24 + pref*rhom*tempd16
+        prefd = prefd + pm*pmd + (pm-pinf)*tempd16 + ptot*&
+&         massflowratelocal*mass_ptotd
+        pmd = pref*tempd16 + tempd17 + pref*pmd
+        tempd11 = (pm-pinf)*pref*tempd18
+        vnmfreestreamrefd = rhoref*rhom*tempd19 + rhom*tempd20 + tempd11
+        tempd22 = rhom*vnmfreestreamref*rhoref*tempd21
+        rhomd = vnmfreestreamref*tempd20 + half*temp1*tempd17 + rhoref*&
+&         vnmfreestreamref*tempd19
+        rhorefd = rhorefd + u**2*tempd23 + rhom*vnmfreestreamref*tempd19
         call popreal8(vnmfreestreamref)
         cellaread = vnmfreestreamref*vnmfreestreamrefd - uinf*&
 &         normfreestreamref(1)*tempd11 + timeref*tempd10
         vnmfreestreamrefd = cellarea*vnmfreestreamrefd
         normfreestreamrefd(1) = normfreestreamrefd(1) + (uinf+u)*&
 &         vnmfreestreamrefd - uinf*cellarea*tempd11
-        vd = normfreestreamref(2)*vnmfreestreamrefd + 2*v*tempd23
-        wd = normfreestreamref(3)*vnmfreestreamrefd + 2*w*tempd23
-        ud = normfreestreamref(1)*vnmfreestreamrefd + pref*2*u*tempd17
+        vd = normfreestreamref(2)*vnmfreestreamrefd + 2*v*tempd22
+        wd = normfreestreamref(3)*vnmfreestreamrefd + 2*w*tempd22
+        ud = normfreestreamref(1)*vnmfreestreamrefd + rhoref*2*u*tempd23
         normfreestreamrefd(2) = normfreestreamrefd(2) + v*&
 &         vnmfreestreamrefd
         normfreestreamrefd(3) = normfreestreamrefd(3) + w*&
@@ -1700,7 +1696,7 @@ contains
 &                     arg20, arg2d0, normfreestreamref, &
 &                     normfreestreamrefd, liftindex)
         call popreal8array(vfreestreamref, 3)
-        vmagd = rhom*half*2*vmag*tempd19 + sum(vfreestreamref*&
+        vmagd = rhom*half*2*vmag*tempd17 + sum(vfreestreamref*&
 &         vfreestreamrefd)
         vfreestreamrefd = vmag*vfreestreamrefd
         arg1d = 0.0_8
@@ -1715,9 +1711,9 @@ contains
         vcoordrefd(2) = 0.0_8
         vxmd = vxmd + vcoordrefd(1)
         vcoordrefd(1) = 0.0_8
-        tempd21 = (pm-pinf+half*(rhom*temp1))*tempd26
-        vnmd = pref*tempd21 + tempd11
-        prefd = prefd + vnm*tempd21
+        tempd26 = (pm-pinf+half*(rhom*temp1))*tempd25
+        vnmd = pref*tempd26
+        prefd = prefd + vnm*tempd26
       end if
       tempd0 = blk*fact*massflowratelocald
       rhomd = rhomd + mredim*vnm*tempd0
@@ -1788,7 +1784,7 @@ contains
     use blockpointers, only : bctype, bcfaceid, bcdata, &
 &   addgridvelocities
     use flowvarrefstate, only : pref, pinf, rhoref, timeref, lref, &
-&   tref, rgas, uref, uinf
+&   tref, rgas, uref, uinf, rhoinf
     use inputphysics, only : pointref, flowtype, alpha, beta, &
 &   liftindex
     use flowutils_b, only : computeptot, computettot, getdirvector
@@ -1818,6 +1814,7 @@ contains
 &   vcoordref, vfreestreamref, sfacefreestreamref, normfreestreamref
     real(kind=realtype) :: mnm, massflowratelocal
     real(kind=realtype) :: edota, edotv, edotp
+    real(kind=realtype) :: totalarea
     intrinsic sqrt
     intrinsic mod
     intrinsic max
@@ -1868,6 +1865,7 @@ contains
     edotp = zero
     sigma_mn = zero
     sigma_ptot = zero
+    totalarea = zero
     do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
 &       (mm)%inbeg)-1
       i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&
@@ -1895,6 +1893,7 @@ contains
       mnm = vmag/sqrt(gammam*pm/rhom)
       cellarea = sqrt(ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**&
 &       2)
+      totalarea = totalarea + cellarea
       call computeptot(rhom, vxm, vym, vzm, pm, ptot)
       call computettot(rhom, vxm, vym, vzm, pm, ttot)
       massflowratelocal = rhom*vnm*blk*fact*mredim
@@ -1915,8 +1914,9 @@ contains
 &         ))**2
       else
         massflowrate = massflowrate + massflowratelocal
-        pk = pk + (pm-pinf+half*rhom*(vmag**2-uinf**2))*vnm*pref*uref*&
-&         fact*internalflowfact*blk
+! note that we don't use fact here because we need the signed behavior from ssi
+        pk = pk - (pm-pinf+half*rhom*(vmag**2-uinf**2))*vnm*pref*uref*&
+&         blk*inflowfact
 ! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
         vcoordref(1) = vxm
         vcoordref(2) = vym
@@ -1936,12 +1936,13 @@ contains
         vnmfreestreamref = (u+uinf)*normfreestreamref(1) + v*&
 &         normfreestreamref(2) + w*normfreestreamref(3)
         vnmfreestreamref = vnmfreestreamref*cellarea
-        edota = edota + half*rhom*u**2*vnmfreestreamref*pref*uref*&
-&         internalflowfact*blk
-        edotv = edotv + half*rhom*(v**2+w**2)*vnmfreestreamref*pref*uref&
-&         *internalflowfact*blk
-        edotp = edotp + (pm-pinf)*(vnm-uinf*normfreestreamref(1)*&
-&         cellarea)*pref*uref*internalflowfact*blk
+        edota = edota - half*rhom*u**2*vnmfreestreamref*rhoref*uref**3*&
+&         internalflowfact*blk*inflowfact*fact
+        edotv = edotv - half*rhom*(v**2+w**2)*vnmfreestreamref*rhoref*&
+&         uref**3*internalflowfact*blk*inflowfact*fact
+        edotp = edotp - (pm-pinf)*(vnmfreestreamref-uinf*&
+&         normfreestreamref(1)*cellarea)*pref*uref*internalflowfact*blk*&
+&         inflowfact*fact
 ! re-dimentionalize quantities
         pm = pm*pref
         mass_ptot = mass_ptot + ptot*massflowratelocal*pref
