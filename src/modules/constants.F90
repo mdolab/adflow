@@ -336,7 +336,7 @@ module constants
   integer(kind=intType), parameter :: iTotal=16
 
   ! Cost functions.
-  integer(kind=intType), parameter :: nCostFunction = 54
+  integer(kind=intType), parameter :: nCostFunction = 57
   integer(kind=intType), parameter :: &
        costFuncLift       = 1,&
        costFuncDrag       = 2,&
@@ -383,17 +383,20 @@ module constants
        costFuncMdot          = 43, &
        costFuncMavgPtot      = 44, &
        costFuncMavgTtot      = 45, &
-       costFuncMavgPs        = 46, & 
-       costFuncMavgMN        = 47, &
-       costFuncSigmaMN       = 48, &
-       costFuncSigmaPtot     = 49, &
-       costFuncPk            = 50, &
-       costFuncEdot          = 51, &
-       costFuncEdotA         = 52, &
-       costFuncEdotV         = 53, &
-       costFuncEdotP         = 54
+       costFuncMavgRho       = 46, &
+       costFuncMavgPs        = 47, & 
+       costFuncMavgMN        = 48, &
+       costFuncMavga         = 49, &
+       costFuncArea          = 50, &
+       costFuncSigmaMN       = 51, &
+       costFuncSigmaPtot     = 52, &
+       costFuncPk            = 53, &
+       costFuncEdot          = 54, &
+       costFuncEdotA         = 55, &
+       costFuncEdotV         = 56, &
+       costFuncEdotP         = 57
 
-  integer(kind=intType), parameter :: nLocalValues=39
+  integer(kind=intType), parameter :: nLocalValues=48
   integer(kind=intType), parameter :: &
        iFp =  1, &
        iFv =  4, &
@@ -414,11 +417,19 @@ module constants
        isigmaMN    = 33, &
        isigmaPtot  = 34, &
        iPk         = 35, &
-       iEdot       = 36, &
-       iEdotA      = 37, & 
-       iEdotV      = 38, & 
-       iEdotP      = 39
-
+       iEdotA      = 36, & 
+       iEdotV      = 37, & 
+       iEdotP      = 38, & 
+       iMassa      = 39, & 
+       iMassRho    = 40, &
+       iArea       = 41, &
+       iMassVx     = 42, &
+       iMassVy     = 43, &
+       iMassVz     = 44, &
+       iMassnx     = 45, &
+       iMassny     = 46, &
+       iMassnz     = 47, & 
+       iedot       = 48
 
   ! Constants for zipper comm
 

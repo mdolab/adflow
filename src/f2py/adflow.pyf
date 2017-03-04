@@ -735,7 +735,7 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfuncforceycoef=9
          integer(kind=inttype) parameter,optional :: costfuncclalpha=23
          integer(kind=inttype) parameter,optional :: costfuncmomycoef=15
-         integer(kind=inttype) parameter,optional :: costfunccfy0=32	
+         integer(kind=inttype) parameter,optional :: costfunccfy0=32  
          integer(kind=inttype) parameter,optional :: costfunccfyalpha=33 
          integer(kind=inttype) parameter,optional :: costfunccfyalphadot=34
          integer(kind=inttype) parameter,optional :: costfunccfyq=35
@@ -749,15 +749,18 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfuncmdot=43
          integer(kind=inttype) parameter,optional :: costfuncmavgptot=44
          integer(kind=inttype) parameter,optional :: costfuncmavgttot=45
-         integer(kind=inttype) parameter,optional :: costfuncmavgps=46
-         integer(kind=inttype) parameter,optional :: costfuncmavgmn=47
-         integer(kind=inttype) parameter,optional :: costfuncsigmamn=48
-         integer(kind=inttype) parameter,optional :: costfuncsigmaptot=49
-         integer(kind=inttype) parameter,optional :: costfuncpk=50
-         integer(kind=inttype) parameter,optional :: costfuncedot=51
-         integer(kind=inttype) parameter,optional :: costfuncedota=52
-         integer(kind=inttype) parameter,optional :: costfuncedotp=53
-         integer(kind=inttype) parameter,optional :: costfuncedotv=54
+         integer(kind=inttype) parameter,optional :: costfuncmavgrho=46
+         integer(kind=inttype) parameter,optional :: costfuncmavgps=47
+         integer(kind=inttype) parameter,optional :: costfuncmavgmn=48
+         integer(kind=inttype) parameter,optional :: costfuncmavga=49
+         integer(kind=inttype) parameter,optional :: costfuncarea=50
+         integer(kind=inttype) parameter,optional :: costfuncsigmamn=51
+         integer(kind=inttype) parameter,optional :: costfuncsigmaptot=52
+         integer(kind=inttype) parameter,optional :: costfuncpk=53
+         integer(kind=inttype) parameter,optional :: costfuncedot=54
+         integer(kind=inttype) parameter,optional :: costfuncedota=55
+         integer(kind=inttype) parameter,optional :: costfuncedotp=56
+         integer(kind=inttype) parameter,optional :: costfuncedotv=57
 
        end module constants
 
