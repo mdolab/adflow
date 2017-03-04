@@ -264,9 +264,9 @@ Norm of state vector
 -> Alpha... 90.000000 
 Eval Functions:
 Dictionary Key: nozzle_edot_down
-@value  2.5051842960081e+03 1e-10 1e-10
+@value  3.9690916814965e+04 1e-10 1e-10
 Dictionary Key: nozzle_edot_up
-@value -2.0032313055452e+04 1e-10 1e-10
+@value  1.0285589490110e+04 1e-10 1e-10
 Dictionary Key: nozzle_mavgps_down
 @value  8.1842770719055e+04 1e-10 1e-10
 Dictionary Key: nozzle_mavgps_up
@@ -284,9 +284,9 @@ Dictionary Key: nozzle_mdot_down
 Dictionary Key: nozzle_mdot_up
 @value  1.0496982236621e+00 1e-10 1e-10
 Dictionary Key: nozzle_pk_down
-@value  1.9763888917308e+04 1e-10 1e-10
+@value  2.6227378234156e+04 1e-10 1e-10
 Dictionary Key: nozzle_pk_up
-@value -1.7095186312596e+04 1e-10 1e-10
+@value -2.6058890175975e+04 1e-10 1e-10
 Dictionary Key: nozzle_sigmamn_up
 @value  2.9642726839777e-02 1e-10 1e-10
 Dictionary Key: nozzle_sigmaptot_up

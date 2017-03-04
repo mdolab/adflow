@@ -255,9 +255,9 @@
 #  Grid  | Iter | Iter | Iter |   CFL   |    Wall    |        Res rho         |        totalRes        |
 #  level |      | Tot  | Type |         | Clock (s)  |                        |                        |
 #-------------------------------------------------------------------------------------------------------
-      1       0      0   None   0.00E+00  0.10691E+00   0.4044307328664265E-10   0.7251466858589091E-07 
-      1       1      2     NK   0.97E+28  0.69443E+01   0.3677221492792871E-10   0.6598192189812279E-07 
-Solution Time:      6.947 sec
+      1       0      0   None   0.00E+00  0.12178E+00   0.4044307328664265E-10   0.7251466858589091E-07 
+      1       1      2     NK   0.97E+28  0.80532E+01   0.3677221492792871E-10   0.6598192189812279E-07 
+Solution Time:      8.057 sec
 #
 # Writing grid file(s): ./nozzle_000_vol.cgns
 # Grid file(s) written
@@ -278,11 +278,11 @@ Norm of state vector
 -> Alpha... 90.000000 
 Eval Functions:
 Dictionary Key: nozzle_edot_down
-@value  2.7700230801053e+03 1e-10 1e-10
+@value  3.1543081554960e+04 1e-10 1e-10
 Dictionary Key: nozzle_edot_plane
-@value  1.2342793919786e+04 1e-10 1e-10
+@value  1.0397338512093e+04 1e-10 1e-10
 Dictionary Key: nozzle_edot_up
-@value -2.0027093709344e+04 1e-10 1e-10
+@value  7.9833482348147e+03 1e-10 1e-10
 Dictionary Key: nozzle_mavgps_down
 @value  8.1845854918160e+04 1e-10 1e-10
 Dictionary Key: nozzle_mavgps_plane
@@ -308,11 +308,11 @@ Dictionary Key: nozzle_mdot_plane
 Dictionary Key: nozzle_mdot_up
 @value  1.0496918257764e+00 1e-10 1e-10
 Dictionary Key: nozzle_pk_down
-@value  1.9761170190920e+04 1e-10 1e-10
+@value  1.9856506790228e+04 1e-10 1e-10
 Dictionary Key: nozzle_pk_plane
-@value  1.7078245935982e+04 1e-10 1e-10
+@value -2.2652089498290e+04 1e-10 1e-10
 Dictionary Key: nozzle_pk_up
-@value -1.7094222781005e+04 1e-10 1e-10
+@value -2.0654139296115e+04 1e-10 1e-10
 Dictionary Key: nozzle_sigmamn_plane
 @value  3.4840327359805e-02 1e-10 1e-10
 Dictionary Key: nozzle_sigmamn_up
