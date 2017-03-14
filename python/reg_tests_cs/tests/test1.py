@@ -48,10 +48,10 @@ aeroOptions.update(
      'blocksplitting': True
  }
 )
-h = 1e-40
+
 
 # Setup aeroproblem, cfdsolver
-ap = AeroProblem(name='mdo_tutorial', alpha=1.8+h*1j, mach=0.80,
+ap = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.80,
                  altitude=10000.0, areaRef=45.5, chordRef=3.25,
                  evalFuncs=['cd','lift','cmz'])
 ap.addDV('alpha')
@@ -73,6 +73,7 @@ if not 'complex' in sys.argv:
         for key in ['cd','cmz','lift']:
             print 'funcs[%s]:'%key
             reg_write(funcs['mdo_tutorial_%s'%key],1e-10,1e-10)
+
         # Now write the derivatives in the same order the CS will do them:
         print ('Alpha Derivatives:')
         reg_write(funcsSens['mdo_tutorial_cd']['alpha_mdo_tutorial'], 1e-10,1e-10)
@@ -91,7 +92,7 @@ if not 'complex' in sys.argv:
 
 else:
     # For the complex....we just do successive perturbation
-
+    h = 1e-40
     for ii in range(3):
         ap.alpha = 1.8
         ap.mach = 0.80
