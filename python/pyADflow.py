@@ -2707,60 +2707,62 @@ class ADFLOW(AeroSolver):
 	funcsSens = {}
 
         for dvName in self.curAP.DVs:
-            key = self.curAP.DVs[dvName].key.lower()
-            dvFam = self.curAP.DVs[dvName].family
-            if key in self.possibleAeroDVs:
-                tmp = {}
-                if key in ['altitude']:
-                    # This design variable is special. It combines changes
-                    # in temperature, pressure and density into a single
-                    # variable. Since we have derivatives for T, P and
-                    # rho, we simply chain rule it back to the the
-                    # altitude variable.
-                    self.curAP.evalFunctionsSens(tmp, ['P', 'T', 'rho'])
+           key = self.curAP.DVs[dvName].key.lower()
+           dvFam = self.curAP.DVs[dvName].family
+           print ('key:', key)
+           
+           tmp = {}
+           if key == 'altitude':
+               # This design variable is special. It combines changes
+               # in temperature, pressure and density into a single
+               # variable. Since we have derivatives for T, P and
+               # rho, we simply chain rule it back to the the
+               # altitude variable.
+               self.curAP.evalFunctionsSens(tmp, ['P', 'T', 'rho'])
 
-                    # Extract the derivatives wrt the independent
-                    # parameters in ADflow
-                    dIdP = dIda[self.possibleAeroDVs['p']]
-                    dIdT = dIda[self.possibleAeroDVs['t']]
-                    dIdrho = dIda[self.possibleAeroDVs['rho']]
+               # Extract the derivatives wrt the independent
+               # parameters in ADflow
+               dIdP = dIda[self.possibleAeroDVs['p']]
+               dIdT = dIda[self.possibleAeroDVs['t']]
+               dIdrho = dIda[self.possibleAeroDVs['rho']]
 
-                    # Chain-rule to get the final derivative:
-                    funcsSens[dvName] = (
-                        tmp[self.curAP['P']][key]*dIdP +
-                        tmp[self.curAP['T']][key]*dIdT +
-                        tmp[self.curAP['rho']][key]*dIdrho)
-                elif key in ['mach']:
-                    self.curAP.evalFunctionsSens(tmp, ['P', 'rho'])
-                    # Simular story for Mach: It is technically possible
-                    # to use a mach number for a fixed RE simulation. For
-                    # the RE to stay fixed and change the mach number, the
-                    # 'P' and 'rho' must also change. We have to chain run
-                    # this dependence back through to the final mach
-                    # derivative. When Mach number is used with altitude
-                    # or P and T, this calc is unnecessary, but won't do
-                    # any harm.
-                    dIdP = dIda[self.possibleAeroDVs['p']]
-                    dIdrho = dIda[self.possibleAeroDVs['rho']]
+               # Chain-rule to get the final derivative:
+               funcsSens[dvName] = (
+                   tmp[self.curAP['P']][key]*dIdP +
+                   tmp[self.curAP['T']][key]*dIdT +
+                   tmp[self.curAP['rho']][key]*dIdrho)
+           elif key == 'mach':
+               self.curAP.evalFunctionsSens(tmp, ['P', 'rho'])
+               # Simular story for Mach: It is technically possible
+               # to use a mach number for a fixed RE simulation. For
+               # the RE to stay fixed and change the mach number, the
+               # 'P' and 'rho' must also change. We have to chain run
+               # this dependence back through to the final mach
+               # derivative. When Mach number is used with altitude
+               # or P and T, this calc is unnecessary, but won't do
+               # any harm.
+               dIdP = dIda[self.possibleAeroDVs['p']]
+               dIdrho = dIda[self.possibleAeroDVs['rho']]
 
-                    # Chain-rule to get the final derivative:
-                    funcsSens[dvName] = (
-                        tmp[self.curAP['P']][key]*dIdP +
-                        tmp[self.curAP['rho']][key]*dIdrho +
-                        dIda[self.possibleAeroDVs['mach']])
+               # Chain-rule to get the final derivative:
+               funcsSens[dvName] = (
+                   tmp[self.curAP['P']][key]*dIdP +
+                   tmp[self.curAP['rho']][key]*dIdrho +
+                   dIda[self.possibleAeroDVs['mach']])
 
-                else:
-                    funcsSens[dvName] = dIda[self.possibleAeroDVs[key]]
-                    if key == 'alpha':
-                        funcsSens[dvName] *= numpy.pi/180.0
-            elif key in self.possibleBCDvs:
-                # We need to determine what the index is in dIdBC. For
-                # now just do an efficient linear search:
-                i = 0
-                for (varName, family), value in self.curAP.bcVarData.iteritems():
-                    if varName.lower() == key and family.lower() == dvFam.lower():
-                        funcsSens[dvName] = dIdBC[i]
-                    i += 1
+           elif key in self.possibleAeroDVs:
+               funcsSens[dvName] = dIda[self.possibleAeroDVs[key]]
+               if key == 'alpha':
+                   funcsSens[dvName] *= numpy.pi/180.0
+
+           elif key in self.possibleBCDvs:
+               # We need to determine what the index is in dIdBC. For
+               # now just do an efficient linear search:
+               i = 0
+               for (varName, family), value in self.curAP.bcVarData.iteritems():
+                   if varName.lower() == key and family.lower() == dvFam.lower():
+                       funcsSens[dvName] = dIdBC[i]
+                   i += 1
 
 	return funcsSens
 
