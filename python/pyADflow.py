@@ -2655,6 +2655,12 @@ class ADFLOW(AeroSolver):
     def solveAdjoint(self, aeroProblem, objective, forcePoints=None,
                       structAdjoint=None, groupName=None):
 
+        # Remind the user they are using frozen turbulence.
+        if self.getOption('frozenTurbulence') and self.myid== 0:
+           self.getOption('equationType').lower() == 'rans' and \
+            ADFLOWWarning("Turbulence is frozen!!! DERIVATIVES WILL BE WRONG!!! "
+                          "USE AT OWN RISK!!!")
+
         # May be switching aeroProblems here
         self.setAeroProblem(aeroProblem)
 
