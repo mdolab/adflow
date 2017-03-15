@@ -4049,7 +4049,7 @@ class ADFLOW(AeroSolver):
             'innerpreconits':[int, 1],
             'outerpreconits':[int, 3],
             'applyadjointpcsubspacesize':[int, 20],
-            'frozenturbulence':[bool, True],
+            'frozenturbulence':[bool, False],
             'usematrixfreedrdw':[bool, True],
 
             # ADjoint debugger
