@@ -84,6 +84,27 @@ contains
           CALL BCNSWALLADIABATIC_B(mm, secondhalo, correctfork)
        END IF
     END DO
+
+
+    ! ------------------------------------
+    !  Symmetry Polar Boundary Condition
+    ! ------------------------------------
+    if (secondHalo) then
+       do mm=1, nBocos
+          if (BCType(mm) == symmPolar) then
+             call setBCPointers_d(mm, .True.)
+             call bcSymmPolar2ndHalo_b(mm)
+          end if
+       end do
+    end if
+
+    do mm=1, nBocos
+       if (BCType(mm) == symmPolar) then
+          call setBCPointers_d(mm, .True.)
+          call bcSymmPolar1stHalo_b(mm)
+       end if
+    end do
+
    
     ! ------------------------------------
     !  Symmetry Boundary Condition 

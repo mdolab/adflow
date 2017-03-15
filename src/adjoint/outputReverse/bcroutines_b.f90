@@ -416,6 +416,136 @@ contains
       if (eddymodel) rev0(i, j) = rev3(i, j)
     end do
   end subroutine bcsymm2ndhalo
+!  differentiation of bcsymmpolar1sthalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: *xx *rev1 *rev2 *pp1 *pp2 *rlv1
+!                *rlv2 *ww1 *ww2
+!   with respect to varying inputs: *xx *rev1 *rev2 *pp1 *pp2 *rlv1
+!                *rlv2 *ww1 *ww2
+!   rw status of diff variables: *xx:incr *rev1:in-out *rev2:incr
+!                *pp1:in-out *pp2:incr *rlv1:in-out *rlv2:incr
+!                *ww1:in-out *ww2:incr
+!   plus diff mem management of: xx:in rev1:in rev2:in pp1:in pp2:in
+!                rlv1:in rlv2:in ww1:in ww2:in
+  subroutine bcsymmpolar1sthalo_b(nn)
+! bcsymmpolar applies the polar symmetry boundary conditions to a
+! singular line of a block. it is assumed that the pointers in
+! blockpointers are already set to the correct block on the
+! correct grid level.  the polar symmetry condition is a special
+! case of a degenerate line, as this line is the axi-symmetric
+! centerline. this routine does just the 1st level halo.
+    use constants
+    use bcpointers_b, only : ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, pp2d,&
+&   rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, xx, xxd, istart,&
+&   jstart, isize, jsize
+    use flowvarrefstate, only : viscous, eddymodel
+    implicit none
+! subroutine arguments.
+    integer(kind=inttype), intent(in) :: nn
+! local variables.
+    integer(kind=inttype) :: i, j, l, ii, mm
+    real(kind=realtype) :: nnx, nny, nnz, tmp, vtx, vty, vtz
+    real(kind=realtype) :: nnxd, nnyd, nnzd, tmpd, vtxd, vtyd, vtzd
+    intrinsic mod
+    intrinsic sqrt
+    integer :: branch
+    real(kind=realtype) :: temp0
+    real(kind=realtype) :: tempd
+    real(kind=realtype) :: tempd0
+    real(kind=realtype) :: temp
+    do ii=0,isize*jsize-1
+      i = mod(ii, isize) + istart
+      j = ii/isize + jstart
+! determine the unit vector along the degenerated face.
+! however it is not known which is the singular
+! direction and therefore determine the direction along
+! the diagonal (i,j) -- (i-1,j-1), which is correct for
+! both singular i and j-direction. note that due to the
+! usage of the pointer xx there is an offset of +1
+! in the indices and therefore (i+1,j+1) - (i,j) must
+! be used to determine this vector.
+      nnx = xx(i+1, j+1, 1) - xx(i, j, 1)
+      nny = xx(i+1, j+1, 2) - xx(i, j, 2)
+      nnz = xx(i+1, j+1, 3) - xx(i, j, 3)
+! determine the unit vector in this direction.
+      tmp = one/sqrt(nnx*nnx+nny*nny+nnz*nnz)
+      call pushreal8(nnx)
+      nnx = nnx*tmp
+      call pushreal8(nny)
+      nny = nny*tmp
+      call pushreal8(nnz)
+      nnz = nnz*tmp
+! determine twice the tangential velocity vector of the
+! internal cell.
+      call pushreal8(tmp)
+      tmp = two*(ww2(i, j, ivx)*nnx+ww2(i, j, ivy)*nny+ww2(i, j, ivz)*&
+&       nnz)
+! determine the flow variables in the halo cell. the
+! velocity is constructed such that the average of the
+! internal and the halo cell is along the centerline.
+! note that the magnitude of the velocity does not
+! change and thus the energy is identical.
+! set the pressure and possibly the laminar and
+! eddy viscosity in the halo.
+      if (viscous) then
+        call pushcontrol1b(0)
+      else
+        call pushcontrol1b(1)
+      end if
+      if (eddymodel) then
+        rev2d(i, j) = rev2d(i, j) + rev1d(i, j)
+        rev1d(i, j) = 0.0_8
+      end if
+      call popcontrol1b(branch)
+      if (branch .eq. 0) then
+        rlv2d(i, j) = rlv2d(i, j) + rlv1d(i, j)
+        rlv1d(i, j) = 0.0_8
+      end if
+      pp2d(i, j) = pp2d(i, j) + pp1d(i, j)
+      pp1d(i, j) = 0.0_8
+      ww2d(i, j, irhoe) = ww2d(i, j, irhoe) + ww1d(i, j, irhoe)
+      ww1d(i, j, irhoe) = 0.0_8
+      vtzd = ww1d(i, j, ivz)
+      ww2d(i, j, ivz) = ww2d(i, j, ivz) - ww1d(i, j, ivz)
+      ww1d(i, j, ivz) = 0.0_8
+      vtyd = ww1d(i, j, ivy)
+      ww2d(i, j, ivy) = ww2d(i, j, ivy) - ww1d(i, j, ivy)
+      ww1d(i, j, ivy) = 0.0_8
+      vtxd = ww1d(i, j, ivx)
+      ww2d(i, j, ivx) = ww2d(i, j, ivx) - ww1d(i, j, ivx)
+      ww1d(i, j, ivx) = 0.0_8
+      ww2d(i, j, irho) = ww2d(i, j, irho) + ww1d(i, j, irho)
+      ww1d(i, j, irho) = 0.0_8
+      tmpd = nny*vtyd + nnx*vtxd + nnz*vtzd
+      tempd = two*tmpd
+      nnzd = ww2(i, j, ivz)*tempd + tmp*vtzd
+      nnyd = ww2(i, j, ivy)*tempd + tmp*vtyd
+      nnxd = ww2(i, j, ivx)*tempd + tmp*vtxd
+      call popreal8(tmp)
+      ww2d(i, j, ivx) = ww2d(i, j, ivx) + nnx*tempd
+      ww2d(i, j, ivy) = ww2d(i, j, ivy) + nny*tempd
+      ww2d(i, j, ivz) = ww2d(i, j, ivz) + nnz*tempd
+      call popreal8(nnz)
+      call popreal8(nny)
+      call popreal8(nnx)
+      tmpd = nny*nnyd + nnx*nnxd + nnz*nnzd
+      temp = nnx**2 + nny**2 + nnz**2
+      temp0 = sqrt(temp)
+      if (temp .eq. 0.0_8) then
+        tempd0 = 0.0
+      else
+        tempd0 = -(one*tmpd/(temp0**3*2.0))
+      end if
+      nnzd = 2*nnz*tempd0 + tmp*nnzd
+      nnyd = 2*nny*tempd0 + tmp*nnyd
+      nnxd = 2*nnx*tempd0 + tmp*nnxd
+      xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + nnzd
+      xxd(i, j, 3) = xxd(i, j, 3) - nnzd
+      xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + nnyd
+      xxd(i, j, 2) = xxd(i, j, 2) - nnyd
+      xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + nnxd
+      xxd(i, j, 1) = xxd(i, j, 1) - nnxd
+    end do
+  end subroutine bcsymmpolar1sthalo_b
   subroutine bcsymmpolar1sthalo(nn)
 ! bcsymmpolar applies the polar symmetry boundary conditions to a
 ! singular line of a block. it is assumed that the pointers in
@@ -480,6 +610,136 @@ contains
       if (eddymodel) rev1(i, j) = rev2(i, j)
     end do
   end subroutine bcsymmpolar1sthalo
+!  differentiation of bcsymmpolar2ndhalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: *xx *rev0 *rev3 *pp0 *pp3 *rlv0
+!                *rlv3 *ww0 *ww3
+!   with respect to varying inputs: *xx *rev0 *rev3 *pp0 *pp3 *rlv0
+!                *rlv3 *ww0 *ww3
+!   rw status of diff variables: *xx:incr *rev0:in-out *rev3:incr
+!                *pp0:in-out *pp3:incr *rlv0:in-out *rlv3:incr
+!                *ww0:in-out *ww3:incr
+!   plus diff mem management of: xx:in rev0:in rev3:in pp0:in pp3:in
+!                rlv0:in rlv3:in ww0:in ww3:in
+  subroutine bcsymmpolar2ndhalo_b(nn)
+! bcsymmpolar applies the polar symmetry boundary conditions to a
+! singular line of a block. it is assumed that the pointers in
+! blockpointers are already set to the correct block on the
+! correct grid level.  the polar symmetry condition is a special
+! case of a degenerate line, as this line is the axi-symmetric
+! centerline. this routine does just the 2nd level halo.
+    use constants
+    use bcpointers_b, only : ww0, ww0d, ww3, ww3d, pp0, pp0d, pp3, pp3d,&
+&   rlv0, rlv0d, rlv3, rlv3d, rev0, rev0d, rev3, rev3d, xx, xxd, istart,&
+&   jstart, isize, jsize
+    use flowvarrefstate, only : viscous, eddymodel
+    implicit none
+! subroutine arguments.
+    integer(kind=inttype), intent(in) :: nn
+! local variables.
+    integer(kind=inttype) :: i, j, l, ii, mm
+    real(kind=realtype) :: nnx, nny, nnz, tmp, vtx, vty, vtz
+    real(kind=realtype) :: nnxd, nnyd, nnzd, tmpd, vtxd, vtyd, vtzd
+    intrinsic mod
+    intrinsic sqrt
+    integer :: branch
+    real(kind=realtype) :: temp0
+    real(kind=realtype) :: tempd
+    real(kind=realtype) :: tempd0
+    real(kind=realtype) :: temp
+    do ii=0,isize*jsize-1
+      i = mod(ii, isize) + istart
+      j = ii/isize + jstart
+! determine the unit vector along the degenerated face.
+! however it is not known which is the singular
+! direction and therefore determine the direction along
+! the diagonal (i,j) -- (i-1,j-1), which is correct for
+! both singular i and j-direction. note that due to the
+! usage of the pointer xx there is an offset of +1
+! in the indices and therefore (i+1,j+1) - (i,j) must
+! be used to determine this vector.
+      nnx = xx(i+1, j+1, 1) - xx(i, j, 1)
+      nny = xx(i+1, j+1, 2) - xx(i, j, 2)
+      nnz = xx(i+1, j+1, 3) - xx(i, j, 3)
+! determine the unit vector in this direction.
+      tmp = one/sqrt(nnx*nnx+nny*nny+nnz*nnz)
+      call pushreal8(nnx)
+      nnx = nnx*tmp
+      call pushreal8(nny)
+      nny = nny*tmp
+      call pushreal8(nnz)
+      nnz = nnz*tmp
+! determine twice the tangential velocity vector of the
+! internal cell.
+      call pushreal8(tmp)
+      tmp = two*(ww3(i, j, ivx)*nnx+ww3(i, j, ivy)*nny+ww3(i, j, ivz)*&
+&       nnz)
+! determine the flow variables in the halo cell. the
+! velocity is constructed such that the average of the
+! internal and the halo cell is along the centerline.
+! note that the magnitude of the velocity does not
+! change and thus the energy is identical.
+! set the pressure and possibly the laminar and
+! eddy viscosity in the halo.
+      if (viscous) then
+        call pushcontrol1b(0)
+      else
+        call pushcontrol1b(1)
+      end if
+      if (eddymodel) then
+        rev3d(i, j) = rev3d(i, j) + rev0d(i, j)
+        rev0d(i, j) = 0.0_8
+      end if
+      call popcontrol1b(branch)
+      if (branch .eq. 0) then
+        rlv3d(i, j) = rlv3d(i, j) + rlv0d(i, j)
+        rlv0d(i, j) = 0.0_8
+      end if
+      pp3d(i, j) = pp3d(i, j) + pp0d(i, j)
+      pp0d(i, j) = 0.0_8
+      ww3d(i, j, irhoe) = ww3d(i, j, irhoe) + ww0d(i, j, irhoe)
+      ww0d(i, j, irhoe) = 0.0_8
+      vtzd = ww0d(i, j, ivz)
+      ww3d(i, j, ivz) = ww3d(i, j, ivz) - ww0d(i, j, ivz)
+      ww0d(i, j, ivz) = 0.0_8
+      vtyd = ww0d(i, j, ivy)
+      ww3d(i, j, ivy) = ww3d(i, j, ivy) - ww0d(i, j, ivy)
+      ww0d(i, j, ivy) = 0.0_8
+      vtxd = ww0d(i, j, ivx)
+      ww3d(i, j, ivx) = ww3d(i, j, ivx) - ww0d(i, j, ivx)
+      ww0d(i, j, ivx) = 0.0_8
+      ww3d(i, j, irho) = ww3d(i, j, irho) + ww0d(i, j, irho)
+      ww0d(i, j, irho) = 0.0_8
+      tmpd = nny*vtyd + nnx*vtxd + nnz*vtzd
+      tempd = two*tmpd
+      nnzd = ww3(i, j, ivz)*tempd + tmp*vtzd
+      nnyd = ww3(i, j, ivy)*tempd + tmp*vtyd
+      nnxd = ww3(i, j, ivx)*tempd + tmp*vtxd
+      call popreal8(tmp)
+      ww3d(i, j, ivx) = ww3d(i, j, ivx) + nnx*tempd
+      ww3d(i, j, ivy) = ww3d(i, j, ivy) + nny*tempd
+      ww3d(i, j, ivz) = ww3d(i, j, ivz) + nnz*tempd
+      call popreal8(nnz)
+      call popreal8(nny)
+      call popreal8(nnx)
+      tmpd = nny*nnyd + nnx*nnxd + nnz*nnzd
+      temp = nnx**2 + nny**2 + nnz**2
+      temp0 = sqrt(temp)
+      if (temp .eq. 0.0_8) then
+        tempd0 = 0.0
+      else
+        tempd0 = -(one*tmpd/(temp0**3*2.0))
+      end if
+      nnzd = 2*nnz*tempd0 + tmp*nnzd
+      nnyd = 2*nny*tempd0 + tmp*nnyd
+      nnxd = 2*nnx*tempd0 + tmp*nnxd
+      xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + nnzd
+      xxd(i, j, 3) = xxd(i, j, 3) - nnzd
+      xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + nnyd
+      xxd(i, j, 2) = xxd(i, j, 2) - nnyd
+      xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + nnxd
+      xxd(i, j, 1) = xxd(i, j, 1) - nnxd
+    end do
+  end subroutine bcsymmpolar2ndhalo_b
   subroutine bcsymmpolar2ndhalo(nn)
 ! bcsymmpolar applies the polar symmetry boundary conditions to a
 ! singular line of a block. it is assumed that the pointers in
