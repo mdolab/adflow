@@ -59,7 +59,7 @@ if args.mode == 'train':
     # Run each script
     for iTest in tests:
         print 'Running reference for test%d'%iTest
-        os.system('%s -np %d python tests_cs/test%d.py %s > ref/%s_test%d_reg.ref 2>&1'%(
+        os.system('%s -np %d python tests_cs/test%d.py %s > ref_cs/%s_test%d_reg.ref 2>&1'%(
             args.mpiexec, args.procs, iTest, solveStr, module_name, iTest))
             
     # If we're training, we done (no comparison)
