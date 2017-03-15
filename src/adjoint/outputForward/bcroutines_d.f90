@@ -382,6 +382,118 @@ contains
       if (eddymodel) rev0(i, j) = rev3(i, j)
     end do
   end subroutine bcsymm2ndhalo
+!  differentiation of bcsymmpolar1sthalo in forward (tangent) mode (with options i4 dr8 r8):
+!   variations   of useful results: *rev1 *pp1 *rlv1 *ww1
+!   with respect to varying inputs: *xx *rev1 *rev2 *pp1 *pp2 *rlv1
+!                *rlv2 *ww1 *ww2
+!   rw status of diff variables: *xx:in *rev1:in-out *rev2:in *pp1:in-out
+!                *pp2:in *rlv1:in-out *rlv2:in *ww1:in-out *ww2:in
+!   plus diff mem management of: xx:in rev1:in rev2:in pp1:in pp2:in
+!                rlv1:in rlv2:in ww1:in ww2:in
+  subroutine bcsymmpolar1sthalo_d(nn)
+! bcsymmpolar applies the polar symmetry boundary conditions to a
+! singular line of a block. it is assumed that the pointers in
+! blockpointers are already set to the correct block on the
+! correct grid level.  the polar symmetry condition is a special
+! case of a degenerate line, as this line is the axi-symmetric
+! centerline. this routine does just the 1st level halo.
+    use constants
+    use bcpointers_d, only : ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, pp2d,&
+&   rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, xx, xxd, istart,&
+&   jstart, isize, jsize
+    use flowvarrefstate, only : viscous, eddymodel
+    implicit none
+! subroutine arguments.
+    integer(kind=inttype), intent(in) :: nn
+! local variables.
+    integer(kind=inttype) :: i, j, l, ii, mm
+    real(kind=realtype) :: nnx, nny, nnz, tmp, vtx, vty, vtz
+    real(kind=realtype) :: nnxd, nnyd, nnzd, tmpd, vtxd, vtyd, vtzd
+    intrinsic mod
+    intrinsic sqrt
+    real(kind=realtype) :: arg1
+    real(kind=realtype) :: arg1d
+    real(kind=realtype) :: result1
+    real(kind=realtype) :: result1d
+! loop over the generic subface to set the state in the
+! 1-st level halos
+    do ii=0,isize*jsize-1
+      i = mod(ii, isize) + istart
+      j = ii/isize + jstart
+! determine the unit vector along the degenerated face.
+! however it is not known which is the singular
+! direction and therefore determine the direction along
+! the diagonal (i,j) -- (i-1,j-1), which is correct for
+! both singular i and j-direction. note that due to the
+! usage of the pointer xx there is an offset of +1
+! in the indices and therefore (i+1,j+1) - (i,j) must
+! be used to determine this vector.
+      nnxd = xxd(i+1, j+1, 1) - xxd(i, j, 1)
+      nnx = xx(i+1, j+1, 1) - xx(i, j, 1)
+      nnyd = xxd(i+1, j+1, 2) - xxd(i, j, 2)
+      nny = xx(i+1, j+1, 2) - xx(i, j, 2)
+      nnzd = xxd(i+1, j+1, 3) - xxd(i, j, 3)
+      nnz = xx(i+1, j+1, 3) - xx(i, j, 3)
+! determine the unit vector in this direction.
+      arg1d = nnxd*nnx + nnx*nnxd + nnyd*nny + nny*nnyd + nnzd*nnz + nnz&
+&       *nnzd
+      arg1 = nnx*nnx + nny*nny + nnz*nnz
+      if (arg1 .eq. 0.0_8) then
+        result1d = 0.0_8
+      else
+        result1d = arg1d/(2.0*sqrt(arg1))
+      end if
+      result1 = sqrt(arg1)
+      tmpd = -(one*result1d/result1**2)
+      tmp = one/result1
+      nnxd = nnxd*tmp + nnx*tmpd
+      nnx = nnx*tmp
+      nnyd = nnyd*tmp + nny*tmpd
+      nny = nny*tmp
+      nnzd = nnzd*tmp + nnz*tmpd
+      nnz = nnz*tmp
+! determine twice the tangential velocity vector of the
+! internal cell.
+      tmpd = two*(ww2d(i, j, ivx)*nnx+ww2(i, j, ivx)*nnxd+ww2d(i, j, ivy&
+&       )*nny+ww2(i, j, ivy)*nnyd+ww2d(i, j, ivz)*nnz+ww2(i, j, ivz)*&
+&       nnzd)
+      tmp = two*(ww2(i, j, ivx)*nnx+ww2(i, j, ivy)*nny+ww2(i, j, ivz)*&
+&       nnz)
+      vtxd = tmpd*nnx + tmp*nnxd
+      vtx = tmp*nnx
+      vtyd = tmpd*nny + tmp*nnyd
+      vty = tmp*nny
+      vtzd = tmpd*nnz + tmp*nnzd
+      vtz = tmp*nnz
+! determine the flow variables in the halo cell. the
+! velocity is constructed such that the average of the
+! internal and the halo cell is along the centerline.
+! note that the magnitude of the velocity does not
+! change and thus the energy is identical.
+      ww1d(i, j, irho) = ww2d(i, j, irho)
+      ww1(i, j, irho) = ww2(i, j, irho)
+      ww1d(i, j, ivx) = vtxd - ww2d(i, j, ivx)
+      ww1(i, j, ivx) = vtx - ww2(i, j, ivx)
+      ww1d(i, j, ivy) = vtyd - ww2d(i, j, ivy)
+      ww1(i, j, ivy) = vty - ww2(i, j, ivy)
+      ww1d(i, j, ivz) = vtzd - ww2d(i, j, ivz)
+      ww1(i, j, ivz) = vtz - ww2(i, j, ivz)
+      ww1d(i, j, irhoe) = ww2d(i, j, irhoe)
+      ww1(i, j, irhoe) = ww2(i, j, irhoe)
+! set the pressure and possibly the laminar and
+! eddy viscosity in the halo.
+      pp1d(i, j) = pp2d(i, j)
+      pp1(i, j) = pp2(i, j)
+      if (viscous) then
+        rlv1d(i, j) = rlv2d(i, j)
+        rlv1(i, j) = rlv2(i, j)
+      end if
+      if (eddymodel) then
+        rev1d(i, j) = rev2d(i, j)
+        rev1(i, j) = rev2(i, j)
+      end if
+    end do
+  end subroutine bcsymmpolar1sthalo_d
   subroutine bcsymmpolar1sthalo(nn)
 ! bcsymmpolar applies the polar symmetry boundary conditions to a
 ! singular line of a block. it is assumed that the pointers in
@@ -450,6 +562,116 @@ contains
       if (eddymodel) rev1(i, j) = rev2(i, j)
     end do
   end subroutine bcsymmpolar1sthalo
+!  differentiation of bcsymmpolar2ndhalo in forward (tangent) mode (with options i4 dr8 r8):
+!   variations   of useful results: *rev0 *pp0 *rlv0 *ww0
+!   with respect to varying inputs: *xx *rev0 *rev3 *pp0 *pp3 *rlv0
+!                *rlv3 *ww0 *ww3
+!   rw status of diff variables: *xx:in *rev0:in-out *rev3:in *pp0:in-out
+!                *pp3:in *rlv0:in-out *rlv3:in *ww0:in-out *ww3:in
+!   plus diff mem management of: xx:in rev0:in rev3:in pp0:in pp3:in
+!                rlv0:in rlv3:in ww0:in ww3:in
+  subroutine bcsymmpolar2ndhalo_d(nn)
+! bcsymmpolar applies the polar symmetry boundary conditions to a
+! singular line of a block. it is assumed that the pointers in
+! blockpointers are already set to the correct block on the
+! correct grid level.  the polar symmetry condition is a special
+! case of a degenerate line, as this line is the axi-symmetric
+! centerline. this routine does just the 2nd level halo.
+    use constants
+    use bcpointers_d, only : ww0, ww0d, ww3, ww3d, pp0, pp0d, pp3, pp3d,&
+&   rlv0, rlv0d, rlv3, rlv3d, rev0, rev0d, rev3, rev3d, xx, xxd, istart,&
+&   jstart, isize, jsize
+    use flowvarrefstate, only : viscous, eddymodel
+    implicit none
+! subroutine arguments.
+    integer(kind=inttype), intent(in) :: nn
+! local variables.
+    integer(kind=inttype) :: i, j, l, ii, mm
+    real(kind=realtype) :: nnx, nny, nnz, tmp, vtx, vty, vtz
+    real(kind=realtype) :: nnxd, nnyd, nnzd, tmpd, vtxd, vtyd, vtzd
+    intrinsic mod
+    intrinsic sqrt
+    real(kind=realtype) :: arg1
+    real(kind=realtype) :: arg1d
+    real(kind=realtype) :: result1
+    real(kind=realtype) :: result1d
+    do ii=0,isize*jsize-1
+      i = mod(ii, isize) + istart
+      j = ii/isize + jstart
+! determine the unit vector along the degenerated face.
+! however it is not known which is the singular
+! direction and therefore determine the direction along
+! the diagonal (i,j) -- (i-1,j-1), which is correct for
+! both singular i and j-direction. note that due to the
+! usage of the pointer xx there is an offset of +1
+! in the indices and therefore (i+1,j+1) - (i,j) must
+! be used to determine this vector.
+      nnxd = xxd(i+1, j+1, 1) - xxd(i, j, 1)
+      nnx = xx(i+1, j+1, 1) - xx(i, j, 1)
+      nnyd = xxd(i+1, j+1, 2) - xxd(i, j, 2)
+      nny = xx(i+1, j+1, 2) - xx(i, j, 2)
+      nnzd = xxd(i+1, j+1, 3) - xxd(i, j, 3)
+      nnz = xx(i+1, j+1, 3) - xx(i, j, 3)
+! determine the unit vector in this direction.
+      arg1d = nnxd*nnx + nnx*nnxd + nnyd*nny + nny*nnyd + nnzd*nnz + nnz&
+&       *nnzd
+      arg1 = nnx*nnx + nny*nny + nnz*nnz
+      if (arg1 .eq. 0.0_8) then
+        result1d = 0.0_8
+      else
+        result1d = arg1d/(2.0*sqrt(arg1))
+      end if
+      result1 = sqrt(arg1)
+      tmpd = -(one*result1d/result1**2)
+      tmp = one/result1
+      nnxd = nnxd*tmp + nnx*tmpd
+      nnx = nnx*tmp
+      nnyd = nnyd*tmp + nny*tmpd
+      nny = nny*tmp
+      nnzd = nnzd*tmp + nnz*tmpd
+      nnz = nnz*tmp
+! determine twice the tangential velocity vector of the
+! internal cell.
+      tmpd = two*(ww3d(i, j, ivx)*nnx+ww3(i, j, ivx)*nnxd+ww3d(i, j, ivy&
+&       )*nny+ww3(i, j, ivy)*nnyd+ww3d(i, j, ivz)*nnz+ww3(i, j, ivz)*&
+&       nnzd)
+      tmp = two*(ww3(i, j, ivx)*nnx+ww3(i, j, ivy)*nny+ww3(i, j, ivz)*&
+&       nnz)
+      vtxd = tmpd*nnx + tmp*nnxd
+      vtx = tmp*nnx
+      vtyd = tmpd*nny + tmp*nnyd
+      vty = tmp*nny
+      vtzd = tmpd*nnz + tmp*nnzd
+      vtz = tmp*nnz
+! determine the flow variables in the halo cell. the
+! velocity is constructed such that the average of the
+! internal and the halo cell is along the centerline.
+! note that the magnitude of the velocity does not
+! change and thus the energy is identical.
+      ww0d(i, j, irho) = ww3d(i, j, irho)
+      ww0(i, j, irho) = ww3(i, j, irho)
+      ww0d(i, j, ivx) = vtxd - ww3d(i, j, ivx)
+      ww0(i, j, ivx) = vtx - ww3(i, j, ivx)
+      ww0d(i, j, ivy) = vtyd - ww3d(i, j, ivy)
+      ww0(i, j, ivy) = vty - ww3(i, j, ivy)
+      ww0d(i, j, ivz) = vtzd - ww3d(i, j, ivz)
+      ww0(i, j, ivz) = vtz - ww3(i, j, ivz)
+      ww0d(i, j, irhoe) = ww3d(i, j, irhoe)
+      ww0(i, j, irhoe) = ww3(i, j, irhoe)
+! set the pressure and possibly the laminar and
+! eddy viscosity in the halo.
+      pp0d(i, j) = pp3d(i, j)
+      pp0(i, j) = pp3(i, j)
+      if (viscous) then
+        rlv0d(i, j) = rlv3d(i, j)
+        rlv0(i, j) = rlv3(i, j)
+      end if
+      if (eddymodel) then
+        rev0d(i, j) = rev3d(i, j)
+        rev0(i, j) = rev3(i, j)
+      end if
+    end do
+  end subroutine bcsymmpolar2ndhalo_d
   subroutine bcsymmpolar2ndhalo(nn)
 ! bcsymmpolar applies the polar symmetry boundary conditions to a
 ! singular line of a block. it is assumed that the pointers in
