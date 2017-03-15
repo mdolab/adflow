@@ -18,8 +18,6 @@ adflowDefOpts = {
     # Output Parameters
     'storerindlayer':True,
     'outputdirectory':'./',
-    'writesymmetry':True,
-    'writefarfield':False,
     'writesurfacesolution':True,
     'writevolumesolution':True,
     'nsavevolume':1,
