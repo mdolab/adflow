@@ -2709,7 +2709,6 @@ class ADFLOW(AeroSolver):
         for dvName in self.curAP.DVs:
            key = self.curAP.DVs[dvName].key.lower()
            dvFam = self.curAP.DVs[dvName].family
-           print ('key:', key)
            
            tmp = {}
            if key == 'altitude':
@@ -3112,7 +3111,7 @@ class ADFLOW(AeroSolver):
         dwdot, tmp, fdot = self.adflow.adjointapi.computematrixfreeproductfwd(
             xvdot, extradot, wdot, bcDataValuesdot, useSpatial, useState, famLists, bcDataNames, 
             bcDataValues, bcDataFamLists, bcVarsEmpty, costSize, max(1, fSize), nTime)
-        print (tmp.shape)
+
         # Explictly put fdot to nothing if size is zero
         if fSize==0:
             fdot = numpy.zeros((0, 3))
