@@ -54,26 +54,26 @@ contains
        end do
     end if
 
-    ! ! ------------------------------------
-    ! !  Symmetry Polar Boundary Condition
-    ! ! ------------------------------------
-    ! !$AD II-LOOP
-    ! do nn=1, nBocos
-    !    if (BCType(nn) == symmPolar) then
-    !       call setBCPointers_d(nn, .True.)
-    !       call bcSymmPolar1stHalo_d(nn)
-    !    end if
-    ! end do
+    ! ------------------------------------
+    !  Symmetry Polar Boundary Condition
+    ! ------------------------------------
+    !$AD II-LOOP
+    do nn=1, nBocos
+       if (BCType(nn) == symmPolar) then
+          call setBCPointers_d(nn, .True.)
+          call bcSymmPolar1stHalo_d(nn)
+       end if
+    end do
 
-    ! if (secondHalo) then
-    !    !$AD II-LOOP
-    !    do nn=1, nBocos
-    !       if (BCType(nn) == symmPolar) then
-    !          call setBCPointers_d(nn, .True.)
-    !          call bcSymmPolar2ndHalo_d(nn)
-    !       end if
-    !    end do
-    ! end if
+    if (secondHalo) then
+       !$AD II-LOOP
+       do nn=1, nBocos
+          if (BCType(nn) == symmPolar) then
+             call setBCPointers_d(nn, .True.)
+             call bcSymmPolar2ndHalo_d(nn)
+          end if
+       end do
+    end if
 
     ! ------------------------------------
     !  adibatic Wall Boundary Condition 
