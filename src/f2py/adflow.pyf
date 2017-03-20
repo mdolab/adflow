@@ -1025,6 +1025,7 @@ python module libadflow
          integer(kind=inttype) :: oversetupdatemode
          integer(kind=inttype)::nrefine
          logical :: debugzipper
+         logical :: usezippermesh
        end module inputoverset
 
        module inputunsteady ! in :test:inputParam.f90

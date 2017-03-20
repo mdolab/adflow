@@ -21,7 +21,7 @@ contains
     use stencils, only : N_visc_drdw, visc_drdw_stencil
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use adtBuild, only : destroySerialQuad
-    use inputOverset, onlY : useoversetLoadBalance, overlapFactor, nRefine
+    use inputOverset, onlY : useoversetLoadBalance, overlapFactor, nRefine, backgroundVolScale
     use utils, only : EChk, setPointers, setBufferSizes, terminate
     use surfaceFamilies, only : BCFamGroups
     use kdtree2_module, onlY : kdtree2_create, kdtree2destroy
@@ -35,7 +35,7 @@ contains
          fringeReduction, transposeOverlap, setIBlankArray, deallocateOFringes, deallocateoBlocks, &
          deallocateOSurfs, deallocateCSRMatrix, setIsCompute, getWorkArray, flagForcedRecv, &
          qsortFringeType, isReceiver, setIsReceiver, addToFringeList, printOverlapMatrix, &
-         tic, toc, unwindIndex, windIndex, isFloodSeed, isFlooded
+         tic, toc, unwindIndex, windIndex, isFloodSeed, isFlooded, wallsOnBlock
     use oversetPackingRoutines, only : packOFringe, packOBlock, unpackOFringe, unpackOBlock, &
          getOFringeBufferSizes, getOBlockBufferSizes, getOSurfBufferSizes
     implicit none
@@ -54,7 +54,7 @@ contains
     integer(kind=intType) :: iWork, nWork, nLocalFringe
     integer(kind=intType) :: myBlock, myINdex, dIndex, donorBlock, donorProc, absDBlock
     real(kind=realType) :: startTime, endTime, curQuality
-    logical :: localChanged, globalChanged 
+    logical :: localChanged, globalChanged, wallsPresent
 
     type(CSRMatrix), pointer :: overlap
     type(CSRMatrix) :: overlapTranspose
@@ -826,7 +826,7 @@ contains
              ! perspective donors and see if we can get one
              ! better. The purpose of this code is to set the "1"
              ! index in fringePtr.
-
+             call wallsOnBlock(wallsPresent)
              do k=2, kl
                 do j=2, jl
                    do i=2, il
@@ -840,7 +840,11 @@ contains
                       
                       ! This is my original quality, accounting for
                       ! the overlap factor. 
-                      curQuality = vol(i, j, k)**third * overlapFactor
+                      if (wallsPresent) then 
+                         curQuality = vol(i, j, k)**third * overlapFactor
+                      else
+                         curQuality = (backGroundVolScale*vol(i, j, k))**third * overlapFactor
+                      end if
                       
                       ! For forced receivers, they get a large quality
                       ! such that ANY donor is selected. 
