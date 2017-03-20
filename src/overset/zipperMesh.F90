@@ -33,7 +33,7 @@ contains
          getOSurfCommPattern
     use oversetPackingRoutines, only : packOSurf, unpackOSurf, getOSurfBufferSizes
     use oversetInitialization, only : initializeOSurf
-    use inputOverset, only : debugZipper
+    use inputOverset, only : debugZipper, useZipperMesh
     use surfaceFamilies, only : BCFamExchange, famNames, BCFamGroups
     use stringOps
     use gapBoundaries
@@ -73,7 +73,7 @@ contains
     type(oversetWall), dimension(:), allocatable, target :: walls
     type(oversetWall),  target :: fullWall
 
-    if (.not. oversetPresent) then 
+    if (.not. oversetPresent .or. (.not. useZipperMesh)) then 
        ! Not overset so we don't can't have a zipper.
        return
     end if

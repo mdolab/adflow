@@ -3948,6 +3948,7 @@ class ADFLOW(AeroSolver):
             'cutcallback':[object, None],
             'oversetupdatemode':[str, 'frozen'],
             'nrefine':[int,10],
+            'usezippermesh':[bool, True],
 
             # Unsteady Paramters
             'timeintegrationscheme':[str, 'bdf'],
@@ -4224,6 +4225,7 @@ class ADFLOW(AeroSolver):
                                  'full':self.adflow.constants.updatefull,
                                  'location':['overset', 'oversetupdatemode']},
             'nrefine':['overset','nrefine'],
+            'usezippermesh':['overset', 'usezippermesh'],
 
             # Unsteady Params
             'timeintegrationscheme':{'bdf':self.adflow.constants.bdf,
