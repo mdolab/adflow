@@ -847,5 +847,6 @@ module inputOverset
 
   ! nRefine: number of connectivity loops to run
   integer(kind=intType)::nRefine
+  logical :: useZipperMesh
 end module inputOverset
 
