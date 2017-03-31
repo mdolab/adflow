@@ -304,12 +304,13 @@ class ADFLOW(AeroSolver):
 
         # Set the surface the user has supplied:
 
-        conn, faceSizes = self.getSurfaceConnectivity(self.meshFamilyGroup, 
-                                                      includeZipper=False)
+        conn, faceSizes, cgnsBlockIDs = self.getSurfaceConnectivity(self.meshFamilyGroup, 
+                                                                    includeZipper=False,
+                                                                    includeCGNS=True)
 
         pts = self.getSurfaceCoordinates(self.meshFamilyGroup, includeZipper=False)
 
-        self.mesh.setSurfaceDefinition(pts, conn, faceSizes)
+        self.mesh.setSurfaceDefinition(pts, conn, faceSizes, cgnsBlockIDs)
 
     def getSolverMeshIndices(self):
         '''
@@ -2511,7 +2512,7 @@ class ADFLOW(AeroSolver):
 
         return pts
 
-    def getSurfaceConnectivity(self, groupName=None, includeZipper=True):
+    def getSurfaceConnectivity(self, groupName=None, includeZipper=True, includeCGNS=False):
         """Return the connectivity dinates at which the forces (or tractions) are
         defined. This is the complement of getForces() which returns
         the forces at the locations returned in this routine.
@@ -2523,6 +2524,11 @@ class ADFLOW(AeroSolver):
             desired group. The group must be a family or a user-supplied
             group of families. The default is None which corresponds to
             all wall-type surfaces.
+        
+        includeCGNS : bool
+            Whether or not this function should return the indices of the CGNS blocks
+            that each face patch belongs to. Zipper mesh patches will have cgnsBlockID = -1.
+
         """
 
         # Create the zipper mesh if not done so
@@ -2535,12 +2541,17 @@ class ADFLOW(AeroSolver):
         famList = self._getFamilyList(groupName)
         npts, ncell = self._getSurfaceSize(groupName, includeZipper)
         conn =  numpy.zeros((ncell, 4), dtype='intc')
-        self.adflow.surfaceutils.getsurfaceconnectivity(numpy.ravel(conn), famList, includeZipper)
+        cgnsBlockID =  numpy.zeros((ncell), dtype='intc')
+        self.adflow.surfaceutils.getsurfaceconnectivity(numpy.ravel(conn), cgnsBlockID, famList, includeZipper)
 
         faceSizes = 4*numpy.ones(len(conn), 'intc')
 
-        # Conver to 0-based ordering becuase we are in python
-        return conn-1, faceSizes
+        if includeCGNS:
+            # Conver to 0-based ordering becuase we are in python
+            return conn-1, faceSizes, cgnsBlockID-1
+        else:
+            # Conver to 0-based ordering becuase we are in python
+            return conn-1, faceSizes
 
     def _expandGroupNames(self, groupNames):
         """Take a list of family (group) names and return a 2D array of the
@@ -2906,6 +2917,9 @@ class ADFLOW(AeroSolver):
                         xCen = self.adflow.utils.getcellcenters(1, n).T
                         cutCallBack(xCen, flag)
 
+                    # We will need to update the zipper mesh
+                    self.zipperCreated = False
+
                 famList = self._getFamilyList(self.closedFamilyGroup)
                 self.adflow.oversetapi.updateoverset(flag, famList)
 
@@ -3075,7 +3089,7 @@ class ADFLOW(AeroSolver):
                 elif len(key) == 2:
                     fam = key[1].lower()
                     key = key[0].lower()
-                    if key in self.possibleBCDVs and not bcVarsEmpty:
+                    if key in self.possibleBCDvs and not bcVarsEmpty:
                         # Figure out what index this should be:
                         for i in range(len(bcDataNames)):
                             if key.lower() == bcDataNames[i].lower() and \
@@ -3144,7 +3158,6 @@ class ADFLOW(AeroSolver):
                     # Get the group index:
                     ind = groupNames.index(groupName)
                     funcsDot[f] += sens[sf]*tmp[mapping -1, ind]
-
                     
         # Assemble the returns
         returns = []
@@ -3281,7 +3294,7 @@ class ADFLOW(AeroSolver):
         # Extract any possibly BC daa
         bcDataNames, bcDataValues, bcDataFamLists, bcDataFams, bcVarsEmpty = (
             self._getBCDataFromAeroProblem(self.curAP))
-      
+
         # Do actual Fortran call.
         xvbar, extrabar, wbar, bcdatavaluesbar = self.adflow.adjointapi.computematrixfreeproductbwd(
             resBar, funcsBar, fBar.T, useSpatial, useState, self.getSpatialSize(), 
@@ -3298,6 +3311,7 @@ class ADFLOW(AeroSolver):
         # Process xVbar back to the xS or xDV (geometric variables) if necessary
         if xDvDeriv or xSDeriv:
             if self.mesh is not None:
+
                 self.mesh.warpDeriv(xvbar)
                 xsbar = self.mesh.getdXs()
                 xsbar = self.mapVector(xsbar, self.meshFamilyGroup,

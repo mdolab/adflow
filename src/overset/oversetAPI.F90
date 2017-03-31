@@ -202,6 +202,7 @@ contains
           call getOBlockBufferSizes (il, jl, kl, tmpInt2D(iDom, 1), tmpInt2D(iDom, 2))
           call getOFringeBufferSizes(il, jl, kl, tmpInt2D(iDom, 3), tmpInt2D(iDom, 4))
           call getOSurfBufferSizes  (wallFamList, il, jl, kl, tmpInt2D(iDom, 5), tmpInt2D(iDom, 6), .True.)
+
        end do
 
        ! Set the tmpReal variable to to be the number of fringes we
@@ -2075,7 +2076,7 @@ contains
     integer(kind=intType), intent(in) :: n, nFam
 
     ! Working
-    integer(kind=intType) :: nLevels, level, sps
+    integer(kind=intType) :: nLevels, level, sps, nn, nDoms, mm
 
     ! If no overset, don't do anything.
     if (.not. oversetPresent) then 
@@ -2099,6 +2100,22 @@ contains
        ! Do the full update like we would have done during
        ! initialization.
        nLevels = ubound(flowDoms,2)
+
+       ! Reinitialize domain iblanks
+       nDoms = ubound(flowDoms,1)
+       do nn=1, nDoms
+          do level=1,nLevels          
+             do sps=1, nTimeIntervalsSpectral
+                flowDoms(nn, level, sps)%iBlank = 1
+                flowDoms(nn, level, sps)%forcedRecv = 0
+                flowDoms(nn, level, sps)%status = 0
+                do mm=1, flowDoms(nn, level, sps)%nBocos
+                   flowDoms(nn, level, sps)%BCData(mm)%iblank = 1
+                end do
+             end do
+          end do
+       end do
+
        do level=1,nLevels
           if (level == 1) then 
              call setExplicitHoleCut(flag)
