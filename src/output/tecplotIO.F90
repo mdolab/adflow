@@ -84,7 +84,7 @@ contains
     integer(kind=intType), dimension(:), pointer :: wallList
     real(kind=realType), dimension(:, :), allocatable :: pts
     integer(kind=intType), dimension(:, :), allocatable :: conn
-    integer(kind=intType), dimension(:), allocatable :: elemFam
+    integer(kind=intType), dimension(:), allocatable :: elemFam, cgnsBlockID
 
     if (.not. allocated(paraSlices)) then 
        allocate(paraSlices(nSliceMax, nTimeIntervalsSpectral))
@@ -103,8 +103,8 @@ contains
        ! points, connectivity and familyID of all the walls.
        wallList =>  BCFamGroups(iBCGroupWalls)%famList
        call getSurfaceSize(sizeNode, sizeCell, wallList, size(wallList), .True.)
-       allocate(pts(3, sizeNode), conn(4, sizeCell), elemFam(sizeCell))
-       call getSurfaceConnectivity(conn, sizeCell, wallList, size(wallList), .True.)
+       allocate(pts(3, sizeNode), conn(4, sizeCell), elemFam(sizeCell), cgnsBlockID(sizeCell))
+       call getSurfaceConnectivity(conn, cgnsBlockID, sizeCell, wallList, size(wallList), .True.)
        call getSurfacePoints(pts, sizeNode, sps, wallList, size(wallList), .True.)
        call getSurfaceFamily(elemFam, sizeCell, wallList, size(wallList), .True.)
        
@@ -140,7 +140,7 @@ contains
     integer(kind=intType), dimension(:), pointer :: wallList
     real(kind=realType), dimension(:, :), allocatable :: pts
     integer(kind=intType), dimension(:, :), allocatable :: conn
-    integer(kind=intType), dimension(:), allocatable :: elemFam
+    integer(kind=intType), dimension(:), allocatable :: elemFam, cgnsBlockID
 
     if (.not. allocated(absSlices)) then 
        allocate(absSlices(nSliceMax, nTimeIntervalsSpectral))
@@ -156,8 +156,8 @@ contains
 
        wallList =>  BCFamGroups(iBCGroupWalls)%famList
        call getSurfaceSize(sizeNode, sizeCell, wallList, size(wallList), .True.)
-       allocate(pts(3, sizeNode), conn(4, sizeCell), elemFam(sizeCell))
-       call getSurfaceConnectivity(conn, sizeCell, wallList, size(wallList), .True.)
+       allocate(pts(3, sizeNode), conn(4, sizeCell), elemFam(sizeCell), cgnsBlockID(sizeCell))
+       call getSurfaceConnectivity(conn, cgnsBlockID, sizeCell, wallList, size(wallList), .True.)
        call getSurfacePoints(pts, sizeNode, sps, wallList, size(wallList), .True.)
        call getSurfaceFamily(elemFam, sizeCell, wallList, size(wallList), .True.)
        call createSlice(pts, conn, elemFam, absSlices(nAbsSlices, sps), pt, direction, &
@@ -293,7 +293,7 @@ contains
     integer(kind=intType), dimension(:), pointer :: wallList
     real(kind=realType), dimension(:, :), allocatable :: pts
     integer(kind=intType), dimension(:, :), allocatable :: conn
-    integer(kind=intType), dimension(:), allocatable :: elemFam
+    integer(kind=intType), dimension(:), allocatable :: elemFam, cgnsBlockID
 
     ! Only write if we actually have lift distributions
     testwriteSlices: if(nParaSlices + nAbsSlices > 0) then
@@ -350,8 +350,8 @@ contains
           ! points, connectivity and familyID of all the walls.
           wallList =>  BCFamGroups(iBCGroupWalls)%famList
           call getSurfaceSize(sizeNode, sizeCell, wallList, size(wallList), .True.)
-          allocate(pts(3, sizeNode), conn(4, sizeCell), elemFam(sizeCell))
-          call getSurfaceConnectivity(conn, sizeCell, wallList, size(wallList), .True.)
+          allocate(pts(3, sizeNode), conn(4, sizeCell), elemFam(sizeCell), cgnsBlockID(sizeCell))
+          call getSurfaceConnectivity(conn, cgnsBlockID, sizeCell, wallList, size(wallList), .True.)
           call getSurfacePoints(pts, sizeNode, sps, wallList, size(wallList), .True.)
           call getSurfaceFamily(elemFam, sizeCell, wallList, size(wallList), .True.)
 
@@ -498,14 +498,14 @@ contains
     integer(kind=intType), dimension(:), pointer :: wallList
     real(kind=realType), dimension(:, :), allocatable :: pts
     integer(kind=intType), dimension(:, :), allocatable :: conn
-    integer(kind=intType), dimension(:), allocatable :: elemFam
+    integer(kind=intType), dimension(:), allocatable :: elemFam, cgnsBlockID
 
     ! Slices are created on walls and walls only. Retrieve the
     ! points, connectivity and familyID of all the walls.
     wallList =>  BCFamGroups(iBCGroupWalls)%famList
     call getSurfaceSize(sizeNode, sizeCell, wallList, size(wallList), .True.)
-    allocate(pts(3, sizeNode), conn(4, sizeCell), elemFam(sizeCell))
-    call getSurfaceConnectivity(conn, sizeCell, wallList, size(wallList), .True.)
+    allocate(pts(3, sizeNode), conn(4, sizeCell), elemFam(sizeCell), cgnsBlockID(sizeCell))
+    call getSurfaceConnectivity(conn, cgnsBlockID, sizeCell, wallList, size(wallList), .True.)
     call getSurfacePoints(pts, sizeNode, sps, wallList, size(wallList), .True.)
     call getSurfaceFamily(elemFam, sizeCell, wallList, size(wallList), .True.)
 
@@ -729,7 +729,7 @@ contains
     real(kind=realType), dimension(:, :), allocatable :: nodalValues
     integer(kind=intType), dimension(:, :), allocatable :: conn, localConn
     real(kind=realType), dimension(:, :), allocatable :: vars
-    integer(kind=intType), dimension(:), allocatable :: mask, elemFam, localElemFam
+    integer(kind=intType), dimension(:), allocatable :: mask, elemFam, localElemFam, cgnsBlockID
     logical :: blankSave, BCGroupNeeded, dataWritten
     type(zipperMesh), pointer :: zipper
     type(familyExchange), pointer :: exch
@@ -965,8 +965,8 @@ contains
           call EChk(ierr,__FILE__,__LINE__)
           
 
-          allocate(localConn(4, sizeCell), localElemFam(sizeCell))
-          call getSurfaceConnectivity(localConn, sizeCell, exch%famList, size(exch%famList), .True.)
+          allocate(localConn(4, sizeCell), localElemFam(sizeCell), cgnsBlockID(sizeCell))
+          call getSurfaceConnectivity(localConn, cgnsBlockID, sizeCell, exch%famList, size(exch%famList), .True.)
           call getSurfaceFamily(localElemFam, sizeCell, exch%famList, size(exch%famList), .True.)
 
           if (myid == 0) then 

@@ -98,10 +98,12 @@ contains
 
   end subroutine getSurfaceSize
 
-  subroutine getSurfaceConnectivity(conn, ncell, famList, nFamList, includeZipper)
+  subroutine getSurfaceConnectivity(conn, cgnsBlockID, ncell, famList, nFamList, includeZipper)
     ! Return the connectivity list for the each of the patches
+    ! cgnsBlockID is the domain number of the CGNS file that each face patch corresponds to.
+    ! the zipper mesh patches will have cgnsBlockID = -1
     use constants
-    use blockPointers, only : nDom, nBocos, BCData, BCFaceID, rightHanded
+    use blockPointers, only : nDom, nBocos, BCData, BCFaceID, rightHanded, nbkGlobal
     use utils, only : setPointers
     use sorting, only : famInList
     use surfaceFamilies, only : BCFamGroups
@@ -111,7 +113,7 @@ contains
 
     ! Input/Output
     integer(kind=intType), intent(in) :: ncell
-    integer(kind=intType), intent(inout) :: conn(4*ncell)
+    integer(kind=intType), intent(inout) :: conn(4*ncell), cgnsBlockID(ncell)
     integer(kind=intType), intent(in) :: nFamList, famList(nFamList)
     logical, intent(in) :: includeZipper
 
@@ -122,6 +124,10 @@ contains
     type(zipperMesh), pointer :: zipper
     cellCount = 0
     nodeCount = 0
+
+    ! Initialize all cgns IDs to -1. This will take care of the zipper meshes IDs, which should
+    ! be -1 since they do not belong to the CGNS file.
+    cgnsBlockID = -1
 
     domains: do nn=1,nDom
        call setPointers(nn, 1_intType, 1_intType)
@@ -184,6 +190,12 @@ contains
                          conn(4*cellCount+2) = nodeCount + (j  )*ni + i + 1   + 1! n2
                          conn(4*cellCount+3) = nodeCount + (j+1)*ni + i + 1   + 1! n3
                          conn(4*cellCount+4) = nodeCount + (j+1)*ni + i       + 1! n4
+
+                         ! Assign the corresponding block IDs.
+                         ! Remember that nbkGlobal is the CGNS ID of the current domain,
+                         ! and this is set when we call setPointers.
+                         cgnsBlockID(cellCount+1) = nbkGlobal
+
                          cellCount = cellCount + 1
                       end if
                    end do
@@ -197,6 +209,12 @@ contains
                          conn(4*cellCount+2) = nodeCount + (j+1)*ni + i        + 1! n4
                          conn(4*cellCount+3) = nodeCount + (j+1)*ni + i + 1    + 1! n3
                          conn(4*cellCount+4) = nodeCount + (j  )*ni + i + 1    + 1! n2
+
+                         ! Assign the corresponding block IDs.
+                         ! Remember that nbkGlobal is the CGNS ID of the current domain,
+                         ! and this is set when we call setPointers.
+                         cgnsBlockID(cellCount+1) = nbkGlobal
+
                          cellCount = cellCount + 1
                       end if
                    end do

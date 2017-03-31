@@ -280,8 +280,9 @@ python module libadflow
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
            logical intent(in) :: includezipper
          end subroutine getsurfacesize
-         subroutine getsurfaceconnectivity(conn,ncell,famlist,nfamlist,includezipper) ! in :test:surfaceUtils.F90:surfaceutils
+         subroutine getsurfaceconnectivity(conn,cgnsblockid,ncell,famlist,nfamlist,includezipper) ! in :test:surfaceUtils.F90:surfaceutils
            integer(kind=inttype) dimension(4 * ncell),intent(inout) :: conn
+           integer(kind=inttype) dimension(ncell),intent(inout) :: cgnsblockid
            integer(kind=inttype), optional,intent(in),check((len(conn))/(4)>=ncell),depend(conn) :: ncell=(len(conn))/(4)
            integer(kind=inttype) dimension(nfamlist),intent(in) :: famlist
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
