@@ -82,6 +82,7 @@ contains
           if (oversetPresent .and. &
                (oversetUpdateMode == updateFast .or. &
                oversetUpdateMode == updateFull)) then 
+             print *,'calling overset update code'
              call updateOversetConnectivity(1_intType, sps)
           end if
        end do
