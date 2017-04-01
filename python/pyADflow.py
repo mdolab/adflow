@@ -2541,10 +2541,14 @@ class ADFLOW(AeroSolver):
         famList = self._getFamilyList(groupName)
         npts, ncell = self._getSurfaceSize(groupName, includeZipper)
         conn =  numpy.zeros((ncell, 4), dtype='intc')
-        cgnsBlockID =  numpy.zeros((ncell), dtype='intc')
-        self.adflow.surfaceutils.getsurfaceconnectivity(numpy.ravel(conn), cgnsBlockID, famList, includeZipper)
+        cgnsBlockID =  numpy.zeros(max(1,ncell), dtype='intc') # f2py will crash if we give a vector of length zero
+        self.adflow.surfaceutils.getsurfaceconnectivity(numpy.ravel(conn), numpy.ravel(cgnsBlockID), famList, includeZipper)
 
         faceSizes = 4*numpy.ones(len(conn), 'intc')
+
+        # Fix cgnsBlockID size if its length should be zero
+        if ncell == 0:
+            cgnsBlockID = numpy.zeros(ncell, dtype='intc')
 
         if includeCGNS:
             # Conver to 0-based ordering becuase we are in python
