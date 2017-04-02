@@ -965,6 +965,10 @@ contains
           call EChk(ierr,__FILE__,__LINE__)
           
 
+          if (allocated(cgnsBlockID)) then
+             deallocate(cgnsBlockID)
+          end if
+
           allocate(localConn(4, sizeCell), localElemFam(sizeCell), cgnsBlockID(sizeCell))
           call getSurfaceConnectivity(localConn, cgnsBlockID, sizeCell, exch%famList, size(exch%famList), .True.)
           call getSurfaceFamily(localElemFam, sizeCell, exch%famList, size(exch%famList), .True.)
