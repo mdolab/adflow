@@ -544,6 +544,32 @@ div.warning p.admonition-title {
     background-color: #b04040;
 }
 
+/* Important only */
+div.important {
+    border: 1px solid #005fa8;
+    background-color: #ddf0ff;
+}
+div.important p.admonition-title {
+    background-color: #5283a8;
+}
+
+/* Caution only */
+div.caution {
+    border: 1px solid #999600;
+    background-color: #fffedb;
+}
+div.caution p.admonition-title {
+    background-color: #878542;
+}
+
+/* Attention only */
+div.attention {
+    border: 1px solid #b57200;
+    background-color: #ffebcc;
+}
+div.attention p.admonition-title {
+    background-color: #b57e22;
+}
 
 /* Figures ------------------------------------------------------------------ */
 
