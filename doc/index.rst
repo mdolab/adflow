@@ -23,4 +23,3 @@ multi-block and overset 3D CFD solver.
    pyADflow
    performance
    devguide
-   adjoint
