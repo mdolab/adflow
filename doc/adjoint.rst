@@ -3,7 +3,7 @@
 Adjoint overview
 !!!!!!!!!!!!!!!!
 
-This section is based on Gaetan Kenway's presentation on 03-22-2017.
+This section is based on a session given by Gaetan Kenway and Charles Mader on 03-22-2017.
 
 Derivative seed manipulation
 ============================
@@ -41,7 +41,7 @@ All these input variable, with the exception of fam_list, are active variables i
 The outputs of the master function are the expected results from a flow solver. They are:
 
 * ``R`` (dw in Fortran) : Flow solution residuals in every cell;
-* ``forces`` : Nodal forces or tractions (forces/area), depending on the AAAAAA flag. This includes the zipper mesh nodes.
+* ``forces`` : Nodal forces or tractions (forces/area), depending on the ``forcesAsTractions`` flag. This includes the zipper mesh nodes.
 * ``funcs`` : ADflow functions requested by the user. They can be integrated quantities such as 'lift', 'cd', and 'mass flow', and the can be defined in arbitrary integration planes. User-defined functions are not included here since they are handled in the Python side.
 
 The master function should perform all relevant operation to receive the solver inputs and compute the corresponding outputs. In other words, it is a collection of functions that will "reproduce" the solver residual and function calculation. Note the call order can be different than in analysis code. There are other calls as well that can be considered as preprocessing calls.
