@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 header_str = ''' pyf_processor.py is used to automatically process a
 particular form of pyf file that allows the specification of both the
 real and complex wrapping functions in one place. This is eliminates
@@ -11,18 +13,17 @@ The resulting "clean" pyf file is written to pyf_file.autogen. This
 .autogen file is what should be passed to f2py to generate the actual
 wrapper.
 '''
-
 import sys
 
-if len(sys.argv) <> 3:
-    print header_str
+if len(sys.argv) != 3:
+    print(header_str)
     sys.exit(1)
 # end if
 
 if sys.argv[1] in ['real','complex']:
     mode = sys.argv[1]
 else:
-    print header_str
+    print(header_str)
     sys.exit(1)
 # end if
 
@@ -30,7 +31,7 @@ try:
     f = open(sys.argv[2],'r')
     orig_lines = f.readlines()
 except:
-    print 'Error opening/reading pyf file!'
+    print('Error opening/reading pyf file!')
     sys.exit(1)
 # end try
 
@@ -45,7 +46,7 @@ g.write('!'+'#'*78+'!'+'\n')
 
 # Start going through the lines:
 cur_mode = 'both'
-for i in xrange(len(orig_lines)):
+for i in range(len(orig_lines)):
     if '#ifdef USE_COMPLEX' in orig_lines[i]:
         cur_mode = 'complex'
     elif '#ifndef USE_COMPLEX' in orig_lines[i]:
@@ -57,7 +58,7 @@ for i in xrange(len(orig_lines)):
         elif cur_mode == 'real':
             cur_mode = 'complex'
         else:
-            print 'Error occured. Mismatched #else statement'
+            print('Error occured. Mismatched #else statement')
             sys.exit(1)
         # end if
     elif '#endif' in orig_lines[i]:
