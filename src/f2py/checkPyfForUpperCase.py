@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from __future__ import print_function
 
 """
 Text in the adflow.pyf cannot contain ANY upper case characters.
@@ -9,8 +10,8 @@ case characters. Text in comments and preprocessor tags are ignored
 import sys
 
 def error(i,line):
-    print "ERROR : No code related characters in adflow.pyf cannot contain upper case characters"
-    print "ERROR : Uppercase found in adflow.pyf line {0:d}. String found is: {1:s} ".format(i,line)    
+    print("ERROR : No code related characters in adflow.pyf cannot contain upper case characters")
+    print("ERROR : Uppercase found in adflow.pyf line {0:d}. String found is: {1:s} ".format(i,line))
     sys.exit(1)
 
 
