@@ -2921,8 +2921,19 @@ class ADFLOW(AeroSolver):
                         xCen = self.adflow.utils.getcellcenters(1, n).T
                         cutCallBack(xCen, flag)
 
-                    # We will need to update the zipper mesh
-                    self.zipperCreated = False
+                    # Verify if we already have previous failures, such as negative volumes
+                    self.adflow.killsignals.routinefailed = \
+                                  self.comm.allreduce(
+                                  bool(self.adflow.killsignals.routinefailed), op=MPI.LOR)
+
+                    # We will need to update the zipper mesh.
+                    # But we only do this if we have a valid mesh, otherwise the
+                    # code might halt during zipper mesh regeneration
+                    if not self.adflow.killsignals.routinefailed:
+                        self.zipperCreated = False
+                    else:
+                        if self.myid == 0:
+                            print('ATTENTION: Zipper mesh will not be regenerated due to previous failures.')
 
                 famList = self._getFamilyList(self.closedFamilyGroup)
                 self.adflow.oversetapi.updateoverset(flag, famList)
