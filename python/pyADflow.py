@@ -1571,7 +1571,7 @@ class ADFLOW(AeroSolver):
         # # Call fully compbined fortran routine. 
         self.adflow.tecplotio.writetecplot(sliceName, True, liftName, True,
                                            surfName, writeSurf, famList)
-        sys.exit(0)
+
     def writeMeshFile(self, fileName):
         """Write the current mesh to a CGNS file. This call isn't used
         normally since the volume solution usually contains the grid
