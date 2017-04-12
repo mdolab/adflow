@@ -2,7 +2,7 @@
 #!/usr/bin/python
 from __future__ import print_function
 from __future__ import division
-from six import iteritems
+
 """
 pyADflow - A Python interface to ADflow.
 
@@ -28,6 +28,7 @@ import os
 import time
 import copy
 import numpy
+import sys
 from mpi4py import MPI
 from petsc4py import PETSc
 from baseclasses import AeroSolver, AeroProblem
@@ -70,6 +71,10 @@ class ADFLOWWarning(object):
                 i += len(word)+1
         msg += ' '*(78-i) + '|\n' + '+'+'-'*78+'+'+'\n'
         print(msg)
+
+# Global constant for a constants.maxtringlen fortran character array.
+# Becuase Python 3 hates you.
+emptyString = ' '*256
 
 # =============================================================================
 # ADFLOW Class
@@ -474,7 +479,7 @@ class ADFLOW(AeroSolver):
             tmp[:, 2] = positions
             dirVec = [0.0, 0.0, 1.0]
 
-        for i in xrange(len(positions)):
+        for i in range(len(positions)):
             # It is important to ensure each slice get a unique
             # name...so we will number sequentially from pythhon
             j = self.nSlice + i + 1
@@ -791,7 +796,7 @@ class ADFLOW(AeroSolver):
         # We now now the mesh warping was ok so reset the flags:
         self.adflow.killsignals.routinefailed =  False
         self.adflow.killsignals.fatalfail = False
-
+        sys.stdout.flush()
         t1 = time.time()
         
         # Solve the equations in appropriate mode
@@ -881,7 +886,7 @@ class ADFLOW(AeroSolver):
         
         # Time advancing
         nTimeStepsFine = self.getOption('ntimestepsfine')
-        for tdx in xrange(1, nTimeStepsFine+1):
+        for tdx in range(1, nTimeStepsFine+1):
             # Increment counter
             curTime, curTimeStep = self.advanceTimeStepCounter()
 
@@ -1567,7 +1572,7 @@ class ADFLOW(AeroSolver):
         # # Call fully compbined fortran routine. 
         self.adflow.tecplotio.writetecplot(sliceName, True, liftName, True,
                                            surfName, writeSurf, famList)
-        
+
     def writeMeshFile(self, fileName):
         """Write the current mesh to a CGNS file. This call isn't used
         normally since the volume solution usually contains the grid
@@ -1589,10 +1594,10 @@ class ADFLOW(AeroSolver):
         self.adflow.monitor.writesurface = False
 
         # Set filename in adflow
-        self.adflow.inputio.solfile[:] = ''
+        self.adflow.inputio.solfile[:] = emptyString
         self.adflow.inputio.solfile[0:len(fileName)] = fileName
 
-        self.adflow.inputio.newgridfile[:] = ''
+        self.adflow.inputio.newgridfile[:] = emptyString
         self.adflow.inputio.newgridfile[0:len(fileName)] = fileName
 
         # Actual fortran write call. Family list doesn't matter.
@@ -1625,11 +1630,11 @@ class ADFLOW(AeroSolver):
         self.adflow.monitor.writevolume = True
         self.adflow.monitor.writesurface = False
 
+        n = self.adflow.constants.maxstringlen
         # Set fileName in adflow
-        self.adflow.inputio.solfile[:] = ''
+        self.adflow.inputio.solfile = emptyString
         self.adflow.inputio.solfile[0:len(fileName)] = fileName
-
-        self.adflow.inputio.newgridfile[:] = ''
+        self.adflow.inputio.newgridfile[:] = emptyString
         self.adflow.inputio.newgridfile[0:len(fileName)] = fileName
 
         # Actual fortran write call. family list doesn't matter
@@ -1655,7 +1660,7 @@ class ADFLOW(AeroSolver):
         self.adflow.monitor.writesurface=True
 
         # Set fileName in adflow
-        self.adflow.inputio.surfacesolfile[:] = ''
+        self.adflow.inputio.surfacesolfile[:] = emptyString
         self.adflow.inputio.surfacesolfile[0:len(fileName)] = fileName
 
         # Actual fortran write call. Fam list matters. 
@@ -1750,7 +1755,7 @@ class ADFLOW(AeroSolver):
             # First sum up the total number of nodes and elements:
             nPt = 0
             nCell = 0
-            for iProc in xrange(len(pts)):
+            for iProc in range(len(pts)):
                 nPt += len(pts[iProc])
                 nCell += len(conn[iProc])
 
@@ -1761,8 +1766,8 @@ class ADFLOW(AeroSolver):
             f.write("%d %d\n"% (nPt, nCell))
 
             # Now write out all the Nodes and Forces (or tractions)
-            for iProc in xrange(len(pts)):
-                for i in xrange(len(pts[iProc])):
+            for iProc in range(len(pts)):
+                for i in range(len(pts[iProc])):
                     f.write('%15.8g %15.8g %15.8g '% (
                             numpy.real(pts[iProc][i, 0]),
                             numpy.real(pts[iProc][i, 1]),
@@ -1778,8 +1783,8 @@ class ADFLOW(AeroSolver):
             # proc, we need to increment the connectivity by the
             # number of nodes we've "used up" so far
             nodeOffset = 0
-            for iProc in xrange(len(conn)):
-                for i in xrange(len(conn[iProc])):
+            for iProc in range(len(conn)):
+                for i in range(len(conn[iProc])):
                     f.write('%d %d %d %d\n'%(
                         conn[iProc][i,0]+nodeOffset,
                         conn[iProc][i,1]+nodeOffset,
@@ -2368,9 +2373,10 @@ class ADFLOW(AeroSolver):
         dataArray = []
         groupNames = []
 
-        for (varName, family), value in AP.bcVarData.iteritems():
+        for tmp in AP.bcVarData:
+            varName, family = tmp
             variables.append(varName)
-            dataArray.append(value)
+            dataArray.append(AP.bcVarData[tmp])
             groupNames.append(family)
         
         nameArray = self._createFortranStringArray(variables)
@@ -2726,7 +2732,7 @@ class ADFLOW(AeroSolver):
         the matrix-free product bwd routine into the required
         dictionary format."""
 
-	funcsSens = {}
+        funcsSens = {}
 
         for dvName in self.curAP.DVs:
            key = self.curAP.DVs[dvName].key.lower()
@@ -2780,12 +2786,15 @@ class ADFLOW(AeroSolver):
                # We need to determine what the index is in dIdBC. For
                # now just do an efficient linear search:
                i = 0
-               for (varName, family), value in self.curAP.bcVarData.iteritems():
+
+               for tmp in AP.bcVarData:
+                   varName, family = tmp
+                   value = AP.bcVarData[tmp]
                    if varName.lower() == key and family.lower() == dvFam.lower():
                        funcsSens[dvName] = dIdBC[i]
                    i += 1
-
-	return funcsSens
+ 
+        return funcsSens
 
     def _setAeroDVs(self):
 
@@ -2922,8 +2931,19 @@ class ADFLOW(AeroSolver):
                         xCen = self.adflow.utils.getcellcenters(1, n).T
                         cutCallBack(xCen, flag)
 
-                    # We will need to update the zipper mesh
-                    self.zipperCreated = False
+                    # Verify if we already have previous failures, such as negative volumes
+                    self.adflow.killsignals.routinefailed = \
+                                  self.comm.allreduce(
+                                  bool(self.adflow.killsignals.routinefailed), op=MPI.LOR)
+
+                    # We will need to update the zipper mesh.
+                    # But we only do this if we have a valid mesh, otherwise the
+                    # code might halt during zipper mesh regeneration
+                    if not self.adflow.killsignals.routinefailed:
+                        self.zipperCreated = False
+                    else:
+                        if self.myid == 0:
+                            print('ATTENTION: Zipper mesh will not be regenerated due to previous failures.')
 
                 famList = self._getFamilyList(self.closedFamilyGroup)
                 self.adflow.oversetapi.updateoverset(flag, famList)
@@ -3739,7 +3759,7 @@ class ADFLOW(AeroSolver):
                         'volumevariables',
                         'isovariables']:
                 varStr = ''
-                for i in xrange(len(value)):
+                for i in range(len(value)):
                     varStr = varStr + value[i] + '_'
                 # end if
                 varStr = varStr[0:-1] # Get rid of last '_'
@@ -3805,14 +3825,14 @@ class ADFLOW(AeroSolver):
                 for key in isoDict.keys():
 
                     isoVals = numpy.atleast_1d(isoDict[key])
-                    for i in xrange(len(isoVals)):
+                    for i in range(len(isoVals)):
                         var.append(key)
                         val.append(isoVals[i])
 
                 val = numpy.array(val)
 
                 self.adflow.inputparamroutines.initializeisosurfacevariables(val)
-                for i in xrange(len(val)):
+                for i in range(len(val)):
                     self.adflow.inputparamroutines.setisosurfacevariable(var[i], i+1)
 
             elif name == "turbresscale":
@@ -4551,31 +4571,31 @@ class ADFLOW(AeroSolver):
         liftDistributionFileName = os.path.join(outputDir, baseName + "_lift")
 
         # Set fileName in adflow
-        self.adflow.inputio.solfile[:] = ''
+        self.adflow.inputio.solfile[:] = emptyString
         self.adflow.inputio.solfile[0:len(volFileName)] = volFileName
 
         # Set the grid file to the same name so the grids will be written
         # to the volume files
-        self.adflow.inputio.newgridfile[:] = ''
+        self.adflow.inputio.newgridfile[:] = emptyString
         self.adflow.inputio.newgridfile[0:len(volFileName)] = volFileName
 
-        self.adflow.inputio.surfacesolfile[:] = ''
+        self.adflow.inputio.surfacesolfile[:] = emptyString
         self.adflow.inputio.surfacesolfile[0:len(surfFileName)] = surfFileName
 
-        self.adflow.inputio.slicesolfile[:] = ''
+        self.adflow.inputio.slicesolfile[:] = emptyString
         self.adflow.inputio.slicesolfile[0:len(sliceFileName)] = sliceFileName
 
-        self.adflow.inputio.liftdistributionfile[:] = ''
+        self.adflow.inputio.liftdistributionfile[:] = emptyString
         self.adflow.inputio.liftdistributionfile[0:len(liftDistributionFileName)] = liftDistributionFileName
 
     def _setForcedFileNames(self):
         # Set the filenames that will be used if the user forces a
         # write during a solution.
 
-        self.adflow.inputio.forcedvolumefile[:] = ''
-        self.adflow.inputio.forcedsurfacefile[:] = ''
-        self.adflow.inputio.forcedliftfile[:] = ''
-        self.adflow.inputio.forcedslicefile[:] = ''
+        self.adflow.inputio.forcedvolumefile[:] = emptyString
+        self.adflow.inputio.forcedsurfacefile[:] = emptyString
+        self.adflow.inputio.forcedliftfile[:] = emptyString
+        self.adflow.inputio.forcedslicefile[:] = emptyString
 
         outputDir = self.getOption('outputDirectory')
         baseName = self.curAP.name
@@ -4627,8 +4647,12 @@ class ADFLOW(AeroSolver):
         shp = strArray.shape
         arr = strArray.reshape((shp[1],shp[0]), order='F')
         tmp = []
+        
         for i in range(arr.shape[1]):
-            tmp.append(''.join(arr[:, i]).strip().lower())
+            tmp.append("")
+            for j in range(arr.shape[0]):
+                tmp[-1] += arr[j, i].decode()
+            tmp[-1] = tmp[-1].strip().lower()
 
         return tmp
 
