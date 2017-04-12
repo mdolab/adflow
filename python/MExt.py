@@ -14,7 +14,7 @@ def _tmp_pkg(dir):
             os.rmdir(path)
         except:
             break
-    init = file(os.path.join(path, '__init__.py'), 'w')
+    init = open(os.path.join(path, '__init__.py'), 'w')
     init.close()
     return name, path
 
