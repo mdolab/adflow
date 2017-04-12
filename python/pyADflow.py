@@ -1,3 +1,4 @@
+
 #!/usr/bin/python
 from __future__ import print_function
 from __future__ import division
@@ -3090,16 +3091,15 @@ class ADFLOW(AeroSolver):
                             val *= numpy.pi/180
                         extradot[self.possibleAeroDVs[key.lower()]] = val
 
-                elif len(key) == 2:
-                    fam = key[1].lower()
+                else:
+                    fam = '_'.join(key[1:])
                     key = key[0].lower()
                     if key in self.possibleBCDvs and not bcVarsEmpty:
                         # Figure out what index this should be:
                         for i in range(len(bcDataNames)):
-                            if key.lower() == bcDataNames[i].lower() and \
-                               fam.lower() == bcDataFams[i]:
+                            if key.lower() == ''.join(bcDataNames[i]).strip().lower() and \
+                               fam.lower() == bcDataFams[i].lower():
                                 bcDataValuesdot[i] = xDvDot[xKey]
-                    
         # For the geometric xDvDot perturbation we accumulate into the
         # already existing (and possibly nonzero) xsdot and xvdot
         if xDvDot is not None or xSDot is not None:
