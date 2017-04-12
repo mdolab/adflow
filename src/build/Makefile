@@ -57,7 +57,7 @@ sources: $(OFILES) $(DEP_FILE)
 # when you change your source
 $(DEP_FILE): $(fortranFiles)
 	@echo "Making dependencies!\n"
-	python fort_depend.py -w -o $(DEP_FILE) -f $(fortranFiles)
+	$(PYTHON) fort_depend.py -w -o $(DEP_FILE) -f $(fortranFiles)
 
 # Include the automatically generated file.
 include $(DEP_FILE)
@@ -103,7 +103,7 @@ python: lib ../f2py/adflow.pyf
 	python ../f2py/pyf_preprocessor.py real ../f2py/adflow.pyf 
 
 # Run f2py to get adflowmodule.c and adflow-f2pywrapper2.f90
-	f2py ../f2py/adflow.pyf.autogen
+	$(F2PY) ../f2py/adflow.pyf.autogen
 
 # Compile c wrapper. Don't use CC_ALL_FLAGS...PETSc wil F-up this command.
 	$(CC) $(CC_ALL_FLAGS) $(PYTHON_INCLUDES) -I$(NUMPY_INCLUDES) \
@@ -119,7 +119,7 @@ python: lib ../f2py/adflow.pyf
 # Final Link:
 	$(FF90) -shared $(PYTHON_OBJECTS) libadflow.a $(LINKER_ALL_FLAGS) -o libadflow.so
 	cp -fr ../f2py/importTest.py .
-	python importTest.py
+	$(PYTHON) importTest.py
 	mv libadflow.so ../../python
 
 
