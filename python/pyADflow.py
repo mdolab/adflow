@@ -2787,9 +2787,9 @@ class ADFLOW(AeroSolver):
                # now just do an efficient linear search:
                i = 0
 
-               for tmp in AP.bcVarData:
+               for tmp in self.curAP.bcVarData:
                    varName, family = tmp
-                   value = AP.bcVarData[tmp]
+                   value = self.curAP.bcVarData[tmp]
                    if varName.lower() == key and family.lower() == dvFam.lower():
                        funcsSens[dvName] = dIdBC[i]
                    i += 1
