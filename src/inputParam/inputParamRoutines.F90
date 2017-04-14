@@ -295,6 +295,9 @@ contains
        case (cgnsCavitation)
           sortNumber(i) = 115
 
+       case(cgnsAxisMoment)
+          sortNumber(i) = 116
+          
        case (cgnsHdiffMax)
           sortNumber(i) = 201
 
@@ -1594,9 +1597,14 @@ contains
        case("sepsensor")
           nMon = nMon + 1; nMonSum = nMonSum + 1
           tmpNames(nMon) = cgnsSepSensor
+
        case("cavitation")
           nMon = nMon + 1; nMonSum = nMonSum + 1
           tmpNames(nMon) = cgnsCavitation
+
+       case("axismoment")
+          nMon = nMon + 1; nMonSum = nMonSum + 1
+          tmpNames(nMon) = cgnsAxisMoment
 
        case default
           write(errorMessage,"(3a)") "Unknown monitoring variable, ", &
@@ -2350,6 +2358,7 @@ contains
     surfWriteBlank = .false.
     surfWriteSepSensor = .false.
     surfWriteCavitation = .false.
+    surfWriteAxisMoment = .false.
     surfWriteGC = .false.
 
     ! Initialize nVarSpecified to 0. This serves as a test
@@ -2468,6 +2477,10 @@ contains
 
        case ("cavitation")
           surfWriteCavitation = .true. 
+          nVarSpecified = nVarSpecified + 1
+
+       case ("axismoment")
+          surfWriteAxisMoment = .true. 
           nVarSpecified = nVarSpecified + 1
 
        case ("gc")
@@ -3952,6 +3965,14 @@ contains
     pointRef(1) = zero
     pointRef(2) = zero
     pointRef(3) = zero
+
+    momentAxis(1,1) = zero
+    momentAxis(1,2) = one
+    momentAxis(2,1) = zero
+    momentAxis(2,2) = zero
+    momentAxis(3,1) = zero
+    momentAxis(3,2) = zero
+    
     !
     !       Set the default values for the time spectral parameters.       
     !

@@ -20,7 +20,7 @@
        logical :: surfWriteCf,    surfWriteCh,       surfWriteYPlus
        logical :: surfWriteCfx,   surfWriteCfy,      surfWriteCfz
        logical :: surfWriteBlank, surfWriteSepSensor
-       logical :: surfWriteCavitation, surfWriteGC
+       logical :: surfWriteCavitation, surfWriteGC, surfWriteAxisMoment
 !
 !       The logical variables, which define the extra volume variables 
 !       to be written.                                                 

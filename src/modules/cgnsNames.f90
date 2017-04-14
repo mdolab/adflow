@@ -271,6 +271,7 @@
 !
        character(len=maxCGNSNameLen), parameter :: cgnsSepSensor = "SepSensor"
        character(len=maxCGNSNameLen), parameter :: cgnsCavitation = "Cavitation"
+       character(len=maxCGNSNameLen), parameter :: cgnsAxisMoment = "AxisMoment"
 !
 !       Names for the convergence history and time history.            
 !
