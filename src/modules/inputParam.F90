@@ -546,6 +546,7 @@ module inputPhysics
   ! SSuthDim:            Sutherlands law temperature (SI Units)
   ! muSuthDim:           Reference viscosity at reference temperature for Sutherlands law (SI Units)
   ! TSuthDim:            Reference temperature for Sutherlands law (SI Units)
+  ! momentAxis(3,2)      Axis about which to calculate a moment, provided as 2 points in 3-D
 
 
   integer(kind=intType) :: equations, equationMode, flowType
@@ -568,6 +569,7 @@ module inputPhysics
   real(kind=realType), dimension(3) :: liftDirection
   real(kind=realType), dimension(3) :: dragDirection
   real(kind=realType), dimension(3) :: pointRef
+  real(kind=realType), dimension(3,2) :: momentAxis
   real(kind=realType) :: SSuthDim, muSuthDim, TSuthDim
 
 #ifndef USE_TAPENADE
@@ -576,6 +578,7 @@ module inputPhysics
   real(kind=realType), dimension(3) :: liftDirectiond, liftDirectionb
   real(kind=realType), dimension(3) :: dragDirectiond, dragDirectionb
   real(kind=realType), dimension(3) :: pointRefd, pointRefb
+  real(kind=realType), dimension(3,2) :: momentAxisd, momentAxisb
   real(kind=realType) :: Machd, MachCoefd, MachGridd
   real(kind=realType) :: reynoldsd, reynoldslengthd
   real(kind=realType) :: gammaconstantd

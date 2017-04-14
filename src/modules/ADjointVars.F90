@@ -21,8 +21,13 @@
       integer(kind=intType), parameter :: iPressure=14
       integer(kind=intType), parameter :: iTemperature=15
       integer(kind=intType), parameter :: iDensity=16
-
-      integer(kind=intType), parameter :: nDesignExtra=16
+      integer(kind=intType), parameter :: iaxisx1=17
+      integer(kind=intType), parameter :: iaxisx2=18
+      integer(kind=intType), parameter :: iaxisy1=19
+      integer(kind=intType), parameter :: iaxisy2=20
+      integer(kind=intType), parameter :: iaxisz1=21
+      integer(kind=intType), parameter :: iaxisz2=22
+      integer(kind=intType), parameter :: nDesignExtra=22
 
       ! nNodesGlobal  Total number of nodes on each level
       ! nNodesLocal   Number of nodes owned by the processor on each level

@@ -1,4 +1,4 @@
-module surfaceIntegrations
+  module surfaceIntegrations
 
 contains
   
@@ -69,6 +69,7 @@ contains
 
        funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + ovrNTS*globalVals(iSepSensor, sps)
        funcValues(costFuncCavitation) = funcValues(costFuncCavitation) + ovrNTS*globalVals(iCavitation, sps)
+       funcValues(costFuncAxisMoment) = funcValues(costFuncAxisMoment) + ovrNTS*globalVals(iAxisMoment, sps)
        funcValues(costFuncSepSensorAvgX) = funcValues(costFuncSepSensorAvgX) + ovrNTS*globalVals(iSepAvg  , sps)
        funcValues(costFuncSepSensorAvgY) = funcValues(costFuncSepSensorAvgY) + ovrNTS*globalVals(iSepAvg+1, sps)
        funcValues(costFuncSepSensorAvgZ) = funcValues(costFuncSepSensorAvgZ) + ovrNTS*globalVals(iSepAvg+2, sps)
@@ -240,7 +241,7 @@ contains
     use blockPointers
     use flowVarRefState
     use inputCostFunctions
-    use inputPhysics, only : MachCoef, pointRef, velDirFreeStream, equations
+    use inputPhysics, only : MachCoef, pointRef, velDirFreeStream, equations, momentAxis
     use BCPointers
     implicit none
   
@@ -254,14 +255,15 @@ contains
     integer(kind=intType) :: i, j, ii, blk
 
     real(kind=realType) :: pm1, fx, fy, fz, fn, sigma
-    real(kind=realType) :: xc, yc, zc, qf(3)
+    real(kind=realType) :: xc, yc, zc, qf(3), r(3), n(3), L
     real(kind=realType) :: fact, rho, mul, yplus, dwall
     real(kind=realType) :: V(3), sensor, sensor1, Cp, tmp, plocal
     real(kind=realType) :: tauXx, tauYy, tauZz
     real(kind=realType) :: tauXy, tauXz, tauYz
 
     real(kind=realType), dimension(3) :: refPoint
-    real(kind=realType) :: mx, my, mz, cellArea
+    real(kind=realType), dimension(3,2) :: axisPoints
+    real(kind=realType) :: mx, my, mz, cellArea, m0x, m0y, m0z, Mvaxis, Mpaxis
 
     select case (BCFaceID(mm))
     case (iMin, jMin, kMin)
@@ -277,6 +279,14 @@ contains
     refPoint(2) = LRef*pointRef(2)
     refPoint(3) = LRef*pointRef(3)
 
+    ! Determine the points defining the axis about which to compute a moment
+    axisPoints(1,1) = LRef*momentAxis(1,1)
+    axisPoints(1,2) = LRef*momentAxis(1,2)
+    axisPoints(2,1) = LRef*momentAxis(2,1)
+    axisPoints(2,2) = LRef*momentAxis(2,2)
+    axisPoints(3,1) = LRef*momentAxis(3,1)
+    axisPoints(3,2) = LRef*momentAxis(3,2)
+    
     ! Initialize the force and moment coefficients to 0 as well as
     ! yplusMax.
 
@@ -286,6 +296,7 @@ contains
     sepSensor = zero
     Cavitation = zero
     sepSensorAvg = zero
+    Mpaxis = zero; Mvaxis = zero;
 
     !
     !         Integrate the inviscid contribution over the solid walls,
@@ -347,7 +358,34 @@ contains
        Mp(1) = Mp(1) + mx*blk
        Mp(2) = Mp(2) + my*blk
        Mp(3) = Mp(3) + mz*blk
+
+       ! Compute the r and n vectores for the moment around an
+       ! axis computation where r is the distance from the
+       ! force to the first point on the axis and n is a unit
+       ! normal in the direction of the axis
+       r(1) = fourth*(xx(i,j,   1) + xx(i+1,j,   1)&
+            + xx(i,j+1,1) + xx(i+1,j+1,1)) - axisPoints(1,1)
+       r(2) = fourth*(xx(i,j,   2) + xx(i+1,j,   2)&
+            + xx(i,j+1,2) + xx(i+1,j+1,2)) - axisPoints(2,1)
+       r(3) = fourth*(xx(i,j,   3) + xx(i+1,j,   3)&
+            + xx(i,j+1,3) + xx(i+1,j+1,3)) - axisPoints(3,1)
        
+       L = sqrt((axisPoints(1,2) - axisPoints(1,1)) **2 &
+            + (axisPoints(2,2) - axisPoints(2,1)) **2 &
+            + (axisPoints(3,2) - axisPoints(3,1)) **2)
+       
+       n(1) = (axisPoints(1,2) - axisPoints(1,1)) / L
+       n(2) = (axisPoints(2,2) - axisPoints(2,1)) / L
+       n(3) = (axisPoints(3,2) - axisPoints(3,1)) / L
+       
+       ! Compute the moment of the force about the first point
+       ! used to define the axis, and the project that axis in
+       ! the n direction
+       m0x = r(2)*fz - r(3)*fy
+       m0y = r(3)*fx - r(1)*fz
+       m0z = r(1)*fy - r(2)*fx
+       Mpaxis = Mpaxis +(m0x*n(1) + m0y*n(2) + m0z*n(3))*blk
+              
        ! Save the face-based forces and area
        bcData(mm)%Fp(i, j, 1) = fx
        bcData(mm)%Fp(i, j, 2) = fy
@@ -462,6 +500,33 @@ contains
           Mv(2) = Mv(2) + my * blk
           Mv(3) = Mv(3) + mz * blk
 
+          ! Compute the r and n vectors for the moment around an
+          ! axis computation where r is the distance from the
+          ! force to the first point on the axis and n is a unit
+          ! normal in the direction of the axis
+          r(1) = fourth*(xx(i,j,   1) + xx(i+1,j,   1)&
+               + xx(i,j+1,1) + xx(i+1,j+1,1)) - axisPoints(1,1)
+          r(2) = fourth*(xx(i,j,   2) + xx(i+1,j,   2)&
+               + xx(i,j+1,2) + xx(i+1,j+1,2)) - axisPoints(2,1)
+          r(3) = fourth*(xx(i,j,   3) + xx(i+1,j,   3)&
+               + xx(i,j+1,3) + xx(i+1,j+1,3)) - axisPoints(3,1)
+
+          L = sqrt((axisPoints(1,2) - axisPoints(1,1)) ** 2 &
+               + (axisPoints(2,2) - axisPoints(2,1)) ** 2 &
+               + (axisPoints(3,2) - axisPoints(3,1)) ** 2 )
+
+          n(1) = (axisPoints(1,2) - axisPoints(1,1)) / L
+          n(2) = (axisPoints(2,2) - axisPoints(2,1)) / L
+          n(3) = (axisPoints(3,2) - axisPoints(3,1)) / L
+
+          ! Compute the moment of the force about the first point
+          ! used to define the axis, and then project that axis in
+          ! the n direction
+          m0x = r(2)*fz - r(3)*fy
+          m0y = r(3)*fx - r(1)*fz
+          m0z = r(1)*fy - r(2)*fx
+          Mvaxis = Mvaxis + (m0x*n(1) + m0y*n(2) + m0z*n(3))*blk
+
           ! Save the face based forces for the slice operations
           bcData(mm)%Fv(i, j, 1) = fx
           bcData(mm)%Fv(i, j, 2) = fy
@@ -516,6 +581,8 @@ contains
     localValues(iSepSensor) = localValues(iSepSensor) + sepSensor
     localValues(iCavitation) = localValues(iCavitation) + cavitation
     localValues(iSepAvg:iSepAvg+2) = localValues(iSepAvg:iSepAvg+2) + sepSensorAvg
+    localValues(iAxisMoment) = localValues(iAxisMoment) + Mpaxis + Mvaxis
+    
 #ifndef USE_TAPENADE
     localValues(iyPlus) = max(localValues(iyPlus), yplusMax)
 #endif
