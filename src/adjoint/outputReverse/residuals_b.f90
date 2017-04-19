@@ -28,7 +28,6 @@ contains
     use flowutils_b, only : computespeedofsoundsquared, &
 &   allnodalgradients
     use fluxes_b
-    use aleutils_b, only : interplevelale_block, recoverlevelale_block
     implicit none
 !
 !      local variables.

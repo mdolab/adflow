@@ -149,6 +149,10 @@ contains
 &       + ovrnts*globalvalsd(icavitation, sps)
       funcvalues(costfunccavitation) = funcvalues(costfunccavitation) + &
 &       ovrnts*globalvals(icavitation, sps)
+      funcvaluesd(costfuncaxismoment) = funcvaluesd(costfuncaxismoment) &
+&       + ovrnts*globalvalsd(iaxismoment, sps)
+      funcvalues(costfuncaxismoment) = funcvalues(costfuncaxismoment) + &
+&       ovrnts*globalvals(iaxismoment, sps)
       funcvaluesd(costfuncsepsensoravgx) = funcvaluesd(&
 &       costfuncsepsensoravgx) + ovrnts*globalvalsd(isepavg, sps)
       funcvalues(costfuncsepsensoravgx) = funcvalues(&
@@ -494,6 +498,8 @@ contains
 &       ovrnts*globalvals(isepsensor, sps)
       funcvalues(costfunccavitation) = funcvalues(costfunccavitation) + &
 &       ovrnts*globalvals(icavitation, sps)
+      funcvalues(costfuncaxismoment) = funcvalues(costfuncaxismoment) + &
+&       ovrnts*globalvals(iaxismoment, sps)
       funcvalues(costfuncsepsensoravgx) = funcvalues(&
 &       costfuncsepsensoravgx) + ovrnts*globalvals(isepavg, sps)
       funcvalues(costfuncsepsensoravgy) = funcvalues(&
@@ -648,7 +654,7 @@ contains
     use flowvarrefstate
     use inputcostfunctions
     use inputphysics, only : machcoef, machcoefd, pointref, pointrefd,&
-&   veldirfreestream, veldirfreestreamd, equations
+&   veldirfreestream, veldirfreestreamd, equations, momentaxis
     use bcpointers_d
     implicit none
 ! input/output variables
@@ -666,8 +672,8 @@ contains
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn, sigma
     real(kind=realtype) :: pm1d, fxd, fyd, fzd
-    real(kind=realtype) :: xc, yc, zc, qf(3)
-    real(kind=realtype) :: xcd, ycd, zcd
+    real(kind=realtype) :: xc, yc, zc, qf(3), r(3), n(3), l
+    real(kind=realtype) :: xcd, ycd, zcd, rd(3)
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
     real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal
     real(kind=realtype) :: vd(3), sensord, sensor1d, cpd, tmpd, plocald
@@ -677,8 +683,11 @@ contains
     real(kind=realtype) :: tauxyd, tauxzd, tauyzd
     real(kind=realtype), dimension(3) :: refpoint
     real(kind=realtype), dimension(3) :: refpointd
-    real(kind=realtype) :: mx, my, mz, cellarea
-    real(kind=realtype) :: mxd, myd, mzd, cellaread
+    real(kind=realtype), dimension(3, 2) :: axispoints
+    real(kind=realtype) :: mx, my, mz, cellarea, m0x, m0y, m0z, mvaxis, &
+&   mpaxis
+    real(kind=realtype) :: mxd, myd, mzd, cellaread, m0xd, m0yd, m0zd, &
+&   mvaxisd, mpaxisd
     intrinsic mod
     intrinsic max
     intrinsic sqrt
@@ -702,6 +711,13 @@ contains
     refpoint(2) = lref*pointref(2)
     refpointd(3) = lref*pointrefd(3)
     refpoint(3) = lref*pointref(3)
+! determine the points defining the axis about which to compute a moment
+    axispoints(1, 1) = lref*momentaxis(1, 1)
+    axispoints(1, 2) = lref*momentaxis(1, 2)
+    axispoints(2, 1) = lref*momentaxis(2, 1)
+    axispoints(2, 2) = lref*momentaxis(2, 2)
+    axispoints(3, 1) = lref*momentaxis(3, 1)
+    axispoints(3, 2) = lref*momentaxis(3, 2)
 ! initialize the force and moment coefficients to 0 as well as
 ! yplusmax.
     fp = zero
@@ -712,8 +728,12 @@ contains
     sepsensor = zero
     cavitation = zero
     sepsensoravg = zero
+    mpaxis = zero
+    mvaxis = zero
     sepsensoravgd = 0.0_8
+    rd = 0.0_8
     vd = 0.0_8
+    mpaxisd = 0.0_8
     fpd = 0.0_8
     mpd = 0.0_8
     cavitationd = 0.0_8
@@ -792,6 +812,39 @@ contains
       mp(2) = mp(2) + my*blk
       mpd(3) = mpd(3) + blk*mzd
       mp(3) = mp(3) + mz*blk
+! compute the r and n vectores for the moment around an
+! axis computation where r is the distance from the
+! force to the first point on the axis and n is a unit
+! normal in the direction of the axis
+      rd(1) = fourth*(xxd(i, j, 1)+xxd(i+1, j, 1)+xxd(i, j+1, 1)+xxd(i+1&
+&       , j+1, 1))
+      r(1) = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1&
+&       , 1)) - axispoints(1, 1)
+      rd(2) = fourth*(xxd(i, j, 2)+xxd(i+1, j, 2)+xxd(i, j+1, 2)+xxd(i+1&
+&       , j+1, 2))
+      r(2) = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1&
+&       , 2)) - axispoints(2, 1)
+      rd(3) = fourth*(xxd(i, j, 3)+xxd(i+1, j, 3)+xxd(i, j+1, 3)+xxd(i+1&
+&       , j+1, 3))
+      r(3) = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
+&       , 3)) - axispoints(3, 1)
+      arg1 = (axispoints(1, 2)-axispoints(1, 1))**2 + (axispoints(2, 2)-&
+&       axispoints(2, 1))**2 + (axispoints(3, 2)-axispoints(3, 1))**2
+      l = sqrt(arg1)
+      n(1) = (axispoints(1, 2)-axispoints(1, 1))/l
+      n(2) = (axispoints(2, 2)-axispoints(2, 1))/l
+      n(3) = (axispoints(3, 2)-axispoints(3, 1))/l
+! compute the moment of the force about the first point
+! used to define the axis, and the project that axis in
+! the n direction
+      m0xd = rd(2)*fz + r(2)*fzd - rd(3)*fy - r(3)*fyd
+      m0x = r(2)*fz - r(3)*fy
+      m0yd = rd(3)*fx + r(3)*fxd - rd(1)*fz - r(1)*fzd
+      m0y = r(3)*fx - r(1)*fz
+      m0zd = rd(1)*fy + r(1)*fyd - rd(2)*fx - r(2)*fxd
+      m0z = r(1)*fy - r(2)*fx
+      mpaxisd = mpaxisd + blk*(n(1)*m0xd+n(2)*m0yd+n(3)*m0zd)
+      mpaxis = mpaxis + (m0x*n(1)+m0y*n(2)+m0z*n(3))*blk
 ! save the face-based forces and area
       bcdatad(mm)%fp(i, j, 1) = fxd
       bcdata(mm)%fp(i, j, 1) = fx
@@ -889,6 +942,7 @@ contains
 ! initialize dwall for the laminar case and set the pointer
 ! for the unit normals.
       dwall = zero
+      mvaxisd = 0.0_8
       fvd = 0.0_8
       mvd = 0.0_8
 ! loop over the quadrilateral faces of the subface and
@@ -972,6 +1026,40 @@ contains
         mv(2) = mv(2) + my*blk
         mvd(3) = mvd(3) + blk*mzd
         mv(3) = mv(3) + mz*blk
+! compute the r and n vectors for the moment around an
+! axis computation where r is the distance from the
+! force to the first point on the axis and n is a unit
+! normal in the direction of the axis
+        rd(1) = fourth*(xxd(i, j, 1)+xxd(i+1, j, 1)+xxd(i, j+1, 1)+xxd(i&
+&         +1, j+1, 1))
+        r(1) = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j&
+&         +1, 1)) - axispoints(1, 1)
+        rd(2) = fourth*(xxd(i, j, 2)+xxd(i+1, j, 2)+xxd(i, j+1, 2)+xxd(i&
+&         +1, j+1, 2))
+        r(2) = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j&
+&         +1, 2)) - axispoints(2, 1)
+        rd(3) = fourth*(xxd(i, j, 3)+xxd(i+1, j, 3)+xxd(i, j+1, 3)+xxd(i&
+&         +1, j+1, 3))
+        r(3) = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j&
+&         +1, 3)) - axispoints(3, 1)
+        arg1 = (axispoints(1, 2)-axispoints(1, 1))**2 + (axispoints(2, 2&
+&         )-axispoints(2, 1))**2 + (axispoints(3, 2)-axispoints(3, 1))**&
+&         2
+        l = sqrt(arg1)
+        n(1) = (axispoints(1, 2)-axispoints(1, 1))/l
+        n(2) = (axispoints(2, 2)-axispoints(2, 1))/l
+        n(3) = (axispoints(3, 2)-axispoints(3, 1))/l
+! compute the moment of the force about the first point
+! used to define the axis, and then project that axis in
+! the n direction
+        m0xd = rd(2)*fz + r(2)*fzd - rd(3)*fy - r(3)*fyd
+        m0x = r(2)*fz - r(3)*fy
+        m0yd = rd(3)*fx + r(3)*fxd - rd(1)*fz - r(1)*fzd
+        m0y = r(3)*fx - r(1)*fz
+        m0zd = rd(1)*fy + r(1)*fyd - rd(2)*fx - r(2)*fxd
+        m0z = r(1)*fy - r(2)*fx
+        mvaxisd = mvaxisd + blk*(n(1)*m0xd+n(2)*m0yd+n(3)*m0zd)
+        mvaxis = mvaxis + (m0x*n(1)+m0y*n(2)+m0z*n(3))*blk
 ! save the face based forces for the slice operations
         bcdatad(mm)%fv(i, j, 1) = fxd
         bcdata(mm)%fv(i, j, 1) = fx
@@ -1003,6 +1091,7 @@ contains
 ! if we had no viscous force, set the viscous component to zero
       bcdatad(mm)%fv = 0.0_8
       bcdata(mm)%fv = zero
+      mvaxisd = 0.0_8
       fvd = 0.0_8
       mvd = 0.0_8
     end if
@@ -1023,6 +1112,10 @@ contains
 &     sepsensoravgd
     localvalues(isepavg:isepavg+2) = localvalues(isepavg:isepavg+2) + &
 &     sepsensoravg
+    localvaluesd(iaxismoment) = localvaluesd(iaxismoment) + mpaxisd + &
+&     mvaxisd
+    localvalues(iaxismoment) = localvalues(iaxismoment) + mpaxis + &
+&     mvaxis
   end subroutine wallintegrationface_d
   subroutine wallintegrationface(localvalues, mm)
 !
@@ -1041,7 +1134,7 @@ contains
     use flowvarrefstate
     use inputcostfunctions
     use inputphysics, only : machcoef, pointref, veldirfreestream, &
-&   equations
+&   equations, momentaxis
     use bcpointers_d
     implicit none
 ! input/output variables
@@ -1054,13 +1147,15 @@ contains
 &   cavitation
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn, sigma
-    real(kind=realtype) :: xc, yc, zc, qf(3)
+    real(kind=realtype) :: xc, yc, zc, qf(3), r(3), n(3), l
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
     real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal
     real(kind=realtype) :: tauxx, tauyy, tauzz
     real(kind=realtype) :: tauxy, tauxz, tauyz
     real(kind=realtype), dimension(3) :: refpoint
-    real(kind=realtype) :: mx, my, mz, cellarea
+    real(kind=realtype), dimension(3, 2) :: axispoints
+    real(kind=realtype) :: mx, my, mz, cellarea, m0x, m0y, m0z, mvaxis, &
+&   mpaxis
     intrinsic mod
     intrinsic max
     intrinsic sqrt
@@ -1078,6 +1173,13 @@ contains
     refpoint(1) = lref*pointref(1)
     refpoint(2) = lref*pointref(2)
     refpoint(3) = lref*pointref(3)
+! determine the points defining the axis about which to compute a moment
+    axispoints(1, 1) = lref*momentaxis(1, 1)
+    axispoints(1, 2) = lref*momentaxis(1, 2)
+    axispoints(2, 1) = lref*momentaxis(2, 1)
+    axispoints(2, 2) = lref*momentaxis(2, 2)
+    axispoints(3, 1) = lref*momentaxis(3, 1)
+    axispoints(3, 2) = lref*momentaxis(3, 2)
 ! initialize the force and moment coefficients to 0 as well as
 ! yplusmax.
     fp = zero
@@ -1088,6 +1190,8 @@ contains
     sepsensor = zero
     cavitation = zero
     sepsensoravg = zero
+    mpaxis = zero
+    mvaxis = zero
 !
 !         integrate the inviscid contribution over the solid walls,
 !         either inviscid or viscous. the integration is done with
@@ -1142,6 +1246,29 @@ contains
       mp(1) = mp(1) + mx*blk
       mp(2) = mp(2) + my*blk
       mp(3) = mp(3) + mz*blk
+! compute the r and n vectores for the moment around an
+! axis computation where r is the distance from the
+! force to the first point on the axis and n is a unit
+! normal in the direction of the axis
+      r(1) = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1&
+&       , 1)) - axispoints(1, 1)
+      r(2) = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1&
+&       , 2)) - axispoints(2, 1)
+      r(3) = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
+&       , 3)) - axispoints(3, 1)
+      arg1 = (axispoints(1, 2)-axispoints(1, 1))**2 + (axispoints(2, 2)-&
+&       axispoints(2, 1))**2 + (axispoints(3, 2)-axispoints(3, 1))**2
+      l = sqrt(arg1)
+      n(1) = (axispoints(1, 2)-axispoints(1, 1))/l
+      n(2) = (axispoints(2, 2)-axispoints(2, 1))/l
+      n(3) = (axispoints(3, 2)-axispoints(3, 1))/l
+! compute the moment of the force about the first point
+! used to define the axis, and the project that axis in
+! the n direction
+      m0x = r(2)*fz - r(3)*fy
+      m0y = r(3)*fx - r(1)*fz
+      m0z = r(1)*fy - r(2)*fx
+      mpaxis = mpaxis + (m0x*n(1)+m0y*n(2)+m0z*n(3))*blk
 ! save the face-based forces and area
       bcdata(mm)%fp(i, j, 1) = fx
       bcdata(mm)%fp(i, j, 2) = fy
@@ -1241,6 +1368,30 @@ contains
         mv(1) = mv(1) + mx*blk
         mv(2) = mv(2) + my*blk
         mv(3) = mv(3) + mz*blk
+! compute the r and n vectors for the moment around an
+! axis computation where r is the distance from the
+! force to the first point on the axis and n is a unit
+! normal in the direction of the axis
+        r(1) = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j&
+&         +1, 1)) - axispoints(1, 1)
+        r(2) = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j&
+&         +1, 2)) - axispoints(2, 1)
+        r(3) = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j&
+&         +1, 3)) - axispoints(3, 1)
+        arg1 = (axispoints(1, 2)-axispoints(1, 1))**2 + (axispoints(2, 2&
+&         )-axispoints(2, 1))**2 + (axispoints(3, 2)-axispoints(3, 1))**&
+&         2
+        l = sqrt(arg1)
+        n(1) = (axispoints(1, 2)-axispoints(1, 1))/l
+        n(2) = (axispoints(2, 2)-axispoints(2, 1))/l
+        n(3) = (axispoints(3, 2)-axispoints(3, 1))/l
+! compute the moment of the force about the first point
+! used to define the axis, and then project that axis in
+! the n direction
+        m0x = r(2)*fz - r(3)*fy
+        m0y = r(3)*fx - r(1)*fz
+        m0z = r(1)*fy - r(2)*fx
+        mvaxis = mvaxis + (m0x*n(1)+m0y*n(2)+m0z*n(3))*blk
 ! save the face based forces for the slice operations
         bcdata(mm)%fv(i, j, 1) = fx
         bcdata(mm)%fv(i, j, 2) = fy
@@ -1278,6 +1429,8 @@ contains
     localvalues(icavitation) = localvalues(icavitation) + cavitation
     localvalues(isepavg:isepavg+2) = localvalues(isepavg:isepavg+2) + &
 &     sepsensoravg
+    localvalues(iaxismoment) = localvalues(iaxismoment) + mpaxis + &
+&     mvaxis
   end subroutine wallintegrationface
 !  differentiation of flowintegrationface in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: localvalues
