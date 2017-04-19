@@ -59,7 +59,7 @@ contains
     real(kind=realtype) :: pm, ptot, ttot, rhom, gammam, mnm, &
 &   massflowratelocal, am
     real(kind=realtype) :: pmd, ptotd, ttotd, rhomd, gammamd, mnmd, &
-&   massflowratelocald
+&   massflowratelocald, amd
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps, &
 &   mass_mn, mass_a, mass_rho, mass_vx, mass_vy, mass_vz, mass_nx, &
 &   mass_ny, mass_nz
@@ -261,7 +261,14 @@ contains
           result1 = sqrt(arg1)
           vmagd = result1d - sfd
           vmag = result1 - sf
-! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
+          arg1d = ((gammamd*pm+gammam*pmd)*rhom-gammam*pm*rhomd)/rhom**2
+          arg1 = gammam*pm/rhom
+          if (arg1 .eq. 0.0_8) then
+            amd = 0.0_8
+          else
+            amd = arg1d/(2.0*sqrt(arg1))
+          end if
+          am = sqrt(arg1)
           arg1d = ((gammamd*pm+gammam*pmd)*rhom-gammam*pm*rhomd)/rhom**2
           arg1 = gammam*pm/rhom
           if (arg1 .eq. 0.0_8) then
@@ -329,7 +336,8 @@ contains
 &             massflowratelocald)*rhoref + rhom*massflowratelocal*&
 &             rhorefd
             mass_rho = mass_rho + rhom*massflowratelocal*rhoref
-            mass_ad = mass_ad + am*uref*massflowratelocald
+            mass_ad = mass_ad + uref*(amd*massflowratelocal+am*&
+&             massflowratelocald)
             mass_a = mass_a + am*massflowratelocal*uref
             mass_psd = mass_psd + pmd*massflowratelocal + pm*&
 &             massflowratelocald
@@ -655,7 +663,8 @@ contains
           arg1 = vxm**2 + vym**2 + vzm**2
           result1 = sqrt(arg1)
           vmag = result1 - sf
-! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
+          arg1 = gammam*pm/rhom
+          am = sqrt(arg1)
           arg1 = gammam*pm/rhom
           result1 = sqrt(arg1)
           mnm = vmag/result1

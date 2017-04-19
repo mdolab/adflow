@@ -28,7 +28,6 @@ contains
     use flowutils_fast_b, only : computespeedofsoundsquared, &
 &   allnodalgradients
     use fluxes_fast_b
-    use aleutils_fast_b, only : interplevelale_block, recoverlevelale_block
     implicit none
 !
 !      local variables.
@@ -307,4 +306,89 @@ contains
       end do
     end if
   end subroutine residual_block
+!  differentiation of sourceterms_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: *dw *w
+!   with respect to varying inputs: *dw *w
+!   rw status of diff variables: *dw:in-out *w:incr
+!   plus diff mem management of: dw:in w:in
+  subroutine sourceterms_block_fast_b(nn)
+! apply the source terms for the given block. assume that the
+! block pointers are already set. 
+    use constants
+    use actuatorregiondata
+    use blockpointers, only : vol, dw, dwd, w, wd
+    use flowvarrefstate, only : pref
+    implicit none
+! input 
+    integer(kind=inttype), intent(in) :: nn
+! working
+    integer(kind=inttype) :: i, j, k, ii, iregion
+    type(actuatorregiontype), pointer :: region
+    real(kind=realtype) :: ftmp(3), vx, vy, vz, fact(3)
+    real(kind=realtype) :: vxd, vyd, vzd
+    integer :: ad_from
+    integer :: ad_to
+! region loop
+regionloop:do iregion=1,nactuatorregions
+! pointer for easier reading
+! compute the constant force factor
+      fact = region%f/region%volume/pref
+      ad_from = region%blkptr(nn-1) + 1
+! loop over the ranges for this block
+      ii = region%blkptr(nn) + 1
+    end do regionloop
+    do iregion=nactuatorregions,1,-1
+      do ii=ad_to,ad_from,-1
+        i = region%cellids(1, ii)
+        j = region%cellids(2, ii)
+        k = region%cellids(3, ii)
+        ftmp = vol(i, j, k)*fact
+        vxd = -(ftmp(1)*dwd(i, j, k, irhoe))
+        vyd = -(ftmp(2)*dwd(i, j, k, irhoe))
+        vzd = -(ftmp(3)*dwd(i, j, k, irhoe))
+        wd(i, j, k, ivz) = wd(i, j, k, ivz) + vzd
+        wd(i, j, k, ivy) = wd(i, j, k, ivy) + vyd
+        wd(i, j, k, ivx) = wd(i, j, k, ivx) + vxd
+      end do
+    end do
+  end subroutine sourceterms_block_fast_b
+  subroutine sourceterms_block(nn)
+! apply the source terms for the given block. assume that the
+! block pointers are already set. 
+    use constants
+    use actuatorregiondata
+    use blockpointers, only : vol, dw, w
+    use flowvarrefstate, only : pref
+    implicit none
+! input 
+    integer(kind=inttype), intent(in) :: nn
+! working
+    integer(kind=inttype) :: i, j, k, ii, iregion
+    type(actuatorregiontype), pointer :: region
+    real(kind=realtype) :: ftmp(3), vx, vy, vz, fact(3)
+! region loop
+regionloop:do iregion=1,nactuatorregions
+! pointer for easier reading
+      region => actuatorregions(iregion)
+! compute the constant force factor
+      fact = region%f/region%volume/pref
+! loop over the ranges for this block
+      do ii=region%blkptr(nn-1)+1,region%blkptr(nn)
+! extract the cell id. 
+        i = region%cellids(1, ii)
+        j = region%cellids(2, ii)
+        k = region%cellids(3, ii)
+! this actually gets the force
+        ftmp = vol(i, j, k)*fact
+        vx = w(i, j, k, ivx)
+        vy = w(i, j, k, ivy)
+        vz = w(i, j, k, ivz)
+! momentum residuals
+        dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - ftmp
+! energy residuals
+        dw(i, j, k, irhoe) = dw(i, j, k, irhoe) - ftmp(1)*vx - ftmp(2)*&
+&         vy - ftmp(3)*vz
+      end do
+    end do regionloop
+  end subroutine sourceterms_block
 end module residuals_fast_b

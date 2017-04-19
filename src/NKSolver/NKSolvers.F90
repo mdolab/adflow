@@ -961,7 +961,7 @@ contains
     use flowUtils, only : computeLamViscosity
     use BCRoutines, only : applyAllBC, applyAllBC_block
     use solverUtils, only : timeStep, computeUtau
-    use residuals, only :residual, initRes
+    use residuals, only :residual, initRes, sourceTerms
     use overset, only : oversetPresent
     implicit none
 
@@ -1064,6 +1064,7 @@ contains
 
     ! Initialize Flow residuals
     call initres(1_intType, nwf)
+    call sourceTerms
 
     ! Actual Residual Calc
     call residual 
@@ -1924,7 +1925,7 @@ contains
     use flowUtils, only : computeLamViscosity
     use BCRoutines, only : applyAllBC
     use solverUtils, only : timeStep, computeUtau
-    use residuals, only :residual, initRes 
+    use residuals, only :residual, initRes, sourceTerms
     implicit none
 
     ! Local Variables
@@ -1991,6 +1992,7 @@ contains
 
     ! Initialize Flow residuals
     call initres(1_intType, nwf)
+    call sourceTerms
 
     ! Actual Residual Calc
     call residual 

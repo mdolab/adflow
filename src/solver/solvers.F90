@@ -506,7 +506,7 @@ contains
     use turbAPI, only : turbResidual
     use turbBCRoutines, only : applyAllTurbBC 
     use utils, only : convergenceHeader
-    use residuals, only :initRes, residual
+    use residuals, only :initRes, residual, sourceTerms
     use flowUtils, only : computeLamViscosity
     use BCRoutines, only : applyAllBC
     use preprocessingAPI, only : updateCoordinatesAllLevels
@@ -601,6 +601,7 @@ contains
           endif
 
           call initres(1_intType, nwf)
+          call sourceTerms()
           call residual
 
           ! Loop over the number of domains.

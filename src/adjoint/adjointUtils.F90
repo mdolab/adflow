@@ -334,7 +334,6 @@ contains
 #endif
                 else
                    call block_res_state(nn, sps)
-                   !call block_res(nn, sps, .False., frozenTurb)
                 end if
 
                 ! Set the computed residual in dw_deriv. If using FD, 
@@ -1795,7 +1794,6 @@ end subroutine statePreAllocation
           call setPointers(nn, level, sps)
           shockSensor => flowDoms(nn,level,sps)%shockSensor
           call block_res_state(nn, sps)
-          !call block_res(nn, sps, .False., .False.)
           ! Set the values
           do l=1, nw
              do k=0, kb 

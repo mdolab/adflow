@@ -30,7 +30,7 @@ contains
          viscousFlux, viscousFluxApprox, inviscidCentralFlux
     use utils, only : setPointers, EChk
     use turbUtils, only : turbAdvection, computeEddyViscosity
-    use residuals, only : initRes_block
+    use residuals, only : initRes_block, sourceTerms_block
     use surfaceIntegrations, only : getSolution
     use adjointExtra, only : volume_block, metric_block, boundaryNormals,&
          xhalo_block, sumdwandfw, resScale
@@ -82,7 +82,6 @@ contains
           if (oversetPresent .and. &
                (oversetUpdateMode == updateFast .or. &
                oversetUpdateMode == updateFull)) then 
-             print *,'calling overset update code'
              call updateOversetConnectivity(1_intType, sps)
           end if
        end do
@@ -144,6 +143,7 @@ contains
        do nn=1, nDom
           call setPointers(nn, 1, sps)
           call initRes_block(1, nw, nn, sps)
+          call sourceTerms_block(nn)
 
           ! Compute turbulence residual for RANS equations
           if( equations == RANSEquations) then
@@ -242,6 +242,7 @@ contains
     use fluxes_d, only :inviscidDissFluxScalarApprox_d, inviscidDissFluxMatrixApprox_d, &
          inviscidUpwindFlux_d, inviscidDissFluxScalar_d, inviscidDissFluxMatrix_d, &
          inviscidUpwindFlux_d, viscousFlux_d, viscousFluxApprox_d, inviscidCentralFlux_d
+    use residuals_d, only : sourceTerms_block_d
     use adjointPETSc, only : x_like
     use haloExchange, only : whalo2_d, exchangeCoor_d, exchangeCoor, whalo2
     use wallDistance_d, only : updateWallDistancesQuickly_d
@@ -437,6 +438,7 @@ contains
           call timeStep_block_d(.false.)
           dw = zero
           dwd = zero
+          call sourceTerms_block_d(nn)
 
           !Compute turbulence residual for RANS equations
           if( equations == RANSEquations) then
@@ -564,6 +566,7 @@ contains
     use wallDistance_b, only : updateWallDistancesQuickly_b
     use sa_b, only : saSource_b, saViscous_b, saResScale_b, qq
     use turbutils_b, only : turbAdvection_b, computeEddyViscosity_b
+    use residuals_b, only : sourceTerms_block_b
     use fluxes_b, only :inviscidUpwindFlux_b, inviscidDissFluxScalar_b, &
          inviscidDissFluxMatrix_b, viscousFlux_b, inviscidCentralFlux_b
     use BCExtra_b, only : applyAllBC_Block_b
@@ -692,6 +695,8 @@ contains
 
              !call unsteadyTurbSpectral_block_b(itu1, itu1, nn, sps)
           end if
+
+          call sourceTerms_block_b(nn)
 
           ! Initres_b should be called here. For steady just zero:
           dwd = zero
@@ -909,6 +914,7 @@ contains
          inviscidDissFluxMatrix_fast_b, viscousFlux_fast_b, inviscidCentralFlux_fast_b
     use solverutils_fast_b, only : timeStep_block_fast_b
     use flowutils_fast_b, only : allnodalgradients_fast_b
+    use residuals_fast_b, only : sourceTerms_block_fast_b
     use overset, only : oversetPresent
     implicit none
 
@@ -990,6 +996,7 @@ contains
           end if
 
           call timeStep_block_fast_b(.false.)
+          call sourceTerms_block_fast_b(nn)
         
           ! Initres_b should be called here. For steady just zero:
           dwd = zero
@@ -1065,6 +1072,7 @@ contains
     use inputPhysics, only : equations, turbModel
     use inputDiscretization, only : lowSpeedPreconditioner, lumpedDiss, spaceDiscr
     use utils, only :  setPointers, EChk
+    use residuals, only : sourceTerms_block
     use sa, only : sa_block, saSource, saViscous, saResScale, qq
     use turbutils, only : turbAdvection, computeEddyViscosity
     use fluxes, only :inviscidDissFluxScalarApprox, inviscidDissFluxMatrixApprox, &
@@ -1097,8 +1105,9 @@ contains
 
     call applyAllBC_block(.True.)
     call timeStep_block(.false.)
-    dw = zero
-
+    dw = zero ! This should be init_res
+    call sourceTerms_block(nn)    
+    
     !Compute turbulence residual for RANS equations
     if( equations == RANSEquations) then
        !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
@@ -1181,6 +1190,7 @@ contains
     use solverutils_d, only : timeStep_Block_d
     use turbbcroutines_d, only : applyAllTurbBCthisblock_d,  bcTurbTreatment_d
     use adjointextra_d, only : resscale_D, sumdwandfw_d
+    use residuals_d, only: sourceterms_block_d
     implicit none
 
     ! Input Arguments:
@@ -1202,8 +1212,12 @@ contains
 
     call applyAllBC_block_d(.True.)
     call timeStep_block_d(.false.)
-    dw = zero
+
+    dw = zero ! These two lines are init_res
     dwd = zero
+
+    ! Compute any source terms
+    call sourceTerms_block_d(nn)
 
     !Compute turbulence residual for RANS equations
     if( equations == RANSEquations) then
