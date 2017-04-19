@@ -59,7 +59,7 @@ contains
     real(kind=realtype) :: pm, ptot, ttot, rhom, gammam, mnm, &
 &   massflowratelocal, am
     real(kind=realtype) :: pmd, ptotd, ttotd, rhomd, gammamd, mnmd, &
-&   massflowratelocald
+&   massflowratelocald, amd
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps, &
 &   mass_mn, mass_a, mass_rho, mass_vx, mass_vy, mass_vz, mass_nx, &
 &   mass_ny, mass_nz
@@ -90,6 +90,7 @@ contains
     real(kind=realtype) :: temp0
     real(kind=realtype) :: abs1d
     real(kind=realtype) :: abs0d
+    real(kind=realtype) :: tempd9
     real(kind=realtype) :: tempd
     real(kind=realtype) :: tempd8
     real(kind=realtype) :: tempd7
@@ -103,6 +104,7 @@ contains
     real(kind=realtype) :: abs1
     real(kind=realtype) :: abs0
     real(kind=realtype) :: temp
+    real(kind=realtype) :: temp4
     mredim = sqrt(pref*rhoref)
     refpoint(1) = lref*pointref(1)
     refpoint(2) = lref*pointref(2)
@@ -214,7 +216,7 @@ contains
           call computettot(rhom, vxm, vym, vzm, pm, ttot)
           vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3) - sf
           vmag = sqrt(vxm**2 + vym**2 + vzm**2) - sf
-! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
+          am = sqrt(gammam*pm/rhom)
           mnm = vmag/sqrt(gammam*pm/rhom)
           cellarea = sqrt(ss(1)**2 + ss(2)**2 + ss(3)**2)
           overcellarea = 1/cellarea
@@ -236,12 +238,12 @@ contains
               abs1 = -massflowratelocal
               call pushcontrol1b(1)
             end if
-            tempd4 = abs1*2*(ptot-funcvalues(costfuncmavgptot))*&
+            tempd5 = abs1*2*(ptot-funcvalues(costfuncmavgptot))*&
 &             sigma_ptotd
             abs1d = (ptot-funcvalues(costfuncmavgptot))**2*sigma_ptotd
-            ptotd = ptotd + tempd4
+            ptotd = ptotd + tempd5
             funcvaluesd(costfuncmavgptot) = funcvaluesd(costfuncmavgptot&
-&             ) - tempd4
+&             ) - tempd5
             call popcontrol1b(branch)
             if (branch .eq. 0) then
               massflowratelocald = abs1d
@@ -251,17 +253,18 @@ contains
             call popreal8(ptot)
             prefd = prefd + ptot*ptotd
             ptotd = pref*ptotd
-            tempd3 = abs0*2*(mnm-funcvalues(costfuncmavgmn))*sigma_mnd
+            tempd4 = abs0*2*(mnm-funcvalues(costfuncmavgmn))*sigma_mnd
             abs0d = (mnm-funcvalues(costfuncmavgmn))**2*sigma_mnd
-            mnmd = tempd3
+            mnmd = tempd4
             funcvaluesd(costfuncmavgmn) = funcvaluesd(costfuncmavgmn) - &
-&             tempd3
+&             tempd4
             call popcontrol1b(branch)
             if (branch .eq. 0) then
               massflowratelocald = massflowratelocald + abs0d
             else
               massflowratelocald = massflowratelocald - abs0d
             end if
+            amd = 0.0_8
             vxmd = 0.0_8
             overcellaread = 0.0_8
             vymd = 0.0_8
@@ -306,8 +309,8 @@ contains
             fx = massflowratelocal*ss(1)*vxm/timeref
             fy = massflowratelocal*ss(2)*vym/timeref
             fz = massflowratelocal*ss(3)*vzm/timeref
-            temp1 = ss(1)/timeref
-            temp2 = ss(2)/timeref
+            temp2 = ss(1)/timeref
+            temp3 = ss(2)/timeref
             mzd = mmomd(3)
             myd = mmomd(2)
             mxd = mmomd(1)
@@ -318,24 +321,24 @@ contains
             zcd = fx*myd - fy*mxd
             fzd = yc*mxd - fmomd(3) - xc*myd
             ssd = 0.0_8
-            tempd5 = massflowratelocal*vzm*fzd/timeref
-            temp3 = ss(3)/timeref
-            ssd(3) = ssd(3) + tempd5
-            massflowratelocald = temp2*vym*fyd + temp1*vxm*fxd + temp3*&
+            tempd6 = massflowratelocal*vzm*fzd/timeref
+            temp4 = ss(3)/timeref
+            ssd(3) = ssd(3) + tempd6
+            massflowratelocald = temp3*vym*fyd + temp2*vxm*fxd + temp4*&
 &             vzm*fzd
-            vzmd = temp3*massflowratelocal*fzd
-            tempd6 = massflowratelocal*vym*fyd/timeref
-            ssd(2) = ssd(2) + tempd6
-            vymd = temp2*massflowratelocal*fyd
-            tempd8 = massflowratelocal*vxm*fxd/timeref
-            ssd(1) = ssd(1) + tempd8
-            vxmd = temp1*massflowratelocal*fxd
+            vzmd = temp4*massflowratelocal*fzd
+            tempd7 = massflowratelocal*vym*fyd/timeref
+            ssd(2) = ssd(2) + tempd7
+            vymd = temp3*massflowratelocal*fyd
+            tempd9 = massflowratelocal*vxm*fxd/timeref
+            ssd(1) = ssd(1) + tempd9
+            vxmd = temp2*massflowratelocal*fxd
             call popreal8(massflowratelocal)
-            tempd7 = internalflowfact*inflowfact*massflowratelocald/&
+            tempd8 = internalflowfact*inflowfact*massflowratelocald/&
 &             timeref
-            timerefd = timerefd - temp2*tempd6 - massflowratelocal*&
-&             tempd7/timeref - temp1*tempd8 - temp3*tempd5
-            massflowratelocald = tempd7
+            timerefd = timerefd - temp3*tempd7 - massflowratelocal*&
+&             tempd8/timeref - temp2*tempd9 - temp4*tempd6
+            massflowratelocald = tempd8
             call popreal8array(ss, 3)
             cellaread = sum(-(ss*ssd/cellarea))/cellarea
             ssd = ssd/cellarea
@@ -386,7 +389,7 @@ contains
 &             *mass_nyd + (uref*vzm-sfacecoordref(3))*mass_vzd + (uref*&
 &             vxm-sfacecoordref(1))*mass_vxd + pm*mass_psd + rhoref*rhom&
 &             *mass_rhod + pref*ptot*mass_ptotd + massflowrated + tref*&
-&             ttot*mass_ttotd + am*uref*mass_ad + mnm*mass_mnd + (uref*&
+&             ttot*mass_ttotd + uref*am*mass_ad + mnm*mass_mnd + (uref*&
 &             vym-sfacecoordref(2))*mass_vyd + ss(1)*overcellarea*&
 &             mass_nxd + ss(3)*overcellarea*mass_nzd
             ssd(2) = ssd(2) + overcellarea*massflowratelocal*mass_nyd
@@ -407,6 +410,7 @@ contains
             sfacecoordrefd(1) = 0.0_8
             mnmd = massflowratelocal*mass_mnd
             pmd = pmd + massflowratelocal*mass_psd
+            amd = uref*massflowratelocal*mass_ad
             rhomd = rhoref*massflowratelocal*mass_rhod
             rhorefd = rhorefd + rhom*massflowratelocal*mass_rhod
             ttotd = ttotd + tref*massflowratelocal*mass_ttotd
@@ -417,35 +421,42 @@ contains
             pmd = pref*pmd
           end if
           temp = gammam*pm/rhom
-          temp0 = sqrt(temp)
           if (temp .eq. 0.0_8) then
+            tempd1 = 0.0
+          else
+            tempd1 = amd/(2.0*sqrt(temp)*rhom)
+          end if
+          temp0 = gammam*pm/rhom
+          temp1 = sqrt(temp0)
+          if (temp0 .eq. 0.0_8) then
             tempd0 = 0.0
           else
-            tempd0 = -(vmag*mnmd/(2.0*temp0**3*rhom))
+            tempd0 = -(vmag*mnmd/(2.0*temp1**3*rhom))
           end if
-          rhomd = rhomd + mredim*vnm*massflowratelocald - temp*tempd0
+          rhomd = rhomd + mredim*vnm*massflowratelocald - temp*tempd1 - &
+&           temp0*tempd0
           vnmd = mredim*rhom*massflowratelocald
           mredimd = mredimd + rhom*vnm*massflowratelocald
           cellaread = cellaread + aread - overcellaread/cellarea**2
           if (ss(1)**2 + ss(2)**2 + ss(3)**2 .eq. 0.0_8) then
-            tempd1 = 0.0
-          else
-            tempd1 = cellaread/(2.0*sqrt(ss(1)**2+ss(2)**2+ss(3)**2))
-          end if
-          ssd(1) = ssd(1) + 2*ss(1)*tempd1
-          ssd(2) = ssd(2) + 2*ss(2)*tempd1
-          ssd(3) = ssd(3) + 2*ss(3)*tempd1
-          vmagd = mnmd/temp0
-          gammamd = pm*tempd0
-          pmd = pmd + gammam*tempd0
-          if (vxm**2 + vym**2 + vzm**2 .eq. 0.0_8) then
             tempd2 = 0.0
           else
-            tempd2 = vmagd/(2.0*sqrt(vxm**2+vym**2+vzm**2))
+            tempd2 = cellaread/(2.0*sqrt(ss(1)**2+ss(2)**2+ss(3)**2))
           end if
-          vxmd = vxmd + ss(1)*vnmd + 2*vxm*tempd2
-          vymd = vymd + ss(2)*vnmd + 2*vym*tempd2
-          vzmd = vzmd + ss(3)*vnmd + 2*vzm*tempd2
+          ssd(1) = ssd(1) + 2*ss(1)*tempd2
+          ssd(2) = ssd(2) + 2*ss(2)*tempd2
+          ssd(3) = ssd(3) + 2*ss(3)*tempd2
+          vmagd = mnmd/temp1
+          gammamd = pm*tempd1 + pm*tempd0
+          pmd = pmd + gammam*tempd1 + gammam*tempd0
+          if (vxm**2 + vym**2 + vzm**2 .eq. 0.0_8) then
+            tempd3 = 0.0
+          else
+            tempd3 = vmagd/(2.0*sqrt(vxm**2+vym**2+vzm**2))
+          end if
+          vxmd = vxmd + ss(1)*vnmd + 2*vxm*tempd3
+          vymd = vymd + ss(2)*vnmd + 2*vym*tempd3
+          vzmd = vzmd + ss(3)*vnmd + 2*vzm*tempd3
           sfd = sfd - vnmd - vmagd
           ssd(1) = ssd(1) + vxm*vnmd
           ssd(2) = ssd(2) + vym*vnmd
@@ -631,7 +642,7 @@ contains
           call computettot(rhom, vxm, vym, vzm, pm, ttot)
           vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3) - sf
           vmag = sqrt(vxm**2 + vym**2 + vzm**2) - sf
-! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
+          am = sqrt(gammam*pm/rhom)
           mnm = vmag/sqrt(gammam*pm/rhom)
           cellarea = sqrt(ss(1)**2 + ss(2)**2 + ss(3)**2)
           area = area + cellarea

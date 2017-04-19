@@ -21,7 +21,7 @@ contains
     use flowUtils, only : computeEtotBlock, computeLamViscosity
     use turbutils, only : computeeddyviscosity
     use solverUtils, only : timeStep
-    use residuals, only : residual, initRes
+    use residuals, only : residual, initRes, sourceTerms
     use BCRoutines, only : applyAllBC
     implicit none
     !
@@ -49,6 +49,7 @@ contains
     call timeStep(.true.)
 
     call initres(1_intType, nwf)
+    call sourceTerms()
     call residual
 
     ! Store the fine grid level and update the current level such
@@ -835,7 +836,7 @@ contains
     use turbAPI, only : turbSolveSegregated
     use solverUtils, only : timeStep, computeUtau
     use smoothers, only : rungeKuttaSmoother, DADISmoother
-    use residuals, only : residual, initRes
+    use residuals, only : residual, initRes, sourceTerms
     implicit none
     !
     !      Local variables.
@@ -884,6 +885,7 @@ contains
                 call timeStep(.false.)
 
                 call initres(1_intType, nwf)
+                call sourceTerms()
                 call residual
 
              endif
@@ -945,6 +947,7 @@ contains
     ! Compute the residual of the new solution on the ground level.
 
     call initres(1_intType, nwf)
+    call sourceTerms()
     call residual
 
     ! Set some information for monitoring purposes

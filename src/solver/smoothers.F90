@@ -17,7 +17,7 @@ contains
     use inputTimeSpectral, only :ntimeIntervalsSpectral
     use iteration, only: currentLevel, rkStage
     use utils, only : setPointers
-    use residuals, only : initRes, residual, residualAveraging
+    use residuals, only : initRes, residual, residualAveraging, sourceTerms
     use BCRoutines, only : applyAllBC
     implicit none
     !
@@ -71,6 +71,7 @@ contains
        ! Compute the residuals for the next stage.
 
        call initres(1_intType, nwf)
+       call sourceTerms()
        call residual
 
     enddo
@@ -393,7 +394,7 @@ contains
     use inputIteration
     use inputTimeSpectral
     use iteration
-    use residuals, only : initRes, residual
+    use residuals, only : initRes, residual, sourceTerms
     implicit none
 
 
@@ -406,6 +407,7 @@ contains
 
           ! Compute the residuals for the next stage.
           call initres(1_intType, nwf)
+          call sourceTerms()
           call residual
 
        enddo

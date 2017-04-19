@@ -17,7 +17,9 @@ contains
     use inputAdjoint
     use flowUtils, only : computeSpeedOfSoundSquared, allNodalGradients
     use fluxes
+#ifndef USE_TAPENADE
     use ALEUtils, only : interpLevelALE_block, recoverLevelALE_block
+#endif
     implicit none
     !
     !      Local variables.
@@ -303,6 +305,61 @@ contains
 
   end subroutine residual_block
 
+
+  subroutine sourceTerms_block(nn)
+
+    ! Apply the source terms for the given block. Assume that the
+    ! block pointers are already set. 
+    use constants
+    use actuatorRegionData
+    use blockPointers, only : vol, dw, w
+    use flowVarRefState, only : Pref
+    implicit none
+
+    ! Input 
+    integer(kind=intType), intent(in) ::  nn
+
+    ! Working
+    integer(kind=intType) :: i, j, k, ii, iRegion
+    type(actuatorRegionType), pointer :: region
+    real(kind=realType) :: Ftmp(3), Vx, Vy, Vz, Fact(3)
+
+    ! Region Loop
+    regionLoop: do iRegion=1, nActuatorRegions
+
+       ! Pointer for easier reading
+       region => actuatorRegions(iRegion)
+       
+       ! Compute the constant force factor
+       fact = region%F / region%volume / pRef
+
+       ! Loop over the ranges for this block
+       do ii=region%blkPtr(nn-1) + 1, region%blkPtr(nn)
+          
+          ! Extract the cell ID. 
+          i = region%cellIDs(1, ii)
+          j = region%cellIDs(2, ii)
+          k = region%cellIDs(3, ii)
+
+          ! This actually gets the force
+          FTmp = vol(i, j, k) * fact
+          
+          Vx = w(i, j, k, iVx)
+          Vy = w(i, j, k, iVy)
+          Vz = w(i, j, k, iVz)
+          
+          ! Momentum residuals
+          dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - Ftmp
+
+          ! energy residuals
+          dw(i, j, k, iRhoE) = dw(i, j, k, iRhoE)  - &
+               Ftmp(1)*Vx - Ftmp(2)*Vy - Ftmp(3)*Vz
+       end do
+    end do regionLoop
+
+  end subroutine sourceTerms_block
+
+
   ! ----------------------------------------------------------------------
   !                                                                      |
   !                    No Tapenade Routine below this line               |
@@ -404,6 +461,7 @@ contains
                 enddo
              enddo
           enddo
+
        else steadyLevelTest
 
           ! Coarse grid level. Initialize the owned cells to the
@@ -878,6 +936,27 @@ contains
 
   end subroutine initres_block
 
+  subroutine sourceTerms
+    
+    ! Shell function to call sourceTerms_block on all blocks
+
+    use constants
+    use blockPointers
+    use utils, only : setPointers
+    implicit none
+
+    integer(kind=intType) :: nn
+
+    ! Loop over the number of domains. 
+    domains: do nn=1,nDom
+
+       ! Set the pointers for this block.
+       call setPointers(nn, 1, 1)
+       call sourceTerms_block(nn)
+    end do domains
+
+  end subroutine sourceTerms
+
   subroutine residual
     !
     ! Shell function to call residual_block on all blocks
@@ -904,7 +983,7 @@ contains
           ! Set the pointers for this block.
 
           call setPointers(nn, currentLevel, sps)
-
+          
           call residual_block
 
        end do domains

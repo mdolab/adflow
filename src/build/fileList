@@ -47,6 +47,7 @@ fortranFiles=	ADT/adtUtils.F90\
 		modules/overset.F90\
 		modules/BCDataMod.F90\
 		modules/userSurfaceIntegrationData.F90\
+		modules/actuatorRegionData.F90\
 		\
 		NKSolver/NKSolvers.F90\
 		\
@@ -92,6 +93,7 @@ fortranFiles=	ADT/adtUtils.F90\
 		solver/surfaceIntegrations.F90\
 		solver/zipperIntegrations.F90\
 		solver/userSurfaceIntegrations.F90\
+		solver/actuatorRegion.F90\
 		solver/ALEUtils.F90\
 		solver/residuals.F90\
 		solver/smoothers.F90\
@@ -174,6 +176,7 @@ fortranFiles=	ADT/adtUtils.F90\
 		adjoint/outputReverseFast/turbutils_fast_b.f90\
 		adjoint/outputReverseFast/solverutils_fast_b.f90\
 		adjoint/outputReverseFast/fluxes_fast_b.f90\
+		adjoint/outputReverseFast/residuals_fast_b.f90\
 		adjoint/outputReverseFast/turbbcroutines_fast_b.f90\
 		adjoint/outputReverseFast/sa_fast_b.f90\
 
