@@ -2916,7 +2916,8 @@ contains
 
              !===========================================================
 
-          case (4_intType:)
+         case (4_intType:)
+
 
              ! Subblock must be split in 4 or more. First determine the
              ! number of subblocks into the two new subblocks must be

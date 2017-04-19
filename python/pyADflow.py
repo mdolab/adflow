@@ -515,10 +515,12 @@ class ADFLOW(AeroSolver):
             raise Error("Cannot add integration surface with family name '%s'"
                         "becuase the name it already exists."%familyName)
 
-        # Need to add an additional family so first figure out what the max family index is:
+        # Need to add an additional family so first figure out what
+        # the max family index is:
         maxInd = 0
         for fam in self.families:
-            maxInd = max(maxInd, numpy.max(self.families[fam]))
+            if len(self.families[fam]) > 0:
+                maxInd = max(maxInd, numpy.max(self.families[fam]))
         famID = maxInd + 1
         self.families[familyName.lower()] = [famID]
 
@@ -529,6 +531,80 @@ class ADFLOW(AeroSolver):
         pts, conn = self._readPlot3DSurfFile(fileName)
         self.adflow.usersurfaceintegrations.addintegrationsurface(
             pts.T, conn.T, familyName, famID)
+
+    def addActuatorRegion(self, fileName, axis1, axis2, familyName, 
+                          smoothDistance, F=None, T=None):
+        """Add an actuator disk zone defined by the (closed) supplied
+        in the plot3d file "fileName". Axis1 and Axis2 defines the
+        physical extent of the region overwhich to apply the ramp
+        factor. 
+
+        Parameters
+        ----------
+
+        fileName : str 
+           Surface Plot 3D file (multiblock ascii) defining the closed
+           region over which the integration is to be applied. 
+
+        axis1 : numpy array, length 3
+           The physical location of the start of the axis 
+
+        axis2 : numpy array, length 4
+           The physical location of the end of the axis
+
+        familyName : str
+           The name to be associated with the functions defined on this
+           region.
+
+        smoothDistance : scalar
+           The distance overwhich to smooth the implementatoin of the 
+           actuation. 
+
+        F : numpy array, length 3
+           The total amount of force to apply to this region
+
+        T : scalar 
+           The total amoun tof torque to apply to the region, about the 
+           specified axis. 
+           """
+        # ActuatorDiskRegions cannot be used in timeSpectralMode
+        if self.getOption('equationMode').lower() == 'time spectral':
+            raise Error("ActuatorRegions cannot be used in Time Spectral Mode.")
+
+        # Load in the user supplied surface file. 
+        pts, conn = self._readPlot3DSurfFile(fileName, convertToTris=False)
+
+        # We should do a topology check to ensure that the surface the
+        # user supplied is actually closed. 
+        # self._closedTopoCheck(pts, conn)
+
+        # Check if the family name given is already used for something
+        # else. 
+        if familyName.lower() in self.families:
+            raise Error("Cannot add ActuatorDiskRegion with family name '%s'"
+                        "becuase the name it already exists."%familyName)
+
+        # Need to add an additional family so first figure out what
+        # the max family index is:
+        maxInd = 0
+
+        for fam in self.families:
+            if len(self.families[fam]) > 0:
+                maxInd = max(maxInd, numpy.max(self.families[fam]))
+        famID = maxInd + 1
+        self.families[familyName.lower()] = [famID]
+        
+        # Set defaults for T and P if not specified
+        if F is None:
+            F = numpy.zeros(3)
+        if T is None:
+            T = 0.0
+
+        #  Now continue to fortran were we setup the actual
+        #  region. 
+        self.adflow.actuatorregion.addactuatorregion(
+            pts.T, conn.T, axis1, axis2, familyName, famID, F, T, smoothDistance)
+
 
     def addUserFunction(self, funcName, functions, callBack):
         """Add a new function to ADflow by combining existing functions in a
@@ -4680,7 +4756,7 @@ class ADFLOW(AeroSolver):
         slave.isSlave = True
         return slave
 
-    def _readPlot3DSurfFile(self, fileName):
+    def _readPlot3DSurfFile(self, fileName, convertToTris=True):
         """Read a plot3d file and return the points and connectivity in
         an unstructured mesh format"""
 
@@ -4733,14 +4809,16 @@ class ADFLOW(AeroSolver):
                     newConn[i, j] = link[conn[i, j]]
             conn = newConn
 
-            # Now convert the connectivity to triangles since we
-            # actually will be doing the integration on a triangles
-            newConn = numpy.zeros((len(conn)*2, 3))
-            for i in range(len(conn)):
-                newConn[2*i  , :] = [conn[i, 0], conn[i, 1], conn[i, 2]]
-                newConn[2*i+1, :] = [conn[i, 0], conn[i, 2], conn[i, 3]]
+            # Now convert the connectivity to triangles if requested
+            # since we actually will be doing the integration on a
+            # triangles
+            if convertToTris:
+                newConn = numpy.zeros((len(conn)*2, 3))
+                for i in range(len(conn)):
+                    newConn[2*i  , :] = [conn[i, 0], conn[i, 1], conn[i, 2]]
+                    newConn[2*i+1, :] = [conn[i, 0], conn[i, 2], conn[i, 3]]
 
-            conn = newConn
+                conn = newConn
 
         # Now bcast to everyone
         pts = self.comm.bcast(pts)

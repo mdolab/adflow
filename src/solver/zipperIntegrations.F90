@@ -135,7 +135,7 @@ contains
              vnm = vxm*ss(1) + vym*ss(2) + vzm*ss(3)  - sF
              
              vmag = sqrt((vxm**2 + vym**2 + vzm**2)) - sF
-             ! a = sqrt(gamma*p/rho); sqrt(v**2/a**2)
+             am = sqrt(gammam*pm/rhom)
              MNm = vmag/sqrt(gammam*pm/rhom)
 
              cellArea = sqrt(ss(1)**2 + ss(2)**2 + ss(3)**2)
