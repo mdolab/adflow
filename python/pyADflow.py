@@ -1,3 +1,4 @@
+
 #!/usr/bin/python
 from __future__ import print_function
 from __future__ import division
@@ -610,6 +611,16 @@ class ADFLOW(AeroSolver):
         """Add a new function to ADflow by combining existing functions in a
         user-supplied way. The allows the user to define a function
         such as L/D while only requiring a single adjoint solution. 
+        
+        example>>>
+        ap = AeroProblem(....,evalFuncs=['L/D'])
+        CFDSolver=ADFLOW(options=....)
+        def LoverD(funcs):
+             funcs['L/D'] = funcs['cl']/funcs['cd']
+             return funcs
+        CFDSolver.addUserFunction('L/D',['cl','cd'],LoverD)
+
+
 
         Parameters
         ----------
@@ -1092,13 +1103,14 @@ class ADFLOW(AeroSolver):
 
                 if g[1] in callBackFuncs:
                     callBackFuncs[g[1]] = res[g[0]]
-
+                
         # Execute the user supplied functions if there are any
         for f in self.adflowUserCostFunctions:
-            self.adflowUserCostFunctions[f].evalFunctions(callBackFuncs)
-            key = self.adflowUserCostFunctions[f].funcName
-            value = callBackFuncs[key]
-            funcs[self.curAP.name + '_%s'%key] = value
+            if f in evalFuncs:
+                self.adflowUserCostFunctions[f].evalFunctions(callBackFuncs)
+                key = self.adflowUserCostFunctions[f].funcName
+                value = callBackFuncs[key]
+                funcs[self.curAP.name + '_%s'%key] = value
 
     def _getFuncsBar(self, f):
         # Internal routine to return the funcsBar dictionary for the
@@ -2250,6 +2262,7 @@ class ADFLOW(AeroSolver):
 
         xRef = AP.xRef; yRef = AP.yRef; zRef = AP.zRef
         xRot = AP.xRot; yRot = AP.yRot; zRot = AP.zRot
+        momentAxis = AP.momentAxis
         areaRef = AP.areaRef
         chordRef = AP.chordRef
         liftIndex = self.getOption('liftIndex')
@@ -2320,6 +2333,15 @@ class ADFLOW(AeroSolver):
         if zRot is None:
             zRot = 0.0
 
+        if momentAxis is None: #Set the default to the x-axis through the origin
+            axisX1 = 0.0; axisX2 = 1.0;
+            axisY1 = 0.0; axisY2 = 0.0;
+            axisZ1 = 0.0; axisZ2 = 0.0;
+        else:
+            axisX1 = momentAxis[0][0]; axisX2 = momentAxis[1][0]
+            axisY1 = momentAxis[0][1]; axisY2 = momentAxis[1][1]
+            axisZ1 = momentAxis[0][2]; axisZ2 = momentAxis[1][2]
+            
         # Set mach defaults if user did not specified any machRef or machGrid values
 
         # If the user is running time spectral but did not specify
@@ -2347,6 +2369,7 @@ class ADFLOW(AeroSolver):
 
         # 2. Reference Points:
         self.adflow.inputphysics.pointref = [xRef, yRef, zRef]
+        self.adflow.inputphysics.momentaxis = [[axisX1,axisX2],[axisY1,axisY2],[axisZ1,axisZ2]]
         self.adflow.inputmotion.rotpoint = [xRot, yRot, zRot]
         self.adflow.inputphysics.pointrefec = [0.0, 0.0, 0.0]
 
@@ -2862,9 +2885,9 @@ class ADFLOW(AeroSolver):
                # now just do an efficient linear search:
                i = 0
 
-               for tmp in AP.bcVarData:
+               for tmp in self.curAP.bcVarData:
                    varName, family = tmp
-                   value = AP.bcVarData[tmp]
+                   value = self.curAP.bcVarData[tmp]
                    if varName.lower() == key and family.lower() == dvFam.lower():
                        funcsSens[dvName] = dIdBC[i]
                    i += 1
@@ -3186,16 +3209,15 @@ class ADFLOW(AeroSolver):
                             val *= numpy.pi/180
                         extradot[self.possibleAeroDVs[key.lower()]] = val
 
-                elif len(key) == 2:
-                    fam = key[1].lower()
+                else:
+                    fam = '_'.join(key[1:])
                     key = key[0].lower()
                     if key in self.possibleBCDvs and not bcVarsEmpty:
                         # Figure out what index this should be:
                         for i in range(len(bcDataNames)):
-                            if key.lower() == bcDataNames[i].lower() and \
-                               fam.lower() == bcDataFams[i]:
+                            if key.lower() == ''.join(bcDataNames[i]).strip().lower() and \
+                               fam.lower() == bcDataFams[i].lower():
                                 bcDataValuesdot[i] = xDvDot[xKey]
-                    
         # For the geometric xDvDot perturbation we accumulate into the
         # already existing (and possibly nonzero) xsdot and xvdot
         if xDvDot is not None or xSDot is not None:
@@ -4597,7 +4619,7 @@ class ADFLOW(AeroSolver):
             'edota':self.adflow.constants.costfuncedota, 
             'edotv':self.adflow.constants.costfuncedotv, 
             'edotp':self.adflow.constants.costfuncedotp, 
-
+            'axismoment':self.adflow.constants.costfuncaxismoment,
             }
 
         return iDV, BCDV, adflowCostFunctions

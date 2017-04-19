@@ -780,6 +780,7 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfuncedota=55
          integer(kind=inttype) parameter,optional :: costfuncedotp=56
          integer(kind=inttype) parameter,optional :: costfuncedotv=57
+         integer(kind=inttype) parameter,optional :: costfuncaxismoment=58
 
        end module constants
 
@@ -979,6 +980,7 @@ python module libadflow
          real(kind=realtype) dimension(3) :: dragdirection
          real(kind=realtype) dimension(3) :: pointref
          real(kind=realtype) dimension(3) :: pointrefec
+         real(kind=realtype) dimension(3,2) :: momentaxis
          logical :: forcesastractions
          real(kind=realtype) :: ssuthdim
          real(kind=realtype) :: musuthdim
@@ -1181,7 +1183,13 @@ python module libadflow
             integer(kind=inttype), parameter,optional :: ipressure=14
             integer(kind=inttype), parameter,optional :: itemperature=15
             integer(kind=inttype), parameter,optional :: idensity=16
-            integer(kind=inttype), parameter,optional :: ndesignextra=16
+            integer(kind=inttype), parameter,optional :: iaxisx1=17
+            integer(kind=inttype), parameter,optional :: iaxisx2=18
+            integer(kind=inttype), parameter,optional :: iaxisy1=19
+            integer(kind=inttype), parameter,optional :: iaxisy2=20
+            integer(kind=inttype), parameter,optional :: iaxisz1=21
+            integer(kind=inttype), parameter,optional :: iaxisz2=22
+            integer(kind=inttype), parameter,optional :: ndesignextra=22
           end module adjointvars
 
        module adjointpetsc

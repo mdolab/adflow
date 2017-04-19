@@ -1222,11 +1222,12 @@ contains
     integer(kind=intType) :: sps, nn, mm, iConv
 
     real(kind=realType) :: hdiffMax, MachMax
-    real(kind=realType) :: eddyvisMax, yplusMax, sepSensor, Cavitation
+    real(kind=realType) :: eddyvisMax, yplusMax, sepSensor, Cavitation, axisMoment
     real(kind=realType) :: sepSensorAvg(3)
 
     real(kind=realType) :: L2ConvThisLevel, fact
     real(kind=realType), dimension(3) :: cfp, cfv, cmp, cmv
+    real(kind=realType) :: cmpaxis, cmvaxis
     logical :: nanOccurred, writeIterations
     logical :: absConv, relConv
     real(kind=realType) :: localValues(nLocalValues)
@@ -1383,11 +1384,14 @@ contains
                 monLoc(mm) = max(monLoc(mm), eddyvisMax)
 
              case (cgnsSepSensor)
-                monLoc(mm) = monLoc(mm) + sepSensor
+                monLoc(mm) = monLoc(mm) + localValues(isepSensor)
 
              case (cgnsCavitation)
-                monLoc(mm) = monLoc(mm) + Cavitation
+                monLoc(mm) = monLoc(mm) + localValues(iCavitation)
 
+             case (cgnsAxisMoment)
+                monLoc(mm) = monLoc(mm) + localValues(iaxisMoment)
+               
              end select
 
           end do nMonitoringVar
