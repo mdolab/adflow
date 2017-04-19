@@ -535,6 +535,16 @@ class ADFLOW(AeroSolver):
         """Add a new function to ADflow by combining existing functions in a
         user-supplied way. The allows the user to define a function
         such as L/D while only requiring a single adjoint solution. 
+        
+        example>>>
+        ap = AeroProblem(....,evalFuncs=['L/D'])
+        CFDSolver=ADFLOW(options=....)
+        def LoverD(funcs):
+             funcs['L/D'] = funcs['cl']/funcs['cd']
+             return funcs
+        CFDSolver.addUserFunction('L/D',['cl','cd'],LoverD)
+
+
 
         Parameters
         ----------
@@ -1017,13 +1027,14 @@ class ADFLOW(AeroSolver):
 
                 if g[1] in callBackFuncs:
                     callBackFuncs[g[1]] = res[g[0]]
-
+                
         # Execute the user supplied functions if there are any
         for f in self.adflowUserCostFunctions:
-            self.adflowUserCostFunctions[f].evalFunctions(callBackFuncs)
-            key = self.adflowUserCostFunctions[f].funcName
-            value = callBackFuncs[key]
-            funcs[self.curAP.name + '_%s'%key] = value
+            if f in evalFuncs:
+                self.adflowUserCostFunctions[f].evalFunctions(callBackFuncs)
+                key = self.adflowUserCostFunctions[f].funcName
+                value = callBackFuncs[key]
+                funcs[self.curAP.name + '_%s'%key] = value
 
     def _getFuncsBar(self, f):
         # Internal routine to return the funcsBar dictionary for the
