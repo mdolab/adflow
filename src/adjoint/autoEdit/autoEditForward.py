@@ -1,3 +1,4 @@
+from __future__ import print_function
 #! /usr/bin/env python
 """
 autoEdit - A Python tool to automatically edit a set of files
@@ -26,8 +27,8 @@ patt_function = re.compile(r'\s*function\s\w*')
 patt_subend = re.compile(r'\s*end\s*subroutine')
 patt_funcend = re.compile(r'\s*end\s*function\n')
 
-print "Directory of input source files  :", DIR_ORI
-print "Directory of output source files :", DIR_MOD
+print("Directory of input source files  :", DIR_ORI)
+print("Directory of output source files :", DIR_MOD)
 
 useful_modules = ['bcroutines_d','turbbcroutines_d',
                   'utils_d', 'flowutils_d', 'walldistance_d', 'bcpointers_d',
@@ -39,7 +40,7 @@ for f in os.listdir(DIR_ORI):
     if f.endswith(EXT):
         # open original file in read mode
         file_object_ori = open(os.path.join(DIR_ORI,f),'r')
-        print "\nParsing input file", file_object_ori.name
+        print("\nParsing input file", file_object_ori.name)
 
         # read to whole file to string and reposition the pointer
         # at the first byte for future reading
@@ -112,4 +113,4 @@ for f in os.listdir(DIR_ORI):
         file_object_mod.close()
 
         # success message
-        print " Modified file saved", file_object_mod.name
+        print(" Modified file saved", file_object_mod.name)
