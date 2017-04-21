@@ -634,9 +634,10 @@ class ADFLOW(AeroSolver):
             This routine must be complex-step safe for the purpose of 
             computing sensitivities. 
         """
+        funcName = funcName.lower()
 
         # First check if the function name supplied is already used:
-        if funcName.lower() in self.adflowCostFunctions:
+        if funcName in self.adflowCostFunctions:
             raise Error("The supplied funcName %s, is already used"% funcName)
 
         # Now check that we've supplied at least 2 or more functions
@@ -645,7 +646,7 @@ class ADFLOW(AeroSolver):
                         " to be provided")
         # Check that each of the functions are valid:
         for func in functions:
-            if func.lower() not in self.adflowCostFunctions:
+            if func not in self.adflowCostFunctions:
                 raise Error('Supplied  function %s to addUserFunction '
                             'not know to ADflow'%func)
 
@@ -1057,6 +1058,12 @@ class ADFLOW(AeroSolver):
         if evalFuncs is None:
             evalFuncs = self.curAP.evalFuncs
 
+        # Make sure we have a list that has only lower-cased entries
+        tmp = []
+        for f in evalFuncs:
+            tmp.append(f.lower())
+        evalFuncs = tmp
+                    
         # We need to determine how many different groupings we have,
         # since we will have to call getSolution for each *unique*
         # function grouping. We can also do the error checking
@@ -1073,13 +1080,13 @@ class ADFLOW(AeroSolver):
         callBackFuncs = {}
         for f in evalFuncs:
             # Standard functions
-            if f.lower() in self.adflowCostFunctions:
-                addToGroup(f.lower())
+            if f in self.adflowCostFunctions:
+                addToGroup(f)
 
             # User supplied functions
             elif f in self.adflowUserCostFunctions:
                 for sf in self.adflowUserCostFunctions[f].functions:
-                    addToGroup(sf.lower())
+                    addToGroup(sf)
                     # This just flags the sub-function 'sf' as being
                     # required for callBacks. 
                     callBackFuncs[sf] = 0.0
@@ -1099,9 +1106,10 @@ class ADFLOW(AeroSolver):
             for g in groupMap[group]:
                 key = self.curAP.name + '_%s'% g[1]
                 self.curAP.funcNames[g[1]] = key
-                funcs[key] = res[g[0]]
+                if g[1].lower() in evalFuncs:
+                    funcs[key] = res[g[0]]
 
-                if g[1] in callBackFuncs:
+                if g[1].lower() in callBackFuncs:
                     callBackFuncs[g[1]] = res[g[0]]
                 
         # Execute the user supplied functions if there are any
@@ -1158,12 +1166,17 @@ class ADFLOW(AeroSolver):
 
         if evalFuncs is None:
             evalFuncs = self.curAP.evalFuncs
-        else:
-            evalFuncs = list(evalFuncs)
+
+        # Make sure we have a list that has only lower-cased entries
+        tmp = []
+        for f in evalFuncs:
+            tmp.append(f.lower())
+        evalFuncs = tmp
+                    
 
         # Do the functions one at a time:
         for f in evalFuncs:
-            if f.lower() in self.adflowCostFunctions:
+            if f in self.adflowCostFunctions:
                 pass 
             elif f in self.adflowUserCostFunctions:
                 pass
@@ -4866,7 +4879,7 @@ class adflowFlowCase(object):
 class adflowUserFunc(object):
     """Class containing the user-supplied function information"""
     def __init__(self, funcName, functions, callBack):
-        self.funcName = funcName
+        self.funcName = funcName.lower()
         self.functions = functions
         self.callBack = callBack
         self.funcs = None
@@ -4875,6 +4888,10 @@ class adflowUserFunc(object):
         # Cache the input funcs for reference
         self.funcs = funcs
         self.callBack(funcs)
+        # Make sure the funcName was actually added:
+        if self.funcName not in funcs:
+            raise Error("The func '%s' (must be lower-case) was "
+                        "not supplied from user-supplied function."%self.funcName)
 
     def evalFunctionsSens(self):
         # We need to get the derivative of 'self.funcName' as a
