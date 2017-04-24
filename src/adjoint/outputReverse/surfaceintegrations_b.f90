@@ -42,16 +42,12 @@ contains
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: forced&
 &   , momentd, cforced, cmomentd
     real(kind=realtype), dimension(3) :: vcoordref, vfreestreamref
-    real(kind=realtype), dimension(3) :: vcoordrefd, vfreestreamrefd
     real(kind=realtype) :: mavgptot, mavgttot, mavgrho, mavgps, mflow, &
 &   mavgmn, mavga, mavgvx, mavgvy, mavgvz, mavgnx, mavgny, mavgnz, mavgu&
 &   , sigmamn, sigmaptot
     real(kind=realtype) :: mavgptotd, mavgttotd, mavgrhod, mavgpsd, &
-&   mflowd, mavgmnd, mavgad, mavgvxd, mavgvyd, mavgvzd, mavgnxd, mavgnyd&
-&   , mavgnzd, mavgud, sigmamnd, sigmaptotd
-    real(kind=realtype) :: pk, edota, edotv, edotp, vdotn, mag, u, v, w
-    real(kind=realtype) :: pkd, edotad, edotvd, edotpd, vdotnd, magd, ud&
-&   , vd, wd
+&   mflowd, mavgmnd, mavgad, sigmamnd, sigmaptotd
+    real(kind=realtype) :: vdotn, mag, u, v, w
     integer(kind=inttype) :: sps
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
@@ -62,35 +58,22 @@ contains
     real(kind=realtype) :: tmp0
     real(kind=realtype) :: tmp1
     real(kind=realtype) :: tmp2
-    real(kind=realtype) :: arg2
-    real(kind=realtype) :: arg1
     integer :: branch
-    real(kind=realtype) :: temp3
     real(kind=realtype) :: temp2
     real(kind=realtype) :: temp1
     real(kind=realtype) :: temp0
-    real(kind=realtype) :: tempd10
     real(kind=realtype) :: abs1d
     real(kind=realtype) :: tmpd
-    real(kind=realtype) :: abs0d
-    real(kind=realtype) :: tempd9
     real(kind=realtype) :: tempd
-    real(kind=realtype) :: tempd8
-    real(kind=realtype) :: tempd7
-    real(kind=realtype) :: tempd6
-    real(kind=realtype) :: tempd5
-    real(kind=realtype) :: arg2d
-    real(kind=realtype) :: tempd4
-    real(kind=realtype) :: tempd3
-    real(kind=realtype) :: tempd2
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: tmpd2
     real(kind=realtype) :: tmpd1
     real(kind=realtype) :: tmpd0
+    real(kind=realtype) :: abs2
+    real(kind=realtype) :: abs2d
     real(kind=realtype) :: abs1
     real(kind=realtype) :: abs0
-    real(kind=realtype) :: arg1d
     real(kind=realtype) :: temp
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
@@ -107,8 +90,6 @@ contains
     cmoment = fact*moment
 ! zero values since we are summing.
     funcvalues = zero
-    call pushreal8array(vfreestreamref, 3)
-    call pushreal8array(vcoordref, 3)
 ! here we finally assign the final function values
     do sps=1,ntimeintervalsspectral
       funcvalues(costfuncforcex) = funcvalues(costfuncforcex) + ovrnts*&
@@ -171,13 +152,19 @@ contains
         else
           abs0 = -mflow
         end if
-        sigmamn = sqrt(globalvals(isigmamn, sps)/abs0)
+        print*, 'stuff:', globalvals(isigmamn, sps), abs0
         if (mflow .ge. 0.) then
           abs1 = mflow
         else
           abs1 = -mflow
         end if
-        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs1)
+        sigmamn = sqrt(globalvals(isigmamn, sps)/abs1)
+        if (mflow .ge. 0.) then
+          abs2 = mflow
+        else
+          abs2 = -mflow
+        end if
+        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs2)
       else
         mavgptot = zero
         mavgttot = zero
@@ -211,34 +198,6 @@ contains
 &       *sigmamn
       funcvalues(costfuncsigmaptot) = funcvalues(costfuncsigmaptot) + &
 &       ovrnts*sigmaptot
-      vdotn = mavgvx*mavgnx + mavgvy*mavgny + mavgvz*mavgnz
-      mavgu = mavgmn*mavga
-! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
-      vcoordref(1) = mavgvx
-      vcoordref(2) = mavgvy
-      vcoordref(3) = mavgvz
-      call getdirvector(vcoordref, -alpha, -beta, vfreestreamref, &
-&                 liftindex)
-      vfreestreamref = vfreestreamref*mavgu
-! compute the pertubations of the flow from the free-stream velocity
-      u = vfreestreamref(1) - uinf*uref
-      v = vfreestreamref(2)
-      w = vfreestreamref(3)
-      edota = half*mavgrho*u**2*vdotn*globalvals(iarea, sps)
-      edotv = half*mavgrho*(v**2+w**2)*vdotn*globalvals(iarea, sps)
-      edotp = ((mavgps-pinf*pref)*vdotn-uinf*uref*mavgnx)*globalvals(&
-&       iarea, sps)
-      pk = (mavgps-pinf*pref+half*mavgrho*(mavgu**2-(uinf*uref)**2))*&
-&       vdotn*globalvals(iarea, sps)
-      funcvalues(costfuncpk) = funcvalues(costfuncpk) + ovrnts*pk
-      funcvalues(costfuncedota) = funcvalues(costfuncedota) + ovrnts*&
-&       edota
-      funcvalues(costfuncedotv) = funcvalues(costfuncedotv) + ovrnts*&
-&       edotv
-      funcvalues(costfuncedotp) = funcvalues(costfuncedotp) + ovrnts*&
-&       edotp
-      funcvalues(costfuncedot) = funcvalues(costfuncedot) + edota + &
-&       edotv + edotp
     end do
 ! bending moment calc - also broken. 
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
@@ -326,39 +285,15 @@ contains
 &       liftdirection(3)*tmpd2
       liftdirectiond(3) = liftdirectiond(3) + funcvalues(costfuncforcez)&
 &       *tmpd2
-      prefd = 0.0_8
       globalvalsd = 0.0_8
       momentd = 0.0_8
-      vfreestreamrefd = 0.0_8
-      vcoordrefd = 0.0_8
       cforced = 0.0_8
       forced = 0.0_8
       cmomentd = 0.0_8
-      call popreal8array(vcoordref, 3)
-      call popreal8array(vfreestreamref, 3)
       do sps=1,ntimeintervalsspectral
 ! mass flow like objective
         mflow = globalvals(imassflow, sps)
         if (mflow .ne. zero) then
-          mavgrho = globalvals(imassrho, sps)/mflow
-          mavgps = globalvals(imassps, sps)/mflow
-          mavgmn = globalvals(imassmn, sps)/mflow
-          mavga = globalvals(imassa, sps)/mflow
-          mavgvx = globalvals(imassvx, sps)/mflow
-          mavgvy = globalvals(imassvy, sps)/mflow
-          mavgvz = globalvals(imassvz, sps)/mflow
-          mag = sqrt(globalvals(imassnx, sps)**2 + globalvals(imassny, &
-&           sps)**2 + globalvals(imassnz, sps)**2)
-          mavgnx = globalvals(imassnx, sps)/mag
-          mavgny = globalvals(imassny, sps)/mag
-          mavgnz = globalvals(imassnz, sps)/mag
-          if (mflow .ge. 0.) then
-            abs0 = mflow
-            call pushcontrol1b(0)
-          else
-            abs0 = -mflow
-            call pushcontrol1b(1)
-          end if
           if (mflow .ge. 0.) then
             abs1 = mflow
             call pushcontrol1b(0)
@@ -366,160 +301,65 @@ contains
             abs1 = -mflow
             call pushcontrol1b(1)
           end if
+          if (mflow .ge. 0.) then
+            abs2 = mflow
+            call pushcontrol1b(0)
+          else
+            abs2 = -mflow
+            call pushcontrol1b(1)
+          end if
           call pushcontrol1b(0)
         else
           call pushcontrol1b(1)
-          mavgrho = zero
-          mavgps = zero
-          mavgmn = zero
-          mavga = zero
-          mavgvx = zero
-          mavgvy = zero
-          mavgvz = zero
-          mavgnx = zero
-          mavgny = zero
-          mavgnz = zero
         end if
-        vdotn = mavgvx*mavgnx + mavgvy*mavgny + mavgvz*mavgnz
-        mavgu = mavgmn*mavga
-! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
-        vcoordref(1) = mavgvx
-        vcoordref(2) = mavgvy
-        vcoordref(3) = mavgvz
-        arg2 = -beta
-        arg1 = -alpha
-        call getdirvector(vcoordref, arg1, arg2, vfreestreamref, &
-&                   liftindex)
-        call pushreal8array(vfreestreamref, 3)
-        vfreestreamref = vfreestreamref*mavgu
-! compute the pertubations of the flow from the free-stream velocity
-        u = vfreestreamref(1) - uinf*uref
-        v = vfreestreamref(2)
-        w = vfreestreamref(3)
-        call popreal8array(vfreestreamref, 3)
-        edotad = ovrnts*funcvaluesd(costfuncedota) + funcvaluesd(&
-&         costfuncedot)
-        edotvd = ovrnts*funcvaluesd(costfuncedotv) + funcvaluesd(&
-&         costfuncedot)
-        edotpd = ovrnts*funcvaluesd(costfuncedotp) + funcvaluesd(&
-&         costfuncedot)
-        pkd = ovrnts*funcvaluesd(costfuncpk)
-        tempd3 = vdotn*globalvals(iarea, sps)*pkd
-        temp3 = mavgu**2 - (uinf*uref)**2
-        tempd4 = (mavgps-pinf*pref+half*(mavgrho*temp3))*pkd
-        tempd5 = globalvals(iarea, sps)*edotpd
-        mavgpsd = vdotn*tempd5 + ovrnts*funcvaluesd(costfuncmavgps) + &
-&         tempd3
-        prefd = prefd - vdotn*pinf*tempd5 - pinf*tempd3
-        tempd10 = half*mavgrho*vdotn*globalvals(iarea, sps)*edotvd
-        tempd9 = half*(v**2+w**2)*edotvd
-        tempd6 = globalvals(iarea, sps)*tempd9
-        vd = 2*v*tempd10
-        wd = 2*w*tempd10
-        tempd7 = half*u**2*globalvals(iarea, sps)*edotad
-        mavgrhod = vdotn*tempd6 + ovrnts*funcvaluesd(costfuncmavgrho) + &
-&         vdotn*tempd7 + half*temp3*tempd3
-        vdotnd = (mavgps-pinf*pref)*tempd5 + mavgrho*tempd7 + mavgrho*&
-&         tempd6 + globalvals(iarea, sps)*tempd4
-        mavgnxd = mavgvx*vdotnd - uinf*uref*tempd5
-        tempd8 = half*mavgrho*vdotn*edotad
-        globalvalsd(iarea, sps) = globalvalsd(iarea, sps) + ((mavgps-&
-&         pinf*pref)*vdotn-uinf*uref*mavgnx)*edotpd + u**2*tempd8 + &
-&         mavgrho*vdotn*tempd9 + vdotn*tempd4
-        ud = globalvals(iarea, sps)*2*u*tempd8
-        vfreestreamrefd(3) = vfreestreamrefd(3) + wd
-        vfreestreamrefd(2) = vfreestreamrefd(2) + vd
-        vfreestreamrefd(1) = vfreestreamrefd(1) + ud
-        mavgud = sum(vfreestreamref*vfreestreamrefd) + mavgrho*half*2*&
-&         mavgu*tempd3
-        vfreestreamrefd = mavgu*vfreestreamrefd
-        arg1d = 0.0_8
-        arg2d = 0.0_8
-        call getdirvector_b(vcoordref, vcoordrefd, arg1, arg1d, arg2, &
-&                     arg2d, vfreestreamref, vfreestreamrefd, liftindex)
-        mavgvzd = mavgnz*vdotnd + vcoordrefd(3)
-        vcoordrefd(3) = 0.0_8
-        mavgvyd = mavgny*vdotnd + vcoordrefd(2)
-        vcoordrefd(2) = 0.0_8
-        mavgvxd = mavgnx*vdotnd + vcoordrefd(1)
-        vcoordrefd(1) = 0.0_8
-        mavgmnd = ovrnts*funcvaluesd(costfuncmavgmn) + mavga*mavgud
-        mavgad = ovrnts*funcvaluesd(costfuncmavga) + mavgmn*mavgud
-        mavgnyd = mavgvy*vdotnd
-        mavgnzd = mavgvz*vdotnd
         sigmaptotd = ovrnts*funcvaluesd(costfuncsigmaptot)
         sigmamnd = ovrnts*funcvaluesd(costfuncsigmamn)
+        mavgad = ovrnts*funcvaluesd(costfuncmavga)
+        mavgmnd = ovrnts*funcvaluesd(costfuncmavgmn)
+        mavgpsd = ovrnts*funcvaluesd(costfuncmavgps)
+        mavgrhod = ovrnts*funcvaluesd(costfuncmavgrho)
         mavgttotd = ovrnts*funcvaluesd(costfuncmavgttot)
         mavgptotd = ovrnts*funcvaluesd(costfuncmavgptot)
         mflowd = ovrnts*funcvaluesd(costfuncmdot)
         call popcontrol1b(branch)
         if (branch .eq. 0) then
-          temp2 = globalvals(isigmaptot, sps)/abs1
+          temp2 = globalvals(isigmaptot, sps)/abs2
           if (temp2 .eq. 0.0_8) then
-            tempd2 = 0.0
+            tempd1 = 0.0
           else
-            tempd2 = sigmaptotd/(2.0*sqrt(temp2)*abs1)
+            tempd1 = sigmaptotd/(2.0*sqrt(temp2)*abs2)
           end if
           globalvalsd(isigmaptot, sps) = globalvalsd(isigmaptot, sps) + &
-&           tempd2
-          abs1d = -(temp2*tempd2)
+&           tempd1
+          abs2d = -(temp2*tempd1)
+          call popcontrol1b(branch)
+          if (branch .eq. 0) then
+            mflowd = mflowd + abs2d
+          else
+            mflowd = mflowd - abs2d
+          end if
+          temp1 = globalvals(isigmamn, sps)/abs1
+          if (temp1 .eq. 0.0_8) then
+            tempd0 = 0.0
+          else
+            tempd0 = sigmamnd/(2.0*sqrt(temp1)*abs1)
+          end if
+          globalvalsd(isigmamn, sps) = globalvalsd(isigmamn, sps) + &
+&           tempd0
+          abs1d = -(temp1*tempd0)
           call popcontrol1b(branch)
           if (branch .eq. 0) then
             mflowd = mflowd + abs1d
           else
             mflowd = mflowd - abs1d
           end if
-          temp1 = globalvals(isigmamn, sps)/abs0
-          if (temp1 .eq. 0.0_8) then
-            tempd1 = 0.0
-          else
-            tempd1 = sigmamnd/(2.0*sqrt(temp1)*abs0)
-          end if
-          globalvalsd(isigmamn, sps) = globalvalsd(isigmamn, sps) + &
-&           tempd1
-          abs0d = -(temp1*tempd1)
-          call popcontrol1b(branch)
-          if (branch .eq. 0) then
-            mflowd = mflowd + abs0d
-          else
-            mflowd = mflowd - abs0d
-          end if
-          globalvalsd(imassnz, sps) = globalvalsd(imassnz, sps) + &
-&           mavgnzd/mag
-          magd = -(globalvals(imassny, sps)*mavgnyd/mag**2) - globalvals&
-&           (imassnx, sps)*mavgnxd/mag**2 - globalvals(imassnz, sps)*&
-&           mavgnzd/mag**2
-          globalvalsd(imassny, sps) = globalvalsd(imassny, sps) + &
-&           mavgnyd/mag
-          if (globalvals(imassnx, sps)**2 + globalvals(imassny, sps)**2 &
-&             + globalvals(imassnz, sps)**2 .eq. 0.0_8) then
-            tempd0 = 0.0
-          else
-            tempd0 = magd/(2.0*sqrt(globalvals(imassnx, sps)**2+&
-&             globalvals(imassny, sps)**2+globalvals(imassnz, sps)**2))
-          end if
-          globalvalsd(imassnx, sps) = globalvalsd(imassnx, sps) + 2*&
-&           globalvals(imassnx, sps)*tempd0 + mavgnxd/mag
-          globalvalsd(imassny, sps) = globalvalsd(imassny, sps) + 2*&
-&           globalvals(imassny, sps)*tempd0
-          globalvalsd(imassnz, sps) = globalvalsd(imassnz, sps) + 2*&
-&           globalvals(imassnz, sps)*tempd0
-          globalvalsd(imassvz, sps) = globalvalsd(imassvz, sps) + &
-&           mavgvzd/mflow
-          mflowd = mflowd - globalvals(imassvy, sps)*mavgvyd/mflow**2 - &
-&           globalvals(imassa, sps)*mavgad/mflow**2 - globalvals(imassps&
-&           , sps)*mavgpsd/mflow**2 - globalvals(imassttot, sps)*&
-&           mavgttotd/mflow**2 - globalvals(imassptot, sps)*mavgptotd/&
-&           mflow**2 - globalvals(imassrho, sps)*mavgrhod/mflow**2 - &
-&           globalvals(imassmn, sps)*mavgmnd/mflow**2 - globalvals(&
-&           imassvx, sps)*mavgvxd/mflow**2 - globalvals(imassvz, sps)*&
-&           mavgvzd/mflow**2
-          globalvalsd(imassvy, sps) = globalvalsd(imassvy, sps) + &
-&           mavgvyd/mflow
-          globalvalsd(imassvx, sps) = globalvalsd(imassvx, sps) + &
-&           mavgvxd/mflow
           globalvalsd(imassa, sps) = globalvalsd(imassa, sps) + mavgad/&
 &           mflow
+          mflowd = mflowd - globalvals(imassmn, sps)*mavgmnd/mflow**2 - &
+&           globalvals(imassrho, sps)*mavgrhod/mflow**2 - globalvals(&
+&           imassptot, sps)*mavgptotd/mflow**2 - globalvals(imassttot, &
+&           sps)*mavgttotd/mflow**2 - globalvals(imassps, sps)*mavgpsd/&
+&           mflow**2 - globalvals(imassa, sps)*mavgad/mflow**2
           globalvalsd(imassmn, sps) = globalvalsd(imassmn, sps) + &
 &           mavgmnd/mflow
           globalvalsd(imassps, sps) = globalvalsd(imassps, sps) + &
@@ -581,7 +421,7 @@ contains
       temp = temp0*machcoef**2*pref
       tempd = -(two*temp0*factd/temp**2)
       machcoefd = pref*2*machcoef*tempd
-      prefd = prefd + machcoef**2*tempd
+      prefd = machcoef**2*tempd
       globalvalsd(imp:imp+2, :) = globalvalsd(imp:imp+2, :) + momentd
       globalvalsd(imv:imv+2, :) = globalvalsd(imv:imv+2, :) + momentd
       globalvalsd(iflowmm:iflowmm+2, :) = globalvalsd(iflowmm:iflowmm+2&
@@ -615,13 +455,14 @@ contains
     real(kind=realtype) :: mavgptot, mavgttot, mavgrho, mavgps, mflow, &
 &   mavgmn, mavga, mavgvx, mavgvy, mavgvz, mavgnx, mavgny, mavgnz, mavgu&
 &   , sigmamn, sigmaptot
-    real(kind=realtype) :: pk, edota, edotv, edotp, vdotn, mag, u, v, w
+    real(kind=realtype) :: vdotn, mag, u, v, w
     integer(kind=inttype) :: sps
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
     intrinsic sqrt
     intrinsic abs
+    real(kind=realtype) :: abs2
     real(kind=realtype) :: abs1
     real(kind=realtype) :: abs0
 ! factor used for time-averaged quantities.
@@ -700,13 +541,19 @@ contains
         else
           abs0 = -mflow
         end if
-        sigmamn = sqrt(globalvals(isigmamn, sps)/abs0)
+        print*, 'stuff:', globalvals(isigmamn, sps), abs0
         if (mflow .ge. 0.) then
           abs1 = mflow
         else
           abs1 = -mflow
         end if
-        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs1)
+        sigmamn = sqrt(globalvals(isigmamn, sps)/abs1)
+        if (mflow .ge. 0.) then
+          abs2 = mflow
+        else
+          abs2 = -mflow
+        end if
+        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs2)
       else
         mavgptot = zero
         mavgttot = zero
@@ -740,34 +587,6 @@ contains
 &       *sigmamn
       funcvalues(costfuncsigmaptot) = funcvalues(costfuncsigmaptot) + &
 &       ovrnts*sigmaptot
-      vdotn = mavgvx*mavgnx + mavgvy*mavgny + mavgvz*mavgnz
-      mavgu = mavgmn*mavga
-! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
-      vcoordref(1) = mavgvx
-      vcoordref(2) = mavgvy
-      vcoordref(3) = mavgvz
-      call getdirvector(vcoordref, -alpha, -beta, vfreestreamref, &
-&                 liftindex)
-      vfreestreamref = vfreestreamref*mavgu
-! compute the pertubations of the flow from the free-stream velocity
-      u = vfreestreamref(1) - uinf*uref
-      v = vfreestreamref(2)
-      w = vfreestreamref(3)
-      edota = half*mavgrho*u**2*vdotn*globalvals(iarea, sps)
-      edotv = half*mavgrho*(v**2+w**2)*vdotn*globalvals(iarea, sps)
-      edotp = ((mavgps-pinf*pref)*vdotn-uinf*uref*mavgnx)*globalvals(&
-&       iarea, sps)
-      pk = (mavgps-pinf*pref+half*mavgrho*(mavgu**2-(uinf*uref)**2))*&
-&       vdotn*globalvals(iarea, sps)
-      funcvalues(costfuncpk) = funcvalues(costfuncpk) + ovrnts*pk
-      funcvalues(costfuncedota) = funcvalues(costfuncedota) + ovrnts*&
-&       edota
-      funcvalues(costfuncedotv) = funcvalues(costfuncedotv) + ovrnts*&
-&       edotv
-      funcvalues(costfuncedotp) = funcvalues(costfuncedotp) + ovrnts*&
-&       edotp
-      funcvalues(costfuncedot) = funcvalues(costfuncedot) + edota + &
-&       edotv + edotp
     end do
 ! bending moment calc - also broken. 
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
@@ -2057,28 +1876,6 @@ contains
         pmd = 0.0_8
         vzmd = 0.0_8
       else
-! note that we don't use fact here because we need the signed behavior from ssi
-! pk = pk - ((pm-pinf) + half*rhom*(vmag**2 - uinf**2)) * vnm * pref* uref * blk * inflowfact
-! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
-! vcoordref(1) = vxm
-! vcoordref(2) = vym
-! vcoordref(3) = vzm
-! call getdirvector(vcoordref, -alpha, -beta, vfreestreamref, liftindex)
-! vfreestreamref = vfreestreamref * vmag
-! !project the face normal into the freestream velocity and scale by the face
-! call getdirvector(ssi(i,j,:), -alpha, -beta, normfreestreamref, liftindex)
-! ! note that normfreestreamref is of magnitude 1 now
-! sfacefreestreamref = normfreestreamref * sf
-! ! compute the pertubations of the flow from the free-stream velocity
-! u = vfreestreamref(1) - sfacefreestreamref(1) - uinf
-! v = vfreestreamref(2) - sfacefreestreamref(2)
-! w = vfreestreamref(3) - sfacefreestreamref(3)
-! vnmfreestreamref =  (u+uinf)*normfreestreamref(1) + v*normfreestreamref(2) + w*normfreestreamref(3)
-! vnmfreestreamref = vnmfreestreamref * cellarea
-! edota = edota - half * rhom*u**2 * vnmfreestreamref * rhoref * uref**3 * internalflowfact * blk * inflowfact * fact
-! edotv = edotv - half * rhom*(v**2+w**2) * vnmfreestreamref * rhoref * uref**3 * internalflowfact * blk * inflowfact * fact 
-! edotp = edotp - (pm-pinf) * (vnmfreestreamref - uinf*normfreestreamref(1)*cellarea) * pref * uref * & 
-!         internalflowfact * blk * inflowfact *fact
 ! re-dimentionalize quantities
         call pushreal8(pm)
         pm = pm*pref
@@ -2424,28 +2221,6 @@ contains
 &         ))**2
       else
         massflowrate = massflowrate + massflowratelocal
-! note that we don't use fact here because we need the signed behavior from ssi
-! pk = pk - ((pm-pinf) + half*rhom*(vmag**2 - uinf**2)) * vnm * pref* uref * blk * inflowfact
-! computes the normalized vector maped into the freestream direction, so we multiply by the magnitude after
-! vcoordref(1) = vxm
-! vcoordref(2) = vym
-! vcoordref(3) = vzm
-! call getdirvector(vcoordref, -alpha, -beta, vfreestreamref, liftindex)
-! vfreestreamref = vfreestreamref * vmag
-! !project the face normal into the freestream velocity and scale by the face
-! call getdirvector(ssi(i,j,:), -alpha, -beta, normfreestreamref, liftindex)
-! ! note that normfreestreamref is of magnitude 1 now
-! sfacefreestreamref = normfreestreamref * sf
-! ! compute the pertubations of the flow from the free-stream velocity
-! u = vfreestreamref(1) - sfacefreestreamref(1) - uinf
-! v = vfreestreamref(2) - sfacefreestreamref(2)
-! w = vfreestreamref(3) - sfacefreestreamref(3)
-! vnmfreestreamref =  (u+uinf)*normfreestreamref(1) + v*normfreestreamref(2) + w*normfreestreamref(3)
-! vnmfreestreamref = vnmfreestreamref * cellarea
-! edota = edota - half * rhom*u**2 * vnmfreestreamref * rhoref * uref**3 * internalflowfact * blk * inflowfact * fact
-! edotv = edotv - half * rhom*(v**2+w**2) * vnmfreestreamref * rhoref * uref**3 * internalflowfact * blk * inflowfact * fact 
-! edotp = edotp - (pm-pinf) * (vnmfreestreamref - uinf*normfreestreamref(1)*cellarea) * pref * uref * & 
-!         internalflowfact * blk * inflowfact *fact
 ! re-dimentionalize quantities
         pm = pm*pref
         mass_ptot = mass_ptot + ptot*massflowratelocal*pref
@@ -2510,6 +2285,7 @@ contains
       end if
     end do
     if (withgathered) then
+      print*, 'here:', sigma_mn
       localvalues(isigmamn) = localvalues(isigmamn) + sigma_mn
       localvalues(isigmaptot) = localvalues(isigmaptot) + sigma_ptot
     else
@@ -2522,11 +2298,6 @@ contains
       localvalues(imassttot) = localvalues(imassttot) + mass_ttot
       localvalues(imassps) = localvalues(imassps) + mass_ps
       localvalues(imassmn) = localvalues(imassmn) + mass_mn
-! localvalues(ipk)   = localvalues(ipk)   + pk
-! localvalues(iedota) = localvalues(iedota) + edota
-! localvalues(iedotv) = localvalues(iedotv) + edotv
-! localvalues(iedotp) = localvalues(iedotp) + edotp
-! localvalues(iedot)   = localvalues(iedot) + edota + edotv + edotp
       localvalues(ifp:ifp+2) = localvalues(ifp:ifp+2) + fp
       localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
 &       fmom
