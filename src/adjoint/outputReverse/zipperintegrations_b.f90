@@ -749,11 +749,6 @@ contains
       localvalues(imassttot) = localvalues(imassttot) + mass_ttot
       localvalues(imassps) = localvalues(imassps) + mass_ps
       localvalues(imassmn) = localvalues(imassmn) + mass_mn
-! localvalues(ipk)   = localvalues(ipk)   + pk
-! localvalues(iedota) = localvalues(iedota) + edota
-! localvalues(iedotv) = localvalues(iedotv) + edotv
-! localvalues(iedotp) = localvalues(iedotp) + edotp
-! localvalues(iedot)   = localvalues(iedot)   + edota + edotv + edotp
       localvalues(ifp:ifp+2) = localvalues(ifp:ifp+2) + fp
       localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
 &       fmom

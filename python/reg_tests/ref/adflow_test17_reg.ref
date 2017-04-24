@@ -11,6 +11,37 @@
 # - With cgns support
 # - With support for signals.
 #
+#
+#                      Warning
+# Mach number specified for an internal flow problem.
+# This information is ignored.
+#
+#
+# Specified load imbalance tolerance  0.100 acheived
+# Continuing with  0.000 load imbalance for the cells and  0.000 for the faces
+#
+#
+# Grid level: 1, Total number of cells: 163840
+#
+#
+# Grid level: 2, Total number of cells: 20480
+#
+#
+# Grid level: 3, Total number of cells: 2560
+#
++--------------------------------------------------+
+  CGNS Surface Families by Boundary Condition Type
++--------------------------------------------------+
+| Wall Types           : nozzle_wall
+| Inflow Types : inlet
+| Outflow Types : outlet
+| Symmetry Types       : 
+| Farfield Types       : 
+| Oveset Types         : 
++--------------------------------------------------+
+#
+# Found restart file: ../inputFiles/conic_conv_nozzle_mb.cgns
+#
 +---------------------------------------+
 |          All ADFLOW Options:          |
 +---------------------------------------+
@@ -64,7 +95,7 @@
  'firstrun': True,
  'flowtype': 'internal',
  'forcesastractions': True,
- 'frozenturbulence': True,
+ 'frozenturbulence': False,
  'globalpreconditioner': 'additive schwartz',
  'gridfile': '../inputFiles/conic_conv_nozzle_mb.cgns',
  'gridprecision': 'double',
@@ -163,6 +194,7 @@
  'useqcr': False,
  'userotationsa': False,
  'usewallfunctions': False,
+ 'usezippermesh': True,
  'verifyextra': True,
  'verifyspatial': True,
  'verifystate': True,
@@ -180,43 +212,10 @@
  'writevolumesolution': True,
  'zippersurfacefamily': 'output_fam'}
 -> Alpha... 0.000000 
-#
-#                      Warning
-# Mach number specified for an internal flow problem.
-# This information is ignored.
-#
-#
-# Specified load imbalance tolerance  0.100 acheived
-# Continuing with  0.000 load imbalance for the cells and  0.000 for the faces
-#
-#
-# Grid level: 1, Total number of cells: 163840
-#
-#
-# Grid level: 2, Total number of cells: 20480
-#
-#
-# Grid level: 3, Total number of cells: 2560
-#
-+--------------------------------------------------+
-  CGNS Surface Families by Boundary Condition Type
-+--------------------------------------------------+
-| Wall Types           : nozzle_wall 
-| Inflow Types : inlet 
-| Outflow Types : outlet 
-| Symmetry Types       : 
-| Farfield Types       : 
-| Oveset Types         : 
-+--------------------------------------------------+
-/home/jsgray/hg/adflow/python/pyADflow.py:4682: VisibleDeprecationWarning: using a non-integer number instead of an integer will result in an error in the future
-  newConn[i, j] = link[conn[i, j]]
 +----------------------------------------------------------------------+
 |  Switching to Aero Problem: nozzle                                   |
 +----------------------------------------------------------------------+
 -> Alpha... 90.000000 
-#
-# Found restart file: ../inputFiles/conic_conv_nozzle_mb.cgns
-#
 +---------------------------------------+
 |      All Modified ADFLOW Options:     |
 +---------------------------------------+
@@ -255,9 +254,8 @@
 #  Grid  | Iter | Iter | Iter |   CFL   |    Wall    |        Res rho         |        totalRes        |
 #  level |      | Tot  | Type |         | Clock (s)  |                        |                        |
 #-------------------------------------------------------------------------------------------------------
-      1       0      0   None   0.00E+00  0.12178E+00   0.4044307328664265E-10   0.7251466858589091E-07 
-      1       1      2     NK   0.97E+28  0.80532E+01   0.3677221492792871E-10   0.6598192189812279E-07 
-Solution Time:      8.057 sec
+      1       0      0   None   0.00E+00  0.52346E-01   0.4044309082264859E-10   0.7251465692028570E-07
+      1       1      2     NK   0.97E+28  0.30878E+01   0.3677230232203605E-10   0.6598204050382392E-07
 #
 # Writing grid file(s): ./nozzle_000_vol.cgns
 # Grid file(s) written
@@ -270,23 +268,18 @@ Solution Time:      8.057 sec
 # Writing surface solution file(s): ./nozzle_000_surf.cgns
 # Surface solution file(s) written
 #
+Solution Time:      3.089 sec
 -> Alpha... 90.000000 
 Norm of residual
-@value  9.2806521374370e-13 1e-10 1e-10
+@value  9.2806690888160e-13 1e-10 1e-10
 Norm of state vector
 @value  1.0137970300715e+03 1e-10 1e-10
 -> Alpha... 90.000000 
 Eval Functions:
-Dictionary Key: nozzle_edot_down
-@value  3.1543081554960e+04 1e-10 1e-10
-Dictionary Key: nozzle_edot_plane
-@value  1.0397338512093e+04 1e-10 1e-10
-Dictionary Key: nozzle_edot_up
-@value  7.9833482348147e+03 1e-10 1e-10
 Dictionary Key: nozzle_mavgps_down
 @value  8.1845854918160e+04 1e-10 1e-10
 Dictionary Key: nozzle_mavgps_plane
-@value  9.7647539517876e+04 1e-10 1e-10
+@value  9.7647539517877e+04 1e-10 1e-10
 Dictionary Key: nozzle_mavgps_up
 @value  9.9561159806051e+04 1e-10 1e-10
 Dictionary Key: nozzle_mavgptot_down
@@ -307,17 +300,11 @@ Dictionary Key: nozzle_mdot_plane
 @value -1.0459468815634e+00 1e-10 1e-10
 Dictionary Key: nozzle_mdot_up
 @value  1.0496918257764e+00 1e-10 1e-10
-Dictionary Key: nozzle_pk_down
-@value  1.9856506790228e+04 1e-10 1e-10
-Dictionary Key: nozzle_pk_plane
-@value -2.2652089498290e+04 1e-10 1e-10
-Dictionary Key: nozzle_pk_up
-@value -2.0654139296115e+04 1e-10 1e-10
 Dictionary Key: nozzle_sigmamn_plane
 @value  3.4840327359805e-02 1e-10 1e-10
 Dictionary Key: nozzle_sigmamn_up
 @value  2.9696266114569e-02 1e-10 1e-10
 Dictionary Key: nozzle_sigmaptot_plane
-@value  7.0904044166403e+01 1e-10 1e-10
+@value  7.0904044166402e+01 1e-10 1e-10
 Dictionary Key: nozzle_sigmaptot_up
 @value  6.5219986921741e+01 1e-10 1e-10

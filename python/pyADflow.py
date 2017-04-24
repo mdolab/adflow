@@ -4627,11 +4627,6 @@ class ADFLOW(AeroSolver):
             'mavgmn':self.adflow.constants.costfuncmavgmn,
             'sigmamn':self.adflow.constants.costfuncsigmamn, 
             'sigmaptot':self.adflow.constants.costfuncsigmaptot, 
-            'pk':self.adflow.constants.costfuncpk, 
-            'edot':self.adflow.constants.costfuncedot, 
-            'edota':self.adflow.constants.costfuncedota, 
-            'edotv':self.adflow.constants.costfuncedotv, 
-            'edotp':self.adflow.constants.costfuncedotp, 
             'axismoment':self.adflow.constants.costfuncaxismoment,
             }
 

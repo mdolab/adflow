@@ -59,9 +59,7 @@ ap = AeroProblem(name='conv_nozzle', alpha=00.0,  mach=0.25, T=500, P=79326.7,
                             'mavgps_up', 'mavgps_down', 
                             'mavgmn_up', 'mavgmn_down', 
                             'thrust', 
-                            'pk_up', 'pk_down', 
                             'distortionmn', 'distortionptot',
-                            'edot_up', 'edot_down'
                             ], )
 
 # Creat the solver
@@ -85,12 +83,6 @@ CFDSolver.addFunction('mavgps', 'upstream', name="mavgps_up")
 
 CFDSolver.addFunction('mavgmn', 'downstream', name="mavgmn_down")
 CFDSolver.addFunction('mavgmn', 'upstream', name="mavgmn_up")
-
-CFDSolver.addFunction('pk', 'downstream', name="pk_down")
-CFDSolver.addFunction('pk', 'upstream', name="pk_up")
-
-CFDSolver.addFunction('edot', 'downstream', name="edot_down")
-CFDSolver.addFunction('edot', 'upstream', name="edot_up")
 
 CFDSolver.addFunction('sigmamn', 'upstream', name="distortionmn")
 CFDSolver.addFunction('sigmaptot', 'upstream', name="distortionptot")
