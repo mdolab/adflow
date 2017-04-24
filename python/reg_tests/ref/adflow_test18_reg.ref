@@ -11,6 +11,79 @@
 # - With cgns support
 # - With support for signals.
 #
+#
+#                      Warning
+# Mach number specified for an internal flow problem.
+# This information is ignored.
+#
+#
+# Specified load imbalance tolerance  0.100 acheived
+# Continuing with  0.000 load imbalance for the cells and  0.006 for the faces
+#
+#
+# Grid level: 1, Total number of cells: 163840
+#
++--------------------------------------------------+
+  CGNS Surface Families by Boundary Condition Type
++--------------------------------------------------+
+| Wall Types           : nozzle_wall
+| Inflow Types : inlet
+| Outflow Types : outlet
+| Symmetry Types       : 
+| Farfield Types       : 
+| Oveset Types         : overset
++--------------------------------------------------+
+ Flood Iteration:           1 Blanked            0 Interior Cells.
+ +--------------------------------+
+ | Compute Cells           :      140956
+ | Fringe Cells            :       22884
+ | Blanked Cells           :           0
+ | Explicitly Blanked Cells:           0
+ | Flooded   Cells         :           0
+ | FloodSeed Cells         :           0
+ +--------------------------------+
+ Total number of orphans:           0
+ Flood Iteration:           1 Blanked            0 Interior Cells.
+ +--------------------------------+
+ | Compute Cells           :      140956
+ | Fringe Cells            :       22884
+ | Blanked Cells           :           0
+ | Explicitly Blanked Cells:           0
+ | Flooded   Cells         :           0
+ | FloodSeed Cells         :           0
+ +--------------------------------+
+ Total number of orphans:           0
+ +--------------------------------+
+ | Compute Cells           :      140956
+ | Fringe Cells            :       13461
+ | Blanked Cells           :        9423
+ | Explicitly Blanked Cells:           0
+ | Flooded   Cells         :           0
+ | FloodSeed Cells         :           0
+ +--------------------------------+
+ Total number of orphans:           0
+-> Creating zipper for families : nozzle_wall
+-> Creating zipper for families : inlet
+ ------------------------------------------------
+ Starting string            1 at index            1
+ ------------------------------------------------
+ Initial Range s1:           1           1 T
+ Initial Range s2:          59          59 T
+ Zipping string:            1  with            2
+ s1 range:          45          45
+ s2 range:          36          36
+-> Creating zipper for families : outlet
+ ------------------------------------------------
+ Starting string            1 at index            1
+ ------------------------------------------------
+ Initial Range s1:           1           1 T
+ Initial Range s2:          12          12 T
+ Zipping string:            1  with            2
+ s1 range:           9           9
+ s2 range:           9           9
+#
+# Found restart file: ../inputFiles/conic_conv_nozzle.cgns
+#
 +---------------------------------------+
 |          All ADFLOW Options:          |
 +---------------------------------------+
@@ -64,7 +137,7 @@
  'firstrun': True,
  'flowtype': 'internal',
  'forcesastractions': True,
- 'frozenturbulence': True,
+ 'frozenturbulence': False,
  'globalpreconditioner': 'additive schwartz',
  'gridfile': '../inputFiles/conic_conv_nozzle.cgns',
  'gridprecision': 'double',
@@ -163,6 +236,7 @@
  'useqcr': False,
  'userotationsa': False,
  'usewallfunctions': False,
+ 'usezippermesh': True,
  'verifyextra': True,
  'verifyspatial': True,
  'verifystate': True,
@@ -180,93 +254,16 @@
  'writevolumesolution': True,
  'zippersurfacefamily': 'output_fam'}
 -> Alpha... 0.000000 
-#
-#                      Warning
-# Mach number specified for an internal flow problem.
-# This information is ignored.
-#
-#
-# Specified load imbalance tolerance  0.100 acheived
-# Continuing with  0.000 load imbalance for the cells and  0.006 for the faces
-#
-#
-# Grid level: 1, Total number of cells: 163840
-#
-+--------------------------------------------------+
-  CGNS Surface Families by Boundary Condition Type
-+--------------------------------------------------+
-| Wall Types           : nozzle_wall 
-| Inflow Types : inlet 
-| Outflow Types : outlet 
-| Symmetry Types       : 
-| Farfield Types       : 
-| Oveset Types         : overset 
-+--------------------------------------------------+
- Flood Iteration:           1 Blanked            0 Interior Cells.
- +--------------------------------+
- | Compute Cells           :      140956
- | Fringe Cells            :       22884
- | Blanked Cells           :           0
- | Explicitly Blanked Cells:           0
- | Flooded   Cells         :           0
- | FloodSeed Cells         :           0
- +--------------------------------+
- Total number of orphans:           0
- Flood Iteration:           1 Blanked            0 Interior Cells.
- +--------------------------------+
- | Compute Cells           :      140956
- | Fringe Cells            :       22884
- | Blanked Cells           :           0
- | Explicitly Blanked Cells:           0
- | Flooded   Cells         :           0
- | FloodSeed Cells         :           0
- +--------------------------------+
- Total number of orphans:           0
- +--------------------------------+
- | Compute Cells           :      140956
- | Fringe Cells            :       13461
- | Blanked Cells           :        9423
- | Explicitly Blanked Cells:           0
- | Flooded   Cells         :           0
- | FloodSeed Cells         :           0
- +--------------------------------+
- Total number of orphans:           0
 +----------------------------------------------------------------------+
 |  Switching to Aero Problem: nozzle                                   |
 +----------------------------------------------------------------------+
 -> Alpha... 90.000000 
--> Creating zipper for families : nozzle_wall 
--> Creating zipper for families : inlet 
- ------------------------------------------------
- Starting string            1 at index            1
- ------------------------------------------------
- Initial Range s1:           1           1 T
- Initial Range s2:          59          59 T
- Zipping string:            1  with            2
- s1 range:          45          45
- s2 range:          36          36
--> Creating zipper for families : outlet 
- ------------------------------------------------
- Starting string            1 at index            1
- ------------------------------------------------
- Initial Range s1:           1           1 T
- Initial Range s2:          12          12 T
- Zipping string:            1  with            2
- s1 range:           9           9
- s2 range:           9           9
-#
-# Found restart file: ../inputFiles/conic_conv_nozzle.cgns
-#
 Norm of residual
-@value  3.4082612390488e-07 1e-10 1e-10
+@value  3.4082607760804e-07 1e-10 1e-10
 Norm of state vector
 @value  1.0245586519507e+03 1e-10 1e-10
 -> Alpha... 90.000000 
 Eval Functions:
-Dictionary Key: nozzle_edot_down
-@value  3.9690916814965e+04 1e-10 1e-10
-Dictionary Key: nozzle_edot_up
-@value  1.0285589490110e+04 1e-10 1e-10
 Dictionary Key: nozzle_mavgps_down
 @value  8.1842770719055e+04 1e-10 1e-10
 Dictionary Key: nozzle_mavgps_up
@@ -283,10 +280,6 @@ Dictionary Key: nozzle_mdot_down
 @value -1.0410862008518e+00 1e-10 1e-10
 Dictionary Key: nozzle_mdot_up
 @value  1.0496982236621e+00 1e-10 1e-10
-Dictionary Key: nozzle_pk_down
-@value  2.6227378234156e+04 1e-10 1e-10
-Dictionary Key: nozzle_pk_up
-@value -2.6058890175975e+04 1e-10 1e-10
 Dictionary Key: nozzle_sigmamn_up
 @value  2.9642726839777e-02 1e-10 1e-10
 Dictionary Key: nozzle_sigmaptot_up

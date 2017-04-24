@@ -83,8 +83,6 @@ ap = AeroProblem(name=name, alpha=alpha, mach=mach, altitude=altitude,
                             'mavgptot_up', 'mavgptot_down',# 'mavgptot_plane', 
                             'mavgttot_up', 'mavgttot_down',# 'mavgttot_plane',
                             'mavgps_up', 'mavgps_down', #'mavgps_plane'
-                            'pk_up', 'pk_down', #'pk_plane'
-                            'edot_up', 'edot_down', #'edot_plane'
                             'sigmamn_up',  #'sigmamn_plane'
                             'sigmaptot_up', #'sigmaptot_plane'
                             ])
@@ -126,12 +124,6 @@ CFDSolver.addFunction('mavgttot', 'upstream', name="mavgttot_up")
 CFDSolver.addFunction('mavgps', 'downstream', name="mavgps_down")
 CFDSolver.addFunction('mavgps', 'upstream', name="mavgps_up")
 #CFDSolver.addFunction('mavgps', 'viscous_plane', name="mavgps_plane")
-
-CFDSolver.addFunction('pk', 'downstream', name="pk_down")
-CFDSolver.addFunction('pk', 'upstream', name="pk_up")
-
-CFDSolver.addFunction('edot', 'downstream', name="edot_down")
-CFDSolver.addFunction('edot', 'upstream', name="edot_up")
 
 CFDSolver.addFunction('sigmamn', 'upstream', name="sigmamn_up")
 CFDSolver.addFunction('sigmaptot', 'upstream', name="sigmaptot_up")
