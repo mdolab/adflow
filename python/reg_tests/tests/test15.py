@@ -1,3 +1,4 @@
+from __future__ import print_function
 ############################################################
 # DO NOT USE THIS SCRIPT AS A REFERENCE FOR HOW TO USE ADFLOW
 # THIS SCRIPT USES PRIVATE INTERNAL FUNCTIONALITY THAT IS
@@ -85,7 +86,7 @@ funcs = {}
 CFDSolver.evalFunctions(ap, funcs)
 CFDSolver.checkSolutionFailure(ap, funcs)
 if MPI.COMM_WORLD.rank == 0:
-    print 'Eval Functions:'
+    print('Eval Functions:')
     reg_write_dict(funcs, 1e-6, 1e-6)
 
 os.system('rm  0012pitching*')
