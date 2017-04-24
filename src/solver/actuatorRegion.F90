@@ -80,7 +80,7 @@ contains
     end do
 
     ! Get the max distance. This should be quite conservative. 
-    dStar = norm2(maxX-minX)**2
+    dStar = (maxX(1)-minx(1))**2 + (maxX(2)-minX(2))**2  + (maxX(3)-minX(3))**2
 
     ! Now build the tree. 
     call buildSerialQuad(size(conn, 2), size(pts, 2), pts, conn, ADT)
@@ -266,6 +266,7 @@ contains
     integer(kind=intType), dimension(:), allocatable :: sizesProc, cumSizesProc
     real(kind=realType) , dimension(:), allocatable :: pts, allPts, factor, allFactor
     real(kind=realType) , dimension(:,:), allocatable :: tmp, uniquePts
+    real(kind=realType), parameter :: tol=1e-8
     integer(kind=intType), dimension(:), allocatable :: conn, allConn, link
     character(80) :: zoneName  
     type(actuatorRegionType), pointer :: region
@@ -382,7 +383,7 @@ contains
           allocate(uniquePts(3, totalCount*8), link(totalCount*8))
 
           ! Get unique set of nodes. 
-          call pointReduce(tmp, totalCount*8, 1e-8, uniquePts, link, nUnique)
+          call pointReduce(tmp, totalCount*8, tol, uniquePts, link, nUnique)
           
           write (zoneName,"(a,a,a)") 'Zone T="', trim(region%famName), ' Region"'
           write (101, *) trim(zoneName)
