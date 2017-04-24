@@ -1,3 +1,4 @@
+from __future__ import print_function
 ############################################################
 # DO NOT USE THIS SCRIPT AS A REFERENCE FOR HOW TO USE ADFLOW
 # THIS SCRIPT USES PRIVATE INTERNAL FUNCTIONALITY THAT IS
@@ -44,5 +45,5 @@ CFDSolver.solveCL(ap, 0.475, alpha0=1.20, delta=0.025, tol=1e-4, autoReset=False
 funcs = {}
 CFDSolver.evalFunctions(ap, funcs, evalFuncs=['cl'])
 if MPI.COMM_WORLD.rank == 0:
-    print 'CL-CL*'
+    print('CL-CL*')
     reg_write(funcs['mdo_tutorial_cl'] - 0.475, 1e-4, 1e-4)
