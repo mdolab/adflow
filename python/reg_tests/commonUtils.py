@@ -1,3 +1,4 @@
+from __future__ import print_function
 # This file defines a few common variables that can be used for all
 # regression test scripts. This includes default option lists, default
 # function lists, and some priting routines. 
@@ -206,9 +207,9 @@ pyWarpUStructDefOpts = {
 
 def printHeader(testName):
     if MPI.COMM_WORLD.rank == 0:
-        print '+' + '-'*78 + '+'
-        print '|  ' + '%-76s'%testName + '|'
-        print '+' + '-'*78 + '+'
+        print('+' + '-'*78 + '+')
+        print('|  ' + '%-76s'%testName + '|')
+        print('+' + '-'*78 + '+')
 
 def parPrint(s):
     if MPI.COMM_WORLD.rank == 0:

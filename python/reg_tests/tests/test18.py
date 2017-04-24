@@ -1,3 +1,4 @@
+from __future__ import print_function
 ############################################################
 # DO NOT USE THIS SCRIPT AS A REFERENCE FOR HOW TO USE ADFLOW
 # THIS SCRIPT USES PRIVATE INTERNAL FUNCTIONALITY THAT IS
@@ -156,6 +157,6 @@ reg_par_write_norm(CFDSolver.getStates(), 1e-10, 1e-10)
 funcs = {}
 CFDSolver.evalFunctions(ap, funcs)
 if MPI.COMM_WORLD.rank == 0:
-    print 'Eval Functions:'
+    print('Eval Functions:')
     reg_write_dict(funcs, 1e-10, 1e-10)
 
