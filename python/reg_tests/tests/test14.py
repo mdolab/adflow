@@ -1,3 +1,4 @@
+from __future__ import print_function
 ############################################################
 # DO NOT USE THIS SCRIPT AS A REFERENCE FOR HOW TO USE ADFLOW
 # THIS SCRIPT USES PRIVATE INTERNAL FUNCTIONALITY THAT IS
@@ -63,7 +64,7 @@ DVGeo.addRefAxis('wing', Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist),
                                y=numpy.zeros(nTwist),
                                z=numpy.linspace(0,14, nTwist), k=2))
 def twist(val, geo):
-    for i in xrange(nTwist):
+    for i in range(nTwist):
         geo.rot_z['wing'].coef[i] = val[i]
 
 DVGeo.addGeoDVGlobal('twist', [0]*nTwist, twist, lower=-10, upper=10, scale=1.0)
