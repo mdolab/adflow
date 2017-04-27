@@ -82,7 +82,8 @@ contains
     use overset, only : oversetBlock, clusters, cumDomProc
     use inputOverset, only : backgroundVolScale, nearWallDist
     use blockPointers, only : x, globalCell, il, jl, kl, ib, jb, kb, &
-         ie, je, ke, vol, iBlank, xSeed, forcedRecv
+         ie, je, ke, vol, iBlank, xSeed, forcedRecv, nbkglobal
+    use cgnsGrid, only : cgnsDoms
     use adtBuild, only : buildSerialHex
     use communication, only : myID
     use stencils, only : visc_drdw_stencil, n_visc_drdw
@@ -139,6 +140,9 @@ contains
              else
                 oBlock%qualDonor(1, mm) = (backGroundVolScale*vol(i, j, k))**third
              end if
+          
+             ! Account for explicit scaling of quality
+             oblock%qualDonor(1, mm) =  oblock%qualDonor(1, mm)*cgnsDoms(nbkglobal)%priority
           end do
        end do
     end do

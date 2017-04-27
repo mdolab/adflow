@@ -10,7 +10,7 @@
 !       module also contains the name of the base and the physical     
 !       dimensions of the problem.                                     
 !
-       use constants, only : intType, realType, maxCGNSNameLen
+       use constants, only : intType, realType, maxCGNSNameLen, one
        implicit none
        save
 !
@@ -404,6 +404,11 @@
 
          ! Cluster indentifier of multiblock "cluser" in overset mesh
          integer(kind=intType) :: cluster
+
+         ! Overset Priority scaling. Not currently read from CGNS
+         ! file, but could be in the future. Property of CGNS block so
+         ! it's stored here. Set from python options
+         real(kind=realType) :: priority=one
 
        end type cgnsBlockInfoType
 !
