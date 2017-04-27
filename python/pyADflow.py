@@ -273,6 +273,10 @@ class ADFLOW(AeroSolver):
             xCen = self.adflow.utils.getcellcenters(1, n).T
             cutCallBack(xCen, flag)
 
+        # Need to reset the oversetPriority option since the CGNSGrid
+        # structure wasn't available before;
+        self.setOption('oversetPriority', self.getOption('oversetPriority'))
+
         # Set the closed surface families if given. Otherwise
         # default to all walls. 
         famList = self.getOption('closedSurfaceFamilies')
@@ -3978,6 +3982,13 @@ class ADFLOW(AeroSolver):
                     module = self.moduleMap[self.optionMap[name][0]]
                     variable = self.optionMap[name][1]
                     setattr(module, variable, tmp_turbresscalar)
+            elif name == 'oversetpriority':
+                # Loop over each of the block names and call the fortran setter:
+                for blkName in value:
+                    setValue = self.adflow.oversetapi.setblockpriority(blkName.lower(), value[blkName])
+                    if not setValue:
+                        raise Error("The block name %s was not found in the CGNS file "
+                                    "and could not set it\'s priority"%blkName.lower())
 
             # Special option has been set so return from function
             return
@@ -4098,6 +4109,7 @@ class ADFLOW(AeroSolver):
             'oversetupdatemode':[str, 'frozen'],
             'nrefine':[int,10],
             'usezippermesh':[bool, True],
+            'oversetpriority':[dict, {}],
 
             # Unsteady Paramters
             'timeintegrationscheme':[str, 'bdf'],
@@ -4549,7 +4561,8 @@ class ADFLOW(AeroSolver):
                               'isovariables',
                               'isosurface',
                               'turbresscale',
-                              'restartfile'
+                              'restartfile',
+                              'oversetpriority',
                           ))
 
         return ignoreOptions, deprecatedOptions, specialOptions

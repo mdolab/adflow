@@ -13,11 +13,12 @@ contains
          nProc
     use blockPointers, only : flowDoms, nDom, fringeType, fringes, &
          il, jl, kl, ie, je, ke, x, nx, ny, nz, iBlank, globalCell, ib, jb, kb, nDonors, &
-         vol, fringePtr, forcedRecv, status
+         vol, fringePtr, forcedRecv, status, nbkglobal
     use overset, only : CSRMatrix, oversetBlock, oversetFringe, &
          oversetWall, nClusters, cumDomProc, localWallFringes, nDomTotal, &
          nLocalWallFringe, clusterWalls, oversetPresent, nDomProc, &
          overlapMatrix, tmpFringePtr, oversetTimes
+    use cgnsGrid, only : cgnsDoms
     use stencils, only : N_visc_drdw, visc_drdw_stencil
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use adtBuild, only : destroySerialQuad
@@ -846,7 +847,9 @@ contains
                       else
                          curQuality = (backGroundVolScale*vol(i, j, k))**third * overlapFactor
                       end if
-                      
+                      ! Account for explict priority
+                      curQuality = curQuality * cgnsDoms(nbkGlobal)%priority
+
                       ! For forced receivers, they get a large quality
                       ! such that ANY donor is selected. 
                       if (forcedRecv(i,j,k) > 0) then 
@@ -2126,7 +2129,41 @@ contains
        end do
        
     end select
-
   end subroutine updateOverset
+  
+  subroutine setBlockPriority(blkName, value, setValue)
+
+    ! Set the CGNSblock with blkName to have a priority of "value"
+
+    use constants
+    use cgnsGrid, only : cgnsDoms, cgnsNDom
+    use communication
+    implicit none
+
+    ! Input Parameters
+    character(len=*), intent(in) :: blkName
+    real(kind=realType), intent(in) :: value
+    logical, intent(out) :: setValue
+
+    ! Working
+    integer(kind=intType) :: iDom
+
+    ! We should do a binary search for the block names, but for now
+    ! just loop over the number of CGNS Doms. 
+    if (cgnsNDom > 0) then 
+       setValue = .False.
+       do iDom=1, CGNSnDom
+          if (trim(cgnsDoms(iDom)%zoneName) == trim(blkName)) then
+             setValue = .True.
+             cgnsDoms(iDom)%priority = value
+             exit
+          end if
+       end do
+    else
+       ! If there are no domains yet, just say we did it so we don't
+       ! raise an error in python.
+       setValue = .True. 
+    end if
+  end subroutine setBlockPriority
 
 end module oversetAPI

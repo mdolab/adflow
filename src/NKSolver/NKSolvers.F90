@@ -1587,6 +1587,8 @@ module ANKSolver
   ! MPI comes from constants, so we need to avoid MPIF_H in PETSc
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
+#include "petsc/finclude/petscvec.h90"
+
 
   Mat  dRdwPre
   Vec wVec, rVec, deltaW
@@ -2281,6 +2283,7 @@ contains
     use utils, only : EChk
     use turbAPI, only : turbSolveSegregated
     use solverUtils, only : computeUTau
+
     implicit none
 
     ! Input Variables
@@ -2349,7 +2352,7 @@ contains
     ! No line search...just take the new solution
     call VecAXPY(wVec, -1.0_realType, deltaW, ierr)
     call EChk(ierr, __FILE__, __LINE__)
-
+    
     ! Set the updated state variables
     call setWANK(wVec)
 
