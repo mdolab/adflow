@@ -477,6 +477,11 @@ python module libadflow
            logical, intent(in) :: firsttime
            logical, intent(in) :: coarselevel
          end subroutine oversetcomm
+         subroutine setblockpriority(blkname, value, setvalue)
+           character*(*) intent(in) :: blkname
+           real(kind=realtype), intent(in) :: value
+           logical, intent(out) :: setvalue
+         end subroutine setblockpriority
        end module oversetapi
 
        module oversetutilities

@@ -83,8 +83,8 @@ subroutine surfaceCorrection(oBlock, oFringe, offset, n)
           xx, intInfoB, uvwB, dummy, nInterpol, BB, frontLeaves, frontLeavesNew)
      dB = sqrt(uvwB(4))
 
-     if (uvwB(1) > zero .and. uvwB(1) < one .and. &
-          uvwB(2) > zero .and. uvwB(2) < one) then 
+     if ((uvwB(1) > zero .and. uvwB(1) < one .and. &
+          uvwB(2) > zero .and. uvwB(2) < one) .or. dB < nearWallDist) then 
 
         ! Extract the 4 nodes for this quad element
         do k=1, 4
@@ -103,6 +103,7 @@ subroutine surfaceCorrection(oBlock, oFringe, offset, n)
         overlapped1 = .False.
         overlapped2 = .False.
         overlapped = .False.
+
         ! Now loop over (up to 4) of the quads surrounding this node:
         quadLoop: do j=1, 4
 
@@ -119,7 +120,7 @@ subroutine surfaceCorrection(oBlock, oFringe, offset, n)
               if (dB < nearWallDist) then 
                  overlapped2 = .True. 
               end if
-
+              
               if (overlapped1 .and. overlapped2) then 
                  overlapped = .True.
                  exit quadLoop
