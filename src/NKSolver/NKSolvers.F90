@@ -2291,8 +2291,8 @@ contains
 
     ! Working Variables
     integer(kind=intType) :: ierr, maxIt, kspIterations, j
-    real(kind=realType) :: norm, atol, val
-
+    real(kind=realType) :: atol, val
+    real(kind=alwaysRealType) :: norm
     if (firstCall) then 
        call setupANKSolver()
        call destroyANKSolver()
@@ -2350,7 +2350,7 @@ contains
     end if
 
     ! No line search...just take the new solution
-    call VecAXPY(wVec, -1.0_realType, deltaW, ierr)
+    call VecAXPY(wVec, -one, deltaW, ierr)
     call EChk(ierr, __FILE__, __LINE__)
     
     ! Set the updated state variables
@@ -2380,7 +2380,7 @@ contains
           end if
 
           ! No line search...just take the new solution
-          call VecAXPY(wVecTurb, -.250_realType, deltaWTurb, ierr)
+          call VecAXPY(wVecTurb, -fourth, deltaWTurb, ierr)
           call EChk(ierr, __FILE__, __LINE__)
 
           ! Set the updated turbulent state variables
