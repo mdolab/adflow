@@ -326,11 +326,11 @@ contains
 ! input 
     integer(kind=inttype), intent(in) :: nn
 ! working
-    integer(kind=inttype) :: i, j, k, ii, iregion
+    integer(kind=inttype) :: i, j, k, ii, iregion, istart, iend
     type(actuatorregiontype), pointer :: region
     real(kind=realtype) :: ftmp(3), vx, vy, vz, fact(3)
     real(kind=realtype) :: ftmpd(3), vxd, vyd, vzd, factd(3)
-! region loop
+! region loo
 regionloop:do iregion=1,nactuatorregions
 ! pointer for easier reading
       region => actuatorregions(iregion)
@@ -338,7 +338,9 @@ regionloop:do iregion=1,nactuatorregions
       factd = -(region%f*prefd/region%volume/pref**2)
       fact = region%f/region%volume/pref
 ! loop over the ranges for this block
-      do ii=region%blkptr(nn-1)+1,region%blkptr(nn)
+      istart = region%blkptr(nn-1) + 1
+      iend = region%blkptr(nn)
+      do ii=istart,iend
 ! extract the cell id. 
         i = region%cellids(1, ii)
         j = region%cellids(2, ii)
@@ -374,17 +376,19 @@ regionloop:do iregion=1,nactuatorregions
 ! input 
     integer(kind=inttype), intent(in) :: nn
 ! working
-    integer(kind=inttype) :: i, j, k, ii, iregion
+    integer(kind=inttype) :: i, j, k, ii, iregion, istart, iend
     type(actuatorregiontype), pointer :: region
     real(kind=realtype) :: ftmp(3), vx, vy, vz, fact(3)
-! region loop
+! region loo
 regionloop:do iregion=1,nactuatorregions
 ! pointer for easier reading
       region => actuatorregions(iregion)
 ! compute the constant force factor
       fact = region%f/region%volume/pref
 ! loop over the ranges for this block
-      do ii=region%blkptr(nn-1)+1,region%blkptr(nn)
+      istart = region%blkptr(nn-1) + 1
+      iend = region%blkptr(nn)
+      do ii=istart,iend
 ! extract the cell id. 
         i = region%cellids(1, ii)
         j = region%cellids(2, ii)

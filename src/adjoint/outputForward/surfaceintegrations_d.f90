@@ -56,8 +56,7 @@ contains
     intrinsic abs
     real(kind=realtype) :: arg1
     real(kind=realtype) :: abs1d
-    real(kind=realtype) :: abs2
-    real(kind=realtype) :: abs2d
+    real(kind=realtype) :: abs0d
     real(kind=realtype) :: abs1
     real(kind=realtype) :: abs0
 ! factor used for time-averaged quantities.
@@ -195,11 +194,20 @@ contains
         mavgny = globalvals(imassny, sps)/mag
         mavgnz = globalvals(imassnz, sps)/mag
         if (mflow .ge. 0.) then
+          abs0d = mflowd
           abs0 = mflow
         else
+          abs0d = -mflowd
           abs0 = -mflow
         end if
-        print*, 'stuff:', globalvals(isigmamn, sps), abs0
+        if (globalvals(isigmamn, sps)/abs0 .eq. 0.0_8) then
+          sigmamnd = 0.0_8
+        else
+          sigmamnd = (globalvalsd(isigmamn, sps)*abs0-globalvals(&
+&           isigmamn, sps)*abs0d)/(abs0**2*2.0*sqrt(globalvals(isigmamn&
+&           , sps)/abs0))
+        end if
+        sigmamn = sqrt(globalvals(isigmamn, sps)/abs0)
         if (mflow .ge. 0.) then
           abs1d = mflowd
           abs1 = mflow
@@ -207,29 +215,14 @@ contains
           abs1d = -mflowd
           abs1 = -mflow
         end if
-        if (globalvals(isigmamn, sps)/abs1 .eq. 0.0_8) then
-          sigmamnd = 0.0_8
-        else
-          sigmamnd = (globalvalsd(isigmamn, sps)*abs1-globalvals(&
-&           isigmamn, sps)*abs1d)/(abs1**2*2.0*sqrt(globalvals(isigmamn&
-&           , sps)/abs1))
-        end if
-        sigmamn = sqrt(globalvals(isigmamn, sps)/abs1)
-        if (mflow .ge. 0.) then
-          abs2d = mflowd
-          abs2 = mflow
-        else
-          abs2d = -mflowd
-          abs2 = -mflow
-        end if
-        if (globalvals(isigmaptot, sps)/abs2 .eq. 0.0_8) then
+        if (globalvals(isigmaptot, sps)/abs1 .eq. 0.0_8) then
           sigmaptotd = 0.0_8
         else
-          sigmaptotd = (globalvalsd(isigmaptot, sps)*abs2-globalvals(&
-&           isigmaptot, sps)*abs2d)/(abs2**2*2.0*sqrt(globalvals(&
-&           isigmaptot, sps)/abs2))
+          sigmaptotd = (globalvalsd(isigmaptot, sps)*abs1-globalvals(&
+&           isigmaptot, sps)*abs1d)/(abs1**2*2.0*sqrt(globalvals(&
+&           isigmaptot, sps)/abs1))
         end if
-        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs2)
+        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs1)
       else
         mavgptot = zero
         mavgttot = zero
@@ -366,7 +359,6 @@ contains
     intrinsic sqrt
     intrinsic abs
     real(kind=realtype) :: arg1
-    real(kind=realtype) :: abs2
     real(kind=realtype) :: abs1
     real(kind=realtype) :: abs0
 ! factor used for time-averaged quantities.
@@ -446,19 +438,13 @@ contains
         else
           abs0 = -mflow
         end if
-        print*, 'stuff:', globalvals(isigmamn, sps), abs0
+        sigmamn = sqrt(globalvals(isigmamn, sps)/abs0)
         if (mflow .ge. 0.) then
           abs1 = mflow
         else
           abs1 = -mflow
         end if
-        sigmamn = sqrt(globalvals(isigmamn, sps)/abs1)
-        if (mflow .ge. 0.) then
-          abs2 = mflow
-        else
-          abs2 = -mflow
-        end if
-        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs2)
+        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs1)
       else
         mavgptot = zero
         mavgttot = zero
@@ -1719,7 +1705,6 @@ contains
       end if
     end do
     if (withgathered) then
-      print*, 'here:', sigma_mn
       localvaluesd(isigmamn) = localvaluesd(isigmamn) + sigma_mnd
       localvalues(isigmamn) = localvalues(isigmamn) + sigma_mn
       localvaluesd(isigmaptot) = localvaluesd(isigmaptot) + sigma_ptotd
@@ -1979,7 +1964,6 @@ contains
       end if
     end do
     if (withgathered) then
-      print*, 'here:', sigma_mn
       localvalues(isigmamn) = localvalues(isigmamn) + sigma_mn
       localvalues(isigmaptot) = localvalues(isigmaptot) + sigma_ptot
     else

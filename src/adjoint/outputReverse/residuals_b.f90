@@ -322,36 +322,30 @@ contains
 ! input 
     integer(kind=inttype), intent(in) :: nn
 ! working
-    integer(kind=inttype) :: i, j, k, ii, iregion
+    integer(kind=inttype) :: i, j, k, ii, iregion, istart, iend
     type(actuatorregiontype), pointer :: region
     real(kind=realtype) :: ftmp(3), vx, vy, vz, fact(3)
     real(kind=realtype) :: ftmpd(3), vxd, vyd, vzd, factd(3)
-    integer :: ad_from
-    integer :: ad_to
-! region loop
-regionloop:do iregion=1,nactuatorregions
+    do iregion=1,nactuatorregions
 ! pointer for easier reading
 ! compute the constant force factor
-      call pushreal8array(fact, 3)
       fact = region%f/region%volume/pref
-      ad_from = region%blkptr(nn-1) + 1
 ! loop over the ranges for this block
-      ii = region%blkptr(nn) + 1
-      call pushinteger4(ii - 1)
-      call pushinteger4(ad_from)
-    end do regionloop
-    do iregion=nactuatorregions,1,-1
+      istart = region%blkptr(nn-1) + 1
+      iend = region%blkptr(nn)
       factd = 0.0_8
-      call popinteger4(ad_from)
-      call popinteger4(ad_to)
-      do ii=ad_to,ad_from,-1
+      do ii=istart,iend
+! extract the cell id. 
         i = region%cellids(1, ii)
         j = region%cellids(2, ii)
         k = region%cellids(3, ii)
+! this actually gets the force
         ftmp = vol(i, j, k)*fact
         vx = w(i, j, k, ivx)
         vy = w(i, j, k, ivy)
         vz = w(i, j, k, ivz)
+! momentum residuals
+! energy residuals
         ftmpd = 0.0_8
         ftmpd(1) = ftmpd(1) - vx*dwd(i, j, k, irhoe)
         vxd = -(ftmp(1)*dwd(i, j, k, irhoe))
@@ -366,7 +360,6 @@ regionloop:do iregion=1,nactuatorregions
         vold(i, j, k) = vold(i, j, k) + sum(fact*ftmpd)
         factd = factd + vol(i, j, k)*ftmpd
       end do
-      call popreal8array(fact, 3)
       prefd = prefd + sum(-(region%f*factd/(region%volume*pref)))/pref
     end do
   end subroutine sourceterms_block_b
@@ -381,17 +374,19 @@ regionloop:do iregion=1,nactuatorregions
 ! input 
     integer(kind=inttype), intent(in) :: nn
 ! working
-    integer(kind=inttype) :: i, j, k, ii, iregion
+    integer(kind=inttype) :: i, j, k, ii, iregion, istart, iend
     type(actuatorregiontype), pointer :: region
     real(kind=realtype) :: ftmp(3), vx, vy, vz, fact(3)
-! region loop
+! region loo
 regionloop:do iregion=1,nactuatorregions
 ! pointer for easier reading
       region => actuatorregions(iregion)
 ! compute the constant force factor
       fact = region%f/region%volume/pref
 ! loop over the ranges for this block
-      do ii=region%blkptr(nn-1)+1,region%blkptr(nn)
+      istart = region%blkptr(nn-1) + 1
+      iend = region%blkptr(nn)
+      do ii=istart,iend
 ! extract the cell id. 
         i = region%cellids(1, ii)
         j = region%cellids(2, ii)

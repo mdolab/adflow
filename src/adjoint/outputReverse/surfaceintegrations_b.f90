@@ -64,14 +64,13 @@ contains
     real(kind=realtype) :: temp0
     real(kind=realtype) :: abs1d
     real(kind=realtype) :: tmpd
+    real(kind=realtype) :: abs0d
     real(kind=realtype) :: tempd
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: tmpd2
     real(kind=realtype) :: tmpd1
     real(kind=realtype) :: tmpd0
-    real(kind=realtype) :: abs2
-    real(kind=realtype) :: abs2d
     real(kind=realtype) :: abs1
     real(kind=realtype) :: abs0
     real(kind=realtype) :: temp
@@ -152,19 +151,13 @@ contains
         else
           abs0 = -mflow
         end if
-        print*, 'stuff:', globalvals(isigmamn, sps), abs0
+        sigmamn = sqrt(globalvals(isigmamn, sps)/abs0)
         if (mflow .ge. 0.) then
           abs1 = mflow
         else
           abs1 = -mflow
         end if
-        sigmamn = sqrt(globalvals(isigmamn, sps)/abs1)
-        if (mflow .ge. 0.) then
-          abs2 = mflow
-        else
-          abs2 = -mflow
-        end if
-        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs2)
+        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs1)
       else
         mavgptot = zero
         mavgttot = zero
@@ -295,17 +288,17 @@ contains
         mflow = globalvals(imassflow, sps)
         if (mflow .ne. zero) then
           if (mflow .ge. 0.) then
+            abs0 = mflow
+            call pushcontrol1b(0)
+          else
+            abs0 = -mflow
+            call pushcontrol1b(1)
+          end if
+          if (mflow .ge. 0.) then
             abs1 = mflow
             call pushcontrol1b(0)
           else
             abs1 = -mflow
-            call pushcontrol1b(1)
-          end if
-          if (mflow .ge. 0.) then
-            abs2 = mflow
-            call pushcontrol1b(0)
-          else
-            abs2 = -mflow
             call pushcontrol1b(1)
           end if
           call pushcontrol1b(0)
@@ -323,35 +316,35 @@ contains
         mflowd = ovrnts*funcvaluesd(costfuncmdot)
         call popcontrol1b(branch)
         if (branch .eq. 0) then
-          temp2 = globalvals(isigmaptot, sps)/abs2
+          temp2 = globalvals(isigmaptot, sps)/abs1
           if (temp2 .eq. 0.0_8) then
             tempd1 = 0.0
           else
-            tempd1 = sigmaptotd/(2.0*sqrt(temp2)*abs2)
+            tempd1 = sigmaptotd/(2.0*sqrt(temp2)*abs1)
           end if
           globalvalsd(isigmaptot, sps) = globalvalsd(isigmaptot, sps) + &
 &           tempd1
-          abs2d = -(temp2*tempd1)
-          call popcontrol1b(branch)
-          if (branch .eq. 0) then
-            mflowd = mflowd + abs2d
-          else
-            mflowd = mflowd - abs2d
-          end if
-          temp1 = globalvals(isigmamn, sps)/abs1
-          if (temp1 .eq. 0.0_8) then
-            tempd0 = 0.0
-          else
-            tempd0 = sigmamnd/(2.0*sqrt(temp1)*abs1)
-          end if
-          globalvalsd(isigmamn, sps) = globalvalsd(isigmamn, sps) + &
-&           tempd0
-          abs1d = -(temp1*tempd0)
+          abs1d = -(temp2*tempd1)
           call popcontrol1b(branch)
           if (branch .eq. 0) then
             mflowd = mflowd + abs1d
           else
             mflowd = mflowd - abs1d
+          end if
+          temp1 = globalvals(isigmamn, sps)/abs0
+          if (temp1 .eq. 0.0_8) then
+            tempd0 = 0.0
+          else
+            tempd0 = sigmamnd/(2.0*sqrt(temp1)*abs0)
+          end if
+          globalvalsd(isigmamn, sps) = globalvalsd(isigmamn, sps) + &
+&           tempd0
+          abs0d = -(temp1*tempd0)
+          call popcontrol1b(branch)
+          if (branch .eq. 0) then
+            mflowd = mflowd + abs0d
+          else
+            mflowd = mflowd - abs0d
           end if
           globalvalsd(imassa, sps) = globalvalsd(imassa, sps) + mavgad/&
 &           mflow
@@ -462,7 +455,6 @@ contains
     real(kind=realtype), dimension(8) :: coef0
     intrinsic sqrt
     intrinsic abs
-    real(kind=realtype) :: abs2
     real(kind=realtype) :: abs1
     real(kind=realtype) :: abs0
 ! factor used for time-averaged quantities.
@@ -541,19 +533,13 @@ contains
         else
           abs0 = -mflow
         end if
-        print*, 'stuff:', globalvals(isigmamn, sps), abs0
+        sigmamn = sqrt(globalvals(isigmamn, sps)/abs0)
         if (mflow .ge. 0.) then
           abs1 = mflow
         else
           abs1 = -mflow
         end if
-        sigmamn = sqrt(globalvals(isigmamn, sps)/abs1)
-        if (mflow .ge. 0.) then
-          abs2 = mflow
-        else
-          abs2 = -mflow
-        end if
-        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs2)
+        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs1)
       else
         mavgptot = zero
         mavgttot = zero
@@ -2285,7 +2271,6 @@ contains
       end if
     end do
     if (withgathered) then
-      print*, 'here:', sigma_mn
       localvalues(isigmamn) = localvalues(isigmamn) + sigma_mn
       localvalues(isigmaptot) = localvalues(isigmaptot) + sigma_ptot
     else
