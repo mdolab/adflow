@@ -322,27 +322,26 @@ contains
 ! input 
     integer(kind=inttype), intent(in) :: nn
 ! working
-    integer(kind=inttype) :: i, j, k, ii, iregion
+    integer(kind=inttype) :: i, j, k, ii, iregion, istart, iend
     type(actuatorregiontype), pointer :: region
     real(kind=realtype) :: ftmp(3), vx, vy, vz, fact(3)
     real(kind=realtype) :: vxd, vyd, vzd
-    integer :: ad_from
-    integer :: ad_to
-! region loop
-regionloop:do iregion=1,nactuatorregions
+    do iregion=1,nactuatorregions
 ! pointer for easier reading
 ! compute the constant force factor
       fact = region%f/region%volume/pref
-      ad_from = region%blkptr(nn-1) + 1
 ! loop over the ranges for this block
-      ii = region%blkptr(nn) + 1
-    end do regionloop
-    do iregion=nactuatorregions,1,-1
-      do ii=ad_to,ad_from,-1
+      istart = region%blkptr(nn-1) + 1
+      iend = region%blkptr(nn)
+      do ii=istart,iend
+! extract the cell id. 
         i = region%cellids(1, ii)
         j = region%cellids(2, ii)
         k = region%cellids(3, ii)
+! this actually gets the force
         ftmp = vol(i, j, k)*fact
+! momentum residuals
+! energy residuals
         vxd = -(ftmp(1)*dwd(i, j, k, irhoe))
         vyd = -(ftmp(2)*dwd(i, j, k, irhoe))
         vzd = -(ftmp(3)*dwd(i, j, k, irhoe))
@@ -363,17 +362,19 @@ regionloop:do iregion=1,nactuatorregions
 ! input 
     integer(kind=inttype), intent(in) :: nn
 ! working
-    integer(kind=inttype) :: i, j, k, ii, iregion
+    integer(kind=inttype) :: i, j, k, ii, iregion, istart, iend
     type(actuatorregiontype), pointer :: region
     real(kind=realtype) :: ftmp(3), vx, vy, vz, fact(3)
-! region loop
+! region loo
 regionloop:do iregion=1,nactuatorregions
 ! pointer for easier reading
       region => actuatorregions(iregion)
 ! compute the constant force factor
       fact = region%f/region%volume/pref
 ! loop over the ranges for this block
-      do ii=region%blkptr(nn-1)+1,region%blkptr(nn)
+      istart = region%blkptr(nn-1) + 1
+      iend = region%blkptr(nn)
+      do ii=istart,iend
 ! extract the cell id. 
         i = region%cellids(1, ii)
         j = region%cellids(2, ii)

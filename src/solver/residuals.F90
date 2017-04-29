@@ -320,11 +320,12 @@ contains
     integer(kind=intType), intent(in) ::  nn
 
     ! Working
-    integer(kind=intType) :: i, j, k, ii, iRegion
+    integer(kind=intType) :: i, j, k, ii, iRegion, iStart, iEnd
     type(actuatorRegionType), pointer :: region
     real(kind=realType) :: Ftmp(3), Vx, Vy, Vz, Fact(3)
 
-    ! Region Loop
+    ! Region Loo
+    !$AD II-LOOP
     regionLoop: do iRegion=1, nActuatorRegions
 
        ! Pointer for easier reading
@@ -334,7 +335,10 @@ contains
        fact = region%F / region%volume / pRef
 
        ! Loop over the ranges for this block
-       do ii=region%blkPtr(nn-1) + 1, region%blkPtr(nn)
+       iStart = region%blkPtr(nn-1) + 1
+       iEnd =  region%blkPtr(nn)
+       !$AD II-LOOP
+       do ii=iStart, iEnd
           
           ! Extract the cell ID. 
           i = region%cellIDs(1, ii)
