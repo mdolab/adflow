@@ -39,7 +39,6 @@ contains
     real(kind=realtype), dimension(8) :: coef0
     intrinsic sqrt
     intrinsic abs
-    real(kind=realtype) :: abs2
     real(kind=realtype) :: abs1
     real(kind=realtype) :: abs0
 ! factor used for time-averaged quantities.
@@ -118,19 +117,13 @@ contains
         else
           abs0 = -mflow
         end if
-        print*, 'stuff:', globalvals(isigmamn, sps), abs0
+        sigmamn = sqrt(globalvals(isigmamn, sps)/abs0)
         if (mflow .ge. 0.) then
           abs1 = mflow
         else
           abs1 = -mflow
         end if
-        sigmamn = sqrt(globalvals(isigmamn, sps)/abs1)
-        if (mflow .ge. 0.) then
-          abs2 = mflow
-        else
-          abs2 = -mflow
-        end if
-        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs2)
+        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs1)
       else
         mavgptot = zero
         mavgttot = zero
@@ -702,7 +695,6 @@ contains
       end if
     end do
     if (withgathered) then
-      print*, 'here:', sigma_mn
       localvalues(isigmamn) = localvalues(isigmamn) + sigma_mn
       localvalues(isigmaptot) = localvalues(isigmaptot) + sigma_ptot
     else
