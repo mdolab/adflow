@@ -1405,7 +1405,9 @@ contains
     use blockPointers, only : BCData, nDom, nBocos, nBKGlobal, & 
          cgnsSubFace, BCType
     use sorting, only : famInList
-    use utils, only : setPointers,terminate
+    use utils, only : setPointers,terminate, char2str
+    use communication, only : myid
+    use actuatorRegionData
     !
     !      Subroutine arguments.
     !
@@ -1416,8 +1418,8 @@ contains
     !
     !      Local variables.
     !
-    integer(kind=intType) :: i, j, k, iVar, nFam
-
+    integer(kind=intType) :: i, j, k, iVar, nFam, iRegion
+    character(maxCGNSNameLen) :: varName
     domainsLoop: do i=1, nDom
 
        ! Set the pointers to this block on groundLevel to make
@@ -1466,6 +1468,25 @@ contains
           end do bocoLoop
        end do varLoop
     end do domainsLoop
+
+    ! Loop over any actuator regions since they also could have to set BCData
+    regionLoop: do iRegion=1, nActuatorRegions
+       varLoop2: do iVar=1, nVar
+          nFam = famLists(iVar, 1)
+          famInclude2: if (famInList(actuatorRegions(iRegion)%famID, famLists(iVar, 2:2+nFam-1))) then 
+             
+             ! Extract the name
+             varName = char2str(bcDataNamesIn(iVar,:), maxCGNSNameLen)
+             ! Only thrust is setup here.
+             if (trim(varName) == "Thrust") then 
+                actuatorRegions(iRegion)%F = (/bcDataIn(iVar), 0.0, 0.0/)
+             end if
+             
+          end if famInclude2
+       end do varLoop2
+    end do regionLoop
+
+
   end subroutine setBCData
 
   subroutine setBCData_d(bcDataNamesIn, bcDataIn, bcDataInd, famLists, sps, &
