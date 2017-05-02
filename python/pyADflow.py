@@ -2493,7 +2493,7 @@ class ADFLOW(AeroSolver):
             variables.append(varName)
             dataArray.append(AP.bcVarData[tmp])
             groupNames.append(family)
-        
+
         nameArray = self._createFortranStringArray(variables)
         groupArray = self._expandGroupNames(groupNames)
         if len(nameArray) > 0:

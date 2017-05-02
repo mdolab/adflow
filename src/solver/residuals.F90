@@ -321,29 +321,25 @@ contains
 
     ! Working
     integer(kind=intType) :: i, j, k, ii, iRegion, iStart, iEnd
-    type(actuatorRegionType), pointer :: region
     real(kind=realType) :: Ftmp(3), Vx, Vy, Vz, Fact(3)
 
     ! Region Loo
     !$AD II-LOOP
     regionLoop: do iRegion=1, nActuatorRegions
 
-       ! Pointer for easier reading
-       region => actuatorRegions(iRegion)
-       
        ! Compute the constant force factor
-       fact = region%F / region%volume / pRef
+       fact = actuatorRegions(iRegion)%F / actuatorRegions(iRegion)%volume / pRef
 
        ! Loop over the ranges for this block
-       iStart = region%blkPtr(nn-1) + 1
-       iEnd =  region%blkPtr(nn)
+       iStart = actuatorRegions(iRegion)%blkPtr(nn-1) + 1
+       iEnd =  actuatorRegions(iRegion)%blkPtr(nn)
        !$AD II-LOOP
        do ii=iStart, iEnd
           
           ! Extract the cell ID. 
-          i = region%cellIDs(1, ii)
-          j = region%cellIDs(2, ii)
-          k = region%cellIDs(3, ii)
+          i = actuatorRegions(iRegion)%cellIDs(1, ii)
+          j = actuatorRegions(iRegion)%cellIDs(2, ii)
+          k = actuatorRegions(iRegion)%cellIDs(3, ii)
 
           ! This actually gets the force
           FTmp = vol(i, j, k) * fact

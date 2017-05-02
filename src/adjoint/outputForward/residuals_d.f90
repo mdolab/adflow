@@ -327,24 +327,23 @@ contains
     integer(kind=inttype), intent(in) :: nn
 ! working
     integer(kind=inttype) :: i, j, k, ii, iregion, istart, iend
-    type(actuatorregiontype), pointer :: region
     real(kind=realtype) :: ftmp(3), vx, vy, vz, fact(3)
     real(kind=realtype) :: ftmpd(3), vxd, vyd, vzd, factd(3)
 ! region loo
 regionloop:do iregion=1,nactuatorregions
-! pointer for easier reading
-      region => actuatorregions(iregion)
 ! compute the constant force factor
-      factd = -(region%f*prefd/region%volume/pref**2)
-      fact = region%f/region%volume/pref
+      factd = -(actuatorregions(iregion)%f*prefd/actuatorregions(iregion&
+&       )%volume/pref**2)
+      fact = actuatorregions(iregion)%f/actuatorregions(iregion)%volume/&
+&       pref
 ! loop over the ranges for this block
-      istart = region%blkptr(nn-1) + 1
-      iend = region%blkptr(nn)
+      istart = actuatorregions(iregion)%blkptr(nn-1) + 1
+      iend = actuatorregions(iregion)%blkptr(nn)
       do ii=istart,iend
 ! extract the cell id. 
-        i = region%cellids(1, ii)
-        j = region%cellids(2, ii)
-        k = region%cellids(3, ii)
+        i = actuatorregions(iregion)%cellids(1, ii)
+        j = actuatorregions(iregion)%cellids(2, ii)
+        k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
         ftmpd = vold(i, j, k)*fact + vol(i, j, k)*factd
         ftmp = vol(i, j, k)*fact
@@ -377,22 +376,20 @@ regionloop:do iregion=1,nactuatorregions
     integer(kind=inttype), intent(in) :: nn
 ! working
     integer(kind=inttype) :: i, j, k, ii, iregion, istart, iend
-    type(actuatorregiontype), pointer :: region
     real(kind=realtype) :: ftmp(3), vx, vy, vz, fact(3)
 ! region loo
 regionloop:do iregion=1,nactuatorregions
-! pointer for easier reading
-      region => actuatorregions(iregion)
 ! compute the constant force factor
-      fact = region%f/region%volume/pref
+      fact = actuatorregions(iregion)%f/actuatorregions(iregion)%volume/&
+&       pref
 ! loop over the ranges for this block
-      istart = region%blkptr(nn-1) + 1
-      iend = region%blkptr(nn)
+      istart = actuatorregions(iregion)%blkptr(nn-1) + 1
+      iend = actuatorregions(iregion)%blkptr(nn)
       do ii=istart,iend
 ! extract the cell id. 
-        i = region%cellids(1, ii)
-        j = region%cellids(2, ii)
-        k = region%cellids(3, ii)
+        i = actuatorregions(iregion)%cellids(1, ii)
+        j = actuatorregions(iregion)%cellids(2, ii)
+        k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
         ftmp = vol(i, j, k)*fact
         vx = w(i, j, k, ivx)
