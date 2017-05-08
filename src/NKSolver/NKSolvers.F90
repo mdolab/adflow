@@ -2350,7 +2350,9 @@ contains
     end if
 
     ! No line search...just take the new solution
-    call VecAXPY(wVec, -one, deltaW, ierr)
+    !call VecAXPY(wVec, -one, deltaW, ierr)
+    ! Take the 0.8 of the new step instead of full step
+    call VecAXPY(wVec, -0.8_realType, deltaW, ierr)
     call EChk(ierr, __FILE__, __LINE__)
     
     ! Set the updated state variables
