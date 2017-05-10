@@ -336,7 +336,7 @@ module constants
   integer(kind=intType), parameter :: iTotal=16
 
   ! Cost functions.
-  integer(kind=intType), parameter :: nCostFunction = 53
+  integer(kind=intType), parameter :: nCostFunction = 54
   integer(kind=intType), parameter :: &
        costFuncLift       = 1,&
        costFuncDrag       = 2,&
@@ -390,9 +390,10 @@ module constants
        costFuncArea          = 50, &
        costFuncSigmaMN       = 51, &
        costFuncSigmaPtot     = 52, &
-       costFuncAxisMoment    = 53
+       costFuncAxisMoment    = 53, &
+       costFuncFlowPower     = 54
 
-  integer(kind=intType), parameter :: nLocalValues=49
+  integer(kind=intType), parameter :: nLocalValues=46
   integer(kind=intType), parameter :: &
        iFp =  1, &
        iFv =  4, &
@@ -422,7 +423,8 @@ module constants
        iMassnx     = 42, &
        iMassny     = 43, &
        iMassnz     = 44, & 
-       iAxisMoment = 45
+       iAxisMoment = 45, & 
+       iPower      = 46
 
   ! Constants for zipper comm
 

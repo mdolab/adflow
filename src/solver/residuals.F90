@@ -313,7 +313,7 @@ contains
     use constants
     use actuatorRegionData
     use blockPointers, only : vol, dw, w
-    use flowVarRefState, only : Pref
+    use flowVarRefState, only : Pref, uRef
     implicit none
 
     ! Input 
@@ -322,8 +322,8 @@ contains
     ! Working
     integer(kind=intType) :: i, j, k, ii, iRegion, iStart, iEnd
     real(kind=realType) :: Ftmp(3), Vx, Vy, Vz, Fact(3)
-
-    ! Region Loo
+    
+    ! Region Loop
     !$AD II-LOOP
     regionLoop: do iRegion=1, nActuatorRegions
 
@@ -333,6 +333,7 @@ contains
        ! Loop over the ranges for this block
        iStart = actuatorRegions(iRegion)%blkPtr(nn-1) + 1
        iEnd =  actuatorRegions(iRegion)%blkPtr(nn)
+
        !$AD II-LOOP
        do ii=iStart, iEnd
           
@@ -943,9 +944,10 @@ contains
     use constants
     use blockPointers
     use utils, only : setPointers
+    use actuatorRegionData
     implicit none
 
-    integer(kind=intType) :: nn
+    integer(kind=intType) :: nn, iRegion
 
     ! Loop over the number of domains. 
     domains: do nn=1,nDom
