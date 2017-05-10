@@ -423,4 +423,76 @@ contains
        close(101)
     end if
   end subroutine writeActuatorRegions
+
+  subroutine integrateActuatorRegions(localValues, famList, sps, withGathered, funcValues)
+
+    ! Perform volume integrals over the actuator region. 
+    use constants
+    use blockPointers, only : vol, dw, w, nDom
+    use flowVarRefState, only : Pref, uRef
+    use utils, only : setPointers
+    use sorting, only : famInList
+    use actuatorRegionData
+
+    ! Input/output Variables
+    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
+    integer(kind=intType), dimension(:), intent(in) :: famList
+    integer(kind=intType), intent(in) :: sps
+    logical, intent(in) :: withGathered
+    real(kind=realType),  dimension(:), intent(in) :: funcValues
+
+    ! Working
+    integer(kind=intType) :: i, j, k, ii, iRegion, iStart, iEnd, nn
+    real(kind=realType) :: Ftmp(3), Vx, Vy, Vz, Fact(3), PLocal 
+
+    ! Zero the accumulation variable. We comptue flow power across
+    ! 'all' actuaor zones. The famInclude is used to section out which
+    ! one we want. 
+    PLocal = zero
+
+    !$AD II-LOOP
+    regionLoop: do iRegion=1, nActuatorRegions
+
+       ! Check if this needs to be included:
+       famInclude: if (famInList(actuatorRegions(iRegion)%famID, famList)) then 
+
+          ! Compute the constant force factor. Account for the uRef here.
+          fact = actuatorRegions(iRegion)%F / actuatorRegions(iRegion)%volume * uRef 
+
+          domainLoop: do nn=1, nDom
+             call setPointers(nn, 1, sps)
+             
+             ! Loop over the ranges for this block
+             iStart = actuatorRegions(iRegion)%blkPtr(nn-1) + 1
+             iEnd =  actuatorRegions(iRegion)%blkPtr(nn)
+             
+            
+             !$AD II-LOOP
+             do ii=iStart, iEnd
+                
+                ! Extract the cell ID. 
+                i = actuatorRegions(iRegion)%cellIDs(1, ii)
+                j = actuatorRegions(iRegion)%cellIDs(2, ii)
+                k = actuatorRegions(iRegion)%cellIDs(3, ii)
+                
+                ! This actually gets the actual dimensional force
+                FTmp = vol(i, j, k) * fact
+                
+                Vx = w(i, j, k, iVx)
+                Vy = w(i, j, k, iVy)
+                Vz = w(i, j, k, iVz)
+                
+                ! Sum up the flow power while we're at it since it's easy to
+                ! do at this point:
+                PLocal = PLocal + FTmp(1)*Vx + FTmp(2)*Vy + FTmp(3)*Vz
+             end do
+          end do domainLoop
+       end if famInclude
+    end do regionLoop
+
+    ! Add in the contribution from this processor. 
+    localValues(iPower) = localValues(iPower) + PLocal
+    
+  end subroutine integrateActuatorRegions
+
 end module actuatorRegion

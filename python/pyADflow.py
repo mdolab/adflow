@@ -4649,6 +4649,7 @@ class ADFLOW(AeroSolver):
             'sigmamn':self.adflow.constants.costfuncsigmamn, 
             'sigmaptot':self.adflow.constants.costfuncsigmaptot, 
             'axismoment':self.adflow.constants.costfuncaxismoment,
+            'flowpower':self.adflow.constants.costfuncflowpower,
             }
 
         return iDV, BCDV, adflowCostFunctions
