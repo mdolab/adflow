@@ -302,11 +302,11 @@ contains
           enddo
        enddo
     endif
-
+    
   end subroutine residual_block
 
 
-  subroutine sourceTerms_block(nn)
+  subroutine sourceTerms_block(nn, res, pLocal)
 
     ! Apply the source terms for the given block. Assume that the
     ! block pointers are already set. 
@@ -318,11 +318,15 @@ contains
 
     ! Input 
     integer(kind=intType), intent(in) ::  nn
+    logical, intent(in) :: res
+    real(kind=realType), intent(inout) :: pLocal
 
     ! Working
     integer(kind=intType) :: i, j, k, ii, iRegion, iStart, iEnd
-    real(kind=realType) :: Ftmp(3), Vx, Vy, Vz, Fact(3)
-    
+    real(kind=realType) :: Ftmp(3), Vx, Vy, Vz, Fact(3), reDim
+
+    reDim = pRef*uRef
+
     ! Region Loop
     !$AD II-LOOP
     regionLoop: do iRegion=1, nActuatorRegions
@@ -348,13 +352,18 @@ contains
           Vx = w(i, j, k, iVx)
           Vy = w(i, j, k, iVy)
           Vz = w(i, j, k, iVz)
-          
-          ! Momentum residuals
-          dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - Ftmp
 
-          ! energy residuals
-          dw(i, j, k, iRhoE) = dw(i, j, k, iRhoE)  - &
-               Ftmp(1)*Vx - Ftmp(2)*Vy - Ftmp(3)*Vz
+          if (res) then 
+             ! Momentum residuals
+             dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - Ftmp
+             
+             ! energy residuals
+             dw(i, j, k, iRhoE) = dw(i, j, k, iRhoE)  - &
+                  Ftmp(1)*Vx - Ftmp(2)*Vy - Ftmp(3)*Vz
+          else
+             ! Add in the local power contribution:
+             pLocal = pLocal + (Vx*Ftmp(1) + Vy*FTmp(2) + Vz*Ftmp(3))*reDim
+          end if
        end do
     end do regionLoop
 
@@ -948,13 +957,14 @@ contains
     implicit none
 
     integer(kind=intType) :: nn, iRegion
+    real(kind=realType) :: dummy
 
     ! Loop over the number of domains. 
     domains: do nn=1,nDom
 
        ! Set the pointers for this block.
        call setPointers(nn, 1, 1)
-       call sourceTerms_block(nn)
+       call sourceTerms_block(nn, .True., dummy)
     end do domains
 
   end subroutine sourceTerms
