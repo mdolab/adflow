@@ -1105,6 +1105,7 @@ contains
     use surfaceIntegrations_d, only : getCostFunctions_d
     use zipperIntegrations, only :integrateZippers_d
     use userSurfaceIntegrations, only : integrateUserSurfaces_d
+    use actuatorRegion, only : integrateActuatorRegions_d
     implicit none
 
     ! Input/Output Variables
@@ -1141,10 +1142,9 @@ contains
           call integrateUserSurfaces_d(localVal(:, sps), localVald(:, sps), famList, sps, .False., &
                funcValues(:, iGroup), funcValuesd(:, iGroup))
 
-!           ! Integrate any actuator regions we have
-!           call integrateActuatorRegions_d(localVal(:, sps), localVald(:, sps), famList, sps, .False., &
-!                funcValues(:, iGroup), funcValuesd(:, iGroup))
-          
+          ! Integrate any actuator regions we have
+          call integrateActuatorRegions_d(localVal(:, sps), localVald(:, sps), famList, sps, .False., &
+               funcValues(:, iGroup), funcValuesd(:, iGroup))
        end do
        
        ! Now we need to reduce all the cost functions
@@ -1220,6 +1220,7 @@ contains
     use surfaceIntegrations_b, only : getCostFunctions_b
     use zipperIntegrations, only :integrateZippers_b 
     use userSurfaceIntegrations, only : integrateUserSurfaces_b
+    use actuatorRegion, only : integrateActuatorRegions_b
     implicit none
 
     ! Input/Output Variables
@@ -1309,8 +1310,8 @@ contains
                .False., funcValues(:, iGroup), funcValuesd(:, iGroup))
 
           ! Integrate any actuator regions we have:
-!           call integrateActuatorRegions_b(localVal(:, sps), localVald(:, sps), famList, sps, & 
-!                .False., funcValues(:, iGroup), funcValuesd(:, iGroup))
+           call integrateActuatorRegions_b(localVal(:, sps), localVald(:, sps), famList, sps, & 
+                .False., funcValues(:, iGroup), funcValuesd(:, iGroup))
 
        end do
     end do groupLoop
