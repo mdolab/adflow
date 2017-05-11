@@ -423,4 +423,165 @@ contains
        close(101)
     end if
   end subroutine writeActuatorRegions
+
+  subroutine integrateActuatorRegions(localValues, famList, sps, withGathered, funcValues)
+    !--------------------------------------------------------------
+    ! Manual Differentiation Warning: Modifying this routine requires
+    ! modifying the hand-written forward and reverse routines. 
+    ! --------------------------------------------------------------
+
+    ! Perform volume integrals over the actuator region. 
+    use constants
+    use blockPointers, only : vol, dw, w, nDom
+    use flowVarRefState, only : Pref, uRef
+    use utils, only : setPointers
+    use sorting, only : famInList
+    use residuals, only : sourceTerms_block
+    use actuatorRegionData
+
+    ! Input/output Variables
+    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
+    integer(kind=intType), dimension(:), intent(in) :: famList
+    integer(kind=intType), intent(in) :: sps
+    logical, intent(in) :: withGathered
+    real(kind=realType),  dimension(:), intent(in) :: funcValues
+
+    ! Working
+    integer(kind=intType) :: nn, iRegion
+    real(kind=realType) :: PLocal, PLocald
+    ! Zero the accumulation variable. We comptue flow power across
+    ! 'all' actuaor zones. The famInclude is used to section out which
+    ! one we want. 
+    PLocal = zero
+   
+    domainLoop: do nn=1, nDom
+       call setPointers(nn, 1, sps)
+
+       ! Loop over each region
+       regionLoop: do iRegion=1, nActuatorRegions
+
+          ! Check if this needs to be included:
+          famInclude: if (famInList(actuatorRegions(iRegion)%famID, famList)) then 
+
+             ! If so, call the regular sourceTerms_block routine
+             call sourceTerms_block(nn, .False., pLocal)
+
+          end if famInclude
+       end do regionLoop
+    end do domainLoop
+
+    ! Add in the contribution from this processor. 
+    localValues(iPower) = localValues(iPower) + PLocal
+    
+  end subroutine integrateActuatorRegions
+#ifndef USE_COMPLEX
+  subroutine integrateActuatorRegions_d(localValues, localValuesd, famList, sps, &
+       withGathered, funcValues, funcValuesd)
+    !--------------------------------------------------------------
+    ! Manual Differentiation Warning: Modifying this routine requires
+    ! modifying the hand-written forward and reverse routines. 
+    ! --------------------------------------------------------------
+
+    ! Perform volume integrals over the actuator region. 
+    use constants
+    use blockPointers, only : vol, dw, w, nDom
+    use flowVarRefState, only : Pref, uRef
+    use utils, only : setPointers
+    use sorting, only : famInList
+    use actuatorRegionData
+    use residuals_d, only : sourceTerms_block_d
+
+    ! Input/output Variables
+    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
+    integer(kind=intType), dimension(:), intent(in) :: famList
+    integer(kind=intType), intent(in) :: sps
+    logical, intent(in) :: withGathered
+    real(kind=realType),  dimension(:), intent(in) :: funcValues, funcValuesd
+
+    ! Working
+    integer(kind=intType) :: nn, iRegion
+    real(kind=realType) :: PLocal, PLocald
+
+    ! Zero the accumulation variable. We comptue flow power across
+    ! 'all' actuaor zones. The famInclude is used to section out which
+    ! one we want. 
+    PLocal = zero
+    PLocald = zero
+   
+    domainLoop: do nn=1, nDom
+       call setPointers(nn, 1, sps)
+
+       ! Loop over each region
+       regionLoop: do iRegion=1, nActuatorRegions
+
+          ! Check if this needs to be included:
+          famInclude: if (famInList(actuatorRegions(iRegion)%famID, famList)) then 
+
+             ! If so, call the regular sourceTerms_block routine
+             call sourceTerms_block_d(nn, .False., pLocal, pLocald)
+
+          end if famInclude
+       end do regionLoop
+    end do domainLoop
+
+    ! Add in the contribution from this processor. 
+    localValues(iPower) = localValues(iPower) + PLocal
+    localValuesd(iPower) = localValuesd(iPower) + PLocald
+    
+  end subroutine integrateActuatorRegions_d
+
+  subroutine integrateActuatorRegions_b(localValues, localValuesd, famList, sps, &
+       withGathered, funcValues, funcValuesd)
+    !--------------------------------------------------------------
+    ! Manual Differentiation Warning: Modifying this routine requires
+    ! modifying the hand-written forward and reverse routines. 
+    ! --------------------------------------------------------------
+
+    ! Perform volume integrals over the actuator region. 
+    use constants
+    use blockPointers, only : vol, dw, w, nDom
+    use flowVarRefState, only : Pref, uRef
+    use utils, only : setPointers
+    use sorting, only : famInList
+    use actuatorRegionData
+    use residuals_b, only : sourceTerms_block_b
+
+    ! Input/output Variables
+    real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
+    integer(kind=intType), dimension(:), intent(in) :: famList
+    integer(kind=intType), intent(in) :: sps
+    logical, intent(in) :: withGathered
+    real(kind=realType),  dimension(:), intent(in) :: funcValues, funcValuesd
+
+    ! Working
+    integer(kind=intType) :: nn, iRegion
+    real(kind=realType) :: PLocal, PLocald
+
+    ! Zero the accumulation variable. We comptue flow power across
+    ! 'all' actuaor zones. The famInclude is used to section out which
+    ! one we want. 
+    PLocal = zero
+    PLocald = zero
+
+    ! Pull out the seed
+    PLocald = localValuesd(iPower)
+   
+    domainLoop: do nn=1, nDom
+       call setPointers(nn, 1, sps)
+
+       ! Loop over each region
+       regionLoop: do iRegion=1, nActuatorRegions
+
+          ! Check if this needs to be included:
+          famInclude: if (famInList(actuatorRegions(iRegion)%famID, famList)) then 
+
+             ! If so, call the regular sourceTerms_block routine
+             call sourceTerms_block_b(nn, .False., pLocal, pLocald)
+
+          end if famInclude
+       end do regionLoop
+    end do domainLoop
+  end subroutine integrateActuatorRegions_b
+#endif
+
 end module actuatorRegion

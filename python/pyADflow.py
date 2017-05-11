@@ -35,6 +35,14 @@ from baseclasses import AeroSolver, AeroProblem
 from . import MExt
 from pprint import pprint as pp
 import hashlib
+try:
+    from collections import OrderedDict
+except ImportError:
+    try:
+        from ordereddict import OrderedDict
+    except ImportError:
+        print('Could not find any OrderedDict class. For 2.6 and earlier, \
+use:\n pip install ordereddict')
 
 class Error(Exception):
     """
@@ -125,12 +133,12 @@ class ADFLOW(AeroSolver):
             self._getObjectivesAndDVs())
 
         # Now add the group for each of the "basic" cost functions:
-        self.adflowCostFunctions = {}
+        self.adflowCostFunctions = OrderedDict()
         for key in self.basicCostFunctions:
             self.adflowCostFunctions[key] = [None, key]
             
         # Separate list of the suplied supplied functions
-        self.adflowUserCostFunctions = {}
+        self.adflowUserCostFunctions = OrderedDict()
             
         # This is the real solver so dtype is 'd'
         self.dtype = dtype
@@ -711,7 +719,7 @@ class ADFLOW(AeroSolver):
 
             # First make sure the supplied function is already known to adflow
             if funcName.lower() not in self.basicCostFunctions:
-                raise Error('Supplied function name is not known to ADflow')
+                raise Error('Supplied function name %s is not known to ADflow'%funcName.lower())
 
             # Check if the goupName has been added to the mesh.
             if groupName is not None:
@@ -840,7 +848,7 @@ class ADFLOW(AeroSolver):
 
         # Clear out any saved adjoint RHS since they are now out of
         # data. Also increment the counter for this case.
-        self.curAP.adflowData.adjointRHS = {}
+        self.curAP.adflowData.adjointRHS = OrderedDict()
         self.curAP.adflowData.callCounter += 1
 
         # --------------------------------------------------------------
@@ -1071,7 +1079,7 @@ class ADFLOW(AeroSolver):
         # We need to determine how many different groupings we have,
         # since we will have to call getSolution for each *unique*
         # function grouping. We can also do the error checking
-        groupMap = {}
+        groupMap = OrderedDict()
         
         def addToGroup(f):
             group = self.adflowCostFunctions[f][0]
@@ -1081,7 +1089,7 @@ class ADFLOW(AeroSolver):
             else:
                 groupMap[group].append([basicFunc, f])
 
-        callBackFuncs = {}
+        callBackFuncs = OrderedDict()
         for f in evalFuncs:
             # Standard functions
             if f in self.adflowCostFunctions:
@@ -2917,7 +2925,6 @@ class ADFLOW(AeroSolver):
         design variables in ADflow"""
 
         DVsRequired = list(self.curAP.DVs.keys())
-        DVMap = {}
         for dv in DVsRequired:
             key = self.curAP.DVs[dv].key.lower()
             if key in ['altitude']:
@@ -4170,6 +4177,7 @@ class ADFLOW(AeroSolver):
             'ankjacobianlag':[int, 20],
             'ankinnerpreconits':[int, 1],
             'ankcfl0':[float, 1.0],
+            'ankcfllimit':[float, 10000.0],
 
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
@@ -4454,7 +4462,7 @@ class ADFLOW(AeroSolver):
             'ankjacobianlag':['ank', 'ank_jacobianlag'],
             'ankinnerpreconits':['ank', 'ank_innerpreconits'],
             'ankcfl0':['ank', 'ank_cfl0'],
-
+            'ankcfllimit':['ank','ank_cfllimit'],
             # Load Balance Paramters
             'blocksplitting':['parallel', 'splitblocks'],
             'loadimbalance':['parallel', 'loadimbalance'],
@@ -4568,7 +4576,7 @@ class ADFLOW(AeroSolver):
         return ignoreOptions, deprecatedOptions, specialOptions
 
     def _getObjectivesAndDVs(self):
-        iDV = {}
+        iDV = OrderedDict()
         iDV['alpha'] = self.adflow.adjointvars.ialpha
         iDV['beta'] = self.adflow.adjointvars.ibeta
         iDV['mach'] = self.adflow.adjointvars.imach
@@ -4641,6 +4649,7 @@ class ADFLOW(AeroSolver):
             'sigmamn':self.adflow.constants.costfuncsigmamn, 
             'sigmaptot':self.adflow.constants.costfuncsigmaptot, 
             'axismoment':self.adflow.constants.costfuncaxismoment,
+            'flowpower':self.adflow.constants.costfuncflowpower,
             }
 
         return iDV, BCDV, adflowCostFunctions

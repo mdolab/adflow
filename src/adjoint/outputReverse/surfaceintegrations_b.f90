@@ -129,6 +129,8 @@ contains
 &       costfuncsepsensoravgz) + ovrnts*globalvals(isepavg+2, sps)
       funcvalues(costfuncarea) = funcvalues(costfuncarea) + ovrnts*&
 &       globalvals(iarea, sps)
+      funcvalues(costfuncflowpower) = funcvalues(costfuncflowpower) + &
+&       ovrnts*globalvals(ipower, sps)
 ! mass flow like objective
       mflow = globalvals(imassflow, sps)
       if (mflow .ne. zero) then
@@ -366,6 +368,8 @@ contains
         end if
         globalvalsd(imassflow, sps) = globalvalsd(imassflow, sps) + &
 &         mflowd
+        globalvalsd(ipower, sps) = globalvalsd(ipower, sps) + ovrnts*&
+&         funcvaluesd(costfuncflowpower)
         globalvalsd(iarea, sps) = globalvalsd(iarea, sps) + ovrnts*&
 &         funcvaluesd(costfuncarea)
         globalvalsd(isepavg+2, sps) = globalvalsd(isepavg+2, sps) + &
@@ -511,6 +515,8 @@ contains
 &       costfuncsepsensoravgz) + ovrnts*globalvals(isepavg+2, sps)
       funcvalues(costfuncarea) = funcvalues(costfuncarea) + ovrnts*&
 &       globalvals(iarea, sps)
+      funcvalues(costfuncflowpower) = funcvalues(costfuncflowpower) + &
+&       ovrnts*globalvals(ipower, sps)
 ! mass flow like objective
       mflow = globalvals(imassflow, sps)
       if (mflow .ne. zero) then

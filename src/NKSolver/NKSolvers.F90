@@ -1611,7 +1611,7 @@ module ANKSolver
   logical :: ANK_useTurbDADI
 
   ! Misc variables
-  real(kind=realType) :: ANK_CFL, ANK_CFL0
+  real(kind=realType) :: ANK_CFL, ANK_CFL0, ANK_CFLLimit
   logical :: ANK_solverSetup=.False.
   logical :: ANK_turbSetup=.False.
   integer(kind=intTYpe) :: ANK_iter
@@ -1928,6 +1928,8 @@ contains
     use BCRoutines, only : applyAllBC
     use solverUtils, only : timeStep, computeUtau
     use residuals, only :residual, initRes, sourceTerms
+    use overset, only : oversetPresent
+
     implicit none
 
     ! Local Variables
@@ -1988,6 +1990,14 @@ contains
     ! Exchange halos
     call whalo2(currentLevel, 1_intType, nwf, .true., &
          .true., .true.)
+
+    ! Need to re-apply the BCs. The reason is that BC halos behind
+    ! interpolated cells need to be recomputed with their new
+    ! interpolated values from actual compute cells. Only needed for
+    ! overset. 
+    if (oversetPresent) then 
+       call applyAllBC(secondHalo)
+    end if
 
     ! Compute time step (spectral radius is actually what we need)
     call timestep(.false.)
@@ -2325,7 +2335,7 @@ contains
        call VecNorm(rVec, NORM_2, norm, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
-       ANK_CFL = min(ANK_CFL0 * (totalR0 / norm)**1.5, 100000.0)
+       ANK_CFL = min(ANK_CFL0 * (totalR0 / norm)**1.5, ANK_CFLLimit)
 
        call FormJacobianANK()
     end if

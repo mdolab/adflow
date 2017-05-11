@@ -74,6 +74,7 @@ contains
        funcValues(costFuncSepSensorAvgY) = funcValues(costFuncSepSensorAvgY) + ovrNTS*globalVals(iSepAvg+1, sps)
        funcValues(costFuncSepSensorAvgZ) = funcValues(costFuncSepSensorAvgZ) + ovrNTS*globalVals(iSepAvg+2, sps)
        funcValues(costFuncArea)    = funcValues(costFuncArea) + ovrNTS*globalVals(iArea, sps)
+       funcValues(costFuncFlowPower) = funcValues(costFuncFlowPower) + ovrNTS*globalVals(iPower, sps)
 
        ! Mass flow like objective
        mFlow = globalVals(iMassFlow, sps)
@@ -843,7 +844,7 @@ contains
     use utils, only : setPointers, EChk
     use zipperIntegrations, only :integrateZippers
     use userSurfaceIntegrations, only : integrateUserSurfaces
-    
+    use actuatorRegion, only : integrateActuatorRegions
     implicit none
 
     ! Input/Output Variables
@@ -877,9 +878,11 @@ contains
 
           ! Integrate any user-supplied surfaces as have as well. 
           call integrateUserSurfaces(localVal(:, sps), famList, sps, .False., funcValues(:, iGroup))
+          
+          ! Integrate any actuator regions we have
+          call integrateActuatorRegions(localVal(:, sps), famList, sps, .False., funcValues(:, iGroup))
        end do
        
-
        ! Now we need to reduce all the cost functions
        call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
             MPI_SUM, adflow_comm_world, ierr)
@@ -903,6 +906,8 @@ contains
           
           ! Integrate any user-supplied planes as have as well. 
           call integrateUserSurfaces(localVal(:, sps), famList, sps, .True., funcValues(:, iGroup))
+
+          ! No need to call the actuatorRegion integration
        end do
        
        ! All reduce again. Technially just need the additionally
@@ -1100,6 +1105,7 @@ contains
     use surfaceIntegrations_d, only : getCostFunctions_d
     use zipperIntegrations, only :integrateZippers_d
     use userSurfaceIntegrations, only : integrateUserSurfaces_d
+    use actuatorRegion, only : integrateActuatorRegions_d
     implicit none
 
     ! Input/Output Variables
@@ -1135,7 +1141,10 @@ contains
           ! Integrate any user-supplied surface as have as well. 
           call integrateUserSurfaces_d(localVal(:, sps), localVald(:, sps), famList, sps, .False., &
                funcValues(:, iGroup), funcValuesd(:, iGroup))
-          
+
+          ! Integrate any actuator regions we have
+          call integrateActuatorRegions_d(localVal(:, sps), localVald(:, sps), famList, sps, .False., &
+               funcValues(:, iGroup), funcValuesd(:, iGroup))
        end do
        
        ! Now we need to reduce all the cost functions
@@ -1211,6 +1220,7 @@ contains
     use surfaceIntegrations_b, only : getCostFunctions_b
     use zipperIntegrations, only :integrateZippers_b 
     use userSurfaceIntegrations, only : integrateUserSurfaces_b
+    use actuatorRegion, only : integrateActuatorRegions_b
     implicit none
 
     ! Input/Output Variables
@@ -1298,6 +1308,11 @@ contains
           ! Integrate any user-supplied planes as have as well. 
           call integrateUserSurfaces_b(localVal(:, sps), localVald(:, sps), famList, sps, & 
                .False., funcValues(:, iGroup), funcValuesd(:, iGroup))
+
+          ! Integrate any actuator regions we have:
+           call integrateActuatorRegions_b(localVal(:, sps), localVald(:, sps), famList, sps, & 
+                .False., funcValues(:, iGroup), funcValuesd(:, iGroup))
+
        end do
     end do groupLoop
   end subroutine getSolution_b

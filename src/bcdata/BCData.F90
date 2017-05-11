@@ -1479,7 +1479,7 @@ contains
              varName = char2str(bcDataNamesIn(iVar,:), maxCGNSNameLen)
              ! Only thrust is setup here.
              if (trim(varName) == "Thrust") then 
-                actuatorRegions(iRegion)%F = (/bcDataIn(iVar), 0.0, 0.0/)
+                actuatorRegions(iRegion)%F = (/bcDataIn(iVar), zero, zero/)
              end if
              
           end if famInclude2
