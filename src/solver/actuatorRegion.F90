@@ -474,7 +474,7 @@ contains
     localValues(iPower) = localValues(iPower) + PLocal
     
   end subroutine integrateActuatorRegions
-
+#ifndef USE_COMPLEX
   subroutine integrateActuatorRegions_d(localValues, localValuesd, famList, sps, &
        withGathered, funcValues, funcValuesd)
     !--------------------------------------------------------------
@@ -582,6 +582,6 @@ contains
        end do regionLoop
     end do domainLoop
   end subroutine integrateActuatorRegions_b
-
+#endif
 
 end module actuatorRegion
