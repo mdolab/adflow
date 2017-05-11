@@ -53,6 +53,7 @@ contains
     ! Working Variables
     integer(kind=intType) :: ierr, nn, sps, fSize
     real(kind=realType), dimension(nSections) :: t
+    real(kind=realType) :: dummyReal
 
     if (useSpatial) then 
        call adjustInflowAngle()
@@ -143,7 +144,7 @@ contains
        do nn=1, nDom
           call setPointers(nn, 1, sps)
           call initRes_block(1, nw, nn, sps)
-          call sourceTerms_block(nn)
+          call sourceTerms_block(nn, .True., dummyReal)
 
           ! Compute turbulence residual for RANS equations
           if( equations == RANSEquations) then
@@ -282,6 +283,7 @@ contains
     real(kind=realType), dimension(:, :, :), allocatable :: forces
     integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj
     real(kind=realType), dimension(nSections) :: t
+    real(kind=realType) :: dummyReal, dummyReald
 
     fSize = size(forcesDot, 2)
     allocate(forces(3, fSize, nTimeIntervalsSpectral))
@@ -438,7 +440,7 @@ contains
           call timeStep_block_d(.false.)
           dw = zero
           dwd = zero
-          call sourceTerms_block_d(nn)
+          call sourceTerms_block_d(nn, .True., dummyReal, dummyReald)
 
           !Compute turbulence residual for RANS equations
           if( equations == RANSEquations) then
@@ -597,7 +599,7 @@ contains
     ! Working Variables
     integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj,  level
     real(kind=realType), dimension(:), allocatable :: extraLocalBar, bcDataValuesdLocal
-
+    real(kind=realType) :: dummyReal, dummyReald
     logical ::resetToRans
 
     ! extraLocalBar accumulates the seeds onto the extra variables
@@ -696,7 +698,9 @@ contains
              !call unsteadyTurbSpectral_block_b(itu1, itu1, nn, sps)
           end if
 
-          call sourceTerms_block_b(nn)
+          ! Just to be safe, zero the pLocald value...should not matter
+          dummyReald = zero
+          call sourceTerms_block_b(nn, .True., dummyReal, dummyReald)
 
           ! Initres_b should be called here. For steady just zero:
           dwd = zero
@@ -927,6 +931,7 @@ contains
 
     ! Working Variables
     integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj,  level
+    real(kind=realType) :: dummyReal
 
     ! Set the residual seeds. 
     ii = 0
@@ -996,7 +1001,7 @@ contains
           end if
 
           call timeStep_block_fast_b(.false.)
-          call sourceTerms_block_fast_b(nn)
+          call sourceTerms_block_fast_b(nn, .true., dummyReal)
         
           ! Initres_b should be called here. For steady just zero:
           dwd = zero
@@ -1091,6 +1096,7 @@ contains
 
     ! Working Variables
     integer(kind=intType) :: ierr, mm,i,j,k, l, fSize, ii, jj
+    real(kind=realType) :: dummyReal
 
     call computePressureSimple(.True.)
     call computeLamViscosity(.True.)
@@ -1106,7 +1112,7 @@ contains
     call applyAllBC_block(.True.)
     call timeStep_block(.false.)
     dw = zero ! This should be init_res
-    call sourceTerms_block(nn)    
+    call sourceTerms_block(nn, .True., dummyReal)
     
     !Compute turbulence residual for RANS equations
     if( equations == RANSEquations) then
@@ -1198,6 +1204,7 @@ contains
 
     ! Working Variables
     integer(kind=intType) :: ierr, mm,i,j,k, l, fSize, ii, jj
+    real(kind=realType) :: dummyReal, dummyReald
 
     call computePressureSimple_d(.True.)
     call computeLamViscosity_d(.True.)
@@ -1217,7 +1224,7 @@ contains
     dwd = zero
 
     ! Compute any source terms
-    call sourceTerms_block_d(nn)
+    call sourceTerms_block_d(nn, .True. , dummyReal, dummyReald)
 
     !Compute turbulence residual for RANS equations
     if( equations == RANSEquations) then

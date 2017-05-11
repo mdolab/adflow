@@ -218,6 +218,7 @@ python module libadflow
          integer(kind=inttype) :: ank_ilufill
          real(kind=realtype) :: ank_switchtol
          real(kind=realtype) :: ank_cfl0
+         real(kind=realtype) :: ank_cfllimit
        
          subroutine destroyanksolver
          end subroutine destroyanksolver
@@ -781,6 +782,7 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfuncsigmamn=51
          integer(kind=inttype) parameter,optional :: costfuncsigmaptot=52
          integer(kind=inttype) parameter,optional :: costfuncaxismoment=53
+         integer(kind=inttype) parameter,optional :: costfuncflowpower=54
 
        end module constants
 
