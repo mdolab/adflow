@@ -1611,7 +1611,7 @@ module ANKSolver
   logical :: ANK_useTurbDADI
 
   ! Misc variables
-  real(kind=realType) :: ANK_CFL, ANK_CFL0, ANK_CFLLimit
+  real(kind=realType) :: ANK_CFL, ANK_CFL0, ANK_CFLLimit, ANK_StepFactor
   logical :: ANK_solverSetup=.False.
   logical :: ANK_turbSetup=.False.
   integer(kind=intTYpe) :: ANK_iter
@@ -2359,10 +2359,9 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
     end if
 
-    ! No line search...just take the new solution
-    !call VecAXPY(wVec, -one, deltaW, ierr)
-    ! Take the 0.8 of the new step instead of full step
-    call VecAXPY(wVec, -0.8_realType, deltaW, ierr)
+    ! No line search...just take the new solution, possibly (fixed)
+    ! limited
+    call VecAXPY(wVec, -ANK_StepFactor, deltaW, ierr)
     call EChk(ierr, __FILE__, __LINE__)
     
     ! Set the updated state variables

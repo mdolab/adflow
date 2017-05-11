@@ -219,7 +219,7 @@ python module libadflow
          real(kind=realtype) :: ank_switchtol
          real(kind=realtype) :: ank_cfl0
          real(kind=realtype) :: ank_cfllimit
-       
+         real(kind=realtype) :: ank_stepfactor
          subroutine destroyanksolver
          end subroutine destroyanksolver
          
