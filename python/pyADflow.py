@@ -4179,6 +4179,7 @@ class ADFLOW(AeroSolver):
             'ankcfl0':[float, 1.0],
             'ankcfllimit':[float, 10000.0],
             'ankstepfactor':[float, 0.8],
+            'anklocalcfl':[bool, False],
 
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
@@ -4465,6 +4466,7 @@ class ADFLOW(AeroSolver):
             'ankcfl0':['ank', 'ank_cfl0'],
             'ankcfllimit':['ank','ank_cfllimit'],
             'ankstepfactor':['ank','ank_stepfactor'],
+            'anklocalcfl':['ank','ank_localcfl'],
             # Load Balance Paramters
             'blocksplitting':['parallel', 'splitblocks'],
             'loadimbalance':['parallel', 'loadimbalance'],
