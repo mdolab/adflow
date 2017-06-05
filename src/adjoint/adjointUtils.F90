@@ -216,10 +216,10 @@ contains
           stat=ierr)
           call EChk(ierr, __FILE__, __LINE__) 
 
-          !if (sps == 1) then !sicheng
+          if (sps == 1) then 
              allocate(flowDoms(nn, level, sps)%color(0:ib, 0:jb, 0:kb), stat=ierr)
              call EChk(ierr, __FILE__, __LINE__) 
-          !end if !sicheng
+          end if
        end do
     end do
 
@@ -313,7 +313,7 @@ contains
                 do k=0, kb
                    do j=0, jb
                       do i=0, ib
-                         if (flowdoms(nn, 1, sps)%color(i, j, k) == icolor) then
+                         if (flowdoms(nn, 1, 1)%color(i, j, k) == icolor) then
                             if (useAD) then
                                flowDomsd(nn, 1, sps)%w(i, j, k, l) = one
                             else
@@ -404,7 +404,7 @@ contains
                             nCol = 8
                          end if
 
-                         colorCheck: if (flowdoms(nn, 1, sps)%color(i, j, k) == icolor) then
+                         colorCheck: if (flowdoms(nn, 1, 1)%color(i, j, k) == icolor) then
 
                             ! i, j, k are now the "Center" cell that we
                             ! actually petrubed. From knowledge of the
@@ -490,7 +490,7 @@ contains
                flowDoms(nn, 1, sps)%dwTmp, &
                flowDoms(nn, 1, sps)%dwTmp2)
           if (sps==1) then 
-             deallocate(flowDoms(nn, 1, sps)%color)
+             deallocate(flowDoms(nn, 1, 1)%color)
           end if
 
           ! Deallocate the shock sensor refernce if usePC 
@@ -970,7 +970,6 @@ contains
     use constants
     use blockPointers, only : flowDoms, ib, jb, kb
     use utils, only : setPointers
-    use inputTimeSpectral
     implicit none
 
     ! Input parameters
@@ -980,20 +979,16 @@ contains
     integer(kind=intTYpe), intent(out) :: nColor
 
     ! Working 
-    integer(kind=intType) :: i, j, k, sps
+    integer(kind=intType) :: i, j, k
 
-   
+    call setPointers(nn, level, 1)
 
-    do sps=1, nTimeIntervalsSpectral
-       call setPointers(nn, level, sps)
-
-       do k=0, kb
-          do j=0, jb
-             do i=0, ib
-                ! Add the extra one for 1-based numbering (as opposed to zero-based)
-                flowDoms(nn, level, sps)%color(i, j, k) = &
-                     mod(i + 5*j + 4*k, 7) + 1
-             end do
+    do k=0, kb
+       do j=0, jb
+          do i=0, ib
+             ! Add the extra one for 1-based numbering (as opposed to zero-based)
+             flowDoms(nn, level, 1)%color(i, j, k) = &
+                  mod(i + 5*j + 4*k, 7) + 1
           end do
        end do
     end do
