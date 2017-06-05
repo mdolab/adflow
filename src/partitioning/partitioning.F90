@@ -799,38 +799,40 @@ contains
     use constants
     use block, only : nDom, flowDoms
     use utils, only : terminate
+    use inputTimeSpectral
     implicit none
     !
     !      Local variables.
     !
     integer :: ierr
 
-    integer(kind=intType) :: i, j, k, l, m, n, cgnsId
+    integer(kind=intType) :: i, j, k, l, m, n, cgnsId, sps
 
     ! Loop over the local blocks.
+    spectralLoop: do sps=1,nTimeIntervalsSpectral
+       domains: do n = 1,nDom
 
-    domains: do n = 1,nDom
+          ! Allocate memory for the iblank array of this block.
 
-       ! Allocate memory for the iblank array of this block.
+          i = flowDoms(n,1,sps)%ib
+          j = flowDoms(n,1,sps)%jb
+          k = flowDoms(n,1,sps)%kb
+          allocate(flowDoms(n,1,sps)%iblank(0:i,0:j,0:k), &
+               flowDoms(n,1,sps)%forcedRecv(0:i,0:j,0:k), &
+               flowDoms(n,1,sps)%status(0:i,0:j,0:k), &
+               stat=ierr)
+          if(ierr /= 0)                             &
+               call terminate("initFineGridIblank", &
+               "Memory allocation failure for iblank")
 
-       i = flowDoms(n,1,1)%ib
-       j = flowDoms(n,1,1)%jb
-       k = flowDoms(n,1,1)%kb
-       allocate(flowDoms(n,1,1)%iblank(0:i,0:j,0:k), &
-            flowDoms(n,1,1)%forcedRecv(0:i,0:j,0:k), &
-            flowDoms(n,1,1)%status(0:i,0:j,0:k), &
-            stat=ierr)
-       if(ierr /= 0)                             &
-            call terminate("initFineGridIblank", &
-            "Memory allocation failure for iblank")
+          ! Initialize iblank to 1 everywhere, and the number of holes
+          ! for this domain to 0.
 
-       ! Initialize iblank to 1 everywhere, and the number of holes
-       ! for this domain to 0.
-
-       flowDoms(n,1,1)%iblank = 1
-       flowDoms(n,1,1)%forcedRecv = 0
-       flowDoms(n,1,1)%status = 0
-    end do domains
+          flowDoms(n,1,sps)%iblank = 1
+          flowDoms(n,1,sps)%forcedRecv = 0
+          flowDoms(n,1,sps)%status = 0
+       end do domains
+    end do spectralLoop
 
   end subroutine initFineGridIblank
 
