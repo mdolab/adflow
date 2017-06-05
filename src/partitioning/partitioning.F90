@@ -799,7 +799,7 @@ contains
     use constants
     use block, only : nDom, flowDoms
     use utils, only : terminate
-    use inputTimeSpectral
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
     implicit none
     !
     !      Local variables.

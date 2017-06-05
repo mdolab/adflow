@@ -2488,7 +2488,7 @@ class ADFLOW(AeroSolver):
         if not firstCall:
             self.adflow.initializeflow.updatebcdataalllevels()
             self.adflow.preprocessingapi.updateperiodicinfoalllevels()
-            self.adflow.preprocessingapi.updatemetricsalllevels() # sicheng
+            self.adflow.preprocessingapi.updatemetricsalllevels()
             self.adflow.preprocessingapi.updategridvelocitiesalllevels()
 
     def _getBCDataFromAeroProblem(self, AP):
