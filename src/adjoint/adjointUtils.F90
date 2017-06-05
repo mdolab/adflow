@@ -216,10 +216,10 @@ contains
           stat=ierr)
           call EChk(ierr, __FILE__, __LINE__) 
 
-          if (sps == 1) then 
+          !if (sps == 1) then !sicheng
              allocate(flowDoms(nn, level, sps)%color(0:ib, 0:jb, 0:kb), stat=ierr)
              call EChk(ierr, __FILE__, __LINE__) 
-          end if
+          !end if !sicheng
        end do
     end do
 
@@ -970,6 +970,7 @@ contains
     use constants
     use blockPointers, only : flowDoms, ib, jb, kb
     use utils, only : setPointers
+    use inputTimeSpectral
     implicit none
 
     ! Input parameters
@@ -979,16 +980,20 @@ contains
     integer(kind=intTYpe), intent(out) :: nColor
 
     ! Working 
-    integer(kind=intType) :: i, j, k
+    integer(kind=intType) :: i, j, k, sps
 
-    call setPointers(nn, level, 1)
+   
 
-    do k=0, kb
-       do j=0, jb
-          do i=0, ib
-             ! Add the extra one for 1-based numbering (as opposed to zero-based)
-             flowDoms(nn, level, 1)%color(i, j, k) = &
-                  mod(i + 5*j + 4*k, 7) + 1
+    do sps=1, nTimeIntervalsSpectral
+       call setPointers(nn, level, sps)
+
+       do k=0, kb
+          do j=0, jb
+             do i=0, ib
+                ! Add the extra one for 1-based numbering (as opposed to zero-based)
+                flowDoms(nn, level, sps)%color(i, j, k) = &
+                     mod(i + 5*j + 4*k, 7) + 1
+             end do
           end do
        end do
     end do
