@@ -169,6 +169,9 @@ module inputIO
   character(len=maxStringLen) :: forcedSurfaceFile, forcedVolumeFile
   character(len=maxStringLen) :: forcedLiftFile, forcedSliceFile
 
+  ! logical to control the us of the transition model
+  logical :: laminarToTurbulent
+
 end module inputIO
 
 !      ==================================================================
