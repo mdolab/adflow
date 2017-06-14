@@ -1610,6 +1610,7 @@ module ANKSolver
 
   ! Misc variables
   real(kind=realType) :: ANK_CFL, ANK_CFL0, ANK_CFLLimit, ANK_StepFactor, lambda
+  real(kind=realType) :: ANK_secondOrdSwitchTol
   logical :: ANK_solverSetup=.False.
   integer(kind=intTYpe) :: ANK_iter
   integer(kind=intType) :: nState
@@ -2219,7 +2220,7 @@ contains
     ! for the matrix-free matrix-vector product routines when the KSP solver calls it
     ! Very important to set the variables back to their original values after each
     ! KSP solve because we want actual flux functions when calculating residuals
-    if (totalR > 0.0001*totalR0) then
+    if (totalR > ANK_secondOrdSwitchTol*totalR0) then
       ! Setting lumped dissipation to true gives approximate fluxes
       lumpedDiss =.True.
       
@@ -2235,7 +2236,7 @@ contains
     call KSPSolve(ANK_KSP, rVec, deltaW, ierr)
 
     ! Return previously changed variables back to normal, VERY IMPORTANT
-    if (totalR > 0.0001*totalR0) then
+    if (totalR > ANK_secondOrdSwitchTol*totalR0) then
       ! Set lumpedDiss back to False to go back to using actual flux routines
       lumpedDiss =.False.
       
