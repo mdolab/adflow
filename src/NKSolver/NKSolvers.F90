@@ -1944,7 +1944,7 @@ contains
   end subroutine computeResidualANK
 
   subroutine setWVecANK(wVec)
-    ! Set the current solution in the PETSc Vector
+    ! Set the current FLOW variables in the PETSc Vector
 
     use constants
     use blockPointers, only : nDom, il, jl, kl, w
@@ -1997,7 +1997,7 @@ contains
     real(Kind=realType) :: ovv
     call VecGetArrayF90(rVec,rvec_pointer,ierr)
     call EChk(ierr,__FILE__,__LINE__)
-    ii = 1
+    ii = 0
     do nn=1, nDom
        do sps=1, nTimeIntervalsSpectral
           call setPointers(nn,1_intType,sps)
@@ -2007,8 +2007,8 @@ contains
                 do i=2, il
                    ovv = one/volRef(i,j,k)
                    do l=1, nwf
-                      rvec_pointer(ii) = dw(i, j, k, l)*ovv
                       ii = ii + 1
+                      rvec_pointer(ii) = dw(i, j, k, l)*ovv
                    end do
                 end do
              end do
