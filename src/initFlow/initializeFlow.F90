@@ -1136,6 +1136,7 @@ contains
          normalVelocitiesAllLevels, slipVelocitiesFineLevel, slipVelocitiesCoarseLevels
     use flowUtils, only : computeLamViscosity
     use BCRoutines, only : applyAllBC
+    use residuals, only : residual
     implicit none
     !
     !      Subroutine arguments.
