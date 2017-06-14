@@ -1615,7 +1615,7 @@ module ANKSolver
   integer(kind=intTYpe) :: ANK_iter
   integer(kind=intType) :: nState
   logical :: ANK_localCFL !flag to turn on/off the local time stepping for PTC
-  real(kind=alwaysRealType) :: norm, norm0, turb_norm_old, totalR0_ANK !keep the norm here so that local CFL can also read it
+  real(kind=alwaysRealType) :: norm, norm0, turb_norm_old, totalR0_ANK, totalR_old !keep the norm here so that local CFL can also read it
 
 contains
 
@@ -2170,6 +2170,8 @@ contains
        
        ! Variable to save the total residual when ANK is initiated
        totalR0_ANK = totalR 
+       totalR_old = totalR
+       lambda = 0.1*ANK_StepFactor
     else
        ANK_iter = ANK_iter + 1
     end if
@@ -2200,9 +2202,16 @@ contains
     call EChk(ierr, __FILE__, __LINE__)
     
     ! Continuation for step factor
-    ! Place this outside jacobian lag check to increase step size during each iteration
-    ! With this, no need for a line search with ANK_useTurbDADI ?
-    lambda = min(0.1*(totalR0_ANK/totalR)**1.0, ANK_StepFactor)    
+    ! If total residual have increased in the previous iteration, halve the step
+    if (totalR > totalR_old) then
+      lambda = lambda*0.5
+    ! If total residual have decreased, slowly ramp the step up
+    else 
+      lambda = min(lambda*totalR_old/totalR ,ANK_StepFactor)
+    end if
+    
+    ! Record the total residual for next iteration
+    totalR_old = totalR
         
     ! Set the BaseVector of the matrix-free matrix:
     call MatMFFDSetBase(dRdw, wVec, PETSC_NULL_OBJECT, ierr)
