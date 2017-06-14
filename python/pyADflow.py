@@ -661,10 +661,11 @@ class ADFLOW(AeroSolver):
             if func not in self.adflowCostFunctions:
                 raise Error('Supplied  function %s to addUserFunction '
                             'not know to ADflow'%func)
-
         self.adflowUserCostFunctions[funcName] = (
             adflowUserFunc(funcName, functions, callBack))
-            
+
+        return funcName
+
     def addFunction(self, funcName, groupName, name=None):
 
         """Add a "new" function to ADflow by restricting the integration of an
@@ -1068,7 +1069,7 @@ class ADFLOW(AeroSolver):
         # Set the AP
         self.setAeroProblem(aeroProblem)
         if evalFuncs is None:
-            evalFuncs = self.curAP.evalFuncs
+            evalFuncs = sorted(list(self.curAP.evalFuncs))
 
         # Make sure we have a list that has only lower-cased entries
         tmp = []
@@ -1177,14 +1178,13 @@ class ADFLOW(AeroSolver):
         self.setAeroProblem(aeroProblem)
 
         if evalFuncs is None:
-            evalFuncs = self.curAP.evalFuncs
+            evalFuncs = sorted(list(self.curAP.evalFuncs))
 
         # Make sure we have a list that has only lower-cased entries
         tmp = []
         for f in evalFuncs:
             tmp.append(f.lower())
         evalFuncs = tmp
-                    
 
         # Do the functions one at a time:
         for f in evalFuncs:
@@ -1202,7 +1202,7 @@ class ADFLOW(AeroSolver):
             ptSetName = self.curAP.ptSetName
 
             # Set dict structure for this derivative
-            funcsSens[key] = {}
+            funcsSens[key] = OrderedDict()
 
             # Solve adjoint equation
             self.solveAdjoint(aeroProblem, f)
@@ -1218,7 +1218,7 @@ class ADFLOW(AeroSolver):
 
             # These are the reverse mode seeds
             psi = -self.getAdjoint(f)
-      
+ 
             # Compute everything and update into the dictionary
             funcsSens[key].update(self.computeJacobianVectorProductBwd(
                 resBar=psi, funcsBar=self._getFuncsBar(f), xDvDeriv=True))
@@ -2813,8 +2813,8 @@ class ADFLOW(AeroSolver):
 
         # Possibly setup adjoint matrices/vector as required
         self._setupAdjoint()
-
-        # # Check to see if the RHS Partials have been computed
+        
+        # Check to see if the RHS Partials have been computed
         if objective not in self.curAP.adflowData.adjointRHS:
             RHS = self.computeJacobianVectorProductBwd(
                 funcsBar=self._getFuncsBar(objective), wDeriv=True)
@@ -4920,11 +4920,12 @@ class adflowUserFunc(object):
         # We need to get the derivative of 'self.funcName' as a
         # function of the 'self.functions'
         refFuncs = copy.deepcopy(self.funcs)
-        deriv = {}
+        deriv = OrderedDict()
+
         for f in self.functions:
             funcs = refFuncs.copy()
             funcs[f] += 1e-40j
             self.callBack(funcs)
             deriv[f] = numpy.imag(funcs[self.funcName])/1e-40
-
+        
         return deriv
