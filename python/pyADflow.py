@@ -4171,16 +4171,17 @@ class ADFLOW(AeroSolver):
             # Approximate Newton-Krylov Parameters
             'useanksolver':[bool, False],
             'ankuseturbdadi':[bool, True],
-            'ankswitchtol':[float, 1e-2],
+            'ankswitchtol':[float, 0.1],
             'anksubspacesize':[int, 5],
-            'anklinearsolvetol':[float, 0.5],
+            'anklinearsolvetol':[float, 0.1],
             'ankasmoverlap':[int, 1],
             'ankpcilufill':[int, 1],
-            'ankjacobianlag':[int, 20],
+            'ankjacobianlag':[int, 5],
             'ankinnerpreconits':[int, 1],
             'ankcfl0':[float, 1.0],
             'ankcfllimit':[float, 10000.0],
             'ankstepfactor':[float, 0.8],
+            'anklocalcfl':[bool, False],
 
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
@@ -4467,6 +4468,7 @@ class ADFLOW(AeroSolver):
             'ankcfl0':['ank', 'ank_cfl0'],
             'ankcfllimit':['ank','ank_cfllimit'],
             'ankstepfactor':['ank','ank_stepfactor'],
+            'anklocalcfl':['ank','ank_localcfl'],
             # Load Balance Paramters
             'blocksplitting':['parallel', 'splitblocks'],
             'loadimbalance':['parallel', 'loadimbalance'],
