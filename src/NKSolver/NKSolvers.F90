@@ -2058,139 +2058,6 @@ contains
 
   end subroutine setWANK
 
-  subroutine setDeltaWTurb(dVec)
-    ! Scale the turbulent update in the coupled solver separately. 
-    ! Can also be done using PETSc functions only
-    ! Did not improve the coupled solver
-    
-    use constants
-    use blockPointers, only : nDom, volRef, il, jl, kl, dw
-    use inputtimespectral, only : nTimeIntervalsSpectral
-    use flowvarrefstate, only : nwf, nt1, nt2
-    use inputIteration, only : turbResScale
-    use utils, only : setPointers, EChk
-    implicit none
-    Vec    dVec
-    integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
-    real(kind=realType),pointer :: dvec_pointer(:)
-    real(Kind=realType) :: ovv
-    call VecGetArrayF90(dVec,dvec_pointer,ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-    ii = 1
-    do nn=1, nDom
-       do sps=1, nTimeIntervalsSpectral
-          call setPointers(nn,1_intType,sps)
-          ! Copy off dw/vol to rVec
-          do k=2, kl
-             do j=2, jl
-                do i=2, il
-                  ovv = one/volRef(i,j,k)
-                  ii = ii + nwf
-                  do l=nt1,nt2
-                    dvec_pointer(ii) = 0.001_realType*dvec_pointer(ii)
-                    ii = ii + 1
-                  end do
-                end do
-             end do
-          end do
-       end do
-    end do
-
-    call VecRestoreArrayF90(dVec, dvec_pointer, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-
-  end subroutine setDeltaWTurb
-  
-  subroutine clipTurbulence(wVec)
-    ! Try to clip the turbulence variable to prevent it going negative with the coupled solver
-    ! Did improve some cases, clipTurbUpdate works better
-
-    use constants
-    use blockPointers, only : nDom, il, jl, kl
-    use inputtimespectral, only : nTimeIntervalsSpectral
-    use flowvarrefstate, only : nwf, nt1, nt2
-    use inputIteration, only : turbResScale
-    use utils, only : setPointers, EChk
-    implicit none
-    Vec    wVec
-    integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
-    real(kind=realType),pointer :: wvec_pointer(:)
-    
-    call VecGetArrayF90(wVec,wvec_pointer,ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-    ii = 1
-    do nn=1, nDom
-       do sps=1, nTimeIntervalsSpectral
-          call setPointers(nn, 1_intType, sps)
-          ! Copy off dw/vol to rVec
-          do k=2, kl
-             do j=2, jl
-                do i=2, il
-                  ii = ii + nwf
-                  do l=nt1, nt2
-                    wvec_pointer(ii) = max(wvec_pointer(ii),0.000000001_realType)
-                    ii = ii + 1
-                  end do
-                end do
-             end do
-          end do
-       end do
-    end do
-
-    call VecRestoreArrayF90(wVec, wvec_pointer, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-
-  end subroutine clipTurbulence
-  
-  subroutine clipTurbUpdate(wVec, dVec)
-    ! Clip the negative turbulence updates to be no larger than 50% of the value itself with the coupled solver
-    ! Did improve the coupled solver, simple backtracking linesearch performs better, this can be used alongside if turbulence is still problematic
-
-    use constants
-    use blockPointers, only : nDom, il, jl, kl
-    use inputtimespectral, only : nTimeIntervalsSpectral
-    use flowvarrefstate, only : nwf, nt1, nt2
-    use utils, only : setPointers, EChk
-    implicit none
-    Vec    wVec, dVec
-    integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
-    real(kind=realType),pointer :: wvec_pointer(:), dvec_pointer(:)
-    
-    call VecGetArrayF90(wVec,wvec_pointer,ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-    
-    call VecGetArrayF90(dVec,dvec_pointer,ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-    
-    ii = 1
-    do nn=1, nDom
-       do sps=1, nTimeIntervalsSpectral
-          call setPointers(nn,1_intType,sps)
-          ! Copy off dw/vol to rVec
-          do k=2, kl
-             do j=2, jl
-                do i=2, il
-                  ii = ii + nwf
-                  do l=nt1,nt2
-                    ! if dw is positive, the update will be negative, clip to 50% of the variable if its larger
-                    ! if dw is negative, the update will be positive, no need to clip. min() will keep the negative values as w itself should be positive 
-                    dvec_pointer(ii) = min(0.5*wvec_pointer(ii), dvec_pointer(ii))
-                    ii = ii + 1
-                  end do
-                end do
-             end do
-          end do
-       end do
-    end do
-
-    call VecRestoreArrayF90(wVec, wvec_pointer, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-    
-    call VecRestoreArrayF90(dVec, dvec_pointer, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-
-  end subroutine clipTurbUpdate
-
   subroutine ANKStep(firstCall)
 
     use constants
@@ -2282,10 +2149,6 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
     end if
     
-    ! Clip the turbulence update so that max update is 0.5 of variable for each cell
-    ! Does help for some cases, disabled for now
-    !call clipTurbUpdate(wVec, deltaW)
-    
     if (ANK_useTurbDADI .or. nwf == nw) then ! if ANK_useTurbDADI or euler equations, use NK solver for flow variables only
       ! No line search...just take the new solution, possibly (fixed)
       ! limited      
@@ -2316,9 +2179,6 @@ contains
         ! take the step
         call VecAXPY(wVec, -lambda, deltaW, ierr)
         call EChk(ierr, __FILE__, __LINE__)
-        
-        !clip the turbulent variable so that it doesnt go negative
-        !call clipTurbulence(wVec) !improves a bit but doesnt fully fix
 
         ! Set the updated state variables
         call setWANK(wVec)
