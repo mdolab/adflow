@@ -2562,6 +2562,7 @@ contains
     volWriteBlank = .false.
     volWriteGC = .false.
     volWriteStatus = .false.
+    volWriteIntermittency = .false.
 
 
     ! Initialize nVarSpecified to 0. This serves as a test
@@ -2708,6 +2709,10 @@ contains
 
        case ("status")
           volWriteStatus = .true.
+          nVarSpecified = nVarSpecified + 1
+
+       case("intermittency")
+          volWriteIntermittency = .true.
           nVarSpecified = nVarSpecified + 1
 
        case default
