@@ -1590,9 +1590,11 @@ module ANKSolver
 #include "petsc/finclude/petscvec.h90"
 
 
-  Mat  dRdwPre
+  Mat  dRdw, dRdwPre
   Vec wVec, rVec, deltaW
   KSP  ANK_KSP
+  
+  PetscFortranAddr   ctx(1)
 
   ! Options for ANK Solver
   logical :: useANKSolver
@@ -1612,7 +1614,7 @@ module ANKSolver
   integer(kind=intTYpe) :: ANK_iter
   integer(kind=intType) :: nState
   logical :: ANK_localCFL !flag to turn on/off the local time stepping for PTC
-  real(kind=alwaysRealType) :: norm, norm0, turb_norm_old !keep the norm here so that local CFL can also read it
+  real(kind=alwaysRealType) :: norm, norm0, turb_norm_old, totalR0_ANK !keep the norm here so that local CFL can also read it
 
 contains
 
@@ -1694,14 +1696,24 @@ contains
        ! subblocks can be passed in in fortran column-oriented format
        call MatSetOption(dRdWPre, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
        call EChk(ierr, __FILE__, __LINE__)
+       
+       ! Setup Matrix-Free dRdw matrix and its function
+       call MatCreateMFFD(ADFLOW_COMM_WORLD, nDimW, nDimW, &
+            PETSC_DETERMINE, PETSC_DETERMINE, dRdw, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+
+       call MatMFFDSetFunction(dRdw, FormFunction_mf, ctx, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+       
+       call MatSetOption(dRdW, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
 
        !  Create the linear solver context
        call KSPCreate(ADFLOW_COMM_WORLD, ANK_KSP, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
        ! Set operators for the solver
-
-       call KSPSetOperators(ANK_KSP, dRdwPre, dRdwPre, ierr)
+       call KSPSetOperators(ANK_KSP, dRdw, dRdwPre, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
        ANK_solverSetup = .True.
@@ -1811,6 +1823,45 @@ contains
 
   end subroutine FormJacobianANK
 
+  subroutine FormFunction_mf(ctx, wVec, rVec, ierr)
+
+    ! This is the function used for the matrix-free matrix-vector products 
+    ! for the GMRES solver used in ANK
+
+    use constants
+    use NKSolver, only : computeResidualNK, setRvec
+    use utils, only : EChk
+    implicit none
+
+    ! PETSc Variables
+    PetscFortranAddr ctx(*)
+    Vec     wVec, rVec
+    real(kind=realType) :: dt
+    integer(kind=intType) :: ierr
+
+    ! get the input vector
+    call setWANK(wVec)
+    
+    ! if DADI is used for turbulence, use flow variables only
+    if (ANK_useTurbDADI) then
+      call computeResidualANK()
+      call setRVecANK(rVec)
+    ! if coupled solver is used, use all variables
+    else 
+      call computeResidualNK()
+      call setRVec(rVec)
+    end if
+    
+    ! Add the contribution from the diagonal time stepping term
+    dt = one/ANK_CFL
+    call VecAXPY(rVec, dt, wVec, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+    
+    ! We don't check an error here, so just pass back zero
+    ierr = 0
+
+  end subroutine FormFunction_mf
+
   subroutine destroyANKsolver
 
     ! Destroy all the PETSc objects for the Newton-Krylov
@@ -1822,6 +1873,9 @@ contains
     integer(kind=intType) :: ierr
 
     if (ANK_SolverSetup) then
+      
+       call MatDestroy(dRdw, ierr) 
+       call EChk(ierr, __FILE__, __LINE__)
 
        call MatDestroy(dRdwPre, ierr)
        call EChk(ierr, __FILE__, __LINE__)
@@ -2065,10 +2119,13 @@ contains
     use NKSolver, only : computeResidualNK
     use inputPhysics, only : equations
     use inputIteration, only : L2conv
-    use iteration, only : approxTotalIts, totalR0
+    use inputDiscretization, only : lumpedDiss
+    use iteration, only : approxTotalIts, totalR0, totalR
     use utils, only : EChk
     use turbAPI, only : turbSolveSegregated
+    use turbMod, only : secondOrd
     use solverUtils, only : computeUTau
+    use adjointUtils, only : referenceShockSensor
     use NKSolver, only : setRVec
 
     implicit none
@@ -2079,7 +2136,7 @@ contains
     ! Working Variables
     integer(kind=intType) :: ierr, maxIt, kspIterations, j, iter_res = 0
     real(kind=realType) :: atol, val, turb_norm
-    !real(kind=alwaysRealType) :: norm
+    logical :: secondOrdSave
     
     if (firstCall) then
        call setupANKSolver()
@@ -2109,6 +2166,9 @@ contains
        ! The goal is to get the same CFL for the first step, no matter when the solver is used
        call VecNorm(rVec, NORM_2, norm0, ierr)
        call EChk(ierr, __FILE__, __LINE__)
+       
+       ! Variable to save the total residual when ANK is initiated
+       totalR0_ANK = totalR 
     else
        ANK_iter = ANK_iter + 1
     end if
@@ -2123,12 +2183,29 @@ contains
        ! alternate CFL calculation so that initial CFL is always equal to input CFL0
        ANK_CFL = min(ANK_CFL0 * (norm0 / norm)**1.5, ANK_CFLLimit)
        
-       ! continuation for step factor
-       ! With this, no need for a line search with ANK_useTurbDADI ?
-       lambda = min(0.1*(norm0/norm)**1.5, ANK_StepFactor)
+       ! Continuation for NK parameters wrt convergence
+       if (totalR < 0.001*totalR0) then
+         ! Increase Jacobian Lag after 1e-3 relative convergence
+         ANK_jacobianLag = 20
+       end if
 
        call FormJacobianANK()
     end if
+    
+    ! Dummy matrix assembly for the matrix-free matrix
+    call MatAssemblyBegin(dRdw, MAT_FINAL_ASSEMBLY, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+    call MatAssemblyEnd(dRdw, MAT_FINAL_ASSEMBLY, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+    
+    ! Continuation for step factor
+    ! Place this outside jacobian lag check to increase step size during each iteration
+    ! With this, no need for a line search with ANK_useTurbDADI ?
+    lambda = min(0.1*(totalR0_ANK/totalR)**1.0, ANK_StepFactor)    
+        
+    ! Set the BaseVector of the matrix-free matrix:
+    call MatMFFDSetBase(dRdw, wVec, PETSC_NULL_OBJECT, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
 
     ! ============== Flow Update =============
     ! Set all tolerances for linear solve:
@@ -2137,8 +2214,34 @@ contains
          real(atol), real(ANK_divTol), ANK_subSpace, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
+    ! For the approximate solver, we need the approximate flux routines
+    ! We set the variables required for approximate fluxes here and they will be used 
+    ! for the matrix-free matrix-vector product routines when the KSP solver calls it
+    ! Very important to set the variables back to their original values after each
+    ! KSP solve because we want actual flux functions when calculating residuals
+    if (totalR > 0.0001*totalR0) then
+      ! Setting lumped dissipation to true gives approximate fluxes
+      lumpedDiss =.True.
+      
+      ! Save if second order turbulence is used, we will only use 1st order during ANK (only matters for the coupled solver)
+      secondOrdSave = secondOrd
+      secondOrd =.False.
+      
+      ! Calculate the shock sensor here because the approximate routines do not
+      call referenceShockSensor()
+    end if 
+
     ! Actually do the Linear Krylov Solve
     call KSPSolve(ANK_KSP, rVec, deltaW, ierr)
+
+    ! Return previously changed variables back to normal, VERY IMPORTANT
+    if (totalR > 0.0001*totalR0) then
+      ! Set lumpedDiss back to False to go back to using actual flux routines
+      lumpedDiss =.False.
+      
+      ! Replace the second order turbulence option
+      secondOrd = secondOrdSave
+    end if
 
     ! DON'T just check the error. We want to catch error code 72
     ! which is a floating point error. This is ok, we just reset and
