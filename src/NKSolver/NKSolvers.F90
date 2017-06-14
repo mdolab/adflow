@@ -2079,7 +2079,6 @@ contains
     ! Working Variables
     integer(kind=intType) :: ierr, maxIt, kspIterations, j, iter_res = 0
     real(kind=realType) :: atol, val, turb_norm
-    !real(kind=alwaysRealType) :: norm
     
     if (firstCall) then
        call setupANKSolver()
