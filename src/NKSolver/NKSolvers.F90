@@ -2077,8 +2077,9 @@ contains
     logical, intent(in) :: firstCall
 
     ! Working Variables
-    integer(kind=intType) :: ierr, maxIt, kspIterations, j, iter_res = 0
+    integer(kind=intType) :: ierr, maxIt, kspIterations, j, iter_res
     real(kind=realType) :: atol, val
+    iter_res = 0
     
     if (firstCall) then
        call setupANKSolver()
