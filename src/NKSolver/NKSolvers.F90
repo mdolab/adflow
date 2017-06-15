@@ -1612,7 +1612,7 @@ module ANKSolver
   integer(kind=intTYpe) :: ANK_iter
   integer(kind=intType) :: nState
   logical :: ANK_localCFL !flag to turn on/off the local time stepping for PTC
-  real(kind=alwaysRealType) :: norm, norm0, turb_norm_old !keep the norm here so that local CFL can also read it
+  real(kind=alwaysRealType) :: norm, norm0, turb_norm, turb_norm_old !keep the norm here so that local CFL can also read it
 
 contains
 
@@ -2078,7 +2078,7 @@ contains
 
     ! Working Variables
     integer(kind=intType) :: ierr, maxIt, kspIterations, j, iter_res = 0
-    real(kind=realType) :: atol, val, turb_norm
+    real(kind=realType) :: atol, val
     
     if (firstCall) then
        call setupANKSolver()
