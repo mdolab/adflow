@@ -511,7 +511,7 @@ contains
     call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_OBJECT, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    if (NK_iter == 1 .or. .not. NK_useEW) then 
+    if (NK_iter == 0 .or. .not. NK_useEW) then 
        rtol = NK_rtolInit
     else
        call getEWTol(norm, oldNorm, rtolLast, rtol)
