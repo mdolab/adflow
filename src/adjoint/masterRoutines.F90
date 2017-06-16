@@ -338,7 +338,8 @@ contains
        if (oversetPresent .and. &
             (oversetUpdateMode == updateFast .or. &
             oversetUpdateMode == updateFull)) then 
-          call updateOversetConnectivity_d(1_intType, sps)
+          print *,'Full overset update derivatives not implemented'
+          !call updateOversetConnectivity_d(1_intType, sps)
        end if
     end do
     
@@ -807,7 +808,8 @@ contains
        if (oversetPresent .and. &
             (oversetUpdateMode == updateFast .or. &
             oversetUpdateMode == updateFull)) then 
-          call updateOversetConnectivity_b(1_intType, sps)
+          print *,'Full overset update derivatives not implemented'
+          !call updateOversetConnectivity_b(1_intType, sps)
        end if
     end do
     ! Now the adjoint of the coordinate exhcange
