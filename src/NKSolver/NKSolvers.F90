@@ -1615,7 +1615,7 @@ module ANKSolver
   integer(kind=intTYpe) :: ANK_iter
   integer(kind=intType) :: nState
   logical :: ANK_localCFL !flag to turn on/off the local time stepping for PTC
-  real(kind=alwaysRealType) :: norm, norm0, turb_norm_old, totalR0_ANK, totalR_old !keep the norm here so that local CFL can also read it
+  real(kind=alwaysRealType) :: turb_norm_old, totalR0_ANK, totalR_old !keep the norm here so that local CFL can also read it
 
 contains
 
@@ -1730,6 +1730,7 @@ contains
     use blockPointers, only : nDom, volRef, il, jl, kl, dw
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputADjoint, only : viscPC
+    use iteration, only : totalR0
     use utils, only : EChk, setPointers
     use adjointUtils, only :setupStateResidualMatrix, setupStandardKSP
     implicit none
@@ -1786,7 +1787,7 @@ contains
                         !calculate the local CFL at the current cell
                         ovv = one/volRef(i,j,k)
                         ! Scale by 1000 to match density residual with total residual norm, add eps to denominator to avoid division by zero
-                        local_CFL = min(ANK_CFL * (norm*1000.0_realType / (abs(dw(i, j, k, irho))*ovv+ eps)), ANK_CFL)
+                        local_CFL = min(ANK_CFL * (totalR0*1000.0_realType / (abs(dw(i, j, k, irho))*ovv+ eps)), ANK_CFL)
                         !set the diag values for every variable used
                         do l = 1, nState
                           diag(ii) = one/(local_CFL)
@@ -2164,35 +2165,21 @@ contains
           call EChk(ierr, __FILE__, __LINE__)
        end if
        
-       ! Calculate the initial norm when the ANK solver is initiated. 
-       ! The goal is to get the same CFL for the first step, no matter when the solver is used
-       call VecNorm(rVec, NORM_2, norm0, ierr)
-       call EChk(ierr, __FILE__, __LINE__)
-       
-       ! Variable to save the total residual when ANK is initiated
+       ! Record the initial residual when ANK is initiated
        totalR0_ANK = totalR 
-       totalR_old = totalR
-       lambda = 0.1*ANK_StepFactor
+       totalR_old = totalR ! Also record the old residual for the first iteration
+       
+       ! Start with 10% of the ANK_StepFactor
+       lambda = 0.1_realType*ANK_StepFactor
     else
        ANK_iter = ANK_iter + 1
     end if
 
+    ! ANK CFL calculation, initial CFL is always equal to input ANK_CFL0
+    ANK_CFL = min(ANK_CFL0 * (totalR0_ANK / totalR)**1.0, ANK_CFLLimit)
+
     ! Determine if if we need to form the Preconditioner
     if (mod(ANK_iter, ANK_jacobianLag) == 0) then
-
-       ! Compute the norm of rVec to update the CFL
-       call VecNorm(rVec, NORM_2, norm, ierr)
-       call EChk(ierr, __FILE__, __LINE__)
-
-       ! alternate CFL calculation so that initial CFL is always equal to input CFL0
-       ANK_CFL = min(ANK_CFL0 * (norm0 / norm)**1.5, ANK_CFLLimit)
-       
-       ! Continuation for NK parameters wrt convergence
-       if (totalR < 0.001*totalR0) then
-         ! Increase Jacobian Lag after 1e-3 relative convergence
-         ANK_jacobianLag = 20
-       end if
-
        call FormJacobianANK()
     end if
     
@@ -2201,11 +2188,16 @@ contains
     call EChk(ierr, __FILE__, __LINE__)
     call MatAssemblyEnd(dRdw, MAT_FINAL_ASSEMBLY, ierr)
     call EChk(ierr, __FILE__, __LINE__)
+
+    ! Set the BaseVector of the matrix-free matrix:
+    call MatMFFDSetBase(dRdw, wVec, PETSC_NULL_OBJECT, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
     
-    ! Continuation for step factor
-    ! If total residual have increased in the previous iteration, halve the step
+    ! Continuation for step factor:
+    ! If total residual have increased in the previous iteration,
+    ! reduce the step 20%, until half of ANK_StepFactor is reached
     if (totalR > totalR_old) then
-      lambda = lambda*0.5
+      lambda = max(lambda*0.8_realType, ANK_StepFactor*0.5_realType) 
     ! If total residual have decreased, slowly ramp the step up
     else 
       lambda = min(lambda*totalR_old/totalR ,ANK_StepFactor)
@@ -2213,17 +2205,8 @@ contains
     
     ! Record the total residual for next iteration
     totalR_old = totalR
-        
-    ! Set the BaseVector of the matrix-free matrix:
-    call MatMFFDSetBase(dRdw, wVec, PETSC_NULL_OBJECT, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
 
     ! ============== Flow Update =============
-    ! Set all tolerances for linear solve:
-    atol = totalR0*L2Conv
-    call KSPSetTolerances(ANK_KSP, real(ANK_rtol), &
-         real(atol), real(ANK_divTol), ANK_subSpace, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
 
     ! For the approximate solver, we need the approximate flux routines
     ! We set the variables required for approximate fluxes here and they will be used 
@@ -2241,9 +2224,24 @@ contains
       ! Calculate the shock sensor here because the approximate routines do not
       call referenceShockSensor()
     end if 
+    
+    ! Set all tolerances for linear solve:
+    atol = totalR0*L2Conv
+    call KSPSetTolerances(ANK_KSP, real(ANK_rtol), &
+         real(atol), real(ANK_divTol), ANK_subSpace, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
 
     ! Actually do the Linear Krylov Solve
     call KSPSolve(ANK_KSP, rVec, deltaW, ierr)
+    
+    ! DON'T just check the error. We want to catch error code 72
+    ! which is a floating point error. This is ok, we just reset and
+    ! keep going
+    if (ierr == 72) then
+       ! The convergence check will get the nan
+    else
+       call EChk(ierr, __FILE__, __LINE__)
+    end if
 
     ! Return previously changed variables back to normal, VERY IMPORTANT
     if (totalR > ANK_secondOrdSwitchTol*totalR0) then
@@ -2252,15 +2250,6 @@ contains
       
       ! Replace the second order turbulence option
       secondOrd = secondOrdSave
-    end if
-
-    ! DON'T just check the error. We want to catch error code 72
-    ! which is a floating point error. This is ok, we just reset and
-    ! keep going
-    if (ierr == 72) then
-       ! The convergence check will get the nan
-    else
-       call EChk(ierr, __FILE__, __LINE__)
     end if
     
     if (ANK_useTurbDADI .or. nwf == nw) then ! if ANK_useTurbDADI or euler equations, use NK solver for flow variables only
