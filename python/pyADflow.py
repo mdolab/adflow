@@ -4180,7 +4180,7 @@ class ADFLOW(AeroSolver):
             'anklinearsolvetol':[float, 0.1],
             'ankasmoverlap':[int, 1],
             'ankpcilufill':[int, 1],
-            'ankjacobianlag':[int, 5],
+            'ankjacobianlag':[int, 10],
             'ankinnerpreconits':[int, 1],
             'ankcfl0':[float, 1.0],
             'ankcfllimit':[float, 10000.0],
