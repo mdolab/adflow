@@ -975,6 +975,7 @@ contains
     !
     use blockPointers
     use constants
+    use inputDiscretization, only : lumpedDiss
     use inputTimeSpectral
     use Iteration
     use utils, only : setPointers
@@ -995,6 +996,11 @@ contains
           ! Set the pointers for this block.
 
           call setPointers(nn, currentLevel, sps)
+          
+          ! Check if we are using approximate fluxes, if so, the correct pointers to shock sensor must be set
+          if (lumpedDiss) then
+            shockSensor => flowDoms(nn,1,sps)%shockSensor
+          end if 
           
           call residual_block
 
