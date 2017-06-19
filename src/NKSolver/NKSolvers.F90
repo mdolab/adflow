@@ -2229,8 +2229,14 @@ contains
     
     ! Set all tolerances for linear solve:
     atol = totalR0*L2Conv
+    
+    ! Set the iteration limit to 4 times ANK_subSpace size.
+    ! This is because ANK step require 0.1 convergence for stability during initial stages.
+    ! Due to an outdated preconditioner, the KSP solve might take more iterations.
+    ! If this happens, the preconditioner is re-computed and because of this, 
+    ! ANK iterations usually don't take more than 2 times number of ANK_subSpace size iterations
     call KSPSetTolerances(ANK_KSP, real(ANK_rtol), &
-         real(atol), real(ANK_divTol), ANK_subSpace, ierr)
+         real(atol), real(ANK_divTol), 4*ANK_subSpace, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Actually do the Linear Krylov Solve
@@ -2316,6 +2322,17 @@ contains
 
     call KSPGetIterationNumber(ANK_KSP, kspIterations, ierr)
     call EChk(ierr, __FILE__, __LINE__)
+    
+    ! Check if ksp iterations are above 2 times ANK_subSpace size,
+    ! if so, set ANK_iter to -1 to re-calculate the preconditioner on the next iteration.
+    
+    ! If the second order flux routines are used, ksp takes more iterations than this limit
+    ! anyways, so don't check if preconditioner needs to be recalculated. Second order fluxes
+    ! should be turned on after 4-5 orders of convergence and after this region the stability
+    ! is no longer an issue. Preconditioner lagging is just done wrt the input option.
+    if (kspIterations > 2*ANK_subSpace .and. totalR > ANK_secondOrdSwitchTol*totalR0) then
+        ANK_iter = -1 ! -1 is because ANK_iter is incremented by 1 before the preconditioner check
+    end if
 
     approxTotalIts = approxTotalIts + iter_res + kspIterations
 
