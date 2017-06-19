@@ -1615,7 +1615,7 @@ module ANKSolver
   integer(kind=intTYpe) :: ANK_iter
   integer(kind=intType) :: nState
   logical :: ANK_localCFL !flag to turn on/off the local time stepping for PTC
-  real(kind=alwaysRealType) :: turb_norm_old, totalR0_ANK, totalR_old !keep the norm here so that local CFL can also read it
+  real(kind=alwaysRealType) :: turb_norm, turb_norm_old, totalR0_ANK, totalR_old !keep the norm here so that local CFL can also read it
 
 contains
 
@@ -2117,11 +2117,13 @@ contains
   subroutine ANKStep(firstCall)
 
     use constants
+    use blockPointers, only : nDom, flowDoms, shockSensor
     use flowVarRefState, only : nw, nwf, nt1
     use NKSolver, only : computeResidualNK
     use inputPhysics, only : equations
     use inputIteration, only : L2conv
     use inputDiscretization, only : lumpedDiss
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
     use iteration, only : approxTotalIts, totalR0, totalR
     use utils, only : EChk
     use turbAPI, only : turbSolveSegregated
@@ -2136,8 +2138,8 @@ contains
     logical, intent(in) :: firstCall
 
     ! Working Variables
-    integer(kind=intType) :: ierr, maxIt, kspIterations, j, iter_res
-    real(kind=realType) :: atol, val, turb_norm
+    integer(kind=intType) :: ierr, maxIt, kspIterations, j, iter_res, nn, sps
+    real(kind=realType) :: atol, val
     logical :: secondOrdSave
     iter_res = 0
 
@@ -2250,6 +2252,13 @@ contains
       
       ! Replace the second order turbulence option
       secondOrd = secondOrdSave
+      
+      ! Deallocate the memory used for the shock sensor
+      do nn=1, nDom
+          do sps=1, nTimeIntervalsSpectral
+              deallocate(flowDoms(nn,1,sps)%shockSensor)
+          end do
+      end do
     end if
     
     if (ANK_useTurbDADI .or. nwf == nw) then ! if ANK_useTurbDADI or euler equations, use NK solver for flow variables only
