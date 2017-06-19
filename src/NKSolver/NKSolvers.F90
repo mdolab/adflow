@@ -1615,7 +1615,9 @@ module ANKSolver
   integer(kind=intTYpe) :: ANK_iter
   integer(kind=intType) :: nState
   logical :: ANK_localCFL !flag to turn on/off the local time stepping for PTC
-  real(kind=alwaysRealType) :: turb_norm, turb_norm_old, totalR0_ANK, totalR_old !keep the norm here so that local CFL can also read it
+  real(kind=alwaysRealType) :: turb_norm, turb_norm_old ! Variables used for the line search in the coupled ANK solver
+  real(kind=alwaysRealType) :: totalR0_ANK, totalR_old ! for recording initial and previous residuals
+  real(kind=alwaysRealType) :: rtolLast ! for recording the previous relativel tolerance for Eisenstat-Walker
 
 contains
 
@@ -2119,7 +2121,7 @@ contains
     use constants
     use blockPointers, only : nDom, flowDoms, shockSensor
     use flowVarRefState, only : nw, nwf, nt1
-    use NKSolver, only : computeResidualNK
+    use NKSolver, only : computeResidualNK, getEWTol
     use inputPhysics, only : equations
     use inputIteration, only : L2conv
     use inputDiscretization, only : lumpedDiss
@@ -2204,9 +2206,6 @@ contains
     else 
       lambda = min(lambda*totalR_old/totalR ,ANK_StepFactor)
     end if
-    
-    ! Record the total residual for next iteration
-    totalR_old = totalR
 
     ! ============== Flow Update =============
 
@@ -2225,7 +2224,15 @@ contains
       
       ! Calculate the shock sensor here because the approximate routines do not
       call referenceShockSensor()
+    else
+      ! If the second order fluxes are used, Eisenstat-Walker algorithm to determine relateive 
+      ! convergence tolerance helps with performance.
+      call getEWTol(totalR, totalR_old, rtolLast, ANK_rtol)
     end if 
+    
+    ! Record the total residual and relative convergence for next iteration
+    totalR_old = totalR
+    rtolLast = ANK_rtol
     
     ! Set all tolerances for linear solve:
     atol = totalR0*L2Conv
