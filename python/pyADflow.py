@@ -4183,10 +4183,10 @@ class ADFLOW(AeroSolver):
             'ankjacobianlag':[int, 10],
             'ankinnerpreconits':[int, 1],
             'ankcfl0':[float, 1.0],
-            'ankcfllimit':[float, 10000.0],
+            'ankcfllimit':[float, 1e6],
             'ankstepfactor':[float, 0.8],
             'anklocalcfl':[bool, False],
-            'anksecondordswitchtol':[float, 1e-4],
+            'anksecondordswitchtol':[float, 1e-6],
 
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
