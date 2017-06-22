@@ -2142,6 +2142,7 @@ contains
     ! Working Variables
     integer(kind=intType) :: ierr, maxIt, kspIterations, j, iter_res, nn, sps
     real(kind=realType) :: atol, val
+    real(kind=alwaysRealType) :: rtol
     logical :: secondOrdSave
     iter_res = 0
 
@@ -2172,6 +2173,7 @@ contains
        ! Record the initial residual when ANK is initiated
        totalR0_ANK = totalR 
        totalR_old = totalR ! Also record the old residual for the first iteration
+       rtolLast = ANK_rtol ! Set the previous relative convergence tolerance for the first iteration
        
        ! Start with 20% of the ANK_StepFactor
        lambda = 0.2_realType*ANK_StepFactor
@@ -2224,15 +2226,18 @@ contains
       
       ! Calculate the shock sensor here because the approximate routines do not
       call referenceShockSensor()
+      
+      ! Determine the relative convergence for the KSP solver
+      rtol = ANK_rtol ! Just use the input relative tolerance for approximate fluxes
     else
       ! If the second order fluxes are used, Eisenstat-Walker algorithm to determine relateive 
       ! convergence tolerance helps with performance.
-      call getEWTol(totalR, totalR_old, rtolLast, ANK_rtol)
+      call getEWTol(real(totalR), totalR_old, rtolLast, rtol)
     end if 
     
     ! Record the total residual and relative convergence for next iteration
     totalR_old = totalR
-    rtolLast = ANK_rtol
+    rtolLast = rtol
     
     ! Set all tolerances for linear solve:
     atol = totalR0*L2Conv
@@ -2242,7 +2247,7 @@ contains
     ! Due to an outdated preconditioner, the KSP solve might take more iterations.
     ! If this happens, the preconditioner is re-computed and because of this, 
     ! ANK iterations usually don't take more than 2 times number of ANK_subSpace size iterations
-    call KSPSetTolerances(ANK_KSP, real(ANK_rtol), &
+    call KSPSetTolerances(ANK_KSP, rtol, &
          real(atol), real(ANK_divTol), 4*ANK_subSpace, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
