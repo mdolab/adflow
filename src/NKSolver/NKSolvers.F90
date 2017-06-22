@@ -1610,6 +1610,7 @@ module ANKSolver
 
   ! Misc variables
   real(kind=realType) :: ANK_CFL, ANK_CFL0, ANK_CFLLimit, ANK_StepFactor, lambda
+  real(kind=realType) :: ANK_stepInit, ANK_stepCutback, ANK_stepMin, ANK_stepExponent, ANK_CFLExponent
   real(kind=realType) :: ANK_secondOrdSwitchTol
   logical :: ANK_solverSetup=.False.
   integer(kind=intTYpe) :: ANK_iter
@@ -2175,14 +2176,14 @@ contains
        totalR_old = totalR ! Also record the old residual for the first iteration
        rtolLast = ANK_rtol ! Set the previous relative convergence tolerance for the first iteration
        
-       ! Start with 20% of the ANK_StepFactor
-       lambda = 0.2_realType*ANK_StepFactor
+       ! Start with the selected fraction of the ANK_StepFactor
+       lambda = ANK_stepInit*ANK_StepFactor
     else
        ANK_iter = ANK_iter + 1
     end if
 
     ! ANK CFL calculation, initial CFL is always equal to input ANK_CFL0
-    ANK_CFL = min(ANK_CFL0 * (totalR0_ANK / totalR)**1.0, ANK_CFLLimit)
+    ANK_CFL = min(ANK_CFL0 * (totalR0_ANK / totalR)**ANK_CFLExponent, ANK_CFLLimit)
 
     ! Determine if if we need to form the Preconditioner
     if (mod(ANK_iter, ANK_jacobianLag) == 0) then
@@ -2203,10 +2204,10 @@ contains
     ! If total residual have increased in the previous iteration,
     ! reduce the step 30%, until 0.4 of ANK_StepFactor is reached
     if (totalR > totalR_old) then
-      lambda = max(lambda*0.7_realType, ANK_StepFactor*0.4_realType) 
+      lambda = max(lambda*ANK_stepCutback, ANK_StepFactor*ANK_stepMin) 
     ! If total residual have decreased, slowly ramp the step up
     else 
-      lambda = min(lambda*(totalR_old/totalR)**0.75_realType, ANK_StepFactor)
+      lambda = min(lambda*(totalR_old/totalR)**ANK_stepExponent, ANK_StepFactor)
     end if
 
     ! ============== Flow Update =============
