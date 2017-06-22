@@ -2173,8 +2173,8 @@ contains
        totalR0_ANK = totalR 
        totalR_old = totalR ! Also record the old residual for the first iteration
        
-       ! Start with 10% of the ANK_StepFactor
-       lambda = 0.1_realType*ANK_StepFactor
+       ! Start with 20% of the ANK_StepFactor
+       lambda = 0.2_realType*ANK_StepFactor
     else
        ANK_iter = ANK_iter + 1
     end if
@@ -2199,12 +2199,12 @@ contains
     
     ! Continuation for step factor:
     ! If total residual have increased in the previous iteration,
-    ! reduce the step 20%, until half of ANK_StepFactor is reached
+    ! reduce the step 30%, until 0.4 of ANK_StepFactor is reached
     if (totalR > totalR_old) then
-      lambda = max(lambda*0.8_realType, ANK_StepFactor*0.5_realType) 
+      lambda = max(lambda*0.7_realType, ANK_StepFactor*0.4_realType) 
     ! If total residual have decreased, slowly ramp the step up
     else 
-      lambda = min(lambda*totalR_old/totalR ,ANK_StepFactor)
+      lambda = min(lambda*(totalR_old/totalR)**0.75_realType, ANK_StepFactor)
     end if
 
     ! ============== Flow Update =============
