@@ -2202,7 +2202,7 @@ contains
     
     ! Continuation for step factor:
     ! If total residual have increased in the previous iteration,
-    ! reduce the step 30%, until 0.4 of ANK_StepFactor is reached
+    ! reduce the step wrt the cutback factor, until ANK_StepMin factor of the step factor is reached
     if (totalR > totalR_old) then
       lambda = max(lambda*ANK_stepCutback, ANK_StepFactor*ANK_stepMin) 
     ! If total residual have decreased, slowly ramp the step up
