@@ -1611,13 +1611,11 @@ module ANKSolver
   ! Misc variables
   real(kind=realType) :: ANK_CFL, ANK_CFL0, ANK_CFLLimit, ANK_StepFactor, lambda
   real(kind=realType) :: ANK_stepInit, ANK_stepCutback, ANK_stepMin, ANK_stepExponent, ANK_CFLExponent
-  real(kind=realType) :: ANK_secondOrdSwitchTol
+  real(kind=realType) :: ANK_secondOrdSwitchTol, ANK_coupledSwitchTol
   logical :: ANK_solverSetup=.False.
   integer(kind=intTYpe) :: ANK_iter
   integer(kind=intType) :: nState
-  logical :: ANK_localCFL !flag to turn on/off the local time stepping for PTC
-  real(kind=alwaysRealType) :: turb_norm, turb_norm_old ! Variables used for the line search in the coupled ANK solver
-  real(kind=alwaysRealType) :: totalR0_ANK, totalR_old ! for recording initial and previous residuals
+  real(kind=alwaysRealType) :: totalR_old ! for recording the previous residual
   real(kind=alwaysRealType) :: rtolLast ! for recording the previous relativel tolerance for Eisenstat-Walker
 
 contains
@@ -1732,6 +1730,7 @@ contains
     use flowVarRefState, only : nw, nwf, nt1, nt2
     use blockPointers, only : nDom, volRef, il, jl, kl, dw
     use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use inputIteration, only : turbResScale
     use inputADjoint, only : viscPC
     use iteration, only : totalR0
     use utils, only : EChk, setPointers
@@ -1742,7 +1741,7 @@ contains
     character(len=maxStringLen) :: preConSide, localPCType, kspObjectType, globalPCType, localOrdering
     integer(kind=intType) ::ierr
     logical :: useAD, usePC, useTranspose, useObjective, tmp
-    real(kind=realType) ::  dt, local_CFL, ovv
+    real(kind=realType) ::  dt
     integer(kind=intType) :: i, j, k, l, ii, nn, sps, outerPreConIts
     real(kind=realType), pointer :: diag(:)
 
@@ -1775,25 +1774,27 @@ contains
     call VecGetArrayF90(deltaW, diag, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
-    !! LOCALIZED CFL wrt residuals, doesnt really help
-    if (.not. ANK_localCFL) then ! the option is turned off by default
-        diag(:) = one/ANK_CFL ! constant CFL for everything
-    else ! localized CFL routine wrt density residual
+    ! Calculate the contribution from the time-stepping term
+    dt = one/ANK_CFL
+    
+    if (ANK_useTurbDADI) then
+        ! For the segragated solver, no need for scaling, each variable gets the same value
+        diag(:) = dt
+    else
+        ! For the coupled solver, CFL number for the turbulent variable needs scaling
         ii = 1
         do nn=1, nDom
            do sps=1, nTimeIntervalsSpectral
               call setPointers(nn,1_intType,sps)
-              ! read the density residuals and set local CFL
               do k=2, kl
                  do j=2, jl
                     do i=2, il
-                        !calculate the local CFL at the current cell
-                        ovv = one/volRef(i,j,k)
-                        ! Scale by 1000 to match density residual with total residual norm, add eps to denominator to avoid division by zero
-                        local_CFL = min(ANK_CFL * (totalR0*1000.0_realType / (abs(dw(i, j, k, irho))*ovv+ eps)), ANK_CFL)
-                        !set the diag values for every variable used
-                        do l = 1, nState
-                          diag(ii) = one/(local_CFL)
+                        do l = 1, nwf
+                          diag(ii) = dt
+                          ii = ii + 1
+                        end do
+                        do l = nt1, nt2
+                          diag(ii) = turbResScale(l-nt1+1)*dt
                           ii = ii + 1
                         end do
                     end do
@@ -1834,15 +1835,21 @@ contains
     ! for the GMRES solver used in ANK
 
     use constants
+    use blockPointers, only : nDom, volRef, il, jl, kl, dw
+    use inputtimespectral, only : nTimeIntervalsSpectral
+    use inputIteration, only : turbResScale
+    use flowvarrefstate, only : nwf, nt1, nt2
     use NKSolver, only : computeResidualNK, setRvec
-    use utils, only : EChk
+    use utils, only : setPointers, EChk
     implicit none
 
     ! PETSc Variables
     PetscFortranAddr ctx(*)
     Vec     wVec, rVec
     real(kind=realType) :: dt
-    integer(kind=intType) :: ierr
+    integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
+    real(kind=realType),pointer :: rvec_pointer(:)
+    real(kind=realType),pointer :: wvec_pointer(:)
 
     ! get the input vector
     call setWANK(wVec)
@@ -1856,12 +1863,51 @@ contains
       call computeResidualNK()
       call setRVec(rVec)
     end if
-    
-    ! Add the contribution from the diagonal time stepping term
+
+    ! Calculate the contribution from the time stepping term
     dt = one/ANK_CFL
-    call VecAXPY(rVec, dt, wVec, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-    
+
+    ! Add the contribution from the diagonal time stepping term
+    if (ANK_useTurbDADI) then
+      ! For the segragated solver each variable gets the same dt value
+      call VecAXPY(rVec, dt, wVec, ierr)
+      call EChk(ierr,__FILE__,__LINE__)
+    else
+      ! For the coupled solver, time stepping term for turbulence needs to be scaled
+      call VecGetArrayF90(rVec,rvec_pointer,ierr)
+      call EChk(ierr,__FILE__,__LINE__)
+      
+      call VecGetArrayReadF90(wVec,wvec_pointer,ierr)
+      call EChk(ierr,__FILE__,__LINE__)
+      
+      ii = 1
+      do nn=1, nDom
+         do sps=1, nTimeIntervalsSpectral
+            call setPointers(nn,1_intType,sps)
+            ! read the density residuals and set local CFL
+            do k=2, kl
+               do j=2, jl
+                  do i=2, il
+                      do l = 1, nwf
+                        rvec_pointer(ii) = rvec_pointer(ii) + wvec_pointer(ii)*dt
+                        ii = ii + 1
+                      end do
+                      do l = nt1, nt2
+                        rvec_pointer(ii) = rvec_pointer(ii) + wvec_pointer(ii)*turbResScale(l-nt1+1)*dt
+                        ii = ii + 1
+                      end do
+                  end do
+               end do
+            end do
+         end do
+      end do
+      
+      call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
+      call EChk(ierr,__FILE__,__LINE__)
+      
+      call VecRestoreArrayReadF90(wVec, wvec_pointer, ierr)
+      call EChk(ierr,__FILE__,__LINE__)
+    end if 
     ! We don't check an error here, so just pass back zero
     ierr = 0
 
@@ -2121,8 +2167,6 @@ contains
 
     use constants
     use blockPointers, only : nDom, flowDoms, shockSensor
-    use flowVarRefState, only : nw, nwf, nt1
-    use NKSolver, only : computeResidualNK, getEWTol
     use inputPhysics, only : equations
     use inputIteration, only : L2conv
     use inputDiscretization, only : lumpedDiss
@@ -2133,7 +2177,7 @@ contains
     use turbMod, only : secondOrd
     use solverUtils, only : computeUTau
     use adjointUtils, only : referenceShockSensor
-    use NKSolver, only : setRVec
+    use NKSolver, only : setRVec, computeResidualNK, getEWTol
 
     implicit none
 
@@ -2141,13 +2185,20 @@ contains
     logical, intent(in) :: firstCall
 
     ! Working Variables
-    integer(kind=intType) :: ierr, maxIt, kspIterations, j, iter_res, nn, sps
+    integer(kind=intType) :: ierr, maxIt, kspIterations, nn, sps
     real(kind=realType) :: atol, val
-    real(kind=alwaysRealType) :: rtol
+    real(kind=alwaysRealType) :: rtol, totalR_dummy
     logical :: secondOrdSave
-    iter_res = 0
 
-    if (firstCall) then
+    ! Enter this check if this is the first ANK step OR we are switching to the coupled ANK solver
+    if (firstCall .or. (totalR < ANK_coupledSwitchTol * totalR0 .and. ANK_useTurbDADI)) then
+       
+       ! If using segragated ANK and below the coupled switch tol, set ANK_useTurbDADI
+       ! to .False. to create the PETSc objets required for the coupled ANK solver
+       if (totalR < ANK_coupledSwitchTol * totalR0 .and. ANK_useTurbDADI) then
+         ANK_useTurbDADI = .False.
+       end if
+       
        call setupANKSolver()
        call destroyANKSolver()
        call setupANKSolver()
@@ -2160,30 +2211,24 @@ contains
        if (ANK_useTurbDADI) then 
           call computeResidualANK() ! Only flow residual
           call setRVecANK(rVec)
-          iter_res = iter_res + 1
        else
           call computeResidualNK() ! Compute full residual
           call setRVec(rVec) ! Use NKSolver's setRVec because it scales the turbulence correctly
-          iter_res = iter_res + 1
-          
-          !calculate norm of turbulent residual for line search
-          call VecStrideNorm(rVec, nt1-1, NORM_2, turb_norm_old, ierr) ! -1 is for PETSc indexing
-          call EChk(ierr, __FILE__, __LINE__)
        end if
-       
-       ! Record the initial residual when ANK is initiated
-       totalR0_ANK = totalR 
-       totalR_old = totalR ! Also record the old residual for the first iteration
+
+       totalR_old = totalR ! Record the old residual for the first iteration
        rtolLast = ANK_rtol ! Set the previous relative convergence tolerance for the first iteration
        
-       ! Start with the selected fraction of the ANK_StepFactor
-       lambda = ANK_stepInit*ANK_StepFactor
+       if (firstCall) then
+         ! Start with the selected fraction of the ANK_StepFactor
+         lambda = ANK_stepInit*ANK_StepFactor
+       end if 
     else
        ANK_iter = ANK_iter + 1
     end if
 
-    ! ANK CFL calculation, initial CFL is always equal to input ANK_CFL0
-    ANK_CFL = min(ANK_CFL0 * (totalR0_ANK / totalR)**ANK_CFLExponent, ANK_CFLLimit)
+    ! ANK CFL calculation, use relative convergence w.r.t. totalR0 for better performance with restarts
+    ANK_CFL = min(ANK_CFL0 * (totalR0 / totalR)**ANK_CFLExponent, ANK_CFLLimit)
 
     ! Determine if if we need to form the Preconditioner
     if (mod(ANK_iter, ANK_jacobianLag) == 0) then
@@ -2230,10 +2275,19 @@ contains
       
       ! Determine the relative convergence for the KSP solver
       rtol = ANK_rtol ! Just use the input relative tolerance for approximate fluxes
+      
+      ! For initial convergence with approximate fluxes, set a relatively higher iteration
+      ! limit because we need 0.1 relative convergence for stability in this region.
+      maxIt = 4*ANK_subSpace
     else
       ! If the second order fluxes are used, Eisenstat-Walker algorithm to determine relateive 
       ! convergence tolerance helps with performance.
-      call getEWTol(real(totalR), totalR_old, rtolLast, rtol)
+      totalR_dummy = totalR
+      call getEWTol(totalR_dummy, totalR_old, rtolLast, rtol)
+      
+      ! For second order fluxes, more aggressively limit the maximum iteration count for each
+      ! KSP solve because stability should not be an issue when second order fluxes are used
+      maxIt = 2*ANK_subSpace
     end if 
     
     ! Record the total residual and relative convergence for next iteration
@@ -2243,13 +2297,13 @@ contains
     ! Set all tolerances for linear solve:
     atol = totalR0*L2Conv
     
-    ! Set the iteration limit to 4 times ANK_subSpace size.
+    ! Set the iteration limit to maxIt, determined by which fluxes are used.
     ! This is because ANK step require 0.1 convergence for stability during initial stages.
     ! Due to an outdated preconditioner, the KSP solve might take more iterations.
     ! If this happens, the preconditioner is re-computed and because of this, 
     ! ANK iterations usually don't take more than 2 times number of ANK_subSpace size iterations
     call KSPSetTolerances(ANK_KSP, rtol, &
-         real(atol), real(ANK_divTol), 4*ANK_subSpace, ierr)
+         real(atol), real(ANK_divTol), maxIt, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Actually do the Linear Krylov Solve
@@ -2280,59 +2334,30 @@ contains
       end do
     end if
     
-    if (ANK_useTurbDADI .or. nwf == nw) then ! if ANK_useTurbDADI or euler equations, use NK solver for flow variables only
-      ! No line search...just take the new solution, possibly (fixed)
-      ! limited      
-      call VecAXPY(wVec, -lambda, deltaW, ierr)
-      call EChk(ierr, __FILE__, __LINE__)
-
-      ! Set the updated state variables
-      call setWANK(wVec)
-
-      ! ============== Turb Update =============
-      if (equations==RANSEquations) then
-        call computeUtau
-        call turbSolveSegregated
-      end if
+    ! No line search...just take the new solution, possibly (fixed)
+    ! limited      
+    call VecAXPY(wVec, -lambda, deltaW, ierr)
+    call EChk(ierr, __FILE__, __LINE__)    
       
+    ! Set the updated state variables
+    call setWANK(wVec)
+
+    ! ============== Turb Update =============
+    if (ANK_useTurbDADI .and. equations==RANSEquations) then
+      call computeUtau
+      call turbSolveSegregated
+    end if
+    
+    ! Calculate the residual with the new values and set the R vec in PETSc
+    if (ANK_useTurbDADI) then
       call computeResidualANK()
       call setRVecANK(rVec)
-      iter_res = iter_res + 1
-      
-    else ! do backtracking line search for turublence if the coupled solver is used
-      
-      turb_norm = 1000.0_realType*turb_norm_old !set a high value to enter while loop
-      
-      ! allow the residual to increase a bit between each iteration, we just want to avoid nan or exploding solutions
-      ! exit loop if minimum step size is reached or the residual is reasonable
-      do while (turb_norm >= turb_norm_old*1.5_realType .and. abs(lambda) > 0.0001_realType)
-        
-        ! take the step
-        call VecAXPY(wVec, -lambda, deltaW, ierr)
-        call EChk(ierr, __FILE__, __LINE__)
+    else 
+      call computeResidualNK()
+      call setRVec(rVec)
+    end if
 
-        ! Set the updated state variables
-        call setWANK(wVec)
-        
-        call computeResidualNK()
-        iter_res = iter_res + 1
-        
-        call setRVec(rVec)
-      
-        ! calculate the norm of the turbulent residual for next iteration
-        call VecStrideNorm(rVec, nt1-1, NORM_2, turb_norm, ierr) ! -1 is for PETSc indexing
-        call EChk(ierr, __FILE__, __LINE__)
-        
-        ! backtracking, take half the step back until a reasonable step is found
-        lambda = -0.5_realType * abs(lambda)
-      end do
-      
-      turb_norm_old = turb_norm ! record the old norm for next iteration
-    end if 
-
-    ! Update the approximate iteration counter. The +iter_res is for the
-    ! residual evaluations.
-
+    ! Get the number of iterations from the KSP solver
     call KSPGetIterationNumber(ANK_KSP, kspIterations, ierr)
     call EChk(ierr, __FILE__, __LINE__)
     
@@ -2347,7 +2372,9 @@ contains
         ANK_iter = -1 ! -1 is because ANK_iter is incremented by 1 before the preconditioner check
     end if
 
-    approxTotalIts = approxTotalIts + iter_res + kspIterations
+    ! Update the approximate iteration counter. The +1 is for the
+    ! residual evaluations.
+    approxTotalIts = approxTotalIts + 1 + kspIterations
 
   end subroutine ANKStep
 end module ANKSolver
