@@ -800,23 +800,25 @@ contains
       sepsensoravg(2) = sepsensoravg(2) + sensor*yc
       sepsensoravgd(3) = sepsensoravgd(3) + sensord*zc + sensor*zcd
       sepsensoravg(3) = sepsensoravg(3) + sensor*zc
-      plocald = pp2d(i, j)
-      plocal = pp2(i, j)
-      tmpd = -(two*gammainf*(machcoefd*machcoef+machcoef*machcoefd)/(&
-&       gammainf*machcoef*machcoef)**2)
-      tmp = two/(gammainf*machcoef*machcoef)
-      cpd = tmpd*(plocal-pinf) + tmp*(plocald-pinfd)
-      cp = tmp*(plocal-pinf)
-      sigma = 1.4
-      sensor1d = -cpd
-      sensor1 = -cp - sigma
-      sensor1d = -((-(one*2*10*sensor1d*exp(-(2*10*sensor1))))/(one+exp(&
-&       -(2*10*sensor1)))**2)
-      sensor1 = one/(one+exp(-(2*10*sensor1)))
-      sensor1d = blk*(sensor1d*cellarea+sensor1*cellaread)
-      sensor1 = sensor1*cellarea*blk
-      cavitationd = cavitationd + sensor1d
-      cavitation = cavitation + sensor1
+      if (computecavitation) then
+        plocald = pp2d(i, j)
+        plocal = pp2(i, j)
+        tmpd = -(two*gammainf*(machcoefd*machcoef+machcoef*machcoefd)/(&
+&         gammainf*machcoef*machcoef)**2)
+        tmp = two/(gammainf*machcoef*machcoef)
+        cpd = tmpd*(plocal-pinf) + tmp*(plocald-pinfd)
+        cp = tmp*(plocal-pinf)
+        sigma = 1.4
+        sensor1d = -cpd
+        sensor1 = -cp - sigma
+        sensor1d = -((-(one*2*10*sensor1d*exp(-(2*10*sensor1))))/(one+&
+&         exp(-(2*10*sensor1)))**2)
+        sensor1 = one/(one+exp(-(2*10*sensor1)))
+        sensor1d = blk*(sensor1d*cellarea+sensor1*cellaread)
+        sensor1 = sensor1*cellarea*blk
+        cavitationd = cavitationd + sensor1d
+        cavitation = cavitation + sensor1
+      end if
     end do
 !
 ! integration of the viscous forces.
@@ -1187,14 +1189,16 @@ contains
       sepsensoravg(1) = sepsensoravg(1) + sensor*xc
       sepsensoravg(2) = sepsensoravg(2) + sensor*yc
       sepsensoravg(3) = sepsensoravg(3) + sensor*zc
-      plocal = pp2(i, j)
-      tmp = two/(gammainf*machcoef*machcoef)
-      cp = tmp*(plocal-pinf)
-      sigma = 1.4
-      sensor1 = -cp - sigma
-      sensor1 = one/(one+exp(-(2*10*sensor1)))
-      sensor1 = sensor1*cellarea*blk
-      cavitation = cavitation + sensor1
+      if (computecavitation) then
+        plocal = pp2(i, j)
+        tmp = two/(gammainf*machcoef*machcoef)
+        cp = tmp*(plocal-pinf)
+        sigma = 1.4
+        sensor1 = -cp - sigma
+        sensor1 = one/(one+exp(-(2*10*sensor1)))
+        sensor1 = sensor1*cellarea*blk
+        cavitation = cavitation + sensor1
+      end if
     end do
 !
 ! integration of the viscous forces.
