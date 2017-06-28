@@ -220,6 +220,7 @@ python module libadflow
          real(kind=realtype) :: ank_cfl0
          real(kind=realtype) :: ank_cfllimit
          real(kind=realtype) :: ank_stepfactor
+         logical :: ank_localcfl
          subroutine destroyanksolver
          end subroutine destroyanksolver
          
@@ -1163,6 +1164,7 @@ python module libadflow
          use constants
          real(kind=realtype) sepsensoroffset
          real(kind=realtype) sepsensorsharpness
+         logical::computecavitation
        end module inputcostfunctions
        
        module adjointvars ! in :test:ADjointVars.F90

@@ -136,10 +136,10 @@ class ADFLOW(AeroSolver):
         self.adflowCostFunctions = OrderedDict()
         for key in self.basicCostFunctions:
             self.adflowCostFunctions[key] = [None, key]
-            
+
         # Separate list of the suplied supplied functions
         self.adflowUserCostFunctions = OrderedDict()
-            
+
         # This is the real solver so dtype is 'd'
         self.dtype = dtype
 
@@ -253,7 +253,7 @@ class ADFLOW(AeroSolver):
 
         # We also need to know about which surfaces are walls. Pull
         # out that information from fortran and set the special
-        # familyGroup. 
+        # familyGroup.
         wallList, nWalls = self.adflow.surfaceutils.getwalllist(len(famList))
         wallList = wallList[0:nWalls]
         wallListFam = []
@@ -286,7 +286,7 @@ class ADFLOW(AeroSolver):
         self.setOption('oversetPriority', self.getOption('oversetPriority'))
 
         # Set the closed surface families if given. Otherwise
-        # default to all walls. 
+        # default to all walls.
         famList = self.getOption('closedSurfaceFamilies')
         if famList is None:
             self.closedFamilyGroup = self.allWallsGroup
@@ -322,7 +322,7 @@ class ADFLOW(AeroSolver):
 
         # Set the surface the user has supplied:
 
-        conn, faceSizes, cgnsBlockIDs = self.getSurfaceConnectivity(self.meshFamilyGroup, 
+        conn, faceSizes, cgnsBlockIDs = self.getSurfaceConnectivity(self.meshFamilyGroup,
                                                                     includeZipper=False,
                                                                     includeCGNS=True)
 
@@ -508,16 +508,16 @@ class ADFLOW(AeroSolver):
 
     def addIntegrationSurface(self, fileName, familyName):
         """Add a specific integration surface for performing massflow-like
-        computations. 
+        computations.
 
         Parameters
         ----------
 
-        fileName : str 
+        fileName : str
            Surface Plot 3D file (may have multiple zones) defining
            integration surface.
 
-        familyName : str 
+        familyName : str
            User supplied name to use for this family. It should not
            already be a name that is defined by the surfaces of the
            CGNS file.
@@ -539,28 +539,28 @@ class ADFLOW(AeroSolver):
 
         # We are going to operate under the assuption that the number
         # of nodes/elements of the defined surface are sufficiently
-        # small that we do not have to worry about parallelization. 
+        # small that we do not have to worry about parallelization.
 
         pts, conn = self._readPlot3DSurfFile(fileName)
         self.adflow.usersurfaceintegrations.addintegrationsurface(
             pts.T, conn.T, familyName, famID)
 
-    def addActuatorRegion(self, fileName, axis1, axis2, familyName, 
+    def addActuatorRegion(self, fileName, axis1, axis2, familyName,
                           smoothDistance, F=None, T=None):
         """Add an actuator disk zone defined by the (closed) supplied
         in the plot3d file "fileName". Axis1 and Axis2 defines the
         physical extent of the region overwhich to apply the ramp
-        factor. 
+        factor.
 
         Parameters
         ----------
 
-        fileName : str 
+        fileName : str
            Surface Plot 3D file (multiblock ascii) defining the closed
-           region over which the integration is to be applied. 
+           region over which the integration is to be applied.
 
         axis1 : numpy array, length 3
-           The physical location of the start of the axis 
+           The physical location of the start of the axis
 
         axis2 : numpy array, length 4
            The physical location of the end of the axis
@@ -570,29 +570,29 @@ class ADFLOW(AeroSolver):
            region.
 
         smoothDistance : scalar
-           The distance overwhich to smooth the implementatoin of the 
-           actuation. 
+           The distance overwhich to smooth the implementatoin of the
+           actuation.
 
         F : numpy array, length 3
            The total amount of force to apply to this region
 
-        T : scalar 
-           The total amoun tof torque to apply to the region, about the 
-           specified axis. 
+        T : scalar
+           The total amoun tof torque to apply to the region, about the
+           specified axis.
            """
         # ActuatorDiskRegions cannot be used in timeSpectralMode
         if self.getOption('equationMode').lower() == 'time spectral':
             raise Error("ActuatorRegions cannot be used in Time Spectral Mode.")
 
-        # Load in the user supplied surface file. 
+        # Load in the user supplied surface file.
         pts, conn = self._readPlot3DSurfFile(fileName, convertToTris=False)
 
         # We should do a topology check to ensure that the surface the
-        # user supplied is actually closed. 
+        # user supplied is actually closed.
         # self._closedTopoCheck(pts, conn)
 
         # Check if the family name given is already used for something
-        # else. 
+        # else.
         if familyName.lower() in self.families:
             raise Error("Cannot add ActuatorDiskRegion with family name '%s'"
                         "becuase the name it already exists."%familyName)
@@ -606,7 +606,7 @@ class ADFLOW(AeroSolver):
                 maxInd = max(maxInd, numpy.max(self.families[fam]))
         famID = maxInd + 1
         self.families[familyName.lower()] = [famID]
-        
+
         # Set defaults for T and P if not specified
         if F is None:
             F = numpy.zeros(3)
@@ -614,7 +614,7 @@ class ADFLOW(AeroSolver):
             T = 0.0
 
         #  Now continue to fortran were we setup the actual
-        #  region. 
+        #  region.
         self.adflow.actuatorregion.addactuatorregion(
             pts.T, conn.T, axis1, axis2, familyName, famID, F, T, smoothDistance)
 
@@ -622,8 +622,8 @@ class ADFLOW(AeroSolver):
     def addUserFunction(self, funcName, functions, callBack):
         """Add a new function to ADflow by combining existing functions in a
         user-supplied way. The allows the user to define a function
-        such as L/D while only requiring a single adjoint solution. 
-        
+        such as L/D while only requiring a single adjoint solution.
+
         example>>>
         ap = AeroProblem(....,evalFuncs=['L/D'])
         CFDSolver=ADFLOW(options=....)
@@ -637,14 +637,14 @@ class ADFLOW(AeroSolver):
         Parameters
         ----------
         funcName : str
-            The name of user-supplied function 
+            The name of user-supplied function
         functions : list of strings
             The exisitng function strings which are the input to the
             callBack function
         callBack : python function handle
-            The user supplied function that will produce the user function. 
-            This routine must be complex-step safe for the purpose of 
-            computing sensitivities. 
+            The user supplied function that will produce the user function.
+            This routine must be complex-step safe for the purpose of
+            computing sensitivities.
         """
         funcName = funcName.lower()
 
@@ -661,10 +661,11 @@ class ADFLOW(AeroSolver):
             if func not in self.adflowCostFunctions:
                 raise Error('Supplied  function %s to addUserFunction '
                             'not know to ADflow'%func)
-
         self.adflowUserCostFunctions[funcName] = (
             adflowUserFunc(funcName, functions, callBack))
-            
+
+        return funcName
+
     def addFunction(self, funcName, groupName, name=None):
 
         """Add a "new" function to ADflow by restricting the integration of an
@@ -842,7 +843,7 @@ class ADFLOW(AeroSolver):
         # Possibly release adjoint memory if not already done
         # so. Don't remove this. If switching problems, this is done
         # in setAeroProblem, but for when not switching it must be
-        # done here regardless. 
+        # done here regardless.
         if releaseAdjointMemory:
             self.releaseAdjointMemory()
 
@@ -897,7 +898,7 @@ class ADFLOW(AeroSolver):
         self.adflow.killsignals.fatalfail = False
         sys.stdout.flush()
         t1 = time.time()
-        
+
         # Solve the equations in appropriate mode
         mode = self.getOption('equationMode').lower()
         if mode in ['steady', 'time spectral']:
@@ -907,7 +908,7 @@ class ADFLOW(AeroSolver):
             groupName       = kwargs.pop('groupName', None)
             if wallTemperature is not None:
                 self.setWallTemperature(wallTemperature, groupName=groupName)
-            
+
             self.adflow.solvers.solver()
         elif mode == 'unsteady':
             # Initialization specific for unsteady simulation
@@ -921,7 +922,7 @@ class ADFLOW(AeroSolver):
                 # Get the callback functions
                 surfaceMeshCallback = kwargs.pop('surfaceMeshCallback', None)
                 volumeMeshCallback  = kwargs.pop('volumeMeshCallback', None)
-                
+
                 # Call solver wrapper for unsteady simulations
                 self._solverunsteady(surfaceMeshCallback = surfaceMeshCallback,
                                      volumeMeshCallback  = volumeMeshCallback)
@@ -968,7 +969,7 @@ class ADFLOW(AeroSolver):
         ----------
         surfaceMeshCallback : Python function handle
             Computes new surface coordinates for mesh warping
-        
+
         volumeMeshCallback : Python function handle
             Computes new volume coordinates for mesh moving
         """
@@ -982,7 +983,7 @@ class ADFLOW(AeroSolver):
             refGrid = self.mesh.getSolverGrid().reshape(-1, 3)
         else:
             refGrid = None
-        
+
         # Time advancing
         nTimeStepsFine = self.getOption('ntimestepsfine')
         for tdx in range(1, nTimeStepsFine+1):
@@ -1004,7 +1005,7 @@ class ADFLOW(AeroSolver):
             else:
                 self.adflow.preprocessingapi.shiftcoorandvolumes()
                 self.adflow.solvers.updateunsteadygeometry()
-            
+
             # Solve current step
             self.solveTimeStep()
             self.writeSolution()
@@ -1019,9 +1020,9 @@ class ADFLOW(AeroSolver):
 
         if self.myid == 0:
             self.adflow.utils.unsteadyheader()
-        
+
         return self.adflow.monitor.timeunsteady, self.adflow.monitor.timestepunsteady
-        
+
     def solveTimeStep(self):
         """
         Solve the current time step, and write solutions if necessary
@@ -1032,7 +1033,7 @@ class ADFLOW(AeroSolver):
         if self.getOption('printTiming') and self.comm.rank == 0:
             print('Timestep solution time: {0:10.3f} sec'.format(t2-t1))
 
-    def evalFunctions(self, aeroProblem, funcs, evalFuncs=None, 
+    def evalFunctions(self, aeroProblem, funcs, evalFuncs=None,
                       ignoreMissing=False):
         """
         Evaluate the desired functions given in iterable object,
@@ -1068,19 +1069,19 @@ class ADFLOW(AeroSolver):
         # Set the AP
         self.setAeroProblem(aeroProblem)
         if evalFuncs is None:
-            evalFuncs = self.curAP.evalFuncs
+            evalFuncs = sorted(list(self.curAP.evalFuncs))
 
         # Make sure we have a list that has only lower-cased entries
         tmp = []
         for f in evalFuncs:
             tmp.append(f.lower())
         evalFuncs = tmp
-                    
+
         # We need to determine how many different groupings we have,
         # since we will have to call getSolution for each *unique*
         # function grouping. We can also do the error checking
         groupMap = OrderedDict()
-        
+
         def addToGroup(f):
             group = self.adflowCostFunctions[f][0]
             basicFunc = self.adflowCostFunctions[f][1]
@@ -1100,7 +1101,7 @@ class ADFLOW(AeroSolver):
                 for sf in self.adflowUserCostFunctions[f].functions:
                     addToGroup(sf)
                     # This just flags the sub-function 'sf' as being
-                    # required for callBacks. 
+                    # required for callBacks.
                     callBackFuncs[sf] = 0.0
             else:
                 if not ignoreMissing:
@@ -1123,7 +1124,7 @@ class ADFLOW(AeroSolver):
 
                 if g[1].lower() in callBackFuncs:
                     callBackFuncs[g[1]] = res[g[0]]
-                
+
         # Execute the user supplied functions if there are any
         for f in self.adflowUserCostFunctions:
             if f in evalFuncs:
@@ -1136,7 +1137,7 @@ class ADFLOW(AeroSolver):
         # Internal routine to return the funcsBar dictionary for the
         # given objective. For regular functions this just sets a 1.0
         # for f. For the user-supplied functions, it linearizes the
-        # user-supplied function and sets all required seeds. 
+        # user-supplied function and sets all required seeds.
         if f.lower() in self.adflowCostFunctions:
             funcsBar = {f.lower():1.0}
         elif f in self.adflowUserCostFunctions:
@@ -1177,19 +1178,18 @@ class ADFLOW(AeroSolver):
         self.setAeroProblem(aeroProblem)
 
         if evalFuncs is None:
-            evalFuncs = self.curAP.evalFuncs
+            evalFuncs = sorted(list(self.curAP.evalFuncs))
 
         # Make sure we have a list that has only lower-cased entries
         tmp = []
         for f in evalFuncs:
             tmp.append(f.lower())
         evalFuncs = tmp
-                    
 
         # Do the functions one at a time:
         for f in evalFuncs:
             if f in self.adflowCostFunctions:
-                pass 
+                pass
             elif f in self.adflowUserCostFunctions:
                 pass
             else:
@@ -1202,7 +1202,7 @@ class ADFLOW(AeroSolver):
             ptSetName = self.curAP.ptSetName
 
             # Set dict structure for this derivative
-            funcsSens[key] = {}
+            funcsSens[key] = OrderedDict()
 
             # Solve adjoint equation
             self.solveAdjoint(aeroProblem, f)
@@ -1218,7 +1218,7 @@ class ADFLOW(AeroSolver):
 
             # These are the reverse mode seeds
             psi = -self.getAdjoint(f)
-      
+
             # Compute everything and update into the dictionary
             funcsSens[key].update(self.computeJacobianVectorProductBwd(
                 resBar=psi, funcsBar=self._getFuncsBar(f), xDvDeriv=True))
@@ -1674,14 +1674,14 @@ class ADFLOW(AeroSolver):
             sliceName = base + '_slices.dat'
             surfName = base + '_surf.plt'
 
-        
+
         # Get the family list to write for the surface.
         famList = self._getFamilyList(self.getOption('outputSurfaceFamily'))
 
         # Flag to write the tecplot surface solution or not
         writeSurf = self.getOption('writeTecplotSurfaceSolution')
 
-        # # Call fully compbined fortran routine. 
+        # # Call fully compbined fortran routine.
         self.adflow.tecplotio.writetecplot(sliceName, True, liftName, True,
                                            surfName, writeSurf, famList)
 
@@ -1775,7 +1775,7 @@ class ADFLOW(AeroSolver):
         self.adflow.inputio.surfacesolfile[:] = emptyString
         self.adflow.inputio.surfacesolfile[0:len(fileName)] = fileName
 
-        # Actual fortran write call. Fam list matters. 
+        # Actual fortran write call. Fam list matters.
         famList = self._getFamilyList(self.getOption('outputSurfaceFamily'))
         self.adflow.writesol(famList)
 
@@ -1815,7 +1815,7 @@ class ADFLOW(AeroSolver):
         surfName = ""
         self.adflow.tecplotio.writetecplot(sliceName, False, fileName, True,
                                            surfName, False, self.allFamilies)
-        
+
     def writeSlicesFile(self, fileName):
         """Evaluate and write the defined slice information to a
         tecplot file.
@@ -1910,14 +1910,14 @@ class ADFLOW(AeroSolver):
     def writeSurfaceSensitivity(self, fileName, func, groupName=None):
         """Write a tecplot file of the surface sensitivty. It is up to the use
         to make sure the adjoint already computed before calling this
-        function. 
-        
+        function.
+
         Parameters
         ----------
         fileName : str
-           String for output filename. Should end in .dat for tecplot. 
+           String for output filename. Should end in .dat for tecplot.
         func : str
-           ADFlow objective string for the objective to write. 
+           ADFlow objective string for the objective to write.
         groupName : str
            Family group to use. Default to all walls if not given (None)
         """
@@ -1955,16 +1955,16 @@ class ADFLOW(AeroSolver):
 
         # Write out Data only on root proc:
         if self.myid == 0:
-         
+
             # Make numpy arrays of all data
             pts = numpy.vstack(pts)
             dXs = numpy.vstack(dXs)
             conn = numpy.vstack(conn)
-            
+
             # Next point reduce all nodes:
             uniquePts, link, nUnique = self.adflow.utils.pointreduce(pts.T, 1e-12)
 
-            # Insert existing nodes into the new array. *Accumulate* dXs. 
+            # Insert existing nodes into the new array. *Accumulate* dXs.
             newdXs = numpy.zeros((nUnique, 3))
             newPts = numpy.zeros((nUnique, 3))
             newConn = numpy.zeros_like(conn)
@@ -2051,7 +2051,7 @@ class ADFLOW(AeroSolver):
         """Retrieve the basic solution variables from the solver. This will
         return all variables defined in basicCostFunctions for the
         specified group. This is a lower level function than
-        evalFunctions() which should be used for optimization. 
+        evalFunctions() which should be used for optimization.
 
         Paramters
         ---------
@@ -2061,9 +2061,9 @@ class ADFLOW(AeroSolver):
         """
 
         # Extract the familiy list we want to use for evaluation. We
-        # explictly have just the one group in the call. 
+        # explictly have just the one group in the call.
         famLists = self._expandGroupNames([groupName])
-        
+
         # Run the underlying fortran routine
         costSize = self.adflow.constants.ncostfunction
         funcVals = self.adflow.surfaceintegrations.getsolutionwrap(
@@ -2091,13 +2091,13 @@ class ADFLOW(AeroSolver):
             if fileName is not None:
                 f = open(fileName, 'w')
                 for i in range(nCellTotal):
-                    f.write('%d %d %d %d %d\n'%(blkList[5*i], blkList[5*i+1], blkList[5*i+2], 
+                    f.write('%d %d %d %d %d\n'%(blkList[5*i], blkList[5*i+1], blkList[5*i+2],
                                                 blkList[5*i+3], blkList[5*i+4]))
                 f.close()
-            
+
 
         return self.comm.bcast(hexStr)
-            
+
     # =========================================================================
     #   The following routines are public functions however, they should
     #   not need to be used by a user using this class directly. They are
@@ -2144,10 +2144,10 @@ class ADFLOW(AeroSolver):
 
         # First get the surface coordinates of the meshFamily in case
         # the groupName is a subset, those values will remain unchanged.
-        meshSurfCoords = self.getSurfaceCoordinates(self.meshFamilyGroup, 
+        meshSurfCoords = self.getSurfaceCoordinates(self.meshFamilyGroup,
                                                     includeZipper=False)
         meshSurfCoords = self.mapVector(coordinates, groupName,
-                                        self.meshFamilyGroup, meshSurfCoords, 
+                                        self.meshFamilyGroup, meshSurfCoords,
                                         includeZipper=False)
         self.mesh.setSurfaceCoordinates(meshSurfCoords)
 
@@ -2235,7 +2235,7 @@ class ADFLOW(AeroSolver):
                 aeroProblem.adflowData.stateInfo = self._getInfo()
             else:
                 self._resetFlow()
-     
+
         # Now set the data from the incomming aeroProblem:
         stateInfo = aeroProblem.adflowData.stateInfo
         if stateInfo is not None and newAP:
@@ -2254,7 +2254,7 @@ class ADFLOW(AeroSolver):
             self.adflow.anksolver.destroyanksolver()
             if releaseAdjointMemory:
                 self.releaseAdjointMemory()
-                
+
     def _setAeroProblemData(self, aeroProblem, firstCall=False):
         """
         After an aeroProblem has been associated with self.cuAP, set
@@ -2366,7 +2366,7 @@ class ADFLOW(AeroSolver):
             axisX1 = momentAxis[0][0]; axisX2 = momentAxis[1][0]
             axisY1 = momentAxis[0][1]; axisY2 = momentAxis[1][1]
             axisZ1 = momentAxis[0][2]; axisZ2 = momentAxis[1][2]
-            
+
         # Set mach defaults if user did not specified any machRef or machGrid values
 
         # If the user is running time spectral but did not specify
@@ -2484,7 +2484,7 @@ class ADFLOW(AeroSolver):
             self._getBCDataFromAeroProblem(AP))
         if not empty:
             self.adflow.bcdata.setbcdata(nameArray, dataArray, groupArray, 1)
-            
+
         if not firstCall:
             self.adflow.initializeflow.updatebcdataalllevels()
             if self.getOption('equationMode').lower() == 'time spectral':
@@ -2493,7 +2493,7 @@ class ADFLOW(AeroSolver):
             self.adflow.preprocessingapi.updategridvelocitiesalllevels()
 
     def _getBCDataFromAeroProblem(self, AP):
-        
+
         variables = []
         dataArray = []
         groupNames = []
@@ -2510,7 +2510,7 @@ class ADFLOW(AeroSolver):
             return nameArray, dataArray, groupArray, groupNames, False
         else:
             # dummy data that doesn't matter
-            return (self._createFortranStringArray(['Pressure']), [0.0], 
+            return (self._createFortranStringArray(['Pressure']), [0.0],
                     [[1,1]], groupNames, True)
 
     def getForces(self, groupName=None, TS=0):
@@ -2584,7 +2584,7 @@ class ADFLOW(AeroSolver):
         return fluxes
 
     def setWallTemperature(self, temperature, groupName=None, TS=0):
-        """Set the temperature of the isothermal walls. 
+        """Set the temperature of the isothermal walls.
 
         Parameters
         ----------
@@ -2602,11 +2602,11 @@ class ADFLOW(AeroSolver):
             corresponds to all wall-type surfaces.
 
         TS : int
-            Time spectral instance to set. 
+            Time spectral instance to set.
         """
         if groupName is None:
             groupName = self.allWallsGroup
-            
+
         # For the mapVector to work correctly, we need to retrieve the
         # existing values and just overwrite the ones we've changed
         # using mapVector.
@@ -2616,7 +2616,7 @@ class ADFLOW(AeroSolver):
         # Now map new values in and set.
         fullTemp = self.mapVector(temperature, groupName, self.allWallsGroup, fullTemp)
         self.adflow.settnswall(fullTemp, TS+1)
-        
+
     def getSurfacePoints(self, groupName=None, includeZipper=True, TS=0):
 
         """Return the coordinates for the surfaces defined by groupName.
@@ -2640,7 +2640,11 @@ class ADFLOW(AeroSolver):
         npts, ncell = self._getSurfaceSize(groupName, includeZipper)
         pts = numpy.zeros((npts, 3), self.dtype)
         famList = self._getFamilyList(groupName)
-        self.adflow.surfaceutils.getsurfacepoints(pts.T, TS+1, famList, includeZipper)
+        if npts == 0:
+            dummy =  numpy.zeros((1, 3), self.dtype)
+            self.adflow.surfaceutils.getsurfacepoints(dummy.T, TS+1, famList, includeZipper)
+        else:
+            self.adflow.surfaceutils.getsurfacepoints(pts.T, TS+1, famList, includeZipper)
 
         return pts
 
@@ -2656,7 +2660,7 @@ class ADFLOW(AeroSolver):
             desired group. The group must be a family or a user-supplied
             group of families. The default is None which corresponds to
             all wall-type surfaces.
-        
+
         includeCGNS : bool
             Whether or not this function should return the indices of the CGNS blocks
             that each face patch belongs to. Zipper mesh patches will have cgnsBlockID = -1.
@@ -2692,7 +2696,7 @@ class ADFLOW(AeroSolver):
     def _expandGroupNames(self, groupNames):
         """Take a list of family (group) names and return a 2D array of the
         fortran group numbers of the following form:
-        
+
         [ 2 | y y x x x ]
         [ 1 | y x x x x ]
         [ 5 | y y y y y ]
@@ -2705,7 +2709,7 @@ class ADFLOW(AeroSolver):
         nMax = 0
         for groupName in groupNames:
             nMax = max(nMax, len(self._getFamilyList(groupName)))
-        
+
         groupArray = numpy.zeros((len(groupNames), nMax + 1))
         for i in range(len(groupNames)):
             famList = self._getFamilyList(groupNames[i])
@@ -2713,7 +2717,7 @@ class ADFLOW(AeroSolver):
             groupArray[i, 1:1+len(famList)] = famList
 
         return groupArray
-        
+
 
     def globalNKPreCon(self, inVec, outVec):
 
@@ -2814,7 +2818,7 @@ class ADFLOW(AeroSolver):
         # Possibly setup adjoint matrices/vector as required
         self._setupAdjoint()
 
-        # # Check to see if the RHS Partials have been computed
+        # Check to see if the RHS Partials have been computed
         if objective not in self.curAP.adflowData.adjointRHS:
             RHS = self.computeJacobianVectorProductBwd(
                 funcsBar=self._getFuncsBar(objective), wDeriv=True)
@@ -2862,7 +2866,7 @@ class ADFLOW(AeroSolver):
         for dvName in self.curAP.DVs:
            key = self.curAP.DVs[dvName].key.lower()
            dvFam = self.curAP.DVs[dvName].family
-           
+
            tmp = {}
            if key == 'altitude':
                # This design variable is special. It combines changes
@@ -2918,7 +2922,7 @@ class ADFLOW(AeroSolver):
                    if varName.lower() == key and family.lower() == dvFam.lower():
                        funcsSens[dvName] = dIdBC[i]
                    i += 1
- 
+
         return funcsSens
 
     def _setAeroDVs(self):
@@ -3048,7 +3052,7 @@ class ADFLOW(AeroSolver):
                 flag = numpy.zeros(n)
 
                 # Only need to call the cutCallBack if we're doing a
-                # full update. 
+                # full update.
                 if self.getOption('oversetUpdateMode') == 'full':
                     cutCallBack = self.getOption('cutCallBack')
                     if cutCallBack is not None:
@@ -3144,7 +3148,7 @@ class ADFLOW(AeroSolver):
     #   =========================================================================
 
     def computeJacobianVectorProductFwd(self, xDvDot=None, xSDot=None, xVDot=None, wDot=None,
-                                        residualDeriv=False, funcDeriv=False, fDeriv=False, 
+                                        residualDeriv=False, funcDeriv=False, fDeriv=False,
                                         groupName=None):
         """This the main python gateway for producing forward mode jacobian
         vector products. It is not generally called by the user by
@@ -3171,8 +3175,8 @@ class ADFLOW(AeroSolver):
             Flag specifiying if the derviative of the surface forces (tractions)
             should be returned
         groupName : str
-            Optional group name to use for evaluating functions. Defaults to all 
-            surfaces. 
+            Optional group name to use for evaluating functions. Defaults to all
+            surfaces.
 
         Returns
         -------
@@ -3195,7 +3199,7 @@ class ADFLOW(AeroSolver):
         if xSDot is None:
             xsdot = numpy.zeros_like(self.coords0)
             xsdot = self.mapVector(xsdot, self.allFamilies,
-                                   self.designFamilyGroup, 
+                                   self.designFamilyGroup,
                                    includeZipper=False)
         else:
             xsdot = xSDot
@@ -3266,7 +3270,7 @@ class ADFLOW(AeroSolver):
                 groupNames.add(groupName)
             if f in self.adflowUserCostFunctions:
                 for sf in self.adflowUserCostFunctions[f].functions:
-                    groupName = self.adflowCostFunctions[sf.lower()][0]  
+                    groupName = self.adflowCostFunctions[sf.lower()][0]
                     groupNames.add(groupName)
 
         groupNames = list(groupNames)
@@ -3277,7 +3281,7 @@ class ADFLOW(AeroSolver):
 
         # Extract any possibly BC daa
         dwdot, tmp, fdot = self.adflow.adjointapi.computematrixfreeproductfwd(
-            xvdot, extradot, wdot, bcDataValuesdot, useSpatial, useState, famLists, bcDataNames, 
+            xvdot, extradot, wdot, bcDataValuesdot, useSpatial, useState, famLists, bcDataNames,
             bcDataValues, bcDataFamLists, bcVarsEmpty, costSize, max(1, fSize), nTime)
 
         # Explictly put fdot to nothing if size is zero
@@ -3306,7 +3310,7 @@ class ADFLOW(AeroSolver):
                     # Get the group index:
                     ind = groupNames.index(groupName)
                     funcsDot[f] += sens[sf]*tmp[mapping -1, ind]
-                    
+
         # Assemble the returns
         returns = []
         if residualDeriv:
@@ -3445,8 +3449,8 @@ class ADFLOW(AeroSolver):
 
         # Do actual Fortran call.
         xvbar, extrabar, wbar, bcdatavaluesbar = self.adflow.adjointapi.computematrixfreeproductbwd(
-            resBar, funcsBar, fBar.T, useSpatial, useState, self.getSpatialSize(), 
-            self.adflow.adjointvars.ndesignextra, self.getAdjointStateSize(), famLists, 
+            resBar, funcsBar, fBar.T, useSpatial, useState, self.getSpatialSize(),
+            self.adflow.adjointvars.ndesignextra, self.getAdjointStateSize(), famLists,
             bcDataNames, bcDataValues, bcDataFamLists, bcVarsEmpty)
 
         # Assemble the possible returns the user has requested:
@@ -3570,7 +3574,7 @@ class ADFLOW(AeroSolver):
         # happen that we have the same family group but one has the
         # zipper nodes and the other doesn't. In that case, vec2 must
         # be a differnet size and thus we can't immediately return
-        # vec1 as being vec2. 
+        # vec1 as being vec2.
 
         # if groupName1 == groupName2:
         #     return vec1
@@ -3583,7 +3587,7 @@ class ADFLOW(AeroSolver):
         famList2 = self.families[groupName2]
 
         self.adflow.surfaceutils.mapvector(vec1.T, famList1, vec2.T, famList2, includeZipper)
-        
+
         return vec2
 
     def getStateSize(self):
@@ -3636,12 +3640,12 @@ class ADFLOW(AeroSolver):
         and for switching aeroproblems
         """
         self.adflow.nksolver.setstates(states)
-    
+
     def getSurfacePerturbation(self, seed=314):
         """This is is a debugging routine only. It is used only in regression
         tests when it is necessary to compute a consistent random
         surface perturbation seed that is independent of per-processor
-        block distribution. 
+        block distribution.
 
         Parameters
         ----------
@@ -3681,12 +3685,12 @@ class ADFLOW(AeroSolver):
 
         return self.adflow.warping.getstateperturbation(
             randVec, self.getStateSize())
-        
+
     def getSpatialPerturbation(self, seed=314):
         """This is is a debugging routine only. It is used only in regression
         tests when it is necessary to compute a consistent random
         spatial vector seed that is independent of per-processor block
-        distribution. 
+        distribution.
 
         Parameters
         ----------
@@ -3696,13 +3700,13 @@ class ADFLOW(AeroSolver):
 
         # This routine is *NOT SCALABLE*. It requires storing the full
         # mesh on each processor. It should only be used for
-        # verification purposes. 
+        # verification purposes.
 
-        # Get all CGNS Mesh indices to all Proc. 
+        # Get all CGNS Mesh indices to all Proc.
         localIndices = self.adflow.warping.getcgnsmeshindices(self.getSpatialSize())
-        cgnsIndices = numpy.hstack(self.comm.allgather(localIndices)) 
+        cgnsIndices = numpy.hstack(self.comm.allgather(localIndices))
 
-        # Gather all nodes to all procs. 
+        # Gather all nodes to all procs.
         pts = self.adflow.warping.getgrid(self.getSpatialSize())
         allPts = numpy.hstack(self.comm.allgather(pts))
 
@@ -3710,16 +3714,16 @@ class ADFLOW(AeroSolver):
         ptSizes = self.comm.allgather(len(pts))
         offsets = numpy.zeros(len(ptSizes), 'intc')
         offsets[1:] = numpy.cumsum(ptSizes)[:-1]
-        
-        # Now Re-assemble the global CGNS vector. 
-        nDOFCGNS = numpy.max(cgnsIndices) +1 
+
+        # Now Re-assemble the global CGNS vector.
+        nDOFCGNS = numpy.max(cgnsIndices) +1
         CGNSVec = numpy.zeros(nDOFCGNS)
         CGNSVec[cgnsIndices] = allPts
         CGNSVec = CGNSVec.reshape((len(CGNSVec)/3, 3))
-        
+
         # Run the pointReduce on the CGNS nodes
         uniquePts, linkTmp, nUnique = self.adflow.utils.pointreduce(CGNSVec.T, 1e-12)
-        
+
         # Expand link out to the 3x the size and convert to 1 based ordering
         linkTmp -= 1
         link = numpy.zeros(len(linkTmp)*3, 'intc')
@@ -3767,17 +3771,17 @@ class ADFLOW(AeroSolver):
             uniquePts, link, nUnique = self.adflow.utils.pointreduce(allPts.T, 1e-12)
             uniquePtsBar = numpy.zeros((nUnique,3))
             link = link -1 # Convert to zero-based for python:
-            
+
             for i in range(len(link)):
                 uniquePtsBar[link[i]] += dXv[i]
 
             # You might be tempted to vectorize the loop above as:
             # uniquePtsBar[link] += dXv
-            # But you would be wrong. It does not work when link 
-            # references multiple indices more than once. 
+            # But you would be wrong. It does not work when link
+            # references multiple indices more than once.
 
             # Now just take the norm of uniquePtsBar. The flatten
-            # isn't strictly necessary. 
+            # isn't strictly necessary.
             norm = numpy.linalg.norm(uniquePtsBar.flatten())
 
         return self.comm.bcast(norm)
@@ -3819,7 +3823,7 @@ class ADFLOW(AeroSolver):
         res = self.adflow.nksolver.getres(res)
 
         return res
-        
+
     def getFreeStreamResidual(self, aeroProblem):
         self.setAeroProblem(aeroProblem)
         rhoRes, totalRRes = self.adflow.nksolver.getfreestreamresidual()
@@ -4046,7 +4050,7 @@ class ADFLOW(AeroSolver):
             'meshsurfacefamily':[object, None],
             'designsurfacefamily':[object, None],
             'closedsurfacefamilies':[object, None],
-            
+
             # Output Parameters
             'storerindlayer':[bool, True],
             'outputdirectory':[str, './'],
@@ -4171,16 +4175,17 @@ class ADFLOW(AeroSolver):
             # Approximate Newton-Krylov Parameters
             'useanksolver':[bool, False],
             'ankuseturbdadi':[bool, True],
-            'ankswitchtol':[float, 1e-2],
+            'ankswitchtol':[float, 0.1],
             'anksubspacesize':[int, 5],
-            'anklinearsolvetol':[float, 0.5],
+            'anklinearsolvetol':[float, 0.1],
             'ankasmoverlap':[int, 1],
             'ankpcilufill':[int, 1],
-            'ankjacobianlag':[int, 20],
+            'ankjacobianlag':[int, 5],
             'ankinnerpreconits':[int, 1],
             'ankcfl0':[float, 1.0],
             'ankcfllimit':[float, 10000.0],
             'ankstepfactor':[float, 0.8],
+            'anklocalcfl':[bool, False],
 
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
@@ -4240,6 +4245,7 @@ class ADFLOW(AeroSolver):
             # Function parmeters
             'sepsensoroffset':[float, 0.0],
             'sepsensorsharpness':[float, 10.0],
+            'computecavitation':[bool,False],
             }
 
         return defOpts
@@ -4467,6 +4473,7 @@ class ADFLOW(AeroSolver):
             'ankcfl0':['ank', 'ank_cfl0'],
             'ankcfllimit':['ank','ank_cfllimit'],
             'ankstepfactor':['ank','ank_stepfactor'],
+            'anklocalcfl':['ank','ank_localcfl'],
             # Load Balance Paramters
             'blocksplitting':['parallel', 'splitblocks'],
             'loadimbalance':['parallel', 'loadimbalance'],
@@ -4531,6 +4538,7 @@ class ADFLOW(AeroSolver):
             # Parameters for functions
             'sepsensoroffset':['cost', 'sepsensoroffset'],
             'sepsensorsharpness':['cost', 'sepsensorsharpness'],
+            'computecavitation':['cost', 'computecavitation'],
         }
 
         return optionMap, moduleMap
@@ -4600,7 +4608,7 @@ class ADFLOW(AeroSolver):
 
         # Convert to python indexing
         for key in iDV:
-            iDV[key] = iDV[key] - 1 
+            iDV[key] = iDV[key] - 1
 
             # Extra DVs for the Boundary condition variables
         BCDV = ['pressure', 'pressurestagnation', 'temperaturestagnation']
@@ -4650,8 +4658,8 @@ class ADFLOW(AeroSolver):
             'mavgttot':self.adflow.constants.costfuncmavgttot,
             'mavgps':self.adflow.constants.costfuncmavgps,
             'mavgmn':self.adflow.constants.costfuncmavgmn,
-            'sigmamn':self.adflow.constants.costfuncsigmamn, 
-            'sigmaptot':self.adflow.constants.costfuncsigmaptot, 
+            'sigmamn':self.adflow.constants.costfuncsigmamn,
+            'sigmaptot':self.adflow.constants.costfuncsigmaptot,
             'axismoment':self.adflow.constants.costfuncaxismoment,
             'flowpower':self.adflow.constants.costfuncflowpower,
             }
@@ -4747,13 +4755,13 @@ class ADFLOW(AeroSolver):
         """Internal routine for generating the zipper mesh. This operation is
         postposted as long as possible and now it cannot wait any longer."""
         if self.zipperCreated:
-            return 
+            return
 
         zipFam = self.getOption('zipperSurfaceFamily')
-        
+
         if zipFam is None:
             # The user didn't tell us anything. So we will use all
-            # walls. Remind the user what those are. 
+            # walls. Remind the user what those are.
             zipperFamList = self.families[self.allWallsGroup]
             if self.myid == 0:
                 ADFLOWWarning("'zipperSurfaceFamily' option was not given. Using all "
@@ -4779,7 +4787,7 @@ class ADFLOW(AeroSolver):
         shp = strArray.shape
         arr = strArray.reshape((shp[1],shp[0]), order='F')
         tmp = []
-        
+
         for i in range(arr.shape[1]):
             tmp.append("")
             for j in range(arr.shape[0]):
@@ -4797,7 +4805,7 @@ class ADFLOW(AeroSolver):
         for i,s in enumerate(strList):
             for j in range(len(s)):
                 arr[i,j] = s[j]
-            
+
         return arr
 
     def createSlaveAeroProblem(self, master):
@@ -4840,7 +4848,7 @@ class ADFLOW(AeroSolver):
                 for idim in range(3):
                     pts[nodeCount:nodeCount+curSize, idim] = (
                         numpy.fromfile(f, 'float', curSize, sep=' '))
-                # Add in the connectivity. 
+                # Add in the connectivity.
                 iSize = sizes[iSurf, 0]
                 for j in range(sizes[iSurf, 1]-1):
                     for i in range(sizes[iSurf, 0]-1):
@@ -4918,7 +4926,8 @@ class adflowUserFunc(object):
         # We need to get the derivative of 'self.funcName' as a
         # function of the 'self.functions'
         refFuncs = copy.deepcopy(self.funcs)
-        deriv = {}
+        deriv = OrderedDict()
+
         for f in self.functions:
             funcs = refFuncs.copy()
             funcs[f] += 1e-40j
