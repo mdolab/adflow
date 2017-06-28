@@ -57,7 +57,7 @@ def reg_write_dict(d, rel_tol=1e-12, abs_tol=1e-12):
     """Write all values in a dictionary in sorted key order"""
     for key in sorted(d.keys()):
         print ('Dictionary Key: %s'%key)
-        if type(d[key]) == dict:
+        if isinstance(d[key],dict):
             reg_write_dict(d[key], rel_tol, abs_tol)
         elif type(d[key]) == bool:
             reg_write(int(d[key]), rel_tol, abs_tol)

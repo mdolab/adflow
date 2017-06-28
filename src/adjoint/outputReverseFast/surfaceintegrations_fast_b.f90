@@ -364,14 +364,16 @@ contains
       sepsensoravg(1) = sepsensoravg(1) + sensor*xc
       sepsensoravg(2) = sepsensoravg(2) + sensor*yc
       sepsensoravg(3) = sepsensoravg(3) + sensor*zc
-      plocal = pp2(i, j)
-      tmp = two/(gammainf*machcoef*machcoef)
-      cp = tmp*(plocal-pinf)
-      sigma = 1.4
-      sensor1 = -cp - sigma
-      sensor1 = one/(one+exp(-(2*10*sensor1)))
-      sensor1 = sensor1*cellarea*blk
-      cavitation = cavitation + sensor1
+      if (computecavitation) then
+        plocal = pp2(i, j)
+        tmp = two/(gammainf*machcoef*machcoef)
+        cp = tmp*(plocal-pinf)
+        sigma = 1.4
+        sensor1 = -cp - sigma
+        sensor1 = one/(one+exp(-(2*10*sensor1)))
+        sensor1 = sensor1*cellarea*blk
+        cavitation = cavitation + sensor1
+      end if
     end do
 !
 ! integration of the viscous forces.

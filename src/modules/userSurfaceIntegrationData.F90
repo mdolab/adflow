@@ -36,7 +36,7 @@ module userSurfaceIntegrationData
 
   end type userIntSurf
 
-  integer(kind=intType), parameter :: nUserIntSurfsMax=25
+  integer(kind=intType), parameter :: nUserIntSurfsMax=360
   type(userIntSurf), dimension(nUserIntSurfsMax), target :: userIntSurfs
   integer(kind=intTYpe) :: nUserIntSurfs=0
 end module userSurfaceIntegrationData

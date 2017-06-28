@@ -85,7 +85,7 @@ contains
              ! Allocate some temporary data needed to supply to the
              ! zipper integration routine. 
              allocate(ptValid(npts), vars(npts, nZippFlowComm), fams(size(surf%conn, 2)))
-             
+            
              ! Initialize ptValid to True. If we find that it isn't,
              ! we'll permenantly set that point to false. This could
              ! come from either the node or the flow comms. 
@@ -117,12 +117,10 @@ contains
                 if (.not. surf%nodeComm%valid(i)) then 
                    ptValid(j) = .False. 
                 end if
-
              end do
              
              ! The family array is all the same value:
              fams = surf%famID
-
              ! Perform the actual integration
              call flowIntegrationZipper(.True., surf%conn, fams, vars, localValues, famList, sps, &
                   withGathered, funcValues, ptValid)
@@ -231,6 +229,12 @@ contains
              allocate(ptValid(npts), vars(npts, nZippFlowComm), &
                   varsd(npts, nZippFlowComm), fams(size(surf%conn, 2)))
 
+             ! Initialize ptValid to True. If we find that it isn't,
+             ! we'll permenantly set that point to false. This could
+             ! come from either the node or the flow comms. 
+
+             ptValid = .True.
+
              ! Prepare for the "zipper" integration call. We have to
              ! re-order the data according to the "inv" array in each
              ! of the two comms. 
@@ -241,6 +245,10 @@ contains
 
                 vars(j, iRho:iZippFlowGamma) = recvBuffer1(6*(i-1) + iRho : 6*(i-1) + iZippFlowGamma)
                 varsd(j, iRho:iZippFlowGamma) = recvBuffer1d(6*(i-1) + iRho : 6*(i-1) + iZippFlowGamma)
+
+                if (.not. surf%flowComm%valid(i)) then 
+                   ptValid(j) = .False. 
+                end if
 
                 ! Sface is not implemented. To correctly do this,
                 ! interpolate the three components of 's', do the dot
@@ -254,7 +262,9 @@ contains
                 varsd(j, iZippFlowX:iZippFlowZ) = recvBuffer2d(3*i-2:3*i)
                       
                 ! The additional pt-valid array
-                ptValid(j) = surf%nodeComm%valid(i)
+                if (.not. surf%nodeComm%valid(i)) then 
+                   ptValid(j) = .False. 
+                end if
              end do
              
              ! The family array is all the same value:
@@ -371,6 +381,13 @@ contains
              ! zipper integration routine. 
              allocate(ptValid(npts), vars(npts, nZippFlowComm), &
                   varsd(npts, nZippFlowComm), fams(size(surf%conn, 2)))
+
+             ! Initialize ptValid to True. If we find that it isn't,
+             ! we'll permenantly set that point to false. This could
+             ! come from either the node or the flow comms. 
+
+             ptValid = .True.
+  
              varsd= zero
              ! Prepare for the "zipper" integration call. We have to
              ! re-order the data according to the "inv" array in each
@@ -380,6 +397,10 @@ contains
                 ! Flow Variables
                 j = surf%flowComm%inv(i)
                 vars(j, iRho:iZippFlowGamma) = recvBuffer1(6*(i-1) + iRho : 6*(i-1) + iZippFlowGamma)
+
+                if (.not. surf%flowComm%valid(i)) then 
+                   ptValid(j) = .False. 
+                end if
 
                 ! Sface is not implemented. To correctly do this,
                 ! interpolate the three components of 's', do the dot
@@ -391,7 +412,9 @@ contains
                 vars(j, iZippFlowX:iZippFlowZ) = recvBuffer2(3*i-2:3*i)
                       
                 ! The additional pt-valid array
-                ptValid(j) = surf%nodeComm%valid(i)
+                if (.not. surf%nodeComm%valid(i)) then 
+                   ptValid(j) = .False. 
+                end if
              end do
 
              ! The family array is all the same value:
@@ -459,8 +482,7 @@ contains
             &"integration slices. Increase nUserIntSurfsMax"
        stop
     end if
-
-
+    
     surf => userIntSurfs(nUserIntSurfs)
     if (myid == 0) then 
        allocate(surf%pts(3, nPts), surf%conn(3, nConn))
@@ -1185,7 +1207,10 @@ contains
     ! We assume that the pointers to the realCommVars have already been set. 
 
     allocate(sendBuffer(nVar*comm%nDonor))
-
+    ! initialize the sendBuffer to an arbitrary value. If the
+    ! integration tries to use this value, you know something is
+    ! wrong.
+    sendBuffer = -99999
     ! First generate the interpolated data necessary
     jj = 0
     donorLoop: do i=1, comm%nDonor

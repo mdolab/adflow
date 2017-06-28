@@ -394,14 +394,16 @@ contains
        sepSensorAvg(2) = sepSensorAvg(2)  + sensor * yc
        sepSensorAvg(3) = sepSensorAvg(3)  + sensor * zc
 
-       plocal = pp2(i,j)
-       tmp = two/(gammaInf*MachCoef*MachCoef)
-       Cp = tmp*(plocal-pinf)
-       Sigma = 1.4
-       Sensor1 = -Cp - Sigma
-       Sensor1 = one/(one+exp(-2*10*Sensor1))
-       Sensor1 = Sensor1 * cellArea * blk
-       Cavitation = Cavitation + Sensor1
+       if (computeCavitation) then
+          plocal = pp2(i,j)
+          tmp = two/(gammaInf*MachCoef*MachCoef)
+          Cp = tmp*(plocal-pinf)
+          Sigma = 1.4
+          Sensor1 = -Cp - Sigma
+          Sensor1 = one/(one+exp(-2*10*Sensor1))
+          Sensor1 = Sensor1 * cellArea * blk
+          Cavitation = Cavitation + Sensor1
+       end if
     enddo
     
     !
