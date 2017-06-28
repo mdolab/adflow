@@ -838,14 +838,16 @@ contains
       sepsensoravg(1) = sepsensoravg(1) + sensor*xc
       sepsensoravg(2) = sepsensoravg(2) + sensor*yc
       sepsensoravg(3) = sepsensoravg(3) + sensor*zc
-      plocal = pp2(i, j)
-      tmp = two/(gammainf*machcoef*machcoef)
-      cp = tmp*(plocal-pinf)
-      sigma = 1.4
-      sensor1 = -cp - sigma
-      sensor1 = one/(one+exp(-(2*10*sensor1)))
-      sensor1 = sensor1*cellarea*blk
-      cavitation = cavitation + sensor1
+      if (computecavitation) then
+        plocal = pp2(i, j)
+        tmp = two/(gammainf*machcoef*machcoef)
+        cp = tmp*(plocal-pinf)
+        sigma = 1.4
+        sensor1 = -cp - sigma
+        sensor1 = one/(one+exp(-(2*10*sensor1)))
+        sensor1 = sensor1*cellarea*blk
+        cavitation = cavitation + sensor1
+      end if
     end do
 !
 ! integration of the viscous forces.
@@ -1136,13 +1138,31 @@ contains
       call pushreal8(zc)
       zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
 &       3))
-      plocal = pp2(i, j)
-      tmp = two/(gammainf*machcoef*machcoef)
-      cp = tmp*(plocal-pinf)
-      sigma = 1.4
-      sensor1 = -cp - sigma
-      call pushreal8(sensor1)
-      sensor1 = one/(one+exp(-(2*10*sensor1)))
+      if (computecavitation) then
+        plocal = pp2(i, j)
+        tmp = two/(gammainf*machcoef*machcoef)
+        cp = tmp*(plocal-pinf)
+        sigma = 1.4
+        sensor1 = -cp - sigma
+        call pushreal8(sensor1)
+        sensor1 = one/(one+exp(-(2*10*sensor1)))
+        sensor1d = cavitationd
+        cellaread = blk*sensor1*sensor1d
+        sensor1d = blk*cellarea*sensor1d
+        call popreal8(sensor1)
+        temp5 = -(10*2*sensor1)
+        temp4 = one + exp(temp5)
+        sensor1d = exp(temp5)*one*10*2*sensor1d/temp4**2
+        cpd = -sensor1d
+        tmpd = (plocal-pinf)*cpd
+        plocald = tmp*cpd
+        pinfd = pinfd - tmp*cpd
+        temp3 = gammainf*machcoef**2
+        machcoefd = machcoefd - gammainf*two*2*machcoef*tmpd/temp3**2
+        pp2d(i, j) = pp2d(i, j) + plocald
+      else
+        cellaread = 0.0_8
+      end if
       mxd = blk*mpd(1)
       myd = blk*mpd(2)
       mzd = blk*mpd(3)
@@ -1150,20 +1170,6 @@ contains
       m0xd = n(1)*tempd9
       m0yd = n(2)*tempd9
       m0zd = n(3)*tempd9
-      sensor1d = cavitationd
-      cellaread = blk*sensor1*sensor1d
-      sensor1d = blk*cellarea*sensor1d
-      call popreal8(sensor1)
-      temp5 = -(10*2*sensor1)
-      temp4 = one + exp(temp5)
-      sensor1d = exp(temp5)*one*10*2*sensor1d/temp4**2
-      cpd = -sensor1d
-      tmpd = (plocal-pinf)*cpd
-      plocald = tmp*cpd
-      pinfd = pinfd - tmp*cpd
-      temp3 = gammainf*machcoef**2
-      machcoefd = machcoefd - gammainf*two*2*machcoef*tmpd/temp3**2
-      pp2d(i, j) = pp2d(i, j) + plocald
       sensord = yc*sepsensoravgd(2) + sepsensord + xc*sepsensoravgd(1) +&
 &       zc*sepsensoravgd(3)
       zcd = sensor*sepsensoravgd(3)
@@ -1482,14 +1488,16 @@ contains
       sepsensoravg(1) = sepsensoravg(1) + sensor*xc
       sepsensoravg(2) = sepsensoravg(2) + sensor*yc
       sepsensoravg(3) = sepsensoravg(3) + sensor*zc
-      plocal = pp2(i, j)
-      tmp = two/(gammainf*machcoef*machcoef)
-      cp = tmp*(plocal-pinf)
-      sigma = 1.4
-      sensor1 = -cp - sigma
-      sensor1 = one/(one+exp(-(2*10*sensor1)))
-      sensor1 = sensor1*cellarea*blk
-      cavitation = cavitation + sensor1
+      if (computecavitation) then
+        plocal = pp2(i, j)
+        tmp = two/(gammainf*machcoef*machcoef)
+        cp = tmp*(plocal-pinf)
+        sigma = 1.4
+        sensor1 = -cp - sigma
+        sensor1 = one/(one+exp(-(2*10*sensor1)))
+        sensor1 = sensor1*cellarea*blk
+        cavitation = cavitation + sensor1
+      end if
     end do
 !
 ! integration of the viscous forces.

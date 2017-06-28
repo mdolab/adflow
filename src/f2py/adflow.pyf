@@ -1164,6 +1164,7 @@ python module libadflow
          use constants
          real(kind=realtype) sepsensoroffset
          real(kind=realtype) sepsensorsharpness
+         logical::computecavitation
        end module inputcostfunctions
        
        module adjointvars ! in :test:ADjointVars.F90
