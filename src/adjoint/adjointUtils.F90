@@ -277,6 +277,9 @@ contains
           else
              call setPointers(nn, level, sps)
           end if
+          if (usePC) then 
+             shockSensor => flowDoms(nn,1,sps)%shockSensor
+          end if
 
           ! Do Coloring and perturb states
           colorLoop: do iColor = 1, nColor
