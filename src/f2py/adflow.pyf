@@ -220,7 +220,13 @@ python module libadflow
          real(kind=realtype) :: ank_cfl0
          real(kind=realtype) :: ank_cfllimit
          real(kind=realtype) :: ank_stepfactor
-         logical :: ank_localcfl
+         real(kind=realtype) :: ank_secondordswitchtol
+         real(kind=realtype) :: ank_stepinit
+         real(kind=realtype) :: ank_stepcutback
+         real(kind=realtype) :: ank_stepmin
+         real(kind=realtype) :: ank_stepexponent
+         real(kind=realtype) :: ank_cflexponent
+         real(kind=realtype) :: ank_coupledswitchtol
          subroutine destroyanksolver
          end subroutine destroyanksolver
          
