@@ -4252,6 +4252,7 @@ class ADFLOW(AeroSolver):
             # Function parmeters
             'sepsensoroffset':[float, 0.0],
             'sepsensorsharpness':[float, 10.0],
+            'computecavitation':[bool,False],
             }
 
         return defOpts
@@ -4544,6 +4545,7 @@ class ADFLOW(AeroSolver):
             # Parameters for functions
             'sepsensoroffset':['cost', 'sepsensoroffset'],
             'sepsensorsharpness':['cost', 'sepsensorsharpness'],
+            'computecavitation':['cost', 'computecavitation'],
         }
 
         return optionMap, moduleMap
