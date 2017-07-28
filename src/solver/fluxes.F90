@@ -2742,7 +2742,7 @@ contains
                    ! Compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
                    Wxy = u_y - v_x
                    Wxz = u_z - w_x
-                   Wyz = u_y - v_x
+                   Wyz = v_z - w_y
                    Wyx = -Wxy
                    Wzx = -Wxz
                    Wzy = -Wyz
