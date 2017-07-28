@@ -902,7 +902,7 @@ contains
     use NKSolver, only : NKLSFuncEvals, freestreamResset, NK_LS, &
          NK_switchTol, useNKSolver, NK_CFL, getFreeStreamResidual, &
          getCurrentResidual, NKStep, computeResidualNK
-    use anksolver, only : ANK_switchTol, useANKSolver, ANK_CFL, ANKStep
+    use anksolver, only : ANK_switchTol, useANKSolver, ANK_CFL, ANKStep, destroyANKSolver
     use inputio, only : forcedLiftFile, forcedSliceFile, forcedVolumeFile, &
          forcedSurfaceFile, solFile, newGridFile, surfaceSolFile
     use inputIteration, only: CFL, CFLCoarse, minIterNum, nCycles, &
@@ -1105,6 +1105,12 @@ contains
 
              else
 
+                ! We free the memory for the ANK solver here because ANK solver 
+                ! module depends on the NK solver module and we cannot call
+                ! destroyANKSolver within NKSolver itself.
+                if (firstNK) then
+                    call destroyANKSolver()
+                end if
                 iterType = "    NK"
                 call NKStep(firstNK)
                 firstNK = .False.

@@ -2349,11 +2349,16 @@ contains
     end if
     
     ! Calculate the residual with the new values and set the R vec in PETSc
+    ! We calculate the full residual using NK routine because the dw values
+    ! for turbulent variable has the update, not the residual and this
+    ! gives the wrong turbulent residual norm. This causes issues when
+    ! switching to NK or restarts after ANK. To fix, we calculate turbulent
+    ! residuals after each ANK step, which the turbSolveSegregated routine
+    ! does not do on its own
+    call computeResidualNK()
     if (ANK_useTurbDADI) then
-      call computeResidualANK()
       call setRVecANK(rVec)
     else 
-      call computeResidualNK()
       call setRVec(rVec)
     end if
 
