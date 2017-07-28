@@ -91,6 +91,7 @@ contains
     !  Source terms.                                                  
     !  Determine the source term and its derivative w.r.t. nuTilde    
     !  for all internal cells of the block.                           
+    !  Remember that the SA field variable nuTilde = w(i,j,k,itu1)
 
     use blockPointers
     use constants
@@ -394,6 +395,8 @@ contains
                 ttm = xm*xa + ym*ya + zm*za
                 ttp = xp*xa + yp*ya + zp*za
 
+                ! ttm and ttp ~ 1/deltaX^2
+
                 ! Computation of the viscous terms in zeta-direction; note
                 ! that cross-derivatives are neglected, i.e. the mesh is
                 ! assumed to be orthogonal.
@@ -412,11 +415,17 @@ contains
                 cam  =  ttm*cnud
                 cap  =  ttp*cnud
 
+                ! Compute nuTilde at the faces
+
                 nutm = half*(w(i,j,k-1,itu1) + w(i,j,k,itu1))
                 nutp = half*(w(i,j,k+1,itu1) + w(i,j,k,itu1))
+
+                ! Compute nu at the faces
+
                 nu   = rlv(i,j,k)/w(i,j,k,irho)
                 num  = half*(rlv(i,j,k-1)/w(i,j,k-1,irho) + nu)
                 nup  = half*(rlv(i,j,k+1)/w(i,j,k+1,irho) + nu)
+
                 cdm  = (num + (one + rsaCb2)*nutm)*ttm*cb3Inv
                 cdp  = (nup + (one + rsaCb2)*nutp)*ttp*cb3Inv
 
