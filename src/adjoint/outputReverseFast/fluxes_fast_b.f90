@@ -8142,6 +8142,7 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: tempd42
     real(kind=realtype) :: tempd41
     real(kind=realtype) :: tempd40
+    real(kind=realtype) :: tempd70
     real(kind=realtype) :: tempd39
     real(kind=realtype) :: tempd38
     real(kind=realtype) :: tempd37
@@ -8150,7 +8151,9 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: tempd34
     real(kind=realtype) :: tempd33
     real(kind=realtype) :: tempd32
+    real(kind=realtype) :: tempd69
     real(kind=realtype) :: tempd31
+    real(kind=realtype) :: tempd68
     real(kind=realtype) :: tempd30
     real(kind=realtype) :: tempd67
     real(kind=realtype) :: tempd66
@@ -8349,16 +8352,18 @@ myIntPtr = myIntPtr + 1
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the tau definition since
+! we still need to separate between laminar and turbulent stress for qcr.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = mut*(two*u_x-fracdiv)
-        tauyy = mut*(two*v_y-fracdiv)
-        tauzz = mut*(two*w_z-fracdiv)
-        tauxy = mut*(u_y+v_x)
-        tauxz = mut*(u_z+w_x)
-        tauyz = mut*(v_z+w_y)
+        tauxx = two*u_x - fracdiv
+        tauyy = two*v_y - fracdiv
+        tauzz = two*w_z - fracdiv
+        tauxy = u_y + v_x
+        tauxz = u_z + w_x
+        tauyz = v_z + w_y
 ! add qcr corrections if necessary
         if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
 ! 
@@ -8369,6 +8374,8 @@ myIntPtr = myIntPtr + 1
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
           den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &           v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z)
@@ -8381,8 +8388,10 @@ myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
             den = den
           end if
-! compute factor that will multiply all tensor components
-          fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+          fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
 ! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
@@ -8398,16 +8407,23 @@ myIntPtr = myIntPtr + 1
           exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
           exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
           eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
-! add extra terms
-          tauxx = tauxx - exx
-          tauyy = tauyy - eyy
-          tauzz = tauzz - ezz
-          tauxy = tauxy - exy
-          tauxz = tauxz - exz
-          tauyz = tauyz - eyz
+! apply the total viscosity to the stress tensor and add extra terms
+          tauxx = mut*tauxx - exx
+          tauyy = mut*tauyy - eyy
+          tauzz = mut*tauzz - ezz
+          tauxy = mut*tauxy - exy
+          tauxz = mut*tauxz - exz
+          tauyz = mut*tauyz - eyz
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 0
         else
+! just apply the total viscosity to the stress tensor
+          tauxx = mut*tauxx
+          tauyy = mut*tauyy
+          tauzz = mut*tauzz
+          tauxy = mut*tauxy
+          tauxz = mut*tauxz
+          tauyz = mut*tauyz
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
         end if
@@ -8425,21 +8441,21 @@ myIntPtr = myIntPtr + 1
         fmzd = fwd(i+1, j, k, imz) - fwd(i, j, k, imz)
         fmyd = fwd(i+1, j, k, imy) - fwd(i, j, k, imy)
         fmxd = fwd(i+1, j, k, imx) - fwd(i, j, k, imx)
-        tempd65 = si(i, j, k, 1)*frhoed
-        tempd66 = si(i, j, k, 2)*frhoed
-        tempd67 = si(i, j, k, 3)*frhoed
-        ubard = tauxz*tempd67 + tauxy*tempd66 + tauxx*tempd65
-        tauxxd = si(i, j, k, 1)*fmxd + ubar*tempd65
-        vbard = tauyz*tempd67 + tauyy*tempd66 + tauxy*tempd65
+        tempd68 = si(i, j, k, 1)*frhoed
+        tempd69 = si(i, j, k, 2)*frhoed
+        tempd70 = si(i, j, k, 3)*frhoed
+        ubard = tauxz*tempd70 + tauxy*tempd69 + tauxx*tempd68
+        tauxxd = si(i, j, k, 1)*fmxd + ubar*tempd68
+        vbard = tauyz*tempd70 + tauyy*tempd69 + tauxy*tempd68
         tauxyd = si(i, j, k, 1)*fmyd + si(i, j, k, 2)*fmxd + ubar*&
-&         tempd66 + vbar*tempd65
-        wbard = tauzz*tempd67 + tauyz*tempd66 + tauxz*tempd65
+&         tempd69 + vbar*tempd68
+        wbard = tauzz*tempd70 + tauyz*tempd69 + tauxz*tempd68
         tauxzd = si(i, j, k, 1)*fmzd + si(i, j, k, 3)*fmxd + ubar*&
-&         tempd67 + wbar*tempd65
-        tauyyd = si(i, j, k, 2)*fmyd + vbar*tempd66
+&         tempd70 + wbar*tempd68
+        tauyyd = si(i, j, k, 2)*fmyd + vbar*tempd69
         tauyzd = si(i, j, k, 2)*fmzd + si(i, j, k, 3)*fmyd + vbar*&
-&         tempd67 + wbar*tempd66
-        tauzzd = si(i, j, k, 3)*fmzd + wbar*tempd67
+&         tempd70 + wbar*tempd69
+        tauzzd = si(i, j, k, 3)*fmzd + wbar*tempd70
         q_xd = -(si(i, j, k, 1)*frhoed)
         q_yd = -(si(i, j, k, 2)*frhoed)
         q_zd = -(si(i, j, k, 3)*frhoed)
@@ -8457,60 +8473,72 @@ branch = myIntStack(myIntPtr)
           exyd = -tauxyd
           ezzd = -tauzzd
           eyyd = -tauyyd
+          mutd = tauxz*tauxzd + tauzz*tauzzd + tauxx*tauxxd + tauyy*&
+&           tauyyd + tauxy*tauxyd + tauyz*tauyzd
           exxd = -tauxxd
-          tempd59 = fact*eyzd
+          tempd65 = fact*eyzd
           factd = (wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)*exzd + two*(&
 &           wzx*tauxz+wzy*tauyz)*ezzd + two*(wxy*tauxy+wxz*tauxz)*exxd +&
 &           two*(wyx*tauxy+wyz*tauyz)*eyyd + (wxy*tauyy+wxz*tauyz+wyx*&
 &           tauxx+wyz*tauxz)*exyd + (wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*&
 &           tauyy)*eyzd
-          tempd64 = fact*exzd
-          tauzzd = tauzzd + wxz*tempd64 + wyz*tempd59
-          tempd60 = fact*exyd
-          tauyyd = tauyyd + wxy*tempd60 + wzy*tempd59
-          tauxxd = tauxxd + wyx*tempd60 + wzx*tempd64
-          tempd63 = two*fact*ezzd
-          wzxd = tauxx*tempd64 + tauxz*tempd63 + tauxy*tempd59
-          wzyd = tauxy*tempd64 + tauyz*tempd63 + tauyy*tempd59
-          tempd61 = two*fact*eyyd
-          wyxd = tauxx*tempd60 + tauxy*tempd61 + tauxz*tempd59
-          wyzd = tauxz*tempd60 - wzyd + tauyz*tempd61 + tauzz*tempd59
-          tauyzd = tauyzd + wxz*tempd60 + wyz*tempd61 + wzy*tempd63 + &
-&           wxy*tempd64
-          tempd62 = two*fact*exxd
-          tauxzd = tauxzd + wyz*tempd60 + wxz*tempd62 + wzx*tempd63 + &
-&           wyx*tempd59
-          tauxyd = tauxyd + wzy*tempd64 + wxy*tempd62 + wyx*tempd61 + &
-&           wzx*tempd59
-          wxyd = tauyy*tempd60 - wyxd + tauxy*tempd62 + tauyz*tempd64
-          wxzd = tauyz*tempd60 - wzxd + tauxz*tempd62 + tauzz*tempd64
+          tempd61 = fact*exzd
+          tauzzd = wyz*tempd65 + wxz*tempd61 + mut*tauzzd
+          tempd64 = fact*exyd
+          tauyyd = wzy*tempd65 + wxy*tempd64 + mut*tauyyd
+          tauxxd = wzx*tempd61 + wyx*tempd64 + mut*tauxxd
+          tempd62 = two*fact*ezzd
+          wzxd = tauxx*tempd61 + tauxz*tempd62 + tauxy*tempd65
+          wzyd = tauxy*tempd61 + tauyz*tempd62 + tauyy*tempd65
+          tempd63 = two*fact*eyyd
+          tauyzd = wxy*tempd61 + wzy*tempd62 + wyz*tempd63 + wxz*tempd64&
+&           + mut*tauyzd
+          wyxd = tauxx*tempd64 + tauxy*tempd63 + tauxz*tempd65
+          wyzd = tauxz*tempd64 - wzyd + tauyz*tempd63 + tauzz*tempd65
+          tempd66 = two*fact*exxd
+          tauxzd = wyx*tempd65 + wzx*tempd62 + wxz*tempd66 + wyz*tempd64&
+&           + mut*tauxzd
+          tauxyd = wzx*tempd65 + wyx*tempd63 + wxy*tempd66 + wzy*tempd61&
+&           + mut*tauxyd
+          wxyd = tauyy*tempd64 - wyxd + tauxy*tempd66 + tauyz*tempd61
+          wxzd = tauyz*tempd64 - wzxd + tauxz*tempd66 + tauzz*tempd61
           v_zd = wyzd
           w_yd = -wyzd
           u_zd = wxzd
           w_xd = -wxzd
           u_yd = wxyd
           v_xd = -wxyd
-          dend = -(ccr1*factd/den**2)
+          tempd67 = ccr1*factd/den
+          mued = mued + tempd67
+          dend = -(mue*tempd67/den)
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
           if (branch .eq. 0) dend = 0.0_8
           if (u_x**2 + u_y**2 + u_z**2 + v_x**2 + v_y**2 + v_z**2 + w_x&
 &             **2 + w_y**2 + w_z**2 .eq. 0.0_8) then
-            tempd58 = 0.0
+            tempd60 = 0.0
           else
-            tempd58 = dend/(2.0*sqrt(u_x**2+u_y**2+u_z**2+v_x**2+v_y**2+&
+            tempd60 = dend/(2.0*sqrt(u_x**2+u_y**2+u_z**2+v_x**2+v_y**2+&
 &             v_z**2+w_x**2+w_y**2+w_z**2))
           end if
-          u_xd = 2*u_x*tempd58
-          u_yd = u_yd + 2*u_y*tempd58
-          u_zd = u_zd + 2*u_z*tempd58
-          v_xd = v_xd + 2*v_x*tempd58
-          v_yd = 2*v_y*tempd58
-          v_zd = v_zd + 2*v_z*tempd58
-          w_xd = w_xd + 2*w_x*tempd58
-          w_yd = w_yd + 2*w_y*tempd58
-          w_zd = 2*w_z*tempd58
+          u_xd = 2*u_x*tempd60
+          u_yd = u_yd + 2*u_y*tempd60
+          u_zd = u_zd + 2*u_z*tempd60
+          v_xd = v_xd + 2*v_x*tempd60
+          v_yd = 2*v_y*tempd60
+          v_zd = v_zd + 2*v_z*tempd60
+          w_xd = w_xd + 2*w_x*tempd60
+          w_yd = w_yd + 2*w_y*tempd60
+          w_zd = 2*w_z*tempd60
         else
+          mutd = tauxz*tauxzd + tauzz*tauzzd + tauxx*tauxxd + tauyy*&
+&           tauyyd + tauxy*tauxyd + tauyz*tauyzd
+          tauyzd = mut*tauyzd
+          tauxzd = mut*tauxzd
+          tauxyd = mut*tauxyd
+          tauzzd = mut*tauzzd
+          tauyyd = mut*tauyyd
+          tauxxd = mut*tauxxd
           u_xd = 0.0_8
           u_yd = 0.0_8
           u_zd = 0.0_8
@@ -8521,24 +8549,21 @@ branch = myIntStack(myIntPtr)
           v_yd = 0.0_8
           v_zd = 0.0_8
         end if
-        fracdivd = -(mut*tauyyd) - mut*tauxxd - mut*tauzzd
-        tempd45 = twothird*fracdivd
+        fracdivd = -tauyyd - tauxxd - tauzzd
+        tempd47 = twothird*fracdivd
         heatcoefd = q_y*q_yd + q_x*q_xd + q_z*q_zd
         q_zd = heatcoef*q_zd
         q_yd = heatcoef*q_yd
         q_xd = heatcoef*q_xd
-        mutd = (u_z+w_x)*tauxzd + (two*w_z-fracdiv)*tauzzd + (two*u_x-&
-&         fracdiv)*tauxxd + (two*v_y-fracdiv)*tauyyd + (u_y+v_x)*tauxyd &
-&         + (v_z+w_y)*tauyzd
-        v_zd = v_zd + mut*tauyzd
-        w_yd = w_yd + mut*tauyzd
-        u_zd = u_zd + mut*tauxzd
-        w_xd = w_xd + mut*tauxzd
-        u_yd = u_yd + mut*tauxyd
-        v_xd = v_xd + mut*tauxyd
-        w_zd = w_zd + tempd45 + mut*two*tauzzd
-        v_yd = v_yd + tempd45 + mut*two*tauyyd
-        u_xd = u_xd + tempd45 + mut*two*tauxxd
+        v_zd = v_zd + tauyzd
+        w_yd = w_yd + tauyzd
+        u_zd = u_zd + tauxzd
+        w_xd = w_xd + tauxzd
+        u_yd = u_yd + tauxyd
+        v_xd = v_xd + tauxyd
+        w_zd = w_zd + tempd47 + two*tauzzd
+        v_yd = v_yd + tempd47 + two*tauyyd
+        u_xd = u_xd + tempd47 + two*tauxxd
         corrd = -(ssy*q_yd) - ssx*q_xd - ssz*q_zd
         q_xd = q_xd + ssx*corrd
         q_yd = q_yd + ssy*corrd
@@ -8563,66 +8588,66 @@ branch = myIntStack(myIntPtr)
         u_zd = u_zd + ssz*corrd
         wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) - ss*corrd
         wd(i, j, k, ivx) = wd(i, j, k, ivx) + ss*corrd
-        tempd46 = fourth*q_zd
-        qzd(i, j-1, k-1) = qzd(i, j-1, k-1) + tempd46
-        qzd(i, j, k-1) = qzd(i, j, k-1) + tempd46
-        qzd(i, j-1, k) = qzd(i, j-1, k) + tempd46
-        qzd(i, j, k) = qzd(i, j, k) + tempd46
-        tempd47 = fourth*q_yd
-        qyd(i, j-1, k-1) = qyd(i, j-1, k-1) + tempd47
-        qyd(i, j, k-1) = qyd(i, j, k-1) + tempd47
-        qyd(i, j-1, k) = qyd(i, j-1, k) + tempd47
-        qyd(i, j, k) = qyd(i, j, k) + tempd47
-        tempd48 = fourth*q_xd
-        qxd(i, j-1, k-1) = qxd(i, j-1, k-1) + tempd48
-        qxd(i, j, k-1) = qxd(i, j, k-1) + tempd48
-        qxd(i, j-1, k) = qxd(i, j-1, k) + tempd48
-        qxd(i, j, k) = qxd(i, j, k) + tempd48
-        tempd49 = fourth*w_zd
-        wzd(i, j-1, k-1) = wzd(i, j-1, k-1) + tempd49
-        wzd(i, j, k-1) = wzd(i, j, k-1) + tempd49
-        wzd(i, j-1, k) = wzd(i, j-1, k) + tempd49
-        wzd(i, j, k) = wzd(i, j, k) + tempd49
-        tempd50 = fourth*w_yd
-        wyd(i, j-1, k-1) = wyd(i, j-1, k-1) + tempd50
-        wyd(i, j, k-1) = wyd(i, j, k-1) + tempd50
-        wyd(i, j-1, k) = wyd(i, j-1, k) + tempd50
-        wyd(i, j, k) = wyd(i, j, k) + tempd50
-        tempd51 = fourth*w_xd
-        wxd(i, j-1, k-1) = wxd(i, j-1, k-1) + tempd51
-        wxd(i, j, k-1) = wxd(i, j, k-1) + tempd51
-        wxd(i, j-1, k) = wxd(i, j-1, k) + tempd51
-        wxd(i, j, k) = wxd(i, j, k) + tempd51
-        tempd52 = fourth*v_zd
-        vzd(i, j-1, k-1) = vzd(i, j-1, k-1) + tempd52
-        vzd(i, j, k-1) = vzd(i, j, k-1) + tempd52
-        vzd(i, j-1, k) = vzd(i, j-1, k) + tempd52
-        vzd(i, j, k) = vzd(i, j, k) + tempd52
-        tempd53 = fourth*v_yd
-        vyd(i, j-1, k-1) = vyd(i, j-1, k-1) + tempd53
-        vyd(i, j, k-1) = vyd(i, j, k-1) + tempd53
-        vyd(i, j-1, k) = vyd(i, j-1, k) + tempd53
-        vyd(i, j, k) = vyd(i, j, k) + tempd53
-        tempd54 = fourth*v_xd
-        vxd(i, j-1, k-1) = vxd(i, j-1, k-1) + tempd54
-        vxd(i, j, k-1) = vxd(i, j, k-1) + tempd54
-        vxd(i, j-1, k) = vxd(i, j-1, k) + tempd54
-        vxd(i, j, k) = vxd(i, j, k) + tempd54
-        tempd55 = fourth*u_zd
-        uzd(i, j-1, k-1) = uzd(i, j-1, k-1) + tempd55
-        uzd(i, j, k-1) = uzd(i, j, k-1) + tempd55
-        uzd(i, j-1, k) = uzd(i, j-1, k) + tempd55
-        uzd(i, j, k) = uzd(i, j, k) + tempd55
-        tempd56 = fourth*u_yd
-        uyd(i, j-1, k-1) = uyd(i, j-1, k-1) + tempd56
-        uyd(i, j, k-1) = uyd(i, j, k-1) + tempd56
-        uyd(i, j-1, k) = uyd(i, j-1, k) + tempd56
-        uyd(i, j, k) = uyd(i, j, k) + tempd56
-        tempd57 = fourth*u_xd
-        uxd(i, j-1, k-1) = uxd(i, j-1, k-1) + tempd57
-        uxd(i, j, k-1) = uxd(i, j, k-1) + tempd57
-        uxd(i, j-1, k) = uxd(i, j-1, k) + tempd57
-        uxd(i, j, k) = uxd(i, j, k) + tempd57
+        tempd48 = fourth*q_zd
+        qzd(i, j-1, k-1) = qzd(i, j-1, k-1) + tempd48
+        qzd(i, j, k-1) = qzd(i, j, k-1) + tempd48
+        qzd(i, j-1, k) = qzd(i, j-1, k) + tempd48
+        qzd(i, j, k) = qzd(i, j, k) + tempd48
+        tempd49 = fourth*q_yd
+        qyd(i, j-1, k-1) = qyd(i, j-1, k-1) + tempd49
+        qyd(i, j, k-1) = qyd(i, j, k-1) + tempd49
+        qyd(i, j-1, k) = qyd(i, j-1, k) + tempd49
+        qyd(i, j, k) = qyd(i, j, k) + tempd49
+        tempd50 = fourth*q_xd
+        qxd(i, j-1, k-1) = qxd(i, j-1, k-1) + tempd50
+        qxd(i, j, k-1) = qxd(i, j, k-1) + tempd50
+        qxd(i, j-1, k) = qxd(i, j-1, k) + tempd50
+        qxd(i, j, k) = qxd(i, j, k) + tempd50
+        tempd51 = fourth*w_zd
+        wzd(i, j-1, k-1) = wzd(i, j-1, k-1) + tempd51
+        wzd(i, j, k-1) = wzd(i, j, k-1) + tempd51
+        wzd(i, j-1, k) = wzd(i, j-1, k) + tempd51
+        wzd(i, j, k) = wzd(i, j, k) + tempd51
+        tempd52 = fourth*w_yd
+        wyd(i, j-1, k-1) = wyd(i, j-1, k-1) + tempd52
+        wyd(i, j, k-1) = wyd(i, j, k-1) + tempd52
+        wyd(i, j-1, k) = wyd(i, j-1, k) + tempd52
+        wyd(i, j, k) = wyd(i, j, k) + tempd52
+        tempd53 = fourth*w_xd
+        wxd(i, j-1, k-1) = wxd(i, j-1, k-1) + tempd53
+        wxd(i, j, k-1) = wxd(i, j, k-1) + tempd53
+        wxd(i, j-1, k) = wxd(i, j-1, k) + tempd53
+        wxd(i, j, k) = wxd(i, j, k) + tempd53
+        tempd54 = fourth*v_zd
+        vzd(i, j-1, k-1) = vzd(i, j-1, k-1) + tempd54
+        vzd(i, j, k-1) = vzd(i, j, k-1) + tempd54
+        vzd(i, j-1, k) = vzd(i, j-1, k) + tempd54
+        vzd(i, j, k) = vzd(i, j, k) + tempd54
+        tempd55 = fourth*v_yd
+        vyd(i, j-1, k-1) = vyd(i, j-1, k-1) + tempd55
+        vyd(i, j, k-1) = vyd(i, j, k-1) + tempd55
+        vyd(i, j-1, k) = vyd(i, j-1, k) + tempd55
+        vyd(i, j, k) = vyd(i, j, k) + tempd55
+        tempd56 = fourth*v_xd
+        vxd(i, j-1, k-1) = vxd(i, j-1, k-1) + tempd56
+        vxd(i, j, k-1) = vxd(i, j, k-1) + tempd56
+        vxd(i, j-1, k) = vxd(i, j-1, k) + tempd56
+        vxd(i, j, k) = vxd(i, j, k) + tempd56
+        tempd57 = fourth*u_zd
+        uzd(i, j-1, k-1) = uzd(i, j-1, k-1) + tempd57
+        uzd(i, j, k-1) = uzd(i, j, k-1) + tempd57
+        uzd(i, j-1, k) = uzd(i, j-1, k) + tempd57
+        uzd(i, j, k) = uzd(i, j, k) + tempd57
+        tempd58 = fourth*u_yd
+        uyd(i, j-1, k-1) = uyd(i, j-1, k-1) + tempd58
+        uyd(i, j, k-1) = uyd(i, j, k-1) + tempd58
+        uyd(i, j-1, k) = uyd(i, j-1, k) + tempd58
+        uyd(i, j, k) = uyd(i, j, k) + tempd58
+        tempd59 = fourth*u_xd
+        uxd(i, j-1, k-1) = uxd(i, j-1, k-1) + tempd59
+        uxd(i, j, k-1) = uxd(i, j, k-1) + tempd59
+        uxd(i, j-1, k) = uxd(i, j-1, k) + tempd59
+        uxd(i, j, k) = uxd(i, j, k) + tempd59
         muld = mutd + factlamheat*heatcoefd
         mued = mued + mutd + factturbheat*heatcoefd
 branch = myIntStack(myIntPtr)
@@ -8732,16 +8757,18 @@ myIntPtr = myIntPtr + 1
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the tau definition since
+! we still need to separate between laminar and turbulent stress for qcr.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = mut*(two*u_x-fracdiv)
-        tauyy = mut*(two*v_y-fracdiv)
-        tauzz = mut*(two*w_z-fracdiv)
-        tauxy = mut*(u_y+v_x)
-        tauxz = mut*(u_z+w_x)
-        tauyz = mut*(v_z+w_y)
+        tauxx = two*u_x - fracdiv
+        tauyy = two*v_y - fracdiv
+        tauzz = two*w_z - fracdiv
+        tauxy = u_y + v_x
+        tauxz = u_z + w_x
+        tauyz = v_z + w_y
 ! add qcr corrections if necessary
         if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
 ! 
@@ -8752,6 +8779,8 @@ myIntPtr = myIntPtr + 1
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
           den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &           v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z)
@@ -8764,8 +8793,10 @@ myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
             den = den
           end if
-! compute factor that will multiply all tensor components
-          fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+          fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
 ! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
@@ -8781,16 +8812,23 @@ myIntPtr = myIntPtr + 1
           exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
           exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
           eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
-! add extra terms
-          tauxx = tauxx - exx
-          tauyy = tauyy - eyy
-          tauzz = tauzz - ezz
-          tauxy = tauxy - exy
-          tauxz = tauxz - exz
-          tauyz = tauyz - eyz
+! apply the total viscosity to the stress tensor and add extra terms
+          tauxx = mut*tauxx - exx
+          tauyy = mut*tauyy - eyy
+          tauzz = mut*tauzz - ezz
+          tauxy = mut*tauxy - exy
+          tauxz = mut*tauxz - exz
+          tauyz = mut*tauyz - eyz
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 0
         else
+! just apply the total viscosity to the stress tensor
+          tauxx = mut*tauxx
+          tauyy = mut*tauyy
+          tauzz = mut*tauzz
+          tauxy = mut*tauxy
+          tauxz = mut*tauxz
+          tauyz = mut*tauyz
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
         end if
@@ -8808,21 +8846,21 @@ myIntPtr = myIntPtr + 1
         fmzd = fwd(i, j+1, k, imz) - fwd(i, j, k, imz)
         fmyd = fwd(i, j+1, k, imy) - fwd(i, j, k, imy)
         fmxd = fwd(i, j+1, k, imx) - fwd(i, j, k, imx)
-        tempd42 = sj(i, j, k, 1)*frhoed
-        tempd43 = sj(i, j, k, 2)*frhoed
-        tempd44 = sj(i, j, k, 3)*frhoed
-        ubard = tauxz*tempd44 + tauxy*tempd43 + tauxx*tempd42
-        tauxxd = sj(i, j, k, 1)*fmxd + ubar*tempd42
-        vbard = tauyz*tempd44 + tauyy*tempd43 + tauxy*tempd42
+        tempd44 = sj(i, j, k, 1)*frhoed
+        tempd45 = sj(i, j, k, 2)*frhoed
+        tempd46 = sj(i, j, k, 3)*frhoed
+        ubard = tauxz*tempd46 + tauxy*tempd45 + tauxx*tempd44
+        tauxxd = sj(i, j, k, 1)*fmxd + ubar*tempd44
+        vbard = tauyz*tempd46 + tauyy*tempd45 + tauxy*tempd44
         tauxyd = sj(i, j, k, 1)*fmyd + sj(i, j, k, 2)*fmxd + ubar*&
-&         tempd43 + vbar*tempd42
-        wbard = tauzz*tempd44 + tauyz*tempd43 + tauxz*tempd42
+&         tempd45 + vbar*tempd44
+        wbard = tauzz*tempd46 + tauyz*tempd45 + tauxz*tempd44
         tauxzd = sj(i, j, k, 1)*fmzd + sj(i, j, k, 3)*fmxd + ubar*&
-&         tempd44 + wbar*tempd42
-        tauyyd = sj(i, j, k, 2)*fmyd + vbar*tempd43
+&         tempd46 + wbar*tempd44
+        tauyyd = sj(i, j, k, 2)*fmyd + vbar*tempd45
         tauyzd = sj(i, j, k, 2)*fmzd + sj(i, j, k, 3)*fmyd + vbar*&
-&         tempd44 + wbar*tempd43
-        tauzzd = sj(i, j, k, 3)*fmzd + wbar*tempd44
+&         tempd46 + wbar*tempd45
+        tauzzd = sj(i, j, k, 3)*fmzd + wbar*tempd46
         q_xd = -(sj(i, j, k, 1)*frhoed)
         q_yd = -(sj(i, j, k, 2)*frhoed)
         q_zd = -(sj(i, j, k, 3)*frhoed)
@@ -8840,60 +8878,72 @@ branch = myIntStack(myIntPtr)
           exyd = -tauxyd
           ezzd = -tauzzd
           eyyd = -tauyyd
+          mutd = tauxz*tauxzd + tauzz*tauzzd + tauxx*tauxxd + tauyy*&
+&           tauyyd + tauxy*tauxyd + tauyz*tauyzd
           exxd = -tauxxd
-          tempd36 = fact*eyzd
+          tempd41 = fact*eyzd
           factd = (wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)*exzd + two*(&
 &           wzx*tauxz+wzy*tauyz)*ezzd + two*(wxy*tauxy+wxz*tauxz)*exxd +&
 &           two*(wyx*tauxy+wyz*tauyz)*eyyd + (wxy*tauyy+wxz*tauyz+wyx*&
 &           tauxx+wyz*tauxz)*exyd + (wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*&
 &           tauyy)*eyzd
-          tempd41 = fact*exzd
-          tauzzd = tauzzd + wxz*tempd41 + wyz*tempd36
-          tempd37 = fact*exyd
-          tauyyd = tauyyd + wxy*tempd37 + wzy*tempd36
-          tauxxd = tauxxd + wyx*tempd37 + wzx*tempd41
-          tempd40 = two*fact*ezzd
-          wzxd = tauxx*tempd41 + tauxz*tempd40 + tauxy*tempd36
-          wzyd = tauxy*tempd41 + tauyz*tempd40 + tauyy*tempd36
-          tempd38 = two*fact*eyyd
-          wyxd = tauxx*tempd37 + tauxy*tempd38 + tauxz*tempd36
-          wyzd = tauxz*tempd37 - wzyd + tauyz*tempd38 + tauzz*tempd36
-          tauyzd = tauyzd + wxz*tempd37 + wyz*tempd38 + wzy*tempd40 + &
-&           wxy*tempd41
-          tempd39 = two*fact*exxd
-          tauxzd = tauxzd + wyz*tempd37 + wxz*tempd39 + wzx*tempd40 + &
-&           wyx*tempd36
-          tauxyd = tauxyd + wzy*tempd41 + wxy*tempd39 + wyx*tempd38 + &
-&           wzx*tempd36
-          wxyd = tauyy*tempd37 - wyxd + tauxy*tempd39 + tauyz*tempd41
-          wxzd = tauyz*tempd37 - wzxd + tauxz*tempd39 + tauzz*tempd41
+          tempd37 = fact*exzd
+          tauzzd = wyz*tempd41 + wxz*tempd37 + mut*tauzzd
+          tempd40 = fact*exyd
+          tauyyd = wzy*tempd41 + wxy*tempd40 + mut*tauyyd
+          tauxxd = wzx*tempd37 + wyx*tempd40 + mut*tauxxd
+          tempd38 = two*fact*ezzd
+          wzxd = tauxx*tempd37 + tauxz*tempd38 + tauxy*tempd41
+          wzyd = tauxy*tempd37 + tauyz*tempd38 + tauyy*tempd41
+          tempd39 = two*fact*eyyd
+          tauyzd = wxy*tempd37 + wzy*tempd38 + wyz*tempd39 + wxz*tempd40&
+&           + mut*tauyzd
+          wyxd = tauxx*tempd40 + tauxy*tempd39 + tauxz*tempd41
+          wyzd = tauxz*tempd40 - wzyd + tauyz*tempd39 + tauzz*tempd41
+          tempd42 = two*fact*exxd
+          tauxzd = wyx*tempd41 + wzx*tempd38 + wxz*tempd42 + wyz*tempd40&
+&           + mut*tauxzd
+          tauxyd = wzx*tempd41 + wyx*tempd39 + wxy*tempd42 + wzy*tempd37&
+&           + mut*tauxyd
+          wxyd = tauyy*tempd40 - wyxd + tauxy*tempd42 + tauyz*tempd37
+          wxzd = tauyz*tempd40 - wzxd + tauxz*tempd42 + tauzz*tempd37
           v_zd = wyzd
           w_yd = -wyzd
           u_zd = wxzd
           w_xd = -wxzd
           u_yd = wxyd
           v_xd = -wxyd
-          dend = -(ccr1*factd/den**2)
+          tempd43 = ccr1*factd/den
+          mued = mued + tempd43
+          dend = -(mue*tempd43/den)
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
           if (branch .eq. 0) dend = 0.0_8
           if (u_x**2 + u_y**2 + u_z**2 + v_x**2 + v_y**2 + v_z**2 + w_x&
 &             **2 + w_y**2 + w_z**2 .eq. 0.0_8) then
-            tempd35 = 0.0
+            tempd36 = 0.0
           else
-            tempd35 = dend/(2.0*sqrt(u_x**2+u_y**2+u_z**2+v_x**2+v_y**2+&
+            tempd36 = dend/(2.0*sqrt(u_x**2+u_y**2+u_z**2+v_x**2+v_y**2+&
 &             v_z**2+w_x**2+w_y**2+w_z**2))
           end if
-          u_xd = 2*u_x*tempd35
-          u_yd = u_yd + 2*u_y*tempd35
-          u_zd = u_zd + 2*u_z*tempd35
-          v_xd = v_xd + 2*v_x*tempd35
-          v_yd = 2*v_y*tempd35
-          v_zd = v_zd + 2*v_z*tempd35
-          w_xd = w_xd + 2*w_x*tempd35
-          w_yd = w_yd + 2*w_y*tempd35
-          w_zd = 2*w_z*tempd35
+          u_xd = 2*u_x*tempd36
+          u_yd = u_yd + 2*u_y*tempd36
+          u_zd = u_zd + 2*u_z*tempd36
+          v_xd = v_xd + 2*v_x*tempd36
+          v_yd = 2*v_y*tempd36
+          v_zd = v_zd + 2*v_z*tempd36
+          w_xd = w_xd + 2*w_x*tempd36
+          w_yd = w_yd + 2*w_y*tempd36
+          w_zd = 2*w_z*tempd36
         else
+          mutd = tauxz*tauxzd + tauzz*tauzzd + tauxx*tauxxd + tauyy*&
+&           tauyyd + tauxy*tauxyd + tauyz*tauyzd
+          tauyzd = mut*tauyzd
+          tauxzd = mut*tauxzd
+          tauxyd = mut*tauxyd
+          tauzzd = mut*tauzzd
+          tauyyd = mut*tauyyd
+          tauxxd = mut*tauxxd
           u_xd = 0.0_8
           u_yd = 0.0_8
           u_zd = 0.0_8
@@ -8904,24 +8954,21 @@ branch = myIntStack(myIntPtr)
           v_yd = 0.0_8
           v_zd = 0.0_8
         end if
-        fracdivd = -(mut*tauyyd) - mut*tauxxd - mut*tauzzd
-        tempd22 = twothird*fracdivd
+        fracdivd = -tauyyd - tauxxd - tauzzd
+        tempd23 = twothird*fracdivd
         heatcoefd = q_y*q_yd + q_x*q_xd + q_z*q_zd
         q_zd = heatcoef*q_zd
         q_yd = heatcoef*q_yd
         q_xd = heatcoef*q_xd
-        mutd = (u_z+w_x)*tauxzd + (two*w_z-fracdiv)*tauzzd + (two*u_x-&
-&         fracdiv)*tauxxd + (two*v_y-fracdiv)*tauyyd + (u_y+v_x)*tauxyd &
-&         + (v_z+w_y)*tauyzd
-        v_zd = v_zd + mut*tauyzd
-        w_yd = w_yd + mut*tauyzd
-        u_zd = u_zd + mut*tauxzd
-        w_xd = w_xd + mut*tauxzd
-        u_yd = u_yd + mut*tauxyd
-        v_xd = v_xd + mut*tauxyd
-        w_zd = w_zd + tempd22 + mut*two*tauzzd
-        v_yd = v_yd + tempd22 + mut*two*tauyyd
-        u_xd = u_xd + tempd22 + mut*two*tauxxd
+        v_zd = v_zd + tauyzd
+        w_yd = w_yd + tauyzd
+        u_zd = u_zd + tauxzd
+        w_xd = w_xd + tauxzd
+        u_yd = u_yd + tauxyd
+        v_xd = v_xd + tauxyd
+        w_zd = w_zd + tempd23 + two*tauzzd
+        v_yd = v_yd + tempd23 + two*tauyyd
+        u_xd = u_xd + tempd23 + two*tauxxd
         corrd = -(ssy*q_yd) - ssx*q_xd - ssz*q_zd
         q_xd = q_xd + ssx*corrd
         q_yd = q_yd + ssy*corrd
@@ -8946,66 +8993,66 @@ branch = myIntStack(myIntPtr)
         u_zd = u_zd + ssz*corrd
         wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) - ss*corrd
         wd(i, j, k, ivx) = wd(i, j, k, ivx) + ss*corrd
-        tempd23 = fourth*q_zd
-        qzd(i-1, j, k-1) = qzd(i-1, j, k-1) + tempd23
-        qzd(i, j, k-1) = qzd(i, j, k-1) + tempd23
-        qzd(i-1, j, k) = qzd(i-1, j, k) + tempd23
-        qzd(i, j, k) = qzd(i, j, k) + tempd23
-        tempd24 = fourth*q_yd
-        qyd(i-1, j, k-1) = qyd(i-1, j, k-1) + tempd24
-        qyd(i, j, k-1) = qyd(i, j, k-1) + tempd24
-        qyd(i-1, j, k) = qyd(i-1, j, k) + tempd24
-        qyd(i, j, k) = qyd(i, j, k) + tempd24
-        tempd25 = fourth*q_xd
-        qxd(i-1, j, k-1) = qxd(i-1, j, k-1) + tempd25
-        qxd(i, j, k-1) = qxd(i, j, k-1) + tempd25
-        qxd(i-1, j, k) = qxd(i-1, j, k) + tempd25
-        qxd(i, j, k) = qxd(i, j, k) + tempd25
-        tempd26 = fourth*w_zd
-        wzd(i-1, j, k-1) = wzd(i-1, j, k-1) + tempd26
-        wzd(i, j, k-1) = wzd(i, j, k-1) + tempd26
-        wzd(i-1, j, k) = wzd(i-1, j, k) + tempd26
-        wzd(i, j, k) = wzd(i, j, k) + tempd26
-        tempd27 = fourth*w_yd
-        wyd(i-1, j, k-1) = wyd(i-1, j, k-1) + tempd27
-        wyd(i, j, k-1) = wyd(i, j, k-1) + tempd27
-        wyd(i-1, j, k) = wyd(i-1, j, k) + tempd27
-        wyd(i, j, k) = wyd(i, j, k) + tempd27
-        tempd28 = fourth*w_xd
-        wxd(i-1, j, k-1) = wxd(i-1, j, k-1) + tempd28
-        wxd(i, j, k-1) = wxd(i, j, k-1) + tempd28
-        wxd(i-1, j, k) = wxd(i-1, j, k) + tempd28
-        wxd(i, j, k) = wxd(i, j, k) + tempd28
-        tempd29 = fourth*v_zd
-        vzd(i-1, j, k-1) = vzd(i-1, j, k-1) + tempd29
-        vzd(i, j, k-1) = vzd(i, j, k-1) + tempd29
-        vzd(i-1, j, k) = vzd(i-1, j, k) + tempd29
-        vzd(i, j, k) = vzd(i, j, k) + tempd29
-        tempd30 = fourth*v_yd
-        vyd(i-1, j, k-1) = vyd(i-1, j, k-1) + tempd30
-        vyd(i, j, k-1) = vyd(i, j, k-1) + tempd30
-        vyd(i-1, j, k) = vyd(i-1, j, k) + tempd30
-        vyd(i, j, k) = vyd(i, j, k) + tempd30
-        tempd31 = fourth*v_xd
-        vxd(i-1, j, k-1) = vxd(i-1, j, k-1) + tempd31
-        vxd(i, j, k-1) = vxd(i, j, k-1) + tempd31
-        vxd(i-1, j, k) = vxd(i-1, j, k) + tempd31
-        vxd(i, j, k) = vxd(i, j, k) + tempd31
-        tempd32 = fourth*u_zd
-        uzd(i-1, j, k-1) = uzd(i-1, j, k-1) + tempd32
-        uzd(i, j, k-1) = uzd(i, j, k-1) + tempd32
-        uzd(i-1, j, k) = uzd(i-1, j, k) + tempd32
-        uzd(i, j, k) = uzd(i, j, k) + tempd32
-        tempd33 = fourth*u_yd
-        uyd(i-1, j, k-1) = uyd(i-1, j, k-1) + tempd33
-        uyd(i, j, k-1) = uyd(i, j, k-1) + tempd33
-        uyd(i-1, j, k) = uyd(i-1, j, k) + tempd33
-        uyd(i, j, k) = uyd(i, j, k) + tempd33
-        tempd34 = fourth*u_xd
-        uxd(i-1, j, k-1) = uxd(i-1, j, k-1) + tempd34
-        uxd(i, j, k-1) = uxd(i, j, k-1) + tempd34
-        uxd(i-1, j, k) = uxd(i-1, j, k) + tempd34
-        uxd(i, j, k) = uxd(i, j, k) + tempd34
+        tempd24 = fourth*q_zd
+        qzd(i-1, j, k-1) = qzd(i-1, j, k-1) + tempd24
+        qzd(i, j, k-1) = qzd(i, j, k-1) + tempd24
+        qzd(i-1, j, k) = qzd(i-1, j, k) + tempd24
+        qzd(i, j, k) = qzd(i, j, k) + tempd24
+        tempd25 = fourth*q_yd
+        qyd(i-1, j, k-1) = qyd(i-1, j, k-1) + tempd25
+        qyd(i, j, k-1) = qyd(i, j, k-1) + tempd25
+        qyd(i-1, j, k) = qyd(i-1, j, k) + tempd25
+        qyd(i, j, k) = qyd(i, j, k) + tempd25
+        tempd26 = fourth*q_xd
+        qxd(i-1, j, k-1) = qxd(i-1, j, k-1) + tempd26
+        qxd(i, j, k-1) = qxd(i, j, k-1) + tempd26
+        qxd(i-1, j, k) = qxd(i-1, j, k) + tempd26
+        qxd(i, j, k) = qxd(i, j, k) + tempd26
+        tempd27 = fourth*w_zd
+        wzd(i-1, j, k-1) = wzd(i-1, j, k-1) + tempd27
+        wzd(i, j, k-1) = wzd(i, j, k-1) + tempd27
+        wzd(i-1, j, k) = wzd(i-1, j, k) + tempd27
+        wzd(i, j, k) = wzd(i, j, k) + tempd27
+        tempd28 = fourth*w_yd
+        wyd(i-1, j, k-1) = wyd(i-1, j, k-1) + tempd28
+        wyd(i, j, k-1) = wyd(i, j, k-1) + tempd28
+        wyd(i-1, j, k) = wyd(i-1, j, k) + tempd28
+        wyd(i, j, k) = wyd(i, j, k) + tempd28
+        tempd29 = fourth*w_xd
+        wxd(i-1, j, k-1) = wxd(i-1, j, k-1) + tempd29
+        wxd(i, j, k-1) = wxd(i, j, k-1) + tempd29
+        wxd(i-1, j, k) = wxd(i-1, j, k) + tempd29
+        wxd(i, j, k) = wxd(i, j, k) + tempd29
+        tempd30 = fourth*v_zd
+        vzd(i-1, j, k-1) = vzd(i-1, j, k-1) + tempd30
+        vzd(i, j, k-1) = vzd(i, j, k-1) + tempd30
+        vzd(i-1, j, k) = vzd(i-1, j, k) + tempd30
+        vzd(i, j, k) = vzd(i, j, k) + tempd30
+        tempd31 = fourth*v_yd
+        vyd(i-1, j, k-1) = vyd(i-1, j, k-1) + tempd31
+        vyd(i, j, k-1) = vyd(i, j, k-1) + tempd31
+        vyd(i-1, j, k) = vyd(i-1, j, k) + tempd31
+        vyd(i, j, k) = vyd(i, j, k) + tempd31
+        tempd32 = fourth*v_xd
+        vxd(i-1, j, k-1) = vxd(i-1, j, k-1) + tempd32
+        vxd(i, j, k-1) = vxd(i, j, k-1) + tempd32
+        vxd(i-1, j, k) = vxd(i-1, j, k) + tempd32
+        vxd(i, j, k) = vxd(i, j, k) + tempd32
+        tempd33 = fourth*u_zd
+        uzd(i-1, j, k-1) = uzd(i-1, j, k-1) + tempd33
+        uzd(i, j, k-1) = uzd(i, j, k-1) + tempd33
+        uzd(i-1, j, k) = uzd(i-1, j, k) + tempd33
+        uzd(i, j, k) = uzd(i, j, k) + tempd33
+        tempd34 = fourth*u_yd
+        uyd(i-1, j, k-1) = uyd(i-1, j, k-1) + tempd34
+        uyd(i, j, k-1) = uyd(i, j, k-1) + tempd34
+        uyd(i-1, j, k) = uyd(i-1, j, k) + tempd34
+        uyd(i, j, k) = uyd(i, j, k) + tempd34
+        tempd35 = fourth*u_xd
+        uxd(i-1, j, k-1) = uxd(i-1, j, k-1) + tempd35
+        uxd(i, j, k-1) = uxd(i, j, k-1) + tempd35
+        uxd(i-1, j, k) = uxd(i-1, j, k) + tempd35
+        uxd(i, j, k) = uxd(i, j, k) + tempd35
         muld = mutd + factlamheat*heatcoefd
         mued = mued + mutd + factturbheat*heatcoefd
 branch = myIntStack(myIntPtr)
@@ -9118,16 +9165,18 @@ myIntPtr = myIntPtr + 1
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the tau definition since
+! we still need to separate between laminar and turbulent stress for qcr.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = mut*(two*u_x-fracdiv)
-        tauyy = mut*(two*v_y-fracdiv)
-        tauzz = mut*(two*w_z-fracdiv)
-        tauxy = mut*(u_y+v_x)
-        tauxz = mut*(u_z+w_x)
-        tauyz = mut*(v_z+w_y)
+        tauxx = two*u_x - fracdiv
+        tauyy = two*v_y - fracdiv
+        tauzz = two*w_z - fracdiv
+        tauxy = u_y + v_x
+        tauxz = u_z + w_x
+        tauyz = v_z + w_y
 ! add qcr corrections if necessary
         if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
 ! 
@@ -9138,6 +9187,8 @@ myIntPtr = myIntPtr + 1
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
           den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &           v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z)
@@ -9150,8 +9201,10 @@ myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
             den = den
           end if
-! compute factor that will multiply all tensor components
-          fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+          fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
 ! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
@@ -9167,16 +9220,23 @@ myIntPtr = myIntPtr + 1
           exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
           exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
           eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
-! add extra terms
-          tauxx = tauxx - exx
-          tauyy = tauyy - eyy
-          tauzz = tauzz - ezz
-          tauxy = tauxy - exy
-          tauxz = tauxz - exz
-          tauyz = tauyz - eyz
+! apply the total viscosity to the stress tensor and add extra terms
+          tauxx = mut*tauxx - exx
+          tauyy = mut*tauyy - eyy
+          tauzz = mut*tauzz - ezz
+          tauxy = mut*tauxy - exy
+          tauxz = mut*tauxz - exz
+          tauyz = mut*tauyz - eyz
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 0
         else
+! just apply the total viscosity to the stress tensor
+          tauxx = mut*tauxx
+          tauyy = mut*tauyy
+          tauzz = mut*tauzz
+          tauxy = mut*tauxy
+          tauxz = mut*tauxz
+          tauyz = mut*tauyz
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
         end if
@@ -9197,21 +9257,21 @@ myIntPtr = myIntPtr + 1
         q_xd = -(sk(i, j, k, 1)*frhoed)
         q_yd = -(sk(i, j, k, 2)*frhoed)
         q_zd = -(sk(i, j, k, 3)*frhoed)
-        tempd19 = sk(i, j, k, 3)*frhoed
-        tauzzd = sk(i, j, k, 3)*fmzd + wbar*tempd19
-        tempd20 = sk(i, j, k, 2)*frhoed
-        tauyzd = wbar*tempd20 + sk(i, j, k, 3)*fmyd + sk(i, j, k, 2)*&
-&         fmzd + vbar*tempd19
-        tauyyd = sk(i, j, k, 2)*fmyd + vbar*tempd20
-        tempd21 = sk(i, j, k, 1)*frhoed
-        ubard = tauxy*tempd20 + tauxx*tempd21 + tauxz*tempd19
-        tauxzd = wbar*tempd21 + sk(i, j, k, 3)*fmxd + sk(i, j, k, 1)*&
-&         fmzd + ubar*tempd19
-        vbard = tauyy*tempd20 + tauxy*tempd21 + tauyz*tempd19
-        wbard = tauyz*tempd20 + tauxz*tempd21 + tauzz*tempd19
-        tauxyd = vbar*tempd21 + sk(i, j, k, 2)*fmxd + sk(i, j, k, 1)*&
-&         fmyd + ubar*tempd20
-        tauxxd = sk(i, j, k, 1)*fmxd + ubar*tempd21
+        tempd20 = sk(i, j, k, 3)*frhoed
+        tauzzd = sk(i, j, k, 3)*fmzd + wbar*tempd20
+        tempd21 = sk(i, j, k, 2)*frhoed
+        tauyzd = wbar*tempd21 + sk(i, j, k, 3)*fmyd + sk(i, j, k, 2)*&
+&         fmzd + vbar*tempd20
+        tauyyd = sk(i, j, k, 2)*fmyd + vbar*tempd21
+        tempd22 = sk(i, j, k, 1)*frhoed
+        ubard = tauxy*tempd21 + tauxx*tempd22 + tauxz*tempd20
+        tauxzd = wbar*tempd22 + sk(i, j, k, 3)*fmxd + sk(i, j, k, 1)*&
+&         fmzd + ubar*tempd20
+        vbard = tauyy*tempd21 + tauxy*tempd22 + tauyz*tempd20
+        wbard = tauyz*tempd21 + tauxz*tempd22 + tauzz*tempd20
+        tauxyd = vbar*tempd22 + sk(i, j, k, 2)*fmxd + sk(i, j, k, 1)*&
+&         fmyd + ubar*tempd21
+        tauxxd = sk(i, j, k, 1)*fmxd + ubar*tempd22
         wd(i, j, k, ivz) = wd(i, j, k, ivz) + half*wbard
         wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + half*wbard
         wd(i, j, k, ivy) = wd(i, j, k, ivy) + half*vbard
@@ -9226,40 +9286,44 @@ branch = myIntStack(myIntPtr)
           exyd = -tauxyd
           ezzd = -tauzzd
           eyyd = -tauyyd
+          mutd = tauxz*tauxzd + tauzz*tauzzd + tauxx*tauxxd + tauyy*&
+&           tauyyd + tauxy*tauxyd + tauyz*tauyzd
           exxd = -tauxxd
-          tempd13 = fact*eyzd
+          tempd17 = fact*eyzd
           factd = (wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)*exzd + two*(&
 &           wzx*tauxz+wzy*tauyz)*ezzd + two*(wxy*tauxy+wxz*tauxz)*exxd +&
 &           two*(wyx*tauxy+wyz*tauyz)*eyyd + (wxy*tauyy+wxz*tauyz+wyx*&
 &           tauxx+wyz*tauxz)*exyd + (wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*&
 &           tauyy)*eyzd
-          tempd18 = fact*exzd
-          tauzzd = tauzzd + wxz*tempd18 + wyz*tempd13
-          tempd14 = fact*exyd
-          tauyyd = tauyyd + wxy*tempd14 + wzy*tempd13
-          tauxxd = tauxxd + wyx*tempd14 + wzx*tempd18
-          tempd17 = two*fact*ezzd
-          wzxd = tauxx*tempd18 + tauxz*tempd17 + tauxy*tempd13
-          wzyd = tauxy*tempd18 + tauyz*tempd17 + tauyy*tempd13
+          tempd13 = fact*exzd
+          tauzzd = wyz*tempd17 + wxz*tempd13 + mut*tauzzd
+          tempd16 = fact*exyd
+          tauyyd = wzy*tempd17 + wxy*tempd16 + mut*tauyyd
+          tauxxd = wzx*tempd13 + wyx*tempd16 + mut*tauxxd
+          tempd14 = two*fact*ezzd
+          wzxd = tauxx*tempd13 + tauxz*tempd14 + tauxy*tempd17
+          wzyd = tauxy*tempd13 + tauyz*tempd14 + tauyy*tempd17
           tempd15 = two*fact*eyyd
-          wyxd = tauxx*tempd14 + tauxy*tempd15 + tauxz*tempd13
-          wyzd = tauxz*tempd14 - wzyd + tauyz*tempd15 + tauzz*tempd13
-          tauyzd = tauyzd + wxz*tempd14 + wyz*tempd15 + wzy*tempd17 + &
-&           wxy*tempd18
-          tempd16 = two*fact*exxd
-          tauxzd = tauxzd + wyz*tempd14 + wxz*tempd16 + wzx*tempd17 + &
-&           wyx*tempd13
-          tauxyd = tauxyd + wzy*tempd18 + wxy*tempd16 + wyx*tempd15 + &
-&           wzx*tempd13
-          wxyd = tauyy*tempd14 - wyxd + tauxy*tempd16 + tauyz*tempd18
-          wxzd = tauyz*tempd14 - wzxd + tauxz*tempd16 + tauzz*tempd18
+          tauyzd = wxy*tempd13 + wzy*tempd14 + wyz*tempd15 + wxz*tempd16&
+&           + mut*tauyzd
+          wyxd = tauxx*tempd16 + tauxy*tempd15 + tauxz*tempd17
+          wyzd = tauxz*tempd16 - wzyd + tauyz*tempd15 + tauzz*tempd17
+          tempd18 = two*fact*exxd
+          tauxzd = wyx*tempd17 + wzx*tempd14 + wxz*tempd18 + wyz*tempd16&
+&           + mut*tauxzd
+          tauxyd = wzx*tempd17 + wyx*tempd15 + wxy*tempd18 + wzy*tempd13&
+&           + mut*tauxyd
+          wxyd = tauyy*tempd16 - wyxd + tauxy*tempd18 + tauyz*tempd13
+          wxzd = tauyz*tempd16 - wzxd + tauxz*tempd18 + tauzz*tempd13
           v_zd = wyzd
           w_yd = -wyzd
           u_zd = wxzd
           w_xd = -wxzd
           u_yd = wxyd
           v_xd = -wxyd
-          dend = -(ccr1*factd/den**2)
+          tempd19 = ccr1*factd/den
+          mued = mued + tempd19
+          dend = -(mue*tempd19/den)
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
           if (branch .eq. 0) dend = 0.0_8
@@ -9280,6 +9344,14 @@ branch = myIntStack(myIntPtr)
           w_yd = w_yd + 2*w_y*tempd12
           w_zd = 2*w_z*tempd12
         else
+          mutd = tauxz*tauxzd + tauzz*tauzzd + tauxx*tauxxd + tauyy*&
+&           tauyyd + tauxy*tauxyd + tauyz*tauyzd
+          tauyzd = mut*tauyzd
+          tauxzd = mut*tauxzd
+          tauxyd = mut*tauxyd
+          tauzzd = mut*tauzzd
+          tauyyd = mut*tauyyd
+          tauxxd = mut*tauxxd
           u_xd = 0.0_8
           u_yd = 0.0_8
           u_zd = 0.0_8
@@ -9290,24 +9362,21 @@ branch = myIntStack(myIntPtr)
           v_yd = 0.0_8
           v_zd = 0.0_8
         end if
-        fracdivd = -(mut*tauyyd) - mut*tauxxd - mut*tauzzd
+        fracdivd = -tauyyd - tauxxd - tauzzd
         tempd = twothird*fracdivd
         heatcoefd = q_y*q_yd + q_x*q_xd + q_z*q_zd
         q_zd = heatcoef*q_zd
         q_yd = heatcoef*q_yd
         q_xd = heatcoef*q_xd
-        mutd = (u_z+w_x)*tauxzd + (two*w_z-fracdiv)*tauzzd + (two*u_x-&
-&         fracdiv)*tauxxd + (two*v_y-fracdiv)*tauyyd + (u_y+v_x)*tauxyd &
-&         + (v_z+w_y)*tauyzd
-        v_zd = v_zd + mut*tauyzd
-        w_yd = w_yd + mut*tauyzd
-        u_zd = u_zd + mut*tauxzd
-        w_xd = w_xd + mut*tauxzd
-        u_yd = u_yd + mut*tauxyd
-        v_xd = v_xd + mut*tauxyd
-        w_zd = w_zd + tempd + mut*two*tauzzd
-        v_yd = v_yd + tempd + mut*two*tauyyd
-        u_xd = u_xd + tempd + mut*two*tauxxd
+        v_zd = v_zd + tauyzd
+        w_yd = w_yd + tauyzd
+        u_zd = u_zd + tauxzd
+        w_xd = w_xd + tauxzd
+        u_yd = u_yd + tauxyd
+        v_xd = v_xd + tauxyd
+        w_zd = w_zd + tempd + two*tauzzd
+        v_yd = v_yd + tempd + two*tauyyd
+        u_xd = u_xd + tempd + two*tauxxd
         corrd = -(ssy*q_yd) - ssx*q_xd - ssz*q_zd
         q_xd = q_xd + ssx*corrd
         q_yd = q_yd + ssy*corrd
@@ -9561,19 +9630,21 @@ branch = myIntStack(myIntPtr)
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the tau definition since
+! we still need to separate between laminar and turbulent stress for qcr.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = mut*(two*u_x-fracdiv)
-        tauyy = mut*(two*v_y-fracdiv)
-        tauzz = mut*(two*w_z-fracdiv)
-        tauxy = mut*(u_y+v_x)
-        tauxz = mut*(u_z+w_x)
-        tauyz = mut*(v_z+w_y)
+        tauxx = two*u_x - fracdiv
+        tauyy = two*v_y - fracdiv
+        tauzz = two*w_z - fracdiv
+        tauxy = u_y + v_x
+        tauxz = u_z + w_x
+        tauyz = v_z + w_y
         q_x = heatcoef*q_x
         q_y = heatcoef*q_y
         q_z = heatcoef*q_z
 ! add qcr corrections if necessary
         if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
 ! 
@@ -9584,6 +9655,8 @@ branch = myIntStack(myIntPtr)
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
           den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &           v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z)
@@ -9592,8 +9665,10 @@ branch = myIntStack(myIntPtr)
           else
             den = den
           end if
-! compute factor that will multiply all tensor components
-          fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+          fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
 ! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
@@ -9609,13 +9684,21 @@ branch = myIntStack(myIntPtr)
           exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
           exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
           eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
-! add extra terms
-          tauxx = tauxx - exx
-          tauyy = tauyy - eyy
-          tauzz = tauzz - ezz
-          tauxy = tauxy - exy
-          tauxz = tauxz - exz
-          tauyz = tauyz - eyz
+! apply the total viscosity to the stress tensor and add extra terms
+          tauxx = mut*tauxx - exx
+          tauyy = mut*tauyy - eyy
+          tauzz = mut*tauzz - ezz
+          tauxy = mut*tauxy - exy
+          tauxz = mut*tauxz - exz
+          tauyz = mut*tauyz - eyz
+        else
+! just apply the total viscosity to the stress tensor
+          tauxx = mut*tauxx
+          tauyy = mut*tauyy
+          tauzz = mut*tauzz
+          tauxy = mut*tauxy
+          tauxz = mut*tauxz
+          tauyz = mut*tauyz
         end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
@@ -9768,19 +9851,21 @@ branch = myIntStack(myIntPtr)
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the tau definition since
+! we still need to separate between laminar and turbulent stress for qcr.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = mut*(two*u_x-fracdiv)
-        tauyy = mut*(two*v_y-fracdiv)
-        tauzz = mut*(two*w_z-fracdiv)
-        tauxy = mut*(u_y+v_x)
-        tauxz = mut*(u_z+w_x)
-        tauyz = mut*(v_z+w_y)
+        tauxx = two*u_x - fracdiv
+        tauyy = two*v_y - fracdiv
+        tauzz = two*w_z - fracdiv
+        tauxy = u_y + v_x
+        tauxz = u_z + w_x
+        tauyz = v_z + w_y
         q_x = heatcoef*q_x
         q_y = heatcoef*q_y
         q_z = heatcoef*q_z
 ! add qcr corrections if necessary
         if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
 ! 
@@ -9791,6 +9876,8 @@ branch = myIntStack(myIntPtr)
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
           den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &           v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z)
@@ -9799,8 +9886,10 @@ branch = myIntStack(myIntPtr)
           else
             den = den
           end if
-! compute factor that will multiply all tensor components
-          fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+          fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
 ! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
@@ -9816,13 +9905,21 @@ branch = myIntStack(myIntPtr)
           exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
           exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
           eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
-! add extra terms
-          tauxx = tauxx - exx
-          tauyy = tauyy - eyy
-          tauzz = tauzz - ezz
-          tauxy = tauxy - exy
-          tauxz = tauxz - exz
-          tauyz = tauyz - eyz
+! apply the total viscosity to the stress tensor and add extra terms
+          tauxx = mut*tauxx - exx
+          tauyy = mut*tauyy - eyy
+          tauzz = mut*tauzz - ezz
+          tauxy = mut*tauxy - exy
+          tauxz = mut*tauxz - exz
+          tauyz = mut*tauyz - eyz
+        else
+! just apply the total viscosity to the stress tensor
+          tauxx = mut*tauxx
+          tauyy = mut*tauyy
+          tauzz = mut*tauzz
+          tauxy = mut*tauxy
+          tauxz = mut*tauxz
+          tauyz = mut*tauyz
         end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
@@ -9972,19 +10069,21 @@ branch = myIntStack(myIntPtr)
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the tau definition since
+! we still need to separate between laminar and turbulent stress for qcr.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = mut*(two*u_x-fracdiv)
-        tauyy = mut*(two*v_y-fracdiv)
-        tauzz = mut*(two*w_z-fracdiv)
-        tauxy = mut*(u_y+v_x)
-        tauxz = mut*(u_z+w_x)
-        tauyz = mut*(v_z+w_y)
+        tauxx = two*u_x - fracdiv
+        tauyy = two*v_y - fracdiv
+        tauzz = two*w_z - fracdiv
+        tauxy = u_y + v_x
+        tauxz = u_z + w_x
+        tauyz = v_z + w_y
         q_x = heatcoef*q_x
         q_y = heatcoef*q_y
         q_z = heatcoef*q_z
 ! add qcr corrections if necessary
         if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
 ! 
@@ -9995,6 +10094,8 @@ branch = myIntStack(myIntPtr)
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
           den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &           v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z)
@@ -10003,8 +10104,10 @@ branch = myIntStack(myIntPtr)
           else
             den = den
           end if
-! compute factor that will multiply all tensor components
-          fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+          fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
 ! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
@@ -10020,13 +10123,21 @@ branch = myIntStack(myIntPtr)
           exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
           exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
           eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
-! add extra terms
-          tauxx = tauxx - exx
-          tauyy = tauyy - eyy
-          tauzz = tauzz - ezz
-          tauxy = tauxy - exy
-          tauxz = tauxz - exz
-          tauyz = tauyz - eyz
+! apply the total viscosity to the stress tensor and add extra terms
+          tauxx = mut*tauxx - exx
+          tauyy = mut*tauyy - eyy
+          tauzz = mut*tauzz - ezz
+          tauxy = mut*tauxy - exy
+          tauxz = mut*tauxz - exz
+          tauyz = mut*tauyz - eyz
+        else
+! just apply the total viscosity to the stress tensor
+          tauxx = mut*tauxx
+          tauyy = mut*tauyy
+          tauzz = mut*tauzz
+          tauxy = mut*tauxy
+          tauxz = mut*tauxz
+          tauyz = mut*tauyz
         end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
