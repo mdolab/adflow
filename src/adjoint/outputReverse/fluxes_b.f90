@@ -8550,7 +8550,6 @@ contains
     real(kind=realtype) :: exxd, eyyd, ezzd
     real(kind=realtype) :: exy, exz, eyz
     real(kind=realtype) :: exyd, exzd, eyzd
-    real(kind=realtype) :: wxx, wyy, wzz
     real(kind=realtype) :: wxy, wxz, wyz, wyx, wzx, wzy
     real(kind=realtype) :: wxyd, wxzd, wyzd, wyxd, wzxd, wzyd
     real(kind=realtype) :: den, ccr1, fact
@@ -8653,10 +8652,6 @@ contains
     real(kind=realtype) :: temp4
 ! set qcr parameters
     ccr1 = 0.3_realtype
-! the diagonals of the vorticity tensor components are always zero
-    wxx = zero
-    wyy = zero
-    wzz = zero
 ! set rfilv to rfil to indicate that this is the viscous part.
 ! if rfilv == 0 the viscous residuals need not to be computed
 ! and a return can be made.
@@ -8935,6 +8930,7 @@ contains
 ! compute factor that will multiply all tensor components
           fact = ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
           wxz = u_z - w_x
           wyz = v_z - w_y
@@ -8942,15 +8938,12 @@ contains
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-          exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*tauxy+&
-&           wyz*tauxz)
-          exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+&
-&           wzz*tauxz)
-          eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*tauyy+&
-&           wzz*tauyz)
+          exx = fact*(wxy*tauxy+wxz*tauxz)*two
+          eyy = fact*(wyx*tauxy+wyz*tauyz)*two
+          ezz = fact*(wzx*tauxz+wzy*tauyz)*two
+          exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
+          exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
+          eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
 ! add extra terms
           call pushreal8(tauxx)
           tauxx = tauxx - exx
@@ -9086,32 +9079,31 @@ contains
           call popreal8(tauxx)
           exxd = -tauxxd
           tempd71 = fact*eyzd
-          factd = (wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+wzz&
-&           *tauxz)*exzd + two*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*ezzd + &
-&           two*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*exxd + two*(wyx*tauxy+&
-&           wyy*tauyy+wyz*tauyz)*eyyd + (wxx*tauxy+wxy*tauyy+wxz*tauyz+&
-&           wyx*tauxx+wyy*tauxy+wyz*tauxz)*exyd + (wyx*tauxz+wyy*tauyz+&
-&           wyz*tauzz+wzx*tauxy+wzy*tauyy+wzz*tauyz)*eyzd
-          tempd74 = fact*exzd
+          factd = (wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)*exzd + two*(&
+&           wzx*tauxz+wzy*tauyz)*ezzd + two*(wxy*tauxy+wxz*tauxz)*exxd +&
+&           two*(wyx*tauxy+wyz*tauyz)*eyyd + (wxy*tauyy+wxz*tauyz+wyx*&
+&           tauxx+wyz*tauxz)*exyd + (wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*&
+&           tauyy)*eyzd
+          tempd76 = fact*exzd
+          tauzzd = tauzzd + wxz*tempd76 + wyz*tempd71
           tempd72 = fact*exyd
+          tauyyd = tauyyd + wxy*tempd72 + wzy*tempd71
+          tauxxd = tauxxd + wyx*tempd72 + wzx*tempd76
           tempd75 = two*fact*ezzd
-          tauzzd = tauzzd + wxz*tempd74 + wzz*tempd75 + wyz*tempd71
-          wzxd = tauxx*tempd74 + tauxz*tempd75 + tauxy*tempd71
-          wzyd = tauxy*tempd74 + tauyz*tempd75 + tauyy*tempd71
+          wzxd = tauxx*tempd76 + tauxz*tempd75 + tauxy*tempd71
+          wzyd = tauxy*tempd76 + tauyz*tempd75 + tauyy*tempd71
           tempd73 = two*fact*eyyd
           wyxd = tauxx*tempd72 + tauxy*tempd73 + tauxz*tempd71
-          tauyzd = tauyzd + wxy*tempd74 + wzy*tempd75 + wyz*tempd73 + &
-&           wxz*tempd72 + (wzz+wyy)*tempd71
           wyzd = tauxz*tempd72 - wzyd + tauyz*tempd73 + tauzz*tempd71
-          tauyyd = tauyyd + wxy*tempd72 + wyy*tempd73 + wzy*tempd71
-          tempd76 = two*fact*exxd
-          tauxzd = tauxzd + (wzz+wxx)*tempd74 + wzx*tempd75 + wxz*&
-&           tempd76 + wyz*tempd72 + wyx*tempd71
-          tauxyd = tauxyd + wzy*tempd74 + wyx*tempd73 + wxy*tempd76 + (&
-&           wyy+wxx)*tempd72 + wzx*tempd71
-          wxyd = tauyy*tempd72 - wyxd + tauxy*tempd76 + tauyz*tempd74
-          wxzd = tauyz*tempd72 - wzxd + tauxz*tempd76 + tauzz*tempd74
-          tauxxd = tauxxd + wyx*tempd72 + wxx*tempd76 + wzx*tempd74
+          tauyzd = tauyzd + wxz*tempd72 + wyz*tempd73 + wzy*tempd75 + &
+&           wxy*tempd76
+          tempd74 = two*fact*exxd
+          tauxzd = tauxzd + wyz*tempd72 + wxz*tempd74 + wzx*tempd75 + &
+&           wyx*tempd71
+          tauxyd = tauxyd + wzy*tempd76 + wxy*tempd74 + wyx*tempd73 + &
+&           wzx*tempd71
+          wxyd = tauyy*tempd72 - wyxd + tauxy*tempd74 + tauyz*tempd76
+          wxzd = tauyz*tempd72 - wzxd + tauxz*tempd74 + tauzz*tempd76
           v_zd = wyzd
           w_yd = -wyzd
           u_zd = wxzd
@@ -9519,6 +9511,7 @@ contains
 ! compute factor that will multiply all tensor components
           fact = ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
           wxz = u_z - w_x
           wyz = v_z - w_y
@@ -9526,15 +9519,12 @@ contains
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-          exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*tauxy+&
-&           wyz*tauxz)
-          exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+&
-&           wzz*tauxz)
-          eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*tauyy+&
-&           wzz*tauyz)
+          exx = fact*(wxy*tauxy+wxz*tauxz)*two
+          eyy = fact*(wyx*tauxy+wyz*tauyz)*two
+          ezz = fact*(wzx*tauxz+wzy*tauyz)*two
+          exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
+          exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
+          eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
 ! add extra terms
           call pushreal8(tauxx)
           tauxx = tauxx - exx
@@ -9670,32 +9660,31 @@ contains
           call popreal8(tauxx)
           exxd = -tauxxd
           tempd44 = fact*eyzd
-          factd = (wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+wzz&
-&           *tauxz)*exzd + two*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*ezzd + &
-&           two*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*exxd + two*(wyx*tauxy+&
-&           wyy*tauyy+wyz*tauyz)*eyyd + (wxx*tauxy+wxy*tauyy+wxz*tauyz+&
-&           wyx*tauxx+wyy*tauxy+wyz*tauxz)*exyd + (wyx*tauxz+wyy*tauyz+&
-&           wyz*tauzz+wzx*tauxy+wzy*tauyy+wzz*tauyz)*eyzd
-          tempd47 = fact*exzd
+          factd = (wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)*exzd + two*(&
+&           wzx*tauxz+wzy*tauyz)*ezzd + two*(wxy*tauxy+wxz*tauxz)*exxd +&
+&           two*(wyx*tauxy+wyz*tauyz)*eyyd + (wxy*tauyy+wxz*tauyz+wyx*&
+&           tauxx+wyz*tauxz)*exyd + (wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*&
+&           tauyy)*eyzd
+          tempd49 = fact*exzd
+          tauzzd = tauzzd + wxz*tempd49 + wyz*tempd44
           tempd45 = fact*exyd
+          tauyyd = tauyyd + wxy*tempd45 + wzy*tempd44
+          tauxxd = tauxxd + wyx*tempd45 + wzx*tempd49
           tempd48 = two*fact*ezzd
-          tauzzd = tauzzd + wxz*tempd47 + wzz*tempd48 + wyz*tempd44
-          wzxd = tauxx*tempd47 + tauxz*tempd48 + tauxy*tempd44
-          wzyd = tauxy*tempd47 + tauyz*tempd48 + tauyy*tempd44
+          wzxd = tauxx*tempd49 + tauxz*tempd48 + tauxy*tempd44
+          wzyd = tauxy*tempd49 + tauyz*tempd48 + tauyy*tempd44
           tempd46 = two*fact*eyyd
           wyxd = tauxx*tempd45 + tauxy*tempd46 + tauxz*tempd44
-          tauyzd = tauyzd + wxy*tempd47 + wzy*tempd48 + wyz*tempd46 + &
-&           wxz*tempd45 + (wzz+wyy)*tempd44
           wyzd = tauxz*tempd45 - wzyd + tauyz*tempd46 + tauzz*tempd44
-          tauyyd = tauyyd + wxy*tempd45 + wyy*tempd46 + wzy*tempd44
-          tempd49 = two*fact*exxd
-          tauxzd = tauxzd + (wzz+wxx)*tempd47 + wzx*tempd48 + wxz*&
-&           tempd49 + wyz*tempd45 + wyx*tempd44
-          tauxyd = tauxyd + wzy*tempd47 + wyx*tempd46 + wxy*tempd49 + (&
-&           wyy+wxx)*tempd45 + wzx*tempd44
-          wxyd = tauyy*tempd45 - wyxd + tauxy*tempd49 + tauyz*tempd47
-          wxzd = tauyz*tempd45 - wzxd + tauxz*tempd49 + tauzz*tempd47
-          tauxxd = tauxxd + wyx*tempd45 + wxx*tempd49 + wzx*tempd47
+          tauyzd = tauyzd + wxz*tempd45 + wyz*tempd46 + wzy*tempd48 + &
+&           wxy*tempd49
+          tempd47 = two*fact*exxd
+          tauxzd = tauxzd + wyz*tempd45 + wxz*tempd47 + wzx*tempd48 + &
+&           wyx*tempd44
+          tauxyd = tauxyd + wzy*tempd49 + wxy*tempd47 + wyx*tempd46 + &
+&           wzx*tempd44
+          wxyd = tauyy*tempd45 - wyxd + tauxy*tempd47 + tauyz*tempd49
+          wxzd = tauyz*tempd45 - wzxd + tauxz*tempd47 + tauzz*tempd49
           v_zd = wyzd
           w_yd = -wyzd
           u_zd = wxzd
@@ -10106,6 +10095,7 @@ contains
 ! compute factor that will multiply all tensor components
           fact = ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
           wxz = u_z - w_x
           wyz = v_z - w_y
@@ -10113,15 +10103,12 @@ contains
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-          exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*tauxy+&
-&           wyz*tauxz)
-          exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+&
-&           wzz*tauxz)
-          eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*tauyy+&
-&           wzz*tauyz)
+          exx = fact*(wxy*tauxy+wxz*tauxz)*two
+          eyy = fact*(wyx*tauxy+wyz*tauyz)*two
+          ezz = fact*(wzx*tauxz+wzy*tauyz)*two
+          exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
+          exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
+          eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
 ! add extra terms
           call pushreal8(tauxx)
           tauxx = tauxx - exx
@@ -10260,32 +10247,31 @@ contains
           call popreal8(tauxx)
           exxd = -tauxxd
           tempd17 = fact*eyzd
-          factd = (wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+wzz&
-&           *tauxz)*exzd + two*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*ezzd + &
-&           two*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*exxd + two*(wyx*tauxy+&
-&           wyy*tauyy+wyz*tauyz)*eyyd + (wxx*tauxy+wxy*tauyy+wxz*tauyz+&
-&           wyx*tauxx+wyy*tauxy+wyz*tauxz)*exyd + (wyx*tauxz+wyy*tauyz+&
-&           wyz*tauzz+wzx*tauxy+wzy*tauyy+wzz*tauyz)*eyzd
-          tempd20 = fact*exzd
+          factd = (wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)*exzd + two*(&
+&           wzx*tauxz+wzy*tauyz)*ezzd + two*(wxy*tauxy+wxz*tauxz)*exxd +&
+&           two*(wyx*tauxy+wyz*tauyz)*eyyd + (wxy*tauyy+wxz*tauyz+wyx*&
+&           tauxx+wyz*tauxz)*exyd + (wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*&
+&           tauyy)*eyzd
+          tempd22 = fact*exzd
+          tauzzd = tauzzd + wxz*tempd22 + wyz*tempd17
           tempd18 = fact*exyd
+          tauyyd = tauyyd + wxy*tempd18 + wzy*tempd17
+          tauxxd = tauxxd + wyx*tempd18 + wzx*tempd22
           tempd21 = two*fact*ezzd
-          tauzzd = tauzzd + wxz*tempd20 + wzz*tempd21 + wyz*tempd17
-          wzxd = tauxx*tempd20 + tauxz*tempd21 + tauxy*tempd17
-          wzyd = tauxy*tempd20 + tauyz*tempd21 + tauyy*tempd17
+          wzxd = tauxx*tempd22 + tauxz*tempd21 + tauxy*tempd17
+          wzyd = tauxy*tempd22 + tauyz*tempd21 + tauyy*tempd17
           tempd19 = two*fact*eyyd
           wyxd = tauxx*tempd18 + tauxy*tempd19 + tauxz*tempd17
-          tauyzd = tauyzd + wxy*tempd20 + wzy*tempd21 + wyz*tempd19 + &
-&           wxz*tempd18 + (wzz+wyy)*tempd17
           wyzd = tauxz*tempd18 - wzyd + tauyz*tempd19 + tauzz*tempd17
-          tauyyd = tauyyd + wxy*tempd18 + wyy*tempd19 + wzy*tempd17
-          tempd22 = two*fact*exxd
-          tauxzd = tauxzd + (wzz+wxx)*tempd20 + wzx*tempd21 + wxz*&
-&           tempd22 + wyz*tempd18 + wyx*tempd17
-          tauxyd = tauxyd + wzy*tempd20 + wyx*tempd19 + wxy*tempd22 + (&
-&           wyy+wxx)*tempd18 + wzx*tempd17
-          wxyd = tauyy*tempd18 - wyxd + tauxy*tempd22 + tauyz*tempd20
-          wxzd = tauyz*tempd18 - wzxd + tauxz*tempd22 + tauzz*tempd20
-          tauxxd = tauxxd + wyx*tempd18 + wxx*tempd22 + wzx*tempd20
+          tauyzd = tauyzd + wxz*tempd18 + wyz*tempd19 + wzy*tempd21 + &
+&           wxy*tempd22
+          tempd20 = two*fact*exxd
+          tauxzd = tauxzd + wyz*tempd18 + wxz*tempd20 + wzx*tempd21 + &
+&           wyx*tempd17
+          tauxyd = tauxyd + wzy*tempd22 + wxy*tempd20 + wyx*tempd19 + &
+&           wzx*tempd17
+          wxyd = tauyy*tempd18 - wyxd + tauxy*tempd20 + tauyz*tempd22
+          wxzd = tauyz*tempd18 - wzxd + tauxz*tempd20 + tauzz*tempd22
           v_zd = wyzd
           w_yd = -wyzd
           u_zd = wxzd
@@ -10545,7 +10531,6 @@ contains
     real(kind=realtype) :: tauxy, tauxz, tauyz
     real(kind=realtype) :: exx, eyy, ezz
     real(kind=realtype) :: exy, exz, eyz
-    real(kind=realtype) :: wxx, wyy, wzz
     real(kind=realtype) :: wxy, wxz, wyz, wyx, wzx, wzy
     real(kind=realtype) :: den, ccr1, fact
     real(kind=realtype) :: fmx, fmy, fmz, frhoe
@@ -10557,10 +10542,6 @@ contains
     real(kind=realtype) :: abs0
 ! set qcr parameters
     ccr1 = 0.3_realtype
-! the diagonals of the vorticity tensor components are always zero
-    wxx = zero
-    wyy = zero
-    wzz = zero
 ! set rfilv to rfil to indicate that this is the viscous part.
 ! if rfilv == 0 the viscous residuals need not to be computed
 ! and a return can be made.
@@ -10706,6 +10687,7 @@ contains
 ! compute factor that will multiply all tensor components
           fact = ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
           wxz = u_z - w_x
           wyz = v_z - w_y
@@ -10713,15 +10695,12 @@ contains
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-          exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*tauxy+&
-&           wyz*tauxz)
-          exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+&
-&           wzz*tauxz)
-          eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*tauyy+&
-&           wzz*tauyz)
+          exx = fact*(wxy*tauxy+wxz*tauxz)*two
+          eyy = fact*(wyx*tauxy+wyz*tauyz)*two
+          ezz = fact*(wzx*tauxz+wzy*tauyz)*two
+          exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
+          exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
+          eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
 ! add extra terms
           tauxx = tauxx - exx
           tauyy = tauyy - eyy
@@ -10915,6 +10894,7 @@ contains
 ! compute factor that will multiply all tensor components
           fact = ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
           wxz = u_z - w_x
           wyz = v_z - w_y
@@ -10922,15 +10902,12 @@ contains
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-          exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*tauxy+&
-&           wyz*tauxz)
-          exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+&
-&           wzz*tauxz)
-          eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*tauyy+&
-&           wzz*tauyz)
+          exx = fact*(wxy*tauxy+wxz*tauxz)*two
+          eyy = fact*(wyx*tauxy+wyz*tauyz)*two
+          ezz = fact*(wzx*tauxz+wzy*tauyz)*two
+          exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
+          exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
+          eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
 ! add extra terms
           tauxx = tauxx - exx
           tauyy = tauyy - eyy
@@ -11121,6 +11098,7 @@ contains
 ! compute factor that will multiply all tensor components
           fact = ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
           wxz = u_z - w_x
           wyz = v_z - w_y
@@ -11128,15 +11106,12 @@ contains
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-          exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*tauxy+&
-&           wyz*tauxz)
-          exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+&
-&           wzz*tauxz)
-          eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*tauyy+&
-&           wzz*tauyz)
+          exx = fact*(wxy*tauxy+wxz*tauxz)*two
+          eyy = fact*(wyx*tauxy+wyz*tauyz)*two
+          ezz = fact*(wzx*tauxz+wzy*tauyz)*two
+          exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
+          exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
+          eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
 ! add extra terms
           tauxx = tauxx - exx
           tauyy = tauyy - eyy
