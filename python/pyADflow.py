@@ -2992,7 +2992,7 @@ class ADFLOW(AeroSolver):
         """
         if relTol is None:
             relTol = self.getOption('adjointl2convergence')
-        outVec = self.adflow.solvedirectforrhs(inVec, relTol)
+        outVec = self.adflow.adjointapi.solvedirectforrhs(inVec, relTol)
 
         return outVec
 
@@ -3726,7 +3726,7 @@ class ADFLOW(AeroSolver):
         nDOFCGNS = numpy.max(cgnsIndices) +1
         CGNSVec = numpy.zeros(nDOFCGNS)
         CGNSVec[cgnsIndices] = allPts
-        CGNSVec = CGNSVec.reshape((len(CGNSVec)/3, 3))
+        CGNSVec = CGNSVec.reshape((len(CGNSVec)//3, 3))
 
         # Run the pointReduce on the CGNS nodes
         uniquePts, linkTmp, nUnique = self.adflow.utils.pointreduce(CGNSVec.T, 1e-12)
@@ -3772,8 +3772,8 @@ class ADFLOW(AeroSolver):
         dXv    = numpy.hstack(self.comm.allgather(dXv))
         norm = None
         if self.myid == 0:
-            allPts = allPts.reshape((len(allPts)/3, 3))
-            dXv = dXv.reshape((len(dXv)/3,3))
+            allPts = allPts.reshape((len(allPts)//3, 3))
+            dXv = dXv.reshape((len(dXv)//3,3))
             # Run the pointReduce on all nodes
             uniquePts, link, nUnique = self.adflow.utils.pointreduce(allPts.T, 1e-12)
             uniquePtsBar = numpy.zeros((nUnique,3))
