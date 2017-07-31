@@ -2691,16 +2691,18 @@ contains
                 q_z  = q_z - corr*ssz
 
                 ! Compute the stress tensor and the heat flux vector.
+                ! We remove the viscosity from the tau definition since
+                ! we still need to separate between laminar and turbulent stress for QCR.
 
                 fracDiv = twoThird*(u_x + v_y + w_z)
 
-                tauxx = mut*(two*u_x - fracDiv)
-                tauyy = mut*(two*v_y - fracDiv)
-                tauzz = mut*(two*w_z - fracDiv)
+                tauxx = two*u_x - fracDiv
+                tauyy = two*v_y - fracDiv
+                tauzz = two*w_z - fracDiv
 
-                tauxy = mut*(u_y + v_x)
-                tauxz = mut*(u_z + w_x)
-                tauyz = mut*(v_z + w_y)
+                tauxy = u_y + v_x
+                tauxz = u_z + w_x
+                tauyz = v_z + w_y
 
                 q_x = heatCoef*q_x
                 q_y = heatCoef*q_y
@@ -2709,7 +2711,7 @@ contains
                 ! Add QCR corrections if necessary
                 if (useQCR) then
                    
-                   ! In the QCR formulation, we add an extra term to the shear tensor:
+                   ! In the QCR formulation, we add an extra term to the turbulent stress tensor:
                    !
                    ! tau_ij,QCR = tau_ij - e_ij
                    ! 
@@ -2720,6 +2722,8 @@ contains
                    ! We are computing O_ik as follows:
                    !
                    ! O_ik = 2*W_ik/den
+                   !
+                   ! Remember that the tau_ij in e_ij should use only the eddy viscosity!
                    
                    ! Compute denominator
                    den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + &
@@ -2730,8 +2734,10 @@ contains
                    ! no gradients
                    den = max(den, xminn)
                    
-                   ! Compute factor that will multiply all tensor components
-                   fact = Ccr1/den
+                   ! Compute factor that will multiply all tensor components.
+                   ! Here we add the eddy viscosity that should multiply the stress tensor (tau)
+                   ! components as well.
+                   fact = mue*Ccr1/den
 
                    ! Compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
                    ! The diagonals of the vorticity tensor components are always zero
@@ -2754,14 +2760,24 @@ contains
                    eyz = fact*(Wyx*tauxz + Wyz*tauzz + &
                                Wzx*tauxy + Wzy*tauyy)
                    
-                   ! Add extra terms
-                   tauxx = tauxx - exx
-                   tauyy = tauyy - eyy
-                   tauzz = tauzz - ezz
-                   tauxy = tauxy - exy
-                   tauxz = tauxz - exz
-                   tauyz = tauyz - eyz
+                   ! Apply the total viscosity to the stress tensor and add extra terms
+                   tauxx = mut*tauxx - exx
+                   tauyy = mut*tauyy - eyy
+                   tauzz = mut*tauzz - ezz
+                   tauxy = mut*tauxy - exy
+                   tauxz = mut*tauxz - exz
+                   tauyz = mut*tauyz - eyz
+
+                else
                    
+                   ! Just apply the total viscosity to the stress tensor
+                   tauxx = mut*tauxx
+                   tauyy = mut*tauyy
+                   tauzz = mut*tauzz
+                   tauxy = mut*tauxy
+                   tauxz = mut*tauxz
+                   tauyz = mut*tauyz
+
                 end if
 
                 ! Compute the average velocities for the face. Remember that
@@ -2965,16 +2981,18 @@ contains
                 q_z  = q_z - corr*ssz
 
                 ! Compute the stress tensor and the heat flux vector.
+                ! We remove the viscosity from the tau definition since
+                ! we still need to separate between laminar and turbulent stress for QCR.
 
                 fracDiv = twoThird*(u_x + v_y + w_z)
 
-                tauxx = mut*(two*u_x - fracDiv)
-                tauyy = mut*(two*v_y - fracDiv)
-                tauzz = mut*(two*w_z - fracDiv)
+                tauxx = two*u_x - fracDiv
+                tauyy = two*v_y - fracDiv
+                tauzz = two*w_z - fracDiv
 
-                tauxy = mut*(u_y + v_x)
-                tauxz = mut*(u_z + w_x)
-                tauyz = mut*(v_z + w_y)
+                tauxy = u_y + v_x
+                tauxz = u_z + w_x
+                tauyz = v_z + w_y
 
                 q_x = heatCoef*q_x
                 q_y = heatCoef*q_y
@@ -2983,7 +3001,7 @@ contains
                 ! Add QCR corrections if necessary
                 if (useQCR) then
                    
-                   ! In the QCR formulation, we add an extra term to the shear tensor:
+                   ! In the QCR formulation, we add an extra term to the turbulent stress tensor:
                    !
                    ! tau_ij,QCR = tau_ij - e_ij
                    ! 
@@ -2994,6 +3012,8 @@ contains
                    ! We are computing O_ik as follows:
                    !
                    ! O_ik = 2*W_ik/den
+                   !
+                   ! Remember that the tau_ij in e_ij should use only the eddy viscosity!
                    
                    ! Compute denominator
                    den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + &
@@ -3004,9 +3024,11 @@ contains
                    ! no gradients
                    den = max(den, xminn)
                    
-                   ! Compute factor that will multiply all tensor components
-                   fact = Ccr1/den
-                   
+                   ! Compute factor that will multiply all tensor components.
+                   ! Here we add the eddy viscosity that should multiply the stress tensor (tau)
+                   ! components as well.
+                   fact = mue*Ccr1/den
+
                    ! Compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
                    ! The diagonals of the vorticity tensor components are always zero
                    Wxy = u_y - v_x
@@ -3015,7 +3037,7 @@ contains
                    Wyx = -Wxy
                    Wzx = -Wxz
                    Wzy = -Wyz
-
+                   
                    ! Compute the extra terms of the Boussinesq relation
                    exx = fact*(Wxy*tauxy + Wxz*tauxz)*two
                    eyy = fact*(Wyx*tauxy + Wyz*tauyz)*two
@@ -3028,14 +3050,24 @@ contains
                    eyz = fact*(Wyx*tauxz + Wyz*tauzz + &
                                Wzx*tauxy + Wzy*tauyy)
                    
-                   ! Add extra terms
-                   tauxx = tauxx - exx
-                   tauyy = tauyy - eyy
-                   tauzz = tauzz - ezz
-                   tauxy = tauxy - exy
-                   tauxz = tauxz - exz
-                   tauyz = tauyz - eyz
+                   ! Apply the total viscosity to the stress tensor and add extra terms
+                   tauxx = mut*tauxx - exx
+                   tauyy = mut*tauyy - eyy
+                   tauzz = mut*tauzz - ezz
+                   tauxy = mut*tauxy - exy
+                   tauxz = mut*tauxz - exz
+                   tauyz = mut*tauyz - eyz
+
+                else
                    
+                   ! Just apply the total viscosity to the stress tensor
+                   tauxx = mut*tauxx
+                   tauyy = mut*tauyy
+                   tauzz = mut*tauzz
+                   tauxy = mut*tauxy
+                   tauxz = mut*tauxz
+                   tauyz = mut*tauyz
+
                 end if
                 
                 ! Compute the average velocities for the face. Remember that
@@ -3242,16 +3274,18 @@ contains
                 q_z  = q_z - corr*ssz
 
                 ! Compute the stress tensor and the heat flux vector.
+                ! We remove the viscosity from the tau definition since
+                ! we still need to separate between laminar and turbulent stress for QCR.
 
                 fracDiv = twoThird*(u_x + v_y + w_z)
 
-                tauxx = mut*(two*u_x - fracDiv)
-                tauyy = mut*(two*v_y - fracDiv)
-                tauzz = mut*(two*w_z - fracDiv)
+                tauxx = two*u_x - fracDiv
+                tauyy = two*v_y - fracDiv
+                tauzz = two*w_z - fracDiv
 
-                tauxy = mut*(u_y + v_x)
-                tauxz = mut*(u_z + w_x)
-                tauyz = mut*(v_z + w_y)
+                tauxy = u_y + v_x
+                tauxz = u_z + w_x
+                tauyz = v_z + w_y
 
                 q_x = heatCoef*q_x
                 q_y = heatCoef*q_y
@@ -3260,7 +3294,7 @@ contains
                 ! Add QCR corrections if necessary
                 if (useQCR) then
                    
-                   ! In the QCR formulation, we add an extra term to the shear tensor:
+                   ! In the QCR formulation, we add an extra term to the turbulent stress tensor:
                    !
                    ! tau_ij,QCR = tau_ij - e_ij
                    ! 
@@ -3271,6 +3305,8 @@ contains
                    ! We are computing O_ik as follows:
                    !
                    ! O_ik = 2*W_ik/den
+                   !
+                   ! Remember that the tau_ij in e_ij should use only the eddy viscosity!
                    
                    ! Compute denominator
                    den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + &
@@ -3281,8 +3317,10 @@ contains
                    ! no gradients
                    den = max(den, xminn)
                    
-                   ! Compute factor that will multiply all tensor components
-                   fact = Ccr1/den
+                   ! Compute factor that will multiply all tensor components.
+                   ! Here we add the eddy viscosity that should multiply the stress tensor (tau)
+                   ! components as well.
+                   fact = mue*Ccr1/den
 
                    ! Compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
                    ! The diagonals of the vorticity tensor components are always zero
@@ -3305,14 +3343,24 @@ contains
                    eyz = fact*(Wyx*tauxz + Wyz*tauzz + &
                                Wzx*tauxy + Wzy*tauyy)
                    
-                   ! Add extra terms
-                   tauxx = tauxx - exx
-                   tauyy = tauyy - eyy
-                   tauzz = tauzz - ezz
-                   tauxy = tauxy - exy
-                   tauxz = tauxz - exz
-                   tauyz = tauyz - eyz
+                   ! Apply the total viscosity to the stress tensor and add extra terms
+                   tauxx = mut*tauxx - exx
+                   tauyy = mut*tauyy - eyy
+                   tauzz = mut*tauzz - ezz
+                   tauxy = mut*tauxy - exy
+                   tauxz = mut*tauxz - exz
+                   tauyz = mut*tauyz - eyz
+
+                else
                    
+                   ! Just apply the total viscosity to the stress tensor
+                   tauxx = mut*tauxx
+                   tauyy = mut*tauyy
+                   tauzz = mut*tauzz
+                   tauxy = mut*tauxy
+                   tauxz = mut*tauxz
+                   tauyz = mut*tauyz
+
                 end if
 
                 ! Compute the average velocities for the face. Remember that
