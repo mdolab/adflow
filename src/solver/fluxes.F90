@@ -2540,7 +2540,6 @@ contains
     real(kind=realType) :: tauxy, tauxz, tauyz
     real(kind=realType) :: exx, eyy, ezz
     real(kind=realType) :: exy, exz, eyz
-    real(kind=realType) :: Wxx, Wyy, Wzz
     real(kind=realType) :: Wxy, Wxz, Wyz, Wyx, Wzx, Wzy
     real(kind=realType) :: den, Ccr1, fact
     real(kind=realType) :: fmx, fmy, fmz, frhoE
@@ -2548,11 +2547,6 @@ contains
 
     ! Set QCR parameters
     Ccr1 = 0.3_realType
-    
-    ! The diagonals of the vorticity tensor components are always zero
-    Wxx = zero
-    Wyy = zero
-    Wzz = zero
 
     ! Set rFilv to rFil to indicate that this is the viscous part.
     ! If rFilv == 0 the viscous residuals need not to be computed
@@ -2740,6 +2734,7 @@ contains
                    fact = Ccr1/den
 
                    ! Compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+                   ! The diagonals of the vorticity tensor components are always zero
                    Wxy = u_y - v_x
                    Wxz = u_z - w_x
                    Wyz = v_z - w_y
@@ -2748,16 +2743,16 @@ contains
                    Wzy = -Wyz
                    
                    ! Compute the extra terms of the Boussinesq relation
-                   exx = fact*(Wxx*tauxx + Wxy*tauxy + Wxz*tauxz)*two
-                   eyy = fact*(Wyx*tauxy + Wyy*tauyy + Wyz*tauyz)*two
-                   ezz = fact*(Wzx*tauxz + Wzy*tauyz + Wzz*tauzz)*two
+                   exx = fact*(Wxy*tauxy + Wxz*tauxz)*two
+                   eyy = fact*(Wyx*tauxy + Wyz*tauyz)*two
+                   ezz = fact*(Wzx*tauxz + Wzy*tauyz)*two
                    
-                   exy = fact*(Wxx*tauxy + Wxy*tauyy + Wxz*tauyz + &
-                        Wyx*tauxx + Wyy*tauxy + Wyz*tauxz)
-                   exz = fact*(Wxx*tauxz + Wxy*tauyz + Wxz*tauzz + &
-                        Wzx*tauxx + Wzy*tauxy + Wzz*tauxz)
-                   eyz = fact*(Wyx*tauxz + Wyy*tauyz + Wyz*tauzz + &
-                        Wzx*tauxy + Wzy*tauyy + Wzz*tauyz)
+                   exy = fact*(Wxy*tauyy + Wxz*tauyz + &
+                               Wyx*tauxx + Wyz*tauxz)
+                   exz = fact*(Wxy*tauyz + Wxz*tauzz + &
+                               Wzx*tauxx + Wzy*tauxy)
+                   eyz = fact*(Wyx*tauxz + Wyz*tauzz + &
+                               Wzx*tauxy + Wzy*tauyy)
                    
                    ! Add extra terms
                    tauxx = tauxx - exx
@@ -3013,6 +3008,7 @@ contains
                    fact = Ccr1/den
                    
                    ! Compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+                   ! The diagonals of the vorticity tensor components are always zero
                    Wxy = u_y - v_x
                    Wxz = u_z - w_x
                    Wyz = v_z - w_y
@@ -3021,16 +3017,16 @@ contains
                    Wzy = -Wyz
 
                    ! Compute the extra terms of the Boussinesq relation
-                   exx = fact*(Wxx*tauxx + Wxy*tauxy + Wxz*tauxz)*two
-                   eyy = fact*(Wyx*tauxy + Wyy*tauyy + Wyz*tauyz)*two
-                   ezz = fact*(Wzx*tauxz + Wzy*tauyz + Wzz*tauzz)*two
+                   exx = fact*(Wxy*tauxy + Wxz*tauxz)*two
+                   eyy = fact*(Wyx*tauxy + Wyz*tauyz)*two
+                   ezz = fact*(Wzx*tauxz + Wzy*tauyz)*two
                    
-                   exy = fact*(Wxx*tauxy + Wxy*tauyy + Wxz*tauyz + &
-                        Wyx*tauxx + Wyy*tauxy + Wyz*tauxz)
-                   exz = fact*(Wxx*tauxz + Wxy*tauyz + Wxz*tauzz + &
-                        Wzx*tauxx + Wzy*tauxy + Wzz*tauxz)
-                   eyz = fact*(Wyx*tauxz + Wyy*tauyz + Wyz*tauzz + &
-                        Wzx*tauxy + Wzy*tauyy + Wzz*tauyz)
+                   exy = fact*(Wxy*tauyy + Wxz*tauyz + &
+                               Wyx*tauxx + Wyz*tauxz)
+                   exz = fact*(Wxy*tauyz + Wxz*tauzz + &
+                               Wzx*tauxx + Wzy*tauxy)
+                   eyz = fact*(Wyx*tauxz + Wyz*tauzz + &
+                               Wzx*tauxy + Wzy*tauyy)
                    
                    ! Add extra terms
                    tauxx = tauxx - exx
@@ -3289,6 +3285,7 @@ contains
                    fact = Ccr1/den
 
                    ! Compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+                   ! The diagonals of the vorticity tensor components are always zero
                    Wxy = u_y - v_x
                    Wxz = u_z - w_x
                    Wyz = v_z - w_y
@@ -3297,16 +3294,16 @@ contains
                    Wzy = -Wyz
                    
                    ! Compute the extra terms of the Boussinesq relation
-                   exx = fact*(Wxx*tauxx + Wxy*tauxy + Wxz*tauxz)*two
-                   eyy = fact*(Wyx*tauxy + Wyy*tauyy + Wyz*tauyz)*two
-                   ezz = fact*(Wzx*tauxz + Wzy*tauyz + Wzz*tauzz)*two
+                   exx = fact*(Wxy*tauxy + Wxz*tauxz)*two
+                   eyy = fact*(Wyx*tauxy + Wyz*tauyz)*two
+                   ezz = fact*(Wzx*tauxz + Wzy*tauyz)*two
                    
-                   exy = fact*(Wxx*tauxy + Wxy*tauyy + Wxz*tauyz + &
-                        Wyx*tauxx + Wyy*tauxy + Wyz*tauxz)
-                   exz = fact*(Wxx*tauxz + Wxy*tauyz + Wxz*tauzz + &
-                        Wzx*tauxx + Wzy*tauxy + Wzz*tauxz)
-                   eyz = fact*(Wyx*tauxz + Wyy*tauyz + Wyz*tauzz + &
-                        Wzx*tauxy + Wzy*tauyy + Wzz*tauyz)
+                   exy = fact*(Wxy*tauyy + Wxz*tauyz + &
+                               Wyx*tauxx + Wyz*tauxz)
+                   exz = fact*(Wxy*tauyz + Wxz*tauzz + &
+                               Wzx*tauxx + Wzy*tauxy)
+                   eyz = fact*(Wyx*tauxz + Wyz*tauzz + &
+                               Wzx*tauxy + Wzy*tauyy)
                    
                    ! Add extra terms
                    tauxx = tauxx - exx
