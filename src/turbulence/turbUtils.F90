@@ -904,6 +904,7 @@ contains
                 za = (sk(i,j,k,3) + sk(i,j,k-1,3))*voli
 
                 uu = xa*w(i,j,k,ivx) + ya*w(i,j,k,ivy) + za*w(i,j,k,ivz) - qs
+                ! This term has unit: velocity/length
 
                 ! Determine the situation we are having here, i.e. positive
                 ! or negative normal velocity.
@@ -965,6 +966,7 @@ contains
                       ! Update the residual. The convective term must be
                       ! substracted, because it appears on the other side of
                       ! the equation as the source and viscous terms.
+                      ! uu*dwtk = (V.dot.face_normal)*delta(nuTilde)/delta(x)
 
                       scratch(i,j,k,idvt+ii-1) = scratch(i,j,k,idvt+ii-1) - uu*dwtk
 #ifndef USE_TAPENADE

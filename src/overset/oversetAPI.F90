@@ -23,7 +23,7 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use adtBuild, only : destroySerialQuad
     use inputOverset, onlY : useoversetLoadBalance, overlapFactor, nRefine, backgroundVolScale
-    use utils, only : EChk, setPointers, setBufferSizes, terminate
+    use utils, only : EChk, setPointers, setBufferSizes, terminate, returnFail
     use surfaceFamilies, only : BCFamGroups
     use kdtree2_module, onlY : kdtree2_create, kdtree2destroy
     use oversetInitialization, only : initializeOBlock, initializeOFringes, initializeStatus, &
@@ -52,7 +52,7 @@ contains
     integer(kind=intType) :: m, iSize, iStart, iEnd, index, rSize, iFringe
     integer(kind=intType) :: iDom, jDom, iDim, nReal, iCol
     integer(kind=intType) :: nn, mm, n, ierr, iProc, iRefine
-    integer(kind=intType) :: iWork, nWork, nLocalFringe
+    integer(kind=intType) :: iWork, nWork, nLocalFringe, totalOrphans
     integer(kind=intType) :: myBlock, myINdex, dIndex, donorBlock, donorProc, absDBlock
     real(kind=realType) :: startTime, endTime, curQuality
     logical :: localChanged, globalChanged, wallsPresent
@@ -1146,7 +1146,7 @@ contains
           ! Step 16: The algorithm is now complete. Run the checkOverset
           ! algorithm to verify that we actually have a valid interpolation
           ! -----------------------------------------------------------------
-          call checkOverset(level, sps, i, .false.)
+          call checkOverset(level, sps, totalOrphans, .false.)
 
           ! Determine if we can exit the loop. To do this we need to
           ! check if *any* of the iblank values has changed on *any*
@@ -1201,7 +1201,7 @@ contains
        call tic(iFinalCommStructures)
        call finalOversetCommStructures(level, sps)
        call setIblankArray(level, sps)
-       call checkOverset(level, sps, i, .True.)
+       call checkOverset(level, sps, totalOrphans, .True.)
        
        do nn=1, nDom
           call setPointers(nn, level, sps)
@@ -1229,6 +1229,15 @@ contains
        deallocate(oFringes, fringeRecvSizes, cumFringeRecv, intRecvBuf)
 
     end do spectralLoop
+
+    ! Add fail flag if we get orphans
+    if (totalOrphans > 0) then
+       if (myID == 0) then
+          print *,'Orphans present in the grid. Setting fail flags to True'
+       end if
+       call returnFail("oversetComm", "Orphans present in grid.")
+       call mpi_barrier(ADflow_comm_world, ierr)
+    end if
 
     ! Free the buffer and make a new one that includes necessary sizes
     ! for the overset comm
@@ -2129,6 +2138,7 @@ contains
        end do
        
     end select
+
   end subroutine updateOverset
   
   subroutine setBlockPriority(blkName, value, setValue)

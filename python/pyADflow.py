@@ -1266,6 +1266,11 @@ class ADFLOW(AeroSolver):
         if alpha0 is not None:
             aeroProblem.alpha = alpha0
 
+        # We can stop here if we have failures in the mesh
+        if self.adflow.killsignals.fatalfail:
+            print('Cannot run CLSolve due to mesh failures.')
+            return
+
         # Set the startign value
         anm2 = aeroProblem.alpha
 
@@ -3051,25 +3056,27 @@ class ADFLOW(AeroSolver):
                 n  = ncells*ntime
                 flag = numpy.zeros(n)
 
-                # Only need to call the cutCallBack if we're doing a
-                # full update.
+                # Only need to call the cutCallBack and regenerate the zipper mesh
+                # if we're doing a full update.
                 if self.getOption('oversetUpdateMode') == 'full':
                     cutCallBack = self.getOption('cutCallBack')
                     if cutCallBack is not None:
                         xCen = self.adflow.utils.getcellcenters(1, n).T
                         cutCallBack(xCen, flag)
 
-                    # Verify if we already have previous failures, such as negative volumes
+                    # Verify previous mesh failures
                     self.adflow.killsignals.routinefailed = \
-                                  self.comm.allreduce(
-                                  bool(self.adflow.killsignals.routinefailed), op=MPI.LOR)
+                        self.comm.allreduce(
+                        bool(self.adflow.killsignals.routinefailed), op=MPI.LOR)
+                    self.adflow.killsignals.fatalfail = self.adflow.killsignals.routinefailed
 
-                    # We will need to update the zipper mesh.
+                    # We will need to update the zipper mesh later on.
                     # But we only do this if we have a valid mesh, otherwise the
                     # code might halt during zipper mesh regeneration
-                    if not self.adflow.killsignals.routinefailed:
+                    if not self.adflow.killsignals.fatalfail:
                         self.zipperCreated = False
-                    else:
+                    else: # We got mesh failure!
+                        self.zipperCreated = True # Set flag to true to skip zipper mesh call
                         if self.myid == 0:
                             print('ATTENTION: Zipper mesh will not be regenerated due to previous failures.')
 
@@ -4754,8 +4761,13 @@ class ADFLOW(AeroSolver):
     def _createZipperMesh(self):
         """Internal routine for generating the zipper mesh. This operation is
         postposted as long as possible and now it cannot wait any longer."""
-        if self.zipperCreated:
-            return
+
+        # Verify if we already have previous failures, such as negative volumes
+        self.adflow.killsignals.routinefailed = self.comm.allreduce(bool(self.adflow.killsignals.routinefailed), op=MPI.LOR)
+
+        # Avoid zipper if we have failures or if it already exists
+        if self.zipperCreated or self.adflow.killsignals.routinefailed:
+            return 
 
         zipFam = self.getOption('zipperSurfaceFamily')
 
