@@ -1454,6 +1454,7 @@ nadvloopspectral:do ii=1,nadv
       za = (sk(i, j, k, 3)+sk(i, j, k-1, 3))*voli
       uu = xa*w(i, j, k, ivx) + ya*w(i, j, k, ivy) + za*w(i, j, k, ivz) &
 &       - qs
+! this term has unit: velocity/length
 ! determine the situation we are having here, i.e. positive
 ! or negative normal velocity.
       if (uu .gt. zero) then
@@ -1773,6 +1774,7 @@ nadvloopspectral:do ii=1,nadv
       za = (sk(i, j, k, 3)+sk(i, j, k-1, 3))*voli
       uu = xa*w(i, j, k, ivx) + ya*w(i, j, k, ivy) + za*w(i, j, k, ivz) &
 &       - qs
+! this term has unit: velocity/length
 ! determine the situation we are having here, i.e. positive
 ! or negative normal velocity.
       if (uu .gt. zero) then
@@ -1835,6 +1837,7 @@ nadvloopspectral:do ii=1,nadv
 ! update the residual. the convective term must be
 ! substracted, because it appears on the other side of
 ! the equation as the source and viscous terms.
+! uu*dwtk = (v.dot.face_normal)*delta(nutilde)/delta(x)
           scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) - uu&
 &           *dwtk
         end do
