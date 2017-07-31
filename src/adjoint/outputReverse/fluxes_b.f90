@@ -8937,7 +8937,7 @@ contains
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
           wxy = u_y - v_x
           wxz = u_z - w_x
-          wyz = u_y - v_x
+          wyz = v_z - w_y
           wyx = -wxy
           wzx = -wxz
           wzy = -wyz
@@ -9112,10 +9112,12 @@ contains
           wxyd = tauyy*tempd72 - wyxd + tauxy*tempd76 + tauyz*tempd74
           wxzd = tauyz*tempd72 - wzxd + tauxz*tempd76 + tauzz*tempd74
           tauxxd = tauxxd + wyx*tempd72 + wxx*tempd76 + wzx*tempd74
-          u_yd = wxyd + wyzd
-          v_xd = -wxyd - wyzd
+          v_zd = wyzd
+          w_yd = -wyzd
           u_zd = wxzd
           w_xd = -wxzd
+          u_yd = wxyd
+          v_xd = -wxyd
           dend = -(ccr1*factd/den**2)
           call popcontrol1b(branch)
           if (branch .eq. 0) dend = 0.0_8
@@ -9131,9 +9133,9 @@ contains
           u_zd = u_zd + 2*u_z*tempd70
           v_xd = v_xd + 2*v_x*tempd70
           v_yd = 2*v_y*tempd70
-          v_zd = 2*v_z*tempd70
+          v_zd = v_zd + 2*v_z*tempd70
           w_xd = w_xd + 2*w_x*tempd70
-          w_yd = 2*w_y*tempd70
+          w_yd = w_yd + 2*w_y*tempd70
           w_zd = 2*w_z*tempd70
         else
           u_xd = 0.0_8
@@ -9519,7 +9521,7 @@ contains
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
           wxy = u_y - v_x
           wxz = u_z - w_x
-          wyz = u_y - v_x
+          wyz = v_z - w_y
           wyx = -wxy
           wzx = -wxz
           wzy = -wyz
@@ -9694,10 +9696,12 @@ contains
           wxyd = tauyy*tempd45 - wyxd + tauxy*tempd49 + tauyz*tempd47
           wxzd = tauyz*tempd45 - wzxd + tauxz*tempd49 + tauzz*tempd47
           tauxxd = tauxxd + wyx*tempd45 + wxx*tempd49 + wzx*tempd47
-          u_yd = wxyd + wyzd
-          v_xd = -wxyd - wyzd
+          v_zd = wyzd
+          w_yd = -wyzd
           u_zd = wxzd
           w_xd = -wxzd
+          u_yd = wxyd
+          v_xd = -wxyd
           dend = -(ccr1*factd/den**2)
           call popcontrol1b(branch)
           if (branch .eq. 0) dend = 0.0_8
@@ -9713,9 +9717,9 @@ contains
           u_zd = u_zd + 2*u_z*tempd43
           v_xd = v_xd + 2*v_x*tempd43
           v_yd = 2*v_y*tempd43
-          v_zd = 2*v_z*tempd43
+          v_zd = v_zd + 2*v_z*tempd43
           w_xd = w_xd + 2*w_x*tempd43
-          w_yd = 2*w_y*tempd43
+          w_yd = w_yd + 2*w_y*tempd43
           w_zd = 2*w_z*tempd43
         else
           u_xd = 0.0_8
@@ -10913,7 +10917,7 @@ contains
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
           wxy = u_y - v_x
           wxz = u_z - w_x
-          wyz = u_y - v_x
+          wyz = v_z - w_y
           wyx = -wxy
           wzx = -wxz
           wzy = -wyz
@@ -11119,7 +11123,7 @@ contains
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
           wxy = u_y - v_x
           wxz = u_z - w_x
-          wyz = u_y - v_x
+          wyz = v_z - w_y
           wyx = -wxy
           wzx = -wxz
           wzy = -wyz

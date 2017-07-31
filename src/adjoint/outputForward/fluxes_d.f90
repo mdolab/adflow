@@ -7018,8 +7018,8 @@ contains
               wxy = u_y - v_x
               wxzd = u_zd - w_xd
               wxz = u_z - w_x
-              wyzd = u_yd - v_xd
-              wyz = u_y - v_x
+              wyzd = v_zd - w_yd
+              wyz = v_z - w_y
               wyxd = -wxyd
               wyx = -wxy
               wzxd = -wxzd
@@ -7395,8 +7395,8 @@ contains
               wxy = u_y - v_x
               wxzd = u_zd - w_xd
               wxz = u_z - w_x
-              wyzd = u_yd - v_xd
-              wyz = u_y - v_x
+              wyzd = v_zd - w_yd
+              wyz = v_z - w_y
               wyxd = -wxyd
               wyx = -wxy
               wzxd = -wxzd
@@ -7961,7 +7961,7 @@ contains
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
               wxy = u_y - v_x
               wxz = u_z - w_x
-              wyz = u_y - v_x
+              wyz = v_z - w_y
               wyx = -wxy
               wzx = -wxz
               wzy = -wyz
@@ -8171,7 +8171,7 @@ contains
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
               wxy = u_y - v_x
               wxz = u_z - w_x
-              wyz = u_y - v_x
+              wyz = v_z - w_y
               wyx = -wxy
               wzx = -wxz
               wzy = -wyz
