@@ -458,7 +458,7 @@ contains
     use inputPhysics, only : equations
     use flowVarRefState, only :  nw, nwf
     use inputIteration, only : L2conv
-    use iteration, only : approxTotalIts, totalR0
+    use iteration, only : approxTotalIts, totalR0, stepMonitor
     use utils, only : EChk
     use killSignals, only : routineFailed
     implicit none
@@ -553,14 +553,14 @@ contains
 
     nfevals = 0
     if (NK_LS == noLineSearch) then
-       call LSNone(wVec, rVec, g, deltaW, work, nfevals, flag)
+       call LSNone(wVec, rVec, g, deltaW, work, nfevals, flag, stepMonitor)
     else if(NK_LS == cubicLineSearch) then
        call LSCubic(wVec, rVec, g, deltaW, work, fnorm, ynorm, gnorm, &
-            nfevals, flag)
+            nfevals, flag, stepMonitor)
     else if (NK_LS == nonMonotoneLineSearch) then
        iter_m = min(iter_m+1, mMax)
        call LSNM(wVec, rVec, g, deltaW, work, fnorm, ynorm, gnorm, &
-            nfevals, flag)
+            nfevals, flag, stepMonitor)
     end if
 
     if (.not. flag) then
@@ -586,7 +586,7 @@ contains
 
   end subroutine NKStep
 
-  subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
+  subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag, step)
 
     use constants
     use utils, only : EChk
@@ -601,7 +601,7 @@ contains
     !g    - residual evaluated at new iterate y
 
     real(kind=alwaysrealType) :: fnorm, gnorm, ynorm
-    real(kind=realType) :: alpha
+    real(kind=realType) :: alpha, step
     logical :: flag
     integer(kind=intType) :: nfevals
     !   Note that for line search purposes we work with with the related
@@ -804,10 +804,10 @@ contains
     end do cubic_loop
 
 100 continue
-
+    step  = lambda
   end subroutine LSCubic
 
-  subroutine LSNone(x, f, g, y, w, nfevals, flag)
+  subroutine LSNone(x, f, g, y, w, nfevals, flag, step)
 
     use constants
     use utils, only : EChk
@@ -824,6 +824,7 @@ contains
     integer(kind=intType) :: nfevals
     integer(kind=intType) :: ierr
     logical :: flag
+    real(kind=realType) :: step
     flag = .True. 
     ! We just accept the step and compute the new residual at the new iterate
     nfevals = 0
@@ -836,10 +837,10 @@ contains
     call setRVec(g)
 
     nfevals = nfevals + 1
-
+    step = one
   end subroutine LSNone
 
-  subroutine LSNM(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
+  subroutine LSNM(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag, step)
 
     use constants
     use utils, only : EChk
@@ -854,7 +855,7 @@ contains
     !g    - residual evaluated at new iterate y
 
     real(kind=alwaysRealType) :: fnorm, gnorm, ynorm
-    real(kind=realType) :: alpha
+    real(kind=realType) :: alpha, step
     logical :: flag
     integer(kind=intType) :: nfevals
     !   Note that for line search purposes we work with with the related
@@ -932,6 +933,7 @@ contains
           end if
        end if
     end do backtrack
+    step = alpha
   end subroutine LSNM
 
   subroutine computeResidualNK()
@@ -2171,14 +2173,14 @@ contains
     use inputIteration, only : L2conv
     use inputDiscretization, only : lumpedDiss
     use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use iteration, only : approxTotalIts, totalR0, totalR
+    use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor
     use utils, only : EChk
     use turbAPI, only : turbSolveSegregated
     use turbMod, only : secondOrd
     use solverUtils, only : computeUTau
     use adjointUtils, only : referenceShockSensor
     use NKSolver, only : setRVec, computeResidualNK, getEWTol
-
+    use communication, only : myid
     implicit none
 
     ! Input Variables
@@ -2254,7 +2256,7 @@ contains
     else 
       lambda = min(lambda*(totalR_old/totalR)**ANK_stepExponent, ANK_StepFactor)
     end if
-
+    stepMonitor = lambda
     ! ============== Flow Update =============
 
     ! For the approximate solver, we need the approximate flux routines
