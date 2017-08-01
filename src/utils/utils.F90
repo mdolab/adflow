@@ -3565,6 +3565,9 @@ end subroutine cross_prod
     i_ipiv => flowDoms(nn,mm,ll)%i_ipiv
     j_ipiv => flowDoms(nn,mm,ll)%j_ipiv
     k_ipiv => flowDoms(nn,mm,ll)%k_ipiv
+    
+    ! Pointers for the Shock Sensor used in approx-flux routines
+    shockSensor => flowDoms(nn,mm,ll)%shockSensor
 
   end subroutine setPointers
 
