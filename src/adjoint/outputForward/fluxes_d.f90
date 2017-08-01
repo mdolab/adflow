@@ -6356,6 +6356,10 @@ contains
     real(kind=realtype) :: tauxxd, tauyyd, tauzzd
     real(kind=realtype) :: tauxy, tauxz, tauyz
     real(kind=realtype) :: tauxyd, tauxzd, tauyzd
+    real(kind=realtype) :: tauxxs, tauyys, tauzzs
+    real(kind=realtype) :: tauxxsd, tauyysd, tauzzsd
+    real(kind=realtype) :: tauxys, tauxzs, tauyzs
+    real(kind=realtype) :: tauxysd, tauxzsd, tauyzsd
     real(kind=realtype) :: exx, eyy, ezz
     real(kind=realtype) :: exxd, eyyd, ezzd
     real(kind=realtype) :: exy, exz, eyz
@@ -6571,22 +6575,25 @@ contains
             q_zd = q_zd - corrd*ssz - corr*sszd
             q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
-! we remove the viscosity from the tau definition since
-! we still need to separate between laminar and turbulent stress for qcr.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
             fracdivd = twothird*(u_xd+v_yd+w_zd)
             fracdiv = twothird*(u_x+v_y+w_z)
-            tauxxd = two*u_xd - fracdivd
-            tauxx = two*u_x - fracdiv
-            tauyyd = two*v_yd - fracdivd
-            tauyy = two*v_y - fracdiv
-            tauzzd = two*w_zd - fracdivd
-            tauzz = two*w_z - fracdiv
-            tauxyd = u_yd + v_xd
-            tauxy = u_y + v_x
-            tauxzd = u_zd + w_xd
-            tauxz = u_z + w_x
-            tauyzd = v_zd + w_yd
-            tauyz = v_z + w_y
+            tauxxsd = two*u_xd - fracdivd
+            tauxxs = two*u_x - fracdiv
+            tauyysd = two*v_yd - fracdivd
+            tauyys = two*v_y - fracdiv
+            tauzzsd = two*w_zd - fracdivd
+            tauzzs = two*w_z - fracdiv
+            tauxysd = u_yd + v_xd
+            tauxys = u_y + v_x
+            tauxzsd = u_zd + w_xd
+            tauxzs = u_z + w_x
+            tauyzsd = v_zd + w_yd
+            tauyzs = v_z + w_y
             q_xd = heatcoefd*q_x + heatcoef*q_xd
             q_x = heatcoef*q_x
             q_yd = heatcoefd*q_y + heatcoef*q_yd
@@ -6647,54 +6654,54 @@ contains
               wzyd = -wyzd
               wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-              exxd = two*(factd*(wxy*tauxy+wxz*tauxz)+fact*(wxyd*tauxy+&
-&               wxy*tauxyd+wxzd*tauxz+wxz*tauxzd))
-              exx = fact*(wxy*tauxy+wxz*tauxz)*two
-              eyyd = two*(factd*(wyx*tauxy+wyz*tauyz)+fact*(wyxd*tauxy+&
-&               wyx*tauxyd+wyzd*tauyz+wyz*tauyzd))
-              eyy = fact*(wyx*tauxy+wyz*tauyz)*two
-              ezzd = two*(factd*(wzx*tauxz+wzy*tauyz)+fact*(wzxd*tauxz+&
-&               wzx*tauxzd+wzyd*tauyz+wzy*tauyzd))
-              ezz = fact*(wzx*tauxz+wzy*tauyz)*two
-              exyd = factd*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz) + &
-&               fact*(wxyd*tauyy+wxy*tauyyd+wxzd*tauyz+wxz*tauyzd+wyxd*&
-&               tauxx+wyx*tauxxd+wyzd*tauxz+wyz*tauxzd)
-              exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
-              exzd = factd*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy) + &
-&               fact*(wxyd*tauyz+wxy*tauyzd+wxzd*tauzz+wxz*tauzzd+wzxd*&
-&               tauxx+wzx*tauxxd+wzyd*tauxy+wzy*tauxyd)
-              exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
-              eyzd = factd*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy) + &
-&               fact*(wyxd*tauxz+wyx*tauxzd+wyzd*tauzz+wyz*tauzzd+wzxd*&
-&               tauxy+wzx*tauxyd+wzyd*tauyy+wzy*tauyyd)
-              eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
+              exxd = two*(factd*(wxy*tauxys+wxz*tauxzs)+fact*(wxyd*&
+&               tauxys+wxy*tauxysd+wxzd*tauxzs+wxz*tauxzsd))
+              exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+              eyyd = two*(factd*(wyx*tauxys+wyz*tauyzs)+fact*(wyxd*&
+&               tauxys+wyx*tauxysd+wyzd*tauyzs+wyz*tauyzsd))
+              eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+              ezzd = two*(factd*(wzx*tauxzs+wzy*tauyzs)+fact*(wzxd*&
+&               tauxzs+wzx*tauxzsd+wzyd*tauyzs+wzy*tauyzsd))
+              ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+              exyd = factd*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)&
+&               + fact*(wxyd*tauyys+wxy*tauyysd+wxzd*tauyzs+wxz*tauyzsd+&
+&               wyxd*tauxxs+wyx*tauxxsd+wyzd*tauxzs+wyz*tauxzsd)
+              exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+              exzd = factd*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)&
+&               + fact*(wxyd*tauyzs+wxy*tauyzsd+wxzd*tauzzs+wxz*tauzzsd+&
+&               wzxd*tauxxs+wzx*tauxxsd+wzyd*tauxys+wzy*tauxysd)
+              exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+              eyzd = factd*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)&
+&               + fact*(wyxd*tauxzs+wyx*tauxzsd+wyzd*tauzzs+wyz*tauzzsd+&
+&               wzxd*tauxys+wzx*tauxysd+wzyd*tauyys+wzy*tauyysd)
+              eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
 ! apply the total viscosity to the stress tensor and add extra terms
-              tauxxd = mutd*tauxx + mut*tauxxd - exxd
-              tauxx = mut*tauxx - exx
-              tauyyd = mutd*tauyy + mut*tauyyd - eyyd
-              tauyy = mut*tauyy - eyy
-              tauzzd = mutd*tauzz + mut*tauzzd - ezzd
-              tauzz = mut*tauzz - ezz
-              tauxyd = mutd*tauxy + mut*tauxyd - exyd
-              tauxy = mut*tauxy - exy
-              tauxzd = mutd*tauxz + mut*tauxzd - exzd
-              tauxz = mut*tauxz - exz
-              tauyzd = mutd*tauyz + mut*tauyzd - eyzd
-              tauyz = mut*tauyz - eyz
+              tauxxd = mutd*tauxxs + mut*tauxxsd - exxd
+              tauxx = mut*tauxxs - exx
+              tauyyd = mutd*tauyys + mut*tauyysd - eyyd
+              tauyy = mut*tauyys - eyy
+              tauzzd = mutd*tauzzs + mut*tauzzsd - ezzd
+              tauzz = mut*tauzzs - ezz
+              tauxyd = mutd*tauxys + mut*tauxysd - exyd
+              tauxy = mut*tauxys - exy
+              tauxzd = mutd*tauxzs + mut*tauxzsd - exzd
+              tauxz = mut*tauxzs - exz
+              tauyzd = mutd*tauyzs + mut*tauyzsd - eyzd
+              tauyz = mut*tauyzs - eyz
             else
 ! just apply the total viscosity to the stress tensor
-              tauxxd = mutd*tauxx + mut*tauxxd
-              tauxx = mut*tauxx
-              tauyyd = mutd*tauyy + mut*tauyyd
-              tauyy = mut*tauyy
-              tauzzd = mutd*tauzz + mut*tauzzd
-              tauzz = mut*tauzz
-              tauxyd = mutd*tauxy + mut*tauxyd
-              tauxy = mut*tauxy
-              tauxzd = mutd*tauxz + mut*tauxzd
-              tauxz = mut*tauxz
-              tauyzd = mutd*tauyz + mut*tauyzd
-              tauyz = mut*tauyz
+              tauxxd = mutd*tauxxs + mut*tauxxsd
+              tauxx = mut*tauxxs
+              tauyyd = mutd*tauyys + mut*tauyysd
+              tauyy = mut*tauyys
+              tauzzd = mutd*tauzzs + mut*tauzzsd
+              tauzz = mut*tauzzs
+              tauxyd = mutd*tauxys + mut*tauxysd
+              tauxy = mut*tauxys
+              tauxzd = mutd*tauxzs + mut*tauxzsd
+              tauxz = mut*tauxzs
+              tauyzd = mutd*tauyzs + mut*tauyzsd
+              tauyz = mut*tauyzs
             end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
@@ -6968,22 +6975,25 @@ contains
             q_zd = q_zd - corrd*ssz - corr*sszd
             q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
-! we remove the viscosity from the tau definition since
-! we still need to separate between laminar and turbulent stress for qcr.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
             fracdivd = twothird*(u_xd+v_yd+w_zd)
             fracdiv = twothird*(u_x+v_y+w_z)
-            tauxxd = two*u_xd - fracdivd
-            tauxx = two*u_x - fracdiv
-            tauyyd = two*v_yd - fracdivd
-            tauyy = two*v_y - fracdiv
-            tauzzd = two*w_zd - fracdivd
-            tauzz = two*w_z - fracdiv
-            tauxyd = u_yd + v_xd
-            tauxy = u_y + v_x
-            tauxzd = u_zd + w_xd
-            tauxz = u_z + w_x
-            tauyzd = v_zd + w_yd
-            tauyz = v_z + w_y
+            tauxxsd = two*u_xd - fracdivd
+            tauxxs = two*u_x - fracdiv
+            tauyysd = two*v_yd - fracdivd
+            tauyys = two*v_y - fracdiv
+            tauzzsd = two*w_zd - fracdivd
+            tauzzs = two*w_z - fracdiv
+            tauxysd = u_yd + v_xd
+            tauxys = u_y + v_x
+            tauxzsd = u_zd + w_xd
+            tauxzs = u_z + w_x
+            tauyzsd = v_zd + w_yd
+            tauyzs = v_z + w_y
             q_xd = heatcoefd*q_x + heatcoef*q_xd
             q_x = heatcoef*q_x
             q_yd = heatcoefd*q_y + heatcoef*q_yd
@@ -7044,54 +7054,54 @@ contains
               wzyd = -wyzd
               wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-              exxd = two*(factd*(wxy*tauxy+wxz*tauxz)+fact*(wxyd*tauxy+&
-&               wxy*tauxyd+wxzd*tauxz+wxz*tauxzd))
-              exx = fact*(wxy*tauxy+wxz*tauxz)*two
-              eyyd = two*(factd*(wyx*tauxy+wyz*tauyz)+fact*(wyxd*tauxy+&
-&               wyx*tauxyd+wyzd*tauyz+wyz*tauyzd))
-              eyy = fact*(wyx*tauxy+wyz*tauyz)*two
-              ezzd = two*(factd*(wzx*tauxz+wzy*tauyz)+fact*(wzxd*tauxz+&
-&               wzx*tauxzd+wzyd*tauyz+wzy*tauyzd))
-              ezz = fact*(wzx*tauxz+wzy*tauyz)*two
-              exyd = factd*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz) + &
-&               fact*(wxyd*tauyy+wxy*tauyyd+wxzd*tauyz+wxz*tauyzd+wyxd*&
-&               tauxx+wyx*tauxxd+wyzd*tauxz+wyz*tauxzd)
-              exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
-              exzd = factd*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy) + &
-&               fact*(wxyd*tauyz+wxy*tauyzd+wxzd*tauzz+wxz*tauzzd+wzxd*&
-&               tauxx+wzx*tauxxd+wzyd*tauxy+wzy*tauxyd)
-              exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
-              eyzd = factd*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy) + &
-&               fact*(wyxd*tauxz+wyx*tauxzd+wyzd*tauzz+wyz*tauzzd+wzxd*&
-&               tauxy+wzx*tauxyd+wzyd*tauyy+wzy*tauyyd)
-              eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
+              exxd = two*(factd*(wxy*tauxys+wxz*tauxzs)+fact*(wxyd*&
+&               tauxys+wxy*tauxysd+wxzd*tauxzs+wxz*tauxzsd))
+              exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+              eyyd = two*(factd*(wyx*tauxys+wyz*tauyzs)+fact*(wyxd*&
+&               tauxys+wyx*tauxysd+wyzd*tauyzs+wyz*tauyzsd))
+              eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+              ezzd = two*(factd*(wzx*tauxzs+wzy*tauyzs)+fact*(wzxd*&
+&               tauxzs+wzx*tauxzsd+wzyd*tauyzs+wzy*tauyzsd))
+              ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+              exyd = factd*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)&
+&               + fact*(wxyd*tauyys+wxy*tauyysd+wxzd*tauyzs+wxz*tauyzsd+&
+&               wyxd*tauxxs+wyx*tauxxsd+wyzd*tauxzs+wyz*tauxzsd)
+              exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+              exzd = factd*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)&
+&               + fact*(wxyd*tauyzs+wxy*tauyzsd+wxzd*tauzzs+wxz*tauzzsd+&
+&               wzxd*tauxxs+wzx*tauxxsd+wzyd*tauxys+wzy*tauxysd)
+              exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+              eyzd = factd*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)&
+&               + fact*(wyxd*tauxzs+wyx*tauxzsd+wyzd*tauzzs+wyz*tauzzsd+&
+&               wzxd*tauxys+wzx*tauxysd+wzyd*tauyys+wzy*tauyysd)
+              eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
 ! apply the total viscosity to the stress tensor and add extra terms
-              tauxxd = mutd*tauxx + mut*tauxxd - exxd
-              tauxx = mut*tauxx - exx
-              tauyyd = mutd*tauyy + mut*tauyyd - eyyd
-              tauyy = mut*tauyy - eyy
-              tauzzd = mutd*tauzz + mut*tauzzd - ezzd
-              tauzz = mut*tauzz - ezz
-              tauxyd = mutd*tauxy + mut*tauxyd - exyd
-              tauxy = mut*tauxy - exy
-              tauxzd = mutd*tauxz + mut*tauxzd - exzd
-              tauxz = mut*tauxz - exz
-              tauyzd = mutd*tauyz + mut*tauyzd - eyzd
-              tauyz = mut*tauyz - eyz
+              tauxxd = mutd*tauxxs + mut*tauxxsd - exxd
+              tauxx = mut*tauxxs - exx
+              tauyyd = mutd*tauyys + mut*tauyysd - eyyd
+              tauyy = mut*tauyys - eyy
+              tauzzd = mutd*tauzzs + mut*tauzzsd - ezzd
+              tauzz = mut*tauzzs - ezz
+              tauxyd = mutd*tauxys + mut*tauxysd - exyd
+              tauxy = mut*tauxys - exy
+              tauxzd = mutd*tauxzs + mut*tauxzsd - exzd
+              tauxz = mut*tauxzs - exz
+              tauyzd = mutd*tauyzs + mut*tauyzsd - eyzd
+              tauyz = mut*tauyzs - eyz
             else
 ! just apply the total viscosity to the stress tensor
-              tauxxd = mutd*tauxx + mut*tauxxd
-              tauxx = mut*tauxx
-              tauyyd = mutd*tauyy + mut*tauyyd
-              tauyy = mut*tauyy
-              tauzzd = mutd*tauzz + mut*tauzzd
-              tauzz = mut*tauzz
-              tauxyd = mutd*tauxy + mut*tauxyd
-              tauxy = mut*tauxy
-              tauxzd = mutd*tauxz + mut*tauxzd
-              tauxz = mut*tauxz
-              tauyzd = mutd*tauyz + mut*tauyzd
-              tauyz = mut*tauyz
+              tauxxd = mutd*tauxxs + mut*tauxxsd
+              tauxx = mut*tauxxs
+              tauyyd = mutd*tauyys + mut*tauyysd
+              tauyy = mut*tauyys
+              tauzzd = mutd*tauzzs + mut*tauzzsd
+              tauzz = mut*tauzzs
+              tauxyd = mutd*tauxys + mut*tauxysd
+              tauxy = mut*tauxys
+              tauxzd = mutd*tauxzs + mut*tauxzsd
+              tauxz = mut*tauxzs
+              tauyzd = mutd*tauyzs + mut*tauyzsd
+              tauyz = mut*tauyzs
             end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
@@ -7360,22 +7370,25 @@ contains
             q_zd = q_zd - corrd*ssz - corr*sszd
             q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
-! we remove the viscosity from the tau definition since
-! we still need to separate between laminar and turbulent stress for qcr.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
             fracdivd = twothird*(u_xd+v_yd+w_zd)
             fracdiv = twothird*(u_x+v_y+w_z)
-            tauxxd = two*u_xd - fracdivd
-            tauxx = two*u_x - fracdiv
-            tauyyd = two*v_yd - fracdivd
-            tauyy = two*v_y - fracdiv
-            tauzzd = two*w_zd - fracdivd
-            tauzz = two*w_z - fracdiv
-            tauxyd = u_yd + v_xd
-            tauxy = u_y + v_x
-            tauxzd = u_zd + w_xd
-            tauxz = u_z + w_x
-            tauyzd = v_zd + w_yd
-            tauyz = v_z + w_y
+            tauxxsd = two*u_xd - fracdivd
+            tauxxs = two*u_x - fracdiv
+            tauyysd = two*v_yd - fracdivd
+            tauyys = two*v_y - fracdiv
+            tauzzsd = two*w_zd - fracdivd
+            tauzzs = two*w_z - fracdiv
+            tauxysd = u_yd + v_xd
+            tauxys = u_y + v_x
+            tauxzsd = u_zd + w_xd
+            tauxzs = u_z + w_x
+            tauyzsd = v_zd + w_yd
+            tauyzs = v_z + w_y
             q_xd = heatcoefd*q_x + heatcoef*q_xd
             q_x = heatcoef*q_x
             q_yd = heatcoefd*q_y + heatcoef*q_yd
@@ -7436,54 +7449,54 @@ contains
               wzyd = -wyzd
               wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-              exxd = two*(factd*(wxy*tauxy+wxz*tauxz)+fact*(wxyd*tauxy+&
-&               wxy*tauxyd+wxzd*tauxz+wxz*tauxzd))
-              exx = fact*(wxy*tauxy+wxz*tauxz)*two
-              eyyd = two*(factd*(wyx*tauxy+wyz*tauyz)+fact*(wyxd*tauxy+&
-&               wyx*tauxyd+wyzd*tauyz+wyz*tauyzd))
-              eyy = fact*(wyx*tauxy+wyz*tauyz)*two
-              ezzd = two*(factd*(wzx*tauxz+wzy*tauyz)+fact*(wzxd*tauxz+&
-&               wzx*tauxzd+wzyd*tauyz+wzy*tauyzd))
-              ezz = fact*(wzx*tauxz+wzy*tauyz)*two
-              exyd = factd*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz) + &
-&               fact*(wxyd*tauyy+wxy*tauyyd+wxzd*tauyz+wxz*tauyzd+wyxd*&
-&               tauxx+wyx*tauxxd+wyzd*tauxz+wyz*tauxzd)
-              exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
-              exzd = factd*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy) + &
-&               fact*(wxyd*tauyz+wxy*tauyzd+wxzd*tauzz+wxz*tauzzd+wzxd*&
-&               tauxx+wzx*tauxxd+wzyd*tauxy+wzy*tauxyd)
-              exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
-              eyzd = factd*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy) + &
-&               fact*(wyxd*tauxz+wyx*tauxzd+wyzd*tauzz+wyz*tauzzd+wzxd*&
-&               tauxy+wzx*tauxyd+wzyd*tauyy+wzy*tauyyd)
-              eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
+              exxd = two*(factd*(wxy*tauxys+wxz*tauxzs)+fact*(wxyd*&
+&               tauxys+wxy*tauxysd+wxzd*tauxzs+wxz*tauxzsd))
+              exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+              eyyd = two*(factd*(wyx*tauxys+wyz*tauyzs)+fact*(wyxd*&
+&               tauxys+wyx*tauxysd+wyzd*tauyzs+wyz*tauyzsd))
+              eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+              ezzd = two*(factd*(wzx*tauxzs+wzy*tauyzs)+fact*(wzxd*&
+&               tauxzs+wzx*tauxzsd+wzyd*tauyzs+wzy*tauyzsd))
+              ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+              exyd = factd*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)&
+&               + fact*(wxyd*tauyys+wxy*tauyysd+wxzd*tauyzs+wxz*tauyzsd+&
+&               wyxd*tauxxs+wyx*tauxxsd+wyzd*tauxzs+wyz*tauxzsd)
+              exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+              exzd = factd*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)&
+&               + fact*(wxyd*tauyzs+wxy*tauyzsd+wxzd*tauzzs+wxz*tauzzsd+&
+&               wzxd*tauxxs+wzx*tauxxsd+wzyd*tauxys+wzy*tauxysd)
+              exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+              eyzd = factd*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)&
+&               + fact*(wyxd*tauxzs+wyx*tauxzsd+wyzd*tauzzs+wyz*tauzzsd+&
+&               wzxd*tauxys+wzx*tauxysd+wzyd*tauyys+wzy*tauyysd)
+              eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
 ! apply the total viscosity to the stress tensor and add extra terms
-              tauxxd = mutd*tauxx + mut*tauxxd - exxd
-              tauxx = mut*tauxx - exx
-              tauyyd = mutd*tauyy + mut*tauyyd - eyyd
-              tauyy = mut*tauyy - eyy
-              tauzzd = mutd*tauzz + mut*tauzzd - ezzd
-              tauzz = mut*tauzz - ezz
-              tauxyd = mutd*tauxy + mut*tauxyd - exyd
-              tauxy = mut*tauxy - exy
-              tauxzd = mutd*tauxz + mut*tauxzd - exzd
-              tauxz = mut*tauxz - exz
-              tauyzd = mutd*tauyz + mut*tauyzd - eyzd
-              tauyz = mut*tauyz - eyz
+              tauxxd = mutd*tauxxs + mut*tauxxsd - exxd
+              tauxx = mut*tauxxs - exx
+              tauyyd = mutd*tauyys + mut*tauyysd - eyyd
+              tauyy = mut*tauyys - eyy
+              tauzzd = mutd*tauzzs + mut*tauzzsd - ezzd
+              tauzz = mut*tauzzs - ezz
+              tauxyd = mutd*tauxys + mut*tauxysd - exyd
+              tauxy = mut*tauxys - exy
+              tauxzd = mutd*tauxzs + mut*tauxzsd - exzd
+              tauxz = mut*tauxzs - exz
+              tauyzd = mutd*tauyzs + mut*tauyzsd - eyzd
+              tauyz = mut*tauyzs - eyz
             else
 ! just apply the total viscosity to the stress tensor
-              tauxxd = mutd*tauxx + mut*tauxxd
-              tauxx = mut*tauxx
-              tauyyd = mutd*tauyy + mut*tauyyd
-              tauyy = mut*tauyy
-              tauzzd = mutd*tauzz + mut*tauzzd
-              tauzz = mut*tauzz
-              tauxyd = mutd*tauxy + mut*tauxyd
-              tauxy = mut*tauxy
-              tauxzd = mutd*tauxz + mut*tauxzd
-              tauxz = mut*tauxz
-              tauyzd = mutd*tauyz + mut*tauyzd
-              tauyz = mut*tauyz
+              tauxxd = mutd*tauxxs + mut*tauxxsd
+              tauxx = mut*tauxxs
+              tauyyd = mutd*tauyys + mut*tauyysd
+              tauyy = mut*tauyys
+              tauzzd = mutd*tauzzs + mut*tauzzsd
+              tauzz = mut*tauzzs
+              tauxyd = mutd*tauxys + mut*tauxysd
+              tauxy = mut*tauxys
+              tauxzd = mutd*tauxzs + mut*tauxzsd
+              tauxz = mut*tauxzs
+              tauyzd = mutd*tauyzs + mut*tauyzsd
+              tauyz = mut*tauyzs
             end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
@@ -7620,6 +7633,8 @@ contains
     real(kind=realtype) :: corr, ssx, ssy, ssz, ss, fracdiv
     real(kind=realtype) :: tauxx, tauyy, tauzz
     real(kind=realtype) :: tauxy, tauxz, tauyz
+    real(kind=realtype) :: tauxxs, tauyys, tauzzs
+    real(kind=realtype) :: tauxys, tauxzs, tauyzs
     real(kind=realtype) :: exx, eyy, ezz
     real(kind=realtype) :: exy, exz, eyz
     real(kind=realtype) :: wxy, wxz, wyz, wyx, wzx, wzy
@@ -7746,15 +7761,18 @@ contains
             q_y = q_y - corr*ssy
             q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
-! we remove the viscosity from the tau definition since
-! we still need to separate between laminar and turbulent stress for qcr.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
             fracdiv = twothird*(u_x+v_y+w_z)
-            tauxx = two*u_x - fracdiv
-            tauyy = two*v_y - fracdiv
-            tauzz = two*w_z - fracdiv
-            tauxy = u_y + v_x
-            tauxz = u_z + w_x
-            tauyz = v_z + w_y
+            tauxxs = two*u_x - fracdiv
+            tauyys = two*v_y - fracdiv
+            tauzzs = two*w_z - fracdiv
+            tauxys = u_y + v_x
+            tauxzs = u_z + w_x
+            tauyzs = v_z + w_y
             q_x = heatcoef*q_x
             q_y = heatcoef*q_y
             q_z = heatcoef*q_z
@@ -7795,27 +7813,27 @@ contains
               wzx = -wxz
               wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-              exx = fact*(wxy*tauxy+wxz*tauxz)*two
-              eyy = fact*(wyx*tauxy+wyz*tauyz)*two
-              ezz = fact*(wzx*tauxz+wzy*tauyz)*two
-              exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
-              exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
-              eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
+              exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+              eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+              ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+              exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+              exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+              eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
 ! apply the total viscosity to the stress tensor and add extra terms
-              tauxx = mut*tauxx - exx
-              tauyy = mut*tauyy - eyy
-              tauzz = mut*tauzz - ezz
-              tauxy = mut*tauxy - exy
-              tauxz = mut*tauxz - exz
-              tauyz = mut*tauyz - eyz
+              tauxx = mut*tauxxs - exx
+              tauyy = mut*tauyys - eyy
+              tauzz = mut*tauzzs - ezz
+              tauxy = mut*tauxys - exy
+              tauxz = mut*tauxzs - exz
+              tauyz = mut*tauyzs - eyz
             else
 ! just apply the total viscosity to the stress tensor
-              tauxx = mut*tauxx
-              tauyy = mut*tauyy
-              tauzz = mut*tauzz
-              tauxy = mut*tauxy
-              tauxz = mut*tauxz
-              tauyz = mut*tauyz
+              tauxx = mut*tauxxs
+              tauyy = mut*tauyys
+              tauzz = mut*tauzzs
+              tauxy = mut*tauxys
+              tauxz = mut*tauxzs
+              tauyz = mut*tauyzs
             end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
@@ -7971,15 +7989,18 @@ contains
             q_y = q_y - corr*ssy
             q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
-! we remove the viscosity from the tau definition since
-! we still need to separate between laminar and turbulent stress for qcr.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
             fracdiv = twothird*(u_x+v_y+w_z)
-            tauxx = two*u_x - fracdiv
-            tauyy = two*v_y - fracdiv
-            tauzz = two*w_z - fracdiv
-            tauxy = u_y + v_x
-            tauxz = u_z + w_x
-            tauyz = v_z + w_y
+            tauxxs = two*u_x - fracdiv
+            tauyys = two*v_y - fracdiv
+            tauzzs = two*w_z - fracdiv
+            tauxys = u_y + v_x
+            tauxzs = u_z + w_x
+            tauyzs = v_z + w_y
             q_x = heatcoef*q_x
             q_y = heatcoef*q_y
             q_z = heatcoef*q_z
@@ -8020,27 +8041,27 @@ contains
               wzx = -wxz
               wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-              exx = fact*(wxy*tauxy+wxz*tauxz)*two
-              eyy = fact*(wyx*tauxy+wyz*tauyz)*two
-              ezz = fact*(wzx*tauxz+wzy*tauyz)*two
-              exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
-              exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
-              eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
+              exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+              eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+              ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+              exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+              exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+              eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
 ! apply the total viscosity to the stress tensor and add extra terms
-              tauxx = mut*tauxx - exx
-              tauyy = mut*tauyy - eyy
-              tauzz = mut*tauzz - ezz
-              tauxy = mut*tauxy - exy
-              tauxz = mut*tauxz - exz
-              tauyz = mut*tauyz - eyz
+              tauxx = mut*tauxxs - exx
+              tauyy = mut*tauyys - eyy
+              tauzz = mut*tauzzs - ezz
+              tauxy = mut*tauxys - exy
+              tauxz = mut*tauxzs - exz
+              tauyz = mut*tauyzs - eyz
             else
 ! just apply the total viscosity to the stress tensor
-              tauxx = mut*tauxx
-              tauyy = mut*tauyy
-              tauzz = mut*tauzz
-              tauxy = mut*tauxy
-              tauxz = mut*tauxz
-              tauyz = mut*tauyz
+              tauxx = mut*tauxxs
+              tauyy = mut*tauyys
+              tauzz = mut*tauzzs
+              tauxy = mut*tauxys
+              tauxz = mut*tauxzs
+              tauyz = mut*tauyzs
             end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
@@ -8193,15 +8214,18 @@ contains
             q_y = q_y - corr*ssy
             q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
-! we remove the viscosity from the tau definition since
-! we still need to separate between laminar and turbulent stress for qcr.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
             fracdiv = twothird*(u_x+v_y+w_z)
-            tauxx = two*u_x - fracdiv
-            tauyy = two*v_y - fracdiv
-            tauzz = two*w_z - fracdiv
-            tauxy = u_y + v_x
-            tauxz = u_z + w_x
-            tauyz = v_z + w_y
+            tauxxs = two*u_x - fracdiv
+            tauyys = two*v_y - fracdiv
+            tauzzs = two*w_z - fracdiv
+            tauxys = u_y + v_x
+            tauxzs = u_z + w_x
+            tauyzs = v_z + w_y
             q_x = heatcoef*q_x
             q_y = heatcoef*q_y
             q_z = heatcoef*q_z
@@ -8242,27 +8266,27 @@ contains
               wzx = -wxz
               wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-              exx = fact*(wxy*tauxy+wxz*tauxz)*two
-              eyy = fact*(wyx*tauxy+wyz*tauyz)*two
-              ezz = fact*(wzx*tauxz+wzy*tauyz)*two
-              exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
-              exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
-              eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
+              exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+              eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+              ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+              exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+              exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+              eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
 ! apply the total viscosity to the stress tensor and add extra terms
-              tauxx = mut*tauxx - exx
-              tauyy = mut*tauyy - eyy
-              tauzz = mut*tauzz - ezz
-              tauxy = mut*tauxy - exy
-              tauxz = mut*tauxz - exz
-              tauyz = mut*tauyz - eyz
+              tauxx = mut*tauxxs - exx
+              tauyy = mut*tauyys - eyy
+              tauzz = mut*tauzzs - ezz
+              tauxy = mut*tauxys - exy
+              tauxz = mut*tauxzs - exz
+              tauyz = mut*tauyzs - eyz
             else
 ! just apply the total viscosity to the stress tensor
-              tauxx = mut*tauxx
-              tauyy = mut*tauyy
-              tauzz = mut*tauzz
-              tauxy = mut*tauxy
-              tauxz = mut*tauxz
-              tauyz = mut*tauyz
+              tauxx = mut*tauxxs
+              tauyy = mut*tauyys
+              tauzz = mut*tauzzs
+              tauxy = mut*tauxys
+              tauxz = mut*tauxzs
+              tauyz = mut*tauyzs
             end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
