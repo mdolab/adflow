@@ -29,6 +29,7 @@ contains
 !  source terms.                                                  
 !  determine the source term and its derivative w.r.t. nutilde    
 !  for all internal cells of the block.                           
+!  remember that the sa field variable nutilde = w(i,j,k,itu1)
     use blockpointers
     use constants
     use paramturb
@@ -512,6 +513,7 @@ contains
 !  source terms.                                                  
 !  determine the source term and its derivative w.r.t. nutilde    
 !  for all internal cells of the block.                           
+!  remember that the sa field variable nutilde = w(i,j,k,itu1)
     use blockpointers
     use constants
     use paramturb
@@ -1201,6 +1203,7 @@ contains
       za = half*(sk(i, j, k, 3)+sk(i, j, k-1, 3))*voli
       ttm = xm*xa + ym*ya + zm*za
       ttp = xp*xa + yp*ya + zp*za
+! ttm and ttp ~ 1/deltax^2
 ! computation of the viscous terms in zeta-direction; note
 ! that cross-derivatives are neglected, i.e. the mesh is
 ! assumed to be orthogonal.
@@ -1216,8 +1219,10 @@ contains
       cnud = -(rsacb2*w(i, j, k, itu1)*cb3inv)
       cam = ttm*cnud
       cap = ttp*cnud
+! compute nutilde at the faces
       nutm = half*(w(i, j, k-1, itu1)+w(i, j, k, itu1))
       nutp = half*(w(i, j, k+1, itu1)+w(i, j, k, itu1))
+! compute nu at the faces
       nu = rlv(i, j, k)/w(i, j, k, irho)
       num = half*(rlv(i, j, k-1)/w(i, j, k-1, irho)+nu)
       nup = half*(rlv(i, j, k+1)/w(i, j, k+1, irho)+nu)
@@ -1383,6 +1388,7 @@ contains
       za = half*(sk(i, j, k, 3)+sk(i, j, k-1, 3))*voli
       ttm = xm*xa + ym*ya + zm*za
       ttp = xp*xa + yp*ya + zp*za
+! ttm and ttp ~ 1/deltax^2
 ! computation of the viscous terms in zeta-direction; note
 ! that cross-derivatives are neglected, i.e. the mesh is
 ! assumed to be orthogonal.
@@ -1398,8 +1404,10 @@ contains
       cnud = -(rsacb2*w(i, j, k, itu1)*cb3inv)
       cam = ttm*cnud
       cap = ttp*cnud
+! compute nutilde at the faces
       nutm = half*(w(i, j, k-1, itu1)+w(i, j, k, itu1))
       nutp = half*(w(i, j, k+1, itu1)+w(i, j, k, itu1))
+! compute nu at the faces
       nu = rlv(i, j, k)/w(i, j, k, irho)
       num = half*(rlv(i, j, k-1)/w(i, j, k-1, irho)+nu)
       nup = half*(rlv(i, j, k+1)/w(i, j, k+1, irho)+nu)

@@ -8550,7 +8550,6 @@ contains
     real(kind=realtype) :: exxd, eyyd, ezzd
     real(kind=realtype) :: exy, exz, eyz
     real(kind=realtype) :: exyd, exzd, eyzd
-    real(kind=realtype) :: wxx, wyy, wzz
     real(kind=realtype) :: wxy, wxz, wyz, wyx, wzx, wzy
     real(kind=realtype) :: wxyd, wxzd, wyzd, wyxd, wzxd, wzyd
     real(kind=realtype) :: den, ccr1, fact
@@ -8644,6 +8643,9 @@ contains
     real(kind=realtype) :: tempd51
     real(kind=realtype) :: tempd50
     real(kind=realtype) :: abs0
+    real(kind=realtype) :: tempd82
+    real(kind=realtype) :: tempd81
+    real(kind=realtype) :: tempd80
     real(kind=realtype) :: temp
     real(kind=realtype) :: tempd19
     real(kind=realtype) :: tempd18
@@ -8653,10 +8655,6 @@ contains
     real(kind=realtype) :: temp4
 ! set qcr parameters
     ccr1 = 0.3_realtype
-! the diagonals of the vorticity tensor components are always zero
-    wxx = zero
-    wyy = zero
-    wzz = zero
 ! set rfilv to rfil to indicate that this is the viscous part.
 ! if rfilv == 0 the viscous residuals need not to be computed
 ! and a return can be made.
@@ -8700,7 +8698,6 @@ contains
       call pushreal8(u_z)
       call pushinteger4(i)
       call pushinteger4(j)
-      call pushinteger4(k)
       call pushreal8(w_x)
       call pushreal8(w_y)
       call pushreal8(w_z)
@@ -8717,11 +8714,9 @@ contains
       call pushreal8(v_z)
       call pushreal8(tauyy)
       call pushreal8(tauyz)
-      call pushreal8(heatcoef)
+      call pushreal8(mue)
       call pushreal8(ss)
-      call pushreal8(fracdiv)
       call pushreal8(por)
-      call pushreal8(mut)
       call pushreal8(ssx)
       call pushreal8(ssy)
       call pushreal8(ssz)
@@ -8748,11 +8743,9 @@ contains
       call pushreal8(v_z)
       call pushreal8(tauyy)
       call pushreal8(tauyz)
-      call pushreal8(heatcoef)
+      call pushreal8(mue)
       call pushreal8(ss)
-      call pushreal8(fracdiv)
       call pushreal8(por)
-      call pushreal8(mut)
       revd = 0.0_8
       aad = 0.0_8
       wxd = 0.0_8
@@ -8896,13 +8889,15 @@ contains
         call pushreal8(q_z)
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the tau definition since
+! we still need to separate between laminar and turbulent stress for qcr.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = mut*(two*u_x-fracdiv)
-        tauyy = mut*(two*v_y-fracdiv)
-        tauzz = mut*(two*w_z-fracdiv)
-        tauxy = mut*(u_y+v_x)
-        tauxz = mut*(u_z+w_x)
-        tauyz = mut*(v_z+w_y)
+        tauxx = two*u_x - fracdiv
+        tauyy = two*v_y - fracdiv
+        tauzz = two*w_z - fracdiv
+        tauxy = u_y + v_x
+        tauxz = u_z + w_x
+        tauyz = v_z + w_y
         call pushreal8(q_x)
         q_x = heatcoef*q_x
         call pushreal8(q_y)
@@ -8911,7 +8906,7 @@ contains
         q_z = heatcoef*q_z
 ! add qcr corrections if necessary
         if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
 ! 
@@ -8922,6 +8917,8 @@ contains
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
           den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &           v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z)
@@ -8932,40 +8929,53 @@ contains
             call pushcontrol1b(1)
             den = den
           end if
-! compute factor that will multiply all tensor components
-          fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+          fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
           wxz = u_z - w_x
-          wyz = u_y - v_x
+          wyz = v_z - w_y
           wyx = -wxy
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-          exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*tauxy+&
-&           wyz*tauxz)
-          exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+&
-&           wzz*tauxz)
-          eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*tauyy+&
-&           wzz*tauyz)
-! add extra terms
+          exx = fact*(wxy*tauxy+wxz*tauxz)*two
+          eyy = fact*(wyx*tauxy+wyz*tauyz)*two
+          ezz = fact*(wzx*tauxz+wzy*tauyz)*two
+          exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
+          exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
+          eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
+! apply the total viscosity to the stress tensor and add extra terms
           call pushreal8(tauxx)
-          tauxx = tauxx - exx
+          tauxx = mut*tauxx - exx
           call pushreal8(tauyy)
-          tauyy = tauyy - eyy
+          tauyy = mut*tauyy - eyy
           call pushreal8(tauzz)
-          tauzz = tauzz - ezz
+          tauzz = mut*tauzz - ezz
           call pushreal8(tauxy)
-          tauxy = tauxy - exy
+          tauxy = mut*tauxy - exy
           call pushreal8(tauxz)
-          tauxz = tauxz - exz
+          tauxz = mut*tauxz - exz
           call pushreal8(tauyz)
-          tauyz = tauyz - eyz
+          tauyz = mut*tauyz - eyz
           call pushcontrol1b(0)
         else
+! just apply the total viscosity to the stress tensor
+          call pushreal8(tauxx)
+          tauxx = mut*tauxx
+          call pushreal8(tauyy)
+          tauyy = mut*tauyy
+          call pushreal8(tauzz)
+          tauzz = mut*tauzz
+          call pushreal8(tauxy)
+          tauxy = mut*tauxy
+          call pushreal8(tauxz)
+          tauxz = mut*tauxz
+          call pushreal8(tauyz)
+          tauyz = mut*tauyz
           call pushcontrol1b(1)
         end if
 ! compute the average velocities for the face. remember that
@@ -9032,25 +9042,25 @@ contains
         fmzd = fwd(i+1, j, k, imz) - fwd(i, j, k, imz)
         fmyd = fwd(i+1, j, k, imy) - fwd(i, j, k, imy)
         fmxd = fwd(i+1, j, k, imx) - fwd(i, j, k, imx)
-        tempd77 = si(i, j, k, 1)*frhoed
-        tempd78 = si(i, j, k, 2)*frhoed
-        tempd79 = si(i, j, k, 3)*frhoed
-        ubard = tauxz*tempd79 + tauxy*tempd78 + tauxx*tempd77
-        tauxxd = tauxxd + si(i, j, k, 1)*fmxd + ubar*tempd77
-        vbard = tauyz*tempd79 + tauyy*tempd78 + tauxy*tempd77
+        tempd80 = si(i, j, k, 1)*frhoed
+        tempd81 = si(i, j, k, 2)*frhoed
+        tempd82 = si(i, j, k, 3)*frhoed
+        ubard = tauxz*tempd82 + tauxy*tempd81 + tauxx*tempd80
+        tauxxd = tauxxd + si(i, j, k, 1)*fmxd + ubar*tempd80
+        vbard = tauyz*tempd82 + tauyy*tempd81 + tauxy*tempd80
         tauxyd = tauxyd + si(i, j, k, 1)*fmyd + si(i, j, k, 2)*fmxd + &
-&         ubar*tempd78 + vbar*tempd77
-        wbard = tauzz*tempd79 + tauyz*tempd78 + tauxz*tempd77
+&         ubar*tempd81 + vbar*tempd80
+        wbard = tauzz*tempd82 + tauyz*tempd81 + tauxz*tempd80
         tauxzd = tauxzd + si(i, j, k, 1)*fmzd + si(i, j, k, 3)*fmxd + &
-&         ubar*tempd79 + wbar*tempd77
+&         ubar*tempd82 + wbar*tempd80
         sid(i, j, k, 1) = sid(i, j, k, 1) + (ubar*tauxx-q_x+vbar*tauxy+&
 &         wbar*tauxz)*frhoed
-        tauyyd = tauyyd + si(i, j, k, 2)*fmyd + vbar*tempd78
+        tauyyd = tauyyd + si(i, j, k, 2)*fmyd + vbar*tempd81
         tauyzd = tauyzd + si(i, j, k, 2)*fmzd + si(i, j, k, 3)*fmyd + &
-&         vbar*tempd79 + wbar*tempd78
+&         vbar*tempd82 + wbar*tempd81
         sid(i, j, k, 2) = sid(i, j, k, 2) + (ubar*tauxy-q_y+vbar*tauyy+&
 &         wbar*tauyz)*frhoed
-        tauzzd = tauzzd + si(i, j, k, 3)*fmzd + wbar*tempd79
+        tauzzd = tauzzd + si(i, j, k, 3)*fmzd + wbar*tempd82
         sid(i, j, k, 3) = sid(i, j, k, 3) + (ubar*tauxz-q_z+vbar*tauyz+&
 &         wbar*tauzz)*frhoed
         q_xd = -(si(i, j, k, 1)*frhoed)
@@ -9084,58 +9094,77 @@ contains
           call popreal8(tauyy)
           eyyd = -tauyyd
           call popreal8(tauxx)
+          mutd = tauxz*tauxzd + tauzz*tauzzd + tauxx*tauxxd + tauyy*&
+&           tauyyd + tauxy*tauxyd + tauyz*tauyzd
           exxd = -tauxxd
-          tempd71 = fact*eyzd
-          factd = (wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+wzz&
-&           *tauxz)*exzd + two*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*ezzd + &
-&           two*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*exxd + two*(wyx*tauxy+&
-&           wyy*tauyy+wyz*tauyz)*eyyd + (wxx*tauxy+wxy*tauyy+wxz*tauyz+&
-&           wyx*tauxx+wyy*tauxy+wyz*tauxz)*exyd + (wyx*tauxz+wyy*tauyz+&
-&           wyz*tauzz+wzx*tauxy+wzy*tauyy+wzz*tauyz)*eyzd
-          tempd74 = fact*exzd
-          tempd72 = fact*exyd
-          tempd75 = two*fact*ezzd
-          tauzzd = tauzzd + wxz*tempd74 + wzz*tempd75 + wyz*tempd71
-          wzxd = tauxx*tempd74 + tauxz*tempd75 + tauxy*tempd71
-          wzyd = tauxy*tempd74 + tauyz*tempd75 + tauyy*tempd71
-          tempd73 = two*fact*eyyd
-          wyxd = tauxx*tempd72 + tauxy*tempd73 + tauxz*tempd71
-          tauyzd = tauyzd + wxy*tempd74 + wzy*tempd75 + wyz*tempd73 + &
-&           wxz*tempd72 + (wzz+wyy)*tempd71
-          wyzd = tauxz*tempd72 - wzyd + tauyz*tempd73 + tauzz*tempd71
-          tauyyd = tauyyd + wxy*tempd72 + wyy*tempd73 + wzy*tempd71
-          tempd76 = two*fact*exxd
-          tauxzd = tauxzd + (wzz+wxx)*tempd74 + wzx*tempd75 + wxz*&
-&           tempd76 + wyz*tempd72 + wyx*tempd71
-          tauxyd = tauxyd + wzy*tempd74 + wyx*tempd73 + wxy*tempd76 + (&
-&           wyy+wxx)*tempd72 + wzx*tempd71
-          wxyd = tauyy*tempd72 - wyxd + tauxy*tempd76 + tauyz*tempd74
-          wxzd = tauyz*tempd72 - wzxd + tauxz*tempd76 + tauzz*tempd74
-          tauxxd = tauxxd + wyx*tempd72 + wxx*tempd76 + wzx*tempd74
-          u_yd = wxyd + wyzd
-          v_xd = -wxyd - wyzd
+          tempd77 = fact*eyzd
+          factd = (wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)*exzd + two*(&
+&           wzx*tauxz+wzy*tauyz)*ezzd + two*(wxy*tauxy+wxz*tauxz)*exxd +&
+&           two*(wyx*tauxy+wyz*tauyz)*eyyd + (wxy*tauyy+wxz*tauyz+wyx*&
+&           tauxx+wyz*tauxz)*exyd + (wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*&
+&           tauyy)*eyzd
+          tempd73 = fact*exzd
+          tauzzd = wyz*tempd77 + wxz*tempd73 + mut*tauzzd
+          tempd76 = fact*exyd
+          tauyyd = wzy*tempd77 + wxy*tempd76 + mut*tauyyd
+          tauxxd = wzx*tempd73 + wyx*tempd76 + mut*tauxxd
+          tempd74 = two*fact*ezzd
+          wzxd = tauxx*tempd73 + tauxz*tempd74 + tauxy*tempd77
+          wzyd = tauxy*tempd73 + tauyz*tempd74 + tauyy*tempd77
+          tempd75 = two*fact*eyyd
+          tauyzd = wxy*tempd73 + wzy*tempd74 + wyz*tempd75 + wxz*tempd76&
+&           + mut*tauyzd
+          wyxd = tauxx*tempd76 + tauxy*tempd75 + tauxz*tempd77
+          wyzd = tauxz*tempd76 - wzyd + tauyz*tempd75 + tauzz*tempd77
+          tempd78 = two*fact*exxd
+          tauxzd = wyx*tempd77 + wzx*tempd74 + wxz*tempd78 + wyz*tempd76&
+&           + mut*tauxzd
+          tauxyd = wzx*tempd77 + wyx*tempd75 + wxy*tempd78 + wzy*tempd73&
+&           + mut*tauxyd
+          wxyd = tauyy*tempd76 - wyxd + tauxy*tempd78 + tauyz*tempd73
+          wxzd = tauyz*tempd76 - wzxd + tauxz*tempd78 + tauzz*tempd73
+          v_zd = wyzd
+          w_yd = -wyzd
           u_zd = wxzd
           w_xd = -wxzd
-          dend = -(ccr1*factd/den**2)
+          u_yd = wxyd
+          v_xd = -wxyd
+          tempd79 = ccr1*factd/den
+          mued = mued + tempd79
+          dend = -(mue*tempd79/den)
           call popcontrol1b(branch)
           if (branch .eq. 0) dend = 0.0_8
           if (u_x**2 + u_y**2 + u_z**2 + v_x**2 + v_y**2 + v_z**2 + w_x&
 &             **2 + w_y**2 + w_z**2 .eq. 0.0_8) then
-            tempd70 = 0.0
+            tempd72 = 0.0
           else
-            tempd70 = dend/(2.0*sqrt(u_x**2+u_y**2+u_z**2+v_x**2+v_y**2+&
+            tempd72 = dend/(2.0*sqrt(u_x**2+u_y**2+u_z**2+v_x**2+v_y**2+&
 &             v_z**2+w_x**2+w_y**2+w_z**2))
           end if
-          u_xd = 2*u_x*tempd70
-          u_yd = u_yd + 2*u_y*tempd70
-          u_zd = u_zd + 2*u_z*tempd70
-          v_xd = v_xd + 2*v_x*tempd70
-          v_yd = 2*v_y*tempd70
-          v_zd = 2*v_z*tempd70
-          w_xd = w_xd + 2*w_x*tempd70
-          w_yd = 2*w_y*tempd70
-          w_zd = 2*w_z*tempd70
+          u_xd = 2*u_x*tempd72
+          u_yd = u_yd + 2*u_y*tempd72
+          u_zd = u_zd + 2*u_z*tempd72
+          v_xd = v_xd + 2*v_x*tempd72
+          v_yd = 2*v_y*tempd72
+          v_zd = v_zd + 2*v_z*tempd72
+          w_xd = w_xd + 2*w_x*tempd72
+          w_yd = w_yd + 2*w_y*tempd72
+          w_zd = 2*w_z*tempd72
         else
+          call popreal8(tauyz)
+          call popreal8(tauxz)
+          call popreal8(tauxy)
+          call popreal8(tauzz)
+          call popreal8(tauyy)
+          call popreal8(tauxx)
+          mutd = tauxz*tauxzd + tauzz*tauzzd + tauxx*tauxxd + tauyy*&
+&           tauyyd + tauxy*tauxyd + tauyz*tauyzd
+          tauyzd = mut*tauyzd
+          tauxzd = mut*tauxzd
+          tauxyd = mut*tauxyd
+          tauzzd = mut*tauzzd
+          tauyyd = mut*tauyyd
+          tauxxd = mut*tauxxd
           u_xd = 0.0_8
           u_yd = 0.0_8
           u_zd = 0.0_8
@@ -9146,8 +9175,8 @@ contains
           v_yd = 0.0_8
           v_zd = 0.0_8
         end if
-        fracdivd = -(mut*tauyyd) - mut*tauxxd - mut*tauzzd
-        tempd53 = twothird*fracdivd
+        fracdivd = -tauyyd - tauxxd - tauzzd
+        tempd55 = twothird*fracdivd
         call popreal8(q_z)
         call popreal8(q_y)
         call popreal8(q_x)
@@ -9155,18 +9184,15 @@ contains
         q_zd = heatcoef*q_zd
         q_yd = heatcoef*q_yd
         q_xd = heatcoef*q_xd
-        mutd = (u_z+w_x)*tauxzd + (two*w_z-fracdiv)*tauzzd + (two*u_x-&
-&         fracdiv)*tauxxd + (two*v_y-fracdiv)*tauyyd + (u_y+v_x)*tauxyd &
-&         + (v_z+w_y)*tauyzd
-        v_zd = v_zd + mut*tauyzd
-        w_yd = w_yd + mut*tauyzd
-        u_zd = u_zd + mut*tauxzd
-        w_xd = w_xd + mut*tauxzd
-        u_yd = u_yd + mut*tauxyd
-        v_xd = v_xd + mut*tauxyd
-        w_zd = w_zd + tempd53 + mut*two*tauzzd
-        v_yd = v_yd + tempd53 + mut*two*tauyyd
-        u_xd = u_xd + tempd53 + mut*two*tauxxd
+        v_zd = v_zd + tauyzd
+        w_yd = w_yd + tauyzd
+        u_zd = u_zd + tauxzd
+        w_xd = w_xd + tauxzd
+        u_yd = u_yd + tauxyd
+        v_xd = v_xd + tauxyd
+        w_zd = w_zd + tempd55 + two*tauzzd
+        v_yd = v_yd + tempd55 + two*tauyyd
+        u_xd = u_xd + tempd55 + two*tauxxd
         call popreal8(q_z)
         corrd = -(ssy*q_yd) - ssx*q_xd - ssz*q_zd
         sszd = q_z*corrd - corr*q_zd
@@ -9229,100 +9255,100 @@ contains
         temp3 = ssx**2 + ssy**2 + ssz**2
         temp4 = sqrt(temp3)
         if (temp3 .eq. 0.0_8) then
-          tempd54 = 0.0
+          tempd56 = 0.0
         else
-          tempd54 = -(one*ssd/(temp4**3*2.0))
+          tempd56 = -(one*ssd/(temp4**3*2.0))
         end if
-        sszd = 2*ssz*tempd54 + ss*sszd
-        ssyd = 2*ssy*tempd54 + ss*ssyd
-        ssxd = 2*ssx*tempd54 + ss*ssxd
-        tempd55 = eighth*sszd
-        xd(i+1, j-1, k-1, 3) = xd(i+1, j-1, k-1, 3) + tempd55
-        xd(i-1, j-1, k-1, 3) = xd(i-1, j-1, k-1, 3) - tempd55
-        xd(i+1, j-1, k, 3) = xd(i+1, j-1, k, 3) + tempd55
-        xd(i-1, j-1, k, 3) = xd(i-1, j-1, k, 3) - tempd55
-        xd(i+1, j, k-1, 3) = xd(i+1, j, k-1, 3) + tempd55
-        xd(i-1, j, k-1, 3) = xd(i-1, j, k-1, 3) - tempd55
-        xd(i+1, j, k, 3) = xd(i+1, j, k, 3) + tempd55
-        xd(i-1, j, k, 3) = xd(i-1, j, k, 3) - tempd55
-        tempd56 = eighth*ssyd
-        xd(i+1, j-1, k-1, 2) = xd(i+1, j-1, k-1, 2) + tempd56
-        xd(i-1, j-1, k-1, 2) = xd(i-1, j-1, k-1, 2) - tempd56
-        xd(i+1, j-1, k, 2) = xd(i+1, j-1, k, 2) + tempd56
-        xd(i-1, j-1, k, 2) = xd(i-1, j-1, k, 2) - tempd56
-        xd(i+1, j, k-1, 2) = xd(i+1, j, k-1, 2) + tempd56
-        xd(i-1, j, k-1, 2) = xd(i-1, j, k-1, 2) - tempd56
-        xd(i+1, j, k, 2) = xd(i+1, j, k, 2) + tempd56
-        xd(i-1, j, k, 2) = xd(i-1, j, k, 2) - tempd56
-        tempd57 = eighth*ssxd
-        xd(i+1, j-1, k-1, 1) = xd(i+1, j-1, k-1, 1) + tempd57
-        xd(i-1, j-1, k-1, 1) = xd(i-1, j-1, k-1, 1) - tempd57
-        xd(i+1, j-1, k, 1) = xd(i+1, j-1, k, 1) + tempd57
-        xd(i-1, j-1, k, 1) = xd(i-1, j-1, k, 1) - tempd57
-        xd(i+1, j, k-1, 1) = xd(i+1, j, k-1, 1) + tempd57
-        xd(i-1, j, k-1, 1) = xd(i-1, j, k-1, 1) - tempd57
-        xd(i+1, j, k, 1) = xd(i+1, j, k, 1) + tempd57
-        xd(i-1, j, k, 1) = xd(i-1, j, k, 1) - tempd57
-        tempd58 = fourth*q_zd
-        qzd(i, j-1, k-1) = qzd(i, j-1, k-1) + tempd58
-        qzd(i, j, k-1) = qzd(i, j, k-1) + tempd58
-        qzd(i, j-1, k) = qzd(i, j-1, k) + tempd58
-        qzd(i, j, k) = qzd(i, j, k) + tempd58
-        tempd59 = fourth*q_yd
-        qyd(i, j-1, k-1) = qyd(i, j-1, k-1) + tempd59
-        qyd(i, j, k-1) = qyd(i, j, k-1) + tempd59
-        qyd(i, j-1, k) = qyd(i, j-1, k) + tempd59
-        qyd(i, j, k) = qyd(i, j, k) + tempd59
-        tempd60 = fourth*q_xd
-        qxd(i, j-1, k-1) = qxd(i, j-1, k-1) + tempd60
-        qxd(i, j, k-1) = qxd(i, j, k-1) + tempd60
-        qxd(i, j-1, k) = qxd(i, j-1, k) + tempd60
-        qxd(i, j, k) = qxd(i, j, k) + tempd60
-        tempd61 = fourth*w_zd
-        wzd(i, j-1, k-1) = wzd(i, j-1, k-1) + tempd61
-        wzd(i, j, k-1) = wzd(i, j, k-1) + tempd61
-        wzd(i, j-1, k) = wzd(i, j-1, k) + tempd61
-        wzd(i, j, k) = wzd(i, j, k) + tempd61
-        tempd62 = fourth*w_yd
-        wyd(i, j-1, k-1) = wyd(i, j-1, k-1) + tempd62
-        wyd(i, j, k-1) = wyd(i, j, k-1) + tempd62
-        wyd(i, j-1, k) = wyd(i, j-1, k) + tempd62
-        wyd(i, j, k) = wyd(i, j, k) + tempd62
-        tempd63 = fourth*w_xd
-        wxd(i, j-1, k-1) = wxd(i, j-1, k-1) + tempd63
-        wxd(i, j, k-1) = wxd(i, j, k-1) + tempd63
-        wxd(i, j-1, k) = wxd(i, j-1, k) + tempd63
-        wxd(i, j, k) = wxd(i, j, k) + tempd63
-        tempd64 = fourth*v_zd
-        vzd(i, j-1, k-1) = vzd(i, j-1, k-1) + tempd64
-        vzd(i, j, k-1) = vzd(i, j, k-1) + tempd64
-        vzd(i, j-1, k) = vzd(i, j-1, k) + tempd64
-        vzd(i, j, k) = vzd(i, j, k) + tempd64
-        tempd65 = fourth*v_yd
-        vyd(i, j-1, k-1) = vyd(i, j-1, k-1) + tempd65
-        vyd(i, j, k-1) = vyd(i, j, k-1) + tempd65
-        vyd(i, j-1, k) = vyd(i, j-1, k) + tempd65
-        vyd(i, j, k) = vyd(i, j, k) + tempd65
-        tempd66 = fourth*v_xd
-        vxd(i, j-1, k-1) = vxd(i, j-1, k-1) + tempd66
-        vxd(i, j, k-1) = vxd(i, j, k-1) + tempd66
-        vxd(i, j-1, k) = vxd(i, j-1, k) + tempd66
-        vxd(i, j, k) = vxd(i, j, k) + tempd66
-        tempd67 = fourth*u_zd
-        uzd(i, j-1, k-1) = uzd(i, j-1, k-1) + tempd67
-        uzd(i, j, k-1) = uzd(i, j, k-1) + tempd67
-        uzd(i, j-1, k) = uzd(i, j-1, k) + tempd67
-        uzd(i, j, k) = uzd(i, j, k) + tempd67
-        tempd68 = fourth*u_yd
-        uyd(i, j-1, k-1) = uyd(i, j-1, k-1) + tempd68
-        uyd(i, j, k-1) = uyd(i, j, k-1) + tempd68
-        uyd(i, j-1, k) = uyd(i, j-1, k) + tempd68
-        uyd(i, j, k) = uyd(i, j, k) + tempd68
-        tempd69 = fourth*u_xd
-        uxd(i, j-1, k-1) = uxd(i, j-1, k-1) + tempd69
-        uxd(i, j, k-1) = uxd(i, j, k-1) + tempd69
-        uxd(i, j-1, k) = uxd(i, j-1, k) + tempd69
-        uxd(i, j, k) = uxd(i, j, k) + tempd69
+        sszd = 2*ssz*tempd56 + ss*sszd
+        ssyd = 2*ssy*tempd56 + ss*ssyd
+        ssxd = 2*ssx*tempd56 + ss*ssxd
+        tempd57 = eighth*sszd
+        xd(i+1, j-1, k-1, 3) = xd(i+1, j-1, k-1, 3) + tempd57
+        xd(i-1, j-1, k-1, 3) = xd(i-1, j-1, k-1, 3) - tempd57
+        xd(i+1, j-1, k, 3) = xd(i+1, j-1, k, 3) + tempd57
+        xd(i-1, j-1, k, 3) = xd(i-1, j-1, k, 3) - tempd57
+        xd(i+1, j, k-1, 3) = xd(i+1, j, k-1, 3) + tempd57
+        xd(i-1, j, k-1, 3) = xd(i-1, j, k-1, 3) - tempd57
+        xd(i+1, j, k, 3) = xd(i+1, j, k, 3) + tempd57
+        xd(i-1, j, k, 3) = xd(i-1, j, k, 3) - tempd57
+        tempd58 = eighth*ssyd
+        xd(i+1, j-1, k-1, 2) = xd(i+1, j-1, k-1, 2) + tempd58
+        xd(i-1, j-1, k-1, 2) = xd(i-1, j-1, k-1, 2) - tempd58
+        xd(i+1, j-1, k, 2) = xd(i+1, j-1, k, 2) + tempd58
+        xd(i-1, j-1, k, 2) = xd(i-1, j-1, k, 2) - tempd58
+        xd(i+1, j, k-1, 2) = xd(i+1, j, k-1, 2) + tempd58
+        xd(i-1, j, k-1, 2) = xd(i-1, j, k-1, 2) - tempd58
+        xd(i+1, j, k, 2) = xd(i+1, j, k, 2) + tempd58
+        xd(i-1, j, k, 2) = xd(i-1, j, k, 2) - tempd58
+        tempd59 = eighth*ssxd
+        xd(i+1, j-1, k-1, 1) = xd(i+1, j-1, k-1, 1) + tempd59
+        xd(i-1, j-1, k-1, 1) = xd(i-1, j-1, k-1, 1) - tempd59
+        xd(i+1, j-1, k, 1) = xd(i+1, j-1, k, 1) + tempd59
+        xd(i-1, j-1, k, 1) = xd(i-1, j-1, k, 1) - tempd59
+        xd(i+1, j, k-1, 1) = xd(i+1, j, k-1, 1) + tempd59
+        xd(i-1, j, k-1, 1) = xd(i-1, j, k-1, 1) - tempd59
+        xd(i+1, j, k, 1) = xd(i+1, j, k, 1) + tempd59
+        xd(i-1, j, k, 1) = xd(i-1, j, k, 1) - tempd59
+        tempd60 = fourth*q_zd
+        qzd(i, j-1, k-1) = qzd(i, j-1, k-1) + tempd60
+        qzd(i, j, k-1) = qzd(i, j, k-1) + tempd60
+        qzd(i, j-1, k) = qzd(i, j-1, k) + tempd60
+        qzd(i, j, k) = qzd(i, j, k) + tempd60
+        tempd61 = fourth*q_yd
+        qyd(i, j-1, k-1) = qyd(i, j-1, k-1) + tempd61
+        qyd(i, j, k-1) = qyd(i, j, k-1) + tempd61
+        qyd(i, j-1, k) = qyd(i, j-1, k) + tempd61
+        qyd(i, j, k) = qyd(i, j, k) + tempd61
+        tempd62 = fourth*q_xd
+        qxd(i, j-1, k-1) = qxd(i, j-1, k-1) + tempd62
+        qxd(i, j, k-1) = qxd(i, j, k-1) + tempd62
+        qxd(i, j-1, k) = qxd(i, j-1, k) + tempd62
+        qxd(i, j, k) = qxd(i, j, k) + tempd62
+        tempd63 = fourth*w_zd
+        wzd(i, j-1, k-1) = wzd(i, j-1, k-1) + tempd63
+        wzd(i, j, k-1) = wzd(i, j, k-1) + tempd63
+        wzd(i, j-1, k) = wzd(i, j-1, k) + tempd63
+        wzd(i, j, k) = wzd(i, j, k) + tempd63
+        tempd64 = fourth*w_yd
+        wyd(i, j-1, k-1) = wyd(i, j-1, k-1) + tempd64
+        wyd(i, j, k-1) = wyd(i, j, k-1) + tempd64
+        wyd(i, j-1, k) = wyd(i, j-1, k) + tempd64
+        wyd(i, j, k) = wyd(i, j, k) + tempd64
+        tempd65 = fourth*w_xd
+        wxd(i, j-1, k-1) = wxd(i, j-1, k-1) + tempd65
+        wxd(i, j, k-1) = wxd(i, j, k-1) + tempd65
+        wxd(i, j-1, k) = wxd(i, j-1, k) + tempd65
+        wxd(i, j, k) = wxd(i, j, k) + tempd65
+        tempd66 = fourth*v_zd
+        vzd(i, j-1, k-1) = vzd(i, j-1, k-1) + tempd66
+        vzd(i, j, k-1) = vzd(i, j, k-1) + tempd66
+        vzd(i, j-1, k) = vzd(i, j-1, k) + tempd66
+        vzd(i, j, k) = vzd(i, j, k) + tempd66
+        tempd67 = fourth*v_yd
+        vyd(i, j-1, k-1) = vyd(i, j-1, k-1) + tempd67
+        vyd(i, j, k-1) = vyd(i, j, k-1) + tempd67
+        vyd(i, j-1, k) = vyd(i, j-1, k) + tempd67
+        vyd(i, j, k) = vyd(i, j, k) + tempd67
+        tempd68 = fourth*v_xd
+        vxd(i, j-1, k-1) = vxd(i, j-1, k-1) + tempd68
+        vxd(i, j, k-1) = vxd(i, j, k-1) + tempd68
+        vxd(i, j-1, k) = vxd(i, j-1, k) + tempd68
+        vxd(i, j, k) = vxd(i, j, k) + tempd68
+        tempd69 = fourth*u_zd
+        uzd(i, j-1, k-1) = uzd(i, j-1, k-1) + tempd69
+        uzd(i, j, k-1) = uzd(i, j, k-1) + tempd69
+        uzd(i, j-1, k) = uzd(i, j-1, k) + tempd69
+        uzd(i, j, k) = uzd(i, j, k) + tempd69
+        tempd70 = fourth*u_yd
+        uyd(i, j-1, k-1) = uyd(i, j-1, k-1) + tempd70
+        uyd(i, j, k-1) = uyd(i, j, k-1) + tempd70
+        uyd(i, j-1, k) = uyd(i, j-1, k) + tempd70
+        uyd(i, j, k) = uyd(i, j, k) + tempd70
+        tempd71 = fourth*u_xd
+        uxd(i, j-1, k-1) = uxd(i, j-1, k-1) + tempd71
+        uxd(i, j, k-1) = uxd(i, j, k-1) + tempd71
+        uxd(i, j-1, k) = uxd(i, j-1, k) + tempd71
+        uxd(i, j, k) = uxd(i, j, k) + tempd71
         muld = mutd + factlamheat*heatcoefd
         mued = mued + mutd + factturbheat*heatcoefd
         call popcontrol1b(branch)
@@ -9334,11 +9360,9 @@ contains
         rlvd(i, j, k) = rlvd(i, j, k) + por*muld
         rlvd(i+1, j, k) = rlvd(i+1, j, k) + por*muld
       end do
-      call popreal8(mut)
       call popreal8(por)
-      call popreal8(fracdiv)
       call popreal8(ss)
-      call popreal8(heatcoef)
+      call popreal8(mue)
       call popreal8(tauyz)
       call popreal8(tauyy)
       call popreal8(v_z)
@@ -9478,13 +9502,15 @@ contains
         call pushreal8(q_z)
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the tau definition since
+! we still need to separate between laminar and turbulent stress for qcr.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = mut*(two*u_x-fracdiv)
-        tauyy = mut*(two*v_y-fracdiv)
-        tauzz = mut*(two*w_z-fracdiv)
-        tauxy = mut*(u_y+v_x)
-        tauxz = mut*(u_z+w_x)
-        tauyz = mut*(v_z+w_y)
+        tauxx = two*u_x - fracdiv
+        tauyy = two*v_y - fracdiv
+        tauzz = two*w_z - fracdiv
+        tauxy = u_y + v_x
+        tauxz = u_z + w_x
+        tauyz = v_z + w_y
         call pushreal8(q_x)
         q_x = heatcoef*q_x
         call pushreal8(q_y)
@@ -9493,7 +9519,7 @@ contains
         q_z = heatcoef*q_z
 ! add qcr corrections if necessary
         if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
 ! 
@@ -9504,6 +9530,8 @@ contains
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
           den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &           v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z)
@@ -9514,40 +9542,53 @@ contains
             call pushcontrol1b(1)
             den = den
           end if
-! compute factor that will multiply all tensor components
-          fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+          fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
           wxz = u_z - w_x
-          wyz = u_y - v_x
+          wyz = v_z - w_y
           wyx = -wxy
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-          exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*tauxy+&
-&           wyz*tauxz)
-          exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+&
-&           wzz*tauxz)
-          eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*tauyy+&
-&           wzz*tauyz)
-! add extra terms
+          exx = fact*(wxy*tauxy+wxz*tauxz)*two
+          eyy = fact*(wyx*tauxy+wyz*tauyz)*two
+          ezz = fact*(wzx*tauxz+wzy*tauyz)*two
+          exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
+          exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
+          eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
+! apply the total viscosity to the stress tensor and add extra terms
           call pushreal8(tauxx)
-          tauxx = tauxx - exx
+          tauxx = mut*tauxx - exx
           call pushreal8(tauyy)
-          tauyy = tauyy - eyy
+          tauyy = mut*tauyy - eyy
           call pushreal8(tauzz)
-          tauzz = tauzz - ezz
+          tauzz = mut*tauzz - ezz
           call pushreal8(tauxy)
-          tauxy = tauxy - exy
+          tauxy = mut*tauxy - exy
           call pushreal8(tauxz)
-          tauxz = tauxz - exz
+          tauxz = mut*tauxz - exz
           call pushreal8(tauyz)
-          tauyz = tauyz - eyz
+          tauyz = mut*tauyz - eyz
           call pushcontrol1b(0)
         else
+! just apply the total viscosity to the stress tensor
+          call pushreal8(tauxx)
+          tauxx = mut*tauxx
+          call pushreal8(tauyy)
+          tauyy = mut*tauyy
+          call pushreal8(tauzz)
+          tauzz = mut*tauzz
+          call pushreal8(tauxy)
+          tauxy = mut*tauxy
+          call pushreal8(tauxz)
+          tauxz = mut*tauxz
+          call pushreal8(tauyz)
+          tauyz = mut*tauyz
           call pushcontrol1b(1)
         end if
 ! compute the average velocities for the face. remember that
@@ -9614,25 +9655,25 @@ contains
         fmzd = fwd(i, j+1, k, imz) - fwd(i, j, k, imz)
         fmyd = fwd(i, j+1, k, imy) - fwd(i, j, k, imy)
         fmxd = fwd(i, j+1, k, imx) - fwd(i, j, k, imx)
-        tempd50 = sj(i, j, k, 1)*frhoed
-        tempd51 = sj(i, j, k, 2)*frhoed
-        tempd52 = sj(i, j, k, 3)*frhoed
-        ubard = tauxz*tempd52 + tauxy*tempd51 + tauxx*tempd50
-        tauxxd = tauxxd + sj(i, j, k, 1)*fmxd + ubar*tempd50
-        vbard = tauyz*tempd52 + tauyy*tempd51 + tauxy*tempd50
+        tempd52 = sj(i, j, k, 1)*frhoed
+        tempd53 = sj(i, j, k, 2)*frhoed
+        tempd54 = sj(i, j, k, 3)*frhoed
+        ubard = tauxz*tempd54 + tauxy*tempd53 + tauxx*tempd52
+        tauxxd = tauxxd + sj(i, j, k, 1)*fmxd + ubar*tempd52
+        vbard = tauyz*tempd54 + tauyy*tempd53 + tauxy*tempd52
         tauxyd = tauxyd + sj(i, j, k, 1)*fmyd + sj(i, j, k, 2)*fmxd + &
-&         ubar*tempd51 + vbar*tempd50
-        wbard = tauzz*tempd52 + tauyz*tempd51 + tauxz*tempd50
+&         ubar*tempd53 + vbar*tempd52
+        wbard = tauzz*tempd54 + tauyz*tempd53 + tauxz*tempd52
         tauxzd = tauxzd + sj(i, j, k, 1)*fmzd + sj(i, j, k, 3)*fmxd + &
-&         ubar*tempd52 + wbar*tempd50
+&         ubar*tempd54 + wbar*tempd52
         sjd(i, j, k, 1) = sjd(i, j, k, 1) + (ubar*tauxx-q_x+vbar*tauxy+&
 &         wbar*tauxz)*frhoed
-        tauyyd = tauyyd + sj(i, j, k, 2)*fmyd + vbar*tempd51
+        tauyyd = tauyyd + sj(i, j, k, 2)*fmyd + vbar*tempd53
         tauyzd = tauyzd + sj(i, j, k, 2)*fmzd + sj(i, j, k, 3)*fmyd + &
-&         vbar*tempd52 + wbar*tempd51
+&         vbar*tempd54 + wbar*tempd53
         sjd(i, j, k, 2) = sjd(i, j, k, 2) + (ubar*tauxy-q_y+vbar*tauyy+&
 &         wbar*tauyz)*frhoed
-        tauzzd = tauzzd + sj(i, j, k, 3)*fmzd + wbar*tempd52
+        tauzzd = tauzzd + sj(i, j, k, 3)*fmzd + wbar*tempd54
         sjd(i, j, k, 3) = sjd(i, j, k, 3) + (ubar*tauxz-q_z+vbar*tauyz+&
 &         wbar*tauzz)*frhoed
         q_xd = -(sj(i, j, k, 1)*frhoed)
@@ -9666,58 +9707,77 @@ contains
           call popreal8(tauyy)
           eyyd = -tauyyd
           call popreal8(tauxx)
+          mutd = tauxz*tauxzd + tauzz*tauzzd + tauxx*tauxxd + tauyy*&
+&           tauyyd + tauxy*tauxyd + tauyz*tauyzd
           exxd = -tauxxd
-          tempd44 = fact*eyzd
-          factd = (wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+wzz&
-&           *tauxz)*exzd + two*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*ezzd + &
-&           two*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*exxd + two*(wyx*tauxy+&
-&           wyy*tauyy+wyz*tauyz)*eyyd + (wxx*tauxy+wxy*tauyy+wxz*tauyz+&
-&           wyx*tauxx+wyy*tauxy+wyz*tauxz)*exyd + (wyx*tauxz+wyy*tauyz+&
-&           wyz*tauzz+wzx*tauxy+wzy*tauyy+wzz*tauyz)*eyzd
-          tempd47 = fact*exzd
-          tempd45 = fact*exyd
-          tempd48 = two*fact*ezzd
-          tauzzd = tauzzd + wxz*tempd47 + wzz*tempd48 + wyz*tempd44
-          wzxd = tauxx*tempd47 + tauxz*tempd48 + tauxy*tempd44
-          wzyd = tauxy*tempd47 + tauyz*tempd48 + tauyy*tempd44
-          tempd46 = two*fact*eyyd
-          wyxd = tauxx*tempd45 + tauxy*tempd46 + tauxz*tempd44
-          tauyzd = tauyzd + wxy*tempd47 + wzy*tempd48 + wyz*tempd46 + &
-&           wxz*tempd45 + (wzz+wyy)*tempd44
-          wyzd = tauxz*tempd45 - wzyd + tauyz*tempd46 + tauzz*tempd44
-          tauyyd = tauyyd + wxy*tempd45 + wyy*tempd46 + wzy*tempd44
-          tempd49 = two*fact*exxd
-          tauxzd = tauxzd + (wzz+wxx)*tempd47 + wzx*tempd48 + wxz*&
-&           tempd49 + wyz*tempd45 + wyx*tempd44
-          tauxyd = tauxyd + wzy*tempd47 + wyx*tempd46 + wxy*tempd49 + (&
-&           wyy+wxx)*tempd45 + wzx*tempd44
-          wxyd = tauyy*tempd45 - wyxd + tauxy*tempd49 + tauyz*tempd47
-          wxzd = tauyz*tempd45 - wzxd + tauxz*tempd49 + tauzz*tempd47
-          tauxxd = tauxxd + wyx*tempd45 + wxx*tempd49 + wzx*tempd47
-          u_yd = wxyd + wyzd
-          v_xd = -wxyd - wyzd
+          tempd49 = fact*eyzd
+          factd = (wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)*exzd + two*(&
+&           wzx*tauxz+wzy*tauyz)*ezzd + two*(wxy*tauxy+wxz*tauxz)*exxd +&
+&           two*(wyx*tauxy+wyz*tauyz)*eyyd + (wxy*tauyy+wxz*tauyz+wyx*&
+&           tauxx+wyz*tauxz)*exyd + (wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*&
+&           tauyy)*eyzd
+          tempd45 = fact*exzd
+          tauzzd = wyz*tempd49 + wxz*tempd45 + mut*tauzzd
+          tempd48 = fact*exyd
+          tauyyd = wzy*tempd49 + wxy*tempd48 + mut*tauyyd
+          tauxxd = wzx*tempd45 + wyx*tempd48 + mut*tauxxd
+          tempd46 = two*fact*ezzd
+          wzxd = tauxx*tempd45 + tauxz*tempd46 + tauxy*tempd49
+          wzyd = tauxy*tempd45 + tauyz*tempd46 + tauyy*tempd49
+          tempd47 = two*fact*eyyd
+          tauyzd = wxy*tempd45 + wzy*tempd46 + wyz*tempd47 + wxz*tempd48&
+&           + mut*tauyzd
+          wyxd = tauxx*tempd48 + tauxy*tempd47 + tauxz*tempd49
+          wyzd = tauxz*tempd48 - wzyd + tauyz*tempd47 + tauzz*tempd49
+          tempd50 = two*fact*exxd
+          tauxzd = wyx*tempd49 + wzx*tempd46 + wxz*tempd50 + wyz*tempd48&
+&           + mut*tauxzd
+          tauxyd = wzx*tempd49 + wyx*tempd47 + wxy*tempd50 + wzy*tempd45&
+&           + mut*tauxyd
+          wxyd = tauyy*tempd48 - wyxd + tauxy*tempd50 + tauyz*tempd45
+          wxzd = tauyz*tempd48 - wzxd + tauxz*tempd50 + tauzz*tempd45
+          v_zd = wyzd
+          w_yd = -wyzd
           u_zd = wxzd
           w_xd = -wxzd
-          dend = -(ccr1*factd/den**2)
+          u_yd = wxyd
+          v_xd = -wxyd
+          tempd51 = ccr1*factd/den
+          mued = mued + tempd51
+          dend = -(mue*tempd51/den)
           call popcontrol1b(branch)
           if (branch .eq. 0) dend = 0.0_8
           if (u_x**2 + u_y**2 + u_z**2 + v_x**2 + v_y**2 + v_z**2 + w_x&
 &             **2 + w_y**2 + w_z**2 .eq. 0.0_8) then
-            tempd43 = 0.0
+            tempd44 = 0.0
           else
-            tempd43 = dend/(2.0*sqrt(u_x**2+u_y**2+u_z**2+v_x**2+v_y**2+&
+            tempd44 = dend/(2.0*sqrt(u_x**2+u_y**2+u_z**2+v_x**2+v_y**2+&
 &             v_z**2+w_x**2+w_y**2+w_z**2))
           end if
-          u_xd = 2*u_x*tempd43
-          u_yd = u_yd + 2*u_y*tempd43
-          u_zd = u_zd + 2*u_z*tempd43
-          v_xd = v_xd + 2*v_x*tempd43
-          v_yd = 2*v_y*tempd43
-          v_zd = 2*v_z*tempd43
-          w_xd = w_xd + 2*w_x*tempd43
-          w_yd = 2*w_y*tempd43
-          w_zd = 2*w_z*tempd43
+          u_xd = 2*u_x*tempd44
+          u_yd = u_yd + 2*u_y*tempd44
+          u_zd = u_zd + 2*u_z*tempd44
+          v_xd = v_xd + 2*v_x*tempd44
+          v_yd = 2*v_y*tempd44
+          v_zd = v_zd + 2*v_z*tempd44
+          w_xd = w_xd + 2*w_x*tempd44
+          w_yd = w_yd + 2*w_y*tempd44
+          w_zd = 2*w_z*tempd44
         else
+          call popreal8(tauyz)
+          call popreal8(tauxz)
+          call popreal8(tauxy)
+          call popreal8(tauzz)
+          call popreal8(tauyy)
+          call popreal8(tauxx)
+          mutd = tauxz*tauxzd + tauzz*tauzzd + tauxx*tauxxd + tauyy*&
+&           tauyyd + tauxy*tauxyd + tauyz*tauyzd
+          tauyzd = mut*tauyzd
+          tauxzd = mut*tauxzd
+          tauxyd = mut*tauxyd
+          tauzzd = mut*tauzzd
+          tauyyd = mut*tauyyd
+          tauxxd = mut*tauxxd
           u_xd = 0.0_8
           u_yd = 0.0_8
           u_zd = 0.0_8
@@ -9728,8 +9788,8 @@ contains
           v_yd = 0.0_8
           v_zd = 0.0_8
         end if
-        fracdivd = -(mut*tauyyd) - mut*tauxxd - mut*tauzzd
-        tempd26 = twothird*fracdivd
+        fracdivd = -tauyyd - tauxxd - tauzzd
+        tempd27 = twothird*fracdivd
         call popreal8(q_z)
         call popreal8(q_y)
         call popreal8(q_x)
@@ -9737,18 +9797,15 @@ contains
         q_zd = heatcoef*q_zd
         q_yd = heatcoef*q_yd
         q_xd = heatcoef*q_xd
-        mutd = (u_z+w_x)*tauxzd + (two*w_z-fracdiv)*tauzzd + (two*u_x-&
-&         fracdiv)*tauxxd + (two*v_y-fracdiv)*tauyyd + (u_y+v_x)*tauxyd &
-&         + (v_z+w_y)*tauyzd
-        v_zd = v_zd + mut*tauyzd
-        w_yd = w_yd + mut*tauyzd
-        u_zd = u_zd + mut*tauxzd
-        w_xd = w_xd + mut*tauxzd
-        u_yd = u_yd + mut*tauxyd
-        v_xd = v_xd + mut*tauxyd
-        w_zd = w_zd + tempd26 + mut*two*tauzzd
-        v_yd = v_yd + tempd26 + mut*two*tauyyd
-        u_xd = u_xd + tempd26 + mut*two*tauxxd
+        v_zd = v_zd + tauyzd
+        w_yd = w_yd + tauyzd
+        u_zd = u_zd + tauxzd
+        w_xd = w_xd + tauxzd
+        u_yd = u_yd + tauxyd
+        v_xd = v_xd + tauxyd
+        w_zd = w_zd + tempd27 + two*tauzzd
+        v_yd = v_yd + tempd27 + two*tauyyd
+        u_xd = u_xd + tempd27 + two*tauxxd
         call popreal8(q_z)
         corrd = -(ssy*q_yd) - ssx*q_xd - ssz*q_zd
         sszd = q_z*corrd - corr*q_zd
@@ -9811,100 +9868,100 @@ contains
         temp1 = ssx**2 + ssy**2 + ssz**2
         temp2 = sqrt(temp1)
         if (temp1 .eq. 0.0_8) then
-          tempd27 = 0.0
+          tempd28 = 0.0
         else
-          tempd27 = -(one*ssd/(temp2**3*2.0))
+          tempd28 = -(one*ssd/(temp2**3*2.0))
         end if
-        sszd = 2*ssz*tempd27 + ss*sszd
-        ssyd = 2*ssy*tempd27 + ss*ssyd
-        ssxd = 2*ssx*tempd27 + ss*ssxd
-        tempd28 = eighth*sszd
-        xd(i-1, j+1, k-1, 3) = xd(i-1, j+1, k-1, 3) + tempd28
-        xd(i-1, j-1, k-1, 3) = xd(i-1, j-1, k-1, 3) - tempd28
-        xd(i-1, j+1, k, 3) = xd(i-1, j+1, k, 3) + tempd28
-        xd(i-1, j-1, k, 3) = xd(i-1, j-1, k, 3) - tempd28
-        xd(i, j+1, k-1, 3) = xd(i, j+1, k-1, 3) + tempd28
-        xd(i, j-1, k-1, 3) = xd(i, j-1, k-1, 3) - tempd28
-        xd(i, j+1, k, 3) = xd(i, j+1, k, 3) + tempd28
-        xd(i, j-1, k, 3) = xd(i, j-1, k, 3) - tempd28
-        tempd29 = eighth*ssyd
-        xd(i-1, j+1, k-1, 2) = xd(i-1, j+1, k-1, 2) + tempd29
-        xd(i-1, j-1, k-1, 2) = xd(i-1, j-1, k-1, 2) - tempd29
-        xd(i-1, j+1, k, 2) = xd(i-1, j+1, k, 2) + tempd29
-        xd(i-1, j-1, k, 2) = xd(i-1, j-1, k, 2) - tempd29
-        xd(i, j+1, k-1, 2) = xd(i, j+1, k-1, 2) + tempd29
-        xd(i, j-1, k-1, 2) = xd(i, j-1, k-1, 2) - tempd29
-        xd(i, j+1, k, 2) = xd(i, j+1, k, 2) + tempd29
-        xd(i, j-1, k, 2) = xd(i, j-1, k, 2) - tempd29
-        tempd30 = eighth*ssxd
-        xd(i-1, j+1, k-1, 1) = xd(i-1, j+1, k-1, 1) + tempd30
-        xd(i-1, j-1, k-1, 1) = xd(i-1, j-1, k-1, 1) - tempd30
-        xd(i-1, j+1, k, 1) = xd(i-1, j+1, k, 1) + tempd30
-        xd(i-1, j-1, k, 1) = xd(i-1, j-1, k, 1) - tempd30
-        xd(i, j+1, k-1, 1) = xd(i, j+1, k-1, 1) + tempd30
-        xd(i, j-1, k-1, 1) = xd(i, j-1, k-1, 1) - tempd30
-        xd(i, j+1, k, 1) = xd(i, j+1, k, 1) + tempd30
-        xd(i, j-1, k, 1) = xd(i, j-1, k, 1) - tempd30
-        tempd31 = fourth*q_zd
-        qzd(i-1, j, k-1) = qzd(i-1, j, k-1) + tempd31
-        qzd(i, j, k-1) = qzd(i, j, k-1) + tempd31
-        qzd(i-1, j, k) = qzd(i-1, j, k) + tempd31
-        qzd(i, j, k) = qzd(i, j, k) + tempd31
-        tempd32 = fourth*q_yd
-        qyd(i-1, j, k-1) = qyd(i-1, j, k-1) + tempd32
-        qyd(i, j, k-1) = qyd(i, j, k-1) + tempd32
-        qyd(i-1, j, k) = qyd(i-1, j, k) + tempd32
-        qyd(i, j, k) = qyd(i, j, k) + tempd32
-        tempd33 = fourth*q_xd
-        qxd(i-1, j, k-1) = qxd(i-1, j, k-1) + tempd33
-        qxd(i, j, k-1) = qxd(i, j, k-1) + tempd33
-        qxd(i-1, j, k) = qxd(i-1, j, k) + tempd33
-        qxd(i, j, k) = qxd(i, j, k) + tempd33
-        tempd34 = fourth*w_zd
-        wzd(i-1, j, k-1) = wzd(i-1, j, k-1) + tempd34
-        wzd(i, j, k-1) = wzd(i, j, k-1) + tempd34
-        wzd(i-1, j, k) = wzd(i-1, j, k) + tempd34
-        wzd(i, j, k) = wzd(i, j, k) + tempd34
-        tempd35 = fourth*w_yd
-        wyd(i-1, j, k-1) = wyd(i-1, j, k-1) + tempd35
-        wyd(i, j, k-1) = wyd(i, j, k-1) + tempd35
-        wyd(i-1, j, k) = wyd(i-1, j, k) + tempd35
-        wyd(i, j, k) = wyd(i, j, k) + tempd35
-        tempd36 = fourth*w_xd
-        wxd(i-1, j, k-1) = wxd(i-1, j, k-1) + tempd36
-        wxd(i, j, k-1) = wxd(i, j, k-1) + tempd36
-        wxd(i-1, j, k) = wxd(i-1, j, k) + tempd36
-        wxd(i, j, k) = wxd(i, j, k) + tempd36
-        tempd37 = fourth*v_zd
-        vzd(i-1, j, k-1) = vzd(i-1, j, k-1) + tempd37
-        vzd(i, j, k-1) = vzd(i, j, k-1) + tempd37
-        vzd(i-1, j, k) = vzd(i-1, j, k) + tempd37
-        vzd(i, j, k) = vzd(i, j, k) + tempd37
-        tempd38 = fourth*v_yd
-        vyd(i-1, j, k-1) = vyd(i-1, j, k-1) + tempd38
-        vyd(i, j, k-1) = vyd(i, j, k-1) + tempd38
-        vyd(i-1, j, k) = vyd(i-1, j, k) + tempd38
-        vyd(i, j, k) = vyd(i, j, k) + tempd38
-        tempd39 = fourth*v_xd
-        vxd(i-1, j, k-1) = vxd(i-1, j, k-1) + tempd39
-        vxd(i, j, k-1) = vxd(i, j, k-1) + tempd39
-        vxd(i-1, j, k) = vxd(i-1, j, k) + tempd39
-        vxd(i, j, k) = vxd(i, j, k) + tempd39
-        tempd40 = fourth*u_zd
-        uzd(i-1, j, k-1) = uzd(i-1, j, k-1) + tempd40
-        uzd(i, j, k-1) = uzd(i, j, k-1) + tempd40
-        uzd(i-1, j, k) = uzd(i-1, j, k) + tempd40
-        uzd(i, j, k) = uzd(i, j, k) + tempd40
-        tempd41 = fourth*u_yd
-        uyd(i-1, j, k-1) = uyd(i-1, j, k-1) + tempd41
-        uyd(i, j, k-1) = uyd(i, j, k-1) + tempd41
-        uyd(i-1, j, k) = uyd(i-1, j, k) + tempd41
-        uyd(i, j, k) = uyd(i, j, k) + tempd41
-        tempd42 = fourth*u_xd
-        uxd(i-1, j, k-1) = uxd(i-1, j, k-1) + tempd42
-        uxd(i, j, k-1) = uxd(i, j, k-1) + tempd42
-        uxd(i-1, j, k) = uxd(i-1, j, k) + tempd42
-        uxd(i, j, k) = uxd(i, j, k) + tempd42
+        sszd = 2*ssz*tempd28 + ss*sszd
+        ssyd = 2*ssy*tempd28 + ss*ssyd
+        ssxd = 2*ssx*tempd28 + ss*ssxd
+        tempd29 = eighth*sszd
+        xd(i-1, j+1, k-1, 3) = xd(i-1, j+1, k-1, 3) + tempd29
+        xd(i-1, j-1, k-1, 3) = xd(i-1, j-1, k-1, 3) - tempd29
+        xd(i-1, j+1, k, 3) = xd(i-1, j+1, k, 3) + tempd29
+        xd(i-1, j-1, k, 3) = xd(i-1, j-1, k, 3) - tempd29
+        xd(i, j+1, k-1, 3) = xd(i, j+1, k-1, 3) + tempd29
+        xd(i, j-1, k-1, 3) = xd(i, j-1, k-1, 3) - tempd29
+        xd(i, j+1, k, 3) = xd(i, j+1, k, 3) + tempd29
+        xd(i, j-1, k, 3) = xd(i, j-1, k, 3) - tempd29
+        tempd30 = eighth*ssyd
+        xd(i-1, j+1, k-1, 2) = xd(i-1, j+1, k-1, 2) + tempd30
+        xd(i-1, j-1, k-1, 2) = xd(i-1, j-1, k-1, 2) - tempd30
+        xd(i-1, j+1, k, 2) = xd(i-1, j+1, k, 2) + tempd30
+        xd(i-1, j-1, k, 2) = xd(i-1, j-1, k, 2) - tempd30
+        xd(i, j+1, k-1, 2) = xd(i, j+1, k-1, 2) + tempd30
+        xd(i, j-1, k-1, 2) = xd(i, j-1, k-1, 2) - tempd30
+        xd(i, j+1, k, 2) = xd(i, j+1, k, 2) + tempd30
+        xd(i, j-1, k, 2) = xd(i, j-1, k, 2) - tempd30
+        tempd31 = eighth*ssxd
+        xd(i-1, j+1, k-1, 1) = xd(i-1, j+1, k-1, 1) + tempd31
+        xd(i-1, j-1, k-1, 1) = xd(i-1, j-1, k-1, 1) - tempd31
+        xd(i-1, j+1, k, 1) = xd(i-1, j+1, k, 1) + tempd31
+        xd(i-1, j-1, k, 1) = xd(i-1, j-1, k, 1) - tempd31
+        xd(i, j+1, k-1, 1) = xd(i, j+1, k-1, 1) + tempd31
+        xd(i, j-1, k-1, 1) = xd(i, j-1, k-1, 1) - tempd31
+        xd(i, j+1, k, 1) = xd(i, j+1, k, 1) + tempd31
+        xd(i, j-1, k, 1) = xd(i, j-1, k, 1) - tempd31
+        tempd32 = fourth*q_zd
+        qzd(i-1, j, k-1) = qzd(i-1, j, k-1) + tempd32
+        qzd(i, j, k-1) = qzd(i, j, k-1) + tempd32
+        qzd(i-1, j, k) = qzd(i-1, j, k) + tempd32
+        qzd(i, j, k) = qzd(i, j, k) + tempd32
+        tempd33 = fourth*q_yd
+        qyd(i-1, j, k-1) = qyd(i-1, j, k-1) + tempd33
+        qyd(i, j, k-1) = qyd(i, j, k-1) + tempd33
+        qyd(i-1, j, k) = qyd(i-1, j, k) + tempd33
+        qyd(i, j, k) = qyd(i, j, k) + tempd33
+        tempd34 = fourth*q_xd
+        qxd(i-1, j, k-1) = qxd(i-1, j, k-1) + tempd34
+        qxd(i, j, k-1) = qxd(i, j, k-1) + tempd34
+        qxd(i-1, j, k) = qxd(i-1, j, k) + tempd34
+        qxd(i, j, k) = qxd(i, j, k) + tempd34
+        tempd35 = fourth*w_zd
+        wzd(i-1, j, k-1) = wzd(i-1, j, k-1) + tempd35
+        wzd(i, j, k-1) = wzd(i, j, k-1) + tempd35
+        wzd(i-1, j, k) = wzd(i-1, j, k) + tempd35
+        wzd(i, j, k) = wzd(i, j, k) + tempd35
+        tempd36 = fourth*w_yd
+        wyd(i-1, j, k-1) = wyd(i-1, j, k-1) + tempd36
+        wyd(i, j, k-1) = wyd(i, j, k-1) + tempd36
+        wyd(i-1, j, k) = wyd(i-1, j, k) + tempd36
+        wyd(i, j, k) = wyd(i, j, k) + tempd36
+        tempd37 = fourth*w_xd
+        wxd(i-1, j, k-1) = wxd(i-1, j, k-1) + tempd37
+        wxd(i, j, k-1) = wxd(i, j, k-1) + tempd37
+        wxd(i-1, j, k) = wxd(i-1, j, k) + tempd37
+        wxd(i, j, k) = wxd(i, j, k) + tempd37
+        tempd38 = fourth*v_zd
+        vzd(i-1, j, k-1) = vzd(i-1, j, k-1) + tempd38
+        vzd(i, j, k-1) = vzd(i, j, k-1) + tempd38
+        vzd(i-1, j, k) = vzd(i-1, j, k) + tempd38
+        vzd(i, j, k) = vzd(i, j, k) + tempd38
+        tempd39 = fourth*v_yd
+        vyd(i-1, j, k-1) = vyd(i-1, j, k-1) + tempd39
+        vyd(i, j, k-1) = vyd(i, j, k-1) + tempd39
+        vyd(i-1, j, k) = vyd(i-1, j, k) + tempd39
+        vyd(i, j, k) = vyd(i, j, k) + tempd39
+        tempd40 = fourth*v_xd
+        vxd(i-1, j, k-1) = vxd(i-1, j, k-1) + tempd40
+        vxd(i, j, k-1) = vxd(i, j, k-1) + tempd40
+        vxd(i-1, j, k) = vxd(i-1, j, k) + tempd40
+        vxd(i, j, k) = vxd(i, j, k) + tempd40
+        tempd41 = fourth*u_zd
+        uzd(i-1, j, k-1) = uzd(i-1, j, k-1) + tempd41
+        uzd(i, j, k-1) = uzd(i, j, k-1) + tempd41
+        uzd(i-1, j, k) = uzd(i-1, j, k) + tempd41
+        uzd(i, j, k) = uzd(i, j, k) + tempd41
+        tempd42 = fourth*u_yd
+        uyd(i-1, j, k-1) = uyd(i-1, j, k-1) + tempd42
+        uyd(i, j, k-1) = uyd(i, j, k-1) + tempd42
+        uyd(i-1, j, k) = uyd(i-1, j, k) + tempd42
+        uyd(i, j, k) = uyd(i, j, k) + tempd42
+        tempd43 = fourth*u_xd
+        uxd(i-1, j, k-1) = uxd(i-1, j, k-1) + tempd43
+        uxd(i, j, k-1) = uxd(i, j, k-1) + tempd43
+        uxd(i-1, j, k) = uxd(i-1, j, k) + tempd43
+        uxd(i, j, k) = uxd(i, j, k) + tempd43
         muld = mutd + factlamheat*heatcoefd
         mued = mued + mutd + factturbheat*heatcoefd
         call popcontrol1b(branch)
@@ -9916,11 +9973,9 @@ contains
         rlvd(i, j, k) = rlvd(i, j, k) + por*muld
         rlvd(i, j+1, k) = rlvd(i, j+1, k) + por*muld
       end do
-      call popreal8(mut)
       call popreal8(por)
-      call popreal8(fracdiv)
       call popreal8(ss)
-      call popreal8(heatcoef)
+      call popreal8(mue)
       call popreal8(tauyz)
       call popreal8(tauyy)
       call popreal8(v_z)
@@ -9937,7 +9992,6 @@ contains
       call popreal8(w_z)
       call popreal8(w_y)
       call popreal8(w_x)
-      call popinteger4(k)
       call popinteger4(j)
       call popinteger4(i)
       call popreal8(u_z)
@@ -10063,13 +10117,15 @@ contains
         call pushreal8(q_z)
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the tau definition since
+! we still need to separate between laminar and turbulent stress for qcr.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = mut*(two*u_x-fracdiv)
-        tauyy = mut*(two*v_y-fracdiv)
-        tauzz = mut*(two*w_z-fracdiv)
-        tauxy = mut*(u_y+v_x)
-        tauxz = mut*(u_z+w_x)
-        tauyz = mut*(v_z+w_y)
+        tauxx = two*u_x - fracdiv
+        tauyy = two*v_y - fracdiv
+        tauzz = two*w_z - fracdiv
+        tauxy = u_y + v_x
+        tauxz = u_z + w_x
+        tauyz = v_z + w_y
         call pushreal8(q_x)
         q_x = heatcoef*q_x
         call pushreal8(q_y)
@@ -10078,7 +10134,7 @@ contains
         q_z = heatcoef*q_z
 ! add qcr corrections if necessary
         if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
 ! 
@@ -10089,6 +10145,8 @@ contains
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
           den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &           v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z)
@@ -10099,40 +10157,53 @@ contains
             call pushcontrol1b(1)
             den = den
           end if
-! compute factor that will multiply all tensor components
-          fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+          fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
           wxz = u_z - w_x
-          wyz = u_y - v_x
+          wyz = v_z - w_y
           wyx = -wxy
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-          exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*tauxy+&
-&           wyz*tauxz)
-          exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+&
-&           wzz*tauxz)
-          eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*tauyy+&
-&           wzz*tauyz)
-! add extra terms
+          exx = fact*(wxy*tauxy+wxz*tauxz)*two
+          eyy = fact*(wyx*tauxy+wyz*tauyz)*two
+          ezz = fact*(wzx*tauxz+wzy*tauyz)*two
+          exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
+          exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
+          eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
+! apply the total viscosity to the stress tensor and add extra terms
           call pushreal8(tauxx)
-          tauxx = tauxx - exx
+          tauxx = mut*tauxx - exx
           call pushreal8(tauyy)
-          tauyy = tauyy - eyy
+          tauyy = mut*tauyy - eyy
           call pushreal8(tauzz)
-          tauzz = tauzz - ezz
+          tauzz = mut*tauzz - ezz
           call pushreal8(tauxy)
-          tauxy = tauxy - exy
+          tauxy = mut*tauxy - exy
           call pushreal8(tauxz)
-          tauxz = tauxz - exz
+          tauxz = mut*tauxz - exz
           call pushreal8(tauyz)
-          tauyz = tauyz - eyz
+          tauyz = mut*tauyz - eyz
           call pushcontrol1b(0)
         else
+! just apply the total viscosity to the stress tensor
+          call pushreal8(tauxx)
+          tauxx = mut*tauxx
+          call pushreal8(tauyy)
+          tauyy = mut*tauyy
+          call pushreal8(tauzz)
+          tauzz = mut*tauzz
+          call pushreal8(tauxy)
+          tauxy = mut*tauxy
+          call pushreal8(tauxz)
+          tauxz = mut*tauxz
+          call pushreal8(tauyz)
+          tauyz = mut*tauyz
           call pushcontrol1b(1)
         end if
 ! compute the average velocities for the face. remember that
@@ -10205,25 +10276,25 @@ contains
         skd(i, j, k, 2) = skd(i, j, k, 2) - q_y*frhoed
         q_zd = -(sk(i, j, k, 3)*frhoed)
         skd(i, j, k, 3) = skd(i, j, k, 3) - q_z*frhoed
-        tempd23 = sk(i, j, k, 3)*frhoed
-        tauzzd = tauzzd + sk(i, j, k, 3)*fmzd + wbar*tempd23
+        tempd24 = sk(i, j, k, 3)*frhoed
+        tauzzd = tauzzd + sk(i, j, k, 3)*fmzd + wbar*tempd24
         skd(i, j, k, 3) = skd(i, j, k, 3) + (ubar*tauxz+vbar*tauyz+wbar*&
 &         tauzz)*frhoed
-        tempd24 = sk(i, j, k, 2)*frhoed
-        tauyzd = tauyzd + wbar*tempd24 + sk(i, j, k, 3)*fmyd + sk(i, j, &
-&         k, 2)*fmzd + vbar*tempd23
-        tauyyd = tauyyd + sk(i, j, k, 2)*fmyd + vbar*tempd24
+        tempd25 = sk(i, j, k, 2)*frhoed
+        tauyzd = tauyzd + wbar*tempd25 + sk(i, j, k, 3)*fmyd + sk(i, j, &
+&         k, 2)*fmzd + vbar*tempd24
+        tauyyd = tauyyd + sk(i, j, k, 2)*fmyd + vbar*tempd25
         skd(i, j, k, 2) = skd(i, j, k, 2) + (ubar*tauxy+vbar*tauyy+wbar*&
 &         tauyz)*frhoed
-        tempd25 = sk(i, j, k, 1)*frhoed
-        ubard = tauxy*tempd24 + tauxx*tempd25 + tauxz*tempd23
-        tauxzd = tauxzd + wbar*tempd25 + sk(i, j, k, 3)*fmxd + sk(i, j, &
-&         k, 1)*fmzd + ubar*tempd23
-        vbard = tauyy*tempd24 + tauxy*tempd25 + tauyz*tempd23
-        wbard = tauyz*tempd24 + tauxz*tempd25 + tauzz*tempd23
-        tauxyd = tauxyd + vbar*tempd25 + sk(i, j, k, 2)*fmxd + sk(i, j, &
-&         k, 1)*fmyd + ubar*tempd24
-        tauxxd = tauxxd + sk(i, j, k, 1)*fmxd + ubar*tempd25
+        tempd26 = sk(i, j, k, 1)*frhoed
+        ubard = tauxy*tempd25 + tauxx*tempd26 + tauxz*tempd24
+        tauxzd = tauxzd + wbar*tempd26 + sk(i, j, k, 3)*fmxd + sk(i, j, &
+&         k, 1)*fmzd + ubar*tempd24
+        vbard = tauyy*tempd25 + tauxy*tempd26 + tauyz*tempd24
+        wbard = tauyz*tempd25 + tauxz*tempd26 + tauzz*tempd24
+        tauxyd = tauxyd + vbar*tempd26 + sk(i, j, k, 2)*fmxd + sk(i, j, &
+&         k, 1)*fmyd + ubar*tempd25
+        tauxxd = tauxxd + sk(i, j, k, 1)*fmxd + ubar*tempd26
         skd(i, j, k, 1) = skd(i, j, k, 1) + (ubar*tauxx+vbar*tauxy+wbar*&
 &         tauxz)*frhoed
         skd(i, j, k, 1) = skd(i, j, k, 1) + tauxz*fmzd
@@ -10254,39 +10325,44 @@ contains
           call popreal8(tauyy)
           eyyd = -tauyyd
           call popreal8(tauxx)
+          mutd = tauxz*tauxzd + tauzz*tauzzd + tauxx*tauxxd + tauyy*&
+&           tauyyd + tauxy*tauxyd + tauyz*tauyzd
           exxd = -tauxxd
-          tempd17 = fact*eyzd
-          factd = (wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+wzz&
-&           *tauxz)*exzd + two*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*ezzd + &
-&           two*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*exxd + two*(wyx*tauxy+&
-&           wyy*tauyy+wyz*tauyz)*eyyd + (wxx*tauxy+wxy*tauyy+wxz*tauyz+&
-&           wyx*tauxx+wyy*tauxy+wyz*tauxz)*exyd + (wyx*tauxz+wyy*tauyz+&
-&           wyz*tauzz+wzx*tauxy+wzy*tauyy+wzz*tauyz)*eyzd
-          tempd20 = fact*exzd
-          tempd18 = fact*exyd
-          tempd21 = two*fact*ezzd
-          tauzzd = tauzzd + wxz*tempd20 + wzz*tempd21 + wyz*tempd17
-          wzxd = tauxx*tempd20 + tauxz*tempd21 + tauxy*tempd17
-          wzyd = tauxy*tempd20 + tauyz*tempd21 + tauyy*tempd17
+          tempd21 = fact*eyzd
+          factd = (wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)*exzd + two*(&
+&           wzx*tauxz+wzy*tauyz)*ezzd + two*(wxy*tauxy+wxz*tauxz)*exxd +&
+&           two*(wyx*tauxy+wyz*tauyz)*eyyd + (wxy*tauyy+wxz*tauyz+wyx*&
+&           tauxx+wyz*tauxz)*exyd + (wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*&
+&           tauyy)*eyzd
+          tempd17 = fact*exzd
+          tauzzd = wyz*tempd21 + wxz*tempd17 + mut*tauzzd
+          tempd20 = fact*exyd
+          tauyyd = wzy*tempd21 + wxy*tempd20 + mut*tauyyd
+          tauxxd = wzx*tempd17 + wyx*tempd20 + mut*tauxxd
+          tempd18 = two*fact*ezzd
+          wzxd = tauxx*tempd17 + tauxz*tempd18 + tauxy*tempd21
+          wzyd = tauxy*tempd17 + tauyz*tempd18 + tauyy*tempd21
           tempd19 = two*fact*eyyd
-          wyxd = tauxx*tempd18 + tauxy*tempd19 + tauxz*tempd17
-          tauyzd = tauyzd + wxy*tempd20 + wzy*tempd21 + wyz*tempd19 + &
-&           wxz*tempd18 + (wzz+wyy)*tempd17
-          wyzd = tauxz*tempd18 - wzyd + tauyz*tempd19 + tauzz*tempd17
-          tauyyd = tauyyd + wxy*tempd18 + wyy*tempd19 + wzy*tempd17
+          tauyzd = wxy*tempd17 + wzy*tempd18 + wyz*tempd19 + wxz*tempd20&
+&           + mut*tauyzd
+          wyxd = tauxx*tempd20 + tauxy*tempd19 + tauxz*tempd21
+          wyzd = tauxz*tempd20 - wzyd + tauyz*tempd19 + tauzz*tempd21
           tempd22 = two*fact*exxd
-          tauxzd = tauxzd + (wzz+wxx)*tempd20 + wzx*tempd21 + wxz*&
-&           tempd22 + wyz*tempd18 + wyx*tempd17
-          tauxyd = tauxyd + wzy*tempd20 + wyx*tempd19 + wxy*tempd22 + (&
-&           wyy+wxx)*tempd18 + wzx*tempd17
-          wxyd = tauyy*tempd18 - wyxd + tauxy*tempd22 + tauyz*tempd20
-          wxzd = tauyz*tempd18 - wzxd + tauxz*tempd22 + tauzz*tempd20
-          tauxxd = tauxxd + wyx*tempd18 + wxx*tempd22 + wzx*tempd20
-          u_yd = wxyd + wyzd
-          v_xd = -wxyd - wyzd
+          tauxzd = wyx*tempd21 + wzx*tempd18 + wxz*tempd22 + wyz*tempd20&
+&           + mut*tauxzd
+          tauxyd = wzx*tempd21 + wyx*tempd19 + wxy*tempd22 + wzy*tempd17&
+&           + mut*tauxyd
+          wxyd = tauyy*tempd20 - wyxd + tauxy*tempd22 + tauyz*tempd17
+          wxzd = tauyz*tempd20 - wzxd + tauxz*tempd22 + tauzz*tempd17
+          v_zd = wyzd
+          w_yd = -wyzd
           u_zd = wxzd
           w_xd = -wxzd
-          dend = -(ccr1*factd/den**2)
+          u_yd = wxyd
+          v_xd = -wxyd
+          tempd23 = ccr1*factd/den
+          mued = mued + tempd23
+          dend = -(mue*tempd23/den)
           call popcontrol1b(branch)
           if (branch .eq. 0) dend = 0.0_8
           if (u_x**2 + u_y**2 + u_z**2 + v_x**2 + v_y**2 + v_z**2 + w_x&
@@ -10301,11 +10377,25 @@ contains
           u_zd = u_zd + 2*u_z*tempd16
           v_xd = v_xd + 2*v_x*tempd16
           v_yd = 2*v_y*tempd16
-          v_zd = 2*v_z*tempd16
+          v_zd = v_zd + 2*v_z*tempd16
           w_xd = w_xd + 2*w_x*tempd16
-          w_yd = 2*w_y*tempd16
+          w_yd = w_yd + 2*w_y*tempd16
           w_zd = 2*w_z*tempd16
         else
+          call popreal8(tauyz)
+          call popreal8(tauxz)
+          call popreal8(tauxy)
+          call popreal8(tauzz)
+          call popreal8(tauyy)
+          call popreal8(tauxx)
+          mutd = tauxz*tauxzd + tauzz*tauzzd + tauxx*tauxxd + tauyy*&
+&           tauyyd + tauxy*tauxyd + tauyz*tauyzd
+          tauyzd = mut*tauyzd
+          tauxzd = mut*tauxzd
+          tauxyd = mut*tauxyd
+          tauzzd = mut*tauzzd
+          tauyyd = mut*tauyyd
+          tauxxd = mut*tauxxd
           u_xd = 0.0_8
           u_yd = 0.0_8
           u_zd = 0.0_8
@@ -10316,7 +10406,7 @@ contains
           v_yd = 0.0_8
           v_zd = 0.0_8
         end if
-        fracdivd = -(mut*tauyyd) - mut*tauxxd - mut*tauzzd
+        fracdivd = -tauyyd - tauxxd - tauzzd
         tempd = twothird*fracdivd
         call popreal8(q_z)
         call popreal8(q_y)
@@ -10325,18 +10415,15 @@ contains
         q_zd = heatcoef*q_zd
         q_yd = heatcoef*q_yd
         q_xd = heatcoef*q_xd
-        mutd = (u_z+w_x)*tauxzd + (two*w_z-fracdiv)*tauzzd + (two*u_x-&
-&         fracdiv)*tauxxd + (two*v_y-fracdiv)*tauyyd + (u_y+v_x)*tauxyd &
-&         + (v_z+w_y)*tauyzd
-        v_zd = v_zd + mut*tauyzd
-        w_yd = w_yd + mut*tauyzd
-        u_zd = u_zd + mut*tauxzd
-        w_xd = w_xd + mut*tauxzd
-        u_yd = u_yd + mut*tauxyd
-        v_xd = v_xd + mut*tauxyd
-        w_zd = w_zd + tempd + mut*two*tauzzd
-        v_yd = v_yd + tempd + mut*two*tauyyd
-        u_xd = u_xd + tempd + mut*two*tauxxd
+        v_zd = v_zd + tauyzd
+        w_yd = w_yd + tauyzd
+        u_zd = u_zd + tauxzd
+        w_xd = w_xd + tauxzd
+        u_yd = u_yd + tauxyd
+        v_xd = v_xd + tauxyd
+        w_zd = w_zd + tempd + two*tauzzd
+        v_yd = v_yd + tempd + two*tauyyd
+        u_xd = u_xd + tempd + two*tauxxd
         call popreal8(q_z)
         corrd = -(ssy*q_yd) - ssx*q_xd - ssz*q_zd
         sszd = q_z*corrd - corr*q_zd
@@ -10539,7 +10626,6 @@ contains
     real(kind=realtype) :: tauxy, tauxz, tauyz
     real(kind=realtype) :: exx, eyy, ezz
     real(kind=realtype) :: exy, exz, eyz
-    real(kind=realtype) :: wxx, wyy, wzz
     real(kind=realtype) :: wxy, wxz, wyz, wyx, wzx, wzy
     real(kind=realtype) :: den, ccr1, fact
     real(kind=realtype) :: fmx, fmy, fmz, frhoe
@@ -10551,10 +10637,6 @@ contains
     real(kind=realtype) :: abs0
 ! set qcr parameters
     ccr1 = 0.3_realtype
-! the diagonals of the vorticity tensor components are always zero
-    wxx = zero
-    wyy = zero
-    wzz = zero
 ! set rfilv to rfil to indicate that this is the viscous part.
 ! if rfilv == 0 the viscous residuals need not to be computed
 ! and a return can be made.
@@ -10666,19 +10748,21 @@ contains
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the tau definition since
+! we still need to separate between laminar and turbulent stress for qcr.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = mut*(two*u_x-fracdiv)
-        tauyy = mut*(two*v_y-fracdiv)
-        tauzz = mut*(two*w_z-fracdiv)
-        tauxy = mut*(u_y+v_x)
-        tauxz = mut*(u_z+w_x)
-        tauyz = mut*(v_z+w_y)
+        tauxx = two*u_x - fracdiv
+        tauyy = two*v_y - fracdiv
+        tauzz = two*w_z - fracdiv
+        tauxy = u_y + v_x
+        tauxz = u_z + w_x
+        tauyz = v_z + w_y
         q_x = heatcoef*q_x
         q_y = heatcoef*q_y
         q_z = heatcoef*q_z
 ! add qcr corrections if necessary
         if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
 ! 
@@ -10689,6 +10773,8 @@ contains
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
           den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &           v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z)
@@ -10697,32 +10783,40 @@ contains
           else
             den = den
           end if
-! compute factor that will multiply all tensor components
-          fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+          fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
           wxz = u_z - w_x
-          wyz = u_y - v_x
+          wyz = v_z - w_y
           wyx = -wxy
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-          exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*tauxy+&
-&           wyz*tauxz)
-          exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+&
-&           wzz*tauxz)
-          eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*tauyy+&
-&           wzz*tauyz)
-! add extra terms
-          tauxx = tauxx - exx
-          tauyy = tauyy - eyy
-          tauzz = tauzz - ezz
-          tauxy = tauxy - exy
-          tauxz = tauxz - exz
-          tauyz = tauyz - eyz
+          exx = fact*(wxy*tauxy+wxz*tauxz)*two
+          eyy = fact*(wyx*tauxy+wyz*tauyz)*two
+          ezz = fact*(wzx*tauxz+wzy*tauyz)*two
+          exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
+          exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
+          eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
+! apply the total viscosity to the stress tensor and add extra terms
+          tauxx = mut*tauxx - exx
+          tauyy = mut*tauyy - eyy
+          tauzz = mut*tauzz - ezz
+          tauxy = mut*tauxy - exy
+          tauxz = mut*tauxz - exz
+          tauyz = mut*tauyz - eyz
+        else
+! just apply the total viscosity to the stress tensor
+          tauxx = mut*tauxx
+          tauyy = mut*tauyy
+          tauzz = mut*tauzz
+          tauxy = mut*tauxy
+          tauxz = mut*tauxz
+          tauyz = mut*tauyz
         end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
@@ -10875,19 +10969,21 @@ contains
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the tau definition since
+! we still need to separate between laminar and turbulent stress for qcr.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = mut*(two*u_x-fracdiv)
-        tauyy = mut*(two*v_y-fracdiv)
-        tauzz = mut*(two*w_z-fracdiv)
-        tauxy = mut*(u_y+v_x)
-        tauxz = mut*(u_z+w_x)
-        tauyz = mut*(v_z+w_y)
+        tauxx = two*u_x - fracdiv
+        tauyy = two*v_y - fracdiv
+        tauzz = two*w_z - fracdiv
+        tauxy = u_y + v_x
+        tauxz = u_z + w_x
+        tauyz = v_z + w_y
         q_x = heatcoef*q_x
         q_y = heatcoef*q_y
         q_z = heatcoef*q_z
 ! add qcr corrections if necessary
         if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
 ! 
@@ -10898,6 +10994,8 @@ contains
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
           den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &           v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z)
@@ -10906,32 +11004,40 @@ contains
           else
             den = den
           end if
-! compute factor that will multiply all tensor components
-          fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+          fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
           wxz = u_z - w_x
-          wyz = u_y - v_x
+          wyz = v_z - w_y
           wyx = -wxy
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-          exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*tauxy+&
-&           wyz*tauxz)
-          exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+&
-&           wzz*tauxz)
-          eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*tauyy+&
-&           wzz*tauyz)
-! add extra terms
-          tauxx = tauxx - exx
-          tauyy = tauyy - eyy
-          tauzz = tauzz - ezz
-          tauxy = tauxy - exy
-          tauxz = tauxz - exz
-          tauyz = tauyz - eyz
+          exx = fact*(wxy*tauxy+wxz*tauxz)*two
+          eyy = fact*(wyx*tauxy+wyz*tauyz)*two
+          ezz = fact*(wzx*tauxz+wzy*tauyz)*two
+          exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
+          exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
+          eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
+! apply the total viscosity to the stress tensor and add extra terms
+          tauxx = mut*tauxx - exx
+          tauyy = mut*tauyy - eyy
+          tauzz = mut*tauzz - ezz
+          tauxy = mut*tauxy - exy
+          tauxz = mut*tauxz - exz
+          tauyz = mut*tauyz - eyz
+        else
+! just apply the total viscosity to the stress tensor
+          tauxx = mut*tauxx
+          tauyy = mut*tauyy
+          tauzz = mut*tauzz
+          tauxy = mut*tauxy
+          tauxz = mut*tauxz
+          tauyz = mut*tauyz
         end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
@@ -11081,19 +11187,21 @@ contains
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the tau definition since
+! we still need to separate between laminar and turbulent stress for qcr.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = mut*(two*u_x-fracdiv)
-        tauyy = mut*(two*v_y-fracdiv)
-        tauzz = mut*(two*w_z-fracdiv)
-        tauxy = mut*(u_y+v_x)
-        tauxz = mut*(u_z+w_x)
-        tauyz = mut*(v_z+w_y)
+        tauxx = two*u_x - fracdiv
+        tauyy = two*v_y - fracdiv
+        tauzz = two*w_z - fracdiv
+        tauxy = u_y + v_x
+        tauxz = u_z + w_x
+        tauyz = v_z + w_y
         q_x = heatcoef*q_x
         q_y = heatcoef*q_y
         q_z = heatcoef*q_z
 ! add qcr corrections if necessary
         if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
 ! 
@@ -11104,6 +11212,8 @@ contains
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
           den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &           v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z)
@@ -11112,32 +11222,40 @@ contains
           else
             den = den
           end if
-! compute factor that will multiply all tensor components
-          fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+          fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
           wxz = u_z - w_x
-          wyz = u_y - v_x
+          wyz = v_z - w_y
           wyx = -wxy
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-          exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*tauxy+&
-&           wyz*tauxz)
-          exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+&
-&           wzz*tauxz)
-          eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*tauyy+&
-&           wzz*tauyz)
-! add extra terms
-          tauxx = tauxx - exx
-          tauyy = tauyy - eyy
-          tauzz = tauzz - ezz
-          tauxy = tauxy - exy
-          tauxz = tauxz - exz
-          tauyz = tauyz - eyz
+          exx = fact*(wxy*tauxy+wxz*tauxz)*two
+          eyy = fact*(wyx*tauxy+wyz*tauyz)*two
+          ezz = fact*(wzx*tauxz+wzy*tauyz)*two
+          exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
+          exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
+          eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
+! apply the total viscosity to the stress tensor and add extra terms
+          tauxx = mut*tauxx - exx
+          tauyy = mut*tauyy - eyy
+          tauzz = mut*tauzz - ezz
+          tauxy = mut*tauxy - exy
+          tauxz = mut*tauxz - exz
+          tauyz = mut*tauyz - eyz
+        else
+! just apply the total viscosity to the stress tensor
+          tauxx = mut*tauxx
+          tauyy = mut*tauyy
+          tauzz = mut*tauzz
+          tauxy = mut*tauxy
+          tauxz = mut*tauxz
+          tauyz = mut*tauyz
         end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
