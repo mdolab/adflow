@@ -8111,6 +8111,10 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: tauxxd, tauyyd, tauzzd
     real(kind=realtype) :: tauxy, tauxz, tauyz
     real(kind=realtype) :: tauxyd, tauxzd, tauyzd
+    real(kind=realtype) :: tauxxs, tauyys, tauzzs
+    real(kind=realtype) :: tauxxsd, tauyysd, tauzzsd
+    real(kind=realtype) :: tauxys, tauxzs, tauyzs
+    real(kind=realtype) :: tauxysd, tauxzsd, tauyzsd
     real(kind=realtype) :: exx, eyy, ezz
     real(kind=realtype) :: exxd, eyyd, ezzd
     real(kind=realtype) :: exy, exz, eyz
@@ -8352,15 +8356,18 @@ myIntPtr = myIntPtr + 1
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
-! we remove the viscosity from the tau definition since
-! we still need to separate between laminar and turbulent stress for qcr.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = two*u_x - fracdiv
-        tauyy = two*v_y - fracdiv
-        tauzz = two*w_z - fracdiv
-        tauxy = u_y + v_x
-        tauxz = u_z + w_x
-        tauyz = v_z + w_y
+        tauxxs = two*u_x - fracdiv
+        tauyys = two*v_y - fracdiv
+        tauzzs = two*w_z - fracdiv
+        tauxys = u_y + v_x
+        tauxzs = u_z + w_x
+        tauyzs = v_z + w_y
 ! add qcr corrections if necessary
         if (useqcr) then
 ! in the qcr formulation, we add an extra term to the turbulent stress tensor:
@@ -8401,29 +8408,29 @@ myIntPtr = myIntPtr + 1
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz)*two
-          exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
-          exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
-          eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
+          exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+          eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+          ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+          exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+          exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+          eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
 ! apply the total viscosity to the stress tensor and add extra terms
-          tauxx = mut*tauxx - exx
-          tauyy = mut*tauyy - eyy
-          tauzz = mut*tauzz - ezz
-          tauxy = mut*tauxy - exy
-          tauxz = mut*tauxz - exz
-          tauyz = mut*tauyz - eyz
+          tauxx = mut*tauxxs - exx
+          tauyy = mut*tauyys - eyy
+          tauzz = mut*tauzzs - ezz
+          tauxy = mut*tauxys - exy
+          tauxz = mut*tauxzs - exz
+          tauyz = mut*tauyzs - eyz
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 0
         else
 ! just apply the total viscosity to the stress tensor
-          tauxx = mut*tauxx
-          tauyy = mut*tauyy
-          tauzz = mut*tauzz
-          tauxy = mut*tauxy
-          tauxz = mut*tauxz
-          tauyz = mut*tauyz
+          tauxx = mut*tauxxs
+          tauyy = mut*tauyys
+          tauzz = mut*tauzzs
+          tauxy = mut*tauxys
+          tauxz = mut*tauxzs
+          tauyz = mut*tauyzs
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
         end if
@@ -8468,40 +8475,40 @@ myIntPtr = myIntPtr + 1
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
         if (branch .eq. 0) then
-          eyzd = -tauyzd
           exzd = -tauxzd
           exyd = -tauxyd
           ezzd = -tauzzd
           eyyd = -tauyyd
-          mutd = tauxz*tauxzd + tauzz*tauzzd + tauxx*tauxxd + tauyy*&
-&           tauyyd + tauxy*tauxyd + tauyz*tauyzd
+          tempd61 = fact*exzd
+          tempd64 = fact*exyd
+          tempd62 = two*fact*ezzd
+          tempd63 = two*fact*eyyd
+          mutd = tauxzs*tauxzd + tauzzs*tauzzd + tauxxs*tauxxd + tauyys*&
+&           tauyyd + tauxys*tauxyd + tauyzs*tauyzd
+          tauyzsd = wxy*tempd61 + wzy*tempd62 + wyz*tempd63 + wxz*&
+&           tempd64 + mut*tauyzd
+          eyzd = -tauyzd
+          tauxxsd = wzx*tempd61 + wyx*tempd64 + mut*tauxxd
           exxd = -tauxxd
           tempd65 = fact*eyzd
-          factd = (wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)*exzd + two*(&
-&           wzx*tauxz+wzy*tauyz)*ezzd + two*(wxy*tauxy+wxz*tauxz)*exxd +&
-&           two*(wyx*tauxy+wyz*tauyz)*eyyd + (wxy*tauyy+wxz*tauyz+wyx*&
-&           tauxx+wyz*tauxz)*exyd + (wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*&
-&           tauyy)*eyzd
-          tempd61 = fact*exzd
-          tauzzd = wyz*tempd65 + wxz*tempd61 + mut*tauzzd
-          tempd64 = fact*exyd
-          tauyyd = wzy*tempd65 + wxy*tempd64 + mut*tauyyd
-          tauxxd = wzx*tempd61 + wyx*tempd64 + mut*tauxxd
-          tempd62 = two*fact*ezzd
-          wzxd = tauxx*tempd61 + tauxz*tempd62 + tauxy*tempd65
-          wzyd = tauxy*tempd61 + tauyz*tempd62 + tauyy*tempd65
-          tempd63 = two*fact*eyyd
-          tauyzd = wxy*tempd61 + wzy*tempd62 + wyz*tempd63 + wxz*tempd64&
-&           + mut*tauyzd
-          wyxd = tauxx*tempd64 + tauxy*tempd63 + tauxz*tempd65
-          wyzd = tauxz*tempd64 - wzyd + tauyz*tempd63 + tauzz*tempd65
+          tauzzsd = wyz*tempd65 + wxz*tempd61 + mut*tauzzd
+          tauyysd = wzy*tempd65 + wxy*tempd64 + mut*tauyyd
+          factd = (wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)*exzd + &
+&           two*(wzx*tauxzs+wzy*tauyzs)*ezzd + two*(wxy*tauxys+wxz*&
+&           tauxzs)*exxd + two*(wyx*tauxys+wyz*tauyzs)*eyyd + (wxy*&
+&           tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)*exyd + (wyx*tauxzs+&
+&           wyz*tauzzs+wzx*tauxys+wzy*tauyys)*eyzd
+          wyxd = tauxxs*tempd64 + tauxys*tempd63 + tauxzs*tempd65
+          wzxd = tauxxs*tempd61 + tauxzs*tempd62 + tauxys*tempd65
+          wzyd = tauxys*tempd61 + tauyzs*tempd62 + tauyys*tempd65
+          wyzd = tauxzs*tempd64 - wzyd + tauyzs*tempd63 + tauzzs*tempd65
           tempd66 = two*fact*exxd
-          tauxzd = wyx*tempd65 + wzx*tempd62 + wxz*tempd66 + wyz*tempd64&
-&           + mut*tauxzd
-          tauxyd = wzx*tempd65 + wyx*tempd63 + wxy*tempd66 + wzy*tempd61&
-&           + mut*tauxyd
-          wxyd = tauyy*tempd64 - wyxd + tauxy*tempd66 + tauyz*tempd61
-          wxzd = tauyz*tempd64 - wzxd + tauxz*tempd66 + tauzz*tempd61
+          tauxzsd = wyx*tempd65 + wzx*tempd62 + wxz*tempd66 + wyz*&
+&           tempd64 + mut*tauxzd
+          tauxysd = wzx*tempd65 + wyx*tempd63 + wxy*tempd66 + wzy*&
+&           tempd61 + mut*tauxyd
+          wxyd = tauyys*tempd64 - wyxd + tauxys*tempd66 + tauyzs*tempd61
+          wxzd = tauyzs*tempd64 - wzxd + tauxzs*tempd66 + tauzzs*tempd61
           v_zd = wyzd
           w_yd = -wyzd
           u_zd = wxzd
@@ -8531,14 +8538,14 @@ branch = myIntStack(myIntPtr)
           w_yd = w_yd + 2*w_y*tempd60
           w_zd = 2*w_z*tempd60
         else
-          mutd = tauxz*tauxzd + tauzz*tauzzd + tauxx*tauxxd + tauyy*&
-&           tauyyd + tauxy*tauxyd + tauyz*tauyzd
-          tauyzd = mut*tauyzd
-          tauxzd = mut*tauxzd
-          tauxyd = mut*tauxyd
-          tauzzd = mut*tauzzd
-          tauyyd = mut*tauyyd
-          tauxxd = mut*tauxxd
+          mutd = tauxzs*tauxzd + tauzzs*tauzzd + tauxxs*tauxxd + tauyys*&
+&           tauyyd + tauxys*tauxyd + tauyzs*tauyzd
+          tauyzsd = mut*tauyzd
+          tauxzsd = mut*tauxzd
+          tauxysd = mut*tauxyd
+          tauzzsd = mut*tauzzd
+          tauyysd = mut*tauyyd
+          tauxxsd = mut*tauxxd
           u_xd = 0.0_8
           u_yd = 0.0_8
           u_zd = 0.0_8
@@ -8549,21 +8556,21 @@ branch = myIntStack(myIntPtr)
           v_yd = 0.0_8
           v_zd = 0.0_8
         end if
-        fracdivd = -tauyyd - tauxxd - tauzzd
+        fracdivd = -tauyysd - tauxxsd - tauzzsd
         tempd47 = twothird*fracdivd
         heatcoefd = q_y*q_yd + q_x*q_xd + q_z*q_zd
         q_zd = heatcoef*q_zd
         q_yd = heatcoef*q_yd
         q_xd = heatcoef*q_xd
-        v_zd = v_zd + tauyzd
-        w_yd = w_yd + tauyzd
-        u_zd = u_zd + tauxzd
-        w_xd = w_xd + tauxzd
-        u_yd = u_yd + tauxyd
-        v_xd = v_xd + tauxyd
-        w_zd = w_zd + tempd47 + two*tauzzd
-        v_yd = v_yd + tempd47 + two*tauyyd
-        u_xd = u_xd + tempd47 + two*tauxxd
+        v_zd = v_zd + tauyzsd
+        w_yd = w_yd + tauyzsd
+        u_zd = u_zd + tauxzsd
+        w_xd = w_xd + tauxzsd
+        u_yd = u_yd + tauxysd
+        v_xd = v_xd + tauxysd
+        w_zd = w_zd + tempd47 + two*tauzzsd
+        v_yd = v_yd + tempd47 + two*tauyysd
+        u_xd = u_xd + tempd47 + two*tauxxsd
         corrd = -(ssy*q_yd) - ssx*q_xd - ssz*q_zd
         q_xd = q_xd + ssx*corrd
         q_yd = q_yd + ssy*corrd
@@ -8757,15 +8764,18 @@ myIntPtr = myIntPtr + 1
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
-! we remove the viscosity from the tau definition since
-! we still need to separate between laminar and turbulent stress for qcr.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = two*u_x - fracdiv
-        tauyy = two*v_y - fracdiv
-        tauzz = two*w_z - fracdiv
-        tauxy = u_y + v_x
-        tauxz = u_z + w_x
-        tauyz = v_z + w_y
+        tauxxs = two*u_x - fracdiv
+        tauyys = two*v_y - fracdiv
+        tauzzs = two*w_z - fracdiv
+        tauxys = u_y + v_x
+        tauxzs = u_z + w_x
+        tauyzs = v_z + w_y
 ! add qcr corrections if necessary
         if (useqcr) then
 ! in the qcr formulation, we add an extra term to the turbulent stress tensor:
@@ -8806,29 +8816,29 @@ myIntPtr = myIntPtr + 1
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz)*two
-          exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
-          exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
-          eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
+          exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+          eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+          ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+          exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+          exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+          eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
 ! apply the total viscosity to the stress tensor and add extra terms
-          tauxx = mut*tauxx - exx
-          tauyy = mut*tauyy - eyy
-          tauzz = mut*tauzz - ezz
-          tauxy = mut*tauxy - exy
-          tauxz = mut*tauxz - exz
-          tauyz = mut*tauyz - eyz
+          tauxx = mut*tauxxs - exx
+          tauyy = mut*tauyys - eyy
+          tauzz = mut*tauzzs - ezz
+          tauxy = mut*tauxys - exy
+          tauxz = mut*tauxzs - exz
+          tauyz = mut*tauyzs - eyz
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 0
         else
 ! just apply the total viscosity to the stress tensor
-          tauxx = mut*tauxx
-          tauyy = mut*tauyy
-          tauzz = mut*tauzz
-          tauxy = mut*tauxy
-          tauxz = mut*tauxz
-          tauyz = mut*tauyz
+          tauxx = mut*tauxxs
+          tauyy = mut*tauyys
+          tauzz = mut*tauzzs
+          tauxy = mut*tauxys
+          tauxz = mut*tauxzs
+          tauyz = mut*tauyzs
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
         end if
@@ -8873,40 +8883,40 @@ myIntPtr = myIntPtr + 1
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
         if (branch .eq. 0) then
-          eyzd = -tauyzd
           exzd = -tauxzd
           exyd = -tauxyd
           ezzd = -tauzzd
           eyyd = -tauyyd
-          mutd = tauxz*tauxzd + tauzz*tauzzd + tauxx*tauxxd + tauyy*&
-&           tauyyd + tauxy*tauxyd + tauyz*tauyzd
+          tempd37 = fact*exzd
+          tempd40 = fact*exyd
+          tempd38 = two*fact*ezzd
+          tempd39 = two*fact*eyyd
+          mutd = tauxzs*tauxzd + tauzzs*tauzzd + tauxxs*tauxxd + tauyys*&
+&           tauyyd + tauxys*tauxyd + tauyzs*tauyzd
+          tauyzsd = wxy*tempd37 + wzy*tempd38 + wyz*tempd39 + wxz*&
+&           tempd40 + mut*tauyzd
+          eyzd = -tauyzd
+          tauxxsd = wzx*tempd37 + wyx*tempd40 + mut*tauxxd
           exxd = -tauxxd
           tempd41 = fact*eyzd
-          factd = (wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)*exzd + two*(&
-&           wzx*tauxz+wzy*tauyz)*ezzd + two*(wxy*tauxy+wxz*tauxz)*exxd +&
-&           two*(wyx*tauxy+wyz*tauyz)*eyyd + (wxy*tauyy+wxz*tauyz+wyx*&
-&           tauxx+wyz*tauxz)*exyd + (wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*&
-&           tauyy)*eyzd
-          tempd37 = fact*exzd
-          tauzzd = wyz*tempd41 + wxz*tempd37 + mut*tauzzd
-          tempd40 = fact*exyd
-          tauyyd = wzy*tempd41 + wxy*tempd40 + mut*tauyyd
-          tauxxd = wzx*tempd37 + wyx*tempd40 + mut*tauxxd
-          tempd38 = two*fact*ezzd
-          wzxd = tauxx*tempd37 + tauxz*tempd38 + tauxy*tempd41
-          wzyd = tauxy*tempd37 + tauyz*tempd38 + tauyy*tempd41
-          tempd39 = two*fact*eyyd
-          tauyzd = wxy*tempd37 + wzy*tempd38 + wyz*tempd39 + wxz*tempd40&
-&           + mut*tauyzd
-          wyxd = tauxx*tempd40 + tauxy*tempd39 + tauxz*tempd41
-          wyzd = tauxz*tempd40 - wzyd + tauyz*tempd39 + tauzz*tempd41
+          tauzzsd = wyz*tempd41 + wxz*tempd37 + mut*tauzzd
+          tauyysd = wzy*tempd41 + wxy*tempd40 + mut*tauyyd
+          factd = (wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)*exzd + &
+&           two*(wzx*tauxzs+wzy*tauyzs)*ezzd + two*(wxy*tauxys+wxz*&
+&           tauxzs)*exxd + two*(wyx*tauxys+wyz*tauyzs)*eyyd + (wxy*&
+&           tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)*exyd + (wyx*tauxzs+&
+&           wyz*tauzzs+wzx*tauxys+wzy*tauyys)*eyzd
+          wyxd = tauxxs*tempd40 + tauxys*tempd39 + tauxzs*tempd41
+          wzxd = tauxxs*tempd37 + tauxzs*tempd38 + tauxys*tempd41
+          wzyd = tauxys*tempd37 + tauyzs*tempd38 + tauyys*tempd41
+          wyzd = tauxzs*tempd40 - wzyd + tauyzs*tempd39 + tauzzs*tempd41
           tempd42 = two*fact*exxd
-          tauxzd = wyx*tempd41 + wzx*tempd38 + wxz*tempd42 + wyz*tempd40&
-&           + mut*tauxzd
-          tauxyd = wzx*tempd41 + wyx*tempd39 + wxy*tempd42 + wzy*tempd37&
-&           + mut*tauxyd
-          wxyd = tauyy*tempd40 - wyxd + tauxy*tempd42 + tauyz*tempd37
-          wxzd = tauyz*tempd40 - wzxd + tauxz*tempd42 + tauzz*tempd37
+          tauxzsd = wyx*tempd41 + wzx*tempd38 + wxz*tempd42 + wyz*&
+&           tempd40 + mut*tauxzd
+          tauxysd = wzx*tempd41 + wyx*tempd39 + wxy*tempd42 + wzy*&
+&           tempd37 + mut*tauxyd
+          wxyd = tauyys*tempd40 - wyxd + tauxys*tempd42 + tauyzs*tempd37
+          wxzd = tauyzs*tempd40 - wzxd + tauxzs*tempd42 + tauzzs*tempd37
           v_zd = wyzd
           w_yd = -wyzd
           u_zd = wxzd
@@ -8936,14 +8946,14 @@ branch = myIntStack(myIntPtr)
           w_yd = w_yd + 2*w_y*tempd36
           w_zd = 2*w_z*tempd36
         else
-          mutd = tauxz*tauxzd + tauzz*tauzzd + tauxx*tauxxd + tauyy*&
-&           tauyyd + tauxy*tauxyd + tauyz*tauyzd
-          tauyzd = mut*tauyzd
-          tauxzd = mut*tauxzd
-          tauxyd = mut*tauxyd
-          tauzzd = mut*tauzzd
-          tauyyd = mut*tauyyd
-          tauxxd = mut*tauxxd
+          mutd = tauxzs*tauxzd + tauzzs*tauzzd + tauxxs*tauxxd + tauyys*&
+&           tauyyd + tauxys*tauxyd + tauyzs*tauyzd
+          tauyzsd = mut*tauyzd
+          tauxzsd = mut*tauxzd
+          tauxysd = mut*tauxyd
+          tauzzsd = mut*tauzzd
+          tauyysd = mut*tauyyd
+          tauxxsd = mut*tauxxd
           u_xd = 0.0_8
           u_yd = 0.0_8
           u_zd = 0.0_8
@@ -8954,21 +8964,21 @@ branch = myIntStack(myIntPtr)
           v_yd = 0.0_8
           v_zd = 0.0_8
         end if
-        fracdivd = -tauyyd - tauxxd - tauzzd
+        fracdivd = -tauyysd - tauxxsd - tauzzsd
         tempd23 = twothird*fracdivd
         heatcoefd = q_y*q_yd + q_x*q_xd + q_z*q_zd
         q_zd = heatcoef*q_zd
         q_yd = heatcoef*q_yd
         q_xd = heatcoef*q_xd
-        v_zd = v_zd + tauyzd
-        w_yd = w_yd + tauyzd
-        u_zd = u_zd + tauxzd
-        w_xd = w_xd + tauxzd
-        u_yd = u_yd + tauxyd
-        v_xd = v_xd + tauxyd
-        w_zd = w_zd + tempd23 + two*tauzzd
-        v_yd = v_yd + tempd23 + two*tauyyd
-        u_xd = u_xd + tempd23 + two*tauxxd
+        v_zd = v_zd + tauyzsd
+        w_yd = w_yd + tauyzsd
+        u_zd = u_zd + tauxzsd
+        w_xd = w_xd + tauxzsd
+        u_yd = u_yd + tauxysd
+        v_xd = v_xd + tauxysd
+        w_zd = w_zd + tempd23 + two*tauzzsd
+        v_yd = v_yd + tempd23 + two*tauyysd
+        u_xd = u_xd + tempd23 + two*tauxxsd
         corrd = -(ssy*q_yd) - ssx*q_xd - ssz*q_zd
         q_xd = q_xd + ssx*corrd
         q_yd = q_yd + ssy*corrd
@@ -9165,15 +9175,18 @@ myIntPtr = myIntPtr + 1
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
-! we remove the viscosity from the tau definition since
-! we still need to separate between laminar and turbulent stress for qcr.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = two*u_x - fracdiv
-        tauyy = two*v_y - fracdiv
-        tauzz = two*w_z - fracdiv
-        tauxy = u_y + v_x
-        tauxz = u_z + w_x
-        tauyz = v_z + w_y
+        tauxxs = two*u_x - fracdiv
+        tauyys = two*v_y - fracdiv
+        tauzzs = two*w_z - fracdiv
+        tauxys = u_y + v_x
+        tauxzs = u_z + w_x
+        tauyzs = v_z + w_y
 ! add qcr corrections if necessary
         if (useqcr) then
 ! in the qcr formulation, we add an extra term to the turbulent stress tensor:
@@ -9214,29 +9227,29 @@ myIntPtr = myIntPtr + 1
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz)*two
-          exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
-          exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
-          eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
+          exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+          eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+          ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+          exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+          exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+          eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
 ! apply the total viscosity to the stress tensor and add extra terms
-          tauxx = mut*tauxx - exx
-          tauyy = mut*tauyy - eyy
-          tauzz = mut*tauzz - ezz
-          tauxy = mut*tauxy - exy
-          tauxz = mut*tauxz - exz
-          tauyz = mut*tauyz - eyz
+          tauxx = mut*tauxxs - exx
+          tauyy = mut*tauyys - eyy
+          tauzz = mut*tauzzs - ezz
+          tauxy = mut*tauxys - exy
+          tauxz = mut*tauxzs - exz
+          tauyz = mut*tauyzs - eyz
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 0
         else
 ! just apply the total viscosity to the stress tensor
-          tauxx = mut*tauxx
-          tauyy = mut*tauyy
-          tauzz = mut*tauzz
-          tauxy = mut*tauxy
-          tauxz = mut*tauxz
-          tauyz = mut*tauyz
+          tauxx = mut*tauxxs
+          tauyy = mut*tauyys
+          tauzz = mut*tauzzs
+          tauxy = mut*tauxys
+          tauxz = mut*tauxzs
+          tauyz = mut*tauyzs
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
         end if
@@ -9281,40 +9294,40 @@ myIntPtr = myIntPtr + 1
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
         if (branch .eq. 0) then
-          eyzd = -tauyzd
           exzd = -tauxzd
           exyd = -tauxyd
           ezzd = -tauzzd
           eyyd = -tauyyd
-          mutd = tauxz*tauxzd + tauzz*tauzzd + tauxx*tauxxd + tauyy*&
-&           tauyyd + tauxy*tauxyd + tauyz*tauyzd
+          tempd13 = fact*exzd
+          tempd16 = fact*exyd
+          tempd14 = two*fact*ezzd
+          tempd15 = two*fact*eyyd
+          mutd = tauxzs*tauxzd + tauzzs*tauzzd + tauxxs*tauxxd + tauyys*&
+&           tauyyd + tauxys*tauxyd + tauyzs*tauyzd
+          tauyzsd = wxy*tempd13 + wzy*tempd14 + wyz*tempd15 + wxz*&
+&           tempd16 + mut*tauyzd
+          eyzd = -tauyzd
+          tauxxsd = wzx*tempd13 + wyx*tempd16 + mut*tauxxd
           exxd = -tauxxd
           tempd17 = fact*eyzd
-          factd = (wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)*exzd + two*(&
-&           wzx*tauxz+wzy*tauyz)*ezzd + two*(wxy*tauxy+wxz*tauxz)*exxd +&
-&           two*(wyx*tauxy+wyz*tauyz)*eyyd + (wxy*tauyy+wxz*tauyz+wyx*&
-&           tauxx+wyz*tauxz)*exyd + (wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*&
-&           tauyy)*eyzd
-          tempd13 = fact*exzd
-          tauzzd = wyz*tempd17 + wxz*tempd13 + mut*tauzzd
-          tempd16 = fact*exyd
-          tauyyd = wzy*tempd17 + wxy*tempd16 + mut*tauyyd
-          tauxxd = wzx*tempd13 + wyx*tempd16 + mut*tauxxd
-          tempd14 = two*fact*ezzd
-          wzxd = tauxx*tempd13 + tauxz*tempd14 + tauxy*tempd17
-          wzyd = tauxy*tempd13 + tauyz*tempd14 + tauyy*tempd17
-          tempd15 = two*fact*eyyd
-          tauyzd = wxy*tempd13 + wzy*tempd14 + wyz*tempd15 + wxz*tempd16&
-&           + mut*tauyzd
-          wyxd = tauxx*tempd16 + tauxy*tempd15 + tauxz*tempd17
-          wyzd = tauxz*tempd16 - wzyd + tauyz*tempd15 + tauzz*tempd17
+          tauzzsd = wyz*tempd17 + wxz*tempd13 + mut*tauzzd
+          tauyysd = wzy*tempd17 + wxy*tempd16 + mut*tauyyd
+          factd = (wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)*exzd + &
+&           two*(wzx*tauxzs+wzy*tauyzs)*ezzd + two*(wxy*tauxys+wxz*&
+&           tauxzs)*exxd + two*(wyx*tauxys+wyz*tauyzs)*eyyd + (wxy*&
+&           tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)*exyd + (wyx*tauxzs+&
+&           wyz*tauzzs+wzx*tauxys+wzy*tauyys)*eyzd
+          wyxd = tauxxs*tempd16 + tauxys*tempd15 + tauxzs*tempd17
+          wzxd = tauxxs*tempd13 + tauxzs*tempd14 + tauxys*tempd17
+          wzyd = tauxys*tempd13 + tauyzs*tempd14 + tauyys*tempd17
+          wyzd = tauxzs*tempd16 - wzyd + tauyzs*tempd15 + tauzzs*tempd17
           tempd18 = two*fact*exxd
-          tauxzd = wyx*tempd17 + wzx*tempd14 + wxz*tempd18 + wyz*tempd16&
-&           + mut*tauxzd
-          tauxyd = wzx*tempd17 + wyx*tempd15 + wxy*tempd18 + wzy*tempd13&
-&           + mut*tauxyd
-          wxyd = tauyy*tempd16 - wyxd + tauxy*tempd18 + tauyz*tempd13
-          wxzd = tauyz*tempd16 - wzxd + tauxz*tempd18 + tauzz*tempd13
+          tauxzsd = wyx*tempd17 + wzx*tempd14 + wxz*tempd18 + wyz*&
+&           tempd16 + mut*tauxzd
+          tauxysd = wzx*tempd17 + wyx*tempd15 + wxy*tempd18 + wzy*&
+&           tempd13 + mut*tauxyd
+          wxyd = tauyys*tempd16 - wyxd + tauxys*tempd18 + tauyzs*tempd13
+          wxzd = tauyzs*tempd16 - wzxd + tauxzs*tempd18 + tauzzs*tempd13
           v_zd = wyzd
           w_yd = -wyzd
           u_zd = wxzd
@@ -9344,14 +9357,14 @@ branch = myIntStack(myIntPtr)
           w_yd = w_yd + 2*w_y*tempd12
           w_zd = 2*w_z*tempd12
         else
-          mutd = tauxz*tauxzd + tauzz*tauzzd + tauxx*tauxxd + tauyy*&
-&           tauyyd + tauxy*tauxyd + tauyz*tauyzd
-          tauyzd = mut*tauyzd
-          tauxzd = mut*tauxzd
-          tauxyd = mut*tauxyd
-          tauzzd = mut*tauzzd
-          tauyyd = mut*tauyyd
-          tauxxd = mut*tauxxd
+          mutd = tauxzs*tauxzd + tauzzs*tauzzd + tauxxs*tauxxd + tauyys*&
+&           tauyyd + tauxys*tauxyd + tauyzs*tauyzd
+          tauyzsd = mut*tauyzd
+          tauxzsd = mut*tauxzd
+          tauxysd = mut*tauxyd
+          tauzzsd = mut*tauzzd
+          tauyysd = mut*tauyyd
+          tauxxsd = mut*tauxxd
           u_xd = 0.0_8
           u_yd = 0.0_8
           u_zd = 0.0_8
@@ -9362,21 +9375,21 @@ branch = myIntStack(myIntPtr)
           v_yd = 0.0_8
           v_zd = 0.0_8
         end if
-        fracdivd = -tauyyd - tauxxd - tauzzd
+        fracdivd = -tauyysd - tauxxsd - tauzzsd
         tempd = twothird*fracdivd
         heatcoefd = q_y*q_yd + q_x*q_xd + q_z*q_zd
         q_zd = heatcoef*q_zd
         q_yd = heatcoef*q_yd
         q_xd = heatcoef*q_xd
-        v_zd = v_zd + tauyzd
-        w_yd = w_yd + tauyzd
-        u_zd = u_zd + tauxzd
-        w_xd = w_xd + tauxzd
-        u_yd = u_yd + tauxyd
-        v_xd = v_xd + tauxyd
-        w_zd = w_zd + tempd + two*tauzzd
-        v_yd = v_yd + tempd + two*tauyyd
-        u_xd = u_xd + tempd + two*tauxxd
+        v_zd = v_zd + tauyzsd
+        w_yd = w_yd + tauyzsd
+        u_zd = u_zd + tauxzsd
+        w_xd = w_xd + tauxzsd
+        u_yd = u_yd + tauxysd
+        v_xd = v_xd + tauxysd
+        w_zd = w_zd + tempd + two*tauzzsd
+        v_yd = v_yd + tempd + two*tauyysd
+        u_xd = u_xd + tempd + two*tauxxsd
         corrd = -(ssy*q_yd) - ssx*q_xd - ssz*q_zd
         q_xd = q_xd + ssx*corrd
         q_yd = q_yd + ssy*corrd
@@ -9506,6 +9519,8 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: corr, ssx, ssy, ssz, ss, fracdiv
     real(kind=realtype) :: tauxx, tauyy, tauzz
     real(kind=realtype) :: tauxy, tauxz, tauyz
+    real(kind=realtype) :: tauxxs, tauyys, tauzzs
+    real(kind=realtype) :: tauxys, tauxzs, tauyzs
     real(kind=realtype) :: exx, eyy, ezz
     real(kind=realtype) :: exy, exz, eyz
     real(kind=realtype) :: wxy, wxz, wyz, wyx, wzx, wzy
@@ -9630,15 +9645,18 @@ branch = myIntStack(myIntPtr)
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
-! we remove the viscosity from the tau definition since
-! we still need to separate between laminar and turbulent stress for qcr.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = two*u_x - fracdiv
-        tauyy = two*v_y - fracdiv
-        tauzz = two*w_z - fracdiv
-        tauxy = u_y + v_x
-        tauxz = u_z + w_x
-        tauyz = v_z + w_y
+        tauxxs = two*u_x - fracdiv
+        tauyys = two*v_y - fracdiv
+        tauzzs = two*w_z - fracdiv
+        tauxys = u_y + v_x
+        tauxzs = u_z + w_x
+        tauyzs = v_z + w_y
         q_x = heatcoef*q_x
         q_y = heatcoef*q_y
         q_z = heatcoef*q_z
@@ -9678,27 +9696,27 @@ branch = myIntStack(myIntPtr)
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz)*two
-          exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
-          exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
-          eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
+          exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+          eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+          ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+          exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+          exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+          eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
 ! apply the total viscosity to the stress tensor and add extra terms
-          tauxx = mut*tauxx - exx
-          tauyy = mut*tauyy - eyy
-          tauzz = mut*tauzz - ezz
-          tauxy = mut*tauxy - exy
-          tauxz = mut*tauxz - exz
-          tauyz = mut*tauyz - eyz
+          tauxx = mut*tauxxs - exx
+          tauyy = mut*tauyys - eyy
+          tauzz = mut*tauzzs - ezz
+          tauxy = mut*tauxys - exy
+          tauxz = mut*tauxzs - exz
+          tauyz = mut*tauyzs - eyz
         else
 ! just apply the total viscosity to the stress tensor
-          tauxx = mut*tauxx
-          tauyy = mut*tauyy
-          tauzz = mut*tauzz
-          tauxy = mut*tauxy
-          tauxz = mut*tauxz
-          tauyz = mut*tauyz
+          tauxx = mut*tauxxs
+          tauyy = mut*tauyys
+          tauzz = mut*tauzzs
+          tauxy = mut*tauxys
+          tauxz = mut*tauxzs
+          tauyz = mut*tauyzs
         end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
@@ -9851,15 +9869,18 @@ branch = myIntStack(myIntPtr)
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
-! we remove the viscosity from the tau definition since
-! we still need to separate between laminar and turbulent stress for qcr.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = two*u_x - fracdiv
-        tauyy = two*v_y - fracdiv
-        tauzz = two*w_z - fracdiv
-        tauxy = u_y + v_x
-        tauxz = u_z + w_x
-        tauyz = v_z + w_y
+        tauxxs = two*u_x - fracdiv
+        tauyys = two*v_y - fracdiv
+        tauzzs = two*w_z - fracdiv
+        tauxys = u_y + v_x
+        tauxzs = u_z + w_x
+        tauyzs = v_z + w_y
         q_x = heatcoef*q_x
         q_y = heatcoef*q_y
         q_z = heatcoef*q_z
@@ -9899,27 +9920,27 @@ branch = myIntStack(myIntPtr)
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz)*two
-          exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
-          exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
-          eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
+          exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+          eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+          ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+          exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+          exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+          eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
 ! apply the total viscosity to the stress tensor and add extra terms
-          tauxx = mut*tauxx - exx
-          tauyy = mut*tauyy - eyy
-          tauzz = mut*tauzz - ezz
-          tauxy = mut*tauxy - exy
-          tauxz = mut*tauxz - exz
-          tauyz = mut*tauyz - eyz
+          tauxx = mut*tauxxs - exx
+          tauyy = mut*tauyys - eyy
+          tauzz = mut*tauzzs - ezz
+          tauxy = mut*tauxys - exy
+          tauxz = mut*tauxzs - exz
+          tauyz = mut*tauyzs - eyz
         else
 ! just apply the total viscosity to the stress tensor
-          tauxx = mut*tauxx
-          tauyy = mut*tauyy
-          tauzz = mut*tauzz
-          tauxy = mut*tauxy
-          tauxz = mut*tauxz
-          tauyz = mut*tauyz
+          tauxx = mut*tauxxs
+          tauyy = mut*tauyys
+          tauzz = mut*tauzzs
+          tauxy = mut*tauxys
+          tauxz = mut*tauxzs
+          tauyz = mut*tauyzs
         end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
@@ -10069,15 +10090,18 @@ branch = myIntStack(myIntPtr)
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
-! we remove the viscosity from the tau definition since
-! we still need to separate between laminar and turbulent stress for qcr.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = two*u_x - fracdiv
-        tauyy = two*v_y - fracdiv
-        tauzz = two*w_z - fracdiv
-        tauxy = u_y + v_x
-        tauxz = u_z + w_x
-        tauyz = v_z + w_y
+        tauxxs = two*u_x - fracdiv
+        tauyys = two*v_y - fracdiv
+        tauzzs = two*w_z - fracdiv
+        tauxys = u_y + v_x
+        tauxzs = u_z + w_x
+        tauyzs = v_z + w_y
         q_x = heatcoef*q_x
         q_y = heatcoef*q_y
         q_z = heatcoef*q_z
@@ -10117,27 +10141,27 @@ branch = myIntStack(myIntPtr)
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz)*two
-          exy = fact*(wxy*tauyy+wxz*tauyz+wyx*tauxx+wyz*tauxz)
-          exz = fact*(wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy)
-          eyz = fact*(wyx*tauxz+wyz*tauzz+wzx*tauxy+wzy*tauyy)
+          exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+          eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+          ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+          exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+          exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+          eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
 ! apply the total viscosity to the stress tensor and add extra terms
-          tauxx = mut*tauxx - exx
-          tauyy = mut*tauyy - eyy
-          tauzz = mut*tauzz - ezz
-          tauxy = mut*tauxy - exy
-          tauxz = mut*tauxz - exz
-          tauyz = mut*tauyz - eyz
+          tauxx = mut*tauxxs - exx
+          tauyy = mut*tauyys - eyy
+          tauzz = mut*tauzzs - ezz
+          tauxy = mut*tauxys - exy
+          tauxz = mut*tauxzs - exz
+          tauyz = mut*tauyzs - eyz
         else
 ! just apply the total viscosity to the stress tensor
-          tauxx = mut*tauxx
-          tauyy = mut*tauyy
-          tauzz = mut*tauzz
-          tauxy = mut*tauxy
-          tauxz = mut*tauxz
-          tauyz = mut*tauyz
+          tauxx = mut*tauxxs
+          tauyy = mut*tauyys
+          tauzz = mut*tauzzs
+          tauxy = mut*tauxys
+          tauxz = mut*tauxzs
+          tauyz = mut*tauyzs
         end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
