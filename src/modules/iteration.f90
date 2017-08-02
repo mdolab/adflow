@@ -92,9 +92,10 @@
        ! much work.
        integer(kind=intType) :: approxTotalIts
        
-       ! Variable for monitoring the current CFL depending on the type
-       ! of iteration
-       real(kind=realTYpe) :: CFLMonitor
+       ! Variables for monitoring the current CFL and step depending
+       ! on the type of iteration
+       real(kind=realType) :: CFLMonitor
+       real(kind=realTYpe) :: stepMonitor
 
        ! Added by HDN
        ! nALEMeshes:                Number of ALE levels for intermediate mesh

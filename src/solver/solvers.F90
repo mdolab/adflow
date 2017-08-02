@@ -909,7 +909,7 @@ contains
          nCyclesCoarse, nMGSteps, nUpdateBleeds, printIterations, rkReset
     use iteration, only : cycling, approxTotalIts, converged, CFLMonitor, &
          groundLevel, iterTot, iterType, currentLevel, rhoRes0, totalR, &
-         rhoResStart, totalR0, totalRFinal, totalRStart
+         rhoResStart, totalR0, totalRFinal, totalRStart, stepMonitor
     use killSignals, only : globalSignal, localSignal, noSignal, routineFailed, signalWrite, &
          signalWriteQuit
     use monitor, only : writeGrid, writeSurface, writeVolume
@@ -1045,6 +1045,7 @@ contains
           ! Coarse grids do RK/DADI always
           call executeMGCycle
           CFLMonitor = CFLCoarse
+          stepMonitor = 1.0
        else
           if (.not. useANKSolver .and. .not. useNKSolver .or. (iterTot <= minIterNum .and. rkreset)) then 
 
@@ -1052,7 +1053,7 @@ contains
 
              call executeMGCycle
              CFLMonitor = CFL
-
+             stepMonitor = 1.0
           else if (useANKSolver .and. .not. useNKSolver) then 
 
              ! Approx solver, no NKSolver
@@ -1061,12 +1062,13 @@ contains
 
                 call executeMGCycle
                 CFLMonitor = CFL
-
+                stepMonitor = 1.0 
              else
                 call ANKStep(firstANK)
                 firstANK = .False.
                 iterType = "   ANK"
                 CFLMonitor = ANK_CFL
+
              end if
 
           else if (.not. useANKSolver .and. useNKSolver) then 
@@ -1077,12 +1079,14 @@ contains
 
                 call executeMGCycle
                 CFLMonitor = CFL
+                stepMonitor = 1.0  
              else
 
                 call NKStep(firstNK)
                 firstNK = .False.
                 iterType = "    NK"
                 CFLMonitor = NK_CFL
+
              end if
 
           else if (useANKSolver .and. useNKSolver) then 
@@ -1093,7 +1097,7 @@ contains
 
                 call executeMGCycle
                 CFLMonitor = CFL
-
+                stepMonitor = 1.0  
              else if (totalR <= ANK_switchTol*totalR0 .and. &
                   totalR > NK_switchTol*totalR0) then 
 
@@ -1210,7 +1214,7 @@ contains
          showCPU, monRef, convArray, timeUnsteadyRestart, timeArray, timeStepUnsteady, &
          timeUnsteady, nTimeStepsRestart
     use iteration, only : groundLevel, currentLevel, iterTot, iterType, approxTotalIts, &
-         CFLMonitor, t0solver, converged
+         CFLMonitor, stepMonitor, t0solver, converged
     use killSignals, only : routineFailed, fromPython
     use iteration, only : rhoRes, rhoResStart, totalR, totalRStart, totalR0
     use overset, only: oversetPresent
@@ -1528,6 +1532,12 @@ contains
 #else
                 write(*,"(e10.2,1x)",advance="no") real(CFLMonitor)
 #endif
+#ifndef USE_COMPLEX
+                write(*,"(f4.2,1x)",advance="no") stepMonitor
+#else
+                write(*,"(f4.2,1x)",advance="no") real(stepMonitor)
+#endif
+
              end if
 
              if( showCPU ) then 
