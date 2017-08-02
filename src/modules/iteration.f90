@@ -3,7 +3,7 @@
 !       This module contains the iteration parameters mainly used in   
 !       solver.                                                        
 !
-       use constants, only: intType, realType
+       use constants, only: intType, realType, alwaysRealType
        implicit none
 
        ! groundLevel:  Current ground level of the computation. Needed
@@ -95,7 +95,7 @@
        ! Variables for monitoring the current CFL and step depending
        ! on the type of iteration
        real(kind=realType) :: CFLMonitor
-       real(kind=realTYpe) :: stepMonitor
+       real(kind=alwaysRealType) :: stepMonitor
 
        ! Added by HDN
        ! nALEMeshes:                Number of ALE levels for intermediate mesh
