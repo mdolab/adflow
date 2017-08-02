@@ -11,8 +11,8 @@ module NKSolver
   ! PETSc Matrices:
   ! dRdw: This is the actual matrix-free matrix computed with FD
   ! dRdwPre: The preconditoner matrix for NK method. This matrix is stored.
-  ! dRdwPseudo: Shell matrix used with the pseudo-transient 
-  !             continuation method. 
+  ! dRdwPseudo: Shell matrix used with the pseudo-transient
+  !             continuation method.
 
   Mat  dRdw, dRdwPre, dRdwPseudo
 
@@ -38,7 +38,7 @@ module NKSolver
   integer(kind=intType) :: NK_innerPreConIts
   integer(kind=intType) :: NK_outerPreConIts
   integer(kind=intType) :: NK_LS
-  logical :: NK_useEW 
+  logical :: NK_useEW
   logical :: NK_ADPC
   logical :: NK_viscPC
   real(kind=realType) :: NK_CFL0
@@ -115,7 +115,7 @@ contains
        call VecSetBlockSize(wVec, nw, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
-       call VecSetType(wVec, VECMPI, ierr) 
+       call VecSetType(wVec, VECMPI, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
        !  Create duplicates for residual and delta
@@ -245,7 +245,7 @@ contains
 
     ! Get the residual cooresponding to the free-stream on the fine
     ! grid-level --- This saves the current values in W, P, rlv and rev
-    ! and restores them when finished. 
+    ! and restores them when finished.
 
     call getInfoSize(n)
     allocate(tmp(n))
@@ -281,7 +281,7 @@ contains
   subroutine getCurrentResidual(rhoRes,totalRRes)
 
     use constants
-    use communication, only : adflow_comm_world 
+    use communication, only : adflow_comm_world
     use block, only : nCellGlobal
     use blockPointers, only : nDom
     use inputTimeSpectral, only : nTimeIntervalsSpectral
@@ -306,7 +306,7 @@ contains
     end do
 
     ! This is the same calc as in convergence info, just for rehoRes and
-    ! totalR only. 
+    ! totalR only.
     call mpi_allreduce(monLoc, monGlob, nMonSum, adflow_real, &
          mpi_sum, ADflow_comm_world, ierr)
 
@@ -330,7 +330,7 @@ contains
     integer(kind=intType) :: i, j, k, l, ii, nn, sps
     real(kind=realType) :: dt
     real(kind=realType), pointer :: diag(:)
- 
+
 
     ! Dummy assembly begin/end calls for the matrix-free Matrx
     call MatAssemblyBegin(dRdw, MAT_FINAL_ASSEMBLY, ierr)
@@ -410,16 +410,16 @@ contains
   subroutine destroyNKsolver
 
     ! Destroy all the PETSc objects for the Newton-Krylov
-    ! solver. 
+    ! solver.
 
     use constants
     use utils, only: EChk
     implicit none
     integer(kind=intType) :: ierr
 
-    if (NK_solverSetup) then 
+    if (NK_solverSetup) then
 
-       call MatDestroy(dRdw, ierr) 
+       call MatDestroy(dRdw, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
        call MatDestroy(dRdwPre, ierr)
@@ -428,10 +428,10 @@ contains
        call MatDestroy(dRdwPseudo, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
-       call VecDestroy(wVec, ierr)  
+       call VecDestroy(wVec, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
-       call VecDestroy(rVec, ierr) 
+       call VecDestroy(rVec, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
        call VecDestroy(deltaW, ierr)
@@ -458,7 +458,7 @@ contains
     use inputPhysics, only : equations
     use flowVarRefState, only :  nw, nwf
     use inputIteration, only : L2conv
-    use iteration, only : approxTotalIts, totalR0
+    use iteration, only : approxTotalIts, totalR0, stepMonitor
     use utils, only : EChk
     use killSignals, only : routineFailed
     implicit none
@@ -473,7 +473,7 @@ contains
     real(kind=alwaysrealType) :: fnorm, ynorm, gnorm
     logical :: flag
 
-    if (firstCall) then 
+    if (firstCall) then
        call setupNKSolver()
 
        ! Copy the adflow 'w' into the petsc wVec
@@ -511,7 +511,7 @@ contains
     call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_OBJECT, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    if (NK_iter == 0 .or. .not. NK_useEW) then 
+    if (NK_iter == 0 .or. .not. NK_useEW) then
        rtol = NK_rtolInit
     else
        call getEWTol(norm, oldNorm, rtolLast, rtol)
@@ -521,8 +521,8 @@ contains
     oldNorm = norm
     rtolLast = rtol
 
-    ! Set all tolerances for linear solver. 
-    
+    ! Set all tolerances for linear solver.
+
     ! The 0.01 requires some explaination: The linear residual is
     ! roughly the same magnitude as the non-linear one. However, it
     ! very rare situations, it can happen that the non-linear residual
@@ -553,14 +553,14 @@ contains
 
     nfevals = 0
     if (NK_LS == noLineSearch) then
-       call LSNone(wVec, rVec, g, deltaW, work, nfevals, flag)
+       call LSNone(wVec, rVec, g, deltaW, work, nfevals, flag, stepMonitor)
     else if(NK_LS == cubicLineSearch) then
        call LSCubic(wVec, rVec, g, deltaW, work, fnorm, ynorm, gnorm, &
-            nfevals, flag)
+            nfevals, flag, stepMonitor)
     else if (NK_LS == nonMonotoneLineSearch) then
        iter_m = min(iter_m+1, mMax)
        call LSNM(wVec, rVec, g, deltaW, work, fnorm, ynorm, gnorm, &
-            nfevals, flag)
+            nfevals, flag, stepMonitor)
     end if
 
     if (.not. flag) then
@@ -586,7 +586,7 @@ contains
 
   end subroutine NKStep
 
-  subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
+  subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag, lambda)
 
     use constants
     use utils, only : EChk
@@ -606,9 +606,9 @@ contains
     integer(kind=intType) :: nfevals
     !   Note that for line search purposes we work with with the related
     !   minimization problem:
-    !      min  z(x):  R^n -> R, 
+    !      min  z(x):  R^n -> R,
     !   where z(x) = .5 * fnorm*fnorm, and fnorm = || f ||_2.
-    !         
+    !
 
     real(kind=realType) :: initslope, lambdaprev, gnormprev, a, b, d, t1, t2
     real(kind=alwaysRealType) :: minlambda, lambda, lambdatemp
@@ -619,8 +619,8 @@ contains
     alpha		= 1.e-2_realType
     minlambda     = 1.e-7_realType
     nfevals = 0
-    flag = .True. 
-
+    flag = .True.
+    lambda     = 1.0_realType
     ! Compute the two norms we need:
     call VecNorm(y, NORM_2, ynorm, ierr)
     call EChk(ierr, __FILE__, __LINE__)
@@ -646,20 +646,20 @@ contains
     if (initslope == 0.0_realType) then
        initslope = -1.0_realType
     end if
-    call VecWAXPY(w, -one, y, x, ierr)
+    call VecWAXPY(w, -lambda, y, x, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Compute Function:
     call setW(w)
     call computeResidualNK()
-    call setRVec(g)  
+    call setRVec(g)
 
     nfevals = nfevals + 1
 
     call VecNorm(g, NORM_2, gnorm, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    if (isnan(gnorm)) then 
+    if (isnan(gnorm)) then
        ! Special testing for nans
        lambda = 0.1
        backtrack: do iter=1, 10
@@ -683,7 +683,7 @@ contains
           call VecNorm(g, NORM_2, gnorm, ierr)
           call EChk(ierr, __FILE__, __LINE__)
 
-          if (isnan(gnorm)) then 
+          if (isnan(gnorm)) then
              ! Just apply the step limit and keep going (back to the loop start)
              lambda = lambda * .1
           else
@@ -694,12 +694,12 @@ contains
        return
     end if
 
-    ! Sufficient reduction 
+    ! Sufficient reduction
     if (0.5_realType*gnorm*gnorm <= 0.5_realType*fnorm*fnorm + alpha*initslope) then
        goto 100
     end if
 
-    ! Fit points with quadratic 
+    ! Fit points with quadratic
     lambda     = 1.0_realType
     lambdatemp = -initslope/(gnorm*gnorm - fnorm*fnorm - 2.0_realType*initslope)
     lambdaprev = lambda
@@ -710,7 +710,7 @@ contains
 
     if (lambdatemp <= .1_realType*lambda) then
        lambda = .1_realType*lambda
-    else                 
+    else
        lambda = lambdatemp
     end if
 
@@ -736,15 +736,15 @@ contains
     end if
     call EChk(ierr, __FILE__, __LINE__)
 
-    ! Sufficient reduction 
+    ! Sufficient reduction
     if (0.5_realType*gnorm*gnorm <= 0.5_realType*fnorm*fnorm + lambda*alpha*initslope) then
        goto 100
     end if
 
-    ! Fit points with cubic 
-    cubic_loop: do while (.True.) 
+    ! Fit points with cubic
+    cubic_loop: do while (.True.)
 
-       if (lambda <= minlambda) then 
+       if (lambda <= minlambda) then
           flag = .False.
           exit cubic_loop
        end if
@@ -772,7 +772,7 @@ contains
        end if
        if (lambdatemp <= .1_realType*lambda) then
           lambda = .1_realType*lambda
-       else           
+       else
           lambda = lambdatemp
        end if
 
@@ -807,7 +807,7 @@ contains
 
   end subroutine LSCubic
 
-  subroutine LSNone(x, f, g, y, w, nfevals, flag)
+  subroutine LSNone(x, f, g, y, w, nfevals, flag, step)
 
     use constants
     use utils, only : EChk
@@ -824,7 +824,8 @@ contains
     integer(kind=intType) :: nfevals
     integer(kind=intType) :: ierr
     logical :: flag
-    flag = .True. 
+    real(kind=realType) :: step
+    flag = .True.
     ! We just accept the step and compute the new residual at the new iterate
     nfevals = 0
     call VecWAXPY(w, -one, y, x, ierr)
@@ -836,10 +837,10 @@ contains
     call setRVec(g)
 
     nfevals = nfevals + 1
-
+    step = one
   end subroutine LSNone
 
-  subroutine LSNM(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
+  subroutine LSNM(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag, step)
 
     use constants
     use utils, only : EChk
@@ -854,14 +855,14 @@ contains
     !g    - residual evaluated at new iterate y
 
     real(kind=alwaysRealType) :: fnorm, gnorm, ynorm
-    real(kind=realType) :: alpha
+    real(kind=realType) :: alpha, step
     logical :: flag
     integer(kind=intType) :: nfevals
     !   Note that for line search purposes we work with with the related
     !   minimization problem:
-    !      min  z(x):  R^n -> R, 
+    !      min  z(x):  R^n -> R,
     !   where z(x) = .5 * fnorm*fnorm, and fnorm = || f ||_2.
-    !         
+    !
     real(kind=realType) :: initslope, gamma, sigma,  max_val
     integer(kind=intType) :: ierr, iter, j
 
@@ -870,7 +871,7 @@ contains
     sigma = 0.5_realType
 
     nfevals = 0
-    flag = .True. 
+    flag = .True.
 
     ! Compute the two norms we need:
     call VecNorm(y, NORM_2, ynorm, ierr)
@@ -924,7 +925,7 @@ contains
              max_val = max(max_val, NKLSFuncEvals(j) + alpha*gamma*initSlope)
           end do
 
-          ! Sufficient reduction 
+          ! Sufficient reduction
           if (0.5_realType*gnorm*gnorm <= max_val) then
              exit backtrack
           else
@@ -932,6 +933,7 @@ contains
           end if
        end if
     end do backtrack
+    step = alpha
   end subroutine LSNM
 
   subroutine computeResidualNK()
@@ -940,12 +942,12 @@ contains
     ! actual function that is used for the matrix free matrix-vector
     ! products is FormFunction_mf (see formFunction.F90). This the
     ! routine that actually computes the residual. This works with
-    ! Euler, Laminar and RANS equation modes. 
+    ! Euler, Laminar and RANS equation modes.
 
     ! This function uses the w that is currently stored in the flowDoms
     ! datastructure and leaves the resulting residual dw, in the same
     ! structure. setW() and setRVec() is used in formFunction to
-    ! set/extract these values for communication with PETSc. 
+    ! set/extract these values for communication with PETSc.
 
     use constants
     use blockPointers, only : nDom, ib, jb, kb, p, w, gamma
@@ -977,12 +979,12 @@ contains
     correctForK = .false.
     if(currentLevel <= groundLevel) then
        secondHalo = .true.
-       if (kPresent) then 
+       if (kPresent) then
           correctForK = .True.
        end if
     end if
 
-    ! Recompute pressure on ALL cells 
+    ! Recompute pressure on ALL cells
     spectralLoop: do sps=1, nTimeIntervalsSpectral
        domainsState: do nn=1, nDom
           ! Set the pointers to this block.
@@ -998,9 +1000,9 @@ contains
                         + w(i,j,k,ivz)**2
 
                    p(i,j,k) = gm1*(w(i,j,k,irhoE) &
-                        - half*w(i,j,k,irho)*v2) 
+                        - half*w(i,j,k,irho)*v2)
 
-                   if( correctForK ) then 
+                   if( correctForK ) then
                       p(i, j ,K) = p(i,j, k) + factK*w(i, j, k, irho) &
                            * w(i, j, k, itu1)
                    end if
@@ -1020,7 +1022,7 @@ contains
     ! Apply BCs
     call applyAllBC(secondHalo)
 
-    if (equations == RANSequations) then 
+    if (equations == RANSequations) then
        do nn=1,nDom
           do sps=1,nTimeIntervalsSpectral
              call setPointers(nn, currentLevel, sps)
@@ -1037,12 +1039,12 @@ contains
     ! Need to re-apply the BCs. The reason is that BC halos behind
     ! interpolated cells need to be recomputed with their new
     ! interpolated values from actual compute cells. Only needed for
-    ! overset. 
-    if (oversetPresent) then 
+    ! overset.
+    if (oversetPresent) then
        do sps=1,nTimeIntervalsSpectral
           do nn=1,nDom
              call setPointers(nn, 1, sps)
-             if (equations == RANSequations) then 
+             if (equations == RANSequations) then
                 call BCTurbTreatment
                 call applyAllTurbBCthisblock(.True.)
              end if
@@ -1067,7 +1069,7 @@ contains
     call sourceTerms
 
     ! Actual Residual Calc
-    call residual 
+    call residual
 
   end subroutine computeResidualNK
 
@@ -1095,11 +1097,11 @@ contains
     end if
 
     ! We possibly need to re-form the jacobian
-    if (mod(NK_iter, NK_jacobianLag) == 0) then 
+    if (mod(NK_iter, NK_jacobianLag) == 0) then
        call FormJacobianNK()
     end if
 
-    ! Place the two arrays into two vectos. We reuse 'work' and 'g'. 
+    ! Place the two arrays into two vectos. We reuse 'work' and 'g'.
     call VecPlaceArray(work, in_vec, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
@@ -1299,7 +1301,7 @@ contains
              do j=2,jl
                 do i=2,il
                    do l=1,nw
-                      w(i,j,k,l) = wvec_pointer(ii) 
+                      w(i,j,k,l) = wvec_pointer(ii)
                       ii = ii + 1
                    end do
                 end do
@@ -1330,7 +1332,7 @@ contains
     ! Local Variables
     integer(kind=intType) :: nn,i,j,k,l,counter,sps
 
-    counter = 0 
+    counter = 0
     do nn=1,nDom
        do sps=1,nTimeIntervalsSpectral
           call setPointers(nn,1,sps)
@@ -1367,7 +1369,7 @@ contains
     real(kind=realType) :: ovv
 
     call computeResidualNK()
-    counter = 0 
+    counter = 0
     do nn=1,nDom
        do sps=1,nTimeIntervalsSpectral
           call setPointers(nn,1,sps)
@@ -1404,7 +1406,7 @@ contains
     ! Local Variables
     integer(kind=intType) :: nn,i,j,k,l,counter,sps
 
-    counter = 0 
+    counter = 0
     do nn=1,nDom
        do sps=1,nTimeIntervalsSpectral
           call setPointers(nn,1,sps)
@@ -1433,7 +1435,7 @@ contains
     integer(kind=intType), intent(out) :: iSize
     integer(kind=intType) :: nn, sps, nc
     ! Determine the size of a flat array needed to store w, P, ( and
-    ! rlv, rev if necessary) with full double halos. 
+    ! rlv, rev if necessary) with full double halos.
     iSize = 0
     do nn=1,nDom
        do sps=1,nTimeIntervalsSpectral
@@ -1463,7 +1465,7 @@ contains
     integer(kind=intType), intent(in) :: iSize
     integer(kind=intType) :: nn, counter, i, j, k, l, sps
     ! Determine the size of a flat array needed to store w, P, ( and
-    ! rlv, rev if necessary) with full double halos. 
+    ! rlv, rev if necessary) with full double halos.
     counter = 0
     do nn=1,nDom
        do sps=1,nTimeIntervalsSpectral
@@ -1509,7 +1511,7 @@ contains
     integer(kind=intType), intent(in) :: iSize
     integer(kind=intType) ::  nn, counter, i, j, k, l, sps
     ! Determine the size of a flat array needed to store w, P, ( and
-    ! rlv, rev if necessary) with full double halos. 
+    ! rlv, rev if necessary) with full double halos.
     counter = 0
     do nn=1,nDom
        do sps=1,nTimeIntervalsSpectral
@@ -1523,11 +1525,11 @@ contains
                    end do
 
                    counter = counter + 1
-                   info(counter) = P(i,j,k) 
+                   info(counter) = P(i,j,k)
 
                    if (viscous) then
                       counter = counter + 1
-                      info(counter) = rlv(i,j,k) 
+                      info(counter) = rlv(i,j,k)
                    end if
 
                    if (eddyModel) then
@@ -1548,12 +1550,12 @@ contains
 
     ! There are the default EW Parameters from PETSc. They seem to work well
     !version:           2
-    !rtol_0:  0.300000000000000     
-    !rtol_max:  0.900000000000000     
-    !gamma:   1.00000000000000     
-    !alpha:   1.61803398874989     
-    !alpha2:   1.61803398874989     
-    !threshold:  0.100000000000000     
+    !rtol_0:  0.300000000000000
+    !rtol_max:  0.900000000000000
+    !gamma:   1.00000000000000
+    !alpha:   1.61803398874989
+    !alpha2:   1.61803398874989
+    !threshold:  0.100000000000000
 
     real(kind=alwaysrealType), intent(in) :: norm, old_norm, rtol_last
     real(kind=alwaysrealType), intent(out) :: rtol
@@ -1593,7 +1595,7 @@ module ANKSolver
   Mat  dRdw, dRdwPre
   Vec wVec, rVec, deltaW
   KSP  ANK_KSP
-  
+
   PetscFortranAddr   ctx(1)
 
   ! Options for ANK Solver
@@ -1650,7 +1652,7 @@ contains
 
     if (.not. ANK_solverSetup) then
 
-       if (ANK_useTurbDADI) then ! NK solver for flow variables, DADI for turbulence 
+       if (ANK_useTurbDADI) then ! NK solver for flow variables, DADI for turbulence
           nState = nwf ! don't include turbulent variable
       else ! coupled NK solver for flow and turbulence
           nState = nw ! include turbulent variable
@@ -1667,7 +1669,7 @@ contains
        call VecSetBlockSize(wVec, nState, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
-       call VecSetType(wVec, VECMPI, ierr) 
+       call VecSetType(wVec, VECMPI, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
        !  Create duplicates for residual and delta
@@ -1698,7 +1700,7 @@ contains
        ! subblocks can be passed in in fortran column-oriented format
        call MatSetOption(dRdWPre, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
        call EChk(ierr, __FILE__, __LINE__)
-       
+
        ! Setup Matrix-Free dRdw matrix and its function
        call MatCreateMFFD(ADFLOW_COMM_WORLD, nDimW, nDimW, &
             PETSC_DETERMINE, PETSC_DETERMINE, dRdw, ierr)
@@ -1706,7 +1708,7 @@ contains
 
        call MatMFFDSetFunction(dRdw, FormFunction_mf, ctx, ierr)
        call EChk(ierr, __FILE__, __LINE__)
-       
+
        call MatSetOption(dRdW, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
@@ -1753,7 +1755,7 @@ contains
     tmp = viscPC ! Save what is in viscPC and set to the NKvarible
     viscPC = .False.
 
-    if (ANK_useTurbDADI) then 
+    if (ANK_useTurbDADI) then
        call setupStateResidualMatrix(dRdwPre, useAD, usePC, useTranspose, &
             useObjective, .True., 1_intType)
     else
@@ -1767,16 +1769,16 @@ contains
     viscPC = tmp
 
     ! ----------- Setup Flow KSP ----------
-    
+
     !!! The routine of setting CFL can be done just by petsc functions, may consider changing here !!!
     ! the turbulent cfl can be scaled separately by VecStrideScale, did not help
-    
+
     call VecGetArrayF90(deltaW, diag, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
     ! Calculate the contribution from the time-stepping term
     dt = one/ANK_CFL
-    
+
     if (ANK_useTurbDADI) then
         ! For the segragated solver, no need for scaling, each variable gets the same value
         diag(:) = dt
@@ -1816,7 +1818,7 @@ contains
     kspObjectType = 'gmres'
     globalPCType = 'asm'
     localOrdering = 'rcm'
-    outerPreConIts = 1 
+    outerPreConIts = 1
     ! Setup the KSP using the same code as used for the adjoint
     call setupStandardKSP(ANK_KSP, kspObjectType,  ANK_subSpace, &
          preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
@@ -1831,7 +1833,7 @@ contains
 
   subroutine FormFunction_mf(ctx, wVec, rVec, ierr)
 
-    ! This is the function used for the matrix-free matrix-vector products 
+    ! This is the function used for the matrix-free matrix-vector products
     ! for the GMRES solver used in ANK
 
     use constants
@@ -1853,13 +1855,13 @@ contains
 
     ! get the input vector
     call setWANK(wVec)
-    
+
     ! if DADI is used for turbulence, use flow variables only
     if (ANK_useTurbDADI) then
       call computeResidualANK()
       call setRVecANK(rVec)
     ! if coupled solver is used, use all variables
-    else 
+    else
       call computeResidualNK()
       call setRVec(rVec)
     end if
@@ -1876,10 +1878,10 @@ contains
       ! For the coupled solver, time stepping term for turbulence needs to be scaled
       call VecGetArrayF90(rVec,rvec_pointer,ierr)
       call EChk(ierr,__FILE__,__LINE__)
-      
+
       call VecGetArrayReadF90(wVec,wvec_pointer,ierr)
       call EChk(ierr,__FILE__,__LINE__)
-      
+
       ii = 1
       do nn=1, nDom
          do sps=1, nTimeIntervalsSpectral
@@ -1901,13 +1903,13 @@ contains
             end do
          end do
       end do
-      
+
       call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
       call EChk(ierr,__FILE__,__LINE__)
-      
+
       call VecRestoreArrayReadF90(wVec, wvec_pointer, ierr)
       call EChk(ierr,__FILE__,__LINE__)
-    end if 
+    end if
     ! We don't check an error here, so just pass back zero
     ierr = 0
 
@@ -1916,7 +1918,7 @@ contains
   subroutine destroyANKsolver
 
     ! Destroy all the PETSc objects for the Newton-Krylov
-    ! solver. 
+    ! solver.
 
     use constants
     use utils, only : EChk
@@ -1951,13 +1953,13 @@ contains
 
     ! This is the residual evaluation driver for the ANK solver. It
     ! computes the residual for the mean flow but does not compute the
-    ! turbulent residuals. 
+    ! turbulent residuals.
     use constants
     use blockPointers
     use inputTimeSpectral
     use flowvarrefstate
     use iteration
-    use inputPhysics 
+    use inputPhysics
     use utils, only : setPointers
     use haloExchange, only : whalo2
     use turbUtils, only : computeEddyViscosity
@@ -1981,12 +1983,12 @@ contains
     correctForK = .false.
     if(currentLevel <= groundLevel) then
        secondHalo = .true.
-       if (kPresent) then 
+       if (kPresent) then
           correctForK = .True.
        end if
     end if
 
-    ! Recompute pressure on ALL cells 
+    ! Recompute pressure on ALL cells
     spectralLoop: do sps=1, nTimeIntervalsSpectral
        domainsState: do nn=1, nDom
           ! Set the pointers to this block.
@@ -2002,9 +2004,9 @@ contains
                         + w(i,j,k,ivz)**2
 
                    p(i,j,k) = gm1*(w(i,j,k,irhoE) &
-                        - half*w(i,j,k,irho)*v2) 
+                        - half*w(i,j,k,irho)*v2)
 
-                   if( correctForK ) then 
+                   if( correctForK ) then
                       p(i, j ,K) = p(i,j, k) + factK*w(i, j, k, irho) &
                            * w(i, j, k, itu1)
                    end if
@@ -2031,8 +2033,8 @@ contains
     ! Need to re-apply the BCs. The reason is that BC halos behind
     ! interpolated cells need to be recomputed with their new
     ! interpolated values from actual compute cells. Only needed for
-    ! overset. 
-    if (oversetPresent) then 
+    ! overset.
+    if (oversetPresent) then
        call applyAllBC(secondHalo)
     end if
 
@@ -2044,7 +2046,7 @@ contains
     call sourceTerms
 
     ! Actual Residual Calc
-    call residual 
+    call residual
 
   end subroutine computeResidualANK
 
@@ -2151,7 +2153,7 @@ contains
                 do i=2, il
                    do l=1, nState
                       ii = ii + 1
-                      w(i, j, k, l) = wvec_pointer(ii) 
+                      w(i, j, k, l) = wvec_pointer(ii)
                    end do
                 end do
              end do
@@ -2171,7 +2173,7 @@ contains
     use inputIteration, only : L2conv
     use inputDiscretization, only : lumpedDiss
     use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use iteration, only : approxTotalIts, totalR0, totalR
+    use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor
     use utils, only : EChk
     use turbAPI, only : turbSolveSegregated
     use turbMod, only : secondOrd
@@ -2192,13 +2194,13 @@ contains
 
     ! Enter this check if this is the first ANK step OR we are switching to the coupled ANK solver
     if (firstCall .or. (totalR < ANK_coupledSwitchTol * totalR0 .and. ANK_useTurbDADI)) then
-       
+
        ! If using segragated ANK and below the coupled switch tol, set ANK_useTurbDADI
        ! to .False. to create the PETSc objets required for the coupled ANK solver
        if (totalR < ANK_coupledSwitchTol * totalR0 .and. ANK_useTurbDADI) then
          ANK_useTurbDADI = .False.
        end if
-       
+
        call setupANKSolver()
        call destroyANKSolver()
        call setupANKSolver()
@@ -2208,7 +2210,7 @@ contains
 
        ! Evaluate the residual before we start and put the residual in
        ! 'g', which is what would be the case after a linesearch.
-       if (ANK_useTurbDADI) then 
+       if (ANK_useTurbDADI) then
           call computeResidualANK() ! Only flow residual
           call setRVecANK(rVec)
        else
@@ -2218,11 +2220,11 @@ contains
 
        totalR_old = totalR ! Record the old residual for the first iteration
        rtolLast = ANK_rtol ! Set the previous relative convergence tolerance for the first iteration
-       
+
        if (firstCall) then
          ! Start with the selected fraction of the ANK_StepFactor
          lambda = ANK_stepInit*ANK_StepFactor
-       end if 
+       end if
     else
        ANK_iter = ANK_iter + 1
     end if
@@ -2234,7 +2236,7 @@ contains
     if (mod(ANK_iter, ANK_jacobianLag) == 0) then
        call FormJacobianANK()
     end if
-    
+
     ! Dummy matrix assembly for the matrix-free matrix
     call MatAssemblyBegin(dRdw, MAT_FINAL_ASSEMBLY, ierr)
     call EChk(ierr, __FILE__, __LINE__)
@@ -2244,63 +2246,63 @@ contains
     ! Set the BaseVector of the matrix-free matrix:
     call MatMFFDSetBase(dRdw, wVec, PETSC_NULL_OBJECT, ierr)
     call EChk(ierr, __FILE__, __LINE__)
-    
+
     ! Continuation for step factor:
     ! If total residual have increased in the previous iteration,
     ! reduce the step wrt the cutback factor, until ANK_StepMin factor of the step factor is reached
     if (totalR > totalR_old) then
-      lambda = max(lambda*ANK_stepCutback, ANK_StepFactor*ANK_stepMin) 
+      lambda = max(lambda*ANK_stepCutback, ANK_StepFactor*ANK_stepMin)
     ! If total residual have decreased, slowly ramp the step up
-    else 
+    else
       lambda = min(lambda*(totalR_old/totalR)**ANK_stepExponent, ANK_StepFactor)
     end if
-
+    stepMonitor = lambda
     ! ============== Flow Update =============
 
     ! For the approximate solver, we need the approximate flux routines
-    ! We set the variables required for approximate fluxes here and they will be used 
+    ! We set the variables required for approximate fluxes here and they will be used
     ! for the matrix-free matrix-vector product routines when the KSP solver calls it
     ! Very important to set the variables back to their original values after each
     ! KSP solve because we want actual flux functions when calculating residuals
     if (totalR > ANK_secondOrdSwitchTol*totalR0) then
       ! Setting lumped dissipation to true gives approximate fluxes
       lumpedDiss =.True.
-      
+
       ! Save if second order turbulence is used, we will only use 1st order during ANK (only matters for the coupled solver)
       secondOrdSave = secondOrd
       secondOrd =.False.
-      
+
       ! Calculate the shock sensor here because the approximate routines do not
       call referenceShockSensor()
-      
+
       ! Determine the relative convergence for the KSP solver
       rtol = ANK_rtol ! Just use the input relative tolerance for approximate fluxes
-      
+
       ! For initial convergence with approximate fluxes, set a relatively higher iteration
       ! limit because we need 0.1 relative convergence for stability in this region.
       maxIt = 4*ANK_subSpace
     else
-      ! If the second order fluxes are used, Eisenstat-Walker algorithm to determine relateive 
+      ! If the second order fluxes are used, Eisenstat-Walker algorithm to determine relateive
       ! convergence tolerance helps with performance.
       totalR_dummy = totalR
       call getEWTol(totalR_dummy, totalR_old, rtolLast, rtol)
-      
+
       ! For second order fluxes, more aggressively limit the maximum iteration count for each
       ! KSP solve because stability should not be an issue when second order fluxes are used
       maxIt = 2*ANK_subSpace
-    end if 
-    
+    end if
+
     ! Record the total residual and relative convergence for next iteration
     totalR_old = totalR
     rtolLast = rtol
-    
+
     ! Set all tolerances for linear solve:
     atol = totalR0*L2Conv
-    
+
     ! Set the iteration limit to maxIt, determined by which fluxes are used.
     ! This is because ANK step require 0.1 convergence for stability during initial stages.
     ! Due to an outdated preconditioner, the KSP solve might take more iterations.
-    ! If this happens, the preconditioner is re-computed and because of this, 
+    ! If this happens, the preconditioner is re-computed and because of this,
     ! ANK iterations usually don't take more than 2 times number of ANK_subSpace size iterations
     call KSPSetTolerances(ANK_KSP, rtol, &
          real(atol), real(ANK_divTol), maxIt, ierr)
@@ -2308,7 +2310,7 @@ contains
 
     ! Actually do the Linear Krylov Solve
     call KSPSolve(ANK_KSP, rVec, deltaW, ierr)
-    
+
     ! DON'T just check the error. We want to catch error code 72
     ! which is a floating point error. This is ok, we just reset and
     ! keep going

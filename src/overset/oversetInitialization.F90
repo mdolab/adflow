@@ -9,7 +9,7 @@ contains
 
     use constants
     use blockPointers, only : nDom, il, jl, kl, ib, jb, kb, status
-    use oversetUtilities, only : setIsCompute
+    use oversetUtilities, only : setIsCompute, setIsWallDonor, setIsDonor, setIsReceiver
     use utils, only : setPointers
     implicit none
 
@@ -30,6 +30,12 @@ contains
              do i=2, il
                 status(i,j,k) = 0
                 call setIsCompute(status(i, j, k), .True. )
+
+                ! Additional initialization for full overset update mode
+                call setIsWallDonor(status(i, j, k), .False.)
+                call setIsDonor(status(i, j, k), .False.)
+                call setIsReceiver(status(i, j, k), .False.)
+
              end do
           end do
        end do

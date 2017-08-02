@@ -1266,6 +1266,11 @@ class ADFLOW(AeroSolver):
         if alpha0 is not None:
             aeroProblem.alpha = alpha0
 
+        # We can stop here if we have failures in the mesh
+        if self.adflow.killsignals.fatalfail:
+            print('Cannot run CLSolve due to mesh failures.')
+            return
+
         # Set the startign value
         anm2 = aeroProblem.alpha
 
@@ -2987,7 +2992,7 @@ class ADFLOW(AeroSolver):
         """
         if relTol is None:
             relTol = self.getOption('adjointl2convergence')
-        outVec = self.adflow.solvedirectforrhs(inVec, relTol)
+        outVec = self.adflow.adjointapi.solvedirectforrhs(inVec, relTol)
 
         return outVec
 
@@ -3051,25 +3056,27 @@ class ADFLOW(AeroSolver):
                 n  = ncells*ntime
                 flag = numpy.zeros(n)
 
-                # Only need to call the cutCallBack if we're doing a
-                # full update.
+                # Only need to call the cutCallBack and regenerate the zipper mesh
+                # if we're doing a full update.
                 if self.getOption('oversetUpdateMode') == 'full':
                     cutCallBack = self.getOption('cutCallBack')
                     if cutCallBack is not None:
                         xCen = self.adflow.utils.getcellcenters(1, n).T
                         cutCallBack(xCen, flag)
 
-                    # Verify if we already have previous failures, such as negative volumes
+                    # Verify previous mesh failures
                     self.adflow.killsignals.routinefailed = \
-                                  self.comm.allreduce(
-                                  bool(self.adflow.killsignals.routinefailed), op=MPI.LOR)
+                        self.comm.allreduce(
+                        bool(self.adflow.killsignals.routinefailed), op=MPI.LOR)
+                    self.adflow.killsignals.fatalfail = self.adflow.killsignals.routinefailed
 
-                    # We will need to update the zipper mesh.
+                    # We will need to update the zipper mesh later on.
                     # But we only do this if we have a valid mesh, otherwise the
                     # code might halt during zipper mesh regeneration
-                    if not self.adflow.killsignals.routinefailed:
+                    if not self.adflow.killsignals.fatalfail:
                         self.zipperCreated = False
-                    else:
+                    else: # We got mesh failure!
+                        self.zipperCreated = True # Set flag to true to skip zipper mesh call
                         if self.myid == 0:
                             print('ATTENTION: Zipper mesh will not be regenerated due to previous failures.')
 
@@ -3719,7 +3726,7 @@ class ADFLOW(AeroSolver):
         nDOFCGNS = numpy.max(cgnsIndices) +1
         CGNSVec = numpy.zeros(nDOFCGNS)
         CGNSVec[cgnsIndices] = allPts
-        CGNSVec = CGNSVec.reshape((len(CGNSVec)/3, 3))
+        CGNSVec = CGNSVec.reshape((len(CGNSVec)//3, 3))
 
         # Run the pointReduce on the CGNS nodes
         uniquePts, linkTmp, nUnique = self.adflow.utils.pointreduce(CGNSVec.T, 1e-12)
@@ -3765,8 +3772,8 @@ class ADFLOW(AeroSolver):
         dXv    = numpy.hstack(self.comm.allgather(dXv))
         norm = None
         if self.myid == 0:
-            allPts = allPts.reshape((len(allPts)/3, 3))
-            dXv = dXv.reshape((len(dXv)/3,3))
+            allPts = allPts.reshape((len(allPts)//3, 3))
+            dXv = dXv.reshape((len(dXv)//3,3))
             # Run the pointReduce on all nodes
             uniquePts, link, nUnique = self.adflow.utils.pointreduce(allPts.T, 1e-12)
             uniquePtsBar = numpy.zeros((nUnique,3))
@@ -3999,9 +4006,9 @@ class ADFLOW(AeroSolver):
                 # Loop over each of the block names and call the fortran setter:
                 for blkName in value:
                     setValue = self.adflow.oversetapi.setblockpriority(blkName.lower(), value[blkName])
-                    if not setValue:
-                        raise Error("The block name %s was not found in the CGNS file "
-                                    "and could not set it\'s priority"%blkName.lower())
+                    if not setValue and self.myid == 0:
+                        raise ADFLOWWarning("The block name %s was not found in the CGNS file "
+                                            "and could not set it\'s priority"%blkName.lower())
 
             # Special option has been set so return from function
             return
@@ -4766,8 +4773,13 @@ class ADFLOW(AeroSolver):
     def _createZipperMesh(self):
         """Internal routine for generating the zipper mesh. This operation is
         postposted as long as possible and now it cannot wait any longer."""
-        if self.zipperCreated:
-            return
+
+        # Verify if we already have previous failures, such as negative volumes
+        self.adflow.killsignals.routinefailed = self.comm.allreduce(bool(self.adflow.killsignals.routinefailed), op=MPI.LOR)
+
+        # Avoid zipper if we have failures or if it already exists
+        if self.zipperCreated or self.adflow.killsignals.routinefailed:
+            return 
 
         zipFam = self.getOption('zipperSurfaceFamily')
 
