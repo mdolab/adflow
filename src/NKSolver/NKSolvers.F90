@@ -1788,7 +1788,6 @@ contains
         do nn=1, nDom
            do sps=1, nTimeIntervalsSpectral
               call setPointers(nn,1_intType,sps)
-              ! read the density residuals and set local CFL
               do k=2, kl
                  do j=2, jl
                     do i=2, il
@@ -1927,6 +1926,9 @@ contains
     integer(kind=intType) :: ierr
 
     if (ANK_SolverSetup) then
+      
+       call MatDestroy(dRdw, ierr) 
+       call EChk(ierr, __FILE__, __LINE__)
 
        call MatDestroy(dRdwPre, ierr)
        call EChk(ierr, __FILE__, __LINE__)
@@ -2322,10 +2324,10 @@ contains
     if (totalR > ANK_secondOrdSwitchTol*totalR0) then
       ! Set lumpedDiss back to False to go back to using actual flux routines
       lumpedDiss =.False.
-
+      
       ! Replace the second order turbulence option
       secondOrd = secondOrdSave
-
+      
       ! Deallocate the memory used for the shock sensor
       do nn=1, nDom
           do sps=1, nTimeIntervalsSpectral
@@ -2333,12 +2335,12 @@ contains
           end do
       end do
     end if
-
+    
     ! No line search...just take the new solution, possibly (fixed)
-    ! limited
+    ! limited      
     call VecAXPY(wVec, -lambda, deltaW, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-
+    call EChk(ierr, __FILE__, __LINE__)    
+      
     ! Set the updated state variables
     call setWANK(wVec)
 
@@ -2347,23 +2349,28 @@ contains
       call computeUtau
       call turbSolveSegregated
     end if
-
+    
     ! Calculate the residual with the new values and set the R vec in PETSc
+    ! We calculate the full residual using NK routine because the dw values
+    ! for turbulent variable has the update, not the residual and this
+    ! gives the wrong turbulent residual norm. This causes issues when
+    ! switching to NK or restarts after ANK. To fix, we calculate turbulent
+    ! residuals after each ANK step, which the turbSolveSegregated routine
+    ! does not do on its own
+    call computeResidualNK()
     if (ANK_useTurbDADI) then
-      call computeResidualANK()
       call setRVecANK(rVec)
-    else
-      call computeResidualNK()
+    else 
       call setRVec(rVec)
     end if
 
     ! Get the number of iterations from the KSP solver
     call KSPGetIterationNumber(ANK_KSP, kspIterations, ierr)
     call EChk(ierr, __FILE__, __LINE__)
-
+    
     ! Check if ksp iterations are above 2 times ANK_subSpace size,
     ! if so, set ANK_iter to -1 to re-calculate the preconditioner on the next iteration.
-
+    
     ! If the second order flux routines are used, ksp takes more iterations than this limit
     ! anyways, so don't check if preconditioner needs to be recalculated. Second order fluxes
     ! should be turned on after 4-5 orders of convergence and after this region the stability
