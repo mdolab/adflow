@@ -646,8 +646,13 @@ contains
     if (initslope == 0.0_realType) then
        initslope = -1.0_realType
     end if
-    call VecWAXPY(w, -lambda, y, x, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
+#ifdef USE_COMPLEX
+           call VecWAXPY(w, cmplx(-lambda, 0.0), y, x, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+#else
+          call VecWAXPY(w, -lambda, y, x, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+#endif
 
     ! Compute Function:
     call setW(w)
@@ -824,7 +829,7 @@ contains
     integer(kind=intType) :: nfevals
     integer(kind=intType) :: ierr
     logical :: flag
-    real(kind=realType) :: step
+    real(kind=alwaysRealType) :: step
     flag = .True.
     ! We just accept the step and compute the new residual at the new iterate
     nfevals = 0
@@ -855,7 +860,8 @@ contains
     !g    - residual evaluated at new iterate y
 
     real(kind=alwaysRealType) :: fnorm, gnorm, ynorm
-    real(kind=realType) :: alpha, step
+    real(kind=realType) :: alpha
+    real(kind=alwaysRealType) :: step
     logical :: flag
     integer(kind=intType) :: nfevals
     !   Note that for line search purposes we work with with the related
