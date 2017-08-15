@@ -14,8 +14,8 @@ contains
 #ifndef USE_TAPENADE
 subroutine applyAllBC(secondHalo)
   !
-  !       applyAllBC applies all boundary conditions for the all         
-  !       blocks on the grid level currentLevel.                         
+  !       applyAllBC applies all boundary conditions for the all
+  !       blocks on the grid level currentLevel.
   !
   use constants
   use blockPointers, only : nDom
@@ -31,9 +31,9 @@ subroutine applyAllBC(secondHalo)
   !
   !      Local Variables
   integer(kind=intType) :: sps, nn
-  
 
- 
+
+
   ! Loop over the number of spectral solutions.
 
   spectralLoop: do sps=1,nTimeIntervalsSpectral
@@ -49,7 +49,7 @@ subroutine applyAllBC(secondHalo)
         call interpLevelALEBC_block
         call applyAllBC_block(secondHalo)
         call recoverLevelALEBC_block
-  
+
      enddo domains
   enddo spectralLoop
 
@@ -544,26 +544,26 @@ end subroutine applyAllBC
 
        rlv1(i,j) = rlv2(i,j)
        if( eddyModel ) rev1(i,j) = -rev2(i,j)
-  
+
        ! Make sure that on the coarser grids the constant pressure
        ! boundary condition is used.
-       
+
        wallTreatment = viscWallBcTreatment
        if(currentLevel > groundLevel) wallTreatment = constantPressure
-       
+
        BCTreatment: select case (wallTreatment)
-          
+
        case (constantPressure)
-          
+
           ! Constant pressure. Set the gradient to zero.
           pp1(i, j) = pp2(i, j) - four*third*rhok
 
        case default
-          
+
           pp1(i,j) = 2*pp2(i,j) - pp3(i,j)
           ! Adjust value if pressure is negative
           if (pp1(i,j) .le. zero) pp1(i,j) = pp2(i,j)
-          
+
        end select BCTreatment
     end do
 
@@ -705,7 +705,7 @@ end subroutine applyAllBC
     use constants
     use blockPointers, only : BCData
     use BCPointers, only : ww0, ww1, ww2, pp0, pp1, pp2, &
-         rlv0, rlv1, rlv2, rev0, rev1, rev2, gamma2, & 
+         rlv0, rlv1, rlv2, rev0, rev1, rev2, gamma2, &
          iSize, jSize, iStart, jStart
     use flowVarRefState, only : eddyModel, viscous
     implicit none
@@ -816,7 +816,7 @@ end subroutine applyAllBC
     use flowVarRefState, only : viscous, eddyModel, RGas
     use inputDiscretization, only : hScalingInlet
     use BCPointers, only : ww0, ww1, ww2, pp0, pp1, pp2, &
-         rlv0, rlv1, rlv2, rev0, rev1, rev2, gamma2, & 
+         rlv0, rlv1, rlv2, rev0, rev1, rev2, gamma2, &
          iSize, jSize, iStart, jStart
     use inputPhysics, only : cpModel, gammaConstant
     use utils, only : terminate
@@ -952,9 +952,9 @@ end subroutine applyAllBC
           ww1(i,j,ivx)  = q*ssx
           ww1(i,j,ivy)  = q*ssy
           ww1(i,j,ivz)  = q*ssz
-          
+
           ! This should call prhosubsonicInlet, but it doesnt' AD
-          ! correctly, so just the constant CP model is used here. 
+          ! correctly, so just the constant CP model is used here.
 
           ! Compute the pressure and density for these halo's.
           select case (cpModel)
@@ -962,7 +962,7 @@ end subroutine applyAllBC
              ! Compute the static pressure from the total pressure
              ! and the temperature ratio. Compute the density using
              ! the gas law.
-             
+
              ts = a2/(gamma2(i,j)*RGas)
              ratio        = (ts/ttot)**govgm1
              pp1(i,j)      = ptot*ratio
@@ -1101,9 +1101,9 @@ end subroutine applyAllBC
     wallTreatment = eulerWallBcTreatment
     if(currentLevel > groundLevel) wallTreatment = constantPressure
 
-    !  Determine the boundary condition treatment and compute the 
-    !  undivided pressure gradient accordingly. This gradient is  
-    !  temporarily stored in the halo pressure.                   
+    !  Determine the boundary condition treatment and compute the
+    !  undivided pressure gradient accordingly. This gradient is
+    !  temporarily stored in the halo pressure.
     !
     BCTreatment: select case (wallTreatment)
 
@@ -1480,13 +1480,13 @@ end subroutine applyAllBC
 
   subroutine bcExtrap(nn, secondHalo, correctForK)
     !
-    !  ccExtrap applies the extrapolation boundary condition to a     
-    !  block. It is assumed that the pointers in blockPointers are    
-    !  already set to the correct block on the correct grid level.    
-    !  Extrapolation boundaries are applied to both singular lines or 
-    !  points of a block face and to supersonic outlets. They are     
-    !  marked differently because of postprocessing reasons, but      
-    !  their numerical treatment is identical.                        
+    !  ccExtrap applies the extrapolation boundary condition to a
+    !  block. It is assumed that the pointers in blockPointers are
+    !  already set to the correct block on the correct grid level.
+    !  Extrapolation boundaries are applied to both singular lines or
+    !  points of a block face and to supersonic outlets. They are
+    !  marked differently because of postprocessing reasons, but
+    !  their numerical treatment is identical.
     !
     use constants
     use blockPointers, only : BCType

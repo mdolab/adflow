@@ -3,7 +3,7 @@ module BCExtra_b
   use constants
   implicit none
   save
-contains 
+contains
 
   subroutine applyAllBC_block_b(secondHalo)
 
@@ -39,7 +39,7 @@ contains
     !  Subsonic Inflow Boundary Condition
     ! ------------------------------------
     do mm=1,nBocos
-       if (bcType(mm) == subsonicInflow) then 
+       if (bcType(mm) == subsonicInflow) then
           call setBCPointers_d(mm, .False.)
           call bcSubsonicInflow_b(mm, secondHalo, correctForK)
        end if
@@ -49,14 +49,14 @@ contains
     !  Subsonic Outflow Boundary Condition
     ! ------------------------------------
     do mm=1,nBocos
-       if (bcType(mm) == subsonicOutflow) then 
+       if (bcType(mm) == subsonicOutflow) then
           call setBCPointers_d(mm, .False.)
           call bcSubsonicOutflow_b(mm, secondHalo, correctForK)
        end if
     end do
 
     ! ------------------------------------
-    !  Farfield Boundary Condition 
+    !  Farfield Boundary Condition
     ! ------------------------------------
     do mm=1,nBocos
        if (bcType(mm) == farField) then
@@ -66,7 +66,7 @@ contains
     end do
 
     ! ------------------------------------
-    !  Isothermal Wall Boundary Condition 
+    !  Isothermal Wall Boundary Condition
     ! ------------------------------------
     DO mm=1,nviscbocos
        IF (bctype(mm) .EQ. nswallisothermal) THEN
@@ -74,9 +74,9 @@ contains
           CALL BCNSWALLISOTHERMAL_B(mm, secondhalo, correctfork)
        END IF
     END DO
-   
+
     ! ------------------------------------
-    !  Adibatic Wall Boundary Condition 
+    !  Adibatic Wall Boundary Condition
     ! ------------------------------------
     DO mm=1,nviscbocos
        IF (bctype(mm) .EQ. nswalladiabatic) THEN
@@ -105,11 +105,11 @@ contains
        end if
     end do
 
-   
+
     ! ------------------------------------
-    !  Symmetry Boundary Condition 
+    !  Symmetry Boundary Condition
     ! ------------------------------------
-    if (secondHalo) then 
+    if (secondHalo) then
        DO mm=1,nbocos
           IF (bctype(mm) .EQ. symm) THEN
              CALL setBCPointers_d(mm, .false.)
@@ -118,7 +118,7 @@ contains
        END DO
     END if
 
-    if (secondHalo) then 
+    if (secondHalo) then
        DO mm=1,nbocos
           IF (bctype(mm) .EQ. symm) THEN
              CALL setBCPointers_d(mm, .false.)

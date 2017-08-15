@@ -4,9 +4,9 @@ contains
 
   subroutine loadBalanceGrid
     !
-    !       loadBalance determines the mapping of the blocks onto the      
-    !       processors. If the user allows so blocks my be split to obtain 
-    !       a better load balance.                                         
+    !       loadBalance determines the mapping of the blocks onto the
+    !       processors. If the user allows so blocks my be split to obtain
+    !       a better load balance.
     !
     use constants
     use block, only : flowDoms, nDom
@@ -40,7 +40,7 @@ contains
     ! Determine the block distribution over the processors.
 
 
-    if (partitionLikeNProc > nProc) then 
+    if (partitionLikeNProc > nProc) then
        nProc = partitionLikenProc
     end if
 
@@ -51,14 +51,14 @@ contains
 
     ! We ned to modify what comes back if we are using the
     ! partitionLikenProc option:
-    if (partitionLikenProc > nProc) then 
+    if (partitionLikenProc > nProc) then
        do i=1, nBlocks
           part(i) = mod(part(i), nProc)
        end do
     end if
 
     !
-    !       Determine the local block info.                                
+    !       Determine the local block info.
     !
     ! Initialize nBlockPerProc to 0.
 
@@ -303,11 +303,11 @@ contains
             "Deallocation error for boundary info")
     enddo domains
 
-    !       Determine the number of processors, the processor ID's on      
-    !       which the original cgns blocks are stored, the local           
-    !       block ID's and the nodal ranges of the subblocks. As blocks    
-    !       can be split during run-time, multiple processors can store a  
-    !       part of original block.                                        
+    !       Determine the number of processors, the processor ID's on
+    !       which the original cgns blocks are stored, the local
+    !       block ID's and the nodal ranges of the subblocks. As blocks
+    !       can be split during run-time, multiple processors can store a
+    !       part of original block.
     !
     ! Allocate the memory for subblocksOfCGNS.
 
@@ -411,10 +411,10 @@ contains
 
   subroutine blockDistribution
     !
-    !       blockDistribution determines the distribution of the blocks    
-    !       over the processors. If blocks must be split to obtain a good  
-    !       load balance an iterative algorithm is used to determine the   
-    !       best way to split them.                                        
+    !       blockDistribution determines the distribution of the blocks
+    !       over the processors. If blocks must be split to obtain a good
+    !       load balance an iterative algorithm is used to determine the
+    !       best way to split them.
     !
     use constants
     use cgnsGrid, only : cgnsDoms, cgnsNDom
@@ -456,8 +456,8 @@ contains
        call mpi_barrier(ADflow_comm_world, ierr)
     endif
     !
-    !       Determine how the blocks must be split (if allowed) for        
-    !       load balancing reasons.                                        
+    !       Determine how the blocks must be split (if allowed) for
+    !       load balancing reasons.
     !
     ! Initialize splitInfo to the original cgns blocks and determine
     ! the total number of cells.
@@ -630,9 +630,9 @@ contains
 
     logical function splittingIsOkay(cgnsID)
       !
-      !         splittingIsOkay determines whether or not the splitting of   
-      !         the given cgns block is okay in the sense that all subblocks 
-      !         are smaller than the allowed number of cells and faces.      
+      !         splittingIsOkay determines whether or not the splitting of
+      !         the given cgns block is okay in the sense that all subblocks
+      !         are smaller than the allowed number of cells and faces.
       !
       implicit none
       !
@@ -682,8 +682,8 @@ contains
 
     subroutine splitBlockInitialization(cgnsID)
       !
-      !         splitBlockInitialization splits the given cgns block ID      
-      !         into a number of subbocks during the initialization phase.   
+      !         splitBlockInitialization splits the given cgns block ID
+      !         into a number of subbocks during the initialization phase.
       !
       implicit none
       !
@@ -885,8 +885,8 @@ contains
 
     subroutine splitBlocksLoadBalance
       !
-      !         splitBlocksLoadBalance splits some (sub)blocks even          
-      !         further to obtain a better load balance.                     
+      !         splitBlocksLoadBalance splits some (sub)blocks even
+      !         further to obtain a better load balance.
       !
       use sorting, only : bsearchIntegers, qsortIntegers
       implicit none
@@ -1185,9 +1185,9 @@ contains
 
   subroutine initFlowDoms
     !
-    !       initFlowDoms allocates the memory for flowDoms and initializes 
-    !       its pointers to null pointers, such that they do not have      
-    !       random targets.                                                
+    !       initFlowDoms allocates the memory for flowDoms and initializes
+    !       its pointers to null pointers, such that they do not have
+    !       random targets.
     !
     use constants
     use block, only : flowDoms, nDom
@@ -1226,9 +1226,9 @@ contains
   end subroutine initFlowDoms
   subroutine sortSubfaces(oldSubfaceID, blockID)
     !
-    !       sortSubfaces sorts the boundary subfaces of the given block    
-    !       such that viscous subfaces are numbered first, followed by     
-    !       inviscid, etc.                                                 
+    !       sortSubfaces sorts the boundary subfaces of the given block
+    !       such that viscous subfaces are numbered first, followed by
+    !       inviscid, etc.
     !
     use constants
     use partitionMod, only : distributionBlockType
@@ -1375,9 +1375,9 @@ contains
 
   subroutine determineComputeBlocks(splitInfo)
     !
-    !       determineComputeBlocks determines the computational blocks     
-    !       from the original grid and the given information how to split  
-    !       these blocks.                                                  
+    !       determineComputeBlocks determines the computational blocks
+    !       from the original grid and the given information how to split
+    !       these blocks.
     !
     use constants
     use cgnsGrid, only :cgnsnDom, cgnsDoms
@@ -1549,9 +1549,9 @@ contains
 
   subroutine BCFacesSubblock(cgnsID, ii, jj)
     !
-    !       BCFacesSubblock determines the boundary subfaces of compute    
-    !       block ii, which is a subblock of the given cgns block.         
-    !       Jj is the counter for the number of subfaces.                  
+    !       BCFacesSubblock determines the boundary subfaces of compute
+    !       block ii, which is a subblock of the given cgns block.
+    !       Jj is the counter for the number of subfaces.
     !
     use cgnsGrid
     use communication
@@ -1776,13 +1776,13 @@ contains
   subroutine externalFacesSubblock(cgnsID, ii, jj, nSubPerCGNS, &
        nAlloc, splitInfo)
     !
-    !       externalFacesSubblock determines the block boundaries of       
-    !       the compute block ii which are located on the boundaries of    
-    !       the given original cgns block. As it is possible that due to   
-    !       a splitting of a neighboring block the number of block         
-    !       boundaries is larger than the original number, it must be      
-    !       checked whether enough memory has been allocated.              
-    !       jj is the counter for the number of subfaces.                  
+    !       externalFacesSubblock determines the block boundaries of
+    !       the compute block ii which are located on the boundaries of
+    !       the given original cgns block. As it is possible that due to
+    !       a splitting of a neighboring block the number of block
+    !       boundaries is larger than the original number, it must be
+    !       checked whether enough memory has been allocated.
+    !       jj is the counter for the number of subfaces.
     !
     use cgnsGrid
     use communication
@@ -2138,12 +2138,12 @@ contains
   subroutine internalFacesSubblock(cgnsID, ii, jj, nSubPerCGNS, &
        nAlloc, splitInfo)
     !
-    !       internalFacesSubblock determines the block boundaries of       
-    !       the compute block ii which are created due to the splitting of 
-    !       the original block into subblock. As the number of these       
-    !       internal boundaries is not known, it must be checked whether   
-    !       enough memory has been allocated. jj is the counter for the    
-    !       number of subfaces.                                            
+    !       internalFacesSubblock determines the block boundaries of
+    !       the compute block ii which are created due to the splitting of
+    !       the original block into subblock. As the number of these
+    !       internal boundaries is not known, it must be checked whether
+    !       enough memory has been allocated. jj is the counter for the
+    !       number of subfaces.
     !
     use cgnsGrid
     use communication
@@ -2310,10 +2310,10 @@ contains
 
     subroutine searchInternalNeighbors
       !
-      !         searchInternalNeighbors determines block faces created by    
-      !         by the splitting of the original block. The variables set in 
-      !         internalFacesSubblock are used such that a general           
-      !         treatment is possible.                                       
+      !         searchInternalNeighbors determines block faces created by
+      !         by the splitting of the original block. The variables set in
+      !         internalFacesSubblock are used such that a general
+      !         treatment is possible.
       !
       implicit none
       !
@@ -2439,11 +2439,11 @@ contains
   end subroutine internalFacesSubblock
   subroutine graphPartitioning(emptyPartitions, commNeglected)
     !
-    !       graphPartitioning partitions the corresponding graph of the    
-    !       computational blocks such that both the number of cells and    
-    !       number of faces is about equal on all processors.              
+    !       graphPartitioning partitions the corresponding graph of the
+    !       computational blocks such that both the number of cells and
+    !       number of faces is about equal on all processors.
     !
-    use constants       
+    use constants
     use communication, only : myID, adflow_comm_world, nProc
     use partitionMod, only : part, blocks, ubvec, nBlocks
     use inputParallel, only : loadImbalance
@@ -2525,7 +2525,7 @@ contains
     nEdges = 0
     nEdgesMax = 0
     do i=1,nBlocks
-       ii        = blocks(i)%n1to1 
+       ii        = blocks(i)%n1to1
        nEdges    = nedges + ii
        nEdgesMax = max(nedgesMax, ii)
     enddo
@@ -2632,7 +2632,7 @@ contains
 
     ! Metis has problems when the total number of cells or faces
     ! used in the weights exceeds 2Gb. Therefore the sum of these
-    ! values is determined and an appropriate weight factor is 
+    ! values is determined and an appropriate weight factor is
     ! determined. Note that the type of nCellsTotal and nFacesTotal
     ! is integer*8.
 
@@ -2712,8 +2712,8 @@ contains
 
   subroutine checkLoadBalance(cellsBalanced, facesBalanced)
     !
-    !       checkLoadBalance determines whether or not the load balance    
-    !       for the cells and faces is met.                                
+    !       checkLoadBalance determines whether or not the load balance
+    !       for the cells and faces is met.
     !
     use constants
     use communication, only : adflow_comm_world, myid, nProc
@@ -2796,17 +2796,17 @@ contains
 
   subroutine splitBlock(compBlock, nSub, nCells, ranges)
     !
-    !       splitBlock tries to split the given computational block into   
-    !       the desired number of subblocks nSub. However it can happen    
-    !       that nSub is a strange number and a different splitting is     
-    !       performed. On return, nSub contains the actual number into the 
-    !       block is split. This number is smaller or equal to nSub on     
-    !       entry. As it is possible that the computational block itself   
-    !       is a subblock of an original cgns block, on return ranges will 
-    !       contain the nodal ranges of the subblocks in the original cgns 
-    !       block. The splitting attempts to keep the needed multigrid     
-    !       capabilities as much as possible.                              
-    !       A recursive bisection algorithm is used.                       
+    !       splitBlock tries to split the given computational block into
+    !       the desired number of subblocks nSub. However it can happen
+    !       that nSub is a strange number and a different splitting is
+    !       performed. On return, nSub contains the actual number into the
+    !       block is split. This number is smaller or equal to nSub on
+    !       entry. As it is possible that the computational block itself
+    !       is a subblock of an original cgns block, on return ranges will
+    !       contain the nodal ranges of the subblocks in the original cgns
+    !       block. The splitting attempts to keep the needed multigrid
+    !       capabilities as much as possible.
+    !       A recursive bisection algorithm is used.
     !
     use constants
     use inputIteration, only : smoother
@@ -2993,9 +2993,9 @@ contains
   subroutine split2block(nSub, n1, n2, nTarget, ranges, &
        viscousDir)
     !
-    !       split2block splits the block stored in ranges(n1,:,:) into     
-    !       two. The new blocks are stored in ranges(n1,:,:) and           
-    !       ranges(n2,:,:), where the n2 will store the block with the     
+    !       split2block splits the block stored in ranges(n1,:,:) into
+    !       two. The new blocks are stored in ranges(n1,:,:) and
+    !       ranges(n2,:,:), where the n2 will store the block with the
     !      * number of cells closest to nTarget.
     !
     use inputIteration
@@ -3199,10 +3199,10 @@ contains
 
   subroutine reallocSubfaceMemory(ii,nAlloc)
     !
-    !       reallocSubfaceMemory reallocates the memory to store the       
-    !       subface information for the given block ii. On entry nAlloc    
-    !       contains the current number of allocated subfaces, on exit     
-    !       this is updated to the new number.                             
+    !       reallocSubfaceMemory reallocates the memory to store the
+    !       subface information for the given block ii. On entry nAlloc
+    !       contains the current number of allocated subfaces, on exit
+    !       this is updated to the new number.
     !
     use constants
     use partitionmod, only : blocks

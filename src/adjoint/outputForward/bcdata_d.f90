@@ -9,7 +9,7 @@ module bcdata_d
 contains
 ! ---------------------------------------------------------------
 ! routines that set the appropriate variable names for bcs with
-! bcdata. 
+! bcdata.
   subroutine setbcvarnamesisothermalwall()
     use cgnsnames
     use constants
@@ -75,10 +75,10 @@ contains
   end subroutine setbcvarnamessupersonicinflow
   subroutine setbcvarnamesturb(offset)
 !
-!       setbcvarnamesturb sets the names for the turbulence            
-!       variables to be determined. this depends on the turbulence     
-!       model. if not the rans equations are solved an immediate       
-!       return is made.                                                
+!       setbcvarnamesturb sets the names for the turbulence
+!       variables to be determined. this depends on the turbulence
+!       model. if not the rans equations are solved an immediate
+!       return is made.
 !
     use constants
     use cgnsnames
@@ -93,16 +93,16 @@ contains
       return
     else
 ! determine the turbulence model and set the names accordingly.
-      select case  (turbmodel) 
-      case (spalartallmaras, spalartallmarasedwards) 
+      select case  (turbmodel)
+      case (spalartallmaras, spalartallmarasedwards)
         bcvarnames(offset+1) = cgnsturbsanu
-      case (komegawilcox, komegamodified, mentersst) 
+      case (komegawilcox, komegamodified, mentersst)
         bcvarnames(offset+1) = cgnsturbk
         bcvarnames(offset+2) = cgnsturbomega
-      case (ktau) 
+      case (ktau)
         bcvarnames(offset+1) = cgnsturbk
         bcvarnames(offset+2) = cgnsturbtau
-      case (v2f) 
+      case (v2f)
         bcvarnames(offset+1) = cgnsturbk
         bcvarnames(offset+2) = cgnsturbepsilon
         bcvarnames(offset+3) = cgnsturbv2
@@ -119,10 +119,10 @@ contains
 ! --------------------------------------
   subroutine computehtot_d(tt, ttd, ht, htd)
 !
-!       computehtot computes the total enthalpy from the given total   
-!       temperature. the total enthalpy is the integral of cp, which   
-!       is a very simple expression for constant cp. for a variable cp 
-!       it is a bit more work.                                         
+!       computehtot computes the total enthalpy from the given total
+!       temperature. the total enthalpy is the integral of cp, which
+!       is a very simple expression for constant cp. for a variable cp
+!       it is a bit more work.
 !
     use constants
     use cpcurvefits
@@ -144,8 +144,8 @@ contains
     real(kind=realtype) :: t2
 !        ================================================================
 ! determine the cp model used in the computation.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! constant cp. the total enthalpy is simply cp*tt.
       htd = gammaconstant*rgasdim*ttd/(gammaconstant-one)
       ht = gammaconstant*rgasdim*tt/(gammaconstant-one)
@@ -157,10 +157,10 @@ contains
 ! --------------------------------------
   subroutine computehtot(tt, ht)
 !
-!       computehtot computes the total enthalpy from the given total   
-!       temperature. the total enthalpy is the integral of cp, which   
-!       is a very simple expression for constant cp. for a variable cp 
-!       it is a bit more work.                                         
+!       computehtot computes the total enthalpy from the given total
+!       temperature. the total enthalpy is the integral of cp, which
+!       is a very simple expression for constant cp. for a variable cp
+!       it is a bit more work.
 !
     use constants
     use cpcurvefits
@@ -180,18 +180,18 @@ contains
     real(kind=realtype) :: t2
 !        ================================================================
 ! determine the cp model used in the computation.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! constant cp. the total enthalpy is simply cp*tt.
       ht = gammaconstant*rgasdim*tt/(gammaconstant-one)
     end select
   end subroutine computehtot
   subroutine unitvectorscylsystem(boco)
 !
-!       unitvectorscylsystem determines the unit vectors of the        
-!       local coordinate systen of the boundary face defined by the    
-!       data in bcdatamod. in that local system the axial direction    
-!       is rotation axis.                                              
+!       unitvectorscylsystem determines the unit vectors of the
+!       local coordinate systen of the boundary face defined by the
+!       data in bcdatamod. in that local system the axial direction
+!       is rotation axis.
 !
     use constants
     use blockpointers, only : bcfaceid, bcdata, x, si, sj, sk, il, jl,&
@@ -217,28 +217,28 @@ contains
 ! set the pointers for coordinates and normals of the block
 ! face on which this subface is located. set factinlet
 ! such that factinlet*normals points into the domain.
-    select case  (bcfaceid(boco)) 
-    case (imin) 
+    select case  (bcfaceid(boco))
+    case (imin)
       xf => x(1, :, :, :)
       ss => si(1, :, :, :)
       factinlet = one
-    case (imax) 
+    case (imax)
       xf => x(il, :, :, :)
       ss => si(il, :, :, :)
       factinlet = -one
-    case (jmin) 
+    case (jmin)
       xf => x(:, 1, :, :)
       ss => sj(:, 1, :, :)
       factinlet = one
-    case (jmax) 
+    case (jmax)
       xf => x(:, jl, :, :)
       ss => sj(:, jl, :, :)
       factinlet = -one
-    case (kmin) 
+    case (kmin)
       xf => x(:, :, 1, :)
       ss => sk(:, :, 1, :)
       factinlet = one
-    case (kmax) 
+    case (kmax)
       xf => x(:, :, kl, :)
       ss => sk(:, :, kl, :)
       factinlet = -one
@@ -333,9 +333,9 @@ contains
   subroutine bcdataisothermalwall_d(boco, bcvararray, bcvararrayd, ibeg&
 &   , iend, jbeg, jend)
 !
-!       bcdataisothermalwall tries to extract the wall temperature     
-!       for the currently active boundary face, which is an isothermal 
-!       viscous wall.                                                  
+!       bcdataisothermalwall tries to extract the wall temperature
+!       for the currently active boundary face, which is an isothermal
+!       viscous wall.
 !
     use constants
     use cgnsnames
@@ -393,9 +393,9 @@ contains
   subroutine bcdataisothermalwall(boco, bcvararray, ibeg, iend, jbeg, &
 &   jend)
 !
-!       bcdataisothermalwall tries to extract the wall temperature     
-!       for the currently active boundary face, which is an isothermal 
-!       viscous wall.                                                  
+!       bcdataisothermalwall tries to extract the wall temperature
+!       for the currently active boundary face, which is an isothermal
+!       viscous wall.
 !
     use constants
     use cgnsnames
@@ -439,12 +439,12 @@ contains
   subroutine bcdatasubsonicinflow(boco, bcvararray, ibeg, iend, jbeg, &
 &   jend, allturbpresent)
 !
-!       bcdatasubsonicinflow tries to extract the prescribed data      
-!       for the currently active boundary face, which is a subsonic    
-!       inflow. either total conditions and velocity direction or the  
-!       velocity and density can be prescribed. in the latter case the 
-!       mass flow is prescribed, which is okay as long as the flow is  
-!       not choked.                                                    
+!       bcdatasubsonicinflow tries to extract the prescribed data
+!       for the currently active boundary face, which is a subsonic
+!       inflow. either total conditions and velocity direction or the
+!       velocity and density can be prescribed. in the latter case the
+!       mass flow is prescribed, which is okay as long as the flow is
+!       not choked.
 !
     use constants
     use cgnsnames
@@ -536,8 +536,8 @@ contains
 !===============================================================
     subroutine totalsubsonicinlet()
 !
-!         totalsubsonicinlet converts the prescribed total           
-!         conditions and velocity direction into a useable format.     
+!         totalsubsonicinlet converts the prescribed total
+!         conditions and velocity direction into a useable format.
 !
       use constants
       use communication, only : adflow_comm_world
@@ -786,12 +786,12 @@ contains
   subroutine bcdatasubsonicinflow_d(boco, bcvararray, bcvararrayd, ibeg&
 &   , iend, jbeg, jend, allturbpresent)
 !
-!       bcdatasubsonicinflow tries to extract the prescribed data      
-!       for the currently active boundary face, which is a subsonic    
-!       inflow. either total conditions and velocity direction or the  
-!       velocity and density can be prescribed. in the latter case the 
-!       mass flow is prescribed, which is okay as long as the flow is  
-!       not choked.                                                    
+!       bcdatasubsonicinflow tries to extract the prescribed data
+!       for the currently active boundary face, which is a subsonic
+!       inflow. either total conditions and velocity direction or the
+!       velocity and density can be prescribed. in the latter case the
+!       mass flow is prescribed, which is okay as long as the flow is
+!       not choked.
 !
     use constants
     use cgnsnames
@@ -908,8 +908,8 @@ contains
 !===============================================================
     subroutine totalsubsonicinlet_d()
 !
-!         totalsubsonicinlet converts the prescribed total           
-!         conditions and velocity direction into a useable format.     
+!         totalsubsonicinlet converts the prescribed total
+!         conditions and velocity direction into a useable format.
 !
       use constants
       use communication, only : adflow_comm_world
@@ -1195,8 +1195,8 @@ contains
 !===============================================================
     subroutine totalsubsonicinlet()
 !
-!         totalsubsonicinlet converts the prescribed total           
-!         conditions and velocity direction into a useable format.     
+!         totalsubsonicinlet converts the prescribed total
+!         conditions and velocity direction into a useable format.
 !
       use constants
       use communication, only : adflow_comm_world
@@ -1439,9 +1439,9 @@ contains
   subroutine bcdatasubsonicoutflow_d(boco, bcvararray, bcvararrayd, ibeg&
 &   , iend, jbeg, jend)
 !
-!       bcdatasubsonicoutflow tries to extract the static pressure     
-!       for the currently active boundary face, which is a subsonic    
-!       outflow boundary.                                              
+!       bcdatasubsonicoutflow tries to extract the static pressure
+!       for the currently active boundary face, which is a subsonic
+!       outflow boundary.
 !
     use constants
     use cgnsnames
@@ -1494,9 +1494,9 @@ contains
   subroutine bcdatasubsonicoutflow(boco, bcvararray, ibeg, iend, jbeg, &
 &   jend)
 !
-!       bcdatasubsonicoutflow tries to extract the static pressure     
-!       for the currently active boundary face, which is a subsonic    
-!       outflow boundary.                                              
+!       bcdatasubsonicoutflow tries to extract the static pressure
+!       for the currently active boundary face, which is a subsonic
+!       outflow boundary.
 !
     use constants
     use cgnsnames
@@ -1539,9 +1539,9 @@ contains
   subroutine bcdatasupersonicinflow(boco, bcvararray, ibeg, iend, jbeg, &
 &   jend, allflowpresent, allturbpresent)
 !
-!       bcdatasupersonicinflow tries to extract the primitive state    
-!       vector for the currently active boundary face, which is a      
-!       supersonic inflow.                                             
+!       bcdatasupersonicinflow tries to extract the primitive state
+!       vector for the currently active boundary face, which is a
+!       supersonic inflow.
 !
     use constants
     use cgnsnames
@@ -1593,14 +1593,14 @@ contains
     else
 ! not all variables are present. check what type of flow
 ! is to be solved.
-      select case  (flowtype) 
-      case (internalflow) 
+      select case  (flowtype)
+      case (internalflow)
 ! internal flow. data at the inlet must be specified;
 ! no free stream data can be taken.
         write(errormessage, 100) trim(cgnsdoms(nbkglobal)%zonename), &
 &       trim(cgnsdoms(nbkglobal)%bocoinfo(cgnsboco)%boconame)
         call terminate('bcdatasupersonicinflow', errormessage)
-      case (externalflow) 
+      case (externalflow)
 !=============================================================
 ! external flow. free stream data is used.
         do j=jbeg,jend
@@ -1644,8 +1644,8 @@ contains
   contains
     subroutine prescribedsupersonicinlet()
 !
-!         prescribedsupersonicinlet sets the variables for this        
-!         supersonic inlet to prescribed values.                       
+!         prescribedsupersonicinlet sets the variables for this
+!         supersonic inlet to prescribed values.
 !
       use section, only : sections
       implicit none
@@ -1785,9 +1785,9 @@ contains
   subroutine bcdatasupersonicinflow_d(boco, bcvararray, bcvararrayd, &
 &   ibeg, iend, jbeg, jend, allflowpresent, allturbpresent)
 !
-!       bcdatasupersonicinflow tries to extract the primitive state    
-!       vector for the currently active boundary face, which is a      
-!       supersonic inflow.                                             
+!       bcdatasupersonicinflow tries to extract the primitive state
+!       vector for the currently active boundary face, which is a
+!       supersonic inflow.
 !
     use constants
     use cgnsnames
@@ -1846,8 +1846,8 @@ contains
     else
 ! not all variables are present. check what type of flow
 ! is to be solved.
-      select case  (flowtype) 
-      case (internalflow) 
+      select case  (flowtype)
+      case (internalflow)
 ! internal flow. data at the inlet must be specified;
 ! no free stream data can be taken.
         write(errormessage, 100) trim(cgnsdoms(nbkglobal)%zonename), &
@@ -1871,7 +1871,7 @@ contains
         do ii1=1,isize1ofdrfbcdata
           bcdatad(ii1)%ps = 0.0_8
         end do
-      case (externalflow) 
+      case (externalflow)
         do ii1=1,isize1ofdrfbcdata
           bcdatad(ii1)%rho = 0.0_8
         end do
@@ -1967,8 +1967,8 @@ contains
 !                *bcdata.velz:in *bcdata.ps:in
     subroutine prescribedsupersonicinlet_d()
 !
-!         prescribedsupersonicinlet sets the variables for this        
-!         supersonic inlet to prescribed values.                       
+!         prescribedsupersonicinlet sets the variables for this
+!         supersonic inlet to prescribed values.
 !
       use section, only : sections
       use diffsizes
@@ -2157,8 +2157,8 @@ contains
     end subroutine prescribedsupersonicinlet_d
     subroutine prescribedsupersonicinlet()
 !
-!         prescribedsupersonicinlet sets the variables for this        
-!         supersonic inlet to prescribed values.                       
+!         prescribedsupersonicinlet sets the variables for this
+!         supersonic inlet to prescribed values.
 !
       use section, only : sections
       implicit none
@@ -2290,10 +2290,10 @@ contains
   subroutine setbcvarturb_d(offset, boco, bcvararray, bcvararrayd, ibeg&
 &   , iend, jbeg, jend, turbinlet, turbinletd, setbcvarturb)
 !
-!       setbcvarturb sets the array for the turbulent halo data        
-!       for inlet boundaries. this function returns .true. if all      
-!       turbulence variables could be interpolated and .false.         
-!       otherwise.                                                     
+!       setbcvarturb sets the array for the turbulent halo data
+!       for inlet boundaries. this function returns .true. if all
+!       turbulence variables could be interpolated and .false.
+!       otherwise.
 !
     use constants
     use flowvarrefstate, only : nt1, nt2, muref, murefd, pref, prefd, &
@@ -2331,24 +2331,24 @@ contains
 ! set the reference values depending on the turbulence model.
       nurefd = (murefd*rhoref-muref*rhorefd)/rhoref**2
       nuref = muref/rhoref
-      select case  (turbmodel) 
-      case (spalartallmaras, spalartallmarasedwards) 
+      select case  (turbmodel)
+      case (spalartallmaras, spalartallmarasedwards)
         refd = 0.0_8
         refd(itu1) = nurefd
         ref(itu1) = nuref
-      case (komegawilcox, komegamodified, mentersst) 
+      case (komegawilcox, komegamodified, mentersst)
         refd = 0.0_8
         refd(itu1) = (prefd*rhoref-pref*rhorefd)/rhoref**2
         ref(itu1) = pref/rhoref
         refd(itu2) = (refd(itu1)*nuref-ref(itu1)*nurefd)/nuref**2
         ref(itu2) = ref(itu1)/nuref
-      case (ktau) 
+      case (ktau)
         refd = 0.0_8
         refd(itu1) = (prefd*rhoref-pref*rhorefd)/rhoref**2
         ref(itu1) = pref/rhoref
         refd(itu2) = (nurefd*ref(itu1)-nuref*refd(itu1))/ref(itu1)**2
         ref(itu2) = nuref/ref(itu1)
-      case (v2f) 
+      case (v2f)
         refd = 0.0_8
         refd(itu1) = (prefd*rhoref-pref*rhorefd)/rhoref**2
         ref(itu1) = pref/rhoref
@@ -2383,7 +2383,7 @@ turbloop:do nn=nt1,nt2
             end do
           end do
         else
-! turbulent variable not present. use the free stream data. 
+! turbulent variable not present. use the free stream data.
           do j=jbeg,jend
             do i=ibeg,iend
               turbinletd(i, j, nn) = winfd(nn)
@@ -2401,10 +2401,10 @@ turbloop:do nn=nt1,nt2
   logical function setbcvarturb(offset, boco, bcvararray, ibeg, iend, &
 &   jbeg, jend, turbinlet)
 !
-!       setbcvarturb sets the array for the turbulent halo data        
-!       for inlet boundaries. this function returns .true. if all      
-!       turbulence variables could be interpolated and .false.         
-!       otherwise.                                                     
+!       setbcvarturb sets the array for the turbulent halo data
+!       for inlet boundaries. this function returns .true. if all
+!       turbulence variables could be interpolated and .false.
+!       otherwise.
 !
     use constants
     use flowvarrefstate, only : nt1, nt2, muref, pref, rhoref, winf
@@ -2433,16 +2433,16 @@ turbloop:do nn=nt1,nt2
     else
 ! set the reference values depending on the turbulence model.
       nuref = muref/rhoref
-      select case  (turbmodel) 
-      case (spalartallmaras, spalartallmarasedwards) 
+      select case  (turbmodel)
+      case (spalartallmaras, spalartallmarasedwards)
         ref(itu1) = nuref
-      case (komegawilcox, komegamodified, mentersst) 
+      case (komegawilcox, komegamodified, mentersst)
         ref(itu1) = pref/rhoref
         ref(itu2) = ref(itu1)/nuref
-      case (ktau) 
+      case (ktau)
         ref(itu1) = pref/rhoref
         ref(itu2) = nuref/ref(itu1)
-      case (v2f) 
+      case (v2f)
         ref(itu1) = pref/rhoref
         ref(itu4) = ref(itu1)/nuref
         ref(itu2) = ref(itu1)*ref(itu4)
@@ -2467,7 +2467,7 @@ turbloop:do nn=nt1,nt2
             end do
           end do
         else
-! turbulent variable not present. use the free stream data. 
+! turbulent variable not present. use the free stream data.
           do j=jbeg,jend
             do i=ibeg,iend
               turbinlet(i, j, nn) = winf(nn)

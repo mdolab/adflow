@@ -1,10 +1,10 @@
-!       This subroutine takes a list of all local fringes, sorts it,   
-!       then communicates the required fringes back to their donor     
-!       procs, and flags all required cells as donors. This routine    
-!       does double duty: If the flag useWall is set, it flags the     
-!       donor cells as wallDonors, otherwise it flags the cells as     
-!       regular donors. We do this since the communication structure   
-!       for these two operations are identical                         
+!       This subroutine takes a list of all local fringes, sorts it,
+!       then communicates the required fringes back to their donor
+!       procs, and flags all required cells as donors. This routine
+!       does double duty: If the flag useWall is set, it flags the
+!       donor cells as wallDonors, otherwise it flags the cells as
+!       regular donors. We do this since the communication structure
+!       for these two operations are identical
 
 subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
 
@@ -31,7 +31,7 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
   integer(kind=intType) :: il, jl, kl, dIndex
   integer(kind=intType) :: iStart, iEnd, iProc, iSize, nFringeProc
   integer(kind=intType) :: sendCount, recvCount, ierr, totalRecvSize
-  integer mpiStatus(MPI_STATUS_SIZE) 
+  integer mpiStatus(MPI_STATUS_SIZE)
 
   ! First sort the fringes such that they are grouped by destination
   ! procesor.
@@ -44,13 +44,13 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
   ! fire that off to the processor that needs it, again using the
   ! dynamic sparse data exchange. For the section that is
   ! on-processor, we can do that donor flagging overlapped with the
-  ! communication. 
+  ! communication.
   ! -----------------------------------------------------------------
 
   allocate(fringeProc(nProc), cumFringeProc(1:nProc+1))
   call computeFringeProcArray(fringeList, nFringe, &
        fringeProc, cumFringeProc, nFringeProc)
-  
+
   ! nFringeProc is the total number of donor processors from
   ! fringeList fringeProc(1:nProcFringe) are the donor processors
   ! for the fringes cumFringeProc(1:nFringeProc) are the cumulative
@@ -61,23 +61,23 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
   tmpInt = 0
   do j=1, nFringeProc
      iProc = fringeProc(j)
-     if (iProc /= myid) then 
+     if (iProc /= myid) then
         tmpInt(iProc) = (cumFringeProc(j+1) - cumFringeProc(j))*2
      end if
   end do
 
-  ! Sum how much data we must receive from each processor. 
+  ! Sum how much data we must receive from each processor.
   call mpi_alltoall(tmpInt, 1, adflow_integer, recvSizes, 1, adflow_integer, &
        adflow_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
 
   ! We will need to send 2 integers to the donor processor:
   ! donorBlock, dIndex
-  
+
   ! Allocate space for the sending and receiving buffers
   totalRecvSize = sum(recvSizes)
   allocate(intSendBuf(2*nFringe), intRecvBuf(totalRecvSize))
-  
+
      ! Pack the full buffer with donorBlock, dI, dJ, and dK
   do j=1, nFringe
      intSendBuf(2*j-1) = fringeList(j)%donorBlock
@@ -87,30 +87,30 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
   ! Send the donors back to their own processors.
   sendCount = 0
   do j=1, nFringeProc
-     
+
      iProc = fringeProc(j)
      iStart = (cumFringeProc(j)-1)*2 + 1
      iSize = (cumFringeProc(j+1) - cumFringeProc(j))*2
-     
-     if (iProc /= myid) then 
+
+     if (iProc /= myid) then
         sendCount = sendCount + 1
         call mpi_isend(intSendBuf(iStart), iSize, adflow_integer, iProc, myid, &
              adflow_comm_world, sendRequests(sendCount), ierr)
         call ECHK(ierr, __FILE__, __LINE__)
      end if
   end do
-  
+
   ! Non-blocking receives
   recvCount = 0
   ii = 1
   do iProc=0, nProc-1
-     
+
      if (recvSizes(iProc) > 0) then
         recvCount = recvCount + 1
         call mpi_irecv(intRecvBuf(ii), recvSizes(iProc), adflow_integer, &
-             iProc, iProc, adflow_comm_world, recvRequests(recvCount), ierr) 
-        call ECHK(ierr, __FILE__, __LINE__) 
-        
+             iProc, iProc, adflow_comm_world, recvRequests(recvCount), ierr)
+        call ECHK(ierr, __FILE__, __LINE__)
+
         ii = ii + recvSizes(iProc)
      end if
   end do
@@ -121,8 +121,8 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
      iProc = fringeProc(j)
      iStart = cumFringeProc(j)
      iEnd = cumFringeProc(j+1)-1
-     
-     if (iProc == myid) then 
+
+     if (iProc == myid) then
         do i=iStart, iEnd
            nn = fringeList(i)%donorBlock
            il = flowDoms(nn, level, sps)%il
@@ -132,8 +132,8 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
            call unwindIndex(dIndex, il, jl, kl, iii, jjj, kkk)
 
            ! For the wall donors, we just flag the 1 cell that was
-           ! identified in the fringe search based on the octant. 
-           if (useWall) then 
+           ! identified in the fringe search based on the octant.
+           if (useWall) then
               call setIsWallDonor(flowDoms(nn, level, sps)%status(iii, jjj, kkk), .True. )
            else
               do kk=0, 1
@@ -148,9 +148,9 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
         end do
      end if
   end do
-  
+
   ! Complete all the sends/receives. We could do overlapping here
-  ! like the frist comm for the fringes/blocks. 
+  ! like the frist comm for the fringes/blocks.
   do i=1, recvCount
      call mpi_waitany(recvCount, recvRequests, index, mpiStatus, ierr)
      call EChk(ierr,__FILE__,__LINE__)
@@ -160,8 +160,8 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
      call mpi_waitany(sendCount, sendRequests, index, mpiStatus, ierr)
      call EChk(ierr,__FILE__,__LINE__)
   enddo
-  
-  ! Loop over the full receive buffer that should now be full. 
+
+  ! Loop over the full receive buffer that should now be full.
   do j=1, totalRecvSize/2
 
      nn = intRecvBuf(2*j-1)
@@ -172,7 +172,7 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
      dIndex = intRecvBuf(2*j)
      call unwindIndex(dIndex, il, jl, kl, iii, jjj, kkk)
 
-     if (useWall) Then 
+     if (useWall) Then
         call setIsWallDonor(flowDoms(nn, level, sps)%status(iii, jjj, kkk), .True. )
      else
         do kk=0, 1

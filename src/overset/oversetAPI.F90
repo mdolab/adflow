@@ -1,8 +1,8 @@
 module oversetAPI
-  !       computeOversetInterpolation is the top level routine that      
-  !       implements the implicit hole cutting method for determing      
-  !       overset grid connectivitiies. It operates on a given multigrid 
-  !       level and spectral instance                                    
+  !       computeOversetInterpolation is the top level routine that
+  !       implements the implicit hole cutting method for determing
+  !       overset grid connectivitiies. It operates on a given multigrid
+  !       level and spectral instance
 contains
   subroutine oversetComm(level, firstTime, coarseLevel, closedFamList)
 
@@ -75,7 +75,7 @@ contains
     type(fringeType) :: fringe
 
     ! MPI/Communication related
-    integer mpiStatus(MPI_STATUS_SIZE) 
+    integer mpiStatus(MPI_STATUS_SIZE)
     integer(kind=intType) :: MAGIC, source, tag, sendCount, recvCount
     integer(kind=intType) :: nOFringeSend, nOFringeRecv
     integer(kind=intType) :: nOBlockSend, nOBlockRecv
@@ -89,7 +89,7 @@ contains
     real(kind=realType), dimension(:), allocatable :: realRecvBuf
 
     ! -----------------------------------------------------------------
-    ! Step 1: Initializaion: Make sure the stencils are initialized. 
+    ! Step 1: Initializaion: Make sure the stencils are initialized.
     ! -----------------------------------------------------------------
 
     call initialize_stencils()
@@ -101,8 +101,8 @@ contains
     ! -----------------------------------------------------------------
 
     ! If there is not overset meshes present, just make an empty comm
-    ! structure and call it a day. 
-    if (.not. oversetPresent) then 
+    ! structure and call it a day.
+    if (.not. oversetPresent) then
        do sps=1,nTimeIntervalsSpectral
           call emptyOversetComm(level, sps)
 
@@ -127,7 +127,7 @@ contains
     ! Determine the magic number which is actually the same as
     ! nDomTotal. nDomTotal is guaranteed to be greater than or equal to
     ! nProc. This will be used to space out tags on communications to
-    ! make sure they do not overlap. 
+    ! make sure they do not overlap.
     MAGIC = nDomTotal
 
     ! Zero out all the timers
@@ -158,7 +158,7 @@ contains
        ! representation when it is finished. (Routine below)
        ! -----------------------------------------------------------------
        call tic(iBuildOverlap)
-       if (firstTime) then 
+       if (firstTime) then
           call deallocateCSRMatrix(overlap)
           call buildGlobalSparseOverlap(overlap)
        end if
@@ -184,7 +184,7 @@ contains
             tmpReal(size(overlap%data)))
 
        wallFamList => BCFamGroups(iBCGroupWalls)%famList
-       ! Initialization 
+       ! Initialization
        tmpReal = zero
        tmpInt2D = 0
        do nn=1, nDom
@@ -209,22 +209,22 @@ contains
        ! Set the tmpReal variable to to be the number of fringes we
        ! need to search for. This is inefficient becuase we loop over
        ! the all the matrix rows:
-       if (firstTime) then 
+       if (firstTime) then
           do i=1, overlap%nrow
              do jj=overlap%rowPtr(i), overlap%rowPtr(i+1)-1
                 iCol = overlap%colInd(jj)
-                if (iCol > cumDomProc(myid) .and. iCol <= cumDomProc(myid+1)) then 
+                if (iCol > cumDomProc(myid) .and. iCol <= cumDomProc(myid+1)) then
                    nn = iCol - cumDomProc(myid)
                    tmpReal(jj) = &
                         flowDoms(nn, level, sps)%nx * &
                         flowDoms(nn, level, sps)%ny * &
-                        flowDoms(nn, level, sps)%nz 
+                        flowDoms(nn, level, sps)%nz
                 end if
              end do
           end do
        end if
 
-       if (.not. firstTime) then 
+       if (.not. firstTime) then
           tmpReal = overlap%data
        end if
 
@@ -238,7 +238,7 @@ contains
        call ECHK(ierr, __FILE__, __LINE__)
 
        ! Done with the tmp arrays. This should be the last of the
-       ! blocking collectives for a while. 
+       ! blocking collectives for a while.
        deallocate(tmpReal, tmpInt2D)
 
        ! -----------------------------------------------------------------
@@ -250,7 +250,7 @@ contains
        ! sending operation (it is transpose of the block sending)
        ! -----------------------------------------------------------------
        useOversetLoadBalance = .False.
-       if (useOversetLoadBalance) then 
+       if (useOversetLoadBalance) then
           call oversetLoadBalance(overlap)
        end if
        call transposeOverlap(overlap, overlapTranspose)
@@ -260,7 +260,7 @@ contains
        !  do. Essentially this is just the entries in the matrix that we
        !  have been assigned according to assignedProc. This will keep
        !  track of the work we have to do and if it is yet completed or
-       !  not. We want this small so we can constantlly loop over it quickly. 
+       !  not. We want this small so we can constantlly loop over it quickly.
        !  -----------------------------------------------------------------
 
        call getWorkArray(overlap, work)
@@ -268,7 +268,7 @@ contains
 
        ! Call the generic routines to determine the send/receive pattern
        ! for oBlock comm and the fringe comm. These are transpose of
-       ! each other. Just overestimate the sizes of the lists. 
+       ! each other. Just overestimate the sizes of the lists.
 
        ! For sending, the worse case is sending all my blocks/fringes/walls to
        ! everyone but myself:
@@ -294,11 +294,11 @@ contains
        overlap%data = zero
 
        ! Allocate the exact space for our send and recv requests. Note
-       ! that for the oBlocks, two values are set, real and integer. 
+       ! that for the oBlocks, two values are set, real and integer.
        nn = max(2*nProc, &
             2*nOBlockSend + 2*nOFringeSend, &
             2*nOBlockRecv + 2*nOfringeRecv)
-       if (allocated(sendRequests)) then 
+       if (allocated(sendRequests)) then
           deallocate(sendRequests, recvRequests)
        end if
 
@@ -308,9 +308,9 @@ contains
        ! On the first pass we need to get an estimate of what is
        ! inside the body and what isn't. This method isn't
        ! perfect; some cells that are actually inside the true
-       ! surface won't be flagged, but that's ok. 
+       ! surface won't be flagged, but that's ok.
        work(4, :) = 0
-       
+
        ! -----------------------------------------------------------------
        ! Step 8: Allocation of temporary data structures: oBlocks and fringeList
        !
@@ -341,17 +341,17 @@ contains
        ! there are only a few scattered variables and no large arrays it
        ! should be ok.
        ! -----------------------------------------------------------------
-       
+
        allocate(oBlocks(nDomTotal), oFringes(nDomTotal))
 
        ! Thse variables keep track of if the block/fringes are
        ! ready. Initialized to false and only flipped when we are sure
-       ! they are ready to be used. 
-       
+       ! they are ready to be used.
+
        allocate(oBlockReady(nDomTotal), oFringeReady(nDomTotal))
        oBlockReady = .False.
        oFringeReady = .False.
-       
+
        ! Allocate space for the localWallFringes. localWallFringes keeps
        ! track of donors for cells that are next to a wall. These must
        ! be recorded independently of the actual donors since we don't
@@ -379,18 +379,18 @@ contains
        ! doesn't do:
        do ii=1, nClusters
           wall => clusterWalls(ii)
-          if (wall%nNodes > 0) then 
+          if (wall%nNodes > 0) then
              wall%tree => kdtree2_create(wall%x(:, 1:wall%nNodes))
           end if
-          
-          ! Build the inverse of the connectivity, the nodeToElem array. 
+
+          ! Build the inverse of the connectivity, the nodeToElem array.
           allocate(wall%nte(4, wall%nNodes))
           wall%nte = 0
           do i=1, wall%nCells
              do j=1, 4
                 n = wall%conn(j, i)
                 inner:do k=1, 4
-                   if (wall%nte(k, n) == 0) then 
+                   if (wall%nte(k, n) == 0) then
                       wall%nte(k, n) = i
                       exit inner
                    end if
@@ -400,15 +400,15 @@ contains
        end do
        call toc(iComputeCellWallPoint)
 
-       ! Flag all the cells that we know are forced receivers. 
+       ! Flag all the cells that we know are forced receivers.
        call flagForcedRecv()
 
        ! Initialize the overset-specific data structures for
-       ! performing searches. 
+       ! performing searches.
        do nn=1, nDom
           call setPointers(nn, level, sps)
           iDom = cumDomProc(myid) + nn
-          
+
           call tic(iBuildADT)
           call initializeOBlock(oBlocks(iDom), nn, level, sps)
           oBlockReady(iDom) = .True.
@@ -416,8 +416,8 @@ contains
 
           call tic(iBuildSearchPoints)
           call initializeOFringes(oFringes(iDom), nn, closedFamList)
-          oFringeReady(iDom) = .True.  
-          call toc(iBuildSearchPoints)         
+          oFringeReady(iDom) = .True.
+          call toc(iBuildSearchPoints)
        end do
 
        ! Post all the oBlock/oFringe iSends
@@ -428,16 +428,16 @@ contains
           call packOBlock(oBlocks(iDom))
           call sendOBlock(oBlocks(iDom), iDom, iProc, 0, sendCount)
        end do
-       
+
        do jj=1, nOFringeSend
           iProc = oFringeSendList(1, jj)
           iDom = oFringeSendList(2, jj)
           call packOFringe(oFringes(iDom))
           call sendOFringe(oFringes(iDom), iDom, iProc, MAGIC, sendCount)
        end do
-       
+
        ! Post all the oBlock/oFringe receives. Before posting the actual
-       ! receive, allocate the receiving buffer. 
+       ! receive, allocate the receiving buffer.
        recvCount = 0
        do jj=1, nOBlockRecv
           iProc = oBlockRecvList(1, jj)
@@ -467,45 +467,45 @@ contains
 
           ! Global domain index of the recv that finished
           iDom = recvInfo(1, index)
-          
+
           ! Check which type of receive just finished and flag them as
           ! being complete.
-          if     (recvInfo(2, index) == 1) then 
-             oBlocks(iDom)%realBufferReady = .True. 
-          else if (recvInfo(2, index) == 2) then 
-             oBlocks(iDom)%intBufferReady = .True. 
-          else if (recvInfo(2, index) == 3) then 
-             oFringes(iDom)%realBufferReady = .True. 
-          else if (recvInfo(2, index) == 4) then 
-             oFringes(iDOm)%intBufferReady = .True. 
+          if     (recvInfo(2, index) == 1) then
+             oBlocks(iDom)%realBufferReady = .True.
+          else if (recvInfo(2, index) == 2) then
+             oBlocks(iDom)%intBufferReady = .True.
+          else if (recvInfo(2, index) == 3) then
+             oFringes(iDom)%realBufferReady = .True.
+          else if (recvInfo(2, index) == 4) then
+             oFringes(iDOm)%intBufferReady = .True.
           end if
 
           ! If both int and real buffers are received, we can unpack the
           ! oblock and flag it as ready.
           if (oBlocks(iDom)%realBufferReady .and. oBlocks(iDom)%intBufferReady .and. &
-               .not.oBlocks(iDom)%allocated) then 
-             call unpackOBlock(oBlocks(iDom))           
+               .not.oBlocks(iDom)%allocated) then
+             call unpackOBlock(oBlocks(iDom))
              oBlockReady(iDom) = .True.
           end if
-          
+
           ! If both int and real buffers are received, we can unpack the
           ! oFringe and flag it as ready.
           if (oFringes(iDom)%realBufferReady .and. oFringes(iDom)%intBufferReady .and. &
-               .not.oFringes(iDom)%allocated) then 
+               .not.oFringes(iDom)%allocated) then
              call unpackOFringe(oFringes(iDom))
              oFringeReady(iDom) = .True.
           end if
-          
-          ! Now see if we can do any more of the work, ie the searches. 
+
+          ! Now see if we can do any more of the work, ie the searches.
           call doMyWork(flag)
-          
+
           ! Sanity check. flag better be true when i=recvCount
-          if (i==recvCount .and. .not. flag) then 
+          if (i==recvCount .and. .not. flag) then
              call terminate("computeInterpolationParallel", "Inconsistent Comm pattern detected.")
           end if
        end do
 
-       ! Last thing to do wait for all the sends to finish 
+       ! Last thing to do wait for all the sends to finish
        do i=1,sendCount
           call mpi_waitany(sendCount, sendRequests, index, mpiStatus, ierr)
           call ECHK(ierr, __FILE__, __LINE__)
@@ -516,13 +516,13 @@ contains
        call deallocateOBlocks(oBlocks, size(oBlocks))
        deallocate(oBlocks)
        deallocate(oBlockReady, oFringeReady)
-       
+
        ! Destroy the walls we had made for the surface-overlap
        ! searching.
        do i=1, nClusters
           wall => clusterWalls(i)
           call destroySerialQuad(wall%ADT)
-          if (wall%nNodes > 0) then 
+          if (wall%nNodes > 0) then
              call kdtree2destroy(wall%tree)
           end if
           deallocate(wall%x, wall%conn, wall%ind, wall%nte)
@@ -531,50 +531,50 @@ contains
 
        ! -----------------------------------------------------------------
        ! Step 9: Well, all the searches are done, so now we can now send
-       ! the fringes back to where they came from. 
+       ! the fringes back to where they came from.
        ! -----------------------------------------------------------------
 
        ! We are done with most of the data of the oFringe. Nuke that
        ! right now to save memory. The fringeIntBuffer and
-       ! fringeRealBuffer have to stick around a little longer. 
+       ! fringeRealBuffer have to stick around a little longer.
        do iDim=1, nDomTotal
-          if (allocated(oFringes(iDom)%x)) & 
+          if (allocated(oFringes(iDom)%x)) &
                deallocate(oFringes(iDom)%x)
 
-          if (allocated(oFringes(iDom)%isWall)) & 
+          if (allocated(oFringes(iDom)%isWall)) &
                deallocate(oFringes(iDom)%isWall)
 
           if (allocated(oFringes(iDom)%xSeed)) &
                deallocate(oFringes(iDom)%xSeed)
 
-          if (allocated(oFringes(iDom)%wallind)) & 
+          if (allocated(oFringes(iDom)%wallind)) &
                deallocate(oFringes(iDom)%wallInd)
        end do
-       
+
        call tic(iFringeProcessing)
        nReal = 4
        mInt = 5
        do iDom=1, nDomTotal
-          if (oFringes(iDom)%allocated) then 
+          if (oFringes(iDom)%allocated) then
              ! Fringe is allocated so check it
              oFringes(iDom)%fringeReturnSize = oFringes(iDom)%nDonor
 
              ! Check if this domain is one I own. If so, we just copy
              ! the the fringes into the block-based list:
-             
+
              nn = iDom - cumDomProc(myid)
-             if (nn >= 1 .and. nn <= nDom) then 
+             if (nn >= 1 .and. nn <= nDom) then
                 call setPointers(nn, level, sps)
-                if (associated(flowDoms(nn, level, sps)%fringes)) then 
+                if (associated(flowDoms(nn, level, sps)%fringes)) then
                    deallocate(flowDoms(nn, level, sps)%fringes)
                    deallocate(flowDoms(nn, level, sps)%fringePtr)
                    deallocate(flowDoms(nn, level, sps)%nDonors)
                 end if
-                if (associated(flowDoms(nn, level, sps)%gInd)) then 
+                if (associated(flowDoms(nn, level, sps)%gInd)) then
                    deallocate(flowDoms(nn, level, sps)%gInd)
                 end if
 
-                ! Estimate about 1 donors for every cell. 
+                ! Estimate about 1 donors for every cell.
                 mm = nx*ny*nz
                 allocate(flowDoms(nn, level, sps)%fringes(mm), &
                      flowDoms(nn, level, sps)%fringePtr(3, 0:ib, 0:jb, 0:kb), &
@@ -605,29 +605,29 @@ contains
        call toc(iFringeProcessing)
 
        ! This will compute the amount to data we expect to receive
-       ! back for each OFringe we set out. 
+       ! back for each OFringe we set out.
        call getFringeReturnSizes(oFringeSendList, oFringeRecvList, &
             nOFringeSend, nOFringeRecv, oFringes, fringeRecvSizes, cumFringeRecv)
 
        ! Now alocate the integer and real space. Note we are receiving nReal real
        ! values and mInt int values:
        ii = cumFringeRecv(nOfringeSend+1)-1
-       allocate(intRecvBuf(ii*mInt), realRecvBuf(ii*nReal))   
+       allocate(intRecvBuf(ii*mInt), realRecvBuf(ii*nReal))
 
        ! We are now ready to actually send and receive our fringes
        sendCount = 0
        do jj=1, nOFringeRecv
-          
+
           iProc = oFringeRecvList(1, jj)
           iDom = oFringeRecvList(2, jj)
-          iSize = oFringes(iDom)%fringeReturnSize 
-          if (iSize > 0) then 
+          iSize = oFringes(iDom)%fringeReturnSize
+          if (iSize > 0) then
              tag = iDom + MAGIC
              sendCount = sendCount + 1
              call mpi_isend(oFringes(iDom)%fringeRealBuffer, iSize*nReal, adflow_real, &
                   iproc, tag, adflow_comm_world, sendRequests(sendCount), ierr)
              call ECHK(ierr, __FILE__, __LINE__)
-             
+
              tag = iDom + 2*MAGIC
              sendCount = sendCount + 1
              call mpi_isend(oFringes(iDom)%fringeIntBuffer, iSize*mInt, adflow_integer, &
@@ -635,27 +635,27 @@ contains
              call ECHK(ierr, __FILE__, __LINE__)
           end if
        end do
-       
+
        ! Non-blocking receives
        recvCount = 0
        do jj=1, nOfringeSend
-          
+
           iProc = oFringeSendList(1, jj)
           iDom = oFringeSendList(2, jj)
-          iSize = cumFringeRecv(jj+1) - cumFringeRecv(jj) 
-          if (iSize > 0) then 
-             
+          iSize = cumFringeRecv(jj+1) - cumFringeRecv(jj)
+          if (iSize > 0) then
+
              iStart = (cumFringeRecv(jj  )-1)*nReal + 1
              tag = iDom + MAGIC
-             recvCount = recvCount + 1       
+             recvCount = recvCount + 1
              call mpi_irecv(realRecvBuf(iStart), iSize*nReal, adflow_real, &
                   iProc, tag, adflow_comm_world, recvRequests(recvCount), ierr)
              call ECHK(ierr, __FILE__, __LINE__)
              recvInfo(:, recvCount) = (/iDom, 1/) ! 1 for real recv
-             
+
              iStart = (cumFringeRecv(jj  )-1)*mInt + 1
              tag = iDom + 2*MAGIC
-             recvCount = recvCount + 1                
+             recvCount = recvCount + 1
              call mpi_irecv(intRecvBuf(iStart), iSize*mInt, adflow_integer, &
                   iProc, tag, adflow_comm_world, recvRequests(recvCount), ierr)
              call ECHK(ierr, __FILE__, __LINE__)
@@ -670,13 +670,13 @@ contains
        end do
 
        ! With the send finished, we can ditch the oFringe real buffer
-       ! that contains the frac and quality. That is no longer needed. 
+       ! that contains the frac and quality. That is no longer needed.
        do iDom=1, nDom
-          if (associated(oFringes(iDom)%fringeRealBuffer)) then 
+          if (associated(oFringes(iDom)%fringeRealBuffer)) then
              deallocate(oFringes(iDom)%fringeRealBuffer)
           end if
        end do
-       
+
        do i=1,recvCount
           call mpi_waitany(recvCount, recvRequests, index, mpiStatus, ierr)
           call ECHK(ierr, __FILE__, __LINE__)
@@ -684,7 +684,7 @@ contains
 
        call tic(iFringeProcessing)
 
-       ! Process the data we just received. 
+       ! Process the data we just received.
        do kk=1, nOfringeSend
 
           ! Local block index of the fringes
@@ -695,9 +695,9 @@ contains
           ! with:
           call setPointers(nn, level, sps)
 
-          ! This is the range of fringes that are now ready. 
+          ! This is the range of fringes that are now ready.
           do jj=cumFringeRecv(kk), cumFringeRecv(kk+1)-1
-             
+
              ! Recreate the fringe type
              iStart = mInt*(jj-1)
              fringe%donorProc  = intRecvBuf(iStart + 1)
@@ -715,7 +715,7 @@ contains
        end do
 
        ! Ditch the temporary receiving memory for reals. We still the
-       ! integer receiving buffer for inside the loop. 
+       ! integer receiving buffer for inside the loop.
        deallocate(realRecvBuf)
 
        ! Before we start the loop, for each block, we record the total
@@ -725,13 +725,13 @@ contains
        ! necessary for the local halo cells. So we save the current
        ! value of nDonors so that when we start the loop we reset the
        ! value back this. We also sort the fringes as this only needs
-       ! to be completed once. 
+       ! to be completed once.
 
        do nn=1, nDom
-          call setPointers(nn, level, sps) 
+          call setPointers(nn, level, sps)
 
           ! First we need to sort the fringes by RECEIVER. That will
-          ! put all the cells in order. 
+          ! put all the cells in order.
           call qsortFringeType(fringes, nDonors, sortByReceiver)
 
           flowDoms(nn, level, sps)%nDonorsOnOwnedCells = flowDoms(nn, level, sps)%nDonors
@@ -745,24 +745,24 @@ contains
           curI = 0
           curJ = 0
           curK = 0
-          
+
           do ii=1, nDonors
-                
+
              ! fringePtr has the following 3 integers:
-                
+
              ! 1: The actual fringe this cell is using. 0 if it
              ! doesn't have a fringe
-             
+
              ! 2: The start index into fringes of all of this cell's
-             ! fringes. 0 if cell has no fringes. 
-             
+             ! fringes. 0 if cell has no fringes.
+
              ! 3: The end index into fringes of all of this cell's
-             ! fringes. 0 if cell has no fringes. 
+             ! fringes. 0 if cell has no fringes.
 
               call unwindIndex(fringes(ii)%myIndex, il, jl, kl, i, j, k)
              ! Set the start and end to the current index
-             if (curI /= i .or. curJ /= j .or. curK /= k) then 
-                
+             if (curI /= i .or. curJ /= j .or. curK /= k) then
+
                 fringePtr(2, i, j, k) = ii
                 fringePtr(3, i, j, k) = ii
                 curI = i
@@ -778,12 +778,12 @@ contains
        ! Allocate space for iblankLast which is used to keep track of
        ! the previous iblank values to determine when we can sto pcd the
        ! loop. It is initialized to 1 such that at least 2 iteations
-       ! will always be done. 
+       ! will always be done.
        do nn=1, nDom
           call setPointers(nn, level, sps)
           ! Note that we only allocate the owned cells since it
           ! sufficient to check just the owned cells for if any one of
-          ! them has changed. 
+          ! them has changed.
           allocate(flowDoms(nn, level, sps)%iBlankLast(2:il, 2:jl, 2:kl))
           flowDoms(nn, level, sps)%iBlankLast = 1
        end do
@@ -807,10 +807,10 @@ contains
        ! ---------------------------
        refineLoop: do iRefine=1, nRefine
 
-          ! re-Initialize the status array. 
+          ! re-Initialize the status array.
           call reInitializeStatus(level, sps)
-          
-          ! Exchange the status so that the halos get the right 
+
+          ! Exchange the status so that the halos get the right
           call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
 
           call tic(iCheckDonors)
@@ -819,10 +819,10 @@ contains
              call setPointers(nn, level, sps)
 
              ! Reset the nDonors to the total number that were found for
-             ! *just* the owned cells. 
-             
+             ! *just* the owned cells.
+
              nDonors = flowDoms(nn, level, sps)%nDonorsOnOwnedCells
-             
+
              ! Now we *actually* perform the implicit hole cut. We
              ! compute our own quality, and then loop over the
              ! perspective donors and see if we can get one
@@ -832,17 +832,17 @@ contains
              do k=2, kl
                 do j=2, jl
                    do i=2, il
-                      ! Reset the pointer to the donor cell. 
+                      ! Reset the pointer to the donor cell.
                       fringePtr(1, i, j, k) = 0
 
-                      if (iblank(i, j, k) <= -2) then 
+                      if (iblank(i, j, k) <= -2) then
                          ! This is a flooded cell, don't try to get a donor
                          cycle
                       end if
-                      
+
                       ! This is my original quality, accounting for
-                      ! the overlap factor. 
-                      if (wallsPresent) then 
+                      ! the overlap factor.
+                      if (wallsPresent) then
                          curQuality = vol(i, j, k)**third * overlapFactor
                       else
                          curQuality = (backGroundVolScale*vol(i, j, k))**third * overlapFactor
@@ -851,30 +851,30 @@ contains
                       curQuality = curQuality * cgnsDoms(nbkGlobal)%priority
 
                       ! For forced receivers, they get a large quality
-                      ! such that ANY donor is selected. 
-                      if (forcedRecv(i,j,k) > 0) then 
+                      ! such that ANY donor is selected.
+                      if (forcedRecv(i,j,k) > 0) then
                          curQuality = large
                       end if
-                      
+
                       ! Loop over the potential donors
                       iStart = fringePtr(2, i, j, k)
                       iEnd   = fringePtr(3, i, j, k)
-                      
+
                       ! iStart of 0 means no donor:
-                      if (iStart > 0) then 
+                      if (iStart > 0) then
                          do ii=iStart, iEnd
-                            if (fringes(ii)%quality < curQuality) then 
-                               
+                            if (fringes(ii)%quality < curQuality) then
+
                                ! Update the pointer to the fringe we want
                                fringePtr(1, i, j, k) = ii
-                               
+
                                ! Update the current quality to the one
                                ! we just found, in case we have
                                ! multiple ones to choose from.
                                curQuality = fringes(ii)%quality
-                               
+
                                ! Flag this cell as a receiver and remove
-                               ! it's compute status. 
+                               ! it's compute status.
                                call setIsReceiver(status(i, j, k), .True.)
                                call setIsCompute(status(i, j, k), .False.)
                             end if
@@ -883,12 +883,12 @@ contains
                    end do
                 end do
              end do
-             
+
              ! Now count up the number of actual fringes we had.
              do k=2, kl
                 do j=2, jl
                    do i=2, il
-                      if (isReceiver(status(i, j, k))) then 
+                      if (isReceiver(status(i, j, k))) then
                          nLocalFringe = nLocalFringe + 1
                       end if
                    end do
@@ -898,12 +898,12 @@ contains
           call toc(iCheckDonors)
 
           ! -------------------------------
-          !            Flooding 
+          !            Flooding
           ! -------------------------------
           call tic(iFlooding)
           call floodInteriorCells(level, sps)
           call toc(iFlooding)
-        
+
           ! ---------------------------------
           ! Determine which cells are donors
           ! ---------------------------------
@@ -915,7 +915,7 @@ contains
              do k=2, kl
                 do j=2, jl
                    do i=2, il
-                      if (isReceiver(status(i, j, k))) then 
+                      if (isReceiver(status(i, j, k))) then
                          nLocalFringe = nLocalFringe + 1
                          ii = fringePtr(1, i, j, k)
                          localFringes(nLocalFringe) = fringes(ii)
@@ -930,25 +930,25 @@ contains
           call exchangeStatusTranspose(level, sps, commPatternCell_2nd, internalCell_2nd)
           call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
           deallocate(localFringes)
-                
+
           ! Determine which cells need to be forced receivers. This
           ! may have changed due to flooding.
           call flagForcedRecv()
 
           ! Flag cells that are no longer valid donors. This is
-          ! slightly tricky: What we do here is 
-        
+          ! slightly tricky: What we do here is
+
           ! 1. Firstly we go through the oFringes array and mark all
-          ! the fringes that are now invalid. 
+          ! the fringes that are now invalid.
 
           do iDom=1, nDomTotal
-             if (oFringes(iDom)%allocated) then 
+             if (oFringes(iDom)%allocated) then
                 do iFringe=1, oFringes(iDom)%nDonor
                    donorBlock = oFringes(iDom)%fringeIntBuffer(2, iFringe)
                    dIndex = oFringes(iDom)%fringeIntBuffer(3, iFringe)
-                   nn = abs(donorBlock) 
+                   nn = abs(donorBlock)
 
-                   if (nn < 1) then 
+                   if (nn < 1) then
                       print *, 'donor:', myid, donorBlock, cumDomProc(myID), nn
                       stop
                    end if
@@ -963,40 +963,40 @@ contains
                    do kk=k,k+1
                       do jj=j,j+1
                          do ii=i,i+1
-                            
+
                             if (isFlooded(flowDoms(nn, level, sps)%status(ii,jj,kk)) .or. &
                                  isFloodSeed(flowDoms(nn, level, sps)%status(ii,jj,kk)) .or. &
                                  flowDoms(nn, level, sps)%iblank(ii,jj,kk) == -4 .or. &
-                                 flowDoms(nn, level, sps)%forcedRecv(ii, jj, kk) > 0) then 
-                               invalid = .True. 
+                                 flowDoms(nn, level, sps)%forcedRecv(ii, jj, kk) > 0) then
+                               invalid = .True.
                             end if
                          end do
                       end do
                    end do
 
-                   if (invalid) then 
+                   if (invalid) then
                       ! Change the donorBlock to be negative if it is
                       ! not already so.  The negative block index
-                      ! indicates that this donor is no longer valid. 
-                      if (donorBlock > 0) then 
+                      ! indicates that this donor is no longer valid.
+                      if (donorBlock > 0) then
                          oFringes(iDom)%fringeIntBuffer(2, iFringe) = -donorBlock
                       end if
                    end if
                 end do
              end if
           end do
-          
+
           ! 2. We send the fringes back to where they came from like
           ! during the search. The only difference is we don't add
-          ! them to the list again, but rather modify what is already there. 
+          ! them to the list again, but rather modify what is already there.
 
           sendCount = 0
           do jj=1, nOFringeRecv
-          
+
              iProc = oFringeRecvList(1, jj)
              iDom = oFringeRecvList(2, jj)
-             iSize = oFringes(iDom)%fringeReturnSize 
-             if (iSize > 0) then 
+             iSize = oFringes(iDom)%fringeReturnSize
+             if (iSize > 0) then
                 tag = iDom + 2*MAGIC
                 sendCount = sendCount + 1
                 call mpi_isend(oFringes(iDom)%fringeIntBuffer, iSize*mInt, adflow_integer, &
@@ -1004,59 +1004,59 @@ contains
                 call ECHK(ierr, __FILE__, __LINE__)
              end if
           end do
-       
+
           ! Non-blocking receives
           recvCount = 0
           do jj=1, nOfringeSend
-             
+
              iProc = oFringeSendList(1, jj)
              iDom = oFringeSendList(2, jj)
-             iSize = cumFringeRecv(jj+1) - cumFringeRecv(jj) 
-             if (iSize > 0) then 
-             
+             iSize = cumFringeRecv(jj+1) - cumFringeRecv(jj)
+             if (iSize > 0) then
+
                 iStart = (cumFringeRecv(jj  )-1)*mInt + 1
                 tag = iDom + 2*MAGIC
-                recvCount = recvCount + 1                
+                recvCount = recvCount + 1
                 call mpi_irecv(intRecvBuf(iStart), iSize*mInt, adflow_integer, &
                      iProc, tag, adflow_comm_world, recvRequests(recvCount), ierr)
                 call ECHK(ierr, __FILE__, __LINE__)
                 recvInfo(:, recvCount) = (/iDom, 2/) ! 2 for int recv
              end if
           end do
-          
-          ! Process any data we can locally while we wait. 
+
+          ! Process any data we can locally while we wait.
           do iDom=1, nDomTotal
-             if (oFringes(iDom)%allocated) then 
-                
+             if (oFringes(iDom)%allocated) then
+
                 nn = iDom - cumDomProc(myid)
-                if (nn >= 1 .and. nn <= nDom) then 
+                if (nn >= 1 .and. nn <= nDom) then
                    call setPointers(nn, level, sps)
 
                    do jj=1, oFringes(iDom)%nDonor
-                    
+
                       donorProc  = oFringes(iDom)%fringeIntBuffer(1, jj)
                       donorBlock = oFringes(iDom)%fringeIntBuffer(2, jj)
                       dIndex     = oFringes(iDom)%fringeIntBuffer(3, jj)
                       myBlock    = oFringes(iDom)%fringeIntBuffer(4, jj)
                       myIndex    = oFringes(iDom)%fringeIntBuffer(5, jj)
 
-                      if (donorBlock < 0) then 
+                      if (donorBlock < 0) then
                          ! This fringe is no longer valid! Modify this
-                         ! fringe in our list. 
+                         ! fringe in our list.
                          call unwindIndex(myIndex, il, jl, kl, i, j, k)
-                         
+
                          ! Now loop over the donors this cells has to match
-                         ! up the one that we are dealing with here. 
-                         
-                         ! Loop over the potential donors. 
+                         ! up the one that we are dealing with here.
+
+                         ! Loop over the potential donors.
                          iStart = fringePtr(2, i, j, k)
                          iEnd   = fringePtr(3, i, j, k)
-                      
+
                          do ii=iStart, iEnd
                             if (fringes(ii)%donorBlock == abs(donorBlock) .and. &
-                                 fringes(ii)%dIndex == dIndex) then 
-                               
-                               ! This is the fringe. Flag as bad. 
+                                 fringes(ii)%dIndex == dIndex) then
+
+                               ! This is the fringe. Flag as bad.
                                fringes(ii)%quality = 2*Large
                             end if
                          end do
@@ -1071,26 +1071,26 @@ contains
              call mpi_waitany(sendCount, sendRequests, index, mpiStatus, ierr)
              call ECHK(ierr, __FILE__, __LINE__)
           end do
-          
+
           do i=1,recvCount
              call mpi_waitany(recvCount, recvRequests, index, mpiStatus, ierr)
              call ECHK(ierr, __FILE__, __LINE__)
           end do
-          
-          ! Process the data we just received. 
+
+          ! Process the data we just received.
           do kk=1, nOfringeSend
-             
+
              ! Local block index of the fringes
              iDom = oFringeSendList(2, kk)
              nn = iDom - cumDomProc(myid)
-             
+
              ! Set the block pointers for the local block we are dealing
              ! with:
              call setPointers(nn, level, sps)
-             
-             ! This is the range of fringes that are now ready. 
+
+             ! This is the range of fringes that are now ready.
              do jj=cumFringeRecv(kk), cumFringeRecv(kk+1)-1
-                
+
                 iStart = mInt*(jj-1)
                 donorProc  = intRecvBuf(iStart + 1)
                 donorBlock = intRecvBuf(iStart + 2)
@@ -1098,19 +1098,19 @@ contains
                 myBlock    = intRecvBuf(iStart + 4)
                 myIndex    = intRecvBuf(iStart + 5)
 
-                if (donorBlock < 0) then 
+                if (donorBlock < 0) then
                    ! This fringe is no longer valid! Modify this
-                   ! fringe in our list. 
+                   ! fringe in our list.
                    call unwindIndex(myIndex, il, jl, kl, i, j, k)
 
                    ! Now loop over the donors this cells has to match
-                   ! up the one that we are dealing with here. 
+                   ! up the one that we are dealing with here.
 
-                   ! Loop over the potential donors. 
+                   ! Loop over the potential donors.
                    iStart = fringePtr(2, i, j, k)
                    iEnd   = fringePtr(3, i, j, k)
-                      
-                   if (iStart == 0) then 
+
+                   if (iStart == 0) then
                       print *,'Something bad happened. The block does not think'&
                            &'It has any donors but there is an incoming one.'
                       stop
@@ -1119,16 +1119,16 @@ contains
                    do ii=iStart, iEnd
                       if (fringes(ii)%donorProc == donorProc .and. &
                            fringes(ii)%donorBlock == abs(donorBlock) .and. &
-                           fringes(ii)%dIndex == dIndex) then 
+                           fringes(ii)%dIndex == dIndex) then
 
-                         ! This is the fringe. Flag as bad. 
+                         ! This is the fringe. Flag as bad.
                          fringes(ii)%quality = 2*Large
                       end if
                    end do
                 end if
              end do
           end do
-          
+
           ! -------------------------------------------------------------
 
 
@@ -1139,7 +1139,7 @@ contains
           ! Correct irregular cells
           call irregularCellCorrection(level, sps)
 
-          ! Set UPdate the iblank array. 
+          ! Set UPdate the iblank array.
           call setIblankArray(level, sps)
 
           ! -----------------------------------------------------------------
@@ -1150,14 +1150,14 @@ contains
 
           ! Determine if we can exit the loop. To do this we need to
           ! check if *any* of the iblank values has changed on *any*
-          ! processor since the last iteration. 
+          ! processor since the last iteration.
           localChanged = .False.
           do nn=1, nDom
              call setPointers(nn, level, sps)
              do k=2, kl
                 do j=2, jl
                    do i=2, il
-                      if (flowDoms(nn, level, sps)%iblankLast(i, j, k) /= iblank(i, j, k)) then 
+                      if (flowDoms(nn, level, sps)%iblankLast(i, j, k) /= iblank(i, j, k)) then
                          localChanged = .True.
                       end if
                       ! Now save the value
@@ -1171,7 +1171,7 @@ contains
                adflow_comm_world, ierr)
           call ECHK(ierr, __FILE__, __LINE__)
 
-          if (.not. globalChanged) then 
+          if (.not. globalChanged) then
              ! We're done!
              exit refineLoop
           end if
@@ -1191,7 +1191,7 @@ contains
        ! stabilized. Status must be exchanged due to the last
        ! irregular cell correction.
        call tic(iFringeReduction)
-       call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)          
+       call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
        call fringeReduction(level, sps)
        call toc(iFringeReduction)
 
@@ -1202,7 +1202,7 @@ contains
        call finalOversetCommStructures(level, sps)
        call setIblankArray(level, sps)
        call checkOverset(level, sps, totalOrphans, .True.)
-       
+
        do nn=1, nDom
           call setPointers(nn, level, sps)
           allocate(flowDoms(nn, level, sps)%gInd(8, 0:ib, 0:jb, 0:kb))
@@ -1212,7 +1212,7 @@ contains
        ! Setup the buffer sizes
        call setBufferSizes(level, sps, .false., .True.)
 
-       ! Set up the gInd using the final overset comm structure. 
+       ! Set up the gInd using the final overset comm structure.
        call setupFringeGlobalInd(level, sps)
 
        ! Deallocate some data we no longer need
@@ -1305,7 +1305,7 @@ contains
       ! number of rows is the number of blocks I own (in my own numbering)
       ! and the coluns are the total number of blocks. It is initialized
       ! to True, and remains that way unless we can conclusively prove the
-      ! blocks don't overlap. 
+      ! blocks don't overlap.
       allocate(localOverlap(nDom, nDomTotal))
       localOverlap = .True.
 
@@ -1322,34 +1322,34 @@ contains
          iDom = cumDomProc(myid) + nn
 
          ! Now Loop over *all* of the other blocks
-         do jDom=1, nDomTotal 
+         do jDom=1, nDomTotal
 
             ! We can eliminate some of pairs using the cluser
             ! analysis. Note that the cluster analysis will take care
             ! of making sure that a block doesn't interset itself. ie,
             ! the diagonal of the full matrix must be .False.
 
-            if (clusters(iDom) == clusters(jDom)) then 
+            if (clusters(iDom) == clusters(jDom)) then
                localOverlap(nn, jDom) = .False.
                nnzLocal = nnzLocal - 1
             end if
 
             ! Only do the spatial check if we haven't elminated the
             ! connection through the cluster check
-            if (localOverlap(nn, jDom)) then 
+            if (localOverlap(nn, jDom)) then
 
                ! Now do the box overlap check
                if ( &
                     xMin(1, iDom) >= xMax(1, jDom) .or. &
                     xMax(1, iDom) <= xMin(1, jDom) .or. &
                     xMin(2, iDom) >= xMax(2, jDom) .or. &
-                    xMax(2, iDom) <= xMin(2, jDom) .or. &     
+                    xMax(2, iDom) <= xMin(2, jDom) .or. &
                     xMin(3, iDom) >= xMax(3, jDom) .or. &
-                    xMax(3, iDom) <= xMin(3, jDom)) then 
+                    xMax(3, iDom) <= xMin(3, jDom)) then
 
-                  ! These bounding boxes do not intersect. 
+                  ! These bounding boxes do not intersect.
                   localOverlap(nn, jDom) = .False.
-                  nnzLocal = nnzLocal -1 
+                  nnzLocal = nnzLocal -1
                end if
             end if
          end do
@@ -1362,12 +1362,12 @@ contains
       i = 0
       do nn=1, nDom
          do jDom=1,nDomTotal
-            if (localOverlap(nn, jDom)) then 
+            if (localOverlap(nn, jDom)) then
                i = i + 1
                colIndLocal(i) = jDom
             end if
          end do
-         rowPtrLocal(nn+1)  = i + 1 
+         rowPtrLocal(nn+1)  = i + 1
       end do
 
       ! Now we want to assemble the global (sparse!) connectivity
@@ -1423,7 +1423,7 @@ contains
 
       ! This internal subroutine which may be called repeadly, performs
       ! as many of the searches my processor is responsible for. It
-      ! returns true when all the work has been completed. 
+      ! returns true when all the work has been completed.
 
       implicit none
       logical, intent(out) :: flag
@@ -1439,7 +1439,7 @@ contains
          ! Check if I have the oBlock and fringes i need to do this
          ! intersection and I haven't already done it.
          if (oBlockReady(iDom) .and. oFringeReady(jDom) .and. &
-              work(4, iWork) == 0) then 
+              work(4, iWork) == 0) then
 
             startTime = mpi_wtime()
 
@@ -1452,8 +1452,8 @@ contains
          end if
 
          ! If any one is not done, flag is flipped to False.
-         if (work(4, iWork) /= 1) then 
-            flag = .False. 
+         if (work(4, iWork) /= 1) then
+            flag = .False.
          end if
       end do
 
@@ -1491,7 +1491,7 @@ contains
     integer(kind=intType) :: ifield, iSol
     character*40 :: tmpStr, zoneName
     character*32 :: coorNames(3)
-    integer mpiStatus(MPI_STATUS_SIZE) 
+    integer mpiStatus(MPI_STATUS_SIZE)
 
     coorNames(1) = "CoordinateX"
     coorNames(2) = "CoordinateY"
@@ -1542,7 +1542,7 @@ contains
 
     allocate(buffer(maxSize))
 
-    if (myid == 0) then 
+    if (myid == 0) then
 
        ! Open the CGNS File
        call cg_open_f(fileName, mode_write, cg, ier)
@@ -1629,7 +1629,7 @@ contains
              deallocate(xtmp)
           end do
        end do
-    else 
+    else
        ! Pack and send my stuff:
        do nn=1, nDom
           call setPointers(nn, 1, 1)
@@ -1655,7 +1655,7 @@ contains
   end subroutine writePartitionedMesh
 
   ! Debugging routine for writing the dual grids along with the volume
-  ! in CGNS format to help debug. 
+  ! in CGNS format to help debug.
 
   subroutine writeDualMesh(fileName)
 
@@ -1685,7 +1685,7 @@ contains
     integer(kind=intType) :: ifield, iSol
     character*40 :: tmpStr, zoneName
     character*32 :: coorNames(3)
-    integer mpiStatus(MPI_STATUS_SIZE) 
+    integer mpiStatus(MPI_STATUS_SIZE)
 
     coorNames(1) = "CoordinateX"
     coorNames(2) = "CoordinateY"
@@ -1732,7 +1732,7 @@ contains
 
     allocate(buffer(maxSize))
 
-    if (myid == 0) then 
+    if (myid == 0) then
        call cg_open_f(fileName, mode_write, cg, ier)
        base = 1
        call cg_base_write_f(cg, "Base#1", 3, 3, base, ier)
@@ -1754,7 +1754,7 @@ contains
 
 999       FORMAT('domain.', I5.5)
           zoneCounter = zoneCounter + 1
-          write(zonename, 999) zoneCounter 
+          write(zonename, 999) zoneCounter
 
           call cg_zone_write_f(cg, base, zonename, sizes, Structured, zoneID, ier)
 
@@ -1773,7 +1773,7 @@ contains
                         x(i-1, j  , k  , :) + &
                         x(i  , j  , k  , :))
                    xtmp(i,j,k,4) = vol(i,j,k)
-                   if (globalCell(i,j,k) >=0)  then 
+                   if (globalCell(i,j,k) >=0)  then
                       xtmp(i,j,k,5) = dble(iblank(i,j,k))
                    else
                       xtmp(i,j,k,5) = zero
@@ -1809,7 +1809,7 @@ contains
                   adflow_comm_world, mpiStatus, ierr)
 
              zoneCounter = zoneCounter + 1
-             write(zonename, 999) zoneCounter 
+             write(zonename, 999) zoneCounter
              sizes(1) = dims(1, iDom)
              sizes(2) = dims(2, iDom)
              sizes(3) = dims(3, iDom)
@@ -1850,7 +1850,7 @@ contains
           end do
        end do
 
-    else 
+    else
 
        ! Pack and send my stuff:
        do nn=1, nDom
@@ -1871,7 +1871,7 @@ contains
                            x(i  , j  , k  , idim))
                    end do
                    buffer(ii+4) = vol(i,j,k)
-                   if (globalCell(i,j,k) >0) then 
+                   if (globalCell(i,j,k) >0) then
                       buffer(ii+5) = dble(iblank(i,j,k))
                    else
                       buffer(ii+5) = zero
@@ -1894,11 +1894,11 @@ contains
 
 
   !
-  !       determineClusters determines which blocks are connected with   
-  !       1to1 cgns connections. Essentially what we are doing is        
-  !       identifying the consitutive multiblock meshes that make up     
-  !       an overset mesh. There should be precisely 1 cluster for a     
-  !       face mached mesh and 2 or more for a overset mesh              
+  !       determineClusters determines which blocks are connected with
+  !       1to1 cgns connections. Essentially what we are doing is
+  !       identifying the consitutive multiblock meshes that make up
+  !       an overset mesh. There should be precisely 1 cluster for a
+  !       face mached mesh and 2 or more for a overset mesh
 
   subroutine determineClusters()
 
@@ -1930,7 +1930,7 @@ contains
     blockID = 0
 
     ! Initialize variable to state that we have unclassified blocks
-    blocksAvailable = .True. 
+    blocksAvailable = .True.
 
     ! Loop until all blocks are checked
     do while (blocksAvailable)
@@ -2035,7 +2035,7 @@ contains
              do j=2, jl
                 do i=2, il
                    ii = ii + 1
-                   if (flag(ii) /= 0) then 
+                   if (flag(ii) /= 0) then
                       iblank(i,j,k) = -4
                    end if
                 end do
@@ -2065,14 +2065,14 @@ contains
     ! of oversetUpdateMode:
 
     ! updateFrozen: Nothing happens. The initial
-    ! connecitivty computed during initialzation is kept. 
+    ! connecitivty computed during initialzation is kept.
 
     ! updteFast: Update just the weight, but leave the donors
     ! unchanged. This is only applicable when the entire mesh is
-    ! warped at the same time with pyWarpuStruct. 
+    ! warped at the same time with pyWarpuStruct.
 
     ! updateFull: Complete from scratch update. Run the full
-    ! oversetComm routine. 
+    ! oversetComm routine.
 
     use constants
     use inputOverset, only : oversetUpdateMode
@@ -2091,14 +2091,14 @@ contains
     integer(kind=intType) :: nLevels, level, sps, nn, nDoms, mm
 
     ! If no overset, don't do anything.
-    if (.not. oversetPresent) then 
-       return 
+    if (.not. oversetPresent) then
+       return
     end if
 
     select case(oversetUpdateMode)
     case(updateFrozen)
-       return 
-       
+       return
+
     case (updateFast)
        ! Run our fast version.
        nLevels = ubound(flowDoms,2)
@@ -2116,7 +2116,7 @@ contains
        ! Reinitialize domain iblanks
        nDoms = ubound(flowDoms,1)
        do nn=1, nDoms
-          do level=1,nLevels          
+          do level=1,nLevels
              do sps=1, nTimeIntervalsSpectral
                 flowDoms(nn, level, sps)%iBlank = 1
                 flowDoms(nn, level, sps)%forcedRecv = 0
@@ -2129,18 +2129,18 @@ contains
        end do
 
        do level=1,nLevels
-          if (level == 1) then 
+          if (level == 1) then
              call setExplicitHoleCut(flag)
              call oversetComm(level, .False., .false., closedFamList)
           else
              call oversetComm(level, .False., .True., closedFamList)
           end if
        end do
-       
+
     end select
 
   end subroutine updateOverset
-  
+
   subroutine setBlockPriority(blkName, value, setValue)
 
     ! Set the CGNSblock with blkName to have a priority of "value"
@@ -2159,8 +2159,8 @@ contains
     integer(kind=intType) :: iDom
 
     ! We should do a binary search for the block names, but for now
-    ! just loop over the number of CGNS Doms. 
-    if (cgnsNDom > 0) then 
+    ! just loop over the number of CGNS Doms.
+    if (cgnsNDom > 0) then
        setValue = .False.
        do iDom=1, CGNSnDom
           if (trim(cgnsDoms(iDom)%zoneName) == trim(blkName)) then
@@ -2172,7 +2172,7 @@ contains
     else
        ! If there are no domains yet, just say we did it so we don't
        ! raise an error in python.
-       setValue = .True. 
+       setValue = .True.
     end if
   end subroutine setBlockPriority
 

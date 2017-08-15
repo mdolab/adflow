@@ -33,8 +33,8 @@ contains
   function tsbeta(degreepolbeta, coefpolbeta, degreefourbeta, &
 &   omegafourbeta, coscoeffourbeta, sincoeffourbeta, t)
 !
-!       tsbeta computes the angle of attack for a given time interval 
-!       in a time spectral solution.                                   
+!       tsbeta computes the angle of attack for a given time interval
+!       in a time spectral solution.
 !
     use constants
     use inputphysics, only : equationmode
@@ -87,8 +87,8 @@ contains
   function tsbetadot(degreepolbeta, coefpolbeta, degreefourbeta, &
 &   omegafourbeta, coscoeffourbeta, sincoeffourbeta, t)
 !
-!       tsbeta computes the angle of attack for a given time interval  
-!       in a time spectral solution.                                   
+!       tsbeta computes the angle of attack for a given time interval
+!       in a time spectral solution.
 !
     use constants
     use inputphysics, only : equationmode
@@ -142,8 +142,8 @@ contains
   function tsmach(degreepolmach, coefpolmach, degreefourmach, &
 &   omegafourmach, coscoeffourmach, sincoeffourmach, t)
 !
-!       tsmach computes the mach number for a given time interval      
-!       in a time spectral solution.                                   
+!       tsmach computes the mach number for a given time interval
+!       in a time spectral solution.
 !
     use constants
     use inputphysics, only : equationmode
@@ -197,8 +197,8 @@ contains
   function tsmachdot(degreepolmach, coefpolmach, degreefourmach, &
 &   omegafourmach, coscoeffourmach, sincoeffourmach, t)
 !
-!       tsmach computes the angle of attack for a given time interval 
-!       in a time spectral solution.                                   
+!       tsmach computes the angle of attack for a given time interval
+!       in a time spectral solution.
 !
     use constants
     use inputphysics, only : equationmode
@@ -252,10 +252,10 @@ contains
   function derivativerigidrotangle(degreepolrot, coefpolrot, &
 &   degreefourrot, omegafourrot, coscoeffourrot, sincoeffourrot, t)
 !
-!       derivativerigidrotangle computes the time derivative of the    
-!       rigid body rotation angle at the given time for the given      
-!       arguments. the angle is described by a combination of a        
-!       polynomial and fourier series.                                 
+!       derivativerigidrotangle computes the time derivative of the
+!       rigid body rotation angle at the given time for the given
+!       arguments. the angle is described by a combination of a
+!       polynomial and fourier series.
 !
     use constants
     use inputphysics, only : equationmode
@@ -346,9 +346,9 @@ contains
   subroutine rotmatrixrigidbody(tnew, told, rotationmatrix, &
 &   rotationpoint)
 !
-!       rotmatrixrigidbody determines the rotation matrix and the      
-!       rotation point to determine the coordinates of the new time    
-!       level starting from the coordinates of the old time level.     
+!       rotmatrixrigidbody determines the rotation matrix and the
+!       rotation point to determine the coordinates of the new time
+!       level starting from the coordinates of the old time level.
 !
     use constants
     use inputmotion
@@ -448,10 +448,10 @@ contains
   function secondderivativerigidrotangle(degreepolrot, coefpolrot, &
 &   degreefourrot, omegafourrot, coscoeffourrot, sincoeffourrot, t)
 !
-!       2ndderivativerigidrotangle computes the 2nd time derivative of 
-!       the rigid body rotation angle at the given time for the given  
-!       arguments. the angle is described by a combination of a        
-!       polynomial and fourier series.                                 
+!       2ndderivativerigidrotangle computes the 2nd time derivative of
+!       the rigid body rotation angle at the given time for the given
+!       arguments. the angle is described by a combination of a
+!       polynomial and fourier series.
 !
     use constants
     use flowvarrefstate, only : timeref
@@ -505,9 +505,9 @@ contains
   function rigidrotangle(degreepolrot, coefpolrot, degreefourrot, &
 &   omegafourrot, coscoeffourrot, sincoeffourrot, t)
 !
-!       rigidrotangle computes the rigid body rotation angle at the    
-!       given time for the given arguments. the angle is described by  
-!       a combination of a polynomial and fourier series.              
+!       rigidrotangle computes the rigid body rotation angle at the
+!       given time for the given arguments. the angle is described by
+!       a combination of a polynomial and fourier series.
 !
     use constants
     use inputphysics, only : equationmode
@@ -559,9 +559,9 @@ contains
   end function rigidrotangle
   subroutine setbcpointers(nn, spatialpointers)
 !
-!       setbcpointers sets the pointers needed for the boundary        
-!       condition treatment on a general face, such that the boundary  
-!       routines are only implemented once instead of 6 times.         
+!       setbcpointers sets the pointers needed for the boundary
+!       condition treatment on a general face, such that the boundary
+!       routines are only implemented once instead of 6 times.
 !
     use constants
     use blockpointers, only : w, p, rlv, rev, gamma, x, d2wall, si, sj&
@@ -578,7 +578,7 @@ contains
     integer(kind=inttype), intent(in) :: nn
     logical, intent(in) :: spatialpointers
 ! determine the sizes of each face and point to just the range we
-! need on each face. 
+! need on each face.
     istart = bcdata(nn)%icbeg
     iend = bcdata(nn)%icend
     jstart = bcdata(nn)%jcbeg
@@ -588,8 +588,8 @@ contains
     jsize = jend - jstart + 1
 ! determine the face id on which the subface is located and set
 ! the pointers accordinly.
-    select case  (bcfaceid(nn)) 
-    case (imin) 
+    select case  (bcfaceid(nn))
+    case (imin)
 !---------------------------------------------------------------------------
       ww3 => w(3, 1:, 1:, :)
       ww2 => w(2, 1:, 1:, :)
@@ -612,7 +612,7 @@ contains
       gamma1 => gamma(1, 1:, 1:)
       gamma0 => gamma(0, 1:, 1:)
       gcp => globalcell(2, 1:, 1:)
-    case (imax) 
+    case (imax)
 !---------------------------------------------------------------------------
       ww3 => w(nx, 1:, 1:, :)
       ww2 => w(il, 1:, 1:, :)
@@ -635,7 +635,7 @@ contains
       gamma1 => gamma(ie, 1:, 1:)
       gamma0 => gamma(ib, 1:, 1:)
       gcp => globalcell(il, 1:, 1:)
-    case (jmin) 
+    case (jmin)
 !---------------------------------------------------------------------------
       ww3 => w(1:, 3, 1:, :)
       ww2 => w(1:, 2, 1:, :)
@@ -658,7 +658,7 @@ contains
       gamma1 => gamma(1:, 1, 1:)
       gamma0 => gamma(1:, 0, 1:)
       gcp => globalcell(1:, 2, 1:)
-    case (jmax) 
+    case (jmax)
 !---------------------------------------------------------------------------
       ww3 => w(1:, ny, 1:, :)
       ww2 => w(1:, jl, 1:, :)
@@ -681,7 +681,7 @@ contains
       gamma1 => gamma(1:, je, 1:)
       gamma0 => gamma(1:, jb, 1:)
       gcp => globalcell(1:, jl, 1:)
-    case (kmin) 
+    case (kmin)
 !---------------------------------------------------------------------------
       ww3 => w(1:, 1:, 3, :)
       ww2 => w(1:, 1:, 2, :)
@@ -704,7 +704,7 @@ contains
       gamma1 => gamma(1:, 1:, 1)
       gamma0 => gamma(1:, 1:, 0)
       gcp => globalcell(1:, 1:, 2)
-    case (kmax) 
+    case (kmax)
 !---------------------------------------------------------------------------
       ww3 => w(1:, 1:, nz, :)
       ww2 => w(1:, 1:, kl, :)
@@ -729,38 +729,38 @@ contains
       gcp => globalcell(1:, 1:, kl)
     end select
     if (spatialpointers) then
-      select case  (bcfaceid(nn)) 
-      case (imin) 
+      select case  (bcfaceid(nn))
+      case (imin)
         xx => x(1, :, :, :)
         ssi => si(1, :, :, :)
         ssj => sj(2, :, :, :)
         ssk => sk(2, :, :, :)
         ss => s(2, :, :, :)
-      case (imax) 
+      case (imax)
         xx => x(il, :, :, :)
         ssi => si(il, :, :, :)
         ssj => sj(il, :, :, :)
         ssk => sk(il, :, :, :)
         ss => s(il, :, :, :)
-      case (jmin) 
+      case (jmin)
         xx => x(:, 1, :, :)
         ssi => sj(:, 1, :, :)
         ssj => si(:, 2, :, :)
         ssk => sk(:, 2, :, :)
         ss => s(:, 2, :, :)
-      case (jmax) 
+      case (jmax)
         xx => x(:, jl, :, :)
         ssi => sj(:, jl, :, :)
         ssj => si(:, jl, :, :)
         ssk => sk(:, jl, :, :)
         ss => s(:, jl, :, :)
-      case (kmin) 
+      case (kmin)
         xx => x(:, :, 1, :)
         ssi => sk(:, :, 1, :)
         ssj => si(:, :, 2, :)
         ssk => sj(:, :, 2, :)
         ss => s(:, :, 2, :)
-      case (kmax) 
+      case (kmax)
         xx => x(:, :, kl, :)
         ssi => sk(:, :, kl, :)
         ssj => si(:, :, kl, :)
@@ -768,34 +768,34 @@ contains
         ss => s(:, :, kl, :)
       end select
       if (addgridvelocities) then
-        select case  (bcfaceid(nn)) 
-        case (imin) 
+        select case  (bcfaceid(nn))
+        case (imin)
           sface => sfacei(1, :, :)
-        case (imax) 
+        case (imax)
           sface => sfacei(il, :, :)
-        case (jmin) 
+        case (jmin)
           sface => sfacej(:, 1, :)
-        case (jmax) 
+        case (jmax)
           sface => sfacej(:, jl, :)
-        case (kmin) 
+        case (kmin)
           sface => sfacek(:, :, 1)
-        case (kmax) 
+        case (kmax)
           sface => sfacek(:, :, kl)
         end select
       end if
       if (equations .eq. ransequations) then
-        select case  (bcfaceid(nn)) 
-        case (imin) 
+        select case  (bcfaceid(nn))
+        case (imin)
           dd2wall => d2wall(2, :, :)
-        case (imax) 
+        case (imax)
           dd2wall => d2wall(il, :, :)
-        case (jmin) 
+        case (jmin)
           dd2wall => d2wall(:, 2, :)
-        case (jmax) 
+        case (jmax)
           dd2wall => d2wall(:, jl, :)
-        case (kmin) 
+        case (kmin)
           dd2wall => d2wall(:, :, 2)
-        case (kmax) 
+        case (kmax)
           dd2wall => d2wall(:, :, kl)
         end select
       end if
@@ -842,9 +842,9 @@ contains
   subroutine computetsderivatives(force, moment, coef0, dcdalpha, &
 &   dcdalphadot, dcdq, dcdqdot)
 !
-!      computes the stability derivatives based on the time spectral  
-!      solution of a given mesh. takes in the force coefficients at   
-!      all time instantces and computes the agregate parameters       
+!      computes the stability derivatives based on the time spectral
+!      solution of a given mesh. takes in the force coefficients at
+!      all time instantces and computes the agregate parameters
 !
     use constants
     use communication
@@ -924,7 +924,7 @@ contains
 ! do i =1,8
 !    call computeleastsquaresregression(basecoef(:,i),dphiz,ntimeintervalsspectral,dcdq(i),coef0(i))
 ! end do
-! ! now subtract off estimated cl,cmz and use remainder to compute 
+! ! now subtract off estimated cl,cmz and use remainder to compute
 ! ! clqdot and cmzqdot.
 ! do i = 1,8
 !    do sps = 1,ntimeintervalsspectral
@@ -954,7 +954,7 @@ contains
         intervalalphadot(sps) = tsalphadot(degreepolalpha, coefpolalpha&
 &         , degreefouralpha, omegafouralpha, coscoeffouralpha, &
 &         sincoeffouralpha, t(1))
-! this call is wrong!!!! 
+! this call is wrong!!!!
 !call getdirangle(veldirfreestream,liftdirection,liftindex,alpha+intervalalpha(sps), beta)
         basecoef(sps, 1) = fact*(force(1, sps)*liftdirection(1)+force(2&
 &         , sps)*liftdirection(2)+force(3, sps)*liftdirection(3))
@@ -973,7 +973,7 @@ contains
 &                                    , ntimeintervalsspectral, dcdalpha(&
 &                                    i), coef0(i))
       end do
-! now subtract off estimated cl,cmz and use remainder to compute 
+! now subtract off estimated cl,cmz and use remainder to compute
 ! clalphadot and cmzalphadot.
       do i=1,8
         do sps=1,ntimeintervalsspectral
@@ -999,8 +999,8 @@ contains
   function tsalpha(degreepolalpha, coefpolalpha, degreefouralpha, &
 &   omegafouralpha, coscoeffouralpha, sincoeffouralpha, t)
 !
-!       tsalpha computes the angle of attack for a given time interval 
-!       in a time spectral solution.                                   
+!       tsalpha computes the angle of attack for a given time interval
+!       in a time spectral solution.
 !
     use constants
     use inputphysics, only : equationmode
@@ -1054,8 +1054,8 @@ contains
   function tsalphadot(degreepolalpha, coefpolalpha, degreefouralpha, &
 &   omegafouralpha, coscoeffouralpha, sincoeffouralpha, t)
 !
-!       tsalpha computes the angle of attack for a given time interval 
-!       in a time spectral solution.                                   
+!       tsalpha computes the angle of attack for a given time interval
+!       in a time spectral solution.
 !
     use constants
     use inputphysics, only : equationmode
@@ -1108,12 +1108,12 @@ contains
   end function tsalphadot
   subroutine computeleastsquaresregression(y, x, npts, m, b)
 !
-!       computes the slope of best fit for a set of x,y data of length 
-!       npts                                                           
+!       computes the slope of best fit for a set of x,y data of length
+!       npts
 !
     use constants
     implicit none
-!subroutine arguments 
+!subroutine arguments
     integer(kind=inttype) :: npts
     real(kind=realtype), dimension(npts) :: x, y
     real(kind=realtype) :: m, b
@@ -1137,25 +1137,25 @@ contains
   subroutine getdirangle(freestreamaxis, liftaxis, liftindex, alpha, &
 &   beta)
 !
-!      convert the wind axes to angle of attack and side slip angle.  
-!      the direction angles alpha and beta are computed given the     
-!      components of the wind direction vector (freestreamaxis), the  
-!      lift direction vector (liftaxis) and assuming that the         
-!      body direction (xb,yb,zb) is in the default ijk coordinate     
-!      system. the rotations are determined by first determining      
-!      whether the lift is primarily in the j or k direction and then 
-!      determining the angles accordingly.                            
-!      direction vector:                                              
-!        1) rotation about the zb or yb -axis: alpha clockwise (cw)   
-!           (xb,yb,zb) -> (x1,y1,z1)                                  
-!        2) rotation about the yl or z1 -axis: beta counter-clockwise 
-!           (ccw) (x1,y1,z1) -> (xw,yw,zw)                            
-!         input arguments:                                            
-!            freestreamaxis = wind vector in body axes                
-!            liftaxis       = lift direction vector in body axis      
-!         output arguments:                                           
-!            alpha    = angle of attack in radians                    
-!            beta     = side slip angle in radians                    
+!      convert the wind axes to angle of attack and side slip angle.
+!      the direction angles alpha and beta are computed given the
+!      components of the wind direction vector (freestreamaxis), the
+!      lift direction vector (liftaxis) and assuming that the
+!      body direction (xb,yb,zb) is in the default ijk coordinate
+!      system. the rotations are determined by first determining
+!      whether the lift is primarily in the j or k direction and then
+!      determining the angles accordingly.
+!      direction vector:
+!        1) rotation about the zb or yb -axis: alpha clockwise (cw)
+!           (xb,yb,zb) -> (x1,y1,z1)
+!        2) rotation about the yl or z1 -axis: beta counter-clockwise
+!           (ccw) (x1,y1,z1) -> (xw,yw,zw)
+!         input arguments:
+!            freestreamaxis = wind vector in body axes
+!            liftaxis       = lift direction vector in body axis
+!         output arguments:
+!            alpha    = angle of attack in radians
+!            beta     = side slip angle in radians
 !
     use constants
     implicit none
@@ -1266,15 +1266,15 @@ contains
   end subroutine getdirangle
   subroutine stabilityderivativedriver()
 !
-!      runs the time spectral stability derivative routines from the  
-!      main program file                                              
+!      runs the time spectral stability derivative routines from the
+!      main program file
 !
     use precision
     implicit none
 !call computetsderivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
 !
 !     local variables.
-! 
+!
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot, dcdbeta&
 &   , dcdbetadot, dcdmach, dcdmachdot
     real(kind=realtype), dimension(8) :: dcdp, dcdpdot, dcdq, dcdqdot, &
@@ -1283,11 +1283,11 @@ contains
   end subroutine stabilityderivativedriver
   subroutine setcoeftimeintegrator()
 !
-!       setcoeftimeintegrator determines the coefficients of the       
-!       time integration scheme in unsteady mode. normally these are   
-!       equal to the coefficients corresponding to the specified       
-!       accuracy. however during the initial phase there are not       
-!       enough states in the past and the accuracy is reduced.         
+!       setcoeftimeintegrator determines the coefficients of the
+!       time integration scheme in unsteady mode. normally these are
+!       equal to the coefficients corresponding to the specified
+!       accuracy. however during the initial phase there are not
+!       enough states in the past and the accuracy is reduced.
 !
     use constants
     use inputunsteady
@@ -1301,8 +1301,8 @@ contains
     integer(kind=inttype) :: nn, nlevelsset
 ! determine which time integrator must be used.
 ! modified by hdn
-    select case  (timeaccuracy) 
-    case (firstorder) 
+    select case  (timeaccuracy)
+    case (firstorder)
 ! 1st order. no need to check the number of available
 ! states in the past. set the two coefficients and
 ! nlevelsset to 2.
@@ -1314,12 +1314,12 @@ contains
         coefmeshale(1, 2) = half
       end if
       nlevelsset = 2
-    case (secondorder) 
+    case (secondorder)
 !--------------------------------------------------
 ! second order time integrator. determine the amount of
 ! available states and set the coefficients accordingly.
-      select case  (noldsolavail) 
-      case (1_inttype) 
+      select case  (noldsolavail)
+      case (1_inttype)
         coeftime(0) = 1.0_realtype
         coeftime(1) = -1.0_realtype
         if (useale .and. equationmode .eq. unsteady) then
@@ -1350,12 +1350,12 @@ contains
         end if
         nlevelsset = 3
       end select
-    case (thirdorder) 
+    case (thirdorder)
 !--------------------------------------------------
 ! third order time integrator.  determine the amount of
 ! available states and set the coefficients accordingly.
-      select case  (noldsolavail) 
-      case (1_inttype) 
+      select case  (noldsolavail)
+      case (1_inttype)
         coeftime(0) = 1.0_realtype
         coeftime(1) = -1.0_realtype
         if (useale .and. equationmode .eq. unsteady) then
@@ -1364,7 +1364,7 @@ contains
           coefmeshale(1, 2) = half
         end if
         nlevelsset = 2
-      case (2_inttype) 
+      case (2_inttype)
         coeftime(0) = 1.5_realtype
         coeftime(1) = -2.0_realtype
         coeftime(2) = 0.5_realtype
@@ -1503,11 +1503,11 @@ contains
   end subroutine siangle
   subroutine sidensity(mass, len, mult, trans)
 !
-!       sidensity computes the conversion from the given density       
-!       unit, which can be constructed from mass and length, to the    
-!       si-unit kg/m^3. the conversion will look like:                 
-!       density in kg/m^3 = mult*(density in ncu) + trans.             
-!       ncu means non-christian units, i.e. everything that is not si. 
+!       sidensity computes the conversion from the given density
+!       unit, which can be constructed from mass and length, to the
+!       si-unit kg/m^3. the conversion will look like:
+!       density in kg/m^3 = mult*(density in ncu) + trans.
+!       ncu means non-christian units, i.e. everything that is not si.
 !
     use constants
     use su_cgns, only : kilogram, meter
@@ -1529,10 +1529,10 @@ contains
   end subroutine sidensity
   subroutine silen(len, mult, trans)
 !
-!       silen computes the conversion from the given length unit to    
-!       the si-unit meter. the conversion will look like:              
-!       length in meter = mult*(length in ncu) + trans.                
-!       ncu means non-christian units, i.e. everything that is not si. 
+!       silen computes the conversion from the given length unit to
+!       the si-unit meter. the conversion will look like:
+!       length in meter = mult*(length in ncu) + trans.
+!       ncu means non-christian units, i.e. everything that is not si.
 !
     use constants
     use su_cgns, only : meter, centimeter, millimeter, foot, inch
@@ -1543,20 +1543,20 @@ contains
     integer, intent(in) :: len
     real(kind=realtype), intent(out) :: mult, trans
 ! determine the situation we are having here.
-    select case  (len) 
-    case (meter) 
+    select case  (len)
+    case (meter)
       mult = one
       trans = zero
-    case (centimeter) 
+    case (centimeter)
       mult = 0.01_realtype
       trans = zero
-    case (millimeter) 
+    case (millimeter)
       mult = 0.001_realtype
       trans = zero
-    case (foot) 
+    case (foot)
       mult = 0.3048_realtype
       trans = zero
-    case (inch) 
+    case (inch)
       mult = 0.0254_realtype
       trans = zero
     case default
@@ -1565,11 +1565,11 @@ contains
   end subroutine silen
   subroutine sipressure(mass, len, time, mult, trans)
 !
-!       sipressure computes the conversion from the given pressure     
-!       unit, which can be constructed from mass, length and time, to  
-!       the si-unit pa. the conversion will look like:                 
-!       pressure in pa = mult*(pressure in ncu) + trans.               
-!       ncu means non-christian units, i.e. everything that is not si. 
+!       sipressure computes the conversion from the given pressure
+!       unit, which can be constructed from mass, length and time, to
+!       the si-unit pa. the conversion will look like:
+!       pressure in pa = mult*(pressure in ncu) + trans.
+!       ncu means non-christian units, i.e. everything that is not si.
 !
     use constants
     use su_cgns, only : kilogram, meter, second
@@ -1592,11 +1592,11 @@ contains
   end subroutine sipressure
   subroutine sitemperature(temp, mult, trans)
 !
-!       sitemperature computes the conversion from the given           
-!       temperature unit to the si-unit kelvin. the conversion will    
-!       look like:                                                     
-!       temperature in k = mult*(temperature in ncu) + trans.          
-!       ncu means non-christian units, i.e. everything that is not si. 
+!       sitemperature computes the conversion from the given
+!       temperature unit to the si-unit kelvin. the conversion will
+!       look like:
+!       temperature in k = mult*(temperature in ncu) + trans.
+!       ncu means non-christian units, i.e. everything that is not si.
 !
     use constants
     use su_cgns, only : kelvin, celsius, rankine, fahrenheit
@@ -1607,22 +1607,22 @@ contains
     integer, intent(in) :: temp
     real(kind=realtype), intent(out) :: mult, trans
 ! determine the situation we are having here.
-    select case  (temp) 
-    case (kelvin) 
+    select case  (temp)
+    case (kelvin)
 ! temperature is already given in kelvin. no need to convert.
       mult = one
       trans = zero
-    case (celsius) 
+    case (celsius)
 ! is it celcius or celsius?
 ! temperature is in celsius. only an offset must be applied.
       mult = one
       trans = 273.16_realtype
-    case (rankine) 
+    case (rankine)
 ! temperature is in rankine. only a multiplication needs to
 ! be performed.
       mult = 5.0_realtype/9.0_realtype
       trans = zero
-    case (fahrenheit) 
+    case (fahrenheit)
 ! temperature is in fahrenheit. both a multiplication and an
 ! offset must be applied.
       mult = 5.0_realtype/9.0_realtype
@@ -1635,11 +1635,11 @@ contains
   end subroutine sitemperature
   subroutine siturb(mass, len, time, temp, turbname, mult, trans)
 !
-!       siturb computes the conversion from the given turbulence       
-!       unit, which can be constructed from mass, len, time and temp,  
-!       to the si-unit for the given variable. the conversion will     
-!       look like: var in si = mult*(var in ncu) + trans.              
-!       ncu means non-christian units, i.e. everything that is not si. 
+!       siturb computes the conversion from the given turbulence
+!       unit, which can be constructed from mass, len, time and temp,
+!       to the si-unit for the given variable. the conversion will
+!       look like: var in si = mult*(var in ncu) + trans.
+!       ncu means non-christian units, i.e. everything that is not si.
 !
     use constants
     use su_cgns, only : kilogram, meter, second, kelvin
@@ -1663,11 +1663,11 @@ contains
   end subroutine siturb
   subroutine sivelocity(length, time, mult, trans)
 !
-!       sivelocity computes the conversion from the given velocity     
-!       unit, which can be constructed from length and time, to the    
-!       si-unit m/s. the conversion will look like:                    
-!       velocity in m/s = mult*(velocity in ncu) + trans.              
-!       ncu means non-christian units, i.e. everything that is not si. 
+!       sivelocity computes the conversion from the given velocity
+!       unit, which can be constructed from length and time, to the
+!       si-unit m/s. the conversion will look like:
+!       velocity in m/s = mult*(velocity in ncu) + trans.
+!       ncu means non-christian units, i.e. everything that is not si.
 !
     use constants
     use su_cgns, only : meter, centimeter, millimeter, foot, inch, &
@@ -1680,20 +1680,20 @@ contains
     real(kind=realtype), intent(out) :: mult, trans
 ! determine the situation we are having here.
 ! first the length.
-    select case  (length) 
-    case (meter) 
+    select case  (length)
+    case (meter)
       mult = one
       trans = zero
-    case (centimeter) 
+    case (centimeter)
       mult = 0.01_realtype
       trans = zero
-    case (millimeter) 
+    case (millimeter)
       mult = 0.001_realtype
       trans = zero
-    case (foot) 
+    case (foot)
       mult = 0.3048_realtype
       trans = zero
-    case (inch) 
+    case (inch)
       mult = 0.0254_realtype
       trans = zero
     case default
@@ -1701,8 +1701,8 @@ contains
 &              'no idea how to convert this length to si units')
     end select
 ! and the time.
-    select case  (time) 
-    case (second) 
+    select case  (time)
+    case (second)
       mult = mult
     case default
       call terminate('sivelocity', &
@@ -1711,8 +1711,8 @@ contains
   end subroutine sivelocity
   subroutine terminate(routinename, errormessage)
 !
-!       terminate writes an error message to standard output and       
-!       terminates the execution of the program.                       
+!       terminate writes an error message to standard output and
+!       terminates the execution of the program.
 !
     use constants
     use communication, only : adflow_comm_world, myid

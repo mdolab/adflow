@@ -4,7 +4,7 @@ module inputParamRoutines
 
   ! Set the parameter none, which is used as a check to see
   ! whether or not some key parameters were specified.
-  
+
   integer(kind=intType), parameter :: none = 0
 
   ! monDturb:             Whether or not the turbulent residuals
@@ -18,8 +18,8 @@ module inputParamRoutines
   !                        variables were specified.
   ! volumeOutSpecified:  Whether or not the volume output
   !                        variables were specified.
-  ! isoOutSpecified:      Wheter or not the isosurface output 
-  !                        variables were specified 
+  ! isoOutSpecified:      Wheter or not the isosurface output
+  !                        variables were specified
   logical :: monDturb
   logical :: monitorSpecified
   logical :: surfaceOutSpecified
@@ -28,22 +28,22 @@ module inputParamRoutines
 
   ! liftDirSpecified: Whether or not the lift direction was
   !                     specified.
-  
+
   logical :: liftDirSpecified
 
-contains 
+contains
 
   subroutine checkMonitor
     !
-    !       checkMonitor checks and possibly corrects the variables        
-    !       to be monitored during the convergence.  This depends on the   
-    !       governing equations to be solved. After the correction the     
-    !       sequence of the monitoring variable names is changed, such     
-    !       that the output is independent of the specified sequence.      
-    !       Furthermore memory is allocated for the arrays used to compute 
-    !       the monitoring variables and it is checked whether or not the  
-    !       maximum Mach number of total enthalpy difference is to be      
-    !       monitored.                                                     
+    !       checkMonitor checks and possibly corrects the variables
+    !       to be monitored during the convergence.  This depends on the
+    !       governing equations to be solved. After the correction the
+    !       sequence of the monitoring variable names is changed, such
+    !       that the output is independent of the specified sequence.
+    !       Furthermore memory is allocated for the arrays used to compute
+    !       the monitoring variables and it is checked whether or not the
+    !       maximum Mach number of total enthalpy difference is to be
+    !       monitored.
     !
     use constants
     use cgnsNames
@@ -297,7 +297,7 @@ contains
 
        case(cgnsAxisMoment)
           sortNumber(i) = 116
-          
+
        case (cgnsHdiffMax)
           sortNumber(i) = 201
 
@@ -372,9 +372,9 @@ contains
   end subroutine checkMonitor
   subroutine checkOutput
     !
-    !       checkOutput checks and possibly corrects the and output        
-    !       variables. This depends on the set of governing equations to   
-    !       be solved.                                                     
+    !       checkOutput checks and possibly corrects the and output
+    !       variables. This depends on the set of governing equations to
+    !       be solved.
     !
     use constants
     use extraOutput
@@ -440,10 +440,10 @@ contains
   end subroutine checkOutput
   subroutine defaultIsoOut
     !
-    !       defaultIsoOut sets the default set of additional            
-    !       variables to be written to the solution file; the primitive    
-    !       variables are always written. This additional set depends on   
-    !       the governing equations to be solved.                          
+    !       defaultIsoOut sets the default set of additional
+    !       variables to be written to the solution file; the primitive
+    !       variables are always written. This additional set depends on
+    !       the governing equations to be solved.
     !
     use constants
     use extraOutput
@@ -498,9 +498,9 @@ contains
   end subroutine defaultIsoOut
   subroutine defaultMonitor
     !
-    !       defaultMonitor sets the default set of variables to be         
-    !       monitored during the convergence. This set depends on the      
-    !       governing equations to be solved.                              
+    !       defaultMonitor sets the default set of variables to be
+    !       monitored during the convergence. This set depends on the
+    !       governing equations to be solved.
     !
     use constants
     use cgnsNames
@@ -653,9 +653,9 @@ contains
   end subroutine defaultMonitor
   subroutine defaultSurfaceOut
     !
-    !       defaultSurfaceOut sets the default set of surface variables    
-    !       to be written to the solution file. This set depends on the    
-    !       governing equations to be solved.                              
+    !       defaultSurfaceOut sets the default set of surface variables
+    !       to be written to the solution file. This set depends on the
+    !       governing equations to be solved.
     !
     use constants
     use extraOutput
@@ -708,12 +708,12 @@ contains
   end subroutine defaultSurfaceOut
   subroutine defaultVolumeOut
     !
-    !       defaultVolumeOut sets the default set of additional            
-    !       variables to be written to the solution file; the primitive    
-    !       variables are always written. This additional set depends on   
-    !       the governing equations to be solved.                          
+    !       defaultVolumeOut sets the default set of additional
+    !       variables to be written to the solution file; the primitive
+    !       variables are always written. This additional set depends on
+    !       the governing equations to be solved.
     !
-    use constants 
+    use constants
     use extraOutput
     use inputPhysics, only : equations
     implicit none
@@ -763,8 +763,8 @@ contains
   subroutine dummyreadParamFile
     !
     !       This subroutine is the same as readParamFile EXCEPT it does not
-    !       read the actual file. Values are set diectly from python for   
-    !       all the options and then this file is run.                     
+    !       read the actual file. Values are set diectly from python for
+    !       all the options and then this file is run.
     !
     use constants
     use inputPhysics, only : cpModel
@@ -812,16 +812,16 @@ contains
   end subroutine dummyreadParamFile
   subroutine extractMGInfo
     !
-    !       extractMgInfo creates the integer array cycleStrategy from     
-    !       the string describing the multigrid strategy. This string      
-    !       either contains a predefined strategy, like sg, 2v, 4w, etc.,  
-    !       or a combination of -1's, 0's and 1's, which defines a user    
-    !       defined strategy. The integers -1, 0 and 1 have the following  
-    !       meaning:  0 -> perform an iteration step on the current grid.  
-    !                 1 -> go to next coarser grid.                        
-    !                -1 -> go to next finer grid.                          
-    !       For a valid cycling strategy the sum of the elements of the    
-    !       array should be 0.                                             
+    !       extractMgInfo creates the integer array cycleStrategy from
+    !       the string describing the multigrid strategy. This string
+    !       either contains a predefined strategy, like sg, 2v, 4w, etc.,
+    !       or a combination of -1's, 0's and 1's, which defines a user
+    !       defined strategy. The integers -1, 0 and 1 have the following
+    !       meaning:  0 -> perform an iteration step on the current grid.
+    !                 1 -> go to next coarser grid.
+    !                -1 -> go to next finer grid.
+    !       For a valid cycling strategy the sum of the elements of the
+    !       array should be 0.
     !
     use constants
     use inputIteration, only :cycleStrategy, nMGLevels, nMGSteps, mgStartLevel, mgDescription
@@ -1050,9 +1050,9 @@ contains
 
   logical function digitsOnlyInString(string)
     !
-    !       digitsOnlyInString checks whether the given string contains    
-    !       digits only or if other character types are present. In the    
-    !       former case the function returns .True., otherwise .False.     
+    !       digitsOnlyInString checks whether the given string contains
+    !       digits only or if other character types are present. In the
+    !       former case the function returns .True., otherwise .False.
     !
     implicit none
     !
@@ -1085,8 +1085,8 @@ contains
 
   recursive function computeNstepsWcycle(nLevels) result(nSteps)
     !
-    !       computeNstepsWcycle is recursive function, which determines    
-    !       the number of entries of a w-cycle of a given level.           
+    !       computeNstepsWcycle is recursive function, which determines
+    !       the number of entries of a w-cycle of a given level.
     !
     use constants
     use communication
@@ -1124,8 +1124,8 @@ contains
 
   recursive subroutine setEntriesWcycle(counter, nLevels)
     !
-    !       setEntriesWcycle is a recursive subroutine, which actually     
-    !       fills the entries of cycleStrategy for a w-cycle.              
+    !       setEntriesWcycle is a recursive subroutine, which actually
+    !       fills the entries of cycleStrategy for a w-cycle.
     !
     use constants
     use inputIteration, only : cycleStrategy
@@ -1178,8 +1178,8 @@ contains
   end subroutine setEntriesWcycle
   subroutine isoVariables(variables)
     !
-    !       isoVariables extracts from the given string the extra          
-    !       iso surface variables to be written to the solution file.      
+    !       isoVariables extracts from the given string the extra
+    !       iso surface variables to be written to the solution file.
     !
     use constants
     use extraOutput
@@ -1420,8 +1420,8 @@ contains
 
   subroutine monitorVariables(variables)
     !
-    !       monitorVariables extracts from the given string the variables  
-    !       to be monitored during the convergence.                        
+    !       monitorVariables extracts from the given string the variables
+    !       to be monitored during the convergence.
     !
     use constants
     use cgnsNames
@@ -1658,8 +1658,8 @@ contains
   end subroutine monitorVariables
   subroutine readCpTempCurveFits
     !
-    !       readCpTempCurveFits reads the curve fits for the cp as a       
-    !       function of the temperature from the file cpFile.              
+    !       readCpTempCurveFits reads the curve fits for the cp as a
+    !       function of the temperature from the file cpFile.
     !
     use constants
     use communication, only : myid, adflow_comm_world
@@ -1792,7 +1792,7 @@ contains
              endif
           endif
        enddo
-       
+
        ! Read the constants from the file.
 
        call findNextInfoLine(readUnit, string)
@@ -1827,8 +1827,8 @@ contains
 
     close(unit=readUnit)
     !
-    !       Compute the constants eint0, such that the internal energy is  
-    !       a continous function of the temperature.                       
+    !       Compute the constants eint0, such that the internal energy is
+    !       a continous function of the temperature.
     !
     ! First for the first interval, such that at T = 0 Kelvin the
     ! energy is also zero.
@@ -2023,8 +2023,8 @@ contains
 
   subroutine findNextInfoLine(readUnit, string)
     !
-    !       findNextInfoLine skips the comment lines in the given unit     
-    !       and finds the first line containing information.               
+    !       findNextInfoLine skips the comment lines in the given unit
+    !       and finds the first line containing information.
     !
     use communication
     use utils, only : terminate
@@ -2067,8 +2067,8 @@ contains
 
   subroutine setEquationParameters
     !
-    !       setEquationParameters sets the number of variables in the      
-    !       governing equations, the number of turbulent variables, etc.   
+    !       setEquationParameters sets the number of variables in the
+    !       governing equations, the number of turbulent variables, etc.
     !
     use constants
     use paramTurb
@@ -2202,9 +2202,9 @@ contains
   end subroutine setEquationParameters
   subroutine setStageCoeffExplicitRK
     !
-    !       setStageCoeffExplicitRK determines the coefficients of the     
-    !       stages for the explicit Runge Kutta time integration schemes   
-    !       for unsteady problems.                                         
+    !       setStageCoeffExplicitRK determines the coefficients of the
+    !       stages for the explicit Runge Kutta time integration schemes
+    !       for unsteady problems.
     !
     use constants
     use inputUnsteady, only : timeAccuracy, betaRKUnsteady, &
@@ -2308,8 +2308,8 @@ contains
   end subroutine setStageCoeffExplicitRK
   subroutine surfaceVariables(variables)
     !
-    !       surfaceVariables extracts from the given string the surface    
-    !       variables to be written to the solution file.                  
+    !       surfaceVariables extracts from the given string the surface
+    !       variables to be written to the solution file.
     !
     use constants
     use extraOutput
@@ -2472,15 +2472,15 @@ contains
           nVarSpecified = nVarSpecified + 1
 
        case ("sepsensor")
-          surfWriteSepSensor = .true. 
+          surfWriteSepSensor = .true.
           nVarSpecified = nVarSpecified + 1
 
        case ("cavitation")
-          surfWriteCavitation = .true. 
+          surfWriteCavitation = .true.
           nVarSpecified = nVarSpecified + 1
 
        case ("axismoment")
-          surfWriteAxisMoment = .true. 
+          surfWriteAxisMoment = .true.
           nVarSpecified = nVarSpecified + 1
 
        case ("gc")
@@ -2507,12 +2507,12 @@ contains
 
   subroutine volumeVariables(variables)
     !
-    !       volumeVariables extracts from the given string the extra       
-    !       volume variables to be written to the solution file.           
+    !       volumeVariables extracts from the given string the extra
+    !       volume variables to be written to the solution file.
     !
     use constants
     use extraOutput
-    use utils, only : convertToLowerCase, terminate      
+    use utils, only : convertToLowerCase, terminate
     implicit none
     !
     !      Subroutine arguments.
@@ -2730,17 +2730,17 @@ contains
 
   subroutine checkInputParam
     !
-    !       checkInputParam checks if all necessary data has been          
-    !       specified. If some key data is missing an error message will   
-    !       be printed and the program will exit. Key data depends on the  
-    !       case to be solved. E.g. for the Navier Stokes equations it is  
-    !       necessary to specify the Reynolds number, but for Euler this   
-    !       can be omitted.                                                
-    !       Furthermore warnings are printed in case parameters have been  
-    !       specified that are ignored, e.g. Mach number for internal flow 
-    !       computations.                                                  
-    !       Note that only processor 0 prints warning and error messages,  
-    !       such that the output does not become messy.                    
+    !       checkInputParam checks if all necessary data has been
+    !       specified. If some key data is missing an error message will
+    !       be printed and the program will exit. Key data depends on the
+    !       case to be solved. E.g. for the Navier Stokes equations it is
+    !       necessary to specify the Reynolds number, but for Euler this
+    !       can be omitted.
+    !       Furthermore warnings are printed in case parameters have been
+    !       specified that are ignored, e.g. Mach number for internal flow
+    !       computations.
+    !       Note that only processor 0 prints warning and error messages,
+    !       such that the output does not become messy.
     !
     use constants
     !  --------- Bare imports...too many to list -------
@@ -2774,9 +2774,9 @@ contains
 
     logical :: gridPrecisionWarning, solPrecisionWarning
 
-    !       Discretization parameters. Check if the key parameters have    
-    !       been specified and set some coarse grid parameters in case     
-    !       these have not been specified.                                 
+    !       Discretization parameters. Check if the key parameters have
+    !       been specified and set some coarse grid parameters in case
+    !       these have not been specified.
     !
     if(spaceDiscr == none) then
        if(myID == 0)                       &
@@ -2803,17 +2803,17 @@ contains
     radiiNeededCoarse = .false.
     if(spaceDiscrCoarse == dissScalar) radiiNeededCoarse = .true.
     !
-    !       IO parameters. Check if the grid file has been specified       
-    !       Possibly correct the                                           
-    !       value of restart. Note that restart got the default value of   
-    !       .true. in case no restart file has been specified it is now    
-    !       set to false. Set the names of the solution files if not       
-    !       specified and check if a cp curve fit file has been specified  
-    !       if curve fits must be used.                                    
-    !       If the code has been compiled without cgns check that the file 
-    !       format is not cgns.                                            
-    !       Overwrite storeConvInnerIter to .true. if this is not an       
-    !       unsteady computation.                                          
+    !       IO parameters. Check if the grid file has been specified
+    !       Possibly correct the
+    !       value of restart. Note that restart got the default value of
+    !       .true. in case no restart file has been specified it is now
+    !       set to false. Set the names of the solution files if not
+    !       specified and check if a cp curve fit file has been specified
+    !       if curve fits must be used.
+    !       If the code has been compiled without cgns check that the file
+    !       format is not cgns.
+    !       Overwrite storeConvInnerIter to .true. if this is not an
+    !       unsteady computation.
     !
     if(gridFile == "") then
        if(myID == 0) &
@@ -2858,9 +2858,9 @@ contains
        storeConvInnerIter = .true.
     endif
     !
-    !       Iteration parameters. Check if the key parameters have specified    
-    !       been and set some coarse grid parameters in case these    
-    !       have not been specified.                                       
+    !       Iteration parameters. Check if the key parameters have specified
+    !       been and set some coarse grid parameters in case these
+    !       have not been specified.
     !
     if(equationMode          == unsteady .and. &
          timeIntegrationScheme == explicitRK) then
@@ -2904,8 +2904,8 @@ contains
        endif
     endif
     !
-    !       Grid motion parameters. These can only be specified for an     
-    !       external flow problem.                                         
+    !       Grid motion parameters. These can only be specified for an
+    !       external flow problem.
     !
     if(flowType == internalFlow .and. gridMotionSpecified) then
        if(myID == 0) &
@@ -2915,7 +2915,7 @@ contains
        call mpi_barrier(ADflow_comm_world, ierr)
     endif
     !
-    !       Physics parameters. Check if the key parameters have been      
+    !       Physics parameters. Check if the key parameters have been
     !       specified and set the unit vector for the free-stream velocity.
     !
     if(equations == none) then
@@ -3042,8 +3042,8 @@ contains
 
     if(MachCoef < zero) MachCoef = Mach
     !
-    !       Time spectral parameters. They only need to be specified for a 
-    !       time spectral computation.                                     
+    !       Time spectral parameters. They only need to be specified for a
+    !       time spectral computation.
     !
     testSpectral: if(equationMode == timeSpectral) then
 
@@ -3092,8 +3092,8 @@ contains
 
     endif testSpectral
     !
-    !       Unsteady parameters. They only need to be specified for an     
-    !       unsteady computation.                                          
+    !       Unsteady parameters. They only need to be specified for an
+    !       unsteady computation.
     !
     testUnsteady: if(equationMode == unsteady) then
 
@@ -3205,7 +3205,7 @@ contains
 
     endif testUnsteady
     !
-    !                             Warning messages.                        
+    !                             Warning messages.
     !
     ! Check for an invisid problem if the Reynolds number is specified.
     ! If so, print a Warning that this info is ignored.
@@ -3315,15 +3315,15 @@ contains
        print "(a)", "#"
     endif
     !
-    !       Wall functions can only be used if the RANS equations are to   
-    !       be solved. If no wall functions are used the wall offset is    
-    !       set to zero.                                                   
+    !       Wall functions can only be used if the RANS equations are to
+    !       be solved. If no wall functions are used the wall offset is
+    !       set to zero.
     !
     if(equations /= RANSEquations) wallFunctions = .false.
     if(.not. wallFunctions) wallOffset = zero
     !
-    !       Check whether or not the wall distance is needed for the       
-    !       turbulence model.                                              
+    !       Check whether or not the wall distance is needed for the
+    !       turbulence model.
     !
     if(equations == RANSEquations) then
 
@@ -3359,13 +3359,13 @@ contains
 
     endif
     !
-    !       Parallelization parameters. Set the minimum load imbalance to  
-    !       3 percent to avoid any problems.                               
+    !       Parallelization parameters. Set the minimum load imbalance to
+    !       3 percent to avoid any problems.
     !
     loadImbalance = max(loadImbalance, 0.03_realType)
     !
-    !       Some default parameters, which depend on other parameters.     
-    !       Only if these have not been specified of course.               
+    !       Some default parameters, which depend on other parameters.
+    !       Only if these have not been specified of course.
     !
     if(nsgStartup < 0)    nsgStartup    = 0
     if(ncyclesCoarse < 0) nCyclesCoarse = nCycles
@@ -3424,16 +3424,16 @@ contains
        end select
     endif
     !
-    !       Determine the number of old grid levels needed for the BDF     
-    !       time integration of unsteady problems and allocate the memory  
-    !       for the coefficients. The actual values are not yet set,       
-    !       because in the first (and possibly second) time step a reduced 
-    !       order must be used, because the older states are not available 
-    !       yet. Also allocate the memory for the logicals to indicate     
-    !       whether or not old solutions have been written.                
-    !       If a Runge Kutta scheme must be used for the time integration, 
-    !       either explicit or implicit, a separate routine is called to   
-    !       set all the necessary variables.                               
+    !       Determine the number of old grid levels needed for the BDF
+    !       time integration of unsteady problems and allocate the memory
+    !       for the coefficients. The actual values are not yet set,
+    !       because in the first (and possibly second) time step a reduced
+    !       order must be used, because the older states are not available
+    !       yet. Also allocate the memory for the logicals to indicate
+    !       whether or not old solutions have been written.
+    !       If a Runge Kutta scheme must be used for the time integration,
+    !       either explicit or implicit, a separate routine is called to
+    !       set all the necessary variables.
     !
     select case (timeIntegrationScheme)
     case (BDF, MD)
@@ -3473,7 +3473,7 @@ contains
             "Memory allocation error for coefTime")
 
        ! Determine the accuracy and set ALE parameters accordingly.
-       if (useALE) then 
+       if (useALE) then
           select case (timeAccuracy)
           case (firstOrder)
              nALEMeshes = 1
@@ -3528,8 +3528,8 @@ contains
        oldSolWritten(nn) = .false.
     enddo
     !
-    !       Determine the values of the runge kutta parameters, depending  
-    !       on the number of stages specified.                             
+    !       Determine the values of the runge kutta parameters, depending
+    !       on the number of stages specified.
     !
     ! Limit the number of stages between 1 and 6 and allocate the
     ! memory.
@@ -3609,9 +3609,9 @@ contains
        cdisRK(6) = one
     end select
     !
-    !       To avoid any problems later on, allocate the memory for the    
-    !       rigid body motion parameters if these values were not present  
-    !       in the parameter file.                                         
+    !       To avoid any problems later on, allocate the memory for the
+    !       rigid body motion parameters if these values were not present
+    !       in the parameter file.
     !
     if(.not. allocated(coefPolXRot) ) then
        allocate(coefPolXRot(0:0), stat=ierr)
@@ -3694,10 +3694,10 @@ contains
   end subroutine checkInputParam
   subroutine setDefaultValues
     !
-    !       setDefaultValues sets the default values for the input         
-    !       parameters where-ever possible. The parameters that must be    
-    !       set by the user are initialized such a check can be performed  
-    !       later.                                                         
+    !       setDefaultValues sets the default values for the input
+    !       parameters where-ever possible. The parameters that must be
+    !       set by the user are initialized such a check can be performed
+    !       later.
     !
     use constants
 
@@ -3738,7 +3738,7 @@ contains
     volumeOutSpecified  = .false.
     isoOutSpecified     = .false.
     !
-    !       Set the default values for the discretization parameters.      
+    !       Set the default values for the discretization parameters.
     !
     spaceDiscr = none                  ! Serves as a check later on.
     orderTurb  = firstOrder            ! First order discretization.
@@ -3781,7 +3781,7 @@ contains
 
     kappaCoef = third
     !
-    !       Set the default values for the IO-parameters.                  
+    !       Set the default values for the IO-parameters.
 
     gridFile       = ""          ! Serves as a check later on.
 
@@ -3822,7 +3822,7 @@ contains
     precisionSurfSol  = precisionSingle
 
     !
-    !       Set the default values for the iteration parameters.           
+    !       Set the default values for the iteration parameters.
     !
     nCycles       = -1    ! Serves as a check later on.
     nsgStartup    =  0    ! No single grid startup iterations.
@@ -3875,8 +3875,8 @@ contains
     ! when no restart is performed.
     mgDescription = "sg" ! Single grid computation.
     !
-    !       Set the default values for the motion parameters,              
-    !       i.e. no motion.                                                
+    !       Set the default values for the motion parameters,
+    !       i.e. no motion.
     !
     ! Translation data.
 
@@ -3903,14 +3903,14 @@ contains
 
     gridMotionSpecified = .false.
     !
-    !       Set the default values for the parallel parameters.            
+    !       Set the default values for the parallel parameters.
     !
     loadImbalance = 0.1_realType  ! Allow 10 percent load imbalance.
     splitBlocks   = .true.        ! Allow the splitting of blocks to
     ! obtain a better load balancing.
     loadbalanceiter = 2           ! Do two iterations
     !
-    !       Set the default values for the physics parameters.             
+    !       Set the default values for the physics parameters.
     !
     equations     = none       ! These are parameters that must be
     equationMode = none        ! specified. If not, the program
@@ -3972,9 +3972,9 @@ contains
     momentAxis(2,2) = zero
     momentAxis(3,1) = zero
     momentAxis(3,2) = zero
-    
+
     !
-    !       Set the default values for the time spectral parameters.       
+    !       Set the default values for the time spectral parameters.
     !
     nTimeIntervalsSpectral   = -1   ! Serves as a check later on.
 
@@ -3988,7 +3988,7 @@ contains
 
     dtUnsteadyRestartSpectral    = -one    ! Is checked later on.
     !
-    !       Set the default values for the unsteady parameters.            
+    !       Set the default values for the unsteady parameters.
     !
     timeAccuracy = secondOrder  ! Second order time accuracy.
 
@@ -4003,26 +4003,26 @@ contains
     ! overruled for models that
     ! are wall distance free.
     !
-    !       The reference state variables. Set them to -1, such that they  
-    !       can be checked later on.                                       
+    !       The reference state variables. Set them to -1, such that they
+    !       can be checked later on.
     !
     pRef   = -one
     rhoRef = -one
     TRef   = -one
     !
-    !       The conversion factor of the grid units to meters. Default 1.  
+    !       The conversion factor of the grid units to meters. Default 1.
     !
     LRef           = one
     LRefSpecified = .false.
     !
-    !       Initialization of some unsteady restart parameters. These will 
-    !       be overwritten when an actual unsteady restart is performed.   
+    !       Initialization of some unsteady restart parameters. These will
+    !       be overwritten when an actual unsteady restart is performed.
     !
     nOldSolAvail        = 1
     nTimeStepsRestart   = 0
     timeUnsteadyRestart = zero
     !
-    !       Variables needed for the writing of grid and solution files.   
+    !       Variables needed for the writing of grid and solution files.
     !
     timeSpectralGridsNotWritten = .true.
 
@@ -4041,8 +4041,8 @@ contains
 
   subroutine initializeIsoSurfaceVariables(values, nValues)
     !
-    !       isoVariables extracts from the given string the extra          
-    !       iso surface variables to be written to the solution file.      
+    !       isoVariables extracts from the given string the extra
+    !       iso surface variables to be written to the solution file.
     !
     use constants
     use extraOutput, only : isoValues, isoSurfaceNames, nIsoSurface
@@ -4073,7 +4073,7 @@ contains
   subroutine setIsoSurfaceVariable(variable, iVar)
 
     ! Set variable to iVar. initializeIsoSurfaceVariables MUST be called
-    ! first with the desired number of values to set. 
+    ! first with the desired number of values to set.
 
     use constants
     use cgnsNames
@@ -4088,9 +4088,9 @@ contains
     integer(kind=intType) :: iVar
 
     select case (variable)
-    case("rho") 
-       isoSurfaceNames(iVar) = cgnsDensity                 
-    case("vx")  
+    case("rho")
+       isoSurfaceNames(iVar) = cgnsDensity
+    case("vx")
        isoSurfaceNames(iVar) = cgnsVelX
     case("vy")
        isoSurfaceNames(iVar) = cgnsVelY

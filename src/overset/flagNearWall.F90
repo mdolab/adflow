@@ -16,7 +16,7 @@ subroutine flagNearWallCells(level, sps)
   !  search, (which is built from the dual mesh), we want to know of
   !  the *cells* of the dual mesh are near a wall. That means we
   !  actually want check the distnaces of the dual of the
-  !  dual. Basically that means we're back to the primal. 
+  !  dual. Basically that means we're back to the primal.
 
   use constants
   use overset
@@ -26,7 +26,7 @@ subroutine flagNearWallCells(level, sps)
   use cgnsGrid
   use communication
   use utils
-  implicit none 
+  implicit none
 
   ! Input Params
   integer(kind=intType), intent(in) :: level, sps
@@ -47,7 +47,7 @@ subroutine flagNearWallCells(level, sps)
   nFlaggedLocal = 0
   do nn=1, nDom
      call setPointers(nn, level, sps)
-     if (.not. associated(flowDoms(nn, level, sps)%nearWall)) then 
+     if (.not. associated(flowDoms(nn, level, sps)%nearWall)) then
         allocate(flowDoms(nn,level,sps)%nearWall(1:il, 1:jl, 1:kl))
      end if
 
@@ -62,8 +62,8 @@ subroutine flagNearWallCells(level, sps)
 
      ! Flag all nodes that are within nearWallDist as being nearWall
      do mm=1, nBocos
-        if (isWallType(BCType(mm))) then 
-    
+        if (isWallType(BCType(mm))) then
+
            call setBoundaryPointers(mm, BCFaceID(mm), .False.)
            ! Loop over the generalized plane
            do j=jStart, jEnd
@@ -73,7 +73,7 @@ subroutine flagNearWallCells(level, sps)
                  do k=kStart, kEnd
 
                     dist = norm2(planes(k)%x(i, j, :) - planes(1)%x(i, j, :))
-                    if (dist < nearWallDist) then 
+                    if (dist < nearWallDist) then
                        planes(k)%nearWall(i, j) = 1
                        nFlaggedLocal = nFlaggedLocal + 1
 
@@ -82,7 +82,7 @@ subroutine flagNearWallCells(level, sps)
                        ! xSeed array. Note that we need the *SECOND
                        ! LAST NODE*. This is the value that is
                        ! actually transfered as it is the halo node
-                       ! for the other block. 
+                       ! for the other block.
 
                        if (k == kEnd-1) then
                           planes(k)%xSeed(i, j, :) = planes(1)%x(i, j, :)
@@ -101,11 +101,11 @@ subroutine flagNearWallCells(level, sps)
   call mpi_allreduce(nAtBoundaryLocal, nAtBoundary, 1, adflow_integer, MPI_SUM, &
        adflow_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
- 
+
   ! Iterative loop
   loopIter = 1
   parallelSyncLoop: do while (nAtBoundary > 0)
-     if (myid == 0) then 
+     if (myid == 0) then
         print *, 'Flag Near Wall Iteration:', loopIter, 'nAtBoundary', nAtBoundary
      end if
 
@@ -145,18 +145,18 @@ subroutine flagNearWallCells(level, sps)
                  ! Determine if we need to do the generalized 'k'
                  ! direction at all. We only need to do if a valid
                  ! seed has shown up in the xSeed:
-                 if (planes(0)%xSeed(i, j, 1) < large) then 
-        
+                 if (planes(0)%xSeed(i, j, 1) < large) then
+
                     ! Loop over the 'k' ie offwall direction
                     do k=kStart, kEnd
 
                        dist = norm2(planes(k)%x(i, j, :) - planes(0)%xSeed(i, j, :))
-                       if (dist < nearWallDist .and. planes(k)%nearWall(i, j) == 0) then 
+                       if (dist < nearWallDist .and. planes(k)%nearWall(i, j) == 0) then
                           planes(k)%nearWall(i, j) = 1
-                                               
+
                           ! If we made it all the way to the other side
-                          ! of the block, copy over the seed for the next exchange. 
-                          if (k == kEnd-1) then 
+                          ! of the block, copy over the seed for the next exchange.
+                          if (k == kEnd-1) then
                              planes(k)%xSeed(i, j, :) = planes(0)%xSeed(i, j, :)
                              nAtBoundaryLocal = nAtBoundaryLocal + 1
                           end if
@@ -166,7 +166,7 @@ subroutine flagNearWallCells(level, sps)
               end do
            end do
            deallocate(planes)
-        end do 
+        end do
      end do
 
      ! Determine if any cells made it to the other side of a face. If so, we have to keep going:
@@ -175,24 +175,24 @@ subroutine flagNearWallCells(level, sps)
      call ECHK(ierr, __FILE__, __LINE__)
 
      loopIter = loopIter + 1
- 
+
   end do parallelSyncLoop
 
   ! Deallocate X and XSeed since they are no longer needed. We
   ! have to hold onto nearWall a little longer since we need to use it
-  ! in initializeOBlock. It will deallocate it. 
+  ! in initializeOBlock. It will deallocate it.
   do nn=1, nDom
     deallocate(flowDoms(nn, level, sps)%XSeed)
   end do
 
-contains 
+contains
   subroutine setBoundaryPointers(mm, faceID, fullFaces)
     implicit none
 
     integer(kind=intType), intent(in) :: mm, faceID
     logical, intent(in) :: fullFaces
 
-    if (.not. fullFaces) then 
+    if (.not. fullFaces) then
        iStart=BCData(mm)%inBeg; iEnd=BCData(mm)%inEnd
        jStart=BCData(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
     else
@@ -200,7 +200,7 @@ contains
        select case (mm)
        case (iMin, iMax)
           iEnd=jl; jEnd=kl
-       case (jMin, jMax) 
+       case (jMin, jMax)
           iEnd=il; jEnd=kl
        case(kMin, kMax)
           iEnd=il; jEnd=jl
@@ -265,5 +265,5 @@ contains
     end select
   end subroutine setBoundaryPointers
 end subroutine flagNearWallCells
-      
- 
+
+

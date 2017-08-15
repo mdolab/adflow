@@ -11,7 +11,7 @@ import os, sys
 import string
 import re
 # Specify file extension
-EXT = '_b.f90' 
+EXT = '_b.f90'
 
 DIR_ORI = sys.argv[1]
 DIR_MOD = sys.argv[2]
@@ -45,7 +45,7 @@ for f in os.listdir(DIR_ORI):
 
         # First we want to dertmine if it is a 'useful' module or a
         # 'useless' module. A useful module is one that has
-        # subroutines in it. 
+        # subroutines in it.
         isModule = False
         hasSubroutine = False
         for line in file_object_ori:
@@ -55,7 +55,7 @@ for f in os.listdir(DIR_ORI):
             if patt_subroutine.match(line):
                 hasSubroutine = True
 
-        # If we have a module, close the input and cycle to next file. 
+        # If we have a module, close the input and cycle to next file.
         if isModule and not hasSubroutine:
             file_object_ori.close()
             continue
@@ -74,9 +74,9 @@ for f in os.listdir(DIR_ORI):
             # Replace _cb on calls
             if '_cb' in line:
                 line = line.replace('_cb', '')
-                
+
             # Replace _b modules with normal -- except for the useful
-            # ones. 
+            # ones.
             m = patt_modules.match(line)
             if m:
                 found = False
@@ -87,7 +87,7 @@ for f in os.listdir(DIR_ORI):
                     line = line.replace('_b', '_b', 1)
                 else:
                     line = line.replace('_b', '')
-        
+
             # # See if we need to modify the line with changing the
             # # module names
             # m = patt_module_start.match(line)

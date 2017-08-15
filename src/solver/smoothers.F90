@@ -3,12 +3,12 @@ module smoothers
 contains
   subroutine RungeKuttaSmoother
     !
-    !       RungeKuttaSmoother performs one multi-stage runge kutta        
-    !       explicit time step for the current multigrid level. On         
-    !       entrance it is assumed that the residual and time step are     
-    !       already computed. On exit the solution in the halo's contain   
-    !       the latest values. However, the residual corresponding to      
-    !       these values is not computed.                                  
+    !       RungeKuttaSmoother performs one multi-stage runge kutta
+    !       explicit time step for the current multigrid level. On
+    !       entrance it is assumed that the residual and time step are
+    !       already computed. On exit the solution in the halo's contain
+    !       the latest values. However, the residual corresponding to
+    !       these values is not computed.
     !
     use constants
     use blockPointers, only : w, p, wn, pn, il, jl, kl, nDom
@@ -89,8 +89,8 @@ contains
 
   subroutine executeRkStage
     !
-    !       executeRkStage executes one runge kutta stage. The stage       
-    !       number, rkStage, is defined in the local module iteration.     
+    !       executeRkStage executes one runge kutta stage. The stage
+    !       number, rkStage, is defined in the local module iteration.
     !
     use blockPointers
     use constants
@@ -155,7 +155,7 @@ contains
     ! for the presence of the turbulent kinetic energy.
 
     if( kPresent ) then
-       if((currentLevel <= groundLevel)) then 
+       if((currentLevel <= groundLevel)) then
           correctForK = .true.
        else
           correctForK = .false.
@@ -164,7 +164,7 @@ contains
        correctForK = .false.
     endif
     !
-    !       Compute the updates of the conservative variables.             
+    !       Compute the updates of the conservative variables.
     !
     ! Loop over the local number of blocks.
 
@@ -276,7 +276,7 @@ contains
 
     enddo domainsUpdate
     !
-    !       Compute the new state vector.                                  
+    !       Compute the new state vector.
     !
     ! Loop over the number of spectral solutions and local blocks.
 
@@ -382,12 +382,12 @@ contains
   end subroutine executeRkStage
   subroutine DADISmoother
     !
-    !       RungeKuttaSmoother performs one multi-stage runge kutta        
-    !       explicit time step for the current multigrid level. On         
-    !       entrance it is assumed that the residual and time step are     
-    !       already computed. On exit the solution in the halo's contain   
-    !       the latest values. However, the residual corresponding to      
-    !       these values is not computed.                                  
+    !       RungeKuttaSmoother performs one multi-stage runge kutta
+    !       explicit time step for the current multigrid level. On
+    !       entrance it is assumed that the residual and time step are
+    !       already computed. On exit the solution in the halo's contain
+    !       the latest values. However, the residual corresponding to
+    !       these values is not computed.
     !
     use blockPointers
     use flowVarRefState
@@ -398,7 +398,7 @@ contains
     implicit none
 
 
-    if (groundLevel == 1) then 
+    if (groundLevel == 1) then
        do Subit=1,nSubiterations-1
 
           ! Execute a DADI step and exchange the externals.
@@ -489,7 +489,7 @@ contains
     correctForK = getCorrectForK()
 
     !
-    !       Compute the updates of the conservative variables.             
+    !       Compute the updates of the conservative variables.
     !
     ! Loop over the local number of blocks.
 
@@ -589,7 +589,7 @@ contains
 
     enddo domainsUpdate
     !
-    !       Compute the new state vector.                                  
+    !       Compute the new state vector.
     !
     ! Loop over the number of spectral solutions and local blocks.
 

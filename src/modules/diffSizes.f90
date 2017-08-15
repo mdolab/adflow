@@ -9,7 +9,7 @@
 
     integer(kind=intType) :: ISIZE1OFDrfviscsubface
     integer(kind=intType) :: ISIZE1OFDrfflowdoms
-    integer(kind=intType) :: ISIZE2OFDrfflowdoms 
+    integer(kind=intType) :: ISIZE2OFDrfflowdoms
     integer(kind=intType) :: ISIZE3OFDrfflowdoms
     integer(kind=intType) :: ISIZE1OFDrfflowdoms_bcdata
 

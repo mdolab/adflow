@@ -3,9 +3,9 @@ module writeCGNSGrid
 contains
   subroutine writeCGNSGridFile
     !
-    !       writeCGNSGridFile and its subroutines write the CGNS grid      
-    !       file(s). Typically this is needed when the coordinates have    
-    !       changed due to moving parts, deformation or both.              
+    !       writeCGNSGridFile and its subroutines write the CGNS grid
+    !       file(s). Typically this is needed when the coordinates have
+    !       changed due to moving parts, deformation or both.
     !
     use cgnsGrid
     use communication
@@ -123,9 +123,9 @@ contains
 
   subroutine gridFileNamesWrite
     !
-    !       gridFileNamesWrite determines the names and number of grid     
-    !       files to be written. Furthermore, it sets the pointers for     
-    !       IOVar to make a general treatment of the writing possible.     
+    !       gridFileNamesWrite determines the names and number of grid
+    !       files to be written. Furthermore, it sets the pointers for
+    !       IOVar to make a general treatment of the writing possible.
     !
     use block
     use inputIO
@@ -146,7 +146,7 @@ contains
 
     character(len=7) :: intString
 
-    !       Determine the names and number of grid files to be written.    
+    !       Determine the names and number of grid files to be written.
     !
     ! Determine the situation we are having here.
 
@@ -275,7 +275,7 @@ contains
        ! and CGNSbases are NOT allocated at ALL. Then when you try
        ! to write the volume grid, and index into fileIDs and
        ! CGNSbases, you're screwed. nGridsToWrite MUST ALWAYS be
-       ! ntimeIntervalsSpectral regardless. 
+       ! ntimeIntervalsSpectral regardless.
 
 
        if( writeGrid ) then
@@ -312,13 +312,13 @@ contains
 
           ! It is not needed to write the grid files.
 
-          nGridsToWrite = 0 
+          nGridsToWrite = 0
 
        endif
 
     end select
     !
-    !       Determine whether or not to use links in CGNS.                 
+    !       Determine whether or not to use links in CGNS.
     !
 
     if( writeGrid ) then
@@ -345,7 +345,7 @@ contains
 
     endif
 
-    !       Set the pointers for IOVar if grid files need to be written.   
+    !       Set the pointers for IOVar if grid files need to be written.
     !
     testGridsToWrite: if(nGridsToWrite > 0) then
 
@@ -408,10 +408,10 @@ contains
 
   subroutine writeCGNSGridFrame(cgnsZone, ind)
     !
-    !       writeCGNSGridFrame writes the framework for the grid file      
-    !       gridNames(ind) using the information stored in the module      
-    !       cgnsGrid. Basically all information but the coordinates is     
-    !       written by this routine.                                       
+    !       writeCGNSGridFrame writes the framework for the grid file
+    !       gridNames(ind) using the information stored in the module
+    !       cgnsGrid. Basically all information but the coordinates is
+    !       written by this routine.
     !
     use constants
     use cgnsGrid
@@ -469,7 +469,7 @@ contains
 
     cgnsBases(ind) = cgnsBase
     !
-    !       Write the family info.                                         
+    !       Write the family info.
     !
     ! Loop over the number of families.
 
@@ -525,7 +525,7 @@ contains
        endif
     enddo familyLoop
     !
-    !       Write all the zone info, except the coordinates.               
+    !       Write all the zone info, except the coordinates.
     !
     ! Loop over the number of zones in the original grid.
 
@@ -925,9 +925,9 @@ contains
 
     subroutine writeBcdataArrays(narr, arr, DirNeu)
       !
-      !         writeBcdataArrays writes the given bc data set arrays,       
-      !         either of the dirichlet or neumann type, to the correct      
-      !         position in the CGNS file.                                   
+      !         writeBcdataArrays writes the given bc data set arrays,
+      !         either of the dirichlet or neumann type, to the correct
+      !         position in the CGNS file.
       !
       implicit none
       !
@@ -1040,8 +1040,8 @@ contains
 
   subroutine writeCoorCGNSZone(zone, cgnsZone)
     !
-    !       writeCoorCGNSZone writes the coordinates of the given zone     
-    !       to the cgns file(s).                                           
+    !       writeCoorCGNSZone writes the coordinates of the given zone
+    !       to the cgns file(s).
     !
     use constants
     use block
@@ -1205,7 +1205,7 @@ contains
        select case (precisionGrid)
        case (precisionSingle)
           allocate(coor4(ll), coor8(0), stat=ierr)
-          
+
        case (precisionDouble)
           allocate(coor8(ll), coor4(0), stat=ierr)
        end select
@@ -1448,8 +1448,8 @@ contains
   subroutine storeCoorInBuffer(buffer, zone, ind, coorID, &
        blockID, nn)
     !
-    !       storeCoorInBuffer stores the given coordinate for the given    
-    !       blockID. The total size of the buffer is returned in nn.       
+    !       storeCoorInBuffer stores the given coordinate for the given
+    !       blockID. The total size of the buffer is returned in nn.
     !
     use constants
     use block

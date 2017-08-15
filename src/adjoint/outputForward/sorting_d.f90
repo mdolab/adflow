@@ -21,11 +21,11 @@ contains
   end function faminlist
   function bsearchintegers(key, base)
 !
-!       bsearchintegers returns the index in base where key is stored. 
-!       a binary search algorithm is used here, so it is assumed that  
-!       base is sorted in increasing order. in case key appears more   
-!       than once in base, the result is arbitrary. if key is not      
-!       found, a zero is returned.                                     
+!       bsearchintegers returns the index in base where key is stored.
+!       a binary search algorithm is used here, so it is assumed that
+!       base is sorted in increasing order. in case key appears more
+!       than once in base, the result is arbitrary. if key is not
+!       found, a zero is returned.
 !
     use precision
     implicit none
@@ -50,7 +50,7 @@ contains
     ii = size(base)
     entryfound = .false.
 ! binary search to find key.
-    do 100 
+    do 100
 ! condition for breaking the loop
       if (ii .ne. 0) then
 ! determine the position in the array to compare.

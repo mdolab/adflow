@@ -23,8 +23,8 @@ contains
        call setPointers(nn, level, sps)
 
        ! Now loop over the owned cells and set the isCompute flag to
-       ! true. 
-       
+       ! true.
+
        do k=2, kl
           do j=2, jl
              do i=2, il
@@ -42,11 +42,11 @@ contains
     end do
 
   end subroutine initializeStatus
-  
+
   subroutine reInitializeStatus(level, sps)
 
     ! This subroutine reinitializes the status variable. However, if
-    ! cell is a wallDonor, that information is kept. 
+    ! cell is a wallDonor, that information is kept.
 
     use constants
     use blockPointers, only : nDom, il, jl, kl, ib, jb, kb, status
@@ -64,8 +64,8 @@ contains
        call setPointers(nn, level, sps)
 
        ! Now loop over the owned cells and set the isCompute flag to
-       ! true. 
-       
+       ! true.
+
        do k=2, kl
           do j=2, jl
              do i=2, il
@@ -95,7 +95,7 @@ contains
     use stencils, only : visc_drdw_stencil, n_visc_drdw
     use utils, only : mynorm2
     use oversetUtilities, only :  wallsOnBlock
-    implicit none 
+    implicit none
 
     ! Input Params
     type(oversetBlock), intent(inout) :: oBlock
@@ -135,18 +135,18 @@ contains
        end do
     end do
 
-    ! Compute the qualDonor depending on if we have a wall block or not. 
+    ! Compute the qualDonor depending on if we have a wall block or not.
     mm = 0
     do k=1,ke
        do j=1,je
           do i=1,ie
              mm = mm + 1
-             if (wallsPresent) then 
-                oBlock%qualDonor(1, mm) = vol(i, j, k)**third 
+             if (wallsPresent) then
+                oBlock%qualDonor(1, mm) = vol(i, j, k)**third
              else
                 oBlock%qualDonor(1, mm) = (backGroundVolScale*vol(i, j, k))**third
              end if
-          
+
              ! Account for explicit scaling of quality
              oblock%qualDonor(1, mm) =  oblock%qualDonor(1, mm)*cgnsDoms(nbkglobal)%priority
           end do
@@ -188,10 +188,10 @@ contains
 
              ! Determine if this point is near wall. Note that the
              ! boundary halos sill have xSeed as "large" so these won't
-             ! be flagged as nearWall. We will account for this below. 
+             ! be flagged as nearWall. We will account for this below.
              dist = mynorm2(xp - xSeed(i, j, k, :))
-             if (dist < nearWallDist) then 
-                nearWallTmp(i, j, k) = .True. 
+             if (dist < nearWallDist) then
+                nearWallTmp(i, j, k) = .True.
              end if
           end do
        end do
@@ -213,7 +213,7 @@ contains
                   (nearWallTmp(i  , j  , k+1) .or. globalCell(i  , j,   k+1) < 0) .and. &
                   (nearWallTmp(i+1, j  , k+1) .or. globalCell(i+1, j,   k+1) < 0) .and. &
                   (nearWallTmp(i  , j+1, k+1) .or. globalCell(i  , j+1, k+1) < 0) .and. &
-                  (nearWallTmp(i+1, j+1, k+1) .or. globalCell(i+1, j+1, k+1) < 0)) then 
+                  (nearWallTmp(i+1, j+1, k+1) .or. globalCell(i+1, j+1, k+1) < 0)) then
                 oBlock%nearWall(i, j, k) = 1
              end if
           end do
@@ -229,9 +229,9 @@ contains
           do i=2, ie
              mm = mm + 1
              oBlock%hexaConn(1, mm) = (k-2)*planeOffset + (j-2)*ie + (i-2) + 1
-             oBlock%hexaConn(2, mm) = oBlock%hexaConn(1, mm) + 1 
+             oBlock%hexaConn(2, mm) = oBlock%hexaConn(1, mm) + 1
              oBlock%hexaConn(3, mm) = oBlock%hexaConn(2, mm) + ie
-             oBlock%hexaConn(4, mm) = oBlock%hexaConn(3, mm) - 1 
+             oBlock%hexaConn(4, mm) = oBlock%hexaConn(3, mm) - 1
 
              oBlock%hexaConn(5, mm) = oBlock%hexaConn(1, mm) + planeOffset
              oBlock%hexaConn(6, mm) = oBlock%hexaConn(2, mm) + planeOffset
@@ -255,7 +255,7 @@ contains
 
     ! This subroutine initializes the fringe information for the given
     ! block, level and spectral instance. It is assumed that
-    ! blockPointers are already set. 
+    ! blockPointers are already set.
     use constants
     use communication, only : myID
     use blockPointers
@@ -279,7 +279,7 @@ contains
     ! Check if we have walls:
     call wallsOnBLock(wallsPresent)
 
-    ! Set the sizes for the oFringe and allocate the required space. 
+    ! Set the sizes for the oFringe and allocate the required space.
     oFringe%il = il
     oFringe%jl = jl
     oFringe%kl = kl
@@ -287,7 +287,7 @@ contains
     oFringe%ny = ny
     oFringe%nz = nz
     oFringe%block = nn
-    oFringe%cluster = clusters(cumDomProc(myid) + nn) 
+    oFringe%cluster = clusters(cumDomProc(myid) + nn)
     oFringe%proc = myid
 
     mm = nx*ny*nz
@@ -302,7 +302,7 @@ contains
     ! Assume each cell will get just one donor. It's just a guess, it
     ! will be expanded if necessary so the exact value doesn't matter.
     allocate(oFringe%fringeIntBuffer(5, mm), ofringe%fringeRealBuffer(4, mm))
-    
+
     oFringe%nDonor = 0
     ! Now loop over the actual compute cells, setting the cell center
     ! value 'x', the volume and flag these cells as compute
@@ -324,7 +324,7 @@ contains
              end do
              oFringe%xSeed(:, ii) = xSeed(i, j, k, :)
              oFringe%wallInd(ii) = wallInd(i, j, k)
-             oFringe%fringeIntBuffer(4, ii) = nn 
+             oFringe%fringeIntBuffer(4, ii) = nn
              oFringe%fringeIntBuffer(5, ii) = windIndex(i, j, k, il, jl, kl)
 
           end do
@@ -364,7 +364,7 @@ contains
           kStart=kl; kEnd=kl;
        end select
 
-       famInclude: if (famInList(BCdata(mm)%famID, famList)) then 
+       famInclude: if (famInList(BCdata(mm)%famID, famList)) then
           do k=kStart, kEnd
              do j=jStart, jEnd
                 do i=iStart, iEnd
@@ -393,12 +393,12 @@ contains
     use kdtree2_module, onlY : kdtree2_create
     use oversetPackingRoutines, only : getWallSize
     use sorting, only : famInList
-    implicit none 
+    implicit none
 
     ! Input Params
     integer(kind=intType), intent(in), dimension(:) :: famList
     type(oversetWall), intent(inout) :: oSurf
-    logical, intent(in) :: dualMesh 
+    logical, intent(in) :: dualMesh
     integer(kind=intType), intent(in) :: cluster
 
     ! Working paramters
@@ -428,7 +428,7 @@ contains
     nodeCount = 0
 
     do mm=1, nBocos
-       famInclude: if (famInList(BCData(mm)%famID, famList)) then 
+       famInclude: if (famInList(BCData(mm)%famID, famList)) then
 
           select case(BCFaceID(mm))
           case(iMin, jMax, kMin)
@@ -438,22 +438,22 @@ contains
           end select
 
           ! Now this can be reversed *again* if we have a block that
-          ! is left handed. 
-          if (.not. rightHanded) then 
+          ! is left handed.
+          if (.not. rightHanded) then
              regularOrdering = .not. (regularOrdering)
           end if
-          
+
           ! THIS IS SUPER IMPORTANT: It is absolutely critical that the
           ! wall be built *FROM THE DUAL MESH!!* IT WILL NOT WORK IF YOU
           ! USE THE PRIMAL MESH! The -1 for the node ranges below gives
-          ! the extra '1' node for the mesh formed from the dual cells. 
+          ! the extra '1' node for the mesh formed from the dual cells.
 
-          dualCheck: if (dualMesh) then 
+          dualCheck: if (dualMesh) then
              jBeg = BCData(mm)%jnBeg-1 ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg-1 ; iEnd = BCData(mm)%inEnd
              ! Now fill up the point array
              do j=jBeg, jEnd
-                do i=iBeg, iEnd 
+                do i=iBeg, iEnd
                    ii = ii +1
                    select case(BCFaceID(mm))
                    case(imin)
@@ -462,16 +462,16 @@ contains
                    case(imax)
                       oSurf%x(:,ii) = fourth*(x(il, i, j, :) + x(il, i+1, j, :) + &
                            x(il, i, j+1, :) + x(il, i+1, j+1, :))
-                   case(jmin) 
+                   case(jmin)
                       oSurf%x(:,ii) = fourth*(x(i, 1, j, :) + x(i+1, 1, j, :) + &
                            x(i, 1, j+1, :) + x(i+1, 1, j+1, :))
-                   case(jmax) 
+                   case(jmax)
                       oSurf%x(:,ii) = fourth*(x(i, jl, j, :) + x(i+1, jl, j, :) + &
                            x(i, jl, j+1, :) + x(i+1, jl, j+1, :))
-                   case(kmin) 
+                   case(kmin)
                       oSurf%x(:,ii) = fourth*(x(i, j, 1, :) + x(i+1, j, 1, :) + &
                            x(i, j+1, 1, :) + x(i+1, j+1, 1, :))
-                   case(kmax) 
+                   case(kmax)
                       oSurf%x(:,ii) = fourth*(x(i, j, kl, :) + x(i+1, j, kl, :) + &
                            x(i, j+1, kl, :) + x(i+1, j+1, kl, :))
                    end select
@@ -489,7 +489,7 @@ contains
              do j=0, nj-2
                 do i=0, ni-2
                    jj = jj + 1
-                   if (regularOrdering) then 
+                   if (regularOrdering) then
                       oSurf%conn(1, jj) = nodeCount + (j  )*ni + i + 1 ! n1
                       oSurf%conn(2, jj) = nodeCount + (j  )*ni + i + 2 ! n2
                       oSurf%conn(3, jj) = nodeCount + (j+1)*ni + i + 2 ! n3
@@ -515,37 +515,37 @@ contains
 
              ! Now fill up the point array. Owned node loop.
              do j=jBeg, jEnd
-                do i=iBeg, iEnd 
+                do i=iBeg, iEnd
                    ii = ii +1
                    select case(BCFaceID(mm))
                    case(imin)
                       oSurf%x(:,ii) = x(1, i, j, :)
                    case(imax)
-                      oSurf%x(:,ii) = x(il, i, j, :) 
-                   case(jmin) 
-                      oSurf%x(:,ii) = x(i, 1, j, :) 
-                   case(jmax) 
-                      oSurf%x(:,ii) = x(i, jl, j, :) 
-                   case(kmin) 
-                      oSurf%x(:,ii) = x(i, j, 1, :) 
-                   case(kmax) 
-                      oSurf%x(:,ii) = x(i, j, kl, :) 
+                      oSurf%x(:,ii) = x(il, i, j, :)
+                   case(jmin)
+                      oSurf%x(:,ii) = x(i, 1, j, :)
+                   case(jmax)
+                      oSurf%x(:,ii) = x(i, jl, j, :)
+                   case(kmin)
+                      oSurf%x(:,ii) = x(i, j, 1, :)
+                   case(kmax)
+                      oSurf%x(:,ii) = x(i, j, kl, :)
                    end select
                    oSurf%delta(ii) = BCData(mm)%deltaNode(i, j)
                 end do
              end do
 
              ! Fill up the conn array being careful to *only* adding
-             ! cells that are not already blanked. 
+             ! cells that are not already blanked.
              ni = iEnd - iBeg + 1
              nj = jEnd - jBeg + 1
              do j=0, nj-2
                 do i=0, ni-2
                    jjj = jjj + 1
                    oSurf%iBlank(jjj) = BCData(mm)%iblank(iBeg+i+1,jBeg+j+1)
-                   if (oSurf%iBlank(jjj) == 1) then 
+                   if (oSurf%iBlank(jjj) == 1) then
                       jj = jj + 1
-                      if (regularOrdering) then 
+                      if (regularOrdering) then
                          oSurf%conn(1, jj) = nodeCount + (j  )*ni + i + 1 ! n1
                          oSurf%conn(2, jj) = nodeCount + (j  )*ni + i + 2 ! n2
                          oSurf%conn(3, jj) = nodeCount + (j+1)*ni + i + 2 ! n3
@@ -572,17 +572,17 @@ contains
     call buildSerialQuad(oSurf%nCells, nNodes, oSurf%x, oSurf%conn, oSurf%ADT)
 
     ! Build the KDTree
-    if (oSurf%nNodes > 0) then 
+    if (oSurf%nNodes > 0) then
        oSurf%tree => kdtree2_create(oSurf%x)
     end if
 
-    ! Build the inverse of the connectivity, the nodeToElem array. 
+    ! Build the inverse of the connectivity, the nodeToElem array.
     oSurf%nte = 0
     do i=1, oSurf%nCells
        do j=1, 4
           n = oSurf%conn(j, i)
           inner:do k=1, 4
-             if (oSurf%nte(k, n) == 0) then 
+             if (oSurf%nte(k, n) == 0) then
                 oSurf%nte(k, n) = i
                 exit inner
              end if

@@ -7,21 +7,21 @@ contains
     use constants
     implicit none
      integer(kind=intType), intent(in) :: famID, famList(:)
-     logical :: famInList 
+     logical :: famInList
      famInLIst = .False.
-     if (bsearchIntegers(famID, famList) > 0) then 
-        famInList = .True. 
+     if (bsearchIntegers(famID, famList) > 0) then
+        famInList = .True.
      end if
    end function famInList
 
 
   function bsearchIntegers(key, base)
     !
-    !       bsearchIntegers returns the index in base where key is stored. 
-    !       A binary search algorithm is used here, so it is assumed that  
-    !       base is sorted in increasing order. In case key appears more   
-    !       than once in base, the result is arbitrary. If key is not      
-    !       found, a zero is returned.                                     
+    !       bsearchIntegers returns the index in base where key is stored.
+    !       A binary search algorithm is used here, so it is assumed that
+    !       base is sorted in increasing order. In case key appears more
+    !       than once in base, the result is arbitrary. If key is not
+    !       found, a zero is returned.
     !
     use precision
     implicit none
@@ -101,8 +101,8 @@ contains
 
   subroutine qsortIntegers(arr, nn)
     !
-    !       qsortIntegers sorts the given number of integers in            
-    !       increasing order.                                              
+    !       qsortIntegers sorts the given number of integers in
+    !       increasing order.
     !
     use precision
     implicit none
@@ -313,8 +313,8 @@ contains
 
   subroutine qsortReals(arr, nn)
     !
-    !       qsortReals sorts the given number of reals in increasing       
-    !       order.                                                         
+    !       qsortReals sorts the given number of reals in increasing
+    !       order.
     !
     use constants
     implicit none
@@ -525,8 +525,8 @@ contains
 
   subroutine qsortStrings(arr, nn)
     !
-    !       qsortStrings sorts the given number of strings in increasing   
-    !       order.                                                         
+    !       qsortStrings sorts the given number of strings in increasing
+    !       order.
     !
     use constants
     implicit none
@@ -738,11 +738,11 @@ contains
 
   function bsearchReals(key, base)
     !
-    !       bsearchReals returns the index in base where key is stored.    
-    !       A binary search algorithm is used here, so it is assumed that  
-    !       base is sorted in increasing order. In case key appears more   
-    !       than once in base, the result is arbitrary. If key is not      
-    !       found, a zero is returned.                                     
+    !       bsearchReals returns the index in base where key is stored.
+    !       A binary search algorithm is used here, so it is assumed that
+    !       base is sorted in increasing order. In case key appears more
+    !       than once in base, the result is arbitrary. If key is not
+    !       found, a zero is returned.
     !
     use precision
     implicit none
@@ -813,11 +813,11 @@ contains
 
   function bsearchStrings(key, base)
     !
-    !       bsearchStrings returns the index in base where key is stored.  
-    !       A binary search algorithm is used here, so it is assumed that  
-    !       base is sorted in increasing order. In case key appears more   
-    !       than once in base, the result is arbitrary. If key is not      
-    !       found, a zero is returned.                                     
+    !       bsearchStrings returns the index in base where key is stored.
+    !       A binary search algorithm is used here, so it is assumed that
+    !       base is sorted in increasing order. In case key appears more
+    !       than once in base, the result is arbitrary. If key is not
+    !       found, a zero is returned.
     !
     use precision
     implicit none
@@ -889,11 +889,11 @@ contains
   !
   ! This file contains two functions that are used to find the unique
   ! values from a list of integers as well as the inverse mapping. These
-  ! routines have been generously borrowed from 
+  ! routines have been generously borrowed from
   !
   ! Michel Olagnon
   ! http://www.fortran-2000.com/rank/
-  ! 
+  !
   ! Slight modifications of I_unirnk and I_uniinv for use with ADflow by
   ! Gaetan Kenway. The 'unique' subroutine was added that combines the
   ! functionality of both routines in a single call.
@@ -901,14 +901,14 @@ contains
   subroutine unique(arr, nn, n_unique, inverse)
     use precision
     implicit none
-    ! Input: 
-    ! arr: Array of integers to be unique-sorted. Overwirtten on output 
+    ! Input:
+    ! arr: Array of integers to be unique-sorted. Overwirtten on output
     !      with unique values
     ! nn : Number of input values
     ! n_unique: Number of unique output values in arr. Only the first n_unique
     !           values of arr on output are meaningful
     ! inverse: size(nn): For each origianl entry in arr, this gives the index
-    !          into to unique, sorted array. 
+    !          into to unique, sorted array.
 
     ! Input Arguments
     integer(kind=intType), intent(in) :: nn

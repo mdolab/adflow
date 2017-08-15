@@ -1,4 +1,4 @@
-# Becuase make is stupid. 
+# Becuase make is stupid.
 include ../../config/config.mk
 include ../../src/build/fileList
 include ../../src/build/directoryList
@@ -17,10 +17,10 @@ includeFiles:=	metis-4.0/defs.h\
 		modules/complexify.f90\
 
 
-# Filter out the precision.F90 file. That is set manually. 
+# Filter out the precision.F90 file. That is set manually.
 fortranFiles:=$(filter-out modules/precision.F90,$(fortranFiles))
 
-complexify: 
+complexify:
 # create the full path to the real file and the complex
 	@for file in $(fortranFiles); do \
 		realFile=$(addprefix ../../src/,$$file); \
@@ -54,7 +54,7 @@ complexify:
 	done
 
 
-directories: 
+directories:
 	@for dir in $(dirs); do \
 		mkdir -p ../$$dir; \
 	done;

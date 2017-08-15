@@ -1,7 +1,7 @@
 module turbMod
   !
-  !       This local module contains variables used when the turbulence  
-  !       equations are solved.                                          
+  !       This local module contains variables used when the turbulence
+  !       equations are solved.
   !
   use precision
   implicit none
