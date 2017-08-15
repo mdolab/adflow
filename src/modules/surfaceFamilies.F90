@@ -2,23 +2,23 @@ module surfaceFamilies
 
   use constants, only : intType, realType, maxCGNSNameLen, nFamExchange
   implicit none
-  save
+
 #ifndef USE_TAPENADE
 #include "petsc/finclude/petsc.h"
 
-  type familyExchange 
+  type familyExchange
      ! Vectors for global traction calc
-     
+
      ! Parallel vector of un-uniqufied values concatenated for all
-     ! included surfaces 
+     ! included surfaces
      Vec nodeValLocal
 
-     ! Parallel vector of uniqueifed values. 
+     ! Parallel vector of uniqueifed values.
      Vec nodeValGlobal
 
      ! Sum global. Same size as nodeValGlobal
      Vec sumGlobal
-     
+
      ! Scatter from nodeValLocal to NodeValGlobal
      VecScatter scatter
 
@@ -41,18 +41,18 @@ module surfaceFamilies
   type(familyExchange), dimension(:, :), allocatable, target :: BCFamExchange
 
   ! List of familis grouped by BC. See constants.F90 for the indices
-  ! to use for this array. 
+  ! to use for this array.
   type(BCGroupType), dimension(nFamExchange) :: BCFamGroups
 
-  ! The full list of the family names 
+  ! The full list of the family names
   character(len=maxCGNSNameLen), dimension(:), allocatable :: famNames
 
   ! List of all families. This is just 1,2,3,4...nFam. It is just used
-  ! in fortran when a specific family is not required. 
+  ! in fortran when a specific family is not required.
   integer(kind=intType), dimension(:), allocatable :: fullFamList
 #endif
 
-  ! Special BC array's that are sometime required for reducitons. 
+  ! Special BC array's that are sometime required for reducitons.
   real(kind=realType), dimension(:, :), allocatable, target :: zeroCellVal
   real(kind=realType), dimension(:, :), allocatable, target :: oneCellVal
   real(kind=realType), dimension(:, :), allocatable, target :: zeroNodeVal
@@ -61,7 +61,30 @@ module surfaceFamilies
 #ifndef USE_TAPENADE
   contains
 
-    subroutine destroyFamilyExchange(exch) 
+    subroutine getnfam(nfam)
+
+      implicit none
+      integer(kind=inttype), intent(out) :: nfam
+      if (allocated(famnames)) then
+         nfam = size(famnames)
+      else
+         nfam = 0
+      end if
+
+    end subroutine getnfam
+
+    subroutine getfam(i, fam)
+      implicit none
+      character(len=maxCGNSNameLen), intent(out) :: fam
+      integer(kind=intType), intent(in) :: i
+
+      if (allocated(famnames)) then
+         fam = famnames(i)
+      end if
+
+    end subroutine getfam
+
+    subroutine destroyFamilyExchange(exch)
 
       use constants
       type(familyExchange) :: exch
@@ -72,11 +95,11 @@ module surfaceFamilies
            call vecDestroy(exch%nodeValGlobal, ierr)
            call vecDestroy(exch%sumGlobal, ierr)
            call vecScatterDestroy(exch%scatter, ierr)
-              
+
         end if
-       
+
         exch%allocated = .False.
-        
+
       end subroutine destroyFamilyExchange
 #endif
 end module surfaceFamilies

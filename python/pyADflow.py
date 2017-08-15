@@ -80,10 +80,6 @@ class ADFLOWWarning(object):
         msg += ' '*(78-i) + '|\n' + '+'+'-'*78+'+'+'\n'
         print(msg)
 
-# Global constant for a constants.maxtringlen fortran character array.
-# Becuase Python 3 hates you.
-emptyString = ' '*256
-
 # =============================================================================
 # ADFLOW Class
 # =============================================================================
@@ -239,8 +235,14 @@ class ADFLOW(AeroSolver):
         ntime  = self.adflow.inputtimespectral.ntimeintervalsspectral
         n  = ncells*ntime
 
-        famList = self._processFortranStringArray(
-            self.adflow.surfacefamilies.famnames)
+        # Normally we would be able to just use the following...but
+        # sometimes f2py is grumpy and we get
+        # ValueError: data type must provide an itemsize
+        # So we do it he hard way...sigh
+        nFam = self.adflow.surfacefamilies.getnfam()
+        famList = []
+        for i in range(nFam):
+            famList.append(self.adflow.surfacefamilies.getfam(i+1).strip())
 
         # Add the initial families that already exist in the CGNS
         # file.
@@ -1711,11 +1713,8 @@ class ADFLOW(AeroSolver):
         self.adflow.monitor.writesurface = False
 
         # Set filename in adflow
-        self.adflow.inputio.solfile[:] = emptyString
-        self.adflow.inputio.solfile[0:len(fileName)] = fileName
-
-        self.adflow.inputio.newgridfile[:] = emptyString
-        self.adflow.inputio.newgridfile[0:len(fileName)] = fileName
+        self.adflow.inputio.solfile = self._expandString(fileName)
+        self.adflow.inputio.newgridfile = self._expandString(fileName)
 
         # Actual fortran write call. Family list doesn't matter.
         famList = self._getFamilyList(self.allFamilies)
@@ -1749,10 +1748,10 @@ class ADFLOW(AeroSolver):
 
         n = self.adflow.constants.maxstringlen
         # Set fileName in adflow
-        self.adflow.inputio.solfile = emptyString
-        self.adflow.inputio.solfile[0:len(fileName)] = fileName
-        self.adflow.inputio.newgridfile[:] = emptyString
-        self.adflow.inputio.newgridfile[0:len(fileName)] = fileName
+        self.adflow.inputio.solfile = self._expandString(fileName)
+        #self.adflow.inputio.solfile[0:len(fileName)] = fileName
+        self.adflow.inputio.newgridfile = self._expandString(fileName)
+        #self.adflow.inputio.newgridfile[0:len(fileName)] = fileName
 
         # Actual fortran write call. family list doesn't matter
         famList = self._getFamilyList(self.allFamilies)
@@ -1777,8 +1776,7 @@ class ADFLOW(AeroSolver):
         self.adflow.monitor.writesurface=True
 
         # Set fileName in adflow
-        self.adflow.inputio.surfacesolfile[:] = emptyString
-        self.adflow.inputio.surfacesolfile[0:len(fileName)] = fileName
+        self.adflow.inputio.surfacesolfile = self._expandString(fileName)
 
         # Actual fortran write call. Fam list matters.
         famList = self._getFamilyList(self.getOption('outputSurfaceFamily'))
@@ -4730,31 +4728,18 @@ class ADFLOW(AeroSolver):
         liftDistributionFileName = os.path.join(outputDir, baseName + "_lift")
 
         # Set fileName in adflow
-        self.adflow.inputio.solfile[:] = emptyString
-        self.adflow.inputio.solfile[0:len(volFileName)] = volFileName
+        self.adflow.inputio.solfile = self._expandString(volFileName)
 
         # Set the grid file to the same name so the grids will be written
         # to the volume files
-        self.adflow.inputio.newgridfile[:] = emptyString
-        self.adflow.inputio.newgridfile[0:len(volFileName)] = volFileName
-
-        self.adflow.inputio.surfacesolfile[:] = emptyString
-        self.adflow.inputio.surfacesolfile[0:len(surfFileName)] = surfFileName
-
-        self.adflow.inputio.slicesolfile[:] = emptyString
-        self.adflow.inputio.slicesolfile[0:len(sliceFileName)] = sliceFileName
-
-        self.adflow.inputio.liftdistributionfile[:] = emptyString
-        self.adflow.inputio.liftdistributionfile[0:len(liftDistributionFileName)] = liftDistributionFileName
+        self.adflow.inputio.newgridfile = self._expandString(volFileName)
+        self.adflow.inputio.surfacesolfile = self._expandString(surfFileName)
+        self.adflow.inputio.slicesolfile = self._expandString(sliceFileName)
+        self.adflow.inputio.liftdistributionfile = self._expandString(liftDistributionFileName)
 
     def _setForcedFileNames(self):
         # Set the filenames that will be used if the user forces a
         # write during a solution.
-
-        self.adflow.inputio.forcedvolumefile[:] = emptyString
-        self.adflow.inputio.forcedsurfacefile[:] = emptyString
-        self.adflow.inputio.forcedliftfile[:] = emptyString
-        self.adflow.inputio.forcedslicefile[:] = emptyString
 
         outputDir = self.getOption('outputDirectory')
         baseName = self.curAP.name
@@ -4765,10 +4750,10 @@ class ADFLOW(AeroSolver):
         liftFileName = base + '_forced_lift.dat'
         sliceFileName = base + '_forced_slices.dat'
 
-        self.adflow.inputio.forcedvolumefile[0:len(volFileName)] = volFileName
-        self.adflow.inputio.forcedsurfacefile[0:len(surfFileName)] = surfFileName
-        self.adflow.inputio.forcedliftfile[0:len(liftFileName)] = liftFileName
-        self.adflow.inputio.forcedslicefile[0:len(sliceFileName)] = sliceFileName
+        self.adflow.inputio.forcedvolumefile = self._expandString(volFileName)
+        self.adflow.inputio.forcedsurfacefile = self._expandString(surfFileName)
+        self.adflow.inputio.forcedliftfile = self._expandString(liftFileName)
+        self.adflow.inputio.forcedslicefile = self._expandString(sliceFileName)
 
     def _createZipperMesh(self):
         """Internal routine for generating the zipper mesh. This operation is
@@ -4779,7 +4764,7 @@ class ADFLOW(AeroSolver):
 
         # Avoid zipper if we have failures or if it already exists
         if self.zipperCreated or self.adflow.killsignals.routinefailed:
-            return 
+            return
 
         zipFam = self.getOption('zipperSurfaceFamily')
 
@@ -4805,20 +4790,10 @@ class ADFLOW(AeroSolver):
         self.adflow.usersurfaceintegrations.interpolateintegrationsurfaces()
         self.coords0 = self.getSurfaceCoordinates(self.allFamilies)
 
-    def _processFortranStringArray(self, strArray):
-        """Getting arrays of strings out of Fortran can be kinda nasty. This
-        takes the array and returns a nice python list of strings"""
-        shp = strArray.shape
-        arr = strArray.reshape((shp[1],shp[0]), order='F')
-        tmp = []
-
-        for i in range(arr.shape[1]):
-            tmp.append("")
-            for j in range(arr.shape[0]):
-                tmp[-1] += arr[j, i].decode()
-            tmp[-1] = tmp[-1].strip().lower()
-
-        return tmp
+    def _expandString(self, s):
+        """Expand a supplied string 's' to be of the constants.maxstring
+        length so we can set them in fortran"""
+        return s + ' '*(256-len(s))
 
     def _createFortranStringArray(self, strList):
         """Setting arrays of strings in Fortran can be kinda nasty. This
