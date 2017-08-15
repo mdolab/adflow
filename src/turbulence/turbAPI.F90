@@ -1,11 +1,11 @@
-module turbAPI 
+module turbAPI
 
 contains
   subroutine turbSolveSegregated
     !
-    !       turbSolveSegregated solves the turbulent transport equations   
-    !       segregatedly, i.e. the mean flow variables are kept constant   
-    !       and the turbulent variables are updated.                       
+    !       turbSolveSegregated solves the turbulent transport equations
+    !       segregatedly, i.e. the mean flow variables are kept constant
+    !       and the turbulent variables are updated.
     !
     use constants
     use blockPointers, only : nDom
@@ -44,7 +44,7 @@ contains
        ! Compute the quantities for certain turbulence models that
        ! need to be communicated between blocks.
 
-       if (turbModel == menterSST) then 
+       if (turbModel == menterSST) then
           call f1SST
        end if
 
@@ -103,8 +103,8 @@ contains
 
   subroutine turbResidual
     !
-    !       turbResidual computes the residual of the residual of the      
-    !       turbulent transport equations on the current multigrid level.  
+    !       turbResidual computes the residual of the residual of the
+    !       turbulent transport equations on the current multigrid level.
     !
     use constants
     use blockPointers, only : nDom
@@ -133,7 +133,7 @@ contains
     ! Compute the quantities for certain turbulence models that
     ! need to be communicated between blocks.
 
-    if (turbModel == menterSST) then 
+    if (turbModel == menterSST) then
        call f1SST
     end if
 

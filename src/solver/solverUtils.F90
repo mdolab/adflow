@@ -42,12 +42,12 @@ contains
 #endif
   subroutine timeStep_block(onlyRadii)
     !
-    !       timeStep computes the time step, or more precisely the time    
-    !       step divided by the volume per unit CFL, in the owned cells.   
-    !       However, for the artificial dissipation schemes, the spectral  
-    !       radIi in the halo's are needed. Therefore the loop is taken    
-    !       over the the first level of halo cells. The spectral radIi are 
-    !       stored and possibly modified for high aspect ratio cells.      
+    !       timeStep computes the time step, or more precisely the time
+    !       step divided by the volume per unit CFL, in the owned cells.
+    !       However, for the artificial dissipation schemes, the spectral
+    !       radIi in the halo's are needed. Therefore the loop is taken
+    !       over the the first level of halo cells. The spectral radIi are
+    !       stored and possibly modified for high aspect ratio cells.
     !
     use constants
     use blockPointers, only : ie, je, ke, il, jl, kl, w, p, rlv, rev, &
@@ -110,8 +110,8 @@ contains
 
     sFace = zero
     !
-    !           Inviscid contribution, depending on the preconditioner.    
-    !           Compute the cell centered values of the spectral radii.    
+    !           Inviscid contribution, depending on the preconditioner.
+    !           Compute the cell centered values of the spectral radii.
     !
     select case (precond)
 
@@ -130,7 +130,7 @@ contains
           do k=1,ke
              do j=1,je
                 do i=1,ie
-#endif       
+#endif
                    ! Compute the velocities and speed of sound squared.
 
                    uux  = w(i,j,k,ivx)
@@ -195,8 +195,8 @@ contains
                    dtl(i,j,k) = ri + rj + rk
 
                    !
-                   !           Adapt the spectral radii if directional scaling must be    
-                   !           applied.                                                   
+                   !           Adapt the spectral radii if directional scaling must be
+                   !           applied.
                    !
                    if(doScaling) then
 
@@ -233,7 +233,7 @@ contains
              enddo
           enddo
        enddo
-#endif  
+#endif
 
     case (Turkel)
        call terminate("timeStep","Turkel preconditioner not implemented yet")
@@ -394,14 +394,14 @@ contains
 
   subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
     !
-    !       gridVelocitiesFineLevel computes the grid velocities for       
-    !       the cell centers and the normal grid velocities for the faces  
-    !       of moving blocks for the currently finest grid, i.e.           
-    !       groundLevel. The velocities are computed at time t for         
-    !       spectral mode sps. If useOldCoor is .true. the velocities      
-    !       are determined using the unsteady time integrator in           
-    !       combination with the old coordinates; otherwise the analytic   
-    !       form is used.                                                  
+    !       gridVelocitiesFineLevel computes the grid velocities for
+    !       the cell centers and the normal grid velocities for the faces
+    !       of moving blocks for the currently finest grid, i.e.
+    !       groundLevel. The velocities are computed at time t for
+    !       spectral mode sps. If useOldCoor is .true. the velocities
+    !       are determined using the unsteady time integrator in
+    !       combination with the old coordinates; otherwise the analytic
+    !       form is used.
     !
     use blockPointers
     use cgnsGrid
@@ -457,7 +457,7 @@ contains
     ! Compute the mesh velocity from the given mesh Mach number.
 
     ! vel{x,y,z}Grid0 is the ACTUAL velocity you want at the
-    ! geometry. 
+    ! geometry.
     aInf = sqrt(gammaInf*pInf/rhoInf)
     velxGrid0 = (aInf*machgrid)*(-velDirFreestream(1))
     velyGrid0 = (aInf*machgrid)*(-velDirFreestream(2))
@@ -503,7 +503,7 @@ contains
           end if
 
        elseif(tsAlphaMode)then
-          
+
           !Determine the alpha for this time instance
           alphaIncrement = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
                degreeFourAlpha,  omegaFourAlpha,     &
@@ -561,9 +561,9 @@ contains
 
        testUseOldCoor: if( useOldCoor ) then
           !
-          !             The velocities must be determined via a finite           
-          !             difference formula using the coordinates of the old      
-          !             levels.                                                  
+          !             The velocities must be determined via a finite
+          !             difference formula using the coordinates of the old
+          !             levels.
           !
           ! Set the coefficients for the time integrator and store
           ! the inverse of the physical nonDimensional time step,
@@ -573,8 +573,8 @@ contains
           oneOver4dt = fourth*timeRef/deltaT
           oneOver8dt = half*oneOver4dt
           !
-          !             Grid velocities of the cell centers, including the       
-          !             1st level halo cells.                                    
+          !             Grid velocities of the cell centers, including the
+          !             1st level halo cells.
           !
           ! Loop over the cells, including the 1st level halo's.
 
@@ -646,7 +646,7 @@ contains
              enddo
           enddo
           !
-          !             Normal grid velocities of the faces.                     
+          !             Normal grid velocities of the faces.
           !
           ! Loop over the three directions.
 
@@ -665,10 +665,10 @@ contains
                 iie = ke; jje = ie; kke = je
              end select
              !
-             !               Normal grid velocities in generalized i-direction.     
-             !               Mm == 1: i-direction                                   
-             !               mm == 2: j-direction                                   
-             !               mm == 3: k-direction                                   
+             !               Normal grid velocities in generalized i-direction.
+             !               Mm == 1: i-direction
+             !               mm == 2: j-direction
+             !               mm == 3: k-direction
              !
              do i=0,iie
 
@@ -749,7 +749,7 @@ contains
 
        else testUseOldCoor
           !
-          !             The velocities must be determined analytically.          
+          !             The velocities must be determined analytically.
           !
           ! Store the rotation center and determine the
           ! nonDimensional rotation rate of this block. As the
@@ -765,8 +765,8 @@ contains
           velYgrid = velYGrid0
           velZgrid = velZGrid0
           !
-          !             Grid velocities of the cell centers, including the       
-          !             1st level halo cells.                                    
+          !             Grid velocities of the cell centers, including the
+          !             1st level halo cells.
           !
           ! Loop over the cells, including the 1st level halo's.
 
@@ -831,7 +831,7 @@ contains
              enddo
           enddo
           !
-          !             Normal grid velocities of the faces.                     
+          !             Normal grid velocities of the faces.
           !
           ! Loop over the three directions.
 
@@ -850,10 +850,10 @@ contains
                 iie = ke; jje = ie; kke = je
              end select
              !
-             !               Normal grid velocities in generalized i-direction.     
-             !               mm == 1: i-direction                                   
-             !               mm == 2: j-direction                                   
-             !               mm == 3: k-direction                                   
+             !               Normal grid velocities in generalized i-direction.
+             !               mm == 1: i-direction
+             !               mm == 2: j-direction
+             !               mm == 3: k-direction
              !
              do i=0,iie
 
@@ -986,11 +986,11 @@ contains
 
   subroutine slipVelocitiesFineLevel_block(useOldCoor, t, sps)
     !
-    !       slipVelocitiesFineLevel computes the slip velocities for       
-    !       viscous subfaces on all viscous boundaries on groundLevel for  
-    !       the given spectral solution. If useOldCoor is .true. the       
-    !       velocities are determined using the unsteady time integrator;  
-    !       otherwise the analytic form is used.                           
+    !       slipVelocitiesFineLevel computes the slip velocities for
+    !       viscous subfaces on all viscous boundaries on groundLevel for
+    !       the given spectral solution. If useOldCoor is .true. the
+    !       velocities are determined using the unsteady time integrator;
+    !       otherwise the analytic form is used.
     !
     use constants
     use inputTimeSpectral
@@ -1449,10 +1449,10 @@ contains
 
   subroutine normalVelocities_block(sps)
     !
-    !       normalVelocitiesAllLevels computes the normal grid             
-    !       velocities of some boundary faces of the moving blocks for     
-    !       spectral mode sps. All grid levels from ground level to the    
-    !       coarsest level are considered.                                 
+    !       normalVelocitiesAllLevels computes the normal grid
+    !       velocities of some boundary faces of the moving blocks for
+    !       spectral mode sps. All grid levels from ground level to the
+    !       coarsest level are considered.
     !
     use constants
     use blockPointers, only : il, jl, kl, addGridVelocities, nBocos, BCData, &
@@ -1481,13 +1481,13 @@ contains
 
     testMoving: if( addGridVelocities ) then
        !
-       !             Determine the normal grid velocities of the boundaries.  
-       !             As these values are based on the unit normal. A division 
-       !             by the length of the normal is needed.                   
-       !             Furthermore the boundary unit normals are per definition 
-       !             outward pointing, while on the iMin, jMin and kMin       
-       !             boundaries the face normals are inward pointing. This    
-       !             is taken into account by the factor mult.                
+       !             Determine the normal grid velocities of the boundaries.
+       !             As these values are based on the unit normal. A division
+       !             by the length of the normal is needed.
+       !             Furthermore the boundary unit normals are per definition
+       !             outward pointing, while on the iMin, jMin and kMin
+       !             boundaries the face normals are inward pointing. This
+       !             is taken into account by the factor mult.
        !
        ! Loop over the boundary subfaces.
 
@@ -1569,12 +1569,12 @@ contains
 
   subroutine shiftSolution
     !
-    !       shiftSolution shifts the solution of the older time levels,    
-    !       such that a new time step can be started.                      
+    !       shiftSolution shifts the solution of the older time levels,
+    !       such that a new time step can be started.
     !
     use constants
     use blockPointers, only: il, jl, kl, nbkglobal, wOld, w, nDom
-    use cgnsGrid, only : cgnsDoms 
+    use cgnsGrid, only : cgnsDoms
     use flowvarrefstate, only : nw
     use iteration, only : groundLevel, nOldLevels
     use inputTimeSpectral, only : nTimeIntervalsSpectral
@@ -1820,9 +1820,9 @@ contains
 
   subroutine computeUtau_block
     !
-    !       computeUtau computes the skin friction velocity for the        
-    !       viscous subfaces. This data is only needed if wall functions   
-    !       are used.                                                      
+    !       computeUtau computes the skin friction velocity for the
+    !       viscous subfaces. This data is only needed if wall functions
+    !       are used.
     !
     use constants
     use blockPointers
@@ -1976,17 +1976,17 @@ contains
 
   subroutine gridVelocitiesFineLevelPart1_block(useOldCoor, t, sps)
     !
-    !       gridVelocitiesFineLevel computes the grid velocities for       
-    !       the cell centers and the normal grid velocities for the faces  
-    !       of moving blocks for the currently finest grid, i.e.           
-    !       groundLevel. The velocities are computed at time t for         
-    !       spectral mode sps. If useOldCoor is .true. the velocities      
-    !       are determined using the unsteady time integrator in           
-    !       combination with the old coordinates; otherwise the analytic   
-    !       form is used.                                                  
-    !       Now it is split up into two parts.                             
-    !       First part calculate the grid velocity using FIRST order BDF.  
-    !       Second part calculate the surface normal and normal velocity.  
+    !       gridVelocitiesFineLevel computes the grid velocities for
+    !       the cell centers and the normal grid velocities for the faces
+    !       of moving blocks for the currently finest grid, i.e.
+    !       groundLevel. The velocities are computed at time t for
+    !       spectral mode sps. If useOldCoor is .true. the velocities
+    !       are determined using the unsteady time integrator in
+    !       combination with the old coordinates; otherwise the analytic
+    !       form is used.
+    !       Now it is split up into two parts.
+    !       First part calculate the grid velocity using FIRST order BDF.
+    !       Second part calculate the surface normal and normal velocity.
     !
     use blockPointers
     use cgnsGrid
@@ -2041,7 +2041,7 @@ contains
     ! Compute the mesh velocity from the given mesh Mach number.
 
     ! vel{x,y,z}Grid0 is the ACTUAL velocity you want at the
-    ! geometry. 
+    ! geometry.
     aInf = sqrt(gammaInf*pInf/rhoInf)
     velxGrid0 = (aInf*machgrid)*(-velDirFreestream(1))
     velyGrid0 = (aInf*machgrid)*(-velDirFreestream(2))
@@ -2139,9 +2139,9 @@ contains
        ! REMOVED the rigid body rotation part for simplicity
 
        !
-       !             The velocities must be determined via a finite           
-       !             difference formula using the coordinates of the old      
-       !             levels.                                                  
+       !             The velocities must be determined via a finite
+       !             difference formula using the coordinates of the old
+       !             levels.
        !
        ! Set the coefficients for the time integrator and store
        ! the inverse of the physical nonDimensional time step,
@@ -2151,8 +2151,8 @@ contains
        oneOver4dt = fourth*timeRef/deltaT
        oneOver8dt = half*oneOver4dt
        !
-       !             Grid velocities of the cell centers, including the       
-       !             1st level halo cells.                                    
+       !             Grid velocities of the cell centers, including the
+       !             1st level halo cells.
        !
        ! Loop over the cells, including the 1st level halo's.
 
@@ -2226,7 +2226,7 @@ contains
        enddo
 
        !
-       !             Velocities of the faces, vector.                         
+       !             Velocities of the faces, vector.
        !
        ! Loop over the three directions.
 
@@ -2245,10 +2245,10 @@ contains
              iie = ke; jje = ie; kke = je
           end select
           !
-          !               Face velocities in generalized i-direction.            
-          !               mm == 1: i-direction                                   
-          !               mm == 2: j-direction                                   
-          !               mm == 3: k-direction                                   
+          !               Face velocities in generalized i-direction.
+          !               mm == 1: i-direction
+          !               mm == 2: j-direction
+          !               mm == 3: k-direction
           !
           do i=0,iie
 
@@ -2403,7 +2403,7 @@ contains
 
     testMoving: if( blockIsMoving ) then
        !
-       !             Normal grid velocities of the faces.                     
+       !             Normal grid velocities of the faces.
        !
        ! Loop over the three directions.
 
@@ -2422,10 +2422,10 @@ contains
              iie = ke; jje = ie; kke = je
           end select
           !
-          !               Normal grid velocities in generalized i-direction.     
-          !               Mm == 1: i-direction                                   
-          !               mm == 2: j-direction                                   
-          !               mm == 3: k-direction                                   
+          !               Normal grid velocities in generalized i-direction.
+          !               Mm == 1: i-direction
+          !               mm == 2: j-direction
+          !               mm == 3: k-direction
           !
           do i=0,iie
 
@@ -2475,8 +2475,8 @@ contains
 
   subroutine utauWF(rFilv)
     !
-    !       utauWF substitutes the wall shear stress with values from a    
-    !       look-up table, if desired.                                     
+    !       utauWF substitutes the wall shear stress with values from a
+    !       look-up table, if desired.
     !
     use constants
     use blockPointers, only : si, sj, sk, fw, rlv, d2wall, w, BCData, viscSubFace, &
@@ -2742,9 +2742,9 @@ contains
 #ifndef USE_TAPENADE
   subroutine slipVelocitiesCoarseLevels(sps)
     !
-    !       slipVelocitiesCoarseLevels determines the slip velocities      
-    !       for the given spectral solution starting from the known        
-    !       velocities on the finer level.                                 
+    !       slipVelocitiesCoarseLevels determines the slip velocities
+    !       for the given spectral solution starting from the known
+    !       velocities on the finer level.
     !
     use constants
     use blockPointers
@@ -2878,10 +2878,10 @@ contains
 
   subroutine gridVelocitiesCoarseLevels(sps)
     !
-    !       gridVelocitiesCoarseLevels computes the grid velocities for    
-    !       the cell centers and the normal grid velocities for the faces  
-    !       of moving blocks on the coarser grid levels. GroundLevel is    
-    !       considered the fine grid level.                                
+    !       gridVelocitiesCoarseLevels computes the grid velocities for
+    !       the cell centers and the normal grid velocities for the faces
+    !       of moving blocks on the coarser grid levels. GroundLevel is
+    !       considered the fine grid level.
     !
     use constants
     use blockPointers
@@ -2930,10 +2930,10 @@ contains
 
           testMoving: if( addGridVelocities ) then
              !
-             !             Grid velocities of the cell centers, including the 1st   
-             !             level halo cells. These are determined by accumulating   
-             !             the fine grid values. At the end the internal halo's are 
-             !             communicated to obtain the correct values.               
+             !             Grid velocities of the cell centers, including the 1st
+             !             level halo cells. These are determined by accumulating
+             !             the fine grid values. At the end the internal halo's are
+             !             communicated to obtain the correct values.
              !
              levm1 = level - 1
 
@@ -2995,7 +2995,7 @@ contains
                 enddo
              enddo
              !
-             !             Normal grid velocities of the faces.                     
+             !             Normal grid velocities of the faces.
              !
              ! Loop over the three directions.
 
@@ -3022,10 +3022,10 @@ contains
 
                 end select
                 !
-                !               Normal grid velocities in generalized i-direction.     
-                !               mm == 1: i-direction                                   
-                !               mm == 2: j-direction                                   
-                !               mm == 3: k-direction                                   
+                !               Normal grid velocities in generalized i-direction.
+                !               mm == 1: i-direction
+                !               mm == 2: j-direction
+                !               mm == 3: k-direction
                 !
                 do i=0,iie
 
@@ -3115,9 +3115,9 @@ contains
 
   subroutine exchangeCellGridVelocities(level,sps)
     !
-    !       exchangeCellGridVelocities exchanges the grid velocities in    
-    !       the cell centers for the given grid level and spectral         
-    !       solution.                                                      
+    !       exchangeCellGridVelocities exchanges the grid velocities in
+    !       the cell centers for the given grid level and spectral
+    !       solution.
     !
     use constants
     use block
@@ -3138,8 +3138,8 @@ contains
 
     real(kind=realType) :: alp
     real(kind=realType), dimension(3) :: vv
-  
-    !       The 1 to 1 communication.                                      
+
+    !       The 1 to 1 communication.
     !
     ! Send the variables. The data is first copied into
     ! the send buffer after which the buffer is sent asap.
@@ -3319,8 +3319,8 @@ contains
   subroutine correctPeriodicGridVel(level, sps, nPeriodic, &
        periodicData)
     !
-    !       correctPeriodicGridVel applies the periodic transformation     
-    !       to the grid velocities of the cell halo's in periodicData.     
+    !       correctPeriodicGridVel applies the periodic transformation
+    !       to the grid velocities of the cell halo's in periodicData.
     !
     use block
     use communication

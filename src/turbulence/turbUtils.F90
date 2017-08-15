@@ -4,8 +4,8 @@ contains
 
   subroutine prodKatoLaunder
     !
-    !       prodKatoLaunder computes the turbulent production term using   
-    !       the Kato-Launder formulation.                                  
+    !       prodKatoLaunder computes the turbulent production term using
+    !       the Kato-Launder formulation.
     !
     use constants
     use blockPointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, vol, sectionID, scratch
@@ -49,7 +49,7 @@ contains
        do k=2, kl
           do j=2, jl
              do i=2, il
-#endif   
+#endif
 
                 ! Compute the gradient of u in the cell center. Use is made
                 ! of the fact that the surrounding normals sum up to zero,
@@ -123,16 +123,16 @@ contains
           enddo
        enddo
     enddo
-#endif  
+#endif
   end subroutine prodKatoLaunder
 
   subroutine prodSmag2
     !
-    !       prodSmag2 computes the term:                                   
-    !              2*sij*sij - 2/3 div(u)**2 with  sij=0.5*(duidxj+dujdxi) 
-    !       which is used for the turbulence equations.                    
-    !       It is assumed that the pointer prod, stored in turbMod, is     
-    !       already set to the correct entry.                              
+    !       prodSmag2 computes the term:
+    !              2*sij*sij - 2/3 div(u)**2 with  sij=0.5*(duidxj+dujdxi)
+    !       which is used for the turbulence equations.
+    !       It is assumed that the pointer prod, stored in turbMod, is
+    !       already set to the correct entry.
     !
     use constants
     use blockPointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, vol, sectionID, scratch
@@ -163,7 +163,7 @@ contains
        do k=2, kl
           do j=2, jl
              do i=2, il
-#endif   
+#endif
 
                 ! Compute the gradient of u in the cell center. Use is made
                 ! of the fact that the surrounding normals sum up to zero,
@@ -233,16 +233,16 @@ contains
           enddo
        enddo
     enddo
-#endif  
+#endif
   end subroutine prodSmag2
 
   subroutine prodWmag2
     !
-    !       prodWmag2 computes the term:                                   
-    !          2*oij*oij  with oij=0.5*(duidxj - dujdxi).                  
-    !       This is equal to the magnitude squared of the vorticity.       
-    !       It is assumed that the pointer vort, stored in turbMod, is     
-    !       already set to the correct entry.                              
+    !       prodWmag2 computes the term:
+    !          2*oij*oij  with oij=0.5*(duidxj - dujdxi).
+    !       This is equal to the magnitude squared of the vorticity.
+    !       It is assumed that the pointer vort, stored in turbMod, is
+    !       already set to the correct entry.
     !
     use constants
     use blockPointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, vol, sectionID, scratch
@@ -278,7 +278,7 @@ contains
        do k=2, kl
           do j=2, jl
              do i=2, il
-#endif 
+#endif
 
                 ! Compute the necessary derivatives of u in the cell center.
                 ! Use is made of the fact that the surrounding normals sum up
@@ -332,8 +332,8 @@ contains
   end subroutine prodWmag2
   function saNuKnownEddyRatio(eddyRatio, nuLam)
     !
-    !       saNuKnownEddyRatio computes the Spalart-Allmaras transport     
-    !       variable nu for the given eddy viscosity ratio.                
+    !       saNuKnownEddyRatio computes the Spalart-Allmaras transport
+    !       variable nu for the given eddy viscosity ratio.
     !
     use constants
     use paramTurb
@@ -409,20 +409,20 @@ contains
 
   subroutine unsteadyTurbTerm(mAdv, nAdv, offset, qq)
     !
-    !       unsteadyTurbTerm discretizes the time derivative of the        
-    !       turbulence transport equations and add it to the residual.     
-    !       As the time derivative is the same for all turbulence models,  
-    !       this generic routine can be used; both the discretization of   
-    !       the time derivative and its contribution to the central        
-    !       jacobian are computed by this routine.                         
-    !       Only nAdv equations are treated, while the actual system has   
-    !       size mAdv. The reason is that some equations for some          
-    !       turbulence equations do not have a time derivative, e.g. the   
-    !       f equation in the v2-f model. The argument offset indicates    
-    !       the offset in the w vector where this subsystem starts. As a   
-    !       consequence it is assumed that the indices of the current      
-    !       subsystem are contiguous, e.g. if a 2*2 system is solved the   
-    !       Last index in w is offset+1 and offset+2 respectively.         
+    !       unsteadyTurbTerm discretizes the time derivative of the
+    !       turbulence transport equations and add it to the residual.
+    !       As the time derivative is the same for all turbulence models,
+    !       this generic routine can be used; both the discretization of
+    !       the time derivative and its contribution to the central
+    !       jacobian are computed by this routine.
+    !       Only nAdv equations are treated, while the actual system has
+    !       size mAdv. The reason is that some equations for some
+    !       turbulence equations do not have a time derivative, e.g. the
+    !       f equation in the v2-f model. The argument offset indicates
+    !       the offset in the w vector where this subsystem starts. As a
+    !       consequence it is assumed that the indices of the current
+    !       subsystem are contiguous, e.g. if a 2*2 system is solved the
+    !       Last index in w is offset+1 and offset+2 respectively.
     !
     use blockPointers
     use flowVarRefState
@@ -579,10 +579,10 @@ contains
 
   subroutine computeEddyViscosity(includeHalos)
     !
-    !       computeEddyViscosity computes the eddy viscosity in the        
-    !       owned cell centers of the given block. It is assumed that the  
-    !       pointes already point to the correct block before entering     
-    !       this subroutine.                                               
+    !       computeEddyViscosity computes the eddy viscosity in the
+    !       owned cell centers of the given block. It is assumed that the
+    !       pointes already point to the correct block before entering
+    !       this subroutine.
     !
     use constants
     use flowVarRefState
@@ -616,7 +616,7 @@ contains
 
     ! Determine the turbulence model and call the appropriate
     ! routine to compute the eddy viscosity.
-    if (includeHalos) then 
+    if (includeHalos) then
        iBeg = 1
        iEnd = ie
        jBeg = 1
@@ -636,7 +636,7 @@ contains
 
     case (spalartAllmaras, spalartAllmarasEdwards)
        call saEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
-#ifndef USE_TAPENADE          
+#ifndef USE_TAPENADE
 
     case (v2f)
        call vfEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
@@ -655,10 +655,10 @@ contains
 
   subroutine saEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
     !
-    !       saEddyViscosity computes the eddy-viscosity according to the   
-    !       Spalart-Allmaras model for the block given in blockPointers.   
-    !       This routine for both the original version as well as the      
-    !       modified version according to Edwards.                         
+    !       saEddyViscosity computes the eddy-viscosity according to the
+    !       Spalart-Allmaras model for the block given in blockPointers.
+    !       This routine for both the original version as well as the
+    !       modified version according to Edwards.
     !
     use constants
     use blockPointers
@@ -694,7 +694,7 @@ contains
        do k=kBeg, kEnd
           do j=jBeg, jEnd
              do i=iBeg, iEnd
-#endif             
+#endif
                 rnuSA      = w(i,j,k,itu1)*w(i,j,k,irho)
                 chi        = rnuSA/rlv(i,j,k)
                 chi3       = chi**3
@@ -706,14 +706,14 @@ contains
           enddo
        enddo
     enddo
-#endif 
+#endif
   end subroutine saEddyViscosity
 
   subroutine kwEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
     !
-    !       kwEddyViscosity computes the eddy viscosity according to the   
-    !       k-omega models (both the original Wilcox as well as the        
-    !       modified version) for the block given in blockPointers.        
+    !       kwEddyViscosity computes the eddy viscosity according to the
+    !       k-omega models (both the original Wilcox as well as the
+    !       modified version) for the block given in blockPointers.
     !
     use constants
     use blockPointers
@@ -742,7 +742,7 @@ contains
        do k=kBeg, kEnd
           do j=jBeg, jEnd
              do i=iBeg, iEnd
-#endif            
+#endif
                 rev(i,j,k) = abs(w(i,j,k,irho)*w(i,j,k,itu1)/w(i,j,k,itu2))
 #ifdef TAPENADE_REVERSE
              end do
@@ -756,11 +756,11 @@ contains
 
   subroutine SSTEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
     !
-    !       SSTEddyViscosity computes the eddy viscosity according to      
-    !       menter's SST variant of the k-omega turbulence model for the   
-    !       block given in blockPointers.                                  
+    !       SSTEddyViscosity computes the eddy viscosity according to
+    !       menter's SST variant of the k-omega turbulence model for the
+    !       block given in blockPointers.
     !
-    use constants  
+    use constants
     use blockPointers
     use paramTurb
     use turbMod
@@ -796,7 +796,7 @@ contains
        do k=kBeg, kEnd
           do j=jBeg, jEnd
              do i=iBeg, iEnd
-#endif            
+#endif
                 ! Compute the value of the function f2, which occurs in the
                 ! eddy-viscosity computation.
 
@@ -825,23 +825,23 @@ contains
 
   subroutine turbAdvection(mAdv, nAdv, offset, qq)
     !
-    !       turbAdvection discretizes the advection part of the turbulent  
-    !       transport equations. As the advection part is the same for all 
-    !       models, this generic routine can be used. Both the             
-    !       discretization and the central jacobian are computed in this   
-    !       subroutine. The former can either be 1st or 2nd order          
-    !       accurate; the latter is always based on the 1st order upwind   
-    !       discretization. When the discretization must be second order   
-    !       accurate, the fully upwind (kappa = -1) scheme in combination  
-    !       with the minmod limiter is used.                               
-    !       Only nAdv equations are treated, while the actual system has   
-    !       size mAdv. The reason is that some equations for some          
-    !       turbulence equations do not have an advection part, e.g. the   
-    !       f equation in the v2-f model. The argument offset indicates    
-    !       the offset in the w vector where this subsystem starts. As a   
-    !       consequence it is assumed that the indices of the current      
-    !       subsystem are contiguous, e.g. if a 2*2 system is solved the   
-    !       Last index in w is offset+1 and offset+2 respectively.         
+    !       turbAdvection discretizes the advection part of the turbulent
+    !       transport equations. As the advection part is the same for all
+    !       models, this generic routine can be used. Both the
+    !       discretization and the central jacobian are computed in this
+    !       subroutine. The former can either be 1st or 2nd order
+    !       accurate; the latter is always based on the 1st order upwind
+    !       discretization. When the discretization must be second order
+    !       accurate, the fully upwind (kappa = -1) scheme in combination
+    !       with the minmod limiter is used.
+    !       Only nAdv equations are treated, while the actual system has
+    !       size mAdv. The reason is that some equations for some
+    !       turbulence equations do not have an advection part, e.g. the
+    !       f equation in the v2-f model. The argument offset indicates
+    !       the offset in the w vector where this subsystem starts. As a
+    !       consequence it is assumed that the indices of the current
+    !       subsystem are contiguous, e.g. if a 2*2 system is solved the
+    !       Last index in w is offset+1 and offset+2 respectively.
     !
     use constants
     use blockPointers, only : nx, ny, nz, il, jl, kl, vol, sfaceI, sfaceJ, sfaceK, &
@@ -872,11 +872,11 @@ contains
     !$AD CHECKPOINT-START
     qs = zero
     !
-    !       Upwind discretization of the convective term in k (zeta)       
-    !       direction. Either the 1st order upwind or the second order     
-    !       fully upwind interpolation scheme, kappa = -1, is used in      
-    !       combination with the minmod limiter.                           
-    !       The possible grid velocity must be taken into account.         
+    !       Upwind discretization of the convective term in k (zeta)
+    !       direction. Either the 1st order upwind or the second order
+    !       fully upwind interpolation scheme, kappa = -1, is used in
+    !       combination with the minmod limiter.
+    !       The possible grid velocity must be taken into account.
     !
 #ifdef TAPENADE_REVERSE
     !$AD II-LOOP
@@ -888,7 +888,7 @@ contains
        do k=2, kl
           do j=2, jl
              do i=2, il
-#endif  
+#endif
                 ! Compute the grid velocity if present.
                 ! It is taken as the average of k and k-1,
 
@@ -1090,15 +1090,15 @@ contains
           enddo
        enddo
     enddo
-#endif  
+#endif
     continue
     !$AD CHECKPOINT-END
     !
-    !       Upwind discretization of the convective term in j (eta)        
-    !       direction. Either the 1st order upwind or the second order     
-    !       fully upwind interpolation scheme, kappa = -1, is used in      
-    !       combination with the minmod limiter.                           
-    !       The possible grid velocity must be taken into account.         
+    !       Upwind discretization of the convective term in j (eta)
+    !       direction. Either the 1st order upwind or the second order
+    !       fully upwind interpolation scheme, kappa = -1, is used in
+    !       combination with the minmod limiter.
+    !       The possible grid velocity must be taken into account.
     !
     continue
     !$AD CHECKPOINT-START
@@ -1113,7 +1113,7 @@ contains
        do k=2, kl
           do j=2, jl
              do i=2, il
-#endif   
+#endif
 
                 ! Compute the grid velocity if present.
                 ! It is taken as the average of j and j-1,
@@ -1313,15 +1313,15 @@ contains
           enddo
        enddo
     enddo
-#endif 
+#endif
     continue
     !$AD CHECKPOINT-END
     !
-    !       Upwind discretization of the convective term in i (xi)         
-    !       direction. Either the 1st order upwind or the second order     
-    !       fully upwind interpolation scheme, kappa = -1, is used in      
-    !       combination with the minmod limiter.                           
-    !       The possible grid velocity must be taken into account.         
+    !       Upwind discretization of the convective term in i (xi)
+    !       direction. Either the 1st order upwind or the second order
+    !       fully upwind interpolation scheme, kappa = -1, is used in
+    !       combination with the minmod limiter.
+    !       The possible grid velocity must be taken into account.
     !
     continue
     !$AD CHECKPOINT-START
@@ -1336,7 +1336,7 @@ contains
        do k=2, kl
           do j=2, jl
              do i=2, il
-#endif   
+#endif
 
 
                 ! Compute the grid velocity if present.
@@ -1537,7 +1537,7 @@ contains
           enddo
        enddo
     enddo
-#endif  
+#endif
 
     !$AD CHECKPOINT-END
     continue
@@ -1554,17 +1554,17 @@ contains
 
   subroutine tdia3(nb, ne, l, c, u, r)
     !
-    !       tdia3 solves the tridiagonal linear system (l+c+u) v = r,      
-    !       where l is the lower, c the central and u the upper diagonal.  
-    !       Every entry in the matrix is a 2x2 block matrix, i.e.          
-    !                    x x  x 0  0 0  ........        = c(nb) u(nb)      
-    !                    x x  0 x  0 0  ........                           
-    !                    x 0  x x  x 0  ........        = l(i) c(i) u(i)   
-    !                    0 x  x x  0 x  ........                           
-    !                         ........  x 0  x x        = l(ne) c(ne)      
-    !                         ........  0 x  x x                           
-    !               With c = x x     u,l = x 0                             
-    !                        x x           0 x                             
+    !       tdia3 solves the tridiagonal linear system (l+c+u) v = r,
+    !       where l is the lower, c the central and u the upper diagonal.
+    !       Every entry in the matrix is a 2x2 block matrix, i.e.
+    !                    x x  x 0  0 0  ........        = c(nb) u(nb)
+    !                    x x  0 x  0 0  ........
+    !                    x 0  x x  x 0  ........        = l(i) c(i) u(i)
+    !                    0 x  x x  0 x  ........
+    !                         ........  x 0  x x        = l(ne) c(ne)
+    !                         ........  0 x  x x
+    !               With c = x x     u,l = x 0
+    !                        x x           0 x
     !
     use constants
     implicit none
@@ -1628,9 +1628,9 @@ contains
 
   subroutine vfEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
     !
-    !       vfEddyViscosity computes the eddy-viscosity according to the   
-    !       v2f turbulence model for the block given in blockPointers.     
-    !       This routine is for both the n=1 and n=6 version.              
+    !       vfEddyViscosity computes the eddy-viscosity according to the
+    !       v2f turbulence model for the block given in blockPointers.
+    !       This routine is for both the n=1 and n=6 version.
     !
     use constants
     use blockPointers
@@ -1675,7 +1675,7 @@ contains
        do k=kBeg, kEnd
           do j=jBeg, jEnd
              do i=iBeg, iEnd
-#endif            
+#endif
 
                 tke   = w(i,j,k,itu1)
                 tep   = w(i,j,k,itu2)
@@ -1761,9 +1761,9 @@ contains
   end subroutine vfEddyViscosity
   subroutine vfScale
     !
-    !       time and length scale definition for v2f turbulence model. The 
-    !       upper bound can be switched on by setting rvfB to .true.       
-    !       The strain squared is defined as: strain2 = 2 sij sij          
+    !       time and length scale definition for v2f turbulence model. The
+    !       upper bound can be switched on by setting rvfB to .true.
+    !       The strain squared is defined as: strain2 = 2 sij sij
     !
     use constants
     use blockPointers
@@ -1795,7 +1795,7 @@ contains
     vort    => prod
     strain2 => prod
     !
-    !       Production term.                                               
+    !       Production term.
     !
     select case (turbProd)
     case (strain)
@@ -1809,7 +1809,7 @@ contains
 
     end select
     !
-    !       Compute the length and time scale for all internal cells.      
+    !       Compute the length and time scale for all internal cells.
     !
     if( rvfB ) then
 
@@ -1862,8 +1862,8 @@ contains
 
   subroutine ktEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
     !
-    !       ktEddyViscosity computes the eddy viscosity according to the   
-    !       k-tau turbulence model for the block given in blockPointers.   
+    !       ktEddyViscosity computes the eddy viscosity according to the
+    !       k-tau turbulence model for the block given in blockPointers.
     !
     use blockPointers
     use constants
@@ -1891,7 +1891,7 @@ contains
        do k=kBeg, kEnd
           do j=jBeg, jEnd
              do i=iBeg, iEnd
-#endif     
+#endif
                 rev(i,j,k) = abs(w(i,j,k,irho)*w(i,j,k,itu1)*w(i,j,k,itu2))
 #ifdef TAPENADE_REVERSE
              end do
@@ -1943,11 +1943,11 @@ contains
 
   subroutine unsteadyTurbSpectral_block(ntu1, ntu2, nn, sps)
     !
-    !       unsteadyTurbSpectral determines the spectral time derivative   
-    !       for all owned cells. This routine is called before the actual  
-    !       solve routines, such that the treatment is identical for all   
-    !       spectral solutions. The results is stored in the corresponding 
-    !       entry in dw.                                                   
+    !       unsteadyTurbSpectral determines the spectral time derivative
+    !       for all owned cells. This routine is called before the actual
+    !       solve routines, such that the treatment is identical for all
+    !       spectral solutions. The results is stored in the corresponding
+    !       entry in dw.
     !
     use constants
     use blockPointers
@@ -2009,13 +2009,13 @@ contains
 
   subroutine initKOmega(pOffset)
     !
-    !       initKOmega initializes the values of k and omega a bit more    
-    !       intelligently than just free-stream values.                    
-    !       It is assumed that the pointers in blockPointers already       
-    !       point to the correct block on the correct level.               
-    !       The argument pOffset is present such that in case of restart   
-    !       a possible pointer offset is taken into account. For more      
-    !       details see the corresponding routines in initFlow.            
+    !       initKOmega initializes the values of k and omega a bit more
+    !       intelligently than just free-stream values.
+    !       It is assumed that the pointers in blockPointers already
+    !       point to the correct block on the correct level.
+    !       The argument pOffset is present such that in case of restart
+    !       a possible pointer offset is taken into account. For more
+    !       details see the corresponding routines in initFlow.
     !
     use blockPointers
     use constants
@@ -2064,10 +2064,10 @@ contains
 
   subroutine kwCDterm
     !
-    !       kwCDterm computes the cross-diffusion term in the omega-eqn    
-    !       for the SST version as well as the modified k-omega turbulence 
-    !       model. It is assumed that the pointers in blockPointers and    
-    !       turbMod are already set.                                       
+    !       kwCDterm computes the cross-diffusion term in the omega-eqn
+    !       for the SST version as well as the modified k-omega turbulence
+    !       model. It is assumed that the pointers in blockPointers and
+    !       turbMod are already set.
     !
     use constants
     use blockPointers

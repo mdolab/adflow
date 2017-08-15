@@ -3,8 +3,8 @@ contains
 
   subroutine solver
     !
-    !       solver is the main subroutine of the solver library.           
-    !       It controls the full multigrid and the kill signals.           
+    !       solver is the main subroutine of the solver library.
+    !       It controls the full multigrid and the kill signals.
     !
     use constants
     use communication, only : myid
@@ -197,7 +197,7 @@ contains
     integer(kind=intType) :: lale
 
     testChanging: if(changing_Grid .or. gridMotionSpecified) then
-       
+
        ! Set the new time for all sections
        do nn=1,nSections
           tNewSec(nn)   = timeUnsteady + timeUnsteadyRestart
@@ -332,7 +332,7 @@ contains
 
     call setCoefTimeIntegrator
 
-    ! Solve the state for the current time step and 
+    ! Solve the state for the current time step and
     ! update nOldSolAvail.
     call solveState
     nOldSolAvail = nOldSolAvail + 1
@@ -346,8 +346,8 @@ contains
 
   subroutine checkWriteUnsteadyInLoop
     !
-    !       checkWriteUnsteadyInLoop checks if a solution must be          
-    !       written inside the time loop and if so write it.               
+    !       checkWriteUnsteadyInLoop checks if a solution must be
+    !       written inside the time loop and if so write it.
     !
     use communication, only : ADflow_comm_world
     use constants
@@ -431,8 +431,8 @@ contains
 
   subroutine checkWriteUnsteadyEndLoop
     !
-    !       checkWriteUnsteadyEndLoop checks if a solution must be         
-    !       written at the end of the time loop and if so write it.        
+    !       checkWriteUnsteadyEndLoop checks if a solution must be
+    !       written at the end of the time loop and if so write it.
     !
     use constants
     use inputMotion, only : gridMotionSpecified
@@ -486,9 +486,9 @@ contains
 
   subroutine solverUnsteadyExplicitRK
     !
-    !       solverUnsteadyExplicitRK solves the unsteady equations using   
-    !       the explicit Runge-Kutta schemes for the multigrid level       
-    !       groundLevel.                                                   
+    !       solverUnsteadyExplicitRK solves the unsteady equations using
+    !       the explicit Runge-Kutta schemes for the multigrid level
+    !       groundLevel.
     !
     use constants
     use blockPointers, only: nDom, il, jl, kl, vol, dw, w, dwOldRK, p
@@ -502,9 +502,9 @@ contains
     use utils, only : setPointers
     use flowUtils, only : computePressure
     use haloExchange, only : whalo1, whalo2
-    use turbutils, only : computeeddyviscosity    
+    use turbutils, only : computeeddyviscosity
     use turbAPI, only : turbResidual
-    use turbBCRoutines, only : applyAllTurbBC 
+    use turbBCRoutines, only : applyAllTurbBC
     use utils, only : convergenceHeader
     use residuals, only :initRes, residual, sourceTerms
     use flowUtils, only : computeLamViscosity
@@ -572,7 +572,7 @@ contains
 
     call convergenceInfo
     !
-    !       Loop over the number of time steps to be computed.             
+    !       Loop over the number of time steps to be computed.
     !
     ! Initialize the unsteady time.
 
@@ -794,8 +794,8 @@ contains
 
   subroutine initStageRK(stage)
     !
-    !       initStageRK performs the initialization tasks for the          
-    !       Runge-Kutta schemes in unsteady mode.                          
+    !       initStageRK performs the initialization tasks for the
+    !       Runge-Kutta schemes in unsteady mode.
     !
     use inputMotion
     use inputUnsteady
@@ -893,9 +893,9 @@ contains
   ! ================================================
   subroutine solveState
     !
-    !       solveState computes either the steady or unsteady state        
-    !       vector for the multigrid level groundLevel, which can be       
-    !       found in the module iteration.                                 
+    !       solveState computes either the steady or unsteady state
+    !       vector for the multigrid level groundLevel, which can be
+    !       found in the module iteration.
     !
     use constants
     use communication, only : myID, adflow_comm_world
@@ -932,7 +932,7 @@ contains
 
 
     ! Allocate the memory for cycling.
-    if (allocated(cycling)) then 
+    if (allocated(cycling)) then
        deallocate(cycling)
     end if
     allocate(cycling(nMGSteps), stat=ierr)
@@ -961,14 +961,14 @@ contains
 
     ! Allocate space for storing hisotry of function evaluations for NK
     ! solver with non-monotone line search if necessary
-    if (currentLevel == 1 .and. useNKSolver .and. NK_LS==nonMonotoneLineSearch) then 
+    if (currentLevel == 1 .and. useNKSolver .and. NK_LS==nonMonotoneLineSearch) then
        allocate(NKLSFuncEvals(nMGCycles))
     end if
 
-   
+
 
     ! Only compute the free stream resisudal once for efficiency on the
-    ! fine grid only. 
+    ! fine grid only.
     if (groundLevel == 1)  then
        if (.not. freeStreamResSet)  then
           call getFreeStreamResidual(rhoRes0, totalR0)
@@ -1010,7 +1010,7 @@ contains
 
     ! Initialize the approxiate iteration count. We won't count this
     ! first residual evaluation. This way on the first convergence info
-    ! call, "Iter" and "Iter Total" will both display 0. 
+    ! call, "Iter" and "Iter Total" will both display 0.
     approxTotalIts = 0
 
     ! Evaluate the initial residual
@@ -1027,11 +1027,11 @@ contains
 
     ! Loop over the maximum number of nonlinear iterations
     firstANK = .True.
-    firstNK = .True. 
+    firstNK = .True.
 
     nonlinearIteration: do while (approxTotalIts < nMGCycles)
 
-       ! Update iterTot 
+       ! Update iterTot
        iterTot = iterTot + 1
 
        if(mod(iterTot, nWriteConvHeader) == 0 .and. &
@@ -1040,29 +1040,29 @@ contains
        endif
 
        ! Determine what type of update to do:
-       if (currentLevel > 1) then 
+       if (currentLevel > 1) then
 
           ! Coarse grids do RK/DADI always
           call executeMGCycle
           CFLMonitor = CFLCoarse
           stepMonitor = 1.0
        else
-          if (.not. useANKSolver .and. .not. useNKSolver .or. (iterTot <= minIterNum .and. rkreset)) then 
+          if (.not. useANKSolver .and. .not. useNKSolver .or. (iterTot <= minIterNum .and. rkreset)) then
 
              ! Always RK/DADI or a RK startup. Run the MG Cycle
 
              call executeMGCycle
              CFLMonitor = CFL
              stepMonitor = 1.0
-          else if (useANKSolver .and. .not. useNKSolver) then 
+          else if (useANKSolver .and. .not. useNKSolver) then
 
              ! Approx solver, no NKSolver
 
-             if (totalR > ANK_switchTol * totalR0) then 
+             if (totalR > ANK_switchTol * totalR0) then
 
                 call executeMGCycle
                 CFLMonitor = CFL
-                stepMonitor = 1.0 
+                stepMonitor = 1.0
              else
                 call ANKStep(firstANK)
                 firstANK = .False.
@@ -1071,15 +1071,15 @@ contains
 
              end if
 
-          else if (.not. useANKSolver .and. useNKSolver) then 
+          else if (.not. useANKSolver .and. useNKSolver) then
 
              ! NK Solver no approx solver
 
-             if (totalR > NK_switchTol * totalR0) then 
+             if (totalR > NK_switchTol * totalR0) then
 
                 call executeMGCycle
                 CFLMonitor = CFL
-                stepMonitor = 1.0  
+                stepMonitor = 1.0
              else
 
                 call NKStep(firstNK)
@@ -1089,17 +1089,17 @@ contains
 
              end if
 
-          else if (useANKSolver .and. useNKSolver) then 
+          else if (useANKSolver .and. useNKSolver) then
 
-             ! Both approximate and NK solver. 
+             ! Both approximate and NK solver.
 
-             if (totalR > ANK_switchTol*totalR0) then 
+             if (totalR > ANK_switchTol*totalR0) then
 
                 call executeMGCycle
                 CFLMonitor = CFL
-                stepMonitor = 1.0  
+                stepMonitor = 1.0
              else if (totalR <= ANK_switchTol*totalR0 .and. &
-                  totalR > NK_switchTol*totalR0) then 
+                  totalR > NK_switchTol*totalR0) then
 
                 iterType = "   ANK"
                 call ANKStep(firstANK)
@@ -1109,7 +1109,7 @@ contains
 
              else
 
-                ! We free the memory for the ANK solver here because ANK solver 
+                ! We free the memory for the ANK solver here because ANK solver
                 ! module depends on the NK solver module and we cannot call
                 ! destroyANKSolver within NKSolver itself.
                 if (firstNK) then
@@ -1136,7 +1136,7 @@ contains
        endif
 
        ! Exit the loop if we are converged
-       if (converged) then 
+       if (converged) then
           exit nonLinearIteration
        end if
 
@@ -1151,13 +1151,13 @@ contains
             ierr)
 #endif
 
-       if (globalSignal == signalWrite) then 
+       if (globalSignal == signalWrite) then
 
           ! We have been told to write the solution
 
           writeGrid = .True.
-          writeVolume = .True. 
-          writeSurface = .True. 
+          writeVolume = .True.
+          writeSurface = .True.
 
           surfaceSolFile = forcedSurfaceFile
           newGridFile = forcedVolumeFile
@@ -1167,15 +1167,15 @@ contains
 
           ! Also write potential tecplot files. Note that we are not
           ! writing the tecplot surface file so pass in an empty file
-          ! name and a nonsense family list. 
+          ! name and a nonsense family list.
           call writeTecplot(forcedSliceFile, .True., forcedLiftFile, .True., &
                "", .False., [0], 1)
-          
-          ! Reset the signal 
+
+          ! Reset the signal
           localSignal = noSignal
        end if
 
-       if (globalSignal == signalWriteQuit) then 
+       if (globalSignal == signalWriteQuit) then
           exit nonLinearIteration
        end if
 
@@ -1184,7 +1184,7 @@ contains
 
     ! deallocate space for storing hisotry of function evaluations for NK
     ! solver with non-monotone line search if necessary
-    if (currentLevel == 1 .and. useNKSolver .and. NK_LS==nonMonotoneLineSearch) then 
+    if (currentLevel == 1 .and. useNKSolver .and. NK_LS==nonMonotoneLineSearch) then
        deallocate(NKLSFuncEvals)
     end if
 
@@ -1193,9 +1193,9 @@ contains
 
   subroutine convergenceInfo
     !
-    !       convergenceInfo computes and writes the convergence info to    
-    !       standard output. In spectral mode a convergence history for    
-    !       every mode is written.                                         
+    !       convergenceInfo computes and writes the convergence info to
+    !       standard output. In spectral mode a convergence history for
+    !       every mode is written.
     !
     use constants
     use cgnsNames
@@ -1275,7 +1275,7 @@ contains
 
           ! Compute the forces and moments for this block.  Note that
           ! we zero localValues before each call becuase we are
-          ! summing into momLocal. 
+          ! summing into momLocal.
           localvalues = zero
           call integrateSurfaces(localValues, fullFamList, .False., funcValues)
 
@@ -1401,14 +1401,14 @@ contains
 
              case (cgnsAxisMoment)
                 monLoc(mm) = monLoc(mm) + localValues(iaxisMoment)
-               
+
              end select
 
           end do nMonitoringVar
        end do domains
 
        ! Add the corrections from zipper meshes from proc 0
-       if (oversetPresent) then 
+       if (oversetPresent) then
           localValues = zero
           call integrateZippers(localValues, fullFamList, sps, .False., funcValues)
 
@@ -1422,7 +1422,7 @@ contains
 
           !Loop over the number of monitoring variables and just modify
           !the ones that need to be updated with the zipper forces we just
-          !computed. 
+          !computed.
           nMonitoringVarZip: do mm=1,nMon
 
              ! Determine the monitoring variable and act accordingly.
@@ -1485,7 +1485,7 @@ contains
        end if
        ! Determine the global sum of the summation monitoring
        ! variables. This is an all reduce since every processor needs to
-       ! know the residual to make the same descisions. 
+       ! know the residual to make the same descisions.
 
        if(nMonSum > 0) &
             call mpi_allreduce(monLoc, monGlob, nMonSum, adflow_real, &
@@ -1497,7 +1497,7 @@ contains
             call mpi_allreduce(monLoc(nMonSum+1), monGlob(nMonSum+1), &
             nMonMax, adflow_real, mpi_max, ADflow_comm_world, ierr)
 #else
-       if (nMonMax < 0) & 
+       if (nMonMax < 0) &
             monGlob(nMonSum+1) = zero
 #endif
 
@@ -1523,7 +1523,7 @@ contains
 
              endif
 
-             if( writeIterations ) then 
+             if( writeIterations ) then
                 write(*,"(i6,1x)",advance="no") iterTot
                 write(*,"(i6,1x)",advance="no") approxTotalIts
                 write(*,"(a,1x)", advance="no") iterType
@@ -1540,7 +1540,7 @@ contains
 
              end if
 
-             if( showCPU ) then 
+             if( showCPU ) then
 #ifndef USE_COMPLEX
                   write(*,"(e12.5,1x)",advance="no") mpi_wtime() - t0Solver
 #else
@@ -1564,7 +1564,7 @@ contains
                cgnsL2resTau,  cgnsL2resEpsilon, &
                cgnsL2resV2,   cgnsL2resF        )
              monGlob(mm) = sqrt(monGlob(mm)/nCellGlobal(groundLevel))
-             if (monNames(mm) == cgnsL2resRho) then 
+             if (monNames(mm) == cgnsL2resRho) then
                 rhoRes = monGlob(mm)
              end if
           case ('totalR')
@@ -1572,9 +1572,9 @@ contains
              totalR = monGlob(mm)
           end select
 
-          if( myIsNAN(monGlob(mm)) ) nanOccurred = .true.                  
+          if( myIsNAN(monGlob(mm)) ) nanOccurred = .true.
 
-          if (myid == 0 .and. printIterations) then 
+          if (myid == 0 .and. printIterations) then
              ! Write the convergence info to stdout.
 #ifndef USE_COMPLEX
              write(*,"(e24.16,1x)",advance="no") monGlob(mm)
@@ -1589,7 +1589,7 @@ contains
           endif
        end do variableLoop
 
-       if (myid == 0 .and. printIterations) then 
+       if (myid == 0 .and. printIterations) then
           ! Write the carriage return.
           print "(1x)"
        end if
@@ -1608,41 +1608,41 @@ contains
           ! has not converged yet.
 
           absConv = .False.
-          relConv = .False. 
+          relConv = .False.
 
           ! We make a split here based on if we are operating on a
           ! coarse grid or the finest. On the coarse grid levels, we
           ! l2convThisLevel refers to the relative convergence of
-          ! rhoRes. 
+          ! rhoRes.
 
-          if (currentLevel /= 1) then 
-             if (rhoRes < L2ConvThisLevel * rhoResStart) then 
-                relConv = .True. 
+          if (currentLevel /= 1) then
+             if (rhoRes < L2ConvThisLevel * rhoResStart) then
+                relConv = .True.
              end if
           else
              ! We are on the fine level. All checking is done using
-             ! the total residual. 
+             ! the total residual.
 
              ! Absolute convergence check
-             if (totalR < L2ConvThisLevel * totalR0) then 
-                absConv = .True. 
+             if (totalR < L2ConvThisLevel * totalR0) then
+                absConv = .True.
              end if
 
              ! Relative check only done on finest level
-             if (totalR < L2ConvRel*totalRStart) then 
-                relConv = .True. 
+             if (totalR < L2ConvRel*totalRStart) then
+                relConv = .True.
              end if
 
              ! If the totla number of iterations is less than the
              ! RKReset, don't check the residual
-             if (iterTot < minIterNum .and. rkreset) then 
+             if (iterTot < minIterNum .and. rkreset) then
                 relConv = .False.
                 absConv = .False.
              end if
           end if
 
           ! Combine the two flags.
-          if (absConv .or. relConv)  then 
+          if (absConv .or. relConv)  then
              converged = .True.
           end if
 
@@ -1718,7 +1718,7 @@ contains
                 ! Iteration for this time step. Store the relative
                 ! convergence for the residual compared to the start
                 ! of this time step; an absolute norm does not give
-                ! any information here. For all other monitoring 
+                ! any information here. For all other monitoring
                 ! variables the current value is stored.
 
                 do mm=1,nMon
@@ -1760,7 +1760,7 @@ contains
 
     if( nanOccurred )then
 
-       if (myid == 0) then 
+       if (myid == 0) then
           print *,'Nan occured in Convergence Info on proc:',myid
        end if
 
@@ -1770,8 +1770,8 @@ contains
             "A NaN occurred during the computation.")
 
        ! in a normal computation, code will simply exit.
-       ! in a python based computation, code will set 
-       ! routinedFailed to .True. and return to the 
+       ! in a python based computation, code will set
+       ! routinedFailed to .True. and return to the
        ! python level...
        return
     endif

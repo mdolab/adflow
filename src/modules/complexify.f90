@@ -12,7 +12,7 @@
 !       15-Aug-00  Fixed bug in atan2 formula and added the rest of the
 !                  _ci and _ic cominations to the relational operators.
 !                  P. Sturdza
-!                  
+!
 !
 ! Assume all code is compiled with double precision (-r8 compiler flag)
 !
@@ -26,7 +26,7 @@ module complexify
 
 
   implicit none
-  
+
 ! ABS
   interface abs
      module procedure abs_c
@@ -114,12 +114,12 @@ module complexify
   interface sinh
      module procedure sinh_c
   end interface
-  
+
 ! TAN
   interface tan
      module procedure tan_c
   end interface
-  
+
 ! TANH
   interface tanh
      module procedure tanh_c
@@ -179,7 +179,7 @@ module complexify
 !! comment out (and uncomment) the appropriate versions for
 !! your compiler
 !!
-! >= 
+! >=
   interface operator (>=)
      module procedure ge_cc
      module procedure ge_cr
@@ -312,7 +312,7 @@ contains
     atan_c = cmplx(atan(real(z)),aimag(z)/(1.+real(z)**2))
     return
   end function atan_c
-  
+
 ! ATAN2
   complex*16 function atan2_cc(csn, ccs)
     complex*16, intent(in) :: csn, ccs
@@ -374,7 +374,7 @@ contains
     tan_c=cmplx(tan(real(z)),aimag(z)/cos(real(z))**2)
     return
   end function tan_c
-  
+
 ! TANH
   complex*16 function tanh_c(a)
     complex*16, intent(in) :: a
@@ -402,8 +402,8 @@ contains
     return
   end function max_cc
   complex*16 function max_cr(val1, val2)
-    complex*16, intent(in) :: val1    
-    real*8, intent(in) :: val2    
+    complex*16, intent(in) :: val1
+    real*8, intent(in) :: val2
     if (real(val1) > val2) then
       max_cr = val1
     else
@@ -464,8 +464,8 @@ contains
     return
   end function min_cc
   complex*16 function min_cr(val1, val2)
-    complex*16, intent(in) :: val1    
-    real*8, intent(in) :: val2    
+    complex*16, intent(in) :: val1
+    real*8, intent(in) :: val2
     if (real(val1) < val2) then
       min_cr = val1
     else
@@ -537,7 +537,7 @@ contains
 !    minloc_c = minloc(real(z))
 !  end function minval_c
 
-  
+
 ! SIGN, intrinsic, assume that val1 is always a complex*16
 !                  in reality could be int
   complex*16 function sign_cc(val1, val2)
@@ -623,7 +623,7 @@ contains
     endif
     return
   end function dim_rc
-  
+
 ! LOG10
   complex*16 function log10_c(z)
     complex*16, intent(in) :: z
@@ -806,13 +806,13 @@ contains
     eq_ii = lhs == rhs
   end function eq_ii
   ! lhs and rhs are rank 1 integer arrays
-  function eq_iaia(lhs, rhs) 
+  function eq_iaia(lhs, rhs)
     integer, intent(in) :: lhs(:), rhs(:)
     logical eq_iaia(size(lhs))
     eq_iaia = lhs == rhs
   end function eq_iaia
   ! lhs is a rank 3 integer array
-  function eq_iai(lhs, rhs) 
+  function eq_iai(lhs, rhs)
     integer, intent(in) :: lhs(:,:,:)
     integer, intent(in) :: rhs
     logical eq_iai(size(lhs,1), size(lhs,2), size(lhs,3))

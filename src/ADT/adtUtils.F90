@@ -1,13 +1,13 @@
 module adtUtils
   !
-  !      Module, which contains small subroutines which perform useful  
-  !      tasks.                                                         
+  !      Module, which contains small subroutines which perform useful
+  !      tasks.
   !
   use constants
   use adtData
   implicit none
   !
-  !                Variables stored in this module.                     
+  !                Variables stored in this module.
   !
   ! nStack:   Number of elements allocated in the stack array;
   !           needed for a more efficient implementation of the
@@ -27,19 +27,19 @@ contains
 
   subroutine adtTerminate(ADT, routineName, errorMessage)
     !
-    !        This routine writes the given error message to standard      
-    !        output and terminates the executation of the program.        
-    !        Subroutine intent(in) arguments.                             
-    !        --------------------------------                             
-    !        routineName: Name of the routine where the error occured.    
-    !        ADT:         Currently active ADT.                           
-    !        Subroutine intent(inout) arguments.                          
-    !        -----------------------------------                          
-    !        errorMessage: On input it contains the error message to be   
-    !                      written. It is modified in this routine, such  
-    !                      that it fits on one line. On output its        
-    !                      contents is undefined, which does not matter   
-    !                      a whole lot.                                   
+    !        This routine writes the given error message to standard
+    !        output and terminates the executation of the program.
+    !        Subroutine intent(in) arguments.
+    !        --------------------------------
+    !        routineName: Name of the routine where the error occured.
+    !        ADT:         Currently active ADT.
+    !        Subroutine intent(inout) arguments.
+    !        -----------------------------------
+    !        errorMessage: On input it contains the error message to be
+    !                      written. It is modified in this routine, such
+    !                      that it fits on one line. On output its
+    !                      contents is undefined, which does not matter
+    !                      a whole lot.
     !
     implicit none
     !
@@ -143,8 +143,8 @@ contains
 
   subroutine allocateADTs
     !
-    !        This routine allocates the memory for the first ADT and is   
-    !        only called when no other ADT's are present.                 
+    !        This routine allocates the memory for the first ADT and is
+    !        only called when no other ADT's are present.
     !
     implicit none
     !
@@ -185,12 +185,12 @@ contains
 
   subroutine deallocateADTs(adtID)
     !
-    !        This routine deallocates the memory for the given entry in   
-    !        the array ADTs and it tries to reallocate ADTs itself        
-    !        accordingly.                                                 
-    !        Subroutine intent(in) arguments.                             
-    !        --------------------------------                             
-    !        adtID: The entry in ADTs to be deallocated.                  
+    !        This routine deallocates the memory for the given entry in
+    !        the array ADTs and it tries to reallocate ADTs itself
+    !        accordingly.
+    !        Subroutine intent(in) arguments.
+    !        --------------------------------
+    !        adtID: The entry in ADTs to be deallocated.
     !
     implicit none
     !
@@ -327,25 +327,25 @@ contains
 
   subroutine qsortBBoxes(arr, nn, ADT, dir)
     !
-    !        This routine sorts the integer array arr, such that the      
-    !        coordinate of the corresponding bounding box in the          
-    !        direction dir is in increasing order. Note that the array to 
-    !        store the stack is stored in this module. The reason is that 
-    !        this routine is called quite often and in this way constant  
-    !        allocation, deallocation and reallocation of stack is        
-    !        avoided.                                                     
-    !        Subroutine intent(in) arguments.                             
-    !        --------------------------------                             
-    !        nn:  Size of the array to be sorted.                         
-    !        ADT: The ADTfrom which the coordinate of                     
-    !             the bounding box must be taken.                         
-    !        dir: Index of the coordinate, which must be sorted.          
-    !        Subroutine intent(inout) arguments.                          
-    !        -----------------------------------                          
-    !        arr(:): On input it contains the bounding box ID's which     
-    !                must be sorted. On output these ID's are sorted,     
-    !                such that the given coordinate is in increasing      
-    !                order.                                               
+    !        This routine sorts the integer array arr, such that the
+    !        coordinate of the corresponding bounding box in the
+    !        direction dir is in increasing order. Note that the array to
+    !        store the stack is stored in this module. The reason is that
+    !        this routine is called quite often and in this way constant
+    !        allocation, deallocation and reallocation of stack is
+    !        avoided.
+    !        Subroutine intent(in) arguments.
+    !        --------------------------------
+    !        nn:  Size of the array to be sorted.
+    !        ADT: The ADTfrom which the coordinate of
+    !             the bounding box must be taken.
+    !        dir: Index of the coordinate, which must be sorted.
+    !        Subroutine intent(inout) arguments.
+    !        -----------------------------------
+    !        arr(:): On input it contains the bounding box ID's which
+    !                must be sorted. On output these ID's are sorted,
+    !                such that the given coordinate is in increasing
+    !                order.
     !
     implicit none
     !
@@ -413,7 +413,7 @@ contains
 
           ! Subarray is larger than the threshold for a linear sort.
           ! Choose median of left, center and right elements as
-          ! partitioning element a. Also rearrange so that 
+          ! partitioning element a. Also rearrange so that
           ! (l) <= (l+1) <= (r).
 
           k = (l+r)/2
@@ -517,13 +517,13 @@ contains
 
   subroutine qsortBBoxTargets(arr, nn, ADT)
     !
-    !        This routine sorts the given number of bounding box targets  
-    !        in increasing order, based on the generalized < operator.    
+    !        This routine sorts the given number of bounding box targets
+    !        in increasing order, based on the generalized < operator.
     !
     implicit none
     !
     !       Subroutine arguments
-    !        
+    !
     type(adtType), intent(in) :: ADT
     integer(kind=intType), intent(in) :: nn
 
@@ -679,17 +679,17 @@ contains
 
   subroutine reallocateADTs(adtID, jj)
     !
-    !        This routine reallocates the memory for the ADTs array, such 
-    !        that it is possible to store a new ADT. First it is tried to 
-    !        find an empty spot in the currently allocated array. If this 
-    !        is not present a true reallocation takes place.              
-    !        Subroutine intent(in) arguments.                             
-    !        --------------------------------                             
-    !        adtID: The ID of the ADT.                                    
-    !        Subroutine intent(out) arguments.                            
-    !        ---------------------------------                            
-    !        jj: The index in the array ADTs, where the new entry will be 
-    !            stored.                                                  
+    !        This routine reallocates the memory for the ADTs array, such
+    !        that it is possible to store a new ADT. First it is tried to
+    !        find an empty spot in the currently allocated array. If this
+    !        is not present a true reallocation takes place.
+    !        Subroutine intent(in) arguments.
+    !        --------------------------------
+    !        adtID: The ID of the ADT.
+    !        Subroutine intent(out) arguments.
+    !        ---------------------------------
+    !        jj: The index in the array ADTs, where the new entry will be
+    !            stored.
     !
     implicit none
     !
@@ -800,25 +800,25 @@ contains
 
   subroutine reallocBBoxTargetTypePlus(arr, nSize, nInc, ADT)
     !
-    !        This routine reallocates the memory of the given             
-    !        adtBBoxTargetType pointer array.                             
-    !        Subroutine intent(in) arguments.                             
-    !        --------------------------------                             
-    !        ADT:         Currently active ADT.                           
-    !        nInc: Increment of the size of the array.                    
-    !        Subroutine intent(inout) arguments.                          
-    !        -----------------------------------                          
-    !        nSize: On input it contains the size of the given array.     
-    !               On output this value is incremented by nInc.          
-    !        Subroutine pointer arguments.                                
-    !        -----------------------------                                
-    !        arr: Array to be reallocated.                                
+    !        This routine reallocates the memory of the given
+    !        adtBBoxTargetType pointer array.
+    !        Subroutine intent(in) arguments.
+    !        --------------------------------
+    !        ADT:         Currently active ADT.
+    !        nInc: Increment of the size of the array.
+    !        Subroutine intent(inout) arguments.
+    !        -----------------------------------
+    !        nSize: On input it contains the size of the given array.
+    !               On output this value is incremented by nInc.
+    !        Subroutine pointer arguments.
+    !        -----------------------------
+    !        arr: Array to be reallocated.
     !
     implicit none
     !
     !       Subroutine arguments.
     !
-    type(adtType), intent(in) :: ADT 
+    type(adtType), intent(in) :: ADT
     integer,                  intent(in)    :: nInc
     integer(kind=intType), intent(inout) :: nSize
 
@@ -865,19 +865,19 @@ contains
 
   subroutine reallocPlus(arr, nSize, nInc, ADT)
     !
-    !        This internal routine reallocates the memory of the given    
-    !        pointer array.                                               
-    !        Subroutine intent(in) arguments.                             
-    !        --------------------------------                             
-    !        ADT:         Currently active ADT.                           
-    !        nInc: Increment of the size of the array.                    
-    !        Subroutine intent(inout) arguments.                          
-    !        -----------------------------------                          
-    !        nSize: On input it contains the size of the given array.     
-    !               On output this value is incremented by nInc.          
-    !        Subroutine pointer arguments.                                
-    !        -----------------------------                                
-    !        arr: Array to be reallocated.                                
+    !        This internal routine reallocates the memory of the given
+    !        pointer array.
+    !        Subroutine intent(in) arguments.
+    !        --------------------------------
+    !        ADT:         Currently active ADT.
+    !        nInc: Increment of the size of the array.
+    !        Subroutine intent(inout) arguments.
+    !        -----------------------------------
+    !        nSize: On input it contains the size of the given array.
+    !               On output this value is incremented by nInc.
+    !        Subroutine pointer arguments.
+    !        -----------------------------
+    !        arr: Array to be reallocated.
     !
     implicit none
     !

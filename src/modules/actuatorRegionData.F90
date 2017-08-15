@@ -10,7 +10,7 @@ module actuatorRegionData
      ! The total number of cells included this proc has
      integer(kind=intType) :: nCellIDs
 
-     ! The scaling factor to account for the edges of the region. 
+     ! The scaling factor to account for the edges of the region.
      real(kind=realType), dimension(:), pointer :: Factor
 
      ! F is the total Force to be applied on this region
@@ -23,7 +23,7 @@ module actuatorRegionData
      ! procs) inluleded in this region
      real(kind=realType) :: volume
 
-     ! The physical distance 
+     ! The physical distance
      real(kind=realType) :: smoothDistance
      integer(kind=intType), dimension(:), allocatable :: blkPtr
   end type actuatorRegionType

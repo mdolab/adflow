@@ -287,7 +287,7 @@ contains
       funcvalues(costfuncsigmaptot) = funcvalues(costfuncsigmaptot) + &
 &       ovrnts*sigmaptot
     end do
-! bending moment calc - also broken. 
+! bending moment calc - also broken.
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
 ! funcvalues(costfuncbendingcoef) = funcvalues(costfuncbendingcoef) + ovrnts*bendingmoment
 ! lift and drag (coefficients): dot product with the lift/drag direction.
@@ -485,7 +485,7 @@ contains
       funcvalues(costfuncsigmaptot) = funcvalues(costfuncsigmaptot) + &
 &       ovrnts*sigmaptot
     end do
-! bending moment calc - also broken. 
+! bending moment calc - also broken.
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
 ! funcvalues(costfuncbendingcoef) = funcvalues(costfuncbendingcoef) + ovrnts*bendingmoment
 ! lift and drag (coefficients): dot product with the lift/drag direction.
@@ -581,10 +581,10 @@ contains
     real(kind=realtype) :: arg1d
     real(kind=realtype) :: result1
     real(kind=realtype) :: result1d
-    select case  (bcfaceid(mm)) 
-    case (imin, jmin, kmin) 
+    select case  (bcfaceid(mm))
+    case (imin, jmin, kmin)
       fact = -one
-    case (imax, jmax, kmax) 
+    case (imax, jmax, kmax)
       fact = one
     end select
 ! determine the reference point for the moment computation in
@@ -1049,10 +1049,10 @@ contains
     intrinsic exp
     real(kind=realtype) :: arg1
     real(kind=realtype) :: result1
-    select case  (bcfaceid(mm)) 
-    case (imin, jmin, kmin) 
+    select case  (bcfaceid(mm))
+    case (imin, jmin, kmin)
       fact = -one
-    case (imax, jmax, kmax) 
+    case (imax, jmax, kmax)
       fact = one
     end select
 ! determine the reference point for the moment computation in
@@ -1408,11 +1408,11 @@ contains
 ! is that we want positive mass flow into the domain and negative
 ! mass flow out of the domain. since the low faces have ssi
 ! vectors pointining into the domain, this is correct. the high
-! end faces need to flip this. 
-    select case  (bcfaceid(mm)) 
-    case (imin, jmin, kmin) 
+! end faces need to flip this.
+    select case  (bcfaceid(mm))
+    case (imin, jmin, kmin)
       fact = one
-    case (imax, jmax, kmax) 
+    case (imax, jmax, kmax)
       fact = -one
     end select
 ! the sign of momentum forces are flipped for internal flows
@@ -1645,9 +1645,9 @@ contains
 &         , j+1, 3)) - refpointd(3)
         zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
 &         , 3)) - refpoint(3)
-! pressure forces. note that these need a *negative* and to subtract 
-! the reference pressure sign to be consistent with the force 
-! computation on the walls. 
+! pressure forces. note that these need a *negative* and to subtract
+! the reference pressure sign to be consistent with the force
+! computation on the walls.
         pmd = -(fact*blk*(pmd-pinf*prefd))
         pm = -((pm-pinf*pref)*fact*blk)
         fxd = pmd*ssi(i, j, 1) + pm*ssid(i, j, 1)
@@ -1675,10 +1675,10 @@ contains
         mp(2) = mp(2) + my
         mpd(3) = mpd(3) + mzd
         mp(3) = mp(3) + mz
-! momentum forces are a little tricky.  we negate because 
-! have to re-apply fact to massflowratelocal to undoo it, because 
-! we need the signed behavior of ssi to get the momentum forces correct. 
-! also, the sign is flipped between inflow and outflow types 
+! momentum forces are a little tricky.  we negate because
+! have to re-apply fact to massflowratelocal to undoo it, because
+! we need the signed behavior of ssi to get the momentum forces correct.
+! also, the sign is flipped between inflow and outflow types
         massflowratelocald = internalflowfact*inflowfact*(blk*(fact*&
 &         massflowratelocald*timeref-massflowratelocal*fact*timerefd)*&
 &         cellarea/timeref**2-massflowratelocal*fact*blk*cellaread/&
@@ -1816,11 +1816,11 @@ contains
 ! is that we want positive mass flow into the domain and negative
 ! mass flow out of the domain. since the low faces have ssi
 ! vectors pointining into the domain, this is correct. the high
-! end faces need to flip this. 
-    select case  (bcfaceid(mm)) 
-    case (imin, jmin, kmin) 
+! end faces need to flip this.
+    select case  (bcfaceid(mm))
+    case (imin, jmin, kmin)
       fact = one
-    case (imax, jmax, kmax) 
+    case (imax, jmax, kmax)
       fact = -one
     end select
 ! the sign of momentum forces are flipped for internal flows
@@ -1936,9 +1936,9 @@ contains
 &         , 2)) - refpoint(2)
         zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
 &         , 3)) - refpoint(3)
-! pressure forces. note that these need a *negative* and to subtract 
-! the reference pressure sign to be consistent with the force 
-! computation on the walls. 
+! pressure forces. note that these need a *negative* and to subtract
+! the reference pressure sign to be consistent with the force
+! computation on the walls.
         pm = -((pm-pinf*pref)*fact*blk)
         fx = pm*ssi(i, j, 1)
         fy = pm*ssi(i, j, 2)
@@ -1953,10 +1953,10 @@ contains
         mp(1) = mp(1) + mx
         mp(2) = mp(2) + my
         mp(3) = mp(3) + mz
-! momentum forces are a little tricky.  we negate because 
-! have to re-apply fact to massflowratelocal to undoo it, because 
-! we need the signed behavior of ssi to get the momentum forces correct. 
-! also, the sign is flipped between inflow and outflow types 
+! momentum forces are a little tricky.  we negate because
+! have to re-apply fact to massflowratelocal to undoo it, because
+! we need the signed behavior of ssi to get the momentum forces correct.
+! also, the sign is flipped between inflow and outflow types
         massflowratelocal = massflowratelocal*fact/timeref*blk/cellarea*&
 &         internalflowfact*inflowfact
         fx = massflowratelocal*ssi(i, j, 1)*vxm

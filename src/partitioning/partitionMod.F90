@@ -1,17 +1,17 @@
 module partitionMod
   !
-  !       This local module contains definitions of derived datatypes    
-  !       as well as variables used in the partitioning directory.       
+  !       This local module contains definitions of derived datatypes
+  !       as well as variables used in the partitioning directory.
   !
   use constants
   implicit none
   save
   !
-  !       The definition of the derived datatype distributionBlockType   
+  !       The definition of the derived datatype distributionBlockType
   !
   type distributionBlockType
      !
-     !         Block dimensions and local block ID.                         
+     !         Block dimensions and local block ID.
      !
      !  nx, ny, nz - block integer dimensions for no halo cell based
      !               quantities.
@@ -24,16 +24,16 @@ module partitionMod
           il, jl, kl
      integer(kind=intType) :: blockID
      !
-     !         Total number cells and faces inside the block. In the number 
-     !         faces the work for nonmatching block boundaries is included, 
-     !         such that the load balance is still guaranteed.              
+     !         Total number cells and faces inside the block. In the number
+     !         faces the work for nonmatching block boundaries is included,
+     !         such that the load balance is still guaranteed.
      !
      ! Ncell     : total number of cells in this block.
      ! Nface     : total number of faces in this block.
 
      integer(kind=intType) :: ncell, nface
      !
-     !         Block boundary conditions.                                   
+     !         Block boundary conditions.
      !
      !  nSubface             - Number of subfaces on this block.
      !  n1to1                - Number of 1 to 1 block boundaries.
@@ -96,7 +96,7 @@ module partitionMod
      integer(kind=intType), dimension(:), pointer :: groupNum
 
      !
-     !         Relation to the original cgns grid.                          
+     !         Relation to the original cgns grid.
      !
      ! cgnsBlockID    - block/zone number of the cgns grid to which
      !                  this block is related.
@@ -120,8 +120,8 @@ module partitionMod
   type(distributionBlockType), dimension(:), allocatable :: blocks
 
   !
-  !       Type definition to store the way the original cgns blocks are  
-  !       split for load balancing reasons.                              
+  !       Type definition to store the way the original cgns blocks are
+  !       split for load balancing reasons.
   !
   type splitCGNSType
 
@@ -136,8 +136,8 @@ module partitionMod
   end type splitCGNSType
 
   !
-  !       Type definition needed to determine the processor ID's and     
-  !       nodal ranges of the subblocks for every CGNS block.            
+  !       Type definition needed to determine the processor ID's and
+  !       nodal ranges of the subblocks for every CGNS block.
   !
   type subblocksOfCGNSType
 
@@ -174,8 +174,8 @@ module partitionMod
      module procedure lessSubblocksOfCGNSType
   end interface operator(<)
   !
-  !       Type definition needed to determine the number of distinct     
-  !       non-matching abutting subfaces in the CGNS file.               
+  !       Type definition needed to determine the number of distinct
+  !       non-matching abutting subfaces in the CGNS file.
   !
   type subfaceNonMatchType
 
@@ -255,8 +255,8 @@ module partitionMod
 
   ! ==========================================================================
   !
-  !       Variable to store the partition number (processor ID) of the   
-  !       computational blocks.                                          
+  !       Variable to store the partition number (processor ID) of the
+  !       computational blocks.
   !
   ! ubvec(2):      Tolerance for the constraints.
   ! part(nBlocks): The processor ID for each block, starting at 0.
@@ -265,12 +265,12 @@ module partitionMod
 
   integer(kind=intType), dimension(:), allocatable :: part
   !
-  !       Variables needed for the reading of the grid files.            
+  !       Variables needed for the reading of the grid files.
   !
   ! nGridsRead:            Number of grids to read.
   ! fileIDs(nGridsRead):   The file ID's.
   ! gridFiles(nGridsRead): Names of the grid files to read.
-  ! interpolSpectral:      Whether or not to interpolate the 
+  ! interpolSpectral:      Whether or not to interpolate the
   !                        coordinates for the time spectral mode.
 
   integer(kind=intType) :: nGridsRead
@@ -284,14 +284,14 @@ module partitionMod
 
 contains
   !
-  !         Functions to simulate the operators <= and < for the derived 
-  !         datatypes subblocksOfCGNSType and subfaceNonMatchType.       
+  !         Functions to simulate the operators <= and < for the derived
+  !         datatypes subblocksOfCGNSType and subfaceNonMatchType.
   !
   logical function lessEqualSubblocksOfCGNSType(g1, g2)
     !
-    !         This function returns .true. if g1 <= g2 and .false.         
-    !         otherwise. The comparison is firstly based on the CGNS block 
-    !         ID, then the processor ID and finally the local block ID.    
+    !         This function returns .true. if g1 <= g2 and .false.
+    !         otherwise. The comparison is firstly based on the CGNS block
+    !         ID, then the processor ID and finally the local block ID.
     !
     implicit none
     !
@@ -342,9 +342,9 @@ contains
 
   logical function lessSubblocksOfCGNSType(g1, g2)
     !
-    !         This function returns .true. if g1 < g2 and .false.          
-    !         otherwise. The comparison is firstly based on the CGNS block 
-    !         ID, then the processor ID and finally the local blockID.     
+    !         This function returns .true. if g1 < g2 and .false.
+    !         otherwise. The comparison is firstly based on the CGNS block
+    !         ID, then the processor ID and finally the local blockID.
     !
     implicit none
     !
@@ -395,10 +395,10 @@ contains
 
   logical function lessEqualSubfaceNonMatchType(g1, g2)
     !
-    !         This function returns .true. if g1 <= g2 and .false.         
-    !         otherwise. The comparison is firstly based on the i-range,   
-    !         followed by the j-range and k-range. If these are all the    
-    !         same the connectivity ID is compared.                        
+    !         This function returns .true. if g1 <= g2 and .false.
+    !         otherwise. The comparison is firstly based on the i-range,
+    !         followed by the j-range and k-range. If these are all the
+    !         same the connectivity ID is compared.
     !
     implicit none
     !
@@ -406,7 +406,7 @@ contains
     !
     type(subfaceNonMatchType), intent(in) :: g1, g2
 
-    ! Comparison of the iBeg value. If different set 
+    ! Comparison of the iBeg value. If different set
     ! lessEqualSubfaceNonMatchType appropriately and return.
 
     if(g1%iBeg < g2%iBeg) then
@@ -487,10 +487,10 @@ contains
 
   logical function lessSubfaceNonMatchType(g1, g2)
     !
-    !         This function returns .true. if g1 < g2 and .false.          
-    !         otherwise. The comparison is firstly based on the i-range,   
-    !         followed by the j-range and k-range. If these are all the    
-    !         same the connectivity ID is compared.                        
+    !         This function returns .true. if g1 < g2 and .false.
+    !         otherwise. The comparison is firstly based on the i-range,
+    !         followed by the j-range and k-range. If these are all the
+    !         same the connectivity ID is compared.
     !
     implicit none
     !
@@ -498,7 +498,7 @@ contains
     !
     type(subfaceNonMatchType), intent(in) :: g1, g2
 
-    ! Comparison of the iBeg value. If different set 
+    ! Comparison of the iBeg value. If different set
     ! lessEqualSubfaceNonMatchType appropriately and return.
 
     if(g1%iBeg < g2%iBeg) then
@@ -577,9 +577,9 @@ contains
 
   subroutine qsortSubblocksOfCGNSType(arr, nn)
     !
-    !       qsortSubblocksOfCGNSType sorts the array of the derived        
-    !       datatype subblocksOfCGNSType in increasing order based on the  
-    !       <= operator for this derived data type.                        
+    !       qsortSubblocksOfCGNSType sorts the array of the derived
+    !       datatype subblocksOfCGNSType in increasing order based on the
+    !       <= operator for this derived data type.
     !
     use constants
     use utils, only : terminate
@@ -793,9 +793,9 @@ contains
 
   subroutine qsortSubfaceNonMatchType(arr, nn)
     !
-    !       qsortSubfaceNonMatchType sorts the array of the derived        
-    !       datatype subfaceNonMatchType in increasing order based on the  
-    !       <= operator for this derived data type.                        
+    !       qsortSubfaceNonMatchType sorts the array of the derived
+    !       datatype subfaceNonMatchType in increasing order based on the
+    !       <= operator for this derived data type.
     !
     use constants
     use utils, only : terminate
@@ -1009,10 +1009,10 @@ contains
 
   logical function lessEqualSortSubRangeType(g1, g2)
     !
-    !         lessEqualSortSubRangeType defines the operator <= for the    
-    !         derived datatype sortSubRangeType. The comparison is first   
-    !         based on kMin, followed by jMin and finally iMin.            
-    !         The comparison is therefore not based on the max values.     
+    !         lessEqualSortSubRangeType defines the operator <= for the
+    !         derived datatype sortSubRangeType. The comparison is first
+    !         based on kMin, followed by jMin and finally iMin.
+    !         The comparison is therefore not based on the max values.
     !
     implicit none
     !
@@ -1020,7 +1020,7 @@ contains
     !
     type(sortSubRangeType), intent(in) :: g1, g2
     !
-    !         Begin executation.                                           
+    !         Begin executation.
     !
     ! Compare the kMin index and return .true. or .false. if they
     ! differ.
@@ -1063,10 +1063,10 @@ contains
 
   logical function lessSortSubRangeType(g1, g2)
     !
-    !         lessSortSubRangeType defines the operator < for the derived  
-    !         datatype sortSubRangeType. The comparison is first based on  
-    !         kMin, followed by jMin and finally iMin.                     
-    !         The comparison is therefore not based on the max values.     
+    !         lessSortSubRangeType defines the operator < for the derived
+    !         datatype sortSubRangeType. The comparison is first based on
+    !         kMin, followed by jMin and finally iMin.
+    !         The comparison is therefore not based on the max values.
     !
     implicit none
     !
@@ -1074,7 +1074,7 @@ contains
     !
     type(sortSubRangeType), intent(in) :: g1, g2
     !
-    !         Begin executation.                                           
+    !         Begin executation.
     !
     ! Compare the kMin index and return .true. or .false. if they
     ! differ.
@@ -1117,9 +1117,9 @@ contains
 
   subroutine sortRangesSplitInfo(splitInfo)
     !
-    !       sortRangesSplitInfo sort the ranges of the given subblocks in  
-    !       increasing order such that a unique ordering is obtained,      
-    !       independent of the history of the splitting.                   
+    !       sortRangesSplitInfo sort the ranges of the given subblocks in
+    !       increasing order such that a unique ordering is obtained,
+    !       independent of the history of the splitting.
     !
     use constants
     implicit none
@@ -1170,9 +1170,9 @@ contains
 
   subroutine qsortSortSubRangeType(arr, nn)
     !
-    !       qsortSortSubRangeType sorts the given number of halo's in      
-    !       increasing order based on the <= operator for this derived     
-    !       data type.                                                     
+    !       qsortSortSubRangeType sorts the given number of halo's in
+    !       increasing order based on the <= operator for this derived
+    !       data type.
     !
     use utils, only : terminate
     implicit none
@@ -1384,11 +1384,11 @@ contains
   end subroutine qsortSortSubRangeType
 
   !
-  !         Functions to define the operators <, <= and /=.              
-  !         Note that the comparison is only based on the integers.      
-  !         The real contains additional info, the maximum deviation,    
-  !         which is normally different even if the subfaces are         
-  !         identical.                                                   
+  !         Functions to define the operators <, <= and /=.
+  !         Note that the comparison is only based on the integers.
+  !         The real contains additional info, the maximum deviation,
+  !         which is normally different even if the subfaces are
+  !         identical.
   !
   logical function lessEqualFourIntPlusRealType(g1, g2)
     implicit none
@@ -1510,8 +1510,8 @@ contains
 
   subroutine sortBadEntities(nEntities, entities, dist, sortDist)
     !
-    !       sortBadEntities sorts the given number of entities in          
-    !       increasing order and gets rid of the multiple entries.         
+    !       sortBadEntities sorts the given number of entities in
+    !       increasing order and gets rid of the multiple entries.
     !
     use constants
     implicit none
@@ -1588,9 +1588,9 @@ contains
 
   subroutine qsortFourIntPlusRealType(arr, nn)
     !
-    !       qsortFourIntPlusRealType sorts the given number of halo's in   
-    !       increasing order based on the <= operator for this derived     
-    !       data type.                                                     
+    !       qsortFourIntPlusRealType sorts the given number of halo's in
+    !       increasing order based on the <= operator for this derived
+    !       data type.
     !
     use constants
     use utils, only : terminate

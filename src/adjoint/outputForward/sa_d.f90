@@ -3,7 +3,7 @@
 !
 ! this module contains the source code related to the sa turbulence
 ! model. it is slightly more modularized than the original which makes
-! performing reverse mode ad simplier. 
+! performing reverse mode ad simplier.
 module sa_d
   use constants
   implicit none
@@ -24,9 +24,9 @@ contains
 !                d2wall:in si:in sj:in sk:in
   subroutine sasource_d()
 !
-!  source terms.                                                  
-!  determine the source term and its derivative w.r.t. nutilde    
-!  for all internal cells of the block.                           
+!  source terms.
+!  determine the source term and its derivative w.r.t. nutilde
+!  for all internal cells of the block.
 !  remember that the sa field variable nutilde = w(i,j,k,itu1)
     use blockpointers
     use constants
@@ -380,9 +380,9 @@ contains
   end subroutine sasource_d
   subroutine sasource()
 !
-!  source terms.                                                  
-!  determine the source term and its derivative w.r.t. nutilde    
-!  for all internal cells of the block.                           
+!  source terms.
+!  determine the source term and its derivative w.r.t. nutilde
+!  for all internal cells of the block.
 !  remember that the sa field variable nutilde = w(i,j,k,itu1)
     use blockpointers
     use constants
@@ -577,9 +577,9 @@ contains
 !                si:in sj:in sk:in
   subroutine saviscous_d()
 !
-!  viscous term.                                                  
-!  determine the viscous contribution to the residual             
-!  for all internal cells of the block.                           
+!  viscous term.
+!  determine the viscous contribution to the residual
+!  for all internal cells of the block.
     use blockpointers
     use paramturb
     implicit none
@@ -604,7 +604,7 @@ contains
     cw36 = rsacw3**6
     cb3inv = one/rsacb3
 !
-!       viscous terms in k-direction.                                  
+!       viscous terms in k-direction.
 !
     do k=2,kl
       do j=2,jl
@@ -712,7 +712,7 @@ contains
       end do
     end do
 !
-!       viscous terms in j-direction.                                  
+!       viscous terms in j-direction.
 !
     do k=2,kl
       do j=2,jl
@@ -817,7 +817,7 @@ contains
       end do
     end do
 !
-!       viscous terms in i-direction.                                  
+!       viscous terms in i-direction.
 !
     do k=2,kl
       do j=2,jl
@@ -924,9 +924,9 @@ contains
   end subroutine saviscous_d
   subroutine saviscous()
 !
-!  viscous term.                                                  
-!  determine the viscous contribution to the residual             
-!  for all internal cells of the block.                           
+!  viscous term.
+!  determine the viscous contribution to the residual
+!  for all internal cells of the block.
     use blockpointers
     use paramturb
     implicit none
@@ -945,7 +945,7 @@ contains
     cw36 = rsacw3**6
     cb3inv = one/rsacb3
 !
-!       viscous terms in k-direction.                                  
+!       viscous terms in k-direction.
 !
     do k=2,kl
       do j=2,jl
@@ -1010,7 +1010,7 @@ contains
       end do
     end do
 !
-!       viscous terms in j-direction.                                  
+!       viscous terms in j-direction.
 !
     do k=2,kl
       do j=2,jl
@@ -1072,7 +1072,7 @@ contains
       end do
     end do
 !
-!       viscous terms in i-direction.                                  
+!       viscous terms in i-direction.
 !
     do k=2,kl
       do j=2,jl
@@ -1141,12 +1141,12 @@ contains
 !   plus diff mem management of: dw:in scratch:in
   subroutine saresscale_d()
 !
-!  multiply the residual by the volume and store this in dw; this 
+!  multiply the residual by the volume and store this in dw; this
 ! * is done for monitoring reasons only. the multiplication with the
 ! * volume is present to be consistent with the flow residuals; also
-!  the negative value is taken, again to be consistent with the   
+!  the negative value is taken, again to be consistent with the
 ! * flow equations. also multiply by iblank so that no updates occur
-!  in holes or the overset boundary.                              
+!  in holes or the overset boundary.
     use blockpointers
     implicit none
 ! local variables
@@ -1174,12 +1174,12 @@ contains
   end subroutine saresscale_d
   subroutine saresscale()
 !
-!  multiply the residual by the volume and store this in dw; this 
+!  multiply the residual by the volume and store this in dw; this
 ! * is done for monitoring reasons only. the multiplication with the
 ! * volume is present to be consistent with the flow residuals; also
-!  the negative value is taken, again to be consistent with the   
+!  the negative value is taken, again to be consistent with the
 ! * flow equations. also multiply by iblank so that no updates occur
-!  in holes or the overset boundary.                              
+!  in holes or the overset boundary.
     use blockpointers
     implicit none
 ! local variables

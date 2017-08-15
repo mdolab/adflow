@@ -4,9 +4,9 @@ contains
 
   subroutine writeCGNSSurfaceSol(famList)
     !
-    !       writeCGNSSurfaceSol and its subroutines write the surface      
-    !       solution file(s). The unknowns are stored in the center of the 
-    !       surface quadrilaterals.                                        
+    !       writeCGNSSurfaceSol and its subroutines write the surface
+    !       solution file(s). The unknowns are stored in the center of the
+    !       surface quadrilaterals.
     !
     use cgnsGrid
     use communication
@@ -21,7 +21,7 @@ contains
     use surfaceFamilies, only : famNames
     use sorting, only : qsortStrings
     implicit none
-    
+
     ! Input Param
     integer(kind=intType), dimension(:), intent(in) :: famList
 
@@ -191,7 +191,7 @@ contains
        end if testRootProc2
 
        ! Determine the number of variables to be written to the
-       ! isosurface itself well as the cgns names. 
+       ! isosurface itself well as the cgns names.
 
        call numberOfIsoSurfVariables(nIsoSurfVar)
 
@@ -267,8 +267,8 @@ contains
   end subroutine writeCGNSSurfaceSol
   subroutine surfSolFileNamesWrite
     !
-    !       surfSolFileNamesWrite determines the names and number of       
-    !       surface solution files to be written.                          
+    !       surfSolFileNamesWrite determines the names and number of
+    !       surface solution files to be written.
     !
     use inputIO
     use inputPhysics
@@ -351,11 +351,11 @@ contains
   subroutine writeSurfsolCGNSZone(zone, nBlocks, subface, nSolVar, &
        solNames, nZonesWritten, periodic, famListStr)
     !
-    !       writeSurfsolCGNSZone writes a surface solution of the given    
-    !       zone (block) and boundary subface to the cgns surface file(s). 
-    !       A distinction must be made between true boundaries and         
-    !       periodic boundaries; the latter are a special kind of internal 
-    !       block boundaries. This is indicated by the logical periodic.   
+    !       writeSurfsolCGNSZone writes a surface solution of the given
+    !       zone (block) and boundary subface to the cgns surface file(s).
+    !       A distinction must be made between true boundaries and
+    !       periodic boundaries; the latter are a special kind of internal
+    !       block boundaries. This is indicated by the logical periodic.
     !
     use block
     use cgnsGrid
@@ -448,7 +448,7 @@ contains
        tmpStr = trim(CGNSDoms(zone)%bocoInfo(subface)%wallBCName)
        call convertToLowerCase(tmpStr)
        if (bsearchStrings(tmpStr, famListStr) == 0) then
-          return 
+          return
        end if
 
        iBeg = min(cgnsDoms(zone)%bocoInfo(subface)%iBeg, &
@@ -739,8 +739,8 @@ contains
 
     subroutine determineSubranges
       !
-      !         determineSubranges determines the nodal and cell subrange    
-      !         for the given local block ID mm in the current cgns subface. 
+      !         determineSubranges determines the nodal and cell subrange
+      !         for the given local block ID mm in the current cgns subface.
       !
       use inputIO
       implicit none
@@ -829,9 +829,9 @@ contains
 
     subroutine createSurfaceZone
       !
-      !         createSurfaceZone creates a surface node in the given        
-      !         cgns surface solution file. This routine should only be      
-      !         called by processor 0.                                       
+      !         createSurfaceZone creates a surface node in the given
+      !         cgns surface solution file. This routine should only be
+      !         called by processor 0.
       !
       use inputIO
       implicit none
@@ -991,9 +991,9 @@ contains
 
     subroutine writeSurfaceCoord
       !
-      !         WriteSurfaceCoord write the vertex values of the             
-      !         coordinates to the given zone of the cgns surface solution   
-      !         file.                                                        
+      !         WriteSurfaceCoord write the vertex values of the
+      !         coordinates to the given zone of the cgns surface solution
+      !         file.
       !
       use cgnsNames
       use inputIO
@@ -1244,8 +1244,8 @@ contains
 
     subroutine writeSurfaceSol
       !
-      !         writeSurfaceSol writes the cell centered surface solution    
-      !         to the cgns surface file.                                    
+      !         writeSurfaceSol writes the cell centered surface solution
+      !         to the cgns surface file.
       !
       implicit none
       !
@@ -1278,11 +1278,11 @@ contains
             kkEnd = max(kkEnd,rangeCell(3,2,ll))
          enddo
 
-         mm = (kkEnd-kkBeg+1) * (jjEnd-jjBeg+1) * (iiEnd-iiBeg+1) 
+         mm = (kkEnd-kkBeg+1) * (jjEnd-jjBeg+1) * (iiEnd-iiBeg+1)
          select case (precisionSurfSol)
          case (precisionSingle)
             allocate(writeBuffer4(mm), writeBuffer8(0), stat=ierr)
-         case (precisionDouble) 
+         case (precisionDouble)
             allocate(writeBuffer4(0), writeBuffer8(mm), stat=ierr)
          end select
          if(ierr /= 0)                       &
@@ -1393,7 +1393,7 @@ contains
                call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, &
                     cgnsSol, realSingle, solNames(mm), writeBuffer4, &
                     source, ierr)
-            case (precisionDouble) 
+            case (precisionDouble)
                call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, &
                     cgnsSol, realDouble, solNames(mm), writeBuffer8, &
                     source, ierr)
@@ -1544,8 +1544,8 @@ contains
 
                       ! Indices of nodes
                       n1 = (/i, j, k/) + ccwOrdering(: ,num1)
-                      n2 = (/i, j, k/) + ccwOrdering(:, num2) 
-                      indices(:, iCoor) = (/nn, n1(1), n1(2), n1(3), n2(1), n2(2), n2(3)/)              
+                      n2 = (/i, j, k/) + ccwOrdering(:, num2)
+                      indices(:, iCoor) = (/nn, n1(1), n1(2), n1(3), n2(1), n2(2), n2(3)/)
 
                       kk = kk + 1
                    end if
@@ -1591,7 +1591,7 @@ contains
 
     ! Compute the reduced set of coordinates. The sole purpose of this
     ! is to reduce the filesize. This will typicaly reduce the number of
-    ! coordinates by about a factor of 4. 
+    ! coordinates by about a factor of 4.
 
     call pointReduce(coords, iCoor, tol, uniqueCoords, link, nUnique)
 
@@ -1612,13 +1612,13 @@ contains
     call EChk(ierr, __FILE__, __LINE__)
 
 
-    if (sum(nPtsProc) > 0) then 
+    if (sum(nPtsProc) > 0) then
 
        if (myid == 0) then ! Root proc does the writing
 
           ! Write a new zone:
-          cgnsInd = fileIDs(sps) 
-          cgnsBase = cgnsIsoSurfBases(sps) 
+          cgnsInd = fileIDs(sps)
+          cgnsBase = cgnsIsoSurfBases(sps)
 
           ! Write the unstructured zone
           call cg_zone_write_f(cgnsInd, cgnsBase, isoName, (/sum(nPtsProc), sum(nConnProc), 0/), &
@@ -1639,8 +1639,8 @@ contains
           ! processing easier
 
           ! Write a new zone:
-          cgnsInd = fileIDs(sps) 
-          cgnsBase = cgnsIsoSurfBases(sps) 
+          cgnsInd = fileIDs(sps)
+          cgnsBase = cgnsIsoSurfBases(sps)
 
           call writeEmptyZone
 
@@ -1773,7 +1773,7 @@ contains
           end do
 
           cumNodes = cumNodes + nPtsProc(iProc+1)
-          cumConn  = cumConn  + nConnProc(iProc+1)    
+          cumConn  = cumConn  + nConnProc(iProc+1)
        end if
 
        ! Buffer was only allocated on roto and iProc
@@ -1820,7 +1820,7 @@ contains
        ! onwhich we did the interpolation. However, set 'zero' for the
        ! isovalue such that we get the true value back
 
-       call computeIsoVariable(isoSurfSolNames(iVar), sps, zero) 
+       call computeIsoVariable(isoSurfSolNames(iVar), sps, zero)
 
        ! Set points to first block:
        call setPointers(1, 1, sps)
@@ -2204,10 +2204,10 @@ contains
 
   subroutine computeIsoVariable(solName, sps, isoVal)
     !
-    !       computeIsoVar computes NODE centered values for the given      
-    !       solName variable. It is essentially equilivent to              
-    !       sotreSolInBuffer. It is assumed blockPointers are already      
-    !       set to the correct block.                                      
+    !       computeIsoVar computes NODE centered values for the given
+    !       solName variable. It is essentially equilivent to
+    !       sotreSolInBuffer. It is assumed blockPointers are already
+    !       set to the correct block.
     !
     use constants
     use blockPointers
@@ -2728,7 +2728,7 @@ contains
 
                    ! Here we compute U/a <dot> grad P / ||grad P||
                    ! Whre U is the velocity vector, a is the speed of
-                   ! sound and P is the pressure. 
+                   ! sound and P is the pressure.
 
                    ! U / a
                    a  = sqrt(gamma(i,j,k)*max(p(i,j,k),plim) &
@@ -2793,7 +2793,7 @@ contains
        ! etc.
 
        do k=1,kl
-          do j=1,jl 
+          do j=1,jl
              do i=1,il
                 fn(i,j,k) = eighth*( &
                      fc(i  , j  , k  ) + &

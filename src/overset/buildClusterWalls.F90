@@ -2,7 +2,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
 
   ! This routine will will build a global reduced surface mesh and ADT
   ! for each cluster. It can build using either the primal mesh or the
-  ! dual mesh depending on the  useDual option. 
+  ! dual mesh depending on the  useDual option.
 
   use adtBuild, only : buildSerialQuad
   use blockPointers
@@ -73,7 +73,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
   ! procedure *DOES NOT SCALE IN MEMORY*...ie eventually the surface
   ! mesh will become too large to store on a single processor,
   ! although this will probably not happen until the sizes get up in
-  ! the hundreds of millions of cells. 
+  ! the hundreds of millions of cells.
 
   nNodesLocal = 0
   nCellsLocal = 0
@@ -87,7 +87,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
      ii = ii + il*jl*kl
   end do
 
-  if (level == 1) then 
+  if (level == 1) then
      allocate(cgnsIndices(3*ii))
      call getCGNSMeshIndices(size(cgnsIndices), cgnsIndices)
      ii = 0
@@ -114,20 +114,20 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
      call setPointers(nn, level, sps)
 
      do mm=1, nBocos
-        if (famInList(BCdata(mm)%famID, famlist)) then 
+        if (famInList(BCdata(mm)%famID, famlist)) then
            iBeg = bcData(mm)%inBeg
            iEnd = bcData(mm)%inEnd
            jBeg = bcData(mm)%jnBeg
            jEnd = bcData(mm)%jnEnd
-           if (useDual) then 
+           if (useDual) then
               nNodesLocal = nNodesLocal + &
                    (iEnd - iBeg + 2)*(jEnd - jBeg + 2)
-              nCellsLocal = nCellsLocal + & 
+              nCellsLocal = nCellsLocal + &
                    (iEnd - iBeg + 1)*(jEnd - jBeg + 1)
            else
               nNodesLocal = nNodesLocal + &
                    (iEnd - iBeg + 1)*(jEnd - jBeg + 1)
-              nCellsLocal = nCellsLocal + & 
+              nCellsLocal = nCellsLocal + &
                    (iEnd - iBeg)*(jEnd - jBeg)
            end if
         end if
@@ -172,12 +172,12 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
      c = clusters(cumDomProc(myid) + nn)
      globalCGNSNode => flowDoms(nn, level, sps)%globalCGNSNode
      do mm=1,nBocos
-        if (famInList(BCdata(mm)%famID, famlist)) then 
+        if (famInList(BCdata(mm)%famID, famlist)) then
 
            jBeg = BCData(mm)%jnBeg-1 ; jEnd = BCData(mm)%jnEnd
            iBeg = BCData(mm)%inBeg-1 ; iEnd = BCData(mm)%inEnd
 
-           if (useDual) then 
+           if (useDual) then
               ! For the dual we have to allocate the pointer, xx.
               select case (BCFaceID(mm))
               case (iMin)
@@ -192,21 +192,21 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
                  xx3 => x(il,0:jl,1:ke,:)
                  xx4 => x(il,1:je,1:ke,:)
                  ind => globalCell(il, 1:je, 1:ke)
-                 
+
               case (jMin)
                  xx1  => x(0:il,1,0:kl,:)
                  xx2  => x(1:ie,1,0:kl,:)
                  xx3  => x(0:il,1,1:ke,:)
                  xx4  => x(1:ie,1,1:ke,:)
                  ind  => globalCell(1:ie, 2, 1:ke)
-                
+
               case (jMax)
                  xx1 => x(0:il,jl,0:kl,:)
                  xx2 => x(1:ie,jl,0:kl,:)
                  xx3 => x(0:il,jl,1:ke,:)
                  xx4 => x(1:ie,jl,1:ke,:)
                  ind => globalCell(1:ie, jl, 1:ke)
-              
+
               case (kMin)
                  xx1 => x(0:il,0:jl,1,:)
                  xx2 => x(1:ie,0:jl,1,:)
@@ -230,12 +230,12 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
                  indCGNS => globalCGNSNode(1, :, :)
                  ! Pointer to owned global cell indices
                  indCell => globalCell(2, :, :)
-                
+
               case (iMax)
                  xx   => x(il,:,:,:)
                  ind  => globalNode(il, :, :)
                  indCGNS => globalCGNSNode(il, :, :)
-                 
+
                  ! Pointer to owned global cell indices
                  indCell => globalCell(il, :, :)
 
@@ -245,7 +245,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
                  indCGNS => globalCGNSNode(:, 1, :)
                  ! Pointer to owned global cell indices
                  indCell => globalCell(:, 2, :)
-                
+
               case (jMax)
                  xx   => x(:,jl,:,:)
                  ind  => globalNode(:, jl, :)
@@ -259,17 +259,17 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
                  indCGNS => globalCGNSNode(:, :, 1)
                  ! Pointer to owned global cell indices
                  indCell => globalCell(:, :, 2)
-                
+
               case (kMax)
                  xx   => x(:,:,kl,:)
                  ind  => globalNode(:, :, kl)
                  indCGNS => globalCGNSNode(:, :, kl)
-                 
+
                  ! Pointer to owned global cell indices
                  indCell => globalCell(:, :, kl)
-                
+
               end select
-              
+
               ! Just set hte 4 other pointers to xx so we can use the
               ! same quarter-summation code below:
               xx1 => xx
@@ -292,7 +292,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
            ! other two, the pointers are cyclic consistent: i,j->k,
            ! j,k (wrap) ->i, but for the j-direction is is i,k->j when
            ! to be consistent with the others it should be
-           ! k,i->j. Hope that made sense. 
+           ! k,i->j. Hope that made sense.
 
            select case(BCFaceID(mm))
            case(iMin, jMax, kMin)
@@ -302,12 +302,12 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
            end select
 
            ! Now this can be reversed *again* if we have a block that
-           ! is left handed. 
-           if (.not. rightHanded) then 
+           ! is left handed.
+           if (.not. rightHanded) then
               regularOrdering = .not. (regularOrdering)
            end if
 
-           if (useDual) then 
+           if (useDual) then
               ! Start and end bounds for NODES
               jBeg = BCData(mm)%jnBeg-1; jEnd = BCData(mm)%jnEnd
               iBeg = BCData(mm)%inBeg-1; iEnd = BCData(mm)%inEnd
@@ -322,17 +322,17 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
            nj = jEnd - jBeg + 1
 
            ! Loop over the faces....this is the node sizes - 1
-           if (regularOrdering) then 
+           if (regularOrdering) then
               do j=1,nj-1
                  do i=1,ni-1
                     iCell = iCell + 1
                     connLocal(1, iCell) = cumNodeProc(myid) + iNode + (j-1)*ni + i
                     connLocal(2, iCell) = cumNodeProc(myid) + iNode + (j-1)*ni + i + 1
-                    connLocal(3, iCell) = cumNodeProc(myid) + iNode + (j)*ni + i + 1 
+                    connLocal(3, iCell) = cumNodeProc(myid) + iNode + (j)*ni + i + 1
                     connLocal(4, iCell) = cumNodeProc(myid) + iNode + (j)*ni + i
                     ! Set the cluster
                     clusterCellLocal(iCell) = c
-        
+
                     ! Save the global cell index
                     if (useDual) then
                        cellIndicesLocal(iCell) = 0
@@ -349,8 +349,8 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
                     iCell = iCell + 1
                     connLocal(1, iCell) = cumNodeProc(myid) + iNode + (j-1)*ni + i
                     connLocal(2, iCell) = cumNodeProc(myid) + iNode + (j  )*ni + i
-                    connLocal(3, iCell) = cumNodeProc(myid) + iNode + (j)  *ni + i + 1 
-                    connLocal(4, iCell) = cumNodeProc(myid) + iNode + (j-1)*ni + i + 1   
+                    connLocal(3, iCell) = cumNodeProc(myid) + iNode + (j)  *ni + i + 1
+                    connLocal(4, iCell) = cumNodeProc(myid) + iNode + (j-1)*ni + i + 1
 
                     ! Set the cluster
                     clusterCellLocal(iCell) = c
@@ -365,7 +365,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
                  end do
               end do
            end if
-                   
+
            ! Loop over the nodes
            do j=jBeg, jEnd
               do i=iBeg, iEnd
@@ -377,7 +377,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
 
                  clusterNodeLocal(iNode) = c
                  nodeIndicesLocal(iNode) = ind(i+1, j+1) ! +1 for pointer offset
-                 if (.not. useDual) then 
+                 if (.not. useDual) then
                     nodeIndicesCGNSLocal(iNode) = indCGNS(i, j) ! No pointer offset
                  else
                     nodeIndicesCGNSLocal(iNode) = 0
@@ -393,24 +393,24 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
        clusterCellGlobal(nCellsGlobal), clusterNodeGlobal(nNodesGlobal), &
        nodeIndicesGlobal(nNodesGlobal), nodeIndicesCGNSGlobal(nNodesGlobal), &
        cellIndicesGlobal(nCellsGlobal))
-         
+
   ! Communicate the nodes, connectivity and cluster information to everyone
-  call mpi_allgatherv(nodesLocal, 3*nNodesLocal, adflow_real, & 
+  call mpi_allgatherv(nodesLocal, 3*nNodesLocal, adflow_real, &
        nodesGlobal, nNodeProc*3, cumNodeProc*3, adflow_real, &
        adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call mpi_allgatherv(clusterNodeLocal, nNodesLocal, adflow_integer, & 
+  call mpi_allgatherv(clusterNodeLocal, nNodesLocal, adflow_integer, &
        clusterNodeGlobal, nNodeProc, cumNodeProc, adflow_integer, &
        adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call mpi_allgatherv(nodeIndicesLocal, nNodesLocal, adflow_integer, & 
+  call mpi_allgatherv(nodeIndicesLocal, nNodesLocal, adflow_integer, &
        nodeIndicesGlobal, nNodeProc, cumNodeProc, adflow_integer, &
        adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call mpi_allgatherv(nodeIndicesCGNSLocal, nNodesLocal, adflow_integer, & 
+  call mpi_allgatherv(nodeIndicesCGNSLocal, nNodesLocal, adflow_integer, &
        nodeIndicesCGNSGlobal, nNodeProc, cumNodeProc, adflow_integer, &
        adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
@@ -435,7 +435,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
        nCellProc, cumCellProc, nNodeProc, cumNodeProc, nodeIndicesLocal, &
        nodeIndicesCGNSLocal, cellIndicesLocal)
 
-  ! We will now build separate trees for each cluster. 
+  ! We will now build separate trees for each cluster.
   allocate(nodesPerCluster(nClusters), cellsPerCluster(nClusters), &
        cnc(nClusters), ccc(nClusters))
   nodesPerCluster = 0
@@ -445,7 +445,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
   do i=1, nCellsGlobal
      cellsPerCluster(clusterCellGlobal(i)) = cellsPerCluster(clusterCellGlobal(i)) + 1
   end do
-  
+
   do i=1, nNodesGlobal
      nodesPerCluster(clusterNodeGlobal(i)) = nodesPerCluster(clusterNodeGlobal(i)) + 1
   end do
@@ -485,23 +485,23 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
      c = clusterCellGlobal(i)
      ccc(c) = ccc(c) + 1 ! "Cluster cell count" the 'nth' cell for this cluster
      walls(c)%conn(:, ccc(c)) = connGlobal(:, i)
-     
+
      walls(c)%indCell(ccc(c)) = cellIndicesGlobal(i)
   end do
 
   do i=1, nClusters
 
      nCells = walls(i)%nCells
-     nNodes = walls(i)%nNodes 
+     nNodes = walls(i)%nNodes
 
-     ! Fistly we need to update the conn to use our local node ordering. 
+     ! Fistly we need to update the conn to use our local node ordering.
      do j=1, nCells
         do k=1, 4
            walls(i)%conn(k, j) = localNodeNums(walls(i)%conn(k, j))
         end do
      end do
 
-     ! Allocate temporary space for doing the point reduction. 
+     ! Allocate temporary space for doing the point reduction.
      allocate(uniqueNodes(3, nNodes), link(nNodes))
 
      call pointReduce(walls(i)%x, nNodes, tol, uniqueNodes, link, nUnique)
@@ -520,14 +520,14 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
         ! partitioning/splitting. Note that this will work even for
         ! the coarse levels when nodeIndicesCGNSGLobal are all 0's. In
         ! that case the first time wall(i)%ind(link(j)) is touched,
-        ! that index is taken. 
+        ! that index is taken.
         lj = link(j)
-        if (walls(i)%ind(lj) == -1) then 
+        if (walls(i)%ind(lj) == -1) then
            ! Not set yet
            walls(i)%ind(lj) = tmpInd(j)
            curCGNSNode(lj) = nodeIndicesCGNSGlobal(j)
         else
-           if (nodeIndicesCGNSGlobal(j) < curCGNSNode(lj)) then  
+           if (nodeIndicesCGNSGlobal(j) < curCGNSNode(lj)) then
               ! OR then potential global CGNS node index is LOWER
               ! than the one I already have
               walls(i)%ind(lj) = tmpInd(j)
@@ -540,8 +540,8 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
      ! Reset the number of nodes to be number of unique nodes
      nNodes = nUnique
      walls(i)%nNodes = nNodes
-     
-     ! Update the nodes with the unique ones. 
+
+     ! Update the nodes with the unique ones.
      do j=1, nUnique
         walls(i)%x(:, j) = uniqueNodes(:, j)
      end do

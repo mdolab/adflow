@@ -61,34 +61,34 @@ void ChangeMesh2FNumbering(int, idxtype *, int, idxtype *, idxtype *);
 void ChangeMesh2FNumbering2(int, idxtype *, int, int, idxtype *, idxtype *);
 
 /* frename.c */
-void METIS_PARTGRAPHRECURSIVE(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *); 
-void metis_partgraphrecursive(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *); 
-void metis_partgraphrecursive_(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *); 
-void metis_partgraphrecursive__(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *); 
-void METIS_WPARTGRAPHRECURSIVE(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *); 
-void metis_wpartgraphrecursive(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *); 
-void metis_wpartgraphrecursive_(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *); 
-void metis_wpartgraphrecursive__(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *); 
-void METIS_PARTGRAPHKWAY(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *); 
-void metis_partgraphkway(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *); 
-void metis_partgraphkway_(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *); 
-void metis_partgraphkway__(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *); 
-void METIS_WPARTGRAPHKWAY(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *); 
-void metis_wpartgraphkway(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *); 
-void metis_wpartgraphkway_(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *); 
-void metis_wpartgraphkway__(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *); 
-void METIS_EDGEND(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *); 
-void metis_edgend(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *); 
-void metis_edgend_(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *); 
-void metis_edgend__(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *); 
-void METIS_NODEND(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *); 
-void metis_nodend(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *); 
-void metis_nodend_(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *); 
-void metis_nodend__(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *); 
-void METIS_NODEWND(int *, idxtype *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *); 
-void metis_nodewnd(int *, idxtype *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *); 
-void metis_nodewnd_(int *, idxtype *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *); 
-void metis_nodewnd__(int *, idxtype *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *); 
+void METIS_PARTGRAPHRECURSIVE(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *);
+void metis_partgraphrecursive(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *);
+void metis_partgraphrecursive_(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *);
+void metis_partgraphrecursive__(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *);
+void METIS_WPARTGRAPHRECURSIVE(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *);
+void metis_wpartgraphrecursive(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *);
+void metis_wpartgraphrecursive_(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *);
+void metis_wpartgraphrecursive__(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *);
+void METIS_PARTGRAPHKWAY(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *);
+void metis_partgraphkway(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *);
+void metis_partgraphkway_(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *);
+void metis_partgraphkway__(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *);
+void METIS_WPARTGRAPHKWAY(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *);
+void metis_wpartgraphkway(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *);
+void metis_wpartgraphkway_(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *);
+void metis_wpartgraphkway__(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *);
+void METIS_EDGEND(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
+void metis_edgend(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
+void metis_edgend_(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
+void metis_edgend__(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
+void METIS_NODEND(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
+void metis_nodend(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
+void metis_nodend_(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
+void metis_nodend__(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
+void METIS_NODEWND(int *, idxtype *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
+void metis_nodewnd(int *, idxtype *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
+void metis_nodewnd_(int *, idxtype *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
+void metis_nodewnd__(int *, idxtype *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
 void METIS_PARTMESHNODAL(int *, int *, idxtype *, int *, int *, int *, int *, idxtype *, idxtype *);
 void metis_partmeshnodal(int *, int *, idxtype *, int *, int *, int *, int *, idxtype *, idxtype *);
 void metis_partmeshnodal_(int *, int *, idxtype *, int *, int *, int *, int *, idxtype *, idxtype *);
@@ -145,8 +145,8 @@ void GrowBisectionNode(CtrlType *, GraphType *, float);
 void RandomBisection(CtrlType *, GraphType *, int *, float);
 
 /* kmetis.c */
-void METIS_PartGraphKway(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *); 
-void METIS_WPartGraphKway(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *); 
+void METIS_PartGraphKway(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *);
+void METIS_WPartGraphKway(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *);
 int MlevelKWayPartitioning(CtrlType *, GraphType *, int, idxtype *, float *, float);
 
 /* kvmetis.c */
@@ -336,9 +336,9 @@ void ikeysort(int, KeyValueType *);
 void ikeyvalsort(int, KeyValueType *);
 
 /* ometis.c */
-void METIS_EdgeND(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *); 
-void METIS_NodeND(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *); 
-void METIS_NodeWND(int *, idxtype *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *); 
+void METIS_EdgeND(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
+void METIS_NodeND(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
+void METIS_NodeWND(int *, idxtype *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
 void MlevelNestedDissection(CtrlType *, GraphType *, idxtype *, float, int);
 void MlevelNestedDissectionCC(CtrlType *, GraphType *, idxtype *, float, int);
 void MlevelNodeBisectionMultiple(CtrlType *, GraphType *, int *, float);
@@ -348,16 +348,16 @@ void MMDOrder(CtrlType *, GraphType *, idxtype *, int);
 int SplitGraphOrderCC(CtrlType *, GraphType *, GraphType *, int, idxtype *, idxtype *);
 
 /* parmetis.c */
-void METIS_PartGraphKway2(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *); 
-void METIS_WPartGraphKway2(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *); 
+void METIS_PartGraphKway2(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *);
+void METIS_WPartGraphKway2(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *);
 void METIS_NodeNDP(int, idxtype *, idxtype *, int, int *, idxtype *, idxtype *, idxtype *);
 void MlevelNestedDissectionP(CtrlType *, GraphType *, idxtype *, int, int, int, idxtype *);
-void METIS_NodeComputeSeparator(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, idxtype *); 
-void METIS_EdgeComputeSeparator(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, idxtype *); 
+void METIS_NodeComputeSeparator(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, idxtype *);
+void METIS_EdgeComputeSeparator(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, idxtype *);
 
 /* pmetis.c */
-void METIS_PartGraphRecursive(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *); 
-void METIS_WPartGraphRecursive(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *); 
+void METIS_PartGraphRecursive(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *);
+void METIS_WPartGraphRecursive(int *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *);
 int MlevelRecursiveBisection(CtrlType *, GraphType *, int, idxtype *, float *, float, int);
 void MlevelEdgeBisection(CtrlType *, GraphType *, int *, float);
 void SplitGraphPart(CtrlType *, GraphType *, GraphType *, GraphType *);

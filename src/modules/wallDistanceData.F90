@@ -1,7 +1,7 @@
 module wallDistanceData
 
   ! This module stores some additional data required for the fast wall
-  ! distance computations. 
+  ! distance computations.
 
 
   use constants, only : realType
@@ -27,7 +27,7 @@ module wallDistanceData
   ! sensitivities.
 
   ! wallDistanceDataAllocated : Logical array keeping track of
-  ! whether or not the petsc data is allocated. 
+  ! whether or not the petsc data is allocated.
 
   ! indicesForSPS: A simple derived type for keeping track of
   ! indices while doing wall distance computation.
@@ -41,7 +41,7 @@ module wallDistanceData
 #ifndef USE_TAPENADE
   real(kind=realType), dimension(:), pointer :: xSurfd
   Vec , dimension(:), allocatable :: xVolumeVec
-  Vec , dimension(:, :), allocatable :: xSurfVec 
+  Vec , dimension(:, :), allocatable :: xSurfVec
   Vec , dimension(:), allocatable :: xSurfVecd
   VecScatter, dimension(:, :), allocatable :: wallScatter
   IS IS1, IS2

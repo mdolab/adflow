@@ -294,7 +294,7 @@ contains
     logical :: BCGroupNeeded
     real(kind=realType), dimension(:), pointer :: localPtr
 
-    ii = 0 
+    ii = 0
     jj = 0
     domains: do nn=1,nDom
        call setPointers(nn, 1_intType, sps)
@@ -306,7 +306,7 @@ contains
           jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
           iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
 
-          famInclude: if (famInList(BCdata(mm)%famID, famList)) then 
+          famInclude: if (famInList(BCdata(mm)%famID, famList)) then
 
              do j=jBeg, jEnd ! This is a node loop
                 do i=iBeg, iEnd ! This is a node loop
@@ -319,19 +319,19 @@ contains
                       indI = il
                       indJ = i
                       indK = j
-                   case(jmin) 
+                   case(jmin)
                       indI = i
                       indJ = 1
                       indK = j
-                   case(jmax) 
+                   case(jmax)
                       indI = i
                       indJ = jl
                       indK = j
-                   case(kmin) 
+                   case(kmin)
                       indI = i
                       indJ = j
                       indK = 1
-                   case(kmax) 
+                   case(kmax)
                       indI = i
                       indJ = j
                       indK = kl
@@ -348,13 +348,13 @@ contains
        end do bocos
 
        ! jj is the counter through xRand. Increment it by the full
-       ! block. 
+       ! block.
        jj = jj + il*jl*kl*3
     end do domains
 
-    ! No overset or not zipper, return 
+    ! No overset or not zipper, return
     if (.not. oversetPresent) then ! .or. .not. includeZipper) then
-       return 
+       return
     end if
 
 
@@ -364,24 +364,24 @@ contains
 
        zipper => zipperMeshes(iBCGroup)
 
-       if (.not. zipper%allocated) then 
+       if (.not. zipper%allocated) then
           cycle
        end if
 
        exch => BCFamExchange(iBCGroup, sps)
        BCGroupNeeded = .False.
        BCGroupFamLoop: do i=1, size(BCFamGroups(iBCGroup)%famList)
-          if (famInList(BCFamGroups(iBCGroup)%famList(i), famList)) then 
+          if (famInList(BCFamGroups(iBCGroup)%famList(i), famList)) then
              BCGroupNeeded = .True.
              exit BCGroupFamLoop
           end if
        end do BCGroupFamLoop
 
-       if (.not. BCGroupNeeded) then 
+       if (.not. BCGroupNeeded) then
           cycle
        end if
 
-       ! Now we know we *actually* need something from this BCGroup. 
+       ! Now we know we *actually* need something from this BCGroup.
 
        ! Loop over each dimension individually since we have a scalar
        ! scatter.
@@ -421,7 +421,7 @@ contains
 
        end do dimLoop
 
-       ! Increcment the running ii counter. 
+       ! Increcment the running ii counter.
        ii = ii + size(localPtr)
     end do
   end subroutine getSurfacePerturbation

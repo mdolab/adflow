@@ -1,6 +1,6 @@
 module indirectHalo
   !
-  !       This local module contains the derived data type used to       
+  !       This local module contains the derived data type used to
   !       determine the indirect halo's as well as an array of this type.
   !
   use precision
@@ -11,7 +11,7 @@ module indirectHalo
   private :: lessEqualIndirectHaloType
   private :: lessIndirectHaloType
   !
-  !       The definition of the derived data type indirectHaloType.      
+  !       The definition of the derived data type indirectHaloType.
   !
   type indirectHaloType
 
@@ -66,15 +66,15 @@ module indirectHalo
 
 contains
   !
-  !         Functions to simulate the operators <= and <.                
+  !         Functions to simulate the operators <= and <.
   !
   logical function lessEqualIndirectHaloType(g1, g2)
     !
-    !         This function returns .true. if g1 <= g2 and .false.         
-    !         otherwise. The comparison is firstly based on the level of   
-    !         indirectness followed by the donor processor, the            
-    !         corresponding direct halo, my block ID and finally the i, j  
-    !         and k indices.                                               
+    !         This function returns .true. if g1 <= g2 and .false.
+    !         otherwise. The comparison is firstly based on the level of
+    !         indirectness followed by the donor processor, the
+    !         corresponding direct halo, my block ID and finally the i, j
+    !         and k indices.
     !
     implicit none
     !
@@ -163,10 +163,10 @@ contains
 
   logical function lessIndirectHaloType(g1, g2)
     !
-    !         This function returns .true. If g1 < g2 and .false.          
-    !         otherwise. It is basically the same as the lessEqual         
-    !         function, except that the equality is now considered as      
-    !         .false.                                                      
+    !         This function returns .true. If g1 < g2 and .false.
+    !         otherwise. It is basically the same as the lessEqual
+    !         function, except that the equality is now considered as
+    !         .false.
     !
     implicit none
     !
@@ -255,8 +255,8 @@ contains
 end module indirectHalo
 module haloList
   !
-  !       This local module contains temporary variables to create the   
-  !       list of halo cells and nodes.                                  
+  !       This local module contains temporary variables to create the
+  !       list of halo cells and nodes.
   !
   use precision
   implicit none
@@ -266,7 +266,7 @@ module haloList
   private :: lessEqualHaloListType
   private :: lessHaloListType
   !
-  !       The definition of the variables for the 3 lists.               
+  !       The definition of the variables for the 3 lists.
   !
   type haloListType
 
@@ -346,13 +346,13 @@ module haloList
   integer(kind=intType), dimension(:,:), allocatable :: transformCell
   integer(kind=intType), dimension(:,:), allocatable :: transformNode
   !
-  !       The definition of the index variables, which store for each    
-  !       i,j,k in the block the index in the corresponding list.        
-  !       I know I'm wasting memory here (because only the halo's are    
-  !       relevant), but that's not too much of a problem. The reason is 
-  !       that neither the metrics nor the variables have been allocated 
-  !       yet. So later on, much more memory is needed than the single   
-  !       integer for each cell/node used here.                          
+  !       The definition of the index variables, which store for each
+  !       i,j,k in the block the index in the corresponding list.
+  !       I know I'm wasting memory here (because only the halo's are
+  !       relevant), but that's not too much of a problem. The reason is
+  !       that neither the metrics nor the variables have been allocated
+  !       yet. So later on, much more memory is needed than the single
+  !       integer for each cell/node used here.
   !
   type indexListType
 
@@ -374,15 +374,15 @@ module haloList
 
 contains
   !
-  !         Functions to simulate the operators <= and <.                
+  !         Functions to simulate the operators <= and <.
   !
   logical function lessEqualHaloListType(g1, g2)
     !
-    !         lessEqual returns .true. if g1 <= g2 and .false. otherwise.  
-    !         The comparison is firstly based on the processor ID of the   
-    !         donor. After that it depends whether the halo is a boundary  
+    !         lessEqual returns .true. if g1 <= g2 and .false. otherwise.
+    !         The comparison is firstly based on the processor ID of the
+    !         donor. After that it depends whether the halo is a boundary
     !         halo or not. Note that boundary halo's have a donor processor
-    !         if of -1, such that they are always first in the list.       
+    !         if of -1, such that they are always first in the list.
     !
     implicit none
     !
@@ -569,10 +569,10 @@ contains
 
   logical function lessHaloListType(g1, g2)
     !
-    !         This function returns .true. if g1 < g2 and .false.          
-    !         otherwise. It is basically the same as the lessEqual         
-    !         function, except that the equality is now considered as      
-    !         .false.                                                      
+    !         This function returns .true. if g1 < g2 and .false.
+    !         otherwise. It is basically the same as the lessEqual
+    !         function, except that the equality is now considered as
+    !         .false.
     !
     implicit none
     !
@@ -760,8 +760,8 @@ end module haloList
 
 module checkVolBlock
   !
-  !       Local module, which contains the definition of the derived     
-  !       datatype used to test for negative volumes in the grid.        
+  !       Local module, which contains the definition of the derived
+  !       datatype used to test for negative volumes in the grid.
   !
   implicit none
   save
@@ -781,9 +781,9 @@ module checkVolBlock
 end module checkVolBlock
 module periodicInfo
   !
-  !       Local module that contains derived datatypes as well as arrays 
-  !       of these derived datatypes to store information related to     
-  !       periodicity.                                                   
+  !       Local module that contains derived datatypes as well as arrays
+  !       of these derived datatypes to store information related to
+  !       periodicity.
   !
   use precision
   implicit none
@@ -872,13 +872,13 @@ contains
 
   !=================================================================
   !
-  !         Functions to simulate the operators < and ==.                
+  !         Functions to simulate the operators < and ==.
   !
   logical function lessCGNSPeriodicType(g1, g2)
     !
-    !         lessCGNSPeriodicType returns .true. if g1 is considered      
-    !         smaller than g2. This comparison is first based on the block 
-    !         ID followed by the subface id.                               
+    !         lessCGNSPeriodicType returns .true. if g1 is considered
+    !         smaller than g2. This comparison is first based on the block
+    !         ID followed by the subface id.
     !
     implicit none
     !
@@ -918,8 +918,8 @@ contains
 
   logical function equalCGNSPeriodicType(g1, g2)
     !
-    !         equalCGNSPeriodicType returns .true. if g1 is considered     
-    !         equal to g2, i.e. both the block and subface ID must match,  
+    !         equalCGNSPeriodicType returns .true. if g1 is considered
+    !         equal to g2, i.e. both the block and subface ID must match,
     !
     implicit none
     !
@@ -938,8 +938,8 @@ contains
 
   logical function lessPeriodicSubfacesHaloT(g1, g2)
     !
-    !         lessPeriodicSubfacesHaloT returns .true. if g1 is            
-    !         considered smaller than g2.                                  
+    !         lessPeriodicSubfacesHaloT returns .true. if g1 is
+    !         considered smaller than g2.
     !
     implicit none
     !
@@ -1012,8 +1012,8 @@ contains
 
   logical function lessEqualPeriodicSubfacesHaloT(g1, g2)
     !
-    !         lessEqualPeriodicSubfacesHaloT returns .true. if g1 is       
-    !         considered smaller than or equal to g2.                      
+    !         lessEqualPeriodicSubfacesHaloT returns .true. if g1 is
+    !         considered smaller than or equal to g2.
     !
     implicit none
     !
@@ -1086,13 +1086,13 @@ contains
 
   logical function equalPeriodicSubfacesHaloT(g1, g2)
     !
-    !         equalPeriodicSubfacesHaloT returns .true. if g1 is           
-    !         considered equal to g2. The equal operator is only used to   
-    !         find the different number of periodic transformations in     
-    !         determinePeriodicData. Hence only the periodic subfaces of   
-    !         the halo's are compared and g1 and g2 are considered equal   
-    !         if the subfaces are equal, even if other member variables    
-    !         differ.                                                      
+    !         equalPeriodicSubfacesHaloT returns .true. if g1 is
+    !         considered equal to g2. The equal operator is only used to
+    !         find the different number of periodic transformations in
+    !         determinePeriodicData. Hence only the periodic subfaces of
+    !         the halo's are compared and g1 and g2 are considered equal
+    !         if the subfaces are equal, even if other member variables
+    !         differ.
     !
     implicit none
     !
@@ -1123,10 +1123,10 @@ contains
 end module periodicInfo
 module bcHalo
   !
-  !       This local module contains the derived datatype bcHaloType,    
-  !       which is used to determine the boundary condition for an       
-  !       indirect halo when the nearest direct halo's are all boundary  
-  !       halo's.                                                        
+  !       This local module contains the derived datatype bcHaloType,
+  !       which is used to determine the boundary condition for an
+  !       indirect halo when the nearest direct halo's are all boundary
+  !       halo's.
   !
   use precision
   implicit none
@@ -1135,7 +1135,7 @@ module bcHalo
   public
   private :: lessEqualBCHaloType
   !
-  !       The definition of the derived datatype.                        
+  !       The definition of the derived datatype.
   !
   type bcHaloType
 
@@ -1160,11 +1160,11 @@ contains
   !
   logical function lessEqualBCHaloType(g1, g2)
     !
-    !         Function to simulate the operator <= for bcHaloType.         
-    !         It first compares the boundary condition. If equal the index 
-    !         of the direct halo is compared, although this is not really  
-    !         important.                                                   
-    !         LessEqual returns .true. if g1 <= g2 and .false. otherwise.  
+    !         Function to simulate the operator <= for bcHaloType.
+    !         It first compares the boundary condition. If equal the index
+    !         of the direct halo is compared, although this is not really
+    !         important.
+    !         LessEqual returns .true. if g1 <= g2 and .false. otherwise.
     !
     implicit none
     !
@@ -1204,10 +1204,10 @@ contains
 
   subroutine sortBCHaloType(bcHaloArray, nn)
     !
-    !         SortBCHaloType sorts the given number of BCHalo's in         
-    !         increasing order. Note that this routine is called sort and  
-    !         not qsort, because only an insertion sort is done here. The  
-    !         reason is that nn <= 3 and thus an insertion sort is okay.   
+    !         SortBCHaloType sorts the given number of BCHalo's in
+    !         increasing order. Note that this routine is called sort and
+    !         not qsort, because only an insertion sort is done here. The
+    !         reason is that nn <= 3 and thus an insertion sort is okay.
     !
     implicit none
     !
@@ -1237,15 +1237,15 @@ end module bcHalo
 
 module coarse1to1Subface
   !
-  !       This local module contains the derived datatype                
-  !       coarse1to1SubfaceType, which is used to determine the 1 to 1   
-  !       block boundaries for the coarser grids.                        
+  !       This local module contains the derived datatype
+  !       coarse1to1SubfaceType, which is used to determine the 1 to 1
+  !       block boundaries for the coarser grids.
   !
   use precision
   implicit none
   save
   !
-  !       The definition of the derived datatype.                        
+  !       The definition of the derived datatype.
   !
   type coarse1to1SubfaceType
 
@@ -1286,9 +1286,9 @@ end module coarse1to1Subface
 
 module coarseningInfo
   !
-  !       This local module contains the derived datatype                
-  !       coarseningInfoType, which stores for a given block the grid    
-  !       lines to keep for the coarse grid.                             
+  !       This local module contains the derived datatype
+  !       coarseningInfoType, which stores for a given block the grid
+  !       lines to keep for the coarse grid.
   !
   type coarseningInfoType
 

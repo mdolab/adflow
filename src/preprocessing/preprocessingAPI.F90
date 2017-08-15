@@ -5,9 +5,9 @@ contains
 
   subroutine preprocessing
     !
-    !       preprocessing determines the communication patterns between    
-    !       the processors for all the mg levels, computes the wall        
-    !       distances and the metrics.                                     
+    !       preprocessing determines the communication patterns between
+    !       the processors for all the mg levels, computes the wall
+    !       distances and the metrics.
     !
     use constants
     use block
@@ -162,13 +162,13 @@ contains
     allocate(xVolumeVec(nLevels), xSurfVec(nLevels, mm), wallScatter(nLevels, mm), &
          wallDistanceDataAllocated(nLevels), updateWallAssociation(nLevels))
     wallDistanceDataAllocated = .False.
-    updateWallAssociation = .True. 
+    updateWallAssociation = .True.
 
     ! Nullify the wallFringe poiter as initialization
     nullify(wallFringes, localWallFringes)
 
     ! Allocate nDomProc: the number of domains on each processor
-    ! and a cumulative form. 
+    ! and a cumulative form.
     allocate(nDomProc(0:nProc-1), cumDomProc(0:nProc))
 
     ! Gather the dimensions of all blocks to everyone
@@ -226,7 +226,7 @@ contains
     call allocMemBCData
 
     call setSurfaceFamilyInfo
-    
+
     ! Surface info needs to be computed before the wall distance can
     ! be done and overset connectivity computed
     do level=1,nLevels
@@ -235,7 +235,7 @@ contains
     call preprocessingADjoint
 
   end subroutine preprocessing
-  
+
   subroutine preprocessingoverset(flag, n, closedFamList, nFam)
 
     use constants
@@ -249,13 +249,13 @@ contains
     integer(kind=intType), dimension(nFam) :: closedFamList
     integer(kind=intType), intent(in) :: n, nFam
 
-    ! Working 
+    ! Working
     integer(kind=intType) :: level, nLevels
 
     nLevels = ubound(flowDoms,2)
 
     do level=1,nLevels
-       if (level == 1) then 
+       if (level == 1) then
           call setExplicitHoleCut(flag)
           call oversetComm(level, .true., .false., closedFamList)
        else
@@ -263,13 +263,13 @@ contains
        end if
     end do
   end subroutine preprocessingoverset
-   
+
   subroutine cellRangeSubface
     !
-    !       cellRangeSubface determines the cell range for every subface   
-    !       of every block all grid levels. This subrange can include one  
-    !       cell of overlap if the boundary coincides with the block       
-    !       boundary.                                                      
+    !       cellRangeSubface determines the cell range for every subface
+    !       of every block all grid levels. This subrange can include one
+    !       cell of overlap if the boundary coincides with the block
+    !       boundary.
     !
     use constants
     use block
@@ -466,11 +466,11 @@ contains
 
 
   subroutine determineNcellGlobal(level)
-    !       determineNcellGlobal determines the global number of cells     
-    !       the given grid level. This info is needed to compute the L2    
-    !       norm of the residuals in the flow solver.                      
-    !       Only the 1st spectral solution needs to be considered, because 
-    !       this info is identical for all of them.                        
+    !       determineNcellGlobal determines the global number of cells
+    !       the given grid level. This info is needed to compute the L2
+    !       norm of the residuals in the flow solver.
+    !       Only the 1st spectral solution needs to be considered, because
+    !       this info is identical for all of them.
     !
     use constants
     use block
@@ -523,14 +523,14 @@ contains
 
   subroutine setPorosities(level)
     !
-    !       setPorosities sets the porosities for the faces to a certain   
-    !       flag. Default is normalFlux. The two other possibilities are   
-    !       boundFlux, used for solid wall boundaries, and noFlux for a    
-    !       conservative treatment of non matching block boundaries. In    
-    !       the latter case the flux is constructed differently and the    
-    !       flux computation in the block must be neglected.               
-    !       Note that only the 1st spectral solution is treated, because   
-    !       this informations is the same for all of them.                 
+    !       setPorosities sets the porosities for the faces to a certain
+    !       flag. Default is normalFlux. The two other possibilities are
+    !       boundFlux, used for solid wall boundaries, and noFlux for a
+    !       conservative treatment of non matching block boundaries. In
+    !       the latter case the flux is constructed differently and the
+    !       flux computation in the block must be neglected.
+    !       Note that only the 1st spectral solution is treated, because
+    !       this informations is the same for all of them.
     !
     use blockPointers
     use constants
@@ -679,8 +679,8 @@ contains
 
   subroutine exchangeGlobalCells(level, sps, commPattern, internal)
     !
-    !       ExchangeIblank exchanges the 1 to 1 internal halo's for the    
-    !       given level and sps instance.                                  
+    !       ExchangeIblank exchanges the 1 to 1 internal halo's for the
+    !       given level and sps instance.
     !
     use constants
     use block
@@ -802,7 +802,7 @@ contains
        j2 = internal(level)%haloIndices(i,2)
        k2 = internal(level)%haloIndices(i,3)
 
-       ! Copy the globalCell value 
+       ! Copy the globalCell value
 
        flowDoms(d2,level,sps)%globalCell(i2,j2,k2) = flowDoms(d1,level,sps)%globalCell(i1,j1,k1)
 
@@ -858,11 +858,11 @@ contains
 
   subroutine checkSymmetry(level)
     !
-    !       checkSymmetry checks whether or not the symmetry planes are    
-    !       really planar (within a certain tolerance). If this is not the 
-    !       case for the finest level, a warning is printed. In all cases  
-    !       the unit normals are replaced by the face averaged unit        
-    !       normal.                                                        
+    !       checkSymmetry checks whether or not the symmetry planes are
+    !       really planar (within a certain tolerance). If this is not the
+    !       case for the finest level, a warning is printed. In all cases
+    !       the unit normals are replaced by the face averaged unit
+    !       normal.
     !
     use constants
     use blockPointers
@@ -1044,11 +1044,11 @@ contains
   end subroutine checkSymmetry
   subroutine xhalo(level)
     !
-    !       xhalo determines the coordinates of the nodal halo's.          
-    !       First it sets all halo coordinates by simple extrapolation,    
-    !       then the symmetry planes are treated (also the unit normal of  
-    !       symmetry planes are determined) and finally an exchange is     
-    !       made for the internal halo's.                                  
+    !       xhalo determines the coordinates of the nodal halo's.
+    !       First it sets all halo coordinates by simple extrapolation,
+    !       then the symmetry planes are treated (also the unit normal of
+    !       symmetry planes are determined) and finally an exchange is
+    !       made for the internal halo's.
     !
     use constants
     use blockPointers
@@ -1086,11 +1086,11 @@ contains
           call setPointers(nn, level, sps)
 
           !
-          !           Extrapolation of the coordinates. First extrapolation in   
-          !           i-direction, without halo's, followed by extrapolation in  
-          !           j-direction, with i-halo's and finally extrapolation in    
-          !           k-direction, with both i- and j-halo's. In this way also   
-          !           the indirect halo's get a value, albeit a bit arbitrary.   
+          !           Extrapolation of the coordinates. First extrapolation in
+          !           i-direction, without halo's, followed by extrapolation in
+          !           j-direction, with i-halo's and finally extrapolation in
+          !           k-direction, with both i- and j-halo's. In this way also
+          !           the indirect halo's get a value, albeit a bit arbitrary.
           !
           ! Extrapolation in i-direction.
 
@@ -1134,8 +1134,8 @@ contains
              enddo
           enddo
           !
-          !           Mirror the halo coordinates adjacent to the symmetry       
-          !           planes                                                     
+          !           Mirror the halo coordinates adjacent to the symmetry
+          !           planes
           !
           ! Loop over boundary subfaces.
 
@@ -1206,7 +1206,7 @@ contains
                 ! Check if BCData is allocated yet:
                 if (.not. bcData(mm)%symNormSet) then
                    length = sqrt(norm(1)**2 + norm(2)**2 + norm(3)**2)
-                   if (length == 0) then 
+                   if (length == 0) then
                       length = eps
                    end if
                    bcData(mm)%symNorm(1) = norm(1)/length
@@ -1297,7 +1297,7 @@ contains
     enddo spectralLoop
 
     !
-    !       Exchange the coordinates for the internal halo's.              
+    !       Exchange the coordinates for the internal halo's.
     !
     call exchangeCoor(level)
 
@@ -1322,7 +1322,7 @@ contains
     integer(kind=intType) :: nLevels, level, nn, mm, nsMin, nsMax, i, j, k, nFam, famID, cgb, iFam
     integer(kind=intType) :: sps, isizemax, jsizemax, totalFamilies, totalWallFamilies
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii, iBCGroup, totalBCFamilies
-    character(maxCGNSNameLen), dimension(25) :: defaultFamName 
+    character(maxCGNSNameLen), dimension(25) :: defaultFamName
     character(maxCGNSNameLen) :: curStr, family
     character(maxCGNSNameLen), dimension(:), allocatable :: uniqueFamListNames
     integer(kind=intType), dimension(:), allocatable :: localFlag, famIsPartOfBCGroup
@@ -1334,7 +1334,7 @@ contains
     ! condition. The CGNS grid has all the information we need.
 
     ! Firstly make sure that there is actual family specified for
-    ! each BC. If there isn't, we will provide one for you. 
+    ! each BC. If there isn't, we will provide one for you.
     defaultFamName(BCAxisymmetricWedge) = 'axi'
     defaultFamName(BCDegenerateLine) = 'degenerate'
     defaultFamName(BCDegeneratePoint) ='degenerate'
@@ -1367,9 +1367,9 @@ contains
     nFam = 0
     do i=1, size(cgnsDoms)
        do j=1, size(cgnsDoms(i)%bocoInfo)
-          if (cgnsDoms(i)%bocoInfo(j)%actualFace) then 
-             if (trim(cgnsDoms(i)%bocoInfo(j)%wallBCName) == "") then 
-                if (myid == 0) then 
+          if (cgnsDoms(i)%bocoInfo(j)%actualFace) then
+             if (trim(cgnsDoms(i)%bocoInfo(j)%wallBCName) == "") then
+                if (myid == 0) then
                    ! Tell the user we are adding an automatic family name
                    write(*, 101), i, j, trim(BCTypeName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS)), &
                         trim(defaultFamName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS))
@@ -1386,7 +1386,7 @@ contains
     nFam = 0
     do i=1, size(cgnsDoms)
        do j=1, size(cgnsDoms(i)%bocoInfo)
-          if (cgnsDoms(i)%bocoInfo(j)%actualFace) then 
+          if (cgnsDoms(i)%bocoInfo(j)%actualFace) then
              nFam = nFam + 1
              famNames(nfam) = cgnsDoms(i)%bocoInfo(j)%wallBCName
              call convertToLowerCase(famNames(nFam))
@@ -1397,7 +1397,7 @@ contains
     ! Now sort the family names:
     call qsortStrings(famNames, nFam)
 
-    ! Next we need to generate a unique set of names. 
+    ! Next we need to generate a unique set of names.
     allocate(uniqueFamListNames(nFam))
 
     curStr = famNames(1)
@@ -1407,8 +1407,8 @@ contains
     do while(i < nFam)
 
        i = i + 1
-       if (famNames(i) == curStr) then 
-          ! Same str, do nothing. 
+       if (famNames(i) == curStr) then
+          ! Same str, do nothing.
        else
           j = j + 1
           curStr = famNames(i)
@@ -1419,14 +1419,14 @@ contains
 
     totalFamilies = j
     ! Now copy the uniqueFamListNames back to "famNames" and allocate
-    ! exactly the right size. 
+    ! exactly the right size.
     deallocate(famNames)
     allocate(famNames(totalFamilies))
     famNames(1:totalFamilies) = uniqueFamListNames(1:totalFamilies)
     deallocate(uniqueFamListNames)
 
     ! Now each block boundary condition can uniquely determine it's
-    ! famID. We do all BC on all blocks and levels. 
+    ! famID. We do all BC on all blocks and levels.
     nLevels = ubound(flowDoms,2)
     do nn=1, nDom
        call setPointers(nn, 1_intType, 1_intType)
@@ -1437,7 +1437,7 @@ contains
           call convertToLowerCase(family)
 
           famID = bsearchStrings(family, famNames)
-          if (famID == 0) then 
+          if (famID == 0) then
              ! Somehow we never found the family...
              call terminate("setSurfaceFamilyInfo", &
                   "An error occuring in assigning families")
@@ -1466,52 +1466,52 @@ contains
     ! 5. Overset : OversetouterBound
     ! 6. Others : All remaining BCs
 
-    ! The final familyExchange structure. 
+    ! The final familyExchange structure.
     allocate(BCFamExchange(nFamExchange, nTimeIntervalsSpectral), localFlag(totalFamilies))
 
     BCGroupLoop: do iBCGroup=1, nfamExchange
        localFlag = 0
        ! Determine which of the unique families match the specific
        ! BCGroup.  This is slightly inefficient but not it isn't
-       ! performance critical. 
+       ! performance critical.
        famLoop: do iFam=1, totalFamilies
           domainLoop: do nn=1,nDom
              call setPointers(nn, 1_intType, 1_intType)
              bocoLoop: do mm=1, nBocos
-                matchiFam: if (flowDoms(nn, 1, 1)%bcData(mm)%famID == iFam) then 
+                matchiFam: if (flowDoms(nn, 1, 1)%bcData(mm)%famID == iFam) then
                    select case(iBCGroup)
 
                    case (iBCGroupWalls)
                       if (BCType(mm) == EulerWall .or. &
                            BCType(mm) == NSWallAdiabatic .or. &
-                           BCType(mm) == NSwallIsoThermal) then 
+                           BCType(mm) == NSwallIsoThermal) then
                          localFlag(iFam) = 1
                       end if
 
                    case (iBCGroupInflow)
                       if (BCType(mm) == SubsonicInflow .or. &
-                           BCType(mm) == SupersonicInflow) then 
+                           BCType(mm) == SupersonicInflow) then
                          localFlag(iFam) = 1
                       end if
 
                    case (iBCGroupOutflow)
                       if (BCType(mm) == SubsonicOutflow .or. &
-                           BCType(mm) == SupersonicOutflow) then 
+                           BCType(mm) == SupersonicOutflow) then
                          localFlag(iFam) = 1
                       end if
 
                    case (iBCGroupSymm)
-                      if (BCType(mm) == Symm .or. BCType(mm) == SymmPolar) then 
+                      if (BCType(mm) == Symm .or. BCType(mm) == SymmPolar) then
                          localFlag(iFam) = 1
                       end if
 
-                   case (iBCGroupFarfield) 
-                      if (BCType(mm) == Farfield) then 
+                   case (iBCGroupFarfield)
+                      if (BCType(mm) == Farfield) then
                          localFlag(iFam) = 1
                       end if
 
                    case (iBCGroupOverset)
-                      if (BCType(mm) == OversetOuterBound) then 
+                      if (BCType(mm) == OversetOuterBound) then
                          localFlag(iFam) = 1
                       end if
 
@@ -1531,7 +1531,7 @@ contains
                            BCType(mm) == DomainInterfaceRhoUVW .or. &
                            BCType(mm) == DomainInterfaceP .or. &
                            BCType(mm) == DomainInterfaceRho .or. &
-                           BCType(mm) == DomainInterfaceTotal) then 
+                           BCType(mm) == DomainInterfaceTotal) then
                          localFlag(iFam) = 1
                       end if
                    end select
@@ -1539,26 +1539,26 @@ contains
              end do bocoLoop
           end do domainLoop
        end do famLoop
-       
-       ! All Reduce so all procs know the same information. 
+
+       ! All Reduce so all procs know the same information.
        allocate(famIsPartOfBCGroup(totalFamilies))
        call mpi_allreduce(localFlag, famIsPartOfBCGroup, totalFamilies, &
             adflow_integer, MPI_SUM, adflow_comm_world, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
-       ! Count up the number of families this BC has. 
+       ! Count up the number of families this BC has.
        totalBCFamilies = 0
        do i=1, totalFamilies
-          if (famIsPartOfBCGroup(i) > 0) then 
+          if (famIsPartOfBCGroup(i) > 0) then
              totalBCFamilies = totalBCFamilies + 1
           end if
        end do
-       
-       ! Allocate the space for the list of fam for each BC and set. 
+
+       ! Allocate the space for the list of fam for each BC and set.
        allocate(BCFamGroups(iBCGroup)%famList(totalBCFamilies))
        k = 0
        do i=1, totalFamilies
-          if (famIsPartOfBCGroup(i) > 0) then 
+          if (famIsPartOfBCGroup(i) > 0) then
              k = k + 1
              BCFamGroups(iBCGroup)%famList(k) = i
           end if
@@ -1567,9 +1567,9 @@ contains
     end do BCGroupLoop
 
     ! Dump a little information out to the user giving the family and
-    ! the BC types. This will probably be useful in general. 
-    
-    if (myid == 0) then 
+    ! the BC types. This will probably be useful in general.
+
+    if (myid == 0) then
        write(*, "(a)") '+--------------------------------------------------+'
        write(*, "(a)") '  CGNS Surface Families by Boundary Condition Type'
        write(*, "(a)") '+--------------------------------------------------+'
@@ -1603,20 +1603,20 @@ contains
     ! Generate the node scatters for each family. This will also tell
     ! us the surfaceIndex for each BC. This is the index into the
     ! *gloablly reduced vector*. This is what we will need for tecplot
-    ! output as well as the zipper mesh computations. 
+    ! output as well as the zipper mesh computations.
 
     do iBCGroup=1, nFamExchange
        do sps=1,nTimeIntervalsSpectral
           call createNodeScatterForFamilies(&
                BCFamGroups(iBCGroup)%famList, BCFamExchange(iBCGroup, sps), sps, localIndices)
-          
+
           ! this won't include the zipper nodes since that isn't done yet.
           call getSurfaceSize(nodeSize, cellSize, BCFamGroups(iBCGroup)%famList, &
                size(BCFamGroups(iBCGroup)%famlist), .False.)
           allocate(nodeSizes(nProc), nodeDisps(0:nProc))
           nodeSizes = 0
           nodeDisps = 0
-          
+
           call mpi_allgather(nodeSize, 1, adflow_integer, nodeSizes, 1, adflow_integer, &
                adflow_comm_world, ierr)
           call EChk(ierr,__FILE__,__LINE__)
@@ -1624,13 +1624,13 @@ contains
           do iProc=1, nProc
              nodeDisps(iProc) = nodeDisps(iProc-1) + nodeSizes(iProc)
           end do
-          
-          
+
+
           ii = 0
           do nn=1, nDom
              call setPointers(nn, 1, sps)
              do mm=1, nBocos
-                famInclude: if (famInList(BCData(mm)%famId, BCFamGroups(iBCGroup)%famList)) then 
+                famInclude: if (famInList(BCData(mm)%famId, BCFamGroups(iBCGroup)%famList)) then
                    iBeg = BCData(mm)%inbeg; iEnd = BCData(mm)%inend
                    jBeg = BCData(mm)%jnbeg; jEnd = BCData(mm)%jnend
                    do j=jBeg, jEnd
@@ -1647,8 +1647,8 @@ contains
     end do
     ! Allocate  arrays that have the maximum face size. These may
     ! be slightly larger than necessary, but that's ok. We just need
-    ! somethwere to point the pointers. 
-    isizemax = 0 
+    ! somethwere to point the pointers.
+    isizemax = 0
     jsizemax = 0
     do nn=1,nDom
        isizemax = max(isizemax, flowDoms(nn, 1, 1)%ie)
@@ -1657,11 +1657,11 @@ contains
        jsizemax = max(jsizemax, flowDoms(nn, 1, 1)%je)
        jsizemax = max(jsizemax, flowDoms(nn, 1, 1)%ke)
     end do
- 
+
 
     ! Allocate generic arrays for the cell and nodes. These will be
     ! used when a BC is not included in a computed but needs to be
-    ! point somehwere. 
+    ! point somehwere.
     allocate(zeroCellVal(isizemax, jsizemax), zeroNodeVal(isizemax, jsizemax), oneCellVal(isizemax, jsizemax))
     oneCellVal = one
     zeroCellVal = zero
@@ -1715,14 +1715,14 @@ contains
     real(kind=realType) :: tol
     integer(kind=intType) :: mpiStatus(MPI_STATUS_SIZE)
 
-    ! Save the family list. 
+    ! Save the family list.
     nFam = size(famList)
     allocate(exch%famList(nFam))
     exch%famList = famList
     exch%sps = sps
 
     ! Determine the total number of nodes and cells on this
-    ! processor. This will include the zipper mesh if there is one. 
+    ! processor. This will include the zipper mesh if there is one.
     call getSurfaceSize(nNodesLocal, nCellsLocal, famList, nFam, .True.)
 
     ! Allocate the space to store nodal values, connectivity and the
@@ -1766,7 +1766,7 @@ contains
     deallocate(uniqueNodes, allNodes)
 
     ! Now back out the global indices for our local points
-    if (allocated(localIndices)) then 
+    if (allocated(localIndices)) then
        deallocate(localIndices)
     end if
     allocate(localIndices(nNodesLocal))
@@ -1794,17 +1794,17 @@ contains
     ! definition all unqiue. Proc 1 then will start at 1 more than the
     ! proc 0 and continue to it's maximum value. Proc 2 starts at the
     ! end of proc 1 etc. This way the vast majority of the global nodes
-    ! are owned locally. 
+    ! are owned locally.
 
     ! In order to determine the owning range for each processor, it is
     ! much trickier than it sounds. We do a linear cascasde through the
     ! procs sending the upper range from proc 0 to proc 1, then proc1 to
     ! proc 2 and so on.
 
-    ! Proc zero owns all of it's nodes. 
+    ! Proc zero owns all of it's nodes.
     if (myid == 0) then
        iStart = 0
-       if (nNodesLocal == 0) then 
+       if (nNodesLocal == 0) then
           iEnd = 0
        else
           iEnd = maxval(localIndices) + 1
@@ -1812,19 +1812,19 @@ contains
     end if
 
     do iProc=0, nProc-2
-       if (myid == iProc) then 
+       if (myid == iProc) then
           ! I need to send my iEnd to proc+1
           call mpi_send(iEnd, 1, adflow_integer, iProc+1, iProc, adflow_comm_world, ierr)
           call EChk(ierr,__FILE__,__LINE__)
-       else if(myid == iProc+1) then 
+       else if(myid == iProc+1) then
 
           ! Receive the value from the proc below me:
           call mpi_recv(iEnd, 1, adflow_integer, iProc, iProc, adflow_comm_world, mpiStatus, ierr)
           call EChk(ierr,__FILE__,__LINE__)
 
-          ! On this proc, the start index is the 
+          ! On this proc, the start index is the
           iStart = iEnd
-          if (nNodesLOCAl == 0) then 
+          if (nNodesLOCAl == 0) then
              iEnd = iStart
           else
              iEnd = max(iStart, maxval(localIndices)+1)
@@ -1852,7 +1852,7 @@ contains
     call EChk(ierr,__FILE__,__LINE__)
 
     ! Indices for the global vector are the "localIndices" we previously
-    ! computed. 
+    ! computed.
     call ISCreateGeneral(adflow_comm_world, nNodesLocal, localIndices, &
          PETSC_COPY_VALUES, IS2, ierr)
     call EChk(ierr,__FILE__,__LINE__)
@@ -1904,29 +1904,29 @@ contains
 
   subroutine setGlobalCellsAndNodes(level)
     !
-    !      Determine the global node numbering that is used to assemble   
-    !      the adjoint system of equations. It take cares of all the halo 
-    !      nodes between the blocks.                                      
-    !      The nodes are numbered according to the following sequence:    
-    !      loop processor = 1, nProc                                      
-    !        loop domain = 1, nDom                                        
-    !          loop k = 2, kl                                             
-    !            loop j = 2, jl                                           
-    !              loop i = 2, il                                         
-    !      Only the onwned nodes are numbered, meaning i/j/k span from 2  
-    !      to il/jl/kl. The halo nodes receive the numbering from the     
-    !      neighboring block that owns them.                              
-    !      These variables are the same for all spectral modes, therefore 
-    !      only the 1st mode needs to be communicated.                    
-    !      This function will also set FMPointer which is only defined    
-    !      on wall boundary conditions and points to the correct index    
-    !      for the vectors that are of shape nsurface nodes               
+    !      Determine the global node numbering that is used to assemble
+    !      the adjoint system of equations. It take cares of all the halo
+    !      nodes between the blocks.
+    !      The nodes are numbered according to the following sequence:
+    !      loop processor = 1, nProc
+    !        loop domain = 1, nDom
+    !          loop k = 2, kl
+    !            loop j = 2, jl
+    !              loop i = 2, il
+    !      Only the onwned nodes are numbered, meaning i/j/k span from 2
+    !      to il/jl/kl. The halo nodes receive the numbering from the
+    !      neighboring block that owns them.
+    !      These variables are the same for all spectral modes, therefore
+    !      only the 1st mode needs to be communicated.
+    !      This function will also set FMPointer which is only defined
+    !      on wall boundary conditions and points to the correct index
+    !      for the vectors that are of shape nsurface nodes
     !
-    use ADjointVars 
+    use ADjointVars
     use blockpointers
     use communication
     use inputTimeSpectral
-    use utils, only: setPointers, terminate 
+    use utils, only: setPointers, terminate
     use haloExchange, only : whalo1to1intgeneric
     implicit none
 
@@ -2094,17 +2094,17 @@ contains
   end subroutine setGlobalCellsAndNodes
   subroutine setFamilyInfoFaces(level)
     !
-    !       setFamilyInfoFaces sets the values of the family parameters    
-    !       for faces on the given multigrid level. The default values for 
-    !       indFamily is 0, which means that the mass flow through that    
-    !       face does not contribute to the mass flow that must be         
-    !       monitored. For sliding mesh interfaces both sides of the       
-    !       interface are monitored and the value of indFamily corresponds 
-    !       to one of the two entries in the local monitoring arrays. The  
-    !       values of factFamily are such that the mass flow entering the  
-    !       block is defined positive.                                     
-    !       Note that only the 1st spectral solution is treated, because   
-    !       this informations is the same for all of them.                 
+    !       setFamilyInfoFaces sets the values of the family parameters
+    !       for faces on the given multigrid level. The default values for
+    !       indFamily is 0, which means that the mass flow through that
+    !       face does not contribute to the mass flow that must be
+    !       monitored. For sliding mesh interfaces both sides of the
+    !       interface are monitored and the value of indFamily corresponds
+    !       to one of the two entries in the local monitoring arrays. The
+    !       values of factFamily are such that the mass flow entering the
+    !       block is defined positive.
+    !       Note that only the 1st spectral solution is treated, because
+    !       this informations is the same for all of them.
     !
     use constants
     use blockPointers
@@ -2352,12 +2352,12 @@ contains
   end subroutine setFamilyInfoFaces
   subroutine shiftCoorAndVolumes
     !
-    !       shiftCoorAndVolumes shifts the owned coordinates and           
-    !       volumes in case of a deforming mesh for an unsteady            
-    !       computation. In this case the old coordinates are needed to    
-    !       determine the mesh velocities. The loop over the number of     
-    !       spectral solutions is present for consistency, but this number 
-    !       will be 1 when this routine is called.                         
+    !       shiftCoorAndVolumes shifts the owned coordinates and
+    !       volumes in case of a deforming mesh for an unsteady
+    !       computation. In this case the old coordinates are needed to
+    !       determine the mesh velocities. The loop over the number of
+    !       spectral solutions is present for consistency, but this number
+    !       will be 1 when this routine is called.
     !
     use blockPointers
     use inputTimeSpectral
@@ -2439,15 +2439,15 @@ contains
   end subroutine shiftCoorAndVolumes
   subroutine viscSubfaceInfo(level)
     !
-    !       viscSubfaceInfo allocates the memory for the storage of the    
-    !       stress tensor and heat flux vector of viscous subfaces for the 
-    !       given multigrid level and all spectral solutions. Furthermore  
-    !       the pointers viscIminPointer, etc. Are allocated and set.      
-    !       These pointers contain info to which viscous subface the faces 
-    !       of the block faces possibly belong. If not part of a viscous   
-    !       subface these values are set to 0. Note that these pointers    
-    !       are only allocated and determined for the 1st spectral         
-    !       solution, because the info is the same for all of them.        
+    !       viscSubfaceInfo allocates the memory for the storage of the
+    !       stress tensor and heat flux vector of viscous subfaces for the
+    !       given multigrid level and all spectral solutions. Furthermore
+    !       the pointers viscIminPointer, etc. Are allocated and set.
+    !       These pointers contain info to which viscous subface the faces
+    !       of the block faces possibly belong. If not part of a viscous
+    !       subface these values are set to 0. Note that these pointers
+    !       are only allocated and determined for the 1st spectral
+    !       solution, because the info is the same for all of them.
     !
     use constants
     use blockPointers
@@ -2594,8 +2594,8 @@ contains
 
   subroutine allocateMetric(level)
     !
-    !       allocateMetric allocates the memory for the metric variables   
-    !       on the given grid level for all spectral solutions.            
+    !       allocateMetric allocates the memory for the metric variables
+    !       on the given grid level for all spectral solutions.
     !
     use constants
     use block
@@ -2652,7 +2652,7 @@ contains
 
           ! Added by HDN
           ! Added s[I,J,K]ALE
-          if (equationMode == unSteady .and. useALE) then 
+          if (equationMode == unSteady .and. useALE) then
              allocate(flowDoms(nn,level,sps)%sIALE(0:nALEsteps,0:ie,1:je,1:ke,3), &
                   flowDoms(nn,level,sps)%sJALE(0:nALEsteps,1:ie,0:je,1:ke,3), &
                   flowDoms(nn,level,sps)%sKALE(0:nALEsteps,1:ie,1:je,0:ke,3), &
@@ -2714,16 +2714,16 @@ contains
 
   subroutine metric(level)
     !
-    !       metric computes the face normals and the volume for the given  
-    !       grid level for all spectral solutions. First the volumes are   
-    !       computed assuming that the block is right handed. Then the     
-    !       number of positive and negative volumes are determined. If all 
-    !       volumes are positive the block is indeed right handed; if all  
-    !       volumes are negative the block is left handed and both the     
-    !       volumes and the normals must be negated (for the normals this  
-    !       is done by the introduction of fact, which is either -0.5 or   
-    !       0.5); if there are both positive and negative volumes the mesh 
-    !       is not valid.                                                  
+    !       metric computes the face normals and the volume for the given
+    !       grid level for all spectral solutions. First the volumes are
+    !       computed assuming that the block is right handed. Then the
+    !       number of positive and negative volumes are determined. If all
+    !       volumes are positive the block is indeed right handed; if all
+    !       volumes are negative the block is left handed and both the
+    !       volumes and the normals must be negated (for the normals this
+    !       is done by the introduction of fact, which is either -0.5 or
+    !       0.5); if there are both positive and negative volumes the mesh
+    !       is not valid.
     !
     use constants
     use blockPointers
@@ -2794,7 +2794,7 @@ contains
                "Memory allocation failure for volumeIsNeg")
           volumeIsNeg => checkVolDoms(nn,sps)%volumeIsNeg
           !
-          !           Volume and block orientation computation.                  
+          !           Volume and block orientation computation.
           !
           ! Initialize the number of positive and negative volumes for
           ! this block to 0.
@@ -2946,10 +2946,10 @@ contains
 
           do k=2,kl
              do j=2,jl
-                if(vol(1, j,k)/vol(2, j, k) < haloCellRatio) then 
+                if(vol(1, j,k)/vol(2, j, k) < haloCellRatio) then
                    vol(1, j,k) = vol(2, j,k)
                 end if
-                if(vol(ie,j,k)/vol(il,j,k)  < haloCellRatio) then 
+                if(vol(ie,j,k)/vol(il,j,k)  < haloCellRatio) then
                    vol(ie,j,k) = vol(il,j,k)
                 end if
              enddo
@@ -2957,10 +2957,10 @@ contains
 
           do k=2,kl
              do i=1,ie
-                if(vol(i,1, k)/vol(i,2,k) < haloCellRatio) then 
+                if(vol(i,1, k)/vol(i,2,k) < haloCellRatio) then
                    vol(i,1, k) = vol(i,2, k)
                 end if
-                if(vol(i,je,k)/voL(i,jl,k) < haloCellRatio) then 
+                if(vol(i,je,k)/voL(i,jl,k) < haloCellRatio) then
                    vol(i,je,k) = vol(i,jl,k)
                 end if
              enddo
@@ -2968,10 +2968,10 @@ contains
 
           do j=1,je
              do i=1,ie
-                if(vol(i,j,1)/vol(i,j,2)  < haloCellRatio) then 
+                if(vol(i,j,1)/vol(i,j,2)  < haloCellRatio) then
                    vol(i,j,1)  = vol(i,j,2)
                 end if
-                if(vol(i,j,ke)/vol(i,j,kl) < haloCellRatio) then 
+                if(vol(i,j,ke)/vol(i,j,kl) < haloCellRatio) then
                    vol(i,j,ke) = vol(i,j,kl)
                 end if
              enddo
@@ -3018,14 +3018,14 @@ contains
              checkVolDoms(nn,sps)%blockHasNegVol = .false.
           endif
           !
-          !           Computation of the face normals in i-, j- and k-direction. 
-          !           Formula's are valid for a right handed block; for a left   
-          !           handed block the correct orientation is obtained via fact. 
-          !           The normals point in the direction of increasing index.    
-          !           The absolute value of fact is 0.5, because the cross       
-          !           product of the two diagonals is twice the normal vector.   
-          !           Note that also the normals of the first level halo cells   
-          !           are computed. These are needed for the viscous fluxes.     
+          !           Computation of the face normals in i-, j- and k-direction.
+          !           Formula's are valid for a right handed block; for a left
+          !           handed block the correct orientation is obtained via fact.
+          !           The normals point in the direction of increasing index.
+          !           The absolute value of fact is 0.5, because the cross
+          !           product of the two diagonals is twice the normal vector.
+          !           Note that also the normals of the first level halo cells
+          !           are computed. These are needed for the viscous fluxes.
           !
           ! Projected areas of cell faces in the i direction.
 
@@ -3117,9 +3117,9 @@ contains
              enddo
           enddo
           !
-          !           The unit normals on the boundary faces. These always point 
-          !           out of the domain, so a multiplication by -1 is needed for 
-          !           the iMin, jMin and kMin boundaries.                        
+          !           The unit normals on the boundary faces. These always point
+          !           out of the domain, so a multiplication by -1 is needed for
+          !           the iMin, jMin and kMin boundaries.
           !
           ! Loop over the boundary subfaces of this block.
 
@@ -3173,8 +3173,8 @@ contains
 
           enddo bocoLoop
           !
-          !           Check in debug mode the sum of the normals of the cells.   
-          !           If everything is correct this should sum up to zero.       
+          !           Check in debug mode the sum of the normals of the cells.
+          !           If everything is correct this should sum up to zero.
           !
           debugging: if( debug ) then
 
@@ -3327,13 +3327,13 @@ contains
 
     function volpym(xa,ya,za,xb,yb,zb,xc,yc,zc,xd,yd,zd)
       !
-      !         volpym computes 6 times the volume of a pyramid. Node p,     
-      !         whose coordinates are set in the subroutine metric itself,   
-      !         is the top node and a-b-c-d is the quadrilateral surface.    
-      !         It is assumed that the cross product vCa * vDb points in     
-      !         the direction of the top node. Here vCa is the diagonal      
-      !         running from node c to node a and vDb the diagonal from      
-      !         node d to node b.                                            
+      !         volpym computes 6 times the volume of a pyramid. Node p,
+      !         whose coordinates are set in the subroutine metric itself,
+      !         is the top node and a-b-c-d is the quadrilateral surface.
+      !         It is assumed that the cross product vCa * vDb points in
+      !         the direction of the top node. Here vCa is the diagonal
+      !         running from node c to node a and vDb the diagonal from
+      !         node d to node b.
       !
       use precision
       implicit none
@@ -3362,16 +3362,16 @@ contains
 
   subroutine writeNegVolumes(checkVolDoms)
     !
-    !       writeNegVolumes writes the negative volumes of a block to      
-    !       stdout. If a block is flagged to have negative volumes it is   
-    !       assumed that the block is intended to be a right handed block. 
+    !       writeNegVolumes writes the negative volumes of a block to
+    !       stdout. If a block is flagged to have negative volumes it is
+    !       assumed that the block is intended to be a right handed block.
     !
     use constants
     use blockPointers
     use cgnsGrid
     use communication
     use inputPhysics
-    use inputTimeSpectral     
+    use inputTimeSpectral
     use checkVolBlock
     use utils, only : setPointers, terminate
     implicit none
@@ -3477,7 +3477,7 @@ contains
                                     +         x(i-1,j-1,k  ,1:3) &
                                     +         x(i,  j-1,k  ,1:3) &
                                     +         x(i-1,j  ,k  ,1:3) &
-                                    +         x(i,  j  ,k  ,1:3)) 
+                                    +         x(i,  j  ,k  ,1:3))
 
                                write(intString1,"(i10)") i
                                write(intString2,"(i10)") j
@@ -3516,10 +3516,10 @@ contains
   end subroutine writeNegVolumes
   subroutine faceRotationMatrices(level, allocMem)
     !
-    !       faceRotationMatrices computes the rotation matrices on the     
-    !       faces, such that for a rotationally periodic the nonlinear     
-    !       reconstruction in the upwind schemes is consistent with its    
-    !       periodic neighbor.                                             
+    !       faceRotationMatrices computes the rotation matrices on the
+    !       faces, such that for a rotationally periodic the nonlinear
+    !       reconstruction in the upwind schemes is consistent with its
+    !       periodic neighbor.
     !
     use constants
     use blockPointers
@@ -3646,9 +3646,9 @@ contains
 
     subroutine computeRotMatrixFace(xx, rotMat, iil, jjl)
       !
-      !         computeRotMatrixFace is an internal subroutine, which        
-      !         computes the rotation matrix from Cartesian to local         
-      !         cylindrical velocity components for the face centers.        
+      !         computeRotMatrixFace is an internal subroutine, which
+      !         computes the rotation matrix from Cartesian to local
+      !         cylindrical velocity components for the face centers.
       !
       implicit none
       !
@@ -3715,9 +3715,9 @@ contains
   end subroutine faceRotationMatrices
   subroutine updateCoordinatesAllLevels
     !
-    !       updateCoordinatesAllLevels updates the coordinates of all      
-    !       grid levels, assuming that the owned coordinates of the fine   
-    !       grid are known.                                                
+    !       updateCoordinatesAllLevels updates the coordinates of all
+    !       grid levels, assuming that the owned coordinates of the fine
+    !       grid are known.
     !
     use constants
     use block
@@ -3754,10 +3754,10 @@ contains
 
   subroutine updateMetricsAllLevels
     !
-    !       updateMetricsAllLevels recomputes the metrics on all grid      
-    !       levels. This routine is typically called when the coordinates  
-    !       have changed, but the connectivity remains the same, i.e. for  
-    !       moving or deforming mesh problems.                             
+    !       updateMetricsAllLevels recomputes the metrics on all grid
+    !       levels. This routine is typically called when the coordinates
+    !       have changed, but the connectivity remains the same, i.e. for
+    !       moving or deforming mesh problems.
     !
     use constants
     use block
@@ -3775,7 +3775,7 @@ contains
     nLevels = ubound(flowDoms,2)
     do nn=groundLevel,nLevels
        if(equationMode == unsteady) then
-          call metric(nn) 
+          call metric(nn)
        else
           call metric(nn)
        end if
@@ -3790,11 +3790,11 @@ contains
   subroutine updateGridVelocitiesAllLevels
 
     !
-    !       updateGridVelocitesAllLevels recomputes the rotational         
-    !       parameters on all grid                                         
-    !       levels. This routine is typically called when the coordinates  
-    !       have changed, but the connectivity remains the same, i.e. for  
-    !       moving or deforming mesh problems.                             
+    !       updateGridVelocitesAllLevels recomputes the rotational
+    !       parameters on all grid
+    !       levels. This routine is typically called when the coordinates
+    !       have changed, but the connectivity remains the same, i.e. for
+    !       moving or deforming mesh problems.
     !
     use constants
     use block
@@ -3845,10 +3845,10 @@ contains
 
 
     !
-    !       updatePeriodicInfoAllLevels recomputes the spectral parameters 
-    !       on all grid levels. This routine is typically called when the  
-    !       frequnecy or amplitude of the oscillation in the time spectral 
-    !       computation has changed                                        
+    !       updatePeriodicInfoAllLevels recomputes the spectral parameters
+    !       on all grid levels. This routine is typically called when the
+    !       frequnecy or amplitude of the oscillation in the time spectral
+    !       computation has changed
     !
     use block
     use iteration
@@ -3876,11 +3876,11 @@ contains
   end subroutine updatePeriodicInfoAllLevels
   subroutine unitVectorsInAxialPlane(axis, vecR1, vecR2)
     !
-    !       unitVectorsInAxialPlane computes from the given unit vector    
-    !       axis the two unit vectors which describe the plane normal to   
-    !       axis. There is of course an ambiguity in this choice, but this 
-    !       is not a problem as long as the choice is consistent           
-    !       throughout the code.                                           
+    !       unitVectorsInAxialPlane computes from the given unit vector
+    !       axis the two unit vectors which describe the plane normal to
+    !       axis. There is of course an ambiguity in this choice, but this
+    !       is not a problem as long as the choice is consistent
+    !       throughout the code.
     !
     use constants
     implicit none
@@ -3932,9 +3932,9 @@ contains
 
   subroutine preprocessingADjoint
     !
-    !      Perform the preprocessing tasks for the adjoint solver. This   
-    !      routine is called only once. The memory allcoated here is      
-    !      deallocated in src/utils/releaseMemory.f90                     
+    !      Perform the preprocessing tasks for the adjoint solver. This
+    !      routine is called only once. The memory allcoated here is
+    !      deallocated in src/utils/releaseMemory.f90
     !
     use constants
     use communication, only : adflow_comm_world
@@ -3970,7 +3970,7 @@ contains
     nDimPsi = nState*  nCellsLocal(1_intType)*nTimeIntervalsSpectral
     nDimX = 3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
 
-    ! Two w-like vectors. 
+    ! Two w-like vectors.
     call VecCreateMPIWithArray(ADFLOW_COMM_WORLD,nw,ndimW,PETSC_DECIDE, &
          PETSC_NULL_SCALAR,w_like1,PETScIerr)
     call EChk(PETScIerr,__FILE__,__LINE__)
@@ -3979,7 +3979,7 @@ contains
          PETSC_NULL_SCALAR,w_like2,PETScIerr)
     call EChk(PETScIerr,__FILE__,__LINE__)
 
-    ! Two psi-like vectors. 
+    ! Two psi-like vectors.
     call VecCreateMPIWithArray(ADFLOW_COMM_WORLD,nState,ndimPsi,PETSC_DECIDE, &
          PETSC_NULL_SCALAR,psi_like1,PETScIerr)
     call EChk(PETScIerr,__FILE__,__LINE__)
@@ -4003,8 +4003,8 @@ contains
 
   subroutine updateReferencePoint
     !
-    !       reruns the initialization routines to update AOA and other    
-    !       flow variables after a design change                          
+    !       reruns the initialization routines to update AOA and other
+    !       flow variables after a design change
     !
     use constants
     use inputTimeSpectral, only : nTimeINTervalsSpectral

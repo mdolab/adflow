@@ -4,13 +4,13 @@ contains
 
   subroutine partitionAndReadGrid(partitionOnly)
     !
-    !       partitionAndReadGrid determines the partitioning of the        
-    !       multiblock grid over the processors and reads the grid of the  
-    !       blocks (or block parts) assigned to this processor. Other      
-    !       preprocessing activities, such as the proper setup of the halo 
-    !       communication structure, creation of coarse grids and wall     
-    !       distance computation, are performed in the preprocessing       
-    !       library.                                                       
+    !       partitionAndReadGrid determines the partitioning of the
+    !       multiblock grid over the processors and reads the grid of the
+    !       blocks (or block parts) assigned to this processor. Other
+    !       preprocessing activities, such as the proper setup of the halo
+    !       communication structure, creation of coarse grids and wall
+    !       distance computation, are performed in the preprocessing
+    !       library.
     !
     use constants
     use IOModule, only : IOVar
@@ -42,7 +42,7 @@ contains
     call determineSections
 
     ! If we are just doing a partition test, return
-    if (partitionOnly) then 
+    if (partitionOnly) then
        return
     end if
 
@@ -62,7 +62,7 @@ contains
     call allocCoorFineGrid
 
     ! Read the grid of the blocks (block parts) to be stored
-    ! on this processor. 
+    ! on this processor.
 
     call readGrid
 
@@ -95,18 +95,18 @@ contains
 
   subroutine determineGridFileNames
     !
-    !       determineGridFileNames determines the number and names of the  
-    !       files that contain the grids. For steady computations only one 
-    !       file must be present no matter if a restart is performed or    
-    !       not. For unsteady the situation is a little more complicated.  
-    !       If no restart is performed only one file must be present. If a 
-    !       restart is performed in unsteady or time spectral mode and a   
-    !       rigid body motion is prescribed again only one grid file is    
-    !       required; however for a consistent restart with deforming      
-    !       meshes the grids in the past must be read as well. If this is  
-    !       not possible only a first order restart can be made in         
-    !       unsteady mode and some kind of interpolation is used for the   
-    !       time spectral method.                                          
+    !       determineGridFileNames determines the number and names of the
+    !       files that contain the grids. For steady computations only one
+    !       file must be present no matter if a restart is performed or
+    !       not. For unsteady the situation is a little more complicated.
+    !       If no restart is performed only one file must be present. If a
+    !       restart is performed in unsteady or time spectral mode and a
+    !       rigid body motion is prescribed again only one grid file is
+    !       required; however for a consistent restart with deforming
+    !       meshes the grids in the past must be read as well. If this is
+    !       not possible only a first order restart can be made in
+    !       unsteady mode and some kind of interpolation is used for the
+    !       time spectral method.
     !
     use constants
     use communication, only: myID, adflow_comm_world
@@ -177,7 +177,7 @@ contains
           enddo
 
           ! If the last characters of the file name do not contain a
-          ! number, the grid file does not come from a previous 
+          ! number, the grid file does not come from a previous
           ! unsteady deforming mesh computation and therefore only
           ! one grid will be read.
 
@@ -280,7 +280,7 @@ contains
           enddo
 
           ! If the last characters of the file name do not contain a
-          ! number, the grid file does not come from a previous 
+          ! number, the grid file does not come from a previous
           ! time spectral deforming mesh computation and therefore
           ! only one grid will be read.
 
@@ -370,14 +370,14 @@ contains
 
   subroutine determineNeighborIDs
     !
-    !       determineNeighborIDs determines for every internal block       
-    !       boundary the block ID of the neighbor. In the cgns file only   
-    !       the zone name is stored, but the ID's are more useful          
-    !       internally.                                                    
-    !       Although for this case a quadratic search algorithm is not too 
-    !       bad (number of blocks are O(1000) maximum), I don't like the   
-    !       idea of having a quadratic loop in the code. That's why a      
-    !       O(n log(n)) algorithm is used here.                            
+    !       determineNeighborIDs determines for every internal block
+    !       boundary the block ID of the neighbor. In the cgns file only
+    !       the zone name is stored, but the ID's are more useful
+    !       internally.
+    !       Although for this case a quadratic search algorithm is not too
+    !       bad (number of blocks are O(1000) maximum), I don't like the
+    !       idea of having a quadratic loop in the code. That's why a
+    !       O(n log(n)) algorithm is used here.
     !
     use constants
     use cgnsGrid, only : cgnsDoms, cgnsNDOm
@@ -455,7 +455,7 @@ contains
 
           do k=1,cgnsDoms(i)%connNonMatchAbutting(j)%nDonorBlocks
 
-             ii = bsearchStrings(&                                      
+             ii = bsearchStrings(&
                   cgnsDoms(i)%connNonMatchAbutting(j)%donorNames(k), zoneNames)
              if(ii == 0)                              &
                   call terminate("determineNeighborIDs", &
@@ -473,16 +473,16 @@ contains
 
   subroutine determineInterfaceIDs
     !
-    !       DetermineInterfaceIDs determines more information for both the 
-    !       sliding mesh and domain interfaces with other codes, which are 
-    !       both specified as user defined boundary conditions in CGNS. In 
-    !       particular the number of sliding mesh interfaces and their     
-    !       pairings, and number of interfaces with other codes are        
-    !       determined.                                                    
-    !       There are some parts in the coupler API routines where         
-    !       the family-specified domain interfaces are implicitly assumed. 
-    !       Therefore, it is recommended for the time being that all the   
-    !       domain interfaces should be family-specified.                  
+    !       DetermineInterfaceIDs determines more information for both the
+    !       sliding mesh and domain interfaces with other codes, which are
+    !       both specified as user defined boundary conditions in CGNS. In
+    !       particular the number of sliding mesh interfaces and their
+    !       pairings, and number of interfaces with other codes are
+    !       determined.
+    !       There are some parts in the coupler API routines where
+    !       the family-specified domain interfaces are implicitly assumed.
+    !       Therefore, it is recommended for the time being that all the
+    !       domain interfaces should be family-specified.
     !
     use constants
     use cgnsGrid, only : cgnsDoms, cgnsNDom, cgnsFamilies, &
@@ -789,12 +789,12 @@ contains
 
   subroutine initFineGridIblank
     !
-    !       InitFineGridIblank allocates the fine grid iblank array and    
-    !       initializes the values for the holes, boundary, and halos. The 
-    !       holes read into the cgns domains are distributed amongst its   
-    !       sublocks in the form of iblanks. That is, we do not store a    
-    !       list of indices for the holes of the flow domains as done in   
-    !       the CGNS. The number of holes in each domain are also counted. 
+    !       InitFineGridIblank allocates the fine grid iblank array and
+    !       initializes the values for the holes, boundary, and halos. The
+    !       holes read into the cgns domains are distributed amongst its
+    !       sublocks in the form of iblanks. That is, we do not store a
+    !       list of indices for the holes of the flow domains as done in
+    !       the CGNS. The number of holes in each domain are also counted.
     !
     use constants
     use block, only : nDom, flowDoms
@@ -838,9 +838,9 @@ contains
 
   subroutine timePeriodSpectral
     !
-    !       timePeriodSpectral determines the time of one period for the   
-    !       time spectral method. It is possible that sections have        
-    !       different periodic times.                                      
+    !       timePeriodSpectral determines the time of one period for the
+    !       time spectral method. It is possible that sections have
+    !       different periodic times.
     !
     use constants
     use communication, only : myID, adflow_comm_world
@@ -1069,9 +1069,9 @@ contains
 
   function commonTimeSpectral(t1, t2)
     !
-    !       The function commonTimeSpectral determines the smallest        
-    !       possible common time between t1 and t2, such that              
-    !       tcommon = n1*t1 = n2*t2 and n1, n2 integers.                   
+    !       The function commonTimeSpectral determines the smallest
+    !       possible common time between t1 and t2, such that
+    !       tcommon = n1*t1 = n2*t2 and n1, n2 integers.
     !
     use communication
     use utils, only : terminate
@@ -1131,12 +1131,12 @@ contains
   end function commonTimeSpectral
   subroutine timeRotMatricesSpectral
     !
-    !       timeRotMatricesSpectral determines the rotation matrices       
-    !       used in the time derivatives for the velocity components in    
-    !       the time spectral method. These matrices are the identity      
-    !       matrices for non-rotating sections and something different for 
-    !       rotating sections. Therefore the rotation matrices are stored  
-    !       for every section.                                             
+    !       timeRotMatricesSpectral determines the rotation matrices
+    !       used in the time derivatives for the velocity components in
+    !       the time spectral method. These matrices are the identity
+    !       matrices for non-rotating sections and something different for
+    !       rotating sections. Therefore the rotation matrices are stored
+    !       for every section.
     !
     use constants
     use inputPhysics, only : equationMode
@@ -1295,9 +1295,9 @@ contains
 
   subroutine fineGridSpectralCoor
     !
-    !       fineGridSpectralCoor computes the coordinates of all but       
-    !       the first spectral solution from the known coordinates of the  
-    !       first time instance.                                           
+    !       fineGridSpectralCoor computes the coordinates of all but
+    !       the first spectral solution from the known coordinates of the
+    !       first time instance.
     !
     use constants
     use block, only: flowDoms, nDom
@@ -1330,8 +1330,8 @@ contains
 
     if(.not. interpolSpectral) return
     !
-    !       Step 1. Perform a rigid body motion of the coordinates of the  
-    !               1st time instance to the other instances.              
+    !       Step 1. Perform a rigid body motion of the coordinates of the
+    !               1st time instance to the other instances.
     !
     ! Set currentLevel to 1, such that updateCoorFineMesh
     ! updates the coordinates of the correct level.
@@ -1384,12 +1384,12 @@ contains
 
     if(nGridsRead == 1) return
     !
-    !       Step 2. Multiple grids have been read, but the number is not   
-    !               equal to the number of time instances used in the      
-    !               computation. As multiple grids have been read this     
-    !               means that a time spectral computation on a deforming  
-    !               mesh is performed. Therefore the deformations,         
-    !               relative to the first grid, must be interpolated.      
+    !       Step 2. Multiple grids have been read, but the number is not
+    !               equal to the number of time instances used in the
+    !               computation. As multiple grids have been read this
+    !               means that a time spectral computation on a deforming
+    !               mesh is performed. Therefore the deformations,
+    !               relative to the first grid, must be interpolated.
     !
     ! First allocate the memory of IOVar(..,1)%w.
     ! This will serve as temporary storage for the coordinates of
@@ -1500,19 +1500,19 @@ contains
   end subroutine fineGridSpectralCoor
  subroutine updateCoorFineMesh(dtAdvance, sps)
     !
-    !       updateCoorFineMesh updates the coordinates of the              
-    !       moving parts of the current finest mesh by the given amount of 
-    !       time, possibly different per section. In unsteady mode all the 
-    !       times will be equal, but in time spectral mode they can be     
-    !       different.                                                     
-    !       This routine is called in the full mg cycle to put the fine    
-    !       mesh to the position previously calculated on the coarser      
-    !       grid levels, in the unsteady time loop to advance the          
-    !       coordinates only one time step and in the partitioning part    
-    !       of the spectral mode to compute the coordinates of the given   
-    !       spectral solution sps. As it is used in the full MG cycle,     
-    !       currentLevel points to the correct grid level and not          
-    !       ground level.                                                  
+    !       updateCoorFineMesh updates the coordinates of the
+    !       moving parts of the current finest mesh by the given amount of
+    !       time, possibly different per section. In unsteady mode all the
+    !       times will be equal, but in time spectral mode they can be
+    !       different.
+    !       This routine is called in the full mg cycle to put the fine
+    !       mesh to the position previously calculated on the coarser
+    !       grid levels, in the unsteady time loop to advance the
+    !       coordinates only one time step and in the partitioning part
+    !       of the spectral mode to compute the coordinates of the given
+    !       spectral solution sps. As it is used in the full MG cycle,
+    !       currentLevel points to the correct grid level and not
+    !       ground level.
     !
     use constants
     use block
@@ -1575,7 +1575,7 @@ contains
 
        call setPointers(nn, currentLevel, sps)
        !
-       !         The rigid body motion of the entire mesh.                    
+       !         The rigid body motion of the entire mesh.
        !
        ! First the rotation.
 
@@ -1618,10 +1618,10 @@ contains
        enddo
 
        !
-       !         Determine whether the corresponding cgns block is a rotating 
-       !         block. If it is, apply the rotation.                         
-       !         Note that now the section ID of the block is taken into      
-       !         account to allow for different periodic times per section.   
+       !         Determine whether the corresponding cgns block is a rotating
+       !         block. If it is, apply the rotation.
+       !         Note that now the section ID of the block is taken into
+       !         account to allow for different periodic times per section.
        !
        if( cgnsDoms(nbkGlobal)%rotatingFrameSpecified ) then
 
@@ -1711,12 +1711,12 @@ contains
   end subroutine updateCoorFineMesh
   subroutine allocCoorFineGrid
     !
-    !       allocCoorFineGrid allocates the memory for all the coordinates 
-    !       of all local blocks. Also the memory for the derived data type 
-    !       used for the reading is allocated. If an interpolation must be 
-    !       performed for the time spectral method the variables of this   
-    !       IO type are allocated as well. For all other cases the pointer 
-    !       of the variables are set to the appropriate entry in flowDoms. 
+    !       allocCoorFineGrid allocates the memory for all the coordinates
+    !       of all local blocks. Also the memory for the derived data type
+    !       used for the reading is allocated. If an interpolation must be
+    !       performed for the time spectral method the variables of this
+    !       IO type are allocated as well. For all other cases the pointer
+    !       of the variables are set to the appropriate entry in flowDoms.
     !
     use constants
     use block, only : nDom, flowDoms
@@ -1768,7 +1768,7 @@ contains
                call terminate("allocCoorFineGrid", &
                "Memory allocation failure for flowDoms%xInit")
           !flowDoms(nn,1,mm)%xInit=0.0
-          !for the first grid also allocate xPlus and xMinus for the 
+          !for the first grid also allocate xPlus and xMinus for the
           !meshwarping verification...
        enddo
 
@@ -1908,7 +1908,7 @@ contains
 
     ! This subroutine runs the load balancing and partitioning algorithm
     ! to determine what the load balancing will be for a given number of
-    ! procs np. The output is load_inbalance and face_inbalance. 
+    ! procs np. The output is load_inbalance and face_inbalance.
 
     use constants
     use communication, only : nProc
@@ -1940,9 +1940,9 @@ contains
 
   subroutine determineSections
     !
-    !       determineSections determines the number of sections, i.e.      
-    !       grid parts between sliding mesh interfaces, present in the     
-    !       entire grid.                                                   
+    !       determineSections determines the number of sections, i.e.
+    !       grid parts between sliding mesh interfaces, present in the
+    !       entire grid.
     !
     use constants
     use block

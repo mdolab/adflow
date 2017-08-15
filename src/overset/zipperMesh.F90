@@ -2,17 +2,17 @@ module zipperMesh
 contains
 
   !
-  !      createZipperMesh zips multiple overlapping surface meshes.         
-  !      First, it eliminates overlapping quads and then stiches the        
-  !      non-overlapping surface mesh boundaries with triangular            
-  !      surface grids.                                                     
-  !      In an overset framework the overlapping surface grids give         
-  !      wrong estimate of airloads. Zipper mesh overcomes this by          
-  !      creating a more accurate representation of the surface in the      
-  !      mesh overlap regions.                                              
-  !      ref:  "Enhancements to the Hybrid Mesh Approach to Surface Loads   
-  !             Integration on Overset Structured Grids", William M. Chan   
-  !      http://people.nas.nasa.gov/~wchan/publications/AIAA-2009-3990.pdf  
+  !      createZipperMesh zips multiple overlapping surface meshes.
+  !      First, it eliminates overlapping quads and then stiches the
+  !      non-overlapping surface mesh boundaries with triangular
+  !      surface grids.
+  !      In an overset framework the overlapping surface grids give
+  !      wrong estimate of airloads. Zipper mesh overcomes this by
+  !      creating a more accurate representation of the surface in the
+  !      mesh overlap regions.
+  !      ref:  "Enhancements to the Hybrid Mesh Approach to Surface Loads
+  !             Integration on Overset Structured Grids", William M. Chan
+  !      http://people.nas.nasa.gov/~wchan/publications/AIAA-2009-3990.pdf
   !
 
   subroutine createZipperMesh(zipperFamList, nZipFam)
@@ -61,7 +61,7 @@ contains
     integer(kind=intType) :: nOSurfRecv, nOSurfSend
     integer(kind=intType) , dimension(:,:), allocatable :: oSurfRecvList, oSurfSendList
     ! MPI/Communication related
-    integer mpiStatus(MPI_STATUS_SIZE) 
+    integer mpiStatus(MPI_STATUS_SIZE)
     integer(kind=intType), dimension(:, :), allocatable :: bufSizes
     integer(kind=intType), dimension(:, :), allocatable :: recvInfo
     integer(kind=intType) :: sendCount, recvCount, index
@@ -73,20 +73,20 @@ contains
     type(oversetWall), dimension(:), allocatable, target :: walls
     type(oversetWall),  target :: fullWall
 
-    if (.not. oversetPresent .or. (.not. useZipperMesh)) then 
+    if (.not. oversetPresent .or. (.not. useZipperMesh)) then
        ! Not overset so we don't can't have a zipper.
        return
     end if
 
     ! Zipper is only implemented for single grid and 1 spectral
-    ! instance (ie not time spectral). 
+    ! instance (ie not time spectral).
     level = 1
     sps = 1
 
     call initBCDataIblank(level, sps)
 
 
-    ! We build the zipper meshes *independently* for each BCType. 
+    ! We build the zipper meshes *independently* for each BCType.
     BCGroupLoop: do iBCGroup=1, nFamExchange
 
        ! Set a pointer to the zipper we are working on to make code
@@ -94,7 +94,7 @@ contains
        zipper => zipperMeshes(iBCGroup)
 
        ! Deallocate if already exists
-       if (zipper%allocated) then 
+       if (zipper%allocated) then
           call VecScatterDestroy(zipper%scatter, ierr)
           call ECHK(ierr, __FILE__, __LINE__)
           call VecDestroy(zipper%localVal, ierr)
@@ -103,32 +103,32 @@ contains
        end if
        ! Note that the zipper%conn could be allocated with size of
        ! zero, but the vecScatter and Vec are not petsc-allocated.
-       if (allocated(zipper%conn)) then 
+       if (allocated(zipper%conn)) then
           deallocate(zipper%conn, zipper%fam, zipper%indices)
        end if
-       
+
        ! Before we can proceed with the zipper, we need to generate
        ! union of the zipperFamList() with the families on this
        ! BCGroup. This would be so much easier in Python...
 
-       if (allocated(famList)) then 
+       if (allocated(famList)) then
           deallocate(famList)
        end if
 
        nFam = 0
        do i=1, size(BCFamGroups(iBCGroup)%famList)
           do j=1, size(zipperFamlist)
-             if (BCFamGroups(iBCGroup)%famList(i) == zipperFamList(j)) then 
+             if (BCFamGroups(iBCGroup)%famList(i) == zipperFamList(j)) then
                 nFam = nFam + 1
              end if
           end do
        end do
-       
+
        ! If nFam is zero, no need ot do anything for this zipper. Just
        ! allocated zero-sized arrays so we know the size is 0.
-       if (nFam == 0) then 
+       if (nFam == 0) then
           allocate(zipper%conn(3, 0), zipper%fam(0), zipper%indices(0))
-          
+
           cycle
        else
           ! Do a second pass and fill up the famList
@@ -136,7 +136,7 @@ contains
           nFam = 0
           do i=1, size(BCFamGroups(iBCGroup)%famList)
              do j=1, size(zipperFamlist)
-                if (BCFamGroups(iBCGroup)%famList(i) == zipperFamList(j)) then 
+                if (BCFamGroups(iBCGroup)%famList(i) == zipperFamList(j)) then
                    nFam = nFam + 1
                    famList(nFam) = zipperFamList(j)
                 end if
@@ -144,7 +144,7 @@ contains
           end do
        end if
 
-       if (debugZipper .and. myid == 0) then 
+       if (debugZipper .and. myid == 0) then
           write(*,"(a)",advance="no") '-> Creating zipper for families : '
           do i=1, size(famList)
              write(*,"(a,1x)",advance="no") trim(famNames(famList(i)))
@@ -159,8 +159,8 @@ contains
        ! -------------------------------------------------------------------
 
        ! Determine the average area of surfaces on each cluster. This
-       ! will be independent of any block splitting distribution. 
-       
+       ! will be independent of any block splitting distribution.
+
        call determineClusterAreas(famList)
 
 
@@ -186,7 +186,7 @@ contains
             adflow_comm_world, ierr)
        call ECHK(ierr, __FILE__, __LINE__)
 
-       ! Get the basic surface comm pattern. 
+       ! Get the basic surface comm pattern.
        ! For sending, the worse case is sending all my blocks/fringes/walls to
        ! everyone but myself:
        ii = nDom*(nProc-1)
@@ -227,7 +227,7 @@ contains
        ! allocate oSurfs for the primal mesh
        allocate(oSurfs(nDomTotal))
        do iDom=1, nDomtotal
-          if (bufSizes(iDom, 1) == 0) then 
+          if (bufSizes(iDom, 1) == 0) then
              oSurfReady(iDom) = .True.
           else
              oSurfReady(iDom) = .False.
@@ -240,7 +240,7 @@ contains
           iDom = cumDomProc(myid) + nn
           call initializeOSurf(famList, oSurfs(iDom), .False., clusters(iDom))
           call packOSurf(famList, oSurfs(iDom), .False.)
-          oSurfReady(iDom) = .True. 
+          oSurfReady(iDom) = .True.
        end do
 
        ! Post all the oSurf iSends
@@ -275,7 +275,7 @@ contains
 
           ! Global domain index of the recv that finished
           iDom = recvInfo(1, i)
-          if (.not. oSurfs(iDom)%allocated) then 
+          if (.not. oSurfs(iDom)%allocated) then
              call unpackOSurf(oSurfs(iDom))
           end if
        end do
@@ -285,13 +285,13 @@ contains
        ! always the same size.
        ii = 0
        do jj=1, noSurfSend
-          ! These blocks are by definition local. 
+          ! These blocks are by definition local.
           iDom = oSurfSendList(2, jj)
           ii = ii + oSurfs(iDom)%maxCells
        end do
        allocate(intRecvBuf(max(1, ii)))
 
-       ! ------------------------ Performing Searches ----------------        
+       ! ------------------------ Performing Searches ----------------
        call getWorkArray(overlap, work)
 
        do iWork=1, size(work,2)
@@ -318,7 +318,7 @@ contains
           iProc = oSurfSendList(1, jj)
           iDom = oSurfSendList(2, jj)
           iSize = oSurfs(iDom)%maxCells
-          recvCount = recvCount + 1       
+          recvCount = recvCount + 1
 
           call mpi_irecv(intRecvBuf(iStart), iSize, adflow_integer, &
                iProc, iDom, adflow_comm_world, recvRequests(recvCount), ierr)
@@ -343,11 +343,11 @@ contains
           iDom = cumDomProc(myid) + nn
           ii = 0
           do mm=1, nBocos
-             if (famInList(BCData(mm)%famID, famList)) then 
+             if (famInList(BCData(mm)%famID, famList)) then
                 do j=BCData(mm)%jnBeg+1, BCData(mm)%jnEnd
                    do i=BCData(mm)%inBeg+1, BCData(mm)%inEnd
                       ii = ii +1
-                      if (oSurfs(iDom)%iBlank(ii) == -2) then 
+                      if (oSurfs(iDom)%iBlank(ii) == -2) then
                          BCData(mm)%iblank(i,j) = -2
                       end if
                    end do
@@ -367,11 +367,11 @@ contains
            !with:
           call setPointers(nn, level, sps)
           do mm=1, nBocos
-             if (famInList(BCData(mm)%famID, famList)) then 
+             if (famInList(BCData(mm)%famID, famList)) then
                 do j=BCData(mm)%jnBeg+1, BCData(mm)%jnEnd
                    do i=BCData(mm)%inBeg+1, BCData(mm)%inEnd
                       ii = ii + 1
-                      if (intRecvBuf(ii) == -2) then 
+                      if (intRecvBuf(ii) == -2) then
                          BCData(mm)%iBlank(i  , j) = -2
                       end if
                    enddo
@@ -399,18 +399,18 @@ contains
        call bowTieAndIsolationElimination(famList, level, sps)
 
        ! -------------------------------------------------------------------
-       ! Step 2: Identify gap boundary strings and split the strings to 
+       ! Step 2: Identify gap boundary strings and split the strings to
        !         sub-strings.
        ! -------------------------------------------------------------------
 
-       if (debugZipper) then 
+       if (debugZipper) then
           call writeWalls(famList)
        end if
 
        call makeGapBoundaryStrings(famList, level, sps, master)
-  
-       rootProc: if (myid == 0) then 
-          if (debugZipper) then 
+
+       rootProc: if (myid == 0) then
+          if (debugZipper) then
              call writeZipperDebug(master)
           end if
 
@@ -419,23 +419,23 @@ contains
           call performSelfZip(master, strings, nStrings)
 
           ! Write out any self-zipped triangles
-          if (debugZipper) then 
+          if (debugZipper) then
              call writeOversetTriangles(master, "selfzipTriangulation.dat")
           end if
 
           call makeCrossZip(master, strings, nStrings)
 
-          if (debugZipper) then 
+          if (debugZipper) then
              call writeOversetTriangles(master, "fullTriangulation.dat")
           end if
 
           ! ---------------------------------------------------------------
           ! Sort through zipped triangle edges and the edges which have not
-          ! been used twice (orphan edges) will be ultimately gathered to 
+          ! been used twice (orphan edges) will be ultimately gathered to
           ! form polygon pockets to be zipped.
           call makePocketZip(master, strings, nStrings, pocketMaster)
 
-          if (debugZipper) then 
+          if (debugZipper) then
              call writeOversetTriangles(pocketMaster, "pocketTriangulation.dat")
           end if
 
@@ -453,7 +453,7 @@ contains
           jj = 0
           outerLoop: do iStr=1,2
              ! Select which of the two we are dealing with
-             if (iStr ==1) then 
+             if (iStr ==1) then
                 str => master
                 offset = 0
              else
@@ -475,7 +475,7 @@ contains
                 ! Set the family
                 zipper%Fam(ii) = selectNodeFamily(nodeFam)
 
-                ! Set the connectivity. 
+                ! Set the connectivity.
                 zipper%conn(:, ii) = str%tris(:, i) + offset
              end do
 
@@ -484,7 +484,7 @@ contains
                 ! And set the global indices that the zipper needs. Note
                 ! that we are doing zipperIndices as a scalar and that
                 ! the indices refer to the global nodes so are already in
-                ! 0-based ordering. 
+                ! 0-based ordering.
                 jj = jj + 1
                 zipper%indices(jj) = str%ind(j)
              end do
@@ -499,7 +499,7 @@ contains
           call deallocateString(pocketMaster)
 
        else
-          ! Other procs don't have any triangles *sniffle* :-( 
+          ! Other procs don't have any triangles *sniffle* :-(
           allocate(zipper%conn(3, 0), zipper%fam(0), zipper%indices(0))
        end if rootProc
 
@@ -508,7 +508,7 @@ contains
        call EChk(ierr,__FILE__,__LINE__)
 
        ! Now create the general scatter that goes from the
-       ! globalNodalVector to the local vectors. 
+       ! globalNodalVector to the local vectors.
        call ISCreateGeneral(adflow_comm_world, size(zipper%indices), &
             zipper%indices-1, PETSC_COPY_VALUES, IS1, ierr)
        call EChk(ierr,__FILE__,__LINE__)
@@ -531,36 +531,36 @@ contains
       integer(kind=intType), dimension(3) :: nodeFam
       integer(kind=intType) :: selectNodeFamily
 
-      ! We have a few cases to check: 
+      ! We have a few cases to check:
 
-      if (nodeFam(1) == nodeFam(2) .and. nodeFam(1) == nodeFam(3)) then 
+      if (nodeFam(1) == nodeFam(2) .and. nodeFam(1) == nodeFam(3)) then
          ! Case 1: All of the nodes have the same family. This is what
          ! *should* happen all the time:
 
          selectNodeFamily = nodeFam(1)
 
-      else if (nodeFam(1) == nodeFam(2)) then 
+      else if (nodeFam(1) == nodeFam(2)) then
 
-         ! Case 2a: First two nodes are the same. Take the family from 1. 
+         ! Case 2a: First two nodes are the same. Take the family from 1.
 
          selectNodeFamily = nodeFam(1)
 
-      else if (nodeFam(2) == nodeFam(3)) then 
+      else if (nodeFam(2) == nodeFam(3)) then
 
-         ! Case 2b: Last two nodes are the same. Take the family from 2. 
+         ! Case 2b: Last two nodes are the same. Take the family from 2.
 
          selectNodeFamily = nodeFam(2)
 
-      else if (nodeFam(1) == nodeFam(3)) then 
+      else if (nodeFam(1) == nodeFam(3)) then
 
-         ! Case 2b: First and last nodes are the same. Take the family from 1. 
+         ! Case 2b: First and last nodes are the same. Take the family from 1.
 
          selectNodeFamily = nodeFam(1)
 
       else
 
          ! All nodes are different. We arbitrarily take the first and
-         ! print a warning becuase this should not happen. 
+         ! print a warning becuase this should not happen.
 
          selectNodeFamily = nodeFam(1)
          print *,'Family for triangle could not be uniquely determined. Nodes are from 3 different families!'
@@ -569,9 +569,9 @@ contains
     end function selectNodeFamily
   end subroutine createZipperMesh
   !
-  !       determineClusterArea determine the average cell surface area   
-  !       for all blocks in a particular cluster. This is used for       
-  !       determine blanking preference for overlapping surface cells.   
+  !       determineClusterArea determine the average cell surface area
+  !       for all blocks in a particular cluster. This is used for
+  !       determine blanking preference for overlapping surface cells.
 
   subroutine determineClusterAreas(famList)
 
@@ -595,7 +595,7 @@ contains
     real(kind=realType), dimension(:, :), allocatable :: pts
     real(kind=realType) :: fact , v1(3), v2(3), sss(3), da
 
-    if (allocated(clusterAreas)) then 
+    if (allocated(clusterAreas)) then
        ! We only ever do this once!
        deallocate(clusterAreas)
     end if
@@ -613,23 +613,23 @@ contains
 
        ! Loop over the number of boundary subfaces of this block.
        bocos: do mm=1,nBocos
-          famInclude: if (famInList(BCData(mm)%famID, famList)) then 
+          famInclude: if (famInList(BCData(mm)%famID, famList)) then
              ! Store the cell range of the subfaces a bit easier.
              ! As only owned faces must be considered the nodal range
              ! in BCData must be used to obtain this data.
-             
+
              jBeg = BCData(mm)%jnBeg + 1; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
-             
+
              call setBCPointers(mm, .True.)
-             
+
              ! Compute the dual area at each node. Just store in first dof
              do j=jBeg, jEnd ! This is a face loop
-                do i=iBeg, iEnd ! This is a face loop 
-                   
+                do i=iBeg, iEnd ! This is a face loop
+
                    v1(:) = xx(i+1, j+1, :) - xx(i,   j,  :)
                    v2(:) = xx(i  , j+1, :) - xx(i+1, j,  :)
-                   
+
                    ! Cross Product
                    call cross_prod(v1, v2, sss)
                    da = fourth*(sss(1)**2 + sss(2)**2 + sss(3)**2)
@@ -640,7 +640,7 @@ contains
           end if famInclude
        end do bocos
     end do domains
-    
+
     ! All reduce sum for the localAreas to get clusterAreas and
     ! localCount to get globalCount
 
@@ -681,7 +681,7 @@ contains
 
     ! This routine initializes the surface cell iblank based on the
     ! volume iblank. It is not a straight copy since we a little
-    ! preprocessing 
+    ! preprocessing
 
     ! This is a little trickier than it seems. The reason is that we
     ! will allow a limited number of interpolated cells to be used
@@ -717,7 +717,7 @@ contains
     domainLoop: do nn=1, nDom
        call setPointers(nn, level, sps)
 
-       ! Setting the surface IBlank array is done for *all* bocos. 
+       ! Setting the surface IBlank array is done for *all* bocos.
        bocoLoop: do mm=1, nBocos
           select case (BCFaceID(mm))
           case (iMin)
@@ -777,7 +777,7 @@ contains
 
     ! This routine initializes the surface cell iblank based on the
     ! volume iblank. It is not a straight copy since we a little
-    ! preprocessing 
+    ! preprocessing
 
     ! This is a little trickier than it seems. The reason is that we
     ! will allow a limited number of interpolated cells to be used
@@ -814,7 +814,7 @@ contains
     domainLoop: do nn=1, nDom
        call setPointers(nn, level, sps)
 
-       ! Setting the surface IBlank array is done for *all* bocos. 
+       ! Setting the surface IBlank array is done for *all* bocos.
        bocoLoop: do mm=1, nBocos
           select case (BCFaceID(mm))
           case (iMin)
@@ -852,7 +852,7 @@ contains
 
           ! Only do the slit elimination if we actually care about
           ! this surface for the zipper
-          famInclude: if (famInList(BCData(mm)%famID, famList)) then 
+          famInclude: if (famInList(BCData(mm)%famID, famList)) then
 
              ! -------------------------------------------------
              ! Step 2: Slit elimination
@@ -936,11 +936,11 @@ contains
 
 
   !
-  !      surfaceDeviation computes an approximation of the maximum          
-  !      deviation a surface could be as compared to an underlying "exact"  
+  !      surfaceDeviation computes an approximation of the maximum
+  !      deviation a surface could be as compared to an underlying "exact"
   !      surface. The purpose is to compute an adaptive "near wall distance"
-  !      value that can be used to determine if a point is "close" to a     
-  !     * wall. 
+  !      value that can be used to determine if a point is "close" to a
+  !     * wall.
   !
 
   subroutine surfaceDeviation(famList, level, sps)
@@ -965,11 +965,11 @@ contains
        call setPointers(nn, level, sps)
 
        bocoLoop: do mm=1, nBocos
-          famInclude: if (famInList(BCData(mm)%famID, famList)) then 
+          famInclude: if (famInList(BCData(mm)%famID, famList)) then
 
              call setBCPointers(mm, .True.)
              jBeg = BCdata(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
-             iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd  
+             iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd
 
              ! The procedure goes in 2 passes. The first pass checks all
              ! the i-direction edges, and the second all the j-direction
@@ -978,7 +978,7 @@ contains
              ! deviation from each of the 4 edges. Ie we scatter the
              ! edge deviation to the two cells next to it. We only do
              ! the real cells here. Boundary halos get -one set (below)
-             ! and then actual compute halos are set with an exchange. 
+             ! and then actual compute halos are set with an exchange.
 
              bcData(mm)%delta = -one
 
@@ -997,12 +997,12 @@ contains
                         xx(i+2, j, :))
 
                    ! Cell to the bottom:
-                   if (j-1 >= jBeg+1) then 
+                   if (j-1 >= jBeg+1) then
                       bcData(mm)%delta(i, j-1) = max(bcData(mm)%delta(i, j-1), deviation)
                    end if
 
                    ! Cell to the top:
-                   if (j+1 <= jEnd) then 
+                   if (j+1 <= jEnd) then
                       bcData(mm)%delta(i, j+1) = max(bcData(mm)%delta(i, j+1), deviation)
                    end if
                 end do
@@ -1023,12 +1023,12 @@ contains
                         xx(i, j+2, :))
 
                    ! Cell to the left:
-                   if (i-1 >= iBeg+1) then 
+                   if (i-1 >= iBeg+1) then
                       bcData(mm)%delta(i-1, j) = max(bcData(mm)%delta(i-1, j), deviation)
                    end if
 
                    ! Cell to the right:
-                   if (i+1 <= iEnd) then 
+                   if (i+1 <= iEnd) then
                       bcData(mm)%delta(i+1, j) = max(bcData(mm)%delta(i+1, j), deviation)
                    end if
 
@@ -1046,24 +1046,24 @@ contains
     ! exactly
     ! using this as a surrogate for what is near a surface, it make a
     ! little sense. Essentially we go through the nodes, and take the
-    ! max deviation from the cells surrpounding it. 
+    ! max deviation from the cells surrpounding it.
 
     ! Loop over blocks
     do nn=1, nDom
        call setPointers(nn, level, sps)
 
        bocoLoop2: do mm=1, nBocos
-          famInclude2: if (famInList(BCData(mm)%famID, famList)) then 
+          famInclude2: if (famInList(BCData(mm)%famID, famList)) then
 
              jBeg = BCdata(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
-             iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd  
+             iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd
 
              do j=jBeg, jEnd
                 do i=iBeg, iEnd
 
                    ! Since we are taking the max and the boundary halos
                    ! have a value of -one it's ok to blindy just take
-                   ! the max from each of the 4 cells surrounding each node. 
+                   ! the max from each of the 4 cells surrounding each node.
 
                    BCData(mm)%deltaNode(i, j) = max(&
                         BCData(mm)%delta(i  , j  ), &
@@ -1082,9 +1082,9 @@ contains
 
     ! Find the maximum deviation between a local cubic approximation
     ! formed by nodes P0, P1, P2 and P3, with the linear approximation
-    ! formed by nodes P1 and P2. 
+    ! formed by nodes P1 and P2.
 
-    ! See this article for the implementation. 
+    ! See this article for the implementation.
     ! https://en.wikipedia.org/wiki/Centripetal_Catmull-Rom_spline
 
     use constants
@@ -1169,11 +1169,11 @@ contains
     do nn=1,nDom
        iDom = nn + cumDomProc(myid)
        call setPointers(nn, 1, 1)
-       if (nBocos > 0) then 
+       if (nBocos > 0) then
           do mm=1, nBocos
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
-             famInclude2: if (famInList(BCData(mm)%famID, famList)) then 
+             famInclude2: if (famInList(BCData(mm)%famID, famList)) then
                 call setBCPointers(mm, .True.)
 
                 write(zoneName, "(a,I5.5,a,I5.5)") "Zone", iDom, "_Proc_", myid
@@ -1240,7 +1240,7 @@ contains
           call setPointers(nn, level, sps)
 
           bocoLoop1: do mm=1, nBocos
-             famInclude1: if (famInList(BCData(mm)%famID, famList)) then 
+             famInclude1: if (famInList(BCData(mm)%famID, famList)) then
 
                 select case (BCFaceID(mm))
                 case (iMin)
@@ -1304,7 +1304,7 @@ contains
        call setPointers(nn, level, sps)
 
        bocoLoop2: do mm=1, nBocos
-          famInclude2: if (famInList(BCData(mm)%famID, famList)) then 
+          famInclude2: if (famInList(BCData(mm)%famID, famList)) then
 
              select case (BCFaceID(mm))
              case (iMin)
