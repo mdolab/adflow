@@ -12,8 +12,8 @@ module turbutils_d
 contains
   subroutine prodkatolaunder()
 !
-!       prodkatolaunder computes the turbulent production term using   
-!       the kato-launder formulation.                                  
+!       prodkatolaunder computes the turbulent production term using
+!       the kato-launder formulation.
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, &
@@ -118,11 +118,11 @@ contains
   end subroutine prodkatolaunder
   subroutine prodsmag2()
 !
-!       prodsmag2 computes the term:                                   
-!              2*sij*sij - 2/3 div(u)**2 with  sij=0.5*(duidxj+dujdxi) 
-!       which is used for the turbulence equations.                    
-!       it is assumed that the pointer prod, stored in turbmod, is     
-!       already set to the correct entry.                              
+!       prodsmag2 computes the term:
+!              2*sij*sij - 2/3 div(u)**2 with  sij=0.5*(duidxj+dujdxi)
+!       which is used for the turbulence equations.
+!       it is assumed that the pointer prod, stored in turbmod, is
+!       already set to the correct entry.
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, &
@@ -213,8 +213,8 @@ contains
   function sanuknowneddyratio_d(eddyratio, nulam, nulamd, &
 &   sanuknowneddyratio)
 !
-!       sanuknowneddyratio computes the spalart-allmaras transport     
-!       variable nu for the given eddy viscosity ratio.                
+!       sanuknowneddyratio computes the spalart-allmaras transport
+!       variable nu for the given eddy viscosity ratio.
 !
     use constants
     use paramturb
@@ -257,7 +257,7 @@ contains
         chi = eddyratio
       end if
 ! the actual newton algorithm.
-      do 
+      do
 ! compute the function value and the derivative.
         chi2 = chi*chi
         chi3 = chi*chi2
@@ -284,8 +284,8 @@ contains
   end function sanuknowneddyratio_d
   function sanuknowneddyratio(eddyratio, nulam)
 !
-!       sanuknowneddyratio computes the spalart-allmaras transport     
-!       variable nu for the given eddy viscosity ratio.                
+!       sanuknowneddyratio computes the spalart-allmaras transport
+!       variable nu for the given eddy viscosity ratio.
 !
     use constants
     use paramturb
@@ -325,7 +325,7 @@ contains
         chi = eddyratio
       end if
 ! the actual newton algorithm.
-      do 
+      do
 ! compute the function value and the derivative.
         chi2 = chi*chi
         chi3 = chi*chi2
@@ -354,20 +354,20 @@ contains
   end function sanuknowneddyratio
   subroutine unsteadyturbterm(madv, nadv, offset, qq)
 !
-!       unsteadyturbterm discretizes the time derivative of the        
-!       turbulence transport equations and add it to the residual.     
-!       as the time derivative is the same for all turbulence models,  
-!       this generic routine can be used; both the discretization of   
-!       the time derivative and its contribution to the central        
-!       jacobian are computed by this routine.                         
-!       only nadv equations are treated, while the actual system has   
-!       size madv. the reason is that some equations for some          
-!       turbulence equations do not have a time derivative, e.g. the   
-!       f equation in the v2-f model. the argument offset indicates    
-!       the offset in the w vector where this subsystem starts. as a   
-!       consequence it is assumed that the indices of the current      
-!       subsystem are contiguous, e.g. if a 2*2 system is solved the   
-!       last index in w is offset+1 and offset+2 respectively.         
+!       unsteadyturbterm discretizes the time derivative of the
+!       turbulence transport equations and add it to the residual.
+!       as the time derivative is the same for all turbulence models,
+!       this generic routine can be used; both the discretization of
+!       the time derivative and its contribution to the central
+!       jacobian are computed by this routine.
+!       only nadv equations are treated, while the actual system has
+!       size madv. the reason is that some equations for some
+!       turbulence equations do not have a time derivative, e.g. the
+!       f equation in the v2-f model. the argument offset indicates
+!       the offset in the w vector where this subsystem starts. as a
+!       consequence it is assumed that the indices of the current
+!       subsystem are contiguous, e.g. if a 2*2 system is solved the
+!       last index in w is offset+1 and offset+2 respectively.
 !
     use blockpointers
     use flowvarrefstate
@@ -390,16 +390,16 @@ contains
     integer(kind=inttype) :: i, j, k, ii, jj, nn
     real(kind=realtype) :: oneoverdt, tmp
 ! determine the equation mode.
-    select case  (equationmode) 
-    case (steady) 
+    select case  (equationmode)
+    case (steady)
 ! steady computation. no time derivative present.
       return
-    case (unsteady) 
+    case (unsteady)
 !===============================================================
 ! the time deritvative term depends on the integration
 ! scheme used.
-      select case  (timeintegrationscheme) 
-      case (bdf) 
+      select case  (timeintegrationscheme)
+      case (bdf)
 ! backward difference formula is used as time
 ! integration scheme.
 ! store the inverse of the physical nondimensional
@@ -437,13 +437,13 @@ nadvloopunsteady:do ii=1,nadv
             end do
           end do
         end do nadvloopunsteady
-      case (explicitrk) 
+      case (explicitrk)
 !===========================================================
 ! explicit time integration scheme. the time derivative
 ! is handled differently.
         return
       end select
-    case (timespectral) 
+    case (timespectral)
 !===============================================================
 ! time spectral method.
 ! loop over the number of turbulent transport equations.
@@ -481,10 +481,10 @@ nadvloopspectral:do ii=1,nadv
 !   plus diff mem management of: rev:in w:in rlv:in
   subroutine computeeddyviscosity_d(includehalos)
 !
-!       computeeddyviscosity computes the eddy viscosity in the        
-!       owned cell centers of the given block. it is assumed that the  
-!       pointes already point to the correct block before entering     
-!       this subroutine.                                               
+!       computeeddyviscosity computes the eddy viscosity in the
+!       owned cell centers of the given block. it is assumed that the
+!       pointes already point to the correct block before entering
+!       this subroutine.
 !
     use constants
     use flowvarrefstate
@@ -530,8 +530,8 @@ nadvloopspectral:do ii=1,nadv
         kbeg = 2
         kend = kl
       end if
-      select case  (turbmodel) 
-      case (spalartallmaras, spalartallmarasedwards) 
+      select case  (turbmodel)
+      case (spalartallmaras, spalartallmarasedwards)
         call saeddyviscosity_d(ibeg, iend, jbeg, jend, kbeg, kend)
       case default
         revd = 0.0_8
@@ -540,10 +540,10 @@ nadvloopspectral:do ii=1,nadv
   end subroutine computeeddyviscosity_d
   subroutine computeeddyviscosity(includehalos)
 !
-!       computeeddyviscosity computes the eddy viscosity in the        
-!       owned cell centers of the given block. it is assumed that the  
-!       pointes already point to the correct block before entering     
-!       this subroutine.                                               
+!       computeeddyviscosity computes the eddy viscosity in the
+!       owned cell centers of the given block. it is assumed that the
+!       pointes already point to the correct block before entering
+!       this subroutine.
 !
     use constants
     use flowvarrefstate
@@ -588,8 +588,8 @@ nadvloopspectral:do ii=1,nadv
         kbeg = 2
         kend = kl
       end if
-      select case  (turbmodel) 
-      case (spalartallmaras, spalartallmarasedwards) 
+      select case  (turbmodel)
+      case (spalartallmaras, spalartallmarasedwards)
         call saeddyviscosity(ibeg, iend, jbeg, jend, kbeg, kend)
       end select
     end if
@@ -600,10 +600,10 @@ nadvloopspectral:do ii=1,nadv
 !   plus diff mem management of: rev:in w:in rlv:in
   subroutine saeddyviscosity_d(ibeg, iend, jbeg, jend, kbeg, kend)
 !
-!       saeddyviscosity computes the eddy-viscosity according to the   
-!       spalart-allmaras model for the block given in blockpointers.   
-!       this routine for both the original version as well as the      
-!       modified version according to edwards.                         
+!       saeddyviscosity computes the eddy-viscosity according to the
+!       spalart-allmaras model for the block given in blockpointers.
+!       this routine for both the original version as well as the
+!       modified version according to edwards.
 !
     use constants
     use blockpointers
@@ -644,10 +644,10 @@ nadvloopspectral:do ii=1,nadv
   end subroutine saeddyviscosity_d
   subroutine saeddyviscosity(ibeg, iend, jbeg, jend, kbeg, kend)
 !
-!       saeddyviscosity computes the eddy-viscosity according to the   
-!       spalart-allmaras model for the block given in blockpointers.   
-!       this routine for both the original version as well as the      
-!       modified version according to edwards.                         
+!       saeddyviscosity computes the eddy-viscosity according to the
+!       spalart-allmaras model for the block given in blockpointers.
+!       this routine for both the original version as well as the
+!       modified version according to edwards.
 !
     use constants
     use blockpointers
@@ -679,9 +679,9 @@ nadvloopspectral:do ii=1,nadv
   end subroutine saeddyviscosity
   subroutine kweddyviscosity(ibeg, iend, jbeg, jend, kbeg, kend)
 !
-!       kweddyviscosity computes the eddy viscosity according to the   
-!       k-omega models (both the original wilcox as well as the        
-!       modified version) for the block given in blockpointers.        
+!       kweddyviscosity computes the eddy viscosity according to the
+!       k-omega models (both the original wilcox as well as the
+!       modified version) for the block given in blockpointers.
 !
     use constants
     use blockpointers
@@ -711,9 +711,9 @@ nadvloopspectral:do ii=1,nadv
   end subroutine kweddyviscosity
   subroutine ssteddyviscosity(ibeg, iend, jbeg, jend, kbeg, kend)
 !
-!       ssteddyviscosity computes the eddy viscosity according to      
-!       menter's sst variant of the k-omega turbulence model for the   
-!       block given in blockpointers.                                  
+!       ssteddyviscosity computes the eddy viscosity according to
+!       menter's sst variant of the k-omega turbulence model for the
+!       block given in blockpointers.
 !
     use constants
     use blockpointers
@@ -771,11 +771,11 @@ nadvloopspectral:do ii=1,nadv
   end subroutine ssteddyviscosity
   subroutine prodwmag2()
 !
-!       prodwmag2 computes the term:                                   
-!          2*oij*oij  with oij=0.5*(duidxj - dujdxi).                  
-!       this is equal to the magnitude squared of the vorticity.       
-!       it is assumed that the pointer vort, stored in turbmod, is     
-!       already set to the correct entry.                              
+!       prodwmag2 computes the term:
+!          2*oij*oij  with oij=0.5*(duidxj - dujdxi).
+!       this is equal to the magnitude squared of the vorticity.
+!       it is assumed that the pointer vort, stored in turbmod, is
+!       already set to the correct entry.
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, &
@@ -852,23 +852,23 @@ nadvloopspectral:do ii=1,nadv
 !                sk:in
   subroutine turbadvection_d(madv, nadv, offset, qq)
 !
-!       turbadvection discretizes the advection part of the turbulent  
-!       transport equations. as the advection part is the same for all 
-!       models, this generic routine can be used. both the             
-!       discretization and the central jacobian are computed in this   
-!       subroutine. the former can either be 1st or 2nd order          
-!       accurate; the latter is always based on the 1st order upwind   
-!       discretization. when the discretization must be second order   
-!       accurate, the fully upwind (kappa = -1) scheme in combination  
-!       with the minmod limiter is used.                               
-!       only nadv equations are treated, while the actual system has   
-!       size madv. the reason is that some equations for some          
-!       turbulence equations do not have an advection part, e.g. the   
-!       f equation in the v2-f model. the argument offset indicates    
-!       the offset in the w vector where this subsystem starts. as a   
-!       consequence it is assumed that the indices of the current      
-!       subsystem are contiguous, e.g. if a 2*2 system is solved the   
-!       last index in w is offset+1 and offset+2 respectively.         
+!       turbadvection discretizes the advection part of the turbulent
+!       transport equations. as the advection part is the same for all
+!       models, this generic routine can be used. both the
+!       discretization and the central jacobian are computed in this
+!       subroutine. the former can either be 1st or 2nd order
+!       accurate; the latter is always based on the 1st order upwind
+!       discretization. when the discretization must be second order
+!       accurate, the fully upwind (kappa = -1) scheme in combination
+!       with the minmod limiter is used.
+!       only nadv equations are treated, while the actual system has
+!       size madv. the reason is that some equations for some
+!       turbulence equations do not have an advection part, e.g. the
+!       f equation in the v2-f model. the argument offset indicates
+!       the offset in the w vector where this subsystem starts. as a
+!       consequence it is assumed that the indices of the current
+!       subsystem are contiguous, e.g. if a 2*2 system is solved the
+!       last index in w is offset+1 and offset+2 respectively.
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, vol, vold, &
@@ -923,11 +923,11 @@ nadvloopspectral:do ii=1,nadv
     qs = zero
     qsd = 0.0_8
 !
-!       upwind discretization of the convective term in k (zeta)       
-!       direction. either the 1st order upwind or the second order     
-!       fully upwind interpolation scheme, kappa = -1, is used in      
-!       combination with the minmod limiter.                           
-!       the possible grid velocity must be taken into account.         
+!       upwind discretization of the convective term in k (zeta)
+!       direction. either the 1st order upwind or the second order
+!       fully upwind interpolation scheme, kappa = -1, is used in
+!       combination with the minmod limiter.
+!       the possible grid velocity must be taken into account.
 !
     do k=2,kl
       do j=2,jl
@@ -1115,11 +1115,11 @@ nadvloopspectral:do ii=1,nadv
 ! update the central jacobian. first the term which is
 ! always present, i.e. -uu.
 !
-!       upwind discretization of the convective term in j (eta)        
-!       direction. either the 1st order upwind or the second order     
-!       fully upwind interpolation scheme, kappa = -1, is used in      
-!       combination with the minmod limiter.                           
-!       the possible grid velocity must be taken into account.         
+!       upwind discretization of the convective term in j (eta)
+!       direction. either the 1st order upwind or the second order
+!       fully upwind interpolation scheme, kappa = -1, is used in
+!       combination with the minmod limiter.
+!       the possible grid velocity must be taken into account.
 !
     qs = zero
     qsd = 0.0_8
@@ -1309,11 +1309,11 @@ nadvloopspectral:do ii=1,nadv
 ! update the central jacobian. first the term which is
 ! always present, i.e. -uu.
 !
-!       upwind discretization of the convective term in i (xi)         
-!       direction. either the 1st order upwind or the second order     
-!       fully upwind interpolation scheme, kappa = -1, is used in      
-!       combination with the minmod limiter.                           
-!       the possible grid velocity must be taken into account.         
+!       upwind discretization of the convective term in i (xi)
+!       direction. either the 1st order upwind or the second order
+!       fully upwind interpolation scheme, kappa = -1, is used in
+!       combination with the minmod limiter.
+!       the possible grid velocity must be taken into account.
 !
     qs = zero
     qsd = 0.0_8
@@ -1506,23 +1506,23 @@ nadvloopspectral:do ii=1,nadv
   end subroutine turbadvection_d
   subroutine turbadvection(madv, nadv, offset, qq)
 !
-!       turbadvection discretizes the advection part of the turbulent  
-!       transport equations. as the advection part is the same for all 
-!       models, this generic routine can be used. both the             
-!       discretization and the central jacobian are computed in this   
-!       subroutine. the former can either be 1st or 2nd order          
-!       accurate; the latter is always based on the 1st order upwind   
-!       discretization. when the discretization must be second order   
-!       accurate, the fully upwind (kappa = -1) scheme in combination  
-!       with the minmod limiter is used.                               
-!       only nadv equations are treated, while the actual system has   
-!       size madv. the reason is that some equations for some          
-!       turbulence equations do not have an advection part, e.g. the   
-!       f equation in the v2-f model. the argument offset indicates    
-!       the offset in the w vector where this subsystem starts. as a   
-!       consequence it is assumed that the indices of the current      
-!       subsystem are contiguous, e.g. if a 2*2 system is solved the   
-!       last index in w is offset+1 and offset+2 respectively.         
+!       turbadvection discretizes the advection part of the turbulent
+!       transport equations. as the advection part is the same for all
+!       models, this generic routine can be used. both the
+!       discretization and the central jacobian are computed in this
+!       subroutine. the former can either be 1st or 2nd order
+!       accurate; the latter is always based on the 1st order upwind
+!       discretization. when the discretization must be second order
+!       accurate, the fully upwind (kappa = -1) scheme in combination
+!       with the minmod limiter is used.
+!       only nadv equations are treated, while the actual system has
+!       size madv. the reason is that some equations for some
+!       turbulence equations do not have an advection part, e.g. the
+!       f equation in the v2-f model. the argument offset indicates
+!       the offset in the w vector where this subsystem starts. as a
+!       consequence it is assumed that the indices of the current
+!       subsystem are contiguous, e.g. if a 2*2 system is solved the
+!       last index in w is offset+1 and offset+2 respectively.
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, vol, sfacei, &
@@ -1572,11 +1572,11 @@ nadvloopspectral:do ii=1,nadv
 ! if the block is not moving.
     qs = zero
 !
-!       upwind discretization of the convective term in k (zeta)       
-!       direction. either the 1st order upwind or the second order     
-!       fully upwind interpolation scheme, kappa = -1, is used in      
-!       combination with the minmod limiter.                           
-!       the possible grid velocity must be taken into account.         
+!       upwind discretization of the convective term in k (zeta)
+!       direction. either the 1st order upwind or the second order
+!       fully upwind interpolation scheme, kappa = -1, is used in
+!       combination with the minmod limiter.
+!       the possible grid velocity must be taken into account.
 !
     do k=2,kl
       do j=2,jl
@@ -1730,11 +1730,11 @@ nadvloopspectral:do ii=1,nadv
 ! update the central jacobian. first the term which is
 ! always present, i.e. -uu.
 !
-!       upwind discretization of the convective term in j (eta)        
-!       direction. either the 1st order upwind or the second order     
-!       fully upwind interpolation scheme, kappa = -1, is used in      
-!       combination with the minmod limiter.                           
-!       the possible grid velocity must be taken into account.         
+!       upwind discretization of the convective term in j (eta)
+!       direction. either the 1st order upwind or the second order
+!       fully upwind interpolation scheme, kappa = -1, is used in
+!       combination with the minmod limiter.
+!       the possible grid velocity must be taken into account.
 !
     continue
     qs = zero
@@ -1890,11 +1890,11 @@ nadvloopspectral:do ii=1,nadv
 ! update the central jacobian. first the term which is
 ! always present, i.e. -uu.
 !
-!       upwind discretization of the convective term in i (xi)         
-!       direction. either the 1st order upwind or the second order     
-!       fully upwind interpolation scheme, kappa = -1, is used in      
-!       combination with the minmod limiter.                           
-!       the possible grid velocity must be taken into account.         
+!       upwind discretization of the convective term in i (xi)
+!       direction. either the 1st order upwind or the second order
+!       fully upwind interpolation scheme, kappa = -1, is used in
+!       combination with the minmod limiter.
+!       the possible grid velocity must be taken into account.
 !
     continue
     qs = zero

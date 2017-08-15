@@ -16,7 +16,7 @@ contains
   subroutine flowintegrationzipper_b(isinflow, conn, fams, vars, varsd, &
 &   localvalues, localvaluesd, famlist, sps, withgathered, funcvalues, &
 &   funcvaluesd, ptvalid)
-! integrate over the trianges for the inflow/outflow conditions. 
+! integrate over the trianges for the inflow/outflow conditions.
     use constants
     use blockpointers, only : bctype
     use sorting, only : faminlist
@@ -280,7 +280,7 @@ contains
             sfacecoordref(1) = sf*ss(1)*overcellarea
             sfacecoordref(2) = sf*ss(2)*overcellarea
             sfacecoordref(3) = sf*ss(3)*overcellarea
-! compute the average cell center. 
+! compute the average cell center.
             xc = zero
             yc = zero
             zc = zero
@@ -300,7 +300,7 @@ contains
             pm = -(pm-pinf*pref)
 ! update the pressure force and moment coefficients.
 ! momentum forces
-! get unit normal vector. 
+! get unit normal vector.
             call pushreal8array(ss, 3)
             ss = ss/cellarea
             call pushreal8(massflowratelocal)
@@ -516,7 +516,7 @@ contains
   end subroutine flowintegrationzipper_b
   subroutine flowintegrationzipper(isinflow, conn, fams, vars, &
 &   localvalues, famlist, sps, withgathered, funcvalues, ptvalid)
-! integrate over the trianges for the inflow/outflow conditions. 
+! integrate over the trianges for the inflow/outflow conditions.
     use constants
     use blockpointers, only : bctype
     use sorting, only : faminlist
@@ -685,7 +685,7 @@ contains
             mass_nx = mass_nx + ss(1)*overcellarea*massflowratelocal
             mass_ny = mass_ny + ss(2)*overcellarea*massflowratelocal
             mass_nz = mass_nz + ss(3)*overcellarea*massflowratelocal
-! compute the average cell center. 
+! compute the average cell center.
             xc = zero
             yc = zero
             zc = zero
@@ -716,7 +716,7 @@ contains
             mp(2) = mp(2) + my
             mp(3) = mp(3) + mz
 ! momentum forces
-! get unit normal vector. 
+! get unit normal vector.
             ss = ss/cellarea
             massflowratelocal = massflowratelocal/timeref*&
 &             internalflowfact*inflowfact
@@ -834,7 +834,7 @@ contains
     do i=1,size(conn, 2)
       res = faminlist(fams(i), famlist)
       if (res) then
-! get the nodes of triangle. 
+! get the nodes of triangle.
         x1 = vars(conn(1, i), izippwallx:izippwallz)
         x2 = vars(conn(2, i), izippwallx:izippwallz)
         x3 = vars(conn(3, i), izippwallx:izippwallz)
@@ -846,7 +846,7 @@ contains
 ! and p3
         result1 = mynorm2(ss)
         triarea = result1*third
-! compute the average cell center. 
+! compute the average cell center.
         xc = third*(x1(1)+x2(1)+x3(1))
         yc = third*(x1(2)+x2(2)+x3(2))
         zc = third*(x1(3)+x2(3)+x3(3))
@@ -1010,7 +1010,7 @@ contains
     mv = zero
     do i=1,size(conn, 2)
       if (faminlist(fams(i), famlist)) then
-! get the nodes of triangle. 
+! get the nodes of triangle.
         x1 = vars(conn(1, i), izippwallx:izippwallz)
         x2 = vars(conn(2, i), izippwallx:izippwallz)
         x3 = vars(conn(3, i), izippwallx:izippwallz)
@@ -1022,7 +1022,7 @@ contains
 ! and p3
         result1 = mynorm2(ss)
         triarea = result1*third
-! compute the average cell center. 
+! compute the average cell center.
         xc = third*(x1(1)+x2(1)+x3(1))
         yc = third*(x1(2)+x2(2)+x3(2))
         zc = third*(x1(3)+x2(3)+x3(3))

@@ -3,10 +3,10 @@ module fluxes
 contains
   subroutine inviscidCentralFlux
     !
-    !       inviscidCentralFlux computes the Euler fluxes using a central  
-    !       discretization for a given block. Therefore it is assumed that 
-    !       the pointers in block pointer already point to the correct     
-    !       block on the correct multigrid level.                          
+    !       inviscidCentralFlux computes the Euler fluxes using a central
+    !       discretization for a given block. Therefore it is assumed that
+    !       the pointers in block pointer already point to the correct
+    !       block on the correct multigrid level.
     !
     use constants
     use blockPointers, only : nx, il, ie, ny, jl, je, nz, kl, ke, spectralSol, &
@@ -25,14 +25,14 @@ contains
     real(kind=realType) :: pa, fs, sFace, vnp, vnm
     real(kind=realType) :: wwx, wwy, wwz, rvol
 
- 
+
     continue
     !$AD CHECKPOINT-START
     ! Initialize sFace to zero. This value will be used if the
     ! block is not moving.
     sFace = zero
     !
-    !       Advective fluxes in the i-direction.                           
+    !       Advective fluxes in the i-direction.
     !
 #ifdef TAPENADE_REVERSE
     !$AD II-LOOP
@@ -44,7 +44,7 @@ contains
        do k=2, kl
           do j=2, jl
              do i=1, il
-#endif             
+#endif
                 ! Set the dot product of the grid velocity and the
                 ! normal in i-direction for a moving face.
 
@@ -134,12 +134,12 @@ contains
           enddo
        enddo
     enddo
-#endif  
+#endif
     continue
     !$AD CHECKPOINT-END
 
     !
-    !       Advective fluxes in the j-direction.                           
+    !       Advective fluxes in the j-direction.
     !
     continue
     !$AD CHECKPOINT-START
@@ -154,7 +154,7 @@ contains
        do k=2,kl
           do j=1,jl
              do i=2,il
-#endif             
+#endif
                 ! Set the dot product of the grid velocity and the
                 ! normal in j-direction for a moving face.
 
@@ -251,7 +251,7 @@ contains
     !$AD CHECKPOINT-END
 
     !
-    !       Advective fluxes in the k-direction.                           
+    !       Advective fluxes in the k-direction.
     continue
     !$AD CHECKPOINT-START
     sface = zero
@@ -265,7 +265,7 @@ contains
        do k=1,kl
           do j=2,jl
              do i=2,il
-#endif             
+#endif
                 ! Set the dot product of the grid velocity and the
                 ! normal in k-direction for a moving face.
 
@@ -357,7 +357,7 @@ contains
           enddo
        enddo
     enddo
-#endif   
+#endif
     continue
     !$AD CHECKPOINT-END
 
@@ -403,12 +403,12 @@ contains
 
   subroutine inviscidDissFluxMatrix
     !
-    !       inviscidDissFluxMatrix computes the matrix artificial          
-    !       dissipation term. Instead of the spectral radius, as used in   
-    !       the scalar dissipation scheme, the absolute value of the flux  
-    !       jacobian is used. This leads to a less diffusive and           
-    !       consequently more accurate scheme. It is assumed that the      
-    !       pointers in blockPointers already point to the correct block.  
+    !       inviscidDissFluxMatrix computes the matrix artificial
+    !       dissipation term. Instead of the spectral radius, as used in
+    !       the scalar dissipation scheme, the absolute value of the flux
+    !       jacobian is used. This leads to a less diffusive and
+    !       consequently more accurate scheme. It is assumed that the
+    !       pointers in blockPointers already point to the correct block.
     !
     use constants
     use blockPointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb, kb, &
@@ -477,7 +477,7 @@ contains
     sfil = one - rFil
 
     ! Initialize the dissipative residual to a certain times,
-    ! possibly zero, the previously stored value. 
+    ! possibly zero, the previously stored value.
 
     fw = sfil*fw
 
@@ -492,7 +492,7 @@ contains
        do k=1,ke
           do j=1,je
              do i=1,ie
-#endif             
+#endif
                 dss(i,j,k,1) =abs((p(i+1,j,k) - two*p(i,j,k) + p(i-1,j,k))        &
                      /     (omega*(p(i+1,j,k) + two*p(i,j,k) + p(i-1,j,k)) &
                      +      oneMinOmega*(abs(p(i+1,j,k) - p(i,j,k))      &
@@ -516,7 +516,7 @@ contains
     end do
 #endif
     !
-    !       Dissipative fluxes in the i-direction.                         
+    !       Dissipative fluxes in the i-direction.
     !
 #ifdef TAPENADE_REVERSE
     !$AD II-LOOP
@@ -528,7 +528,7 @@ contains
        do k=2,kl
           do j=2,jl
              do i=1,il
-#endif 
+#endif
                 ! Compute the dissipation coefficients for this face.
 
                 ppor = zero
@@ -692,7 +692,7 @@ contains
     end do
 #endif
     !
-    !       Dissipative fluxes in the j-direction.                         
+    !       Dissipative fluxes in the j-direction.
     !
 #ifdef TAPENADE_REVERSE
     !$AD II-LOOP
@@ -870,7 +870,7 @@ contains
     end do
 #endif
     !
-    !       Dissipative fluxes in the k-direction.                         
+    !       Dissipative fluxes in the k-direction.
     !
 #ifdef TAPENADE_REVERSE
     !$AD II-LOOP
@@ -882,7 +882,7 @@ contains
        do k=1,kl
           do j=2,jl
              do i=2,il
-#endif     
+#endif
                 ! Compute the dissipation coefficients for this face.
 
                 ppor = zero
@@ -1050,10 +1050,10 @@ contains
 
   subroutine inviscidDissFluxScalar
     !
-    !       inviscidDissFluxScalar computes the scalar artificial          
-    !       dissipation, see AIAA paper 81-1259, for a given block.        
-    !       Therefore it is assumed that the pointers in  blockPointers    
-    !       already point to the correct block.                            
+    !       inviscidDissFluxScalar computes the scalar artificial
+    !       dissipation, see AIAA paper 81-1259, for a given block.
+    !       Therefore it is assumed that the pointers in  blockPointers
+    !       already point to the correct block.
     !
     use constants
     use blockPointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb, kb, &
@@ -1101,7 +1101,7 @@ contains
 
        ! Copy the pressure in ss. Only need the entries used in the
        ! discretization, i.e. not including the corner halo's, but we'll
-       ! just copy all anyway. 
+       ! just copy all anyway.
 
        ss = P
        !===============================================================
@@ -1115,19 +1115,19 @@ contains
 
        sslim = 0.001_realType*pInfCorr/(rhoInf**gammaInf)
 
-       ! Store the entropy in ss. See above. 
+       ! Store the entropy in ss. See above.
 
 #ifdef TAPENADE_REVERSE
        !$AD II-LOOP
        do ii=0,(ib+1)*(jb+1)*(kb+1)-1
           i = mod(ii, ib+1)
-          j = mod(ii/(ib+1), jb+1) 
+          j = mod(ii/(ib+1), jb+1)
           k = ii/((ib+1)*(jb+1))
 #else
           do k=0,kb
              do j=0,jb
                 do i=0,ib
-#endif      
+#endif
                    ss(i,j,k) = p(i,j,k)/(w(i,j,k,irho)**gamma(i,j,k))
 #ifdef TAPENADE_REVERSE
                 end do
@@ -1149,7 +1149,7 @@ contains
        do k=1,ke
           do j=1,je
              do i=1,ie
-#endif             
+#endif
                 dss(i,j,k,1) = abs((ss(i+1,j,k) - two*ss(i,j,k) + ss(i-1,j,k)) &
                      /     (ss(i+1,j,k) + two*ss(i,j,k) + ss(i-1,j,k) + sslim))
 
@@ -1178,7 +1178,7 @@ contains
 
     fw = sfil*fw
     !
-    !       Dissipative fluxes in the i-direction.                         
+    !       Dissipative fluxes in the i-direction.
     !
 #ifdef TAPENADE_REVERSE
     !$AD II-LOOP
@@ -1190,7 +1190,7 @@ contains
        do k=2,kl
           do j=2,jl
              do i=1,il
-#endif             
+#endif
                 ! Compute the dissipation coefficients for this face.
 
                 ppor = zero
@@ -1255,7 +1255,7 @@ contains
 #endif
 
     !
-    !       Dissipative fluxes in the j-direction.                         
+    !       Dissipative fluxes in the j-direction.
     !
 #ifdef TAPENADE_REVERSE
     !$AD II-LOOP
@@ -1267,7 +1267,7 @@ contains
        do k=2,kl
           do j=1,jl
              do i=2,il
-#endif   
+#endif
                 ! Compute the dissipation coefficients for this face.
 
                 ppor = zero
@@ -1331,7 +1331,7 @@ contains
     end do
 #endif
     !
-    !       Dissipative fluxes in the k-direction.                         
+    !       Dissipative fluxes in the k-direction.
     !
 #ifdef TAPENADE_REVERSE
     !$AD II-LOOP
@@ -1343,7 +1343,7 @@ contains
        do k=1,kl
           do j=2,jl
              do i=2,il
-#endif     
+#endif
                 ! Compute the dissipation coefficients for this face.
 
                 ppor = zero
@@ -1411,22 +1411,22 @@ contains
 
   subroutine inviscidUpwindFlux(fineGrid)
     !
-    !       inviscidUpwindFlux computes the artificial dissipation part of 
-    !       the Euler fluxes by means of an approximate solution of the 1D 
-    !       Riemann problem on the face. For first order schemes,          
-    !       fineGrid == .false., the states in the cells are assumed to    
-    !       be constant; for the second order schemes on the fine grid a   
-    !       nonlinear reconstruction of the left and right state is done   
-    !       for which several options exist.                               
-    !       It is assumed that the pointers in blockPointers already       
-    !       point to the correct block.                                    
+    !       inviscidUpwindFlux computes the artificial dissipation part of
+    !       the Euler fluxes by means of an approximate solution of the 1D
+    !       Riemann problem on the face. For first order schemes,
+    !       fineGrid == .false., the states in the cells are assumed to
+    !       be constant; for the second order schemes on the fine grid a
+    !       nonlinear reconstruction of the left and right state is done
+    !       for which several options exist.
+    !       It is assumed that the pointers in blockPointers already
+    !       point to the correct block.
     !
     use constants
     use blockPointers, only : il, jl, kl, ie, je, ke, ib, jb, kb, w, p, &
          porI, porJ, porK, fw, gamma, si, sj, sk, &
          indFamilyI, indFamilyJ, indFamilyK, spectralSol, addGridVelocities, &
          sFaceI, sfaceJ, sFacek, rotMatrixI, rotMatrixJ, rotMatrixK, &
-         factFamilyI, factFamilyJ, factFamilyK 
+         factFamilyI, factFamilyJ, factFamilyK
     use flowVarRefState, only : kPresent, nw, nwf, rgas, tref
     use inputDiscretization, only: limiter, lumpedDiss, precond, riemann, &
          riemannCoarse, orderTurb, kappaCoef
@@ -1545,14 +1545,14 @@ contains
        firstOrderK = .false.
     endif
     !
-    !       Flux computation. A distinction is made between first and      
-    !       second order schemes to avoid the overhead for the first order 
-    !       scheme.                                                        
+    !       Flux computation. A distinction is made between first and
+    !       second order schemes to avoid the overhead for the first order
+    !       scheme.
     !
     orderTest: if(limUsed == firstOrder) then
        !
-       !         First order reconstruction. The states in the cells are      
-       !         constant. The left and right states are constructed easily.  
+       !         First order reconstruction. The states in the cells are
+       !         constant. The left and right states are constructed easily.
        !
        ! Fluxes in the i-direction.
 
@@ -1752,12 +1752,12 @@ contains
 
        !      ==================================================================
        !
-       !         Second order reconstruction of the left and right state.     
-       !         The three differences used in the, possibly nonlinear,       
-       !         interpolation are constructed here; the actual left and      
-       !         right states, or at least the differences from the first     
-       !         order interpolation, are computed in the subroutine          
-       !         leftRightState.                                              
+       !         Second order reconstruction of the left and right state.
+       !         The three differences used in the, possibly nonlinear,
+       !         interpolation are constructed here; the actual left and
+       !         right states, or at least the differences from the first
+       !         order interpolation, are computed in the subroutine
+       !         leftRightState.
        !
        ! Fluxes in the i-direction.
 
@@ -2076,12 +2076,12 @@ contains
 
     subroutine leftRightState(du1, du2, du3, rotMatrix, left, right)
       !
-      !         leftRightState computes the differences in the left and      
-      !         right state compared to the first order interpolation. For a 
-      !         monotonic second order discretization the interpolations     
-      !         need to be nonlinear. The linear second order scheme can be  
-      !         stable (depending on the value of kappa), but it will have   
-      !         oscillations near discontinuities.                           
+      !         leftRightState computes the differences in the left and
+      !         right state compared to the first order interpolation. For a
+      !         monotonic second order discretization the interpolations
+      !         need to be nonlinear. The linear second order scheme can be
+      !         stable (depending on the value of kappa), but it will have
+      !         oscillations near discontinuities.
       !
       implicit none
       !
@@ -2269,8 +2269,8 @@ contains
 
     subroutine riemannFlux(left, right, flux)
       !
-      !         riemannFlux computes the flux for the given face and left    
-      !         and right states.                                            
+      !         riemannFlux computes the flux for the given face and left
+      !         and right states.
       !
       implicit none
       !
@@ -2507,10 +2507,10 @@ contains
 
   subroutine viscousFlux
     !
-    !       viscousFlux computes the viscous fluxes using a central        
-    !       difference scheme for a block.                                 
-    !       It is assumed that the pointers in block pointer already point 
-    !       to the correct block.                                          
+    !       viscousFlux computes the viscous fluxes using a central
+    !       difference scheme for a block.
+    !       It is assumed that the pointers in block pointer already point
+    !       to the correct block.
     !
     use constants
     use blockPointers
@@ -2569,7 +2569,7 @@ contains
     endif
 
     !
-    !         viscous fluxes in the k-direction.                           
+    !         viscous fluxes in the k-direction.
     !
     continue
     !$AD CHECKPOINT-START
@@ -2584,7 +2584,7 @@ contains
        do k=1,kl
           do j=2,jl
              do i=2,il
-#endif             
+#endif
 
                 ! Set the value of the porosity. If not zero, it is set
                 ! to average the eddy-viscosity and to take the factor
@@ -2715,11 +2715,11 @@ contains
 
                 ! Add QCR corrections if necessary
                 if (useQCR) then
-                   
+
                    ! In the QCR formulation, we add an extra term to the turbulent stress tensor:
                    !
                    ! tau_ij,QCR = tau_ij - e_ij
-                   ! 
+                   !
                    ! where, according to TMR website (http://turbmodels.larc.nasa.gov/spalart.html):
                    !
                    ! e_ij = Ccr1*(O_ik*tau_jk + O_jk*tau_ik)
@@ -2729,16 +2729,16 @@ contains
                    ! O_ik = 2*W_ik/den
                    !
                    ! Remember that the tau_ij in e_ij should use only the eddy viscosity!
-                   
+
                    ! Compute denominator
                    den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + &
                         v_x*v_x + v_y*v_y + v_z*v_z + &
                         w_x*w_x + w_y*w_y + w_z*w_z)
-                   
+
                    ! Denominator should be limited to avoid division by zero in regions with
                    ! no gradients
                    den = max(den, xminn)
-                   
+
                    ! Compute factor that will multiply all tensor components.
                    ! Here we add the eddy viscosity that should multiply the stress tensor (tau)
                    ! components as well.
@@ -2752,19 +2752,19 @@ contains
                    Wyx = -Wxy
                    Wzx = -Wxz
                    Wzy = -Wyz
-                   
+
                    ! Compute the extra terms of the Boussinesq relation
                    exx = fact*(Wxy*tauxyS + Wxz*tauxzS)*two
                    eyy = fact*(Wyx*tauxyS + Wyz*tauyzS)*two
                    ezz = fact*(Wzx*tauxzS + Wzy*tauyzS)*two
-                   
+
                    exy = fact*(Wxy*tauyyS + Wxz*tauyzS + &
                                Wyx*tauxxS + Wyz*tauxzS)
                    exz = fact*(Wxy*tauyzS + Wxz*tauzzS + &
                                Wzx*tauxxS + Wzy*tauxyS)
                    eyz = fact*(Wyx*tauxzS + Wyz*tauzzS + &
                                Wzx*tauxyS + Wzy*tauyyS)
-                   
+
                    ! Apply the total viscosity to the stress tensor and add extra terms
                    tauxx = mut*tauxxS - exx
                    tauyy = mut*tauyyS - eyy
@@ -2774,7 +2774,7 @@ contains
                    tauyz = mut*tauyzS - eyz
 
                 else
-                   
+
                    ! Just apply the total viscosity to the stress tensor
                    tauxx = mut*tauxxS
                    tauyy = mut*tauyyS
@@ -2801,8 +2801,8 @@ contains
                 fmz   = tauxz*sk(i,j,k,1) + tauyz*sk(i,j,k,2) &
                      + tauzz*sk(i,j,k,3)
                 frhoE =         (ubar*tauxx + vbar*tauxy + wbar*tauxz)*sk(i,j,k,1)
-                frhoE = frhoE + (ubar*tauxy + vbar*tauyy + wbar*tauyz)*sk(i,j,k,2) 
-                frhoE = frhoE + (ubar*tauxz + vbar*tauyz + wbar*tauzz)*sk(i,j,k,3) 
+                frhoE = frhoE + (ubar*tauxy + vbar*tauyy + wbar*tauyz)*sk(i,j,k,2)
+                frhoE = frhoE + (ubar*tauxz + vbar*tauyz + wbar*tauzz)*sk(i,j,k,3)
                 frhoE = frhoE -  q_x*sk(i,j,k,1) - q_y*sk(i,j,k,2) - q_z*sk(i,j,k,3)
 
                 ! Update the residuals of cell k and k+1.
@@ -2823,8 +2823,8 @@ contains
 
                 if(k == 1 .and. storeWallTensor .and. &
                      viscKminPointer(i,j) > 0) then
-                   ! We need to index viscSubface with viscKminPointer(i,j) 
-                   ! since Tapenade does not like temporary indexes 
+                   ! We need to index viscSubface with viscKminPointer(i,j)
+                   ! since Tapenade does not like temporary indexes
 
                    viscSubface(viscKminPointer(i,j))%tau(i,j,1) = tauxx
                    viscSubface(viscKminPointer(i,j))%tau(i,j,2) = tauyy
@@ -2858,12 +2858,12 @@ contains
           enddo
        enddo
     enddo
-#endif   
+#endif
     continue
     !$AD CHECKPOINT-END
 
     !
-    !         Viscous fluxes in the j-direction.                           
+    !         Viscous fluxes in the j-direction.
     !
     continue
     !$AD CHECKPOINT-START
@@ -2878,7 +2878,7 @@ contains
        do k=2,kl
           do j=1,jl
              do i=2,il
-#endif  
+#endif
 
                 ! Set the value of the porosity. If not zero, it is set
                 ! to average the eddy-viscosity and to take the factor
@@ -3008,11 +3008,11 @@ contains
 
                 ! Add QCR corrections if necessary
                 if (useQCR) then
-                   
+
                    ! In the QCR formulation, we add an extra term to the turbulent stress tensor:
                    !
                    ! tau_ij,QCR = tau_ij - e_ij
-                   ! 
+                   !
                    ! where, according to TMR website (http://turbmodels.larc.nasa.gov/spalart.html):
                    !
                    ! e_ij = Ccr1*(O_ik*tau_jk + O_jk*tau_ik)
@@ -3022,16 +3022,16 @@ contains
                    ! O_ik = 2*W_ik/den
                    !
                    ! Remember that the tau_ij in e_ij should use only the eddy viscosity!
-                   
+
                    ! Compute denominator
                    den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + &
                         v_x*v_x + v_y*v_y + v_z*v_z + &
                         w_x*w_x + w_y*w_y + w_z*w_z)
-                   
+
                    ! Denominator should be limited to avoid division by zero in regions with
                    ! no gradients
                    den = max(den, xminn)
-                   
+
                    ! Compute factor that will multiply all tensor components.
                    ! Here we add the eddy viscosity that should multiply the stress tensor (tau)
                    ! components as well.
@@ -3045,19 +3045,19 @@ contains
                    Wyx = -Wxy
                    Wzx = -Wxz
                    Wzy = -Wyz
-                   
+
                    ! Compute the extra terms of the Boussinesq relation
                    exx = fact*(Wxy*tauxyS + Wxz*tauxzS)*two
                    eyy = fact*(Wyx*tauxyS + Wyz*tauyzS)*two
                    ezz = fact*(Wzx*tauxzS + Wzy*tauyzS)*two
-                   
+
                    exy = fact*(Wxy*tauyyS + Wxz*tauyzS + &
                                Wyx*tauxxS + Wyz*tauxzS)
                    exz = fact*(Wxy*tauyzS + Wxz*tauzzS + &
                                Wzx*tauxxS + Wzy*tauxyS)
                    eyz = fact*(Wyx*tauxzS + Wyz*tauzzS + &
                                Wzx*tauxyS + Wzy*tauyyS)
-                   
+
                    ! Apply the total viscosity to the stress tensor and add extra terms
                    tauxx = mut*tauxxS - exx
                    tauyy = mut*tauyyS - eyy
@@ -3067,7 +3067,7 @@ contains
                    tauyz = mut*tauyzS - eyz
 
                 else
-                   
+
                    ! Just apply the total viscosity to the stress tensor
                    tauxx = mut*tauxxS
                    tauyy = mut*tauyyS
@@ -3077,7 +3077,7 @@ contains
                    tauyz = mut*tauyzS
 
                 end if
-                
+
                 ! Compute the average velocities for the face. Remember that
                 ! the velocities are stored and not the momentum.
 
@@ -3116,8 +3116,8 @@ contains
 
                 if(j == 1 .and. storeWallTensor .and. &
                      viscJminPointer(i,k) > 0) then
-                   ! We need to index viscSubface with viscJminPointer(i,k) 
-                   ! since Tapenade does not like temporary indexes 
+                   ! We need to index viscSubface with viscJminPointer(i,k)
+                   ! since Tapenade does not like temporary indexes
 
                    viscSubface(viscJminPointer(i,k))%tau(i,k,1) = tauxx
                    viscSubface(viscJminPointer(i,k))%tau(i,k,2) = tauyy
@@ -3152,14 +3152,14 @@ contains
           enddo
        enddo
     enddo
-#endif 
+#endif
     continue
     !$AD CHECKPOINT-END
 
 
 
     !
-    !         Viscous fluxes in the i-direction.                           
+    !         Viscous fluxes in the i-direction.
     !
     continue
     !$AD CHECKPOINT-START
@@ -3174,7 +3174,7 @@ contains
        do k=2, kl
           do j=2, jl
              do i=1, il
-#endif 
+#endif
 
                 ! Set the value of the porosity. If not zero, it is set
                 ! to average the eddy-viscosity and to take the factor
@@ -3304,11 +3304,11 @@ contains
 
                 ! Add QCR corrections if necessary
                 if (useQCR) then
-                   
+
                    ! In the QCR formulation, we add an extra term to the turbulent stress tensor:
                    !
                    ! tau_ij,QCR = tau_ij - e_ij
-                   ! 
+                   !
                    ! where, according to TMR website (http://turbmodels.larc.nasa.gov/spalart.html):
                    !
                    ! e_ij = Ccr1*(O_ik*tau_jk + O_jk*tau_ik)
@@ -3318,16 +3318,16 @@ contains
                    ! O_ik = 2*W_ik/den
                    !
                    ! Remember that the tau_ij in e_ij should use only the eddy viscosity!
-                   
+
                    ! Compute denominator
                    den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + &
                         v_x*v_x + v_y*v_y + v_z*v_z + &
                         w_x*w_x + w_y*w_y + w_z*w_z)
-                   
+
                    ! Denominator should be limited to avoid division by zero in regions with
                    ! no gradients
                    den = max(den, xminn)
-                   
+
                    ! Compute factor that will multiply all tensor components.
                    ! Here we add the eddy viscosity that should multiply the stress tensor (tau)
                    ! components as well.
@@ -3341,19 +3341,19 @@ contains
                    Wyx = -Wxy
                    Wzx = -Wxz
                    Wzy = -Wyz
-                   
+
                    ! Compute the extra terms of the Boussinesq relation
                    exx = fact*(Wxy*tauxyS + Wxz*tauxzS)*two
                    eyy = fact*(Wyx*tauxyS + Wyz*tauyzS)*two
                    ezz = fact*(Wzx*tauxzS + Wzy*tauyzS)*two
-                   
+
                    exy = fact*(Wxy*tauyyS + Wxz*tauyzS + &
                                Wyx*tauxxS + Wyz*tauxzS)
                    exz = fact*(Wxy*tauyzS + Wxz*tauzzS + &
                                Wzx*tauxxS + Wzy*tauxyS)
                    eyz = fact*(Wyx*tauxzS + Wyz*tauzzS + &
                                Wzx*tauxyS + Wzy*tauyyS)
-                   
+
                    ! Apply the total viscosity to the stress tensor and add extra terms
                    tauxx = mut*tauxxS - exx
                    tauyy = mut*tauyyS - eyy
@@ -3363,7 +3363,7 @@ contains
                    tauyz = mut*tauyzS - eyz
 
                 else
-                   
+
                    ! Just apply the total viscosity to the stress tensor
                    tauxx = mut*tauxxS
                    tauyy = mut*tauyyS
@@ -3412,8 +3412,8 @@ contains
 
                 if(i == 1 .and. storeWallTensor .and. &
                      viscIminPointer(j,k) > 0) then
-                   ! We need to index viscSubface with viscIminPointer(j,k) 
-                   ! since Tapenade does not like temporary indexes 
+                   ! We need to index viscSubface with viscIminPointer(j,k)
+                   ! since Tapenade does not like temporary indexes
 
                    viscSubface(viscIminPointer(j,k))%tau(j,k,1) = tauxx
                    viscSubface(viscIminPointer(j,k))%tau(j,k,2) = tauyy
@@ -3431,8 +3431,8 @@ contains
 
                 if(i == il .and. storeWallTensor .and. &
                      viscImaxPointer(j,k) > 0) then
-                   ! We need to index viscSubface with viscImaxPointer(j,k) 
-                   ! since Tapenade does not like temporary indexes 
+                   ! We need to index viscSubface with viscImaxPointer(j,k)
+                   ! since Tapenade does not like temporary indexes
 
                    viscSubface(viscImaxPointer(j,k))%tau(j,k,1) = tauxx
                    viscSubface(viscImaxPointer(j,k))%tau(j,k,2) = tauyy
@@ -3451,12 +3451,12 @@ contains
           enddo
        enddo
     enddo
-#endif 
+#endif
     !$AD CHECKPOINT-END
     continue
     ! Possibly correct the wall shear stress.
     ! Wall function is not ADed
-#ifndef USE_TAPENADE       
+#ifndef USE_TAPENADE
     call utauWF(rFilv)
 #endif
   end subroutine viscousFlux
@@ -3498,7 +3498,7 @@ contains
        do j=2,jl
           do i=1,il
 
-             ! Compute the vector from the center of cell i to cell i+1           
+             ! Compute the vector from the center of cell i to cell i+1
              ssx = eighth*(x(i+1,j-1,k-1,1) - x(i-1,j-1,k-1,1) &
                   +         x(i+1,j-1,k,  1) - x(i-1,j-1,k,  1) &
                   +         x(i+1,j,  k-1,1) - x(i-1,j,  k-1,1) &
@@ -3612,7 +3612,7 @@ contains
        do j=1,jl
           do i=2,il
 
-             ! Compute the vector from the center of cell j to cell j+1           
+             ! Compute the vector from the center of cell j to cell j+1
              ssx = eighth*(x(i-1,j+1,k-1,1) - x(i-1,j-1,k-1,1) &
                   +         x(i-1,j+1,k,  1) - x(i-1,j-1,k,  1) &
                   +         x(i,  j+1,k-1,1) - x(i,  j-1,k-1,1) &
@@ -3726,7 +3726,7 @@ contains
        do j=2,jl
           do i=2,il
 
-             ! Compute the vector from the center of cell k to cell k+1           
+             ! Compute the vector from the center of cell k to cell k+1
              ssx = eighth*(x(i-1,j-1,k+1,1) - x(i-1,j-1,k-1,1) &
                   +         x(i-1,j,  k+1,1) - x(i-1,j,  k-1,1) &
                   +         x(i,  j-1,k+1,1) - x(i,  j-1,k-1,1) &
@@ -3837,10 +3837,10 @@ contains
 
   subroutine inviscidDissFluxScalarApprox
     !
-    !       inviscidDissFluxScalar computes the scalar artificial          
-    !       dissipation, see AIAA paper 81-1259, for a given block.        
-    !       Therefore it is assumed that the pointers in  blockPointers    
-    !       already point to the correct block.                            
+    !       inviscidDissFluxScalar computes the scalar artificial
+    !       dissipation, see AIAA paper 81-1259, for a given block.
+    !       Therefore it is assumed that the pointers in  blockPointers
+    !       already point to the correct block.
     !
     use blockPointers
     use cgnsGrid
@@ -3985,7 +3985,7 @@ contains
        enddo
     enddo
     !
-    !       Dissipative fluxes in the i-direction.                         
+    !       Dissipative fluxes in the i-direction.
     !
     do k=2,kl
        do j=2,jl
@@ -4070,7 +4070,7 @@ contains
        enddo
     enddo
     !
-    !       Dissipative fluxes in the j-direction.                         
+    !       Dissipative fluxes in the j-direction.
     !
     do k=2,kl
        do i=2,il
@@ -4150,7 +4150,7 @@ contains
        enddo
     enddo
     !
-    !       Dissipative fluxes in the k-direction.                         
+    !       Dissipative fluxes in the k-direction.
     !
     do j=2,jl
        do i=2,il
@@ -4307,12 +4307,12 @@ contains
 
   subroutine inviscidDissFluxMatrixApprox
     !
-    !       inviscidDissFluxMatrix computes the matrix artificial          
-    !       dissipation term. Instead of the spectral radius, as used in   
-    !       the scalar dissipation scheme, the absolute value of the flux  
-    !       jacobian is used. This leads to a less diffusive and           
-    !       consequently more accurate scheme. It is assumed that the      
-    !       pointers in blockPointers already point to the correct block.  
+    !       inviscidDissFluxMatrix computes the matrix artificial
+    !       dissipation term. Instead of the spectral radius, as used in
+    !       the scalar dissipation scheme, the absolute value of the flux
+    !       jacobian is used. This leads to a less diffusive and
+    !       consequently more accurate scheme. It is assumed that the
+    !       pointers in blockPointers already point to the correct block.
     !
     use blockPointers
     use cgnsGrid
@@ -4392,7 +4392,7 @@ contains
     enddo
 
     !
-    !       Dissipative fluxes in the i-direction.                         
+    !       Dissipative fluxes in the i-direction.
     !
     do k=2,kl
        do j=2,jl
@@ -4570,7 +4570,7 @@ contains
        enddo
     enddo
     !
-    !       Dissipative fluxes in the j-direction.                         
+    !       Dissipative fluxes in the j-direction.
     !
     do k=2,kl
        do i=2,il
@@ -4748,7 +4748,7 @@ contains
        enddo
     enddo
     !
-    !       Dissipative fluxes in the k-direction.                         
+    !       Dissipative fluxes in the k-direction.
     !
     do j=2,jl
        do i=2,il
@@ -4937,11 +4937,11 @@ contains
 
   subroutine inviscidDissFluxScalarCoarse
     !
-    !       inviscidDissFluxScalarCoarse computes the coarse grid, i.e.    
-    !       1st order, artificial dissipation flux for the scalar          
-    !       dissipation scheme for a given block. Therefore it is assumed  
-    !       that the pointers in blockPointers already point to the        
-    !       correct block.                                                 
+    !       inviscidDissFluxScalarCoarse computes the coarse grid, i.e.
+    !       1st order, artificial dissipation flux for the scalar
+    !       dissipation scheme for a given block. Therefore it is assumed
+    !       that the pointers in blockPointers already point to the
+    !       correct block.
     !
     use constants
     use blockPointers, only : il, jl, kl, ie, je, ke, w, p, &
@@ -5000,7 +5000,7 @@ contains
        enddo
     enddo
     !
-    !       Dissipative fluxes in the i-direction.                         
+    !       Dissipative fluxes in the i-direction.
     !
     do k=2,kl
        do j=2,jl
@@ -5048,7 +5048,7 @@ contains
        enddo
     enddo
     !
-    !       Dissipative fluxes in the j-direction.                         
+    !       Dissipative fluxes in the j-direction.
     !
     do k=2,kl
        do j=1,jl
@@ -5096,7 +5096,7 @@ contains
        enddo
     enddo
     !
-    !       Dissipative fluxes in the k-direction.                         
+    !       Dissipative fluxes in the k-direction.
     !
     do k=1,kl
        do j=2,jl
@@ -5165,13 +5165,13 @@ contains
 
   subroutine inviscidDissFluxMatrixCoarse
     !
-    !       inviscidDissFluxMatrixCoarse computes the matrix artificial    
-    !       dissipation term. Instead of the spectral radius, as used in   
-    !       the scalar dissipation scheme, the absolute value of the flux  
-    !       jacobian is used. This routine is used on the coarser grids in 
-    !       the multigrid cycle and only computes the first order          
-    !       dissipation term. It is assumed that the pointers in           
-    !       blockPointers already point to the correct block.              
+    !       inviscidDissFluxMatrixCoarse computes the matrix artificial
+    !       dissipation term. Instead of the spectral radius, as used in
+    !       the scalar dissipation scheme, the absolute value of the flux
+    !       jacobian is used. This routine is used on the coarser grids in
+    !       the multigrid cycle and only computes the first order
+    !       dissipation term. It is assumed that the pointers in
+    !       blockPointers already point to the correct block.
     !
     use constants
     use blockPointers, only : il, jl, kl, ie, je, ke, ib, jb, kb, w, p, &
@@ -5237,7 +5237,7 @@ contains
        enddo
     enddo
     !
-    !       Dissipative fluxes in the i-direction.                         
+    !       Dissipative fluxes in the i-direction.
     !
     do k=2,kl
        do j=2,jl
@@ -5381,7 +5381,7 @@ contains
        enddo
     enddo
     !
-    !       Dissipative fluxes in the j-direction.                         
+    !       Dissipative fluxes in the j-direction.
     !
     do k=2,kl
        do j=1,jl
@@ -5525,7 +5525,7 @@ contains
        enddo
     enddo
     !
-    !       Dissipative fluxes in the k-direction.                         
+    !       Dissipative fluxes in the k-direction.
     !
     do k=1,kl
        do j=2,jl

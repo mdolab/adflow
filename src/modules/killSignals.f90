@@ -1,16 +1,16 @@
        module killSignals
 !
-!       This module contains the variables used to handle the          
-!       kill signals from the user. The user can send two signals that 
+!       This module contains the variables used to handle the
+!       kill signals from the user. The user can send two signals that
 !       can be processed by the code, namely kill -USR1 and kill -USR2.
-!       The former signal will cause the program to dump a solution    
-!       File after the current iteration, the latter will dump a       
-!       solution file and the computation will be stopped. The         
-!       definition of iteration is different for steady and unsteady.  
-!       For steady it means after the current multigrid iteration, for 
-!       unsteady after the current time step.                          
-!       The handling can be switched off at compile time using the     
-!       compiler flag -DUSE_NO_SIGNALS.                                
+!       The former signal will cause the program to dump a solution
+!       File after the current iteration, the latter will dump a
+!       solution file and the computation will be stopped. The
+!       definition of iteration is different for steady and unsteady.
+!       For steady it means after the current multigrid iteration, for
+!       unsteady after the current time step.
+!       The handling can be switched off at compile time using the
+!       compiler flag -DUSE_NO_SIGNALS.
 !
         use constants, only : intType
        implicit none
@@ -31,7 +31,7 @@
 
        ! fromPython: was this instance of the solver called from python
        logical :: fromPython
-       
+
        ! routineFailed: was terminate called from a routine?
        logical :: routineFailed
        logical :: fatalFail

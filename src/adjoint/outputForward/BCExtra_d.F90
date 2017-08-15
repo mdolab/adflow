@@ -36,18 +36,18 @@ contains
     ! some of them have been AD'ed
 
     ! ------------------------------------
-    !  Symmetry Boundary Condition 
+    !  Symmetry Boundary Condition
     ! ------------------------------------
     do nn=1, nBocos
-       if (bcType(nn) == symm) then 
+       if (bcType(nn) == symm) then
           call setBCPointers_d(nn, .False.)
           call bcSymm1stHalo_d(nn)
        end if
     end do
 
-    if (secondHalo) then 
+    if (secondHalo) then
        do nn=1, nBocos
-          if (bcType(nn) == symm) then 
+          if (bcType(nn) == symm) then
              call setBCPointers_d(nn, .False.)
              call bcSymm2ndHalo_d(nn)
           end if
@@ -76,27 +76,27 @@ contains
     end if
 
     ! ------------------------------------
-    !  adibatic Wall Boundary Condition 
+    !  adibatic Wall Boundary Condition
     ! ------------------------------------
     do nn=1, nViscBocos
-       if (bcType(nn) == NSWallAdiabatic) then 
+       if (bcType(nn) == NSWallAdiabatic) then
           call setBCPointers_d(nn, .False.)
           call bcNSWallAdiabatic_d(nn, secondHalo, correctForK)
        end if
     end do
 
     ! ------------------------------------
-    !  Isothermal Wall Boundary Condition 
+    !  Isothermal Wall Boundary Condition
     ! ------------------------------------
     do nn=1, nViscBocos
-       if (bcType(nn) == NSWallIsoThermal) then 
+       if (bcType(nn) == NSWallIsoThermal) then
           call setBCPointers_d(nn, .False.)
           call bcNSWallIsothermal_d(nn, secondHalo, correctForK)
        end if
     end do
 
     ! ------------------------------------
-    !  Farfield Boundary Condition 
+    !  Farfield Boundary Condition
     ! ------------------------------------
     do nn=1,nBocos
        if (bcType(nn) == farField) then
@@ -127,7 +127,7 @@ contains
     end do
 
     ! ------------------------------------
-    !  Euler Wall Boundary Condition 
+    !  Euler Wall Boundary Condition
     ! ------------------------------------
     do nn=1,nBocos
        if (bcType(nn) == EulerWall) then

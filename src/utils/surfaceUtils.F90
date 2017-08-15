@@ -28,20 +28,20 @@ contains
        call setPointers(nn,1_intType,1_intType)
        bocos: do mm=1,nBocos
           ! Check if this surface should be included or not:
-          famInclude: if (famInList(BCData(mm)%famID, famList)) then 
+          famInclude: if (famInList(BCData(mm)%famID, famList)) then
 
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
              sizeNode = sizeNode + (iEnd - iBeg + 1)*(jEnd - jBeg + 1)
 
              ! If we don't care about blanking, it's easy:
-             blanking:if (.not. includeZipper) then 
+             blanking:if (.not. includeZipper) then
                 sizeCell = sizeCell + (iEnd - iBeg)*(jEnd - jBeg)
              else
                 ! Otherwise we have to consider the iBlank
                 do j=jBeg+1, jEnd
                    do i=iBeg+1, iEnd
-                      if (BCData(mm)%iBlank(i,j) == 1) then 
+                      if (BCData(mm)%iBlank(i,j) == 1) then
                          sizeCell = sizeCell + 1
                       end if
                    end do
@@ -52,11 +52,11 @@ contains
     end do domains
 
     ! We know must consider additional nodes that are required by the
-    ! zipper mesh triangles on the root proc. 
+    ! zipper mesh triangles on the root proc.
 
     ! No overset or we don't want to include the zipper, return immediately
     if (.not. oversetPresent .or. .not. includeZipper) then
-       return 
+       return
     end if
 
     ! If there are zipper meshes, we must include the nodes that the
@@ -64,33 +64,33 @@ contains
     do iBCGroup=1, nfamExchange
        BCGroupNeeded = .False.
        BCGroupFamLoop: do j=1, size(BCFamGroups(iBCGroup)%famList)
-          if (famInList(BCFamGroups(iBCGroup)%famList(j), famList)) then 
+          if (famInList(BCFamGroups(iBCGroup)%famList(j), famList)) then
              BCGroupNeeded = .True.
              exit BCGroupFamLoop
           end if
        end do BCGroupFamLoop
-       
-       if (.not. BCGroupNeeded) then 
+
+       if (.not. BCGroupNeeded) then
           cycle
        end if
-       
-       ! Pointer for easier reading. 
+
+       ! Pointer for easier reading.
        zipper => zipperMeshes(iBCGroup)
-       
+
        ! If we don't have a zipper for this BCGroup, just keep going.
-       if (.not. zipper%allocated) then 
+       if (.not. zipper%allocated) then
           cycle
        end if
 
        ! Include the total extra number of nodes. Not necessairly all
-       ! nodes are needed, but they will be returned anyway. 
+       ! nodes are needed, but they will be returned anyway.
        sizeNode = sizeNode + size(zipper%indices)
-       
+
        ! Include the extra number of cells. Not necessairly all cells
-       ! are needed, but here we have to check indvidually. 
-       
+       ! are needed, but here we have to check indvidually.
+
        do i=1,size(zipper%fam)
-          if (famInList(zipper%fam(i), famList)) then 
+          if (famInList(zipper%fam(i), famList)) then
              sizeCell = sizeCell + 1
           end if
        end do
@@ -132,7 +132,7 @@ contains
     domains: do nn=1,nDom
        call setPointers(nn, 1_intType, 1_intType)
        bocos: do mm=1,nBocos
-          famInclude: if (famInList(BCData(mm)%famID, famList)) then 
+          famInclude: if (famInList(BCData(mm)%famID, famList)) then
 
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
@@ -153,7 +153,7 @@ contains
              ! other two, the pointers are cyclic consistent: i,j->k,
              ! j,k (wrap) ->i, but for the j-direction is is i,k->j when
              ! to be consistent with the others it should be
-             ! k,i->j. Hope that made sense. 
+             ! k,i->j. Hope that made sense.
 
              select case(BCFaceID(mm))
              case(iMin, jMax, kMin)
@@ -163,12 +163,12 @@ contains
              end select
 
              ! Now this can be reversed *again* if we have a block that
-             ! is left handed. 
-             if (.not. rightHanded) then 
+             ! is left handed.
+             if (.not. rightHanded) then
                 regularOrdering = .not. (regularOrdering)
              end if
 
-             if (regularOrdering) then 
+             if (regularOrdering) then
                 ! Do regular ordering.
 
                 ! Loop over generic face size...Note we are doing zero
@@ -185,7 +185,7 @@ contains
 
                 do j=0,nj-2
                    do i=0,ni-2
-                      if (.not. includeZipper .or. BCData(mm)%iBlank(i+iBeg+1, j+jBeg+1) ==1 ) then 
+                      if (.not. includeZipper .or. BCData(mm)%iBlank(i+iBeg+1, j+jBeg+1) ==1 ) then
                          conn(4*cellCount+1) = nodeCount + (j  )*ni + i       + 1! n1
                          conn(4*cellCount+2) = nodeCount + (j  )*ni + i + 1   + 1! n2
                          conn(4*cellCount+3) = nodeCount + (j+1)*ni + i + 1   + 1! n3
@@ -204,7 +204,7 @@ contains
                 ! Do reverse ordering:
                 do j=0,nj-2
                    do i=0,ni-2
-                      if (.not. includeZipper .or. BCData(mm)%iBlank(i+iBeg+1, j+JBeg+1) ==1 ) then 
+                      if (.not. includeZipper .or. BCData(mm)%iBlank(i+iBeg+1, j+JBeg+1) ==1 ) then
                          conn(4*cellCount+1) = nodeCount + (j  )*ni + i        + 1! n1
                          conn(4*cellCount+2) = nodeCount + (j+1)*ni + i        + 1! n4
                          conn(4*cellCount+3) = nodeCount + (j+1)*ni + i + 1    + 1! n3
@@ -230,7 +230,7 @@ contains
 
     ! No overset or don't want zipper return immediately
     if (.not. oversetPresent .or. .not. includeZipper) then
-       return 
+       return
     end if
 
     ! If there are zipper meshes, we must include the nodes that the
@@ -239,29 +239,29 @@ contains
 
        BCGroupNeeded = .False.
        BCGroupFamLoop: do i=1, size(BCFamGroups(iBCGroup)%famList)
-          if (famInList(BCFamGroups(iBCGroup)%famList(i), famList)) then 
+          if (famInList(BCFamGroups(iBCGroup)%famList(i), famList)) then
              BCGroupNeeded = .True.
              exit BCGroupFamLoop
           end if
        end do BCGroupFamLoop
 
-       if (.not. BCGroupNeeded) then 
+       if (.not. BCGroupNeeded) then
           cycle
        end if
-       
-       ! Pointer for easier reading. 
+
+       ! Pointer for easier reading.
        zipper => zipperMeshes(iBCGroup)
-       
+
        ! If the zipper isn't done yet, don't do anything
-       if (.not. zipper%allocated) then 
+       if (.not. zipper%allocated) then
           cycle
        end if
-       
+
        ! Include the extra number of cells. Not necessairly all cells
-       ! are needed, but ehre we have to check indvidually. 
-       
+       ! are needed, but ehre we have to check indvidually.
+
        do i=1,size(zipper%fam)
-          if (famInList(zipper%fam(i), famList)) then 
+          if (famInList(zipper%fam(i), famList)) then
              ! This triangle should be included. Note that we use
              ! degenerate quads for the triangles.
              conn(4*cellCount+1) = nodeCount + zipper%conn(1, i)
@@ -303,7 +303,7 @@ contains
     domains: do nn=1,nDom
        call setPointers(nn, 1_intType, 1_intType)
        bocos: do mm=1,nBocos
-          famInclude: if (famInList(BCData(mm)%famID, famList)) then 
+          famInclude: if (famInList(BCData(mm)%famID, famList)) then
 
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
@@ -312,7 +312,7 @@ contains
              nj = jEnd - jBeg + 1
              do j=0,nj-2
                 do i=0,ni-2
-                   if (.not. includeZipper .or. BCData(mm)%iBlank(i+iBeg+1, j+JBeg+1)==1 ) then 
+                   if (.not. includeZipper .or. BCData(mm)%iBlank(i+iBeg+1, j+JBeg+1)==1 ) then
                       cellCount = cellCount + 1
                       elemFam(cellCount) = BCdata(mm)%famID
                    end if
@@ -328,7 +328,7 @@ contains
 
     ! No overset or don't want zipper
     if (.not. oversetPresent .or. .not. includeZipper) then
-       return 
+       return
     end if
 
     ! If there are zipper meshes, we must include the nodes that the
@@ -337,29 +337,29 @@ contains
 
        BCGroupNeeded = .False.
        BCGroupFamLoop: do i=1, size(BCFamGroups(iBCGroup)%famList)
-          if (famInList(BCFamGroups(iBCGroup)%famList(i), famList)) then 
+          if (famInList(BCFamGroups(iBCGroup)%famList(i), famList)) then
              BCGroupNeeded = .True.
              exit BCGroupFamLoop
           end if
        end do BCGroupFamLoop
 
-       if (.not. BCGroupNeeded) then 
+       if (.not. BCGroupNeeded) then
           cycle
        end if
-       
-       ! Pointer for easier reading. 
+
+       ! Pointer for easier reading.
        zipper => zipperMeshes(iBCGroup)
-       
+
        ! If the zipper isn't done yet, don't do anything
-       if (.not. zipper%allocated) then 
+       if (.not. zipper%allocated) then
           cycle
        end if
-       
+
        ! Include the extra number of cells. Not necessairly all cells
-       ! are needed, but ehre we have to check indvidually. 
-       
+       ! are needed, but ehre we have to check indvidually.
+
        do i=1, size(zipper%fam)
-          if (famInList(zipper%fam(i), famList)) then 
+          if (famInList(zipper%fam(i), famList)) then
              ! This triangle should be included. Note that we use
              ! degenerate quads for the triangles.
              cellCount = cellCount + 1
@@ -400,14 +400,14 @@ contains
     real(kind=realType), dimension(:), pointer :: localPtr
     sps = sps_in
 
-    ii = 0 
+    ii = 0
     domains: do nn=1,nDom
        call setPointers(nn, 1_intType, sps)
 
        ! Loop over the number of boundary subfaces of this block.
        bocos: do mm=1,nBocos
 
-          famInclude: if (famInList(BCData(mm)%famID, famList)) then 
+          famInclude: if (famInList(BCData(mm)%famID, famList)) then
 
              ! NODE Based
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
@@ -422,13 +422,13 @@ contains
                       points(:,ii) = x(1,i,j,:)
                    case(imax)
                       points(:,ii) = x(il,i,j,:)
-                   case(jmin) 
+                   case(jmin)
                       points(:,ii) = x(i,1,j,:)
-                   case(jmax) 
+                   case(jmax)
                       points(:,ii) = x(i,jl,j,:)
-                   case(kmin) 
+                   case(kmin)
                       points(:,ii) = x(i,j,1,:)
-                   case(kmax) 
+                   case(kmax)
                       points(:,ii) = x(i,j,kl,:)
                    end select
                 end do
@@ -437,9 +437,9 @@ contains
        end do bocos
     end do domains
 
-    ! No overset or not zipper, return 
+    ! No overset or not zipper, return
     if (.not. oversetPresent .or. .not. includeZipper) then
-       return 
+       return
     end if
 
     ! If there are zipper meshes, we must include the nodes that the
@@ -448,39 +448,39 @@ contains
 
        zipper => zipperMeshes(iBCGroup)
 
-       if (.not. zipper%allocated) then 
+       if (.not. zipper%allocated) then
           cycle
        end if
 
        exch => BCFamExchange(iBCGroup, sps)
        BCGroupNeeded = .False.
        BCGroupFamLoop: do i=1, size(BCFamGroups(iBCGroup)%famList)
-          if (famInList(BCFamGroups(iBCGroup)%famList(i), famList)) then 
+          if (famInList(BCFamGroups(iBCGroup)%famList(i), famList)) then
              BCGroupNeeded = .True.
              exit BCGroupFamLoop
           end if
        end do BCGroupFamLoop
 
-       if (.not. BCGroupNeeded) then 
+       if (.not. BCGroupNeeded) then
           cycle
        end if
 
-       ! Now we know we *actually* need something from this BCGroup. 
+       ! Now we know we *actually* need something from this BCGroup.
 
        ! Loop over each dimension individually since we have a scalar
        ! scatter.
        dimLoop: do iDim=1,3
-          
+
           call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
           call EChk(ierr,__FILE__,__LINE__)
           localPtr = zero
-  
+
           ! jj is the running counter through the pointer array.
           jj = 0
           do nn=1, nDom
              call setPointers(nn, 1_intType, sps)
              do mm=1, nBocos
-                famInclude2: if (famInList(BCData(mm)%famID, exch%famList)) then 
+                famInclude2: if (famInList(BCData(mm)%famID, exch%famList)) then
                    iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
                    jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
                    call setBCPointers(mm, .True.)
@@ -506,13 +506,13 @@ contains
           call VecScatterEnd(zipper%scatter, exch%nodeValLocal,&
                zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
           call EChk(ierr,__FILE__,__LINE__)
-                    
+
           ! The values we need are precisely what is in zipper%localVal
           call vecGetArrayF90(zipper%localVal, localPtr, ierr)
           call EChk(ierr,__FILE__,__LINE__)
 
-          ! Just copy the received data into the points array. Only root proc. 
-          if (myid == 0) then 
+          ! Just copy the received data into the points array. Only root proc.
+          if (myid == 0) then
              points(iDim, ii+1:ii+size(localPtr)) = localPtr
           end if
           ! The values we need are precisely what is in zipper%localVal
@@ -521,7 +521,7 @@ contains
 
        end do dimLoop
 
-       ! Increcment the running ii counter. 
+       ! Increcment the running ii counter.
        ii = ii + size(localPtr)
 
     end do
@@ -533,7 +533,7 @@ contains
     ! vector, vec2, of size (3, n2) defined on family list 'famList2'
 
     ! This operation is actually pretty fast since it just requires a
-    ! single copy of surface-based data. 
+    ! single copy of surface-based data.
     use constants
     use blockPointers, onlY :nDom, flowDoms
     use sorting, only : famInList
@@ -555,7 +555,7 @@ contains
     logical :: fam1Included, fam2Included
     type(zipperMesh), pointer :: zipper
     logical :: BCGroupNeeed
-    ii = 0 
+    ii = 0
     jj = 0
     domains: do nn=1,nDom
        ! Don't set pointers for speed
@@ -574,7 +574,7 @@ contains
           iEnd = flowDoms(nn, 1, 1)%bcData(mm)%inEnd
           iSize = (iEnd-iBeg+1)*(jEnd-jBeg+1)
 
-          if (fam1Included .and. fam2Included) then 
+          if (fam1Included .and. fam2Included) then
              ! The two lists overlap so copy:
              do k=1, iSize
                 vec2(:, k+jj) = vec1(:, k+ii)
@@ -582,11 +582,11 @@ contains
           end if
 
           ! Finally increment the counters if the face had been inclded
-          if (fam1Included) then 
+          if (fam1Included) then
              ii = ii + iSize
           end if
 
-          if (fam2Included) then 
+          if (fam2Included) then
              jj =jj + iSize
           end if
 
@@ -597,11 +597,11 @@ contains
     ! mesh on the root proc.
 
     ! We know must consider additional nodes that are required by the
-    ! zipper mesh triangles on the root proc. 
+    ! zipper mesh triangles on the root proc.
 
     ! No overset or don't want to include zipper, return immediately
     if (.not. oversetPresent .or. .not. includeZipper) then
-       return 
+       return
     end if
 
     ! If there are zipper meshes, we must include the nodes that the
@@ -613,10 +613,10 @@ contains
        fam1Included = .False.
        fam2Included = .False.
        BCGroupFamLoop: do i=1, size(BCFamGroups(iBCGroup)%famList)
-          if (famInList(BCFamGroups(iBCGroup)%famList(i), famList1)) then 
+          if (famInList(BCFamGroups(iBCGroup)%famList(i), famList1)) then
              fam1Included = .True.
           end if
-          if (famInList(BCFamGroups(iBCGroup)%famList(i), famList2)) then 
+          if (famInList(BCFamGroups(iBCGroup)%famList(i), famList2)) then
              fam2Included = .True.
           end if
        end do BCGroupFamLoop
@@ -628,18 +628,18 @@ contains
        if (fam1Included .and. fam2Included) then
           ! The two lists overlap so copy:
           do k=1, iSize
-             if (k+ii <= n1) then 
+             if (k+ii <= n1) then
                 vec2(:, k+jj) = vec1(:, k+ii)
              end if
           end do
        end if
-       
-       ! Finally increment the counters if this BCGroup had been included. 
-       if (fam1Included) then 
+
+       ! Finally increment the counters if this BCGroup had been included.
+       if (fam1Included) then
           ii = ii + iSize
        end if
-       
-       if (fam2Included) then 
+
+       if (fam2Included) then
           jj = jj + iSize
        end if
     end do BCGroupLoop
@@ -647,22 +647,22 @@ contains
   end subroutine mapVector
 
   subroutine getWallList(wallList, nWallList, nFamTotal)
-    
+
     ! Python wrapped utility function to return the list of families
     ! that are walls to Python since we need that information in
-    ! Python for a few default values. 
+    ! Python for a few default values.
 
     use constants
     use surfaceFamilies, only :BCFamGroups
     implicit none
-    
+
     integer(kind=intType), intent(in) :: nFamtotal
     integer(kind=intType), dimension(nFamTotal), intent(out) :: wallList
     integer(kind=intType), intent(out) :: nWallList
 
     nWallList = size(BCFamGroups(iBCGroupWalls)%famList)
     wallList(1:nWallList) = BCfamGroups(iBCGroupWalls)%famList
-    
+
   end subroutine getWallList
 
 end module surfaceUtils

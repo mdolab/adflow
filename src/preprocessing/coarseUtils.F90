@@ -6,12 +6,12 @@ contains
 
   subroutine createCoarseBlocks(level)
     !
-    !       createCoarseBlocks creates the block data structure for the    
-    !       given coarse grid from the 1 level finer grid. Only direct     
-    !       info is created, like owned coordinates, block sizes and       
-    !       subface info. Indirect info, like face normals, volumes, wall  
-    !       distances, etc. Are created later on. That info can be created 
-    !       independent of the finer grid.                                 
+    !       createCoarseBlocks creates the block data structure for the
+    !       given coarse grid from the 1 level finer grid. Only direct
+    !       info is created, like owned coordinates, block sizes and
+    !       subface info. Indirect info, like face normals, volumes, wall
+    !       distances, etc. Are created later on. That info can be created
+    !       independent of the finer grid.
     !
     use constants
     use block
@@ -244,8 +244,8 @@ contains
        if(flowDoms(nn,levm1,1)%nz == 2*flowDoms(nn,level,1)%nz) &
             flowDoms(nn,level,1)%kCoarsened = regular
        !
-       !         The variables, which control the restriction to and the      
-       !         interpolation from the coarser grid level.                   
+       !         The variables, which control the restriction to and the
+       !         interpolation from the coarser grid level.
        !
        ! Allocate the memory.
 
@@ -391,9 +391,9 @@ contains
           endif
        enddo
        !
-       !         The coordinate mapping from fine to coarse and coarse to     
-       !         fine. These are needed to determine the coarse grid subface  
-       !         info.                                                        
+       !         The coordinate mapping from fine to coarse and coarse to
+       !         fine. These are needed to determine the coarse grid subface
+       !         info.
        !
        ! Allocate the memory.
 
@@ -436,10 +436,10 @@ contains
           endif
        enddo
        !
-       !         The subface info. Except for the subface range all other     
-       !         data can be copied. The range must be adapted and the donor  
-       !         range is created later, because the coarsening info of the   
-       !         donor block must be known.                                   
+       !         The subface info. Except for the subface range all other
+       !         data can be copied. The range must be adapted and the donor
+       !         range is created later, because the coarsening info of the
+       !         donor block must be known.
        !
        flowDoms(nn,level,1)%nSubface   = flowDoms(nn,levm1,1)%nSubface
        flowDoms(nn,level,1)%n1to1      = flowDoms(nn,levm1,1)%n1to1
@@ -781,11 +781,11 @@ contains
 
   subroutine coarseOwnedCoordinates(level)
     !
-    !       coarseOwnedCoordinates determines from the coarsening info     
-    !       the owned coordinates of the coarse grid. This is done in a    
-    !       separate routine, because in unsteady moving mesh mode or for  
-    !       deforming meshes only new coordinates need to be computed,     
-    !       while the connectivity remains the same.                       
+    !       coarseOwnedCoordinates determines from the coarsening info
+    !       the owned coordinates of the coarse grid. This is done in a
+    !       separate routine, because in unsteady moving mesh mode or for
+    !       deforming meshes only new coordinates need to be computed,
+    !       while the connectivity remains the same.
     !
     use block
     use inputTimeSpectral
@@ -861,9 +861,9 @@ contains
 
   subroutine update1to1Coarse(level, subface)
     !
-    !       update1to1Coarse determines whether or not the given 1 to 1    
-    !       block boundary subface on the fine level is still a 1 to 1     
-    !       subface on the coarser grid level.                             
+    !       update1to1Coarse determines whether or not the given 1 to 1
+    !       block boundary subface on the fine level is still a 1 to 1
+    !       subface on the coarser grid level.
     !
     use block
     use coarse1to1Subface
@@ -1042,8 +1042,8 @@ contains
   end subroutine update1to1Coarse
   subroutine coarseDonorInfo(level)
     !
-    !       coarseDonorInfo creates the donor info for the internal        
-    !       block boundaries on the given coarse grid level.               
+    !       coarseDonorInfo creates the donor info for the internal
+    !       block boundaries on the given coarse grid level.
     !
     use communication
     use coarse1to1Subface
@@ -1360,9 +1360,9 @@ contains
 
   subroutine checkCoarse1to1(level)
     !
-    !       checkCoarse1to1 removes the nonmatching block boundaries       
-    !       from the list of 1 to 1 matching ones. They are in there,      
-    !       because they are 1 to 1 matching on the finer grids.           
+    !       checkCoarse1to1 removes the nonmatching block boundaries
+    !       from the list of 1 to 1 matching ones. They are in there,
+    !       because they are 1 to 1 matching on the finer grids.
     !
     use constants
     use cgnsGrid

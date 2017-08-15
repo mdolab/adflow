@@ -1,7 +1,7 @@
 module adtLocalSearch
   !
-  !      Module which contains the subroutines to perform the local     
-  !      searches, i.e. the tree traversals.                            
+  !      Module which contains the subroutines to perform the local
+  !      searches, i.e. the tree traversals.
   !
   use constants
   use adtUtils, only : ADTs, adtLeafType, adtBBoxTargetType, stack, &
@@ -21,38 +21,38 @@ contains
        arrDonor,  nCoor,  &
        nInterpol)
     !
-    !        This routine performs the actual containment search in the   
-    !        local tree. It is a local routine in the sense that no       
-    !        communication is involved.                                   
-    !        Subroutine intent(in) arguments.                             
-    !        --------------------------------                             
-    !        ADT:       ADT type whose ADT must be searched               
-    !        nCoor:     Number of coordinates for which the element must  
-    !                   be determined.                                    
-    !        coor:      The coordinates of these points.                  
-    !        nInterpol: Number of variables to be interpolated.           
-    !        arrDonor:  Array with the donor data; needed to obtain the   
-    !                   interpolated data.                                
-    !        Subroutine intent(out) arguments.                            
-    !        ---------------------------------                            
-    !        intInfo: 2D integer array, in which the following output     
-    !                 be be stored:                                       
-    !                 intInfo(1,:): processor ID of the processor where   
-    !                               the element is stored. This of course 
-    !                               is myID. If no element is found this  
-    !                               value is set to -1.                   
-    !                 intInfo(2,:): The element type of the element.      
-    !                 intInfo(3,:): The element ID of the element in the  
-    !                               connectivity.                         
-    !        uvw:     2D floating point array to store the parametric     
-    !                 coordinates of the point in the transformed element 
-    !                 and the interpolated data:                          
-    !                 uvw(1, :): Parametric u-weight.                     
-    !                 uvw(2, :): Parametric v-weight.                     
-    !                 uvw(3, :): Parametric w-weight.                     
-    !                 uvw(4:,:): Interpolated solution, if desired. It is 
-    !                            possible to call this routine with       
-    !                            nInterpol == 0.                          
+    !        This routine performs the actual containment search in the
+    !        local tree. It is a local routine in the sense that no
+    !        communication is involved.
+    !        Subroutine intent(in) arguments.
+    !        --------------------------------
+    !        ADT:       ADT type whose ADT must be searched
+    !        nCoor:     Number of coordinates for which the element must
+    !                   be determined.
+    !        coor:      The coordinates of these points.
+    !        nInterpol: Number of variables to be interpolated.
+    !        arrDonor:  Array with the donor data; needed to obtain the
+    !                   interpolated data.
+    !        Subroutine intent(out) arguments.
+    !        ---------------------------------
+    !        intInfo: 2D integer array, in which the following output
+    !                 be be stored:
+    !                 intInfo(1,:): processor ID of the processor where
+    !                               the element is stored. This of course
+    !                               is myID. If no element is found this
+    !                               value is set to -1.
+    !                 intInfo(2,:): The element type of the element.
+    !                 intInfo(3,:): The element ID of the element in the
+    !                               connectivity.
+    !        uvw:     2D floating point array to store the parametric
+    !                 coordinates of the point in the transformed element
+    !                 and the interpolated data:
+    !                 uvw(1, :): Parametric u-weight.
+    !                 uvw(2, :): Parametric v-weight.
+    !                 uvw(3, :): Parametric w-weight.
+    !                 uvw(4:,:): Interpolated solution, if desired. It is
+    !                            possible to call this routine with
+    !                            nInterpol == 0.
     !
     implicit none
     !
@@ -113,44 +113,44 @@ contains
        intInfo, uvw, arrDonor, nInterpol, BB, &
        frontLeaves, frontLeavesNew, failed)
     !
-    !        This routine is replaces the original containment            
-    !        tree search, however, it has been optimized for searching a  
-    !        single query point at a time. Specifically, this means that  
-    !        there are no allocatable arrays inside this routine; they    
-    !        must be supplied exterally. Also since only a single point   
-    !        is searched we can fix some of the dimensions. This routine  
-    !        requires pointers for BB, frontLeaves and frontLeavesNew to  
-    !        be passed to the routine. Since this routine is called a     
-    !        very large number of times, these cannot be allocated        
-    !        dynamically inside for speed purposes.                       
-    !        Subroutine intent(in) arguments.                             
-    !        --------------------------------                             
-    !        ADT:       ADT type whose ADT must be searched               
-    !        coor:      The coordinate of the point to be searched.       
-    !        nInterpol: Number of variables to be interpolated.           
-    !        arrDonor:  Array with the donor data; needed to obtain the   
-    !                   interpolated data.                                
-    !        Subroutine intent(out) arguments.                            
-    !        ---------------------------------                            
-    !        intInfo: 1D integer array of length three , in which the     
-    !               following output                                      
-    !                 be be stored:                                       
-    !       *          intInfo(1): processor ID of the processor where    
-    !                               the element is stored. This of course 
-    !                               is myID. If no element is found this  
-    !                               value is set to -1.                   
-    !       *          intInfo(2): The element type of the element.        
-    !       *          intInfo(3): The element ID of the element in the   
-    !                               connectivity.                         
-    !        uvw:     1D floating point array to store the parametric     
-    !                 coordinates of the point in the transformed element 
-    !                 and the interpolated data:                          
-    !                 uvw(1): Parametric u-weight.                        
-    !                 uvw(2): Parametric v-weight.                        
-    !                 uvw(3): Parametric w-weight.                        
+    !        This routine is replaces the original containment
+    !        tree search, however, it has been optimized for searching a
+    !        single query point at a time. Specifically, this means that
+    !        there are no allocatable arrays inside this routine; they
+    !        must be supplied exterally. Also since only a single point
+    !        is searched we can fix some of the dimensions. This routine
+    !        requires pointers for BB, frontLeaves and frontLeavesNew to
+    !        be passed to the routine. Since this routine is called a
+    !        very large number of times, these cannot be allocated
+    !        dynamically inside for speed purposes.
+    !        Subroutine intent(in) arguments.
+    !        --------------------------------
+    !        ADT:       ADT type whose ADT must be searched
+    !        coor:      The coordinate of the point to be searched.
+    !        nInterpol: Number of variables to be interpolated.
+    !        arrDonor:  Array with the donor data; needed to obtain the
+    !                   interpolated data.
+    !        Subroutine intent(out) arguments.
+    !        ---------------------------------
+    !        intInfo: 1D integer array of length three , in which the
+    !               following output
+    !                 be be stored:
+    !       *          intInfo(1): processor ID of the processor where
+    !                               the element is stored. This of course
+    !                               is myID. If no element is found this
+    !                               value is set to -1.
+    !       *          intInfo(2): The element type of the element.
+    !       *          intInfo(3): The element ID of the element in the
+    !                               connectivity.
+    !        uvw:     1D floating point array to store the parametric
+    !                 coordinates of the point in the transformed element
+    !                 and the interpolated data:
+    !                 uvw(1): Parametric u-weight.
+    !                 uvw(2): Parametric v-weight.
+    !                 uvw(3): Parametric w-weight.
     !                 uvw(4:): Interpolated solution(s), if desired. It is
-    !                            possible to call this routine with       
-    !                            nInterpol == 0.                          
+    !                            possible to call this routine with
+    !                            nInterpol == 0.
     !
     use constants
     implicit none
@@ -220,8 +220,8 @@ contains
     intInfo(1) = -1
     failed = .True.
     !
-    !          Part 1. Traverse the tree and determine the target         
-    !                  bounding boxes, which may contain the element.     
+    !          Part 1. Traverse the tree and determine the target
+    !                  bounding boxes, which may contain the element.
     !
     ! Start at the root, i.e. set the front leaf to the root leaf.
     ! Also initialize the number of possible bounding boxes to 0.
@@ -325,8 +325,8 @@ contains
 
     enddo treeTraversalLoop
     !
-    !          Part 2: Loop over the selected bounding boxes and check if 
-    !                  the corresponding elements contain the point.      
+    !          Part 2: Loop over the selected bounding boxes and check if
+    !                  the corresponding elements contain the point.
     !
     elementFound = .false.
 
@@ -497,7 +497,7 @@ contains
              ! weights is below the threshold
 
              val = sqrt(du*du + dv*dv + dw*dw)
-             if(val <= thresConv) then 
+             if(val <= thresConv) then
                 failed = .False.
                 exit NewtonPyra
              end if
@@ -625,7 +625,7 @@ contains
              ! weights is below the threshold
 
              val = sqrt(du*du + dv*dv + dw*dw)
-             if(val <= thresConv) then 
+             if(val <= thresConv) then
                 failed = .False.
                 exit NewtonPrisms
              end if
@@ -768,7 +768,7 @@ contains
              ! weights is below the threshold
 
              val = sqrt(du*du + dv*dv + dw*dw)
-             if(val <= thresConv) then 
+             if(val <= thresConv) then
                 failed = .False.
                 exit NewtonHexa
              end if
@@ -781,7 +781,7 @@ contains
 
           if(u >= zero .and. u <= one .and. &
                v >= zero .and. v <= one .and. &
-               w >= zero .and. w <= one .and. .not. failed) then 
+               w >= zero .and. w <= one .and. .not. failed) then
              elementFound = .true.
 
              ! Set the number of interpolation nodes to 8 and
@@ -848,46 +848,46 @@ contains
        arrDonor,  nCoor,  &
        nInterpol)
     !
-    !        This routine performs the actual minimum distance search in  
-    !        the local tree. It is a local routine in the sense that no   
-    !        communication is involved.                                   
-    !        Subroutine intent(in) arguments.                             
-    !        --------------------------------                             
-    !        ADT:       ADT type whose ADT must be searched               
-    !        nCoor:     Number of coordinates for which the element must  
-    !                   be determined.                                    
-    !        coor:      The coordinates and the currently stored minimum  
-    !                   distance squared of these points:                 
-    !                   coor(1,;): Coordinate 1.                          
-    !                   coor(2,;): Coordinate 2.                          
-    !                   coor(3,;): Coordinate 3.                          
-    !                   coor(4,;): The currently stored minimum distance  
-    !                   squared.                                          
-    !        nInterpol: Number of variables to be interpolated.           
-    !        arrDonor:  Array with the donor data; needed to obtain the   
-    !                   interpolated data.                                
-    !        Subroutine intent(out) arguments.                            
-    !        ---------------------------------                            
-    !        intInfo: 2D integer array, in which the following output     
-    !                 will be stored:                                     
-    !                 intInfo(1,:): processor ID of the processor where   
-    !                               the element is stored. This of course 
-    !                               is myID. If no element is found this  
-    !                               value is set to -1.                   
-    !                 intInfo(2,:): The element type of the element.      
-    !                 intInfo(3,:): The element ID of the element in the  
-    !                               the connectivity.                     
-    !        uvw:     2D floating point array to store the parametric     
-    !                 coordinates of the point in the transformed element 
-    !                 as well as the new distance squared and the         
-    !                 interpolated solution:                              
-    !                 uvw(1, :): Parametric u-weight.                     
-    !                 uvw(2, :): Parametric v-weight.                     
-    !                 uvw(3, :): Parametric w-weight.                     
-    !                 uvw(4, :): The new distance squared.                
-    !                 uvw(5:,:): Interpolated solution, if desired. It is 
-    !                            possible to call this routine with       
-    !                            nInterpol == 0.                          
+    !        This routine performs the actual minimum distance search in
+    !        the local tree. It is a local routine in the sense that no
+    !        communication is involved.
+    !        Subroutine intent(in) arguments.
+    !        --------------------------------
+    !        ADT:       ADT type whose ADT must be searched
+    !        nCoor:     Number of coordinates for which the element must
+    !                   be determined.
+    !        coor:      The coordinates and the currently stored minimum
+    !                   distance squared of these points:
+    !                   coor(1,;): Coordinate 1.
+    !                   coor(2,;): Coordinate 2.
+    !                   coor(3,;): Coordinate 3.
+    !                   coor(4,;): The currently stored minimum distance
+    !                   squared.
+    !        nInterpol: Number of variables to be interpolated.
+    !        arrDonor:  Array with the donor data; needed to obtain the
+    !                   interpolated data.
+    !        Subroutine intent(out) arguments.
+    !        ---------------------------------
+    !        intInfo: 2D integer array, in which the following output
+    !                 will be stored:
+    !                 intInfo(1,:): processor ID of the processor where
+    !                               the element is stored. This of course
+    !                               is myID. If no element is found this
+    !                               value is set to -1.
+    !                 intInfo(2,:): The element type of the element.
+    !                 intInfo(3,:): The element ID of the element in the
+    !                               the connectivity.
+    !        uvw:     2D floating point array to store the parametric
+    !                 coordinates of the point in the transformed element
+    !                 as well as the new distance squared and the
+    !                 interpolated solution:
+    !                 uvw(1, :): Parametric u-weight.
+    !                 uvw(2, :): Parametric v-weight.
+    !                 uvw(3, :): Parametric w-weight.
+    !                 uvw(4, :): The new distance squared.
+    !                 uvw(5:,:): Interpolated solution, if desired. It is
+    !                            possible to call this routine with
+    !                            nInterpol == 0.
     !
     implicit none
     !
@@ -959,49 +959,49 @@ contains
   subroutine minDistanceTreeSearchSinglePoint(ADT, coor, intInfo, &
        uvw, arrDonor, nInterpol, BB, frontLeaves, frontLeavesNew)
     !
-    !        This routine performs the actual minimum distance search for 
-    !        a single point on the local tree. It is local in the sens    
-    !        that no communication is involved. This routine does the     
-    !        actual search. The minDistanceTreeSearch is just a wrapper   
-    !        around this routine. The reason for the split is that the    
-    !        overset mesh connectivity requires efficient calling with    
-    !        a single coordinate. Therefore, this rouine does not         
-    !        allocate/deallocate any variables.                           
-    !        Subroutine intent(in) arguments.                             
-    !        --------------------------------                             
-    !        ADT:       ADT type whose ADT must be searched               
-    !        coor:      The coordinates and the currently stored minimum  
-    !                   distance squared of these points:                 
-    !                   coor(1): Coordinate 1.                            
-    !                   coor(2): Coordinate 2.                            
-    !                   coor(3): Coordinate 3.                            
-    !                   coor(4): The currently stored minimum distance    
-    !                   squared.                                          
-    !        nInterpol: Number of variables to be interpolated.           
-    !        arrDonor:  Array with the donor data; needed to obtain the   
-    !                   interpolated data.                                
-    !        Subroutine intent(out) arguments.                            
-    !        ---------------------------------                            
-    !        intInfo: 1D integer array, in which the following output     
-    !                 will be stored:                                     
-    !                 intInfo(1): processor ID of the processor where   
-    !                               the element is stored. This of course 
-    !                               is myID. If no element is found this  
-    !                               value is set to -1.                   
-    !                 intInfo(2): The element type of the element.        
-    !                 intInfo(3): The element ID of the element in the    
-    !                               the connectivity.                     
-    !        uvw:     2D floating point array to store the parametric     
-    !                 coordinates of the point in the transformed element 
-    !                 as well as the new distance squared and the         
-    !                 interpolated solution:                              
-    !                 uvw(1): Parametric u-weight.                        
-    !                 uvw(2): Parametric v-weight.                        
-    !                 uvw(3): Parametric w-weight.                        
-    !                 uvw(4): The new distance squared.                   
-    !                 uvw(5): Interpolated solution, if desired. It is    
-    !                            possible to call this routine with       
-    !                            nInterpol == 0.                          
+    !        This routine performs the actual minimum distance search for
+    !        a single point on the local tree. It is local in the sens
+    !        that no communication is involved. This routine does the
+    !        actual search. The minDistanceTreeSearch is just a wrapper
+    !        around this routine. The reason for the split is that the
+    !        overset mesh connectivity requires efficient calling with
+    !        a single coordinate. Therefore, this rouine does not
+    !        allocate/deallocate any variables.
+    !        Subroutine intent(in) arguments.
+    !        --------------------------------
+    !        ADT:       ADT type whose ADT must be searched
+    !        coor:      The coordinates and the currently stored minimum
+    !                   distance squared of these points:
+    !                   coor(1): Coordinate 1.
+    !                   coor(2): Coordinate 2.
+    !                   coor(3): Coordinate 3.
+    !                   coor(4): The currently stored minimum distance
+    !                   squared.
+    !        nInterpol: Number of variables to be interpolated.
+    !        arrDonor:  Array with the donor data; needed to obtain the
+    !                   interpolated data.
+    !        Subroutine intent(out) arguments.
+    !        ---------------------------------
+    !        intInfo: 1D integer array, in which the following output
+    !                 will be stored:
+    !                 intInfo(1): processor ID of the processor where
+    !                               the element is stored. This of course
+    !                               is myID. If no element is found this
+    !                               value is set to -1.
+    !                 intInfo(2): The element type of the element.
+    !                 intInfo(3): The element ID of the element in the
+    !                               the connectivity.
+    !        uvw:     2D floating point array to store the parametric
+    !                 coordinates of the point in the transformed element
+    !                 as well as the new distance squared and the
+    !                 interpolated solution:
+    !                 uvw(1): Parametric u-weight.
+    !                 uvw(2): Parametric v-weight.
+    !                 uvw(3): Parametric w-weight.
+    !                 uvw(4): The new distance squared.
+    !                 uvw(5): Interpolated solution, if desired. It is
+    !                            possible to call this routine with
+    !                            nInterpol == 0.
     !
     implicit none
     !
@@ -1075,9 +1075,9 @@ contains
     intInfo(1)     = -1
     uvw(4) = coor(4)
     !
-    !          Part 1. Determine the possible minimum distance squared to 
-    !                  the root leaf. If larger than the current distance 
-    !                  there is no need to search this tree.              
+    !          Part 1. Determine the possible minimum distance squared to
+    !                  the root leaf. If larger than the current distance
+    !                  there is no need to search this tree.
     !
     if(     coor(1) < ADTree(1)%xMin(1)) then
        dx =  coor(1) - ADTree(1)%xMin(1)
@@ -1109,8 +1109,8 @@ contains
 
     if((dx*dx + dy*dy + dz*dz) >= uvw(4)) return
     !
-    !          Part 2. Find a likely bounding box, which minimizes the    
-    !                  guaranteed distance.                               
+    !          Part 2. Find a likely bounding box, which minimizes the
+    !                  guaranteed distance.
     !
     activeLeaf = 1
 
@@ -1193,8 +1193,8 @@ contains
 
     uvw(4) = min(uvw(4),dd(1),dd(2))
     !
-    !          Part 3. Find the bounding boxes whose possible minimum     
-    !                  distance is less than the currently stored value.  
+    !          Part 3. Find the bounding boxes whose possible minimum
+    !                  distance is less than the currently stored value.
     !
     ! In part 1 it was already tested that the possible distance
     ! squared of the root leaf was less than the current value.
@@ -1398,8 +1398,8 @@ contains
 
     call qsortBBoxTargets(BB, nBB, ADT)
     !
-    !          Part 4: Loop over the selected bounding boxes and check if 
-    !                  the corresponding element minimizes the distance.  
+    !          Part 4: Loop over the selected bounding boxes and check if
+    !                  the corresponding element minimizes the distance.
     !
     elementFound = .false.
 
@@ -1726,17 +1726,17 @@ contains
        intInfo, BB, frontLeaves, frontLeavesNew)
     !
     !        This routine is used in the ray casting approach to determine
-    !        if a given ray intersects any of the surface elements. The   
-    !        purpose is to determine if a point of interest is inside     
-    !        or outside the (closed) surface defined by the ADT.          
-    !        Subroutine intent(in) arguments.                             
-    !        --------------------------------                             
-    !        ADT:       ADT type whose ADT must be searched               
-    !        coor(3):   The coordinate of the point to be searched.       
-    !        Subroutine intent(out) arguments.                            
-    !        ---------------------------------                            
-    !        intInfo: Intersection info. The number of intersections we   
-    !       *          found. 
+    !        if a given ray intersects any of the surface elements. The
+    !        purpose is to determine if a point of interest is inside
+    !        or outside the (closed) surface defined by the ADT.
+    !        Subroutine intent(in) arguments.
+    !        --------------------------------
+    !        ADT:       ADT type whose ADT must be searched
+    !        coor(3):   The coordinate of the point to be searched.
+    !        Subroutine intent(out) arguments.
+    !        ---------------------------------
+    !        intInfo: Intersection info. The number of intersections we
+    !       *          found.
     !
     implicit none
     !
@@ -1777,8 +1777,8 @@ contains
 
     intInfo = 0
     !
-    !          Part 1. Traverse the tree and determine the target         
-    !                  bounding boxes, which may contain the intersection 
+    !          Part 1. Traverse the tree and determine the target
+    !                  bounding boxes, which may contain the intersection
     !
     ! Start at the root, i.e. set the front leaf to the root leaf.
     ! Also initialize the number of possible bounding boxes to 0.
@@ -1817,7 +1817,7 @@ contains
 
                 kk = -kk
                 if(  coor(1) <= xBBox(4,kk) .and. &
-                     
+
                      coor(2) >= xBBox(2,kk) .and. &
                      coor(2) <= xBBox(5,kk) .and. &
                      coor(3) >= xBBox(3,kk) .and. &
@@ -1834,7 +1834,7 @@ contains
                 ! inside the bounding box of the leaf.
 
                 if(coor(1) <= ADTree(kk)%xMax(4) .and. &
-                     
+
                      coor(2) >= ADTree(kk)%xMin(2) .and. &
                      coor(2) <= ADTree(kk)%xMax(5) .and. &
                      coor(3) >= ADTree(kk)%xMin(3) .and. &
@@ -1863,7 +1863,7 @@ contains
        ! is empty the entire tree has been traversed and an exit is
        ! made from the corresponding loop.
 
-       if(nFrontLeavesNew == 0) then 
+       if(nFrontLeavesNew == 0) then
           exit treeTraversalLoop
        end if
        ! Copy the data of the new front leaves into the current
@@ -1876,8 +1876,8 @@ contains
 
     enddo treeTraversalLoop
     !
-    !          Part 2: Loop over the selected bounding boxes and check if 
-    !                  the corresponding elements contain the point.      
+    !          Part 2: Loop over the selected bounding boxes and check if
+    !                  the corresponding elements contain the point.
     !
     !intInfo = nBB
     ! elementFound = .false.
@@ -1906,39 +1906,39 @@ contains
 
   subroutine minD2Hexa(xP,x1,x2,x3,x4,x5,x6,x7,x8,d2,chi,iErr)
     !
-    !      Subroutine to compute a fail-safe minimum distance computation 
-    !      between a point, P, and a hexahedral element.  This subroutine 
-    !      can provide the minimum distance whether P is inside or        
-    !      outside of the hexahedral element.  If P is inside the element 
-    !      the distance returned is zero, while if P is outside of the    
-    !      element, the distance returned is the minimum distance between 
-    !      P and any of the bounding faces of the hexahedral element.     
-    !      The basic idea of this subroutine is to perform a              
-    !      bound-constrained minimization of the distance between the     
-    !      point P and a point inside the element given by parametric     
-    !      coordinates chi(3) using a modified Newton step bound          
-    !      constrained optimizer.                                         
-    !      For more details of the optimization algorithms, a good        
-    !      reference is:                                                  
-    !      Nocedal, J. and Wright, S. J., Numerical Optimization,         
-    !      Springer, 1999.                                                
-    !      Subroutine arguments:                                          
-    !      xp(3)        - The Cartesian coordinates of point P.           
-    !      x1(3)-x8(3)  - The Cartesian coordinates of the 8 nodes that   
-    !                      make up the hexahedron, in the order specified 
-    !                      in the CHIMPS standard.                        
-    !      d2           - The squared of the minimum distance between the 
-    !                      point P and the hexahedral element.            
-    !      chi(3)       - Parametric coordinates of the point that        
-    !                      belongs to the hexahedron where the minimum    
-    !                      distance has been found.  If P is inside the   
-    !                      element, 0<(ksi,eta,zeta)<1, while if P is     
-    !                      strictly outside of the element, then one or   
-    !                      more of the values of (ksi,eta,zeta) will be   
-    !                      exactly zero or one.                           
-    !      iErr         - Output status of this subroutine:               
-    !                      iErr =  0, Proper minimum found.               
-    !                      iErr = -1, Distance minimization failed.       
+    !      Subroutine to compute a fail-safe minimum distance computation
+    !      between a point, P, and a hexahedral element.  This subroutine
+    !      can provide the minimum distance whether P is inside or
+    !      outside of the hexahedral element.  If P is inside the element
+    !      the distance returned is zero, while if P is outside of the
+    !      element, the distance returned is the minimum distance between
+    !      P and any of the bounding faces of the hexahedral element.
+    !      The basic idea of this subroutine is to perform a
+    !      bound-constrained minimization of the distance between the
+    !      point P and a point inside the element given by parametric
+    !      coordinates chi(3) using a modified Newton step bound
+    !      constrained optimizer.
+    !      For more details of the optimization algorithms, a good
+    !      reference is:
+    !      Nocedal, J. and Wright, S. J., Numerical Optimization,
+    !      Springer, 1999.
+    !      Subroutine arguments:
+    !      xp(3)        - The Cartesian coordinates of point P.
+    !      x1(3)-x8(3)  - The Cartesian coordinates of the 8 nodes that
+    !                      make up the hexahedron, in the order specified
+    !                      in the CHIMPS standard.
+    !      d2           - The squared of the minimum distance between the
+    !                      point P and the hexahedral element.
+    !      chi(3)       - Parametric coordinates of the point that
+    !                      belongs to the hexahedron where the minimum
+    !                      distance has been found.  If P is inside the
+    !                      element, 0<(ksi,eta,zeta)<1, while if P is
+    !                      strictly outside of the element, then one or
+    !                      more of the values of (ksi,eta,zeta) will be
+    !                      exactly zero or one.
+    !      iErr         - Output status of this subroutine:
+    !                      iErr =  0, Proper minimum found.
+    !                      iErr = -1, Distance minimization failed.
     !
     use precision
 
@@ -1971,7 +1971,7 @@ contains
 
     logical :: convDeltaChi, convGradD2
     !
-    !      Initialization section.                                        
+    !      Initialization section.
     !
 
     ! Setup initial values for the parametric coordinates of the
@@ -2001,7 +2001,7 @@ contains
     actualDeltaChi(:) = 1.0_realType
 
     !
-    !      Main iteration loop.                                           
+    !      Main iteration loop.
     !
     itCount = 0
 
@@ -2012,17 +2012,17 @@ contains
        itCount = itCount +1
 
        !
-       !      Compute the gradient of d2                            
+       !      Compute the gradient of d2
        !
 
        call gradD2Hexa(xP,x1,x2,x3,x4,x5,x6,x7,x8,chi,x0,y0,z0,grad,iErr)
 
        !
-       !      Convergence test                                      
+       !      Convergence test
        !
 
        convDeltaChi = .false.
-       convGradD2   = .false. 
+       convGradD2   = .false.
 
        ! Convergence test for step size
 
@@ -2093,20 +2093,20 @@ contains
        if (convDeltaChi .and. convGradD2) exit IterLoop
 
        !
-       !      Compute the Hessian of d2                             
+       !      Compute the Hessian of d2
        !
 
        call hessD2Hexa(xP,x1,x2,x3,x4,x5,x6,x7,x8,chi,hess,iErr)
 
        !
-       !      Compute the Newton step                               
+       !      Compute the Newton step
        !
 
        call newtonStep(hess,grad,deltaChi,iErr)
 
        !
-       !      Update the current guess (appropriately clipped at    
-       !      the bounds) and update the active set array as needed 
+       !      Update the current guess (appropriately clipped at
+       !      the bounds) and update the active set array as needed
        !
 
        ! Loop over the components of chi
@@ -2139,8 +2139,8 @@ contains
     end do IterLoop
 
     !
-    !      Return the results to the calling function and print info      
-    !      for debugging purposes.                                        
+    !      Return the results to the calling function and print info
+    !      for debugging purposes.
     !
 
     ! Compute the minimum distance (squared) that the algorithm found
@@ -2166,8 +2166,8 @@ contains
 
   subroutine newtonStep(hess,grad,step,iErr)
     !
-    !      Compute the Newton step given by the Hessian matrix and the    
-    !      gradient vector of the distance squared function.              
+    !      Compute the Newton step given by the Hessian matrix and the
+    !      gradient vector of the distance squared function.
     !
     use precision
 
@@ -2187,9 +2187,9 @@ contains
     real(kind=realType) :: determinant
 
     !
-    !      Compute the Newton step as the solution of the problem         
-    !      Hessian . step = -grad                                         
-    !      using simple Cramer's rule                                     
+    !      Compute the Newton step as the solution of the problem
+    !      Hessian . step = -grad
+    !      using simple Cramer's rule
     !
     ! Compute the determinant of the Hessian Matrix
 
@@ -2228,9 +2228,9 @@ contains
 
   subroutine hessD2Hexa(xP,x1,x2,x3,x4,x5,x6,x7,x8,chi,hess,iErr)
     !
-    !      Compute the Hessian of the square of the distance between the  
-    !      point xP, and the actual point in the hexahedron represented   
-    !      by chi(1:3).                                                   
+    !      Compute the Hessian of the square of the distance between the
+    !      point xP, and the actual point in the hexahedron represented
+    !      by chi(1:3).
     !
     use precision
 
@@ -2353,9 +2353,9 @@ contains
 
   subroutine gradD2Hexa(xP,x1,x2,x3,x4,x5,x6,x7,x8,chi,x0,y0,z0,grad,iErr)
     !
-    !      Compute the gradient of the square of the distance between the 
-    !      point xP, and the actual point in the hexahedron represented   
-    !      by chi(1:3).                                                   
+    !      Compute the gradient of the square of the distance between the
+    !      point xP, and the actual point in the hexahedron represented
+    !      by chi(1:3).
     !
     use precision
 

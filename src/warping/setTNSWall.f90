@@ -22,7 +22,7 @@ subroutine setTNSWall(tnsw, npts, sps_in)
 
   sps = sps_in
 
-  ii = 0 
+  ii = 0
   domains: do nn=1,nDom
      call setPointers(nn,1_intType,sps)
 

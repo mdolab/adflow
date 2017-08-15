@@ -1,6 +1,6 @@
 ! This module contains the source code related to the SA turbulence
 ! model. It is slightly more modularized than the original which makes
-! performing reverse mode AD simplier. 
+! performing reverse mode AD simplier.
 
 module sa
 
@@ -10,7 +10,7 @@ module sa
   real(kind=realType), dimension(:,:,:), pointer :: ddw, ww, ddvt
   real(kind=realType), dimension(:,:),   pointer :: rrlv
   real(kind=realType), dimension(:,:),   pointer :: dd2Wall
-  
+
 contains
 #ifndef USE_TAPENADE
   subroutine sa_block(resOnly)
@@ -67,7 +67,7 @@ contains
     ! viscosity and the boundary conditions
 
     if(.not. resOnly ) then
-       
+
        ! Do solve
        call saSolve
 
@@ -88,9 +88,9 @@ contains
 
   subroutine saSource
     !
-    !  Source terms.                                                  
-    !  Determine the source term and its derivative w.r.t. nuTilde    
-    !  for all internal cells of the block.                           
+    !  Source terms.
+    !  Determine the source term and its derivative w.r.t. nuTilde
+    !  for all internal cells of the block.
     !  Remember that the SA field variable nuTilde = w(i,j,k,itu1)
 
     use blockPointers
@@ -151,7 +151,7 @@ contains
                 ! of the fact that the surrounding normals sum up to zero,
                 ! such that the cell i,j,k does not give a contribution.
                 ! The gradient is scaled by the factor 2*vol.
-                
+
                 uux = w(i+1,j,k,ivx)*si(i,j,k,1) - w(i-1,j,k,ivx)*si(i-1,j,k,1) &
                      + w(i,j+1,k,ivx)*sj(i,j,k,1) - w(i,j-1,k,ivx)*sj(i,j-1,k,1) &
                      + w(i,j,k+1,ivx)*sk(i,j,k,1) - w(i,j,k-1,ivx)*sk(i,j,k-1,1)
@@ -204,7 +204,7 @@ contains
                    syz = fact*(vvz + wwy)
 
                    ! Compute 2/3 * divergence of velocity squared
-                
+
                    div2 = f23*(sxx+syy+szz)**2
 
                    ! Compute strain production term
@@ -253,7 +253,7 @@ contains
                 ! The function ft2, which is designed to keep a laminar
                 ! solution laminar. When running in fully turbulent mode
                 ! this function should be set to 0.0.
-            
+
                 if (useft2SA) then
                    ft2 = rsaCt3*exp(-rsaCt4*chi2)
                 else
@@ -334,14 +334,14 @@ contains
           enddo
        enddo
     enddo
-#endif  
+#endif
   end subroutine saSource
 
   subroutine saViscous
     !
-    !  Viscous term.                                                  
-    !  Determine the viscous contribution to the residual             
-    !  for all internal cells of the block.                           
+    !  Viscous term.
+    !  Determine the viscous contribution to the residual
+    !  for all internal cells of the block.
 
     use blockPointers
     use paramTurb
@@ -362,7 +362,7 @@ contains
     cb3Inv  = one/rsaCb3
 
     !
-    !       Viscous terms in k-direction.                                  
+    !       Viscous terms in k-direction.
     !
 #ifdef TAPENADE_REVERSE
     !$AD II-LOOP
@@ -374,7 +374,7 @@ contains
        do k=2, kl
           do j=2, jl
              do i=2, il
-#endif   
+#endif
                 ! Compute the metrics in zeta-direction, i.e. along the
                 ! line k = constant.
 
@@ -438,7 +438,7 @@ contains
 
                 scratch(i,j,k,idvt) = scratch(i,j,k,idvt)      + c1m*w(i,j,k-1,itu1) &
                      - c10*w(i,j,k,itu1) + c1p*w(i,j,k+1,itu1)
-#ifndef USE_TAPENADE              
+#ifndef USE_TAPENADE
                 b1 = -c1m
                 c1 =  c10
                 d1 = -c1p
@@ -467,9 +467,9 @@ contains
           enddo
        enddo
     enddo
-#endif        
+#endif
     !
-    !       Viscous terms in j-direction.                                  
+    !       Viscous terms in j-direction.
     !
 #ifdef TAPENADE_REVERSE
     !$AD II-LOOP
@@ -481,7 +481,7 @@ contains
        do k=2, kl
           do j=2, jl
              do i=2, il
-#endif   
+#endif
                 ! Compute the metrics in eta-direction, i.e. along the
                 ! line j = constant.
 
@@ -566,9 +566,9 @@ contains
           enddo
        enddo
     enddo
-#endif  
+#endif
     !
-    !       Viscous terms in i-direction.                                  
+    !       Viscous terms in i-direction.
     !
 #ifdef TAPENADE_REVERSE
     !$AD II-LOOP
@@ -580,7 +580,7 @@ contains
        do k=2, kl
           do j=2, jl
              do i=2, il
-#endif   
+#endif
                 ! Compute the metrics in xi-direction, i.e. along the
                 ! line i = constant.
 
@@ -665,25 +665,25 @@ contains
           enddo
        enddo
     enddo
-#endif  
+#endif
   end subroutine saViscous
 
   subroutine saResScale
 
     !
-    !  Multiply the residual by the volume and store this in dw; this 
+    !  Multiply the residual by the volume and store this in dw; this
     ! * is done for monitoring reasons only. The multiplication with the
     ! * volume is present to be consistent with the flow residuals; also
-    !  the negative value is taken, again to be consistent with the   
+    !  the negative value is taken, again to be consistent with the
     ! * flow equations. Also multiply by iblank so that no updates occur
-    !  in holes or the overset boundary.                              
+    !  in holes or the overset boundary.
     use blockPointers
     implicit none
 
     ! Local variables
     integer(kind=intType) :: i,j,k,ii
     real(kind=realType) :: rblank
-    
+
 #ifdef TAPENADE_REVERSE
     !$AD II-LOOP
     do ii=0,nx*ny*nz-1
@@ -694,7 +694,7 @@ contains
        do k=2, kl
           do j=2, jl
              do i=2, il
-#endif 
+#endif
                 rblank = max(real(iblank(i,j,k), realType), zero)
                 dw(i,j,k,itu1) = -volRef(i,j,k)*scratch(i,j,k,idvt)*rblank
 #ifdef TAPENADE_REVERSE
@@ -703,15 +703,15 @@ contains
           enddo
        enddo
     enddo
-#endif 
+#endif
   end subroutine saResScale
 
 #ifndef USE_TAPENADE
   subroutine saSolve
     !
-    !  saSolve solves the turbulent transport equation for the        
-    !  original Spalart-Allmaras model in a segregated manner using   
-    !  a diagonal dominant ADI-scheme.                                
+    !  saSolve solves the turbulent transport equation for the
+    !  original Spalart-Allmaras model in a segregated manner using
+    !  a diagonal dominant ADI-scheme.
     use blockPointers
     use inputIteration
     use inputPhysics
@@ -867,9 +867,9 @@ contains
 
     qs = zero
     !
-    !       dd-ADI step in j-direction. There is no particular reason to   
-    !       start in j-direction, it just happened to be so. As we solve   
-    !       in j-direction, the j-loop is the innermost loop.              
+    !       dd-ADI step in j-direction. There is no particular reason to
+    !       start in j-direction, it just happened to be so. As we solve
+    !       in j-direction, the j-loop is the innermost loop.
     !
     do k=2,kl
        do i=2,il
@@ -992,8 +992,8 @@ contains
        enddo
     enddo
     !
-    !       dd-ADI step in i-direction. As we solve in i-direction, the    
-    !       i-loop is the innermost loop.                                  
+    !       dd-ADI step in i-direction. As we solve in i-direction, the
+    !       i-loop is the innermost loop.
     !
     do k=2,kl
        do j=2,jl
@@ -1116,8 +1116,8 @@ contains
        enddo
     enddo
     !
-    !       dd-ADI step in k-direction. As we solve in k-direction, the    
-    !       k-loop is the innermost loop.                                  
+    !       dd-ADI step in k-direction. As we solve in k-direction, the
+    !       k-loop is the innermost loop.
     !
     do j=2,jl
        do i=2,il
@@ -1240,9 +1240,9 @@ contains
        enddo
     enddo
     !
-    !       Update the turbulent variables. For explicit relaxation the    
-    !       update must be relaxed; for implicit relaxation this has been  
-    !       done via the time step.                                        
+    !       Update the turbulent variables. For explicit relaxation the
+    !       update must be relaxed; for implicit relaxation this has been
+    !       done via the time step.
     !
     factor = one
     if(turbRelax == turbRelaxExplicit) factor = alfaTurb

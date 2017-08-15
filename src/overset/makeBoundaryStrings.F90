@@ -42,7 +42,7 @@ contains
     type(oversetString), dimension(:), allocatable, target :: strings
     integer(kind=intType) :: nFullStrings, nUnique, famID
     logical :: regularOrdering
-    integer mpiStatus(MPI_STATUS_SIZE) 
+    integer mpiStatus(MPI_STATUS_SIZE)
 
     ! Wall search related
     integer(kind=intType) :: ncells
@@ -51,13 +51,13 @@ contains
     character(80) :: fileName
 
     ! Loop over the wall faces counting up the edges that stradle a
-    ! compute cell and a blanked (or interpolated) cell. 
+    ! compute cell and a blanked (or interpolated) cell.
 
     allocate(epc(nClusters)) ! epc = elementsPerCluster
     epc = 0
 
     ! Get a (very) large overestimate of the total number of edges in a
-    ! cluster: as twice the  number of nodes. 
+    ! cluster: as twice the  number of nodes.
     domainLoop: do nn=1, nDom
        call setPointers(nn, level, sps)
        call getWallSize(zipperFamList, nNodes, nElems, .False.)
@@ -66,7 +66,7 @@ contains
     end do domainLoop
 
 
-    ! Allocate the spae we need in the local strings. 
+    ! Allocate the spae we need in the local strings.
     allocate(localStrings(nClusters))
     do c=1, nClusters
        call nullifyString(localStrings(c))
@@ -86,7 +86,7 @@ contains
     end do
     deallocate(epc)
     ! And now loop back through the walls and add in the
-    ! elems/nodes/normals/indices for each edge. 
+    ! elems/nodes/normals/indices for each edge.
 
     ! Reset the elems per cluster. We will count up the actual number
     ! now.
@@ -99,7 +99,7 @@ contains
 
        bocoLoop: do mm=1, nBocos
           famID = BCData(mm)%famID
-          if (famInList(famID, zipperFamList)) then 
+          if (famInList(famID, zipperFamList)) then
 
              select case (BCFaceID(mm))
              case (iMin)
@@ -123,7 +123,7 @@ contains
                 fact = one
                 regularOrdering = .True.
              case (kMin)
-                xx => x(:, :, 1, :)          
+                xx => x(:, :, 1, :)
                 gcp => globalCell(:, :, 2)
                 fact = one
                 regularOrdering = .True.
@@ -135,7 +135,7 @@ contains
              end select
 
              ! Need to reverse once more for a left-handed block
-             if (.not. rightHanded) then 
+             if (.not. rightHanded) then
                 fact = -fact
                 regularOrdering = .not. (regularOrdering)
              end if
@@ -144,7 +144,7 @@ contains
              ! precompute the patch numbering and node-based averaged
              ! unit normals
              jBeg = BCdata(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
-             iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd  
+             iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd
 
              allocate(patchNormals(3, iBeg:iEnd, jBeg:jEnd), &
                   patchH(iBeg:iEnd, jBeg:jEnd))
@@ -154,7 +154,7 @@ contains
                    patchNodeCounter = patchNodeCounter + 1
                    x0 = xx(i+1, j+1, :)
 
-                   ! Normalized normals for each surrounding face. 
+                   ! Normalized normals for each surrounding face.
                    v1 = xx(i+2, j+1, :) - x0
                    v2 = xx(i+1, j+2, :) - x0
                    v3 = xx(i  , j+1, :) - x0
@@ -171,7 +171,7 @@ contains
                    s4 = s4/mynorm2(s4)
 
                    ! Average and do final normalization including
-                   ! correcting for inward normals. 
+                   ! correcting for inward normals.
                    s1 = fourth*(s1 + s2 + s3 + s4)
                    patchNormals(:, i, j) = s1/mynorm2(s1)*fact
 
@@ -192,38 +192,38 @@ contains
              ! ------------------
              do j=jBeg, jEnd       ! <------- Node loop
                 do i=iBeg+1, iEnd  ! <------- Face Loop
-                   if (gcp(i+1, j+1) >= 0 .and. gcp(i+1, j+2) >= 0) then 
+                   if (gcp(i+1, j+1) >= 0 .and. gcp(i+1, j+2) >= 0) then
                       below = max(BCData(mm)%iBlank(i, j), 0)
                       above = max(BCData(mm)%iBlank(i, j+1), 0)
 
-                      if ((below == 0 .and. above == 1) .or. (below == 1 .and. above == 0)) then 
+                      if ((below == 0 .and. above == 1) .or. (below == 1 .and. above == 0)) then
                          localStrings(c)%nNodes = localStrings(c)%nNodes + 2
                          localStrings(c)%nElems = localStrings(c)%nElems + 1
-                         e = localStrings(c)%nElems  
+                         e = localStrings(c)%nElems
 
                          ! Make sure the real cell is on the LEFT
                          ! of the directed edge
 
-                         if (below == 0) then 
-                            i1 = i-1; j1 = j  
-                            i2 = i  ; j2 = j  
+                         if (below == 0) then
+                            i1 = i-1; j1 = j
+                            i2 = i  ; j2 = j
 
                             i3 = i1; j3 = j + 1
                             i4 = i2; j4 = j + 1
                          else
-                            i1 = i  ; j1 = j  
-                            i2 = i-1; j2 = j  
+                            i1 = i  ; j1 = j
+                            i2 = i-1; j2 = j
 
                             i3 = i1; j3 = j - 1
                             i4 = i2; j4 = j - 1
                          end if
 
                          ! Don't forget pointer offset for xx
-                         if (regularOrdering) then 
+                         if (regularOrdering) then
                             localStrings(c)%nodeData(1:3, 2*e-1) = xx(i1+1, j1+1, :)
                             localStrings(c)%nodeData(1:3, 2*e  ) = xx(i2+1, j2+1, :)
 
-                            
+
                             ! Global index of node on reduced global surface.
                             localStrings(c)%intNodeData(1, 2*e-1) = BCData(mm)%surfIndex(i1, j1)
                             localStrings(c)%intNodeData(1, 2*e  ) = BCData(mm)%surfIndex(i2, j2)
@@ -258,7 +258,7 @@ contains
                          localStrings(c)%intNodeData(2, 2*e-1) = c
                          localStrings(c)%intNodeData(2, 2*e  ) = c
 
-                         ! Family ID of node. Not implemented yet. 
+                         ! Family ID of node. Not implemented yet.
                          localStrings(c)%intNodeData(3, 2*e-1) = famID
                          localStrings(c)%intNodeData(3, 2*e  ) = famID
 
@@ -274,11 +274,11 @@ contains
              ! -----------------
              do j=jBeg+1, jEnd   ! <------- Face loop
                 do i=iBeg, iEnd  ! <------- Node Loop
-                   if (gcp(i+1, j+1) >= 0 .and. gcp(i+2, j+1) >= 0)then 
+                   if (gcp(i+1, j+1) >= 0 .and. gcp(i+2, j+1) >= 0)then
                       left = max(BCData(mm)%iBlank(i, j), 0)
                       right = max(BCData(mm)%iBlank(i+1,  j), 0)
 
-                      if ((left == 0 .and. right == 1) .or. (left == 1 .and. right == 0)) then 
+                      if ((left == 0 .and. right == 1) .or. (left == 1 .and. right == 0)) then
                          localStrings(c)%nNodes = localStrings(c)%nNodes + 2
                          localStrings(c)%nElems = localStrings(c)%nElems + 1
 
@@ -286,17 +286,17 @@ contains
 
                          ! Again, make sure the real cell is on the LEFT
                          ! of the directed edge
-                         if (left == 0) then 
-                            i1 = i  ; j1 = j  
+                         if (left == 0) then
+                            i1 = i  ; j1 = j
                             i2 = i  ; j2 = j-1
-                            
+
                             i3 = i1+1; j3 = j1
                             i4 = i2+1; j4 = j2
-                            
+
                          else
                             i1 = i  ; j1 = j-1
-                            i2 = i  ; j2 = j  
-                            
+                            i2 = i  ; j2 = j
+
                             i3 = i1-1; j3 = j1
                             i4 = i2-1; j4 = j2
                          end if
@@ -338,7 +338,7 @@ contains
                          localStrings(c)%nodeData(10, 2*e-1) = patchH(i1, j1)
                          localStrings(c)%nodeData(10, 2*e  ) = patchH(i2, j2)
 
-                    
+
 
                          ! Cluster of the node
                          localStrings(c)%intNodeData(2, 2*e-1) = c
@@ -360,20 +360,20 @@ contains
     end do domainLoop2
 
     ! Before we send the gap strings to the root proc, reduce them so
-    ! the root proc has a little less work to do. 
+    ! the root proc has a little less work to do.
     do c=1, nClusters
        call reduceGapString(localStrings(c))
     end do
-    
+
 
     ! Allocate the global list of strings on the root proc
-    if (myid == 0) then 
+    if (myid == 0) then
        allocate(globalStrings(nClusters))
        do c=1, nClusters
           call nullifyString(globalStrings(c))
        end do
     end if
-   
+
     ! Next for each each cluster, gather to the root the gap boundary strings
 
     allocate(nNodesProc(0:nProc), nElemsProc(0:nProc))
@@ -392,11 +392,11 @@ contains
             adflow_comm_world, ierr)
        call ECHK(ierr, __FILE__, __LINE__)
 
-       if (myid == 0) then 
+       if (myid == 0) then
 
           ! Before we can receive stuff, we need to determine the node
           ! off-sets such that the conn from the strings on each processor
-          ! don't overlap. 
+          ! don't overlap.
 
           do i=2, nProc
              ! The 0 and 1st entry of the nEdgeProc and nNodeProc arrays are already correct:
@@ -426,10 +426,10 @@ contains
           globalStrings(c)%nNodes = nNodesProc(nProc)
           globalStrings(c)%nElems = nElemsProc(nProc)
 
-          ! Now receive from each of the other procs. 
+          ! Now receive from each of the other procs.
           do iProc=1, nProc-1
              ! Check if this proc actually has anything to send:
-             if ((nElemsProc(iProc+1) - nElemsProc(iProc)) > 0) then 
+             if ((nElemsProc(iProc+1) - nElemsProc(iProc)) > 0) then
                 iStart = nNodesProc(iProc) + 1
                 iEnd =   nNodesProc(iProc+1)
                 iSize = iEnd - iStart + 1
@@ -459,7 +459,7 @@ contains
           end do
        else
           ! Not root proc so send my stuff if we have anything:
-          if (localStrings(c)%nElems > 0) then 
+          if (localStrings(c)%nElems > 0) then
 
              ! ----------- Node sized arrays -------------
              call MPI_Send(localStrings(c)%nodeData, 10*localStrings(c)%nNodes, adflow_real, 0, myid, &
@@ -485,8 +485,8 @@ contains
     end do
     deallocate(localStrings)
 
-    ! Before we perform serial code implementations, surface wall info 
-    ! need to be communicated to root proc (zero) too. This will be used 
+    ! Before we perform serial code implementations, surface wall info
+    ! need to be communicated to root proc (zero) too. This will be used
     ! later to identify zipper triangle containment search for identifying
     ! quad surface cell info for force integration. Search will be
     ! performed on dual surface cells.
@@ -498,7 +498,7 @@ contains
 
 
     ! Finally build up a "full wall" that is made up of all the cluster
-    ! walls. 
+    ! walls.
 
     nNodes = 0
     nCells = 0
@@ -549,7 +549,7 @@ contains
     ! =================================================================
 
 
-    if (myid == 0) then 
+    if (myid == 0) then
        timea = mpi_wtime()
 
        ! First thing we do is reduce each of the global cluster gap
@@ -595,7 +595,7 @@ contains
        end do
 
        ! Now the root is done with the global strings so deallocate that
-       ! too. 
+       ! too.
        do c=1, nClusters
           call deallocateString(globalStrings(c))
        end do

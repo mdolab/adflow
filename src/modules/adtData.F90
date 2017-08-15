@@ -1,27 +1,27 @@
       module adtData
 !
-!      Module, which defines the derived data types and the arrays to 
-!      store multiple ADT's. An array is chosen to store multiple     
-!      ATD's rather than a linked list, because this is more          
-!      convenient during the search. When the ADT's are built there   
-!      is some additional work due to reallocation. However this is   
-!      negligible due to the usage of pointers.                       
+!      Module, which defines the derived data types and the arrays to
+!      store multiple ADT's. An array is chosen to store multiple
+!      ATD's rather than a linked list, because this is more
+!      convenient during the search. When the ADT's are built there
+!      is some additional work due to reallocation. However this is
+!      negligible due to the usage of pointers.
 !
       use constants, only : intType, realType, adtElementType, alwaysRealType
       implicit none
       save
 !
-!      Define the functions needed for the sorting of the derived     
-!      data types to be private, i.e. they can only be accessed       
-!      within this module.                                            
+!      Define the functions needed for the sorting of the derived
+!      data types to be private, i.e. they can only be accessed
+!      within this module.
 !
       public
       private :: adtBBoxTargetTypeLessEqual
       private :: adtBBoxTargetTypeLess
       private :: adtTypeAssign
 !
-!      Definition of the derived data type store a leaf of an ADT.    
-!      The ADT itself is an array of these leaves.                    
+!      Definition of the derived data type store a leaf of an ADT.
+!      The ADT itself is an array of these leaves.
 !
       type adtLeafType
 
@@ -38,9 +38,9 @@
 
       end type adtLeafType
 !
-!      The definition of adtBBoxTargetType, which stores the data of  
-!      a possible bounding box which minimizes the distances to the   
-!      given coordinate.                                              
+!      The definition of adtBBoxTargetType, which stores the data of
+!      a possible bounding box which minimizes the distances to the
+!      given coordinate.
 !
       type adtBBoxTargetType
 
@@ -66,7 +66,7 @@
         module procedure adtBBoxTargetTypeLess
       end interface
 !
-!      Definition of the derived data type to store an ADT.           
+!      Definition of the derived data type to store an ADT.
 !
       type adtType
 
@@ -163,7 +163,7 @@
         module procedure adtTypeAssign
       end interface
 !
-!                Variables stored in this module.                     
+!                Variables stored in this module.
 !
       ! ADTs(:): The array to store the different ADT's.
 
@@ -211,14 +211,14 @@
 
         logical function adtBBoxTargetTypeLessEqual(g1,g2)
 !
-!        This function returns .true. if g1 <= g2. The comparison is  
-!        firstly based on the possible minimum distance such that the 
-!        most likely candidates are treated first. In case of ties    
-!        the boundary box ID is considered.                           
-!        Function intent(in) arguments.                               
-!        ------------------------------                               
-!        g1, g2: The two instances of the derived datatype that most  
-!                be compared.                                         
+!        This function returns .true. if g1 <= g2. The comparison is
+!        firstly based on the possible minimum distance such that the
+!        most likely candidates are treated first. In case of ties
+!        the boundary box ID is considered.
+!        Function intent(in) arguments.
+!        ------------------------------
+!        g1, g2: The two instances of the derived datatype that most
+!                be compared.
 !
         implicit none
 !
@@ -256,14 +256,14 @@
 
         logical function adtBBoxTargetTypeLess(g1,g2)
 !
-!        This function returns .true. if g1 < g2. The comparison is   
-!        firstly based on the possible minimum distance such that the 
-!        most likely candidates are treated first. In case of ties    
-!        the boundary box ID is considered.                           
-!        Function intent(in) arguments.                               
-!        ------------------------------                               
-!        g1, g2: The two instances of the derived datatype that most  
-!                be compared.                                         
+!        This function returns .true. if g1 < g2. The comparison is
+!        firstly based on the possible minimum distance such that the
+!        most likely candidates are treated first. In case of ties
+!        the boundary box ID is considered.
+!        Function intent(in) arguments.
+!        ------------------------------
+!        g1, g2: The two instances of the derived datatype that most
+!                be compared.
 !
         implicit none
 !
@@ -301,16 +301,16 @@
 
         subroutine adtTypeAssign(g1, g2)
 !
-!        This subroutine defines the generic assignment operator for  
-!        the derived datatype adtType. The contents of g1 is copied   
-!        into g2, where pointers just point to the other pointers,    
-!        i.e. no additional allocation takes place.                   
-!        Subroutine intent(in) arguments.                             
-!        --------------------------------                             
-!        g2: Entity whose data should be copied.                      
-!        Subroutine intent(out) arguments.                            
-!        ---------------------------------                            
-!        g1: Entity whose data should be assigned.                    
+!        This subroutine defines the generic assignment operator for
+!        the derived datatype adtType. The contents of g1 is copied
+!        into g2, where pointers just point to the other pointers,
+!        i.e. no additional allocation takes place.
+!        Subroutine intent(in) arguments.
+!        --------------------------------
+!        g2: Entity whose data should be copied.
+!        Subroutine intent(out) arguments.
+!        ---------------------------------
+!        g1: Entity whose data should be assigned.
 !
         implicit none
 !

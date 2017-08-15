@@ -1,7 +1,7 @@
 module adjointExtra
 
 contains
-  
+
   subroutine volume_block
 
     ! This is COPY of metric.f90. It was necessary to copy this file
@@ -114,10 +114,10 @@ contains
 
     do k=2,kl
        do j=2,jl
-          if(vol(1, j,k)/vol(2, j, k) < haloCellRatio) then 
+          if(vol(1, j,k)/vol(2, j, k) < haloCellRatio) then
              vol(1, j,k) = vol(2, j,k)
           end if
-          if(vol(ie,j,k)/vol(il,j,k)  < haloCellRatio) then 
+          if(vol(ie,j,k)/vol(il,j,k)  < haloCellRatio) then
              vol(ie,j,k) = vol(il,j,k)
           end if
        enddo
@@ -125,10 +125,10 @@ contains
 
     do k=2,kl
        do i=1,ie
-          if(vol(i,1, k)/vol(i,2,k) < haloCellRatio) then 
+          if(vol(i,1, k)/vol(i,2,k) < haloCellRatio) then
              vol(i,1, k) = vol(i,2, k)
           end if
-          if(vol(i,je,k)/voL(i,jl,k) < haloCellRatio) then 
+          if(vol(i,je,k)/voL(i,jl,k) < haloCellRatio) then
              vol(i,je,k) = vol(i,jl,k)
           end if
        enddo
@@ -136,10 +136,10 @@ contains
 
     do j=1,je
        do i=1,ie
-          if(vol(i,j,1)/vol(i,j,2)  < haloCellRatio) then 
+          if(vol(i,j,1)/vol(i,j,2)  < haloCellRatio) then
              vol(i,j,1)  = vol(i,j,2)
           end if
-          if(vol(i,j,ke)/vol(i,j,kl) < haloCellRatio) then 
+          if(vol(i,j,ke)/vol(i,j,kl) < haloCellRatio) then
              vol(i,j,ke) = vol(i,j,kl)
           end if
        enddo
@@ -150,13 +150,13 @@ contains
 
     subroutine volpym(xa,ya,za,xb,yb,zb,xc,yc,zc,xd,yd,zd,volume)
       !
-      !         volpym computes 6 times the volume of a pyramid. Node p,     
-      !         whose coordinates are set in the subroutine metric itself,   
-      !         is the top node and a-b-c-d is the quadrilateral surface.    
-      !         It is assumed that the cross product vCa * vDb points in     
-      !         the direction of the top node. Here vCa is the diagonal      
-      !         running from node c to node a and vDb the diagonal from      
-      !         node d to node b.                                            
+      !         volpym computes 6 times the volume of a pyramid. Node p,
+      !         whose coordinates are set in the subroutine metric itself,
+      !         is the top node and a-b-c-d is the quadrilateral surface.
+      !         It is assumed that the cross product vCa * vDb points in
+      !         the direction of the top node. Here vCa is the diagonal
+      !         running from node c to node a and vDb the diagonal from
+      !         node d to node b.
       !
       use precision
       implicit none
@@ -205,14 +205,14 @@ contains
     endif
 
     !
-    !  Computation of the face normals in i-, j- and k-direction. 
-    !  Formula's are valid for a right handed block; for a left   
-    !  handed block the correct orientation is obtained via fact. 
-    !  The normals point in the direction of increasing index.    
-    !  The absolute value of fact is 0.5, because the cross       
-    !  product of the two diagonals is twice the normal vector.   
-    !  Note that also the normals of the first level halo cells   
-    !  are computed. These are needed for the viscous fluxes.     
+    !  Computation of the face normals in i-, j- and k-direction.
+    !  Formula's are valid for a right handed block; for a left
+    !  handed block the correct orientation is obtained via fact.
+    !  The normals point in the direction of increasing index.
+    !  The absolute value of fact is 0.5, because the cross
+    !  product of the two diagonals is twice the normal vector.
+    !  Note that also the normals of the first level halo cells
+    !  are computed. These are needed for the viscous fluxes.
     !
     ! Projected areas of cell faces in the i direction.
     !$AD II-LOOP
@@ -304,9 +304,9 @@ contains
 
   subroutine boundaryNormals
 
-    !  The unit normals on the boundary faces. These always point 
-    !  out of the domain, so a multiplication by -1 is needed for 
-    !  the iMin, jMin and kMin boundaries.                        
+    !  The unit normals on the boundary faces. These always point
+    !  out of the domain, so a multiplication by -1 is needed for
+    !  the iMin, jMin and kMin boundaries.
     !
     use constants
     use blockPointers
@@ -327,7 +327,7 @@ contains
 
        ! Loop over the boundary faces of the subface.
        !$AD II-LOOP
-       do ii=0,(BCData(mm)%jcEnd - bcData(mm)%jcBeg + 1)*(BCData(mm)%icEnd - BCData(mm)%icBeg + 1) - 1 
+       do ii=0,(BCData(mm)%jcEnd - bcData(mm)%jcBeg + 1)*(BCData(mm)%icEnd - BCData(mm)%icBeg + 1) - 1
           i = mod(ii, (BCData(mm)%icEnd - BCData(mm)%icBeg + 1)) + BCData(mm)%icBeg
           j = ii/(BCData(mm)%icEnd - BCData(mm)%icBeg + 1) + BCData(mm)%jcBeg
 
@@ -369,11 +369,11 @@ contains
 
   subroutine xhalo_block
     !
-    !       xhalo determines the coordinates of the nodal halo's.          
-    !       First it sets all halo coordinates by simple extrapolation,    
-    !       then the symmetry planes are treated (also the unit normal of  
-    !       symmetry planes are determined) and finally an exchange is     
-    !       made for the internal halo's.                                  
+    !       xhalo determines the coordinates of the nodal halo's.
+    !       First it sets all halo coordinates by simple extrapolation,
+    !       then the symmetry planes are treated (also the unit normal of
+    !       symmetry planes are determined) and finally an exchange is
+    !       made for the internal halo's.
     !
     use constants
     use blockPointers
@@ -406,7 +406,7 @@ contains
     ! Extrapolation in j-direction.
 
     do k=1,kl
-       do i=0,ie  
+       do i=0,ie
           x(i,0,k,1) = two*x(i,1,k,1) - x(i,2,k,1)
           x(i,0,k,2) = two*x(i,1,k,2) - x(i,2,k,2)
           x(i,0,k,3) = two*x(i,1,k,3) - x(i,2,k,3)
@@ -431,8 +431,8 @@ contains
        enddo
     enddo
     !
-    !           Mirror the halo coordinates adjacent to the symmetry       
-    !           planes                                                     
+    !           Mirror the halo coordinates adjacent to the symmetry
+    !           planes
     !
     ! Loop over boundary subfaces.
 
@@ -627,7 +627,7 @@ contains
        do k=2,kl
           do j=2,jl
              do i=2,il
-#endif             
+#endif
                 oVol = one/volRef(i,j,k)
                 dw(i, j, k, 1:nwf) = dw(i,j, k, 1:nwf)* ovol
                 dw(i, j, k, nt1:nt2) = dw(i, j, k, nt1:nt2) * ovol * turbResScale(1:nTurb)
@@ -662,5 +662,5 @@ contains
        end do
     end do
   end subroutine sumDwAndFw
- 
+
 end module adjointExtra

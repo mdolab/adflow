@@ -2,10 +2,10 @@ module turbCurveFits
 contains
   function curveUpRe(Re)
     !
-    !       curveUpRe determines the value of the nonDimensional           
-    !       tangential velocity (made nonDimensional with the skin         
-    !       friction velocity) for the given Reynolds number.              
-    !       This data has been curve fitted with cubic splines.            
+    !       curveUpRe determines the value of the nonDimensional
+    !       tangential velocity (made nonDimensional with the skin
+    !       friction velocity) for the given Reynolds number.
+    !       This data has been curve fitted with cubic splines.
     !
     use paramTurb
     implicit none
@@ -102,9 +102,9 @@ contains
   !
   subroutine curveTupYp(tup, yp, ntu1, ntu2)
     !
-    !       CurveTupYp determines the value of the turbulent variables     
-    !       ntu1 to ntu2 for the given yplus.                              
-    !       This data has been curve fitted with cubic splines.            
+    !       CurveTupYp determines the value of the turbulent variables
+    !       ntu1 to ntu2 for the given yplus.
+    !       This data has been curve fitted with cubic splines.
     !
     use constants
     use inputPhysics
@@ -325,8 +325,8 @@ contains
 
   subroutine initCurveFitDataKtau
     !
-    !       initCurveFitDataKtau contains the curve fit constants for      
-    !       the wall function data for the k-tau turbulence model.         
+    !       initCurveFitDataKtau contains the curve fit constants for
+    !       the wall function data for the k-tau turbulence model.
     !
     use flowVarRefState
     use paramTurb
@@ -343,8 +343,8 @@ contains
 
   subroutine initCurveFitDataKw
     !
-    !       initCurveFitDataKw contains the curve fit constants for        
-    !       the wall function data for the standard Wilcox k-omega model.  
+    !       initCurveFitDataKw contains the curve fit constants for
+    !       the wall function data for the standard Wilcox k-omega model.
     !
     use constants
     use flowVarRefState
@@ -898,9 +898,9 @@ contains
 
   subroutine initCurveFitDataKwMod
     !
-    !       initCurveFitDataKwMod contains the curve fit constants         
-    !       for the wall function data for the modified k-omega turbulence 
-    !       model.                                                         
+    !       initCurveFitDataKwMod contains the curve fit constants
+    !       for the wall function data for the modified k-omega turbulence
+    !       model.
     !
     use flowVarRefState
     use paramTurb
@@ -917,9 +917,9 @@ contains
 
   subroutine initCurveFitDataSST
     !
-    !       initCurveFitDataSST contains the curve fit constants for       
-    !       the wall function data for Menter's SST turbulence model.      
-    !       Warning: Wall function data developed for k-omega model        
+    !       initCurveFitDataSST contains the curve fit constants for
+    !       the wall function data for Menter's SST turbulence model.
+    !       Warning: Wall function data developed for k-omega model
     !
     use constants
     use flowVarRefState
@@ -1474,9 +1474,9 @@ contains
 
   subroutine initCurveFitDataSa
     !
-    !       initCurveFitDataSa contains the curve fit constants for        
-    !       the wall function data for the Spalart-Allmaras turbulence     
-    !       model.                                                         
+    !       initCurveFitDataSa contains the curve fit constants for
+    !       the wall function data for the Spalart-Allmaras turbulence
+    !       model.
     !
     use constants
     use flowVarRefState
@@ -1872,9 +1872,9 @@ contains
   end subroutine initCurveFitDataSa
   subroutine initCurveFitDataSae
     !
-    !       initCurveFitDataSae contains the curve fit constants for       
-    !       the wall function data for the Spalart-Allmaras (Edwards       
-    !       modification) turbulence model.                                
+    !       initCurveFitDataSae contains the curve fit constants for
+    !       the wall function data for the Spalart-Allmaras (Edwards
+    !       modification) turbulence model.
     !
     use flowVarRefState
     use paramTurb
@@ -1891,8 +1891,8 @@ contains
 
   subroutine initCurveFitDataVf
     !
-    !       initCurveFitDataVf contains the curve fit constants for        
-    !       the wall function data for the v2-f turbulence model.          
+    !       initCurveFitDataVf contains the curve fit constants for
+    !       the wall function data for the v2-f turbulence model.
     !
     use constants
     use flowVarRefState
@@ -3838,8 +3838,8 @@ contains
 
 subroutine terminate(routineName, errorMessage)
     !
-    !       terminate writes an error message to standard output and       
-    !       terminates the execution of the program.                       
+    !       terminate writes an error message to standard output and
+    !       terminates the execution of the program.
     !
     use constants
     use communication, only : adflow_comm_world, myid

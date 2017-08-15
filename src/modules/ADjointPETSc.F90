@@ -1,7 +1,7 @@
 module ADjointPETSc
 
-  !      This module contains the objects used by PETSc for the         
-  !      solution of the discrete adjoint equations.                    
+  !      This module contains the objects used by PETSc for the
+  !      solution of the discrete adjoint equations.
   !
   use constants
   implicit none

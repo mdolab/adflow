@@ -1,7 +1,7 @@
        module flowVarRefState
 !
-!       Module that contains information about the reference state as  
-!       well as the nondimensional free stream state.                  
+!       Module that contains information about the reference state as
+!       well as the nondimensional free stream state.
 !
        use constants, only : intType, realType
        implicit none
@@ -22,18 +22,18 @@
        !           nondimensionalize the flow equations.
        ! TRef:     Reference temperature (in K) used to nondimensionalize
        !           the flow equations.
-       ! muRef:    Scale for the viscosity, 
+       ! muRef:    Scale for the viscosity,
        !           muRef = rhoRef*sqrt(pRef/rhoRef); there is also a
        !           reference length in the nondimensionalization of mu,
-       !           but this is 1.0, because all the coordinates are 
+       !           but this is 1.0, because all the coordinates are
        !           converted to meters.
-       ! timeRef:  time scale; needed for a correct 
+       ! timeRef:  time scale; needed for a correct
        !           nondimensionalization of unsteady problems.
        !           timeRef = sqrt(rhoRef/pRef); for the reference
        !           length, see the comments for muRef.
-       ! uRef:     velocity scale; 
+       ! uRef:     velocity scale;
        !           uRef = sqrt(pRef/rhoRef);
-       ! hRef:     enthalpy scale; 
+       ! hRef:     enthalpy scale;
        !           hRef = pRef/rhoRef;
 
        real(kind=realType) :: pRef, rhoRef, TRef

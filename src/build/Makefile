@@ -1,7 +1,7 @@
 # Include the user supplied makefil
 include ../../config/config.mk
 
-# Group all the fortran, C and compiler flags together. 
+# Group all the fortran, C and compiler flags together.
 FF90_ALL_FLAGS   = $(FF90_FLAGS) $(CGNS_INCLUDE_FLAGS) -I. \
 		   $(PETSC_CC_INCLUDES) $(FF90_PRECISION_FLAGS)
 
@@ -30,7 +30,7 @@ cFiles:=$(addprefix ../,$(cFiles))
 f77Files:=$(addprefix ../,$(f77Files))
 
 # Now strip off the directory part. This is because fort_depend gives
-# us targets that are like <filename.o>. 
+# us targets that are like <filename.o>.
 fortranFilesNoDir=$(notdir $(fortranFiles))
 cFilesNoDir=$(notdir $(cFiles))
 f77FilesNoDir=$(notdir $(f77Files))
@@ -39,7 +39,7 @@ f77FilesNoDir=$(notdir $(f77Files))
 f90Files=$(filter %.f90,$(fortranFilesNoDir))
 F90Files=$(filter %.F90,$(fortranFilesNoDir))
 
-# Finally convert all source files to .o 
+# Finally convert all source files to .o
 OFILES=$(f90Files:%.f90=%.o) $(F90Files:%.F90=%.o) $(cFilesNoDir:%.c=%.o) $(f77FilesNoDir:%.f=%.o)
 
 # Define the file name for the auto-generated dependency file.
@@ -50,8 +50,8 @@ DEP_FILE=adflow_project.dep
 
 default: all
 
-# The 'source's makes all the .o files. It also depends on the dependence file "DEP_FILE". 
-sources: $(OFILES) $(DEP_FILE) 
+# The 'source's makes all the .o files. It also depends on the dependence file "DEP_FILE".
+sources: $(OFILES) $(DEP_FILE)
 
 # The .dep file depends on the source files, so it automatically gets updated
 # when you change your source
@@ -74,7 +74,7 @@ PYTHON_OBJECTS = fortranobject.o\
 # For all (driven by default)...we depend on having the library 'lib'
 # up to date as well changes to the pyf file. This is where we execute
 # the "PMAKE" command so everything is built in parallel.
-all: 
+all:
 	$(PMAKE) python
 
 python: lib ../f2py/adflow.pyf
@@ -100,7 +100,7 @@ python: lib ../f2py/adflow.pyf
 	python ../f2py/checkPyfForUpperCase.py
 
 # Run the preprocessor on the pyf file:
-	python ../f2py/pyf_preprocessor.py real ../f2py/adflow.pyf 
+	python ../f2py/pyf_preprocessor.py real ../f2py/adflow.pyf
 
 # Run f2py to get adflowmodule.c and adflow-f2pywrapper2.f90
 	$(F2PY) ../f2py/adflow.pyf.autogen

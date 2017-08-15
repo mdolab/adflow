@@ -21,10 +21,10 @@ contains
 !                sk:in
   subroutine inviscidcentralflux_b()
 !
-!       inviscidcentralflux computes the euler fluxes using a central  
-!       discretization for a given block. therefore it is assumed that 
-!       the pointers in block pointer already point to the correct     
-!       block on the correct multigrid level.                          
+!       inviscidcentralflux computes the euler fluxes using a central
+!       discretization for a given block. therefore it is assumed that
+!       the pointers in block pointer already point to the correct
+!       block on the correct multigrid level.
 !
     use constants
     use blockpointers, only : nx, il, ie, ny, jl, je, nz, kl, ke, &
@@ -460,10 +460,10 @@ contains
   end subroutine inviscidcentralflux_b
   subroutine inviscidcentralflux()
 !
-!       inviscidcentralflux computes the euler fluxes using a central  
-!       discretization for a given block. therefore it is assumed that 
-!       the pointers in block pointer already point to the correct     
-!       block on the correct multigrid level.                          
+!       inviscidcentralflux computes the euler fluxes using a central
+!       discretization for a given block. therefore it is assumed that
+!       the pointers in block pointer already point to the correct
+!       block on the correct multigrid level.
 !
     use constants
     use blockpointers, only : nx, il, ie, ny, jl, je, nz, kl, ke, &
@@ -487,7 +487,7 @@ contains
 ! block is not moving.
     sface = zero
 !
-!       advective fluxes in the i-direction.                           
+!       advective fluxes in the i-direction.
 !
     do ii=0,il*ny*nz-1
       i = mod(ii, il) + 1
@@ -554,7 +554,7 @@ contains
       dw(i, j, k, irhoe) = dw(i, j, k, irhoe) + fs
     end do
 !
-!       advective fluxes in the j-direction.                           
+!       advective fluxes in the j-direction.
 !
     continue
     sface = zero
@@ -623,7 +623,7 @@ contains
       dw(i, j, k, irhoe) = dw(i, j, k, irhoe) + fs
     end do
 !
-!       advective fluxes in the k-direction.                           
+!       advective fluxes in the k-direction.
     continue
     sface = zero
     do ii=0,nx*ny*kl-1
@@ -728,12 +728,12 @@ contains
 !   plus diff mem management of: p:in w:in si:in sj:in sk:in fw:in
   subroutine invisciddissfluxmatrix_b()
 !
-!       invisciddissfluxmatrix computes the matrix artificial          
-!       dissipation term. instead of the spectral radius, as used in   
-!       the scalar dissipation scheme, the absolute value of the flux  
-!       jacobian is used. this leads to a less diffusive and           
-!       consequently more accurate scheme. it is assumed that the      
-!       pointers in blockpointers already point to the correct block.  
+!       invisciddissfluxmatrix computes the matrix artificial
+!       dissipation term. instead of the spectral radius, as used in
+!       the scalar dissipation scheme, the absolute value of the flux
+!       jacobian is used. this leads to a less diffusive and
+!       consequently more accurate scheme. it is assumed that the
+!       pointers in blockpointers already point to the correct block.
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, &
@@ -979,7 +979,7 @@ contains
       fis4 = rfil*vis4
       sfil = one - rfil
 ! initialize the dissipative residual to a certain times,
-! possibly zero, the previously stored value. 
+! possibly zero, the previously stored value.
 ! compute the pressure sensor for each cell, in each direction:
       do ii=0,ie*je*ke-1
         i = mod(ii, ie) + 1
@@ -1044,7 +1044,7 @@ contains
       call pushinteger4(j)
       call pushreal8(sface)
 !
-!       dissipative fluxes in the i-direction.                         
+!       dissipative fluxes in the i-direction.
 !
       do ii=0,il*ny*nz-1
         i = mod(ii, il) + 1
@@ -1221,7 +1221,7 @@ contains
       call pushreal8(ppor)
       call pushreal8(sface)
 !
-!       dissipative fluxes in the j-direction.                         
+!       dissipative fluxes in the j-direction.
 !
       do ii=0,nx*jl*nz-1
         i = mod(ii, nx) + 2
@@ -2949,12 +2949,12 @@ contains
   end subroutine invisciddissfluxmatrix_b
   subroutine invisciddissfluxmatrix()
 !
-!       invisciddissfluxmatrix computes the matrix artificial          
-!       dissipation term. instead of the spectral radius, as used in   
-!       the scalar dissipation scheme, the absolute value of the flux  
-!       jacobian is used. this leads to a less diffusive and           
-!       consequently more accurate scheme. it is assumed that the      
-!       pointers in blockpointers already point to the correct block.  
+!       invisciddissfluxmatrix computes the matrix artificial
+!       dissipation term. instead of the spectral radius, as used in
+!       the scalar dissipation scheme, the absolute value of the flux
+!       jacobian is used. this leads to a less diffusive and
+!       consequently more accurate scheme. it is assumed that the
+!       pointers in blockpointers already point to the correct block.
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, &
@@ -3052,7 +3052,7 @@ contains
       fis4 = rfil*vis4
       sfil = one - rfil
 ! initialize the dissipative residual to a certain times,
-! possibly zero, the previously stored value. 
+! possibly zero, the previously stored value.
       fw = sfil*fw
 ! compute the pressure sensor for each cell, in each direction:
       do ii=0,ie*je*ke-1
@@ -3115,7 +3115,7 @@ contains
         end if
       end do
 !
-!       dissipative fluxes in the i-direction.                         
+!       dissipative fluxes in the i-direction.
 !
       do ii=0,il*ny*nz-1
         i = mod(ii, il) + 1
@@ -3272,7 +3272,7 @@ contains
         fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
       end do
 !
-!       dissipative fluxes in the j-direction.                         
+!       dissipative fluxes in the j-direction.
 !
       do ii=0,nx*jl*nz-1
         i = mod(ii, nx) + 2
@@ -3429,7 +3429,7 @@ contains
         fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
       end do
 !
-!       dissipative fluxes in the k-direction.                         
+!       dissipative fluxes in the k-direction.
 !
       do ii=0,nx*ny*kl-1
         i = mod(ii, nx) + 2
@@ -3597,10 +3597,10 @@ contains
 !                radk:in
   subroutine invisciddissfluxscalar_b()
 !
-!       invisciddissfluxscalar computes the scalar artificial          
-!       dissipation, see aiaa paper 81-1259, for a given block.        
-!       therefore it is assumed that the pointers in  blockpointers    
-!       already point to the correct block.                            
+!       invisciddissfluxscalar computes the scalar artificial
+!       dissipation, see aiaa paper 81-1259, for a given block.
+!       therefore it is assumed that the pointers in  blockpointers
+!       already point to the correct block.
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, &
@@ -3738,8 +3738,8 @@ contains
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations) 
-      case (eulerequations) 
+      select case  (equations)
+      case (eulerequations)
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
@@ -3747,17 +3747,17 @@ contains
         sslim = 0.001_realtype*pinfcorr
 ! copy the pressure in ss. only need the entries used in the
 ! discretization, i.e. not including the corner halo's, but we'll
-! just copy all anyway. 
+! just copy all anyway.
         ss = p
         call pushcontrol2b(1)
-      case (nsequations, ransequations) 
+      case (nsequations, ransequations)
 !===============================================================
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of entropy and it is therefore
 ! set to a fraction of the free stream value.
         sslim = 0.001_realtype*pinfcorr/rhoinf**gammainf
-! store the entropy in ss. see above. 
+! store the entropy in ss. see above.
         do ii=0,(ib+1)*(jb+1)*(kb+1)-1
           i = mod(ii, ib + 1)
           j = mod(ii/(ib+1), jb + 1)
@@ -4369,10 +4369,10 @@ contains
   end subroutine invisciddissfluxscalar_b
   subroutine invisciddissfluxscalar()
 !
-!       invisciddissfluxscalar computes the scalar artificial          
-!       dissipation, see aiaa paper 81-1259, for a given block.        
-!       therefore it is assumed that the pointers in  blockpointers    
-!       already point to the correct block.                            
+!       invisciddissfluxscalar computes the scalar artificial
+!       dissipation, see aiaa paper 81-1259, for a given block.
+!       therefore it is assumed that the pointers in  blockpointers
+!       already point to the correct block.
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, &
@@ -4425,8 +4425,8 @@ contains
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations) 
-      case (eulerequations) 
+      select case  (equations)
+      case (eulerequations)
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
@@ -4434,16 +4434,16 @@ contains
         sslim = 0.001_realtype*pinfcorr
 ! copy the pressure in ss. only need the entries used in the
 ! discretization, i.e. not including the corner halo's, but we'll
-! just copy all anyway. 
+! just copy all anyway.
         ss = p
-      case (nsequations, ransequations) 
+      case (nsequations, ransequations)
 !===============================================================
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of entropy and it is therefore
 ! set to a fraction of the free stream value.
         sslim = 0.001_realtype*pinfcorr/rhoinf**gammainf
-! store the entropy in ss. see above. 
+! store the entropy in ss. see above.
         do ii=0,(ib+1)*(jb+1)*(kb+1)-1
           i = mod(ii, ib + 1)
           j = mod(ii/(ib+1), jb + 1)
@@ -4487,7 +4487,7 @@ contains
 ! only, because the halo values do not matter.
       fw = sfil*fw
 !
-!       dissipative fluxes in the i-direction.                         
+!       dissipative fluxes in the i-direction.
 !
       do ii=0,il*ny*nz-1
         i = mod(ii, il) + 1
@@ -4548,7 +4548,7 @@ contains
         fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
       end do
 !
-!       dissipative fluxes in the j-direction.                         
+!       dissipative fluxes in the j-direction.
 !
       do ii=0,nx*jl*nz-1
         i = mod(ii, nx) + 2
@@ -4609,7 +4609,7 @@ contains
         fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
       end do
 !
-!       dissipative fluxes in the k-direction.                         
+!       dissipative fluxes in the k-direction.
 !
       do ii=0,nx*ny*kl-1
         i = mod(ii, nx) + 2
@@ -4673,15 +4673,15 @@ contains
   end subroutine invisciddissfluxscalar
   subroutine inviscidupwindflux(finegrid)
 !
-!       inviscidupwindflux computes the artificial dissipation part of 
-!       the euler fluxes by means of an approximate solution of the 1d 
-!       riemann problem on the face. for first order schemes,          
-!       finegrid == .false., the states in the cells are assumed to    
-!       be constant; for the second order schemes on the fine grid a   
-!       nonlinear reconstruction of the left and right state is done   
-!       for which several options exist.                               
-!       it is assumed that the pointers in blockpointers already       
-!       point to the correct block.                                    
+!       inviscidupwindflux computes the artificial dissipation part of
+!       the euler fluxes by means of an approximate solution of the 1d
+!       riemann problem on the face. for first order schemes,
+!       finegrid == .false., the states in the cells are assumed to
+!       be constant; for the second order schemes on the fine grid a
+!       nonlinear reconstruction of the left and right state is done
+!       for which several options exist.
+!       it is assumed that the pointers in blockpointers already
+!       point to the correct block.
 !
     use constants
     use blockpointers, only : il, jl, kl, ie, je, ke, ib, jb, kb, w, p&
@@ -4797,14 +4797,14 @@ contains
         firstorderk = .false.
       end if
 !
-!       flux computation. a distinction is made between first and      
-!       second order schemes to avoid the overhead for the first order 
-!       scheme.                                                        
+!       flux computation. a distinction is made between first and
+!       second order schemes to avoid the overhead for the first order
+!       scheme.
 !
       if (limused .eq. firstorder) then
 !
-!         first order reconstruction. the states in the cells are      
-!         constant. the left and right states are constructed easily.  
+!         first order reconstruction. the states in the cells are
+!         constant. the left and right states are constructed easily.
 !
 ! fluxes in the i-direction.
         do k=2,kl
@@ -4945,12 +4945,12 @@ contains
 !      ==================================================================
 !      ==================================================================
 !
-!         second order reconstruction of the left and right state.     
-!         the three differences used in the, possibly nonlinear,       
-!         interpolation are constructed here; the actual left and      
-!         right states, or at least the differences from the first     
-!         order interpolation, are computed in the subroutine          
-!         leftrightstate.                                              
+!         second order reconstruction of the left and right state.
+!         the three differences used in the, possibly nonlinear,
+!         interpolation are constructed here; the actual left and
+!         right states, or at least the differences from the first
+!         order interpolation, are computed in the subroutine
+!         leftrightstate.
 !
 ! fluxes in the i-direction.
         do k=2,kl
@@ -5254,15 +5254,15 @@ contains
         du3(ivz) = rot(3, 1)*dvx + rot(3, 2)*dvy + rot(3, 3)*dvz
       end if
 ! determine the limiter used.
-      select case  (limused) 
-      case (nolimiter) 
+      select case  (limused)
+      case (nolimiter)
 ! linear interpolation; no limiter.
 ! loop over the number of variables to be interpolated.
         do l=1,nwint
           left(l) = omk*du1(l) + opk*du2(l)
           right(l) = -(omk*du3(l)) - opk*du2(l)
         end do
-      case (vanalbeda) 
+      case (vanalbeda)
 !          ==============================================================
 ! nonlinear interpolation using the van albeda limiter.
 ! loop over the number of variables to be interpolated.
@@ -5332,7 +5332,7 @@ contains
           left(l) = omk*rl1*du1(l) + opk*rl2*du2(l)
           right(l) = -(opk*rr1*du2(l)) - omk*rr2*du3(l)
         end do
-      case (minmod) 
+      case (minmod)
 !          ==============================================================
 ! nonlinear interpolation using the minmod limiter.
 ! loop over the number of variables to be interpolated.
@@ -5482,11 +5482,11 @@ contains
       gm1 = gammaface - one
       gm53 = gammaface - five*third
 ! determine which riemann solver must be solved.
-      select case  (riemannused) 
-      case (roe) 
+      select case  (riemannused)
+      case (roe)
 ! determine the preconditioner used.
-        select case  (precond) 
-        case (noprecond) 
+        select case  (precond)
+        case (noprecond)
 ! no preconditioner used. use the roe scheme of the
 ! standard equations.
 ! compute the square root of the left and right densities
@@ -5629,7 +5629,7 @@ contains
           flux(imy) = -(porflux*(lam3*drv+vavg*abv6+sy*abv7))
           flux(imz) = -(porflux*(lam3*drw+wavg*abv6+sz*abv7))
           flux(irhoe) = -(porflux*(lam3*dre+havg*abv6+unavg*abv7))
-        case (turkel) 
+        case (turkel)
 !          tmp = max(lam1,lam2,lam3)
 !          flux(irho)  = -porflux*(tmp*dr)
 !          flux(imx)   = -porflux*(tmp*dru)
@@ -5638,14 +5638,14 @@ contains
 !          flux(irhoe) = -porflux*(tmp*dre)
           call terminate('riemannflux', &
 &                  'turkel preconditioner not implemented yet')
-        case (choimerkle) 
+        case (choimerkle)
           call terminate('riemannflux', &
 &                  'choi merkle preconditioner not implemented yet')
         end select
-      case (vanleer) 
+      case (vanleer)
         call terminate('riemannflux', 'van leer fvs not implemented yet'&
 &               )
-      case (ausmdv) 
+      case (ausmdv)
         call terminate('riemannflux', 'ausmdv fvs not implemented yet')
       end select
     end subroutine riemannflux
@@ -5658,15 +5658,15 @@ contains
 !   plus diff mem management of: p:in w:in si:in sj:in sk:in fw:in
   subroutine inviscidupwindflux_b(finegrid)
 !
-!       inviscidupwindflux computes the artificial dissipation part of 
-!       the euler fluxes by means of an approximate solution of the 1d 
-!       riemann problem on the face. for first order schemes,          
-!       finegrid == .false., the states in the cells are assumed to    
-!       be constant; for the second order schemes on the fine grid a   
-!       nonlinear reconstruction of the left and right state is done   
-!       for which several options exist.                               
-!       it is assumed that the pointers in blockpointers already       
-!       point to the correct block.                                    
+!       inviscidupwindflux computes the artificial dissipation part of
+!       the euler fluxes by means of an approximate solution of the 1d
+!       riemann problem on the face. for first order schemes,
+!       finegrid == .false., the states in the cells are assumed to
+!       be constant; for the second order schemes on the fine grid a
+!       nonlinear reconstruction of the left and right state is done
+!       for which several options exist.
+!       it is assumed that the pointers in blockpointers already
+!       point to the correct block.
 !
     use constants
     use blockpointers, only : il, jl, kl, ie, je, ke, ib, jb, kb, w, &
@@ -5775,14 +5775,14 @@ contains
         firstorderk = .false.
       end if
 !
-!       flux computation. a distinction is made between first and      
-!       second order schemes to avoid the overhead for the first order 
-!       scheme.                                                        
+!       flux computation. a distinction is made between first and
+!       second order schemes to avoid the overhead for the first order
+!       scheme.
 !
       if (limused .eq. firstorder) then
 !
-!         first order reconstruction. the states in the cells are      
-!         constant. the left and right states are constructed easily.  
+!         first order reconstruction. the states in the cells are
+!         constant. the left and right states are constructed easily.
 !
 ! fluxes in the i-direction.
         do k=2,kl
@@ -6178,12 +6178,12 @@ contains
 !      ==================================================================
 !      ==================================================================
 !
-!         second order reconstruction of the left and right state.     
-!         the three differences used in the, possibly nonlinear,       
-!         interpolation are constructed here; the actual left and      
-!         right states, or at least the differences from the first     
-!         order interpolation, are computed in the subroutine          
-!         leftrightstate.                                              
+!         second order reconstruction of the left and right state.
+!         the three differences used in the, possibly nonlinear,
+!         interpolation are constructed here; the actual left and
+!         right states, or at least the differences from the first
+!         order interpolation, are computed in the subroutine
+!         leftrightstate.
 !
 ! fluxes in the i-direction.
         do k=2,kl
@@ -6880,10 +6880,10 @@ contains
         call pushcontrol1b(1)
       end if
 ! determine the limiter used.
-      select case  (limused) 
-      case (nolimiter) 
+      select case  (limused)
+      case (nolimiter)
         call pushcontrol2b(1)
-      case (vanalbeda) 
+      case (vanalbeda)
 !          ==============================================================
 ! nonlinear interpolation using the van albeda limiter.
 ! loop over the number of variables to be interpolated.
@@ -6991,7 +6991,7 @@ contains
 ! scheme.
         end do
         call pushcontrol2b(2)
-      case (minmod) 
+      case (minmod)
 !          ==============================================================
 ! nonlinear interpolation using the minmod limiter.
 ! loop over the number of variables to be interpolated.
@@ -7540,15 +7540,15 @@ contains
         du3(ivz) = rot(3, 1)*dvx + rot(3, 2)*dvy + rot(3, 3)*dvz
       end if
 ! determine the limiter used.
-      select case  (limused) 
-      case (nolimiter) 
+      select case  (limused)
+      case (nolimiter)
 ! linear interpolation; no limiter.
 ! loop over the number of variables to be interpolated.
         do l=1,nwint
           left(l) = omk*du1(l) + opk*du2(l)
           right(l) = -(omk*du3(l)) - opk*du2(l)
         end do
-      case (vanalbeda) 
+      case (vanalbeda)
 !          ==============================================================
 ! nonlinear interpolation using the van albeda limiter.
 ! loop over the number of variables to be interpolated.
@@ -7618,7 +7618,7 @@ contains
           left(l) = omk*rl1*du1(l) + opk*rl2*du2(l)
           right(l) = -(opk*rr1*du2(l)) - omk*rr2*du3(l)
         end do
-      case (minmod) 
+      case (minmod)
 !          ==============================================================
 ! nonlinear interpolation using the minmod limiter.
 ! loop over the number of variables to be interpolated.
@@ -7814,11 +7814,11 @@ contains
       gm1 = gammaface - one
       gm53 = gammaface - five*third
 ! determine which riemann solver must be solved.
-      select case  (riemannused) 
-      case (roe) 
+      select case  (riemannused)
+      case (roe)
 ! determine the preconditioner used.
-        select case  (precond) 
-        case (noprecond) 
+        select case  (precond)
+        case (noprecond)
 ! no preconditioner used. use the roe scheme of the
 ! standard equations.
 ! compute the square root of the left and right densities
@@ -8263,11 +8263,11 @@ contains
 &             z1rd/(2.0*sqrt(right(irho)))
           if (.not.left(irho) .eq. 0.0_8) leftd(irho) = leftd(irho) + &
 &             z1ld/(2.0*sqrt(left(irho)))
-        case (turkel) 
+        case (turkel)
           sxd = 0.0_8
           syd = 0.0_8
           szd = 0.0_8
-        case (choimerkle) 
+        case (choimerkle)
           sxd = 0.0_8
           syd = 0.0_8
           szd = 0.0_8
@@ -8276,11 +8276,11 @@ contains
           syd = 0.0_8
           szd = 0.0_8
         end select
-      case (vanleer) 
+      case (vanleer)
         sxd = 0.0_8
         syd = 0.0_8
         szd = 0.0_8
-      case (ausmdv) 
+      case (ausmdv)
         sxd = 0.0_8
         syd = 0.0_8
         szd = 0.0_8
@@ -8327,11 +8327,11 @@ contains
       gm1 = gammaface - one
       gm53 = gammaface - five*third
 ! determine which riemann solver must be solved.
-      select case  (riemannused) 
-      case (roe) 
+      select case  (riemannused)
+      case (roe)
 ! determine the preconditioner used.
-        select case  (precond) 
-        case (noprecond) 
+        select case  (precond)
+        case (noprecond)
 ! no preconditioner used. use the roe scheme of the
 ! standard equations.
 ! compute the square root of the left and right densities
@@ -8474,7 +8474,7 @@ contains
           flux(imy) = -(porflux*(lam3*drv+vavg*abv6+sy*abv7))
           flux(imz) = -(porflux*(lam3*drw+wavg*abv6+sz*abv7))
           flux(irhoe) = -(porflux*(lam3*dre+havg*abv6+unavg*abv7))
-        case (turkel) 
+        case (turkel)
 !          tmp = max(lam1,lam2,lam3)
 !          flux(irho)  = -porflux*(tmp*dr)
 !          flux(imx)   = -porflux*(tmp*dru)
@@ -8483,14 +8483,14 @@ contains
 !          flux(irhoe) = -porflux*(tmp*dre)
           call terminate('riemannflux', &
 &                  'turkel preconditioner not implemented yet')
-        case (choimerkle) 
+        case (choimerkle)
           call terminate('riemannflux', &
 &                  'choi merkle preconditioner not implemented yet')
         end select
-      case (vanleer) 
+      case (vanleer)
         call terminate('riemannflux', 'van leer fvs not implemented yet'&
 &               )
-      case (ausmdv) 
+      case (ausmdv)
         call terminate('riemannflux', 'ausmdv fvs not implemented yet')
       end select
     end subroutine riemannflux
@@ -8510,10 +8510,10 @@ contains
 !                viscsubface:in *viscsubface.tau:in
   subroutine viscousflux_b()
 !
-!       viscousflux computes the viscous fluxes using a central        
-!       difference scheme for a block.                                 
-!       it is assumed that the pointers in block pointer already point 
-!       to the correct block.                                          
+!       viscousflux computes the viscous fluxes using a central
+!       difference scheme for a block.
+!       it is assumed that the pointers in block pointer already point
+!       to the correct block.
 !
     use constants
     use blockpointers
@@ -8942,7 +8942,7 @@ contains
 ! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
-! 
+!
 ! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
 !
 ! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
@@ -9547,7 +9547,7 @@ contains
 ! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
-! 
+!
 ! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
 !
 ! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
@@ -10017,7 +10017,7 @@ contains
       call popreal8(wxy)
       mued = 0.0_8
 !
-!         viscous fluxes in the k-direction.                           
+!         viscous fluxes in the k-direction.
 !
       mue = zero
       mued = 0.0_8
@@ -10154,7 +10154,7 @@ contains
 ! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
-! 
+!
 ! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
 !
 ! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
@@ -10588,10 +10588,10 @@ contains
   end subroutine viscousflux_b
   subroutine viscousflux()
 !
-!       viscousflux computes the viscous fluxes using a central        
-!       difference scheme for a block.                                 
-!       it is assumed that the pointers in block pointer already point 
-!       to the correct block.                                          
+!       viscousflux computes the viscous fluxes using a central
+!       difference scheme for a block.
+!       it is assumed that the pointers in block pointer already point
+!       to the correct block.
 !
     use constants
     use blockpointers
@@ -10653,7 +10653,7 @@ contains
         storewalltensor = .true.
       end if
 !
-!         viscous fluxes in the k-direction.                           
+!         viscous fluxes in the k-direction.
 !
       mue = zero
       do ii=0,nx*ny*kl-1
@@ -10763,7 +10763,7 @@ contains
 ! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
-! 
+!
 ! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
 !
 ! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
@@ -10849,8 +10849,8 @@ contains
 ! and k == kl must be tested.
         if (k .eq. 1 .and. storewalltensor .and. visckminpointer(i, j) &
 &           .gt. 0) then
-! we need to index viscsubface with visckminpointer(i,j) 
-! since tapenade does not like temporary indexes 
+! we need to index viscsubface with visckminpointer(i,j)
+! since tapenade does not like temporary indexes
           viscsubface(visckminpointer(i, j))%tau(i, j, 1) = tauxx
           viscsubface(visckminpointer(i, j))%tau(i, j, 2) = tauyy
           viscsubface(visckminpointer(i, j))%tau(i, j, 3) = tauzz
@@ -10876,7 +10876,7 @@ contains
         end if
       end do
 !
-!         viscous fluxes in the j-direction.                           
+!         viscous fluxes in the j-direction.
 !
       continue
       mue = zero
@@ -10987,7 +10987,7 @@ contains
 ! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
-! 
+!
 ! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
 !
 ! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
@@ -11070,8 +11070,8 @@ contains
 ! and j == jl must be tested.
         if (j .eq. 1 .and. storewalltensor .and. viscjminpointer(i, k) &
 &           .gt. 0) then
-! we need to index viscsubface with viscjminpointer(i,k) 
-! since tapenade does not like temporary indexes 
+! we need to index viscsubface with viscjminpointer(i,k)
+! since tapenade does not like temporary indexes
           viscsubface(viscjminpointer(i, k))%tau(i, k, 1) = tauxx
           viscsubface(viscjminpointer(i, k))%tau(i, k, 2) = tauyy
           viscsubface(viscjminpointer(i, k))%tau(i, k, 3) = tauzz
@@ -11097,7 +11097,7 @@ contains
         end if
       end do
 !
-!         viscous fluxes in the i-direction.                           
+!         viscous fluxes in the i-direction.
 !
       continue
       mue = zero
@@ -11208,7 +11208,7 @@ contains
 ! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
-! 
+!
 ! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
 !
 ! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
@@ -11291,8 +11291,8 @@ contains
 ! and i == il must be tested.
         if (i .eq. 1 .and. storewalltensor .and. visciminpointer(j, k) &
 &           .gt. 0) then
-! we need to index viscsubface with visciminpointer(j,k) 
-! since tapenade does not like temporary indexes 
+! we need to index viscsubface with visciminpointer(j,k)
+! since tapenade does not like temporary indexes
           viscsubface(visciminpointer(j, k))%tau(j, k, 1) = tauxx
           viscsubface(visciminpointer(j, k))%tau(j, k, 2) = tauyy
           viscsubface(visciminpointer(j, k))%tau(j, k, 3) = tauzz
@@ -11306,8 +11306,8 @@ contains
 ! and the i == il case.
         if (i .eq. il .and. storewalltensor .and. viscimaxpointer(j, k) &
 &           .gt. 0) then
-! we need to index viscsubface with viscimaxpointer(j,k) 
-! since tapenade does not like temporary indexes 
+! we need to index viscsubface with viscimaxpointer(j,k)
+! since tapenade does not like temporary indexes
           viscsubface(viscimaxpointer(j, k))%tau(j, k, 1) = tauxx
           viscsubface(viscimaxpointer(j, k))%tau(j, k, 2) = tauyy
           viscsubface(viscimaxpointer(j, k))%tau(j, k, 3) = tauzz
@@ -11397,7 +11397,7 @@ contains
     do k=2,kl
       do j=2,jl
         do i=1,il
-! compute the vector from the center of cell i to cell i+1           
+! compute the vector from the center of cell i to cell i+1
           call pushreal8(ssx)
           ssx = eighth*(x(i+1, j-1, k-1, 1)-x(i-1, j-1, k-1, 1)+x(i+1, j&
 &           -1, k, 1)-x(i-1, j-1, k, 1)+x(i+1, j, k-1, 1)-x(i-1, j, k-1&
@@ -11483,7 +11483,7 @@ contains
     do k=2,kl
       do j=1,jl
         do i=2,il
-! compute the vector from the center of cell j to cell j+1           
+! compute the vector from the center of cell j to cell j+1
           call pushreal8(ssx)
           ssx = eighth*(x(i-1, j+1, k-1, 1)-x(i-1, j-1, k-1, 1)+x(i-1, j&
 &           +1, k, 1)-x(i-1, j-1, k, 1)+x(i, j+1, k-1, 1)-x(i, j-1, k-1&
@@ -11569,7 +11569,7 @@ contains
     do k=1,kl
       do j=2,jl
         do i=2,il
-! compute the vector from the center of cell k to cell k+1           
+! compute the vector from the center of cell k to cell k+1
           call pushreal8(ssx)
           ssx = eighth*(x(i-1, j-1, k+1, 1)-x(i-1, j-1, k-1, 1)+x(i-1, j&
 &           , k+1, 1)-x(i-1, j, k-1, 1)+x(i, j-1, k+1, 1)-x(i, j-1, k-1&
@@ -12162,7 +12162,7 @@ contains
     do k=2,kl
       do j=2,jl
         do i=1,il
-! compute the vector from the center of cell i to cell i+1           
+! compute the vector from the center of cell i to cell i+1
           ssx = eighth*(x(i+1, j-1, k-1, 1)-x(i-1, j-1, k-1, 1)+x(i+1, j&
 &           -1, k, 1)-x(i-1, j-1, k, 1)+x(i+1, j, k-1, 1)-x(i-1, j, k-1&
 &           , 1)+x(i+1, j, k, 1)-x(i-1, j, k, 1))
@@ -12250,7 +12250,7 @@ contains
     do k=2,kl
       do j=1,jl
         do i=2,il
-! compute the vector from the center of cell j to cell j+1           
+! compute the vector from the center of cell j to cell j+1
           ssx = eighth*(x(i-1, j+1, k-1, 1)-x(i-1, j-1, k-1, 1)+x(i-1, j&
 &           +1, k, 1)-x(i-1, j-1, k, 1)+x(i, j+1, k-1, 1)-x(i, j-1, k-1&
 &           , 1)+x(i, j+1, k, 1)-x(i, j-1, k, 1))
@@ -12338,7 +12338,7 @@ contains
     do k=1,kl
       do j=2,jl
         do i=2,il
-! compute the vector from the center of cell k to cell k+1           
+! compute the vector from the center of cell k to cell k+1
           ssx = eighth*(x(i-1, j-1, k+1, 1)-x(i-1, j-1, k-1, 1)+x(i-1, j&
 &           , k+1, 1)-x(i-1, j, k-1, 1)+x(i, j-1, k+1, 1)-x(i, j-1, k-1&
 &           , 1)+x(i, j, k+1, 1)-x(i, j, k-1, 1))
@@ -12432,10 +12432,10 @@ contains
 !                radk:in
   subroutine invisciddissfluxscalarapprox_b()
 !
-!       invisciddissfluxscalar computes the scalar artificial          
-!       dissipation, see aiaa paper 81-1259, for a given block.        
-!       therefore it is assumed that the pointers in  blockpointers    
-!       already point to the correct block.                            
+!       invisciddissfluxscalar computes the scalar artificial
+!       dissipation, see aiaa paper 81-1259, for a given block.
+!       therefore it is assumed that the pointers in  blockpointers
+!       already point to the correct block.
 !
     use blockpointers
     use cgnsgrid
@@ -12555,14 +12555,14 @@ contains
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations) 
-      case (eulerequations) 
+      select case  (equations)
+      case (eulerequations)
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
 ! set to a fraction of the free stream value.
         sslim = 0.001_realtype*pinfcorr
-      case (nsequations, ransequations) 
+      case (nsequations, ransequations)
 !===============================================================
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
@@ -12693,7 +12693,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the i-direction.                         
+!       dissipative fluxes in the i-direction.
 !
       do k=2,kl
         do j=2,jl
@@ -12751,7 +12751,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the j-direction.                         
+!       dissipative fluxes in the j-direction.
 !
       do k=2,kl
         do i=2,il
@@ -12805,7 +12805,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the k-direction.                         
+!       dissipative fluxes in the k-direction.
 !
       do j=2,jl
         do i=2,il
@@ -13461,10 +13461,10 @@ contains
   end subroutine invisciddissfluxscalarapprox_b
   subroutine invisciddissfluxscalarapprox()
 !
-!       invisciddissfluxscalar computes the scalar artificial          
-!       dissipation, see aiaa paper 81-1259, for a given block.        
-!       therefore it is assumed that the pointers in  blockpointers    
-!       already point to the correct block.                            
+!       invisciddissfluxscalar computes the scalar artificial
+!       dissipation, see aiaa paper 81-1259, for a given block.
+!       therefore it is assumed that the pointers in  blockpointers
+!       already point to the correct block.
 !
     use blockpointers
     use cgnsgrid
@@ -13515,14 +13515,14 @@ contains
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations) 
-      case (eulerequations) 
+      select case  (equations)
+      case (eulerequations)
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
 ! set to a fraction of the free stream value.
         sslim = 0.001_realtype*pinfcorr
-      case (nsequations, ransequations) 
+      case (nsequations, ransequations)
 !===============================================================
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
@@ -13604,7 +13604,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the i-direction.                         
+!       dissipative fluxes in the i-direction.
 !
       do k=2,kl
         do j=2,jl
@@ -13679,7 +13679,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the j-direction.                         
+!       dissipative fluxes in the j-direction.
 !
       do k=2,kl
         do i=2,il
@@ -13750,7 +13750,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the k-direction.                         
+!       dissipative fluxes in the k-direction.
 !
       do j=2,jl
         do i=2,il
@@ -13892,12 +13892,12 @@ contains
 !   plus diff mem management of: p:in w:in fw:in
   subroutine invisciddissfluxmatrixapprox_b()
 !
-!       invisciddissfluxmatrix computes the matrix artificial          
-!       dissipation term. instead of the spectral radius, as used in   
-!       the scalar dissipation scheme, the absolute value of the flux  
-!       jacobian is used. this leads to a less diffusive and           
-!       consequently more accurate scheme. it is assumed that the      
-!       pointers in blockpointers already point to the correct block.  
+!       invisciddissfluxmatrix computes the matrix artificial
+!       dissipation term. instead of the spectral radius, as used in
+!       the scalar dissipation scheme, the absolute value of the flux
+!       jacobian is used. this leads to a less diffusive and
+!       consequently more accurate scheme. it is assumed that the
+!       pointers in blockpointers already point to the correct block.
 !
     use blockpointers
     use cgnsgrid
@@ -14013,7 +14013,7 @@ contains
       fis4 = rfil*vis4
       sfil = one - rfil
 !
-!       dissipative fluxes in the i-direction.                         
+!       dissipative fluxes in the i-direction.
 !
       do k=2,kl
         do j=2,jl
@@ -14220,7 +14220,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the j-direction.                         
+!       dissipative fluxes in the j-direction.
 !
       do k=2,kl
         do i=2,il
@@ -14427,7 +14427,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the k-direction.                         
+!       dissipative fluxes in the k-direction.
 !
       do j=2,jl
         do i=2,il
@@ -15251,12 +15251,12 @@ contains
   end subroutine invisciddissfluxmatrixapprox_b
   subroutine invisciddissfluxmatrixapprox()
 !
-!       invisciddissfluxmatrix computes the matrix artificial          
-!       dissipation term. instead of the spectral radius, as used in   
-!       the scalar dissipation scheme, the absolute value of the flux  
-!       jacobian is used. this leads to a less diffusive and           
-!       consequently more accurate scheme. it is assumed that the      
-!       pointers in blockpointers already point to the correct block.  
+!       invisciddissfluxmatrix computes the matrix artificial
+!       dissipation term. instead of the spectral radius, as used in
+!       the scalar dissipation scheme, the absolute value of the flux
+!       jacobian is used. this leads to a less diffusive and
+!       consequently more accurate scheme. it is assumed that the
+!       pointers in blockpointers already point to the correct block.
 !
     use blockpointers
     use cgnsgrid
@@ -15361,7 +15361,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the i-direction.                         
+!       dissipative fluxes in the i-direction.
 !
       do k=2,kl
         do j=2,jl
@@ -15556,7 +15556,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the j-direction.                         
+!       dissipative fluxes in the j-direction.
 !
       do k=2,kl
         do i=2,il
@@ -15751,7 +15751,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the k-direction.                         
+!       dissipative fluxes in the k-direction.
 !
       do j=2,jl
         do i=2,il

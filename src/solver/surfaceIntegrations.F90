@@ -1,7 +1,7 @@
   module surfaceIntegrations
 
 contains
-  
+
   subroutine getCostFunctions(globalVals, funcValues)
 
     use constants
@@ -12,7 +12,7 @@ contains
     use utils, only : computeTSDerivatives
     use flowUtils, only : getDirVector
     implicit none
-    
+
     ! Input/Output
     real(kind=realType), intent(in), dimension(:, :) :: globalVals
     real(Kind=realType), intent(out), dimension(:) :: funcValues
@@ -21,7 +21,7 @@ contains
     real(kind=realType) :: fact, factMoment, ovrNTS
     real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, cForce, cMoment
     real(kind=realType), dimension(3) :: VcoordRef, VFreestreamRef
-    real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgRho, mAvgPs, mFlow, mAvgMn, mAvga, & 
+    real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgRho, mAvgPs, mFlow, mAvgMn, mAvga, &
                             mAvgVx, mAvgVy, mAvgVz, mAvgnx, mAvgny, mAvgnz, mAvgU, sigmaMN, sigmaPtot
     real(kind=realType) ::  vdotn, mag, u, v, w
     integer(kind=intType) :: sps
@@ -78,10 +78,10 @@ contains
 
        ! Mass flow like objective
        mFlow = globalVals(iMassFlow, sps)
-       if (mFlow /= zero) then 
+       if (mFlow /= zero) then
           mAvgPtot = globalVals(iMassPtot, sps)/mFlow
           mAvgTtot = globalVals(iMassTtot, sps)/mFlow
-          mAvgrho   = globalVals(iMassRho, sps)/mFlow          
+          mAvgrho   = globalVals(iMassRho, sps)/mFlow
           mAvgPs   = globalVals(iMassPs, sps)/mFlow
           mAvgMn   = globalVals(iMassMn, sps)/mFlow
           mAvga   = globalVals(iMassa, sps)/mFlow
@@ -89,7 +89,7 @@ contains
           mAvgVx   = globalVals(iMassVx, sps)/mFlow
           mAvgVy   = globalVals(iMassVy, sps)/mFlow
           mAvgVz   = globalVals(iMassVz, sps)/mFlow
-          
+
           mag = sqrt(globalVals(iMassnx, sps)**2 + &
                     globalVals(iMassny, sps)**2 + &
                     globalVals(iMassnz, sps)**2)
@@ -131,7 +131,7 @@ contains
        funcValues(costFuncSigmaMN) = funcValues(costFuncSigmaMN) + ovrNTS*sigmaMN
        funcValues(costFuncSigmaPtot) = funcValues(costFuncSigmaPtot) + ovrNTS*sigmaPtot
 
-       ! Bending moment calc - also broken. 
+       ! Bending moment calc - also broken.
        ! call computeRootBendingMoment(cForce, cMoment, liftIndex, bendingMoment)
        ! funcValues(costFuncBendingCoef) = funcValues(costFuncBendingCoef) + ovrNTS*bendingMoment
 
@@ -160,7 +160,7 @@ contains
 
     ! -------------------- Time Spectral Objectives ------------------
 
-    if (TSSTability) then 
+    if (TSSTability) then
        print *,'Error: TSStabilityDerivatives are *BROKEN*. They need to be '&
             &'completely verifed from scratch'
        stop
@@ -215,7 +215,7 @@ contains
     use inputPhysics, only : MachCoef, pointRef, velDirFreeStream, equations, momentAxis
     use BCPointers
     implicit none
-  
+
     ! Input/output variables
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
     integer(kind=intType) :: mm
@@ -257,7 +257,7 @@ contains
     axisPoints(2,2) = LRef*momentAxis(2,2)
     axisPoints(3,1) = LRef*momentAxis(3,1)
     axisPoints(3,2) = LRef*momentAxis(3,2)
-    
+
     ! Initialize the force and moment coefficients to 0 as well as
     ! yplusMax.
 
@@ -277,8 +277,8 @@ contains
     !         Question is whether a force for an open contour is
     !         meaningful anyway.
     !
-    
-   
+
+
     ! Loop over the quadrilateral faces of the subface. Note that
     ! the nodal range of BCData must be used and not the cell
     ! range, because the latter may include the halo's in i and
@@ -288,12 +288,12 @@ contains
     !
     ! do j=(BCData(mm)%jnBeg+1),BCData(mm)%jnEnd
     !    do i=(BCData(mm)%inBeg+1),BCData(mm)%inEnd
-    
+
     !$AD II-LOOP
     do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
        i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
        j = ii/(bcData(mm)%inEnd-bcData(mm)%inBeg) + bcData(mm)%jnBeg + 1
-       
+
        ! Compute the average pressure minus 1 and the coordinates
        ! of the centroid of the face relative from from the
        ! moment reference point. Due to the usage of pointers for
@@ -303,25 +303,25 @@ contains
        ! outward pointing normal.
 
        pm1 = fact*(half*(pp2(i,j) + pp1(i,j)) - pInf)*pRef
-       
+
        xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
             +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
        yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
             +         xx(i,j+1,2) + xx(i+1,j+1,2)) - refPoint(2)
        zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
             +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
-       
+
        ! Compute the force components.
        blk = max(BCData(mm)%iblank(i,j), 0)
        fx = pm1*ssi(i,j,1)
        fy = pm1*ssi(i,j,2)
        fz = pm1*ssi(i,j,3)
-       
+
        ! Update the inviscid force and moment coefficients. Iblank as we sum
        Fp(1) = Fp(1) + fx*blk
        Fp(2) = Fp(2) + fy*blk
        Fp(3) = Fp(3) + fz*blk
-       
+
        mx = yc*fz - zc*fy
        my = zc*fx - xc*fz
        mz = xc*fy - yc*fx
@@ -340,15 +340,15 @@ contains
             + xx(i,j+1,2) + xx(i+1,j+1,2)) - axisPoints(2,1)
        r(3) = fourth*(xx(i,j,   3) + xx(i+1,j,   3)&
             + xx(i,j+1,3) + xx(i+1,j+1,3)) - axisPoints(3,1)
-       
+
        L = sqrt((axisPoints(1,2) - axisPoints(1,1)) **2 &
             + (axisPoints(2,2) - axisPoints(2,1)) **2 &
             + (axisPoints(3,2) - axisPoints(3,1)) **2)
-       
+
        n(1) = (axisPoints(1,2) - axisPoints(1,1)) / L
        n(2) = (axisPoints(2,2) - axisPoints(2,1)) / L
        n(3) = (axisPoints(3,2) - axisPoints(3,1)) / L
-       
+
        ! Compute the moment of the force about the first point
        ! used to define the axis, and the project that axis in
        ! the n direction
@@ -356,7 +356,7 @@ contains
        m0y = r(3)*fx - r(1)*fz
        m0z = r(1)*fy - r(2)*fx
        Mpaxis = Mpaxis +(m0x*n(1) + m0y*n(2) + m0z*n(3))*blk
-              
+
        ! Save the face-based forces and area
        bcData(mm)%Fp(i, j, 1) = fx
        bcData(mm)%Fp(i, j, 2) = fy
@@ -364,7 +364,7 @@ contains
        cellArea = sqrt(ssi(i,j,1)**2 + ssi(i,j,2)**2 + ssi(i,j,3)**2)
 
        bcData(mm)%area(i, j) = cellArea
-       
+
        ! Get normalized surface velocity:
        v(1) = ww2(i, j, ivx)
        v(2) = ww2(i, j, ivy)
@@ -374,14 +374,14 @@ contains
        ! Dot product with free stream
        sensor = -(v(1)*velDirFreeStream(1) + v(2)*velDirFreeStream(2) + &
             v(3)*velDirFreeStream(3))
-       
+
        !Now run through a smooth heaviside function:
        sensor = one/(one + exp(-2*sepSensorSharpness*(sensor-sepSensorOffset)))
-       
+
        ! And integrate over the area of this cell and save, blanking as we go.
        sensor = sensor * cellArea * blk
        sepSensor = sepSensor + sensor
-       
+
        ! Also accumulate into the sepSensorAvg
        xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
             +         xx(i,j+1,1) + xx(i+1,j+1,1))
@@ -405,19 +405,19 @@ contains
           Cavitation = Cavitation + Sensor1
        end if
     enddo
-    
+
     !
     ! Integration of the viscous forces.
     ! Only for viscous boundaries.
     !
     visForce: if( BCType(mm) == NSWallAdiabatic .or. &
-         BCType(mm) == NSWallIsoThermal) then 
-       
+         BCType(mm) == NSWallIsoThermal) then
+
        ! Initialize dwall for the laminar case and set the pointer
        ! for the unit normals.
-       
+
        dwall = zero
-       
+
        ! Loop over the quadrilateral faces of the subface and
        ! compute the viscous contribution to the force and
        ! moment and update the maximum value of y+.
@@ -426,49 +426,49 @@ contains
        do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
           i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
           j = ii/(bcData(mm)%inEnd-bcData(mm)%inBeg) + bcData(mm)%jnBeg + 1
-          
+
           ! Store the viscous stress tensor a bit easier.
           blk = max(BCData(mm)%iblank(i,j), 0)
-          
+
           tauXx = viscSubface(mm)%tau(i,j,1)
           tauYy = viscSubface(mm)%tau(i,j,2)
           tauZz = viscSubface(mm)%tau(i,j,3)
           tauXy = viscSubface(mm)%tau(i,j,4)
           tauXz = viscSubface(mm)%tau(i,j,5)
           tauYz = viscSubface(mm)%tau(i,j,6)
-          
+
           ! Compute the viscous force on the face. A minus sign
           ! is now present, due to the definition of this force.
-          
+
           fx = -fact*(tauXx*ssi(i,j,1) + tauXy*ssi(i,j,2) &
                +        tauXz*ssi(i,j,3))*pRef
           fy = -fact*(tauXy*ssi(i,j,1) + tauYy*ssi(i,j,2) &
                +        tauYz*ssi(i,j,3))*pRef
           fz = -fact*(tauXz*ssi(i,j,1) + tauYz*ssi(i,j,2) &
                +        tauZz*ssi(i,j,3))*pRef
-              
+
           ! Compute the coordinates of the centroid of the face
           ! relative from the moment reference point. Due to the
           ! usage of pointers for xx and offset of 1 is present,
           ! because x originally starts at 0.
-          
+
           xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
                +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
           yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
                +         xx(i,j+1,2) + xx(i+1,j+1,2)) - refPoint(2)
           zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
                +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
-          
+
           ! Update the viscous force and moment coefficients, blanking as we go.
 
           Fv(1) = Fv(1) + fx * blk
           Fv(2) = Fv(2) + fy * blk
           Fv(3) = Fv(3) + fz * blk
-          
+
           mx = yc*fz - zc*fy
           my = zc*fx - xc*fz
           mz = xc*fy - yc*fx
- 
+
           Mv(1) = Mv(1) + mx * blk
           Mv(2) = Mv(2) + my * blk
           Mv(3) = Mv(3) + mz * blk
@@ -518,13 +518,13 @@ contains
                + tauYz*BCData(mm)%norm(i,j,3)
           fz = tauXz*BCData(mm)%norm(i,j,1) + tauYz*BCData(mm)%norm(i,j,2) &
                + tauZz*BCData(mm)%norm(i,j,3)
-          
+
           fn = fx*BCData(mm)%norm(i,j,1) + fy*BCData(mm)%norm(i,j,2) + fz*BCData(mm)%norm(i,j,3)
 
           fx = fx - fn*BCData(mm)%norm(i,j,1)
           fy = fy - fn*BCData(mm)%norm(i,j,2)
           fz = fz - fn*BCData(mm)%norm(i,j,3)
-          
+
           ! Compute the local value of y+. Due to the usage
           ! of pointers there is on offset of -1 in dd2Wall..
 #ifndef USE_TAPENADE
@@ -533,10 +533,10 @@ contains
              rho   = half*(ww2(i,j,irho) + ww1(i,j,irho))
              mul   = half*(rlv2(i,j) + rlv1(i,j))
              yplus = sqrt(rho*sqrt(fx*fx + fy*fy + fz*fz))*dwall/mul
-             
+
              ! Store this value if this value is larger than the
-             ! currently stored value. Blank non-active cells. 
-             
+             ! currently stored value. Blank non-active cells.
+
              yplusMax = max(yplusMax, yplus*blk)
           end if
 #endif
@@ -545,7 +545,7 @@ contains
        ! If we had no viscous force, set the viscous component to zero
        bcData(mm)%Fv = zero
     end if visForce
-    
+
     ! Increment the local values array with the values we computed here.
     localValues(iFp:iFp+2) = localValues(iFp:iFp+2) + Fp
     localValues(iFv:iFv+2) = localValues(iFv:iFv+2) + Fv
@@ -555,7 +555,7 @@ contains
     localValues(iCavitation) = localValues(iCavitation) + cavitation
     localValues(iSepAvg:iSepAvg+2) = localValues(iSepAvg:iSepAvg+2) + sepSensorAvg
     localValues(iAxisMoment) = localValues(iAxisMoment) + Mpaxis + Mvaxis
-    
+
 #ifndef USE_TAPENADE
     localValues(iyPlus) = max(localValues(iyPlus), yplusMax)
 #endif
@@ -565,7 +565,7 @@ contains
 
     use constants
     use blockPointers, only : BCType, BCFaceID, BCData, addGridVelocities
-    use flowVarRefState, only : pRef, pInf, rhoRef, timeRef, LRef, TRef, RGas, uRef, uInf, rhoInf 
+    use flowVarRefState, only : pRef, pInf, rhoRef, timeRef, LRef, TRef, RGas, uRef, uInf, rhoInf
     use inputPhysics, only : pointRef, flowType
     use flowUtils, only : computePtot, computeTtot
     use BCPointers, only : ssi, sFace, ww1, ww2, pp1, pp2, xx, gamma1, gamma2
@@ -580,7 +580,7 @@ contains
     real(kind=realType), optional, dimension(:), intent(in) :: funcValues
 
     ! Local variables
-    real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN, mass_a, mass_rho, & 
+    real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN, mass_a, mass_rho, &
                             mass_Vx, mass_Vy, mass_Vz, mass_nx, mass_ny, mass_nz
     real(kind=realType) ::  mReDim, sigma_MN, sigma_Ptot
     integer(kind=intType) :: i, j, ii, blk
@@ -599,7 +599,7 @@ contains
     ! is that we want positive mass flow into the domain and negative
     ! mass flow out of the domain. Since the low faces have ssi
     ! vectors pointining into the domain, this is correct. The high
-    ! end faces need to flip this. 
+    ! end faces need to flip this.
     select case (BCFaceID(mm))
     case (iMin, jMin, kMin)
        fact = one
@@ -609,12 +609,12 @@ contains
 
     ! the sign of momentum forces are flipped for internal flows
     internalFlowFact = one
-    if (flowType == internalFlow) then 
+    if (flowType == internalFlow) then
       internalFlowFact = -one
     end if
 
     inFlowFact = one
-    if (isInflow) then 
+    if (isInflow) then
       inflowFact= -one
     end if
 
@@ -627,7 +627,7 @@ contains
     !
     ! do j=(BCData(mm)%jnBeg+1),BCData(mm)%jnEnd
     !    do i=(BCData(mm)%inBeg+1),BCData(mm)%inEnd
-    
+
     mReDim = sqrt(pRef*rhoRef)
     Fp = zero
     Mp = zero
@@ -644,10 +644,10 @@ contains
     mass_rho = zero
 
     mass_Vx = zero
-    mass_Vy = zero 
-    mass_Vz = zero 
-    mass_nx = zero 
-    mass_ny = zero 
+    mass_Vy = zero
+    mass_Vz = zero
+    mass_nx = zero
+    mass_ny = zero
     mass_nz = zero
 
     sigma_Mn = zero
@@ -660,7 +660,7 @@ contains
       i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
       j = ii/(bcData(mm)%inEnd-bcData(mm)%inBeg) + bcData(mm)%jnBeg + 1
 
-      if( addGridVelocities ) then 
+      if( addGridVelocities ) then
         sF = sFace(i,j)
       else
         sF = zero
@@ -690,13 +690,13 @@ contains
 
       massFlowRateLocal = rhom*vnm*blk*fact*mReDim
 
-      if (withGathered) then 
+      if (withGathered) then
 
         sigma_Mn = sigma_Mn  + abs(massFlowRateLocal)*(MNm - funcValues(costFuncMavgMN))**2
         Ptot = Ptot * pRef
         sigma_Ptot = sigma_Ptot + abs(massFlowRateLocal)*(Ptot - funcValues(costFuncMavgPtot))**2
-        
-      else 
+
+      else
 
         massFlowRate = massFlowRate + massFlowRateLocal
 
@@ -731,9 +731,9 @@ contains
         zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
             +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
 
-        ! Pressure forces. Note that these need a *negative* and to subtract 
-        ! the reference pressure sign to be consistent with the force 
-        ! computation on the walls. 
+        ! Pressure forces. Note that these need a *negative* and to subtract
+        ! the reference pressure sign to be consistent with the force
+        ! computation on the walls.
         pm = -(pm-pInf*pRef)*fact*blk
 
         fx = pm*ssi(i,j,1)
@@ -744,20 +744,20 @@ contains
         Fp(1) = Fp(1) + fx
         Fp(2) = Fp(2) + fy
         Fp(3) = Fp(3) + fz
-                 
+
         mx = yc*fz - zc*fy
         my = zc*fx - xc*fz
         mz = xc*fy - yc*fx
-         
+
         Mp(1) = Mp(1) + mx
         Mp(2) = Mp(2) + my
         Mp(3) = Mp(3) + mz
 
-        ! Momentum forces are a little tricky.  We negate because 
-        ! have to re-apply fact to massFlowRateLocal to undoo it, because 
-        ! we need the signed behavior of ssi to get the momentum forces correct. 
-        ! Also, the sign is flipped between inflow and outflow types 
-      
+        ! Momentum forces are a little tricky.  We negate because
+        ! have to re-apply fact to massFlowRateLocal to undoo it, because
+        ! we need the signed behavior of ssi to get the momentum forces correct.
+        ! Also, the sign is flipped between inflow and outflow types
+
         massFlowRateLocal = massFlowRateLocal*fact/timeRef*blk/cellArea*internalFlowFact*inFlowFact
 
         fx = massFlowRateLocal * ssi(i,j,1)*vxm
@@ -777,13 +777,13 @@ contains
         MMom(3) = MMom(3) + mz
 
      end if
-       
+
     enddo
 
-    if (withGathered) then 
+    if (withGathered) then
       localValues(isigmaMN) = localValues(isigmaMN) + sigma_Mn
       localValues(isigmaPtot) = localValues(isigmaPtot) + sigma_Ptot
-    else 
+    else
       ! Increment the local values array with what we computed here
       localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate
       localValues(iArea) = localValues(iArea) + area
@@ -828,7 +828,7 @@ contains
     real(kind=realType), dimension(nCost, nGroups), intent(out)  :: funcValues
     integer(kind=intType) :: nGroups, nCost, nFamMax
 
-    ! Local variable 
+    ! Local variable
 
     call getSolution(famLists, funcValues)
   end subroutine getSolutionWrap
@@ -836,7 +836,7 @@ contains
   subroutine getSolution(famLists, funcValues, globalValues)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
-    ! modifying the hand-written forward and reverse routines. 
+    ! modifying the hand-written forward and reverse routines.
     ! --------------------------------------------------------------
 
     use constants
@@ -869,7 +869,7 @@ contains
        localVal = zero
 
        do sps=1, nTimeIntervalsSpectral
-          ! Integrate the normal block surfaces. 
+          ! Integrate the normal block surfaces.
           do nn=1, nDom
              call setPointers(nn, 1, sps)
              call integrateSurfaces(localval(:, sps), famList, .False., funcValues(:, iGroup))
@@ -878,50 +878,50 @@ contains
           ! Integrate any zippers we have
           call integrateZippers(localVal(:, sps), famList, sps, .False., funcValues(:, iGroup))
 
-          ! Integrate any user-supplied surfaces as have as well. 
+          ! Integrate any user-supplied surfaces as have as well.
           call integrateUserSurfaces(localVal(:, sps), famList, sps, .False., funcValues(:, iGroup))
-          
+
           ! Integrate any actuator regions we have
           call integrateActuatorRegions(localVal(:, sps), famList, sps, .False., funcValues(:, iGroup))
        end do
-       
+
        ! Now we need to reduce all the cost functions
        call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
             MPI_SUM, adflow_comm_world, ierr)
        call EChk(ierr, __FILE__, __LINE__)
-       
+
        ! Call the final routine that will comptue all of our functions of
        ! interest.
        call getCostFunctions(globalVal, funcValues(:, iGroup))
 
        ! Secondary loop over the blocks/zippers/planes for
        ! calculations that require pre-computed gathered values in the
-       ! computation itself. The withGathered flag is now true. 
+       ! computation itself. The withGathered flag is now true.
        do sps=1, nTimeIntervalsSpectral
           do nn=1, nDom
              call setPointers(nn, 1, sps)
              call integrateSurfaces(localval(:, sps), famList, .True.,  funcValues(:, iGroup))
           end do
-          
+
           ! Integrate any zippers we have
           call integrateZippers(localVal(:, sps), famList, sps, .True., funcValues(:, iGroup))
-          
-          ! Integrate any user-supplied planes as have as well. 
+
+          ! Integrate any user-supplied planes as have as well.
           call integrateUserSurfaces(localVal(:, sps), famList, sps, .True., funcValues(:, iGroup))
 
           ! No need to call the actuatorRegion integration
        end do
-       
+
        ! All reduce again. Technially just need the additionally
        ! computed gathered values, but do all anyway.
        call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
             MPI_SUM, adflow_comm_world, ierr)
        call EChk(ierr, __FILE__, __LINE__)
-       
+
        ! second pass through so the gathered computations are correct.
        call getCostFunctions(globalVal, funcValues(:, iGroup))
 
-       if (present(globalValues)) then 
+       if (present(globalValues)) then
           globalValues(:, :, iGroup) = globalVal
        end if
     end do groupLoop
@@ -930,14 +930,14 @@ contains
   subroutine integrateSurfaces(localValues, famList, withGathered, funcValues)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
-    ! modifying the hand-written forward and reverse routines. 
+    ! modifying the hand-written forward and reverse routines.
     ! --------------------------------------------------------------
     !
     ! This is a shell routine that calls the specific surface
     ! integration routines. Currently we have have the forceAndMoment
     ! routine as well as the flow properties routine. This routine
     ! takes care of setting pointers, while the actual computational
-    ! routine just acts on a specific fast pointed to by pointers. 
+    ! routine just acts on a specific fast pointed to by pointers.
 
     use constants
     use blockPointers, only : nBocos, BCData, BCType, sk, sj, si, x, rlv, &
@@ -945,7 +945,7 @@ contains
     use utils, only : setBCPointers, isWallType
     use sorting, only : famInList
     ! Tapenade needs to see these modules that the callees use.
-    use BCPointers 
+    use BCPointers
     use flowVarRefState
     use inputPhysics
 
@@ -962,31 +962,31 @@ contains
 
     ! Loop over all possible boundary conditions
     bocos: do mm=1, nBocos
-       
+
        ! Determine if this boundary condition is to be incldued in the
        ! currently active group
        famInclude: if (famInList(BCData(mm)%famID, famList)) then
-          
+
           ! Set a bunch of pointers depending on the face id to make
-          ! a generic treatment possible. 
+          ! a generic treatment possible.
           call setBCPointers(mm, .True.)
 
           ! no post gathered integrations currently
-          isWall: if( isWallType(BCType(mm)) .and. .not. withGathered) then 
+          isWall: if( isWallType(BCType(mm)) .and. .not. withGathered) then
              call wallIntegrationFace(localvalues, mm)
           end if isWall
 
           isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
-               BCType(mm) == SupersonicInflow) then 
+               BCType(mm) == SupersonicInflow) then
              call flowIntegrationFace(.true., localValues, mm, withGathered, funcValues)
           else if (BCType(mm) == SubsonicOutflow .or. &
-               BCType(mm) == SupersonicOutflow) then 
+               BCType(mm) == SupersonicOutflow) then
              call flowIntegrationFace(.false., localValues, mm, withGathered, funcValues)
           end if isInflowOutflow
 
        end if famInclude
     end do bocos
-    
+
   end subroutine integrateSurfaces
 
 #ifndef USE_COMPLEX
@@ -995,7 +995,7 @@ contains
     !------------------------------------------------------------------------
     ! Manual Differentiation Warning: This routine is differentiated by hand.
     ! -----------------------------------------------------------------------
- 
+
     ! Forward mode linearization of integrateSurfaces
     use constants
     use blockPointers, only : nBocos, BCData, BCType
@@ -1003,7 +1003,7 @@ contains
     use sorting, only : famInList
     use surfaceIntegrations_d, only : wallIntegrationFace_d, flowIntegrationFace_d
     implicit none
-    
+
     ! Input/output Variables
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
     integer(kind=intType), dimension(:), intent(in) :: famList
@@ -1012,28 +1012,28 @@ contains
 
     ! Working variables
     integer(kind=intType) :: mm
-  
+
     ! Loop over all possible boundary conditions
     do mm=1, nBocos
        ! Determine if this boundary condition is to be incldued in the
        ! currently active group
-       famInclude: if (famInList(BCData(mm)%famID, famList)) then 
-          
+       famInclude: if (famInList(BCData(mm)%famID, famList)) then
+
           ! Set a bunch of pointers depending on the face id to make
-          ! a generic treatment possible. 
+          ! a generic treatment possible.
           call setBCPointers_d(mm, .True.)
-          
+
           ! not post gathered integrations currently
-          isWall: if( isWallType(BCType(mm)) .and. .not. withGathered) then 
+          isWall: if( isWallType(BCType(mm)) .and. .not. withGathered) then
              call wallIntegrationFace_d(localValues, localValuesd, mm)
           end if isWall
-          
+
           isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
-               BCType(mm) == SupersonicInflow) then 
+               BCType(mm) == SupersonicInflow) then
              call flowIntegrationFace_d(.true., localValues, localValuesd, mm, &
                     withGathered, funcValues, funcValuesd)
             else if (BCType(mm) == SubsonicOutflow .or. &
-               BCType(mm) == SupersonicOutflow) then 
+               BCType(mm) == SupersonicOutflow) then
 
                call flowIntegrationFace_d(.false., localValues, localValuesd, mm, &
                     withGathered, funcValues, funcValuesd)
@@ -1043,7 +1043,7 @@ contains
     end do
   end subroutine integrateSurfaces_d
 
-  subroutine integrateSurfaces_b(localValues, localValuesd, famList, withGathered, & 
+  subroutine integrateSurfaces_b(localValues, localValuesd, famList, withGathered, &
        funcValues, funcValuesd)
     !------------------------------------------------------------------------
     ! Manual Differentiation Warning: This routine is differentiated by hand.
@@ -1065,27 +1065,27 @@ contains
     ! Working variables
     integer(kind=intType) :: mm
 
-    ! Call the individual integration routines. 
+    ! Call the individual integration routines.
     do mm=1, nBocos
        ! Determine if this boundary condition is to be incldued in the
        ! currently active group
        famInclude: if (famInList(BCData(mm)%famID, famList)) then
-          
+
           ! Set a bunch of pointers depending on the face id to make
-          ! a generic treatment possible. 
+          ! a generic treatment possible.
           call setBCPointers_d(mm, .True.)
-          
+
           ! not post gathered integrations currently
-          isWall: if( isWallType(BCType(mm)) .and. (.not. withGathered)) then 
+          isWall: if( isWallType(BCType(mm)) .and. (.not. withGathered)) then
              call wallIntegrationFace_b(localValues, localValuesd, mm)
           end if isWall
-          
+
           isInflowOutflow: if (BCType(mm) == SubsonicInflow .or. &
-               BCType(mm) == SupersonicInflow) then 
+               BCType(mm) == SupersonicInflow) then
              call flowIntegrationFace_b(.true., localValues, localValuesd, mm, withGathered, &
                   funcValues, funcValuesd)
           else if (BCType(mm) == SubsonicOutflow .or. &
-               BCType(mm) == SupersonicOutflow) then 
+               BCType(mm) == SupersonicOutflow) then
              call flowIntegrationFace_b(.false., localValues, localValuesd, mm, withGathered, &
                   funcValues, funcValuesd)
           end if isInflowOutflow
@@ -1121,7 +1121,7 @@ contains
     integer(kind=intType), dimension(:), pointer :: famList
 
     groupLoop: do iGroup=1, size(famLists, 1)
-       
+
        ! Extract the current family list
        nFam = famLists(iGroup, 1)
        famList => famLists(iGroup, 2:2+nFam-1)
@@ -1129,18 +1129,18 @@ contains
        localVal = zero
        localVald = zero
        do sps=1, nTimeIntervalsSpectral
-          ! Integrate the normal block surfaces. 
+          ! Integrate the normal block surfaces.
           do nn=1, nDom
              call setPointers_d(nn, 1, sps)
              call integrateSurfaces_d(localval(:, sps), localvald(:, sps), famList, .False., &
                   funcValues(:, iGroup), funcValuesd(:, iGroup))
           end do
-          
+
           ! Integrate any zippers we have
           call integrateZippers_d(localVal(:, sps), localVald(:, sps), famList, sps, .False., &
                funcValues(:, iGroup), funcValuesd(:, iGroup))
-          
-          ! Integrate any user-supplied surface as have as well. 
+
+          ! Integrate any user-supplied surface as have as well.
           call integrateUserSurfaces_d(localVal(:, sps), localVald(:, sps), famList, sps, .False., &
                funcValues(:, iGroup), funcValuesd(:, iGroup))
 
@@ -1148,7 +1148,7 @@ contains
           call integrateActuatorRegions_d(localVal(:, sps), localVald(:, sps), famList, sps, .False., &
                funcValues(:, iGroup), funcValuesd(:, iGroup))
        end do
-       
+
        ! Now we need to reduce all the cost functions
        call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
             MPI_SUM, adflow_comm_world, ierr)
@@ -1158,7 +1158,7 @@ contains
        call mpi_allreduce(localvald, globalVald, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
             MPI_SUM, adflow_comm_world, ierr)
        call EChk(ierr, __FILE__, __LINE__)
-       
+
        ! Call the final routine that will comptue all of our functions of
        ! interest.
 
@@ -1166,23 +1166,23 @@ contains
 
        ! Secondary loop over the blocks/zippers/planes for
        ! calculations that require pre-computed gathered values in the
-       ! computation itself. The withGathered flag is now true. 
+       ! computation itself. The withGathered flag is now true.
        do sps=1, nTimeIntervalsSpectral
           do nn=1, nDom
              call setPointers_d(nn, 1, sps)
              call integrateSurfaces_d(localval(:, sps), localVald(:, sps), famList, .True.,  &
                   funcValues(:, iGroup), funcValuesd(:, iGroup))
           end do
-          
+
           ! Integrate any zippers we have
           call integrateZippers_d(localVal(:, sps), localVald(:, sps), famList, sps, .True., &
                funcValues(:, iGroup), funcValuesd(:, iGroup))
 
-          ! Integrate any user-supplied surfaces as have as well. 
-          call integrateUserSurfaces_d(localVal(:, sps), localVald(:, sps), famList, sps, .True., & 
+          ! Integrate any user-supplied surfaces as have as well.
+          call integrateUserSurfaces_d(localVal(:, sps), localVald(:, sps), famList, sps, .True., &
                funcValues(:, iGroup), funcValuesd(:, iGroup))
        end do
-       
+
        ! All reduce again. Technially just need the additionally
        ! computed gathered values, but do all anyway.
        call mpi_allreduce(localval, globalVal, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
@@ -1194,12 +1194,12 @@ contains
        call mpi_allreduce(localVald, globalVald, nLocalValues*nTimeIntervalsSpectral, adflow_real, &
             MPI_SUM, adflow_comm_world, ierr)
        call EChk(ierr, __FILE__, __LINE__)
-       
+
        ! Call the final routine that will comptue all of our functions of
        ! interest.
        call getCostFunctions_d(globalVal, globalVald, funcValues(:, iGroup), funcValuesd(:, iGroup))
 
-       ! if (present(globalValues)) then 
+       ! if (present(globalValues)) then
        !    globalValues = globalVal
        !    globalValuesd = globalVald
        ! end if
@@ -1211,7 +1211,7 @@ contains
     ! -----------------------------------------------------------------------
     ! Manual Differentiation Warning: This routine is differentiated by hand.
     ! -----------------------------------------------------------------------
-    
+
     use constants
     use communication, only : myid
     use inputTSStabDeriv, only : TSSTability
@@ -1220,7 +1220,7 @@ contains
     use blockPointers, only : nDom
     use utils, only : setPointers_b, EChk, setPointers
     use surfaceIntegrations_b, only : getCostFunctions_b
-    use zipperIntegrations, only :integrateZippers_b 
+    use zipperIntegrations, only :integrateZippers_b
     use userSurfaceIntegrations, only : integrateUserSurfaces_b
     use actuatorRegion, only : integrateActuatorRegions_b
     implicit none
@@ -1236,7 +1236,7 @@ contains
     real(Kind=realType), dimension(nCostFunction) :: funcValuesdSave
     integer(kind=intType) :: nn, sps, ierr, iGroup, nFam
     integer(kind=intType), dimension(:), pointer :: famList
-    
+
 
     call getSolution(famLists, funcValues, globalValues)
 
@@ -1248,71 +1248,71 @@ contains
 
        localVal = zero
        localVald = zero
-     
+
        ! Save the input seeds
        funcValuesdSave = funcValuesd(:, iGroup)
 
        ! Retrive the forward pass values from getSolution
        globalVal = globalValues(:, :, iGroup)
 
-       if (myid == 0) then 
+       if (myid == 0) then
           call getCostFunctions_b(globalVal, globalVald, funcValues(:, iGroup), funcValuesd(:, iGroup))
           localVald = globalVald
        end if
-       
-       ! Now we need to bcast out the localValues to all procs. 
+
+       ! Now we need to bcast out the localValues to all procs.
        call mpi_bcast(localVald, nLocalValues*nTimeIntervalsSpectral, &
             adflow_real, 0, adflow_comm_world, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
        do sps=1, nTimeIntervalsSpectral
-          ! Integrate the normal block surfaces. 
+          ! Integrate the normal block surfaces.
           do nn=1, nDom
              call setPointers_b(nn, 1, sps)
-             call integrateSurfaces_b(localval(:, sps), localVald(:, sps), famList, & 
+             call integrateSurfaces_b(localval(:, sps), localVald(:, sps), famList, &
              .True., funcValues(:, iGroup), funcValuesd(:, iGroup))
           end do
-          
+
           ! Integrate any zippers we have
-          call integrateZippers_b(localVal(:, sps), localVald(:, sps), famList, sps, & 
+          call integrateZippers_b(localVal(:, sps), localVald(:, sps), famList, sps, &
                .True., funcValues(:, iGroup), funcValuesd(:, iGroup))
-          
-          ! Integrate any user-supplied planes as have as well. 
-          call integrateUserSurfaces_b(localVal(:, sps), localVald(:, sps), famList, sps, & 
+
+          ! Integrate any user-supplied planes as have as well.
+          call integrateUserSurfaces_b(localVal(:, sps), localVald(:, sps), famList, sps, &
                .True., funcValues(:, iGroup), funcValuesd(:, iGroup))
        end do
 
-       ! Reset the funcValues here and do the second pass. 
+       ! Reset the funcValues here and do the second pass.
        funcValuesd(:, iGroup) = funcValuesdSave
 
-       if (myid == 0) then 
+       if (myid == 0) then
           call getCostFunctions_b(globalVal, globalVald, funcValues(:, iGroup), funcValuesd(:, iGroup))
           localVald = globalVald
        end if
-       
-       ! Now we need to bcast out the localValues to all procs. 
+
+       ! Now we need to bcast out the localValues to all procs.
        call mpi_bcast(localVald, nLocalValues*nTimeIntervalsSpectral, &
             adflow_real, 0, adflow_comm_world, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
        do sps=1, nTimeIntervalsSpectral
-          ! Integrate the normal block surfaces. 
+          ! Integrate the normal block surfaces.
           do nn=1, nDom
              call setPointers_b(nn, 1, sps)
-             call integrateSurfaces_b(localval(:, sps), localVald(:, sps), famList, & 
+             call integrateSurfaces_b(localval(:, sps), localVald(:, sps), famList, &
              .False., funcValues(:, iGroup), funcValuesd(:, iGroup))
           end do
-          
+
           ! Integrate any zippers we have
-          call integrateZippers_b(localVal(:, sps), localVald(:, sps), famList, sps, & 
+          call integrateZippers_b(localVal(:, sps), localVald(:, sps), famList, sps, &
                .False., funcValues(:, iGroup), funcValuesd(:, iGroup))
-          
-          ! Integrate any user-supplied planes as have as well. 
-          call integrateUserSurfaces_b(localVal(:, sps), localVald(:, sps), famList, sps, & 
+
+          ! Integrate any user-supplied planes as have as well.
+          call integrateUserSurfaces_b(localVal(:, sps), localVald(:, sps), famList, sps, &
                .False., funcValues(:, iGroup), funcValuesd(:, iGroup))
 
           ! Integrate any actuator regions we have:
-           call integrateActuatorRegions_b(localVal(:, sps), localVald(:, sps), famList, sps, & 
+           call integrateActuatorRegions_b(localVal(:, sps), localVald(:, sps), famList, sps, &
                 .False., funcValues(:, iGroup), funcValuesd(:, iGroup))
 
        end do

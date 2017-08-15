@@ -1,14 +1,14 @@
        module paramTurb
 !
-!       Module that contains the constants for the turbulence models   
-!       as well as some global variables/parameters for the turbulent  
-!       routines.                                                      
+!       Module that contains the constants for the turbulence models
+!       as well as some global variables/parameters for the turbulent
+!       routines.
 !
        use constants, only : realType, intType
        implicit none
        save
 !
-!       Spalart-Allmaras constants.                                    
+!       Spalart-Allmaras constants.
 !
        real(kind=realType), parameter :: rsaK   = 0.41_realType
        real(kind=realType), parameter :: rsaCb1 = 0.1355_realType
@@ -26,7 +26,7 @@
        real(kind=realType), parameter :: rsaCrot = 2.0_realType
 
 !
-!       K-omega constants.                                             
+!       K-omega constants.
 !
        real(kind=realType), parameter :: rkwK     = 0.41_realType
        real(kind=realType), parameter :: rkwSigk1 = 0.5_realType
@@ -35,7 +35,7 @@
        real(kind=realType), parameter :: rkwBeta1 = 0.0750_realType
        real(kind=realType), parameter :: rkwBetas = 0.09_realType
 !
-!       K-omega SST constants.                                         
+!       K-omega SST constants.
 !
        real(kind=realType), parameter :: rSSTK     = 0.41_realType
        real(kind=realType), parameter :: rSSTA1    = 0.31_realType
@@ -49,7 +49,7 @@
        real(kind=realType), parameter :: rSSTSigw2 = 0.856_realType
        real(kind=realType), parameter :: rSSTBeta2 = 0.0828_realType
 !
-!       K-tau constants.                                               
+!       K-tau constants.
 !
        real(kind=realType), parameter :: rktK     = 0.41_realType
        real(kind=realType), parameter :: rktSigk1 = 0.5_realType
@@ -58,7 +58,7 @@
        real(kind=realType), parameter :: rktBeta1 = 0.0750_realType
        real(kind=realType), parameter :: rktBetas = 0.09_realType
 !
-!       V2-f constants.                                                
+!       V2-f constants.
 !
        real(kind=realType), parameter :: rvfC1    = 1.4_realType
        real(kind=realType), parameter :: rvfC2    = 0.3_realType
@@ -80,13 +80,13 @@
        real(kind=realType) :: rvfLimitK, rvfLimitE, rvfCl
        real(kind=realType) :: rvfCmu
 !
-!       Variables to store the parameters for the wall functions fits. 
-!       As these variables depend on the turbulence model they are set 
-!       during runtime. Allocatables are used, because the number of   
-!       fits could be different for the different models.              
-!       The curve is divided in a number of intervals and is           
-!       constructed such that both the function and the derivatives    
-!       are continuous. Consequently cubic polynomials are used.       
+!       Variables to store the parameters for the wall functions fits.
+!       As these variables depend on the turbulence model they are set
+!       during runtime. Allocatables are used, because the number of
+!       fits could be different for the different models.
+!       The curve is divided in a number of intervals and is
+!       constructed such that both the function and the derivatives
+!       are continuous. Consequently cubic polynomials are used.
 !
        ! nFit:               Number of intervals of the curve.
        ! ypT(0:nFit):        y+ values at the interval boundaries.

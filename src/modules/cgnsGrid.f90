@@ -1,21 +1,21 @@
        module cgnsGrid
 !
-!       This module contains the derived data type for storing the     
-!       information of the original cgns grid file. Information stored 
-!       is number of blocks, block sizes, zone names, etc. this info   
-!       is needed again when the solution is written to file. Remember 
-!       that the original blocks may be split to obtain a better       
-!       load balance. Note that this info is stored on all processors. 
-!       Apart from the derived data type for the cgns blocks, this     
-!       module also contains the name of the base and the physical     
-!       dimensions of the problem.                                     
+!       This module contains the derived data type for storing the
+!       information of the original cgns grid file. Information stored
+!       is number of blocks, block sizes, zone names, etc. this info
+!       is needed again when the solution is written to file. Remember
+!       that the original blocks may be split to obtain a better
+!       load balance. Note that this info is stored on all processors.
+!       Apart from the derived data type for the cgns blocks, this
+!       module also contains the name of the base and the physical
+!       dimensions of the problem.
 !
        use constants, only : intType, realType, maxCGNSNameLen, one
        implicit none
        save
 !
-!       The definition of the derived datatype to store the actual     
-!       data of the boundary conditions.                               
+!       The definition of the derived datatype to store the actual
+!       data of the boundary conditions.
 !
        type cgnsBCDataArray
 
@@ -64,8 +64,8 @@
 #endif
 
 !
-!       The definition of the derived datatype to store the prescribed 
-!       boundary data for a boundary subface.                          
+!       The definition of the derived datatype to store the prescribed
+!       boundary data for a boundary subface.
 !
        type cgnsBCDatasetType
 
@@ -95,9 +95,9 @@
 
        end type cgnsBCDatasetType
 !
-!       The definition of the derived data type to store cgns 1 to 1   
-!       block to block, i.e. continuous grid lines across block        
-!       boundaries, connectivities.                                    
+!       The definition of the derived data type to store cgns 1 to 1
+!       block to block, i.e. continuous grid lines across block
+!       boundaries, connectivities.
 !
        type cgns1to1ConnType
 
@@ -147,8 +147,8 @@
 
        end type cgns1to1ConnType
 !
-!       The definition of the derived data type to store cgns          
-!       non-matching abutting block to block connectivities.           
+!       The definition of the derived data type to store cgns
+!       non-matching abutting block to block connectivities.
 !
        type cgnsNonMatchAbuttingConnType
 
@@ -201,8 +201,8 @@
 
        end type cgnsNonMatchAbuttingConnType
 !
-!       The definition of the derived data type to store cgns block    
-!       boundary conditions.                                           
+!       The definition of the derived data type to store cgns block
+!       boundary conditions.
 !
        type cgnsBocoType
 
@@ -298,12 +298,12 @@
 
        end type cgnsBocoType
 !
-!       The definition of the derived data type to store the data of a 
-!       cgns block.                                                    
+!       The definition of the derived data type to store the data of a
+!       cgns block.
 !
        type cgnsBlockInfoType
 !
-!         Information read from the cgns file.                         
+!         Information read from the cgns file.
 !
          ! The type of the zone. Should be structured. Note that this
          ! is an integer and not integer(kind=intType).
@@ -328,8 +328,8 @@
 
          ! The corresponding nodal ranges of the subblocks.
 
-         integer, dimension(:), pointer :: iBegOr, jBegOr, kBegOr 
-         integer, dimension(:), pointer :: iEndOr, jEndOr, kEndOr 
+         integer, dimension(:), pointer :: iBegOr, jBegOr, kBegOr
+         integer, dimension(:), pointer :: iEndOr, jEndOr, kEndOr
 
          ! The units in which the grid is specified.
 
@@ -412,8 +412,8 @@
 
        end type cgnsBlockInfoType
 !
-!       The definition of the derived data type to store the data of a 
-!       cgns family.                                                   
+!       The definition of the derived data type to store the data of a
+!       cgns family.
 !
        type cgnsFamilyType
 
@@ -472,7 +472,7 @@
 
        end type cgnsFamilyType
 !
-!       Definition of the variables stored in this module.             
+!       Definition of the variables stored in this module.
 !
        ! Dimensions of the cell and of the physical dimensions.
        ! Both should be 3 for this code. Note that these are integers

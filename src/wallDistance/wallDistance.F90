@@ -40,7 +40,7 @@ contains
     ! distance. Most importantly, this routine is included in the
     ! reverse mode AD routines, but NOT the forward mode. Since it is
     ! done on a per-block basis, it is assumed that the required block
-    ! pointers are already set. 
+    ! pointers are already set.
 
     use constants
     use blockPointers, only : nx, ny, nz, il, jl, kl, x, flowDoms, d2wall
@@ -65,9 +65,9 @@ contains
              do i=2,il
 #endif
 
-                if (flowDoms(nn, level, sps)%surfNodeIndices(1, i, j, k) == 0) then 
+                if (flowDoms(nn, level, sps)%surfNodeIndices(1, i, j, k) == 0) then
                    ! This node is too far away and has no
-                   ! association. Set the distance to a large constant. 
+                   ! association. Set the distance to a large constant.
                    d2wall(i, j, k) = large
                    cycle
                 end if
@@ -86,7 +86,7 @@ contains
                      (one-u)*(one-v)*xSurf(3*(ind(1)-1)+1:3*ind(1)) + &
                      (    u)*(one-v)*xSurf(3*(ind(2)-1)+1:3*ind(2)) + &
                      (    u)*(    v)*xSurf(3*(ind(3)-1)+1:3*ind(3)) + &
-                     (one-u)*(    v)*xSurf(3*(ind(4)-1)+1:3*ind(4)) 
+                     (one-u)*(    v)*xSurf(3*(ind(4)-1)+1:3*ind(4))
 
                 ! Get the cell center
                 xc(1) = eighth*(x(i-1,j-1,k-1,1) + x(i,j-1,k-1,1)  &
@@ -129,12 +129,12 @@ contains
 #ifndef USE_TAPENADE
   subroutine computeWallDistance(level, allocMem)
     !
-    !       wallDistance computes the distances of the cell centers to     
-    !       the nearest viscous wall. An adt type of method is used, which 
-    !       guarantees to find the minimum distance to the wall. Possible  
-    !       periodic transformations are taken into account, such that     
-    !       also in case of a periodic problem the correct distance is     
-    !       computed; the nearest wall point may lie in a periodic domain. 
+    !       wallDistance computes the distances of the cell centers to
+    !       the nearest viscous wall. An adt type of method is used, which
+    !       guarantees to find the minimum distance to the wall. Possible
+    !       periodic transformations are taken into account, such that
+    !       also in case of a periodic problem the correct distance is
+    !       computed; the nearest wall point may lie in a periodic domain.
     use constants
     use blockPointers, only : nDom
     use communication, only : sendBuffer, recvBuffer, myid, adflow_comm_world, &
@@ -170,13 +170,13 @@ contains
     ! distance. It may be needed for the boundary conditions and
     ! the monitoring of the y+. Return afterwards.
 
-    if(.not. wallDistanceNeeded) then 
+    if(.not. wallDistanceNeeded) then
 
        ! Loop over the number of spectral solutions, initialize the
        ! distance and compute the initial normal spacing.
 
        do sps=1,nTimeIntervalsSpectral
-          call initWallDistance(level, sps, allocMem)    
+          call initWallDistance(level, sps, allocMem)
           call computeNormalSpacing(level, sps)
        enddo
 
@@ -221,11 +221,11 @@ contains
     ! steady/unsteady simulations without periodic/rotating
     ! components. But it is fast. It is designed to be used for
     ! updating the wall distances between iterations of
-    ! aerostructural solutions. 
+    ! aerostructural solutions.
 
     ! Normal, original wall distance calc. Cannot be used when
-    ! overset is present due to possibility of overlapping walls. 
-    if (.not. useApproxWallDistance) then 
+    ! overset is present due to possibility of overlapping walls.
+    if (.not. useApproxWallDistance) then
        ! Loop over the number of spectral solutions.
        spectralLoop: do sps=1,nTimeIntervalsSpectral
 
@@ -258,7 +258,7 @@ contains
     else ! The user wants to use approx wall distance calcs OR we
        ! have overset mesh. :
 
-       if (updateWallAssociation(level)) then 
+       if (updateWallAssociation(level)) then
 
           ! Initialize the wall distance
           spectralLoop2: do sps=1,nTimeIntervalsSpectral
@@ -332,13 +332,13 @@ contains
 
   subroutine computeNormalSpacing(level, sps)
     !
-    !       computeNormalSpacing computes the normal spacing of the first  
-    !       cell center from the viscous wall for the given multigrid      
-    !       level and spectral solution. This routine is called for        
-    !       turbulence models, which do not need the wall distance.        
-    !       However, they do need info of the first normal spacing for the 
-    !       monitoring of y+ and possibly for the boundary conditions.     
-    !       This is computed in this routine.                              
+    !       computeNormalSpacing computes the normal spacing of the first
+    !       cell center from the viscous wall for the given multigrid
+    !       level and spectral solution. This routine is called for
+    !       turbulence models, which do not need the wall distance.
+    !       However, they do need info of the first normal spacing for the
+    !       monitoring of y+ and possibly for the boundary conditions.
+    !       This is computed in this routine.
     !
     use constants
     use blockPointers, only : x, d2wall, nViscBocos, BCFaceID, BCData, &
@@ -469,8 +469,8 @@ contains
 
   subroutine initWallDistance(level, sps, allocMem)
     !
-    !       initWallDistance allocates the memory for the wall distance,   
-    !       if needed, and initializes the wall distance to a large value. 
+    !       initWallDistance allocates the memory for the wall distance,
+    !       if needed, and initializes the wall distance to a large value.
     !
     use constants
     use blockPointers, only : nDom, flowDoms
@@ -517,8 +517,8 @@ contains
 
   subroutine determineDistance(level, sps)
     !
-    !       determineDistance determines the distance from the center      
-    !       of the cell to the nearest viscous wall for owned cells.       
+    !       determineDistance determines the distance from the center
+    !       of the cell to the nearest viscous wall for owned cells.
     !
     use constants
     use adtAPI, only :adtBuildSurfaceADT, adtMinDistanceSearch, adtDeallocateADTs
@@ -602,9 +602,9 @@ contains
          "Memory allocation failure for the variables &
          &needed by the adt.")
     !
-    !       Step 1: The search of the original coordinates; possibly a     
-    !               rotational periodic transformation is applied to align 
-    !               the sections.                                          
+    !       Step 1: The search of the original coordinates; possibly a
+    !               rotational periodic transformation is applied to align
+    !               the sections.
     !
     ! Loop over the domains to store the coordinates of the cell
     ! centers of the owned cells. Apply the transformation such that
@@ -688,11 +688,11 @@ contains
     !        end if
 
     !
-    !       Step 2: For periodic sections the nearest wall may be in the   
-    !               periodic part of the grid that is not stored.          
-    !               Therefore apply the periodic transformation to the     
-    !               node and compute the minimum distance for this         
-    !               coordinate.                                            
+    !       Step 2: For periodic sections the nearest wall may be in the
+    !               periodic part of the grid that is not stored.
+    !               Therefore apply the periodic transformation to the
+    !               node and compute the minimum distance for this
+    !               coordinate.
     !
     ! Initialize the counters mm and ii. Mm is the counter for coor;
     ! ii is the counter for coorPer.
@@ -762,7 +762,7 @@ contains
          uvw,      dist2Per,    0_intType, &
          dummy,    dummy)
     !
-    !       Step 3: Also apply the inverse periodic transformation.        
+    !       Step 3: Also apply the inverse periodic transformation.
     !
     ! Initialize the counters mm and ii. Mm is the counter for coor;
     ! ii is the counter for coorPer.
@@ -834,7 +834,7 @@ contains
          uvw,      dist2Per,    0_intType, &
          dummy,    dummy)
     !
-    !       Step 4: Store the minimum distance in the block type.          
+    !       Step 4: Store the minimum distance in the block type.
     !
     mm = 0
     ii = 0
@@ -907,8 +907,8 @@ contains
 
   subroutine localViscousSurfaceMesh(multSections, level, sps)
     !
-    !       localViscousSurfaceMesh stores the local viscous surface       
-    !       mesh (with possible periodic extensions in conn and coor.      
+    !       localViscousSurfaceMesh stores the local viscous surface
+    !       mesh (with possible periodic extensions in conn and coor.
     !
     use constants
     use blockPointers, only : BCData, x, il, jl, kl, BCFaceID, sectionID, &
@@ -946,9 +946,9 @@ contains
 
     real(kind=realType), dimension(:,:,:), pointer :: xface
 
-    !       Determine the unit vectors of the local coordinate system      
-    !       aligned with the rotation axis of the possible rotational      
-    !       periodic section.                                              
+    !       Determine the unit vectors of the local coordinate system
+    !       aligned with the rotation axis of the possible rotational
+    !       periodic section.
     !
     do nn=1,nSections
        if(sections(nn)%nSlices == 1) cycle
@@ -1107,8 +1107,8 @@ contains
     thetaPMin =  pi
     thetaPMax =  zero
     !
-    !       Determine the local values of thetaNMin, etc. for the          
-    !       different sections.                                            
+    !       Determine the local values of thetaNMin, etc. for the
+    !       different sections.
     !
     do nn=1,nDom
 
@@ -1239,8 +1239,8 @@ contains
          "Memory allocation failure for &
          &rotMatrixSections")
     !
-    !       Determine the rotation matrix for each section, which aligns   
-    !       the rotational periodic sections with other sections.          
+    !       Determine the rotation matrix for each section, which aligns
+    !       the rotational periodic sections with other sections.
     !
     do nn=1,nSections
 
@@ -1334,7 +1334,7 @@ contains
 
     enddo
     !
-    !       Determine the local viscous surface grid.                      
+    !       Determine the local viscous surface grid.
     !
     np = 0
     nq = 0
@@ -1523,10 +1523,10 @@ contains
 
   subroutine updateWallDistanceAllLevels
     !
-    !       updateWallDistanceAllLevels updates the wall distances for     
-    !       the cell centers on all grid levels. This routine is typically 
-    !       called when grid parts have been moved, either due to a        
-    !       physical motion of some parts or due to deformation.           
+    !       updateWallDistanceAllLevels updates the wall distances for
+    !       the cell centers on all grid levels. This routine is typically
+    !       called when grid parts have been moved, either due to a
+    !       physical motion of some parts or due to deformation.
     !
     use constants
     use block, only : flowDoms
@@ -1553,8 +1553,8 @@ contains
 
   subroutine viscousSurfaceMesh(level, sps)
     !
-    !       viscousSurfaceMesh determines and stores the entire viscous    
-    !       surface possibly extended by periodic parts.                   
+    !       viscousSurfaceMesh determines and stores the entire viscous
+    !       surface possibly extended by periodic parts.
     !
     use constants
     use block, only : flowDoms, nDom
@@ -1664,7 +1664,7 @@ contains
   subroutine determineWallAssociation(level, sps)
 
     ! This routine will determine the closest surface point for every
-    ! field cell. Special treatment is required for overlapping surfaces. 
+    ! field cell. Special treatment is required for overlapping surfaces.
 
     use constants
     use adtAPI, only : minDistanceSearch
@@ -1717,15 +1717,15 @@ contains
     ! procedure *DOES NOT SCALE IN MEMORY*...ie eventually the surface
     ! mesh will become too large to store on a single processor,
     ! although this will probably not happen until the sizes get up in
-    ! the hundreds of millions of cells. 
+    ! the hundreds of millions of cells.
 
     allocate(walls(nClusters))
     wallFamList => BCFamGroups(iBCGroupWalls)%famList
     call buildClusterWalls(level, sps, .False., walls, walLFamList, size(wallFamList))
 
-    if (oversetPresent) then 
+    if (oversetPresent) then
        ! Finally build up a "full wall" that is made up of all the cluster
-       ! walls. 
+       ! walls.
 
        nNodes = 0
        nCells = 0
@@ -1767,13 +1767,13 @@ contains
     end if
 
     ! Allocate the (pointer) memory that may be resized as necessary for
-    ! the singlePoint search routine. 
+    ! the singlePoint search routine.
     allocate(stack(100), BB(20), BBint(20), frontLeaves(25), frontLeavesNew(25))
 
     ! We need to store the 4 global node indices defining the quad that
     ! each point has the closest point wrt. We also ned to store the uv
     ! values. This allows us to recompute the exact surface point, after
-    ! the rquired nodes are fetched from (a possibly) remote proc. 
+    ! the rquired nodes are fetched from (a possibly) remote proc.
 
     do nn=1,nDom
        call setPointers(nn, level, sps)
@@ -1791,7 +1791,7 @@ contains
           do j=2, jl
              do i=2, il
 
-                ! Compute the coordinates of the cell center 
+                ! Compute the coordinates of the cell center
                 coor(1) = eighth*(x(i-1,j-1,k-1,1) + x(i,j-1,k-1,1)  &
                      +         x(i-1,j,  k-1,1) + x(i,j,  k-1,1)  &
                      +         x(i-1,j-1,k,  1) + x(i,j-1,k,  1)  &
@@ -1807,7 +1807,7 @@ contains
                      +         x(i-1,j-1,k,  3) + x(i,j-1,k,  3)  &
                      +         x(i-1,j,  k,  3) + x(i,j,  k,  3))
 
-                if (.not. oversetPresent) then 
+                if (.not. oversetPresent) then
                    ! No overset present. Simply search our own wall,
                    ! walls(c), (the only one we have) up to the wall
                    ! cutoff.
@@ -1818,19 +1818,19 @@ contains
                         uvw, dummy, 0, BB, frontLeaves, frontLeavesNew)
 
                    cellID = intInfo(3)
-                   if (cellID > 0) then 
+                   if (cellID > 0) then
                       do kk=1,4
                          flowDoms(nn, level, sps)%surfNodeIndices(kk, i, j, k) = &
                               walls(c)%ind(walls(c)%conn(kk, cellID))
                       end do
                       flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw(1:2)
                    else
-                      ! Just set dummy values. These will never be used. 
+                      ! Just set dummy values. These will never be used.
                       flowDoms(nn, level, sps)%surfNodeIndices(:, i, j, k) = 0
                       flowDoms(nn, level, sps)%uv(:, i, j, k) = 0
                    end if
 
-                   ! We are done with this point. 
+                   ! We are done with this point.
                    cycle
                 end if
 
@@ -1849,8 +1849,8 @@ contains
                    ! We found the cell:
 
                    ! If the cell is outside of near-wall distance or our
-                   ! cluster doesn't have any owned cells. Just accept it. 
-                   if (uvw(4) > nearWallDist**2 .or. walls(c)%nCells == 0) then 
+                   ! cluster doesn't have any owned cells. Just accept it.
+                   if (uvw(4) > nearWallDist**2 .or. walls(c)%nCells == 0) then
 
                       do kk=1,4
                          flowDoms(nn, level, sps)%surfNodeIndices(kk, i, j, k) = &
@@ -1868,7 +1868,7 @@ contains
                            intInfo2, uvw2, dummy, 0, BB, frontLeaves, frontLeavesNew)
                       cellID2 = intInfo2(3)
 
-                      if (uvw2(4) < nearWallDist**2) then 
+                      if (uvw2(4) < nearWallDist**2) then
                          ! Both are close to the wall. Accept the one
                          ! from our own wall unconditionally.
                          do kk=1,4
@@ -1877,7 +1877,7 @@ contains
                          end do
                          flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw2(1:2)
                       else
-                         ! The full wall distance is better. Take that. 
+                         ! The full wall distance is better. Take that.
 
                          do kk=1,4
                             flowDoms(nn, level, sps)%surfNodeIndices(kk, i, j, k) = &
@@ -1902,7 +1902,7 @@ contains
        end do
     end do
 
-    ! Now determine all the node indices this processor needs to get. 
+    ! Now determine all the node indices this processor needs to get.
     mm = 0
     allocate(indicesToGet(nCellsLocal(level)*4), link(nCellsLocal(level)*4))
     do nn=1, nDom
@@ -1919,10 +1919,10 @@ contains
        end do
     end do
 
-    ! This unique-ifies the indices. 
+    ! This unique-ifies the indices.
     call unique(indicesToGet, 4*nCellsLocal(level), nUnique, link)
 
-    ! we need to update the stored indices to use the ordering of the nodes we will receive. 
+    ! we need to update the stored indices to use the ordering of the nodes we will receive.
     mm = 0
     do nn=1, nDom
        call setPointers(nn, level, sps)
@@ -1957,13 +1957,13 @@ contains
     ! Create the volume vector the nodes will be scatter from. Note that
     ! this vector contains all the spectal instances. It is therefore
     ! only allocated on the first call with sps=1
-    if (sps == 1) then 
+    if (sps == 1) then
        call VecCreateMPI(ADFLOW_COMM_WORLD, 3*nNodesLocal(level)*nTimeIntervalsSpectral, &
             PETSC_DETERMINE, xVolumeVec(level), ierr)
        call EChk(ierr,__FILE__,__LINE__)
     end if
 
-    ! This is the vector we will scatter the nodes into. 
+    ! This is the vector we will scatter the nodes into.
     call VecCreateMPI(ADFLOW_COMM_WORLD, 3*nUnique, PETSC_DETERMINE, &
          xSurfVec(level, sps), ierr)
     call EChk(ierr,__FILE__,__LINE__)
@@ -1994,7 +1994,7 @@ contains
     end do
     deallocate(walls)
 
-    if (oversetPresent) then 
+    if (oversetPresent) then
        deallocate(fullWall%x, fullWall%conn, fullWall%ind)
        call destroySerialQuad(fullWall%ADT)
     end if
@@ -2014,7 +2014,7 @@ contains
     ! Working Parameters
     integer(kind=intType) :: ii, i,j,k,l, nn, sps, ierr
 
-    ! Fill up xVolumeVec 
+    ! Fill up xVolumeVec
     call VecGetArrayF90(xVolumeVec(level), xVolume, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
@@ -2073,29 +2073,29 @@ contains
     use inputTimeSpectral, only :nTimeIntervalsspectral
     use utils, onlY : EChk
     use block, only : flowDoms
-   
+
     implicit none
 
     ! Input Parameters
     integer(kind=intType), intent(in) :: level
 
     ! Working
-    integer(kind=intType) :: ierr, sps    
+    integer(kind=intType) :: ierr, sps
 
     ! Determine if we need to deallocate the PETSc data for
     ! this level
-    if (wallDistanceDataAllocated(level)) then 
+    if (wallDistanceDataAllocated(level)) then
        call VecDestroy(xVolumeVec(level), ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
        do sps=1, nTimeIntervalsSpectral
           call VecDestroy(xSurfVec(level, sps), ierr)
           call EChk(ierr,__FILE__,__LINE__)
-          
+
           call VecScatterDestroy(wallScatter(level, sps), ierr)
           call EChk(ierr,__FILE__,__LINE__)
        end do
-       
+
        wallDistanceDataAllocated(level) = .False.
     end if
   end subroutine destroyWallDistanceDataLevel

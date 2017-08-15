@@ -3,8 +3,8 @@ contains
 
   subroutine residual_block
     !
-    !       residual computes the residual of the mean flow equations on   
-    !       the current MG level.                                          
+    !       residual computes the residual of the mean flow equations on
+    !       the current MG level.
     !
     use blockPointers
     use cgnsGrid
@@ -32,7 +32,7 @@ contains
     real(kind=realType), parameter :: M0 = 0.2_realType ! Mach number preconditioner activation
     real(kind=realType), parameter :: alpha = 0_realType
     real(kind=realType), parameter :: delta = 0_realType
-    !real(kind=realType), parameter :: hinf = 2_realType ! Test phase 
+    !real(kind=realType), parameter :: hinf = 2_realType ! Test phase
     real(kind=realType), parameter :: Cpres = 4.18_realType ! Test phase
     real(kind=realType), parameter :: TEMP= 297.15_realType
 
@@ -95,7 +95,7 @@ contains
 
     case (dissScalar) ! Standard scalar dissipation scheme.
 
-       if( fineGrid) then 
+       if( fineGrid) then
           if (.not. lumpedDiss) then
              call inviscidDissFluxScalar
           else
@@ -112,7 +112,7 @@ contains
     case (dissMatrix) ! Matrix dissipation scheme.
 
        if( fineGrid ) then
-          if (.not. lumpedDiss) then 
+          if (.not. lumpedDiss) then
              call inviscidDissFluxMatrix
           else
              call inviscidDissFluxMatrixApprox
@@ -141,11 +141,11 @@ contains
 #endif
 
 
-    if( viscous ) then 
+    if( viscous ) then
        ! Only compute viscous fluxes if rFil > 0
-       if(abs(rFil) > thresholdReal) then 
+       if(abs(rFil) > thresholdReal) then
           ! not lumpedDiss means it isn't the PC...call the vicousFlux
-          if (.not. lumpedDiss) then 
+          if (.not. lumpedDiss) then
              call computeSpeedOfSoundSquared
              call allNodalGradients
              call viscousFlux
@@ -155,7 +155,7 @@ contains
              call computeSpeedOfSoundSquared
              if (viscPC) then
                 call allNodalGradients
-                call viscousFlux 
+                call viscousFlux
              else
                 call viscousFluxApprox
              end if
@@ -195,9 +195,9 @@ contains
                 A12 = zero
                 A13 = zero
                 A14 = zero
-                A15 = (-betaMr2)/SoS**4 
+                A15 = (-betaMr2)/SoS**4
 
-                A21 =one*velXrho/SoS**2 
+                A21 =one*velXrho/SoS**2
                 A22 = one*w(i,j,k,irho)
                 A23 = zero
                 A24 = zero
@@ -206,14 +206,14 @@ contains
                 A31 = one*velYrho/SoS**2
                 A32 = zero
                 A33 = one*w(i,j,k,irho)
-                A34 = zero 
+                A34 = zero
                 A35 = one*(-velYrho)/SoS**2
 
-                A41 = one*velZrho/SoS**2 
+                A41 = one*velZrho/SoS**2
                 A42 = zero
                 A43 = zero
-                A44 = one*w(i,j,k,irho) 
-                A45 = zero + one *(-velZrho)/SoS**2 
+                A44 = one*w(i,j,k,irho)
+                A45 = zero + one *(-velZrho)/SoS**2
 
                 A51=  one*((1/(gamma(i,j,k)-1))+(resM**2)/2)
                 A52 = one * w(i,j,k,irho)*velXrho
@@ -302,21 +302,21 @@ contains
           enddo
        enddo
     endif
-    
+
   end subroutine residual_block
 
 
   subroutine sourceTerms_block(nn, res, pLocal)
 
     ! Apply the source terms for the given block. Assume that the
-    ! block pointers are already set. 
+    ! block pointers are already set.
     use constants
     use actuatorRegionData
     use blockPointers, only : vol, dw, w
     use flowVarRefState, only : Pref, uRef
     implicit none
 
-    ! Input 
+    ! Input
     integer(kind=intType), intent(in) ::  nn
     logical, intent(in) :: res
     real(kind=realType), intent(inout) :: pLocal
@@ -340,23 +340,23 @@ contains
 
        !$AD II-LOOP
        do ii=iStart, iEnd
-          
-          ! Extract the cell ID. 
+
+          ! Extract the cell ID.
           i = actuatorRegions(iRegion)%cellIDs(1, ii)
           j = actuatorRegions(iRegion)%cellIDs(2, ii)
           k = actuatorRegions(iRegion)%cellIDs(3, ii)
 
           ! This actually gets the force
           FTmp = vol(i, j, k) * fact
-          
+
           Vx = w(i, j, k, iVx)
           Vy = w(i, j, k, iVy)
           Vz = w(i, j, k, iVz)
 
-          if (res) then 
+          if (res) then
              ! Momentum residuals
              dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - Ftmp
-             
+
              ! energy residuals
              dw(i, j, k, iRhoE) = dw(i, j, k, iRhoE)  - &
                   Ftmp(1)*Vx - Ftmp(2)*Vy - Ftmp(3)*Vz
@@ -418,10 +418,10 @@ contains
 
   subroutine initres_block(varStart, varEnd, nn, sps)
     !
-    !       initres initializes the given range of the residual. Either to 
-    !       zero, steady computation, or to an unsteady term for the time  
-    !       spectral and unsteady modes. For the coarser grid levels the   
-    !       residual forcing term is taken into account.                   
+    !       initres initializes the given range of the residual. Either to
+    !       zero, steady computation, or to an unsteady term for the time
+    !       spectral and unsteady modes. For the coarser grid levels the
+    !       residual forcing term is taken into account.
     !
     use blockPointers
     use flowVarRefState
@@ -947,7 +947,7 @@ contains
   end subroutine initres_block
 
   subroutine sourceTerms
-    
+
     ! Shell function to call sourceTerms_block on all blocks
 
     use constants
@@ -959,7 +959,7 @@ contains
     integer(kind=intType) :: nn, iRegion
     real(kind=realType) :: dummy
 
-    ! Loop over the number of domains. 
+    ! Loop over the number of domains.
     domains: do nn=1,nDom
 
        ! Set the pointers for this block.
@@ -995,7 +995,7 @@ contains
           ! Set the pointers for this block.
 
           call setPointers(nn, currentLevel, sps)
-          
+
           call residual_block
 
        end do domains
@@ -1005,8 +1005,8 @@ contains
 
   subroutine computedwDADI
     !
-    !       executeRkStage executes one runge kutta stage. The stage       
-    !       number, rkStage, is defined in the local module iteration.     
+    !       executeRkStage executes one runge kutta stage. The stage
+    !       number, rkStage, is defined in the local module iteration.
     !
     use blockPointers
     use constants
@@ -1071,7 +1071,7 @@ contains
 
     !  havent thought about iblank
 
-    !   these are factors for robustness. 
+    !   these are factors for robustness.
 
     epsval = 0.08
     fac    = 1.05
@@ -1098,7 +1098,7 @@ contains
              enddo
           enddo
        enddo
-    else  
+    else
        do k=2,kl
           do j=2,jl
              do i=2,il
@@ -1211,7 +1211,7 @@ contains
              spectral_j(i,j,k) = (fac*sqrt((abs(qq_j(i,j,k))+cc_j(i,j,k))**2 &
                   + eps2**2)+viscTermj)*dual_dt(i,j,k)
              eps2 = rk*cInf*epsval
-             spectral_k(i,j,k) = (fac*sqrt((abs(qq_k(i,j,k))+cc_k(i,j,k))**2 & 
+             spectral_k(i,j,k) = (fac*sqrt((abs(qq_k(i,j,k))+cc_k(i,j,k))**2 &
                   + eps2**2)+viscTermk)*dual_dt(i,j,k)
              spectral_i(i,j,k)=spectral_i(i,j,k)*zero
              spectral_j(i,j,k)=spectral_j(i,j,k)*zero
@@ -1320,7 +1320,7 @@ contains
                 do n=1,5
                    bbj(j+1,n)= -viscTerm1-diagPlus(n)
                    ddj(j-1,n)= -viscTerm3+diagMinus(n)
-                   ccj(j  ,n)=  viscTerm2+diagPlus(n)-diagMinus(n) 
+                   ccj(j  ,n)=  viscTerm2+diagPlus(n)-diagMinus(n)
                 enddo
              enddo
 
@@ -1350,7 +1350,7 @@ contains
     !       Multiply by T_xi^inv T_eta
 
 
-    do k=2,kl 
+    do k=2,kl
        do j=2,jl
           do i=2,il
              ri1  = half*(si(i,j,k,1) + si(i-1,j,k,1))
@@ -1488,7 +1488,7 @@ contains
     !       Multiply by T_zeta^inv T_xi
 
 
-    do k=2,kl 
+    do k=2,kl
        do j=2,jl
           do i=2,il
              ri1  = half*(si(i,j,k,1) + si(i-1,j,k,1))
@@ -1513,10 +1513,10 @@ contains
              dw4   = dw(i,j,k,4)
              dw5   = dw(i,j,k,5)
 
-             a1 =  ri1*rk1 + ri2*rk2 + ri3*rk3 
-             a2 =  rk1*ri2 - ri1*rk2 
-             a3 =  rk3*ri2 - ri3*rk2 
-             a4 =  rk1*ri3 - ri1*rk3 
+             a1 =  ri1*rk1 + ri2*rk2 + ri3*rk3
+             a2 =  rk1*ri2 - ri1*rk2
+             a3 =  rk3*ri2 - ri3*rk2
+             a4 =  rk1*ri3 - ri1*rk3
              a5 = (dw4-dw5)*sqrt2inv
              a6 = (dw4+dw5)*half
              a7 = (a3*dw1+a4*dw2-a2*dw3-a5*a1)*sqrt2inv
@@ -1646,7 +1646,7 @@ contains
              xfact = two/cijkinv
 
              ge=gamma(i,j,k)*w(i,j,k,irhoE)/w(i,j,k,irho)-  &
-                  (gamma(i,j,k)-one)*uvw  
+                  (gamma(i,j,k)-one)*uvw
 
              dw1   = dw(i,j,k,1)
              dw2   = dw(i,j,k,2)
@@ -1659,18 +1659,18 @@ contains
              a3    =  uvw*(rk1*dw1+rk2*dw2+rk3*dw3)
 
              dw(i,j,k,1)  = a1
-             dw(i,j,k,2)  = a1*uvel-w(i,j,k,irho)*(rk3*dw2-rk2*dw3) & 
+             dw(i,j,k,2)  = a1*uvel-w(i,j,k,irho)*(rk3*dw2-rk2*dw3) &
                   +a2*rk1
-             dw(i,j,k,3)  = a1*vvel-w(i,j,k,irho)*(rk1*dw3-rk3*dw1) & 
+             dw(i,j,k,3)  = a1*vvel-w(i,j,k,irho)*(rk1*dw3-rk3*dw1) &
                   +a2*rk2
-             dw(i,j,k,4)  = a1*wvel-w(i,j,k,irho)*(rk2*dw1-rk1*dw2) & 
+             dw(i,j,k,4)  = a1*wvel-w(i,j,k,irho)*(rk2*dw1-rk1*dw2) &
                   +a2*rk3
              dw(i,j,k,5)  = a3+ w(i,j,k,irho)*       &
-                  ((vvel*rk3-wvel*rk2)*dw1            &   
-                  +(wvel*rk1-uvel*rk3)*dw2            &         
-                  +(uvel*rk2-vvel*rk1)*dw3)           & 
-                  +(ge+half*xfact*uu/rk)*dw4 &   
-                  +(ge-half*xfact*uu/rk)*dw5       
+                  ((vvel*rk3-wvel*rk2)*dw1            &
+                  +(wvel*rk1-uvel*rk3)*dw2            &
+                  +(uvel*rk2-vvel*rk1)*dw3)           &
+                  +(ge+half*xfact*uu/rk)*dw4 &
+                  +(ge-half*xfact*uu/rk)*dw5
 
           enddo
        enddo
@@ -1736,56 +1736,56 @@ contains
 
   subroutine residualAveraging
     !
-    !       Implicit residual smoothing is a simple procedure that         
-    !       replaces the residual at each point by a weighted sum of all   
-    !       of the residuals in the block (although the residuals that are 
-    !       closer to the cell under consideration are weighted more       
-    !       heavily). This smoothing can be applied explicitly, but may    
-    !       result in zero smoothed residuals for non-zero initial         
-    !       residual modes.  For this reason, the smoothing is applied     
-    !       implicitly in the following form:                              
-    !       -epz R{i+1} + (1 + 2 epz) R{i} -epz R{i-1} = r{i}              
-    !       Where r{i} is the original residual at point i, and R{i} is    
-    !       the implicitly smoothed residual at point i.  The analysis for 
-    !       the 1-D scalar convection-diffusion equation shows that if     
-    !       Epz >= (1/4)*((lambda/lambda*)^2 -1),                          
-    !       where lambda is the cfl number desired to be used, and         
-    !       lambda* is the CFL limit of the unsmoothed scheme, the scheme  
-    !       can be made unconditionally stable (arbitrarily large lambda). 
-    !       In practice, lambda = 6-8 is common for Euler solutions.  For  
-    !       RANS solutions lambda = 3-4 is what we have used in practice   
-    !       resulting in a slight improvement in convergence rate, but,    
-    !       more importantly, an increase in the robustness of the solver. 
-    !       Note that this theoretical result can be shown for infinite    
-    !       1-D problems, but also for finite-periodic 1-D problems and    
-    !       finite-size 1-D problems (i.e. with block boundaries).  Such   
-    !       theoretical results are not available for 3-D cases, where the 
-    !       scheme is applied in an ADI fashion:                           
-    !       (1 -epzI d_ii)(1 -epzJ d_jj)(1 -epzK d_kk) r = r               
-    !       Where d_ii, d_jj, d_kk are second difference operators in each 
-    !       of the mesh coordinate directions.                             
-    !       For each of the coordinate direction solves, the initial       
-    !       matrix problem is of the form:                                 
-    !         -                                             - - -   - -    
-    !         | (1+2 epz)   -epz                            | |r|   |r|    
-    !         |   -epz    (1 +2 epz)    -epz                | |r|   |r|    
-    !         |             -epz       (1 + 2 epz)   -epz   | |r| = |r|    
-    !         |                 .           .           .   | |.|   |.|    
-    !         |                   .            .          . | |.|   |.|    
-    !         -                                             - - -   - -    
-    !       And after the forward elimination phase a normalization is     
-    !       applied so the result looks like:                              
-    !         -                   - - -   - -                              
-    !         |  1  -d            | |r|   |r|                              
-    !         |  0   1  -d        | |r|   |r|                              
-    !         |      0   1  -d    | |r| = |r|                              
-    !         |       .   .   .   | |.|   |.|                              
-    !         |          .  .   . | |.|   |.|                              
-    !         -                   - - -   - -                              
-    !       Which can then be used with a straightforward backsolve to     
-    !       obtain the answer.                                             
-    !       It is assumed that the pointers in blockPointers already       
-    !       point to the correct block.                                    
+    !       Implicit residual smoothing is a simple procedure that
+    !       replaces the residual at each point by a weighted sum of all
+    !       of the residuals in the block (although the residuals that are
+    !       closer to the cell under consideration are weighted more
+    !       heavily). This smoothing can be applied explicitly, but may
+    !       result in zero smoothed residuals for non-zero initial
+    !       residual modes.  For this reason, the smoothing is applied
+    !       implicitly in the following form:
+    !       -epz R{i+1} + (1 + 2 epz) R{i} -epz R{i-1} = r{i}
+    !       Where r{i} is the original residual at point i, and R{i} is
+    !       the implicitly smoothed residual at point i.  The analysis for
+    !       the 1-D scalar convection-diffusion equation shows that if
+    !       Epz >= (1/4)*((lambda/lambda*)^2 -1),
+    !       where lambda is the cfl number desired to be used, and
+    !       lambda* is the CFL limit of the unsmoothed scheme, the scheme
+    !       can be made unconditionally stable (arbitrarily large lambda).
+    !       In practice, lambda = 6-8 is common for Euler solutions.  For
+    !       RANS solutions lambda = 3-4 is what we have used in practice
+    !       resulting in a slight improvement in convergence rate, but,
+    !       more importantly, an increase in the robustness of the solver.
+    !       Note that this theoretical result can be shown for infinite
+    !       1-D problems, but also for finite-periodic 1-D problems and
+    !       finite-size 1-D problems (i.e. with block boundaries).  Such
+    !       theoretical results are not available for 3-D cases, where the
+    !       scheme is applied in an ADI fashion:
+    !       (1 -epzI d_ii)(1 -epzJ d_jj)(1 -epzK d_kk) r = r
+    !       Where d_ii, d_jj, d_kk are second difference operators in each
+    !       of the mesh coordinate directions.
+    !       For each of the coordinate direction solves, the initial
+    !       matrix problem is of the form:
+    !         -                                             - - -   - -
+    !         | (1+2 epz)   -epz                            | |r|   |r|
+    !         |   -epz    (1 +2 epz)    -epz                | |r|   |r|
+    !         |             -epz       (1 + 2 epz)   -epz   | |r| = |r|
+    !         |                 .           .           .   | |.|   |.|
+    !         |                   .            .          . | |.|   |.|
+    !         -                                             - - -   - -
+    !       And after the forward elimination phase a normalization is
+    !       applied so the result looks like:
+    !         -                   - - -   - -
+    !         |  1  -d            | |r|   |r|
+    !         |  0   1  -d        | |r|   |r|
+    !         |      0   1  -d    | |r| = |r|
+    !         |       .   .   .   | |.|   |.|
+    !         |          .  .   . | |.|   |.|
+    !         -                   - - -   - -
+    !       Which can then be used with a straightforward backsolve to
+    !       obtain the answer.
+    !       It is assumed that the pointers in blockPointers already
+    !       point to the correct block.
     !
     use constants
     use blockPointers, only : nx, ny, nz, il, jl, kl, dw, p, iBlank
@@ -1817,8 +1817,8 @@ contains
 
     plim  = 0.001_realType*pInfCorr
 
-    !       Smoothing in the i-direction. Only done when enough cells are  
-    !       present in the i-direction.                                    
+    !       Smoothing in the i-direction. Only done when enough cells are
+    !       present in the i-direction.
     !
     if(nx > 1) then
 
@@ -1888,8 +1888,8 @@ contains
        enddo
     endif
     !
-    !       Smoothing in the j-direction. Only done when enough cells are  
-    !       present in the j-direction.                                    
+    !       Smoothing in the j-direction. Only done when enough cells are
+    !       present in the j-direction.
     !
     if(ny > 1) then
 
@@ -1959,8 +1959,8 @@ contains
        enddo
     endif
     !
-    !       Smoothing in the k-direction. Only done when enough cells are  
-    !       present in the k-direction.                                    
+    !       Smoothing in the k-direction. Only done when enough cells are
+    !       present in the k-direction.
     !
     if(nz > 1) then
 

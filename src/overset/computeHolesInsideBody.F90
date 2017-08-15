@@ -4,7 +4,7 @@ subroutine computeHolesInsideBody(level, sps)
   ! the cell center falls inside the body. This is a (semi) parallel
   ! implementation: The global surface mesh is communicated to all
   ! processors who then search accordingly. This scalable in terms of
-  ! computation but not strictly memory. 
+  ! computation but not strictly memory.
   use adtLocalSearch, only : minDistanceTreeSearchSinglePoint
   use adtBuild, only : buildSerialQuad, destroySerialHex
   use blockPointers
@@ -70,7 +70,7 @@ subroutine computeHolesInsideBody(level, sps)
   real(kind=realType), parameter :: tol=1e-12
   integer(kind=intType), dimension(:), pointer :: frontLeaves, frontLeavesNew, BBint
   type(adtBBoxTargetType), dimension(:), pointer :: BB
-  
+
   ! Misc
   real(kind=realType) :: dp, shp(4)
   real(kind=realType), dimension(3) ::xp, normal, v1
@@ -81,7 +81,7 @@ subroutine computeHolesInsideBody(level, sps)
   ! procedure *DOES NOT SCALE IN MEMORY*...ie eventually the surface
   ! mesh will become too large to store on a single processor,
   ! although this will probably not happen until the sizes get up in
-  ! the hundreds of millions of cells. 
+  ! the hundreds of millions of cells.
   timea = mpi_wtime()
 
   nNodesLocal = 0
@@ -100,7 +100,7 @@ subroutine computeHolesInsideBody(level, sps)
 
            nNodesLocal = nNodesLocal + &
                 (iEnd - iBeg + 1)*(jEnd - jBeg + 1)
-           nCellsLocal = nCellsLocal + & 
+           nCellsLocal = nCellsLocal + &
                 (iEnd - iBeg)*(jEnd - jBeg)
         end if
      end do
@@ -151,11 +151,11 @@ subroutine computeHolesInsideBody(level, sps)
            case (iMin)
               xx   => x(1,:,:,:)
               ind  => globalNode(1, :, :)
-                
+
            case (iMax)
               xx   => x(il,:,:,:)
               ind  => globalNode(il, :, :)
-                 
+
            case (jMin)
               xx   => x(:,1,:,:)
               ind  => globalNode(:, 1, :)
@@ -163,7 +163,7 @@ subroutine computeHolesInsideBody(level, sps)
            case (jMax)
               xx   => x(:,jl,:,:)
               ind  => globalNode(:, jl, :)
-              
+
            case (kMin)
               xx   => x(:,:,1,:)
               ind  => globalNode(:, :, 1)
@@ -187,7 +187,7 @@ subroutine computeHolesInsideBody(level, sps)
            ! other two, the pointers are cyclic consistent: i,j->k,
            ! j,k (wrap) ->i, but for the j-direction is is i,k->j when
            ! to be consistent with the others it should be
-           ! k,i->j. Hope that made sense. 
+           ! k,i->j. Hope that made sense.
 
            select case(BCFaceID(mm))
            case(iMin, jMax, kMin)
@@ -197,8 +197,8 @@ subroutine computeHolesInsideBody(level, sps)
            end select
 
            ! Now this can be reversed *again* if we have a block that
-           ! is left handed. 
-           if (.not. rightHanded) then 
+           ! is left handed.
+           if (.not. rightHanded) then
               regularOrdering = .not. (regularOrdering)
            end if
 
@@ -211,13 +211,13 @@ subroutine computeHolesInsideBody(level, sps)
            nj = jEnd - jBeg + 1
 
            ! Loop over the faces....this is the node sizes - 1
-           if (regularOrdering) then 
+           if (regularOrdering) then
               do j=1,nj-1
                  do i=1,ni-1
                     iCell = iCell + 1
                     connLocal(1, iCell) = cumNodeProc(myid) + iNode + (j-1)*ni + i
                     connLocal(2, iCell) = cumNodeProc(myid) + iNode + (j-1)*ni + i + 1
-                    connLocal(3, iCell) = cumNodeProc(myid) + iNode + (j)*ni + i + 1 
+                    connLocal(3, iCell) = cumNodeProc(myid) + iNode + (j)*ni + i + 1
                     connLocal(4, iCell) = cumNodeProc(myid) + iNode + (j)*ni + i
                     ! Set the cluster
                     clusterCellLocal(iCell) = c
@@ -230,15 +230,15 @@ subroutine computeHolesInsideBody(level, sps)
                     iCell = iCell + 1
                     connLocal(1, iCell) = cumNodeProc(myid) + iNode + (j-1)*ni + i
                     connLocal(2, iCell) = cumNodeProc(myid) + iNode + (j  )*ni + i
-                    connLocal(3, iCell) = cumNodeProc(myid) + iNode + (j)  *ni + i + 1 
-                    connLocal(4, iCell) = cumNodeProc(myid) + iNode + (j-1)*ni + i + 1   
+                    connLocal(3, iCell) = cumNodeProc(myid) + iNode + (j)  *ni + i + 1
+                    connLocal(4, iCell) = cumNodeProc(myid) + iNode + (j-1)*ni + i + 1
 
                     ! Set the cluster
                     clusterCellLocal(iCell) = c
                  end do
               end do
            end if
-                   
+
            ! Loop over the nodes
            do j=jBeg,jEnd
               do i=iBeg,iEnd
@@ -258,19 +258,19 @@ subroutine computeHolesInsideBody(level, sps)
   allocate(nodesGlobal(3, nNodesGlobal), connGlobal(4, nCellsGlobal), &
        clusterCellGlobal(nCellsGlobal), clusterNodeGlobal(nNodesGlobal), &
        nodeIndicesGlobal(nNodesGlobal))
-         
+
   ! Communicate the nodes, connectivity and cluster information to everyone
-  call mpi_allgatherv(nodesLocal, 3*nNodesLocal, adflow_real, & 
+  call mpi_allgatherv(nodesLocal, 3*nNodesLocal, adflow_real, &
        nodesGlobal, nNodeProc*3, cumNodeProc*3, adflow_real, &
        adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call mpi_allgatherv(clusterNodeLocal, nNodesLocal, adflow_integer, & 
+  call mpi_allgatherv(clusterNodeLocal, nNodesLocal, adflow_integer, &
        clusterNodeGlobal, nNodeProc, cumNodeProc, adflow_integer, &
        adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call mpi_allgatherv(nodeIndicesLocal, nNodesLocal, adflow_integer, & 
+  call mpi_allgatherv(nodeIndicesLocal, nNodesLocal, adflow_integer, &
        nodeIndicesGlobal, nNodeProc, cumNodeProc, adflow_integer, &
        adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
@@ -289,7 +289,7 @@ subroutine computeHolesInsideBody(level, sps)
   deallocate(nodesLocal, connLocal, clusterCellLocal, clusterNodeLocal, &
        nCellProc, cumCellProc, nNodeProc, cumNodeProc, nodeIndicesLocal)
 
-  ! We will now build separate trees for each cluster. 
+  ! We will now build separate trees for each cluster.
   allocate(nodesPerCluster(nClusters), cellsPerCluster(nClusters), &
        cnc(nClusters), ccc(nClusters))
   nodesPerCluster = 0
@@ -299,7 +299,7 @@ subroutine computeHolesInsideBody(level, sps)
   do i=1, nCellsGlobal
      cellsPerCluster(clusterCellGlobal(i)) = cellsPerCluster(clusterCellGlobal(i)) + 1
   end do
-  
+
   do i=1, nNodesGlobal
      nodesPerCluster(clusterNodeGlobal(i)) = nodesPerCluster(clusterNodeGlobal(i)) + 1
   end do
@@ -332,7 +332,7 @@ subroutine computeHolesInsideBody(level, sps)
      walls(c)%x(:, cnc(c))= nodesGlobal(:, i)
      walls(c)%ind(cnc(c)) = nodeIndicesGlobal(i)
      localNodeNums(i) = cnc(c)
-     
+
   end do
 
 
@@ -347,22 +347,22 @@ subroutine computeHolesInsideBody(level, sps)
   do i=1, nClusters
 
      nCells = walls(i)%nCells
-     nNodes = walls(i)%nNodes 
+     nNodes = walls(i)%nNodes
 
-     ! Fistly we need to update the conn to use our local node ordering. 
+     ! Fistly we need to update the conn to use our local node ordering.
      do j=1, nCells
         do k=1, 4
            walls(i)%conn(k, j) = localNodeNums(walls(i)%conn(k, j))
         end do
      end do
 
-     ! Allocate temporary space for doing the point reduction. 
+     ! Allocate temporary space for doing the point reduction.
      allocate(uniqueNodes(3, nNodes), link(nNodes))
 
      call pointReduce(walls(i)%x, nNodes, tol, uniqueNodes, link, nUnique)
 
 
-            
+
 
      ! Update the global indices. Use the returned link
      tmpInd => walls(i)%ind
@@ -375,8 +375,8 @@ subroutine computeHolesInsideBody(level, sps)
      ! Reset the number of nodes to be number of unique nodes
      nNodes = nUnique
      walls(i)%nNodes = nNodes
-     
-     ! Update the nodes with the unique ones. 
+
+     ! Update the nodes with the unique ones.
      do j=1, nUnique
         walls(i)%x(:, j) = uniqueNodes(:, j)
      end do
@@ -395,12 +395,12 @@ subroutine computeHolesInsideBody(level, sps)
      call buildUniqueNormal(walls(i))
   end do
 
-  if (oversetPresent) then 
+  if (oversetPresent) then
      ! Finally build up a "full wall" that is made up of all the cluster
      ! walls. Note that we can reuse the space previously allocated for
      ! the global data, namely, nodes and conn. These will be slightly
-     ! larger than necessary becuase of the point reduce. 
-     
+     ! larger than necessary becuase of the point reduce.
+
      fullWall%x => nodesGlobal
      fullWall%conn => connGlobal
      fullWall%ind => nodeIndicesGlobal
@@ -412,22 +412,22 @@ subroutine computeHolesInsideBody(level, sps)
      do i=1, nClusters
 
         ! Add in the nodes/elements from this cluster
-        
+
         do j=1, walls(i)%nNodes
            nNodes = nNodes + 1
            fullWall%x(:, nNodes) = walls(i)%x(:, j)
            fullWall%ind(nNodes) = walls(i)%ind(j)
         end do
-        
+
         do j=1, walls(i)%nCells
            nCells = nCells + 1
            fullWall%conn(:, nCells) = walls(i)%conn(:, j) + ii
         end do
-        
+
         ! Increment the node offset
         ii = ii + walls(i)%nNodes
      end do
-     
+
      ! Finish the setup of the full wall.
      fullWall%nCells = nCells
      fullWall%nNodes = nNodes
@@ -436,53 +436,53 @@ subroutine computeHolesInsideBody(level, sps)
   end if
 
   ! Allocate the (pointer) memory that may be resized as necessary for
-  ! the singlePoint search routine. 
+  ! the singlePoint search routine.
   allocate(stack(100), BB(20), BBint(20), frontLeaves(25), frontLeavesNew(25))
 
 
   ! We need to store the 4 global node indices defining the quad that
   ! each point has the closest point wrt. We also ned to store the uv
   ! values. This allows us to recompute the exact surface point, after
-  ! the rquired nodes are fetched from (a possibly) remote proc. 
+  ! the rquired nodes are fetched from (a possibly) remote proc.
 
   do nn=1,nDom
      call setPointers(nn, level, sps)
-     
+
      ! Check if elemID and uv are allocated yet.
      if (.not. associated(flowDoms(nn,level,sps)%surfNodeIndices)) then
         allocate(flowDoms(nn,level,sps)%surfNodeIndices(4, 2:il, 2:jl, 2:kl))
         allocate(flowDoms(nn,level,sps)%uv(2, 2:il, 2:jl, 2:kl))
      end if
-     
+
      ! Set the cluster for this block
      c = clusters(cumDomProc(myid) + nn)
      conn => fullWall%conn
      nodes => fullWall%x
      norm => fullWall%norm
-     
+
      do k=2, kl
         do j=2, jl
            do i=2, il
 
-              ! Compute the coordinates of the cell center 
+              ! Compute the coordinates of the cell center
               coor(1) = eighth*(x(i-1,j-1,k-1,1) + x(i,j-1,k-1,1)  &
                    +         x(i-1,j,  k-1,1) + x(i,j,  k-1,1)  &
                    +         x(i-1,j-1,k,  1) + x(i,j-1,k,  1)  &
                    +         x(i-1,j,  k,  1) + x(i,j,  k,  1))
-              
+
               coor(2) = eighth*(x(i-1,j-1,k-1,2) + x(i,j-1,k-1,2)  &
                    +         x(i-1,j,  k-1,2) + x(i,j,  k-1,2)  &
                    +         x(i-1,j-1,k,  2) + x(i,j-1,k,  2)  &
                    +         x(i-1,j,  k,  2) + x(i,j,  k,  2))
-              
+
               coor(3) = eighth*(x(i-1,j-1,k-1,3) + x(i,j-1,k-1,3)  &
                    +         x(i-1,j,  k-1,3) + x(i,j,  k-1,3)  &
                    +         x(i-1,j-1,k,  3) + x(i,j-1,k,  3)  &
                    +         x(i-1,j,  k,  3) + x(i,j,  k,  3))
 
-              if (.not. oversetPresent) then 
+              if (.not. oversetPresent) then
                  ! No overset present. Simply search our own wall,
-                 ! walls(c), up to the wall cutoff. 
+                 ! walls(c), up to the wall cutoff.
                  coor(4) = wallDistCutoff**2
                  intInfo(3) = 0 ! Must be initialized since the search
                                 ! may not find closer point.
@@ -490,26 +490,26 @@ subroutine computeHolesInsideBody(level, sps)
                       uvw, dummy, 0, BB, frontLeaves, frontLeavesNew)
 
                  cellID = intInfo(3)
-                 if (cellID > 0) then 
+                 if (cellID > 0) then
                     do kk=1,4
                        flowDoms(nn, level, sps)%surfNodeIndices(kk, i, j, k) = &
                             walls(c)%ind(walls(c)%conn(kk, cellID))
                     end do
                     flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw(1:2)
                  else
-                    ! Just set dummy values. These will never be used. 
+                    ! Just set dummy values. These will never be used.
                     flowDoms(nn, level, sps)%surfNodeIndices(:, i, j, k) = 0
                     flowDoms(nn, level, sps)%uv(:, i, j, k) = 0
                  end if
 
-                 ! We are done with this point. 
+                 ! We are done with this point.
                  cycle
               end if
 
               ! This is now the (possibly) overlapping surface mesh
               ! case. It is somewhat more complex since we use the
-              ! same searches to flag cells that are inside the body. 
-              
+              ! same searches to flag cells that are inside the body.
+
               coor(4) = wallDistCutoff**2
               intInfo(3) = 0
               call minDistancetreeSearchSinglePoint(fullWall%ADT, coor, &
@@ -517,35 +517,35 @@ subroutine computeHolesInsideBody(level, sps)
               cellID = intInfo(3)
 
               if (cellID > 0) then
-                 
 
-                 if (uvw(4) > nearWallDist**2 .or. walls(c)%nCells == 0) then 
+
+                 if (uvw(4) > nearWallDist**2 .or. walls(c)%nCells == 0) then
 
                     call checkInside()
- 
+
                     ! We found a point within the wallDist cutoff OR the
                     ! cell is from a cluster with no walls, ie a
                     ! background cell. Accept it's wall distance, since
                     ! it guaranteed to be correct.
-                    
+
                     do kk=1,4
                        flowDoms(nn, level, sps)%surfNodeIndices(kk, i, j, k) = &
                             fullWall%ind(fullWall%conn(kk, cellID))
                     end do
                     flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw(1:2)
-                    
+
                  else
-                    
+
                     ! This point is *closer* than the nearWallDist AND
-                    ! it has a wall. Search for our own wall. 
+                    ! it has a wall. Search for our own wall.
 
                     coor(4) = large
                     call minDistancetreeSearchSinglePoint(walls(c)%ADT, coor, &
                          intInfo2, uvw2, dummy, 0, BB, frontLeaves, frontLeavesNew)
                     cellID2 = intInfo2(3)
 
-                    if (uvw2(4) < nearWallDist**2) then 
-                       ! Both are close to the wall. Accept the one from our own wall. 
+                    if (uvw2(4) < nearWallDist**2) then
+                       ! Both are close to the wall. Accept the one from our own wall.
                        do kk=1,4
                           flowDoms(nn, level, sps)%surfNodeIndices(kk, i, j, k) = &
                                walls(c)%ind(walls(c)%conn(kk, cellID2))
@@ -560,13 +560,13 @@ subroutine computeHolesInsideBody(level, sps)
 
                        ! And save the wall-dist info we already had
                        ! computed from the full wall search
-        
+
                        do kk=1,4
                           flowDoms(nn, level, sps)%surfNodeIndices(kk, i, j, k) = &
                                fullWall%ind(fullWall%conn(kk, cellID))
                        end do
                        flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw(1:2)
-                       
+
                     end if
                  end if
               else
@@ -574,7 +574,7 @@ subroutine computeHolesInsideBody(level, sps)
                  ! What happend here is a cell is outside the
                  ! wallDistCutoff. We don't care about wall distance
                  ! info here so just set dummy info.
-                 
+
                  flowDoms(nn, level, sps)%surfNodeIndices(:, i, j, k) = 0
                  flowDoms(nn, level, sps)%uv(:, i, j, k) = 0
 
@@ -584,10 +584,10 @@ subroutine computeHolesInsideBody(level, sps)
 
                  call intersectionTreeSearchSinglePoint(fullWall%ADT, coor(1:3), &
                       intInfo(1), BBint, frontLeaves, frontLeavesNew)
-              
+
                  ! If we never found *any* intersections, cannot
-                 ! possibly be inside, and there is nothing else to do. 
-                 if (intInfo(1) == 0) then 
+                 ! possibly be inside, and there is nothing else to do.
+                 if (intInfo(1) == 0) then
                     cycle
                  else
                     ! We found a ray cast intersection. Looks like it
@@ -601,7 +601,7 @@ subroutine computeHolesInsideBody(level, sps)
 
                     ! Determine if it is inside:
                     call checkInside()
-                    
+
                  end if
               end if
            end do
@@ -609,7 +609,7 @@ subroutine computeHolesInsideBody(level, sps)
      end do
   end do
 
-  ! Now determine all the node indices this processor needs to get. 
+  ! Now determine all the node indices this processor needs to get.
   mm = 0
   allocate(indicesToGet(totalVolumeCells(level)*4), link(totalVolumeCells(level)*4))
   do nn=1, nDom
@@ -626,10 +626,10 @@ subroutine computeHolesInsideBody(level, sps)
      end do
   end do
 
-  ! This unique-ifies the indices. 
+  ! This unique-ifies the indices.
   call unique(indicesToGet, 4*totalVolumeCells(level), nUnique, link)
 
-  ! we need to update the stored indices to use the ordering of the nodes we will receive. 
+  ! we need to update the stored indices to use the ordering of the nodes we will receive.
   mm = 0
   do nn=1, nDom
      call setPointers(nn, level, sps)
@@ -664,13 +664,13 @@ subroutine computeHolesInsideBody(level, sps)
   ! Create the volume vector the nodes will be scatter from. Note that
   ! this vector contains all the spectal instances. It is therefore
   ! only allocated on the first call with sps=1
-  if (sps == 1) then 
+  if (sps == 1) then
      call VecCreateMPI(ADFLOW_COMM_WORLD, 3*totalVolumeNodes(level)*nTimeIntervalsSpectral, &
           PETSC_DETERMINE, xVolumeVec(level), ierr)
      call EChk(ierr,__FILE__,__LINE__)
   end if
 
-  ! This is the vector we will scatter the nodes into. 
+  ! This is the vector we will scatter the nodes into.
   call VecCreateMPI(ADFLOW_COMM_WORLD, 3*nUnique, PETSC_DETERMINE, &
        xSurfVec(level, sps), ierr)
   call EChk(ierr,__FILE__,__LINE__)
@@ -704,7 +704,7 @@ subroutine computeHolesInsideBody(level, sps)
   deallocate(nodesGlobal, connGlobal, clusterCellGlobal, &
        clusterNodeGlobal, localNodeNums)
 
-  if (oversetPresent) then 
+  if (oversetPresent) then
      call destroySerialQuad(fullWall%ADT)
      deallocate(fullWall%norm)
   end if
@@ -714,7 +714,7 @@ subroutine computeHolesInsideBody(level, sps)
      flowDoms(nn, level, sps)%intCommVars(1)%var => &
           flowDoms(nn, level, sps)%iblank(:, :, :)
   end do domainLoop
-  
+
   ! Run the generic integer exchange
   call wHalo1to1IntGeneric(1, level, sps, commPatternCell_2nd, internalCell_2nd)
 
@@ -729,23 +729,23 @@ contains
     shp(2) = (    uvw(1))*(one-uvw(2))
     shp(3) = (    uvw(1))*(    uvw(2))
     shp(4) = (one-uvw(1))*(    uvw(2))
-                    
+
     xp = zero
     normal = zero
     do jj=1, 4
        xp = xp + shp(jj)*nodes(:, conn(jj, cellID))
        normal = normal + shp(jj)*norm(:, conn(jj, cellID))
     end do
-                    
+
     ! Compute the dot product of normal with cell center
     ! (stored in coor) with the point on the surface.
     v1 = coor(1:3) - xp
     dp = normal(1)*v1(1) + normal(2)*v1(2) + normal(3)*v1(3)
-    
-    if (dp < zero) then 
+
+    if (dp < zero) then
        ! We're inside so blank this cell. Set it to -3 as
-       ! being a flood seed. 
-       
+       ! being a flood seed.
+
        iBlank(i, j, k) = -3
     end if
   end subroutine checkInside
@@ -760,9 +760,9 @@ subroutine buildUniqueNormal(wall)
 
   ! Input/Output parameters
   type(oversetWall), intent(inout) :: wall
-  
+
   ! Working
-  integer(kind=intType), dimension(:),    allocatable :: link, normCount  
+  integer(kind=intType), dimension(:),    allocatable :: link, normCount
   real(kind=realType),   dimension(:, :), pointer :: nodes, norm
   integer(kind=intType), dimension(:, :), pointer :: conn
   real(kind=realType), dimension(3) :: sss,  v1, v2
@@ -777,28 +777,28 @@ subroutine buildUniqueNormal(wall)
   normCount = 0
 
   do i=1, wall%nCells
-        
+
      ! Compute cross product normal and normize
      v1 = nodes(:, conn(3, i)) -  nodes(:, conn(1, i))
      v2 =  nodes(:, conn(4, i)) -  nodes(:, conn(2, i))
-     
+
      sss(1) = (v1(2)*v2(3) - v1(3)*v2(2))
      sss(2) = (v1(3)*v2(1) - v1(1)*v2(3))
      sss(3) = (v1(1)*v2(2) - v1(2)*v2(1))
      sss = sss / sqrt(sss(1)**2 + sss(2)**2 + sss(3)**2)
-     
+
      ! Add to each of the four nodes and increment the number added
      do j=1, 4
         norm(:, conn(j, i)) = norm(:, conn(j, i)) + sss
         normCount(conn(j, i)) = normCount(conn(j, i)) + 1
      end do
   end do
-  
+
   ! Now just divide by the norm count
   do i=1, wall%nNodes
      norm(:, i) = norm(:, i) / normCount(i)
   end do
-  
+
   ! Node count is no longer needed
   deallocate(normCount)
 

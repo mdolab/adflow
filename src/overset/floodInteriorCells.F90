@@ -33,7 +33,7 @@ subroutine floodInteriorCells(level, sps)
   ! Keep track of the total number of loops
   loopIter = 1
 
-  parallelSyncLoop: do 
+  parallelSyncLoop: do
 
      ! Keep track of the total number of fringes we've modified
      nChangedLocal = 0
@@ -50,22 +50,22 @@ subroutine floodInteriorCells(level, sps)
         allocate(stack(3, nx*ny*nz*6 + 1))
 
         ! Also allocate space for our flood seeds. Make it big enough to
-        ! include the first level halos. 
+        ! include the first level halos.
         allocate(floodSeeds(3, 6*ie*je*je))
 
         ! These are the seeds we have directly. We will only use these on the first iteration:
         nSeed = 0
 
-        if (loopIter == 1) then 
+        if (loopIter == 1) then
 
            ! Make the -3 and -2 cells, those inside the body,
            ! "compute" cells. This allows the flooding algorithm to
            ! flood them as if they were comptue cells on subsequent
-           ! iterations the same as the first iteration. 
+           ! iterations the same as the first iteration.
            do k=2, kl
               do j=2, jl
                  do i=2, il
-                    if (iblank(i, j, k) == -3 .or. iblank(i, j, k) == -2) then 
+                    if (iblank(i, j, k) == -3 .or. iblank(i, j, k) == -2) then
                        call setIsCompute(status(i, j, k), .True.)
                        call setIsReceiver(status(i, j, k), .False.)
                     end if
@@ -105,10 +105,10 @@ subroutine floodInteriorCells(level, sps)
            ! jMin/jMax
            do k=2, kl
               do i=2, il
-                 if (changed(i+1, 1+1, k+1) == 1) then 
+                 if (changed(i+1, 1+1, k+1) == 1) then
                     call addSeed(i, 2, k)
                  end if
-                 if (changed(i+1, je+1, k+1) == 1) then 
+                 if (changed(i+1, je+1, k+1) == 1) then
                     call addSeed(i, jl, k)
                  end if
               end do
@@ -138,7 +138,7 @@ subroutine floodInteriorCells(level, sps)
            stackPointer = 1
 
            ! flag the seed points --- only on first pass
-           if (loopIter == 1) then 
+           if (loopIter == 1) then
               i = stack(1, stackPointer)
               j = stack(2, stackPointer)
               k = stack(3, stackPointer)
@@ -156,14 +156,14 @@ subroutine floodInteriorCells(level, sps)
               k = stack(3, stackPointer)
               stackPointer = stackPointer - 1
 
-              if (isCompute(status(i, j, k)) .and. .not. isReceiver(status(i, j, k)) .and. iblank(i,j,k)/=-4) then 
+              if (isCompute(status(i, j, k)) .and. .not. isReceiver(status(i, j, k)) .and. iblank(i,j,k)/=-4) then
                  ! Flag the cell (using changed) as being changed
                  changed(i+1, j+1, k+1) = 1
 
                  ! Keep track of the total number we've changed.  For
                  ! reporting purposes...only count the ones that are
                  ! on actual compute cells:
-                 if (onBlock(i, j, k)) then 
+                 if (onBlock(i, j, k)) then
                     nChangedLocal = nChangedLocal + 1
                  end if
 
@@ -171,36 +171,36 @@ subroutine floodInteriorCells(level, sps)
                  call setIsHole(status(i, j, k), .True.)
                  call setIsFlooded(status(i, j, k), .True.)
                  call setIsCompute(status(i, j, k), .False.)
-                            
+
                  ! Now add the six nearest neighbours to the stack
                  ! provided they are in the owned cell range:
 
-                 if (i-1 >= 2) then 
+                 if (i-1 >= 2) then
                     stackPointer = stackPointer + 1
                     stack(:, stackPointer) = (/i-1, j  , k  /)
                  end if
 
-                 if (i+1 <= il) then 
+                 if (i+1 <= il) then
                     stackPointer = stackPointer + 1
                     stack(:, stackPointer) = (/i+1, j  , k  /)
                  end if
 
-                 if (j-1 >= 2) then 
+                 if (j-1 >= 2) then
                     stackPointer = stackPointer + 1
                     stack(:, stackPointer) = (/i  , j-1, k  /)
                  end if
 
-                 if (j+1 <= jl) then 
+                 if (j+1 <= jl) then
                     stackPointer = stackPointer + 1
                     stack(:, stackPointer) = (/i  , j+1, k  /)
                  end if
 
-                 if (k-1 >= 2) then 
+                 if (k-1 >= 2) then
                     stackPointer = stackPointer + 1
                     stack(:, stackPointer) = (/i  , j  , k-1/)
                  end if
 
-                 if (k+1 <= kl) then 
+                 if (k+1 <= kl) then
                     stackPointer = stackPointer + 1
                     stack(:, stackPointer) = (/i  , j , k+1 /)
                  end if
@@ -220,11 +220,11 @@ subroutine floodInteriorCells(level, sps)
           adflow_comm_world, ierr)
      call ECHK(ierr, __FILE__, __LINE__)
 
-     if (myid == 0) then 
+     if (myid == 0) then
         print *, 'Flood Iteration:', loopIter, 'Blanked ', nChanged, 'Interior Cells.'
      end if
 
-     if (nChanged == 0) then 
+     if (nChanged == 0) then
         exit parallelSyncLoop
      end if
 
@@ -247,16 +247,16 @@ contains
     nSeed = nSeed + 1
     floodSeeds(:, nSeed) = (/i, j, k/)
   end subroutine addSeed
-  
+
   function onBlock(i, j, k)
 
     implicit none
-    
+
     integer(kind=intType), intent(in) :: i, j, k
     logical :: onBlock
-    
-    if (i >= 2 .and. i <= il .and. j >= 2 .and. j<= jl .and. k >= 2 .and. k <= kl) then 
-       onBlock = .True. 
+
+    if (i >= 2 .and. i <= il .and. j >= 2 .and. j<= jl .and. k >= 2 .and. k <= kl) then
+       onBlock = .True.
     else
        onBlock = .False.
     end if

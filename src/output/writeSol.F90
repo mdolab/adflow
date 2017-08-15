@@ -1,8 +1,8 @@
 
 subroutine writeSol(famList, nFamList)
   !
-  !       writeSol controls the writing of a new grid file, a volume     
-  !       solution file and a surface solution file.            
+  !       writeSol controls the writing of a new grid file, a volume
+  !       solution file and a surface solution file.
   !
   use constants
   use extraOutput

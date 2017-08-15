@@ -16,7 +16,7 @@ subroutine surfaceCorrection(oBlock, oFringe, offset, n)
   integer(kind=intType), intent(in) :: n
   real(kind=realType), intent(out), dimension(3, n) :: offset
 
-  ! Working 
+  ! Working
   integer(kind=intType) :: i, j, k, ii, jj, nInterpol
   integer(kind=intType) :: cellID, idx, nUnique
 
@@ -45,15 +45,15 @@ subroutine surfaceCorrection(oBlock, oFringe, offset, n)
   fWall => clusterWalls(oFringe%cluster)
 
   ! Determine if we can make a quick exit:
-  if (bWall%nNodes == 0 .or. fWall%nNodes == 0) then 
+  if (bWall%nNodes == 0 .or. fWall%nNodes == 0) then
      ! oBlock cluster or fringeCluster do not have walls. Cannot have
      !  a surface-surface overlap!
      return
   end if
 
-  
+
   ! Allocate the (pointer) memory that may be resized as necessary for
-  ! the singlePoint search routine. 
+  ! the singlePoint search routine.
   allocate(BB(10), frontLeaves(25), frontLeavesNew(25))
 
   nInterpol = 0
@@ -84,7 +84,7 @@ subroutine surfaceCorrection(oBlock, oFringe, offset, n)
      dB = sqrt(uvwB(4))
 
      if ((uvwB(1) > zero .and. uvwB(1) < one .and. &
-          uvwB(2) > zero .and. uvwB(2) < one) .or. dB < nearWallDist) then 
+          uvwB(2) > zero .and. uvwB(2) < one) .or. dB < nearWallDist) then
 
         ! Extract the 4 nodes for this quad element
         do k=1, 4
@@ -95,7 +95,7 @@ subroutine surfaceCorrection(oBlock, oFringe, offset, n)
         ! determine the 4 quads surrounding the point I'm looking
         ! for. Use the KDTree to determine the index of the node in
         ! question, then use the nToElem pointer to get the 4 quads
-        ! surrounding my node.  
+        ! surrounding my node.
         call kdtree2_n_nearest(fWall%tree, xx(1:3), 1, results)
 
         idx = results(1)%idx ! Node index on fWall
@@ -108,7 +108,7 @@ subroutine surfaceCorrection(oBlock, oFringe, offset, n)
         quadLoop: do j=1, 4
 
            cellID = fWall%nte(j, idx)
-           if (cellID > 0) then 
+           if (cellID > 0) then
 
               do k=1, 4
                  q2(:, k) = fWall%x(:, fWall%conn(k, cellID))
@@ -116,19 +116,19 @@ subroutine surfaceCorrection(oBlock, oFringe, offset, n)
 
               ! Now see if the two quads overlap in the flat sense
               call quadOverlap(q1, q2, overlapped1)
-              overlapped2 = .False. 
-              if (dB < nearWallDist) then 
-                 overlapped2 = .True. 
+              overlapped2 = .False.
+              if (dB < nearWallDist) then
+                 overlapped2 = .True.
               end if
-              
-              if (overlapped1 .and. overlapped2) then 
+
+              if (overlapped1 .and. overlapped2) then
                  overlapped = .True.
                  exit quadLoop
               end if
            end if
         end do quadLoop
 
-        if (overlapped) then 
+        if (overlapped) then
 
            nodesB = bWall%conn(:, intInfoB(3))
            call getWeights(uvwB(1:2), weightsB)
@@ -138,14 +138,14 @@ subroutine surfaceCorrection(oBlock, oFringe, offset, n)
               ptB = ptB + weightsB(j)*bWall%x(:, nodesB(j))
            end do
 
-           ! Now set the offset for the wall. 
+           ! Now set the offset for the wall.
            masterOffset(:, ii) =  ptB - xx(1:3)
         end if
      end if
   end do masterLoop
 
   ! Now that we've determined the number of surface offsets, we can
-  ! loop back throught he actual nodes and set the wall offset. 
+  ! loop back throught he actual nodes and set the wall offset.
 
   do ii=1, n
      ! Attenuate the offset over nearWallDist
