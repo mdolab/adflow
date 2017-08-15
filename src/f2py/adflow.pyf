@@ -1,6 +1,6 @@
 !    -*- f90 -*-
 #ifdef USE_COMPLEX
-python module libadflow_cs ! in 
+python module libadflow_cs ! in
 #else
 python module libadflow
 #endif
@@ -11,7 +11,7 @@ python module libadflow
        ! ############################################################################
 
        module utils
-         subroutine writeintromessage 
+         subroutine writeintromessage
          end subroutine writeintromessage
 
          subroutine getliftdirfromsymmetry(liftdir)
@@ -21,12 +21,12 @@ python module libadflow
          subroutine allocconvarrays(nitertot)
            integer(kind=inttype) :: nitertot
          end subroutine allocconvarrays
-         
-         subroutine alloctimearrays(nitertot) 
+
+         subroutine alloctimearrays(nitertot)
            integer(kind=inttype) :: ntimetot
          end subroutine alloctimearrays
-         
-         subroutine unsteadyheader 
+
+         subroutine unsteadyheader
          end subroutine unsteadyheader
 
          subroutine pointreduce(pts,n,tol,uniquepts,link,nunique) ! in :test:utils.F90:utils
@@ -37,18 +37,18 @@ python module libadflow
            integer(kind=inttype) dimension(n),intent(out),depend(n) :: link
            integer(kind=inttype) intent(out) :: nunique
          end subroutine pointreduce
-         
+
          subroutine getcellcenters(level,n,xcen) ! in :test:utils.F90:utils
            integer(kind=inttype) intent(in) :: level
            integer(kind=inttype) intent(in) :: n
            real(kind=realtype) dimension(3,n),intent(out),depend(n) :: xcen
          end subroutine getcellcenters
-        
+
        end module utils
 
        module walldistance
 
-         subroutine updatewalldistancealllevels 
+         subroutine updatewalldistancealllevels
          end subroutine updatewalldistancealllevels
 
        end module walldistance
@@ -58,16 +58,16 @@ python module libadflow
          subroutine updatebcdataalllevels
          end subroutine updatebcdataalllevels
 
-         subroutine initflow 
+         subroutine initflow
          end subroutine initflow
-       
+
          subroutine initflowrestart
          end subroutine initflowrestart
 
          subroutine setuniformflow
          end subroutine setuniformflow
 
-         subroutine allocrestartfiles(nfiles) 
+         subroutine allocrestartfiles(nfiles)
            integer(kind=inttype) :: nfiles
          end subroutine allocrestartfiles
 
@@ -108,24 +108,24 @@ python module libadflow
          subroutine monitorvariables(variables) ! in :test:monitorVariables.f90
            character*(*) intent(inout) :: variables
          end subroutine monitorvariables
-         
+
          subroutine surfacevariables(variables) ! in :test:surfaceVariables.f90
            character*(*) intent(inout) :: variables
          end subroutine surfacevariables
-         
+
          subroutine volumevariables(variables) ! in :test:volumeVariables.f90
            character*(*) intent(inout) :: variables
          end subroutine volumevariables
-         
+
          subroutine isovariables(variables) ! in :test:volumeVariables.f90
            character*(*) intent(inout) :: variables
          end subroutine isovariables
-         
+
          subroutine initializeisosurfacevariables(values,nvalues) ! in :test:setIsoSurfaceValues.F90
            real(kind=realtype), dimension(nvalues),intent(in) :: values
            integer(kind=inttype), optional,intent(in),check(len(values)>=nvalues),depend(values) :: nvalues=len(values)
          end subroutine initializeisosurfacevariables
-         
+
          subroutine setisosurfacevariable(variable,ivar) ! in :test:setIsoSurfaceValues.F90
            character*(*), intent(in) :: variable
            integer(kind=inttype), intent(in) :: ivar
@@ -168,29 +168,29 @@ python module libadflow
          subroutine getinfosize(isize)
            integer(kind=inttype) intent(out) :: isize
          end subroutine getinfosize
-         
-         subroutine setinfo(info,isize) 
+
+         subroutine setinfo(info,isize)
            real(kind=realtype) dimension(isize),intent(in) :: info
            integer(kind=inttype) optional,intent(in),check(len(info)>=isize),depend(info) :: isize=len(info)
          end subroutine setinfo
-         
-         subroutine getinfo(info,isize) 
+
+         subroutine getinfo(info,isize)
            real(kind=realtype) dimension(isize),intent(out),depend(isize) :: info
            integer(kind=inttype) intent(in) :: isize
          end subroutine getinfo
-         
+
          subroutine getres(res,ndimw)
            real(kind=realtype) dimension(ndimw),intent(in,out) :: res
            integer(kind=inttype) optional,intent(in),check(len(res)>=ndimw),depend(res) :: ndimw=len(res)
          end subroutine getres
- 
+
          subroutine applypc(in_vec,out_vec,ndof)
            real(kind=realtype) dimension(ndof),intent(in) :: in_vec
            real(kind=realtype) dimension(ndof),intent(in, out),depend(ndof) :: out_vec
            integer(kind=inttype) optional,check(len(in_vec)>=ndof),depend(in_vec) :: ndof=len(in_vec)
          end subroutine applypc
-         
-         subroutine applyadjointpc(in_vec,out_vec,ndof) 
+
+         subroutine applyadjointpc(in_vec,out_vec,ndof)
            real(kind=realtype) dimension(ndof),intent(in) :: in_vec
            real(kind=realtype) dimension(ndof),intent(in, out),depend(ndof) :: out_vec
            integer(kind=inttype) optional,check(len(in_vec)>=ndof),depend(in_vec) :: ndof=len(in_vec)
@@ -203,7 +203,7 @@ python module libadflow
            real(kind=realtype) intent(out) :: rhores
            real(kind=realtype) intent(out) :: totalrres
          end subroutine getfreestreamresidual
-         
+
        end module nksolver
 
        module anksolver
@@ -229,9 +229,9 @@ python module libadflow
          real(kind=realtype) :: ank_coupledswitchtol
          subroutine destroyanksolver
          end subroutine destroyanksolver
-         
+
        end module anksolver
-     
+
        module partitioning
          subroutine partitionandreadgrid(partitiononly)
            logical :: partitiononly
@@ -242,7 +242,7 @@ python module libadflow
            real(kind=realtype) intent(out) :: load_inbalance
            real(kind=realtype) intent(out) :: face_inbalance
          end subroutine checkpartitioning
-         
+
        end module partitioning
 
        module warping
@@ -251,13 +251,13 @@ python module libadflow
            integer(kind=inttype) intent(in) :: ndof
            integer(kind=inttype) dimension(ndof),intent(out),depend(ndof) :: indices
          end subroutine getcgnsmeshindices
-         
+
          subroutine setgrid(grid,ndof)
            real(kind=realtype) dimension(ndof),intent(in) :: grid
            integer(kind=inttype) optional,intent(in),check(len(grid)>=ndof),depend(grid) :: ndof=len(grid)
          end subroutine setgrid
-         
-         subroutine getgrid(grid,ndof) 
+
+         subroutine getgrid(grid,ndof)
            real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: grid
            integer(kind=inttype) intent(in) :: ndof
          end subroutine getgrid
@@ -279,7 +279,7 @@ python module libadflow
            integer(kind=inttype) intent(in) :: sps
          end subroutine getsurfaceperturbation
        end module warping
-       
+
        module surfaceutils
          subroutine getsurfacesize(size_bn,sizecell,famlist,n,includezipper) ! in :test:surfaceUtils.F90:surfaceutils
            integer(kind=inttype) intent(out) :: size_bn
@@ -341,7 +341,7 @@ python module libadflow
            integer(kind=inttype) dimension(n),intent(in) :: famlist
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
          end subroutine addabsslice
-         
+
          subroutine addliftdistribution(nsegments,dir_vec,dir_ind, distname,famlist,n) ! in :test:liftDistribution.F90
            integer(kind=inttype) intent(in) :: nsegments
            real(kind=realtype) dimension(3), intent(in) :: dir_vec
@@ -365,7 +365,7 @@ python module libadflow
          subroutine initializeliftdistributiondata
          end subroutine initializeliftdistributiondata
        end subroutine tecplotio
-       
+
        module surfaceintegrations
          subroutine getsolutionwrap(famlists,funcvalues,ncost,ngroups,nfammax) ! in :test:surfaceIntegrations.F90:surfaceintegrations
            integer(kind=inttype) dimension(ngroups,nfammax) :: famlists
@@ -408,43 +408,43 @@ python module libadflow
            character*(*) intent(in) :: filename
          end subroutine writeactuatorregions
        end module actuatorregion
-       
+
        module solvers
 
-         subroutine solver 
+         subroutine solver
          end subroutine solver
-         
+
          subroutine solverunsteadyinit
          end subroutine solverunsteadyinit
-         
+
          subroutine updateunsteadygeometry
          end subroutine updateunsteadygeometry
-         
+
          subroutine solverunsteadystep
          end subroutine solverunsteadystep
 
        end module solvers
-       
+
        module aleutils
 
-         subroutine shiftlevelale 
+         subroutine shiftlevelale
          end subroutine shiftlevelale
-         
+
        end module aleutils
-       
+
        module preprocessingapi
          subroutine preprocessing ! in :adflow:../../preprocessing/preprocessing.f90
          end subroutine preprocessing
-         
+
          subroutine updatecoordinatesalllevels ! in :adflow:../../preprocessing/mdUpdateRoutines.f90
          end subroutine updatecoordinatesalllevels
 
          subroutine updatemetricsalllevels ! in :adflow:../../preprocessing/mdUpdateRoutines.f90
          end subroutine updatemetricsalllevels
-         
+
          subroutine updategridvelocitiesalllevels ! in :adflow:../../preprocessing/mdUpdateRoutines.f90
          end subroutine updategridvelocitiesalllevels
-         
+
          subroutine updateperiodicinfoalllevels
          end subroutine updateperiodicinfoalllevels
 
@@ -498,22 +498,22 @@ python module libadflow
            integer(kind=inttype) intent(in) :: n
          end subroutine getoversetiblank
        end module oversetutilities
-       
+
        module adjointapi
-         
-         subroutine setuppetscksp 
+
+         subroutine setuppetscksp
          end subroutine setuppetscksp
-         
+
          subroutine setupallresidualmatricesfwd
          end subroutine setupallresidualmatricesfwd
-         
+
          subroutine solveadjoint(rhs,psi,checksolution,nstate) ! in :test:solveADjointTransposePETSc.F90
            real(kind=realtype) dimension(nstate) :: rhs
            real(kind=realtype) dimension(nstate),depend(nstate) :: psi
            logical :: checksolution
            integer(kind=inttype), optional,check(len(rhs)>=nstate),depend(rhs) :: nstate=len(rhs)
          end subroutine solveadjoint
-         
+
          subroutine solveadjointforrhs(invec,outvec,ndof,relativetolerance) ! in :test:matrixFreeRoutines.F90
            real(kind=realtype) dimension(ndof),intent(in) :: invec
            real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: outvec
@@ -526,19 +526,19 @@ python module libadflow
            integer(kind=inttype), optional,intent(in),check(len(invec)>=ndof),depend(invec) :: ndof=len(invec)
            real(kind=realtype) intent(in) :: relativetolerance
          end subroutine solvedirectforrhs
-         
+
          subroutine saveadjointmatrix(filename)
            character*(*) intent(in) :: filename
          end subroutine saveadjointmatrix
 
-         subroutine saveadjointpc(filename) 
+         subroutine saveadjointpc(filename)
            character*(*) intent(in) :: filename
          end subroutine saveadjointpc
-        
-         subroutine savecellcenters(filename) 
+
+         subroutine savecellcenters(filename)
            character*(*) intent(in) :: filename
          end subroutine savecellcenters
-         
+
          subroutine spectralprecscribedmotion(input,nin,dxv,nout)
            real(kind=realtype) dimension(nin),intent(in) :: input
            integer(kind=inttype), optional,intent(in),check(len(input)>=nin),depend(input) :: nin=len(input)
@@ -592,7 +592,7 @@ python module libadflow
        end module adjointapi
        module adjointutils
 
-         subroutine initializepetsc 
+         subroutine initializepetsc
          end subroutine initializepetsc
 
          subroutine destroypetscvars
@@ -605,25 +605,25 @@ python module libadflow
            integer(kind=inttype), optional,intent(in),check(len(zipperfamlist)>=nzipfam),depend(zipperfamlist) :: nzipfam=len(zipperfamlist)
          end subroutine createzippermesh
        end module zippermesh
-       
+
        module overset
          use constants
          real(kind=realtype) dimension(16) :: oversettimes
        end module overset
-       
+
 ! ================ bare subroutines =============
 
         subroutine writesol(famlist,nfamlist) ! in :test:writeSol.F90
             integer(kind=inttype) dimension(nfamlist),intent(in) :: famlist
             integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
         end subroutine writesol
- 
+
         subroutine getforces(forces,npts,sps) ! in :test:getForces.F90
           real(kind=realtype) dimension(3,npts),intent(inout) :: forces
           integer(kind=inttype), optional,intent(in),check(shape(forces,1)==npts),depend(forces) :: npts=shape(forces,1)
           integer(kind=inttype) intent(in) :: sps
         end subroutine getforces
-        
+
        subroutine getheatflux(hflux,npts,sps_in) ! in :test:getForces.F90
          real(kind=realtype) dimension(npts),intent(inout) :: hflux
          integer(kind=inttype), optional,intent(in),depend(hflux) :: npts=len(hflux)
@@ -658,7 +658,7 @@ python module libadflow
          real(kind=realtype) dimension(3),intent(in) :: axis
        end subroutine getareasensitivity
 
-       
+
        ! ############################################################################
        ! ADflow Modules
        ! ############################################################################
@@ -767,8 +767,8 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfuncforceycoef=9
          integer(kind=inttype) parameter,optional :: costfuncclalpha=23
          integer(kind=inttype) parameter,optional :: costfuncmomycoef=15
-         integer(kind=inttype) parameter,optional :: costfunccfy0=32  
-         integer(kind=inttype) parameter,optional :: costfunccfyalpha=33 
+         integer(kind=inttype) parameter,optional :: costfunccfy0=32
+         integer(kind=inttype) parameter,optional :: costfunccfyalpha=33
          integer(kind=inttype) parameter,optional :: costfunccfyalphadot=34
          integer(kind=inttype) parameter,optional :: costfunccfyq=35
          integer(kind=inttype) parameter,optional :: costfunccfyqdot=36
@@ -946,7 +946,7 @@ python module libadflow
          real(kind=realtype) allocatable,dimension(:) :: coefpolxrot
          real(kind=realtype) allocatable,dimension(:) :: coefpolbeta
        end module inputmotion
-       
+
        module inputparallel ! in :adflow:../../modules/inputParam.f90
          real(kind=realtype) :: loadimbalance
          logical :: splitblocks
@@ -1089,7 +1089,7 @@ python module libadflow
          integer(kind=inttype) :: noldlevels
          real(kind=realtype) allocatable,dimension(:) :: coeftime
          logical :: timespectralgridsnotwritten
-         logical, dimension(:), allocatable :: oldsolwritten       
+         logical, dimension(:), allocatable :: oldsolwritten
          real(kind=realtype) :: totalr0
          real(kind=realtype) :: totalrstart
          real(kind=realtype) :: totalrfinal
@@ -1172,7 +1172,7 @@ python module libadflow
          real(kind=realtype) sepsensorsharpness
          logical::computecavitation
        end module inputcostfunctions
-       
+
        module adjointvars ! in :test:ADjointVars.F90
          use constants
             integer(kind=inttype) dimension(20) :: ncellslocal
@@ -1216,20 +1216,24 @@ python module libadflow
          logical :: tspmode
          logical :: tsqmode
          logical :: tsalphamode
-         logical :: tsalphafollowing 
+         logical :: tsalphafollowing
        end module inputtsstabderiv
 
         module surfacefamilies ! in :test:inputParam.F90
-          character(len=32), dimension(:), allocatable :: famnames
+          subroutine getnfam(nfam) ! in :test:surfaceFamilies.F90:surfacefamilies
+            integer(kind=inttype) intent(out) :: nfam
+          end subroutine getnfam
+          subroutine getfam(i,fam) ! in :test:surfaceFamilies.F90:surfacefamilies
+            integer(kind=inttype) intent(in) :: i
+            character(32) intent(out) :: fam
+          end subroutine getfam
         end module surfacefamilies
 
 
-    end interface 
+    end interface
 
 #ifdef USE_COMPLEX
 end python module libadflow_cs
 #else
 end python module libadflow
 #endif
-
-
