@@ -49,7 +49,7 @@ static int cell_index = 0;
 // Function to traverse the list of events
 static void traverse_event_list(void (*process)(struct event *ev, void *data), void *data) {
         struct list_node *c = &hdcell;
-        
+
         while (c) {
                 int max = c->next ? ARRAY_SIZE : cell_index;
                 int i;
@@ -62,7 +62,7 @@ static void traverse_event_list(void (*process)(struct event *ev, void *data), v
 
 // Declaration of profiling functions
 #if 1
-#define profiledebug 
+#define profiledebug
 #else
 #define profiledebug(type) \
         printf("%50s %02u %022llu %010lu %li\n", buffer, type, mytime_(), bigStackSize, smallstacksize_());
@@ -153,7 +153,7 @@ static int get(char *function, int flen) {
   hashtbl[h].function = function;
   hashtbl[h].len = flen;
   return h;
-} 
+}
 
 // Functions to serialize integers and known length strings
 static inline void fwrite_int(FILE *f, int i) {
@@ -170,7 +170,7 @@ static inline void fwrite_string(FILE *f, char *str, int len) {
 // Function to build the hashtable of function names
 static void add_event_to_hashtable(struct event *ev, void *data);
 static void build_hashtable() {
-        
+
         // Initialize the hashtable
         memset(hashtbl, 0, sizeof(struct hash_cell)*hashtbl_size);
         /** Fill the hashtbl */
@@ -203,13 +203,13 @@ void printprofile_() {
         }
         // Compress the output;
         // Generate a hashtable of the functions name
-        // use it to make a map from function name 
+        // use it to make a map from function name
         // to numeric id
         build_hashtable();
 
         // Position at the beginning
         fseek(prof, 0, SEEK_SET);
-        
+
         // Dump the hash table
         fwrite_int(prof, hashtbl_count);
         for (i=0; i < hashtbl_size; ++i)
@@ -219,18 +219,18 @@ void printprofile_() {
             int string_length = hashtbl[i].len;
             fwrite_string(prof, string, string_length);
           }
-          
+
         // Dump the events
         struct list_node *c = &hdcell;
         struct event *stack[1000];
         int stack_counter = -1;
-        struct print_args args = { 
-                .prof = prof, 
-                .stack = stack, 
-                .stack_counter = &stack_counter 
+        struct print_args args = {
+                .prof = prof,
+                .stack = stack,
+                .stack_counter = &stack_counter
         };
         traverse_event_list(print_an_event, &args);
-        
+
         // For program that aborts too abruptly ( with STOP )
         // Use the return stack image to recreate EXIT events
         for (i=stack_counter; i>-1;i--) {
@@ -248,7 +248,7 @@ void halt_();
 static void print_an_event(struct event *ev, void *data) {
         struct print_args *args = (struct print_args*)data;
         static unsigned long long int last_time = 0;
-        
+
         int h = get(ev->function, ev->len);
         // Keep trace of the return stack depth and values
         switch (ev->kind) {

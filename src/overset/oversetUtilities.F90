@@ -31,8 +31,8 @@ contains
     iSize = il+3
     jSize = jl+3
     kSize = kl+3
-    i = mod(ID, iSize) 
-    j = mod(ID/iSize, jSize) 
+    i = mod(ID, iSize)
+    j = mod(ID/iSize, jSize)
     k = ID/(iSize*jSize)
 
   end subroutine unwindIndex
@@ -49,7 +49,7 @@ contains
     kSize = kl+3
 
     windIndex = k*iSize*jSize + j*iSize + i +1
-    
+
   end function windIndex
 
   subroutine printOverlapMatrix(overlap)
@@ -66,7 +66,7 @@ contains
     ! Working
     integer(kind=intType) :: i, jj
 
-    if (myid == 0) then 
+    if (myid == 0) then
        ! Now dump out who owns what:
        do i=1, overlap%nrow
           write(*, "(a,I4, a)", advance='no'), 'Row:', i, "   "
@@ -110,7 +110,7 @@ contains
 
   subroutine transposeOverlap(A, B)
 
-    ! Create the matrix Create the matrix transpose. 
+    ! Create the matrix Create the matrix transpose.
     ! Inspired by: https://people.sc.fsu.edu/~jburkardt/f_src/sparsekit/sparsekit.f90
     use constants
     use overset, only : CSRMatrix
@@ -161,9 +161,9 @@ contains
           next = B%rowPtr(col)
 
           B%data(next) = A%data(k)
-          B%assignedProc(next) = A%assignedProc(k) 
+          B%assignedProc(next) = A%assignedProc(k)
 
-          B%colInd(next) = i 
+          B%colInd(next) = i
           B%rowPtr(col) = next + 1
        end do
     end do
@@ -172,7 +172,7 @@ contains
     do i = A%nRow, 1, -1
        B%rowPtr(i+1) = B%rowPtr(i)
     end do
-    B%rowPtr(1) = 1 
+    B%rowPtr(1) = 1
 
   end subroutine transposeOverlap
 
@@ -184,7 +184,7 @@ contains
 
     type(CSRMatrix), intent(inout) :: mat1
 
-    if (mat1%allocated) then 
+    if (mat1%allocated) then
        deallocate(&
             mat1%data, &
             mat1%colInd, &
@@ -220,7 +220,7 @@ contains
     currentProc = -1
 
     do i=1, n
-       if (currentProc /= fringes(i)%donorProc) then 
+       if (currentProc /= fringes(i)%donorProc) then
           nFringeProc = nFringeProc + 1
           cumFringeProc(nFringeProc) = i
           fringeProc(nFringeProc) = fringes(i)%donorProc
@@ -252,7 +252,7 @@ contains
     do i=1, n
 
        ! oBlock:
-       if (oblocks(i)%allocated) then 
+       if (oblocks(i)%allocated) then
           deallocate(&
                oBlocks(i)%hexaConn, &
                oBlocks(i)%globalCell, &
@@ -260,7 +260,7 @@ contains
                oBLocks(i)%invalidDonor, &
                oBlocks(i)%qualDonor, &
                oBlocks(i)%xADT)
-          if (allocated(oblocks(i)%rbuffer)) then 
+          if (allocated(oblocks(i)%rbuffer)) then
              deallocate(oBlocks(i)%rBuffer, &
                   oBlocks(i)%iBuffer)
           end if
@@ -297,18 +297,18 @@ contains
             deallocate(oFringes(i)%wallInd)
 
        if (allocated(oFringes(i)%rbuffer)) &
-            deallocate(oFringes(i)%rBuffer) 
+            deallocate(oFringes(i)%rBuffer)
 
        if (allocated(oFringes(i)%ibuffer)) &
-            deallocate(oFringes(i)%iBuffer) 
+            deallocate(oFringes(i)%iBuffer)
 
        if (associated(oFringes(i)%fringeIntBuffer)) &
           deallocate(oFringes(i)%fringeIntBuffer)
 
-       if (associated(oFringes(i)%fringeRealBuffer)) & 
+       if (associated(oFringes(i)%fringeRealBuffer)) &
           deallocate(oFringes(i)%fringeRealBuffer)
-       
-       oFringes(i)%allocated = .False. 
+
+       oFringes(i)%allocated = .False.
     end do
   end subroutine deallocateOFringes
 
@@ -330,14 +330,14 @@ contains
     integer(kind=intType) :: i
 
     do i=1, n
-       if (oSurfs(i)%allocated) then 
+       if (oSurfs(i)%allocated) then
           deallocate(&
                oSurfs(i)%x, &
                oSurfs(i)%conn, &
                oSurfs(i)%iblank, &
                oSurfs(i)%cellPtr)
           call destroySerialQuad(oSurfs(i)%ADT)
-          if (oSurfs(i)%nNodes > 0) then 
+          if (oSurfs(i)%nNodes > 0) then
              call kdtree2destroy(oSurfs(i)%tree)
           end if
        end if
@@ -345,7 +345,7 @@ contains
     end do
   end subroutine deallocateOSurfs
 
-  subroutine wallsOnBlock(wallsPresent) 
+  subroutine wallsOnBlock(wallsPresent)
 
     use constants
     use blockPointers, only : nBkGlobal
@@ -356,7 +356,7 @@ contains
     integer(kind=intType) :: mm
     wallsPresent = .False.
     ! Check THE ORIGINAL CGNS blocks for BCs, because the block may have
-    ! been split. 
+    ! been split.
     do mm=1, cgnsDoms(nbkGlobal)%nBocos
        if (cgnsDoms(nbkGlobal)%bocoInfo(mm)%BCType == NSWallAdiabatic .or. &
             cgnsDoms(nbkGlobal)%bocoInfo(mm)%BCType == NSWallIsothermal .or. &
@@ -367,7 +367,7 @@ contains
   end subroutine wallsOnBlock
 
   subroutine flagForcedRecv
-    
+
     use constants
     use blockPointers, only : nx, ny, nz, ie, je, ke, BCData, BCFaceID, nBocos, BCType, &
          forcedRecv, flowDoms, nDom, il, jl, kl, iBlank, status
@@ -394,7 +394,7 @@ contains
           ! meaningless. Essentially we ignore those. So the outer two
           ! layers of cells are indices 2 and 3. Therefore the first 3 on
           ! either side need to be flagged as invalid.
-          
+
           select case (BCFaceID(mm))
           case (iMin)
              iStart=1; iEnd=3;
@@ -421,7 +421,7 @@ contains
              jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
              kStart=nz; kEnd=ke;
           end select
-          
+
           if (BCType(mm) == OversetOuterBound) then
              do k=kStart, kEnd
                 do j=jStart, jEnd
@@ -441,19 +441,19 @@ contains
                 floodOrBlank = isFlooded(status(i,j,k)) .or. &
                      isFloodSeed(status(i,j,k)) .or.&
                      iblank(i,j,k) == -4
-                if (floodOrBlank) then 
+                if (floodOrBlank) then
                    stencilLoop: do i_stencil=1, N_visc_drdw
                       ii = visc_drdw_stencil(i_stencil, 1) + i
                       jj = visc_drdw_stencil(i_stencil, 2) + j
                       kk = visc_drdw_stencil(i_stencil, 3) + k
                       ! Flag as a forced reciver if it *isn't* flooded
                       ! or explictly blanked
-                      
+
                       floodOrBlank2 = isFlooded(status(ii,jj,kk)) .or. &
                            isFloodSeed(status(ii,jj,kk)) .or.&
                            iblank(ii,jj,kk) == -4
-                      
-                      if (.not. floodOrBlank2) then 
+
+                      if (.not. floodOrBlank2) then
                          forcedRecv(ii, jj, kk) = 1
                       end if
                    end do stencilLoop
@@ -480,7 +480,7 @@ contains
     !   ----+-----+------++-----+
     !       |     |      ||     |
     !   ----+-----+------++-----+
-    !                    ^block boundary 
+    !                    ^block boundary
     !
     ! So what happens, is blk2 (1 cell wide) sets the two layers of
     ! cells off of the BC as forced receivers. However, the second of
@@ -489,14 +489,14 @@ contains
     ! reverse halo exchange that takes halo information and combines
     ! it with real cell information. Essentially we will accumulate
     ! forcedRecv from the halo to the real cell. For this we run the
-    ! generic reverse halo exchange. 
+    ! generic reverse halo exchange.
 
     call wHalo1to1IntGeneric_b(1, 1, 1, commPatternCell_2nd, internalCell_2nd)
 
     ! Finally we now need to run the forward halo exchange to make
     ! sure any halos on other procs are set correctly that may be part of a stencil
     call wHalo1to1IntGeneric(1, 1, 1, commPatternCell_2nd, internalCell_2nd)
-    
+
   end subroutine flagForcedRecv
 
   ! Utility function for unpacking/accessing the status variable
@@ -651,40 +651,40 @@ contains
     isFloodSeed = .False.
     isFlooded = .False.
     isWallDonor = .False.
-    isReceiver = .False. 
+    isReceiver = .False.
 
-    if (j/64 > 0) then 
-       isReceiver = .True. 
+    if (j/64 > 0) then
+       isReceiver = .True.
        j = j - 64
     end if
 
-    if (j/32 > 0) then 
-       isWallDonor = .True. 
+    if (j/32 > 0) then
+       isWallDonor = .True.
        j = j - 32
     end if
 
-    if (j/16 > 0) then 
-       isFlooded = .True. 
+    if (j/16 > 0) then
+       isFlooded = .True.
        j = j - 16
     end if
 
-    if (j/8 > 0) then 
-       isFloodSeed = .True. 
+    if (j/8 > 0) then
+       isFloodSeed = .True.
        j = j - 8
     end if
 
-    if (j/4 > 0) then 
-       isCompute = .True. 
+    if (j/4 > 0) then
+       isCompute = .True.
        j = j - 4
     end if
 
-    if (j/2 > 0) then 
-       isHole = .True. 
+    if (j/2 > 0) then
+       isHole = .True.
        j = j - 2
     end if
 
-    if (j/1 > 0) then 
-       isDonor = .True. 
+    if (j/1 > 0) then
+       isDonor = .True.
        j = j - 1
     end if
   end subroutine getStatus
@@ -692,9 +692,9 @@ contains
   !
   subroutine binSearchNodes(arr, searchNode, nn, searchInd)
 
-    !  binSearchNodes does binary search for a node 'searchNode'  
-    !  in arr(1:nn) and returns index 'searchInd' where           
-    !  'searchNode' lies in arr. searchInd = -1 if not found.     
+    !  binSearchNodes does binary search for a node 'searchNode'
+    !  in arr(1:nn) and returns index 'searchInd' where
+    !  'searchNode' lies in arr. searchInd = -1 if not found.
 
     use constants
     implicit none
@@ -728,15 +728,15 @@ contains
     if (first > last) then
        searchInd = -1
        print*, ' binSearchNode fails for searchNode ',searchNode
-       STOP 
+       STOP
     end if
   end subroutine binSearchNodes
 
   subroutine binSearchPocketEdgeType(arr, search, nn, searchInd)
 
-    !  binSearchPocketEdgeType does binary searche for            
-    !  pocketEdgeType 'search' edge and returns index 'searchInd' 
-    !  where 'search' lies in arr.                                
+    !  binSearchPocketEdgeType does binary searche for
+    !  pocketEdgeType 'search' edge and returns index 'searchInd'
+    !  where 'search' lies in arr.
 
     use constants
     use overset ! cannot use only becuase of <= operator
@@ -773,17 +773,17 @@ contains
     if (first > last) then
        print*, ' binSearchPocketEdgeType fails for Edge with nodes ',&
             search%n1, search%n2
-       STOP 
+       STOP
     end if
   end subroutine binSearchPocketEdgeType
 
   !
   subroutine qsortEdgeType(arr, nn)
     !
-    !       qsortEdgeType sorts the given number of oversetString master   
-    !       Edges in increasing order based on the <= operator for this    
-    !       derived data type.                                             
-    !       (Generously copied from qsortFringeType.F90)                   
+    !       qsortEdgeType sorts the given number of oversetString master
+    !       Edges in increasing order based on the <= operator for this
+    !       derived data type.
+    !       (Generously copied from qsortFringeType.F90)
     !
     use constants
     use overset ! cannot use only becuase of <= operator
@@ -998,9 +998,9 @@ contains
 
   subroutine qsortFringeType(arr, nn, sortType)
     !
-    !       qsortFringeListTy sorts the given number of fringes            
-    !       increasing order based on the <= operator for this derived     
-    !       data type.                                                     
+    !       qsortFringeListTy sorts the given number of fringes
+    !       increasing order based on the <= operator for this derived
+    !       data type.
     !
     use constants
     use block ! Cannot use-only becuase of <= operator
@@ -1027,10 +1027,10 @@ contains
     integer(kind=intType), allocatable, dimension(:) :: stack
     integer(kind=intType), allocatable, dimension(:) :: tmpStack
 
-    if (sortType == sortByDonor) then 
+    if (sortType == sortByDonor) then
        fringeSortType = sortByDonor
-    else if (sortType == sortByReceiver) then 
-       fringeSortType = sortByReceiver 
+    else if (sortType == sortByReceiver) then
+       fringeSortType = sortByReceiver
     else
        call terminate("qsortfringeType", &
             "Uuknown sort type")
@@ -1228,7 +1228,7 @@ contains
     ! actually a list but rather an allocatable (pointer) array that
     ! is periodically resized as necessary. n is the current size
     ! which is automatically incremented by this routine. This
-    ! operation occurs multiple times throughout the overset code. 
+    ! operation occurs multiple times throughout the overset code.
 
     use constants
     use block, only : fringeType
@@ -1244,11 +1244,11 @@ contains
     integer(kind=intType) :: fSize
     type(fringeType), dimension(:), pointer :: tmpFringePtr
     fSize = size(fringeList)
-    
+
     ! Increment n for next item
     n = n + 1
 
-    if (n > fSize) then 
+    if (n > fSize) then
 
        ! Pointer to existing data:
        tmpFringePtr => fringeList
@@ -1259,13 +1259,13 @@ contains
        ! Copy exsitng values
        fringeList(1:fSize) = tmpFringePtr(1:fSize)
 
-       ! Free original memory 
-       deallocate(tmpFringePtr)    
+       ! Free original memory
+       deallocate(tmpFringePtr)
 
     end if
 
     fringeList(n) = fringe
-    
+
   end subroutine addToFringeList
 
 
@@ -1290,11 +1290,11 @@ contains
     integer(kind=intType), dimension(:,:), pointer :: tmpInt
     real(kind=realType), dimension(:,:), pointer :: tmpReal
     fSize = size(intBuffer, 2)
-    
+
     ! Increment n for next item
     n = n + 1
 
-    if (n > fSize) then 
+    if (n > fSize) then
 
        ! Pointers to existing data:
        tmpInt => intBuffer
@@ -1308,7 +1308,7 @@ contains
        intBuffer(:, 1:fSize) = tmpInt(:, 1:fSize)
        realBuffer(:, 1:fSize) = tmpReal(:, 1:fSize)
 
-       ! Free original memory 
+       ! Free original memory
        deallocate(tmpInt, tmpReal)
 
     end if
@@ -1319,7 +1319,7 @@ contains
     intBuffer(3, n) = fringe%dIndex
     intBuffer(4, n) = fringe%myBlock
     intBuffer(5, n) = fringe%myIndex
-    
+
     realBuffer(1:3, n) = fringe%donorFrac
     realBuffer(4, n) = fringe%quality
 
@@ -1331,10 +1331,10 @@ contains
 
   subroutine qsortPocketEdgeType(arr, nn)
     !
-    !       qsortPocketEdgeType sorts the given number of oversetString    
-    !       master Edges in increasing order based on the <= operator for  
-    !       this derived data type.                                        
-    !       (Generously copied from qsortFringeType.F90)                   
+    !       qsortPocketEdgeType sorts the given number of oversetString
+    !       master Edges in increasing order based on the <= operator for
+    !       this derived data type.
+    !       (Generously copied from qsortFringeType.F90)
     !
     use constants
     use overset ! Cannot use-only becuase of <= operator
@@ -1551,10 +1551,10 @@ contains
   subroutine checkOverset (level, sps, totalOrphans, printBadCells)
 
     !
-    !       CheckOverset checks the integrity of the overset connectivity  
-    !       and holes. For every comptue cell (iblank = 1) it checks that  
-    !       every cell in its stencil are not blanked. If even 1 cell is   
-    !      * found with an incomplete stencil it is a fatal error. 
+    !       CheckOverset checks the integrity of the overset connectivity
+    !       and holes. For every comptue cell (iblank = 1) it checks that
+    !       every cell in its stencil are not blanked. If even 1 cell is
+    !      * found with an incomplete stencil it is a fatal error.
     use constants
     use blockPointers, only : il, jl, kl, iblank, flowDoms, nDom, orphans, &
          iBegOR, jBegOr, kBegOr, nbkGlobal, nOrphans
@@ -1573,7 +1573,7 @@ contains
     integer(kind=intType) :: magic, localOrphans, i_stencil
     logical :: badCell
 
-    ! This pass just lets the user know where the bad cells are. 
+    ! This pass just lets the user know where the bad cells are.
     do nn=1, nDom
        call setPointers(nn, level, sps)
 
@@ -1582,7 +1582,7 @@ contains
        do k=2, kl
           do j=2, jl
              do i=2, il
-                if (iblank(i,j,k) == 1) then 
+                if (iblank(i,j,k) == 1) then
                    badCell = .False.
 
                    stencilLoop: do i_stencil=1, N_visc_drdw
@@ -1590,11 +1590,11 @@ contains
                       jj = visc_drdw_stencil(i_stencil, 2) + j
                       kk = visc_drdw_stencil(i_stencil, 3) + k
 
-                      if (.not. (iBlank(ii, jj, kk) == 1 .or. iblank(ii,jj,kk) == -1)) then 
+                      if (.not. (iBlank(ii, jj, kk) == 1 .or. iblank(ii,jj,kk) == -1)) then
                          badCell = .True.
                       end if
                    end do stencilLoop
-                   if (badCell .and. printBadCells) then 
+                   if (badCell .and. printBadCells) then
                       print *,'Error in connectivity at :',nbkglobal, i+iBegOr, j+jBegOr, k+kBegOr
                    end if
                 end if
@@ -1615,7 +1615,7 @@ contains
           do j=2, jl
              do i=2, il
                 if (iblank(i,j,k) == 0 .or. iblank(i,j,k)==-2 .or. &
-                     iblank(i,j,k)==-3 .or. iblank(i,j,k) == -4) then 
+                     iblank(i,j,k)==-3 .or. iblank(i,j,k) == -4) then
 
                    stencilLoop2: do i_stencil=1, N_visc_drdw
                       ii = visc_drdw_stencil(i_stencil, 1) + i
@@ -1623,9 +1623,9 @@ contains
                       kk = visc_drdw_stencil(i_stencil, 3) + k
 
                       if (ii >= 2 .and. jj >= 2 .and. kk>=2 .and. &
-                           ii <= il .and. jj <= jl .and. kk <= kl) then 
+                           ii <= il .and. jj <= jl .and. kk <= kl) then
 
-                         if (iBlank(ii, jj, kk) == 1) then 
+                         if (iBlank(ii, jj, kk) == 1) then
                             ! This cell is an orphan:
                             n = n + 1
                          end if
@@ -1638,8 +1638,8 @@ contains
 
        localOrphans = localOrphans + n
 
-       ! Remove any existing orphans 
-       if (associated(flowDoms(nn, level, sps)%orphans)) then 
+       ! Remove any existing orphans
+       if (associated(flowDoms(nn, level, sps)%orphans)) then
           deallocate(flowDoms(nn, level, sps)%orphans)
        end if
        allocate(flowDoms(nn, level, sps)%orphans(3, n))
@@ -1658,7 +1658,7 @@ contains
           do j=2, jl
              do i=2, il
                 if (iblank(i,j,k) == 0 .or. iblank(i,j,k)==-2 .or. &
-                     iblank(i,j,k)==-3 .or. iblank(i,j,k)==-4) then 
+                     iblank(i,j,k)==-3 .or. iblank(i,j,k)==-4) then
 
                    stencilLoop3: do i_stencil=1, N_visc_drdw
                       ii = visc_drdw_stencil(i_stencil, 1) + i
@@ -1666,9 +1666,9 @@ contains
                       kk = visc_drdw_stencil(i_stencil, 3) + k
 
                       if (ii >= 2 .and. jj >= 2 .and. kk>=2 .and. &
-                           ii <= il .and. jj <= jl .and. kk <= kl) then 
+                           ii <= il .and. jj <= jl .and. kk <= kl) then
 
-                         if (iBlank(ii, jj, kk) == 1) then 
+                         if (iBlank(ii, jj, kk) == 1) then
                             ! This cell is an orphan:
                             n = n + 1
                             orphans(:, n) = (/ii, jj, kk/)
@@ -1686,7 +1686,7 @@ contains
          adflow_comm_world, ierr)
     call ECHK(ierr, __FILE__, __LINE__)
 
-    if (myid == 0) then 
+    if (myid == 0) then
        print *, 'Total number of orphans:', totalOrphans
     end if
 
@@ -1694,11 +1694,11 @@ contains
   end subroutine checkOverset
 
   !
-  !       Finds quadratic uvw weights [-1:1] for interpolant point       
-  !       xSearch by solving for its co-ord in donor element defined by  
-  !       xElem using newton-raphson iteration.                          
-  !       Fractions uvwQuadratic come with initial guess from ADT search 
-  !       used for linear interpolation.                                 
+  !       Finds quadratic uvw weights [-1:1] for interpolant point
+  !       xSearch by solving for its co-ord in donor element defined by
+  !       xElem using newton-raphson iteration.
+  !       Fractions uvwQuadratic come with initial guess from ADT search
+  !       used for linear interpolation.
 
   subroutine computeQuadraticWeights(xSearch,xElem,uvwQuadratic)
 
@@ -1725,7 +1725,7 @@ contains
     ! -----------------------------------------------------------------
 
     ! Initialize newton parameters
-    niter = 0 
+    niter = 0
     resid = 1.0e10
     residtol = 1.0e-15
 
@@ -1738,7 +1738,7 @@ contains
        !step 1: find weights
        !--------------------
 
-       ! Initialize weights 
+       ! Initialize weights
        psi(1:3) = uvwQuadratic(1:3)
 
        ! Precopute the FE shape functions for each j-direction
@@ -1916,7 +1916,7 @@ contains
        ! ----------------------------------------------------------------------
 
        ! loop over x,y,z dirs, stored row-wise
-       loop_xyz: do n=1,3 
+       loop_xyz: do n=1,3
 
           ! construct LHS -d(R(psi(:))/d(psi(:))
 
@@ -1939,7 +1939,7 @@ contains
 
           ! construct RHS (Xp - sum_i(ff_i * X_i), i =1,27) for nth row (x,y or z)
           l = 0
-          b(n, 4) = xSearch(n) 
+          b(n, 4) = xSearch(n)
 
           ! loop over nodes
           do kkk=-1,1
@@ -1954,7 +1954,7 @@ contains
        end do loop_xyz
 
        ! Get d(uvwQuadratic) weights
-       ! invert 3x3 matrix returns solution in b(:,4) 
+       ! invert 3x3 matrix returns solution in b(:,4)
        call matrixinv3by3(b, ok_flag)
        if (.not. ok_flag) stop 'Can not invert B in computeQuadraticWeights'
 
@@ -1977,10 +1977,10 @@ contains
     end do newton_loop
   end subroutine computeQuadraticWeights
   !
-  !      Plain invert of A to solve Ax=B                                
-  !      a(3,3) --- matrix to be inverted                               
-  !      a(:,4) --- contains the right hand side vector, also stores    
-  !                 the final solution                                  
+  !      Plain invert of A to solve Ax=B
+  !      a(3,3) --- matrix to be inverted
+  !      a(:,4) --- contains the right hand side vector, also stores
+  !                 the final solution
 
   subroutine matrixinv3by3(a, ok_flag)
 
@@ -1989,7 +1989,7 @@ contains
 
     ! Input variables
     real(kind=realType), intent(inout) :: a(3, 4)
-    logical,             intent(out)   :: ok_flag   
+    logical,             intent(out)   :: ok_flag
 
     ! Working variables
     integer(kind=intType) :: n
@@ -2062,7 +2062,7 @@ contains
              do i=2, il
 
                 ! Check if this cell is a fringe:
-                if (isReceiver(status(i, j, k))) then 
+                if (isReceiver(status(i, j, k))) then
 
                    computeCellFound = .False.
 
@@ -2070,14 +2070,14 @@ contains
                       ii = visc_drdw_stencil(i_stencil, 1) + i
                       jj = visc_drdw_stencil(i_stencil, 2) + j
                       kk = visc_drdw_stencil(i_stencil, 3) + k
-                      
-                      if (isCompute(status(ii, jj, kk))) then 
+
+                      if (isCompute(status(ii, jj, kk))) then
                          ! This is a compute cell
                          computeCellFound = .True.
                       end if
                    end do stencilLoop2
 
-                   if (.not. computeCellFound) then 
+                   if (.not. computeCellFound) then
                       ! This cell is a hole no compute cell
                       ! surrounding a fringe, we can hard iblank it.
                       call setIsHole(status(i, j, k), .True.)
@@ -2194,9 +2194,9 @@ contains
        do k=2, kl
           do j=2, jl
              do i=2, il
-                
-                
-                if (isReceiver(status(i, j, k))) then 
+
+
+                if (isReceiver(status(i, j, k))) then
                    iblank(i, j, k) = -1
                    nFringe = nFringe + 1
 
@@ -2208,20 +2208,20 @@ contains
                    iBlank(i, j, k) = -2
                    nFlooded = nFlooded + 1
 
-                else if (isHole(status(i,j, k))) then 
+                else if (isHole(status(i,j, k))) then
                    iBlank(i, j, k) = 0
                    nBlank = nBlank + 1
 
                 else
-                   if (iblank(i,j,k) == -4) then 
+                   if (iblank(i,j,k) == -4) then
                       ! do nothing. It is an explict hole.
                       nExplicitBlanked = nExplicitBlanked + 1
                    else
                       ! We need to explictly make sure forced receivers
-                      ! *NEVER EVER EVER EVER* get set as compute cells. 
-                      if (forcedRecv(i,j,k) .ne. 0) then 
+                      ! *NEVER EVER EVER EVER* get set as compute cells.
+                      if (forcedRecv(i,j,k) .ne. 0) then
                          ! This is REALLY Bad. This cell must be a forced
-                         ! receiver but never found a donor. 
+                         ! receiver but never found a donor.
                          iblank(i,j,k) = 0
                          nBlank = nBlank + 1
                       else
@@ -2236,7 +2236,7 @@ contains
        end do
     end do
 
-    ! Update the iblank info. 
+    ! Update the iblank info.
     domainLoop:do nn=1, nDom
        flowDoms(nn, level, sps)%intCommVars(1)%var => &
             flowDoms(nn, level, sps)%iblank(:, :, :)
@@ -2249,7 +2249,7 @@ contains
          counts, 6, adflow_integer, MPI_SUM, 0, adflow_comm_world, ierr)
     call ECHK(ierr, __FILE__, __LINE__)
 
-    if (myid == 0) then 
+    if (myid == 0) then
        print *, '+--------------------------------+'
        print *, '| Compute Cells           :', counts(1)
        print *, '| Fringe Cells            :', counts(2)
@@ -2257,7 +2257,7 @@ contains
        print *, '| Explicitly Blanked Cells:', counts(6)
        print *, '| Flooded   Cells         :', counts(4)
        print *, '| FloodSeed Cells         :', counts(5)
-       print *, '+--------------------------------+' 
+       print *, '+--------------------------------+'
     end if
   end subroutine setIblankArray
 
@@ -2323,7 +2323,7 @@ contains
 
     nWork = 0
     do jj=1,overlap%nnz
-       if (overlap%assignedProc(jj) == myid) then 
+       if (overlap%assignedProc(jj) == myid) then
           nWork = nWork + 1
        end if
     end do
@@ -2333,7 +2333,7 @@ contains
     do iDom=1, nDomTotal
        do jj=overlap%rowPtr(iDom), overlap%rowPtr(iDom+1)-1
           jDom = overlap%colInd(jj)
-          if (overlap%assignedProc(jj) == myID) then 
+          if (overlap%assignedProc(jj) == myID) then
              nWork = nWork + 1
              work(1, nWork) = iDom
              work(2, nWork) = jDom
@@ -2373,14 +2373,14 @@ contains
   end subroutine writeOversetWall
 
   subroutine getOversetIblank(blkList, n)
-    
+
     ! This routine gathers a list of the iblank status of every
     ! compute cell in the original CGNS ordering. It then returns the
     ! full list on the root processor. Therefore, this routine is not
     ! memory or computation scalable. It is only meant to be used a
     ! debugging tool to ensure that the overset connectivity as
     ! computed with given parallel decomposition is the same as a
-    ! different parallel decomposition. 
+    ! different parallel decomposition.
 
     use constants
     use blockPointers, only : nDom, il, jl, kl, iBegOr, jBegOr, kBegOr, &
@@ -2411,11 +2411,11 @@ contains
     Vec CGNSVec
 
     ! This routine cannot be used in timespectral mode
-    if (nTimeIntervalsSpectral > 1) then 
+    if (nTimeIntervalsSpectral > 1) then
        call terminate('getOversetIBlank', 'This routine can only be used '&
             &'with 1 spectral instance')
     end if
-   
+
     allocate(cellOffset(cgnsNDom+1))
     cellOffset(1) = 0
     do nn=1,cgnsNDom
@@ -2424,11 +2424,11 @@ contains
     end do
 
     ! Create the CGNSVector
-    if (myid == 0) then 
+    if (myid == 0) then
        call VecCreateMPI(adflow_comm_world, cellOffset(cgnsNDom+1)*5, &
             PETSC_DETERMINE, cgnsVec, ierr)
        call EChk(ierr,__FILE__,__LINE__)
-       
+
     else
        call VecCreateMPI(adflow_comm_world, 0, PETSC_DETERMINE, cgnsVec, ierr)
        call EChk(ierr,__FILE__,__LINE__)
@@ -2442,7 +2442,7 @@ contains
        do k=2, kl
           do j=2, jl
              do i=2, il
-                
+
                 nx_cg = cgnsDoms(nbkGlobal)%nx
                 ny_cg = cgnsDoms(nbkGlobal)%ny
                 nz_cg = cgnsDoms(nbkGlobal)%nz
@@ -2457,7 +2457,7 @@ contains
                      (indy-1)*nx_cg       + &
                      (indx-1)
                 vals(1) = real(iblank(i,j,k))
-                if (vals(1) <= -2) then 
+                if (vals(1) <= -2) then
                    vals(1) = 0
                 end if
                 vals(2) = real(nbkGlobal)
@@ -2478,11 +2478,11 @@ contains
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Get the local vector pointer. Only the root proc actually has
-    ! values. 
+    ! values.
     call vecGetArrayF90(cgnsVec, localPtr, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
-    ! Convert back to integer. 
+    ! Convert back to integer.
     do i=1,size(localPtr)
        blkList(i) = int(localPtr(i))
     end do
@@ -2497,7 +2497,7 @@ contains
 #endif
 
   ! --------------------------------------------------
-  !           Tapenade Routine BELOW this point 
+  !           Tapenade Routine BELOW this point
   ! --------------------------------------------------
 
   subroutine fracToWeights(frac, weights)
@@ -2541,7 +2541,7 @@ contains
     ! "frac" (u,v,w) for the point xCen. The actual search is performed
     ! on the the dual cell formed by the cell centers of the 3x3x3 block
     ! of primal nodes. This routine is AD'd with tapenade in both
-    ! forward and reverse. 
+    ! forward and reverse.
 
     use constants
     implicit none
@@ -2564,14 +2564,14 @@ contains
     real(kind=realType),   parameter :: thresConv = 1.e-10_realType
 
     ! Compute the cell center locations for the 8 nodes describing the
-    ! dual cell. Note that this must be counter-clockwise ordering. 
+    ! dual cell. Note that this must be counter-clockwise ordering.
 
     ii = 0
     do k=1,2
        do j=1,2
           do i=1,2
              ii = ii + 1
-             xn(:, indices(ii)) = eighth * (& 
+             xn(:, indices(ii)) = eighth * (&
                   blk(i  , j  , k  , :) + &
                   blk(i+1, j  , k  , :) + &
                   blk(i  , j+1, k  , :) + &
@@ -2591,7 +2591,7 @@ contains
        xn(:, i) = xn(:, i) - xn(:, 1)
     enddo
 
-    ! Compute the location of our seach point relative to the first node. 
+    ! Compute the location of our seach point relative to the first node.
     x = xCen - xn(:, 1)
 
     ! Modify the coordinates of node 3, 6, 8 and 7 such that
@@ -2679,7 +2679,7 @@ contains
        ! weights is below the threshold
 
        val = sqrt(du*du + dv*dv + dw*dw)
-       if(val <= thresConv) then 
+       if(val <= thresConv) then
           exit NewtonHexa
        end if
 
@@ -2688,12 +2688,12 @@ contains
     ! We would *like* that all solutions fall inside the hexa, but we
     ! can't be picky here since we are not changing the donors. So
     ! whatever the u,v,w is we have to accept. Even if it is greater than
-    ! 1 or less than zero, it shouldn't be by much.  
+    ! 1 or less than zero, it shouldn't be by much.
 
     frac(1) = u
     frac(2) = v
     frac(3) = w
-    
+
   end subroutine newtonUpdate
 
 end module oversetUtilities

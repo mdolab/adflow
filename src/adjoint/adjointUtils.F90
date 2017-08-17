@@ -7,28 +7,28 @@ contains
   subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
        useObjective, frozenTurb, level, matrixTurb)
 
-    !      Compute the state derivative matrix using a forward mode calc  
-    !      There are three different flags that determine how this        
-    !      routine is run:                                                
-    !      useAD: if True, AD is used for derivative calculation, if      
-    !             False, FD is used.                                      
-    !      usePC: if True, the reduced 1st order stencil with dissipation 
-    !             lumping is assembled instead of the actual exact        
-    !             full stencil jacobian                                   
-    !      useTranspose: If true, the transpose of dRdw is assembled.     
-    !                    For use with the adjoint this must be true.      
-    !      useObjective: If true, the force matrix is assembled           
-    !      level : What level to use to form the matrix. Level 1 is       
-    !              always the finest level                                
+    !      Compute the state derivative matrix using a forward mode calc
+    !      There are three different flags that determine how this
+    !      routine is run:
+    !      useAD: if True, AD is used for derivative calculation, if
+    !             False, FD is used.
+    !      usePC: if True, the reduced 1st order stencil with dissipation
+    !             lumping is assembled instead of the actual exact
+    !             full stencil jacobian
+    !      useTranspose: If true, the transpose of dRdw is assembled.
+    !                    For use with the adjoint this must be true.
+    !      useObjective: If true, the force matrix is assembled
+    !      level : What level to use to form the matrix. Level 1 is
+    !              always the finest level
     !
     use block, only : flowDomsd
     use blockPointers
-    use inputDiscretization 
-    use inputTimeSpectral 
+    use inputDiscretization
+    use inputTimeSpectral
     use inputPhysics
-    use iteration         
-    use flowVarRefState     
-    use inputAdjoint       
+    use iteration
+    use flowVarRefState
+    use inputAdjoint
     use stencils
     use diffSizes
     use communication
@@ -67,8 +67,8 @@ contains
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, colInd
     logical :: resetToRANS, secondOrdSave,  splitMat
 
-    if (present(matrixTurb)) then 
-       splitMat = .True. 
+    if (present(matrixTurb)) then
+       splitMat = .True.
     else
        splitMat = .False.
     end if
@@ -120,7 +120,7 @@ contains
           do k=2, kl
              do j=2, jl
                 do i=2, il
-                   if (iblank(i, j, k) /= 1) then 
+                   if (iblank(i, j, k) /= 1) then
                       iRow = flowDoms(nn, level, sps)%globalCell(i, j, k)
                       cols(1) = irow
                       nCol = 1
@@ -132,7 +132,7 @@ contains
        end do
     end do
 
-    if (splitMat) then 
+    if (splitMat) then
        call MatZeroEntries(matrixTurb, ierr)
        call EChk(ierr, __FILE__, __LINE__)
     end if
@@ -149,7 +149,7 @@ contains
           n_stencil = N_euler_pc
        end if
 
-       ! Very important to use only Second-Order dissipation for PC 
+       ! Very important to use only Second-Order dissipation for PC
        lumpedDiss=.True.
        secondOrdSave = secondOrd
        secondOrd = .False.
@@ -169,9 +169,9 @@ contains
     ! If we want to do the matrix on a coarser level, we must first
     ! restrict the fine grid solutions, since it is possible the
     ! NKsolver was used an the coarse grid solutions are (very!) out of
-    ! date. 
+    ! date.
 
-    ! Assembling matrix on coarser levels is not entirely implemented yet. 
+    ! Assembling matrix on coarser levels is not entirely implemented yet.
     currentLevel = level
     groundLevel = level
 
@@ -181,20 +181,20 @@ contains
     rkStage = 0
 
     ! Determine if we want to use frozenTurbulent Adjoint
-    resetToRANS = .False. 
+    resetToRANS = .False.
     if (frozenTurb .and. equations == RANSEquations) then
-       equations = NSEquations 
+       equations = NSEquations
        resetToRANS = .True.
     end if
 
     ! Allocate the additional memory we need for doing forward mode AD
     !  derivatives and copy any required reference values:
-    if (.not. derivVarsAllocated .and. useAD) then 
+    if (.not. derivVarsAllocated .and. useAD) then
        call allocDerivativeValues(level)
     end if
 
     ! For AD the initial seeds must all be zeroed.
-    if (useAD) then 
+    if (useAD) then
        do nn=1, nDom
           do sps=1, nTimeIntervalsSpectral
              call setPointers(nn, level, sps)
@@ -214,23 +214,23 @@ contains
                flowDoms(nn, level, sps)%dwtmp(0:ib,0:jb,0:kb,1:nw), &
                flowDoms(nn, level, sps)%dwtmp2(0:ib,0:jb,0:kb,1:nw), &
           stat=ierr)
-          call EChk(ierr, __FILE__, __LINE__) 
+          call EChk(ierr, __FILE__, __LINE__)
 
-          if (sps == 1) then 
+          if (sps == 1) then
              allocate(flowDoms(nn, level, sps)%color(0:ib, 0:jb, 0:kb), stat=ierr)
-             call EChk(ierr, __FILE__, __LINE__) 
+             call EChk(ierr, __FILE__, __LINE__)
           end if
        end do
     end do
 
     ! For the PC we don't linearize the shock sensor so it must be
     ! computed here.
-    if (usePC) then 
+    if (usePC) then
        call referenceShockSensor
     end if
 
     ! For FD, the initial reference values must be computed and stored.
-    if (.not. useAD) then 
+    if (.not. useAD) then
        call setFDReference(level)
     end if
 
@@ -265,20 +265,17 @@ contains
           if (viscous) then
              !call setup_5x5x5_coloring(nn, level,  nColor)
              call setup_dRdw_visc_coloring(nn, level,  nColor)! Viscous/RANS
-          else 
+          else
              call setup_dRdw_euler_coloring(nn, level,  nColor) ! Euler Colorings
           end if
        end if
 
        spectralLoop: do sps=1, nTimeIntervalsSpectral
           ! Set pointers and (possibly derivative pointers)
-          if (useAD) then 
+          if (useAD) then
              call setPointers_d(nn, level, sps)
           else
              call setPointers(nn, level, sps)
-          end if
-          if (usePC) then 
-             shockSensor => flowDoms(nn,1,sps)%shockSensor
           end if
 
           ! Do Coloring and perturb states
@@ -292,7 +289,7 @@ contains
 
                 ! Reset All States and possibe AD seeds
                 do sps2 = 1, nTimeIntervalsSpectral
-                   if (.not. useAD) then 
+                   if (.not. useAD) then
                       do ll=1,nw
                          do k=0,kb
                             do j=0,jb
@@ -324,7 +321,7 @@ contains
                    end do
                 end do
 
-                ! Run Block-based residual 
+                ! Run Block-based residual
                 if (useAD) then
 #ifndef USE_COMPLEX
                    call block_res_state_d(nn, sps)
@@ -336,14 +333,14 @@ contains
                    call block_res_state(nn, sps)
                 end if
 
-                ! Set the computed residual in dw_deriv. If using FD, 
+                ! Set the computed residual in dw_deriv. If using FD,
                 ! actually do the FD calculation if AD, just copy out dw
                 ! in flowdomsd
 
                 ! Compute/Copy all derivatives
                 do sps2 = 1, nTimeIntervalsSpectral
                    do ll=1, nState
-                      do k=2, kl 
+                      do k=2, kl
                          do j=2, jl
                             do i=2, il
                                if (useAD) then
@@ -385,13 +382,13 @@ contains
                 jLoop: do j=0, jb
                    iLoop: do i=0, ib
                       colBlank: if (flowDoms(nn, level, sps)%iblank(i, j, k) == 1 .or. &
-                           flowDoms(nn, level, sps)%iBlank(i, j, k) == -1) then 
+                           flowDoms(nn, level, sps)%iBlank(i, j, k) == -1) then
 
                          ! If the cell we perturned ('iCol') is an
                          ! interpolated cell, we don't actually use
                          ! iCol, rather we use the 8 real donors that
-                         ! comprise the cell's value. 
-                         if (flowDoms(nn, level, sps)%iblank(i, j, k) == 1) then 
+                         ! comprise the cell's value.
+                         if (flowDoms(nn, level, sps)%iblank(i, j, k) == 1) then
                             cols(1) = flowDoms(nn, level, sps)%globalCell(i, j, k)
                             nCol = 1
                          else
@@ -422,12 +419,12 @@ contains
                                ! halo/BC halo
                                onBlock: if ( i+ii >= 2 .and. i+ii <= il .and. &
                                     j+jj >= 2 .and. j+jj <= jl .and. &
-                                    k+kk >= 2 .and. k+kk <= kl) then 
+                                    k+kk >= 2 .and. k+kk <= kl) then
 
                                   irow = flowDoms(nn, level, sps)%globalCell(&
                                        i+ii, j+jj, k+kk)
 
-                                  rowBlank: if (flowDoms(nn, level, sps)%iBlank(i+ii, j+jj, k+kk) == 1) then 
+                                  rowBlank: if (flowDoms(nn, level, sps)%iBlank(i+ii, j+jj, k+kk) == 1) then
 
                                      centerCell: if ( ii == 0 .and. jj == 0  .and. kk == 0) then
                                         useDiagPC: if (usePC .and. useDiagTSPC) then
@@ -470,15 +467,15 @@ contains
     call MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    if (splitMat) then 
+    if (splitMat) then
        call MatAssemblyBegin(matrixTurb, MAT_FINAL_ASSEMBLY, ierr)
        call EChk(ierr, __FILE__, __LINE__)
     end if
     ! Maybe we can do something useful while the communication happens?
     ! Deallocate the temporary memory used in this routine.
 
-    ! Deallocate and reset values 
-    if (.not. useAD) then 
+    ! Deallocate and reset values
+    if (.not. useAD) then
        call resetFDReference(level)
     end if
 
@@ -489,12 +486,12 @@ contains
                flowDoms(nn, 1, sps)%wTmp, &
                flowDoms(nn, 1, sps)%dwTmp, &
                flowDoms(nn, 1, sps)%dwTmp2)
-          if (sps==1) then 
+          if (sps==1) then
              deallocate(flowDoms(nn, 1, 1)%color)
           end if
 
-          ! Deallocate the shock sensor refernce if usePC 
-          if (usePC) then 
+          ! Deallocate the shock sensor refernce if usePC
+          if (usePC) then
              deallocate(flowDoms(nn, 1, sps)%shockSensor)
           end if
        end do
@@ -507,7 +504,7 @@ contains
     end if
 
     ! Reset the correct equation parameters if we were useing the frozen
-    ! Turbulent 
+    ! Turbulent
     if (resetToRANS) then
        equations = RANSEquations
     end if
@@ -521,7 +518,7 @@ contains
     call MatSetOption(matrix, MAT_NEW_NONZERO_LOCATIONS, PETSC_FALSE, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    if (splitMat) then 
+    if (splitMat) then
        call MatAssemblyEnd(matrixTurb, MAT_FINAL_ASSEMBLY, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
@@ -529,7 +526,7 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
     end if
 
-    ! ================= Important =================== 
+    ! ================= Important ===================
 
     ! We must run the residual computation to make sure that all
     ! intermediate variables are up to date. We can just call master
@@ -574,7 +571,7 @@ contains
 #endif
 
       if (.not. zeroFlag) then
-         if (nCol == 1) then 
+         if (nCol == 1) then
             if (useTranspose) then
                blk = transpose(blk)
                call MatSetValuesBlocked(matrix, 1, cols(1), 1, irow, blk, &
@@ -589,7 +586,7 @@ contains
             if (useTranspose) then
                blk = transpose(blk)
                do m=1, ncol
-                  if (cols(m) >= 0) then 
+                  if (cols(m) >= 0) then
                      call MatSetValuesBlocked(matrix, 1, cols(m), 1, irow, blk*weights(m), &
                           ADD_VALUES, ierr)
                      call EChk(ierr, __FILE__, __LINE__)
@@ -597,7 +594,7 @@ contains
                end do
             else
                do m=1, ncol
-                  if (cols(m) >= 0) then 
+                  if (cols(m) >= 0) then
                      call MatSetValuesBlocked(matrix, 1, irow, 1, cols(m), blk*weights(m), &
                           ADD_VALUES, ierr)
                      call EChk(ierr, __FILE__, __LINE__)
@@ -637,7 +634,7 @@ contains
     integer(kind=intType) :: massShape(2), max_face_size
     integer(kind=intType) :: iBoco, nDataset, iData, nDirichlet, iDirichlet, nArray
     ! First create the derivative flowdoms structure flowDomsd. Note we
-    ! only allocate information for the finest grid. 
+    ! only allocate information for the finest grid.
 
     allocate(flowDomsd(nDom, 1, nTimeIntervalsSpectral), stat=ierr)
     call EChk(ierr,__FILE__,__LINE__)
@@ -647,7 +644,7 @@ contains
 
     ! If we are not using RANS with walDistance create a dummy xSurfVec
     ! since one does not yet exist
-    if (.not. wallDistanceNeeded .or. .not. useApproxWallDistance) then 
+    if (.not. wallDistanceNeeded .or. .not. useApproxWallDistance) then
        do sps=1, nTimeIntervalsSpectral
           call VecCreateMPI(ADFLOW_COMM_WORLD, 1, PETSC_DETERMINE, xSurfVec(1, sps), ierr)
           call EChk(ierr,__FILE__,__LINE__)
@@ -666,7 +663,7 @@ contains
           call setPointers(nn, level, sps)
 
           ! Allocate d2wall if not already done so
-          if (.not. associated(flowDoms(nn, 1, sps)%d2wall)) then 
+          if (.not. associated(flowDoms(nn, 1, sps)%d2wall)) then
              allocate(flowDoms(nn, 1, sps)%d2wall(2:il, 2:jl, 2:kl))
              call EChk(ierr,__FILE__,__LINE__)
           end if
@@ -732,7 +729,7 @@ contains
           call EChk(ierr,__FILE__,__LINE__)
 
           ! Set the number of bocos/viscbocs
-          flowdomsd(nn, level, sps)%nBocos = flowdoms(nn, level, sps)%nbocos   
+          flowdomsd(nn, level, sps)%nBocos = flowdoms(nn, level, sps)%nbocos
           flowDomsd(nn, level, sps)%nViscBocos = flowDoms(nn, level, sps)%nViscBocos
           bocoLoop: do mm=1,nBocos
 
@@ -755,11 +752,11 @@ contains
                   flowDomsd(nn, level, sps)%BCData(mm)%T(inBeg:inStop, jnBeg:jnStop, 3),&
                   flowDomsd(nn, level, sps)%BCData(mm)%area(inBeg+1:inStop, jnBeg+1:jnStop), &
                   flowDomsd(nn, level, sps)%BCData(mm)%uSlip(iBeg:iStop,jBeg:jStop,3), &
-                  flowDomsd(nn, level, sps)%BCData(mm)%TNS_Wall(iBeg:iStop,jBeg:jStop), & 
-                  flowDomsd(nn, level, sps)%BCData(mm)%ptInlet(iBeg:iStop,jBeg:jStop), & 
-                  flowDomsd(nn, level, sps)%BCData(mm)%htInlet(iBeg:iStop,jBeg:jStop), & 
-                  flowDomsd(nn, level, sps)%BCData(mm)%ttInlet(iBeg:iStop,jBeg:jStop), & 
-                  flowDomsd(nn, level, sps)%BCData(mm)%turbInlet(iBeg:iStop,jBeg:jStop,nt1:nt2), & 
+                  flowDomsd(nn, level, sps)%BCData(mm)%TNS_Wall(iBeg:iStop,jBeg:jStop), &
+                  flowDomsd(nn, level, sps)%BCData(mm)%ptInlet(iBeg:iStop,jBeg:jStop), &
+                  flowDomsd(nn, level, sps)%BCData(mm)%htInlet(iBeg:iStop,jBeg:jStop), &
+                  flowDomsd(nn, level, sps)%BCData(mm)%ttInlet(iBeg:iStop,jBeg:jStop), &
+                  flowDomsd(nn, level, sps)%BCData(mm)%turbInlet(iBeg:iStop,jBeg:jStop,nt1:nt2), &
                   flowDomsd(nn, level, sps)%BCData(mm)%ps(iBeg:iStop,jBeg:jStop), stat=ierr)
 
              call EChk(ierr,__FILE__,__LINE__)
@@ -785,15 +782,15 @@ contains
        nBocos = cgnsDoms(nn)%nBocos
        allocate(cgnsDomsd(nn)%bocoInfo(nBocos))
        do iBoco = 1,nBocos
-          if (associated(cgnsDoms(nn)%bocoInfo(iBoco)%dataSet)) then 
+          if (associated(cgnsDoms(nn)%bocoInfo(iBoco)%dataSet)) then
              nDataSet = size(cgnsDoms(nn)%bocoInfo(iBoco)%dataSet)
              allocate(cgnsDomsd(nn)%bocoInfo(iBoco)%dataSet(nDataSet))
-       
+
              do iData=1, nDataSet
-                if (associated(cgnsDoms(nn)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays)) then 
+                if (associated(cgnsDoms(nn)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays)) then
                    nDirichlet = size(cgnsDoms(nn)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays)
                    allocate(cgnsDomsd(nn)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(nDirichlet))
-                   
+
                    do iDirichlet = 1, nDirichlet
                       nArray = size(cgnsDoms(nn)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(iDirichlet)%dataArr)
                       allocate(cgnsDomsd(nn)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(iDirichlet)%dataArr(nArray))
@@ -804,8 +801,8 @@ contains
           end if
        end do
     end do
-    
-    derivVarsAllocated = .True. 
+
+    derivVarsAllocated = .True.
   end subroutine allocDerivativeValues
 
   subroutine zeroADSeeds(nn, level, sps)
@@ -901,13 +898,13 @@ contains
 
 
     viscbocoLoop: do mm=1,flowDoms(nn, level, sps)%nViscBocos
-       flowDomsd(nn, level, sps)%viscSubface(mm)%tau = zero 
+       flowDomsd(nn, level, sps)%viscSubface(mm)%tau = zero
        flowDomsd(nn, level, sps)%viscSubface(mm)%q = zero
     end do viscbocoLoop
 
     ! For overset, the weights may be active in the comm structure. We
     ! need to zero them before we can accumulate.
-    if (oversetPresent) then 
+    if (oversetPresent) then
        ! Pointers to the overset comms to make it easier to read
        sends: do i=1,commPatternOverset(level, sps)%nProcSend
           commPatternOverset(level, sps)%sendList(i)%interpd = zero
@@ -947,9 +944,9 @@ contains
     ! Zero all the reverse seeds in the dirichlet input arrays
     do iDom=1, cgnsNDom
        do iBoco=1, cgnsDoms(iDom)%nBocos
-          if (associated(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet)) then 
+          if (associated(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet)) then
              do iData=1, size(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet)
-                if (associated(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays)) then 
+                if (associated(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays)) then
                    do iDirichlet = 1, size(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays)
                       cgnsDomsd(iDom)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(iDirichlet)%dataArr(:) = zero
                    end do
@@ -978,7 +975,7 @@ contains
     ! Output parameters
     integer(kind=intTYpe), intent(out) :: nColor
 
-    ! Working 
+    ! Working
     integer(kind=intType) :: i, j, k
 
     call setPointers(nn, level, 1)
@@ -1010,7 +1007,7 @@ contains
     ! Output parameters
     integer(kind=intTYpe), intent(out) :: nColor
 
-    ! Working 
+    ! Working
     integer(kind=intType) :: i, j, k
 
     call setPointers(nn, level, 1)
@@ -1041,7 +1038,7 @@ contains
     ! Output parameters
     integer(kind=intTYpe), intent(out) :: nColor
 
-    ! Working 
+    ! Working
     integer(kind=intType) :: i, j, k
 
     call setPointers(nn, level, 1) ! Just to get the correct sizes
@@ -1077,7 +1074,7 @@ contains
     ! Output parameters
     integer(kind=intTYpe), intent(out) :: nColor
 
-    ! Working 
+    ! Working
     integer(kind=intType) :: i, j, k, modi, modj, modk
 
     call setPointers(nn, level, 1)
@@ -1113,10 +1110,10 @@ contains
     ! Output parameters
     integer(kind=intTYpe), intent(out) :: nColor
 
-    ! Working 
+    ! Working
     integer(kind=intType) :: i, j, k, modi, modj, modk
 
-    call setPointers(nn, level, 1) 
+    call setPointers(nn, level, 1)
 
     do k=0, kb
        do j=0, jb
@@ -1148,12 +1145,12 @@ contains
     ! Output parameters
     integer(kind=intTYpe), intent(out) :: nColor
 
-    ! Working 
+    ! Working
     integer(kind=intType) :: i, j, k
 
     ! This is a REALLY brute force coloring for debugging
 
-    call setPointers(nn, level, 1) 
+    call setPointers(nn, level, 1)
 
     do k=0, kb
        do j=0, jb
@@ -1174,7 +1171,7 @@ contains
     ! Function to create petsc matrix to make stuff a little cleaner in
     ! the code above. Also, PETSc always thinks is a good idea to
     ! RANDOMLY change syntax between versions so this way there is only
-    ! one place to make a change based on petsc version. 
+    ! one place to make a change based on petsc version.
 
     use constants
     use communication, only : adflow_comm_world
@@ -1193,14 +1190,14 @@ contains
        call MatCreateBAIJ(ADFLOW_COMM_WORLD, blockSize, &
             m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
             0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
-    else     
+    else
        call MatCreateAIJ(ADFLOW_COMM_WORLD,&
             m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
             0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
        call EChk(ierr, file, line)
     end if
 
-    ! Warning: The array values is logically two-dimensional, 
+    ! Warning: The array values is logically two-dimensional,
     ! containing the values that are to be inserted. By default the
     ! values are given in row major order, which is the opposite of
     ! the Fortran convention, meaning that the value to be put in row
@@ -1218,10 +1215,10 @@ contains
 
   subroutine MyKSPMonitor(myKsp, n, rnorm, dummy, ierr)
     !
-    !      This is a user-defined routine for monitoring the KSP          
-    !      iterative solvers. Instead of outputing the L2-norm at every   
-    !      iteration (default PETSc monitor), it only does it every       
-    !      'adjMonStep' iterations.                                       
+    !      This is a user-defined routine for monitoring the KSP
+    !      iterative solvers. Instead of outputing the L2-norm at every
+    !      iteration (default PETSc monitor), it only does it every
+    !      'adjMonStep' iterations.
     !
     use ADjointPETSc
     use inputADjoint
@@ -1263,8 +1260,8 @@ contains
     ! its own function is that it is used in the following places:
     ! 1. Setting up the preconditioner to use for the NKsolver
     ! 2. Setting up the preconditioner to use for the adjoint solver
-    ! 3. Setting up the smoothers on the coarse multigrid levels. 
-    ! 
+    ! 3. Setting up the smoothers on the coarse multigrid levels.
+    !
     ! The hierarchy of the setup is:
     !  kspObject --> Supplied KSP object
     !  |
@@ -1279,11 +1276,11 @@ contains
     !               --> subKSP --> KSP type set to Richardon with 'LocalPreConIts'
     !                   |
     !                   --> subPC -->  PC type set to 'loclaPCType'.
-    !                                  Usually ILU. 'localFillLevel' is 
+    !                                  Usually ILU. 'localFillLevel' is
     !                                  set and 'localMatrixOrder' is used.
     !
     ! Note that if globalPreConIts=1 then maser_PC_KSP is NOT created and master_PC=globalPC
-    ! and if localPreConIts=1 then subKSP is set to preOnly. 
+    ! and if localPreConIts=1 then subKSP is set to preOnly.
     use constants
     use utils, only : ECHk
     implicit none
@@ -1318,7 +1315,7 @@ contains
 
     ! If you're using GMRES, set refinement type
     call KSPGMRESSetCGSRefinementType(kspObject, &
-         KSP_GMRES_CGS_REFINE_IFNEEDED, ierr)   
+         KSP_GMRES_CGS_REFINE_IFNEEDED, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Set the preconditioner side from option:
@@ -1352,7 +1349,7 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
 
        ! master_PC_KSP type will always be of type richardson. If the
-       ! number  of iterations is set to 1, this ksp object is transparent. 
+       ! number  of iterations is set to 1, this ksp object is transparent.
        call KSPSetType(master_PC_KSP, 'richardson', ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
@@ -1368,7 +1365,7 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
 
        ! Get the 'preconditioner for master_PC_KSP, called 'globalPC'. This
-       ! preconditioner is potentially run multiple times. 
+       ! preconditioner is potentially run multiple times.
        call KSPgetPC(master_PC_KSP, globalPC, ierr)
        call EChk(ierr, __FILE__, __LINE__)
     else
@@ -1402,7 +1399,7 @@ contains
        call KSPSetType(subksp, 'richardson', ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
-       ! Set the number of iterations to do on local blocks. Tolerances are ignored. 
+       ! Set the number of iterations to do on local blocks. Tolerances are ignored.
 
        call KSPSetTolerances(subksp, PETSC_DEFAULT_REAL, &
             PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
@@ -1431,7 +1428,7 @@ contains
 
     ! Set the ILU parameters
     call PCFactorSetLevels(subpc, localFillLevel , ierr)
-    call EChk(ierr, __FILE__, __LINE__) 
+    call EChk(ierr, __FILE__, __LINE__)
 
 
   end subroutine setupStandardKSP
@@ -1445,7 +1442,7 @@ contains
 
     integer(kind=intType) ::  ierr
 
-    if (adjointPETScVarsAllocated) then 
+    if (adjointPETScVarsAllocated) then
 
        ! Matrices
        call MatDestroy(dRdWT, ierr)
@@ -1478,9 +1475,9 @@ contains
 
   subroutine finalizePETSc
     !
-    !      Finalize PETSc by calling the appropriate routine              
-    !      PetscFinalize provided in the PETSc library. This              
-    !      automatically calls MPI_Finalize().                            
+    !      Finalize PETSc by calling the appropriate routine
+    !      PetscFinalize provided in the PETSc library. This
+    !      automatically calls MPI_Finalize().
     !
     use ADjointPETSc, only : PETScIerr
     implicit none
@@ -1502,7 +1499,7 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
   ! correct since we will be using the real values as floats, but
   ! since the number of non-zeros per row is always going to be
   ! bounded, we don't have to worry about the integer/floating point
-  ! conversions. 
+  ! conversions.
 
   use constants
   use blockPointers, only : nDom, il, jl, kl, fringes, flowDoms, globalCell, &
@@ -1534,17 +1531,17 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
   logical :: overset
   real(kind=realType), pointer :: tmpPointer(:)
 
-  
+
   call vecCreateMPI(adflow_comm_world, wSize, PETSC_DETERMINE, offProcVec, ierr)
   call EChk(ierr, __FILE__, __LINE__)
-  
+
 
   ! Zero the cell movement counter
   ii = 0
-  
+
   ! Set the onProc values for each cell to the number of "OFF" time
   ! spectral instances. The "on" spectral instances are accounted for
-  ! in the stencil  
+  ! in the stencil
   onProc(:) = nTimeIntervalsSpectral-1
   offProc(:) = 0
   ! Determine the range of onProc in dRdwT
@@ -1558,7 +1555,7 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
         ! Loop over each real cell
         do k=2, kl
            do j=2, jl
-              do i=2, il 
+              do i=2, il
 
                  ! Increment the running ii counter ONLY for each each
                  ! movement of center cell
@@ -1567,41 +1564,41 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
                  ! Reset the running tally of the number of neighbours
                  n = 0
 
-                 blankedTest: if (iblank(i, j, k) == 1) then 
-                    
+                 blankedTest: if (iblank(i, j, k) == 1) then
+
                     ! Short-cut flag for cells without interpolated
                     ! cells in it's stencil
                     overset = .False.
 
                     ! Loop over the cells in the provided stencil:
                     do jj=1, N_stencil
-                    
-                       ! Determine the cell we are dealing with 
+
+                       ! Determine the cell we are dealing with
                        iii = stencil(jj, 1) + i
-                       jjj = stencil(jj, 2) + j 
-                       kkk = stencil(jj, 3) + k 
-                    
+                       jjj = stencil(jj, 2) + j
+                       kkk = stencil(jj, 3) + k
+
                        ! Index of the cell we are dealing with. Make
                        ! code easier to read
                        gc = globalCell(iii, jjj, kkk)
 
                        ! Check if the cell in question is a fringe or not:
-                       if (iblank(iii, jjj, kkk) == 1) then 
+                       if (iblank(iii, jjj, kkk) == 1) then
                           ! regular cell, add to our list, if it is
                           ! not a boundary
-                          if (gc >= 0) then 
+                          if (gc >= 0) then
                              n = n + 1
                              cellBuffer(n) = gc
                           end if
 
-                       else if (iblank(iii, jjj, kkk) == -1) then 
+                       else if (iblank(iii, jjj, kkk) == -1) then
                           ! Fringe cell. What we do here is loop over
                           ! the donors for this cell and add any
                           ! entries that are real cells
                           overset = .True.
                           do kk=1,8
                              gc = gInd(kk, iii, jjj, kkk)
-                             if (gc >= 0) then 
+                             if (gc >= 0) then
                                 n = n + 1
                                 cellBuffer(n) = gc
                              end if
@@ -1617,23 +1614,23 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
                     ! unique-ify the values, producing 'm' unique
                     ! values. If overset wasn't present, we can be
                     ! sure that m=n and we simply don't do the unique
-                    ! operation. 
-                    
-                    if (overset) then 
+                    ! operation.
+
+                    if (overset) then
                        call unique(cellBuffer, n, m, dummy)
                     else
                        m = n
                     end if
 
                     ! -------------------- Non-transposed code ----------------
-                    if (.not. transposed) then 
+                    if (.not. transposed) then
                        ! Now we loop over the total number of
                        ! (unique) neighbours we have and assign them
                        ! to either an on-proc or an off-proc entry:
                        do jj=1, m
                           gc = cellBuffer(jj)
-                          
-                          if (gc >= irowStart .and. gc <= iRowEnd) then 
+
+                          if (gc >= irowStart .and. gc <= iRowEnd) then
                              onProc(ii) = onProc(ii) + 1
                           else
                              offProc(ii) = offProc(ii) + 1
@@ -1650,10 +1647,10 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
                        ! transposed matrix.
                        do jj=1, m
                           gc = cellBuffer(jj)
-                          
-                          if (gc >= irowStart .and. gc <= iRowEnd) then 
+
+                          if (gc >= irowStart .and. gc <= iRowEnd) then
                              ! On processor values can be dealt with
-                             ! directly since the diagonal part is square. 
+                             ! directly since the diagonal part is square.
                              onProc(gc-iRowStart + 1) = onProc(gc-iRowStart+1)  +1
                           else
                              ! The offproc values need to be sent to
@@ -1681,13 +1678,13 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
 
   call VecAssemblyEnd(offProcVec, ierr)
   call EChk(ierr, __FILE__, __LINE__)
-  
-  if (transposed) then 
-     ! Pull the local vector out and convert it back to integers. 
+
+  if (transposed) then
+     ! Pull the local vector out and convert it back to integers.
      call VecGetArrayF90(offProcVec, tmpPointer, ierr)
      call EChk(ierr,__FILE__,__LINE__)
      do i=1,wSize
-        offProc(i) = int(tmpPointer(i) + half) ! Make sure, say 14.99999 is 15. 
+        offProc(i) = int(tmpPointer(i) + half) ! Make sure, say 14.99999 is 15.
      end do
 
      call VecRestoreArrayF90(offProcVec, tmpPointer, ierr)
@@ -1723,12 +1720,12 @@ end subroutine statePreAllocation
           ! Allocate shockSensor in flowDoms *NOT* flowDomsd....and
           ! compute the value depending on equations/dissipation
           ! type. Note we are just doing all cells including corners
-          ! halos..those values are not used anyway. 
+          ! halos..those values are not used anyway.
 
           allocate(flowDoms(nn, 1, sps)%shockSensor(0:ib, 0:jb, 0:kb))
           shockSensor => flowDoms(nn,1,sps)%shockSensor
 
-          if (equations == EulerEquations .or. spaceDiscr == dissMatrix) then 
+          if (equations == EulerEquations .or. spaceDiscr == dissMatrix) then
              !shockSensor is Pressure
              do k=0, kb
                 do j=0, jb
@@ -1796,7 +1793,7 @@ end subroutine statePreAllocation
           call block_res_state(nn, sps)
           ! Set the values
           do l=1, nw
-             do k=0, kb 
+             do k=0, kb
                 do j=0, jb
                    do i=0, ib
                       flowdoms(nn, 1, sps)%wtmp(i,j,k,l)  = w(i, j, k, l)
@@ -1812,7 +1809,7 @@ end subroutine statePreAllocation
           ! normally, dw would have been mulitpiled by 1/Vol in block_res_state
 
           do l=1, nw
-             do k=0, kb 
+             do k=0, kb
                 do j=0, jb
                    do i=0, ib
                       flowdoms(nn, 1, sps)%dwtmp2(i, j, k, l) = &
@@ -1844,9 +1841,9 @@ end subroutine statePreAllocation
     do nn=1, nDom
        do sps=1, nTimeIntervalsSpectral
           call setPointers(nn, level, sps)
-          ! Reset w and dw                            
+          ! Reset w and dw
           do l=1, nw
-             do k=0, kb 
+             do k=0, kb
                 do j=0, jb
                    do i=0, ib
                       w(i, j, k, l) = flowdoms(nn, 1, sps)%wtmp(i, j, k, l)
@@ -1861,8 +1858,8 @@ end subroutine statePreAllocation
 
   subroutine setDiffSizes
     !
-    !       This routine set the sizes for the pointers that will be       
-    !       used in the forward debug mode and reverse mode AD.            
+    !       This routine set the sizes for the pointers that will be
+    !       used in the forward debug mode and reverse mode AD.
     !
     use constants
     use blockPointers, only : flowDoms, ib, jb, kb, ie, je, ke, ib, jb, ke, &
@@ -1914,14 +1911,14 @@ end subroutine statePreAllocation
     ISIZE1OFDrfDrfbcdata_sepSensor = 0
     ISIZE2OFDrfDrfbcdata_sepSensor = 0
 
-    ! Cavitation 
+    ! Cavitation
     ISIZE1OFDrfDrfbcdata_Cavitation = 0
     ISIZE2OFDrfDrfbcdata_Cavitation = 0
 
     ! AxisMoment
     ISIZE1OFDrfDrfbcdata_axisMoment = 0
     ISIZE2OFDrfDrfbcdata_axisMoment = 0
-    
+
     ! viscsubface%tau
     ISIZE1OFDrfDrfviscsubface_tau = 0
     ISIZE2OFDrfDrfviscsubface_tau = 0
@@ -1987,7 +1984,7 @@ end subroutine statePreAllocation
     ISIZE1OFDrfsfaceJ = ke
 
     ! sfacek
-    ISIZE3OFDrfsfaceK = 0!ie 
+    ISIZE3OFDrfsfaceK = 0!ie
     ISIZE2OFDrfsfaceK = je
     ISIZE1OFDrfsfaceK = ke + 1
 
@@ -2112,13 +2109,13 @@ end subroutine statePreAllocation
     ISIZE1OFDrfbmti1 = je
     ISIZE2OFDrfbmti1 = ke
     ISIZE3OFDrfbmti1 = nt2 - nt1 + 1
-    ISIZE4OFDrfbmti1 = nt2 - nt1 + 1 
+    ISIZE4OFDrfbmti1 = nt2 - nt1 + 1
 
     !bmti2
     ISIZE1OFDrfbmti2 = je
     ISIZE2OFDrfbmti2 = ke
     ISIZE3OFDrfbmti2 = nt2 - nt1 + 1
-    ISIZE4OFDrfbmti2 = nt2 - nt1 + 1 
+    ISIZE4OFDrfbmti2 = nt2 - nt1 + 1
 
     !bmtj1
     ISIZE1OFDrfbmtj1 = ie

@@ -5,17 +5,17 @@ contains
 
   subroutine determineCommPattern(level)
     !
-    !       determineCommPattern determines the communication pattern      
-    !       for the indicated grid level from the given block distribution 
-    !       and corresponding halo info. Both the first and second level   
-    !       cell halo communication pattern as well as the first level     
-    !       nodal halo communication pattern is determined.                
-    !       A recursive algorithm is used. First the face halo's are       
-    !       determined and from those the indirect halo's can be obtained  
-    !       by looping over the level of indirectness.                     
-    !       This routine controls the creation of the communication        
-    !       pattern and basically contains the function calls to the       
-    !       subtasks.                                                      
+    !       determineCommPattern determines the communication pattern
+    !       for the indicated grid level from the given block distribution
+    !       and corresponding halo info. Both the first and second level
+    !       cell halo communication pattern as well as the first level
+    !       nodal halo communication pattern is determined.
+    !       A recursive algorithm is used. First the face halo's are
+    !       determined and from those the indirect halo's can be obtained
+    !       by looping over the level of indirectness.
+    !       This routine controls the creation of the communication
+    !       pattern and basically contains the function calls to the
+    !       subtasks.
     !
     use block
     use communication
@@ -171,8 +171,8 @@ contains
 
   subroutine deallocatePointersHaloList(entityHalo, nHalo)
     !
-    !       deallocatePointersHaloList deallocates the memory of the       
-    !       pointer variables of entityHalo.                               
+    !       deallocatePointersHaloList deallocates the memory of the
+    !       pointer variables of entityHalo.
     !
     use haloList
     use utils, only : terminate
@@ -215,42 +215,42 @@ contains
        start, nLevel, offset,      &
        gridLevel)
     !
-    !       determineIndirectHalos determines the indirect halo's via a    
-    !       recursive algorithm.                                           
-    !       Step 1.                                                        
-    !       =======                                                        
-    !       Determine for every indirect halo the closest face halo.       
-    !       If several options exist choose the one that does not          
-    !       correspond to a boundary halo, if possible. If several         
-    !       non-boundary halo's exist, just pick one. If all the closest   
-    !       face halo's are boundary halo's then there is no corresponding 
-    !       halo and the state is determined by the boundary conditions    
-    !       and/or extrapolation.                                          
-    !       Store the direction from the face halo to the indirect halo.   
-    !       Step 2.                                                        
-    !       =======                                                        
-    !       Determine the level of indirectness of every indirect halo.    
-    !       This is the sum of the absolute values of the elements of the  
-    !       direction vector. For 1st level halo's the maximum level of    
-    !       of indirectness is 2; for 2nd level halo's it is 5. These      
-    !       numbers are for 3 space dimensions.                            
-    !       Step 3.                                                        
-    !       =======                                                        
-    !       Loop over the number of indirect levels.                       
-    !         For every halo of the current level of indirectness do:      
-    !           - apply the transformation matrix of its corresponding     
-    !             face halo to the direction vector.                       
-    !           - start in the donor cell of the face halo and travel in   
-    !             the direction of the transformed direction vector.       
-    !           - you either end up in an internal cell/node or in a halo. 
-    !             Case internal: you're done. Internal cell/node is the    
-    !                            donor.                                    
-    !             Case halo: this is guarenteed to be a halo of at least   
-    !                        one level of indirectness less than the       
-    !                        current level. Thus the donor is known and    
-    !                        you're done too. It is possible that it is a  
-    !                        boundary halo, but this is allowed.           
-    !       End loop over the number of indirect levels.                   
+    !       determineIndirectHalos determines the indirect halo's via a
+    !       recursive algorithm.
+    !       Step 1.
+    !       =======
+    !       Determine for every indirect halo the closest face halo.
+    !       If several options exist choose the one that does not
+    !       correspond to a boundary halo, if possible. If several
+    !       non-boundary halo's exist, just pick one. If all the closest
+    !       face halo's are boundary halo's then there is no corresponding
+    !       halo and the state is determined by the boundary conditions
+    !       and/or extrapolation.
+    !       Store the direction from the face halo to the indirect halo.
+    !       Step 2.
+    !       =======
+    !       Determine the level of indirectness of every indirect halo.
+    !       This is the sum of the absolute values of the elements of the
+    !       direction vector. For 1st level halo's the maximum level of
+    !       of indirectness is 2; for 2nd level halo's it is 5. These
+    !       numbers are for 3 space dimensions.
+    !       Step 3.
+    !       =======
+    !       Loop over the number of indirect levels.
+    !         For every halo of the current level of indirectness do:
+    !           - apply the transformation matrix of its corresponding
+    !             face halo to the direction vector.
+    !           - start in the donor cell of the face halo and travel in
+    !             the direction of the transformed direction vector.
+    !           - you either end up in an internal cell/node or in a halo.
+    !             Case internal: you're done. Internal cell/node is the
+    !                            donor.
+    !             Case halo: this is guarenteed to be a halo of at least
+    !                        one level of indirectness less than the
+    !                        current level. Thus the donor is known and
+    !                        you're done too. It is possible that it is a
+    !                        boundary halo, but this is allowed.
+    !       End loop over the number of indirect levels.
     !
     use haloList
     use indirectHalo
@@ -344,8 +344,8 @@ contains
   subroutine determinePeriodicData(entityHalo,   nHalo, &
        externalComm, internalComm)
     !
-    !       determinePeriodicData determines the periodic transformation   
-    !       for both the external and the internal communication patterns. 
+    !       determinePeriodicData determines the periodic transformation
+    !       for both the external and the internal communication patterns.
     !
     use constants
     use communication
@@ -480,10 +480,10 @@ contains
     subroutine setPeriodicData(perHalo, nPerHalo, nPeriodic, &
          periodicData)
       !
-      !         setPeriodicData stores the periodic transformations and the  
-      !         corresponding halo's to which it must be applied in          
-      !         nPeriodic and periodicData. These variables are part of      
-      !         either the internal or external communication pattern.       
+      !         setPeriodicData stores the periodic transformations and the
+      !         corresponding halo's to which it must be applied in
+      !         nPeriodic and periodicData. These variables are part of
+      !         either the internal or external communication pattern.
       !
       use cgnsGrid
       implicit none
@@ -686,12 +686,12 @@ contains
 
   subroutine allocMemHaloList(level)
     !
-    !       allocMemHaloList allocates the memory for the variables        
-    !       needed to construct the communication lists and the periodic   
-    !       information. These variables are located in the module         
-    !       haloList. Only the 1st level halo variables are allocated here 
-    !       to avoid unnecessary memory usage. The 2nd level cell halo     
-    !       are allocated later on in init2ndLevelCellHalos.               
+    !       allocMemHaloList allocates the memory for the variables
+    !       needed to construct the communication lists and the periodic
+    !       information. These variables are located in the module
+    !       haloList. Only the 1st level halo variables are allocated here
+    !       to avoid unnecessary memory usage. The 2nd level cell halo
+    !       are allocated later on in init2ndLevelCellHalos.
     !
     use block
     use haloList
@@ -797,11 +797,11 @@ contains
 
   subroutine determineFaceHalos(level)
     !
-    !       determineFaceHalos determines the 1st level direct cell and    
-    !       node halo's. Direct halo means that at least one of the        
-    !       neighboring cell/nodes belongs is owned by the block.          
-    !       Consequently the halo can be found using the 1 to 1 block      
-    !       connectivity.                                                  
+    !       determineFaceHalos determines the 1st level direct cell and
+    !       node halo's. Direct halo means that at least one of the
+    !       neighboring cell/nodes belongs is owned by the block.
+    !       Consequently the halo can be found using the 1 to 1 block
+    !       connectivity.
     !
     use constants
     use blockPointers
@@ -848,11 +848,11 @@ contains
 
        call setPointers(nn,level,1_intType)
        !
-       !         Loop over the boundary halo's first. The reason is that a    
+       !         Loop over the boundary halo's first. The reason is that a
        !         node could belong to both a boundary and an internal subface.
-       !         By looping first over the boundaries, the internal subfaces  
-       !         overwrite earlier set values by the boundary subface, which  
-       !         is desirable.                                                
+       !         By looping first over the boundaries, the internal subfaces
+       !         overwrite earlier set values by the boundary subface, which
+       !         is desirable.
        !
        bocos: do mm=1,nBocos
 
@@ -861,7 +861,7 @@ contains
 
           call haloRanges(mm, myOffset, myCellRange, myNodeRange, step)
           !
-          !           First treat the nodes on the subface.                      
+          !           First treat the nodes on the subface.
           !
           ! Loop over the nodes of the boundary subface and store
           ! the halo info. For the edges of the subface it is possible
@@ -917,9 +917,9 @@ contains
              enddo
           enddo
           !
-          !           The cell halo's belonging to this subface. Direct cell     
-          !           halo's are unique and therefore info cannot already be     
-          !           written earlier.                                           
+          !           The cell halo's belonging to this subface. Direct cell
+          !           halo's are unique and therefore info cannot already be
+          !           written earlier.
           !
           ! Loop over the halo cells located adjacent to the subface.
 
@@ -967,7 +967,7 @@ contains
 
        enddo bocos
        !
-       !         Loop over the 1 to 1 block to block boundaries.              
+       !         Loop over the 1 to 1 block to block boundaries.
        !
        n1to1Loop: do ll=1,n1to1
 
@@ -1035,7 +1035,7 @@ contains
                + tMat(3,2)*myOffset(2) &
                + tMat(3,3)*myOffset(3)
           !
-          !           First treat the nodes on the subface.                      
+          !           First treat the nodes on the subface.
           !
           ! Loop over the nodal range for this subface.
 
@@ -1132,9 +1132,9 @@ contains
              enddo
           enddo
           !
-          !           The cell halo's belonging to this subface. Direct cell     
-          !           halo's are unique and therefore info cannot already be     
-          !           written earlier.                                           
+          !           The cell halo's belonging to this subface. Direct cell
+          !           halo's are unique and therefore info cannot already be
+          !           written earlier.
           !
           ! First determine the cell range of the donor block on
           ! the subface. This equals the nodal range, except that 1 is
@@ -1259,10 +1259,10 @@ contains
 
   subroutine haloRanges(mm, offset, cellRange, nodeRange, step)
     !
-    !       haloRanges determines the cell and nodal ranges for the given  
-    !       subface as well as the direction normal to the subface,        
-    !       pointing outwards. In case of negative running indices of the  
-    !       subface, step is set to -1; otherwise it is 1.                 
+    !       haloRanges determines the cell and nodal ranges for the given
+    !       subface as well as the direction normal to the subface,
+    !       pointing outwards. In case of negative running indices of the
+    !       subface, step is set to -1; otherwise it is 1.
 
     use constants
     use blockPointers
@@ -1360,15 +1360,15 @@ contains
 
   subroutine init2ndLevelCellHalos
     !
-    !       init2ndLevelCellHalos initializes the 2nd level cell halo      
-    !       list. Basically the 1st level cell halo list is copied and the 
-    !       counter iicell2nd is set to nCellHalo1st. This means that      
-    !       the 2nd level cell halo's are appended to the first level      
-    !       halo's. They are stored in a separate list, because the        
-    !       communication pattern of the 2nd level halo's is separate from 
-    !       the 1st level halo's. Efficiency is the reason to do this; it  
-    !       is more efficient to send one big message than two smaller     
-    !       ones.                                                          
+    !       init2ndLevelCellHalos initializes the 2nd level cell halo
+    !       list. Basically the 1st level cell halo list is copied and the
+    !       counter iicell2nd is set to nCellHalo1st. This means that
+    !       the 2nd level cell halo's are appended to the first level
+    !       halo's. They are stored in a separate list, because the
+    !       communication pattern of the 2nd level halo's is separate from
+    !       the 1st level halo's. Efficiency is the reason to do this; it
+    !       is more efficient to send one big message than two smaller
+    !       ones.
     !
     use haloList
     use utils, only : terminate
@@ -1441,9 +1441,9 @@ contains
 
   subroutine qsortHaloListType(arr, nn)
     !
-    !       qsortHaloListType sorts the given number of halo's in          
-    !       increasing order based on the <= operator for this derived     
-    !       data type.                                                     
+    !       qsortHaloListType sorts the given number of halo's in
+    !       increasing order based on the <= operator for this derived
+    !       data type.
     !
     use haloList
     use utils, only : terminate
@@ -1658,9 +1658,9 @@ contains
   subroutine finalCommStructures(entityHalo, nHalo, commPattern, &
        internalComm, nInterp)
     !
-    !       FinalCommStructures determines the communication data          
-    !       structures used in the flow solver, commPattern and            
-    !       internalComm, from the given haloList, entityHalo.             
+    !       FinalCommStructures determines the communication data
+    !       structures used in the flow solver, commPattern and
+    !       internalComm, from the given haloList, entityHalo.
     !
     use communication
     use haloList
@@ -2076,8 +2076,8 @@ contains
   subroutine closestDirectHalos(entityHalo, entityIndex, &
        start, nLevel, offset, gridLevel)
     !
-    !       closestDirectHalos determines the number of indirect halo's    
-    !       to be treated and its corresponding direct halo.               
+    !       closestDirectHalos determines the number of indirect halo's
+    !       to be treated and its corresponding direct halo.
     !
     use block
     use bcHalo
@@ -2325,8 +2325,8 @@ contains
 
   function getNumberIndirectHalos(start, nLevel, offset, gridLevel)
     !
-    !       getNumberIndirectHalos determines the number of indirect       
-    !       halo's for which the donor must be determined.                 
+    !       getNumberIndirectHalos determines the number of indirect
+    !       halo's for which the donor must be determined.
     !
     use block
     implicit none
@@ -2400,9 +2400,9 @@ contains
 
   subroutine determineNumberOfHalos(level)
     !
-    !       determineNumberOfHalos determines the amount of 1st and 2nd    
-    !       level cell halo's as well as the number of 1st level node      
-    !       halo's stored on this processor.                               
+    !       determineNumberOfHalos determines the amount of 1st and 2nd
+    !       level cell halo's as well as the number of 1st level node
+    !       halo's stored on this processor.
     !
     use blockPointers
     use haloList
@@ -2456,10 +2456,10 @@ contains
   subroutine indirectHalosPerLevel(level, iihalo, entityHalo, &
        transform, entityIndex)
     !
-    !       indirectHalosPerLevel determines the donor cells for the       
-    !       halo's of the given level of indirectness. From the known      
-    !       appropriate direct halo and its donor, the corresponding cell  
-    !       in the donor block is determined.                              
+    !       indirectHalosPerLevel determines the donor cells for the
+    !       halo's of the given level of indirectness. From the known
+    !       appropriate direct halo and its donor, the corresponding cell
+    !       in the donor block is determined.
     !
     use haloList
     use indirectHalo
@@ -2852,8 +2852,8 @@ contains
   subroutine fillSendBuf(sendBuf, proc, entityHalo, transform, &
        level, mm)
     !
-    !       fillSendBuf fills the buffer, which must be sent to the        
-    !       given processor.                                               
+    !       fillSendBuf fills the buffer, which must be sent to the
+    !       given processor.
     !
     use haloList
     use indirectHalo
@@ -2947,12 +2947,12 @@ contains
   subroutine findDonorsRecvBuffer(recvBuf, nHalos, entityHalo, &
        entityIndex, level, nItemReturn)
     !
-    !       findDonorsRecvBuffer finds the donor cells for the halo        
-    !       information stored in recvBuf. On return recvBuf contains      
-    !       for every halo the following information: processor ID,        
-    !       block ID, the i,j,k indices of the donor cell and periodic     
-    !       information. The number of periodic subfaces stored is level,  
-    !       where a 0 indicates that the subface is not periodic.          
+    !       findDonorsRecvBuffer finds the donor cells for the halo
+    !       information stored in recvBuf. On return recvBuf contains
+    !       for every halo the following information: processor ID,
+    !       block ID, the i,j,k indices of the donor cell and periodic
+    !       information. The number of periodic subfaces stored is level,
+    !       where a 0 indicates that the subface is not periodic.
     !
     use haloList
     use communication
@@ -3113,9 +3113,9 @@ contains
        nItemReturn, entityHalo,      &
        entityIndex, iihalo)
     !
-    !       storeHalosInList stores the halo info present in buf, which    
-    !       has been retreived from the given processor, in the correct    
-    !       place in entityHalo and entityIndex.                           
+    !       storeHalosInList stores the halo info present in buf, which
+    !       has been retreived from the given processor, in the correct
+    !       place in entityHalo and entityIndex.
     !
     use haloList
     use indirectHalo
@@ -3239,9 +3239,9 @@ contains
 
   subroutine qsortPeriodicSubfacesHaloType(arr, nn)
     !
-    !       qsortPeriodicSubfacesHaloType sorts the given number of halo's 
-    !       with periodic subfaces in increasing order based on the        
-    !       <= operator for this derived data type.                        
+    !       qsortPeriodicSubfacesHaloType sorts the given number of halo's
+    !       with periodic subfaces in increasing order based on the
+    !       <= operator for this derived data type.
     !
     use periodicInfo
     use utils, only : terminate
@@ -3455,9 +3455,9 @@ contains
 
   subroutine determinePeriodicFaces
     !
-    !       determinePeriodicFaces determines and stores the number of     
-    !       periodic faces present in the complete mesh. The sequence of   
-    !       storing the data is such that the array periodicGlobal is      
+    !       determinePeriodicFaces determines and stores the number of
+    !       periodic faces present in the complete mesh. The sequence of
+    !       storing the data is such that the array periodicGlobal is
     !       sorted with the definition of the < operator for this datatype.
     !
     use cgnsGrid
@@ -3507,11 +3507,11 @@ contains
 
   function bsearchCGNSPeriodicType(key, base)
     !
-    !       bsearchCGNSPeriodicType returns the index in base where key    
-    !       is stored. A binary search algorithm is used here, so it is    
-    !       assumed that base is sorted in increasing order. In case key   
-    !       appears more than once in base, the result is arbitrary.       
-    !       If key is not found, a zero is returned.                       
+    !       bsearchCGNSPeriodicType returns the index in base where key
+    !       is stored. A binary search algorithm is used here, so it is
+    !       assumed that base is sorted in increasing order. In case key
+    !       appears more than once in base, the result is arbitrary.
+    !       If key is not found, a zero is returned.
     !
     use periodicInfo
     implicit none
@@ -3582,9 +3582,9 @@ contains
   end function bsearchCGNSPeriodicType
   subroutine qsortIndHaloType(arr, nn)
     !
-    !       qsortIndHaloType sorts the given number of indirect halo's     
-    !       in increasing order based on the <= operator for this derived  
-    !       data type.                                                     
+    !       qsortIndHaloType sorts the given number of indirect halo's
+    !       in increasing order based on the <= operator for this derived
+    !       data type.
     !
     use indirectHalo
     use utils, only : terminate

@@ -126,7 +126,7 @@ subroutine slipVelocitiesFineLevelALE_block(useOldCoor, t, sps)
      ! *******************************
      ! REMOVED the rigid body rotation part for simplicity
      ! *******************************
-     
+
      ! The velocities must be determined via a finite difference
      ! formula using the coordinates of the old levels.
 
@@ -260,7 +260,7 @@ subroutine interpLevelALE_block
   !
   integer(kind=intType) :: i,j,k,l,nn,mm,kk
 
-  if (.not. useALE .or. equationMode .ne. unsteady)  then 
+  if (.not. useALE .or. equationMode .ne. unsteady)  then
      return
   end if
 
@@ -373,7 +373,7 @@ subroutine recoverLevelALE_block
   !
   integer(kind=intType) :: i,j,k,nn,mm,kk
 
-  if (.not. useALE .or. equationMode .ne. unsteady)  then 
+  if (.not. useALE .or. equationMode .ne. unsteady)  then
      return
   end if
 
@@ -433,7 +433,7 @@ subroutine interpLevelALEBC_block
   !
   integer(kind=intType) :: i,j,k,l,nn,mm,kk
 
-  if (.not. useALE .or. equationMode .ne. unsteady)  then 
+  if (.not. useALE .or. equationMode .ne. unsteady)  then
      return
   end if
 
@@ -540,7 +540,7 @@ subroutine recoverLevelALEBC_block
   !
   integer(kind=intType) :: i,j,k,nn,mm,kk
 
-  if (.not. useALE .or. equationMode .ne. unsteady)  then 
+  if (.not. useALE .or. equationMode .ne. unsteady)  then
      return
   end if
 
@@ -622,17 +622,17 @@ subroutine fillCoor
   !
   integer(kind=intType) :: i,j,k,nn,kk
 
-  if (equationMode .ne. unsteady)  then 
+  if (equationMode .ne. unsteady)  then
      return
   end if
 
   spectralLoop: do kk=1,nTimeIntervalsSpectral
      domains: do nn=1,nDom
-             
+
         ! Set the pointers for this block on the ground level.
-        
+
         call setPointers(nn, groundLevel,kk)
-        
+
         do k=0,ke
            do j=0,je
               do i=0,ie
@@ -653,7 +653,7 @@ subroutine fillCoor
 
      end do domains
   end do spectralLoop
-  
+
 end subroutine fillCoor
 
 ! ===========================================================
@@ -671,17 +671,17 @@ subroutine storeCoor
   !
   integer(kind=intType) :: i,j,k,nn,kk
 
-  if (.not. useALE .or. equationMode .ne. unsteady)  then 
+  if (.not. useALE .or. equationMode .ne. unsteady)  then
      return
   end if
 
   spectralLoop: do kk=1,nTimeIntervalsSpectral
      domains: do nn=1,nDom
-        
+
         ! Set the pointers for this block on the ground level.
-        
+
         call setPointers(nn, groundLevel,kk)
-        
+
         storex : do k = 0,ke
            do j = 0,je
               do i = 0,ie
@@ -694,7 +694,7 @@ subroutine storeCoor
 
      end do domains
   end do spectralLoop
-  
+
 end subroutine storeCoor
 
 ! ===========================================================
@@ -833,7 +833,7 @@ subroutine setLevelALE(setType)
   integer(kind=intType) :: i,j,k,l, aleBeg,aleEnd, nn,mm,kk
   integer(kind=intType) :: ll,nlvl
 
-  if (.not. useALE .or. equationMode .ne. unsteady)  then 
+  if (.not. useALE .or. equationMode .ne. unsteady)  then
      return
   end if
 
@@ -958,7 +958,7 @@ subroutine shiftLevelALE
   !
   integer(kind=intType) :: i,j,k,l,lo,nn,mm,kk
 
-  if (.not. useALE .or. equationMode .ne. unsteady)  then 
+  if (.not. useALE .or. equationMode .ne. unsteady)  then
      return
   end if
 

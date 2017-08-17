@@ -51,20 +51,20 @@ contains
     ! Allocate the memory we need for derivatives if not done so
     ! already. Note this isn't deallocated until the adflow is
     ! destroyed.
-    if (.not. derivVarsAllocated) then 
+    if (.not. derivVarsAllocated) then
        call allocDerivativeValues(level)
     end if
-    
-    ! Zero all AD seesd. 
+
+    ! Zero all AD seesd.
     do nn=1,nDom
        do sps=1,nTimeIntervalsSpectral
           call zeroADSeeds(nn,level, sps)
        end do
     end do
-    
+
     ! Set the extra seeds now do the extra ones. Note that we are assuming the
     ! machNumber used for the coefficients follows the Mach number,
-    ! not the grid mach number. 
+    ! not the grid mach number.
     alphad = extraDot(iAlpha)
     betad = extraDot(iBeta)
     machd = extraDot(iMach)
@@ -79,13 +79,13 @@ contains
     rgasdimd = zero
 
     ! Run the super-dee-duper master forward rotuine
-   if (bcVarsEmpty) then 
+   if (bcVarsEmpty) then
       call master_d(wDot, xVDot, fDot, dwDot, famLists, funcs, funcsDot)
    else
       call master_d(wDot, xVDot, fDot, dwDot, &
            famLists, funcs, funcsDot, bcDataNames, bcDataValues, bcDataValuesdot, bcDataFamLists)
     end if
-           
+
   end subroutine computeMatrixFreeProductFwd
 
   subroutine computeMatrixFreeProductBwd(dwbar, funcsBar, fbar, useSpatial, useState, xvbar, &
@@ -143,14 +143,14 @@ contains
     groundLevel = level
 
     ! Determine if we want to use frozenTurbulent Adjoint
-    resetToRANS = .False. 
+    resetToRANS = .False.
     if (frozenTurbulence .and. equations == RANSEquations) then
-       equations = NSEquations 
+       equations = NSEquations
        resetToRANS = .True.
     end if
 
     ! Allocate the memory for reverse
-    if (.not. derivVarsAllocated) then 
+    if (.not. derivVarsAllocated) then
        call allocDerivativeValues(level)
     end if
     do nn=1,nDom
@@ -159,27 +159,27 @@ contains
        end do
     end do
 
-    if (bcVarsEmpty) then 
-       call master_b(wbar, xvbar, extraBar, fBar, dwbar, nState, famLists, & 
+    if (bcVarsEmpty) then
+       call master_b(wbar, xvbar, extraBar, fBar, dwbar, nState, famLists, &
             funcs, funcsBar)
     else
-       call master_b(wbar, xvbar, extraBar, fBar, dwbar, nState, famLists, & 
+       call master_b(wbar, xvbar, extraBar, fBar, dwbar, nState, famLists, &
             funcs, funcsBar, bcDataNames, bcDataValues, bcDataValuesbar, bcDataFamLists)
     end if
 
     ! Reset the correct equation parameters if we were useing the frozen
-    ! Turbulent 
+    ! Turbulent
     if (resetToRANS) then
        equations = RANSEquations
     end if
 
   end subroutine computeMatrixFreeProductBwd
- 
+
   subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
     ! This is the "Fast" ie. State variable only version of the reverse
     ! mode computation. It is intended to compute dRdw^T product
     ! ONLY. The main purpose is for fast matrix-vector products for the
-    ! actual adjoint solve. 
+    ! actual adjoint solve.
     use constants
     use inputPhysics, only : equations
     use inputAdjoint, only : frozenTurbulence
@@ -198,7 +198,7 @@ contains
     ! Ouput Variables
     real(kind=realType), dimension(stateSize), intent(out) :: wbar
 
-    
+
     real(kind=realType), dimension(:), allocatable :: extrabar
     real(kind=realType), dimension(:), allocatable :: xvbar
     real(kind=realType), dimension(:, :, :), allocatable :: fBar
@@ -215,15 +215,15 @@ contains
        nState = nw
     endif
 
-    ! Assembling matrix on coarser levels is not entirely implemented yet. 
+    ! Assembling matrix on coarser levels is not entirely implemented yet.
     level = 1
     currentLevel = level
     groundLevel = level
 
     ! Determine if we want to use frozenTurbulent Adjoint
-    resetToRANS = .False. 
+    resetToRANS = .False.
     if (frozenTurbulence .and. equations == RANSEquations) then
-       equations = NSEquations 
+       equations = NSEquations
        resetToRANS = .True.
     end if
 
@@ -231,7 +231,7 @@ contains
     ! derivative values are allocated AND ZEROED! This routine makes use
     ! of the fact that only wbar needs to be zeroed since all other
     ! required seeds are zeroed in the individual fast routines. This is
-    ! slightly unsafe, but it necessary for speed. 
+    ! slightly unsafe, but it necessary for speed.
      do nn=1,nDom
        do sps=1,nTimeIntervalsSpectral
           call zeroADSeeds(nn,level, sps)
@@ -252,7 +252,7 @@ contains
   end subroutine computeMatrixFreeProductBwdFast
 
 
-#endif 
+#endif
   ! if def for complex
 
   subroutine solveAdjointForRHS(inVec, outVec, nDOF, relativeTolerance)
@@ -296,8 +296,8 @@ contains
          adjMaxIter, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    ! Make sure the derivative memory is allocated and zeroed. 
-    if (.not. derivVarsAllocated) then 
+    ! Make sure the derivative memory is allocated and zeroed.
+    if (.not. derivVarsAllocated) then
        call allocDerivativeValues(1_intType)
     end if
 
@@ -373,8 +373,8 @@ contains
          adjMaxIter, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    ! Make sure the derivative memory is allocated and zeroed. 
-    if (.not. derivVarsAllocated) then 
+    ! Make sure the derivative memory is allocated and zeroed.
+    if (.not. derivVarsAllocated) then
        call allocDerivativeValues(1_intType)
     end if
 
@@ -468,7 +468,7 @@ contains
 
   end subroutine saveAdjointPC
 
-  
+
 
   subroutine spectralPrecscribedMotion(input, nin, dXv, nout)
 
@@ -488,28 +488,28 @@ contains
     integer(kind=intType) :: ierr, sps, i, nn, mm, counter0, counter1
     integer(kind=intType) :: nodes_on_block, cum_nodes_on_block
     real(kind=realType), dimension(3)   :: rotationPoint, r
-    real(kind=realType), dimension(3, 3) :: rotationMatrix  
+    real(kind=realType), dimension(3, 3) :: rotationMatrix
     real(kind=realType) :: t(nSections), dt(nSections)
     real(kind=realType) :: tOld, tNew, pt(3)
     real(kind=realType), pointer :: xvec_pointer(:)
     real(kind=realType) :: time(3)
 
     !       For the TimeSpectral case, we need to include    *
-    !      the operation that rotates the base grid to each time instance 
-    !      This is basically the reverse of the operation that is done in 
-    !      setGrid.f90                                                    
-    !      The operation in setGrid.f90 is the following                  
-    !      X_sps = M(X - rotPoint) + rotPoint                             
-    !      where                                                          
-    !      X_sps is the set of coordinates at each time instance          
-    !      M is the rotation matrix calculated by rotMatrixRigidBody      
-    !      rotPoint is the point about which the motion takes place       
-    !      It is easy to see dX_sps/dX = M                                
-    !      What we are actually computing is the following:               
-    !                 T          T                                        
-    !        /dX_sps \ /   dR   \                                         
-    !        |-------| |------- |  psi                                    
-    !        \  dX   / \ dX_sps /                                         
+    !      the operation that rotates the base grid to each time instance
+    !      This is basically the reverse of the operation that is done in
+    !      setGrid.f90
+    !      The operation in setGrid.f90 is the following
+    !      X_sps = M(X - rotPoint) + rotPoint
+    !      where
+    !      X_sps is the set of coordinates at each time instance
+    !      M is the rotation matrix calculated by rotMatrixRigidBody
+    !      rotPoint is the point about which the motion takes place
+    !      It is easy to see dX_sps/dX = M
+    !      What we are actually computing is the following:
+    !                 T          T
+    !        /dX_sps \ /   dR   \
+    !        |-------| |------- |  psi
+    !        \  dX   / \ dX_sps /
 
     ! Zero dXv for time spectral case since we add to array.
     dXv = zero
@@ -546,7 +546,7 @@ contains
           ! Take rotation Matrix Transpose
           rotationMatrix = transpose(rotationMatrix)
 
-          counter1 = cum_nodes_on_block        
+          counter1 = cum_nodes_on_block
 
           ! Loop over the localally owned nodes:
           do i=1, nodes_on_block
@@ -592,7 +592,7 @@ contains
     useTranspose = .True.
     useObjective = .True.
 
-    if (.not. useMatrixFreedRdw) then 
+    if (.not. useMatrixFreedRdw) then
        if( myid ==0 ) then
           write(*, 10) "Assembling State Residual Matrix in Forward mode..."
        end if
@@ -606,7 +606,7 @@ contains
             mpi_max, 0, ADFLOW_COMM_WORLD, ierr)
        call EChk(ierr,  __FILE__, __LINE__)
 
-       if(myid ==0)  then 
+       if(myid ==0)  then
           write(*, 20) "Assembling State Residaul Matrices Fwd time (s) = ", timeAdj
        end if
     end if
@@ -619,10 +619,10 @@ contains
 
   subroutine solveAdjoint(RHS, psi, checkSolution, nState)
     !
-    !      Solve the linear discrete ADjoint system of equations          
-    !          [dR/dW]T . psi = {RHS}                                     
+    !      Solve the linear discrete ADjoint system of equations
+    !          [dR/dW]T . psi = {RHS}
     !      using preconditioned GMRES provided by PETSc. The values in psi
-    !      are significant as they are used as the inital guess.          
+    !      are significant as they are used as the inital guess.
     !
     use constants
     use ADjointPETSc, only : dRdwT, psi_like1, psi_like2, adjointKSP, &
@@ -644,7 +644,7 @@ contains
     ! Input Parameters
     real(kind=realType), dimension(nState) :: RHS, psi
     integer(kind=intType) :: nState
-    logical :: checkSolution 
+    logical :: checkSolution
     !
     !     Local variables.
     real(kind=alwaysRealType)   :: norm
@@ -663,8 +663,8 @@ contains
 
     call cpu_time(time(1))
 
-    ! Make sure the derivative memory is allocated and zeroed. 
-    if (.not. derivVarsAllocated) then 
+    ! Make sure the derivative memory is allocated and zeroed.
+    if (.not. derivVarsAllocated) then
        call allocDerivativeValues(1_intType)
     end if
 
@@ -683,7 +683,7 @@ contains
 
     call VecDuplicate(psi_like1, adjointRes, ierr)
     call EChk(ierr,__FILE__,__LINE__)
-    if (checkSolution) then 
+    if (checkSolution) then
        call VecDuplicate(psi_like1, RHSVec, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
@@ -709,7 +709,7 @@ contains
 
     ! The way we use tolerances are as follows: The residual must
     ! statify:
-    ! res < adjRelTol * adjResInit OR 
+    ! res < adjRelTol * adjResInit OR
     ! res < adjRelTolRel * adjResStart OR
     ! res < adjAbsTol
 
@@ -728,7 +728,7 @@ contains
     ! adjoints.
     L2Rel = (adjReltol * adjResInit) / adjResStart
 
-    ! We need to clip L2Rel such that it can never be greater than one. 
+    ! We need to clip L2Rel such that it can never be greater than one.
     L2Rel = min(L2Rel, 0.9)
 
     ! Set the tolerances
@@ -744,7 +744,7 @@ contains
     call VecAXPY(psi_like1, -one, psi_like2, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
-    if (checkSolution) then 
+    if (checkSolution) then
 
        ! Get new time and compute the elapsed time.
        call cpu_time(time(2))
@@ -851,8 +851,8 @@ contains
     else
        ! Use the exact jacobian.  Here the matrix that defines the
        ! linear system also serves as the preconditioning matrix. This
-       ! is only valid if useMatrixFree is flase. 
-       if (useMatrixfreedRdw) then 
+       ! is only valid if useMatrixFree is flase.
+       if (useMatrixfreedRdw) then
           call terminate("setupPETScKSP", "useMatrixFreedRdW option cannot be true when the approxPC option is False")
        end if
        call KSPSetOperators(adjointKSP, dRdWt, dRdWT, ierr)
@@ -960,9 +960,9 @@ contains
     use constants
     use communication
     use blockPointers
-    use iteration         
-    use flowVarRefState     
-    use inputAdjoint       
+    use iteration
+    use flowVarRefState
+    use inputAdjoint
     use ADjointVars
     use inputTimeSpectral
     use utils, only : EChk
@@ -1005,11 +1005,11 @@ contains
     use constants
     use communication
     use blockPointers
-    use iteration         
-    use flowVarRefState     
-    use inputAdjoint       
+    use iteration
+    use flowVarRefState
+    use inputAdjoint
     use ADjointVars
-    use inputTimeSpectral  
+    use inputTimeSpectral
     use surfaceFamilies, only : fullFamList, BCFamGroups
     use utils, only : EChk
     use surfaceUtils, only : getSurfaceSize
@@ -1042,12 +1042,12 @@ contains
 
     call VecGetArrayF90(VecY, dwd_pointer, ierr)
     call EChk(ierr,__FILE__,__LINE__)
-    
-    if (.not. derivVarsAllocated) then 
+
+    if (.not. derivVarsAllocated) then
        call allocDerivativeValues(1)
     end if
-    
-    ! Zero all AD seesd. 
+
+    ! Zero all AD seesd.
     do nn=1,nDom
        do sps=1,nTimeIntervalsSpectral
           call zeroADSeeds(nn, 1, sps)
@@ -1060,7 +1060,7 @@ contains
 
     allocate(xvdot(spatialSize))
     allocate(fdot(3, fSize, nTimeIntervalsSpectral))
-   
+
     xvdot = zero
     fdot = zero
 
@@ -1080,12 +1080,12 @@ contains
 
   subroutine createPETScVars
     !
-    !      Create the matrices/vectors that are required for the adjoint  
+    !      Create the matrices/vectors that are required for the adjoint
     !
     use constants
     use ADjointPETSc, only: dRdwT, dRdwPreT, &
          adjointKSP, matfreectx, x_like, psi_like1, adjointPETScVarsAllocated
-    use ADjointVars   
+    use ADjointVars
     use communication, only : adflow_comm_world
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use flowVarRefState, only : nwf, nw, viscous
@@ -1123,7 +1123,7 @@ contains
     nDimW = nState * nCellsLocal(1_intType)*nTimeIntervalsSpectral
     nDimX = 3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
 
-    if (.not. useMatrixFreedRdw) then 
+    if (.not. useMatrixFreedRdw) then
        ! Setup matrix-based dRdwT
        allocate(nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral), &
             nnzOffDiag(nCellsLocal(1_intType)*nTimeIntervalsSpectral) )
@@ -1133,7 +1133,7 @@ contains
           stencil => visc_drdw_stencil
        else
           n_stencil = N_euler_drdw
-          stencil => euler_drdw_stencil 
+          stencil => euler_drdw_stencil
        end if
 
        level = 1

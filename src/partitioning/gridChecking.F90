@@ -2,10 +2,10 @@ module gridChecking
 contains
   subroutine checkFaces
     !
-    !       checkFaces determines whether or not a boundary condition or   
-    !       a connectivity has been specified for all block faces. If this 
-    !       is not the case, the corresponding blocks are printed and the  
-    !       code terminates.                                               
+    !       checkFaces determines whether or not a boundary condition or
+    !       a connectivity has been specified for all block faces. If this
+    !       is not the case, the corresponding blocks are printed and the
+    !       code terminates.
     !
     use constants
     use blockPointers, only : nDom, nbkGlobal
@@ -37,7 +37,7 @@ contains
 
     character(len=7) :: intString
 
-    !       Determine the local bad blocks.                                
+    !       Determine the local bad blocks.
     !
     ! Loop over the number of spectral solutions to be checked and
     ! the number of local blocks.
@@ -64,8 +64,8 @@ contains
        enddo
     enddo
     !
-    !       Determine the global number of bad blocks and gather this      
-    !       information.                                                   
+    !       Determine the global number of bad blocks and gather this
+    !       information.
     !
     ! Determine the number of bad blocks per processor.
 
@@ -237,10 +237,10 @@ contains
 
   subroutine checkFacesBlock(blockIsBad, faceID, multiple)
     !
-    !       checkFacesBlock checks if for the currently active block all   
-    !       the necessary boundary and connectivity info is specified.     
-    !       If not, blockIsBad is set to .true. and the block face ID      
-    !       which is bad, is returned as well.                             
+    !       checkFacesBlock checks if for the currently active block all
+    !       the necessary boundary and connectivity info is specified.
+    !       If not, blockIsBad is set to .true. and the block face ID
+    !       which is bad, is returned as well.
     !
     use constants
     use blockPointers
@@ -411,11 +411,11 @@ contains
   end subroutine checkFacesBlock
   subroutine check1to1Subfaces
     !
-    !       check1to1Subfaces checks if the 1 to 1 internal subfaces,      
-    !       including the periodic ones, match up to a certain tolerance.  
-    !       If not, a warning will be printed. The computation is not      
-    !       returnFaild, because sometimes gaps are introduced on purpose,  
-    !       e.g. near a wing tip in an H-topology in spanwise direction.   
+    !       check1to1Subfaces checks if the 1 to 1 internal subfaces,
+    !       including the periodic ones, match up to a certain tolerance.
+    !       If not, a warning will be printed. The computation is not
+    !       returnFaild, because sometimes gaps are introduced on purpose,
+    !       e.g. near a wing tip in an H-topology in spanwise direction.
     !
     use constants
     use blockPointers, only : nDom, nBocos, inBeg, inEnd, jnBeg, &
@@ -462,9 +462,9 @@ contains
 
     character(len=7) :: intString
     !
-    !       Determine the local number of faces that must be sent to other 
-    !       processors, including to myself. Also determine the number of  
-    !       faces I have to check.                                         
+    !       Determine the local number of faces that must be sent to other
+    !       processors, including to myself. Also determine the number of
+    !       faces I have to check.
     !
     nFCheck = 0
     nFSend  = 0
@@ -516,8 +516,8 @@ contains
        nCoor(nn)  = nCoor(nn)  + nCoor(nn-1)
     enddo
     !
-    !       Determine the integer and real buffers to store the subface    
-    !       information to be communicated.                                
+    !       Determine the integer and real buffers to store the subface
+    !       information to be communicated.
     !
     ! Allocate the memory for the integer and real buffers to store
     ! the information of the subfaces to be communicated.
@@ -659,9 +659,9 @@ contains
        enddo
     enddo
     !
-    !       Determine the number of messages I will send and receive.      
-    !       The term message in this routine means a the complete subface  
-    !       info, i.e. a combination of an integer and real message.       
+    !       Determine the number of messages I will send and receive.
+    !       The term message in this routine means a the complete subface
+    !       info, i.e. a combination of an integer and real message.
     !
     ! Fill the array nCCount with 0's and 1's. A 0 indicates that no
     ! message is sent to the corresponding processor.
@@ -725,8 +725,8 @@ contains
 
     nMessagesSend = ii
     !
-    !       Check the coordinates of the subfaces which should have been   
-    !       sent to myself.                                                
+    !       Check the coordinates of the subfaces which should have been
+    !       sent to myself.
     !
     ! Initialize nBad to 0 and allocate the memory to store possible
     ! bad subfaces.
@@ -750,8 +750,8 @@ contains
             nTimeIntervalsSpectral)
     endif
     !
-    !       Check the coordinates of the subfaces which are received from  
-    !       other processors.                                              
+    !       Check the coordinates of the subfaces which are received from
+    !       other processors.
     !
     ! Loop over the number of messages to be received.
 
@@ -823,7 +823,7 @@ contains
 
        ! Check the subfaces stored in these messages.
 
-       call checkSubfaceCoor(intRecv, realRecv, nn, nBad, & 
+       call checkSubfaceCoor(intRecv, realRecv, nn, nBad, &
             badSubfaces, badDist,        &
             nTimeIntervalsSpectral)
 
@@ -851,8 +851,8 @@ contains
          call terminate("check1to1Subfaces", &
          "Deallocation failure for intBuf and realBuf")
     !
-    !       Determine the global number of bad subfaces and gather this    
-    !       information.                                                   
+    !       Determine the global number of bad subfaces and gather this
+    !       information.
     !
     ! Determine the global number of bad subfaces.
 
@@ -1018,9 +1018,9 @@ contains
   subroutine periodicTransformSubface(coor, nn, rotCenter, &
        rotAngles, translation)
     !
-    !       periodicTransformSubface transforms the given set of           
-    !       coordinates using the periodic transformation defined by       
-    !       rotCenter, rotAngles and translation.                          
+    !       periodicTransformSubface transforms the given set of
+    !       coordinates using the periodic transformation defined by
+    !       rotCenter, rotAngles and translation.
     !
     use constants
     implicit none
@@ -1103,9 +1103,9 @@ contains
        nBad, badSubfaces, badDist, &
        nSpectral)
     !
-    !       checkSubfaceCoor checks if the coordinates of the subfaces     
-    !       defined in subfaceInfo and coor match the coordinates stored   
-    !       in flowDoms.                                                   
+    !       checkSubfaceCoor checks if the coordinates of the subfaces
+    !       defined in subfaceInfo and coor match the coordinates stored
+    !       in flowDoms.
     !
     use constants
     use blockPointers

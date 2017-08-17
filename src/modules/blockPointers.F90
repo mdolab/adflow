@@ -1,15 +1,15 @@
 module blockPointers
   !
-  !       This module contains the pointers for all variables inside a   
-  !       block. The pointers are set via the subroutine setPointers,    
-  !       which can be found in the utils directory. In this way the     
-  !       code becomes much more readable. The relation to the original  
-  !       multiblock grid is not copied, because it does not affect the  
-  !       computation.                                                   
-  !       See the module block for the meaning of the variables.         
-  !       Note that the dimensions are not pointers, but integers.       
-  !       Consequently changing dimensions of a block must be done only  
-  !       with the variables of floDoms.                                 
+  !       This module contains the pointers for all variables inside a
+  !       block. The pointers are set via the subroutine setPointers,
+  !       which can be found in the utils directory. In this way the
+  !       code becomes much more readable. The relation to the original
+  !       multiblock grid is not copied, because it does not affect the
+  !       computation.
+  !       See the module block for the meaning of the variables.
+  !       Note that the dimensions are not pointers, but integers.
+  !       Consequently changing dimensions of a block must be done only
+  !       with the variables of floDoms.
   !
   use constants, only : intType, realType, porType
   use block, only : fringeType, BCDataType, viscSubFaceType, flowDoms, nDom
@@ -18,8 +18,8 @@ module blockPointers
 #endif
   implicit none
   !
-  !       Additional info, such that it is known to which block the data 
-  !       inside this module belongs.                                    
+  !       Additional info, such that it is known to which block the data
+  !       inside this module belongs.
   !
   ! sectionID:   the section to which this block belongs.
   ! nbkLocal :   local block number.
@@ -31,9 +31,9 @@ module blockPointers
   integer(kind=intType) :: nbkLocal, nbkGlobal, mgLevel
   integer(kind=intType) :: spectralSol
   !
-  !       Variables, which are either copied or the pointer is set to    
-  !       the correct variable in the block. See the module block for    
-  !       meaning of the variables.                                      
+  !       Variables, which are either copied or the pointer is set to
+  !       the correct variable in the block. See the module block for
+  !       meaning of the variables.
   !
   integer(kind=intType) :: nx, ny, nz, il, jl, kl
   integer(kind=intType) :: ie, je, ke, ib, jb, kb
@@ -129,10 +129,10 @@ module blockPointers
   real(kind=realType), dimension(:,:,:,:,:), pointer :: dwOldRK
   real(kind=realType), dimension(:,:,:,:),   pointer :: w1, wr
   real(kind=realType), dimension(:, :, :), pointer:: ux, uy, uz
-  real(kind=realType), dimension(:, :, :), pointer:: vx, vy, vz 
-  real(kind=realType), dimension(:, :, :), pointer:: wx, wy, wz 
-  real(kind=realType), dimension(:, :, :), pointer:: qx, qy, qz 
-  
+  real(kind=realType), dimension(:, :, :), pointer:: vx, vy, vz
+  real(kind=realType), dimension(:, :, :), pointer:: wx, wy, wz
+  real(kind=realType), dimension(:, :, :), pointer:: qx, qy, qz
+
   integer(kind=intType), dimension(:,:), pointer :: mgIFine
   integer(kind=intType), dimension(:,:), pointer :: mgJFine
   integer(kind=intType), dimension(:,:), pointer :: mgKFine
@@ -177,7 +177,7 @@ module blockPointers
   real(kind=realType), dimension(:,:,:,:,:), pointer :: sIALE, sJALE, sKALE
   real(kind=realType), dimension(:,:,:,:),   pointer :: sFaceIALE, sFaceJALE, sFaceKALE
   real(kind=realType), dimension(:,:,:,:,:), pointer :: dwALE, fwALE
-  
+
 
 #ifndef USE_TAPENADE
   TYPE(VISCSUBFACETYPE), DIMENSION(:), POINTER :: viscsubfaced
@@ -186,7 +186,7 @@ module blockPointers
   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: sid, sjd, skd
 
   real(kind=realType), dimension(:,:,:),   pointer ::vold
-  
+
   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: rotmatrixid
   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: rotmatrixjd
   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: rotmatrixkd
@@ -243,15 +243,15 @@ module blockPointers
 
   real(kind=realType), dimension(:,:,:,:), pointer :: w_offTimeInstanced
   real(kind=realType), dimension(:,:,:), pointer :: vol_offTimeInstanced
-  
+
   type(BCDataType),      dimension(:), pointer :: BCDatad
 
   real(kind=realType), dimension(:, :, :, :, :), pointer :: PCMat
-    real(kind=realType), dimension(:, :, :, :), pointer :: PCvec1, PCvec2  
+    real(kind=realType), dimension(:, :, :, :), pointer :: PCvec1, PCvec2
 
-  real(kind=realType), dimension(:, :, :, :), pointer :: i_D_fact,  j_D_fact,  k_D_fact 
-  real(kind=realType), dimension(:, :, :, :), pointer :: i_L_Fact,  j_L_Fact,  k_L_Fact 
-  real(kind=realType), dimension(:, :, :, :), pointer :: i_U_Fact,  j_U_Fact,  k_U_Fact 
+  real(kind=realType), dimension(:, :, :, :), pointer :: i_D_fact,  j_D_fact,  k_D_fact
+  real(kind=realType), dimension(:, :, :, :), pointer :: i_L_Fact,  j_L_Fact,  k_L_Fact
+  real(kind=realType), dimension(:, :, :, :), pointer :: i_U_Fact,  j_U_Fact,  k_U_Fact
   real(kind=realType), dimension(:, :, :, :), pointer :: i_U2_Fact, j_U2_Fact, k_U2_Fact
   integer(kind=intType), dimension(:, :, :, :), pointer :: i_ipiv, j_ipiv, k_ipiv
 #endif

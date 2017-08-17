@@ -6,13 +6,13 @@ module userSurfaceIntegrationData
 
      ! nDonor: The number of donor points the proc will provide
      ! frac (3, nDonor) : The uvw coordinates of the interpolation point
-     ! donorInfo(4, nDonor) : Donor information. 1 is the local block ID and 2-4 is the 
-     !    starting i,j,k indices for the interpolation. 
+     ! donorInfo(4, nDonor) : Donor information. 1 is the local block ID and 2-4 is the
+     !    starting i,j,k indices for the interpolation.
      ! procSizes(0:nProc-1) : The number of donors on each proc
      ! procDisps(0:nProc) : Cumulative form of procSizes
 
      ! inv(nConn) : Array allocated only on root processor used to
-     ! reorder the nodes or elements back to the original order. 
+     ! reorder the nodes or elements back to the original order.
 
      integer(kind=intType) :: nDonor
      real(kind=realType), dimension(:,:), allocatable :: frac

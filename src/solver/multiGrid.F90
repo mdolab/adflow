@@ -4,9 +4,9 @@ contains
 
   subroutine transferToCoarseGrid
     !
-    !       transferToCoarseGrid restricts both the solution and the       
-    !       residual to the next coarser grid level and computes the       
-    !       residual forcing term on this level.                           
+    !       transferToCoarseGrid restricts both the solution and the
+    !       residual to the next coarser grid level and computes the
+    !       residual forcing term on this level.
     !
     use constants
     use blockPointers, only : flowDoms, dw, il, jl, kl, ie, je, ke, w, &
@@ -58,7 +58,7 @@ contains
     fineLevel    = currentLevel
     currentLevel = currentLevel +1
 
-    ! Set the logical correctForK. 
+    ! Set the logical correctForK.
     correctForK = .false.
 
     ! Set the value of the blanking factor for the restricted
@@ -325,9 +325,9 @@ contains
 
   subroutine transferToFineGrid(corrections)
     !
-    !       transferToFineGrid interpolates either the corrections or the  
-    !       solution to the next finer grid level. A standard trilinear    
-    !       interpolation is used.                                         
+    !       transferToFineGrid interpolates either the corrections or the
+    !       solution to the next finer grid level. A standard trilinear
+    !       interpolation is used.
     !
     use constants
     use blockPointers, only : flowDoms, dw, il, jl, kl, ie, je, ke, w, &
@@ -609,7 +609,7 @@ contains
     ! first call the turbulent boundary conditions, such that the
     ! turbulent kinetic energy is properly initialized in the halo's.
 
-    if(.not. corrections .and. equations==RANSEquations) then 
+    if(.not. corrections .and. equations==RANSEquations) then
        call applyAllTurbBC(secondHalo)
     end if
 
@@ -656,12 +656,12 @@ contains
 
   subroutine extrapolateSolution
     !
-    !       extrapolateSolution sets the solution of the cell halos by a   
-    !       constant extrapolation. This routine is called after the       
-    !       solution has been interpolated to the next finer grid and this 
-    !       routine makes sure that the halo's are initialized.            
-    !       Only the block to which the pointers in blockPointers          
-    !       currently point is treated.                                    
+    !       extrapolateSolution sets the solution of the cell halos by a
+    !       constant extrapolation. This routine is called after the
+    !       solution has been interpolated to the next finer grid and this
+    !       routine makes sure that the halo's are initialized.
+    !       Only the block to which the pointers in blockPointers
+    !       currently point is treated.
     !
     use blockPointers
     use flowVarRefState
@@ -739,13 +739,13 @@ contains
 
   subroutine extrapolateViscosities
     !
-    !       extrapolateViscosities sets the laminar and eddy viscosities   
-    !       of the cell halos by a constant extrapolation. This routine is 
-    !       called after the solution has been interpolated to the next    
-    !       finer grid and this routine makes sure that the halo's are     
-    !       initialized.                                                   
-    !       Only the block to which the pointers in blockPointers          
-    !       currently point is treated and only for a viscous problem.     
+    !       extrapolateViscosities sets the laminar and eddy viscosities
+    !       of the cell halos by a constant extrapolation. This routine is
+    !       called after the solution has been interpolated to the next
+    !       finer grid and this routine makes sure that the halo's are
+    !       initialized.
+    !       Only the block to which the pointers in blockPointers
+    !       currently point is treated and only for a viscous problem.
     !
     use blockPointers
     use flowVarRefState
@@ -825,8 +825,8 @@ contains
 
   subroutine executeMGCycle
     !
-    !       executeMGCycle performs a multigrid cycle defined by           
-    !       cycling, see the module iteration.                             
+    !       executeMGCycle performs a multigrid cycle defined by
+    !       cycling, see the module iteration.
     !
     use flowVarRefState
     use iteration
@@ -936,7 +936,7 @@ contains
     ! Apply an iteration to the turbulent transport equations in
     ! case these must be solved segregatedly.
 
-    if (equations == RANSEquations) then 
+    if (equations == RANSEquations) then
        call turbSolveSegregated
     end if
 
@@ -957,11 +957,11 @@ contains
 
   subroutine setCycleStrategy
     !
-    !       setCycleStrategy sets the multigrid cycling strategy for the   
-    !       multigrid level groundLevel. It is cycle strategy for the      
-    !       fine grid cut off at the current grid level. If the grid level 
-    !       is not in the range of the fine grid cycle strategy, cycling   
-    !       will be set to a single grid strategy.                         
+    !       setCycleStrategy sets the multigrid cycling strategy for the
+    !       multigrid level groundLevel. It is cycle strategy for the
+    !       fine grid cut off at the current grid level. If the grid level
+    !       is not in the range of the fine grid cycle strategy, cycling
+    !       will be set to a single grid strategy.
     !
     use constants
     use inputIteration, only : nMGSteps, cycleStrategy
@@ -1032,12 +1032,12 @@ contains
 
   subroutine setCornerRowHalos(nVar)
     !
-    !       setCornerRowHalos initializes the halo's next to corner row    
-    !       halo's, such that it contains some values. Otherwise it may    
-    !       be uninitialized or cause a floating point exception, as this  
-    !       memory is also used to compute the mg corrections.             
-    !       It is assumed that the pointers in blockPointers already       
-    !       point to the correct block.                                    
+    !       setCornerRowHalos initializes the halo's next to corner row
+    !       halo's, such that it contains some values. Otherwise it may
+    !       be uninitialized or cause a floating point exception, as this
+    !       memory is also used to compute the mg corrections.
+    !       It is assumed that the pointers in blockPointers already
+    !       point to the correct block.
     !
     use constants
     use blockPointers, only : w, p, rlv, rev, nx, ny, nz,  &
@@ -1053,7 +1053,7 @@ contains
     !
     integer(kind=intType) :: i, j, k, l, mm, ll
 
-    !       Halo's on the i=iMin and i=iMax plane.                         
+    !       Halo's on the i=iMin and i=iMax plane.
     !
     ! K-rows.
 
@@ -1154,7 +1154,7 @@ contains
        endif
     enddo
     !
-    !       Halo's on the j=jMin and j=jMax plane.                         
+    !       Halo's on the j=jMin and j=jMax plane.
     !
     ! K-rows; no need to include the corners; this is done in the
     ! next i-loop.
@@ -1255,7 +1255,7 @@ contains
        endif
     enddo
     !
-    !       Halo's on the k=kMin and k=kMax plane.                         
+    !       Halo's on the k=kMin and k=kMax plane.
     !
     ! J-rows, including halo's set on the jMin and jMax plane.
 
@@ -1360,11 +1360,11 @@ contains
   subroutine setCorrectionsCoarseHalos(sps, nn, coarseLevel, &
        fact, nVarInt)
     !
-    !       setCorrectionsCoarseHalos sets the values of the coarse        
-    !       grid boundary halo corrections. For all boundaries, either a   
-    !       homogeneous Dirichlet condition (fact = 0.0) or a Neumann      
-    !       condition (fact = 1.0) is used. Exception are symmetry planes, 
-    !       where a mirroring takes place.                                 
+    !       setCorrectionsCoarseHalos sets the values of the coarse
+    !       grid boundary halo corrections. For all boundaries, either a
+    !       homogeneous Dirichlet condition (fact = 0.0) or a Neumann
+    !       condition (fact = 1.0) is used. Exception are symmetry planes,
+    !       where a mirroring takes place.
     !
     use constants
     use block, only : BCDataType, flowDoms
@@ -1453,7 +1453,7 @@ contains
 
        case (Symm)
 
-          ! This is a symmetry plane. Loop over the faces of this 
+          ! This is a symmetry plane. Loop over the faces of this
           ! subface.
 
           do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd

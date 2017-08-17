@@ -1,7 +1,7 @@
 module BCDataMod
   !
-  !       This local module contains the variables and subroutine to     
-  !       handle the prescribed boundary data.                           
+  !       This local module contains the variables and subroutine to
+  !       handle the prescribed boundary data.
   !
   use cgnsGrid
   implicit none
@@ -62,5 +62,5 @@ module BCDataMod
 #ifndef USE_TAPENADE
   type(cgnsBcDatasetType), pointer, dimension(:) :: dataSetd
   real(kind=realType), dimension(:,:,:), allocatable :: bcVarArrayd
-#endif 
+#endif
 end module BCDataMod

@@ -152,7 +152,7 @@ C$Id: dpTest.f 2595 2008-10-15 09:04:22Z llh $
       end
 
       subroutine DPFWDINITDISPLAY(point)
-      CHARACTER point*(*) 
+      CHARACTER point*(*)
       REAL*8 dotp
       common /cdotp/dotp
       REAL*8 fwdarray(1000), revarray(1000)
@@ -166,7 +166,7 @@ C$Id: dpTest.f 2595 2008-10-15 09:04:22Z llh $
       end
 
       subroutine DPREVINITDISPLAY(point)
-      CHARACTER point*(*) 
+      CHARACTER point*(*)
       REAL*8 dotp
       common /cdotp/dotp
       REAL*8 fwdarray(1000), revarray(1000)
@@ -180,7 +180,7 @@ c      dotp = 0.0
       end
 
       subroutine DPSONDE(point)
-      CHARACTER point*(*) 
+      CHARACTER point*(*)
       REAL*8 dotp
       common /cdotp/dotp
       write (6,1002) 'sonde DotProduct ', point, ': ', dotp
@@ -188,7 +188,7 @@ c      dotp = 0.0
       end
 
       subroutine DPFWDDISPLAY(point)
-      CHARACTER point*(*) 
+      CHARACTER point*(*)
       REAL*8 dotp
       common /cdotp/dotp
       REAL*8 fwdarray(1000), revarray(1000)
@@ -206,7 +206,7 @@ c      dotp = 0.0
       end
 
       subroutine DPREVDISPLAY(point)
-      CHARACTER point*(*) 
+      CHARACTER point*(*)
       REAL*8 dotp
       common /cdotp/dotp
       REAL*8 fwdarray(1000), revarray(1000)

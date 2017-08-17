@@ -20,10 +20,10 @@ contains
 !                sk:in
   subroutine inviscidcentralflux_d()
 !
-!       inviscidcentralflux computes the euler fluxes using a central  
-!       discretization for a given block. therefore it is assumed that 
-!       the pointers in block pointer already point to the correct     
-!       block on the correct multigrid level.                          
+!       inviscidcentralflux computes the euler fluxes using a central
+!       discretization for a given block. therefore it is assumed that
+!       the pointers in block pointer already point to the correct
+!       block on the correct multigrid level.
 !
     use constants
     use blockpointers, only : nx, il, ie, ny, jl, je, nz, kl, ke, &
@@ -50,7 +50,7 @@ contains
 ! block is not moving.
     sface = zero
 !
-!       advective fluxes in the i-direction.                           
+!       advective fluxes in the i-direction.
 !
     do k=2,kl
       do j=2,jl
@@ -157,7 +157,7 @@ contains
       end do
     end do
 !
-!       advective fluxes in the j-direction.                           
+!       advective fluxes in the j-direction.
 !
     sface = zero
     do k=2,kl
@@ -265,7 +265,7 @@ contains
       end do
     end do
 !
-!       advective fluxes in the k-direction.                           
+!       advective fluxes in the k-direction.
     sface = zero
     do k=1,kl
       do j=2,jl
@@ -414,10 +414,10 @@ contains
   end subroutine inviscidcentralflux_d
   subroutine inviscidcentralflux()
 !
-!       inviscidcentralflux computes the euler fluxes using a central  
-!       discretization for a given block. therefore it is assumed that 
-!       the pointers in block pointer already point to the correct     
-!       block on the correct multigrid level.                          
+!       inviscidcentralflux computes the euler fluxes using a central
+!       discretization for a given block. therefore it is assumed that
+!       the pointers in block pointer already point to the correct
+!       block on the correct multigrid level.
 !
     use constants
     use blockpointers, only : nx, il, ie, ny, jl, je, nz, kl, ke, &
@@ -441,7 +441,7 @@ contains
 ! block is not moving.
     sface = zero
 !
-!       advective fluxes in the i-direction.                           
+!       advective fluxes in the i-direction.
 !
     do k=2,kl
       do j=2,jl
@@ -509,7 +509,7 @@ contains
       end do
     end do
 !
-!       advective fluxes in the j-direction.                           
+!       advective fluxes in the j-direction.
 !
     continue
     sface = zero
@@ -579,7 +579,7 @@ contains
       end do
     end do
 !
-!       advective fluxes in the k-direction.                           
+!       advective fluxes in the k-direction.
     continue
     sface = zero
     do k=1,kl
@@ -684,12 +684,12 @@ contains
 !   plus diff mem management of: p:in w:in si:in sj:in sk:in fw:in
   subroutine invisciddissfluxmatrix_d()
 !
-!       invisciddissfluxmatrix computes the matrix artificial          
-!       dissipation term. instead of the spectral radius, as used in   
-!       the scalar dissipation scheme, the absolute value of the flux  
-!       jacobian is used. this leads to a less diffusive and           
-!       consequently more accurate scheme. it is assumed that the      
-!       pointers in blockpointers already point to the correct block.  
+!       invisciddissfluxmatrix computes the matrix artificial
+!       dissipation term. instead of the spectral radius, as used in
+!       the scalar dissipation scheme, the absolute value of the flux
+!       jacobian is used. this leads to a less diffusive and
+!       consequently more accurate scheme. it is assumed that the
+!       pointers in blockpointers already point to the correct block.
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, &
@@ -828,7 +828,7 @@ contains
       fis4 = rfil*vis4
       sfil = one - rfil
 ! initialize the dissipative residual to a certain times,
-! possibly zero, the previously stored value. 
+! possibly zero, the previously stored value.
       fwd = sfil*fwd
       fw = sfil*fw
       dssd = 0.0_8
@@ -931,7 +931,7 @@ contains
       end do
       sfaced = 0.0_8
 !
-!       dissipative fluxes in the i-direction.                         
+!       dissipative fluxes in the i-direction.
 !
       do k=2,kl
         do j=2,jl
@@ -1222,7 +1222,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the j-direction.                         
+!       dissipative fluxes in the j-direction.
 !
       do k=2,kl
         do j=1,jl
@@ -1513,7 +1513,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the k-direction.                         
+!       dissipative fluxes in the k-direction.
 !
       do k=1,kl
         do j=2,jl
@@ -1807,12 +1807,12 @@ contains
   end subroutine invisciddissfluxmatrix_d
   subroutine invisciddissfluxmatrix()
 !
-!       invisciddissfluxmatrix computes the matrix artificial          
-!       dissipation term. instead of the spectral radius, as used in   
-!       the scalar dissipation scheme, the absolute value of the flux  
-!       jacobian is used. this leads to a less diffusive and           
-!       consequently more accurate scheme. it is assumed that the      
-!       pointers in blockpointers already point to the correct block.  
+!       invisciddissfluxmatrix computes the matrix artificial
+!       dissipation term. instead of the spectral radius, as used in
+!       the scalar dissipation scheme, the absolute value of the flux
+!       jacobian is used. this leads to a less diffusive and
+!       consequently more accurate scheme. it is assumed that the
+!       pointers in blockpointers already point to the correct block.
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, &
@@ -1909,7 +1909,7 @@ contains
       fis4 = rfil*vis4
       sfil = one - rfil
 ! initialize the dissipative residual to a certain times,
-! possibly zero, the previously stored value. 
+! possibly zero, the previously stored value.
       fw = sfil*fw
 ! compute the pressure sensor for each cell, in each direction:
       do k=1,ke
@@ -1973,7 +1973,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the i-direction.                         
+!       dissipative fluxes in the i-direction.
 !
       do k=2,kl
         do j=2,jl
@@ -2131,7 +2131,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the j-direction.                         
+!       dissipative fluxes in the j-direction.
 !
       do k=2,kl
         do j=1,jl
@@ -2289,7 +2289,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the k-direction.                         
+!       dissipative fluxes in the k-direction.
 !
       do k=1,kl
         do j=2,jl
@@ -2458,10 +2458,10 @@ contains
 !                radk:in
   subroutine invisciddissfluxscalar_d()
 !
-!       invisciddissfluxscalar computes the scalar artificial          
-!       dissipation, see aiaa paper 81-1259, for a given block.        
-!       therefore it is assumed that the pointers in  blockpointers    
-!       already point to the correct block.                            
+!       invisciddissfluxscalar computes the scalar artificial
+!       dissipation, see aiaa paper 81-1259, for a given block.
+!       therefore it is assumed that the pointers in  blockpointers
+!       already point to the correct block.
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, &
@@ -2530,8 +2530,8 @@ contains
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations) 
-      case (eulerequations) 
+      select case  (equations)
+      case (eulerequations)
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
@@ -2540,11 +2540,11 @@ contains
         sslim = 0.001_realtype*pinfcorr
 ! copy the pressure in ss. only need the entries used in the
 ! discretization, i.e. not including the corner halo's, but we'll
-! just copy all anyway. 
+! just copy all anyway.
         ssd = pd
         ss = p
         dssd = 0.0_8
-      case (nsequations, ransequations) 
+      case (nsequations, ransequations)
 !===============================================================
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
@@ -2563,7 +2563,7 @@ contains
 &         pwr1d)/pwr1**2
         sslim = 0.001_realtype*pinfcorr/pwr1
         ssd = 0.0_8
-! store the entropy in ss. see above. 
+! store the entropy in ss. see above.
         do k=0,kb
           do j=0,jb
             do i=0,ib
@@ -2649,7 +2649,7 @@ contains
       fwd = sfil*fwd
       fw = sfil*fw
 !
-!       dissipative fluxes in the i-direction.                         
+!       dissipative fluxes in the i-direction.
 !
       do k=2,kl
         do j=2,jl
@@ -2763,7 +2763,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the j-direction.                         
+!       dissipative fluxes in the j-direction.
 !
       do k=2,kl
         do j=1,jl
@@ -2877,7 +2877,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the k-direction.                         
+!       dissipative fluxes in the k-direction.
 !
       do k=1,kl
         do j=2,jl
@@ -2994,10 +2994,10 @@ contains
   end subroutine invisciddissfluxscalar_d
   subroutine invisciddissfluxscalar()
 !
-!       invisciddissfluxscalar computes the scalar artificial          
-!       dissipation, see aiaa paper 81-1259, for a given block.        
-!       therefore it is assumed that the pointers in  blockpointers    
-!       already point to the correct block.                            
+!       invisciddissfluxscalar computes the scalar artificial
+!       dissipation, see aiaa paper 81-1259, for a given block.
+!       therefore it is assumed that the pointers in  blockpointers
+!       already point to the correct block.
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, &
@@ -3049,8 +3049,8 @@ contains
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations) 
-      case (eulerequations) 
+      select case  (equations)
+      case (eulerequations)
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
@@ -3058,9 +3058,9 @@ contains
         sslim = 0.001_realtype*pinfcorr
 ! copy the pressure in ss. only need the entries used in the
 ! discretization, i.e. not including the corner halo's, but we'll
-! just copy all anyway. 
+! just copy all anyway.
         ss = p
-      case (nsequations, ransequations) 
+      case (nsequations, ransequations)
 !===============================================================
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
@@ -3068,7 +3068,7 @@ contains
 ! set to a fraction of the free stream value.
         pwr1 = rhoinf**gammainf
         sslim = 0.001_realtype*pinfcorr/pwr1
-! store the entropy in ss. see above. 
+! store the entropy in ss. see above.
         do k=0,kb
           do j=0,jb
             do i=0,ib
@@ -3115,7 +3115,7 @@ contains
 ! only, because the halo values do not matter.
       fw = sfil*fw
 !
-!       dissipative fluxes in the i-direction.                         
+!       dissipative fluxes in the i-direction.
 !
       do k=2,kl
         do j=2,jl
@@ -3176,7 +3176,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the j-direction.                         
+!       dissipative fluxes in the j-direction.
 !
       do k=2,kl
         do j=1,jl
@@ -3237,7 +3237,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the k-direction.                         
+!       dissipative fluxes in the k-direction.
 !
       do k=1,kl
         do j=2,jl
@@ -3301,15 +3301,15 @@ contains
   end subroutine invisciddissfluxscalar
   subroutine inviscidupwindflux(finegrid)
 !
-!       inviscidupwindflux computes the artificial dissipation part of 
-!       the euler fluxes by means of an approximate solution of the 1d 
-!       riemann problem on the face. for first order schemes,          
-!       finegrid == .false., the states in the cells are assumed to    
-!       be constant; for the second order schemes on the fine grid a   
-!       nonlinear reconstruction of the left and right state is done   
-!       for which several options exist.                               
-!       it is assumed that the pointers in blockpointers already       
-!       point to the correct block.                                    
+!       inviscidupwindflux computes the artificial dissipation part of
+!       the euler fluxes by means of an approximate solution of the 1d
+!       riemann problem on the face. for first order schemes,
+!       finegrid == .false., the states in the cells are assumed to
+!       be constant; for the second order schemes on the fine grid a
+!       nonlinear reconstruction of the left and right state is done
+!       for which several options exist.
+!       it is assumed that the pointers in blockpointers already
+!       point to the correct block.
 !
     use constants
     use blockpointers, only : il, jl, kl, ie, je, ke, ib, jb, kb, w, p&
@@ -3425,14 +3425,14 @@ contains
         firstorderk = .false.
       end if
 !
-!       flux computation. a distinction is made between first and      
-!       second order schemes to avoid the overhead for the first order 
-!       scheme.                                                        
+!       flux computation. a distinction is made between first and
+!       second order schemes to avoid the overhead for the first order
+!       scheme.
 !
       if (limused .eq. firstorder) then
 !
-!         first order reconstruction. the states in the cells are      
-!         constant. the left and right states are constructed easily.  
+!         first order reconstruction. the states in the cells are
+!         constant. the left and right states are constructed easily.
 !
 ! fluxes in the i-direction.
         do k=2,kl
@@ -3573,12 +3573,12 @@ contains
 !      ==================================================================
 !      ==================================================================
 !
-!         second order reconstruction of the left and right state.     
-!         the three differences used in the, possibly nonlinear,       
-!         interpolation are constructed here; the actual left and      
-!         right states, or at least the differences from the first     
-!         order interpolation, are computed in the subroutine          
-!         leftrightstate.                                              
+!         second order reconstruction of the left and right state.
+!         the three differences used in the, possibly nonlinear,
+!         interpolation are constructed here; the actual left and
+!         right states, or at least the differences from the first
+!         order interpolation, are computed in the subroutine
+!         leftrightstate.
 !
 ! fluxes in the i-direction.
         do k=2,kl
@@ -3882,15 +3882,15 @@ contains
         du3(ivz) = rot(3, 1)*dvx + rot(3, 2)*dvy + rot(3, 3)*dvz
       end if
 ! determine the limiter used.
-      select case  (limused) 
-      case (nolimiter) 
+      select case  (limused)
+      case (nolimiter)
 ! linear interpolation; no limiter.
 ! loop over the number of variables to be interpolated.
         do l=1,nwint
           left(l) = omk*du1(l) + opk*du2(l)
           right(l) = -(omk*du3(l)) - opk*du2(l)
         end do
-      case (vanalbeda) 
+      case (vanalbeda)
 !          ==============================================================
 ! nonlinear interpolation using the van albeda limiter.
 ! loop over the number of variables to be interpolated.
@@ -3960,7 +3960,7 @@ contains
           left(l) = omk*rl1*du1(l) + opk*rl2*du2(l)
           right(l) = -(opk*rr1*du2(l)) - omk*rr2*du3(l)
         end do
-      case (minmod) 
+      case (minmod)
 !          ==============================================================
 ! nonlinear interpolation using the minmod limiter.
 ! loop over the number of variables to be interpolated.
@@ -4114,11 +4114,11 @@ contains
       gm1 = gammaface - one
       gm53 = gammaface - five*third
 ! determine which riemann solver must be solved.
-      select case  (riemannused) 
-      case (roe) 
+      select case  (riemannused)
+      case (roe)
 ! determine the preconditioner used.
-        select case  (precond) 
-        case (noprecond) 
+        select case  (precond)
+        case (noprecond)
 ! no preconditioner used. use the roe scheme of the
 ! standard equations.
 ! compute the square root of the left and right densities
@@ -4265,7 +4265,7 @@ contains
           flux(imy) = -(porflux*(lam3*drv+vavg*abv6+sy*abv7))
           flux(imz) = -(porflux*(lam3*drw+wavg*abv6+sz*abv7))
           flux(irhoe) = -(porflux*(lam3*dre+havg*abv6+unavg*abv7))
-        case (turkel) 
+        case (turkel)
 !          tmp = max(lam1,lam2,lam3)
 !          flux(irho)  = -porflux*(tmp*dr)
 !          flux(imx)   = -porflux*(tmp*dru)
@@ -4274,14 +4274,14 @@ contains
 !          flux(irhoe) = -porflux*(tmp*dre)
           call terminate('riemannflux', &
 &                  'turkel preconditioner not implemented yet')
-        case (choimerkle) 
+        case (choimerkle)
           call terminate('riemannflux', &
 &                  'choi merkle preconditioner not implemented yet')
         end select
-      case (vanleer) 
+      case (vanleer)
         call terminate('riemannflux', 'van leer fvs not implemented yet'&
 &               )
-      case (ausmdv) 
+      case (ausmdv)
         call terminate('riemannflux', 'ausmdv fvs not implemented yet')
       end select
     end subroutine riemannflux
@@ -4294,15 +4294,15 @@ contains
 !   plus diff mem management of: p:in w:in si:in sj:in sk:in fw:in
   subroutine inviscidupwindflux_d(finegrid)
 !
-!       inviscidupwindflux computes the artificial dissipation part of 
-!       the euler fluxes by means of an approximate solution of the 1d 
-!       riemann problem on the face. for first order schemes,          
-!       finegrid == .false., the states in the cells are assumed to    
-!       be constant; for the second order schemes on the fine grid a   
-!       nonlinear reconstruction of the left and right state is done   
-!       for which several options exist.                               
-!       it is assumed that the pointers in blockpointers already       
-!       point to the correct block.                                    
+!       inviscidupwindflux computes the artificial dissipation part of
+!       the euler fluxes by means of an approximate solution of the 1d
+!       riemann problem on the face. for first order schemes,
+!       finegrid == .false., the states in the cells are assumed to
+!       be constant; for the second order schemes on the fine grid a
+!       nonlinear reconstruction of the left and right state is done
+!       for which several options exist.
+!       it is assumed that the pointers in blockpointers already
+!       point to the correct block.
 !
     use constants
     use blockpointers, only : il, jl, kl, ie, je, ke, ib, jb, kb, w, &
@@ -4428,17 +4428,17 @@ contains
         firstorderk = .false.
       end if
 !
-!       flux computation. a distinction is made between first and      
-!       second order schemes to avoid the overhead for the first order 
-!       scheme.                                                        
+!       flux computation. a distinction is made between first and
+!       second order schemes to avoid the overhead for the first order
+!       scheme.
 !
       if (limused .eq. firstorder) then
         fluxd = 0.0_8
         leftd = 0.0_8
         rightd = 0.0_8
 !
-!         first order reconstruction. the states in the cells are      
-!         constant. the left and right states are constructed easily.  
+!         first order reconstruction. the states in the cells are
+!         constant. the left and right states are constructed easily.
 !
 ! fluxes in the i-direction.
         do k=2,kl
@@ -4678,12 +4678,12 @@ contains
 !      ==================================================================
 !      ==================================================================
 !
-!         second order reconstruction of the left and right state.     
-!         the three differences used in the, possibly nonlinear,       
-!         interpolation are constructed here; the actual left and      
-!         right states, or at least the differences from the first     
-!         order interpolation, are computed in the subroutine          
-!         leftrightstate.                                              
+!         second order reconstruction of the left and right state.
+!         the three differences used in the, possibly nonlinear,
+!         interpolation are constructed here; the actual left and
+!         right states, or at least the differences from the first
+!         order interpolation, are computed in the subroutine
+!         leftrightstate.
 !
 ! fluxes in the i-direction.
         do k=2,kl
@@ -5165,8 +5165,8 @@ contains
         du3(ivz) = rot(3, 1)*dvx + rot(3, 2)*dvy + rot(3, 3)*dvz
       end if
 ! determine the limiter used.
-      select case  (limused) 
-      case (nolimiter) 
+      select case  (limused)
+      case (nolimiter)
 ! linear interpolation; no limiter.
 ! loop over the number of variables to be interpolated.
         do l=1,nwint
@@ -5175,7 +5175,7 @@ contains
           rightd(l) = -(omk*du3d(l)) - opk*du2d(l)
           right(l) = -(omk*du3(l)) - opk*du2(l)
         end do
-      case (vanalbeda) 
+      case (vanalbeda)
 !          ==============================================================
 ! nonlinear interpolation using the van albeda limiter.
 ! loop over the number of variables to be interpolated.
@@ -5283,7 +5283,7 @@ contains
 &           )+rr2*du3d(l))
           right(l) = -(opk*rr1*du2(l)) - omk*rr2*du3(l)
         end do
-      case (minmod) 
+      case (minmod)
 !          ==============================================================
 ! nonlinear interpolation using the minmod limiter.
 ! loop over the number of variables to be interpolated.
@@ -5526,15 +5526,15 @@ contains
         du3(ivz) = rot(3, 1)*dvx + rot(3, 2)*dvy + rot(3, 3)*dvz
       end if
 ! determine the limiter used.
-      select case  (limused) 
-      case (nolimiter) 
+      select case  (limused)
+      case (nolimiter)
 ! linear interpolation; no limiter.
 ! loop over the number of variables to be interpolated.
         do l=1,nwint
           left(l) = omk*du1(l) + opk*du2(l)
           right(l) = -(omk*du3(l)) - opk*du2(l)
         end do
-      case (vanalbeda) 
+      case (vanalbeda)
 !          ==============================================================
 ! nonlinear interpolation using the van albeda limiter.
 ! loop over the number of variables to be interpolated.
@@ -5604,7 +5604,7 @@ contains
           left(l) = omk*rl1*du1(l) + opk*rl2*du2(l)
           right(l) = -(opk*rr1*du2(l)) - omk*rr2*du3(l)
         end do
-      case (minmod) 
+      case (minmod)
 !          ==============================================================
 ! nonlinear interpolation using the minmod limiter.
 ! loop over the number of variables to be interpolated.
@@ -5782,11 +5782,11 @@ contains
       gm1 = gammaface - one
       gm53 = gammaface - five*third
 ! determine which riemann solver must be solved.
-      select case  (riemannused) 
-      case (roe) 
+      select case  (riemannused)
+      case (roe)
 ! determine the preconditioner used.
-        select case  (precond) 
-        case (noprecond) 
+        select case  (precond)
+        case (noprecond)
 ! no preconditioner used. use the roe scheme of the
 ! standard equations.
 ! compute the square root of the left and right densities
@@ -6070,7 +6070,7 @@ contains
           fluxd(irhoe) = -(porflux*(lam3d*dre+lam3*dred+havgd*abv6+havg*&
 &           abv6d+unavgd*abv7+unavg*abv7d))
           flux(irhoe) = -(porflux*(lam3*dre+havg*abv6+unavg*abv7))
-        case (turkel) 
+        case (turkel)
 !          tmp = max(lam1,lam2,lam3)
 !          flux(irho)  = -porflux*(tmp*dr)
 !          flux(imx)   = -porflux*(tmp*dru)
@@ -6079,14 +6079,14 @@ contains
 !          flux(irhoe) = -porflux*(tmp*dre)
           call terminate('riemannflux', &
 &                  'turkel preconditioner not implemented yet')
-        case (choimerkle) 
+        case (choimerkle)
           call terminate('riemannflux', &
 &                  'choi merkle preconditioner not implemented yet')
         end select
-      case (vanleer) 
+      case (vanleer)
         call terminate('riemannflux', 'van leer fvs not implemented yet'&
 &               )
-      case (ausmdv) 
+      case (ausmdv)
         call terminate('riemannflux', 'ausmdv fvs not implemented yet')
       end select
     end subroutine riemannflux_d
@@ -6131,11 +6131,11 @@ contains
       gm1 = gammaface - one
       gm53 = gammaface - five*third
 ! determine which riemann solver must be solved.
-      select case  (riemannused) 
-      case (roe) 
+      select case  (riemannused)
+      case (roe)
 ! determine the preconditioner used.
-        select case  (precond) 
-        case (noprecond) 
+        select case  (precond)
+        case (noprecond)
 ! no preconditioner used. use the roe scheme of the
 ! standard equations.
 ! compute the square root of the left and right densities
@@ -6282,7 +6282,7 @@ contains
           flux(imy) = -(porflux*(lam3*drv+vavg*abv6+sy*abv7))
           flux(imz) = -(porflux*(lam3*drw+wavg*abv6+sz*abv7))
           flux(irhoe) = -(porflux*(lam3*dre+havg*abv6+unavg*abv7))
-        case (turkel) 
+        case (turkel)
 !          tmp = max(lam1,lam2,lam3)
 !          flux(irho)  = -porflux*(tmp*dr)
 !          flux(imx)   = -porflux*(tmp*dru)
@@ -6291,14 +6291,14 @@ contains
 !          flux(irhoe) = -porflux*(tmp*dre)
           call terminate('riemannflux', &
 &                  'turkel preconditioner not implemented yet')
-        case (choimerkle) 
+        case (choimerkle)
           call terminate('riemannflux', &
 &                  'choi merkle preconditioner not implemented yet')
         end select
-      case (vanleer) 
+      case (vanleer)
         call terminate('riemannflux', 'van leer fvs not implemented yet'&
 &               )
-      case (ausmdv) 
+      case (ausmdv)
         call terminate('riemannflux', 'ausmdv fvs not implemented yet')
       end select
     end subroutine riemannflux
@@ -6318,10 +6318,10 @@ contains
 !                viscsubface:in *viscsubface.tau:in
   subroutine viscousflux_d()
 !
-!       viscousflux computes the viscous fluxes using a central        
-!       difference scheme for a block.                                 
-!       it is assumed that the pointers in block pointer already point 
-!       to the correct block.                                          
+!       viscousflux computes the viscous fluxes using a central
+!       difference scheme for a block.
+!       it is assumed that the pointers in block pointer already point
+!       to the correct block.
 !
     use constants
     use blockpointers
@@ -6356,11 +6356,14 @@ contains
     real(kind=realtype) :: tauxxd, tauyyd, tauzzd
     real(kind=realtype) :: tauxy, tauxz, tauyz
     real(kind=realtype) :: tauxyd, tauxzd, tauyzd
+    real(kind=realtype) :: tauxxs, tauyys, tauzzs
+    real(kind=realtype) :: tauxxsd, tauyysd, tauzzsd
+    real(kind=realtype) :: tauxys, tauxzs, tauyzs
+    real(kind=realtype) :: tauxysd, tauxzsd, tauyzsd
     real(kind=realtype) :: exx, eyy, ezz
     real(kind=realtype) :: exxd, eyyd, ezzd
     real(kind=realtype) :: exy, exz, eyz
     real(kind=realtype) :: exyd, exzd, eyzd
-    real(kind=realtype) :: wxx, wyy, wzz
     real(kind=realtype) :: wxy, wxz, wyz, wyx, wzx, wzy
     real(kind=realtype) :: wxyd, wxzd, wyzd, wyxd, wzxd, wzyd
     real(kind=realtype) :: den, ccr1, fact
@@ -6379,10 +6382,6 @@ contains
     integer :: ii1
 ! set qcr parameters
     ccr1 = 0.3_realtype
-! the diagonals of the vorticity tensor components are always zero
-    wxx = zero
-    wyy = zero
-    wzz = zero
 ! set rfilv to rfil to indicate that this is the viscous part.
 ! if rfilv == 0 the viscous residuals need not to be computed
 ! and a return can be made.
@@ -6407,7 +6406,7 @@ contains
         storewalltensor = .true.
       end if
 !
-!         viscous fluxes in the k-direction.                           
+!         viscous fluxes in the k-direction.
 !
       mue = zero
       do ii1=1,isize1ofdrfviscsubface
@@ -6576,20 +6575,25 @@ contains
             q_zd = q_zd - corrd*ssz - corr*sszd
             q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
             fracdivd = twothird*(u_xd+v_yd+w_zd)
             fracdiv = twothird*(u_x+v_y+w_z)
-            tauxxd = mutd*(two*u_x-fracdiv) + mut*(two*u_xd-fracdivd)
-            tauxx = mut*(two*u_x-fracdiv)
-            tauyyd = mutd*(two*v_y-fracdiv) + mut*(two*v_yd-fracdivd)
-            tauyy = mut*(two*v_y-fracdiv)
-            tauzzd = mutd*(two*w_z-fracdiv) + mut*(two*w_zd-fracdivd)
-            tauzz = mut*(two*w_z-fracdiv)
-            tauxyd = mutd*(u_y+v_x) + mut*(u_yd+v_xd)
-            tauxy = mut*(u_y+v_x)
-            tauxzd = mutd*(u_z+w_x) + mut*(u_zd+w_xd)
-            tauxz = mut*(u_z+w_x)
-            tauyzd = mutd*(v_z+w_y) + mut*(v_zd+w_yd)
-            tauyz = mut*(v_z+w_y)
+            tauxxsd = two*u_xd - fracdivd
+            tauxxs = two*u_x - fracdiv
+            tauyysd = two*v_yd - fracdivd
+            tauyys = two*v_y - fracdiv
+            tauzzsd = two*w_zd - fracdivd
+            tauzzs = two*w_z - fracdiv
+            tauxysd = u_yd + v_xd
+            tauxys = u_y + v_x
+            tauxzsd = u_zd + w_xd
+            tauxzs = u_z + w_x
+            tauyzsd = v_zd + w_yd
+            tauyzs = v_z + w_y
             q_xd = heatcoefd*q_x + heatcoef*q_xd
             q_x = heatcoef*q_x
             q_yd = heatcoefd*q_y + heatcoef*q_yd
@@ -6598,10 +6602,10 @@ contains
             q_z = heatcoef*q_z
 ! add qcr corrections if necessary
             if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
-! 
+!
 ! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
 !
 ! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
@@ -6609,6 +6613,8 @@ contains
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
               arg1d = u_xd*u_x + u_x*u_xd + u_yd*u_y + u_y*u_yd + u_zd*&
 &               u_z + u_z*u_zd + v_xd*v_x + v_x*v_xd + v_yd*v_y + v_y*&
@@ -6628,16 +6634,19 @@ contains
               else
                 den = den
               end if
-! compute factor that will multiply all tensor components
-              factd = -(ccr1*dend/den**2)
-              fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+              factd = (ccr1*mued*den-mue*ccr1*dend)/den**2
+              fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
               wxyd = u_yd - v_xd
               wxy = u_y - v_x
               wxzd = u_zd - w_xd
               wxz = u_z - w_x
-              wyzd = u_yd - v_xd
-              wyz = u_y - v_x
+              wyzd = v_zd - w_yd
+              wyz = v_z - w_y
               wyxd = -wxyd
               wyx = -wxy
               wzxd = -wxzd
@@ -6645,46 +6654,54 @@ contains
               wzyd = -wyzd
               wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-              exxd = two*(factd*(wxx*tauxx+wxy*tauxy+wxz*tauxz)+fact*(&
-&               wxx*tauxxd+wxyd*tauxy+wxy*tauxyd+wxzd*tauxz+wxz*tauxzd))
-              exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-              eyyd = two*(factd*(wyx*tauxy+wyy*tauyy+wyz*tauyz)+fact*(&
-&               wyxd*tauxy+wyx*tauxyd+wyy*tauyyd+wyzd*tauyz+wyz*tauyzd))
-              eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-              ezzd = two*(factd*(wzx*tauxz+wzy*tauyz+wzz*tauzz)+fact*(&
-&               wzxd*tauxz+wzx*tauxzd+wzyd*tauyz+wzy*tauyzd+wzz*tauzzd))
-              ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-              exyd = factd*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*&
-&               tauxy+wyz*tauxz) + fact*(wxx*tauxyd+wxyd*tauyy+wxy*&
-&               tauyyd+wxzd*tauyz+wxz*tauyzd+wyxd*tauxx+wyx*tauxxd+wyy*&
-&               tauxyd+wyzd*tauxz+wyz*tauxzd)
-              exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*&
-&               tauxy+wyz*tauxz)
-              exzd = factd*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*&
-&               tauxy+wzz*tauxz) + fact*(wxx*tauxzd+wxyd*tauyz+wxy*&
-&               tauyzd+wxzd*tauzz+wxz*tauzzd+wzxd*tauxx+wzx*tauxxd+wzyd*&
-&               tauxy+wzy*tauxyd+wzz*tauxzd)
-              exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*&
-&               tauxy+wzz*tauxz)
-              eyzd = factd*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*&
-&               tauyy+wzz*tauyz) + fact*(wyxd*tauxz+wyx*tauxzd+wyy*&
-&               tauyzd+wyzd*tauzz+wyz*tauzzd+wzxd*tauxy+wzx*tauxyd+wzyd*&
-&               tauyy+wzy*tauyyd+wzz*tauyzd)
-              eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*&
-&               tauyy+wzz*tauyz)
-! add extra terms
-              tauxxd = tauxxd - exxd
-              tauxx = tauxx - exx
-              tauyyd = tauyyd - eyyd
-              tauyy = tauyy - eyy
-              tauzzd = tauzzd - ezzd
-              tauzz = tauzz - ezz
-              tauxyd = tauxyd - exyd
-              tauxy = tauxy - exy
-              tauxzd = tauxzd - exzd
-              tauxz = tauxz - exz
-              tauyzd = tauyzd - eyzd
-              tauyz = tauyz - eyz
+              exxd = two*(factd*(wxy*tauxys+wxz*tauxzs)+fact*(wxyd*&
+&               tauxys+wxy*tauxysd+wxzd*tauxzs+wxz*tauxzsd))
+              exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+              eyyd = two*(factd*(wyx*tauxys+wyz*tauyzs)+fact*(wyxd*&
+&               tauxys+wyx*tauxysd+wyzd*tauyzs+wyz*tauyzsd))
+              eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+              ezzd = two*(factd*(wzx*tauxzs+wzy*tauyzs)+fact*(wzxd*&
+&               tauxzs+wzx*tauxzsd+wzyd*tauyzs+wzy*tauyzsd))
+              ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+              exyd = factd*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)&
+&               + fact*(wxyd*tauyys+wxy*tauyysd+wxzd*tauyzs+wxz*tauyzsd+&
+&               wyxd*tauxxs+wyx*tauxxsd+wyzd*tauxzs+wyz*tauxzsd)
+              exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+              exzd = factd*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)&
+&               + fact*(wxyd*tauyzs+wxy*tauyzsd+wxzd*tauzzs+wxz*tauzzsd+&
+&               wzxd*tauxxs+wzx*tauxxsd+wzyd*tauxys+wzy*tauxysd)
+              exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+              eyzd = factd*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)&
+&               + fact*(wyxd*tauxzs+wyx*tauxzsd+wyzd*tauzzs+wyz*tauzzsd+&
+&               wzxd*tauxys+wzx*tauxysd+wzyd*tauyys+wzy*tauyysd)
+              eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
+! apply the total viscosity to the stress tensor and add extra terms
+              tauxxd = mutd*tauxxs + mut*tauxxsd - exxd
+              tauxx = mut*tauxxs - exx
+              tauyyd = mutd*tauyys + mut*tauyysd - eyyd
+              tauyy = mut*tauyys - eyy
+              tauzzd = mutd*tauzzs + mut*tauzzsd - ezzd
+              tauzz = mut*tauzzs - ezz
+              tauxyd = mutd*tauxys + mut*tauxysd - exyd
+              tauxy = mut*tauxys - exy
+              tauxzd = mutd*tauxzs + mut*tauxzsd - exzd
+              tauxz = mut*tauxzs - exz
+              tauyzd = mutd*tauyzs + mut*tauyzsd - eyzd
+              tauyz = mut*tauyzs - eyz
+            else
+! just apply the total viscosity to the stress tensor
+              tauxxd = mutd*tauxxs + mut*tauxxsd
+              tauxx = mut*tauxxs
+              tauyyd = mutd*tauyys + mut*tauyysd
+              tauyy = mut*tauyys
+              tauzzd = mutd*tauzzs + mut*tauzzsd
+              tauzz = mut*tauzzs
+              tauxyd = mutd*tauxys + mut*tauxysd
+              tauxy = mut*tauxys
+              tauxzd = mutd*tauxzs + mut*tauxzsd
+              tauxz = mut*tauxzs
+              tauyzd = mutd*tauyzs + mut*tauyzsd
+              tauyz = mut*tauyzs
             end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
@@ -6751,8 +6768,8 @@ contains
 ! and k == kl must be tested.
             if (k .eq. 1 .and. storewalltensor .and. visckminpointer(i, &
 &               j) .gt. 0) then
-! we need to index viscsubface with visckminpointer(i,j) 
-! since tapenade does not like temporary indexes 
+! we need to index viscsubface with visckminpointer(i,j)
+! since tapenade does not like temporary indexes
               viscsubfaced(visckminpointer(i, j))%tau(i, j, 1) = tauxxd
               viscsubface(visckminpointer(i, j))%tau(i, j, 1) = tauxx
               viscsubfaced(visckminpointer(i, j))%tau(i, j, 2) = tauyyd
@@ -6792,7 +6809,7 @@ contains
         end do
       end do
 !
-!         viscous fluxes in the j-direction.                           
+!         viscous fluxes in the j-direction.
 !
       mue = zero
       mued = 0.0_8
@@ -6958,20 +6975,25 @@ contains
             q_zd = q_zd - corrd*ssz - corr*sszd
             q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
             fracdivd = twothird*(u_xd+v_yd+w_zd)
             fracdiv = twothird*(u_x+v_y+w_z)
-            tauxxd = mutd*(two*u_x-fracdiv) + mut*(two*u_xd-fracdivd)
-            tauxx = mut*(two*u_x-fracdiv)
-            tauyyd = mutd*(two*v_y-fracdiv) + mut*(two*v_yd-fracdivd)
-            tauyy = mut*(two*v_y-fracdiv)
-            tauzzd = mutd*(two*w_z-fracdiv) + mut*(two*w_zd-fracdivd)
-            tauzz = mut*(two*w_z-fracdiv)
-            tauxyd = mutd*(u_y+v_x) + mut*(u_yd+v_xd)
-            tauxy = mut*(u_y+v_x)
-            tauxzd = mutd*(u_z+w_x) + mut*(u_zd+w_xd)
-            tauxz = mut*(u_z+w_x)
-            tauyzd = mutd*(v_z+w_y) + mut*(v_zd+w_yd)
-            tauyz = mut*(v_z+w_y)
+            tauxxsd = two*u_xd - fracdivd
+            tauxxs = two*u_x - fracdiv
+            tauyysd = two*v_yd - fracdivd
+            tauyys = two*v_y - fracdiv
+            tauzzsd = two*w_zd - fracdivd
+            tauzzs = two*w_z - fracdiv
+            tauxysd = u_yd + v_xd
+            tauxys = u_y + v_x
+            tauxzsd = u_zd + w_xd
+            tauxzs = u_z + w_x
+            tauyzsd = v_zd + w_yd
+            tauyzs = v_z + w_y
             q_xd = heatcoefd*q_x + heatcoef*q_xd
             q_x = heatcoef*q_x
             q_yd = heatcoefd*q_y + heatcoef*q_yd
@@ -6980,10 +7002,10 @@ contains
             q_z = heatcoef*q_z
 ! add qcr corrections if necessary
             if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
-! 
+!
 ! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
 !
 ! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
@@ -6991,6 +7013,8 @@ contains
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
               arg1d = u_xd*u_x + u_x*u_xd + u_yd*u_y + u_y*u_yd + u_zd*&
 &               u_z + u_z*u_zd + v_xd*v_x + v_x*v_xd + v_yd*v_y + v_y*&
@@ -7010,16 +7034,19 @@ contains
               else
                 den = den
               end if
-! compute factor that will multiply all tensor components
-              factd = -(ccr1*dend/den**2)
-              fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+              factd = (ccr1*mued*den-mue*ccr1*dend)/den**2
+              fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
               wxyd = u_yd - v_xd
               wxy = u_y - v_x
               wxzd = u_zd - w_xd
               wxz = u_z - w_x
-              wyzd = u_yd - v_xd
-              wyz = u_y - v_x
+              wyzd = v_zd - w_yd
+              wyz = v_z - w_y
               wyxd = -wxyd
               wyx = -wxy
               wzxd = -wxzd
@@ -7027,46 +7054,54 @@ contains
               wzyd = -wyzd
               wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-              exxd = two*(factd*(wxx*tauxx+wxy*tauxy+wxz*tauxz)+fact*(&
-&               wxx*tauxxd+wxyd*tauxy+wxy*tauxyd+wxzd*tauxz+wxz*tauxzd))
-              exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-              eyyd = two*(factd*(wyx*tauxy+wyy*tauyy+wyz*tauyz)+fact*(&
-&               wyxd*tauxy+wyx*tauxyd+wyy*tauyyd+wyzd*tauyz+wyz*tauyzd))
-              eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-              ezzd = two*(factd*(wzx*tauxz+wzy*tauyz+wzz*tauzz)+fact*(&
-&               wzxd*tauxz+wzx*tauxzd+wzyd*tauyz+wzy*tauyzd+wzz*tauzzd))
-              ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-              exyd = factd*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*&
-&               tauxy+wyz*tauxz) + fact*(wxx*tauxyd+wxyd*tauyy+wxy*&
-&               tauyyd+wxzd*tauyz+wxz*tauyzd+wyxd*tauxx+wyx*tauxxd+wyy*&
-&               tauxyd+wyzd*tauxz+wyz*tauxzd)
-              exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*&
-&               tauxy+wyz*tauxz)
-              exzd = factd*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*&
-&               tauxy+wzz*tauxz) + fact*(wxx*tauxzd+wxyd*tauyz+wxy*&
-&               tauyzd+wxzd*tauzz+wxz*tauzzd+wzxd*tauxx+wzx*tauxxd+wzyd*&
-&               tauxy+wzy*tauxyd+wzz*tauxzd)
-              exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*&
-&               tauxy+wzz*tauxz)
-              eyzd = factd*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*&
-&               tauyy+wzz*tauyz) + fact*(wyxd*tauxz+wyx*tauxzd+wyy*&
-&               tauyzd+wyzd*tauzz+wyz*tauzzd+wzxd*tauxy+wzx*tauxyd+wzyd*&
-&               tauyy+wzy*tauyyd+wzz*tauyzd)
-              eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*&
-&               tauyy+wzz*tauyz)
-! add extra terms
-              tauxxd = tauxxd - exxd
-              tauxx = tauxx - exx
-              tauyyd = tauyyd - eyyd
-              tauyy = tauyy - eyy
-              tauzzd = tauzzd - ezzd
-              tauzz = tauzz - ezz
-              tauxyd = tauxyd - exyd
-              tauxy = tauxy - exy
-              tauxzd = tauxzd - exzd
-              tauxz = tauxz - exz
-              tauyzd = tauyzd - eyzd
-              tauyz = tauyz - eyz
+              exxd = two*(factd*(wxy*tauxys+wxz*tauxzs)+fact*(wxyd*&
+&               tauxys+wxy*tauxysd+wxzd*tauxzs+wxz*tauxzsd))
+              exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+              eyyd = two*(factd*(wyx*tauxys+wyz*tauyzs)+fact*(wyxd*&
+&               tauxys+wyx*tauxysd+wyzd*tauyzs+wyz*tauyzsd))
+              eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+              ezzd = two*(factd*(wzx*tauxzs+wzy*tauyzs)+fact*(wzxd*&
+&               tauxzs+wzx*tauxzsd+wzyd*tauyzs+wzy*tauyzsd))
+              ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+              exyd = factd*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)&
+&               + fact*(wxyd*tauyys+wxy*tauyysd+wxzd*tauyzs+wxz*tauyzsd+&
+&               wyxd*tauxxs+wyx*tauxxsd+wyzd*tauxzs+wyz*tauxzsd)
+              exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+              exzd = factd*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)&
+&               + fact*(wxyd*tauyzs+wxy*tauyzsd+wxzd*tauzzs+wxz*tauzzsd+&
+&               wzxd*tauxxs+wzx*tauxxsd+wzyd*tauxys+wzy*tauxysd)
+              exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+              eyzd = factd*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)&
+&               + fact*(wyxd*tauxzs+wyx*tauxzsd+wyzd*tauzzs+wyz*tauzzsd+&
+&               wzxd*tauxys+wzx*tauxysd+wzyd*tauyys+wzy*tauyysd)
+              eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
+! apply the total viscosity to the stress tensor and add extra terms
+              tauxxd = mutd*tauxxs + mut*tauxxsd - exxd
+              tauxx = mut*tauxxs - exx
+              tauyyd = mutd*tauyys + mut*tauyysd - eyyd
+              tauyy = mut*tauyys - eyy
+              tauzzd = mutd*tauzzs + mut*tauzzsd - ezzd
+              tauzz = mut*tauzzs - ezz
+              tauxyd = mutd*tauxys + mut*tauxysd - exyd
+              tauxy = mut*tauxys - exy
+              tauxzd = mutd*tauxzs + mut*tauxzsd - exzd
+              tauxz = mut*tauxzs - exz
+              tauyzd = mutd*tauyzs + mut*tauyzsd - eyzd
+              tauyz = mut*tauyzs - eyz
+            else
+! just apply the total viscosity to the stress tensor
+              tauxxd = mutd*tauxxs + mut*tauxxsd
+              tauxx = mut*tauxxs
+              tauyyd = mutd*tauyys + mut*tauyysd
+              tauyy = mut*tauyys
+              tauzzd = mutd*tauzzs + mut*tauzzsd
+              tauzz = mut*tauzzs
+              tauxyd = mutd*tauxys + mut*tauxysd
+              tauxy = mut*tauxys
+              tauxzd = mutd*tauxzs + mut*tauxzsd
+              tauxz = mut*tauxzs
+              tauyzd = mutd*tauyzs + mut*tauyzsd
+              tauyz = mut*tauyzs
             end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
@@ -7128,8 +7163,8 @@ contains
 ! and j == jl must be tested.
             if (j .eq. 1 .and. storewalltensor .and. viscjminpointer(i, &
 &               k) .gt. 0) then
-! we need to index viscsubface with viscjminpointer(i,k) 
-! since tapenade does not like temporary indexes 
+! we need to index viscsubface with viscjminpointer(i,k)
+! since tapenade does not like temporary indexes
               viscsubfaced(viscjminpointer(i, k))%tau(i, k, 1) = tauxxd
               viscsubface(viscjminpointer(i, k))%tau(i, k, 1) = tauxx
               viscsubfaced(viscjminpointer(i, k))%tau(i, k, 2) = tauyyd
@@ -7169,7 +7204,7 @@ contains
         end do
       end do
 !
-!         viscous fluxes in the i-direction.                           
+!         viscous fluxes in the i-direction.
 !
       mue = zero
       mued = 0.0_8
@@ -7335,20 +7370,25 @@ contains
             q_zd = q_zd - corrd*ssz - corr*sszd
             q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
             fracdivd = twothird*(u_xd+v_yd+w_zd)
             fracdiv = twothird*(u_x+v_y+w_z)
-            tauxxd = mutd*(two*u_x-fracdiv) + mut*(two*u_xd-fracdivd)
-            tauxx = mut*(two*u_x-fracdiv)
-            tauyyd = mutd*(two*v_y-fracdiv) + mut*(two*v_yd-fracdivd)
-            tauyy = mut*(two*v_y-fracdiv)
-            tauzzd = mutd*(two*w_z-fracdiv) + mut*(two*w_zd-fracdivd)
-            tauzz = mut*(two*w_z-fracdiv)
-            tauxyd = mutd*(u_y+v_x) + mut*(u_yd+v_xd)
-            tauxy = mut*(u_y+v_x)
-            tauxzd = mutd*(u_z+w_x) + mut*(u_zd+w_xd)
-            tauxz = mut*(u_z+w_x)
-            tauyzd = mutd*(v_z+w_y) + mut*(v_zd+w_yd)
-            tauyz = mut*(v_z+w_y)
+            tauxxsd = two*u_xd - fracdivd
+            tauxxs = two*u_x - fracdiv
+            tauyysd = two*v_yd - fracdivd
+            tauyys = two*v_y - fracdiv
+            tauzzsd = two*w_zd - fracdivd
+            tauzzs = two*w_z - fracdiv
+            tauxysd = u_yd + v_xd
+            tauxys = u_y + v_x
+            tauxzsd = u_zd + w_xd
+            tauxzs = u_z + w_x
+            tauyzsd = v_zd + w_yd
+            tauyzs = v_z + w_y
             q_xd = heatcoefd*q_x + heatcoef*q_xd
             q_x = heatcoef*q_x
             q_yd = heatcoefd*q_y + heatcoef*q_yd
@@ -7357,10 +7397,10 @@ contains
             q_z = heatcoef*q_z
 ! add qcr corrections if necessary
             if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
-! 
+!
 ! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
 !
 ! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
@@ -7368,6 +7408,8 @@ contains
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
               arg1d = u_xd*u_x + u_x*u_xd + u_yd*u_y + u_y*u_yd + u_zd*&
 &               u_z + u_z*u_zd + v_xd*v_x + v_x*v_xd + v_yd*v_y + v_y*&
@@ -7387,16 +7429,19 @@ contains
               else
                 den = den
               end if
-! compute factor that will multiply all tensor components
-              factd = -(ccr1*dend/den**2)
-              fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+              factd = (ccr1*mued*den-mue*ccr1*dend)/den**2
+              fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
               wxyd = u_yd - v_xd
               wxy = u_y - v_x
               wxzd = u_zd - w_xd
               wxz = u_z - w_x
-              wyzd = u_yd - v_xd
-              wyz = u_y - v_x
+              wyzd = v_zd - w_yd
+              wyz = v_z - w_y
               wyxd = -wxyd
               wyx = -wxy
               wzxd = -wxzd
@@ -7404,46 +7449,54 @@ contains
               wzyd = -wyzd
               wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-              exxd = two*(factd*(wxx*tauxx+wxy*tauxy+wxz*tauxz)+fact*(&
-&               wxx*tauxxd+wxyd*tauxy+wxy*tauxyd+wxzd*tauxz+wxz*tauxzd))
-              exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-              eyyd = two*(factd*(wyx*tauxy+wyy*tauyy+wyz*tauyz)+fact*(&
-&               wyxd*tauxy+wyx*tauxyd+wyy*tauyyd+wyzd*tauyz+wyz*tauyzd))
-              eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-              ezzd = two*(factd*(wzx*tauxz+wzy*tauyz+wzz*tauzz)+fact*(&
-&               wzxd*tauxz+wzx*tauxzd+wzyd*tauyz+wzy*tauyzd+wzz*tauzzd))
-              ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-              exyd = factd*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*&
-&               tauxy+wyz*tauxz) + fact*(wxx*tauxyd+wxyd*tauyy+wxy*&
-&               tauyyd+wxzd*tauyz+wxz*tauyzd+wyxd*tauxx+wyx*tauxxd+wyy*&
-&               tauxyd+wyzd*tauxz+wyz*tauxzd)
-              exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*&
-&               tauxy+wyz*tauxz)
-              exzd = factd*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*&
-&               tauxy+wzz*tauxz) + fact*(wxx*tauxzd+wxyd*tauyz+wxy*&
-&               tauyzd+wxzd*tauzz+wxz*tauzzd+wzxd*tauxx+wzx*tauxxd+wzyd*&
-&               tauxy+wzy*tauxyd+wzz*tauxzd)
-              exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*&
-&               tauxy+wzz*tauxz)
-              eyzd = factd*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*&
-&               tauyy+wzz*tauyz) + fact*(wyxd*tauxz+wyx*tauxzd+wyy*&
-&               tauyzd+wyzd*tauzz+wyz*tauzzd+wzxd*tauxy+wzx*tauxyd+wzyd*&
-&               tauyy+wzy*tauyyd+wzz*tauyzd)
-              eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*&
-&               tauyy+wzz*tauyz)
-! add extra terms
-              tauxxd = tauxxd - exxd
-              tauxx = tauxx - exx
-              tauyyd = tauyyd - eyyd
-              tauyy = tauyy - eyy
-              tauzzd = tauzzd - ezzd
-              tauzz = tauzz - ezz
-              tauxyd = tauxyd - exyd
-              tauxy = tauxy - exy
-              tauxzd = tauxzd - exzd
-              tauxz = tauxz - exz
-              tauyzd = tauyzd - eyzd
-              tauyz = tauyz - eyz
+              exxd = two*(factd*(wxy*tauxys+wxz*tauxzs)+fact*(wxyd*&
+&               tauxys+wxy*tauxysd+wxzd*tauxzs+wxz*tauxzsd))
+              exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+              eyyd = two*(factd*(wyx*tauxys+wyz*tauyzs)+fact*(wyxd*&
+&               tauxys+wyx*tauxysd+wyzd*tauyzs+wyz*tauyzsd))
+              eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+              ezzd = two*(factd*(wzx*tauxzs+wzy*tauyzs)+fact*(wzxd*&
+&               tauxzs+wzx*tauxzsd+wzyd*tauyzs+wzy*tauyzsd))
+              ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+              exyd = factd*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)&
+&               + fact*(wxyd*tauyys+wxy*tauyysd+wxzd*tauyzs+wxz*tauyzsd+&
+&               wyxd*tauxxs+wyx*tauxxsd+wyzd*tauxzs+wyz*tauxzsd)
+              exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+              exzd = factd*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)&
+&               + fact*(wxyd*tauyzs+wxy*tauyzsd+wxzd*tauzzs+wxz*tauzzsd+&
+&               wzxd*tauxxs+wzx*tauxxsd+wzyd*tauxys+wzy*tauxysd)
+              exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+              eyzd = factd*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)&
+&               + fact*(wyxd*tauxzs+wyx*tauxzsd+wyzd*tauzzs+wyz*tauzzsd+&
+&               wzxd*tauxys+wzx*tauxysd+wzyd*tauyys+wzy*tauyysd)
+              eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
+! apply the total viscosity to the stress tensor and add extra terms
+              tauxxd = mutd*tauxxs + mut*tauxxsd - exxd
+              tauxx = mut*tauxxs - exx
+              tauyyd = mutd*tauyys + mut*tauyysd - eyyd
+              tauyy = mut*tauyys - eyy
+              tauzzd = mutd*tauzzs + mut*tauzzsd - ezzd
+              tauzz = mut*tauzzs - ezz
+              tauxyd = mutd*tauxys + mut*tauxysd - exyd
+              tauxy = mut*tauxys - exy
+              tauxzd = mutd*tauxzs + mut*tauxzsd - exzd
+              tauxz = mut*tauxzs - exz
+              tauyzd = mutd*tauyzs + mut*tauyzsd - eyzd
+              tauyz = mut*tauyzs - eyz
+            else
+! just apply the total viscosity to the stress tensor
+              tauxxd = mutd*tauxxs + mut*tauxxsd
+              tauxx = mut*tauxxs
+              tauyyd = mutd*tauyys + mut*tauyysd
+              tauyy = mut*tauyys
+              tauzzd = mutd*tauzzs + mut*tauzzsd
+              tauzz = mut*tauzzs
+              tauxyd = mutd*tauxys + mut*tauxysd
+              tauxy = mut*tauxys
+              tauxzd = mutd*tauxzs + mut*tauxzsd
+              tauxz = mut*tauxzs
+              tauyzd = mutd*tauyzs + mut*tauyzsd
+              tauyz = mut*tauyzs
             end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
@@ -7505,8 +7558,8 @@ contains
 ! and i == il must be tested.
             if (i .eq. 1 .and. storewalltensor .and. visciminpointer(j, &
 &               k) .gt. 0) then
-! we need to index viscsubface with visciminpointer(j,k) 
-! since tapenade does not like temporary indexes 
+! we need to index viscsubface with visciminpointer(j,k)
+! since tapenade does not like temporary indexes
               viscsubfaced(visciminpointer(j, k))%tau(j, k, 1) = tauxxd
               viscsubface(visciminpointer(j, k))%tau(j, k, 1) = tauxx
               viscsubfaced(visciminpointer(j, k))%tau(j, k, 2) = tauyyd
@@ -7526,8 +7579,8 @@ contains
 ! and the i == il case.
             if (i .eq. il .and. storewalltensor .and. viscimaxpointer(j&
 &               , k) .gt. 0) then
-! we need to index viscsubface with viscimaxpointer(j,k) 
-! since tapenade does not like temporary indexes 
+! we need to index viscsubface with viscimaxpointer(j,k)
+! since tapenade does not like temporary indexes
               viscsubfaced(viscimaxpointer(j, k))%tau(j, k, 1) = tauxxd
               viscsubface(viscimaxpointer(j, k))%tau(j, k, 1) = tauxx
               viscsubfaced(viscimaxpointer(j, k))%tau(j, k, 2) = tauyyd
@@ -7551,10 +7604,10 @@ contains
   end subroutine viscousflux_d
   subroutine viscousflux()
 !
-!       viscousflux computes the viscous fluxes using a central        
-!       difference scheme for a block.                                 
-!       it is assumed that the pointers in block pointer already point 
-!       to the correct block.                                          
+!       viscousflux computes the viscous fluxes using a central
+!       difference scheme for a block.
+!       it is assumed that the pointers in block pointer already point
+!       to the correct block.
 !
     use constants
     use blockpointers
@@ -7580,9 +7633,10 @@ contains
     real(kind=realtype) :: corr, ssx, ssy, ssz, ss, fracdiv
     real(kind=realtype) :: tauxx, tauyy, tauzz
     real(kind=realtype) :: tauxy, tauxz, tauyz
+    real(kind=realtype) :: tauxxs, tauyys, tauzzs
+    real(kind=realtype) :: tauxys, tauxzs, tauyzs
     real(kind=realtype) :: exx, eyy, ezz
     real(kind=realtype) :: exy, exz, eyz
-    real(kind=realtype) :: wxx, wyy, wzz
     real(kind=realtype) :: wxy, wxz, wyz, wyx, wzx, wzy
     real(kind=realtype) :: den, ccr1, fact
     real(kind=realtype) :: fmx, fmy, fmz, frhoe
@@ -7595,10 +7649,6 @@ contains
     real(kind=realtype) :: abs0
 ! set qcr parameters
     ccr1 = 0.3_realtype
-! the diagonals of the vorticity tensor components are always zero
-    wxx = zero
-    wyy = zero
-    wzz = zero
 ! set rfilv to rfil to indicate that this is the viscous part.
 ! if rfilv == 0 the viscous residuals need not to be computed
 ! and a return can be made.
@@ -7620,7 +7670,7 @@ contains
         storewalltensor = .true.
       end if
 !
-!         viscous fluxes in the k-direction.                           
+!         viscous fluxes in the k-direction.
 !
       mue = zero
       do k=1,kl
@@ -7711,22 +7761,27 @@ contains
             q_y = q_y - corr*ssy
             q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
             fracdiv = twothird*(u_x+v_y+w_z)
-            tauxx = mut*(two*u_x-fracdiv)
-            tauyy = mut*(two*v_y-fracdiv)
-            tauzz = mut*(two*w_z-fracdiv)
-            tauxy = mut*(u_y+v_x)
-            tauxz = mut*(u_z+w_x)
-            tauyz = mut*(v_z+w_y)
+            tauxxs = two*u_x - fracdiv
+            tauyys = two*v_y - fracdiv
+            tauzzs = two*w_z - fracdiv
+            tauxys = u_y + v_x
+            tauxzs = u_z + w_x
+            tauyzs = v_z + w_y
             q_x = heatcoef*q_x
             q_y = heatcoef*q_y
             q_z = heatcoef*q_z
 ! add qcr corrections if necessary
             if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
-! 
+!
 ! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
 !
 ! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
@@ -7734,6 +7789,8 @@ contains
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
               arg1 = u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &               v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z
@@ -7743,32 +7800,40 @@ contains
               else
                 den = den
               end if
-! compute factor that will multiply all tensor components
-              fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+              fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
               wxy = u_y - v_x
               wxz = u_z - w_x
-              wyz = u_y - v_x
+              wyz = v_z - w_y
               wyx = -wxy
               wzx = -wxz
               wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-              exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-              eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-              ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-              exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*&
-&               tauxy+wyz*tauxz)
-              exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*&
-&               tauxy+wzz*tauxz)
-              eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*&
-&               tauyy+wzz*tauyz)
-! add extra terms
-              tauxx = tauxx - exx
-              tauyy = tauyy - eyy
-              tauzz = tauzz - ezz
-              tauxy = tauxy - exy
-              tauxz = tauxz - exz
-              tauyz = tauyz - eyz
+              exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+              eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+              ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+              exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+              exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+              eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
+! apply the total viscosity to the stress tensor and add extra terms
+              tauxx = mut*tauxxs - exx
+              tauyy = mut*tauyys - eyy
+              tauzz = mut*tauzzs - ezz
+              tauxy = mut*tauxys - exy
+              tauxz = mut*tauxzs - exz
+              tauyz = mut*tauyzs - eyz
+            else
+! just apply the total viscosity to the stress tensor
+              tauxx = mut*tauxxs
+              tauyy = mut*tauyys
+              tauzz = mut*tauzzs
+              tauxy = mut*tauxys
+              tauxz = mut*tauxzs
+              tauyz = mut*tauyzs
             end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
@@ -7803,8 +7868,8 @@ contains
 ! and k == kl must be tested.
             if (k .eq. 1 .and. storewalltensor .and. visckminpointer(i, &
 &               j) .gt. 0) then
-! we need to index viscsubface with visckminpointer(i,j) 
-! since tapenade does not like temporary indexes 
+! we need to index viscsubface with visckminpointer(i,j)
+! since tapenade does not like temporary indexes
               viscsubface(visckminpointer(i, j))%tau(i, j, 1) = tauxx
               viscsubface(visckminpointer(i, j))%tau(i, j, 2) = tauyy
               viscsubface(visckminpointer(i, j))%tau(i, j, 3) = tauzz
@@ -7832,7 +7897,7 @@ contains
         end do
       end do
 !
-!         viscous fluxes in the j-direction.                           
+!         viscous fluxes in the j-direction.
 !
       continue
       mue = zero
@@ -7924,22 +7989,27 @@ contains
             q_y = q_y - corr*ssy
             q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
             fracdiv = twothird*(u_x+v_y+w_z)
-            tauxx = mut*(two*u_x-fracdiv)
-            tauyy = mut*(two*v_y-fracdiv)
-            tauzz = mut*(two*w_z-fracdiv)
-            tauxy = mut*(u_y+v_x)
-            tauxz = mut*(u_z+w_x)
-            tauyz = mut*(v_z+w_y)
+            tauxxs = two*u_x - fracdiv
+            tauyys = two*v_y - fracdiv
+            tauzzs = two*w_z - fracdiv
+            tauxys = u_y + v_x
+            tauxzs = u_z + w_x
+            tauyzs = v_z + w_y
             q_x = heatcoef*q_x
             q_y = heatcoef*q_y
             q_z = heatcoef*q_z
 ! add qcr corrections if necessary
             if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
-! 
+!
 ! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
 !
 ! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
@@ -7947,6 +8017,8 @@ contains
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
               arg1 = u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &               v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z
@@ -7956,32 +8028,40 @@ contains
               else
                 den = den
               end if
-! compute factor that will multiply all tensor components
-              fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+              fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
               wxy = u_y - v_x
               wxz = u_z - w_x
-              wyz = u_y - v_x
+              wyz = v_z - w_y
               wyx = -wxy
               wzx = -wxz
               wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-              exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-              eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-              ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-              exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*&
-&               tauxy+wyz*tauxz)
-              exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*&
-&               tauxy+wzz*tauxz)
-              eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*&
-&               tauyy+wzz*tauyz)
-! add extra terms
-              tauxx = tauxx - exx
-              tauyy = tauyy - eyy
-              tauzz = tauzz - ezz
-              tauxy = tauxy - exy
-              tauxz = tauxz - exz
-              tauyz = tauyz - eyz
+              exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+              eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+              ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+              exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+              exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+              eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
+! apply the total viscosity to the stress tensor and add extra terms
+              tauxx = mut*tauxxs - exx
+              tauyy = mut*tauyys - eyy
+              tauzz = mut*tauzzs - ezz
+              tauxy = mut*tauxys - exy
+              tauxz = mut*tauxzs - exz
+              tauyz = mut*tauyzs - eyz
+            else
+! just apply the total viscosity to the stress tensor
+              tauxx = mut*tauxxs
+              tauyy = mut*tauyys
+              tauzz = mut*tauzzs
+              tauxy = mut*tauxys
+              tauxz = mut*tauxzs
+              tauyz = mut*tauyzs
             end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
@@ -8013,8 +8093,8 @@ contains
 ! and j == jl must be tested.
             if (j .eq. 1 .and. storewalltensor .and. viscjminpointer(i, &
 &               k) .gt. 0) then
-! we need to index viscsubface with viscjminpointer(i,k) 
-! since tapenade does not like temporary indexes 
+! we need to index viscsubface with viscjminpointer(i,k)
+! since tapenade does not like temporary indexes
               viscsubface(viscjminpointer(i, k))%tau(i, k, 1) = tauxx
               viscsubface(viscjminpointer(i, k))%tau(i, k, 2) = tauyy
               viscsubface(viscjminpointer(i, k))%tau(i, k, 3) = tauzz
@@ -8042,7 +8122,7 @@ contains
         end do
       end do
 !
-!         viscous fluxes in the i-direction.                           
+!         viscous fluxes in the i-direction.
 !
       continue
       mue = zero
@@ -8134,22 +8214,27 @@ contains
             q_y = q_y - corr*ssy
             q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
             fracdiv = twothird*(u_x+v_y+w_z)
-            tauxx = mut*(two*u_x-fracdiv)
-            tauyy = mut*(two*v_y-fracdiv)
-            tauzz = mut*(two*w_z-fracdiv)
-            tauxy = mut*(u_y+v_x)
-            tauxz = mut*(u_z+w_x)
-            tauyz = mut*(v_z+w_y)
+            tauxxs = two*u_x - fracdiv
+            tauyys = two*v_y - fracdiv
+            tauzzs = two*w_z - fracdiv
+            tauxys = u_y + v_x
+            tauxzs = u_z + w_x
+            tauyzs = v_z + w_y
             q_x = heatcoef*q_x
             q_y = heatcoef*q_y
             q_z = heatcoef*q_z
 ! add qcr corrections if necessary
             if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
-! 
+!
 ! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
 !
 ! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
@@ -8157,6 +8242,8 @@ contains
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
               arg1 = u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &               v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z
@@ -8166,32 +8253,40 @@ contains
               else
                 den = den
               end if
-! compute factor that will multiply all tensor components
-              fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+              fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
               wxy = u_y - v_x
               wxz = u_z - w_x
-              wyz = u_y - v_x
+              wyz = v_z - w_y
               wyx = -wxy
               wzx = -wxz
               wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-              exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-              eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-              ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-              exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*&
-&               tauxy+wyz*tauxz)
-              exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*&
-&               tauxy+wzz*tauxz)
-              eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*&
-&               tauyy+wzz*tauyz)
-! add extra terms
-              tauxx = tauxx - exx
-              tauyy = tauyy - eyy
-              tauzz = tauzz - ezz
-              tauxy = tauxy - exy
-              tauxz = tauxz - exz
-              tauyz = tauyz - eyz
+              exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+              eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+              ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+              exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+              exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+              eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
+! apply the total viscosity to the stress tensor and add extra terms
+              tauxx = mut*tauxxs - exx
+              tauyy = mut*tauyys - eyy
+              tauzz = mut*tauzzs - ezz
+              tauxy = mut*tauxys - exy
+              tauxz = mut*tauxzs - exz
+              tauyz = mut*tauyzs - eyz
+            else
+! just apply the total viscosity to the stress tensor
+              tauxx = mut*tauxxs
+              tauyy = mut*tauyys
+              tauzz = mut*tauzzs
+              tauxy = mut*tauxys
+              tauxz = mut*tauxzs
+              tauyz = mut*tauyzs
             end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
@@ -8223,8 +8318,8 @@ contains
 ! and i == il must be tested.
             if (i .eq. 1 .and. storewalltensor .and. visciminpointer(j, &
 &               k) .gt. 0) then
-! we need to index viscsubface with visciminpointer(j,k) 
-! since tapenade does not like temporary indexes 
+! we need to index viscsubface with visciminpointer(j,k)
+! since tapenade does not like temporary indexes
               viscsubface(visciminpointer(j, k))%tau(j, k, 1) = tauxx
               viscsubface(visciminpointer(j, k))%tau(j, k, 2) = tauyy
               viscsubface(visciminpointer(j, k))%tau(j, k, 3) = tauzz
@@ -8238,8 +8333,8 @@ contains
 ! and the i == il case.
             if (i .eq. il .and. storewalltensor .and. viscimaxpointer(j&
 &               , k) .gt. 0) then
-! we need to index viscsubface with viscimaxpointer(j,k) 
-! since tapenade does not like temporary indexes 
+! we need to index viscsubface with viscimaxpointer(j,k)
+! since tapenade does not like temporary indexes
               viscsubface(viscimaxpointer(j, k))%tau(j, k, 1) = tauxx
               viscsubface(viscimaxpointer(j, k))%tau(j, k, 2) = tauyy
               viscsubface(viscimaxpointer(j, k))%tau(j, k, 3) = tauzz
@@ -8304,7 +8399,7 @@ contains
     do k=2,kl
       do j=2,jl
         do i=1,il
-! compute the vector from the center of cell i to cell i+1           
+! compute the vector from the center of cell i to cell i+1
           ssxd = eighth*(xd(i+1, j-1, k-1, 1)-xd(i-1, j-1, k-1, 1)+xd(i+&
 &           1, j-1, k, 1)-xd(i-1, j-1, k, 1)+xd(i+1, j, k-1, 1)-xd(i-1, &
 &           j, k-1, 1)+xd(i+1, j, k, 1)-xd(i-1, j, k, 1))
@@ -8461,7 +8556,7 @@ contains
     do k=2,kl
       do j=1,jl
         do i=2,il
-! compute the vector from the center of cell j to cell j+1           
+! compute the vector from the center of cell j to cell j+1
           ssxd = eighth*(xd(i-1, j+1, k-1, 1)-xd(i-1, j-1, k-1, 1)+xd(i-&
 &           1, j+1, k, 1)-xd(i-1, j-1, k, 1)+xd(i, j+1, k-1, 1)-xd(i, j-&
 &           1, k-1, 1)+xd(i, j+1, k, 1)-xd(i, j-1, k, 1))
@@ -8618,7 +8713,7 @@ contains
     do k=1,kl
       do j=2,jl
         do i=2,il
-! compute the vector from the center of cell k to cell k+1           
+! compute the vector from the center of cell k to cell k+1
           ssxd = eighth*(xd(i-1, j-1, k+1, 1)-xd(i-1, j-1, k-1, 1)+xd(i-&
 &           1, j, k+1, 1)-xd(i-1, j, k-1, 1)+xd(i, j-1, k+1, 1)-xd(i, j-&
 &           1, k-1, 1)+xd(i, j, k+1, 1)-xd(i, j, k-1, 1))
@@ -8804,7 +8899,7 @@ contains
     do k=2,kl
       do j=2,jl
         do i=1,il
-! compute the vector from the center of cell i to cell i+1           
+! compute the vector from the center of cell i to cell i+1
           ssx = eighth*(x(i+1, j-1, k-1, 1)-x(i-1, j-1, k-1, 1)+x(i+1, j&
 &           -1, k, 1)-x(i-1, j-1, k, 1)+x(i+1, j, k-1, 1)-x(i-1, j, k-1&
 &           , 1)+x(i+1, j, k, 1)-x(i-1, j, k, 1))
@@ -8892,7 +8987,7 @@ contains
     do k=2,kl
       do j=1,jl
         do i=2,il
-! compute the vector from the center of cell j to cell j+1           
+! compute the vector from the center of cell j to cell j+1
           ssx = eighth*(x(i-1, j+1, k-1, 1)-x(i-1, j-1, k-1, 1)+x(i-1, j&
 &           +1, k, 1)-x(i-1, j-1, k, 1)+x(i, j+1, k-1, 1)-x(i, j-1, k-1&
 &           , 1)+x(i, j+1, k, 1)-x(i, j-1, k, 1))
@@ -8980,7 +9075,7 @@ contains
     do k=1,kl
       do j=2,jl
         do i=2,il
-! compute the vector from the center of cell k to cell k+1           
+! compute the vector from the center of cell k to cell k+1
           ssx = eighth*(x(i-1, j-1, k+1, 1)-x(i-1, j-1, k-1, 1)+x(i-1, j&
 &           , k+1, 1)-x(i-1, j, k-1, 1)+x(i, j-1, k+1, 1)-x(i, j-1, k-1&
 &           , 1)+x(i, j, k+1, 1)-x(i, j, k-1, 1))
@@ -9074,10 +9169,10 @@ contains
 !                radk:in
   subroutine invisciddissfluxscalarapprox_d()
 !
-!       invisciddissfluxscalar computes the scalar artificial          
-!       dissipation, see aiaa paper 81-1259, for a given block.        
-!       therefore it is assumed that the pointers in  blockpointers    
-!       already point to the correct block.                            
+!       invisciddissfluxscalar computes the scalar artificial
+!       dissipation, see aiaa paper 81-1259, for a given block.
+!       therefore it is assumed that the pointers in  blockpointers
+!       already point to the correct block.
 !
     use blockpointers
     use cgnsgrid
@@ -9132,14 +9227,14 @@ contains
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations) 
-      case (eulerequations) 
+      select case  (equations)
+      case (eulerequations)
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
 ! set to a fraction of the free stream value.
         sslim = 0.001_realtype*pinfcorr
-      case (nsequations, ransequations) 
+      case (nsequations, ransequations)
 !===============================================================
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
@@ -9290,7 +9385,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the i-direction.                         
+!       dissipative fluxes in the i-direction.
 !
       do k=2,kl
         do j=2,jl
@@ -9387,7 +9482,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the j-direction.                         
+!       dissipative fluxes in the j-direction.
 !
       do k=2,kl
         do i=2,il
@@ -9480,7 +9575,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the k-direction.                         
+!       dissipative fluxes in the k-direction.
 !
       do j=2,jl
         do i=2,il
@@ -9711,10 +9806,10 @@ contains
   end subroutine invisciddissfluxscalarapprox_d
   subroutine invisciddissfluxscalarapprox()
 !
-!       invisciddissfluxscalar computes the scalar artificial          
-!       dissipation, see aiaa paper 81-1259, for a given block.        
-!       therefore it is assumed that the pointers in  blockpointers    
-!       already point to the correct block.                            
+!       invisciddissfluxscalar computes the scalar artificial
+!       dissipation, see aiaa paper 81-1259, for a given block.
+!       therefore it is assumed that the pointers in  blockpointers
+!       already point to the correct block.
 !
     use blockpointers
     use cgnsgrid
@@ -9766,14 +9861,14 @@ contains
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations) 
-      case (eulerequations) 
+      select case  (equations)
+      case (eulerequations)
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
 ! set to a fraction of the free stream value.
         sslim = 0.001_realtype*pinfcorr
-      case (nsequations, ransequations) 
+      case (nsequations, ransequations)
 !===============================================================
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
@@ -9856,7 +9951,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the i-direction.                         
+!       dissipative fluxes in the i-direction.
 !
       do k=2,kl
         do j=2,jl
@@ -9931,7 +10026,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the j-direction.                         
+!       dissipative fluxes in the j-direction.
 !
       do k=2,kl
         do i=2,il
@@ -10002,7 +10097,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the k-direction.                         
+!       dissipative fluxes in the k-direction.
 !
       do j=2,jl
         do i=2,il
@@ -10144,12 +10239,12 @@ contains
 !   plus diff mem management of: p:in w:in fw:in
   subroutine invisciddissfluxmatrixapprox_d()
 !
-!       invisciddissfluxmatrix computes the matrix artificial          
-!       dissipation term. instead of the spectral radius, as used in   
-!       the scalar dissipation scheme, the absolute value of the flux  
-!       jacobian is used. this leads to a less diffusive and           
-!       consequently more accurate scheme. it is assumed that the      
-!       pointers in blockpointers already point to the correct block.  
+!       invisciddissfluxmatrix computes the matrix artificial
+!       dissipation term. instead of the spectral radius, as used in
+!       the scalar dissipation scheme, the absolute value of the flux
+!       jacobian is used. this leads to a less diffusive and
+!       consequently more accurate scheme. it is assumed that the
+!       pointers in blockpointers already point to the correct block.
 !
     use blockpointers
     use cgnsgrid
@@ -10268,7 +10363,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the i-direction.                         
+!       dissipative fluxes in the i-direction.
 !
       do k=2,kl
         do j=2,jl
@@ -10547,7 +10642,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the j-direction.                         
+!       dissipative fluxes in the j-direction.
 !
       do k=2,kl
         do i=2,il
@@ -10826,7 +10921,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the k-direction.                         
+!       dissipative fluxes in the k-direction.
 !
       do j=2,jl
         do i=2,il
@@ -11108,12 +11203,12 @@ contains
   end subroutine invisciddissfluxmatrixapprox_d
   subroutine invisciddissfluxmatrixapprox()
 !
-!       invisciddissfluxmatrix computes the matrix artificial          
-!       dissipation term. instead of the spectral radius, as used in   
-!       the scalar dissipation scheme, the absolute value of the flux  
-!       jacobian is used. this leads to a less diffusive and           
-!       consequently more accurate scheme. it is assumed that the      
-!       pointers in blockpointers already point to the correct block.  
+!       invisciddissfluxmatrix computes the matrix artificial
+!       dissipation term. instead of the spectral radius, as used in
+!       the scalar dissipation scheme, the absolute value of the flux
+!       jacobian is used. this leads to a less diffusive and
+!       consequently more accurate scheme. it is assumed that the
+!       pointers in blockpointers already point to the correct block.
 !
     use blockpointers
     use cgnsgrid
@@ -11219,7 +11314,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the i-direction.                         
+!       dissipative fluxes in the i-direction.
 !
       do k=2,kl
         do j=2,jl
@@ -11415,7 +11510,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the j-direction.                         
+!       dissipative fluxes in the j-direction.
 !
       do k=2,kl
         do i=2,il
@@ -11611,7 +11706,7 @@ contains
         end do
       end do
 !
-!       dissipative fluxes in the k-direction.                         
+!       dissipative fluxes in the k-direction.
 !
       do j=2,jl
         do i=2,il

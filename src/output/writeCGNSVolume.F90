@@ -4,8 +4,8 @@ contains
 
   subroutine writeCGNSVolumeSol
     !
-    !       writeCGNSVolumeSol and its subroutines write the cell          
-    !       centered CGNS solution file(s).                                
+    !       writeCGNSVolumeSol and its subroutines write the cell
+    !       centered CGNS solution file(s).
     !
     use block
     use cgnsGrid
@@ -88,9 +88,9 @@ contains
 
     ! Deallocate the memory of fileIDs and cgnsBases.  These are
     ! allocated ALL PROCESSORS not just processor 0.
-    ! Fixed Bug: GKK 
+    ! Fixed Bug: GKK
 
-    if (allocated(fileIDs)) then 
+    if (allocated(fileIDs)) then
        deallocate(fileIDs, stat=ierr)
     end if
     if (allocated(cgnsBases)) then
@@ -140,10 +140,10 @@ contains
 
   subroutine volSolFileNamesWrite
     !
-    !       volSolFileNamesWrite determines the names and number of volume 
-    !       solution files to be written. Furthermore it sets the pointers 
-    !       and/or allocates the memory for IOVar to make a general        
-    !       treatment of the writing possible.                             
+    !       volSolFileNamesWrite determines the names and number of volume
+    !       solution files to be written. Furthermore it sets the pointers
+    !       and/or allocates the memory for IOVar to make a general
+    !       treatment of the writing possible.
     !
     use block
     use inputIO
@@ -165,8 +165,8 @@ contains
 
     character(len=7) :: intString
 
-    !       Determine the names and number of volume solution files to be  
-    !       written.                                                       
+    !       Determine the names and number of volume solution files to be
+    !       written.
     !
     ! Determine the situation we are having here.
 
@@ -288,8 +288,8 @@ contains
 
     end select
     !
-    !       Set the pointers for IOVar if volume solution files need to be 
-    !       written.                                                       
+    !       Set the pointers for IOVar if volume solution files need to be
+    !       written.
     !
     testSolsToWrite: if(nVolSolToWrite > 0) then
 
@@ -348,7 +348,7 @@ contains
           do mm=2,nVolSolToWrite
              do nn=1,nDom
                 IOVar(nn,mm)%pointerOffset = 0
-                IOVar(nn,mm)%w => IOVar(nn,1)%w 
+                IOVar(nn,mm)%w => IOVar(nn,1)%w
              enddo
           enddo
 
@@ -359,7 +359,7 @@ contains
           ! It is possible that for an unsteady computation previous
           ! solutions need to be written. However only the variables
           ! wOld need to be written, so the pointer can be set to the
-          ! correct entries. As the starting indices of wOld are 2, 
+          ! correct entries. As the starting indices of wOld are 2,
           ! a pointer shift takes place here. I know this is a pain
           ! in the butt, but that's what we have to live with.
 
@@ -382,11 +382,11 @@ contains
 
   subroutine openCGNSVolumeSol
     !
-    !       openCGNSVolumeSol opens the cgns solution file(s) if needed.   
-    !       If opened the files are opened either for writing or for       
-    !       modification. When the grid file(s) have been written, these   
-    !       files are still open and nothing needs to be done.             
-    !       Only processor 0 performs this task.                           
+    !       openCGNSVolumeSol opens the cgns solution file(s) if needed.
+    !       If opened the files are opened either for writing or for
+    !       modification. When the grid file(s) have been written, these
+    !       files are still open and nothing needs to be done.
+    !       Only processor 0 performs this task.
     !
     use cgnsGrid
     use monitor
@@ -485,8 +485,8 @@ contains
 
   subroutine writeCGNSConvInfo
     !
-    !       writeCGNSConvInfo writes the convergence info to the           
-    !       cgns file(s).                                                  
+    !       writeCGNSConvInfo writes the convergence info to the
+    !       cgns file(s).
     !
     use inputIO
     use inputPhysics
@@ -609,9 +609,9 @@ contains
 
   subroutine writeCGNSTimeHistory
     !
-    !       WriteCGNSTimeHistory writes for unsteady computations          
-    !       the time history of the monitoring variables to the            
-    !       cgns file.                                                     
+    !       WriteCGNSTimeHistory writes for unsteady computations
+    !       the time history of the monitoring variables to the
+    !       cgns file.
     !
     use cgnsNames
     use inputIO
@@ -746,15 +746,15 @@ contains
 
     if(ierr /= 0)                            &
          call terminate("writeCGNSTimeHistory", &
-         "Deallocation failure for either buf4 or buf8") 
+         "Deallocation failure for either buf4 or buf8")
   end subroutine writeCGNSTimeHistory
 
   subroutine writeSolCGNSZone(zone, nSolVar, nDiscrVar, solNames)
     !
-    !       writeSolCGNSZone writes a volume solution of the given zone    
-    !       to the cgns file(s). In case the solution must be written to a 
-    !       separate file, useLinksInCGNS == .true., a link to the zone of 
-    !       the grid file is created.                                      
+    !       writeSolCGNSZone writes a volume solution of the given zone
+    !       to the cgns file(s). In case the solution must be written to a
+    !       separate file, useLinksInCGNS == .true., a link to the zone of
+    !       the grid file is created.
     !
     use blockPointers
     use cgnsGrid
@@ -826,7 +826,7 @@ contains
 
     rootproc: if(myID == 0) then
        !
-       !         I am processor 0 and poor me has to do all the work.         
+       !         I am processor 0 and poor me has to do all the work.
        !
        ! Allocate the memory for the array used to write the solution
        ! to file. The size depends whether or not rind layers are to
@@ -834,10 +834,10 @@ contains
 
        if( storeRindLayer ) then
           ll = (cgnsDoms(zone)%kl+1) * (cgnsDoms(zone)%jl+1) &
-               * (cgnsDoms(zone)%il+1) 
+               * (cgnsDoms(zone)%il+1)
        else
           ll = (cgnsDoms(zone)%kl-1) * (cgnsDoms(zone)%jl-1) &
-               * (cgnsDoms(zone)%il-1) 
+               * (cgnsDoms(zone)%il-1)
        endif
 
        select case(precisionSol)
@@ -1204,9 +1204,9 @@ contains
 
     else rootproc
        !
-       !         I am not the root processor and may have to send some data   
-       !         to the root processor.                                       
-       ! 
+       !         I am not the root processor and may have to send some data
+       !         to the root processor.
+       !
        ! Determine the subranges for the 1st solution.
 
        rindLayerThisSol = storeRindLayer
@@ -1333,10 +1333,10 @@ contains
 
     subroutine getSubRangesSol
       !
-      !         getSubRangesSol determines the subranges of the              
-      !         computational blocks that contribute to the CGNS block which 
-      !         is currently written. Also the size of the largest subblock  
-      !         is determined.                                               
+      !         getSubRangesSol determines the subranges of the
+      !         computational blocks that contribute to the CGNS block which
+      !         is currently written. Also the size of the largest subblock
+      !         is determined.
       !
       implicit none
       !
@@ -1355,7 +1355,7 @@ contains
 
       testRoot: if(myID == 0) then
 
-         ! I'm the root processor. Determine the subRanges of the 
+         ! I'm the root processor. Determine the subRanges of the
          ! subblocks stored on locally. Note that nBlocks can be 0.
 
          do i=1,nBlocks

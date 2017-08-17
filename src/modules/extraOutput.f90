@@ -1,16 +1,16 @@
        module extraOutput
 !
-!       This module contains the logicals which define the variables   
-!       to be written to the solution file. Both the surface variables 
-!       to be written as well as the extra volume variables are stored 
-!       in this module.                                                
+!       This module contains the logicals which define the variables
+!       to be written to the solution file. Both the surface variables
+!       to be written as well as the extra volume variables are stored
+!       in this module.
 !
        use constants, only: intType, realType, maxCGNSNameLen
        implicit none
        save
 !
-!       The logical variables, which define the surface variables to   
-!       be written.                                                    
+!       The logical variables, which define the surface variables to
+!       be written.
 !
        logical :: surfWriteRho,   surfWriteP,        surfWriteTemp
        logical :: surfWriteVx,    surfWriteVy,       surfWriteVz
@@ -22,8 +22,8 @@
        logical :: surfWriteBlank, surfWriteSepSensor
        logical :: surfWriteCavitation, surfWriteGC, surfWriteAxisMoment
 !
-!       The logical variables, which define the extra volume variables 
-!       to be written.                                                 
+!       The logical variables, which define the extra volume variables
+!       to be written.
 !
        logical :: volWriteMx,           volWriteMy,       volWriteMz
        logical :: volWriteRVx,          volWriteRVy,      volWriteRVz
@@ -37,8 +37,8 @@
        logical :: volWriteShock,        volWriteFilteredShock, volWriteGC, volWriteStatus
        logical :: volWriteIntermittency
 !
-!       The logical variables, which define the isosurface variables   
-!       to be written.                                                 
+!       The logical variables, which define the isosurface variables
+!       to be written.
 !
        logical :: isoWriteRho,          isoWriteVx,       isoWriteVy
        logical :: isoWriteVz,           isoWriteP,        isoWriteTurb
@@ -53,8 +53,8 @@
        logical :: isoWriteResRhoE,      isoWriteResTurb,  isoWriteBlank
        logical :: isoWriteShock,        isoWriteFilteredShock
 !
-!       Extra variables defining the type and number of iso surfaces   
-!       to be written.                                                 
+!       Extra variables defining the type and number of iso surfaces
+!       to be written.
 !
        integer(kind=intType) :: nIsoSurface = 0
        real(kind=realType), dimension(:), allocatable :: isoValues

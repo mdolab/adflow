@@ -1,8 +1,8 @@
 module stencils
-  
-  !       stencils defines indices for several types of stencils. These  
-  !       are useful for setting blocks in dRdw and dRdwPre depending    
-  !       on the type of equations  being solved                         
+
+  !       stencils defines indices for several types of stencils. These
+  !       are useful for setting blocks in dRdw and dRdwPre depending
+  !       on the type of equations  being solved
 
   use constants, only : intType, realType
   implicit none
@@ -20,13 +20,13 @@ module stencils
 
   integer(kind=intType), dimension(27,3), target :: visc_pc_stencil
   integer(kind=intType), dimension(33,3), target :: visc_drdw_stencil
-  
+
 end module stencils
-       
+
 subroutine initialize_stencils
-  
+
   use stencils
-  
+
   implicit none
   integer(kind=intType) :: i,j,k,ii
 
@@ -94,7 +94,7 @@ subroutine initialize_stencils
         end do
      end do
   end do
-  
+
   ! Plus the 6 double halos
   visc_drdw_stencil(28, :) = (/-2, 0, 0 /)
   visc_drdw_stencil(29, :) = (/ 2, 0, 0 /)

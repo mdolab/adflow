@@ -1,17 +1,17 @@
 module precision
   !
-  !       Definition of the kinds used for the integer and real types.   
-  !       Due to MPI, it is a bit messy to use the compiler options -r8  
-  !       and -r4 and therefore the kind construction is used here,      
-  !       where the precision is set using compiler flags of -d type.    
-  !       This is the only file of the code that should be changed when  
-  !       a user wants single precision instead of double precision. All 
-  !       other routines use the definitions in this file whenever       
-  !       possible. If other definitions are used, there is a good       
-  !       reason to do so, e.g. when calling the cgns or MPI functions.  
-  !       The actual types used are determined by compiler flags like    
-  !       -DUSE_LONG_INT and -DUSE_SINGLE_PRECISION. If these are        
-  !       omitted the default integer and double precision are used.     
+  !       Definition of the kinds used for the integer and real types.
+  !       Due to MPI, it is a bit messy to use the compiler options -r8
+  !       and -r4 and therefore the kind construction is used here,
+  !       where the precision is set using compiler flags of -d type.
+  !       This is the only file of the code that should be changed when
+  !       a user wants single precision instead of double precision. All
+  !       other routines use the definitions in this file whenever
+  !       possible. If other definitions are used, there is a good
+  !       reason to do so, e.g. when calling the cgns or MPI functions.
+  !       The actual types used are determined by compiler flags like
+  !       -DUSE_LONG_INT and -DUSE_SINGLE_PRECISION. If these are
+  !       omitted the default integer and double precision are used.
   !
   !
 
@@ -20,13 +20,13 @@ module precision
   save
 #include "mpif.h"
   !
-  !       Definition of the integer type used in the entire code. There  
-  !       might be a more elegant solution to do this, but be sure that  
-  !       compatability with MPI must be guaranteed. Note that dummyInt  
-  !       is a private variable, only used for the definition of the     
-  !       integer type. Note furthermore that the parameters defining    
-  !       the MPI types are integers. This is because of the definition  
-  !       in MPI.                                                        
+  !       Definition of the integer type used in the entire code. There
+  !       might be a more elegant solution to do this, but be sure that
+  !       compatability with MPI must be guaranteed. Note that dummyInt
+  !       is a private variable, only used for the definition of the
+  !       integer type. Note furthermore that the parameters defining
+  !       the MPI types are integers. This is because of the definition
+  !       in MPI.
   !
 
 #ifdef USE_LONG_INT
@@ -46,9 +46,9 @@ module precision
 #endif
 
   !
-  !       Definition of the float type used in the entire code. The      
-  !       remarks mentioned before the integer type definition also      
-  !       apply here.                                                    
+  !       Definition of the float type used in the entire code. The
+  !       remarks mentioned before the integer type definition also
+  !       apply here.
   !
 
 #ifdef USE_SINGLE_PRECISION
@@ -88,24 +88,24 @@ module precision
   complex(kind=8) :: dummyDouble
 
   !
-  !       Definition of the porosity type. As this is only a flag to     
-  !       indicate whether or not fluxes must be computed, an integer1   
-  !       is perfectly okay.                                             
+  !       Definition of the porosity type. As this is only a flag to
+  !       indicate whether or not fluxes must be computed, an integer1
+  !       is perfectly okay.
   !
   integer(kind=1), private :: dummyPor
 
-  !      Definition of the integer type for the element types. As only  
-  !      a limited number element types are present, a 1 byte integer   
-  !      is enough.                                                     
+  !      Definition of the integer type for the element types. As only
+  !      a limited number element types are present, a 1 byte integer
+  !      is enough.
   !
   integer(kind=1), private :: adtDummyElementInt
 
-  !       Definition of the cgns periodic type.                          
+  !       Definition of the cgns periodic type.
   !
   real(kind=4), private :: dummyCGNSPer
   !
-  !       Definition of the kind parameters for the integer and real     
-  !       types.                                                         
+  !       Definition of the kind parameters for the integer and real
+  !       types.
   !
   integer, parameter :: intType      = kind(dummyInt)
   integer, parameter :: porType      = kind(dummyPor)
@@ -118,7 +118,7 @@ module precision
   integer, parameter :: doubleType   = kind(dummyDouble)
 
   !
-  !       Set the parameter debug, depending on the compiler option.     
+  !       Set the parameter debug, depending on the compiler option.
   !
 #ifdef DEBUG_MODE
   logical, parameter :: debug = .true.

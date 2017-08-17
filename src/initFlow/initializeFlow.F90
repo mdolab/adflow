@@ -199,7 +199,7 @@ contains
     use iteration, only : groundLevel
     use bcdata, only : setbcdataFineGrid, setBCDataCoarseGrid
     implicit none
-    
+
     ! Allocate the memory for the prescribed boundary data at the
     ! boundary faces and determine the data for both the fine grid.
 
@@ -207,7 +207,7 @@ contains
 
     ! Determine the reference state.
     call referenceState
- 
+
     call setBCDataFineGrid(.true.)
 
     ! Determine the prescribed data on the coarse grid levels
@@ -246,7 +246,7 @@ contains
     ! some memory allocated must be released again.
 
      call releaseExtraMemBcs
-    
+
     ! Determine for the time spectral mode the matrices for the
     ! time derivatives.
     call timeSpectralMatrices
