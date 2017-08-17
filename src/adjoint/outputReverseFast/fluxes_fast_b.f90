@@ -17,10 +17,10 @@ contains
 !   plus diff mem management of: p:in dw:in w:in
   subroutine inviscidcentralflux_fast_b()
 !
-!       inviscidcentralflux computes the euler fluxes using a central  
-!       discretization for a given block. therefore it is assumed that 
-!       the pointers in block pointer already point to the correct     
-!       block on the correct multigrid level.                          
+!       inviscidcentralflux computes the euler fluxes using a central
+!       discretization for a given block. therefore it is assumed that
+!       the pointers in block pointer already point to the correct
+!       block on the correct multigrid level.
 !
     use constants
     use blockpointers, only : nx, il, ie, ny, jl, je, nz, kl, ke, &
@@ -374,10 +374,10 @@ branch = myIntStack(myIntPtr)
   end subroutine inviscidcentralflux_fast_b
   subroutine inviscidcentralflux()
 !
-!       inviscidcentralflux computes the euler fluxes using a central  
-!       discretization for a given block. therefore it is assumed that 
-!       the pointers in block pointer already point to the correct     
-!       block on the correct multigrid level.                          
+!       inviscidcentralflux computes the euler fluxes using a central
+!       discretization for a given block. therefore it is assumed that
+!       the pointers in block pointer already point to the correct
+!       block on the correct multigrid level.
 !
     use constants
     use blockpointers, only : nx, il, ie, ny, jl, je, nz, kl, ke, &
@@ -401,7 +401,7 @@ branch = myIntStack(myIntPtr)
 ! block is not moving.
     sface = zero
 !
-!       advective fluxes in the i-direction.                           
+!       advective fluxes in the i-direction.
 !
     do ii=0,il*ny*nz-1
       i = mod(ii, il) + 1
@@ -468,7 +468,7 @@ branch = myIntStack(myIntPtr)
       dw(i, j, k, irhoe) = dw(i, j, k, irhoe) + fs
     end do
 !
-!       advective fluxes in the j-direction.                           
+!       advective fluxes in the j-direction.
 !
     continue
     sface = zero
@@ -537,7 +537,7 @@ branch = myIntStack(myIntPtr)
       dw(i, j, k, irhoe) = dw(i, j, k, irhoe) + fs
     end do
 !
-!       advective fluxes in the k-direction.                           
+!       advective fluxes in the k-direction.
     continue
     sface = zero
     do ii=0,nx*ny*kl-1
@@ -639,12 +639,12 @@ branch = myIntStack(myIntPtr)
 !   plus diff mem management of: p:in w:in fw:in
   subroutine invisciddissfluxmatrix_fast_b()
 !
-!       invisciddissfluxmatrix computes the matrix artificial          
-!       dissipation term. instead of the spectral radius, as used in   
-!       the scalar dissipation scheme, the absolute value of the flux  
-!       jacobian is used. this leads to a less diffusive and           
-!       consequently more accurate scheme. it is assumed that the      
-!       pointers in blockpointers already point to the correct block.  
+!       invisciddissfluxmatrix computes the matrix artificial
+!       dissipation term. instead of the spectral radius, as used in
+!       the scalar dissipation scheme, the absolute value of the flux
+!       jacobian is used. this leads to a less diffusive and
+!       consequently more accurate scheme. it is assumed that the
+!       pointers in blockpointers already point to the correct block.
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, &
@@ -872,7 +872,7 @@ branch = myIntStack(myIntPtr)
       fis4 = rfil*vis4
       sfil = one - rfil
 ! initialize the dissipative residual to a certain times,
-! possibly zero, the previously stored value. 
+! possibly zero, the previously stored value.
 ! compute the pressure sensor for each cell, in each direction:
       do ii=0,ie*je*ke-1
         i = mod(ii, ie) + 1
@@ -934,7 +934,7 @@ branch = myIntStack(myIntPtr)
         end if
       end do
 !
-!       dissipative fluxes in the i-direction.                         
+!       dissipative fluxes in the i-direction.
 !
       do ii=0,il*ny*nz-1
         i = mod(ii, il) + 1
@@ -1091,7 +1091,7 @@ branch = myIntStack(myIntPtr)
         fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
       end do
 !
-!       dissipative fluxes in the j-direction.                         
+!       dissipative fluxes in the j-direction.
 !
       do ii=0,nx*jl*nz-1
         i = mod(ii, nx) + 2
@@ -2701,12 +2701,12 @@ branch = myIntStack(myIntPtr)
   end subroutine invisciddissfluxmatrix_fast_b
   subroutine invisciddissfluxmatrix()
 !
-!       invisciddissfluxmatrix computes the matrix artificial          
-!       dissipation term. instead of the spectral radius, as used in   
-!       the scalar dissipation scheme, the absolute value of the flux  
-!       jacobian is used. this leads to a less diffusive and           
-!       consequently more accurate scheme. it is assumed that the      
-!       pointers in blockpointers already point to the correct block.  
+!       invisciddissfluxmatrix computes the matrix artificial
+!       dissipation term. instead of the spectral radius, as used in
+!       the scalar dissipation scheme, the absolute value of the flux
+!       jacobian is used. this leads to a less diffusive and
+!       consequently more accurate scheme. it is assumed that the
+!       pointers in blockpointers already point to the correct block.
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, &
@@ -2804,7 +2804,7 @@ branch = myIntStack(myIntPtr)
       fis4 = rfil*vis4
       sfil = one - rfil
 ! initialize the dissipative residual to a certain times,
-! possibly zero, the previously stored value. 
+! possibly zero, the previously stored value.
       fw = sfil*fw
 ! compute the pressure sensor for each cell, in each direction:
       do ii=0,ie*je*ke-1
@@ -2867,7 +2867,7 @@ branch = myIntStack(myIntPtr)
         end if
       end do
 !
-!       dissipative fluxes in the i-direction.                         
+!       dissipative fluxes in the i-direction.
 !
       do ii=0,il*ny*nz-1
         i = mod(ii, il) + 1
@@ -3024,7 +3024,7 @@ branch = myIntStack(myIntPtr)
         fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
       end do
 !
-!       dissipative fluxes in the j-direction.                         
+!       dissipative fluxes in the j-direction.
 !
       do ii=0,nx*jl*nz-1
         i = mod(ii, nx) + 2
@@ -3181,7 +3181,7 @@ branch = myIntStack(myIntPtr)
         fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
       end do
 !
-!       dissipative fluxes in the k-direction.                         
+!       dissipative fluxes in the k-direction.
 !
       do ii=0,nx*ny*kl-1
         i = mod(ii, nx) + 2
@@ -3348,10 +3348,10 @@ branch = myIntStack(myIntPtr)
 !                radk:in
   subroutine invisciddissfluxscalar_fast_b()
 !
-!       invisciddissfluxscalar computes the scalar artificial          
-!       dissipation, see aiaa paper 81-1259, for a given block.        
-!       therefore it is assumed that the pointers in  blockpointers    
-!       already point to the correct block.                            
+!       invisciddissfluxscalar computes the scalar artificial
+!       dissipation, see aiaa paper 81-1259, for a given block.
+!       therefore it is assumed that the pointers in  blockpointers
+!       already point to the correct block.
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, &
@@ -3485,8 +3485,8 @@ branch = myIntStack(myIntPtr)
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations) 
-      case (eulerequations) 
+      select case  (equations)
+      case (eulerequations)
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
@@ -3494,17 +3494,17 @@ branch = myIntStack(myIntPtr)
         sslim = 0.001_realtype*pinfcorr
 ! copy the pressure in ss. only need the entries used in the
 ! discretization, i.e. not including the corner halo's, but we'll
-! just copy all anyway. 
+! just copy all anyway.
         ss = p
         call pushcontrol2b(1)
-      case (nsequations, ransequations) 
+      case (nsequations, ransequations)
 !===============================================================
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of entropy and it is therefore
 ! set to a fraction of the free stream value.
         sslim = 0.001_realtype*pinfcorr/rhoinf**gammainf
-! store the entropy in ss. see above. 
+! store the entropy in ss. see above.
         do ii=0,(ib+1)*(jb+1)*(kb+1)-1
           i = mod(ii, ib + 1)
           j = mod(ii/(ib+1), jb + 1)
@@ -4086,10 +4086,10 @@ branch = myIntStack(myIntPtr)
   end subroutine invisciddissfluxscalar_fast_b
   subroutine invisciddissfluxscalar()
 !
-!       invisciddissfluxscalar computes the scalar artificial          
-!       dissipation, see aiaa paper 81-1259, for a given block.        
-!       therefore it is assumed that the pointers in  blockpointers    
-!       already point to the correct block.                            
+!       invisciddissfluxscalar computes the scalar artificial
+!       dissipation, see aiaa paper 81-1259, for a given block.
+!       therefore it is assumed that the pointers in  blockpointers
+!       already point to the correct block.
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, &
@@ -4142,8 +4142,8 @@ branch = myIntStack(myIntPtr)
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations) 
-      case (eulerequations) 
+      select case  (equations)
+      case (eulerequations)
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
@@ -4151,16 +4151,16 @@ branch = myIntStack(myIntPtr)
         sslim = 0.001_realtype*pinfcorr
 ! copy the pressure in ss. only need the entries used in the
 ! discretization, i.e. not including the corner halo's, but we'll
-! just copy all anyway. 
+! just copy all anyway.
         ss = p
-      case (nsequations, ransequations) 
+      case (nsequations, ransequations)
 !===============================================================
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of entropy and it is therefore
 ! set to a fraction of the free stream value.
         sslim = 0.001_realtype*pinfcorr/rhoinf**gammainf
-! store the entropy in ss. see above. 
+! store the entropy in ss. see above.
         do ii=0,(ib+1)*(jb+1)*(kb+1)-1
           i = mod(ii, ib + 1)
           j = mod(ii/(ib+1), jb + 1)
@@ -4204,7 +4204,7 @@ branch = myIntStack(myIntPtr)
 ! only, because the halo values do not matter.
       fw = sfil*fw
 !
-!       dissipative fluxes in the i-direction.                         
+!       dissipative fluxes in the i-direction.
 !
       do ii=0,il*ny*nz-1
         i = mod(ii, il) + 1
@@ -4265,7 +4265,7 @@ branch = myIntStack(myIntPtr)
         fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
       end do
 !
-!       dissipative fluxes in the j-direction.                         
+!       dissipative fluxes in the j-direction.
 !
       do ii=0,nx*jl*nz-1
         i = mod(ii, nx) + 2
@@ -4326,7 +4326,7 @@ branch = myIntStack(myIntPtr)
         fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
       end do
 !
-!       dissipative fluxes in the k-direction.                         
+!       dissipative fluxes in the k-direction.
 !
       do ii=0,nx*ny*kl-1
         i = mod(ii, nx) + 2
@@ -4390,15 +4390,15 @@ branch = myIntStack(myIntPtr)
   end subroutine invisciddissfluxscalar
   subroutine inviscidupwindflux(finegrid)
 !
-!       inviscidupwindflux computes the artificial dissipation part of 
-!       the euler fluxes by means of an approximate solution of the 1d 
-!       riemann problem on the face. for first order schemes,          
-!       finegrid == .false., the states in the cells are assumed to    
-!       be constant; for the second order schemes on the fine grid a   
-!       nonlinear reconstruction of the left and right state is done   
-!       for which several options exist.                               
-!       it is assumed that the pointers in blockpointers already       
-!       point to the correct block.                                    
+!       inviscidupwindflux computes the artificial dissipation part of
+!       the euler fluxes by means of an approximate solution of the 1d
+!       riemann problem on the face. for first order schemes,
+!       finegrid == .false., the states in the cells are assumed to
+!       be constant; for the second order schemes on the fine grid a
+!       nonlinear reconstruction of the left and right state is done
+!       for which several options exist.
+!       it is assumed that the pointers in blockpointers already
+!       point to the correct block.
 !
     use constants
     use blockpointers, only : il, jl, kl, ie, je, ke, ib, jb, kb, w, p&
@@ -4514,14 +4514,14 @@ branch = myIntStack(myIntPtr)
         firstorderk = .false.
       end if
 !
-!       flux computation. a distinction is made between first and      
-!       second order schemes to avoid the overhead for the first order 
-!       scheme.                                                        
+!       flux computation. a distinction is made between first and
+!       second order schemes to avoid the overhead for the first order
+!       scheme.
 !
       if (limused .eq. firstorder) then
 !
-!         first order reconstruction. the states in the cells are      
-!         constant. the left and right states are constructed easily.  
+!         first order reconstruction. the states in the cells are
+!         constant. the left and right states are constructed easily.
 !
 ! fluxes in the i-direction.
         do k=2,kl
@@ -4662,12 +4662,12 @@ branch = myIntStack(myIntPtr)
 !      ==================================================================
 !      ==================================================================
 !
-!         second order reconstruction of the left and right state.     
-!         the three differences used in the, possibly nonlinear,       
-!         interpolation are constructed here; the actual left and      
-!         right states, or at least the differences from the first     
-!         order interpolation, are computed in the subroutine          
-!         leftrightstate.                                              
+!         second order reconstruction of the left and right state.
+!         the three differences used in the, possibly nonlinear,
+!         interpolation are constructed here; the actual left and
+!         right states, or at least the differences from the first
+!         order interpolation, are computed in the subroutine
+!         leftrightstate.
 !
 ! fluxes in the i-direction.
         do k=2,kl
@@ -4971,15 +4971,15 @@ branch = myIntStack(myIntPtr)
         du3(ivz) = rot(3, 1)*dvx + rot(3, 2)*dvy + rot(3, 3)*dvz
       end if
 ! determine the limiter used.
-      select case  (limused) 
-      case (nolimiter) 
+      select case  (limused)
+      case (nolimiter)
 ! linear interpolation; no limiter.
 ! loop over the number of variables to be interpolated.
         do l=1,nwint
           left(l) = omk*du1(l) + opk*du2(l)
           right(l) = -(omk*du3(l)) - opk*du2(l)
         end do
-      case (vanalbeda) 
+      case (vanalbeda)
 !          ==============================================================
 ! nonlinear interpolation using the van albeda limiter.
 ! loop over the number of variables to be interpolated.
@@ -5049,7 +5049,7 @@ branch = myIntStack(myIntPtr)
           left(l) = omk*rl1*du1(l) + opk*rl2*du2(l)
           right(l) = -(opk*rr1*du2(l)) - omk*rr2*du3(l)
         end do
-      case (minmod) 
+      case (minmod)
 !          ==============================================================
 ! nonlinear interpolation using the minmod limiter.
 ! loop over the number of variables to be interpolated.
@@ -5199,11 +5199,11 @@ branch = myIntStack(myIntPtr)
       gm1 = gammaface - one
       gm53 = gammaface - five*third
 ! determine which riemann solver must be solved.
-      select case  (riemannused) 
-      case (roe) 
+      select case  (riemannused)
+      case (roe)
 ! determine the preconditioner used.
-        select case  (precond) 
-        case (noprecond) 
+        select case  (precond)
+        case (noprecond)
 ! no preconditioner used. use the roe scheme of the
 ! standard equations.
 ! compute the square root of the left and right densities
@@ -5346,7 +5346,7 @@ branch = myIntStack(myIntPtr)
           flux(imy) = -(porflux*(lam3*drv+vavg*abv6+sy*abv7))
           flux(imz) = -(porflux*(lam3*drw+wavg*abv6+sz*abv7))
           flux(irhoe) = -(porflux*(lam3*dre+havg*abv6+unavg*abv7))
-        case (turkel) 
+        case (turkel)
 !          tmp = max(lam1,lam2,lam3)
 !          flux(irho)  = -porflux*(tmp*dr)
 !          flux(imx)   = -porflux*(tmp*dru)
@@ -5355,14 +5355,14 @@ branch = myIntStack(myIntPtr)
 !          flux(irhoe) = -porflux*(tmp*dre)
           call terminate('riemannflux', &
 &                  'turkel preconditioner not implemented yet')
-        case (choimerkle) 
+        case (choimerkle)
           call terminate('riemannflux', &
 &                  'choi merkle preconditioner not implemented yet')
         end select
-      case (vanleer) 
+      case (vanleer)
         call terminate('riemannflux', 'van leer fvs not implemented yet'&
 &               )
-      case (ausmdv) 
+      case (ausmdv)
         call terminate('riemannflux', 'ausmdv fvs not implemented yet')
       end select
     end subroutine riemannflux
@@ -5374,15 +5374,15 @@ branch = myIntStack(myIntPtr)
 !   plus diff mem management of: p:in w:in fw:in
   subroutine inviscidupwindflux_fast_b(finegrid)
 !
-!       inviscidupwindflux computes the artificial dissipation part of 
-!       the euler fluxes by means of an approximate solution of the 1d 
-!       riemann problem on the face. for first order schemes,          
-!       finegrid == .false., the states in the cells are assumed to    
-!       be constant; for the second order schemes on the fine grid a   
-!       nonlinear reconstruction of the left and right state is done   
-!       for which several options exist.                               
-!       it is assumed that the pointers in blockpointers already       
-!       point to the correct block.                                    
+!       inviscidupwindflux computes the artificial dissipation part of
+!       the euler fluxes by means of an approximate solution of the 1d
+!       riemann problem on the face. for first order schemes,
+!       finegrid == .false., the states in the cells are assumed to
+!       be constant; for the second order schemes on the fine grid a
+!       nonlinear reconstruction of the left and right state is done
+!       for which several options exist.
+!       it is assumed that the pointers in blockpointers already
+!       point to the correct block.
 !
     use constants
     use blockpointers, only : il, jl, kl, ie, je, ke, ib, jb, kb, w, &
@@ -5489,14 +5489,14 @@ branch = myIntStack(myIntPtr)
         firstorderk = .false.
       end if
 !
-!       flux computation. a distinction is made between first and      
-!       second order schemes to avoid the overhead for the first order 
-!       scheme.                                                        
+!       flux computation. a distinction is made between first and
+!       second order schemes to avoid the overhead for the first order
+!       scheme.
 !
       if (limused .eq. firstorder) then
 !
-!         first order reconstruction. the states in the cells are      
-!         constant. the left and right states are constructed easily.  
+!         first order reconstruction. the states in the cells are
+!         constant. the left and right states are constructed easily.
 !
 ! fluxes in the i-direction.
         do k=2,kl
@@ -5817,12 +5817,12 @@ branch = myIntStack(myIntPtr)
 !      ==================================================================
 !      ==================================================================
 !
-!         second order reconstruction of the left and right state.     
-!         the three differences used in the, possibly nonlinear,       
-!         interpolation are constructed here; the actual left and      
-!         right states, or at least the differences from the first     
-!         order interpolation, are computed in the subroutine          
-!         leftrightstate.                                              
+!         second order reconstruction of the left and right state.
+!         the three differences used in the, possibly nonlinear,
+!         interpolation are constructed here; the actual left and
+!         right states, or at least the differences from the first
+!         order interpolation, are computed in the subroutine
+!         leftrightstate.
 !
 ! fluxes in the i-direction.
         do k=2,kl
@@ -6491,10 +6491,10 @@ myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
       end if
 ! determine the limiter used.
-      select case  (limused) 
-      case (nolimiter) 
+      select case  (limused)
+      case (nolimiter)
         call pushcontrol2b(1)
-      case (vanalbeda) 
+      case (vanalbeda)
 !          ==============================================================
 ! nonlinear interpolation using the van albeda limiter.
 ! loop over the number of variables to be interpolated.
@@ -6603,7 +6603,7 @@ myIntPtr = myIntPtr + 1
 ! scheme.
         end do
         call pushcontrol2b(2)
-      case (minmod) 
+      case (minmod)
 !          ==============================================================
 ! nonlinear interpolation using the minmod limiter.
 ! loop over the number of variables to be interpolated.
@@ -7159,15 +7159,15 @@ branch = myIntStack(myIntPtr)
         du3(ivz) = rot(3, 1)*dvx + rot(3, 2)*dvy + rot(3, 3)*dvz
       end if
 ! determine the limiter used.
-      select case  (limused) 
-      case (nolimiter) 
+      select case  (limused)
+      case (nolimiter)
 ! linear interpolation; no limiter.
 ! loop over the number of variables to be interpolated.
         do l=1,nwint
           left(l) = omk*du1(l) + opk*du2(l)
           right(l) = -(omk*du3(l)) - opk*du2(l)
         end do
-      case (vanalbeda) 
+      case (vanalbeda)
 !          ==============================================================
 ! nonlinear interpolation using the van albeda limiter.
 ! loop over the number of variables to be interpolated.
@@ -7237,7 +7237,7 @@ branch = myIntStack(myIntPtr)
           left(l) = omk*rl1*du1(l) + opk*rl2*du2(l)
           right(l) = -(opk*rr1*du2(l)) - omk*rr2*du3(l)
         end do
-      case (minmod) 
+      case (minmod)
 !          ==============================================================
 ! nonlinear interpolation using the minmod limiter.
 ! loop over the number of variables to be interpolated.
@@ -7431,11 +7431,11 @@ branch = myIntStack(myIntPtr)
       gm1 = gammaface - one
       gm53 = gammaface - five*third
 ! determine which riemann solver must be solved.
-      select case  (riemannused) 
-      case (roe) 
+      select case  (riemannused)
+      case (roe)
 ! determine the preconditioner used.
-        select case  (precond) 
-        case (noprecond) 
+        select case  (precond)
+        case (noprecond)
 ! no preconditioner used. use the roe scheme of the
 ! standard equations.
 ! compute the square root of the left and right densities
@@ -7894,11 +7894,11 @@ branch = myIntStack(myIntPtr)
       gm1 = gammaface - one
       gm53 = gammaface - five*third
 ! determine which riemann solver must be solved.
-      select case  (riemannused) 
-      case (roe) 
+      select case  (riemannused)
+      case (roe)
 ! determine the preconditioner used.
-        select case  (precond) 
-        case (noprecond) 
+        select case  (precond)
+        case (noprecond)
 ! no preconditioner used. use the roe scheme of the
 ! standard equations.
 ! compute the square root of the left and right densities
@@ -8041,7 +8041,7 @@ branch = myIntStack(myIntPtr)
           flux(imy) = -(porflux*(lam3*drv+vavg*abv6+sy*abv7))
           flux(imz) = -(porflux*(lam3*drw+wavg*abv6+sz*abv7))
           flux(irhoe) = -(porflux*(lam3*dre+havg*abv6+unavg*abv7))
-        case (turkel) 
+        case (turkel)
 !          tmp = max(lam1,lam2,lam3)
 !          flux(irho)  = -porflux*(tmp*dr)
 !          flux(imx)   = -porflux*(tmp*dru)
@@ -8050,14 +8050,14 @@ branch = myIntStack(myIntPtr)
 !          flux(irhoe) = -porflux*(tmp*dre)
           call terminate('riemannflux', &
 &                  'turkel preconditioner not implemented yet')
-        case (choimerkle) 
+        case (choimerkle)
           call terminate('riemannflux', &
 &                  'choi merkle preconditioner not implemented yet')
         end select
-      case (vanleer) 
+      case (vanleer)
         call terminate('riemannflux', 'van leer fvs not implemented yet'&
 &               )
-      case (ausmdv) 
+      case (ausmdv)
         call terminate('riemannflux', 'ausmdv fvs not implemented yet')
       end select
     end subroutine riemannflux
@@ -8075,10 +8075,10 @@ branch = myIntStack(myIntPtr)
 !                vx:in vy:in vz:in fw:in
   subroutine viscousflux_fast_b()
 !
-!       viscousflux computes the viscous fluxes using a central        
-!       difference scheme for a block.                                 
-!       it is assumed that the pointers in block pointer already point 
-!       to the correct block.                                          
+!       viscousflux computes the viscous fluxes using a central
+!       difference scheme for a block.
+!       it is assumed that the pointers in block pointer already point
+!       to the correct block.
 !
     use constants
     use blockpointers
@@ -8111,11 +8111,14 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: tauxxd, tauyyd, tauzzd
     real(kind=realtype) :: tauxy, tauxz, tauyz
     real(kind=realtype) :: tauxyd, tauxzd, tauyzd
+    real(kind=realtype) :: tauxxs, tauyys, tauzzs
+    real(kind=realtype) :: tauxxsd, tauyysd, tauzzsd
+    real(kind=realtype) :: tauxys, tauxzs, tauyzs
+    real(kind=realtype) :: tauxysd, tauxzsd, tauyzsd
     real(kind=realtype) :: exx, eyy, ezz
     real(kind=realtype) :: exxd, eyyd, ezzd
     real(kind=realtype) :: exy, exz, eyz
     real(kind=realtype) :: exyd, exzd, eyzd
-    real(kind=realtype) :: wxx, wyy, wzz
     real(kind=realtype) :: wxy, wxz, wyz, wyx, wzx, wzy
     real(kind=realtype) :: wxyd, wxzd, wyzd, wyxd, wzxd, wzyd
     real(kind=realtype) :: den, ccr1, fact
@@ -8143,6 +8146,7 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: tempd42
     real(kind=realtype) :: tempd41
     real(kind=realtype) :: tempd40
+    real(kind=realtype) :: tempd70
     real(kind=realtype) :: tempd39
     real(kind=realtype) :: tempd38
     real(kind=realtype) :: tempd37
@@ -8151,7 +8155,9 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: tempd34
     real(kind=realtype) :: tempd33
     real(kind=realtype) :: tempd32
+    real(kind=realtype) :: tempd69
     real(kind=realtype) :: tempd31
+    real(kind=realtype) :: tempd68
     real(kind=realtype) :: tempd30
     real(kind=realtype) :: tempd67
     real(kind=realtype) :: tempd66
@@ -8200,10 +8206,6 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: tempd15
 ! set qcr parameters
     ccr1 = 0.3_realtype
-! the diagonals of the vorticity tensor components are always zero
-    wxx = zero
-    wyy = zero
-    wzz = zero
 ! set rfilv to rfil to indicate that this is the viscous part.
 ! if rfilv == 0 the viscous residuals need not to be computed
 ! and a return can be made.
@@ -8354,19 +8356,24 @@ myIntPtr = myIntPtr + 1
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = mut*(two*u_x-fracdiv)
-        tauyy = mut*(two*v_y-fracdiv)
-        tauzz = mut*(two*w_z-fracdiv)
-        tauxy = mut*(u_y+v_x)
-        tauxz = mut*(u_z+w_x)
-        tauyz = mut*(v_z+w_y)
+        tauxxs = two*u_x - fracdiv
+        tauyys = two*v_y - fracdiv
+        tauzzs = two*w_z - fracdiv
+        tauxys = u_y + v_x
+        tauxzs = u_z + w_x
+        tauyzs = v_z + w_y
 ! add qcr corrections if necessary
         if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
-! 
+!
 ! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
 !
 ! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
@@ -8374,6 +8381,8 @@ myIntPtr = myIntPtr + 1
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
           den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &           v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z)
@@ -8386,35 +8395,42 @@ myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
             den = den
           end if
-! compute factor that will multiply all tensor components
-          fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+          fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
           wxz = u_z - w_x
-          wyz = u_y - v_x
+          wyz = v_z - w_y
           wyx = -wxy
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-          exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*tauxy+&
-&           wyz*tauxz)
-          exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+&
-&           wzz*tauxz)
-          eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*tauyy+&
-&           wzz*tauyz)
-! add extra terms
-          tauxx = tauxx - exx
-          tauyy = tauyy - eyy
-          tauzz = tauzz - ezz
-          tauxy = tauxy - exy
-          tauxz = tauxz - exz
-          tauyz = tauyz - eyz
+          exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+          eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+          ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+          exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+          exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+          eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
+! apply the total viscosity to the stress tensor and add extra terms
+          tauxx = mut*tauxxs - exx
+          tauyy = mut*tauyys - eyy
+          tauzz = mut*tauzzs - ezz
+          tauxy = mut*tauxys - exy
+          tauxz = mut*tauxzs - exz
+          tauyz = mut*tauyzs - eyz
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 0
         else
+! just apply the total viscosity to the stress tensor
+          tauxx = mut*tauxxs
+          tauyy = mut*tauyys
+          tauzz = mut*tauzzs
+          tauxy = mut*tauxys
+          tauxz = mut*tauxzs
+          tauyz = mut*tauyzs
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
         end if
@@ -8432,21 +8448,21 @@ myIntPtr = myIntPtr + 1
         fmzd = fwd(i+1, j, k, imz) - fwd(i, j, k, imz)
         fmyd = fwd(i+1, j, k, imy) - fwd(i, j, k, imy)
         fmxd = fwd(i+1, j, k, imx) - fwd(i, j, k, imx)
-        tempd65 = si(i, j, k, 1)*frhoed
-        tempd66 = si(i, j, k, 2)*frhoed
-        tempd67 = si(i, j, k, 3)*frhoed
-        ubard = tauxz*tempd67 + tauxy*tempd66 + tauxx*tempd65
-        tauxxd = si(i, j, k, 1)*fmxd + ubar*tempd65
-        vbard = tauyz*tempd67 + tauyy*tempd66 + tauxy*tempd65
+        tempd68 = si(i, j, k, 1)*frhoed
+        tempd69 = si(i, j, k, 2)*frhoed
+        tempd70 = si(i, j, k, 3)*frhoed
+        ubard = tauxz*tempd70 + tauxy*tempd69 + tauxx*tempd68
+        tauxxd = si(i, j, k, 1)*fmxd + ubar*tempd68
+        vbard = tauyz*tempd70 + tauyy*tempd69 + tauxy*tempd68
         tauxyd = si(i, j, k, 1)*fmyd + si(i, j, k, 2)*fmxd + ubar*&
-&         tempd66 + vbar*tempd65
-        wbard = tauzz*tempd67 + tauyz*tempd66 + tauxz*tempd65
+&         tempd69 + vbar*tempd68
+        wbard = tauzz*tempd70 + tauyz*tempd69 + tauxz*tempd68
         tauxzd = si(i, j, k, 1)*fmzd + si(i, j, k, 3)*fmxd + ubar*&
-&         tempd67 + wbar*tempd65
-        tauyyd = si(i, j, k, 2)*fmyd + vbar*tempd66
+&         tempd70 + wbar*tempd68
+        tauyyd = si(i, j, k, 2)*fmyd + vbar*tempd69
         tauyzd = si(i, j, k, 2)*fmzd + si(i, j, k, 3)*fmyd + vbar*&
-&         tempd67 + wbar*tempd66
-        tauzzd = si(i, j, k, 3)*fmzd + wbar*tempd67
+&         tempd70 + wbar*tempd69
+        tauzzd = si(i, j, k, 3)*fmzd + wbar*tempd70
         q_xd = -(si(i, j, k, 1)*frhoed)
         q_yd = -(si(i, j, k, 2)*frhoed)
         q_zd = -(si(i, j, k, 3)*frhoed)
@@ -8459,64 +8475,77 @@ myIntPtr = myIntPtr + 1
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
         if (branch .eq. 0) then
-          eyzd = -tauyzd
           exzd = -tauxzd
           exyd = -tauxyd
           ezzd = -tauzzd
           eyyd = -tauyyd
+          tempd61 = fact*exzd
+          tempd64 = fact*exyd
+          tempd62 = two*fact*ezzd
+          tempd63 = two*fact*eyyd
+          mutd = tauxzs*tauxzd + tauzzs*tauzzd + tauxxs*tauxxd + tauyys*&
+&           tauyyd + tauxys*tauxyd + tauyzs*tauyzd
+          tauyzsd = wxy*tempd61 + wzy*tempd62 + wyz*tempd63 + wxz*&
+&           tempd64 + mut*tauyzd
+          eyzd = -tauyzd
+          tauxxsd = wzx*tempd61 + wyx*tempd64 + mut*tauxxd
           exxd = -tauxxd
-          tempd59 = fact*eyzd
-          factd = (wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+wzz&
-&           *tauxz)*exzd + two*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*ezzd + &
-&           two*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*exxd + two*(wyx*tauxy+&
-&           wyy*tauyy+wyz*tauyz)*eyyd + (wxx*tauxy+wxy*tauyy+wxz*tauyz+&
-&           wyx*tauxx+wyy*tauxy+wyz*tauxz)*exyd + (wyx*tauxz+wyy*tauyz+&
-&           wyz*tauzz+wzx*tauxy+wzy*tauyy+wzz*tauyz)*eyzd
-          tempd62 = fact*exzd
-          tempd60 = fact*exyd
-          tempd63 = two*fact*ezzd
-          tauzzd = tauzzd + wxz*tempd62 + wzz*tempd63 + wyz*tempd59
-          wzxd = tauxx*tempd62 + tauxz*tempd63 + tauxy*tempd59
-          wzyd = tauxy*tempd62 + tauyz*tempd63 + tauyy*tempd59
-          tempd61 = two*fact*eyyd
-          wyxd = tauxx*tempd60 + tauxy*tempd61 + tauxz*tempd59
-          tauyzd = tauyzd + wxy*tempd62 + wzy*tempd63 + wyz*tempd61 + &
-&           wxz*tempd60 + (wzz+wyy)*tempd59
-          wyzd = tauxz*tempd60 - wzyd + tauyz*tempd61 + tauzz*tempd59
-          tauyyd = tauyyd + wxy*tempd60 + wyy*tempd61 + wzy*tempd59
-          tempd64 = two*fact*exxd
-          tauxzd = tauxzd + (wzz+wxx)*tempd62 + wzx*tempd63 + wxz*&
-&           tempd64 + wyz*tempd60 + wyx*tempd59
-          tauxyd = tauxyd + wzy*tempd62 + wyx*tempd61 + wxy*tempd64 + (&
-&           wyy+wxx)*tempd60 + wzx*tempd59
-          wxyd = tauyy*tempd60 - wyxd + tauxy*tempd64 + tauyz*tempd62
-          wxzd = tauyz*tempd60 - wzxd + tauxz*tempd64 + tauzz*tempd62
-          tauxxd = tauxxd + wyx*tempd60 + wxx*tempd64 + wzx*tempd62
-          u_yd = wxyd + wyzd
-          v_xd = -wxyd - wyzd
+          tempd65 = fact*eyzd
+          tauzzsd = wyz*tempd65 + wxz*tempd61 + mut*tauzzd
+          tauyysd = wzy*tempd65 + wxy*tempd64 + mut*tauyyd
+          factd = (wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)*exzd + &
+&           two*(wzx*tauxzs+wzy*tauyzs)*ezzd + two*(wxy*tauxys+wxz*&
+&           tauxzs)*exxd + two*(wyx*tauxys+wyz*tauyzs)*eyyd + (wxy*&
+&           tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)*exyd + (wyx*tauxzs+&
+&           wyz*tauzzs+wzx*tauxys+wzy*tauyys)*eyzd
+          wyxd = tauxxs*tempd64 + tauxys*tempd63 + tauxzs*tempd65
+          wzxd = tauxxs*tempd61 + tauxzs*tempd62 + tauxys*tempd65
+          wzyd = tauxys*tempd61 + tauyzs*tempd62 + tauyys*tempd65
+          wyzd = tauxzs*tempd64 - wzyd + tauyzs*tempd63 + tauzzs*tempd65
+          tempd66 = two*fact*exxd
+          tauxzsd = wyx*tempd65 + wzx*tempd62 + wxz*tempd66 + wyz*&
+&           tempd64 + mut*tauxzd
+          tauxysd = wzx*tempd65 + wyx*tempd63 + wxy*tempd66 + wzy*&
+&           tempd61 + mut*tauxyd
+          wxyd = tauyys*tempd64 - wyxd + tauxys*tempd66 + tauyzs*tempd61
+          wxzd = tauyzs*tempd64 - wzxd + tauxzs*tempd66 + tauzzs*tempd61
+          v_zd = wyzd
+          w_yd = -wyzd
           u_zd = wxzd
           w_xd = -wxzd
-          dend = -(ccr1*factd/den**2)
+          u_yd = wxyd
+          v_xd = -wxyd
+          tempd67 = ccr1*factd/den
+          mued = mued + tempd67
+          dend = -(mue*tempd67/den)
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
           if (branch .eq. 0) dend = 0.0_8
           if (u_x**2 + u_y**2 + u_z**2 + v_x**2 + v_y**2 + v_z**2 + w_x&
 &             **2 + w_y**2 + w_z**2 .eq. 0.0_8) then
-            tempd58 = 0.0
+            tempd60 = 0.0
           else
-            tempd58 = dend/(2.0*sqrt(u_x**2+u_y**2+u_z**2+v_x**2+v_y**2+&
+            tempd60 = dend/(2.0*sqrt(u_x**2+u_y**2+u_z**2+v_x**2+v_y**2+&
 &             v_z**2+w_x**2+w_y**2+w_z**2))
           end if
-          u_xd = 2*u_x*tempd58
-          u_yd = u_yd + 2*u_y*tempd58
-          u_zd = u_zd + 2*u_z*tempd58
-          v_xd = v_xd + 2*v_x*tempd58
-          v_yd = 2*v_y*tempd58
-          v_zd = 2*v_z*tempd58
-          w_xd = w_xd + 2*w_x*tempd58
-          w_yd = 2*w_y*tempd58
-          w_zd = 2*w_z*tempd58
+          u_xd = 2*u_x*tempd60
+          u_yd = u_yd + 2*u_y*tempd60
+          u_zd = u_zd + 2*u_z*tempd60
+          v_xd = v_xd + 2*v_x*tempd60
+          v_yd = 2*v_y*tempd60
+          v_zd = v_zd + 2*v_z*tempd60
+          w_xd = w_xd + 2*w_x*tempd60
+          w_yd = w_yd + 2*w_y*tempd60
+          w_zd = 2*w_z*tempd60
         else
+          mutd = tauxzs*tauxzd + tauzzs*tauzzd + tauxxs*tauxxd + tauyys*&
+&           tauyyd + tauxys*tauxyd + tauyzs*tauyzd
+          tauyzsd = mut*tauyzd
+          tauxzsd = mut*tauxzd
+          tauxysd = mut*tauxyd
+          tauzzsd = mut*tauzzd
+          tauyysd = mut*tauyyd
+          tauxxsd = mut*tauxxd
           u_xd = 0.0_8
           u_yd = 0.0_8
           u_zd = 0.0_8
@@ -8527,24 +8556,21 @@ branch = myIntStack(myIntPtr)
           v_yd = 0.0_8
           v_zd = 0.0_8
         end if
-        fracdivd = -(mut*tauyyd) - mut*tauxxd - mut*tauzzd
-        tempd45 = twothird*fracdivd
+        fracdivd = -tauyysd - tauxxsd - tauzzsd
+        tempd47 = twothird*fracdivd
         heatcoefd = q_y*q_yd + q_x*q_xd + q_z*q_zd
         q_zd = heatcoef*q_zd
         q_yd = heatcoef*q_yd
         q_xd = heatcoef*q_xd
-        mutd = (u_z+w_x)*tauxzd + (two*w_z-fracdiv)*tauzzd + (two*u_x-&
-&         fracdiv)*tauxxd + (two*v_y-fracdiv)*tauyyd + (u_y+v_x)*tauxyd &
-&         + (v_z+w_y)*tauyzd
-        v_zd = v_zd + mut*tauyzd
-        w_yd = w_yd + mut*tauyzd
-        u_zd = u_zd + mut*tauxzd
-        w_xd = w_xd + mut*tauxzd
-        u_yd = u_yd + mut*tauxyd
-        v_xd = v_xd + mut*tauxyd
-        w_zd = w_zd + tempd45 + mut*two*tauzzd
-        v_yd = v_yd + tempd45 + mut*two*tauyyd
-        u_xd = u_xd + tempd45 + mut*two*tauxxd
+        v_zd = v_zd + tauyzsd
+        w_yd = w_yd + tauyzsd
+        u_zd = u_zd + tauxzsd
+        w_xd = w_xd + tauxzsd
+        u_yd = u_yd + tauxysd
+        v_xd = v_xd + tauxysd
+        w_zd = w_zd + tempd47 + two*tauzzsd
+        v_yd = v_yd + tempd47 + two*tauyysd
+        u_xd = u_xd + tempd47 + two*tauxxsd
         corrd = -(ssy*q_yd) - ssx*q_xd - ssz*q_zd
         q_xd = q_xd + ssx*corrd
         q_yd = q_yd + ssy*corrd
@@ -8569,66 +8595,66 @@ branch = myIntStack(myIntPtr)
         u_zd = u_zd + ssz*corrd
         wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) - ss*corrd
         wd(i, j, k, ivx) = wd(i, j, k, ivx) + ss*corrd
-        tempd46 = fourth*q_zd
-        qzd(i, j-1, k-1) = qzd(i, j-1, k-1) + tempd46
-        qzd(i, j, k-1) = qzd(i, j, k-1) + tempd46
-        qzd(i, j-1, k) = qzd(i, j-1, k) + tempd46
-        qzd(i, j, k) = qzd(i, j, k) + tempd46
-        tempd47 = fourth*q_yd
-        qyd(i, j-1, k-1) = qyd(i, j-1, k-1) + tempd47
-        qyd(i, j, k-1) = qyd(i, j, k-1) + tempd47
-        qyd(i, j-1, k) = qyd(i, j-1, k) + tempd47
-        qyd(i, j, k) = qyd(i, j, k) + tempd47
-        tempd48 = fourth*q_xd
-        qxd(i, j-1, k-1) = qxd(i, j-1, k-1) + tempd48
-        qxd(i, j, k-1) = qxd(i, j, k-1) + tempd48
-        qxd(i, j-1, k) = qxd(i, j-1, k) + tempd48
-        qxd(i, j, k) = qxd(i, j, k) + tempd48
-        tempd49 = fourth*w_zd
-        wzd(i, j-1, k-1) = wzd(i, j-1, k-1) + tempd49
-        wzd(i, j, k-1) = wzd(i, j, k-1) + tempd49
-        wzd(i, j-1, k) = wzd(i, j-1, k) + tempd49
-        wzd(i, j, k) = wzd(i, j, k) + tempd49
-        tempd50 = fourth*w_yd
-        wyd(i, j-1, k-1) = wyd(i, j-1, k-1) + tempd50
-        wyd(i, j, k-1) = wyd(i, j, k-1) + tempd50
-        wyd(i, j-1, k) = wyd(i, j-1, k) + tempd50
-        wyd(i, j, k) = wyd(i, j, k) + tempd50
-        tempd51 = fourth*w_xd
-        wxd(i, j-1, k-1) = wxd(i, j-1, k-1) + tempd51
-        wxd(i, j, k-1) = wxd(i, j, k-1) + tempd51
-        wxd(i, j-1, k) = wxd(i, j-1, k) + tempd51
-        wxd(i, j, k) = wxd(i, j, k) + tempd51
-        tempd52 = fourth*v_zd
-        vzd(i, j-1, k-1) = vzd(i, j-1, k-1) + tempd52
-        vzd(i, j, k-1) = vzd(i, j, k-1) + tempd52
-        vzd(i, j-1, k) = vzd(i, j-1, k) + tempd52
-        vzd(i, j, k) = vzd(i, j, k) + tempd52
-        tempd53 = fourth*v_yd
-        vyd(i, j-1, k-1) = vyd(i, j-1, k-1) + tempd53
-        vyd(i, j, k-1) = vyd(i, j, k-1) + tempd53
-        vyd(i, j-1, k) = vyd(i, j-1, k) + tempd53
-        vyd(i, j, k) = vyd(i, j, k) + tempd53
-        tempd54 = fourth*v_xd
-        vxd(i, j-1, k-1) = vxd(i, j-1, k-1) + tempd54
-        vxd(i, j, k-1) = vxd(i, j, k-1) + tempd54
-        vxd(i, j-1, k) = vxd(i, j-1, k) + tempd54
-        vxd(i, j, k) = vxd(i, j, k) + tempd54
-        tempd55 = fourth*u_zd
-        uzd(i, j-1, k-1) = uzd(i, j-1, k-1) + tempd55
-        uzd(i, j, k-1) = uzd(i, j, k-1) + tempd55
-        uzd(i, j-1, k) = uzd(i, j-1, k) + tempd55
-        uzd(i, j, k) = uzd(i, j, k) + tempd55
-        tempd56 = fourth*u_yd
-        uyd(i, j-1, k-1) = uyd(i, j-1, k-1) + tempd56
-        uyd(i, j, k-1) = uyd(i, j, k-1) + tempd56
-        uyd(i, j-1, k) = uyd(i, j-1, k) + tempd56
-        uyd(i, j, k) = uyd(i, j, k) + tempd56
-        tempd57 = fourth*u_xd
-        uxd(i, j-1, k-1) = uxd(i, j-1, k-1) + tempd57
-        uxd(i, j, k-1) = uxd(i, j, k-1) + tempd57
-        uxd(i, j-1, k) = uxd(i, j-1, k) + tempd57
-        uxd(i, j, k) = uxd(i, j, k) + tempd57
+        tempd48 = fourth*q_zd
+        qzd(i, j-1, k-1) = qzd(i, j-1, k-1) + tempd48
+        qzd(i, j, k-1) = qzd(i, j, k-1) + tempd48
+        qzd(i, j-1, k) = qzd(i, j-1, k) + tempd48
+        qzd(i, j, k) = qzd(i, j, k) + tempd48
+        tempd49 = fourth*q_yd
+        qyd(i, j-1, k-1) = qyd(i, j-1, k-1) + tempd49
+        qyd(i, j, k-1) = qyd(i, j, k-1) + tempd49
+        qyd(i, j-1, k) = qyd(i, j-1, k) + tempd49
+        qyd(i, j, k) = qyd(i, j, k) + tempd49
+        tempd50 = fourth*q_xd
+        qxd(i, j-1, k-1) = qxd(i, j-1, k-1) + tempd50
+        qxd(i, j, k-1) = qxd(i, j, k-1) + tempd50
+        qxd(i, j-1, k) = qxd(i, j-1, k) + tempd50
+        qxd(i, j, k) = qxd(i, j, k) + tempd50
+        tempd51 = fourth*w_zd
+        wzd(i, j-1, k-1) = wzd(i, j-1, k-1) + tempd51
+        wzd(i, j, k-1) = wzd(i, j, k-1) + tempd51
+        wzd(i, j-1, k) = wzd(i, j-1, k) + tempd51
+        wzd(i, j, k) = wzd(i, j, k) + tempd51
+        tempd52 = fourth*w_yd
+        wyd(i, j-1, k-1) = wyd(i, j-1, k-1) + tempd52
+        wyd(i, j, k-1) = wyd(i, j, k-1) + tempd52
+        wyd(i, j-1, k) = wyd(i, j-1, k) + tempd52
+        wyd(i, j, k) = wyd(i, j, k) + tempd52
+        tempd53 = fourth*w_xd
+        wxd(i, j-1, k-1) = wxd(i, j-1, k-1) + tempd53
+        wxd(i, j, k-1) = wxd(i, j, k-1) + tempd53
+        wxd(i, j-1, k) = wxd(i, j-1, k) + tempd53
+        wxd(i, j, k) = wxd(i, j, k) + tempd53
+        tempd54 = fourth*v_zd
+        vzd(i, j-1, k-1) = vzd(i, j-1, k-1) + tempd54
+        vzd(i, j, k-1) = vzd(i, j, k-1) + tempd54
+        vzd(i, j-1, k) = vzd(i, j-1, k) + tempd54
+        vzd(i, j, k) = vzd(i, j, k) + tempd54
+        tempd55 = fourth*v_yd
+        vyd(i, j-1, k-1) = vyd(i, j-1, k-1) + tempd55
+        vyd(i, j, k-1) = vyd(i, j, k-1) + tempd55
+        vyd(i, j-1, k) = vyd(i, j-1, k) + tempd55
+        vyd(i, j, k) = vyd(i, j, k) + tempd55
+        tempd56 = fourth*v_xd
+        vxd(i, j-1, k-1) = vxd(i, j-1, k-1) + tempd56
+        vxd(i, j, k-1) = vxd(i, j, k-1) + tempd56
+        vxd(i, j-1, k) = vxd(i, j-1, k) + tempd56
+        vxd(i, j, k) = vxd(i, j, k) + tempd56
+        tempd57 = fourth*u_zd
+        uzd(i, j-1, k-1) = uzd(i, j-1, k-1) + tempd57
+        uzd(i, j, k-1) = uzd(i, j, k-1) + tempd57
+        uzd(i, j-1, k) = uzd(i, j-1, k) + tempd57
+        uzd(i, j, k) = uzd(i, j, k) + tempd57
+        tempd58 = fourth*u_yd
+        uyd(i, j-1, k-1) = uyd(i, j-1, k-1) + tempd58
+        uyd(i, j, k-1) = uyd(i, j, k-1) + tempd58
+        uyd(i, j-1, k) = uyd(i, j-1, k) + tempd58
+        uyd(i, j, k) = uyd(i, j, k) + tempd58
+        tempd59 = fourth*u_xd
+        uxd(i, j-1, k-1) = uxd(i, j-1, k-1) + tempd59
+        uxd(i, j, k-1) = uxd(i, j, k-1) + tempd59
+        uxd(i, j-1, k) = uxd(i, j-1, k) + tempd59
+        uxd(i, j, k) = uxd(i, j, k) + tempd59
         muld = mutd + factlamheat*heatcoefd
         mued = mued + mutd + factturbheat*heatcoefd
 branch = myIntStack(myIntPtr)
@@ -8738,19 +8764,24 @@ myIntPtr = myIntPtr + 1
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = mut*(two*u_x-fracdiv)
-        tauyy = mut*(two*v_y-fracdiv)
-        tauzz = mut*(two*w_z-fracdiv)
-        tauxy = mut*(u_y+v_x)
-        tauxz = mut*(u_z+w_x)
-        tauyz = mut*(v_z+w_y)
+        tauxxs = two*u_x - fracdiv
+        tauyys = two*v_y - fracdiv
+        tauzzs = two*w_z - fracdiv
+        tauxys = u_y + v_x
+        tauxzs = u_z + w_x
+        tauyzs = v_z + w_y
 ! add qcr corrections if necessary
         if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
-! 
+!
 ! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
 !
 ! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
@@ -8758,6 +8789,8 @@ myIntPtr = myIntPtr + 1
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
           den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &           v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z)
@@ -8770,35 +8803,42 @@ myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
             den = den
           end if
-! compute factor that will multiply all tensor components
-          fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+          fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
           wxz = u_z - w_x
-          wyz = u_y - v_x
+          wyz = v_z - w_y
           wyx = -wxy
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-          exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*tauxy+&
-&           wyz*tauxz)
-          exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+&
-&           wzz*tauxz)
-          eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*tauyy+&
-&           wzz*tauyz)
-! add extra terms
-          tauxx = tauxx - exx
-          tauyy = tauyy - eyy
-          tauzz = tauzz - ezz
-          tauxy = tauxy - exy
-          tauxz = tauxz - exz
-          tauyz = tauyz - eyz
+          exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+          eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+          ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+          exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+          exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+          eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
+! apply the total viscosity to the stress tensor and add extra terms
+          tauxx = mut*tauxxs - exx
+          tauyy = mut*tauyys - eyy
+          tauzz = mut*tauzzs - ezz
+          tauxy = mut*tauxys - exy
+          tauxz = mut*tauxzs - exz
+          tauyz = mut*tauyzs - eyz
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 0
         else
+! just apply the total viscosity to the stress tensor
+          tauxx = mut*tauxxs
+          tauyy = mut*tauyys
+          tauzz = mut*tauzzs
+          tauxy = mut*tauxys
+          tauxz = mut*tauxzs
+          tauyz = mut*tauyzs
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
         end if
@@ -8816,21 +8856,21 @@ myIntPtr = myIntPtr + 1
         fmzd = fwd(i, j+1, k, imz) - fwd(i, j, k, imz)
         fmyd = fwd(i, j+1, k, imy) - fwd(i, j, k, imy)
         fmxd = fwd(i, j+1, k, imx) - fwd(i, j, k, imx)
-        tempd42 = sj(i, j, k, 1)*frhoed
-        tempd43 = sj(i, j, k, 2)*frhoed
-        tempd44 = sj(i, j, k, 3)*frhoed
-        ubard = tauxz*tempd44 + tauxy*tempd43 + tauxx*tempd42
-        tauxxd = sj(i, j, k, 1)*fmxd + ubar*tempd42
-        vbard = tauyz*tempd44 + tauyy*tempd43 + tauxy*tempd42
+        tempd44 = sj(i, j, k, 1)*frhoed
+        tempd45 = sj(i, j, k, 2)*frhoed
+        tempd46 = sj(i, j, k, 3)*frhoed
+        ubard = tauxz*tempd46 + tauxy*tempd45 + tauxx*tempd44
+        tauxxd = sj(i, j, k, 1)*fmxd + ubar*tempd44
+        vbard = tauyz*tempd46 + tauyy*tempd45 + tauxy*tempd44
         tauxyd = sj(i, j, k, 1)*fmyd + sj(i, j, k, 2)*fmxd + ubar*&
-&         tempd43 + vbar*tempd42
-        wbard = tauzz*tempd44 + tauyz*tempd43 + tauxz*tempd42
+&         tempd45 + vbar*tempd44
+        wbard = tauzz*tempd46 + tauyz*tempd45 + tauxz*tempd44
         tauxzd = sj(i, j, k, 1)*fmzd + sj(i, j, k, 3)*fmxd + ubar*&
-&         tempd44 + wbar*tempd42
-        tauyyd = sj(i, j, k, 2)*fmyd + vbar*tempd43
+&         tempd46 + wbar*tempd44
+        tauyyd = sj(i, j, k, 2)*fmyd + vbar*tempd45
         tauyzd = sj(i, j, k, 2)*fmzd + sj(i, j, k, 3)*fmyd + vbar*&
-&         tempd44 + wbar*tempd43
-        tauzzd = sj(i, j, k, 3)*fmzd + wbar*tempd44
+&         tempd46 + wbar*tempd45
+        tauzzd = sj(i, j, k, 3)*fmzd + wbar*tempd46
         q_xd = -(sj(i, j, k, 1)*frhoed)
         q_yd = -(sj(i, j, k, 2)*frhoed)
         q_zd = -(sj(i, j, k, 3)*frhoed)
@@ -8843,64 +8883,77 @@ myIntPtr = myIntPtr + 1
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
         if (branch .eq. 0) then
-          eyzd = -tauyzd
           exzd = -tauxzd
           exyd = -tauxyd
           ezzd = -tauzzd
           eyyd = -tauyyd
+          tempd37 = fact*exzd
+          tempd40 = fact*exyd
+          tempd38 = two*fact*ezzd
+          tempd39 = two*fact*eyyd
+          mutd = tauxzs*tauxzd + tauzzs*tauzzd + tauxxs*tauxxd + tauyys*&
+&           tauyyd + tauxys*tauxyd + tauyzs*tauyzd
+          tauyzsd = wxy*tempd37 + wzy*tempd38 + wyz*tempd39 + wxz*&
+&           tempd40 + mut*tauyzd
+          eyzd = -tauyzd
+          tauxxsd = wzx*tempd37 + wyx*tempd40 + mut*tauxxd
           exxd = -tauxxd
-          tempd36 = fact*eyzd
-          factd = (wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+wzz&
-&           *tauxz)*exzd + two*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*ezzd + &
-&           two*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*exxd + two*(wyx*tauxy+&
-&           wyy*tauyy+wyz*tauyz)*eyyd + (wxx*tauxy+wxy*tauyy+wxz*tauyz+&
-&           wyx*tauxx+wyy*tauxy+wyz*tauxz)*exyd + (wyx*tauxz+wyy*tauyz+&
-&           wyz*tauzz+wzx*tauxy+wzy*tauyy+wzz*tauyz)*eyzd
-          tempd39 = fact*exzd
-          tempd37 = fact*exyd
-          tempd40 = two*fact*ezzd
-          tauzzd = tauzzd + wxz*tempd39 + wzz*tempd40 + wyz*tempd36
-          wzxd = tauxx*tempd39 + tauxz*tempd40 + tauxy*tempd36
-          wzyd = tauxy*tempd39 + tauyz*tempd40 + tauyy*tempd36
-          tempd38 = two*fact*eyyd
-          wyxd = tauxx*tempd37 + tauxy*tempd38 + tauxz*tempd36
-          tauyzd = tauyzd + wxy*tempd39 + wzy*tempd40 + wyz*tempd38 + &
-&           wxz*tempd37 + (wzz+wyy)*tempd36
-          wyzd = tauxz*tempd37 - wzyd + tauyz*tempd38 + tauzz*tempd36
-          tauyyd = tauyyd + wxy*tempd37 + wyy*tempd38 + wzy*tempd36
-          tempd41 = two*fact*exxd
-          tauxzd = tauxzd + (wzz+wxx)*tempd39 + wzx*tempd40 + wxz*&
-&           tempd41 + wyz*tempd37 + wyx*tempd36
-          tauxyd = tauxyd + wzy*tempd39 + wyx*tempd38 + wxy*tempd41 + (&
-&           wyy+wxx)*tempd37 + wzx*tempd36
-          wxyd = tauyy*tempd37 - wyxd + tauxy*tempd41 + tauyz*tempd39
-          wxzd = tauyz*tempd37 - wzxd + tauxz*tempd41 + tauzz*tempd39
-          tauxxd = tauxxd + wyx*tempd37 + wxx*tempd41 + wzx*tempd39
-          u_yd = wxyd + wyzd
-          v_xd = -wxyd - wyzd
+          tempd41 = fact*eyzd
+          tauzzsd = wyz*tempd41 + wxz*tempd37 + mut*tauzzd
+          tauyysd = wzy*tempd41 + wxy*tempd40 + mut*tauyyd
+          factd = (wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)*exzd + &
+&           two*(wzx*tauxzs+wzy*tauyzs)*ezzd + two*(wxy*tauxys+wxz*&
+&           tauxzs)*exxd + two*(wyx*tauxys+wyz*tauyzs)*eyyd + (wxy*&
+&           tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)*exyd + (wyx*tauxzs+&
+&           wyz*tauzzs+wzx*tauxys+wzy*tauyys)*eyzd
+          wyxd = tauxxs*tempd40 + tauxys*tempd39 + tauxzs*tempd41
+          wzxd = tauxxs*tempd37 + tauxzs*tempd38 + tauxys*tempd41
+          wzyd = tauxys*tempd37 + tauyzs*tempd38 + tauyys*tempd41
+          wyzd = tauxzs*tempd40 - wzyd + tauyzs*tempd39 + tauzzs*tempd41
+          tempd42 = two*fact*exxd
+          tauxzsd = wyx*tempd41 + wzx*tempd38 + wxz*tempd42 + wyz*&
+&           tempd40 + mut*tauxzd
+          tauxysd = wzx*tempd41 + wyx*tempd39 + wxy*tempd42 + wzy*&
+&           tempd37 + mut*tauxyd
+          wxyd = tauyys*tempd40 - wyxd + tauxys*tempd42 + tauyzs*tempd37
+          wxzd = tauyzs*tempd40 - wzxd + tauxzs*tempd42 + tauzzs*tempd37
+          v_zd = wyzd
+          w_yd = -wyzd
           u_zd = wxzd
           w_xd = -wxzd
-          dend = -(ccr1*factd/den**2)
+          u_yd = wxyd
+          v_xd = -wxyd
+          tempd43 = ccr1*factd/den
+          mued = mued + tempd43
+          dend = -(mue*tempd43/den)
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
           if (branch .eq. 0) dend = 0.0_8
           if (u_x**2 + u_y**2 + u_z**2 + v_x**2 + v_y**2 + v_z**2 + w_x&
 &             **2 + w_y**2 + w_z**2 .eq. 0.0_8) then
-            tempd35 = 0.0
+            tempd36 = 0.0
           else
-            tempd35 = dend/(2.0*sqrt(u_x**2+u_y**2+u_z**2+v_x**2+v_y**2+&
+            tempd36 = dend/(2.0*sqrt(u_x**2+u_y**2+u_z**2+v_x**2+v_y**2+&
 &             v_z**2+w_x**2+w_y**2+w_z**2))
           end if
-          u_xd = 2*u_x*tempd35
-          u_yd = u_yd + 2*u_y*tempd35
-          u_zd = u_zd + 2*u_z*tempd35
-          v_xd = v_xd + 2*v_x*tempd35
-          v_yd = 2*v_y*tempd35
-          v_zd = 2*v_z*tempd35
-          w_xd = w_xd + 2*w_x*tempd35
-          w_yd = 2*w_y*tempd35
-          w_zd = 2*w_z*tempd35
+          u_xd = 2*u_x*tempd36
+          u_yd = u_yd + 2*u_y*tempd36
+          u_zd = u_zd + 2*u_z*tempd36
+          v_xd = v_xd + 2*v_x*tempd36
+          v_yd = 2*v_y*tempd36
+          v_zd = v_zd + 2*v_z*tempd36
+          w_xd = w_xd + 2*w_x*tempd36
+          w_yd = w_yd + 2*w_y*tempd36
+          w_zd = 2*w_z*tempd36
         else
+          mutd = tauxzs*tauxzd + tauzzs*tauzzd + tauxxs*tauxxd + tauyys*&
+&           tauyyd + tauxys*tauxyd + tauyzs*tauyzd
+          tauyzsd = mut*tauyzd
+          tauxzsd = mut*tauxzd
+          tauxysd = mut*tauxyd
+          tauzzsd = mut*tauzzd
+          tauyysd = mut*tauyyd
+          tauxxsd = mut*tauxxd
           u_xd = 0.0_8
           u_yd = 0.0_8
           u_zd = 0.0_8
@@ -8911,24 +8964,21 @@ branch = myIntStack(myIntPtr)
           v_yd = 0.0_8
           v_zd = 0.0_8
         end if
-        fracdivd = -(mut*tauyyd) - mut*tauxxd - mut*tauzzd
-        tempd22 = twothird*fracdivd
+        fracdivd = -tauyysd - tauxxsd - tauzzsd
+        tempd23 = twothird*fracdivd
         heatcoefd = q_y*q_yd + q_x*q_xd + q_z*q_zd
         q_zd = heatcoef*q_zd
         q_yd = heatcoef*q_yd
         q_xd = heatcoef*q_xd
-        mutd = (u_z+w_x)*tauxzd + (two*w_z-fracdiv)*tauzzd + (two*u_x-&
-&         fracdiv)*tauxxd + (two*v_y-fracdiv)*tauyyd + (u_y+v_x)*tauxyd &
-&         + (v_z+w_y)*tauyzd
-        v_zd = v_zd + mut*tauyzd
-        w_yd = w_yd + mut*tauyzd
-        u_zd = u_zd + mut*tauxzd
-        w_xd = w_xd + mut*tauxzd
-        u_yd = u_yd + mut*tauxyd
-        v_xd = v_xd + mut*tauxyd
-        w_zd = w_zd + tempd22 + mut*two*tauzzd
-        v_yd = v_yd + tempd22 + mut*two*tauyyd
-        u_xd = u_xd + tempd22 + mut*two*tauxxd
+        v_zd = v_zd + tauyzsd
+        w_yd = w_yd + tauyzsd
+        u_zd = u_zd + tauxzsd
+        w_xd = w_xd + tauxzsd
+        u_yd = u_yd + tauxysd
+        v_xd = v_xd + tauxysd
+        w_zd = w_zd + tempd23 + two*tauzzsd
+        v_yd = v_yd + tempd23 + two*tauyysd
+        u_xd = u_xd + tempd23 + two*tauxxsd
         corrd = -(ssy*q_yd) - ssx*q_xd - ssz*q_zd
         q_xd = q_xd + ssx*corrd
         q_yd = q_yd + ssy*corrd
@@ -8953,66 +9003,66 @@ branch = myIntStack(myIntPtr)
         u_zd = u_zd + ssz*corrd
         wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) - ss*corrd
         wd(i, j, k, ivx) = wd(i, j, k, ivx) + ss*corrd
-        tempd23 = fourth*q_zd
-        qzd(i-1, j, k-1) = qzd(i-1, j, k-1) + tempd23
-        qzd(i, j, k-1) = qzd(i, j, k-1) + tempd23
-        qzd(i-1, j, k) = qzd(i-1, j, k) + tempd23
-        qzd(i, j, k) = qzd(i, j, k) + tempd23
-        tempd24 = fourth*q_yd
-        qyd(i-1, j, k-1) = qyd(i-1, j, k-1) + tempd24
-        qyd(i, j, k-1) = qyd(i, j, k-1) + tempd24
-        qyd(i-1, j, k) = qyd(i-1, j, k) + tempd24
-        qyd(i, j, k) = qyd(i, j, k) + tempd24
-        tempd25 = fourth*q_xd
-        qxd(i-1, j, k-1) = qxd(i-1, j, k-1) + tempd25
-        qxd(i, j, k-1) = qxd(i, j, k-1) + tempd25
-        qxd(i-1, j, k) = qxd(i-1, j, k) + tempd25
-        qxd(i, j, k) = qxd(i, j, k) + tempd25
-        tempd26 = fourth*w_zd
-        wzd(i-1, j, k-1) = wzd(i-1, j, k-1) + tempd26
-        wzd(i, j, k-1) = wzd(i, j, k-1) + tempd26
-        wzd(i-1, j, k) = wzd(i-1, j, k) + tempd26
-        wzd(i, j, k) = wzd(i, j, k) + tempd26
-        tempd27 = fourth*w_yd
-        wyd(i-1, j, k-1) = wyd(i-1, j, k-1) + tempd27
-        wyd(i, j, k-1) = wyd(i, j, k-1) + tempd27
-        wyd(i-1, j, k) = wyd(i-1, j, k) + tempd27
-        wyd(i, j, k) = wyd(i, j, k) + tempd27
-        tempd28 = fourth*w_xd
-        wxd(i-1, j, k-1) = wxd(i-1, j, k-1) + tempd28
-        wxd(i, j, k-1) = wxd(i, j, k-1) + tempd28
-        wxd(i-1, j, k) = wxd(i-1, j, k) + tempd28
-        wxd(i, j, k) = wxd(i, j, k) + tempd28
-        tempd29 = fourth*v_zd
-        vzd(i-1, j, k-1) = vzd(i-1, j, k-1) + tempd29
-        vzd(i, j, k-1) = vzd(i, j, k-1) + tempd29
-        vzd(i-1, j, k) = vzd(i-1, j, k) + tempd29
-        vzd(i, j, k) = vzd(i, j, k) + tempd29
-        tempd30 = fourth*v_yd
-        vyd(i-1, j, k-1) = vyd(i-1, j, k-1) + tempd30
-        vyd(i, j, k-1) = vyd(i, j, k-1) + tempd30
-        vyd(i-1, j, k) = vyd(i-1, j, k) + tempd30
-        vyd(i, j, k) = vyd(i, j, k) + tempd30
-        tempd31 = fourth*v_xd
-        vxd(i-1, j, k-1) = vxd(i-1, j, k-1) + tempd31
-        vxd(i, j, k-1) = vxd(i, j, k-1) + tempd31
-        vxd(i-1, j, k) = vxd(i-1, j, k) + tempd31
-        vxd(i, j, k) = vxd(i, j, k) + tempd31
-        tempd32 = fourth*u_zd
-        uzd(i-1, j, k-1) = uzd(i-1, j, k-1) + tempd32
-        uzd(i, j, k-1) = uzd(i, j, k-1) + tempd32
-        uzd(i-1, j, k) = uzd(i-1, j, k) + tempd32
-        uzd(i, j, k) = uzd(i, j, k) + tempd32
-        tempd33 = fourth*u_yd
-        uyd(i-1, j, k-1) = uyd(i-1, j, k-1) + tempd33
-        uyd(i, j, k-1) = uyd(i, j, k-1) + tempd33
-        uyd(i-1, j, k) = uyd(i-1, j, k) + tempd33
-        uyd(i, j, k) = uyd(i, j, k) + tempd33
-        tempd34 = fourth*u_xd
-        uxd(i-1, j, k-1) = uxd(i-1, j, k-1) + tempd34
-        uxd(i, j, k-1) = uxd(i, j, k-1) + tempd34
-        uxd(i-1, j, k) = uxd(i-1, j, k) + tempd34
-        uxd(i, j, k) = uxd(i, j, k) + tempd34
+        tempd24 = fourth*q_zd
+        qzd(i-1, j, k-1) = qzd(i-1, j, k-1) + tempd24
+        qzd(i, j, k-1) = qzd(i, j, k-1) + tempd24
+        qzd(i-1, j, k) = qzd(i-1, j, k) + tempd24
+        qzd(i, j, k) = qzd(i, j, k) + tempd24
+        tempd25 = fourth*q_yd
+        qyd(i-1, j, k-1) = qyd(i-1, j, k-1) + tempd25
+        qyd(i, j, k-1) = qyd(i, j, k-1) + tempd25
+        qyd(i-1, j, k) = qyd(i-1, j, k) + tempd25
+        qyd(i, j, k) = qyd(i, j, k) + tempd25
+        tempd26 = fourth*q_xd
+        qxd(i-1, j, k-1) = qxd(i-1, j, k-1) + tempd26
+        qxd(i, j, k-1) = qxd(i, j, k-1) + tempd26
+        qxd(i-1, j, k) = qxd(i-1, j, k) + tempd26
+        qxd(i, j, k) = qxd(i, j, k) + tempd26
+        tempd27 = fourth*w_zd
+        wzd(i-1, j, k-1) = wzd(i-1, j, k-1) + tempd27
+        wzd(i, j, k-1) = wzd(i, j, k-1) + tempd27
+        wzd(i-1, j, k) = wzd(i-1, j, k) + tempd27
+        wzd(i, j, k) = wzd(i, j, k) + tempd27
+        tempd28 = fourth*w_yd
+        wyd(i-1, j, k-1) = wyd(i-1, j, k-1) + tempd28
+        wyd(i, j, k-1) = wyd(i, j, k-1) + tempd28
+        wyd(i-1, j, k) = wyd(i-1, j, k) + tempd28
+        wyd(i, j, k) = wyd(i, j, k) + tempd28
+        tempd29 = fourth*w_xd
+        wxd(i-1, j, k-1) = wxd(i-1, j, k-1) + tempd29
+        wxd(i, j, k-1) = wxd(i, j, k-1) + tempd29
+        wxd(i-1, j, k) = wxd(i-1, j, k) + tempd29
+        wxd(i, j, k) = wxd(i, j, k) + tempd29
+        tempd30 = fourth*v_zd
+        vzd(i-1, j, k-1) = vzd(i-1, j, k-1) + tempd30
+        vzd(i, j, k-1) = vzd(i, j, k-1) + tempd30
+        vzd(i-1, j, k) = vzd(i-1, j, k) + tempd30
+        vzd(i, j, k) = vzd(i, j, k) + tempd30
+        tempd31 = fourth*v_yd
+        vyd(i-1, j, k-1) = vyd(i-1, j, k-1) + tempd31
+        vyd(i, j, k-1) = vyd(i, j, k-1) + tempd31
+        vyd(i-1, j, k) = vyd(i-1, j, k) + tempd31
+        vyd(i, j, k) = vyd(i, j, k) + tempd31
+        tempd32 = fourth*v_xd
+        vxd(i-1, j, k-1) = vxd(i-1, j, k-1) + tempd32
+        vxd(i, j, k-1) = vxd(i, j, k-1) + tempd32
+        vxd(i-1, j, k) = vxd(i-1, j, k) + tempd32
+        vxd(i, j, k) = vxd(i, j, k) + tempd32
+        tempd33 = fourth*u_zd
+        uzd(i-1, j, k-1) = uzd(i-1, j, k-1) + tempd33
+        uzd(i, j, k-1) = uzd(i, j, k-1) + tempd33
+        uzd(i-1, j, k) = uzd(i-1, j, k) + tempd33
+        uzd(i, j, k) = uzd(i, j, k) + tempd33
+        tempd34 = fourth*u_yd
+        uyd(i-1, j, k-1) = uyd(i-1, j, k-1) + tempd34
+        uyd(i, j, k-1) = uyd(i, j, k-1) + tempd34
+        uyd(i-1, j, k) = uyd(i-1, j, k) + tempd34
+        uyd(i, j, k) = uyd(i, j, k) + tempd34
+        tempd35 = fourth*u_xd
+        uxd(i-1, j, k-1) = uxd(i-1, j, k-1) + tempd35
+        uxd(i, j, k-1) = uxd(i, j, k-1) + tempd35
+        uxd(i-1, j, k) = uxd(i-1, j, k) + tempd35
+        uxd(i, j, k) = uxd(i, j, k) + tempd35
         muld = mutd + factlamheat*heatcoefd
         mued = mued + mutd + factturbheat*heatcoefd
 branch = myIntStack(myIntPtr)
@@ -9027,7 +9077,7 @@ branch = myIntStack(myIntPtr)
       end do
       mued = 0.0_8
 !
-!         viscous fluxes in the k-direction.                           
+!         viscous fluxes in the k-direction.
 !
       mue = zero
       mued = 0.0_8
@@ -9125,19 +9175,24 @@ myIntPtr = myIntPtr + 1
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = mut*(two*u_x-fracdiv)
-        tauyy = mut*(two*v_y-fracdiv)
-        tauzz = mut*(two*w_z-fracdiv)
-        tauxy = mut*(u_y+v_x)
-        tauxz = mut*(u_z+w_x)
-        tauyz = mut*(v_z+w_y)
+        tauxxs = two*u_x - fracdiv
+        tauyys = two*v_y - fracdiv
+        tauzzs = two*w_z - fracdiv
+        tauxys = u_y + v_x
+        tauxzs = u_z + w_x
+        tauyzs = v_z + w_y
 ! add qcr corrections if necessary
         if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
-! 
+!
 ! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
 !
 ! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
@@ -9145,6 +9200,8 @@ myIntPtr = myIntPtr + 1
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
           den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &           v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z)
@@ -9157,35 +9214,42 @@ myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
             den = den
           end if
-! compute factor that will multiply all tensor components
-          fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+          fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
           wxz = u_z - w_x
-          wyz = u_y - v_x
+          wyz = v_z - w_y
           wyx = -wxy
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-          exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*tauxy+&
-&           wyz*tauxz)
-          exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+&
-&           wzz*tauxz)
-          eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*tauyy+&
-&           wzz*tauyz)
-! add extra terms
-          tauxx = tauxx - exx
-          tauyy = tauyy - eyy
-          tauzz = tauzz - ezz
-          tauxy = tauxy - exy
-          tauxz = tauxz - exz
-          tauyz = tauyz - eyz
+          exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+          eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+          ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+          exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+          exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+          eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
+! apply the total viscosity to the stress tensor and add extra terms
+          tauxx = mut*tauxxs - exx
+          tauyy = mut*tauyys - eyy
+          tauzz = mut*tauzzs - ezz
+          tauxy = mut*tauxys - exy
+          tauxz = mut*tauxzs - exz
+          tauyz = mut*tauyzs - eyz
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 0
         else
+! just apply the total viscosity to the stress tensor
+          tauxx = mut*tauxxs
+          tauyy = mut*tauyys
+          tauzz = mut*tauzzs
+          tauxy = mut*tauxys
+          tauxz = mut*tauxzs
+          tauyz = mut*tauyzs
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
         end if
@@ -9206,21 +9270,21 @@ myIntPtr = myIntPtr + 1
         q_xd = -(sk(i, j, k, 1)*frhoed)
         q_yd = -(sk(i, j, k, 2)*frhoed)
         q_zd = -(sk(i, j, k, 3)*frhoed)
-        tempd19 = sk(i, j, k, 3)*frhoed
-        tauzzd = sk(i, j, k, 3)*fmzd + wbar*tempd19
-        tempd20 = sk(i, j, k, 2)*frhoed
-        tauyzd = wbar*tempd20 + sk(i, j, k, 3)*fmyd + sk(i, j, k, 2)*&
-&         fmzd + vbar*tempd19
-        tauyyd = sk(i, j, k, 2)*fmyd + vbar*tempd20
-        tempd21 = sk(i, j, k, 1)*frhoed
-        ubard = tauxy*tempd20 + tauxx*tempd21 + tauxz*tempd19
-        tauxzd = wbar*tempd21 + sk(i, j, k, 3)*fmxd + sk(i, j, k, 1)*&
-&         fmzd + ubar*tempd19
-        vbard = tauyy*tempd20 + tauxy*tempd21 + tauyz*tempd19
-        wbard = tauyz*tempd20 + tauxz*tempd21 + tauzz*tempd19
-        tauxyd = vbar*tempd21 + sk(i, j, k, 2)*fmxd + sk(i, j, k, 1)*&
-&         fmyd + ubar*tempd20
-        tauxxd = sk(i, j, k, 1)*fmxd + ubar*tempd21
+        tempd20 = sk(i, j, k, 3)*frhoed
+        tauzzd = sk(i, j, k, 3)*fmzd + wbar*tempd20
+        tempd21 = sk(i, j, k, 2)*frhoed
+        tauyzd = wbar*tempd21 + sk(i, j, k, 3)*fmyd + sk(i, j, k, 2)*&
+&         fmzd + vbar*tempd20
+        tauyyd = sk(i, j, k, 2)*fmyd + vbar*tempd21
+        tempd22 = sk(i, j, k, 1)*frhoed
+        ubard = tauxy*tempd21 + tauxx*tempd22 + tauxz*tempd20
+        tauxzd = wbar*tempd22 + sk(i, j, k, 3)*fmxd + sk(i, j, k, 1)*&
+&         fmzd + ubar*tempd20
+        vbard = tauyy*tempd21 + tauxy*tempd22 + tauyz*tempd20
+        wbard = tauyz*tempd21 + tauxz*tempd22 + tauzz*tempd20
+        tauxyd = vbar*tempd22 + sk(i, j, k, 2)*fmxd + sk(i, j, k, 1)*&
+&         fmyd + ubar*tempd21
+        tauxxd = sk(i, j, k, 1)*fmxd + ubar*tempd22
         wd(i, j, k, ivz) = wd(i, j, k, ivz) + half*wbard
         wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + half*wbard
         wd(i, j, k, ivy) = wd(i, j, k, ivy) + half*vbard
@@ -9230,44 +9294,49 @@ myIntPtr = myIntPtr + 1
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
         if (branch .eq. 0) then
-          eyzd = -tauyzd
           exzd = -tauxzd
           exyd = -tauxyd
           ezzd = -tauzzd
           eyyd = -tauyyd
-          exxd = -tauxxd
-          tempd13 = fact*eyzd
-          factd = (wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+wzz&
-&           *tauxz)*exzd + two*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*ezzd + &
-&           two*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*exxd + two*(wyx*tauxy+&
-&           wyy*tauyy+wyz*tauyz)*eyyd + (wxx*tauxy+wxy*tauyy+wxz*tauyz+&
-&           wyx*tauxx+wyy*tauxy+wyz*tauxz)*exyd + (wyx*tauxz+wyy*tauyz+&
-&           wyz*tauzz+wzx*tauxy+wzy*tauyy+wzz*tauyz)*eyzd
-          tempd16 = fact*exzd
-          tempd14 = fact*exyd
-          tempd17 = two*fact*ezzd
-          tauzzd = tauzzd + wxz*tempd16 + wzz*tempd17 + wyz*tempd13
-          wzxd = tauxx*tempd16 + tauxz*tempd17 + tauxy*tempd13
-          wzyd = tauxy*tempd16 + tauyz*tempd17 + tauyy*tempd13
+          tempd13 = fact*exzd
+          tempd16 = fact*exyd
+          tempd14 = two*fact*ezzd
           tempd15 = two*fact*eyyd
-          wyxd = tauxx*tempd14 + tauxy*tempd15 + tauxz*tempd13
-          tauyzd = tauyzd + wxy*tempd16 + wzy*tempd17 + wyz*tempd15 + &
-&           wxz*tempd14 + (wzz+wyy)*tempd13
-          wyzd = tauxz*tempd14 - wzyd + tauyz*tempd15 + tauzz*tempd13
-          tauyyd = tauyyd + wxy*tempd14 + wyy*tempd15 + wzy*tempd13
+          mutd = tauxzs*tauxzd + tauzzs*tauzzd + tauxxs*tauxxd + tauyys*&
+&           tauyyd + tauxys*tauxyd + tauyzs*tauyzd
+          tauyzsd = wxy*tempd13 + wzy*tempd14 + wyz*tempd15 + wxz*&
+&           tempd16 + mut*tauyzd
+          eyzd = -tauyzd
+          tauxxsd = wzx*tempd13 + wyx*tempd16 + mut*tauxxd
+          exxd = -tauxxd
+          tempd17 = fact*eyzd
+          tauzzsd = wyz*tempd17 + wxz*tempd13 + mut*tauzzd
+          tauyysd = wzy*tempd17 + wxy*tempd16 + mut*tauyyd
+          factd = (wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)*exzd + &
+&           two*(wzx*tauxzs+wzy*tauyzs)*ezzd + two*(wxy*tauxys+wxz*&
+&           tauxzs)*exxd + two*(wyx*tauxys+wyz*tauyzs)*eyyd + (wxy*&
+&           tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)*exyd + (wyx*tauxzs+&
+&           wyz*tauzzs+wzx*tauxys+wzy*tauyys)*eyzd
+          wyxd = tauxxs*tempd16 + tauxys*tempd15 + tauxzs*tempd17
+          wzxd = tauxxs*tempd13 + tauxzs*tempd14 + tauxys*tempd17
+          wzyd = tauxys*tempd13 + tauyzs*tempd14 + tauyys*tempd17
+          wyzd = tauxzs*tempd16 - wzyd + tauyzs*tempd15 + tauzzs*tempd17
           tempd18 = two*fact*exxd
-          tauxzd = tauxzd + (wzz+wxx)*tempd16 + wzx*tempd17 + wxz*&
-&           tempd18 + wyz*tempd14 + wyx*tempd13
-          tauxyd = tauxyd + wzy*tempd16 + wyx*tempd15 + wxy*tempd18 + (&
-&           wyy+wxx)*tempd14 + wzx*tempd13
-          wxyd = tauyy*tempd14 - wyxd + tauxy*tempd18 + tauyz*tempd16
-          wxzd = tauyz*tempd14 - wzxd + tauxz*tempd18 + tauzz*tempd16
-          tauxxd = tauxxd + wyx*tempd14 + wxx*tempd18 + wzx*tempd16
-          u_yd = wxyd + wyzd
-          v_xd = -wxyd - wyzd
+          tauxzsd = wyx*tempd17 + wzx*tempd14 + wxz*tempd18 + wyz*&
+&           tempd16 + mut*tauxzd
+          tauxysd = wzx*tempd17 + wyx*tempd15 + wxy*tempd18 + wzy*&
+&           tempd13 + mut*tauxyd
+          wxyd = tauyys*tempd16 - wyxd + tauxys*tempd18 + tauyzs*tempd13
+          wxzd = tauyzs*tempd16 - wzxd + tauxzs*tempd18 + tauzzs*tempd13
+          v_zd = wyzd
+          w_yd = -wyzd
           u_zd = wxzd
           w_xd = -wxzd
-          dend = -(ccr1*factd/den**2)
+          u_yd = wxyd
+          v_xd = -wxyd
+          tempd19 = ccr1*factd/den
+          mued = mued + tempd19
+          dend = -(mue*tempd19/den)
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
           if (branch .eq. 0) dend = 0.0_8
@@ -9283,11 +9352,19 @@ branch = myIntStack(myIntPtr)
           u_zd = u_zd + 2*u_z*tempd12
           v_xd = v_xd + 2*v_x*tempd12
           v_yd = 2*v_y*tempd12
-          v_zd = 2*v_z*tempd12
+          v_zd = v_zd + 2*v_z*tempd12
           w_xd = w_xd + 2*w_x*tempd12
-          w_yd = 2*w_y*tempd12
+          w_yd = w_yd + 2*w_y*tempd12
           w_zd = 2*w_z*tempd12
         else
+          mutd = tauxzs*tauxzd + tauzzs*tauzzd + tauxxs*tauxxd + tauyys*&
+&           tauyyd + tauxys*tauxyd + tauyzs*tauyzd
+          tauyzsd = mut*tauyzd
+          tauxzsd = mut*tauxzd
+          tauxysd = mut*tauxyd
+          tauzzsd = mut*tauzzd
+          tauyysd = mut*tauyyd
+          tauxxsd = mut*tauxxd
           u_xd = 0.0_8
           u_yd = 0.0_8
           u_zd = 0.0_8
@@ -9298,24 +9375,21 @@ branch = myIntStack(myIntPtr)
           v_yd = 0.0_8
           v_zd = 0.0_8
         end if
-        fracdivd = -(mut*tauyyd) - mut*tauxxd - mut*tauzzd
+        fracdivd = -tauyysd - tauxxsd - tauzzsd
         tempd = twothird*fracdivd
         heatcoefd = q_y*q_yd + q_x*q_xd + q_z*q_zd
         q_zd = heatcoef*q_zd
         q_yd = heatcoef*q_yd
         q_xd = heatcoef*q_xd
-        mutd = (u_z+w_x)*tauxzd + (two*w_z-fracdiv)*tauzzd + (two*u_x-&
-&         fracdiv)*tauxxd + (two*v_y-fracdiv)*tauyyd + (u_y+v_x)*tauxyd &
-&         + (v_z+w_y)*tauyzd
-        v_zd = v_zd + mut*tauyzd
-        w_yd = w_yd + mut*tauyzd
-        u_zd = u_zd + mut*tauxzd
-        w_xd = w_xd + mut*tauxzd
-        u_yd = u_yd + mut*tauxyd
-        v_xd = v_xd + mut*tauxyd
-        w_zd = w_zd + tempd + mut*two*tauzzd
-        v_yd = v_yd + tempd + mut*two*tauyyd
-        u_xd = u_xd + tempd + mut*two*tauxxd
+        v_zd = v_zd + tauyzsd
+        w_yd = w_yd + tauyzsd
+        u_zd = u_zd + tauxzsd
+        w_xd = w_xd + tauxzsd
+        u_yd = u_yd + tauxysd
+        v_xd = v_xd + tauxysd
+        w_zd = w_zd + tempd + two*tauzzsd
+        v_yd = v_yd + tempd + two*tauyysd
+        u_xd = u_xd + tempd + two*tauxxsd
         corrd = -(ssy*q_yd) - ssx*q_xd - ssz*q_zd
         q_xd = q_xd + ssx*corrd
         q_yd = q_yd + ssy*corrd
@@ -9416,10 +9490,10 @@ branch = myIntStack(myIntPtr)
   end subroutine viscousflux_fast_b
   subroutine viscousflux()
 !
-!       viscousflux computes the viscous fluxes using a central        
-!       difference scheme for a block.                                 
-!       it is assumed that the pointers in block pointer already point 
-!       to the correct block.                                          
+!       viscousflux computes the viscous fluxes using a central
+!       difference scheme for a block.
+!       it is assumed that the pointers in block pointer already point
+!       to the correct block.
 !
     use constants
     use blockpointers
@@ -9445,9 +9519,10 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: corr, ssx, ssy, ssz, ss, fracdiv
     real(kind=realtype) :: tauxx, tauyy, tauzz
     real(kind=realtype) :: tauxy, tauxz, tauyz
+    real(kind=realtype) :: tauxxs, tauyys, tauzzs
+    real(kind=realtype) :: tauxys, tauxzs, tauyzs
     real(kind=realtype) :: exx, eyy, ezz
     real(kind=realtype) :: exy, exz, eyz
-    real(kind=realtype) :: wxx, wyy, wzz
     real(kind=realtype) :: wxy, wxz, wyz, wyx, wzx, wzy
     real(kind=realtype) :: den, ccr1, fact
     real(kind=realtype) :: fmx, fmy, fmz, frhoe
@@ -9459,10 +9534,6 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: abs0
 ! set qcr parameters
     ccr1 = 0.3_realtype
-! the diagonals of the vorticity tensor components are always zero
-    wxx = zero
-    wyy = zero
-    wzz = zero
 ! set rfilv to rfil to indicate that this is the viscous part.
 ! if rfilv == 0 the viscous residuals need not to be computed
 ! and a return can be made.
@@ -9484,7 +9555,7 @@ branch = myIntStack(myIntPtr)
         storewalltensor = .true.
       end if
 !
-!         viscous fluxes in the k-direction.                           
+!         viscous fluxes in the k-direction.
 !
       mue = zero
       do ii=0,nx*ny*kl-1
@@ -9574,22 +9645,27 @@ branch = myIntStack(myIntPtr)
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = mut*(two*u_x-fracdiv)
-        tauyy = mut*(two*v_y-fracdiv)
-        tauzz = mut*(two*w_z-fracdiv)
-        tauxy = mut*(u_y+v_x)
-        tauxz = mut*(u_z+w_x)
-        tauyz = mut*(v_z+w_y)
+        tauxxs = two*u_x - fracdiv
+        tauyys = two*v_y - fracdiv
+        tauzzs = two*w_z - fracdiv
+        tauxys = u_y + v_x
+        tauxzs = u_z + w_x
+        tauyzs = v_z + w_y
         q_x = heatcoef*q_x
         q_y = heatcoef*q_y
         q_z = heatcoef*q_z
 ! add qcr corrections if necessary
         if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
-! 
+!
 ! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
 !
 ! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
@@ -9597,6 +9673,8 @@ branch = myIntStack(myIntPtr)
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
           den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &           v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z)
@@ -9605,32 +9683,40 @@ branch = myIntStack(myIntPtr)
           else
             den = den
           end if
-! compute factor that will multiply all tensor components
-          fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+          fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
           wxz = u_z - w_x
-          wyz = u_y - v_x
+          wyz = v_z - w_y
           wyx = -wxy
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-          exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*tauxy+&
-&           wyz*tauxz)
-          exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+&
-&           wzz*tauxz)
-          eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*tauyy+&
-&           wzz*tauyz)
-! add extra terms
-          tauxx = tauxx - exx
-          tauyy = tauyy - eyy
-          tauzz = tauzz - ezz
-          tauxy = tauxy - exy
-          tauxz = tauxz - exz
-          tauyz = tauyz - eyz
+          exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+          eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+          ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+          exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+          exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+          eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
+! apply the total viscosity to the stress tensor and add extra terms
+          tauxx = mut*tauxxs - exx
+          tauyy = mut*tauyys - eyy
+          tauzz = mut*tauzzs - ezz
+          tauxy = mut*tauxys - exy
+          tauxz = mut*tauxzs - exz
+          tauyz = mut*tauyzs - eyz
+        else
+! just apply the total viscosity to the stress tensor
+          tauxx = mut*tauxxs
+          tauyy = mut*tauyys
+          tauzz = mut*tauzzs
+          tauxy = mut*tauxys
+          tauxz = mut*tauxzs
+          tauyz = mut*tauyzs
         end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
@@ -9665,8 +9751,8 @@ branch = myIntStack(myIntPtr)
 ! and k == kl must be tested.
         if (k .eq. 1 .and. storewalltensor .and. visckminpointer(i, j) &
 &           .gt. 0) then
-! we need to index viscsubface with visckminpointer(i,j) 
-! since tapenade does not like temporary indexes 
+! we need to index viscsubface with visckminpointer(i,j)
+! since tapenade does not like temporary indexes
           viscsubface(visckminpointer(i, j))%tau(i, j, 1) = tauxx
           viscsubface(visckminpointer(i, j))%tau(i, j, 2) = tauyy
           viscsubface(visckminpointer(i, j))%tau(i, j, 3) = tauzz
@@ -9692,7 +9778,7 @@ branch = myIntStack(myIntPtr)
         end if
       end do
 !
-!         viscous fluxes in the j-direction.                           
+!         viscous fluxes in the j-direction.
 !
       continue
       mue = zero
@@ -9783,22 +9869,27 @@ branch = myIntStack(myIntPtr)
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = mut*(two*u_x-fracdiv)
-        tauyy = mut*(two*v_y-fracdiv)
-        tauzz = mut*(two*w_z-fracdiv)
-        tauxy = mut*(u_y+v_x)
-        tauxz = mut*(u_z+w_x)
-        tauyz = mut*(v_z+w_y)
+        tauxxs = two*u_x - fracdiv
+        tauyys = two*v_y - fracdiv
+        tauzzs = two*w_z - fracdiv
+        tauxys = u_y + v_x
+        tauxzs = u_z + w_x
+        tauyzs = v_z + w_y
         q_x = heatcoef*q_x
         q_y = heatcoef*q_y
         q_z = heatcoef*q_z
 ! add qcr corrections if necessary
         if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
-! 
+!
 ! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
 !
 ! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
@@ -9806,6 +9897,8 @@ branch = myIntStack(myIntPtr)
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
           den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &           v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z)
@@ -9814,32 +9907,40 @@ branch = myIntStack(myIntPtr)
           else
             den = den
           end if
-! compute factor that will multiply all tensor components
-          fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+          fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
           wxz = u_z - w_x
-          wyz = u_y - v_x
+          wyz = v_z - w_y
           wyx = -wxy
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-          exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*tauxy+&
-&           wyz*tauxz)
-          exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+&
-&           wzz*tauxz)
-          eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*tauyy+&
-&           wzz*tauyz)
-! add extra terms
-          tauxx = tauxx - exx
-          tauyy = tauyy - eyy
-          tauzz = tauzz - ezz
-          tauxy = tauxy - exy
-          tauxz = tauxz - exz
-          tauyz = tauyz - eyz
+          exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+          eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+          ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+          exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+          exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+          eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
+! apply the total viscosity to the stress tensor and add extra terms
+          tauxx = mut*tauxxs - exx
+          tauyy = mut*tauyys - eyy
+          tauzz = mut*tauzzs - ezz
+          tauxy = mut*tauxys - exy
+          tauxz = mut*tauxzs - exz
+          tauyz = mut*tauyzs - eyz
+        else
+! just apply the total viscosity to the stress tensor
+          tauxx = mut*tauxxs
+          tauyy = mut*tauyys
+          tauzz = mut*tauzzs
+          tauxy = mut*tauxys
+          tauxz = mut*tauxzs
+          tauyz = mut*tauyzs
         end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
@@ -9871,8 +9972,8 @@ branch = myIntStack(myIntPtr)
 ! and j == jl must be tested.
         if (j .eq. 1 .and. storewalltensor .and. viscjminpointer(i, k) &
 &           .gt. 0) then
-! we need to index viscsubface with viscjminpointer(i,k) 
-! since tapenade does not like temporary indexes 
+! we need to index viscsubface with viscjminpointer(i,k)
+! since tapenade does not like temporary indexes
           viscsubface(viscjminpointer(i, k))%tau(i, k, 1) = tauxx
           viscsubface(viscjminpointer(i, k))%tau(i, k, 2) = tauyy
           viscsubface(viscjminpointer(i, k))%tau(i, k, 3) = tauzz
@@ -9898,7 +9999,7 @@ branch = myIntStack(myIntPtr)
         end if
       end do
 !
-!         viscous fluxes in the i-direction.                           
+!         viscous fluxes in the i-direction.
 !
       continue
       mue = zero
@@ -9989,22 +10090,27 @@ branch = myIntStack(myIntPtr)
         q_y = q_y - corr*ssy
         q_z = q_z - corr*ssz
 ! compute the stress tensor and the heat flux vector.
+! we remove the viscosity from the stress tensor (tau)
+! to define taus since we still need to separate between
+! laminar and turbulent stress for qcr.
+! therefore, laminar tau = mue*taus, turbulent
+! tau = mue*taus, and total tau = mut*taus.
         fracdiv = twothird*(u_x+v_y+w_z)
-        tauxx = mut*(two*u_x-fracdiv)
-        tauyy = mut*(two*v_y-fracdiv)
-        tauzz = mut*(two*w_z-fracdiv)
-        tauxy = mut*(u_y+v_x)
-        tauxz = mut*(u_z+w_x)
-        tauyz = mut*(v_z+w_y)
+        tauxxs = two*u_x - fracdiv
+        tauyys = two*v_y - fracdiv
+        tauzzs = two*w_z - fracdiv
+        tauxys = u_y + v_x
+        tauxzs = u_z + w_x
+        tauyzs = v_z + w_y
         q_x = heatcoef*q_x
         q_y = heatcoef*q_y
         q_z = heatcoef*q_z
 ! add qcr corrections if necessary
         if (useqcr) then
-! in the qcr formulation, we add an extra term to the shear tensor:
+! in the qcr formulation, we add an extra term to the turbulent stress tensor:
 !
 ! tau_ij,qcr = tau_ij - e_ij
-! 
+!
 ! where, according to tmr website (http://turbmodels.larc.nasa.gov/spalart.html):
 !
 ! e_ij = ccr1*(o_ik*tau_jk + o_jk*tau_ik)
@@ -10012,6 +10118,8 @@ branch = myIntStack(myIntPtr)
 ! we are computing o_ik as follows:
 !
 ! o_ik = 2*w_ik/den
+!
+! remember that the tau_ij in e_ij should use only the eddy viscosity!
 ! compute denominator
           den = sqrt(u_x*u_x + u_y*u_y + u_z*u_z + v_x*v_x + v_y*v_y + &
 &           v_z*v_z + w_x*w_x + w_y*w_y + w_z*w_z)
@@ -10020,32 +10128,40 @@ branch = myIntStack(myIntPtr)
           else
             den = den
           end if
-! compute factor that will multiply all tensor components
-          fact = ccr1/den
+! compute factor that will multiply all tensor components.
+! here we add the eddy viscosity that should multiply the stress tensor (tau)
+! components as well.
+          fact = mue*ccr1/den
 ! compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+! the diagonals of the vorticity tensor components are always zero
           wxy = u_y - v_x
           wxz = u_z - w_x
-          wyz = u_y - v_x
+          wyz = v_z - w_y
           wyx = -wxy
           wzx = -wxz
           wzy = -wyz
 ! compute the extra terms of the boussinesq relation
-          exx = fact*(wxx*tauxx+wxy*tauxy+wxz*tauxz)*two
-          eyy = fact*(wyx*tauxy+wyy*tauyy+wyz*tauyz)*two
-          ezz = fact*(wzx*tauxz+wzy*tauyz+wzz*tauzz)*two
-          exy = fact*(wxx*tauxy+wxy*tauyy+wxz*tauyz+wyx*tauxx+wyy*tauxy+&
-&           wyz*tauxz)
-          exz = fact*(wxx*tauxz+wxy*tauyz+wxz*tauzz+wzx*tauxx+wzy*tauxy+&
-&           wzz*tauxz)
-          eyz = fact*(wyx*tauxz+wyy*tauyz+wyz*tauzz+wzx*tauxy+wzy*tauyy+&
-&           wzz*tauyz)
-! add extra terms
-          tauxx = tauxx - exx
-          tauyy = tauyy - eyy
-          tauzz = tauzz - ezz
-          tauxy = tauxy - exy
-          tauxz = tauxz - exz
-          tauyz = tauyz - eyz
+          exx = fact*(wxy*tauxys+wxz*tauxzs)*two
+          eyy = fact*(wyx*tauxys+wyz*tauyzs)*two
+          ezz = fact*(wzx*tauxzs+wzy*tauyzs)*two
+          exy = fact*(wxy*tauyys+wxz*tauyzs+wyx*tauxxs+wyz*tauxzs)
+          exz = fact*(wxy*tauyzs+wxz*tauzzs+wzx*tauxxs+wzy*tauxys)
+          eyz = fact*(wyx*tauxzs+wyz*tauzzs+wzx*tauxys+wzy*tauyys)
+! apply the total viscosity to the stress tensor and add extra terms
+          tauxx = mut*tauxxs - exx
+          tauyy = mut*tauyys - eyy
+          tauzz = mut*tauzzs - ezz
+          tauxy = mut*tauxys - exy
+          tauxz = mut*tauxzs - exz
+          tauyz = mut*tauyzs - eyz
+        else
+! just apply the total viscosity to the stress tensor
+          tauxx = mut*tauxxs
+          tauyy = mut*tauyys
+          tauzz = mut*tauzzs
+          tauxy = mut*tauxys
+          tauxz = mut*tauxzs
+          tauyz = mut*tauyzs
         end if
 ! compute the average velocities for the face. remember that
 ! the velocities are stored and not the momentum.
@@ -10077,8 +10193,8 @@ branch = myIntStack(myIntPtr)
 ! and i == il must be tested.
         if (i .eq. 1 .and. storewalltensor .and. visciminpointer(j, k) &
 &           .gt. 0) then
-! we need to index viscsubface with visciminpointer(j,k) 
-! since tapenade does not like temporary indexes 
+! we need to index viscsubface with visciminpointer(j,k)
+! since tapenade does not like temporary indexes
           viscsubface(visciminpointer(j, k))%tau(j, k, 1) = tauxx
           viscsubface(visciminpointer(j, k))%tau(j, k, 2) = tauyy
           viscsubface(visciminpointer(j, k))%tau(j, k, 3) = tauzz
@@ -10092,8 +10208,8 @@ branch = myIntStack(myIntPtr)
 ! and the i == il case.
         if (i .eq. il .and. storewalltensor .and. viscimaxpointer(j, k) &
 &           .gt. 0) then
-! we need to index viscsubface with viscimaxpointer(j,k) 
-! since tapenade does not like temporary indexes 
+! we need to index viscsubface with viscimaxpointer(j,k)
+! since tapenade does not like temporary indexes
           viscsubface(viscimaxpointer(j, k))%tau(j, k, 1) = tauxx
           viscsubface(viscimaxpointer(j, k))%tau(j, k, 2) = tauyy
           viscsubface(viscimaxpointer(j, k))%tau(j, k, 3) = tauzz
@@ -10139,7 +10255,7 @@ branch = myIntStack(myIntPtr)
     do k=2,kl
       do j=2,jl
         do i=1,il
-! compute the vector from the center of cell i to cell i+1           
+! compute the vector from the center of cell i to cell i+1
           ssx = eighth*(x(i+1, j-1, k-1, 1)-x(i-1, j-1, k-1, 1)+x(i+1, j&
 &           -1, k, 1)-x(i-1, j-1, k, 1)+x(i+1, j, k-1, 1)-x(i-1, j, k-1&
 &           , 1)+x(i+1, j, k, 1)-x(i-1, j, k, 1))
@@ -10227,7 +10343,7 @@ branch = myIntStack(myIntPtr)
     do k=2,kl
       do j=1,jl
         do i=2,il
-! compute the vector from the center of cell j to cell j+1           
+! compute the vector from the center of cell j to cell j+1
           ssx = eighth*(x(i-1, j+1, k-1, 1)-x(i-1, j-1, k-1, 1)+x(i-1, j&
 &           +1, k, 1)-x(i-1, j-1, k, 1)+x(i, j+1, k-1, 1)-x(i, j-1, k-1&
 &           , 1)+x(i, j+1, k, 1)-x(i, j-1, k, 1))
@@ -10315,7 +10431,7 @@ branch = myIntStack(myIntPtr)
     do k=1,kl
       do j=2,jl
         do i=2,il
-! compute the vector from the center of cell k to cell k+1           
+! compute the vector from the center of cell k to cell k+1
           ssx = eighth*(x(i-1, j-1, k+1, 1)-x(i-1, j-1, k-1, 1)+x(i-1, j&
 &           , k+1, 1)-x(i-1, j, k-1, 1)+x(i, j-1, k+1, 1)-x(i, j-1, k-1&
 &           , 1)+x(i, j, k+1, 1)-x(i, j, k-1, 1))
@@ -10402,10 +10518,10 @@ branch = myIntStack(myIntPtr)
   end subroutine viscousfluxapprox
   subroutine invisciddissfluxscalarapprox()
 !
-!       invisciddissfluxscalar computes the scalar artificial          
-!       dissipation, see aiaa paper 81-1259, for a given block.        
-!       therefore it is assumed that the pointers in  blockpointers    
-!       already point to the correct block.                            
+!       invisciddissfluxscalar computes the scalar artificial
+!       dissipation, see aiaa paper 81-1259, for a given block.
+!       therefore it is assumed that the pointers in  blockpointers
+!       already point to the correct block.
 !
     use blockpointers
     use cgnsgrid
@@ -10456,14 +10572,14 @@ branch = myIntStack(myIntPtr)
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations) 
-      case (eulerequations) 
+      select case  (equations)
+      case (eulerequations)
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
 ! set to a fraction of the free stream value.
         sslim = 0.001_realtype*pinfcorr
-      case (nsequations, ransequations) 
+      case (nsequations, ransequations)
 !===============================================================
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
@@ -10545,7 +10661,7 @@ branch = myIntStack(myIntPtr)
         end do
       end do
 !
-!       dissipative fluxes in the i-direction.                         
+!       dissipative fluxes in the i-direction.
 !
       do k=2,kl
         do j=2,jl
@@ -10620,7 +10736,7 @@ branch = myIntStack(myIntPtr)
         end do
       end do
 !
-!       dissipative fluxes in the j-direction.                         
+!       dissipative fluxes in the j-direction.
 !
       do k=2,kl
         do i=2,il
@@ -10691,7 +10807,7 @@ branch = myIntStack(myIntPtr)
         end do
       end do
 !
-!       dissipative fluxes in the k-direction.                         
+!       dissipative fluxes in the k-direction.
 !
       do j=2,jl
         do i=2,il
@@ -10828,12 +10944,12 @@ branch = myIntStack(myIntPtr)
   end subroutine invisciddissfluxscalarapprox
   subroutine invisciddissfluxmatrixapprox()
 !
-!       invisciddissfluxmatrix computes the matrix artificial          
-!       dissipation term. instead of the spectral radius, as used in   
-!       the scalar dissipation scheme, the absolute value of the flux  
-!       jacobian is used. this leads to a less diffusive and           
-!       consequently more accurate scheme. it is assumed that the      
-!       pointers in blockpointers already point to the correct block.  
+!       invisciddissfluxmatrix computes the matrix artificial
+!       dissipation term. instead of the spectral radius, as used in
+!       the scalar dissipation scheme, the absolute value of the flux
+!       jacobian is used. this leads to a less diffusive and
+!       consequently more accurate scheme. it is assumed that the
+!       pointers in blockpointers already point to the correct block.
 !
     use blockpointers
     use cgnsgrid
@@ -10938,7 +11054,7 @@ branch = myIntStack(myIntPtr)
         end do
       end do
 !
-!       dissipative fluxes in the i-direction.                         
+!       dissipative fluxes in the i-direction.
 !
       do k=2,kl
         do j=2,jl
@@ -11133,7 +11249,7 @@ branch = myIntStack(myIntPtr)
         end do
       end do
 !
-!       dissipative fluxes in the j-direction.                         
+!       dissipative fluxes in the j-direction.
 !
       do k=2,kl
         do i=2,il
@@ -11328,7 +11444,7 @@ branch = myIntStack(myIntPtr)
         end do
       end do
 !
-!       dissipative fluxes in the k-direction.                         
+!       dissipative fluxes in the k-direction.
 !
       do j=2,jl
         do i=2,il

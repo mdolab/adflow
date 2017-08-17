@@ -2,13 +2,13 @@ module SST
 
   ! This module contains the source code related to the SST turbulence
   ! model. It is slightly more modularized than the original which makes
-  ! performing reverse mode AD simplier.  
+  ! performing reverse mode AD simplier.
 
 
 contains
 
   subroutine SST_block(resOnly)
-    
+
     use constants
     use blockPointers, only : il, jl, kl
     use inputTimeSpectral
@@ -55,9 +55,9 @@ contains
 
   subroutine SSTSolve(resOnly)
     !
-    !       SSTSolve solves the turbulent transport equations for          
-    !       menter's SST variant of the k-omega model in a segregated      
-    !       manner using a diagonal dominant ADI-scheme.                   
+    !       SSTSolve solves the turbulent transport equations for
+    !       menter's SST variant of the k-omega model in a segregated
+    !       manner using a diagonal dominant ADI-scheme.
     !
     use blockPointers
     use constants
@@ -123,7 +123,7 @@ contains
     kwCD => scratch(1:,1:,1:,icd)
     f1   => scratch(1:,1:,1:,if1SST)
     !
-    !       Production term.                                               
+    !       Production term.
     !
     select case (turbProd)
     case (strain)
@@ -137,11 +137,11 @@ contains
 
     end select
     !
-    !       Source terms.                                                  
-    !       Determine the source term and its derivative w.r.t. k and      
-    !       omega for all internal cells of the block.                     
-    !       Note that the blending function f1 and the cross diffusion     
-    !       were computed earlier in f1SST.                                
+    !       Source terms.
+    !       Determine the source term and its derivative w.r.t. k and
+    !       omega for all internal cells of the block.
+    !       Note that the blending function f1 and the cross diffusion
+    !       were computed earlier in f1SST.
     !
     do k=2,kl
        do j=2,jl
@@ -183,14 +183,14 @@ contains
        enddo
     enddo
     !
-    !       Advection and unsteady terms.                                  
+    !       Advection and unsteady terms.
     !
     nn = itu1 - 1
     call turbAdvection(2_intType, 2_intType, nn, qq)
 
     call unsteadyTurbTerm(2_intType, 2_intType, nn, qq)
     !
-    !       Viscous terms in k-direction.                                  
+    !       Viscous terms in k-direction.
     !
     do k=2,kl
        do j=2,jl
@@ -310,7 +310,7 @@ contains
        enddo
     enddo
     !
-    !       Viscous terms in j-direction.                                  
+    !       Viscous terms in j-direction.
     !
     do k=2,kl
        do j=2,jl
@@ -430,7 +430,7 @@ contains
        enddo
     enddo
     !
-    !       Viscous terms in i-direction.                                  
+    !       Viscous terms in i-direction.
     !
     do k=2,kl
        do j=2,jl
@@ -715,9 +715,9 @@ contains
 
     qs = zero
     !
-    !       dd-ADI step in j-direction. There is no particular reason to   
-    !       start in j-direction, it just happened to be so. As we solve   
-    !       in j-direction, the j-loop is the innermost loop.              
+    !       dd-ADI step in j-direction. There is no particular reason to
+    !       start in j-direction, it just happened to be so. As we solve
+    !       in j-direction, the j-loop is the innermost loop.
     !
     do k=2,kl
        do i=2,il
@@ -853,8 +853,8 @@ contains
        enddo
     enddo
     !
-    !       dd-ADI step in i-direction. As we solve in i-direction, the    
-    !       i-loop is the innermost loop.                                  
+    !       dd-ADI step in i-direction. As we solve in i-direction, the
+    !       i-loop is the innermost loop.
     !
     do k=2,kl
        do j=2,jl
@@ -991,8 +991,8 @@ contains
        enddo
     enddo
     !
-    !       dd-ADI step in k-direction. As we solve in k-direction, the    
-    !       k-loop is the innermost loop.                                  
+    !       dd-ADI step in k-direction. As we solve in k-direction, the
+    !       k-loop is the innermost loop.
     !
     do j=2,jl
        do i=2,il
@@ -1128,9 +1128,9 @@ contains
        enddo
     enddo
     !
-    !       Update the turbulent variables. For explicit relaxation the    
-    !       update must be relaxed; for implicit relaxation this has been  
-    !       done via the time step.                                        
+    !       Update the turbulent variables. For explicit relaxation the
+    !       update must be relaxed; for implicit relaxation this has been
+    !       done via the time step.
     !
     factor = one
     if(turbRelax == turbRelaxExplicit) factor = alfaTurb
@@ -1151,11 +1151,11 @@ contains
 
   subroutine f1SST
     !
-    !       f1SST computes the blending function f1 in both the owned      
-    !       cells and the first layer of halo's. The result is stored in   
-    !       scratch(:,:,:,if1SST). For the computation of f1 also the cross     
-    !       diffusion term is needed. This is stored in scratch(:,:,:,icd) such 
-    !       that it can be used in SSTSolve later on.                      
+    !       f1SST computes the blending function f1 in both the owned
+    !       cells and the first layer of halo's. The result is stored in
+    !       scratch(:,:,:,if1SST). For the computation of f1 also the cross
+    !       diffusion term is needed. This is stored in scratch(:,:,:,icd) such
+    !       that it can be used in SSTSolve later on.
     !
     use constants
     use blockPointers
@@ -1300,9 +1300,9 @@ contains
 
   subroutine exchangeF1SST1to1
     !
-    !       exchangeF1SST1to1 communicates the 1st layer of halo values    
-    !       for the blending function f1 of the SST model for 1 to 1       
-    !       matching halo's. This variable is stored in scratch(:,:,:,if1SST).  
+    !       exchangeF1SST1to1 communicates the 1st layer of halo values
+    !       for the blending function f1 of the SST model for 1 to 1
+    !       matching halo's. This variable is stored in scratch(:,:,:,if1SST).
     !
     use constants
     use block
@@ -1465,9 +1465,9 @@ contains
 
   subroutine exchangeF1SSTOverset
     !
-    !       exchangeF1SSTOverset communicates the overset boundary values  
-    !       for the blending function f1 of the SST model. This variable   
-    !       is stored in scratch(:,:,:,if1SST).                                 
+    !       exchangeF1SSTOverset communicates the overset boundary values
+    !       for the blending function f1 of the SST model. This variable
+    !       is stored in scratch(:,:,:,if1SST).
     use constants
     use block
     use communication

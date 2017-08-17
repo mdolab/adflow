@@ -10,7 +10,7 @@ module walldistance_d
 !                    no tapenade routine below this line               |
 !                                                                      |
 ! ----------------------------------------------------------------------
-  save 
+  save
 
 contains
 !  differentiation of updatewalldistancesquickly in forward (tangent) mode (with options i4 dr8 r8):
@@ -24,7 +24,7 @@ contains
 ! distance. most importantly, this routine is included in the
 ! reverse mode ad routines, but not the forward mode. since it is
 ! done on a per-block basis, it is assumed that the required block
-! pointers are already set. 
+! pointers are already set.
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, x, xd, flowdoms,&
 &   d2wall, d2walld
@@ -46,7 +46,7 @@ contains
           if (flowdoms(nn, level, sps)%surfnodeindices(1, i, j, k) .eq. &
 &             0) then
 ! this node is too far away and has no
-! association. set the distance to a large constant. 
+! association. set the distance to a large constant.
             d2walld(i, j, k) = 0.0_8
             d2wall(i, j, k) = large
           else
@@ -107,7 +107,7 @@ contains
 ! distance. most importantly, this routine is included in the
 ! reverse mode ad routines, but not the forward mode. since it is
 ! done on a per-block basis, it is assumed that the required block
-! pointers are already set. 
+! pointers are already set.
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, x, flowdoms, &
 &   d2wall
@@ -125,7 +125,7 @@ contains
           if (flowdoms(nn, level, sps)%surfnodeindices(1, i, j, k) .eq. &
 &             0) then
 ! this node is too far away and has no
-! association. set the distance to a large constant. 
+! association. set the distance to a large constant.
             d2wall(i, j, k) = large
           else
 ! extract elemid and u-v position for the association of

@@ -55,14 +55,14 @@ contains
     real(kind=realType), dimension(nSections) :: t
     real(kind=realType) :: dummyReal
 
-    if (useSpatial) then 
+    if (useSpatial) then
        call adjustInflowAngle()
-       
+
        ! Update all the BCData
        call referenceState
-       if (present(bcDataNames)) then 
+       if (present(bcDataNames)) then
           do sps=1,nTimeIntervalsSpectral
-             call setBCData(bcDataNames, bcDataValues, bcDataFamLists, sps, & 
+             call setBCData(bcDataNames, bcDataValues, bcDataFamLists, sps, &
                   size(bcDataValues), size(bcDataFamLIsts, 2))
           end do
           call setBCDataFineGrid(.true.)
@@ -74,7 +74,7 @@ contains
              call xhalo_block()
           end do
        end do
-       
+
        ! Now exchange the coordinates (fine level only)
        call exchangecoor(1)
 
@@ -82,22 +82,22 @@ contains
           ! Update overset connectivity if necessary
           if (oversetPresent .and. &
                (oversetUpdateMode == updateFast .or. &
-               oversetUpdateMode == updateFull)) then 
+               oversetUpdateMode == updateFull)) then
              call updateOversetConnectivity(1_intType, sps)
           end if
        end do
     end if
-    
+
     do sps=1,nTimeIntervalsSpectral
        do nn=1,nDom
           call setPointers(nn, 1, sps)
-          
-          if (useSpatial) then 
+
+          if (useSpatial) then
              call volume_block
              call metric_block
              call boundaryNormals
-             
-             if (equations == RANSEquations .and. useApproxWallDistance) then 
+
+             if (equations == RANSEquations .and. useApproxWallDistance) then
                 call updateWallDistancesQuickly(nn, 1, sps)
              end if
           end if
@@ -111,7 +111,7 @@ contains
 
           ! Make sure to call the turb BC's first incase we need to
           ! correct for K
-          if (equations == RANSequations) then 
+          if (equations == RANSequations) then
              call BCTurbTreatment
              call applyAllTurbBCthisblock(.True.)
           end if
@@ -125,12 +125,12 @@ contains
     ! Need to re-apply the BCs. The reason is that BC halos behind
     ! interpolated cells need to be recomputed with their new
     ! interpolated values from actual compute cells. Only needed for
-    ! overset. 
-    if (oversetPresent) then 
+    ! overset.
+    if (oversetPresent) then
        do sps=1,nTimeIntervalsSpectral
           do nn=1,nDom
              call setPointers(nn, 1, sps)
-             if (equations == RANSequations) then 
+             if (equations == RANSequations) then
                 call BCTurbTreatment
                 call applyAllTurbBCthisblock(.True.)
              end if
@@ -168,13 +168,13 @@ contains
           ! Compute the mean flow residuals
           call timeStep_block(.false.)
           call inviscidCentralFlux
-          if (lumpedDiss) then 
+          if (lumpedDiss) then
              select case (spaceDiscr)
              case (dissScalar)
                 call inviscidDissFluxScalarApprox
              case (dissMatrix)
                 call inviscidDissFluxMatrixApprox
-             case (upwind) 
+             case (upwind)
                 call inviscidUpwindFlux(.True.)
              end select
           else
@@ -183,14 +183,14 @@ contains
                 call inviscidDissFluxScalar
              case (dissMatrix)
                 call inviscidDissFluxMatrix
-             case (upwind) 
+             case (upwind)
                 call inviscidUpwindFlux(.True.)
              end select
           end if
 
-          if (viscous) then 
+          if (viscous) then
              call computeSpeedOfSoundSquared
-             if (.not. lumpedDiss .or. viscPC) then 
+             if (.not. lumpedDiss .or. viscPC) then
                 call allNodalGradients
                 call viscousFlux
              else
@@ -198,7 +198,7 @@ contains
              end if
           end if
           call sumDwAndFw
-          ! if (lowSpeedPreconditioner) then 
+          ! if (lowSpeedPreconditioner) then
           !    call applyLowSpeedPreconditioner
           ! end if
           call resScale
@@ -206,12 +206,12 @@ contains
     end do
 
     ! Compute the final solution values
-    if (present(famLists)) then 
+    if (present(famLists)) then
        call getSolution(famLists, funcValues)
     end if
 
     do sps=1, nTimeIntervalsSpectral
-       if (present(forces)) then 
+       if (present(forces)) then
           ! Now we can retrieve the forces/tractions for this spectral instance
           fSize = size(forces, 2)
           call getForces(forces(:, :, sps), fSize, sps)
@@ -329,7 +329,7 @@ contains
 
     ! Now exchange the coordinates. Note that we *must* exhchange the
     ! actual coordinates as well becuase xhao_block overwrites all
-    ! halo nodes and exchange coor corrects them. 
+    ! halo nodes and exchange coor corrects them.
     call exchangecoor_d(1)
     call exchangecoor(1)
 
@@ -337,15 +337,16 @@ contains
        ! Update overset connectivity if necessary
        if (oversetPresent .and. &
             (oversetUpdateMode == updateFast .or. &
-            oversetUpdateMode == updateFull)) then 
-          call updateOversetConnectivity_d(1_intType, sps)
+            oversetUpdateMode == updateFull)) then
+          print *,'Full overset update derivatives not implemented'
+          !call updateOversetConnectivity_d(1_intType, sps)
        end if
     end do
-    
+
     ! Now set the xsurfd contribution from the full x perturbation.
     ! scatter from the global seed (in x_like) to xSurfVecd...but only
     ! if wallDistances were used
-    if (wallDistanceNeeded .and. useApproxWallDistance) then 
+    if (wallDistanceNeeded .and. useApproxWallDistance) then
        do sps=1, nTimeIntervalsSpectral
           call VecScatterBegin(wallScatter(1, sps), x_like, xSurfVecd(sps), INSERT_VALUES, SCATTER_FORWARD, ierr)
           call EChk(ierr,__FILE__,__LINE__)
@@ -357,7 +358,7 @@ contains
 
     call adjustInflowAngle_d
     call referenceState_d
-    if (present(bcDataNames)) then 
+    if (present(bcDataNames)) then
        do sps=1,nTimeIntervalsSpectral
           call setBCData_d(bcDataNames, bcDataValues, bcDataValuesd, &
                bcDataFamLists, sps, size(bcDataValues), size(bcDataFamLists, 2))
@@ -373,7 +374,7 @@ contains
           ISIZE1OFDrfviscsubface = nViscBocos
 
           ! Get the pointers from the petsc vector for the surface
-          ! perturbation for wall distance. 
+          ! perturbation for wall distance.
           call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
           call EChk(ierr,__FILE__,__LINE__)
 
@@ -384,7 +385,7 @@ contains
           call volume_block_d()
           call metric_block_d()
           call boundaryNormals_d()
-          if (equations == RANSEquations .and. useApproxWallDistance) then 
+          if (equations == RANSEquations .and. useApproxWallDistance) then
              call updateWallDistancesQuickly_d(nn, 1, sps)
           end if
 
@@ -394,14 +395,14 @@ contains
 
           ! Make sure to call the turb BC's first incase we need to
           ! correct for K
-          if (equations == RANSequations) then 
+          if (equations == RANSequations) then
              call BCTurbTreatment_d
              call applyAllTurbBCthisblock_d(.True.)
           end if
 
           call applyAllBC_block_d(.True.)
 
-          ! These arrays need to be restored before we can move to the next spectral instance. 
+          ! These arrays need to be restored before we can move to the next spectral instance.
           call VecRestoreArrayF90(xSurfVec(1, sps), xSurf, ierr)
           call EChk(ierr,__FILE__,__LINE__)
 
@@ -411,18 +412,18 @@ contains
        end do
     end do
 
-    ! Just exchange the derivative values. 
+    ! Just exchange the derivative values.
     call whalo2_d(1, 1, nw, .True., .True., .True.)
 
     ! Need to re-apply the BCs. The reason is that BC halos behind
     ! interpolated cells need to be recomputed with their new
     ! interpolated values from actual compute cells. Only needed for
-    ! overset. 
-    if (oversetPresent) then 
+    ! overset.
+    if (oversetPresent) then
        do sps=1,nTimeIntervalsSpectral
           do nn=1,nDom
              call setPointers_d(nn, 1, sps)
-             if (equations == RANSequations) then 
+             if (equations == RANSequations) then
                 call BCTurbTreatment_d
                 call applyAllTurbBCthisblock_d(.True.)
              end if
@@ -459,13 +460,13 @@ contains
           ! compute the mean flow residual
           call inviscidCentralFlux_d
 
-          if (lumpedDiss) then 
+          if (lumpedDiss) then
              select case (spaceDiscr)
              case (dissScalar)
                 call inviscidDissFluxScalarApprox_d
              case (dissMatrix)
                 call inviscidDissFluxMatrixApprox_d
-             case (upwind) 
+             case (upwind)
                 call inviscidUpwindFlux_d(.True.)
              end select
           else
@@ -474,14 +475,14 @@ contains
                 call inviscidDissFluxScalar_d
              case (dissMatrix)
                 call inviscidDissFluxMatrix_d
-             case (upwind) 
+             case (upwind)
                 call inviscidUpwindFlux_d(.True.)
              end select
           end if
 
-          if (viscous) then 
+          if (viscous) then
              call computeSpeedOfSoundSquared_d
-             if (.not. lumpedDiss .or. viscPC) then 
+             if (.not. lumpedDiss .or. viscPC) then
                 call allNodalGradients_d
                 call viscousFlux_d
              else
@@ -489,7 +490,7 @@ contains
              end if
           end if
 
-          ! if (lowSpeedPreconditioner) then 
+          ! if (lowSpeedPreconditioner) then
           !    call applyLowSpeedPreconditioner_d
           ! end if
           call sumDwAndFw_d
@@ -498,7 +499,7 @@ contains
     end do
 
     ! Compute final solution values
-    if (present(famLists)) then 
+    if (present(famLists)) then
        call getSolution_d(famLists, funcValues, funcValuesd)
     end if
 
@@ -507,7 +508,7 @@ contains
     end do
 
     ! Copy out the residual derivative into the provided dwDot
-    ii =0 
+    ii =0
     do nn=1, nDom
        do sps=1,nTimeIntervalsSpectral
           call setPointers_d(nn, 1, sps)
@@ -530,13 +531,13 @@ contains
 
   subroutine master_b(wbar, xbar, extraBar, forcesBar, dwBar, nState, famLists, &
        funcValues, funcValuesd, bcDataNames, bcDataValues, bcDataValuesd, bcDataFamLists)
-    
+
     ! This is the main reverse mode differentiaion of master. It
     ! compute the reverse mode sensitivity of *all* outputs with
     ! respect to *all* inputs. Anything that needs to be
     ! differentiated for the adjoint method should be included in this
     ! function. This routine is written by had, assembling the various
-    ! individually differentiated tapenade routines. 
+    ! individually differentiated tapenade routines.
 
     use constants
     use adjointVars, only : iAlpha, iBeta, iMach, iMachGrid, iTemperature, iDensity, &
@@ -609,10 +610,10 @@ contains
     ! Place the output spatial seed into the temporary petsc x-like
     ! vector.
     xBar = zero
-    call VecPlaceArray(x_like, xBar, ierr) 
+    call VecPlaceArray(x_like, xBar, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    ! Set the residual seeds. 
+    ! Set the residual seeds.
     ii = 0
     do nn=1,nDom
        do sps=1,nTimeIntervalsSpectral
@@ -640,12 +641,12 @@ contains
     end do forceSpsLoop
 
     ! Call the final getSolution_b routine
-    if (present(famLists)) then 
+    if (present(famLists)) then
        call getSolution_b(famLists, funcValues, funcValuesd)
     end if
 
     spsLoop1: do sps=1, nTimeIntervalsSpectral
-  
+
        domainLoop1: do nn=1, nDom
           call setPointers_b(nn, 1, sps)
 
@@ -653,13 +654,13 @@ contains
           call resScale_b
           call sumDwAndFw_b
 
-          ! if (lowSpeedPreconditioner) then 
+          ! if (lowSpeedPreconditioner) then
           !    call applyLowSpeedPreconditioner_b
           ! end if
 
           ! Note that master_b does not include the first order flux
           ! approxation codes as those are never needed in reverse.
-          if (viscous) then 
+          if (viscous) then
              call viscousFlux_b
              call allNodalGradients_b
              call computeSpeedOfSoundSquared_b
@@ -668,7 +669,7 @@ contains
           ! So the all nodal gradients doesnt' perform the final
           ! scaling by the volume since it isn't necessary for the
           ! derivative. We have a special routine to fix that.
-          if (viscous) then 
+          if (viscous) then
              call fixAllNodalGradientsFromAD()
              call viscousFlux
           end if
@@ -678,7 +679,7 @@ contains
              call inviscidDissFluxScalar_b
           case (dissMatrix)
              call inviscidDissFluxMatrix_b
-          case (upwind) 
+          case (upwind)
              call inviscidUpwindFlux_b(.True.)
           end select
 
@@ -690,7 +691,7 @@ contains
              case (spalartAllmaras)
                 call saResScale_b
                 call saViscous_b
-                !call unsteadyTurbTerm_b(1_intType, 1_intType, itu1-1, qq)    
+                !call unsteadyTurbTerm_b(1_intType, 1_intType, itu1-1, qq)
                 call turbAdvection_b(1_intType, 1_intType, itu1-1, qq)
                 call saSource_b
              end select
@@ -710,14 +711,14 @@ contains
     ! Need to re-apply the BCs. The reason is that BC halos behind
     ! interpolated cells need to be recomputed with their new
     ! interpolated values from actual compute cells. Only needed for
-    ! overset. 
-    if (oversetPresent) then 
+    ! overset.
+    if (oversetPresent) then
        do sps=1, nTimeIntervalsSpectral
           do nn=1,nDom
              call setPointers_b(nn, 1, sps)
              call applyAllBC_block_b(.True.)
-             
-             if (equations == RANSequations) then 
+
+             if (equations == RANSequations) then
                 call applyAllTurbBCThisBlock_b(.True.)
                 call bcTurbTreatment_b
              end if
@@ -732,50 +733,50 @@ contains
 
        ! Get the pointers from the petsc vector for the wall
        ! surface and it's accumulation. Only necessary for wall
-       ! distance. 
+       ! distance.
        call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
        call EChk(ierr,__FILE__,__LINE__)
-       
+
        ! And it's derivative
        call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
        !Zero the accumulation vector on a per-time-spectral instance basis
        xSurfd = zero
-       
+
        domainLoop2: do nn=1,nDom
           call setPointers_b(nn, 1, sps)
           call applyAllBC_block_b(.True.)
-          
-          if (equations == RANSequations) then 
+
+          if (equations == RANSequations) then
              call applyAllTurbBCThisBlock_b(.True.)
              call bcTurbTreatment_b
           end if
           call computeEddyViscosity_b(.false.)
           call computeLamViscosity_b(.false.)
           call computePressureSimple_b(.false.)
-             
-          if (equations == RANSEquations .and. useApproxWallDistance) then 
+
+          if (equations == RANSEquations .and. useApproxWallDistance) then
              call updateWallDistancesQuickly_b(nn, 1, sps)
           end if
-          
+
           call boundaryNormals_b
           call metric_block_b
           call volume_block_b
 
        end do domainLoop2
 
-       ! Restore the petsc pointers. 
+       ! Restore the petsc pointers.
        call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
        call EChk(ierr,__FILE__,__LINE__)
-       
+
        ! And it's derivative
        call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
        ! Now accumulate the xsurfd accumulation by using the wall scatter
        ! in reverse.
-       if (wallDistanceNeeded .and. useApproxWallDistance) then 
+       if (wallDistanceNeeded .and. useApproxWallDistance) then
 
           call VecScatterBegin(wallScatter(1, sps), xSurfVecd(sps), x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
           call EChk(ierr,__FILE__,__LINE__)
@@ -785,8 +786,8 @@ contains
        end if
     end do spsLoop2
 
-    
-    if (present(bcDataNames)) then 
+
+    if (present(bcDataNames)) then
        allocate(bcDataValuesdLocal(size(bcDataValuesd)))
        bcDataValuesdLocal = zero
        call setBCDataFineGrid_b(.true.)
@@ -806,8 +807,9 @@ contains
        ! Update overset connectivity if necessary
        if (oversetPresent .and. &
             (oversetUpdateMode == updateFast .or. &
-            oversetUpdateMode == updateFull)) then 
-          call updateOversetConnectivity_b(1_intType, sps)
+            oversetUpdateMode == updateFull)) then
+          print *,'Full overset update derivatives not implemented'
+          !call updateOversetConnectivity_b(1_intType, sps)
        end if
     end do
     ! Now the adjoint of the coordinate exhcange
@@ -821,7 +823,7 @@ contains
 
     call VecResetArray(x_like, ierr)
     call EChk(ierr, __FILE__, __LINE__)
-          
+
     ! =========================================
     !            End of reverse pass
     ! =========================================
@@ -837,7 +839,7 @@ contains
     extraLocalBar(iPointRefX) = pointrefd(1)
     extraLocalBar(iPointRefY) = pointrefd(2)
     extraLocalBar(iPointRefZ) = pointrefd(3)
-    
+
     ! Finally put the output seeds into the provided vectors.
     ii = 0
     jj = 0
@@ -860,7 +862,7 @@ contains
 
           ! Set the xvbar accumulation. Note that this must be a sum,
           ! becuase we may already have wall distance accumulation
-          ! from the wallScatter directly into xbar (through x_like). 
+          ! from the wallScatter directly into xbar (through x_like).
           do k=1, kl
              do j=1, jl
                 do i=1, il
@@ -875,7 +877,7 @@ contains
     end do
 
     ! Finally get the full contribution of the extra variables by
-    ! summing all local contributions. 
+    ! summing all local contributions.
     extraBar = zero
     call mpi_allreduce(extraLocalBar, extraBar, size(extraBar), adflow_real, &
          mpi_sum, ADflow_comm_world, ierr)
@@ -933,7 +935,7 @@ contains
     integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj,  level
     real(kind=realType) :: dummyReal
 
-    ! Set the residual seeds. 
+    ! Set the residual seeds.
     ii = 0
     do nn=1,nDom
        do sps=1,nTimeIntervalsSpectral
@@ -963,13 +965,13 @@ contains
           call resScale_b
           call sumDwAndFw_b
 
-          ! if (lowSpeedPreconditioner) then 
+          ! if (lowSpeedPreconditioner) then
           !    call applyLowSpeedPreconditioner_b
           ! end if
 
           ! Note that master_b does not include the approximation codes
-          ! as those are never needed in reverse. 
-          if (viscous) then 
+          ! as those are never needed in reverse.
+          if (viscous) then
              call viscousFlux_fast_b
              call allNodalGradients_fast_b
              call computeSpeedOfSoundSquared_b
@@ -980,7 +982,7 @@ contains
              call inviscidDissFluxScalar_fast_b
           case (dissMatrix)
              call inviscidDissFluxMatrix_fast_b
-          case (upwind) 
+          case (upwind)
              call inviscidUpwindFlux_fast_b(.True.)
           end select
 
@@ -992,7 +994,7 @@ contains
              case (spalartAllmaras)
                 call saResScale_fast_b
                 call saViscous_fast_b
-                !call unsteadyTurbTerm_b(1_intType, 1_intType, itu1-1, qq)    
+                !call unsteadyTurbTerm_b(1_intType, 1_intType, itu1-1, qq)
                 call turbAdvection_fast_b(1_intType, 1_intType, itu1-1, qq)
                 call saSource_fast_b
              end select
@@ -1002,7 +1004,7 @@ contains
 
           call timeStep_block_fast_b(.false.)
           call sourceTerms_block_fast_b(nn, .true., dummyReal)
-        
+
           ! Initres_b should be called here. For steady just zero:
           dwd = zero
        end do domainLoop1
@@ -1011,14 +1013,14 @@ contains
     ! Need to re-apply the BCs. The reason is that BC halos behind
     ! interpolated cells need to be recomputed with their new
     ! interpolated values from actual compute cells. Only needed for
-    ! overset. 
-    if (oversetPresent) then 
+    ! overset.
+    if (oversetPresent) then
        do sps=1, nTimeIntervalsSpectral
           do nn=1,nDom
              call setPointers_d(nn, 1, sps)
              call applyAllBC_block_b(.True.)
-             
-             if (equations == RANSequations) then 
+
+             if (equations == RANSequations) then
                 call applyAllTurbBCThisBlock_b(.True.)
                 call bcTurbTreatment_b
              end if
@@ -1034,11 +1036,11 @@ contains
           call setPointers_d(nn, 1, sps)
 
           call applyAllBC_block_b(.True.)
-          if (equations == RANSequations) then 
+          if (equations == RANSequations) then
              call applyAllTurbBCThisBlock_b(.True.)
              call bcTurbTreatment_b
           end if
-          
+
           call computeEddyViscosity_b(.false.)
           call computeLamViscosity_b(.false.)
           call computePressureSimple_b(.false.)
@@ -1104,7 +1106,7 @@ contains
 
     ! Make sure to call the turb BC's first incase we need to
     ! correct for K
-    if (equations == RANSequations) then 
+    if (equations == RANSequations) then
        call BCTurbTreatment
        call applyAllTurbBCthisblock(.True.)
     end if
@@ -1113,7 +1115,7 @@ contains
     call timeStep_block(.false.)
     dw = zero ! This should be init_res
     call sourceTerms_block(nn, .True., dummyReal)
-    
+
     !Compute turbulence residual for RANS equations
     if( equations == RANSEquations) then
        !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
@@ -1135,13 +1137,13 @@ contains
     ! compute the mean flow residual
     call inviscidCentralFlux
 
-    if (lumpedDiss) then 
+    if (lumpedDiss) then
        select case (spaceDiscr)
        case (dissScalar)
           call inviscidDissFluxScalarApprox
        case (dissMatrix)
           call inviscidDissFluxMatrixApprox
-       case (upwind) 
+       case (upwind)
           call inviscidUpwindFlux(.True.)
        end select
     else
@@ -1150,14 +1152,14 @@ contains
           call inviscidDissFluxScalar
        case (dissMatrix)
           call inviscidDissFluxMatrix
-       case (upwind) 
+       case (upwind)
           call inviscidUpwindFlux(.True.)
        end select
     end if
 
-    if (viscous) then 
+    if (viscous) then
        call computeSpeedOfSoundSquared
-       if (.not. lumpedDiss .or. viscPC) then 
+       if (.not. lumpedDiss .or. viscPC) then
           call allNodalGradients
           call viscousFlux
        else
@@ -1165,7 +1167,7 @@ contains
        end if
     end if
 
-    ! if (lowSpeedPreconditioner) then 
+    ! if (lowSpeedPreconditioner) then
     !    call applyLowSpeedPreconditioner_d
     ! end if
     call sumDwAndFw
@@ -1176,7 +1178,7 @@ contains
   subroutine block_res_state_d(nn, sps)
 
     ! This is a special state-only forward mode linearization
-    ! computation used to assemble the jacobian. 
+    ! computation used to assemble the jacobian.
     use constants
     use BCExtra_d, only : applyAllBC_Block_d
     use inputAdjoint,  only : viscPC
@@ -1212,7 +1214,7 @@ contains
 
     ! Make sure to call the turb BC's first incase we need to
     ! correct for K
-    if (equations == RANSequations) then 
+    if (equations == RANSequations) then
        call BCTurbTreatment_d
        call applyAllTurbBCthisblock_d(.True.)
     end if
@@ -1243,13 +1245,13 @@ contains
     ! compute the mean flow residual
     call inviscidCentralFlux_d
 
-    if (lumpedDiss) then 
+    if (lumpedDiss) then
        select case (spaceDiscr)
        case (dissScalar)
           call inviscidDissFluxScalarApprox_d
        case (dissMatrix)
           call inviscidDissFluxMatrixApprox_d
-       case (upwind) 
+       case (upwind)
           call inviscidUpwindFlux_d(.True.)
        end select
     else
@@ -1258,14 +1260,14 @@ contains
           call inviscidDissFluxScalar_d
        case (dissMatrix)
           call inviscidDissFluxMatrix_d
-       case (upwind) 
+       case (upwind)
           call inviscidUpwindFlux_d(.True.)
        end select
     end if
 
-    if (viscous) then 
+    if (viscous) then
        call computeSpeedOfSoundSquared_d
-       if (.not. lumpedDiss .or. viscPC) then 
+       if (.not. lumpedDiss .or. viscPC) then
           call allNodalGradients_d
           call viscousFlux_d
        else
@@ -1273,7 +1275,7 @@ contains
        end if
     end if
 
-    ! if (lowSpeedPreconditioner) then 
+    ! if (lowSpeedPreconditioner) then
     !    call applyLowSpeedPreconditioner_d
     ! end if
     call sumDwAndFw_d

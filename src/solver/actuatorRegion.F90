@@ -8,7 +8,7 @@ module actuatorRegion
 contains
   subroutine addActuatorRegion(pts, conn, axis1, axis2, famName, famID, &
        F, T, smoothDistance, nPts, nConn)
-    ! Add a user-supplied integration surface. 
+    ! Add a user-supplied integration surface.
 
     use communication, only : myID, adflow_comm_world
     use constants
@@ -46,7 +46,7 @@ contains
     real(kind=realType) :: dummy(3, 2)
 
     nActuatorRegions = nActuatorRegions + 1
-    if (nActuatorRegions > nActuatorRegionsMax) then 
+    if (nActuatorRegions > nActuatorRegionsMax) then
        print *,"Error: Exceeded the maximum number of actuatorDiskRegions.  "&
             &"Increase nActuatorDiskRegionsMax"
        stop
@@ -61,7 +61,7 @@ contains
     region%smoothDistance = smoothDistance
     allocate(region%blkPtr(0:nDom))
     region%blkPtr(0) = 0
-    
+
     ! Next thing we need to do is to figure out if any of our cells
     ! are inside the actuator disk region. If so we will save them in
     ! the actuatorRegionType data structure
@@ -71,7 +71,7 @@ contains
     ! simple shortcut: Just compute the bounding box of the region and
     ! use that as the "already found" distance in the cloest point
     ! search. This will eliminate all the points further away
-    ! immediately and this should be sufficiently fast. 
+    ! immediately and this should be sufficiently fast.
 
     ! So...compute that bounding box:
     do iDim=1,3
@@ -79,10 +79,10 @@ contains
        maxX(iDim) = maxval(pts(iDim, :))
     end do
 
-    ! Get the max distance. This should be quite conservative. 
+    ! Get the max distance. This should be quite conservative.
     dStar = (maxX(1)-minx(1))**2 + (maxX(2)-minX(2))**2  + (maxX(3)-minX(3))**2
 
-    ! Now build the tree. 
+    ! Now build the tree.
     call buildSerialQuad(size(conn, 2), size(pts, 2), pts, conn, ADT)
 
     ! Compute the (averaged) uniqe nodal vectors:
@@ -117,7 +117,7 @@ contains
     ! Node count is no longer needed
     deallocate(normCount)
 
-    ! Allocate the extra data the tree search requires. 
+    ! Allocate the extra data the tree search requires.
     allocate(stack(100), BB(20), frontLeaves(25), frontLeavesNew(25))
 
     ! Allocate sufficient space for the maximum possible number of cellIDs
@@ -125,7 +125,7 @@ contains
          region%factor(nCellsLocal(1)))
 
     ! Now search for all the coordinate. Note that We have explictly
-    ! set sps to 1 becuase it is only implemented for single grid. 
+    ! set sps to 1 becuase it is only implemented for single grid.
     sps = 1
     level = 1
     sm2 = smoothDistance**2
@@ -135,7 +135,7 @@ contains
           do j=2, jl
              do i=2, il
                 ! Only check real cells
-                if (iblank(i, j, k) == 1) then 
+                if (iblank(i, j, k) == 1) then
                    ! Compute the cell center
                    xCen = eighth*(x(i-1,j-1,k-1,:) + x(i,j-1,k-1,:)  &
                         +         x(i-1,j,  k-1,:) + x(i,j,  k-1,:)  &
@@ -150,16 +150,16 @@ contains
                    call minDistancetreeSearchSinglePoint(ADT, coor, intInfo, &
                         uvw, dummy, 0, BB, frontLeaves, frontLeavesNew)
                    cellID = intInfo(3)
-                   if (cellID > 0) then 
+                   if (cellID > 0) then
                       ! Now check if this was successful or now:
-                      if (checkInside()) then 
+                      if (checkInside()) then
                          ! Whoohoo! We are inside the region. Add this cell
-                         ! to the list. 
+                         ! to the list.
                          region%nCellIDs = region%nCellIDs + 1
                          region%cellIDs(:, region%nCellIDs) = (/i, j, k/)
 
-                         ! Compute the factor we need for smoothing 
-                         if (uvw(4) > sm2) then 
+                         ! Compute the factor we need for smoothing
+                         if (uvw(4) > sm2) then
                             region%factor(region%nCellIDs) = one
                          else
                             frac = sqrt(uvw(4)) / region%smoothDistance
@@ -179,7 +179,7 @@ contains
     end do
 
     ! Resize the cellIDs to the correct size now that we know the
-    ! correct exact number. 
+    ! correct exact number.
     tmp => region%cellIDs
     allocate(region%cellIDs(3, region%nCellIDs))
     region%cellIDs = tmp(:, 1:region%nCellIDs)
@@ -190,7 +190,7 @@ contains
 
     do nn=1, nDom
        call setPointers(nn, level, sps)
-       
+
        ! Loop over the region for this block
        do iii=region%blkPtr(nn-1) + 1, region%blkPtr(nn)
           i = region%cellIDs(1, iii)
@@ -235,7 +235,7 @@ contains
       v1 = coor(1:3) - xp
       dp = normal(1)*v1(1) + normal(2)*v1(2) + normal(3)*v1(3)
 
-      if (dp < zero) then 
+      if (dp < zero) then
          checkInside = .True.
       else
          checkInside = .False.
@@ -244,12 +244,12 @@ contains
   end subroutine addActuatorRegion
 
   subroutine writeActuatorRegions(fileName)
-    
+
     ! This a (mostly) debug routine that is used to verify to the user
     ! the that the cells that the user thinks should be specified as
     ! being inside the actuator region actually are. We will dump a
     ! hex unstructured ascii tecplot file with all the zones we
-    ! found. We won't be super concerned about efficiency here. 
+    ! found. We won't be super concerned about efficiency here.
 
     use constants
     use utils, only : EChk, pointReduce, setPointers
@@ -257,7 +257,7 @@ contains
     use blockPointers, only : x, nDom
     implicit none
 
-    ! Input 
+    ! Input
     character(len=*) :: fileName
 
     ! Working
@@ -268,13 +268,13 @@ contains
     real(kind=realType) , dimension(:,:), allocatable :: tmp, uniquePts
     real(kind=realType), parameter :: tol=1e-8
     integer(kind=intType), dimension(:), allocatable :: conn, allConn, link
-    character(80) :: zoneName  
+    character(80) :: zoneName
     type(actuatorRegionType), pointer :: region
 
     ! Before we start the main region loop the root procesoor has to
     ! open up the tecplot file and write the header
 
-    if (myid == 0) then 
+    if (myid == 0) then
        open(unit=101, file=trim(fileName), form='formatted')
        write(101,*) 'TITLE = "Actuator Regions"'
        write(101,*) 'Variables = "CoordinateX", "CoordinateY", "CoordinateZ", "Factor"'
@@ -282,21 +282,21 @@ contains
 
     ! Region Loop
     regionLoop: do iRegion=1, nActuatorRegions
-       
-       ! Only for the finest grid level. 
+
+       ! Only for the finest grid level.
        level =1
        sps = 1
 
        ! Do an allgather with the number of actuator cells on each
-       ! processor so that everyone knows the sizes and can compute the offsets, 
+       ! processor so that everyone knows the sizes and can compute the offsets,
        region => actuatorRegions(iRegion)
-       
+
        allocate(sizesProc(nProc), cumSizesProc(0:nProc))
 
-       call mpi_allgather(region%nCellIDs, 1, adflow_integer, sizesProc, 1, & 
+       call mpi_allgather(region%nCellIDs, 1, adflow_integer, sizesProc, 1, &
             adflow_integer, adflow_comm_world, ierr)
        call ECHK(ierr, __FILE__, __LINE__)
-       
+
        cumSizesProc(0) = 0
        do iProc=1, nProc
           cumSizesProc(iProc) = cumSizesProc(iProc-1) + sizesProc(iProc)
@@ -304,13 +304,13 @@ contains
 
        ! Fill up our own nodes/conn with the nodes we have here.
        allocate(conn(8*region%nCellIDs), pts(24*region%nCellIDs))
-       
+
        kkk = 0
        do nn=1, nDom
           call setPointers(nn, level, sps)
           ! Loop over the ranges for this block
           do iii=region%blkPtr(nn-1) + 1, region%blkPtr(nn)
-             
+
              ! Carful with the conn values! They need to be in counter clock wise ordering!
              offset = (iii-1)*8 + cumSizesProc(myID)*8
              conn((iii-1)*8 + 1) = 1 + offset
@@ -321,7 +321,7 @@ contains
              conn((iii-1)*8 + 6) = 6 + offset
              conn((iii-1)*8 + 7) = 8 + offset
              conn((iii-1)*8 + 8) = 7 + offset
-             
+
              ! Add in the 24 values for the nodal coordinates in coordinate
              ! ordering. Do all the coordinates interlaced
              do kk=-1, 0
@@ -341,19 +341,19 @@ contains
        end do
 
        ! Now that we've filled up our array, we can allocate the total
-       ! space we need on the root proc and it 
-       if (myid == 0) then 
+       ! space we need on the root proc and it
+       if (myid == 0) then
           totalCount = sum(sizesProc)
           allocate(allConn(8*totalCount), allPts(24*totalCount), allFactor(totalCount))
        end if
-       
+
        ! Perform the two gatherV's
-       call mpi_gatherV(pts, region%nCellIDs*24, adflow_real, & 
+       call mpi_gatherV(pts, region%nCellIDs*24, adflow_real, &
             allPts, 24*sizesProc, 24*cumSizesProc, adflow_real, &
             0, adflow_comm_world, ierr)
        call ECHK(ierr, __FILE__, __LINE__)
-       
-       call mpi_gatherV(conn, region%nCellIDs*8, adflow_integer, & 
+
+       call mpi_gatherV(conn, region%nCellIDs*8, adflow_integer, &
             allConn, 8*sizesProc, 8*cumSizesProc, adflow_integer, &
             0, adflow_comm_world, ierr)
        call ECHK(ierr, __FILE__, __LINE__)
@@ -362,16 +362,16 @@ contains
             allFactor, sizesProc, cumSizesProc, adflow_real, &
             0, adflow_comm_world, ierr)
        call ECHK(ierr, __FILE__, __LINE__)
-       
+
        ! We can deallocate all the per-proc memory now
        deallocate(sizesProc, cumSizesProc, pts, conn)
-       
-       if (myid == 0) then 
-          
+
+       if (myid == 0) then
+
           ! Now the poor root processor dumps everything out to a
           ! file. To help cut down on the already bloated file size,
           ! we'll point reduce it which will help tecplot display them
-          ! better as well. 
+          ! better as well.
 
           allocate(tmp(3, totalCount*8))
           do i=1, totalCount*8
@@ -382,9 +382,9 @@ contains
           deallocate(allPts)
           allocate(uniquePts(3, totalCount*8), link(totalCount*8))
 
-          ! Get unique set of nodes. 
+          ! Get unique set of nodes.
           call pointReduce(tmp, totalCount*8, tol, uniquePts, link, nUnique)
-          
+
           write (zoneName,"(a,a,a)") 'Zone T="', trim(region%famName), ' Region"'
           write (101, *) trim(zoneName)
           write (101,*) "Nodes = ", nUnique, " Elements= ", totalCount, " ZONETYPE=FEBRICK"
@@ -419,7 +419,7 @@ contains
     end do regionLoop
 
     ! Close the output file on the root proc
-    if (myid == 0) then 
+    if (myid == 0) then
        close(101)
     end if
   end subroutine writeActuatorRegions
@@ -427,10 +427,10 @@ contains
   subroutine integrateActuatorRegions(localValues, famList, sps, withGathered, funcValues)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
-    ! modifying the hand-written forward and reverse routines. 
+    ! modifying the hand-written forward and reverse routines.
     ! --------------------------------------------------------------
 
-    ! Perform volume integrals over the actuator region. 
+    ! Perform volume integrals over the actuator region.
     use constants
     use blockPointers, only : vol, dw, w, nDom
     use flowVarRefState, only : Pref, uRef
@@ -451,9 +451,9 @@ contains
     real(kind=realType) :: PLocal, PLocald
     ! Zero the accumulation variable. We comptue flow power across
     ! 'all' actuaor zones. The famInclude is used to section out which
-    ! one we want. 
+    ! one we want.
     PLocal = zero
-   
+
     domainLoop: do nn=1, nDom
        call setPointers(nn, 1, sps)
 
@@ -461,7 +461,7 @@ contains
        regionLoop: do iRegion=1, nActuatorRegions
 
           ! Check if this needs to be included:
-          famInclude: if (famInList(actuatorRegions(iRegion)%famID, famList)) then 
+          famInclude: if (famInList(actuatorRegions(iRegion)%famID, famList)) then
 
              ! If so, call the regular sourceTerms_block routine
              call sourceTerms_block(nn, .False., pLocal)
@@ -470,19 +470,19 @@ contains
        end do regionLoop
     end do domainLoop
 
-    ! Add in the contribution from this processor. 
+    ! Add in the contribution from this processor.
     localValues(iPower) = localValues(iPower) + PLocal
-    
+
   end subroutine integrateActuatorRegions
 #ifndef USE_COMPLEX
   subroutine integrateActuatorRegions_d(localValues, localValuesd, famList, sps, &
        withGathered, funcValues, funcValuesd)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
-    ! modifying the hand-written forward and reverse routines. 
+    ! modifying the hand-written forward and reverse routines.
     ! --------------------------------------------------------------
 
-    ! Perform volume integrals over the actuator region. 
+    ! Perform volume integrals over the actuator region.
     use constants
     use blockPointers, only : vol, dw, w, nDom
     use flowVarRefState, only : Pref, uRef
@@ -504,10 +504,10 @@ contains
 
     ! Zero the accumulation variable. We comptue flow power across
     ! 'all' actuaor zones. The famInclude is used to section out which
-    ! one we want. 
+    ! one we want.
     PLocal = zero
     PLocald = zero
-   
+
     domainLoop: do nn=1, nDom
        call setPointers(nn, 1, sps)
 
@@ -515,7 +515,7 @@ contains
        regionLoop: do iRegion=1, nActuatorRegions
 
           ! Check if this needs to be included:
-          famInclude: if (famInList(actuatorRegions(iRegion)%famID, famList)) then 
+          famInclude: if (famInList(actuatorRegions(iRegion)%famID, famList)) then
 
              ! If so, call the regular sourceTerms_block routine
              call sourceTerms_block_d(nn, .False., pLocal, pLocald)
@@ -524,20 +524,20 @@ contains
        end do regionLoop
     end do domainLoop
 
-    ! Add in the contribution from this processor. 
+    ! Add in the contribution from this processor.
     localValues(iPower) = localValues(iPower) + PLocal
     localValuesd(iPower) = localValuesd(iPower) + PLocald
-    
+
   end subroutine integrateActuatorRegions_d
 
   subroutine integrateActuatorRegions_b(localValues, localValuesd, famList, sps, &
        withGathered, funcValues, funcValuesd)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
-    ! modifying the hand-written forward and reverse routines. 
+    ! modifying the hand-written forward and reverse routines.
     ! --------------------------------------------------------------
 
-    ! Perform volume integrals over the actuator region. 
+    ! Perform volume integrals over the actuator region.
     use constants
     use blockPointers, only : vol, dw, w, nDom
     use flowVarRefState, only : Pref, uRef
@@ -559,13 +559,13 @@ contains
 
     ! Zero the accumulation variable. We comptue flow power across
     ! 'all' actuaor zones. The famInclude is used to section out which
-    ! one we want. 
+    ! one we want.
     PLocal = zero
     PLocald = zero
 
     ! Pull out the seed
     PLocald = localValuesd(iPower)
-   
+
     domainLoop: do nn=1, nDom
        call setPointers(nn, 1, sps)
 
@@ -573,7 +573,7 @@ contains
        regionLoop: do iRegion=1, nActuatorRegions
 
           ! Check if this needs to be included:
-          famInclude: if (famInList(actuatorRegions(iRegion)%famID, famList)) then 
+          famInclude: if (famInList(actuatorRegions(iRegion)%famID, famList)) then
 
              ! If so, call the regular sourceTerms_block routine
              call sourceTerms_block_b(nn, .False., pLocal, pLocald)

@@ -28,20 +28,20 @@ subroutine wallSearch(aSurf, bSurf)
 
   logical :: overlapped, debugit
 
-  if (aSurf%nCells == 0 .or. bSurf%nCells == 0) then 
+  if (aSurf%nCells == 0 .or. bSurf%nCells == 0) then
      ! Either block doesn't have walls, so there is nothing do but just
-     ! return. 
+     ! return.
      return
   end if
 
-  if (clusterAreas(bSurf%cluster) <= clusterAreas(aSurf%cluster)) then 
+  if (clusterAreas(bSurf%cluster) <= clusterAreas(aSurf%cluster)) then
      ! B is smaller so we don't need to do anything
      return
   end if
 
   nInterpol = 0
   ! Allocate the (pointer) memory that may be resized as necessary for
-  ! the singlePoint search routine. 
+  ! the singlePoint search routine.
   allocate(BB(10), frontLeaves(25), frontLeavesNew(25), stack(100))
 
   ! Basically what we are doing it looping all of our bSurf NODES. We
@@ -63,12 +63,12 @@ subroutine wallSearch(aSurf, bSurf)
 
      xx(1:3) = bSurf%x(:, i)
      xx(4) = large
-     
+
      ! Just check if it is inside the root bounding box..ie the full
      ! bounding box of the surface. This is would appear conservative,
      ! but isn't good enough. We need to expand by nearWallDist since
      ! it is possible a overlap occurs right at the edge of the
-     ! bounding box. 
+     ! bounding box.
      if(xx(1) >= ADTree(1)%xMin(1) - nearWallDist .and. &
           xx(1) <= ADTree(1)%xMax(4)  + nearWallDist .and. &
           xx(2) >= ADTree(1)%xMin(2) - nearWallDist .and. &
@@ -85,7 +85,7 @@ subroutine wallSearch(aSurf, bSurf)
         ! Don't accept the element just yet. Check that that it is
         ! within a factor of our node tolernace. We have to check both
         ! the node on bSurf and the nodes on the cell we found becuase
-        ! one could be bigger. 
+        ! one could be bigger.
         dist = sqrt(uvw(4))
         elemID = intInfo(3)
 
@@ -94,7 +94,7 @@ subroutine wallSearch(aSurf, bSurf)
         do k=1,4
            delta = max(delta, aSurf%delta(aSurf%conn(k, elemID)))
         end do
-        if (dist < max(nearWallDist, 10*delta)) then 
+        if (dist < max(nearWallDist, 10*delta)) then
            ! Store the closest element for this node
            tmpNodeElem(i) = elemID
         end if
@@ -127,7 +127,7 @@ subroutine wallSearch(aSurf, bSurf)
              dummy, nInterpol, BB, frontLeaves, frontLeavesNew)
 
         ! Don't accept the element just yet. Check that that it is
-        ! within a factor of our node tolernace. 
+        ! within a factor of our node tolernace.
         dist = sqrt(uvw(4))
         elemID = intInfo(3)
 
@@ -137,7 +137,7 @@ subroutine wallSearch(aSurf, bSurf)
            delta = max(delta, aSurf%delta(aSurf%conn(k, elemID)))
         end do
 
-        if (dist < max(nearWallDist, 10*delta)) then 
+        if (dist < max(nearWallDist, 10*delta)) then
         ! Store the closest element for this node
            tmpCellElem(i) = elemID
         end if
@@ -158,7 +158,7 @@ subroutine wallSearch(aSurf, bSurf)
         n = bSurf%conn(j, i)
         elem = tmpNodeElem(n)
 
-        if (elem > 0) then 
+        if (elem > 0) then
 
            ! Get coordinates of the other quad
            do jj=1,4
@@ -166,8 +166,8 @@ subroutine wallSearch(aSurf, bSurf)
            end do
 
            call  quadOverlap(q1, q2, overlapped)
-           
-           if (overlapped) then 
+
+           if (overlapped) then
 
               bSurf%iBlank(bSurf%cellPtr(i)) = -2
            end if
@@ -176,7 +176,7 @@ subroutine wallSearch(aSurf, bSurf)
 
      ! And check the cell center
      elem = tmpCellElem(i)
-     if (elem > 0) then 
+     if (elem > 0) then
         ! Get coordinates of the other quad
 
         do jj=1,4
@@ -184,7 +184,7 @@ subroutine wallSearch(aSurf, bSurf)
         end do
 
         call  quadOverlap(q1, q2, overlapped)
-        if (overlapped) then 
+        if (overlapped) then
            bSurf%iBlank(bSurf%cellPtr(i)) = -2 ! -2 means it was overlapped and got blanked
         end if
      end if
@@ -194,7 +194,7 @@ subroutine wallSearch(aSurf, bSurf)
   !
   ! Now do the all the searches in reverse. Probably don't need the
   ! cell center check anymore since the other search will take care of
-  ! it. 
+  ! it.
 
   deallocate(tmpNodeElem, tmpCellElem)
   allocate(tmpNodeElem(aSurf%nNodes), tmpCellElem(aSurf%nCells))
@@ -225,7 +225,7 @@ subroutine wallSearch(aSurf, bSurf)
         ! Don't accept the element just yet. Check that that it is
         ! within a factor of our node tolernace. We have to check both
         ! the node on bSurf and the nodes on the cell we found becuase
-        ! one could be bigger. 
+        ! one could be bigger.
         dist = sqrt(uvw(4))
         elemID = intInfo(3)
 
@@ -235,7 +235,7 @@ subroutine wallSearch(aSurf, bSurf)
            delta = max(delta, bSurf%delta(bSurf%conn(k, elemID)))
         end do
 
-        if (dist < max(nearWallDist, 10*delta)) then 
+        if (dist < max(nearWallDist, 10*delta)) then
            ! Store the closest element for this node
            tmpNodeElem(i) = elemID
         end if
@@ -268,7 +268,7 @@ subroutine wallSearch(aSurf, bSurf)
              dummy, nInterpol, BB, frontLeaves, frontLeavesNew)
 
         ! Don't accept the element just yet. Check that that it is
-        ! within a factor of our node tolernace. 
+        ! within a factor of our node tolernace.
         dist = sqrt(uvw(4))
         elemID = intInfo(3)
 
@@ -278,7 +278,7 @@ subroutine wallSearch(aSurf, bSurf)
            delta = max(delta, bSurf%delta(bSurf%conn(k, elemID)))
         end do
 
-        if (dist < max(nearWallDist, 10*delta)) then 
+        if (dist < max(nearWallDist, 10*delta)) then
         ! Store the closest element for this node
            tmpCellElem(i) = elemID
         end if
@@ -299,7 +299,7 @@ subroutine wallSearch(aSurf, bSurf)
         n = aSurf%conn(j, i)
         elem = tmpNodeElem(n)
 
-        if (elem > 0) then 
+        if (elem > 0) then
 
            ! Get coordinates of the other quad
            do jj=1,4
@@ -307,8 +307,8 @@ subroutine wallSearch(aSurf, bSurf)
            end do
 
            call  quadOverlap(q1, q2, overlapped)
-           
-           if (overlapped) then 
+
+           if (overlapped) then
               bSurf%iBlank(bSurf%cellPtr(elem)) = -2
            end if
         end if
@@ -316,7 +316,7 @@ subroutine wallSearch(aSurf, bSurf)
 
      ! And check the cell center
      elem = tmpCellElem(i)
-     if (elem > 0) then 
+     if (elem > 0) then
         ! Get coordinates of the other quad
 
         do jj=1,4
@@ -324,7 +324,7 @@ subroutine wallSearch(aSurf, bSurf)
         end do
 
         call  quadOverlap(q1, q2, overlapped)
-        if (overlapped) then 
+        if (overlapped) then
            ! bSurf is still the one blanked
            bSurf%iBlank(bSurf%cellPtr(elem)) = -2 ! -2 means it was overlapped and got blanked
         end if
@@ -336,14 +336,14 @@ subroutine wallSearch(aSurf, bSurf)
 
 end subroutine wallSearch
 
-subroutine quadOverlap(q1, q2, overlapped) 
+subroutine quadOverlap(q1, q2, overlapped)
   ! Given two quad in *3D* determine if they overlap using the
   ! separation axis theorem after projecting onto the plane defined by
   ! the cell normal. Check both normals from each quad.
 
   use constants
   use utils, only : mynorm2, cross_prod
-  
+
   implicit none
 
   ! input/output
@@ -377,7 +377,7 @@ subroutine quadOverlap(q1, q2, overlapped)
      return
   end if
 
-  ! The two quads *may* be overlapped. We have to do it hard way. 
+  ! The two quads *may* be overlapped. We have to do it hard way.
 
   ! Normal of first quad
   v1 = q1(:, 3) - q1(:, 1)
@@ -392,14 +392,14 @@ subroutine quadOverlap(q1, q2, overlapped)
   n2 = n2/mynorm2(n2)
 
   ! f the normals are not in the same direction, must be a thin
-  ! surface. 
-  if (dot_product(n1, n2) < zero) then 
-     overlapped = .False. 
-     return 
+  ! surface.
+  if (dot_product(n1, n2) < zero) then
+     overlapped = .False.
+     return
   end if
 
   do ii=1, 2
-     if (ii == 1) then 
+     if (ii == 1) then
         normal = n1
         axis1 = q1(:, 2) - q1(:, 1)
      else
@@ -424,7 +424,7 @@ subroutine quadOverlap(q1, q2, overlapped)
      end do
      call quadOverlap2D(qq1, qq2, overlapped)
 
-     if (overlapped) then 
+     if (overlapped) then
         return
      end if
   end do
@@ -454,7 +454,7 @@ subroutine quadOverlap2D(q1, q2, overlapped)
      edgeLoop: do jj=1, 4 ! Loop over the edges of each quad
         jjp1 = mod(jj, 4)+1
 
-        if (ii == 1) then 
+        if (ii == 1) then
            axis = q1(:, jjp1) - q1(:, jj)
            p0 = q1(:, jj)
         else
@@ -477,10 +477,10 @@ subroutine quadOverlap2D(q1, q2, overlapped)
         min2 = minval(tmp2)
         max2 = maxval(tmp2)
 
-        if (max1 < min2 .or. max2 < min1) then 
+        if (max1 < min2 .or. max2 < min1) then
            overlapped = .False.
            ! We can just jump right out since we know they cannot
-           ! overlap. 
+           ! overlap.
            exit quadLoop
         end if
      end do edgeLoop

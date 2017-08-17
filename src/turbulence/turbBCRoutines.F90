@@ -4,9 +4,9 @@ contains
 #ifndef USE_TAPENADE
   subroutine applyAllTurbBC(secondHalo)
     !
-    !       applyAllTurbBC applies all boundary conditions to the          
-    !       turbulent transport equations for the all blocks on the grid   
-    !       level currentLevel.                                            
+    !       applyAllTurbBC applies all boundary conditions to the
+    !       turbulent transport equations for the all blocks on the grid
+    !       level currentLevel.
     !
     use constants
     use blockPointers
@@ -48,9 +48,9 @@ contains
 
   subroutine applyAllTurbBCThisBlock(secondHalo)
     !
-    !       applyAllTurbBCThisBlock sets the halo values of the            
-    !       turbulent variables and eddy viscosity for the block the       
-    !       variables in blockPointers currently point to.                 
+    !       applyAllTurbBCThisBlock sets the halo values of the
+    !       turbulent variables and eddy viscosity for the block the
+    !       variables in blockPointers currently point to.
     !
     use constants
     use blockPointers
@@ -78,7 +78,7 @@ contains
        ! the turbulent halo cells.
 
        if( wallFunctions ) then
-#ifndef USE_TAPENADE        
+#ifndef USE_TAPENADE
           ! Determine the block face on which this subface is located
           ! and set some pointers accordingly.
 
@@ -237,11 +237,11 @@ contains
 
   subroutine bcEddyNoWall(nn)
     !
-    !       bcEddyNoWall sets the eddy viscosity in the halo cells of      
-    !       subface nn of the block given in blockPointers. The boundary   
-    !       condition on the subface can be anything but a viscous wall.   
-    !       A homogeneous neumann condition is applied, which means that   
-    !       the eddy viscosity is simply copied from the interior cell.    
+    !       bcEddyNoWall sets the eddy viscosity in the halo cells of
+    !       subface nn of the block given in blockPointers. The boundary
+    !       condition on the subface can be anything but a viscous wall.
+    !       A homogeneous neumann condition is applied, which means that
+    !       the eddy viscosity is simply copied from the interior cell.
     !
     use constants
     use blockPointers
@@ -305,10 +305,10 @@ contains
   end subroutine bcEddyNoWall
   subroutine bcEddyWall(nn)
     !
-    !       bcEddyWall sets the eddy viscosity in the halo cells of        
-    !       viscous subface nn of the block given in blockPointers.        
-    !       As the eddy viscosity is zero at the wall, the value in the    
-    !       halo is simply the negative value of the first interior cell.  
+    !       bcEddyWall sets the eddy viscosity in the halo cells of
+    !       viscous subface nn of the block given in blockPointers.
+    !       As the eddy viscosity is zero at the wall, the value in the
+    !       halo is simply the negative value of the first interior cell.
     !
     use constants
     use blockPointers
@@ -374,12 +374,12 @@ contains
   end subroutine bcEddyWall
   subroutine bcTurbFarfield(nn)
     !
-    !       bcTurbFarfield applies the implicit treatment of the           
-    !       farfield boundary condition to subface nn. As the farfield     
-    !       boundary condition is independent of the turbulence model,     
-    !       this routine is valid for all models. It is assumed that the   
-    !       pointers in blockPointers are already set to the correct       
-    !       block on the correct grid level.                               
+    !       bcTurbFarfield applies the implicit treatment of the
+    !       farfield boundary condition to subface nn. As the farfield
+    !       boundary condition is independent of the turbulence model,
+    !       this routine is valid for all models. It is assumed that the
+    !       pointers in blockPointers are already set to the correct
+    !       block on the correct grid level.
     !
     use constants
     use blockPointers
@@ -461,12 +461,12 @@ contains
   end subroutine bcTurbFarfield
   subroutine bcTurbInflow(nn)
     !
-    !       bcTurbInflow applies the implicit treatment of the inflow      
-    !       boundary conditions to subface nn. As the inflow boundary      
-    !       condition is independent of the turbulence model, this routine 
-    !       is valid for all models. It is assumed that the pointers in    
-    !       blockPointers are already set to the correct block on the      
-    !       correct grid level.                                            
+    !       bcTurbInflow applies the implicit treatment of the inflow
+    !       boundary conditions to subface nn. As the inflow boundary
+    !       condition is independent of the turbulence model, this routine
+    !       is valid for all models. It is assumed that the pointers in
+    !       blockPointers are already set to the correct block on the
+    !       correct grid level.
     !
     use constants
     use blockPointers
@@ -518,10 +518,10 @@ contains
   end subroutine bcTurbInflow
   subroutine bcTurbInterface(nn)
     !
-    !       bcTurbInterface applies the halo treatment for interface halo  
-    !       cells, sliding mesh interface and domain interface. As these   
-    !       are not really boundary conditions, the variable bvt is simply 
-    !       set to keep the current value.                                 
+    !       bcTurbInterface applies the halo treatment for interface halo
+    !       cells, sliding mesh interface and domain interface. As these
+    !       are not really boundary conditions, the variable bvt is simply
+    !       set to keep the current value.
     !
     use constants
     use blockPointers
@@ -567,12 +567,12 @@ contains
   end subroutine bcTurbInterface
   subroutine bcTurbOutflow(nn)
     !
-    !       bcTurbOutflow applies the implicit treatment of the outflow    
-    !       boundary conditions to subface nn. As the outflow boundary     
-    !       condition is independent of the turbulence model, either       
-    !       extrapolation or zero Neumann, this routine is valid for all   
-    !       models. It is assumed that the pointers in blockPointers are   
-    !       already set to the correct block on the correct grid level.    
+    !       bcTurbOutflow applies the implicit treatment of the outflow
+    !       boundary conditions to subface nn. As the outflow boundary
+    !       condition is independent of the turbulence model, either
+    !       extrapolation or zero Neumann, this routine is valid for all
+    !       models. It is assumed that the pointers in blockPointers are
+    !       already set to the correct block on the correct grid level.
     !
     use constants
     use blockPointers
@@ -617,12 +617,12 @@ contains
   end subroutine bcTurbOutflow
   subroutine bcTurbSymm(nn)
     !
-    !       bcTurbSymm applies the implicit treatment of the symmetry      
-    !       boundary condition (or inviscid wall) to subface nn. As the    
-    !       symmetry boundary condition is independent of the turbulence   
-    !       model, this routine is valid for all models. It is assumed     
-    !       that the pointers in blockPointers are already set to the      
-    !       correct block on the correct grid level.                       
+    !       bcTurbSymm applies the implicit treatment of the symmetry
+    !       boundary condition (or inviscid wall) to subface nn. As the
+    !       symmetry boundary condition is independent of the turbulence
+    !       model, this routine is valid for all models. It is assumed
+    !       that the pointers in blockPointers are already set to the
+    !       correct block on the correct grid level.
     !
     use constants
     use blockPointers
@@ -665,16 +665,16 @@ contains
 
   subroutine bcTurbTreatment
     !
-    !       bcTurbTreatment sets the arrays bmti1, bvti1, etc, such that   
-    !       the physical boundary conditions are treated correctly.        
-    !       It is assumed that the variables in blockPointers already      
-    !       point to the correct block.                                    
-    !       The turbulent variable in the halo is computed as follows:     
-    !       wHalo = -bmt*wInternal + bvt for every block facer. As it is   
-    !       possible to have a coupling in the boundary conditions bmt     
-    !       actually are matrices. If there is no coupling between the     
-    !       boundary conditions of the turbulence equations bmt is a       
-    !       diagonal matrix.                                               
+    !       bcTurbTreatment sets the arrays bmti1, bvti1, etc, such that
+    !       the physical boundary conditions are treated correctly.
+    !       It is assumed that the variables in blockPointers already
+    !       point to the correct block.
+    !       The turbulent variable in the halo is computed as follows:
+    !       wHalo = -bmt*wInternal + bvt for every block facer. As it is
+    !       possible to have a coupling in the boundary conditions bmt
+    !       actually are matrices. If there is no coupling between the
+    !       boundary conditions of the turbulence equations bmt is a
+    !       diagonal matrix.
     !
     use constants
     use blockPointers
@@ -789,7 +789,7 @@ contains
             DomainInterfaceP,   DomainInterfaceRho,    &
             DomainInterfaceTotal)
 
-          ! Sliding mesh interface, overset outer boudaries, and 
+          ! Sliding mesh interface, overset outer boudaries, and
           ! domain interface with another code are not really boundary
           ! condition and therefore the values are kept.
 
@@ -802,11 +802,11 @@ contains
   end subroutine bcTurbTreatment
   subroutine bcTurbWall(nn)
     !
-    !       bcTurbWall applies the implicit treatment of the viscous       
-    !       wall boundary condition for the turbulence model used to the   
-    !       given subface nn.                                              
-    !       It is assumed that the pointers in blockPointers are           
-    !       already set to the correct block.                              
+    !       bcTurbWall applies the implicit treatment of the viscous
+    !       wall boundary condition for the turbulence model used to the
+    !       given subface nn.
+    !       It is assumed that the pointers in blockPointers are
+    !       already set to the correct block.
     !
     use blockPointers
     use flowVarRefState
@@ -1136,9 +1136,9 @@ contains
 
   subroutine turb2ndHalo(nn)
     !
-    !       turb2ndHalo sets the turbulent variables in the second halo    
-    !       cell for the given subface. Simple constant extrapolation is   
-    !       used to avoid problems.                                        
+    !       turb2ndHalo sets the turbulent variables in the second halo
+    !       cell for the given subface. Simple constant extrapolation is
+    !       used to avoid problems.
     !
     use constants
     use blockPointers
@@ -1237,10 +1237,10 @@ contains
 
   subroutine turbBCNSWall(secondHalo)
     !
-    !       turbBCNSWall applies the viscous wall boundary conditions      
-    !       of the turbulent transport equations to a block. It is assumed 
-    !       that the pointers in blockPointers are already set to the      
-    !       correct block on the correct grid level.                       
+    !       turbBCNSWall applies the viscous wall boundary conditions
+    !       of the turbulent transport equations to a block. It is assumed
+    !       that the pointers in blockPointers are already set to the
+    !       correct block on the correct grid level.
     !
     use constants
     use blockPointers
@@ -1280,15 +1280,15 @@ contains
                    if (secondHalo) w(0,i,j,l) = w(1,i,j,l)
                 end do
 
-                if (eddyModel) then 
+                if (eddyModel) then
                    rev(1,i,j) = -rev(2,i,j)
-                   if (secondHalo) then 
+                   if (secondHalo) then
                       rev(0,i,j) = rev(1,i,j)
                    end if
                 end if
              end do
           end do
-       case (iMax) 
+       case (iMax)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
 
@@ -1300,9 +1300,9 @@ contains
                    if (secondHalo) w(ib,i,j,l) = w(ie,i,j,l)
                 end do
 
-                if (eddyModel) then 
+                if (eddyModel) then
                    rev(ie,i,j) = -rev(il,i,j)
-                   if (secondHalo) then 
+                   if (secondHalo) then
                       rev(ib,i,j) = rev(ie,i,j)
                    end if
                 end if
@@ -1320,9 +1320,9 @@ contains
                    if (secondHalo) w(i,0,j,l) = w(i,1,j,l)
                 end do
 
-                if (eddyModel) then 
+                if (eddyModel) then
                    rev(i,1,j) = -rev(i,2,j)
-                   if (secondHalo) then 
+                   if (secondHalo) then
                       rev(i,0,j) = rev(i,1,j)
                    end if
                 end if
@@ -1340,9 +1340,9 @@ contains
                    if (secondHalo) w(i,jb,j,l) = w(i,je,j,l)
                 end do
 
-                if (eddyModel) then 
+                if (eddyModel) then
                    rev(i,je,j) = -rev(i,jl,j)
-                   if (secondHalo) then 
+                   if (secondHalo) then
                       rev(i,jb,j) = rev(i,je,j)
                    end if
                 end if
@@ -1360,9 +1360,9 @@ contains
                    if (secondHalo) w(i,j,0,l) = w(i,j,1,l)
                 end do
 
-                if (eddyModel) then 
+                if (eddyModel) then
                    rev(i,j,1) = -rev(i,j,2)
-                   if (secondHalo) then 
+                   if (secondHalo) then
                       rev(i,j,0) = rev(i,j,1)
                    end if
                 end if
@@ -1380,9 +1380,9 @@ contains
                    if (secondHalo) w(i,j,kb,l) = w(i,j,ke,l)
                 end do
 
-                if (eddyModel) then 
+                if (eddyModel) then
                    rev(i,j,ke) = -rev(i,j,kl)
-                   if (secondHalo) then 
+                   if (secondHalo) then
                       rev(i,j,kb) = rev(i,j,ke)
                    end if
                 end if

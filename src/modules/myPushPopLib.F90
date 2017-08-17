@@ -5,7 +5,7 @@ module myPushPopLib
   ! CONTAINED ONLY WITHIN A LOOP BODY* ie. only a fixed number of
   ! pushecontrol1b's are called before corresponding popcontrol1b. By
   ! modifiing the output code to make the code in-line, this is
-  ! modification makes the reverse mode code faster. 
+  ! modification makes the reverse mode code faster.
 
   use precision
   implicit none

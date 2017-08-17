@@ -12,8 +12,8 @@ module residuals_b
 contains
   subroutine residual_block()
 !
-!       residual computes the residual of the mean flow equations on   
-!       the current mg level.                                          
+!       residual computes the residual of the mean flow equations on
+!       the current mg level.
 !
     use blockpointers
     use cgnsgrid
@@ -43,7 +43,7 @@ contains
     real(kind=realtype), parameter :: m0=0.2_realtype
     real(kind=realtype), parameter :: alpha=0_realtype
     real(kind=realtype), parameter :: delta=0_realtype
-!real(kind=realtype), parameter :: hinf = 2_realtype ! test phase 
+!real(kind=realtype), parameter :: hinf = 2_realtype ! test phase
 ! test phase
     real(kind=realtype), parameter :: cpres=4.18_realtype
     real(kind=realtype), parameter :: temp=297.15_realtype
@@ -104,8 +104,8 @@ contains
 !
 ! ===========================================================
     call inviscidcentralflux()
-    select case  (discr) 
-    case (dissscalar) 
+    select case  (discr)
+    case (dissscalar)
 ! standard scalar dissipation scheme.
       if (finegrid) then
         if (.not.lumpeddiss) then
@@ -114,7 +114,7 @@ contains
           call invisciddissfluxscalarapprox()
         end if
       end if
-    case (dissmatrix) 
+    case (dissmatrix)
 !===========================================================
 ! matrix dissipation scheme.
       if (finegrid) then
@@ -124,7 +124,7 @@ contains
           call invisciddissfluxmatrixapprox()
         end if
       end if
-    case (upwind) 
+    case (upwind)
 !===========================================================
 ! dissipation via an upwind scheme.
       call inviscidupwindflux(finegrid)
@@ -314,13 +314,13 @@ contains
 !   plus diff mem management of: dw:in w:in vol:in
   subroutine sourceterms_block_b(nn, res, plocal, plocald)
 ! apply the source terms for the given block. assume that the
-! block pointers are already set. 
+! block pointers are already set.
     use constants
     use actuatorregiondata
     use blockpointers, only : vol, vold, dw, dwd, w, wd
     use flowvarrefstate, only : pref, prefd, uref, urefd
     implicit none
-! input 
+! input
     integer(kind=inttype), intent(in) :: nn
     logical, intent(in) :: res
     real(kind=realtype), intent(inout) :: plocal
@@ -341,7 +341,7 @@ contains
       iend = actuatorregions(iregion)%blkptr(nn)
       factd = 0.0_8
       do ii=istart,iend
-! extract the cell id. 
+! extract the cell id.
         i = actuatorregions(iregion)%cellids(1, ii)
         j = actuatorregions(iregion)%cellids(2, ii)
         k = actuatorregions(iregion)%cellids(3, ii)
@@ -384,13 +384,13 @@ contains
   end subroutine sourceterms_block_b
   subroutine sourceterms_block(nn, res, plocal)
 ! apply the source terms for the given block. assume that the
-! block pointers are already set. 
+! block pointers are already set.
     use constants
     use actuatorregiondata
     use blockpointers, only : vol, dw, w
     use flowvarrefstate, only : pref, uref
     implicit none
-! input 
+! input
     integer(kind=inttype), intent(in) :: nn
     logical, intent(in) :: res
     real(kind=realtype), intent(inout) :: plocal
@@ -407,7 +407,7 @@ regionloop:do iregion=1,nactuatorregions
       istart = actuatorregions(iregion)%blkptr(nn-1) + 1
       iend = actuatorregions(iregion)%blkptr(nn)
       do ii=istart,iend
-! extract the cell id. 
+! extract the cell id.
         i = actuatorregions(iregion)%cellids(1, ii)
         j = actuatorregions(iregion)%cellids(2, ii)
         k = actuatorregions(iregion)%cellids(3, ii)

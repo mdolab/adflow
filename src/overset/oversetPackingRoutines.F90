@@ -7,7 +7,7 @@ contains
     ! block dimensions and technically doesn't have anything to do with
     ! oBlock. This allows us to figure out the sizes and perform a
     ! global communication before actually building the ADTrees, which
-    ! may not be that well load-balanced. 
+    ! may not be that well load-balanced.
 
     use constants
     implicit none
@@ -75,7 +75,7 @@ contains
 
     ! If the buffer is already allocated, the block is packed and there
     ! is nothing to do
-    if (allocated(oBlock%rBuffer)) then 
+    if (allocated(oBlock%rBuffer)) then
        return
     end if
 
@@ -145,7 +145,7 @@ contains
        iSize = iSize + 1
        oBlock%iBuffer(iSize) = oBlock%ADT%ADTree(i)%children(1)
        iSize = iSize + 1
-       oBlock%iBuffer(iSize) = oBlock%ADT%ADTree(i)%children(2)  
+       oBlock%iBuffer(iSize) = oBlock%ADT%ADTree(i)%children(2)
     end do
 
     ! Reset the real counter and add all the real values on this pass.
@@ -202,7 +202,7 @@ contains
     ! Reset the integer counter and add all the integers on this pass
     iSize = 0
 
-    oBlock%il = oBlock%iBuffer(1) 
+    oBlock%il = oBlock%iBuffer(1)
     oBlock%jl = oBlock%iBuffer(2)
     oBlock%kl = oBlock%iBuffer(3)
     oBlock%proc = oBlock%iBuffer(4)
@@ -346,8 +346,8 @@ contains
   subroutine getOFringeBufferSizes(il, jl, kl, iSize, rSize)
 
     ! Subroutine to get the required buffer sizes. This one is pretty
-    ! easy, but we use a routine to make it look the same as for the 
-    ! oBlock. 
+    ! easy, but we use a routine to make it look the same as for the
+    ! oBlock.
 
     use constants
     implicit none
@@ -386,7 +386,7 @@ contains
 
     ! If the buffer is already allocated, the block is packed and there
     ! is nothing to do
-    if (allocated(oFringe%rBuffer)) then 
+    if (allocated(oFringe%rBuffer)) then
        return
     end if
 
@@ -460,7 +460,7 @@ contains
 
     mm = (oFringe%nx)*(oFringe%ny)*(oFringe%nz)
 
-    allocate(& 
+    allocate(&
          oFringe%x(3, mm), &
          oFringe%xSeed(3, mm), &
          oFringe%wallInd(mm), &
@@ -509,7 +509,7 @@ contains
 
   subroutine getWallSize(famList, nNodes, nCells, dualMesh)
     ! Simple helper routine to return the number of wall nodes and cells
-    ! for the block pointed to by blockPointers. 
+    ! for the block pointed to by blockPointers.
 
     use constants
     use blockPointers, only :BCType, nBocos, BCData
@@ -530,8 +530,8 @@ contains
     nNodes = 0
     nCells = 0
     do mm=1, nBocos
-       famInclude: if (famInList(BCData(mm)%famID, famList)) then 
-          if (dualMesh) then 
+       famInclude: if (famInList(BCData(mm)%famID, famList)) then
+          if (dualMesh) then
              jBeg = BCData(mm)%jnBeg-1 ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg-1 ; iEnd = BCData(mm)%inEnd
           else
@@ -543,7 +543,7 @@ contains
           nCells = nCells + (iEnd - iBeg )*(jEnd - jBeg)
        end if famInclude
     end do
-    
+
   end subroutine getWallSize
 
   subroutine getOSurfBufferSizes(famList, il, jl, kl, iSize, rSize, dualMesh)
@@ -551,7 +551,7 @@ contains
     ! Subroutine to get the required buffer sizes. This one is pretty
     ! easy, but we use a routine to make it look the same as for hte
     ! oBlock. Note that these bufer sizes are over-estimates. They are
-    ! the maximum possible amount of data to send. 
+    ! the maximum possible amount of data to send.
 
     use constants
     implicit none
@@ -575,7 +575,7 @@ contains
     ! Note that nCells here is the maximum number size. This will result
     ! in a slight overestimate of the buffer size. This is ok.
 
-    if (nNodes > 0) then 
+    if (nNodes > 0) then
        ! Count up the integers we want to send:
 
        iSize = iSize + nCells*4 ! This is for the connectivity
@@ -632,7 +632,7 @@ contains
     oSurf%iBuffer(6) = oSurf%maxCells
     oSurf%iBuffer(7) = oSurf%cluster
 
-    if (oSurf%nNodes > 0) then 
+    if (oSurf%nNodes > 0) then
        iSize = 7
        do j=1, oSurf%nCells
           do i=1, 4
@@ -756,7 +756,7 @@ contains
     allocate(oSurf%ADT%ADTree(oSurf%ADT%nLeaves))
 
     ! Now continue copying out the values if necessary:
-    if (oSurf%nNodes > 0) then 
+    if (oSurf%nNodes > 0) then
        do j=1, oSurf%nCells
           do i=1, 4
              iSize = iSize + 1
@@ -811,17 +811,17 @@ contains
     end if
 
     ! Build the KDTree
-    if (oSurf%nNodes > 0) then 
+    if (oSurf%nNodes > 0) then
        oSurf%tree => kdtree2_create(oSurf%x)
     end if
 
-    ! Build the inverse of the connectivity, the nodeToElem array. 
+    ! Build the inverse of the connectivity, the nodeToElem array.
     oSurf%nte = 0
     do i=1, oSurf%nCells
        do j=1, 4
           n = oSurf%conn(j, i)
           inner:do k=1,4
-             if (oSurf%nte(k, n) == 0) then 
+             if (oSurf%nte(k, n) == 0) then
                 oSurf%nte(k, n) = i
                 exit inner
              end if

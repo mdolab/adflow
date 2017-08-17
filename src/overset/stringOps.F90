@@ -1,6 +1,6 @@
 module stringOps
 
-  ! Import oversetString becuase every routine uses this. 
+  ! Import oversetString becuase every routine uses this.
   use overset, only : oversetString
   contains
 
@@ -19,7 +19,7 @@ module stringOps
          string%intNodeData, &
          string%ind, &
          string%cluster, &
-         string%family, & 
+         string%family, &
          string%conn, &
          string%pNodes, &
          string%pElems, &
@@ -42,13 +42,13 @@ module stringOps
     type(oversetString) :: string
     integer(kind=intType) :: i
 
-    if (associated(string%nodeData)) & 
+    if (associated(string%nodeData)) &
          deallocate(string%nodeData)
 
-    if (associated(string%intNodeData)) & 
+    if (associated(string%intNodeData)) &
          deallocate(string%intNodeData)
 
-    if (associated(string%conn)) & 
+    if (associated(string%conn)) &
          deallocate(string%conn)
 
     if (associated(string%pNodes)) &
@@ -60,13 +60,13 @@ module stringOps
     if (associated(string%cNodes)) &
          deallocate(string%cNodes)
 
-    if (associated(string%otherID)) & 
+    if (associated(string%otherID)) &
          deallocate(string%otherID)
 
-    if (associated(string%nte)) & 
+    if (associated(string%nte)) &
          deallocate(string%nte)
 
-    if (associated(string%subStr)) & 
+    if (associated(string%subStr)) &
          deallocate(string%subStr)
 
     if (associated(string%elemUsed)) &
@@ -117,11 +117,11 @@ module stringOps
     ! The next step is to create ordered strings based on the
     ! connectivity. This is a purely logical operation. We don't know
     ! how many actual strings we will need so we will use a linked
-    ! list as we go. 
+    ! list as we go.
     call createNodeToElem(master)
 
     ! Allocate some additional arrays we need for doing the chain
-    ! searches. 
+    ! searches.
     nElems = master%nElems
     nNodes = master%nNodes
     allocate(master%elemUsed(nElems), master%subStr(2, nElems), &
@@ -147,12 +147,12 @@ module stringOps
        ! ----------------------
        ! Second side of chain:
        ! ----------------------
-       if (nElems > 1) then 
+       if (nElems > 1) then
           firstElem = master%nte(3, iStart)
 
           ! Make sure the second one wasn't wrapped around on a
           ! periodic chain
-          if (master%elemUsed(firstElem) == 0) then 
+          if (master%elemUsed(firstElem) == 0) then
 
              master%subStr(2, 1) = firstElem
              call doChain(master, iStart, 2)
@@ -166,7 +166,7 @@ module stringOps
 
        ! Create or add a new string to our linked list
        ! "stringsLL".
-       if (nString == 0) then 
+       if (nString == 0) then
           allocate(stringsLL)
           nString = 1
           stringsLL%next => stringsLL
@@ -175,7 +175,7 @@ module stringOps
           allocate(str%next)
           str%next%next => stringsLL
           str => str%next
-          nString = nString + 1 
+          nString = nString + 1
        end if
 
        ! Create a substring from master based on the elements we
@@ -192,10 +192,10 @@ module stringOps
     ! manipulate.
     allocate(strings(nString))
     str => stringsLL
-    i = 0 
+    i = 0
     do while (i < nString)
        i = i + 1
-       strings(i) = str ! This is derived type assigment. 
+       strings(i) = str ! This is derived type assigment.
        call nullifyString(str)
        str => str%next
     end do
@@ -227,7 +227,7 @@ module stringOps
     ! the number of triangles we will add, which is also nElems. Now,
     ! we will probably not actualy have that many since we save a
     ! triangle and 3 edges for every self zip that is
-    ! applied. Therefore we know this will always be enough 
+    ! applied. Therefore we know this will always be enough
     allocate(master%edges(4*master%nElems))
 
     master%nEdges = 0
@@ -253,12 +253,12 @@ module stringOps
     ! Perform the string association:
     call stringMatch(strings, nStrings)
 
-    if (debugZipper) then 
+    if (debugZipper) then
        open(unit=101, file="fullGapStrings.dat", form='formatted')
        write(101,*) 'TITLE = "Gap Strings Data" '
        write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
             "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
-       do i=1, nStrings  
+       do i=1, nStrings
           call writeOversetString(strings(i), strings, nStrings, 101)
        end do
        close(101)
@@ -267,18 +267,18 @@ module stringOps
     ! Now determine if there are any "holes" or periodic strings
     ! without anything inside of it. Ie closed loops. If there isn't
     ! we can self zip. Otherwise, we falg it so that it isn't touched
-    ! and automatically pocket zipped at th end. 
+    ! and automatically pocket zipped at th end.
 
     do i=1, nStrings
        str => strings(i)
-       str%isPocket = .True. 
+       str%isPocket = .True.
        do j=1, str%nNodes
-          if (str%otherID(1, j) /= -1) then 
+          if (str%otherID(1, j) /= -1) then
              str%isPocket = .False.
           end if
        end do
 
-       if (.not. str%isPocket) then 
+       if (.not. str%isPocket) then
           zipperLoop: do j=1, 5
              if (j== 1) then
                 cutOff = 120_realType
@@ -286,7 +286,7 @@ module stringOps
                 cutOff = 90_realType
              end if
              call selfZip(strings(i), cutOff, nZipped)
-             if (nZipped == 0) then 
+             if (nZipped == 0) then
                 exit zipperLoop
              end if
           end do zipperLoop
@@ -342,12 +342,12 @@ module stringOps
     end do
 
     ! Reallocate the node based data to the correct size. Set pointers
-    ! to original data first. 
+    ! to original data first.
     nodeDataPtr => string%nodeData
     intNodeDataPtr => string%intNodeData
     allocate(string%nodeData(10, nUnique), string%intNodeData(3, nUnique))
 
-    ! Reset the pointers 
+    ! Reset the pointers
     call setStringPointers(string)
 
     do i=1, string%nNodes
@@ -381,7 +381,7 @@ module stringOps
     logical :: duplicateElement
 
     allocate(string%nte(3, string%nNodes))
-    string%nte = 0 
+    string%nte = 0
     duplicated = 0
 
     do i=1, string%nElems
@@ -399,10 +399,10 @@ module stringOps
 
              m = string%conn(:, curElem)
 
-             if (m(1) == n(1) .and. m(2) == n(2)) then 
+             if (m(1) == n(1) .and. m(2) == n(2)) then
                 duplicateElement = .True.
 
-             else if(m(1) == n(2) .and. m(2) == n(1)) then 
+             else if(m(1) == n(2) .and. m(2) == n(1)) then
                 ! Element exists, but it is the wrong order...don't
                 ! know what to do with this, probably an error or
                 ! maybe a corner case I haven't thought of.
@@ -411,7 +411,7 @@ module stringOps
           end do
        end do
 
-       if (.not. duplicateElement) then 
+       if (.not. duplicateElement) then
           do jj=1, 2
              string%nte(1, n(jj)) = string%nte(1, n(jj)) + 1
              ii = string%nte(1, n(jj))
@@ -424,16 +424,16 @@ module stringOps
        end if
     end do
 
-    ! If we have duplicated elements, modify the conn to adjust for this. 
-    nDup = sum(duplicated) 
-    if (nDup > 0) then 
+    ! If we have duplicated elements, modify the conn to adjust for this.
+    nDup = sum(duplicated)
+    if (nDup > 0) then
        tmpConn => string%conn
 
        allocate(string%conn(2, string%nElems - nDup))
 
        j = 0
        do i=1, string%nElems
-          if (duplicated(i) == 0) then 
+          if (duplicated(i) == 0) then
              j = j + 1
              string%conn(:, j) = tmpConn(:, i)
 
@@ -484,14 +484,14 @@ module stringOps
        n1 = master%conn(1, curElem)
        n2 = master%conn(2, curElem)
 
-       if (n1 == curNode) then 
+       if (n1 == curNode) then
           nextNode = n2
        else
           nextNode = n1
        end if
 
        ! Exit condition 1: Next node was our starting node:
-       if (nextNode == iStart) then 
+       if (nextNode == iStart) then
           exit chainLoop
        end if
 
@@ -499,15 +499,15 @@ module stringOps
        ! we're currently on) so that means the the chain is finished
        c = master%nte(1, nextNode)
 
-       if (c == 1) then 
+       if (c == 1) then
           exit chainLoop
 
-       else if (c == 2) then 
+       else if (c == 2) then
           ! With c=2 this easy, just extract the two elements
           elem1 = master%nte(2, nextNode)
           elem2 = master%nte(3, nextNode)
 
-          if (elem1 == curElem) then 
+          if (elem1 == curElem) then
              nextElem = elem2
           else
              nextElem = elem1
@@ -519,7 +519,7 @@ module stringOps
        master%subStr(iSub, N) = nextElem
 
        ! Flag this elemet as being used
-       master%elemUsed(nextElem) = 1 
+       master%elemUsed(nextElem) = 1
 
        ! Finally set the nextNode back to the current node for the next
        ! iteration
@@ -538,7 +538,7 @@ module stringOps
     type(oversetString), intent(out) :: s
     integer(kind=intType), intent(in) :: id
 
-    ! Working 
+    ! Working
     integer(kind=intType) :: i, j, n1, n2, k
     integer(kind=intType), dimension(:), allocatable :: nodeUsed
 
@@ -560,12 +560,12 @@ module stringOps
     do i=1, s%nElems
        n1 = p%conn(1, p%subStr(1, i))
        n2 = p%conn(2, p%subStr(1, i))
-       if (nodeUsed(n1) == 0) then 
+       if (nodeUsed(n1) == 0) then
           k = k + 1
           nodeUsed(n1) = k
        end if
 
-       if (nodeUsed(n2) == 0) then 
+       if (nodeUsed(n2) == 0) then
           k = k + 1
           nodeUsed(n2) = k
        end if
@@ -577,8 +577,8 @@ module stringOps
     ! The number of nodes will equal the number of elements iff the
     ! string is period. Otherwise we will have 1 more node than element.
 
-    if (s%nNodes ==  s%nElems) then 
-       s%isPeriodic = .True. 
+    if (s%nNodes ==  s%nElems) then
+       s%isPeriodic = .True.
     end if
 
     ! Allocate and set the node and element parent information
@@ -592,7 +592,7 @@ module stringOps
     ! the node index in the parent
     j = 0
     do i=1, p%nNodes
-       if (nodeUsed(i) /= 0) then 
+       if (nodeUsed(i) /= 0) then
           s%pNodes(nodeUsed(i)) = i
        end if
     end do
@@ -624,12 +624,12 @@ module stringOps
        s%conn(2, i) = nodeUsed(p%conn(2, s%pElems(i)))
     end do
 
-    ! Set the pointer to my parent. 
+    ! Set the pointer to my parent.
     s%p => p
 
     deallocate(nodeUsed)
 
-    ! Last thing we can do is create the nodeToElem for the substring. 
+    ! Last thing we can do is create the nodeToElem for the substring.
     call  createNodeToElem(s)
   end subroutine createSubStringFromElems
 
@@ -688,8 +688,8 @@ module stringOps
     nzipped = 0
 
     ! Peroidic string starts at node 1, and uses node 'N' as the previous
-    ! node. Single chains start at node 2 and only go to the N-1 node. 
-    if (s%isPeriodic) then 
+    ! node. Single chains start at node 2 and only go to the N-1 node.
+    if (s%isPeriodic) then
        im1 = s%nNodes
        ii = 1
        ip1 = 2
@@ -704,11 +704,11 @@ module stringOps
     do while (ii <= N)
 
        ! Peroidic string at end...loop around
-       if (s%isPeriodic .and. ii == N) then 
+       if (s%isPeriodic .and. ii == N) then
           ip1 = 1
        end if
 
-       lastNodeZippered = .False. 
+       lastNodeZippered = .False.
 
        ! Determine the anlge between the vectors
        v1 = s%x(:, ip1) - s%x(:, ii)
@@ -718,19 +718,19 @@ module stringOps
        call cross_prod(v2, v1, norm)
        norm = norm / mynorm2(norm)
 
-       if (dot_product(norm, s%norm(:, ii)) > zero) then 
+       if (dot_product(norm, s%norm(:, ii)) > zero) then
 
           ! the dot product of the im1 and ip1 nodes have to be close
-          if (dot_product(s%norm(:, ip1), s%norm(:, im1)) > 0.80) then 
+          if (dot_product(s%norm(:, ip1), s%norm(:, im1)) > 0.80) then
 
              costheta = dot_product(v1, v2)  / (v1nrm * v2nrm)
 
-             if (costheta > cosCutoff) then 
+             if (costheta > cosCutoff) then
 
                 call addPotentialTriangle(s, im1, ii, ip1, nodeMap, &
                      results, added)
 
-                if (added) then 
+                if (added) then
                    nZipped = nZipped + 1
                    lastNodeZippered = .True.
                 end if
@@ -738,7 +738,7 @@ module stringOps
           end if
        end if
 
-       if (lastNodeZippered) then 
+       if (lastNodeZippered) then
           ! Skip the next node...we'll get it on the next pass
           ii = ii + 2
           im1 = ii -1
@@ -754,7 +754,7 @@ module stringOps
     ! Now we will modify our string to remove the elements and nodes
     ! that got knocked off due to self zipping. This way the calling
     ! process still sees the same string, it just gets a little
-    ! shorter. 
+    ! shorter.
 
     call shortenString(s, nodeMap)
     deallocate(results, nodeMap)
@@ -791,18 +791,18 @@ module stringOps
     ! string. This will form the index on the do loop.
 
     ! Str1 goes forward
-    if (N2 > N1) then 
+    if (N2 > N1) then
        nStepsA = N2 - N1
-    else if (N2 < N1) then 
+    else if (N2 < N1) then
        nStepsA = N2 + str1%nNodes - N1
     else ! N1 == N2
        nStepsA = str1%nElems
     end if
 
     ! Str2 goes backwards
-    if (N3 < N4) then 
+    if (N3 < N4) then
        nStepsB = N3 + str2%nNodes - N4
-    else if (N3 > N4) then 
+    else if (N3 > N4) then
        nStepsB = N3 - N4
     else ! N3 == N4
        nStepsB =  str2%nElems
@@ -812,7 +812,7 @@ module stringOps
     stepsA = 0
     stepsB = 0
 
-    ! Initialize the front: 
+    ! Initialize the front:
     A = N1
     B = N3
     ptA = str1%x(:, A)
@@ -839,14 +839,14 @@ module stringOps
     ii = 0
     do while (ii < nStepsA + nStepsB)
 
-       aValid = .True. 
-       bValid = .True. 
+       aValid = .True.
+       bValid = .True.
        ! ---------------------------------------------------------------
        ! Check 1: Point-in-Triangle test: This test considers the
        ! triangle ABA+ and determines if any of the neighbouring points
        ! on either of the two strings is contained inside the
        ! triangle. If the test is positive, A+ must be rejected. The
-       ! same test is repeated for B+. 
+       ! same test is repeated for B+.
        ! ---------------------------------------------------------------
 
        if (triOverlap(ptA, ptB, ptAp, str1, A, Ap) .or. &
@@ -854,7 +854,7 @@ module stringOps
           aValid = .False.
        end if
 
-       if (triOverlap(ptA, ptB, ptBp, str1, A, A) .or. & 
+       if (triOverlap(ptA, ptB, ptBp, str1, A, A) .or. &
             triOverlap(ptA, ptB, ptBp, str2, B, Bp)) then
           bValid = .False.
        end if
@@ -867,34 +867,34 @@ module stringOps
        ! connection to B+ to be valid, the vector areas of trianges ABB+
        ! and AB+A+ should be the same sign.  NOTE THAT THIS TEST DOES NOT
        ! ACTUALLY WORK. IT IS 100% INCORRECT!!! THERE ARE CASES WHERE
-       ! THE SIGN OF BOTH AREAS ARE OPPOSITE! IT CANNOT BE SAFELY USED. 
+       ! THE SIGN OF BOTH AREAS ARE OPPOSITE! IT CANNOT BE SAFELY USED.
        ! ---------------------------------------------------------------
 
        ! area1 = positiveTriArea(ptA, ptB, ptAp, normB)
        ! area2 = positiveTriArea(ptB, ptBp, ptAp, normB)
 
-       ! if (area1 .neqv. area2) then 
-       !    aValid = .False. 
+       ! if (area1 .neqv. area2) then
+       !    aValid = .False.
        ! end if
 
        ! area1 = positiveTriArea(ptA, ptB, ptBp, normA)
        ! area2 = positiveTriArea(ptAp, ptBp, ptA, normA)
 
-       ! if (area1 .neqv. area2) then 
-       !    bValid = .False. 
+       ! if (area1 .neqv. area2) then
+       !    bValid = .False.
        ! end if
 
        ! Instead, check if the triangle we're going to add has a
        ! positive or negative vector area
 
        area1 = positiveTriArea(ptA, ptB, ptAp, normA)
-       if (area1 .eqv. .False.) then 
-          aValid = .False. 
+       if (area1 .eqv. .False.) then
+          aValid = .False.
        end if
 
        area2 = positiveTriArea(ptA, ptB, ptBp, normB)
-       if (area2 .eqv. .False.) then 
-          bValid = .False. 
+       if (area2 .eqv. .False.) then
+          bValid = .False.
        end if
 
        ! ---------------------------------------------------------------
@@ -905,7 +905,7 @@ module stringOps
        ! to make do with the normal vectors and average cell size. We
        ! average the cell size and divide by 1000 to give an approximate
        ! offwall distance. Then we use the norm veectors to offset in
-       ! that distance to produce the "off" points. 
+       ! that distance to produce the "off" points.
        ! ---------------------------------------------------------------
 
        ! h = quarter*(str1%h(A) + str1%h(Ap) + str2%h(B) + str2%h(Bp)) / 1000
@@ -914,12 +914,12 @@ module stringOps
        ! ApOff = ptAp + normAp * h
        ! BpOff = ptBp + normBp * h
 
-       ! if (prismVol(A, B, Ap, Aoff, Boff, ApOff) < zero) then 
-       !    aValid = .False. 
+       ! if (prismVol(A, B, Ap, Aoff, Boff, ApOff) < zero) then
+       !    aValid = .False.
        ! end if
 
-       ! if (prismVol(A, B, Bp, Aoff, Boff, BpOff) < zero) then 
-       !    bValid = .False. 
+       ! if (prismVol(A, B, Bp, Aoff, Boff, BpOff) < zero) then
+       !    bValid = .False.
        ! end if
 
        ! ---------------------------------------------------------------
@@ -933,7 +933,7 @@ module stringOps
        ! and edge with. THIS ALSO DOES NOT WORK! What we have to do
        ! instead, is check the normal tri normal against the node
        ! normals it would be using. This is simplier and is vastly
-       ! superior. 
+       ! superior.
        ! ---------------------------------------------------------------
 
        call cross_prod(ptB-ptA, ptAp-ptA, triNorm1)
@@ -954,75 +954,75 @@ module stringOps
 
           ! Only use this to help pick one if both are still valid:
 
-          if (sum1 < cutoff .and. sum2 > cutoff) then 
+          if (sum1 < cutoff .and. sum2 > cutoff) then
              aValid = .False.
 
-          else if(sum2 < cutoff .and. sum1 > cutoff) then 
+          else if(sum2 < cutoff .and. sum1 > cutoff) then
              bValid = .False.
 
-          else if (sum1 < cutoff .and. sum2 < cutoff) then 
+          else if (sum1 < cutoff .and. sum2 < cutoff) then
              ! Both bad. Take the least bad one
-             if (sum1 > sum2) then 
-                bValid = .False. 
+             if (sum1 > sum2) then
+                bValid = .False.
              else
-                aValid = .False. 
+                aValid = .False.
              end if
           end if
        end if
 
        ! ---------------------------------------------------------------
        ! Check 6: Front angle test: Try to keep the front as close as
-       ! possible to the gap edges. 
+       ! possible to the gap edges.
        ! ---------------------------------------------------------------
 
        ! Triangle ABA+. Original implemnetation
-       sum1 = abs(vecAngle(ptA-ptAp, ptB-ptAp)) + abs(vecAngle(ptBp-ptB, ptAp-ptB)) 
+       sum1 = abs(vecAngle(ptA-ptAp, ptB-ptAp)) + abs(vecAngle(ptBp-ptB, ptAp-ptB))
        sum2 = abs(vecAngle(ptA-ptBp, ptB-ptBp)) + abs(vecAngle(ptBp-ptA, ptAp-ptA))
 
-       if (sum1 > sum2) then 
-          aPreferred = .True. 
+       if (sum1 > sum2) then
+          aPreferred = .True.
        else
-          aPreferred = .False. 
+          aPreferred = .False.
        end if
 
        ! ---------------------------------------------------------------
        ! Check 7: End of string test
        ! ---------------------------------------------------------------
 
-       if (A == Ap) then 
-          aValid = .False. 
-          bValid = .True. 
+       if (A == Ap) then
+          aValid = .False.
+          bValid = .True.
        end if
 
-       if (B == Bp) then 
-          bValid = .False. 
-          aValid = .True. 
+       if (B == Bp) then
+          bValid = .False.
+          aValid = .True.
        end if
 
        ! ---------------------------------------------------------------
-       ! Decide on the triangle we want to take. 
+       ! Decide on the triangle we want to take.
        ! ---------------------------------------------------------------
 
-       if (aValid .and. .not. bValid) then 
+       if (aValid .and. .not. bValid) then
 
           ! We have no choice but to take A+
 
           call addTri(A, str1, B, str2, Ap, str1)
-          advanceA = .True. 
-          advanceB = .False. 
+          advanceA = .True.
+          advanceB = .False.
 
-       else if (bValid .and. .not. aValid) then 
+       else if (bValid .and. .not. aValid) then
 
           ! We have no choice but to take B+
 
           call addTri(A, str1, B, str2, Bp, str2)
-          advanceA = .False. 
-          advanceB = .True. 
+          advanceA = .False.
+          advanceB = .True.
 
-       else if (aValid .and. bValid) then 
+       else if (aValid .and. bValid) then
 
-          ! We could take either. Use the preferred triangle. 
-          if (aPreferred) then 
+          ! We could take either. Use the preferred triangle.
+          if (aPreferred) then
 
              call addTri(A, str1, B, str2, Ap, str1)
              advanceA = .True.
@@ -1031,12 +1031,12 @@ module stringOps
           else
 
              call addTri(A, str1, B, str2, Bp, str2)
-             advanceA = .False. 
-             advanceB = .True. 
+             advanceA = .False.
+             advanceB = .True.
 
           end if
 
-       else 
+       else
 
           ! Ewww. neither triangle is valid. Do not add any triangle,
           ! leave it for pocket zipping. Just move forward to Ap and Bp.
@@ -1047,8 +1047,8 @@ module stringOps
 
        end if
 
-       ! Now we have to shuffle along the string. 
-       if (advanceA .and. .not.advanceB) then 
+       ! Now we have to shuffle along the string.
+       if (advanceA .and. .not.advanceB) then
 
           stepsA = stepsA + 1
 
@@ -1114,12 +1114,12 @@ module stringOps
           perpBp = str2%perpNorm(:, Bp)
        end if
 
-       ! Finally increment the number of triangles we've used so far. 
+       ! Finally increment the number of triangles we've used so far.
        ii = ii + 1
 
        ! Account for two skipped triangles (i.e. one extra count)
        ! if both A and B are skipped and advanced to Ap and Bp.
-       if (.not.advanceA .and. .not.advanceB) then 
+       if (.not.advanceA .and. .not.advanceB) then
           ii = ii + 1
        end if
     end do
@@ -1127,20 +1127,20 @@ module stringOps
   contains
 
     function nextNode(str, i, pos)
-      
+
       implicit none
       type(oversetString), intent(iN) :: str
       integer(kind=intType), intent(in) :: i
       logical, intent(in) :: pos
       integer(kind=intType) :: nextNode
 
-      if (pos) then 
-         if (stepsA == nStepsA) then 
+      if (pos) then
+         if (stepsA == nStepsA) then
             nextNode = i
          else
             nextNode = i + 1
-            if (nextNode > str%nNodes) then 
-               if (str%isPeriodic) then 
+            if (nextNode > str%nNodes) then
+               if (str%isPeriodic) then
                   ! Loop back around
                   nextNode = 1
                else
@@ -1150,12 +1150,12 @@ module stringOps
             end if
          end if
       else
-         if (stepsB == nStepsB) then 
+         if (stepsB == nStepsB) then
             nextNode = i
          else
             nextNode = i - 1
-            if (nextNode < 1) then 
-               if (str%isPeriodic) then 
+            if (nextNode < 1) then
+               if (str%isPeriodic) then
                   ! Loop back around
                   nextNode = str%nNodes
                else
@@ -1195,7 +1195,7 @@ module stringOps
       ! Working
       integer(kind=intType) :: e1, e2, e3, e4
 
-      if (str%nte(1, a) == 1) then 
+      if (str%nte(1, a) == 1) then
          e1 = str%nte(2, a)
          e2 = e1
       else
@@ -1203,7 +1203,7 @@ module stringOps
          e2 = str%nte(3, a)
       end if
 
-      if (str%nte(1, b) == 1) then 
+      if (str%nte(1, b) == 1) then
          e3 = str%nte(2, b)
          e4 = e3
       else
@@ -1212,9 +1212,9 @@ module stringOps
       end if
 
       ! Two of the edges are the same. And this is the one that must
-      ! be between the two nodes. 
+      ! be between the two nodes.
 
-      if (e1 == e3 .or. e1 == e4) then 
+      if (e1 == e3 .or. e1 == e4) then
          elemBetweenNodes = e1
       else
          elemBetweenNodes = e2
@@ -1254,7 +1254,7 @@ module stringOps
     integer(kind=intType), intent(in) :: A, B, C
     type(oversetString), intent(in) :: sA, sB, sC
 
-    ! Working 
+    ! Working
     type(oversetString), pointer :: p
     integer(kind=intType) :: mn1, mn2, mn3
     p => sA%p
@@ -1306,10 +1306,10 @@ module stringOps
     logical :: fullLoop1, fullLoop2, dummy
     ! The purpose of this routine is to determine the ranges on two
     !  paired strings that are continuously paired and suitable for
-    !  performing cross zipping. 
+    !  performing cross zipping.
 
     ! Allocate arrays to keep track of nodes that have already been
-    !  used in cross zipping. 
+    !  used in cross zipping.
     do i=1, nstrings
        s => strings(i)
        allocate(s%XzipNodeUsed(s%nNodes))
@@ -1319,35 +1319,35 @@ module stringOps
     strLoop: do iString=1, nStrings
 
        ! Skip strings that were pocekts
-       if (strings(iString)%isPocket) then 
+       if (strings(iString)%isPocket) then
           cycle
        end if
 
-       ! S1 is the curent '1' string we are working with 
+       ! S1 is the curent '1' string we are working with
        s1 => strings(iString)
 
        ! Find the lowest node number that isn't used:
        curIStart = startNode(s1)
-       do while(curIStart > 0) 
+       do while(curIStart > 0)
 
-          if (debugZipper) then 
+          if (debugZipper) then
              print *,'------------------------------------------------'
              print *,'Starting string ', s1%myid, 'at index ', curIstart
              print *,'------------------------------------------------'
           end if
 
           iStart = curIStart
-          ! Other ID is the string attached at the current pt. 
+          ! Other ID is the string attached at the current pt.
           curOtherID = s1%otherID(1, iStart)
 
-          if (curOtherID == -1) then 
+          if (curOtherID == -1) then
              print *,'*************************************************************************'
              print *,'Error during makeCrossZip: Point ', iStart, 'does not have a matching point'
              print *,'*************************************************************************'
              stop
           end if
 
-          ! S2 is the current '2' string we are working with 
+          ! S2 is the current '2' string we are working with
           s2 => strings(curOtherID)
           jStart = s1%otherID(2, iStart)
 
@@ -1356,18 +1356,18 @@ module stringOps
           ! NEGATIVE direction.
           call traceMatch(s1, iStart, .False., curOtherID, iEnd, fullLoop1)
 
-          if (.not. fullLoop1) then 
+          if (.not. fullLoop1) then
              ! Now set iStart to iEnd. Basically we start right at the
              ! negative end the chain and traverse in the POSITIVE
-             ! direction. 
-             iStart = iEnd 
+             ! direction.
+             iStart = iEnd
              call traceMatch(s1, iStart, .True., curOtherID, iEnd, dummy)
           end if
 
           ! Now, iStart -> iEnd (in the positive order) is the maximum
           ! possible extent that s1 could be connected to s1
           ! over. However, s2 may have something to say about that. We
-          ! do the same operation for s2. Note that the orders are reversed. 
+          ! do the same operation for s2. Note that the orders are reversed.
 
           ! ---------------- s2 increments -------------
           call traceMatch(s2, jStart, .True., s1%myID, jEnd, fullLoop2)
@@ -1376,32 +1376,32 @@ module stringOps
           ! to him. Therefore skip me, and go to the next one.
           if (jStart == jEnd .and. &
                .not. fullLoop2 .and. &
-               s2%otherID(1, jStart) /= s1%myID) then 
+               s2%otherID(1, jStart) /= s1%myID) then
              s1%xZipNodeUsed(curIStart) = 1
              curIStart = startNode(s1)
-             cycle 
+             cycle
           end if
 
-          if (.not. fullLoop2) then 
+          if (.not. fullLoop2) then
              jStart = jEnd
              call traceMatch(s2, jStart, .False., s1%myID, jEnd, dummy)
           end if
 
-          if ((iStart == iEnd .and. .not. fullLoop1)  .or.& 
+          if ((iStart == iEnd .and. .not. fullLoop1)  .or.&
                (jStart == jEnd .and. .not. fullLoop2)) then
              ! Can't go anywhere. Flag this node and the next.
              s1%xZipNodeUsed(curIStart) = 1
              curIStart = startNode(s1)
-             cycle 
+             cycle
           end if
 
-          if (debugZipper) then 
+          if (debugZipper) then
              print *,'Initial Range s1:', istart, iend, fullLoop1
              print *,'Initial Range s2:', jstart, jend, fullLoop2
           end if
 
           if ((istart == iend .and. fullLoop1) .and. &
-               (jstart == jend .and. fullLoop2)) then 
+               (jstart == jend .and. fullLoop2)) then
 
              ! s1 fully attached to s2
 
@@ -1409,19 +1409,19 @@ module stringOps
              iEnd = iStart
              jEnd = jStart
 
-          else if((iStart == iEnd .and. fullLoop1) .and. .not. fullLoop2) then 
+          else if((iStart == iEnd .and. fullLoop1) .and. .not. fullLoop2) then
 
              ! s1 is fully attached to a part of s2. No need to modify the ranges
 
-          else if((jStart == jEnd .and. fullLoop2) .and. .not. fullLoop1) then 
+          else if((jStart == jEnd .and. fullLoop2) .and. .not. fullLoop1) then
 
              ! s2 is fully attached to a part of s1. No need to modify the ranges
-          else 
+          else
 
              ! part of s1 is attached to part of s2
 
              ! Determine the number of elements we initial think we
-             ! want to zip for both strings. 
+             ! want to zip for both strings.
              nIElemsBeg = elemsForRange(s1, iStart, iEnd, .True.)
              nJElemsBeg = elemsForRange(s2, jStart, jEnd, .False.)
 
@@ -1431,7 +1431,7 @@ module stringOps
              iEnd_j   = s2%otherID(2, jEnd)
 
              ! Now determine the smallest overlapping range. iStart and
-             ! iEnd are updated. 
+             ! iEnd are updated.
              iStart = max(iStart, iStart_j)
              iEnd = min(iEnd, iEnd_j)
 
@@ -1444,17 +1444,17 @@ module stringOps
              nIElemsEnd = elemsForRange(s1, iStart, iEnd, .True.)
              nJElemsEnd = elemsForRange(s2, jStart, jEnd, .False.)
 
-             if (nIElemsEnd > nIElemsBeg .or. nJElemsEnd > nJElemsBeg) then 
+             if (nIElemsEnd > nIElemsBeg .or. nJElemsEnd > nJElemsBeg) then
                 ! Something happened and the strings became zero
-                ! length or went the wrong way. 
+                ! length or went the wrong way.
                 s1%xZipNodeUsed(curIStart) = 1
                 curIStart = startNode(s1)
-                cycle 
+                cycle
              end if
 
           end if
 
-          if (debugZipper) then 
+          if (debugZipper) then
              print *,'Zipping string: ', s1%myid, ' with ', s2%myid
              print *,'s1 range:', istart, iend
              print *,'s2 range:', jstart, jend
@@ -1477,7 +1477,7 @@ module stringOps
 
     function startNode(s)
       ! Determine the lowest index of a non-used xzip node for
-      ! string 's'. 
+      ! string 's'.
       implicit none
       type(oversetString) :: s
       integer(kind=intType) :: startNode, i
@@ -1485,7 +1485,7 @@ module stringOps
       ! This will be the return value if all nodes are used:
       startNode = 0
       nodeLoop: do i=1, s%nNodes
-         if (s%xZipNodeUsed(i) == 0) then 
+         if (s%xZipNodeUsed(i) == 0) then
             startNode = i
             exit nodeLoop
          end if
@@ -1502,8 +1502,8 @@ module stringOps
       ! Normally just increment:
       nextNode = i + 1
 
-      if (i == s%nNodes) then 
-         if (s%isPeriodic) then 
+      if (i == s%nNodes) then
+         if (s%isPeriodic) then
             nextNode = 1
          else
             ! Can't go any further
@@ -1513,7 +1513,7 @@ module stringOps
 
       ! If the next node is used. The next node is set the current
       ! one.
-      if (s%xZipNodeUsed(nextNode) == 1) then 
+      if (s%xZipNodeUsed(nextNode) == 1) then
          nextNode = i
       end if
     end function nextNode
@@ -1528,8 +1528,8 @@ module stringOps
       ! Normally just increment:
       simpleNextNode = i + 1
 
-      if (i == s%nNodes) then 
-         if (s%isPeriodic) then 
+      if (i == s%nNodes) then
+         if (s%isPeriodic) then
             simpleNextNode = 1
          else
             ! Can't go any further
@@ -1547,8 +1547,8 @@ module stringOps
       ! Normally just increment:
       prevNode = i - 1
 
-      if (i == 1) then 
-         if (s%isPeriodic) then 
+      if (i == 1) then
+         if (s%isPeriodic) then
             prevNode = s%nNodes
          else
             ! Can't go any further
@@ -1558,7 +1558,7 @@ module stringOps
 
       ! If the next node is used. The next node is set the current
       ! one.
-      if (s%xZipNodeUsed(prevNode) == 1) then 
+      if (s%xZipNodeUsed(prevNode) == 1) then
          prevNode = i
       end if
     end function prevNode
@@ -1570,13 +1570,13 @@ module stringOps
       ! Given a starting position 'iStart' on string 's', traverse in
       ! the 'POSitive' or '.not. POSitive' direction checking that the
       ! otherID still matches "checkID". Return the ending position
-      ! 'iEnd'. 
+      ! 'iEnd'.
 
       ! Input/Output
       type(oversetString) :: s
       integer(kind=intType), intent(in) :: iStart, checkID
       logical, intent(in) :: pos
-      integer(kind=intType), intent(out) :: iEnd 
+      integer(kind=intType), intent(out) :: iEnd
       logical, intent(out) :: fullLoop
 
       ! Working
@@ -1585,14 +1585,14 @@ module stringOps
       i = iStart
       fullLoop = .False.
 
-      traverseLoop: do 
-         if (pos) then 
+      traverseLoop: do
+         if (pos) then
             nextI = nextNode(s, i)
          else
             nextI = prevNode(s, i)
          end if
 
-         if (nextI == i .or. s%otherID(1, nextI) /= checkID) then 
+         if (nextI == i .or. s%otherID(1, nextI) /= checkID) then
             ! We can't go any further than we already are
             iEnd = i
             exit traverseLoop
@@ -1601,7 +1601,7 @@ module stringOps
          ! Continue to the next one.
          i = nextI
 
-         if (i == iStart) then 
+         if (i == iStart) then
             fullLoop = .True.
             iEnd = i
             exit traverseLoop
@@ -1621,18 +1621,18 @@ module stringOps
       ! Working
       integer(kind=intType) :: nSteps, i, nextI
 
-      if (pos) then 
-         if (N2 > N1) then 
+      if (pos) then
+         if (N2 > N1) then
             nSteps = N2 - N1
-         else if (N2 < N1) then 
+         else if (N2 < N1) then
             nSteps = N2 + s%nNodes - N1
          else ! N1 == N2
             nSteps = s%nElems
          end if
       else
-         if (N1 < N2) then 
+         if (N1 < N2) then
             nSteps = N1 + s%nNodes - N2
-         else if (N1 > N2) then 
+         else if (N1 > N2) then
             nSteps = N1 - N2
          else ! N3 == N4
             nSteps =  s%nElems
@@ -1642,7 +1642,7 @@ module stringOps
       s%xZipNodeUsed(N1) = 1
       i = N1
       do ii=1, nSteps
-         if (pos) then 
+         if (pos) then
             nextI = nextNode(s, i)
          else
             nextI = prevNode(s, i)
@@ -1663,25 +1663,25 @@ module stringOps
       logical :: pos
       integer(kind=intType) :: elemsForRange
 
-      if (.not. s%isPeriodic) then 
-         if (pos) then 
+      if (.not. s%isPeriodic) then
+         if (pos) then
             elemsForRange = N2 - N1
          else
             elemsForRange = N1 - N2
          end if
       else ! Periodic
-         if (pos) then 
-            if (N2 == N1) then 
+         if (pos) then
+            if (N2 == N1) then
                elemsForRange = s%nElems
-            else if (N2 > N1) then 
+            else if (N2 > N1) then
                elemsForRange = N2 - N1
             else
                elemsForRange = N2 + s%nNodes - N1
             end if
          else
-            if (N1 == N2) then 
+            if (N1 == N2) then
                elemsForRange = s%nElems
-            else if (N1 > N2) then 
+            else if (N1 > N2) then
                elemsForRange = N1 - N2
             else
                elemsForRange = N1 + s%nNodes - N2
@@ -1717,7 +1717,7 @@ module stringOps
     type(oversetString), allocatable, dimension(:), target :: pocketStringsArr
 
     ! ---------------------------------------------------------------
-    ! PocketZip 1: 
+    ! PocketZip 1:
     ! First sort the edges.
     ! ---------------------------------------------------------------
     call qsortEdgeType(p%Edges, p%nEdges)
@@ -1725,9 +1725,9 @@ module stringOps
     ! Now gather up the left-over edges for pocket zipping.
 
     ! Over estimate of remaining pocket edges to zip
-    allocate(polyEdges(p%nEdges)) 
+    allocate(polyEdges(p%nEdges))
 
-    ! Eliminate the edges going through the ordered edges. 
+    ! Eliminate the edges going through the ordered edges.
     ! The sorted opposite edges are canceled in pairs.
     npolyEdges = 0
 
@@ -1740,7 +1740,7 @@ module stringOps
 
        ! First determine if e1 is at the end of two single ended
        ! chains. In this case the edge *will* not be paired and that's
-       ! correct. 
+       ! correct.
 
        str1    = p%cNodes(1, e1%n1) ! node1's child fullStrings ID
        cn1     = p%cNodes(2, e1%n1) ! node1's child fullStrings node index
@@ -1755,9 +1755,9 @@ module stringOps
                .not.strings(str2)%isperiodic .and. &
                (cn1==1 .or. cn1==nNodes1) .and. (cn2==1 .or. cn2==nNodes2)) then
 
-             ! Increment just 1 in 1 to skip over edge e1. 
+             ! Increment just 1 in 1 to skip over edge e1.
              i = i + 1
-             cycle 
+             cycle
           end if
        end if
 
@@ -1768,8 +1768,8 @@ module stringOps
        ndiff1 = e1%n2 - e1%n1
        ndiff2 = e2%n2 - e2%n1
 
-       if (nsum1 == nsum2 .and. ndiff1 + ndiff2 == 0) then 
-          ! These edges cancel. Great. 
+       if (nsum1 == nsum2 .and. ndiff1 + ndiff2 == 0) then
+          ! These edges cancel. Great.
           i = i + 2
           cycle
        else
@@ -1778,13 +1778,13 @@ module stringOps
           polyEdges(npolyEdges) = e1
 
           ! And e2 if it is the very last edge
-          if (i+1 == p%nEdges) then 
+          if (i+1 == p%nEdges) then
              npolyEdges = npolyEdges + 1
              polyEdges(npolyEdges) = e2
-             i = i + 1 
+             i = i + 1
           end if
 
-          i = i + 1 
+          i = i + 1
        end if
     end do
 
@@ -1815,10 +1815,10 @@ module stringOps
     ! The next step is to create ordered strings based on the
     ! connectivity. This is a purely logical operation. We don't know
     ! how many actual strings we will need so we will use a linked
-    ! list as we go. 
+    ! list as we go.
 
     ! Allocate some additional arrays we need for doing the chain
-    ! searches. 
+    ! searches.
     nElems = pocketMaster%nElems
     nNodes = pocketMaster%nNodes
     allocate(pocketMaster%elemUsed(nElems), pocketMaster%subStr(2, nElems), &
@@ -1844,7 +1844,7 @@ module stringOps
 
        ! Create or add a new string to our linked list
        ! "stringsLL".
-       if (nFullStrings == 0) then 
+       if (nFullStrings == 0) then
           allocate(stringsLL)
           nFullStrings = 1
           stringsLL%next => stringsLL
@@ -1853,7 +1853,7 @@ module stringOps
           allocate(str%next)
           str%next%next => stringsLL
           str => str%next
-          nFullStrings = nFullStrings + 1 
+          nFullStrings = nFullStrings + 1
        end if
 
        ! Create a substring from master based on the elements we
@@ -1887,7 +1887,7 @@ module stringOps
     ! Build the pocketMaster tree
     pocketMaster%tree => kdtree2_create(pocketMaster%x, sort=.True.)
 
-    if (debugZipper) then 
+    if (debugZipper) then
        open(unit=101, file="pocketStrings.dat", form='formatted')
        write(101,*) 'TITLE = "PocketStrings Data" '
 
@@ -1904,10 +1904,10 @@ module stringOps
        close(101)
     end if
 
-    ! Loop over pocketStrings and begin pocketZip starting 
+    ! Loop over pocketStrings and begin pocketZip starting
     ! from smallest convex ear.
     do i=1, nFullStrings
-       pocketZiploop: do while (pocketStringsArr(i)%nNodes > 2) 
+       pocketZiploop: do while (pocketStringsArr(i)%nNodes > 2)
           ! Each pass zips one triangle. Keep zipping
           ! until last triangle is zipped in the pocket polygon.
           call pocketZip(pocketStringsArr(i))
@@ -1949,10 +1949,10 @@ module stringOps
     nodeMap = 1
     badNode = 0 ! Will become 1 if bad
 
-    outerZiploop: do 
+    outerZiploop: do
 
        ! No choice for the last triangle:
-       if (N==3) then 
+       if (N==3) then
           ii = 1
           im1 = prevNode(ii)
           ip1 = nextNode(ii)
@@ -1965,7 +1965,7 @@ module stringOps
        end if
 
        ! Find min angled ear
-       costhetaMax = -Large 
+       costhetaMax = -Large
        nodeloop: do ii=1, N
 
           if (badNode(ii) == 1) cycle nodeloop
@@ -2003,19 +2003,19 @@ module stringOps
        im1 = prevNode(ii)
 
        call addPotentialTriangle(s, ip1, ii, im1, nodeMap, results, added)
-       if (added) then 
+       if (added) then
           ! This triangle was good!
           exit outerZipLoop
-       else 
+       else
           ! Bad node. Need to cycle through rest of pocket nodes.
           ! Remember this bad node in next cycle.
-          badNode(ii) = 1 
+          badNode(ii) = 1
           cycle outerZiploop
        end if
     end do outerZiploop
 
     ! Modify the pocketStrings to remove the two elements and the node
-    ! that got eliminated due to pocketZipping. 
+    ! that got eliminated due to pocketZipping.
     call shortenString(s, nodeMap)
     deallocate(nodeMap, badNode, results)
 
@@ -2024,7 +2024,7 @@ module stringOps
       implicit none
       integer(kind=intType) :: ii, nextNode
       nextNode = ii + 1
-      if (ii == N) then 
+      if (ii == N) then
          nextNode = 1
       end if
     end function nextNode
@@ -2033,7 +2033,7 @@ module stringOps
       implicit none
       integer(kind=intType) :: ii, prevNode
       prevNode = ii - 1
-      if (ii == 1) then 
+      if (ii == 1) then
          prevNode = N
       end if
     end function prevNode
@@ -2085,18 +2085,18 @@ module stringOps
     real(kind=realType) :: triNorm(3)
 
     ! Note: This is a dumb loop. We need to do a spatial serch here to
-    ! only check the nodes around the current point. 
+    ! only check the nodes around the current point.
 
     call cross_prod(pt2-pt1, pt3-pt1, triNorm)
     triNorm = triNorm / mynorm2(triNorm)
 
-    triOverlap = .False. 
+    triOverlap = .False.
     do i=1, str%nNodes
        if (i /= i1 .and. i/= i2) then
-          if (dot_product(str%norm(:, i), triNorm) > 0.8) then 
+          if (dot_product(str%norm(:, i), triNorm) > 0.8) then
              call pointInTriangle(pt1, pt2, pt3, str%x(:, i), inTri)
-             if (inTri) then 
-                triOverlap = .true. 
+             if (inTri) then
+                triOverlap = .true.
                 exit
              end if
           end if
@@ -2127,7 +2127,7 @@ module stringOps
     ! Now we will modify our string to remove the elements and nodes
     ! that got knocked off due to self zipping. This way the calling
     ! process still sees the same string, it just gets a little
-    ! shorter. 
+    ! shorter.
 
     ! Save pointers to existing data
     nNodes = s%nNodes
@@ -2145,7 +2145,7 @@ module stringOps
     j = 0
     nRemoved = 0
     do i=1, s%nNodes
-       if (nodeMap(i) == 1) then 
+       if (nodeMap(i) == 1) then
           j = j + 1
           nodeMap(i) = j
        else
@@ -2155,7 +2155,7 @@ module stringOps
 
     !  Update the cNodes in the parent so they point to the updated node
     ! numbers. Note that the nodes that have been eliminated, have cNode
-    ! = 0, which will identify that it no longer has a child node. 
+    ! = 0, which will identify that it no longer has a child node.
     do i=1, s%nNodes
        s%p%cNodes(:, s%pNodes(i)) = (/s%myID, nodeMap(i)/)
     end do
@@ -2172,7 +2172,7 @@ module stringOps
     call setStringPointers(s)
 
     do i=1, nNodes
-       if (nodeMap(i) /= 0) then 
+       if (nodeMap(i) /= 0) then
           s%nodeData(:, nodeMap(i)) = nodeDataTmp(:, i)
           s%intNodeData(:, nodeMap(i)) = intNodeDataTmp(:, i)
           s%pNodes(nodeMap(i)) = pNodesTmp(i)
@@ -2184,7 +2184,7 @@ module stringOps
        s%conn(:, i) = (/i, i+1/)
     end do
 
-    if (s%isPeriodic) then 
+    if (s%isPeriodic) then
        s%conn(2, s%nElems) = 1
     end if
 
@@ -2192,7 +2192,7 @@ module stringOps
     deallocate(nodeDataTmp, intNodeDataTmp, connTmp, pNodesTmp)
 
     ! Recreate the node to elem
-    if (s%nNodes >=3 ) then 
+    if (s%nNodes >=3 ) then
        call createNodeToElem(s)
     end if
 
@@ -2201,7 +2201,7 @@ module stringOps
   subroutine addPotentialTriangle(s, im1, ii, ip1, nodeMap, results, added)
 
     ! Common routine (for pocketZip and selfZip) to potentially add a
-    ! triangle resulting from a single string. 
+    ! triangle resulting from a single string.
     use constants
     use kdtree2_priority_queue_module
     use kdtree2_module
@@ -2220,7 +2220,7 @@ module stringOps
     logical :: overlapFound, inTri
 
     ! We may have a valid triangle. We need to make sure we
-    ! don't overlap anyone else. 
+    ! don't overlap anyone else.
     !
     ! xim1 +
     !      | \
@@ -2234,7 +2234,7 @@ module stringOps
     ! (average of xip1 and xim1) using a radius defined as the
     ! maximum of (the distance between 'c' and 'xi', half
     ! length of xip1 to xim1)
-    ! 
+    !
     added = .False.
 
     c = half*(s%x(:, ip1) + s%x(:, im1))
@@ -2244,10 +2244,10 @@ module stringOps
          (s%x(3, ip1) - s%x(3, im1))**2)
 
     nFound = 0
-    outerLoop: do 
+    outerLoop: do
        nalloc = size(results)
-       call kdtree2_r_nearest(s%p%tree, c, r2, nfound, nalloc, results) 
-       if (nFound < nAlloc) then 
+       call kdtree2_r_nearest(s%p%tree, c, r2, nfound, nalloc, results)
+       if (nFound < nAlloc) then
           exit outerLoop
        end if
 
@@ -2259,39 +2259,39 @@ module stringOps
 
 
     ! We can now be sure that we have all the points inside our
-    ! ball. Next we proceed to systematically check them. 
+    ! ball. Next we proceed to systematically check them.
     overlapFound = .False.
     nodeFoundLoop: do k=1, nFound
        ! Note that we do check nodes from our own string,
        ! except for the the three nodes we're dealing
        ! with. Remember that we are working in our parent's
        ! ording here.
-       idx = results(k)%idx 
+       idx = results(k)%idx
 
        notPartofTriangle: if (idx /= s%pNodes(im1) .and. &
-            idx /= s%pNodes(ii) .and. idx /= s%pNodes(ip1)) then 
+            idx /= s%pNodes(ii) .and. idx /= s%pNodes(ip1)) then
 
           ! Only check if the node normal of the point we're
-          ! checking is in the same direction as the triangle. 
-          if (dot_product(s%norm(:, ii), s%p%norm(:, idx)) > zero) then 
+          ! checking is in the same direction as the triangle.
+          if (dot_product(s%norm(:, ii), s%p%norm(:, idx)) > zero) then
 
              ! Finally do the actual trianlge test
              call pointInTriangle(s%x(:, ip1), s%x(:, ii), s%x(:, im1), &
                   s%p%x(:, idx), inTri)
-             if (inTri) then 
+             if (inTri) then
                 ! As soon as 1 is in the triangle, we know the
-                ! triangle is no good. 
-                overlapFound = .True. 
+                ! triangle is no good.
+                overlapFound = .True.
                 exit nodeFoundLoop
              end if
           end if
        end if notPartofTriangle
     end do nodeFoundLoop
 
-    if (.not. overlapFound) then 
+    if (.not. overlapFound) then
 
        ! This triangle is good!
-       added = .True. 
+       added = .True.
 
        ! Call the generic addTri Routine. Here all the ndoes from the
        ! triangle come from the same string.
@@ -2322,11 +2322,11 @@ module stringOps
        ! "The other index of the matching node on the other string is
        ! me" ie. "I point to you and you point to me"
 
-       if (s2%otherID(2, s1%otherID(2, ii)) == ii) then 
+       if (s2%otherID(2, s1%otherID(2, ii)) == ii) then
 
           dist = mynorm2(s1%x(:, ii) - s2%x(:, s1%otherID(2, ii)))
 
-          if (dist < minDist) then 
+          if (dist < minDist) then
              minDist = dist
              i = ii
              j = s1%otherID(2, ii)
@@ -2362,12 +2362,12 @@ module stringOps
     integer(kind=intType) :: id, index
     real(kind=realType) :: timeA,  pt(3),   v(3), cosTheta,  cutOff, dist, maxH, ratio
 
-    if (nStrings == 0) then  
+    if (nStrings == 0) then
        return
     end if
 
     ! Now make we determine the nearest point on another substring
-    ! for each point. 
+    ! for each point.
     nAlloc = 50
     allocate(results(nAlloc))
     master => strings(1)%p
@@ -2377,12 +2377,12 @@ module stringOps
        str => strings(i) ! Easier readability
 
        ! No need to do anything with the pocket string.
-       if (str%isPocket) then 
+       if (str%isPocket) then
           cycle
        end if
 
        ! Allocate space for otherID as it is not done yet
-       if (associated(str%otherID)) then 
+       if (associated(str%otherID)) then
           deallocate(str%otherID)
        end if
 
@@ -2396,7 +2396,7 @@ module stringOps
           nSearch = 50
 
           ! We have to be careful since single-sided chains have only
-          ! 1 neighbour at each end. 
+          ! 1 neighbour at each end.
 
           call getNodeInfo(str, j, checkLeft, checkRight, concave, &
                xj, xjm1, xjp1,  normj)
@@ -2408,7 +2408,7 @@ module stringOps
 
              ! Only check edges connected to nodes within the
              ! distance the maximum element size of my self or the
-             ! closest node. We put in a fudge factor of 1.5. 
+             ! closest node. We put in a fudge factor of 1.5.
 
              innerLoop: do k=1, nSearch
 
@@ -2424,14 +2424,14 @@ module stringOps
                 idx = results(k)%idx
                 pt = master%x(:, idx)
 
-                ! --------------------------------------------- 
+                ! ---------------------------------------------
                 ! Exit Condition: We can stop the loop if the current
                 ! uncorrected distance is larger than our current
                 ! minimum. This guarantees the minimum corrected
                 ! distance is found.
                 ! ---------------------------------------------
 
-                if (curDist > minDist) then 
+                if (curDist > minDist) then
                    exit outerLoop
                 end if
 
@@ -2440,8 +2440,8 @@ module stringOps
                 ! substring. we don't need to do anything
                 ! ---------------------------------------------
 
-                if (master%cNodes(1, idx) == str%myID) then 
-                   cycle innerLoop 
+                if (master%cNodes(1, idx) == str%myID) then
+                   cycle innerLoop
                 end if
 
                 ! ---------------------------------------------
@@ -2449,19 +2449,19 @@ module stringOps
                 ! Check 1b: If the node we found has been removed due
                 ! to self zipping, we can just keep going
                 ! --------------------------------------------
-                if (master%cNodes(2, idx) == 0) then 
-                   cycle innerLoop 
+                if (master%cNodes(2, idx) == 0) then
+                   cycle innerLoop
                 end if
 
                 ! The first time we make it here, idx will be the
                 ! index of the closest node on another string that
-                ! isn't me. 
-                if (closestOtherIndex == -1) then 
+                ! isn't me.
+                if (closestOtherIndex == -1) then
                    closestOtherString = master%cNodes(1, idx)
                    closestOtherIndex = master%cNodes(2, idx)
                 end if
 
-                ! --------------------------------------------- 
+                ! ---------------------------------------------
                 ! Check 2: Check if the node we found violates the
                 ! the "in front" test. For a concave corner TWO
                 ! triangle areas formed by the point and the two
@@ -2469,14 +2469,14 @@ module stringOps
                 ! one of the triangle areas needs to be positive.
                 ! ---------------------------------------------
                 if (.not. nodeInFrontOfEdges(pt, concave, checkLeft, checkRight, &
-                     xj, xjm1, xjp1, normj)) then 
+                     xj, xjm1, xjp1, normj)) then
                    cycle innerLoop
                 end if
 
-                ! --------------------------------------------- 
+                ! ---------------------------------------------
                 ! Check 3: This is the *reverse* of check 2: Is the
                 ! node we're searching for visible from the potential
-                ! closest other node. 
+                ! closest other node.
                 ! ---------------------------------------------
                 otherID = master%cNodes(1, idx)
                 otherIndex = master%cNodes(2, idx)
@@ -2485,43 +2485,43 @@ module stringOps
                      checkRight2, concave2, xk, xkm1, xkp1,  normk)
 
                 if (.not. nodeInFrontOfEdges(xj, concave2, checkLeft2, &
-                     checkRight2, xk, xkm1, xkp1, normk)) then 
+                     checkRight2, xk, xkm1, xkp1, normk)) then
                    cycle innerLoop
                 end if
 
-                ! --------------------------------------------- 
+                ! ---------------------------------------------
                 ! Check 4a: Check if the potential node intersects
                 ! itself.
                 ! ---------------------------------------------
-                if (overlappedEdges(str, j, pt)) then 
+                if (overlappedEdges(str, j, pt)) then
                    cycle
                 end if
 
-                ! --------------------------------------------- 
+                ! ---------------------------------------------
                 ! Check 4b: OR if the other node would have to
-                ! intersect *ITSELF* to get back to me. This is used 
-                ! to catch closest points crossing over thin strips. 
+                ! intersect *ITSELF* to get back to me. This is used
+                ! to catch closest points crossing over thin strips.
                 ! ---------------------------------------------
 
-                if (overlappedEdges(strings(otherID), otherIndex, xj)) then 
+                if (overlappedEdges(strings(otherID), otherIndex, xj)) then
                    cycle
                 end if
 
-                ! --------------------------------------------- 
+                ! ---------------------------------------------
                 ! Check 4c: Make sure it doesn't inersect the closest
                 ! string if that happens to be different from the
                 ! cloest one.  string. This should only check very
                 ! rare cases the other checks miss.
                 ! ---------------------------------------------
 
-                if (otherID /= closestOtherString) then 
+                if (otherID /= closestOtherString) then
                    if (overlappedEdges2(&
-                        strings(closestOtherString), xj, normj, pt)) then 
+                        strings(closestOtherString), xj, normj, pt)) then
                       cycle
                    end if
                 end if
 
-                ! --------------------------------------------- 
+                ! ---------------------------------------------
                 ! Check 5: Now that the point has passed the previous
                 ! checks, we can compute the agumented distance
                 ! function and see if it better than the exisitng min
@@ -2535,10 +2535,10 @@ module stringOps
                 ! Recompute the distance function
                 cosTheta = abs(dot_product(normj, v))
 
-                ! Update distFunction 
+                ! Update distFunction
                 dStar = curDist / (max(1-cosTheta, 1e-6))
 
-                if (dStar < minDist) then 
+                if (dStar < minDist) then
                    ! Save the string ID and the index.
                    minDist = dStar
                    str%otherID(:, j) = master%cNodes(:, idx)
@@ -2546,46 +2546,46 @@ module stringOps
              end do innerLoop
 
              ! If we have already searched the max, we have to quit the loop
-             if (nSearch == master%Nnodes) then 
+             if (nSearch == master%Nnodes) then
                 exit outerLoop
              end if
 
              ! We are not 100% sure that we found the minium
-             ! yet. Make nAlloc twice as big and start over. 
+             ! yet. Make nAlloc twice as big and start over.
              nSearch = nSearch * 2
              nSearch = min(nSearch, master%nNodes)
-             if (nSearch > nAlloc) then 
+             if (nSearch > nAlloc) then
                 deallocate(results)
                 nAlloc = nAlloc*2
                 allocate(results(nAlloc))
              end if
           end do outerLoop
        end do nodeLoop
-       
+
        ! Do a sanity check to fix some extraordinary cases. If a node
        ! hasn't found a neighbouring string but each of the two nodes
        ! either side have, and they found the *same* string, just
-       ! accept that. 
-       
+       ! accept that.
+
        do j=3, str%nNodes-2
-          if (str%otherID(1, j) == -1) then 
+          if (str%otherID(1, j) == -1) then
              ! Bad node:
              oid(1) = str%otherID(1, j-2)
              oid(2) = str%otherID(1, j-1)
-             oid(3) = str%otherID(1, j+1)   
-             oid(4) = str%otherID(1, j+2)   
+             oid(3) = str%otherID(1, j+1)
+             oid(4) = str%otherID(1, j+2)
 
-             if (oid(1) /= -1 .and. & 
+             if (oid(1) /= -1 .and. &
                   oid(1) == oid(2) .and. &
                   oid(1) == oid(3) .and. &
-                  oid(1) == oid(4)) then 
-             
-                if (debugZipper) then 
+                  oid(1) == oid(4)) then
+
+                if (debugZipper) then
                    print *,'****************************************************************'
                    print *,'Warning: Fixing a bad association on string ', i, 'at index', j
                    print *,'****************************************************************'
                 end if
-   
+
                 ! We have a '-1' surrounded by the same gap string
 
                 ! Set the stringID
@@ -2593,7 +2593,7 @@ module stringOps
 
                 ! Estimate what the other index should be. Since this
                 ! is in the middle of the string, the exact index
-                ! shouldn't matter. 
+                ! shouldn't matter.
                 str%otherID(2, j) = str%otherID(2, j-1)
              end if
           end if
@@ -2615,7 +2615,7 @@ module stringOps
     real(kind=realType), dimension(3) :: myPt, otherPT, vec
     real(kind=realType) :: maxH, dist, ratio
 
-    character(80) :: zoneName  
+    character(80) :: zoneName
 
 
     write (zoneName,"(a,I5.5)") "Zone T=gap_", str%myID
@@ -2644,7 +2644,7 @@ module stringOps
        do i=1, str%nNodes
           myPt = str%x(:, i)
           id = str%otherID(1, i)
-          if (id /= -1) then 
+          if (id /= -1) then
              index = str%otherID(2, i)
              otherPt = strings(id)%x(:, index)
              vec = otherPt - myPt
@@ -2671,7 +2671,7 @@ module stringOps
        write(fileID,13) real(i)
     end do
 
-    if (associated(str%otherID)) then 
+    if (associated(str%otherID)) then
        ! otherID
        do i=1, str%nNodes
           write(fileID,13) real(str%otherID(1, i))
@@ -2691,7 +2691,7 @@ module stringOps
     do i=1, str%nNodes
        myPt = str%x(:, i)
        id = str%otherID(1, i)
-       if (id /= -1) then 
+       if (id /= -1) then
           index = str%otherID(2, i)
           otherPt = strings(id)%x(:, index)
           dist = mynorm2(myPt - otherPt)
@@ -2719,7 +2719,7 @@ module stringOps
     type(oversetString), intent(inout) :: string
     character(*) :: fileName
     integer(kind=intType) :: i, j
-    character(80) :: zoneName  
+    character(80) :: zoneName
 
     open(unit=101, file=trim(fileName), form='formatted')
     write(101,*) 'TITLE = "Triangles"'
@@ -2732,7 +2732,7 @@ module stringOps
     write (101,*) "DATAPACKING=POINT"
 13  format (E20.12)
 
-    ! Write all the coordinates  
+    ! Write all the coordinates
     do i=1, string%nNodes
        do j=1, 3
           write(101,13, advance='no') string%x(j, i)
@@ -2782,7 +2782,7 @@ module stringOps
   end subroutine writeZipperDebug
 
 
-  subroutine pointInTriangle(x1, x2, x3, pt, inTri) 
+  subroutine pointInTriangle(x1, x2, x3, pt, inTri)
 
     use constants
     use utils, only : cross_prod
@@ -2790,13 +2790,13 @@ module stringOps
     real(kind=realType), dimension(3), intent(in) :: x1, x2, x3, pt
     logical, intent(out) :: inTri
 
-    if (sameSide(pt,x1, x2,x3) .and. sameSide(pt,x2, x1,x3) .and. sameSide(pt,x3, x1,x2)) then 
-       inTri = .True. 
+    if (sameSide(pt,x1, x2,x3) .and. sameSide(pt,x2, x1,x3) .and. sameSide(pt,x3, x1,x2)) then
+       inTri = .True.
     else
        inTri = .false.
     end if
 
-  contains 
+  contains
     function sameSide(p1, p2, a, b)
 
       implicit none
@@ -2806,8 +2806,8 @@ module stringOps
       sameSide = .False.
       call cross_prod(b-a, p1-a, cp1)
       call cross_prod(b-a, p2-a, cp2)
-      if (dot_product(cp1, cp2) >= zero) then 
-         sameSide = .true. 
+      if (dot_product(cp1, cp2) >= zero) then
+         sameSide = .true.
       end if
     end function SameSide
   end subroutine pointInTriangle
@@ -2822,8 +2822,8 @@ module stringOps
     logical :: positiveTriArea
 
     call cross_prod(p2-p1, p3-p1, n)
-    if (dot_product(n, norm) > zero) then 
-       positiveTriArea = .True. 
+    if (dot_product(n, norm) > zero) then
+       positiveTriArea = .True.
     else
        positiveTriArea = .False.
     end if
@@ -2837,22 +2837,22 @@ module stringOps
 
     type(oversetString) :: str
     integer(kind=intType) :: j
-    logical ::checkLeft, checkRight, concave 
+    logical ::checkLeft, checkRight, concave
     real(kind=realType), dimension(3) :: xj, xjm1, xjp1, normj
     real(kind=realType), dimension(3) :: v
-    checkLeft = .True. 
-    checkRight = .True. 
+    checkLeft = .True.
+    checkRight = .True.
     xj = str%x(:, j)
     normj = str%norm(:, j)
     concave = .False.
-    if (str%isPeriodic) then 
-       if (j > 1 .and. j < str%nNodes) then 
+    if (str%isPeriodic) then
+       if (j > 1 .and. j < str%nNodes) then
           xjm1 = str%x(:, j-1)
           xjp1 = str%x(:, j+1)
-       else if (j == 1) then 
+       else if (j == 1) then
           xjm1 = str%x(:, str%nNodes)
           xjp1 = str%x(:, j+1)
-       else if (j == str%nNodes) then 
+       else if (j == str%nNodes) then
           xjm1 = str%x(:, j-1)
           xjp1 = str%x(:, 1)
        end if
@@ -2862,30 +2862,30 @@ module stringOps
        ! which since the leftOK and rightOK's default to
        ! .True., it just checks the one triangle which is what
        ! we want.
-       if (j == 1) then 
+       if (j == 1) then
           checkLeft = .False.
-          concave = .True. 
+          concave = .True.
        end if
 
-       if (j == str%nNodes) then 
+       if (j == str%nNodes) then
           checkRight = .False.
-          concave = .True. 
+          concave = .True.
        end if
 
        if (checkLeft)  &
             xjm1 = str%x(:, j-1)
-       if (checkRight) & 
+       if (checkRight) &
             xjp1 = str%x(:, j+1)
     end if
 
-    if (checkLeft .and. checkRight) then 
+    if (checkLeft .and. checkRight) then
 
        ! Determine if the point is convex or concave provided
        !  we have both neighbours.
        call cross_prod(xjm1 - xj, xjp1 - xj, v)
 
-       if (dot_product(v, normj) > zero) then 
-          concave = .True. 
+       if (dot_product(v, normj) > zero) then
+          concave = .True.
        end if
     end if
 
@@ -2902,22 +2902,22 @@ module stringOps
     logical :: leftOK, rightoK
 
     nodeInFrontOfEdges = .True.
-    leftOK = .True. 
-    rightOK = .True. 
+    leftOK = .True.
+    rightOK = .True.
     if (checkLeft .and. .not. positiveTriArea(xj, xjm1, pt, normj)) then
        leftOK = .False.
     end if
 
-    if (checkRight .and. .not. positiveTriArea(xjp1, xj, pt, normj)) then 
+    if (checkRight .and. .not. positiveTriArea(xjp1, xj, pt, normj)) then
        rightOK = .False.
     end if
 
-    if (concave) then 
-       if (.not. (leftOK .and. rightOK)) then 
-          nodeInFrontofEdges = .False. 
+    if (concave) then
+       if (.not. (leftOK .and. rightOK)) then
+          nodeInFrontofEdges = .False.
        end if
     else
-       if (.not. (leftOK .or. rightOK)) then 
+       if (.not. (leftOK .or. rightOK)) then
           nodeInFrontOfEdges = .False.
        end if
     end if
@@ -2942,7 +2942,7 @@ module stringOps
     real(kind=realType) :: uNrm, x1, x2, x3, x4, y1, y2, y3, y4, idet, Px, Py
     real(kind=realType) :: u1, u2, v1, v2, w1, w2
     real(kind=realType) :: s1, s2, tmp, line(2), vec(2), tol
-    overlappedEdges = .False. 
+    overlappedEdges = .False.
     tol = 1e-6
     ! We will conver this completely into a 2D problem by projecting
     ! everything onto the plane defined by norm. x0 is at the origin of
@@ -2970,7 +2970,7 @@ module stringOps
        ! Don't check the ones right next to me, since they will
        ! "overlap" exactly at x0
 
-       if (str%conn(1, i) == j .or. str%conn(2, i) == j) then 
+       if (str%conn(1, i) == j .or. str%conn(2, i) == j) then
           cycle
        end if
 
@@ -2983,7 +2983,7 @@ module stringOps
 
        ! Make sure the edges are on the same plane, otherwise this is
        ! meaningless
-       if (dot_product(normA, norm) < half .or. dot_product(normb, norm) < half) then 
+       if (dot_product(normA, norm) < half .or. dot_product(normb, norm) < half) then
           cycle
        end if
        ! Project the two points onto the plane
@@ -3008,9 +3008,9 @@ module stringOps
        s1 = (v2*w1 - v1*w2)/(v1*u2 - v2*u1)
        s2 = (u1*w2 - u2*w1)/(u1*v2 - u2*v1)
 
-       if (s1 > tol .and. s1 < one - tol .and. s2 > tol .and. s2 < one - tol) then 
-          overlappedEdges = .True. 
-          exit elemLoop 
+       if (s1 > tol .and. s1 < one - tol .and. s2 > tol .and. s2 < one - tol) then
+          overlappedEdges = .True.
+          exit elemLoop
        end if
     end do elemLoop
 
@@ -3067,7 +3067,7 @@ module stringOps
 
        ! Make sure the edges are on the same plane, otherwise this is
        ! meaningless
-       if (dot_product(normA, norm) < half .or. dot_product(normb, norm) < half) then 
+       if (dot_product(normA, norm) < half .or. dot_product(normb, norm) < half) then
           cycle
        end if
        ! Project the two points onto the plane
@@ -3092,9 +3092,9 @@ module stringOps
        s1 = (v2*w1 - v1*w2)/(v1*u2 - v2*u1)
        s2 = (u1*w2 - u2*w1)/(u1*v2 - u2*v1)
 
-       if (s1 > tol .and. s1 < one - tol .and. s2 > tol .and. s2 < one - tol) then 
-          overlappedEdges2 = .True. 
-          exit elemLoop 
+       if (s1 > tol .and. s1 < one - tol .and. s2 > tol .and. s2 < one - tol) then
+          overlappedEdges2 = .True.
+          exit elemLoop
        end if
     end do elemLoop
 

@@ -1,17 +1,17 @@
        module coolingModelLevel0
 !
-!       Module which contains the derived data type as well as the     
-!       corresponding array to store the information for the level 0   
-!       cooling model used in the turbine.                             
-!       This model has been developed by Pratt and Whitney and should  
-!       not be given to third parties. This implementation assumes     
-!       the x-direction is the axial direction.                        
+!       Module which contains the derived data type as well as the
+!       corresponding array to store the information for the level 0
+!       cooling model used in the turbine.
+!       This model has been developed by Pratt and Whitney and should
+!       not be given to third parties. This implementation assumes
+!       the x-direction is the axial direction.
 !
        use constants, only : intType, realType
        implicit none
        save
 !
-!       The definition of the derived data type level0CoolingType.     
+!       The definition of the derived data type level0CoolingType.
 !
        type level0CoolingType
 
@@ -56,7 +56,7 @@
 
        end type level0CoolingType
 !
-!       Variables stored in this module.                               
+!       Variables stored in this module.
 !
        ! nPlanesLevel0CoolingModel:  Number of injection planes used for
        !                             the level 0 cooling model.

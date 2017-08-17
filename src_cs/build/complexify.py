@@ -22,14 +22,14 @@ header_string = """
 """
 
 todo_string = """
- 
+
   TODO:
        - overwrite previous c_ files?
        - problem: reading existing real inp files to complex
-       - f90 type declarations real(8), real(kind=8), < > , etc 
-       - recursive / directory option... 
+       - f90 type declarations real(8), real(kind=8), < > , etc
+       - recursive / directory option...
        - look into what float() does to a complex, etc
- 
+
   other stuff:
        - comment lines that split up a multiline continued statement
          may hose everything
@@ -42,7 +42,7 @@ todo_string = """
 """
 
 changes_string = """
- 
+
 Wed Aug  9 21:16:49 PDT 2000:
 - replace MPI_real... with MPI_double_complex
 - exception so that MPI include files, 'mpif.h' are not changed
@@ -54,14 +54,14 @@ Wed Aug  9 21:16:49 PDT 2000:
 Mon Aug 14 19:53:53 PDT 2000:
 - changed explicit cast real() to cmplx()
 """
- 
+
 import sys, os, glob
 import string, re
 from stat import *
 
 err = sys.stderr.write
 dbg = err
-rep = sys.stdout.write 
+rep = sys.stdout.write
 fix_relationals = 1
 fudge_format_statement = 0
 
@@ -107,8 +107,8 @@ patt_real_s = re.compile(r'real\b(?:\s*\*\s*)?([48])?', re.IGNORECASE)
 patt_double_s = re.compile(r'double\s*precision', re.IGNORECASE)
 patt_double = re.compile('(^\s*)double\s*precision(\s+.*)', re.IGNORECASE)
 patt_mpi_stuff = re.compile(r'mpi_double_precision|mpi_real8|mpi_real4|mpi_real', re.IGNORECASE)
-patt_implicit = re.compile(r'^\s*implicit\b', re.IGNORECASE)   
-patt_comment = re.compile('^\s*!.*', re.IGNORECASE)   
+patt_implicit = re.compile(r'^\s*implicit\b', re.IGNORECASE)
+patt_comment = re.compile('^\s*!.*', re.IGNORECASE)
 patt_inc = re.compile(r'(\s*\d*\s*)include\s*("|\')(\w+.?\w*)(?:"|\')(.*)',
                       re.IGNORECASE)
 
@@ -124,13 +124,13 @@ patt_if = re.compile('((?:\s*)|(?:\s*\w+:\s*))((?:else\s*|)if\s*\()(.*$)',re.IGN
 patt_logic_ass = re.compile('([^=]*)(\s*=[ \t]*)((?:.|\n)*\.\s*(?:and|or|not|eqv|neqv)\s*\.(?:.|\n)*)', re.IGNORECASE)
 
 patt_subroutine = re.compile(r'\s*(?!end)\w*\s*subroutine\b',
-                             re.IGNORECASE)   
-patt_program = re.compile(r'^\s*program\b', re.IGNORECASE)   
+                             re.IGNORECASE)
+patt_program = re.compile(r'^\s*program\b', re.IGNORECASE)
 patt_function = re.compile(r'^\s*(?!end)\w*\s*function\b\s*\w+\s*\(',
                            re.IGNORECASE)
 patt_module_procedure = re.compile(r'^\s*module procedure', re.IGNORECASE)
 patt_real_cast = re.compile(r'([^a-zA-z]\s*)real\s*\(', re.IGNORECASE)
-patt_module = re.compile(r'^\s*(?!end)\s*module\b', re.IGNORECASE)   
+patt_module = re.compile(r'^\s*(?!end)\s*module\b', re.IGNORECASE)
 
 patt_usemebaby = re.compile(r'^\s*use\s*\w+', re.IGNORECASE)
 patt_intrinsic = re.compile(r'^\s*(?:(?:complex|real|integer|logical|character).*,.*)?intrinsic\b(?:\s*:\s*:)?', re.IGNORECASE)
@@ -215,7 +215,7 @@ def fix_routine(i_line, lines):
 
     i_line = i_line + 1
     i_line = skip_continuation(i_line, lines)
-    lines.insert(i_line, use_module_line)            
+    lines.insert(i_line, use_module_line)
 
     i_line_use = i_line
     i_line = i_line + 1
@@ -237,7 +237,7 @@ def fix_routine(i_line, lines):
         i_line = i_line + 1
     if not implicit_found:
         lines.insert(i_line_use+1, implicit_complex_line)
-        #rep(`i_line_use+1`+'\n'+'>'+implicit_complex_line) 
+        #rep(`i_line_use+1`+'\n'+'>'+implicit_complex_line)
         i_line = i_line + 1
     return i_line, is_EOF
 
@@ -258,19 +258,19 @@ def write_output(filename, lines):
     return
 
 def is_routine(line):
-    if patt_program.match(line): 
+    if patt_program.match(line):
         return 1
-    elif patt_module_procedure.match(line): 
+    elif patt_module_procedure.match(line):
         return 0
-    elif patt_subroutine.match(line): 
+    elif patt_subroutine.match(line):
         return 1
-    elif patt_function.search(line): 
+    elif patt_function.search(line):
         return 1
-    elif patt_module.match(line): 
+    elif patt_module.match(line):
         return 1
-    elif patt_comment.match(line): 
-        return 0 
-    else: 
+    elif patt_comment.match(line):
+        return 0
+    else:
         return 0
 
 def join_lines(i, lines):
@@ -297,11 +297,11 @@ def fix_line(line, implicit_found):
     # skip commented lines
     if patt_comment.search(line) != None: return (line, implicit_found)
 
-    # CHeck if we should keep the line. 
+    # CHeck if we should keep the line.
     if patt_always_real.match(line):
         return (line, implicit_found)
 
-    # CHeck if we should keep the line. 
+    # CHeck if we should keep the line.
     if patt_cgns_real.match(line):
         return (line, implicit_found)
 
@@ -312,7 +312,7 @@ def fix_line(line, implicit_found):
     #if patt_realtype_s.search(line) != None: line = fix_realtype(line)
     #else: print  patt_realtype_s.search(line)
     ######################
-    
+
     if patt_double.match(line) != None: line = fix_double(line)
 
     if patt_implicit.match(line) != None:
@@ -327,15 +327,15 @@ def fix_line(line, implicit_found):
     if fix_relationals == 2: # only for MIPS Pro compiler
         if patt_ge.search(line) != None: line = patt_ge.sub(r'.cge.',line)
 
-    if patt_if.match(line) != None: 
+    if patt_if.match(line) != None:
         line = fix_if(line)
-    elif patt_logic_ass.match(line) != None: 
+    elif patt_logic_ass.match(line) != None:
         line = fix_logic_assignment(line)
 
-    if patt_intrinsic.match(line) != None: 
+    if patt_intrinsic.match(line) != None:
         line = fix_intrinsics(line)
 
-    if patt_mpi_stuff.search(line) != None: 
+    if patt_mpi_stuff.search(line) != None:
         line = fix_mpi_stuff(line)
 
     # Assume that this is not needed: CHECK
@@ -453,7 +453,7 @@ def fix_logic_expression(expression):
             # end for
         expression = string.join(split_expression,'') # don't add spaces
     return expression
-    
+
 def fix_logic_lhs(lhs):
     #print 'lhs=' + lhs
     count = 0
@@ -482,7 +482,7 @@ def fix_logic_rhs(rhs):
             break
     expr = rhs[:i+1]
     tail = rhs[i+1:]
-    return  expr + ')' + tail 
+    return  expr + ')' + tail
 
 def fix_intrinsics(line):
     # The following functions appear in the Complexify.f90 module;
@@ -503,7 +503,7 @@ def fix_intrinsics(line):
 
 def type_repl(match):
     precision = match.group(1)
-    if precision == None: precision = "4" 
+    if precision == None: precision = "4"
     if eval(precision) == 8:
         type = "complex*16"  # double precision complex
     elif eval(precision) == 4:
@@ -519,7 +519,7 @@ def skip_continuation(i, lines):
             break
 
         if patt_comment.match(lines[i]):
-            is_continuation = 1 # can delete these     
+            is_continuation = 1 # can delete these
         elif patt_char6col.match(lines[i]):
             is_continuation = 1
         elif patt_tabno.match(lines[i]):
@@ -529,11 +529,11 @@ def skip_continuation(i, lines):
         elif patt_blankline.match(lines[i]):
             is_continuation = 1
         elif (patt_amperend.match(lines[i-1])):
-              is_continuation = 1  
-        else: 
+              is_continuation = 1
+        else:
             is_continuation = 0
-        i = i+1 
-    i = i - 1   
+        i = i+1
+    i = i - 1
     return i
 
 

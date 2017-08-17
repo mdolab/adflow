@@ -1,15 +1,15 @@
        module section
 !
-!       This module contains the definition of the derived data type   
-!       sectionType, which stores the information of a section of the  
-!       grid. It also contains the array to store the info of all the  
-!       sections.                                                      
+!       This module contains the definition of the derived data type
+!       sectionType, which stores the information of a section of the
+!       grid. It also contains the array to store the info of all the
+!       sections.
 !
        use constants, only : intType, realType
        implicit none
        save
 !
-!       The definition of the derived data type sectionType.          
+!       The definition of the derived data type sectionType.
 !
        type sectionType
 

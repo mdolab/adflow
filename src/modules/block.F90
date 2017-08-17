@@ -71,10 +71,10 @@ module block
      real(kind=realType), dimension(:,:), pointer :: area
      integer(kind=realType), dimension(:,:), pointer :: surfIndex
 
-     ! Generic pointers for performing a globalized reduction. 
+     ! Generic pointers for performing a globalized reduction.
      real(kind=realType), dimension(:, :), pointer :: nodeVal
      real(kind=realType), dimension(:, :), pointer :: cellVal
-     
+
      ! symNorm is the normal for (symmertry) boundary conditions.
      ! symNormSet is set to false until symNorm is computed at the
      ! beginning of a simulation. symNorm then remains constant for
@@ -808,7 +808,7 @@ module block
     !
     ! Compare the donor processors first. If not equal,
     ! set lessEqual appropriately and return.
-    if (fringeSortType == sortByDonor) then 
+    if (fringeSortType == sortByDonor) then
        if(g1%donorProc < g2%donorProc) then
           lessEqualfringeType = .true.
           return
@@ -816,9 +816,9 @@ module block
           lessEqualfringeType = .false.
           return
        endif
-       
+
        ! Donor processors are identical. Now we check the block
-       
+
        if(g1%donorBlock < g2%donorBlock) then
           lessEqualfringeType = .true.
           return
@@ -826,10 +826,10 @@ module block
           lessEqualfringeType = .false.
           return
        endif
-       
+
        ! Compare the indices of the halo. First k, then j and
        ! finally i.
-       
+
        if(g1%dIndex < g2%dIndex) then
           lessEqualfringeType = .true.
           return
@@ -837,12 +837,12 @@ module block
           lessEqualfringeType = .false.
           return
        endif
-       
-    else if (fringeSortType == sortByReceiver) then 
 
-      
+    else if (fringeSortType == sortByReceiver) then
+
+
        ! Compare my indices
-       
+
        if(g1%myIndex < g2%myIndex) then
           lessEqualfringeType = .true.
           return
@@ -850,9 +850,9 @@ module block
           lessEqualfringeType = .false.
           return
        endif
-       
+
        ! Now compare the donor information:
-        
+
        if(g1%donorProc < g2%donorProc) then
           lessEqualfringeType = .true.
           return
@@ -860,9 +860,9 @@ module block
           lessEqualfringeType = .false.
           return
        endif
-       
+
        ! Donor processors are identical. Now we check the block
-       
+
        if(g1%donorBlock < g2%donorBlock) then
           lessEqualfringeType = .true.
           return
@@ -870,10 +870,10 @@ module block
           lessEqualfringeType = .false.
           return
        endif
-       
+
        ! Compare the indices of the halo. First k, then j and
        ! finally i.
-       
+
        if(g1%dIndex < g2%dIndex) then
           lessEqualfringeType = .true.
           return
@@ -903,7 +903,7 @@ module block
     !
     ! Compare the donor processors first. If not equal,
     ! set less appropriately and return.
-    if (fringeSortType == sortByDonor) then 
+    if (fringeSortType == sortByDonor) then
        if(g1%donorProc < g2%donorProc) then
           lessfringeType = .true.
           return
@@ -911,9 +911,9 @@ module block
           lessfringeType = .false.
           return
        endif
-       
+
        ! Donor processors are identical. Now we check the block
-       
+
        if(g1%donorBlock < g2%donorBlock) then
           lessfringeType = .true.
           return
@@ -921,10 +921,10 @@ module block
           lessfringeType = .false.
           return
        endif
-       
+
        ! Compare the indices of the halo. First k, then j and
        ! finally i.
-       
+
        if(g1%dIndex < g2%dIndex) then
           lessfringeType = .true.
           return
@@ -932,11 +932,11 @@ module block
           lessfringeType = .false.
           return
        endif
-       
-    else if (fringeSortType == sortByReceiver) then 
-       
+
+    else if (fringeSortType == sortByReceiver) then
+
        ! Compare my indices
-       
+
        if(g1%myIndex < g2%myIndex) then
           lessfringeType = .true.
           return
@@ -944,9 +944,9 @@ module block
           lessfringeType = .false.
           return
        endif
-       
+
        ! Now compare the donor information:
-        
+
        if(g1%donorProc < g2%donorProc) then
           lessfringeType = .true.
           return
@@ -954,9 +954,9 @@ module block
           lessfringeType = .false.
           return
        endif
-       
+
        ! Donor processors are identical. Now we check the block
-       
+
        if(g1%donorBlock < g2%donorBlock) then
           lessfringeType = .true.
           return
@@ -964,10 +964,10 @@ module block
           lessfringeType = .false.
           return
        endif
-       
+
        ! Compare the indices of the halo. First k, then j and
        ! finally i.
-       
+
        if(g1%dIndex < g2%dIndex) then
           lessfringeType = .true.
           return
@@ -1004,9 +1004,9 @@ module block
        lessEqualinterpPtType = .false.
        return
     endif
-    
+
     ! Donor processors are identical. Now we check the block
-    
+
     if(g1%donorBlock < g2%donorBlock) then
        lessEqualinterpPtType = .true.
        return
@@ -1014,10 +1014,10 @@ module block
        lessEqualinterpPtType = .false.
        return
     endif
-       
+
     ! Compare the indices of the halo. First k, then j and
     ! finally i.
-    
+
     if(g1%dK < g2%dK) then
        lessEqualinterpPtType = .true.
        return
@@ -1025,7 +1025,7 @@ module block
        lessEqualinterpPtType = .false.
        return
     endif
- 
+
    if(g1%dJ < g2%dJ) then
        lessEqualinterpPtType = .true.
        return
@@ -1033,7 +1033,7 @@ module block
        lessEqualinterpPtType = .false.
        return
     endif
- 
+
     if(g1%dI < g2%dI) then
        lessEqualinterpPtType = .true.
        return
@@ -1041,7 +1041,7 @@ module block
        lessEqualinterpPtType = .false.
        return
     endif
-       
+
     ! Both entities are identical. So set lessEqual to .true.
 
     lessEqualinterpPtType = .true.
@@ -1063,9 +1063,9 @@ module block
        lessInterpPtType = .false.
        return
     endif
-    
+
     ! Donor processors are identical. Now we check the block
-    
+
     if(g1%donorBlock < g2%donorBlock) then
        lessInterpPtType = .true.
        return
@@ -1073,10 +1073,10 @@ module block
        lessInterpPtType = .false.
        return
     endif
-       
+
     ! Compare the indices of the halo. First k, then j and
     ! finally i.
-    
+
     if(g1%dK < g2%dK) then
        lessInterpPtType = .true.
        return
@@ -1084,7 +1084,7 @@ module block
        lessInterpPtType = .false.
        return
     endif
- 
+
    if(g1%dJ < g2%dJ) then
        lessInterpPtType = .true.
        return
@@ -1092,7 +1092,7 @@ module block
        lessInterpPtType = .false.
        return
     endif
- 
+
     if(g1%dI < g2%dI) then
        lessInterpPtType = .true.
        return

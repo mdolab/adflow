@@ -5,7 +5,7 @@ module BCData
 contains
   ! ---------------------------------------------------------------
   ! Routines that set the appropriate variable names for BCs with
-  ! BCdata. 
+  ! BCdata.
 
   subroutine setBCVarNamesIsothermalWall
     use cgnsNames
@@ -90,10 +90,10 @@ contains
 
   subroutine setBCVarNamesTurb(offset)
     !
-    !       setBCVarNamesTurb sets the names for the turbulence            
-    !       variables to be determined. This depends on the turbulence     
-    !       model. If not the RANS equations are solved an immediate       
-    !       return is made.                                                
+    !       setBCVarNamesTurb sets the names for the turbulence
+    !       variables to be determined. This depends on the turbulence
+    !       model. If not the RANS equations are solved an immediate
+    !       return is made.
     !
     use constants
     use cgnsNames
@@ -138,10 +138,10 @@ contains
 
   subroutine computeHtot(tt, ht)
     !
-    !       computeHtot computes the total enthalpy from the given total   
-    !       temperature. The total enthalpy is the integral of cp, which   
-    !       is a very simple expression for constant cp. For a variable cp 
-    !       it is a bit more work.                                         
+    !       computeHtot computes the total enthalpy from the given total
+    !       temperature. The total enthalpy is the integral of cp, which
+    !       is a very simple expression for constant cp. For a variable cp
+    !       it is a bit more work.
     !
     use constants
     use cpCurveFits
@@ -284,10 +284,10 @@ contains
 
   subroutine unitVectorsCylSystem(boco)
     !
-    !       unitVectorsCylSystem determines the unit vectors of the        
-    !       local coordinate systen of the boundary face defined by the    
-    !       data in BCDataMod. In that local system the axial direction    
-    !       is rotation axis.                                              
+    !       unitVectorsCylSystem determines the unit vectors of the
+    !       local coordinate systen of the boundary face defined by the
+    !       data in BCDataMod. In that local system the axial direction
+    !       is rotation axis.
     !
     use constants
     use blockPointers, only : BCFaceID, BCData, x, si, sj, sk, il, jl, kl, &
@@ -414,9 +414,9 @@ contains
 
   subroutine BCDataIsothermalWall(boco, bcVarArray, iBeg, iEnd, jBeg, jEnd)
     !
-    !       BCDataIsothermalWall tries to extract the wall temperature     
-    !       for the currently active boundary face, which is an isothermal 
-    !       viscous wall.                                                  
+    !       BCDataIsothermalWall tries to extract the wall temperature
+    !       for the currently active boundary face, which is an isothermal
+    !       viscous wall.
     !
     use constants
     use cgnsNames
@@ -470,12 +470,12 @@ contains
 
   subroutine BCDataSubsonicInflow(boco, bcVarArray, iBeg, iEnd, jBeg, jEnd, allTurbPresent)
     !
-    !       BCDataSubsonicInflow tries to extract the prescribed data      
-    !       for the currently active boundary face, which is a subsonic    
-    !       inflow. Either total conditions and velocity direction or the  
-    !       velocity and density can be prescribed. In the latter case the 
-    !       mass flow is prescribed, which is okay as long as the flow is  
-    !       not choked.                                                    
+    !       BCDataSubsonicInflow tries to extract the prescribed data
+    !       for the currently active boundary face, which is a subsonic
+    !       inflow. Either total conditions and velocity direction or the
+    !       velocity and density can be prescribed. In the latter case the
+    !       mass flow is prescribed, which is okay as long as the flow is
+    !       not choked.
     !
     use constants
     use cgnsNames
@@ -594,8 +594,8 @@ contains
 
     subroutine totalSubsonicInlet
       !
-      !         TotalSubsonicInlet converts the prescribed total           
-      !         conditions and velocity direction into a useable format.     
+      !         TotalSubsonicInlet converts the prescribed total
+      !         conditions and velocity direction into a useable format.
       !
       use constants
       use communication, only : adflow_comm_world
@@ -928,9 +928,9 @@ contains
 
   subroutine BCDataSubsonicOutflow(boco, bcVarArray, iBeg, iEnd, jBeg, jEnd)
     !
-    !       BCDataSubsonicOutflow tries to extract the static pressure     
-    !       for the currently active boundary face, which is a subsonic    
-    !       outflow boundary.                                              
+    !       BCDataSubsonicOutflow tries to extract the static pressure
+    !       for the currently active boundary face, which is a subsonic
+    !       outflow boundary.
     !
     use constants
     use cgnsNames
@@ -981,12 +981,12 @@ contains
 
   end subroutine BCDataSubsonicOutflow
 
-  subroutine BCDataSupersonicInflow(boco, bcVarArray, iBeg, iEnd, jBeg, jEnd, & 
+  subroutine BCDataSupersonicInflow(boco, bcVarArray, iBeg, iEnd, jBeg, jEnd, &
        allFlowPresent, allTurbPresent)
     !
-    !       BCDataSupersonicInflow tries to extract the primitive state    
-    !       vector for the currently active boundary face, which is a      
-    !       supersonic inflow.                                             
+    !       BCDataSupersonicInflow tries to extract the primitive state
+    !       vector for the currently active boundary face, which is a
+    !       supersonic inflow.
     !
     use constants
     use cgnsNames
@@ -1123,8 +1123,8 @@ contains
 
     subroutine prescribedSupersonicInlet
       !
-      !         prescribedSupersonicInlet sets the variables for this        
-      !         supersonic inlet to prescribed values.                       
+      !         prescribedSupersonicInlet sets the variables for this
+      !         supersonic inlet to prescribed values.
       !
       use section, only: sections
       implicit none
@@ -1295,10 +1295,10 @@ contains
   logical function setBCVarTurb(offset, boco, bcVarArray, &
        iBeg, iEnd, jBeg, jEnd, turbInlet)
     !
-    !       SetBCVarTurb sets the array for the turbulent halo data        
-    !       for inlet boundaries. This function returns .true. If all      
-    !       turbulence variables could be interpolated and .false.         
-    !       otherwise.                                                     
+    !       SetBCVarTurb sets the array for the turbulent halo data
+    !       for inlet boundaries. This function returns .true. If all
+    !       turbulence variables could be interpolated and .false.
+    !       otherwise.
     !
     use constants
     use flowVarRefState, only : nt1, nt2, muRef, Pref, rhoRef, wInf
@@ -1376,7 +1376,7 @@ contains
 
        else
 
-          ! Turbulent variable not present. Use the free stream data. 
+          ! Turbulent variable not present. Use the free stream data.
           do j=jBeg,jEnd
              do i=iBeg,iEnd
                 turbInlet(i,j,nn) = wInf(nn)
@@ -1398,11 +1398,11 @@ contains
        nVar, nFamMax)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
-    ! modifying the hand-written forward and reverse routines. 
+    ! modifying the hand-written forward and reverse routines.
     ! --------------------------------------------------------------
     use constants
     use cgnsNames
-    use blockPointers, only : BCData, nDom, nBocos, nBKGlobal, & 
+    use blockPointers, only : BCData, nDom, nBocos, nBKGlobal, &
          cgnsSubFace, BCType
     use sorting, only : famInList
     use utils, only : setPointers,terminate, char2str
@@ -1412,7 +1412,7 @@ contains
     !      Subroutine arguments.
     !
     character, dimension(nVar, maxCGNSNameLen), intent(in) :: bcdatanamesin
-    real(kind=realType), dimension(nVar), intent(in) :: bcDataIn    
+    real(kind=realType), dimension(nVar), intent(in) :: bcDataIn
     integer(kind=intType), dimension(nVar, nFamMax) :: famLists
     integer(kind=intType), intent(in) ::  sps , nVar, nFamMax
     !
@@ -1442,7 +1442,7 @@ contains
 
              ! Check if this surface should be included or not:
              nFam = famLists(iVar, 1)
-             famInclude: if (famInList(BCdata(j)%famID, famLists(iVar, 2:2+nFam-1))) then 
+             famInclude: if (famInList(BCdata(j)%famID, famLists(iVar, 2:2+nFam-1))) then
 
                 select case (BCType(j))
 
@@ -1453,10 +1453,10 @@ contains
                    call setBCVarNamesSupersonicInflow
                    call errorCheckbcDataNamesIn("SupersonicInflow", bcDataNamesIn)
                 case (SubsonicInflow)
-                   call setBCVarNamesSubsonicInflow 
+                   call setBCVarNamesSubsonicInflow
                    call errorCheckbcDataNamesIn("SubsonicInflow", bcDataNamesIn)
                 case (SubsonicOutflow)
-                   call setBCVarNamesSubsonicOutflow 
+                   call setBCVarNamesSubsonicOutflow
                    call errorCheckbcDataNamesIn("SubsonicOutflow", bcDataNamesIn)
                 case default
                    call terminate('setBCData', &
@@ -1473,15 +1473,15 @@ contains
     regionLoop: do iRegion=1, nActuatorRegions
        varLoop2: do iVar=1, nVar
           nFam = famLists(iVar, 1)
-          famInclude2: if (famInList(actuatorRegions(iRegion)%famID, famLists(iVar, 2:2+nFam-1))) then 
-             
+          famInclude2: if (famInList(actuatorRegions(iRegion)%famID, famLists(iVar, 2:2+nFam-1))) then
+
              ! Extract the name
              varName = char2str(bcDataNamesIn(iVar,:), maxCGNSNameLen)
              ! Only thrust is setup here.
-             if (trim(varName) == "Thrust") then 
+             if (trim(varName) == "Thrust") then
                 actuatorRegions(iRegion)%F = (/bcDataIn(iVar), zero, zero/)
              end if
-             
+
           end if famInclude2
        end do varLoop2
     end do regionLoop
@@ -1496,7 +1496,7 @@ contains
     ! -----------------------------------------------------------------------
     use constants
     use cgnsNames
-    use blockPointers, only : BCData, nDom, nBocos, nBKGlobal, & 
+    use blockPointers, only : BCData, nDom, nBocos, nBKGlobal, &
          cgnsSubFace, BCType
     use sorting, only : famInList
     use utils, only : setPointers_d, terminate
@@ -1535,7 +1535,7 @@ contains
 
              ! Check if this surface should be included or not:
              nFam = famLists(iVar, 1)
-             famInclude: if (famInList(BCdata(j)%famID, famLists(iVar, 2:2+nFam-1))) then 
+             famInclude: if (famInList(BCdata(j)%famID, famLists(iVar, 2:2+nFam-1))) then
 
                 select case (BCType(j))
 
@@ -1546,10 +1546,10 @@ contains
                    call setBCVarNamesSupersonicInflow
                    call errorCheckbcDataNamesIn("SupersonicInflow", bcDataNamesIn)
                 case (SubsonicInflow)
-                   call setBCVarNamesSubsonicInflow 
+                   call setBCVarNamesSubsonicInflow
                    call errorCheckbcDataNamesIn("SubsonicInflow", bcDataNamesIn)
                 case (SubsonicOutflow)
-                   call setBCVarNamesSubsonicOutflow 
+                   call setBCVarNamesSubsonicOutflow
                    call errorCheckbcDataNamesIn("SubsonicOutflow", bcDataNamesIn)
                 case default
                    call terminate('setBCData', &
@@ -1570,7 +1570,7 @@ contains
     ! -----------------------------------------------------------------------
     use constants
     use cgnsNames
-    use blockPointers, only : BCData, nDom, nBocos, nBKGlobal, & 
+    use blockPointers, only : BCData, nDom, nBocos, nBKGlobal, &
          cgnsSubFace, BCType
     use sorting, only : famInList
     use utils, only : setPointers_b, terminate
@@ -1611,7 +1611,7 @@ contains
 
              ! Check if this surface should be included or not:
              nFam = famLists(iVar, 1)
-             famInclude: if (famInList(BCdata(j)%famID, famLists(iVar, 2:2+nFam-1))) then 
+             famInclude: if (famInList(BCdata(j)%famID, famLists(iVar, 2:2+nFam-1))) then
 
                 select case (BCType(j))
 
@@ -1622,10 +1622,10 @@ contains
                    call setBCVarNamesSupersonicInflow
                    call errorCheckbcDataNamesIn("SupersonicInflow", bcDataNamesIn)
                 case (SubsonicInflow)
-                   call setBCVarNamesSubsonicInflow 
+                   call setBCVarNamesSubsonicInflow
                    call errorCheckbcDataNamesIn("SubsonicInflow", bcDataNamesIn)
                 case (SubsonicOutflow)
-                   call setBCVarNamesSubsonicOutflow 
+                   call setBCVarNamesSubsonicOutflow
                    call errorCheckbcDataNamesIn("SubsonicOutflow", bcDataNamesIn)
                 case default
                    call terminate('setBCData', &
@@ -1642,13 +1642,13 @@ contains
   subroutine extractFromDataSet(bcVarArray)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
-    ! modifying the hand-written forward and reverse routines. 
+    ! modifying the hand-written forward and reverse routines.
     ! --------------------------------------------------------------
     !
-    !       extractFromDataSet tries to extract and interpolate the        
-    !       variables in bcVarNames from the cgns data set.                
-    !       If successful the corresponding entry of bcVarPresent is       
-    !       set to .true., otherwise it is set to .false.                  
+    !       extractFromDataSet tries to extract and interpolate the
+    !       variables in bcVarNames from the cgns data set.
+    !       If successful the corresponding entry of bcVarPresent is
+    !       set to .true., otherwise it is set to .false.
     !
     use constants
     use cgnsNames
@@ -1748,10 +1748,10 @@ contains
     ! Manual Differentiation Warning: This routine is differentiated by hand.
     ! -----------------------------------------------------------------------
     !
-    !       extractFromDataSet tries to extract and interpolate the        
-    !       variables in bcVarNames from the cgns data set.                
-    !       If successful the corresponding entry of bcVarPresent is       
-    !       set to .true., otherwise it is set to .false.                  
+    !       extractFromDataSet tries to extract and interpolate the
+    !       variables in bcVarNames from the cgns data set.
+    !       If successful the corresponding entry of bcVarPresent is
+    !       set to .true., otherwise it is set to .false.
     !
     use constants
     use cgnsNames
@@ -1841,10 +1841,10 @@ contains
     ! Manual Differentiation Warning: This routine is differentiated by hand.
     ! -----------------------------------------------------------------------
     !
-    !       extractFromDataSet tries to extract and interpolate the        
-    !       variables in bcVarNames from the cgns data set.                
-    !       If successful the corresponding entry of bcVarPresent is       
-    !       set to .true., otherwise it is set to .false.                  
+    !       extractFromDataSet tries to extract and interpolate the
+    !       variables in bcVarNames from the cgns data set.
+    !       If successful the corresponding entry of bcVarPresent is
+    !       set to .true., otherwise it is set to .false.
     !
     use constants
     use cgnsNames
@@ -1920,7 +1920,7 @@ contains
           k = ind(1,m)
           l = ind(2,m)
           ! Accumulate. No need to zero.
-          dataSetd(k)%dirichletArrays(l)%dataArr(1) = & 
+          dataSetd(k)%dirichletArrays(l)%dataArr(1) = &
                dataSetd(k)%dirichletArrays(l)%dataArr(1) + sum(bcVarArrayd(:,:,m))
           bcvararrayd(:, :, m) = 0.0_8
        endif
@@ -1931,7 +1931,7 @@ contains
   subroutine insertToDataSet(bcDataNamesIn, bcDataIn)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
-    ! modifying the hand-written forward and reverse routines. 
+    ! modifying the hand-written forward and reverse routines.
     ! --------------------------------------------------------------
     use constants
     use utils, only: char2str
@@ -2123,9 +2123,9 @@ contains
 
   subroutine allocMemBCData
     !
-    !       allocMemBCData allocates the memory for the prescribed         
-    !       boundary data for all multigrid levels and all spectral        
-    !       solutions for all blocks.                                      
+    !       allocMemBCData allocates the memory for the prescribed
+    !       boundary data for all multigrid levels and all spectral
+    !       solutions for all blocks.
     !
     use constants
     use blockPointers, only : BCData, flowDoms, nBocos, nDom, BCType
@@ -2175,7 +2175,7 @@ contains
 
                 ! Note: iBlank/delta are cell based, but uses the node
                 ! numbers to guarantee a halo exists. These must be
-                ! allocated for all boundary conditions. 
+                ! allocated for all boundary conditions.
                 allocate(BCData(mm)%iBlank(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
                      BCData(mm)%delta(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
                      BCData(mm)%deltaNode(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
@@ -2193,9 +2193,9 @@ contains
                    allocate(BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), &
                         BCData(mm)%uSlipALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd,3), &
                         BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                        BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &                         
+                        BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                        BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), & 
+                        BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Fp(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd, 3), &
                         BCData(mm)%Fv(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd, 3), &
                         BCData(mm)%area(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd), &
@@ -2213,15 +2213,15 @@ contains
                         BCData(mm)%uSlipALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd,3), &
                         BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                        BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &                         
+                        BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                        BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), & 
+                        BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%cellHeatFlux(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%nodeHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                         BCData(mm)%Fp(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd, 3), &
                         BCData(mm)%Fv(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd, 3), &
                         BCData(mm)%area(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd), &
-                        
+
                         stat=ierr)
                    if(ierr /= 0)                      &
                         call terminate("allocMemBCData", &
@@ -2235,9 +2235,9 @@ contains
                    allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%rFaceALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                        BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &                         
+                        BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                        BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), & 
+                        BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Fp(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd, 3), &
                         BCData(mm)%Fv(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd, 3), &
                         BCData(mm)%area(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd), &
@@ -2381,7 +2381,7 @@ contains
 
                 case (DomainInterfaceRhoUVW)
 
-                   ! Domain interface with prescribed density and 
+                   ! Domain interface with prescribed density and
                    ! velocities, i.e. mass flow is prescribed. Allocate
                    ! the memory for the variables needed.
 
@@ -2448,7 +2448,7 @@ contains
 
                 case (domainInterfaceRho)
 
-                   ! Domain interface with prescribed density. 
+                   ! Domain interface with prescribed density.
                    ! Allocate the memory for the density.
 
                    allocate(BCData(mm)%rho(iBeg:iEnd,jBeg:jEnd), &
@@ -2470,9 +2470,9 @@ contains
 
   subroutine initBCData
     !
-    !       initBCData allocates and initializes the arrays BCData for     
-    !       all boundary subfaces on all grid levels for all spectral      
-    !       solutions.                                                     
+    !       initBCData allocates and initializes the arrays BCData for
+    !       all boundary subfaces on all grid levels for all spectral
+    !       solutions.
     !
     use constants
     use blockPointers, only : flowDoms, BCData, nDom, nBocos, inBeg, inEnd, &
@@ -2615,20 +2615,20 @@ contains
 
   end subroutine initBCData
 
-  ! ------------------------------------------ 
+  ! ------------------------------------------
   !             Update routines
-  ! ------------------------------------------ 
+  ! ------------------------------------------
 
 
   subroutine setBCDataFineGrid(initializationPart)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
-    ! modifying the hand-written forward and reverse routines. 
+    ! modifying the hand-written forward and reverse routines.
     ! --------------------------------------------------------------
     !
-    !       setBCDataFineGrid extracts the boundary condition data from    
-    !       the cgnsGrid and stores it in useable form in the BCData       
-    !       arrays of the currently finest grid, i.e. groundLevel.         
+    !       setBCDataFineGrid extracts the boundary condition data from
+    !       the cgnsGrid and stores it in useable form in the BCData
+    !       arrays of the currently finest grid, i.e. groundLevel.
     !
     use constants
     use blockPointers, only : BCData, BCType, nBKGlobal, nBocos, nDom, cgnsSubFace
@@ -2696,7 +2696,7 @@ contains
              jBeg = BCData(j)%jcBeg; jEnd = BCData(j)%jcEnd
 
              ! Allocate the bcVarArray to the maximum size it could
-             ! possibly be *in the last dimension*. 
+             ! possibly be *in the last dimension*.
              allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVarMax))
 
              ! Determine the boundary condition we are having here and
@@ -2895,9 +2895,9 @@ contains
     ! Manual Differentiation Warning: This routine is differentiated by hand.
     ! -----------------------------------------------------------------------
     !
-    !       setBCDataFineGrid extracts the boundary condition data from    
-    !       the cgnsGrid and stores it in useable form in the BCData       
-    !       arrays of the currently finest grid, i.e. groundLevel.         
+    !       setBCDataFineGrid extracts the boundary condition data from
+    !       the cgnsGrid and stores it in useable form in the BCData
+    !       arrays of the currently finest grid, i.e. groundLevel.
     !
     use constants
     use blockPointers, only : BCData, BCType, nBKGlobal, nBocos, nDom, cgnsSubFace
@@ -2951,7 +2951,7 @@ contains
              jBeg = BCData(j)%jcBeg; jEnd = BCData(j)%jcEnd
 
              ! Allocate the bcVarArray to the maximum size it could
-             ! possibly be *in the last dimension*. 
+             ! possibly be *in the last dimension*.
              allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVarMax), &
                   bcVarArrayd(iBeg:iEnd,jBeg:jEnd,nbcVarMax))
              ! Determine the boundary condition we are having here and
@@ -2966,13 +2966,13 @@ contains
              case (SupersonicInflow)
                 call setBCVarNamesSupersonicInflow
                 call extractFromDataSet_d(bcVarArray, bcVarArrayd)
-                call BCDataSupersonicInflow_d(j, bcVarArray, bcVarArrayd, iBeg, iEnd, jBeg, jEnd, & 
+                call BCDataSupersonicInflow_d(j, bcVarArray, bcVarArrayd, iBeg, iEnd, jBeg, jEnd, &
                      allFlowSupersonicInflow, allTurbSupersonicInflow)
 
              case (SubsonicInflow)
                 call setBCVarNamesSubsonicInflow
                 call extractFromDataSet_d(bcVarArray, bcVarArrayd)
-                call BCDataSubsonicInflow_d(j, bcVarArray, bcVarArrayd, iBeg, iEnd, jBeg, jEnd, & 
+                call BCDataSubsonicInflow_d(j, bcVarArray, bcVarArrayd, iBeg, iEnd, jBeg, jEnd, &
                      allTurbSubsonicInflow)
 
              case (SubsonicOutflow)
@@ -2992,9 +2992,9 @@ contains
     ! Manual Differentiation Warning: This routine is differentiated by hand.
     ! -----------------------------------------------------------------------
     !
-    !       setBCDataFineGrid extracts the boundary condition data from    
-    !       the cgnsGrid and stores it in useable form in the BCData       
-    !       arrays of the currently finest grid, i.e. groundLevel.         
+    !       setBCDataFineGrid extracts the boundary condition data from
+    !       the cgnsGrid and stores it in useable form in the BCData
+    !       arrays of the currently finest grid, i.e. groundLevel.
     !
     use constants
     use blockPointers, only : BCData, BCType, nBKGlobal, nBocos, nDom, cgnsSubFace
@@ -3046,7 +3046,7 @@ contains
              jBeg = BCData(j)%jcBeg; jEnd = BCData(j)%jcEnd
 
              ! Allocate the bcVarArray to the maximum size it could
-             ! possibly be *in the last dimension*. 
+             ! possibly be *in the last dimension*.
              allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd, nbcVarMax), &
                   bcVarArrayd(iBeg:iEnd,jBeg:jEnd, nbcVarMax))
 
@@ -3089,9 +3089,9 @@ contains
 #endif
   subroutine setBCDataCoarseGrid
     !
-    !       setBCDataCoarseGrid determines the boundary condition info     
-    !       on the coarse grid from the known info on the fine grid. It    
-    !       will be stored in the BCData arrays of flowDoms.               
+    !       setBCDataCoarseGrid determines the boundary condition info
+    !       on the coarse grid from the known info on the fine grid. It
+    !       will be stored in the BCData arrays of flowDoms.
     !
     use constants
     use blockPointers, only : BCFaceID, BCData, nDom, flowDoms, il, jl, kl, &
@@ -3254,9 +3254,9 @@ contains
 
     subroutine interpolateBcData(varCoarse, varFine)
       !
-      !         InterpolateBcData interpolates the given data array from   
-      !         the fine to the coarse grid. Of course only if the fine      
-      !         array is associated with some data.                          
+      !         InterpolateBcData interpolates the given data array from
+      !         the fine to the coarse grid. Of course only if the fine
+      !         array is associated with some data.
       !
       use constants
       implicit none
@@ -3320,9 +3320,9 @@ contains
     subroutine interpolateBCVecData(varCoarse, varFine, &
          nstart, nend)
       !
-      !         interpolateBCVecData interpolates the given data array       
-      !         from the fine to the coarse grid. Of course only if the fine 
-      !         array is associated with some data.                          
+      !         interpolateBCVecData interpolates the given data array
+      !         from the fine to the coarse grid. Of course only if the fine
+      !         array is associated with some data.
       !
       implicit none
       !
@@ -3407,13 +3407,13 @@ contains
     ! do j=1, size(bcDataNamesIn, 1)
     !    varAllowed = .false.
     !    varName = char2str(bcDataNamesIn(j,:), maxCGNSNameLen)
-    !    do i=1,nbcVar 
+    !    do i=1,nbcVar
     !       if( bcVarPresent(i) .and. bcVarNames(i) == varname) then
-    !          varAllowed = .true. 
+    !          varAllowed = .true.
     !          exit
     !       end if
     !    end do
-    !    if (.not. varAllowed) then 
+    !    if (.not. varAllowed) then
     !       print *,'who the fuck is calling this'
     !       call terminate(setSubroutineName, trim(varName)//" is not a valid variable for this boundary condition")
     !    end if

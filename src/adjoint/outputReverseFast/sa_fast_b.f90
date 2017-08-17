@@ -3,7 +3,7 @@
 !
 ! this module contains the source code related to the sa turbulence
 ! model. it is slightly more modularized than the original which makes
-! performing reverse mode ad simplier. 
+! performing reverse mode ad simplier.
 module sa_fast_b
   use constants
   implicit none
@@ -21,9 +21,10 @@ contains
 !   plus diff mem management of: w:in rlv:in scratch:in
   subroutine sasource_fast_b()
 !
-!  source terms.                                                  
-!  determine the source term and its derivative w.r.t. nutilde    
-!  for all internal cells of the block.                           
+!  source terms.
+!  determine the source term and its derivative w.r.t. nutilde
+!  for all internal cells of the block.
+!  remember that the sa field variable nutilde = w(i,j,k,itu1)
     use blockpointers
     use constants
     use paramturb
@@ -439,9 +440,10 @@ branch = myIntStack(myIntPtr)
   end subroutine sasource_fast_b
   subroutine sasource()
 !
-!  source terms.                                                  
-!  determine the source term and its derivative w.r.t. nutilde    
-!  for all internal cells of the block.                           
+!  source terms.
+!  determine the source term and its derivative w.r.t. nutilde
+!  for all internal cells of the block.
+!  remember that the sa field variable nutilde = w(i,j,k,itu1)
     use blockpointers
     use constants
     use paramturb
@@ -630,9 +632,9 @@ branch = myIntStack(myIntPtr)
 !   plus diff mem management of: w:in rlv:in scratch:in
   subroutine saviscous_fast_b()
 !
-!  viscous term.                                                  
-!  determine the viscous contribution to the residual             
-!  for all internal cells of the block.                           
+!  viscous term.
+!  determine the viscous contribution to the residual
+!  for all internal cells of the block.
     use blockpointers
     use paramturb
     implicit none
@@ -932,6 +934,7 @@ branch = myIntStack(myIntPtr)
       za = half*(sk(i, j, k, 3)+sk(i, j, k-1, 3))*voli
       ttm = xm*xa + ym*ya + zm*za
       ttp = xp*xa + yp*ya + zp*za
+! ttm and ttp ~ 1/deltax^2
 ! computation of the viscous terms in zeta-direction; note
 ! that cross-derivatives are neglected, i.e. the mesh is
 ! assumed to be orthogonal.
@@ -947,8 +950,10 @@ branch = myIntStack(myIntPtr)
       cnud = -(rsacb2*w(i, j, k, itu1)*cb3inv)
       cam = ttm*cnud
       cap = ttp*cnud
+! compute nutilde at the faces
       nutm = half*(w(i, j, k-1, itu1)+w(i, j, k, itu1))
       nutp = half*(w(i, j, k+1, itu1)+w(i, j, k, itu1))
+! compute nu at the faces
       nu = rlv(i, j, k)/w(i, j, k, irho)
       num = half*(rlv(i, j, k-1)/w(i, j, k-1, irho)+nu)
       nup = half*(rlv(i, j, k+1)/w(i, j, k+1, irho)+nu)
@@ -1034,9 +1039,9 @@ branch = myIntStack(myIntPtr)
   end subroutine saviscous_fast_b
   subroutine saviscous()
 !
-!  viscous term.                                                  
-!  determine the viscous contribution to the residual             
-!  for all internal cells of the block.                           
+!  viscous term.
+!  determine the viscous contribution to the residual
+!  for all internal cells of the block.
     use blockpointers
     use paramturb
     implicit none
@@ -1056,7 +1061,7 @@ branch = myIntStack(myIntPtr)
     cw36 = rsacw3**6
     cb3inv = one/rsacb3
 !
-!       viscous terms in k-direction.                                  
+!       viscous terms in k-direction.
 !
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
@@ -1078,6 +1083,7 @@ branch = myIntStack(myIntPtr)
       za = half*(sk(i, j, k, 3)+sk(i, j, k-1, 3))*voli
       ttm = xm*xa + ym*ya + zm*za
       ttp = xp*xa + yp*ya + zp*za
+! ttm and ttp ~ 1/deltax^2
 ! computation of the viscous terms in zeta-direction; note
 ! that cross-derivatives are neglected, i.e. the mesh is
 ! assumed to be orthogonal.
@@ -1093,8 +1099,10 @@ branch = myIntStack(myIntPtr)
       cnud = -(rsacb2*w(i, j, k, itu1)*cb3inv)
       cam = ttm*cnud
       cap = ttp*cnud
+! compute nutilde at the faces
       nutm = half*(w(i, j, k-1, itu1)+w(i, j, k, itu1))
       nutp = half*(w(i, j, k+1, itu1)+w(i, j, k, itu1))
+! compute nu at the faces
       nu = rlv(i, j, k)/w(i, j, k, irho)
       num = half*(rlv(i, j, k-1)/w(i, j, k-1, irho)+nu)
       nup = half*(rlv(i, j, k+1)/w(i, j, k+1, irho)+nu)
@@ -1117,7 +1125,7 @@ branch = myIntStack(myIntPtr)
 &       , itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j, k+1, itu1)
     end do
 !
-!       viscous terms in j-direction.                                  
+!       viscous terms in j-direction.
 !
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
@@ -1178,7 +1186,7 @@ branch = myIntStack(myIntPtr)
 &       , itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j+1, k, itu1)
     end do
 !
-!       viscous terms in i-direction.                                  
+!       viscous terms in i-direction.
 !
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
@@ -1246,12 +1254,12 @@ branch = myIntStack(myIntPtr)
 !   plus diff mem management of: dw:in scratch:in
   subroutine saresscale_fast_b()
 !
-!  multiply the residual by the volume and store this in dw; this 
+!  multiply the residual by the volume and store this in dw; this
 ! * is done for monitoring reasons only. the multiplication with the
 ! * volume is present to be consistent with the flow residuals; also
-!  the negative value is taken, again to be consistent with the   
+!  the negative value is taken, again to be consistent with the
 ! * flow equations. also multiply by iblank so that no updates occur
-!  in holes or the overset boundary.                              
+!  in holes or the overset boundary.
     use blockpointers
     implicit none
 ! local variables
@@ -1279,12 +1287,12 @@ branch = myIntStack(myIntPtr)
   end subroutine saresscale_fast_b
   subroutine saresscale()
 !
-!  multiply the residual by the volume and store this in dw; this 
+!  multiply the residual by the volume and store this in dw; this
 ! * is done for monitoring reasons only. the multiplication with the
 ! * volume is present to be consistent with the flow residuals; also
-!  the negative value is taken, again to be consistent with the   
+!  the negative value is taken, again to be consistent with the
 ! * flow equations. also multiply by iblank so that no updates occur
-!  in holes or the overset boundary.                              
+!  in holes or the overset boundary.
     use blockpointers
     implicit none
 ! local variables

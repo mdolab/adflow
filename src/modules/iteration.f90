@@ -1,9 +1,9 @@
        module iteration
 !
-!       This module contains the iteration parameters mainly used in   
-!       solver.                                                        
+!       This module contains the iteration parameters mainly used in
+!       solver.
 !
-       use constants, only: intType, realType
+       use constants, only: intType, realType, alwaysRealType
        implicit none
 
        ! groundLevel:  Current ground level of the computation. Needed
@@ -63,9 +63,9 @@
        !                   only happen for a multi-disciplinary,
        !                   usually aero-elastic problem.
        ! changingOverset:  Whether or not the overset connectivity needs
-       !                   to be updated at each time step, due to 
+       !                   to be updated at each time step, due to
        !                   moving or deforming grids.
- 
+
        logical :: standAloneMode, changing_Grid, deforming_Grid
        logical :: changingOverset
 
@@ -91,10 +91,11 @@
        ! is this value that is checked again nCycles for doing too
        ! much work.
        integer(kind=intType) :: approxTotalIts
-       
-       ! Variable for monitoring the current CFL depending on the type
-       ! of iteration
-       real(kind=realTYpe) :: CFLMonitor
+
+       ! Variables for monitoring the current CFL and step depending
+       ! on the type of iteration
+       real(kind=realType) :: CFLMonitor
+       real(kind=alwaysRealType) :: stepMonitor
 
        ! Added by HDN
        ! nALEMeshes:                Number of ALE levels for intermediate mesh
@@ -120,7 +121,7 @@
 
        logical, dimension(:), allocatable :: oldSolWritten
 
-       
+
        ! Variables for monitoring the residuals
        real(kind=realType) :: totalR0, totalRStart, totalRFinal, totalR
        real(kind=realType) :: rhoRes0, rhoResStart, rhoResFinal, rhoRes

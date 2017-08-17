@@ -2,7 +2,7 @@
 ! preconditioner based on our own memory managment and matrix vector
 ! operation. The idea is that this could be used to form a DADI based
 ! preconditioner for the NK/adjoint systems.  It is experiemental and
-! not production ready at all. 
+! not production ready at all.
 
 module fortranPC
   contains
@@ -26,7 +26,7 @@ module fortranPC
        do sps=1, nTimeIntervalsSpectral
           call setPointers(nn, level, sps)
 
-          if (.not. associated(flowDoms(nn, level, sps)%PCMat)) then 
+          if (.not. associated(flowDoms(nn, level, sps)%PCMat)) then
 
              allocate(flowDoms(nn, level, sps)%PCMat(nw, 7*nw, 2:il, 2:jl, 2:kl))
 
@@ -70,12 +70,12 @@ module fortranPC
     ! currently not used anywhere, but it become useful in the future.
     use block, only : flowDomsd, flowDoms
     use blockPointers
-    use inputDiscretization 
-    use inputTimeSpectral 
+    use inputDiscretization
+    use inputTimeSpectral
     use inputPhysics
-    use iteration         
-    use flowVarRefState     
-    use inputAdjoint       
+    use iteration
+    use flowVarRefState
+    use inputAdjoint
     use stencils
     use diffSizes
     use communication
@@ -146,7 +146,7 @@ module fortranPC
     stencil => euler_pc_stencil
     n_stencil = N_euler_pc
 
-    ! Very important to use only Second-Order dissipation for PC 
+    ! Very important to use only Second-Order dissipation for PC
     lumpedDiss=.True.
     secondOrdSave = secondOrd
     secondOrd = .False.
@@ -157,9 +157,9 @@ module fortranPC
     ! If we want to do the matrix on a coarser level, we must first
     ! restrict the fine grid solutions, since it is possible the
     ! NKsolver was used an the coarse grid solutions are (very!) out of
-    ! date. 
+    ! date.
 
-    ! Assembling matrix on coarser levels is not entirely implemented yet. 
+    ! Assembling matrix on coarser levels is not entirely implemented yet.
     currentLevel = level
     groundLevel = level
 
@@ -174,9 +174,9 @@ module fortranPC
     rkStage = 0
 
     ! Determine if we want to use frozenTurbulent Adjoint
-    resetToRANS = .False. 
+    resetToRANS = .False.
     if (frozenTurb .and. equations == RANSEquations) then
-       equations = NSEquations 
+       equations = NSEquations
        resetToRANS = .True.
     end if
 
@@ -184,12 +184,12 @@ module fortranPC
     !  derivatives and copy any required reference values:
 
     call allocPCMem(level)
-    if (.not. derivVarsAllocated .and. useAD) then 
+    if (.not. derivVarsAllocated .and. useAD) then
        call alloc_derivative_values(level)
     end if
 
     ! For AD the initial seeds must all be zeroed.
-    if (useAD) then 
+    if (useAD) then
        do nn=1, nDom
           do sps=1, nTimeIntervalsSpectral
              call setPointers(nn, level, sps)
@@ -202,7 +202,7 @@ module fortranPC
        do sps=1, nTimeIntervalsSpectral
           call setPointers(nn, level, sps)
 
-          ! Allocate temporary space only needed while assembling. 
+          ! Allocate temporary space only needed while assembling.
           allocate(flowDoms(nn, 1, sps)%dw_deriv(2:il, 2:jl, 2:kl, 1:nw, 1:nw), stat=ierr)
           call EChk(ierr,__FILE__,__LINE__)
 
@@ -216,7 +216,7 @@ module fortranPC
           call EChk(ierr,__FILE__,__LINE__)
 
           ! Only need 1 set of colors on the first sps instance.
-          if (sps == 1) then 
+          if (sps == 1) then
              allocate(flowDoms(nn, 1, 1)%color(0:ib, 0:jb, 0:kb), stat=ierr)
              call EChk(ierr,__FILE__,__LINE__)
           end if
@@ -232,7 +232,7 @@ module fortranPC
     call referenceShockSensor
 
     ! For FD, the initial reference values must be computed and stored.
-    if (.not. useAD) then 
+    if (.not. useAD) then
        call setFDReference(level)
     end if
 
@@ -249,7 +249,7 @@ module fortranPC
 
        spectralLoop: do sps=1, nTimeIntervalsSpectral
           ! Set pointers and (possibly derivative pointers)
-          if (useAD) then 
+          if (useAD) then
              call setPointers_d(nn, level, sps)
           else
              call setPointers(nn, level, sps)
@@ -267,7 +267,7 @@ module fortranPC
 
                 ! Reset All States and possibe AD seeds
                 do sps2 = 1, nTimeIntervalsSpectral
-                   if (.not. useAD) then 
+                   if (.not. useAD) then
                       do ll=1,nw
                          do k=0,kb
                             do j=0,jb
@@ -292,7 +292,7 @@ module fortranPC
                             if (useAD) then
                                flowDomsd(nn, 1, sps)%w(i, j, k, l) = one
                             else
-                               if (l <= nwf) then 
+                               if (l <= nwf) then
                                   w(i, j, k, l) = w(i, j, k, l) + delta_x
                                else
                                   w(i, j, k, l) = w(i, j, k, l) + delta_x_turb
@@ -303,7 +303,7 @@ module fortranPC
                    end do
                 end do
 
-                ! Run Block-based residual 
+                ! Run Block-based residual
                 if (useAD) then
 #ifndef USE_COMPLEX
                    call block_res_state_d(nn, sps)
@@ -315,14 +315,14 @@ module fortranPC
                    call block_res(nn, sps)
                 end if
 
-                ! Set the computed residual in dw_deriv. If using FD, 
+                ! Set the computed residual in dw_deriv. If using FD,
                 ! actually do the FD calculation if AD, just copy out dw
                 ! in flowdomsd
 
                 ! Compute/Copy all derivatives
                 do sps2 = 1, nTimeIntervalsSpectral
                    do ll=1, nState
-                      do k=2, kl 
+                      do k=2, kl
                          do j=2, jl
                             do i=2, il
                                if (useAD) then
@@ -334,7 +334,7 @@ module fortranPC
                                      ! instance, we've computed the spatial
                                      ! contribution so subtrace dwtmp
 
-                                     if (l <= nwf) then 
+                                     if (l <= nwf) then
                                         flowDoms(nn, 1, sps2)%dw_deriv(i, j, k, ll, l) = &
                                              one_over_dx * &
                                              (flowDoms(nn, 1, sps2)%dw(i, j, k, ll) - &
@@ -372,33 +372,33 @@ module fortranPC
                    iLoop: do i=0, ib
                       if (flowdoms(nn, 1, 1)%color(i, j, k) == icolor .and. globalCell(i,j,k)>=0) then
 
-                         ! Diagonal block is easy. 
+                         ! Diagonal block is easy.
                          if (onBlock(i, j, k)) then
                             PCMat(:, 1:nw, i, j, k) = flowDoms(nn, 1, sps)%dw_deriv(i, j, k, 1:nstate, 1:nstate)
                          end if
 
 
-                         if (onBlock(i-1, j, k)) then 
+                         if (onBlock(i-1, j, k)) then
                             PCMat(:, 2*nw+1:3*nw, i-1, j, k) = flowDoms(nn, 1, sps)%dw_deriv(i-1, j, k, 1:nstate, 1:nstate)
                          end if
 
-                         if (onBlock(i+1, j, k)) then 
+                         if (onBlock(i+1, j, k)) then
                             PCMat(:, 1*nw+1:2*nw, i+1, j, k) = flowDoms(nn, 1, sps)%dw_deriv(i+1, j, k, 1:nstate, 1:nstate)
                          end if
 
-                         if (onBlock(i, j-1, k)) then 
+                         if (onBlock(i, j-1, k)) then
                             PCMat(:, 4*nw+1:5*nw, i, j-1, k) = flowDoms(nn, 1, sps)%dw_deriv(i, j-1, k, 1:nstate, 1:nstate)
                          end if
 
-                         if (onBlock(i, j+1, k)) then 
+                         if (onBlock(i, j+1, k)) then
                             PCMat(:, 3*nw+1:4*nw, i, j+1, k) = flowDoms(nn, 1, sps)%dw_deriv(i, j+1, k, 1:nstate, 1:nstate)
                          end if
 
-                         if (onBlock(i, j, k-1)) then 
+                         if (onBlock(i, j, k-1)) then
                             PCMat(:, 6*nw+1:7*nw, i, j, k-1) = flowDoms(nn, 1, sps)%dw_deriv(i, j, k-1, 1:nstate, 1:nstate)
                          end if
 
-                         if (onBlock(i, j, k+1)) then 
+                         if (onBlock(i, j, k+1)) then
                             PCMat(:, 5*nw+1:6*nw, i, j, k+1) = flowDoms(nn, 1, sps)%dw_deriv(i, j, k+1, 1:nstate, 1:nstate)
                          end if
                       end if
@@ -412,8 +412,8 @@ module fortranPC
     ! Maybe we can do something useful while the communication happens?
     ! Deallocate the temporary memory used in this routine.
 
-    ! Deallocate and reset values 
-    if (.not. useAD) then 
+    ! Deallocate and reset values
+    if (.not. useAD) then
        call resetFDReference(level)
     end if
 
@@ -424,11 +424,11 @@ module fortranPC
                flowDoms(nn, 1, sps)%wTmp, &
                flowDoms(nn, 1, sps)%dwTmp, &
                flowDoms(nn, 1, sps)%dwTmp2)
-          if (sps == 1) then 
+          if (sps == 1) then
              deallocate(flowDoms(nn, 1, sps)%color)
           end if
 
-          ! Deallocate the shock sensor refernce if usePC 
+          ! Deallocate the shock sensor refernce if usePC
           deallocate(flowDoms(nn, 1, sps)%shockSensor)
        end do
     end do
@@ -438,7 +438,7 @@ module fortranPC
     secondOrd = secondOrdSave
 
     ! Reset the correct equation parameters if we were useing the frozen
-    ! Turbulent 
+    ! Turbulent
     if (resetToRANS) then
        equations = RANSEquations
     end if
@@ -454,8 +454,8 @@ module fortranPC
       integer(kind=intType), intent(in) :: i, j, k
       logical :: onBlock
 
-      if (i >= 2 .and. i <= il .and. j >= 2 .and. j<= jl .and. k >= 2 .and. k <= kl) then 
-         onBlock = .True. 
+      if (i >= 2 .and. i <= il .and. j >= 2 .and. j<= jl .and. k >= 2 .and. k <= kl) then
+         onBlock = .True.
       else
          onBlock = .False.
       end if
@@ -517,7 +517,7 @@ module fortranPC
     timeA = mpi_wtime()
     call matMult(drdwpret, psi_like1, psi_like2, ierr)
     call EChk(ierr,__FILE__,__LINE__)
-    timeB =mpi_wtime() 
+    timeB =mpi_wtime()
 
     print *,'Petsc Time:', myid, timeB-timeA
     call vecNorm(psi_like2, NORM_2, val, ierr)
@@ -566,13 +566,13 @@ module fortranPC
                    i_D_fact(:, nw*ii+1:nw*(ii+1), j, k) = PCMat(:,      1:1*nw, i, j, k)
                    ii = ii + 1
 
-                   if (i > 2) then 
-                      i_L_fact(:, nw*jj+1:nw*(jj+1), j, k) = PCMat(:, 1*nw+1:2*nw, i, j, k) 
+                   if (i > 2) then
+                      i_L_fact(:, nw*jj+1:nw*(jj+1), j, k) = PCMat(:, 1*nw+1:2*nw, i, j, k)
                       jj = jj + 1
                    end if
 
-                   if (i < il) then 
-                      i_U_fact(:, nw*kk+1:nw*(kk+1), j, k) = PCMat(:, 2*nw+1:3*nw, i, j, k) 
+                   if (i < il) then
+                      i_U_fact(:, nw*kk+1:nw*(kk+1), j, k) = PCMat(:, 2*nw+1:3*nw, i, j, k)
                       kk = kk + 1
                    end if
 
@@ -597,13 +597,13 @@ module fortranPC
                    j_D_fact(:, nw*ii+1:nw*(ii+1), i, k) = PCMat(:,      1:1*nw, i, j, k)
                    ii = ii + 1
 
-                   if (j > 2) then 
-                      j_L_fact(:, nw*jj+1:nw*(jj+1), i, k) = PCMat(:, 3*nw+1:4*nw, i, j, k) 
+                   if (j > 2) then
+                      j_L_fact(:, nw*jj+1:nw*(jj+1), i, k) = PCMat(:, 3*nw+1:4*nw, i, j, k)
                       jj = jj + 1
                    end if
 
-                   if (j < jl) then 
-                      j_U_fact(:, nw*kk+1:nw*(kk+1), i, k) = PCMat(:, 4*nw+1:5*nw, i, j, k) 
+                   if (j < jl) then
+                      j_U_fact(:, nw*kk+1:nw*(kk+1), i, k) = PCMat(:, 4*nw+1:5*nw, i, j, k)
                       kk =kk + 1
                    end if
                 end do
@@ -620,20 +620,20 @@ module fortranPC
              do i=2, il
 
                 ! Copy data from PCMat
-                ii = 0 
+                ii = 0
                 jj = 0
                 kk = 0
                 do k=2, kl
                    k_D_fact(:, nw*ii+1:nw*(ii+1), i, j) = PCMat(:,      1:1*nw, i, j, k)
                    ii = ii + 1
 
-                   if (k > 2) then 
-                      k_L_fact(:, nw*jj+1:nw*(jj+1), i, j) = PCMat(:, 5*nw+1:6*nw, i, j, k) 
+                   if (k > 2) then
+                      k_L_fact(:, nw*jj+1:nw*(jj+1), i, j) = PCMat(:, 5*nw+1:6*nw, i, j, k)
                       jj = jj + 1
                    end if
 
-                   if (k < kl) then 
-                      k_U_fact(:, nw*kk+1:nw*(kk+1), i, j) = PCMat(:, 6*nw+1:7*nw, i, j, k) 
+                   if (k < kl) then
+                      k_U_fact(:, nw*kk+1:nw*(kk+1), i, j) = PCMat(:, 6*nw+1:7*nw, i, j, k)
                       kk =kk + 1
                    end if
                 end do
@@ -657,11 +657,11 @@ module fortranPC
     use constants
     use communication
     use blockPointers
-    use iteration         
-    use flowVarRefState     
-    use inputAdjoint       
+    use iteration
+    use flowVarRefState
+    use inputAdjoint
     use ADjointVars
-    use inputTimeSpectral  
+    use inputTimeSpectral
     use utils, only : EChk, setPointers
     implicit none
 #define PETSC_AVOID_MPIF_H
@@ -670,7 +670,7 @@ module fortranPC
 
     ! PETSc Arguments
     Mat   A
-    Vec   vecX, vecY 
+    Vec   vecX, vecY
     integer(kind=intType) ::ierr, i, j, k, l, nn, sps, ii
     real(kind=realType) :: sum1, sum2, sum3, sum4, sum5
     real(kind=realType) :: x1, x2, x3, x4, x5
@@ -700,14 +700,14 @@ module fortranPC
                    rhs(1*nw+1:2*nw) = PCVec1(:, i-1, j, k)
                    rhs(2*nw+1:3*nw) = PCVec1(:, i+1, j, k)
                    rhs(3*nw+1:4*nw) = PCVec1(:, i, j-1, k)
-                   rhs(4*nw+1:5*nw) = PCVec1(:, i, j+1, k)             
+                   rhs(4*nw+1:5*nw) = PCVec1(:, i, j+1, k)
                    rhs(5*nw+1:6*nw) = PCVec1(:, i, j, k-1)
                    rhs(6*nw+1:7*nw) = PCVec1(:, i, j, k+1)
 
                    ! Call blass mat-vec. We can dump the result directly
                    ! into yPtr. There doesn't appear to be much
                    ! difference between the fortran matmul and blas for
-                   ! these sized operations. 
+                   ! these sized operations.
 
                    !yPtr(ii:ii+nw) = matmul(PCMat(:, :, i, j, k), rhs)
                    call DGEMV('n', nw, nw*7, one, PCMat(:, :, i, j, k), nw, rhs, 1, zero, yPtr(ii), 1)
@@ -741,14 +741,14 @@ module fortranPC
 
     ! PETSc Arguments
     PC   pc
-    Vec   vecX, vecY 
+    Vec   vecX, vecY
     integer(kind=intType) :: ierr, info, i, j, k, ii, nn, sps, ipiv(nw)
     real(kind=realType) :: blk(nw, nw), rhs(nw)
     real(kind=realType), pointer :: yPtr(:)
 
 
     ! First copy X to Y. This way we will continually transform vecY
-    ! into the preconditioned vector.  
+    ! into the preconditioned vector.
     call vecCopy(vecX, vecY, ierr)
 
     call VecGetArrayF90(vecY, yPtr, ierr)
@@ -766,7 +766,7 @@ module fortranPC
     use constants
     use communication
     use blockPointers
-    use inputTimeSpectral  
+    use inputTimeSpectral
     use flowVarRefState
     use utils, only : EChk, setPointers
     implicit none

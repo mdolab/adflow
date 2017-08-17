@@ -1,7 +1,7 @@
 module outputMod
   !
-  !       This local module contains variables used when writing the     
-  !       grid and solution files.                                       
+  !       This local module contains variables used when writing the
+  !       grid and solution files.
   !
   use constants, only : intType, maxStringLen
   implicit none
@@ -14,7 +14,7 @@ module outputMod
   integer(kind=intType), dimension(:), allocatable :: nblocksCGNSblock
   integer(kind=intType), dimension(:), allocatable :: blocksCGNSblock
 
-  ! nDomPerProc(0:nProc):  The number of flow domains for each 
+  ! nDomPerProc(0:nProc):  The number of flow domains for each
   !                        processor in cumulative storage format.
   ! IDsBegOrAllDoms(4,..): The CGNS block numbers and the beginning
   !                        indices for all of the flow domains on
@@ -62,13 +62,13 @@ module outputMod
 
   logical :: useLinksInCGNS
 
-contains 
+contains
 
   subroutine numberOfIsoSurfVariables(nIsoSolVar)
     !
-    !       numberOfVolSolVariables determines the number of variables     
-    !       to be written on the isosurface. These are similar to the      
-    !       volume variables.                                              
+    !       numberOfVolSolVariables determines the number of variables
+    !       to be written on the isosurface. These are similar to the
+    !       volume variables.
     !
     use flowVarRefState
     use inputPhysics
@@ -126,8 +126,8 @@ contains
 
   subroutine numberOfSurfSolVariables(nSolVar)
     !
-    !       numberOfSurfSolVariables determines the number of surface      
-    !       variables to be written to the surface solution file.          
+    !       numberOfSurfSolVariables determines the number of surface
+    !       variables to be written to the surface solution file.
     !
     use precision
     use extraOutput
@@ -171,11 +171,11 @@ contains
 
   subroutine numberOfVolSolVariables(nVolSolvar, nVolDiscrVar)
     !
-    !       numberOfVolSolVariables determines the number of volume        
-    !       variables to be written to the solution file. A distinction is 
-    !       made between solution variables and discrete variables. The    
-    !       former discribes the actual solution, the latter is additional 
-    !       info such as equation residuals.                               
+    !       numberOfVolSolVariables determines the number of volume
+    !       variables to be written to the solution file. A distinction is
+    !       made between solution variables and discrete variables. The
+    !       former discribes the actual solution, the latter is additional
+    !       info such as equation residuals.
     !
     use flowVarRefState
     use inputPhysics
@@ -238,8 +238,8 @@ contains
        iBeg, jBeg, kBeg, &
        iEnd, jEnd, kEnd, subRange)
     !
-    !       copyDataBufSinglePrecision stores the given 1D buffer into the 
-    !       subrange of the 3D single precision val array.                 
+    !       copyDataBufSinglePrecision stores the given 1D buffer into the
+    !       subrange of the 3D single precision val array.
     !
     use precision
     implicit none
@@ -278,8 +278,8 @@ contains
        iBeg, jBeg, kBeg, &
        iEnd, jEnd, kEnd, subRange)
     !
-    !       copyDataBufDoublePrecision stores the given 1D buffer into the 
-    !       subrange of the 3D double precision val array.                 
+    !       copyDataBufDoublePrecision stores the given 1D buffer into the
+    !       subrange of the 3D double precision val array.
     !
     use precision
     implicit none
@@ -314,9 +314,9 @@ contains
 
   subroutine volSolNames(solNames)
     !
-    !       volSolNames sets the names for the volume variables to be      
-    !       written to the volume solution file. Sids convention names are 
-    !       used as much as possible.                                      
+    !       volSolNames sets the names for the volume variables to be
+    !       written to the volume solution file. Sids convention names are
+    !       used as much as possible.
     !
     use constants
     use cgnsNames
@@ -571,9 +571,9 @@ contains
 
   subroutine surfSolNames(solNames)
     !
-    !       surfSolNames sets the names for the surface variables to be    
-    !       written to the surface solution file. Sids convention names    
-    !       are used as much as possible.                                  
+    !       surfSolNames sets the names for the surface variables to be
+    !       written to the surface solution file. Sids convention names
+    !       are used as much as possible.
     !
     use cgnsNames
     use extraOutput
@@ -708,7 +708,7 @@ contains
        nn = nn + 1
        solNames(nn) = cgnsAxisMoment
     end if
-    
+
     if (surfWriteGC) then
        nn = nn + 1
        solNames(nn) = cgnsGC
@@ -719,10 +719,10 @@ contains
   subroutine storeSolInBuffer(buffer, copyInBuffer, solName, &
        iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
     !
-    !       StoreSolInBuffer stores the given range of the variable        
-    !       indicated by solName in IOVar and copies it into buffer if     
-    !       desired. It is assumed that the variables in blockPointers     
-    !       already point to the correct block.                            
+    !       StoreSolInBuffer stores the given range of the variable
+    !       indicated by solName in IOVar and copies it into buffer if
+    !       desired. It is assumed that the variables in blockPointers
+    !       already point to the correct block.
     !
     use constants
     use blockPointers
@@ -1279,7 +1279,7 @@ contains
        do k=kBeg,kEnd
           do j=jBeg,jEnd
              do i=iBeg,iEnd
-                if (oversetPresent) then 
+                if (oversetPresent) then
                    wIO(i,j,k,1) = real(status(i, j, k))
                 else
                    wIO(i,j,k,1) = 0
@@ -1310,7 +1310,7 @@ contains
 
                 ! Here we compute U/a <dot> grad P / ||grad P||
                 ! Whre U is the velocity vector, a is the speed of
-                ! sound and P is the pressure. 
+                ! sound and P is the pressure.
 
                 ! U / a
                 a  = sqrt(gamma(i,j,k)*max(p(i,j,k),plim) &
@@ -1374,13 +1374,13 @@ contains
        faceID, cellRange, solName, &
        viscousSubface, useRindLayer)
     !
-    !       storeSurfsolInBuffer stores the variable indicated by          
-    !       solName of the given block ID in the buffer. As the solution   
-    !       must be stored in the center of the boundary face the average  
-    !       value of the first internal cell and its corresponding halo is 
-    !       computed. The counter nn is updated in this routine. However   
-    !       it is not initialized, because multiple contributions may be   
-    !       stored in buffer.                                              
+    !       storeSurfsolInBuffer stores the variable indicated by
+    !       solName of the given block ID in the buffer. As the solution
+    !       must be stored in the center of the boundary face the average
+    !       value of the first internal cell and its corresponding halo is
+    !       computed. The counter nn is updated in this routine. However
+    !       it is not initialized, because multiple contributions may be
+    !       stored in buffer.
     !
     use blockPointers
     use cgnsNames
@@ -1388,7 +1388,7 @@ contains
     use flowVarRefState
     use inputPhysics
     use inputIO
-    use communication 
+    use communication
     use utils, only : setPointers
     use flowUtils, only : computePtot
     use inputCostFunctions
@@ -1455,8 +1455,8 @@ contains
     rangeCell(3,1) = cellRange(3,1) - kBegor + 1
     rangeCell(3,2) = cellRange(3,2) - kBegor + 1
     !
-    !                Viscous variables for a non-viscous wall.             
-    !                Simply set the variables to zero and return.          
+    !                Viscous variables for a non-viscous wall.
+    !                Simply set the variables to zero and return.
     !
     if(.not. viscousSubface) then
 
@@ -1483,12 +1483,12 @@ contains
        end select
     endif
     !
-    !       Determine the face on which the subface is located and set     
-    !       a couple of variables accordingly. In this way a generic       
-    !       treatment is possible and there is no need to repeat the code  
-    !       for each of the six block faces.                               
-    !       Note that for dd2Wall a slightly different notation must be    
-    !       used. Reason is that d2Wall starts at index 2, rather than 0.  
+    !       Determine the face on which the subface is located and set
+    !       a couple of variables accordingly. In this way a generic
+    !       treatment is possible and there is no need to repeat the code
+    !       for each of the six block faces.
+    !       Note that for dd2Wall a slightly different notation must be
+    !       used. Reason is that d2Wall starts at index 2, rather than 0.
     !
 
     select case (faceID)
@@ -1502,7 +1502,7 @@ contains
        pp1    => p(1,1:,1:);     pp2    => p(2,1:,1:)
        ss => si(1,:,:,:) ; fact = -one
 
-       pp1    => p(1,1:,1:);     pp2    => p(2,1:,1:)           
+       pp1    => p(1,1:,1:);     pp2    => p(2,1:,1:)
        gamma1 => gamma(1,1:,1:); gamma2 => gamma(2,1:,1:)
 
        if( blockIsMoving)then
@@ -1650,8 +1650,8 @@ contains
 
     end select
     !
-    !       The actual part for storing the data. Determine the variable   
-    !       to be written and loop over the boundary faces of the subface. 
+    !       The actual part for storing the data. Determine the variable
+    !       to be written and loop over the boundary faces of the subface.
     !
     ! Determine the variable to be written.
 
@@ -2070,7 +2070,7 @@ contains
              ! Get local pressure
              plocal = half*(pp1(i,j) + pp2(i,j))
 
-             sigma = 1.4 
+             sigma = 1.4
              sensor1 = (-(fact)*(plocal-pInf))- sigma
              sensor1 = one/(one + exp(-2*10*sensor1))
              buffer(nn) = sensor1
@@ -2084,10 +2084,10 @@ contains
   subroutine storeOldSolInBuffer(buffer, ind, wID, &
        iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
     !
-    !       storeOldSolInBuffer stores the given range of the wID'th       
-    !       conservative variable of an old solution in buffer. Needed for 
-    !       a time accurate restart. It is assumed that the variables in   
-    !       blockPointers already point to the correct block.              
+    !       storeOldSolInBuffer stores the given range of the wID'th
+    !       conservative variable of an old solution in buffer. Needed for
+    !       a time accurate restart. It is assumed that the variables in
+    !       blockPointers already point to the correct block.
     !
     use blockPointers
     use constants
@@ -2126,9 +2126,9 @@ contains
 
   subroutine describeScheme(string)
     !
-    !       describeScheme gives a short description about the scheme      
-    !       used to obtain the solution. The description is stored in the  
-    !       character array string.                                        
+    !       describeScheme gives a short description about the scheme
+    !       used to obtain the solution. The description is stored in the
+    !       character array string.
     !
     use constants
     use inputDiscretization
@@ -2248,9 +2248,9 @@ contains
 
   subroutine isoSurfNames(solNames)
     !
-    !       isoNames sets the names for the volume variables to be         
-    !       written to the isosurfaces. Sids convention names are          
-    !       used as much as possible.                                      
+    !       isoNames sets the names for the volume variables to be
+    !       written to the isosurfaces. Sids convention names are
+    !       used as much as possible.
     !
     use constants
     use cgnsNames
@@ -2509,8 +2509,8 @@ contains
 
   subroutine setHelpVariablesWriting
     !
-    !       setHelpVariablesWriting determines the variables, which are    
-    !       needed to write the CGNS files.                                
+    !       setHelpVariablesWriting determines the variables, which are
+    !       needed to write the CGNS files.
     !
     use block
     use cgnsGrid
@@ -2567,8 +2567,8 @@ contains
 
   subroutine releaseHelpVariablesWriting
     !
-    !       releaseHelpVariablesWriting releases the memory of the         
-    !       variables, which were needed to write the CGNS files.          
+    !       releaseHelpVariablesWriting releases the memory of the
+    !       variables, which were needed to write the CGNS files.
     !
     use cgnsGrid
     use monitor
@@ -2590,8 +2590,8 @@ contains
   end subroutine releaseHelpVariablesWriting
   subroutine writeCGNSHeader(cgnsInd, base)
     !
-    !       writeCGNSHeader writes a descriptive header to the given base  
-    !       of the given CGNS file. Only processor 0 performs this task.   
+    !       writeCGNSHeader writes a descriptive header to the given base
+    !       of the given CGNS file. Only processor 0 performs this task.
     !
     use constants
     use cgnsGrid
@@ -2947,8 +2947,8 @@ contains
 
   subroutine writeCGNSKomegaModifiedInfo(cgnsInd, cgnsBase)
     !
-    !       writeCGNSKomegaModifiedInfo writes information about the       
-    !       modified k-omega turbulence model to the cgns file.            
+    !       writeCGNSKomegaModifiedInfo writes information about the
+    !       modified k-omega turbulence model to the cgns file.
     !
     use inputPhysics
     use cgnsNames
@@ -3029,8 +3029,8 @@ contains
 
   subroutine writeCGNSKomegaWilcoxInfo(cgnsInd, cgnsBase)
     !
-    !       writeCGNSKomegaWilcoxInfo writes information about the         
-    !       standard Wilcox k-omega turbulence model to the cgns file.     
+    !       writeCGNSKomegaWilcoxInfo writes information about the
+    !       standard Wilcox k-omega turbulence model to the cgns file.
     !
     use inputPhysics
     use cgnsNames
@@ -3111,8 +3111,8 @@ contains
 
   subroutine writeCGNSKtauInfo(cgnsInd, cgnsBase)
     !
-    !       WriteCGNSKtauInfo writes information about the k-tau           
-    !       turbulence model to the cgns file.                             
+    !       WriteCGNSKtauInfo writes information about the k-tau
+    !       turbulence model to the cgns file.
     !
     use inputPhysics
     use cgnsNames
@@ -3194,8 +3194,8 @@ contains
 
   subroutine writeCGNSMenterSSTInfo(cgnsInd, cgnsBase)
     !
-    !       WriteCGNSMenterSSTInfo writes information about menter's       
-    !       SST turbulence model to the cgns file.                         
+    !       WriteCGNSMenterSSTInfo writes information about menter's
+    !       SST turbulence model to the cgns file.
     !
     use inputPhysics
     use cgnsNames
@@ -3277,10 +3277,10 @@ contains
 
   subroutine writeCGNSReferenceState(cgnsInd, cgnsBase)
     !
-    !       writeCGNSReferenceState writes the reference state to the      
-    !       cgns file. Enough info is specified such that a restart can be 
-    !       performed by a different solver, which uses a different        
-    !       nonDimensionalization.                                         
+    !       writeCGNSReferenceState writes the reference state to the
+    !       cgns file. Enough info is specified such that a restart can be
+    !       performed by a different solver, which uses a different
+    !       nonDimensionalization.
     !
     use constants
     use cgnsNames
@@ -3482,8 +3482,8 @@ contains
 
   subroutine writeCGNSSaInfo(cgnsInd, cgnsBase)
     !
-    !       WriteCGNSSaInfo writes information about the Spalart           
-    !       Allmaras turbulence model to the cgns file.                    
+    !       WriteCGNSSaInfo writes information about the Spalart
+    !       Allmaras turbulence model to the cgns file.
     !
     use inputPhysics
     use cgnsNames
@@ -3564,9 +3564,9 @@ contains
 
   subroutine writeCGNSSaeInfo(cgnsInd, cgnsBase)
     !
-    !       WriteCGNSSaeInfo writes information about the Spalart          
-    !       Allmaras turbulence model using the Edwards modification to    
-    !       the cgns file.                                                 
+    !       WriteCGNSSaeInfo writes information about the Spalart
+    !       Allmaras turbulence model using the Edwards modification to
+    !       the cgns file.
     !
     use inputPhysics
     use cgnsNames
@@ -3647,8 +3647,8 @@ contains
 
   subroutine writeCGNSV2fInfo(cgnsInd, cgnsBase)
     !
-    !       WriteCGNSV2fInfo writes information about Durbin's v2f         
-    !       turbulence model to the cgns file.                             
+    !       WriteCGNSV2fInfo writes information about Durbin's v2f
+    !       turbulence model to the cgns file.
     !
     use inputPhysics
     use cgnsNames

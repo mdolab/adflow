@@ -20,12 +20,12 @@ contains
 !                radj:in radk:in
   subroutine timestep_block_d(onlyradii)
 !
-!       timestep computes the time step, or more precisely the time    
-!       step divided by the volume per unit cfl, in the owned cells.   
-!       however, for the artificial dissipation schemes, the spectral  
-!       radii in the halo's are needed. therefore the loop is taken    
-!       over the the first level of halo cells. the spectral radii are 
-!       stored and possibly modified for high aspect ratio cells.      
+!       timestep computes the time step, or more precisely the time
+!       step divided by the volume per unit cfl, in the owned cells.
+!       however, for the artificial dissipation schemes, the spectral
+!       radii in the halo's are needed. therefore the loop is taken
+!       over the the first level of halo cells. the spectral radii are
+!       stored and possibly modified for high aspect ratio cells.
 !
     use constants
     use blockpointers, only : ie, je, ke, il, jl, kl, w, wd, p, pd, &
@@ -107,11 +107,11 @@ contains
 ! block is not moving.
       sface = zero
 !
-!           inviscid contribution, depending on the preconditioner.    
-!           compute the cell centered values of the spectral radii.    
+!           inviscid contribution, depending on the preconditioner.
+!           compute the cell centered values of the spectral radii.
 !
-      select case  (precond) 
-      case (noprecond) 
+      select case  (precond)
+      case (noprecond)
         radid = 0.0_8
         radjd = 0.0_8
         radkd = 0.0_8
@@ -236,8 +236,8 @@ contains
 ! compute the inviscid contribution to the time step.
               dtl(i, j, k) = ri + rj + rk
 !
-!           adapt the spectral radii if directional scaling must be    
-!           applied.                                                   
+!           adapt the spectral radii if directional scaling must be
+!           applied.
 !
               if (doscaling) then
                 if (ri .lt. eps) then
@@ -317,13 +317,13 @@ contains
             end do
           end do
         end do
-      case (turkel) 
+      case (turkel)
         call terminate('timestep', &
 &                'turkel preconditioner not implemented yet')
         radid = 0.0_8
         radjd = 0.0_8
         radkd = 0.0_8
-      case (choimerkle) 
+      case (choimerkle)
         call terminate('timestep', &
 &                'choi merkle preconditioner not implemented yet')
         radid = 0.0_8
@@ -338,12 +338,12 @@ contains
   end subroutine timestep_block_d
   subroutine timestep_block(onlyradii)
 !
-!       timestep computes the time step, or more precisely the time    
-!       step divided by the volume per unit cfl, in the owned cells.   
-!       however, for the artificial dissipation schemes, the spectral  
-!       radii in the halo's are needed. therefore the loop is taken    
-!       over the the first level of halo cells. the spectral radii are 
-!       stored and possibly modified for high aspect ratio cells.      
+!       timestep computes the time step, or more precisely the time
+!       step divided by the volume per unit cfl, in the owned cells.
+!       however, for the artificial dissipation schemes, the spectral
+!       radii in the halo's are needed. therefore the loop is taken
+!       over the the first level of halo cells. the spectral radii are
+!       stored and possibly modified for high aspect ratio cells.
 !
     use constants
     use blockpointers, only : ie, je, ke, il, jl, kl, w, p, rlv, rev, &
@@ -409,11 +409,11 @@ contains
 ! block is not moving.
       sface = zero
 !
-!           inviscid contribution, depending on the preconditioner.    
-!           compute the cell centered values of the spectral radii.    
+!           inviscid contribution, depending on the preconditioner.
+!           compute the cell centered values of the spectral radii.
 !
-      select case  (precond) 
-      case (noprecond) 
+      select case  (precond)
+      case (noprecond)
 ! no preconditioner. simply the standard spectral radius.
 ! loop over the cells, including the first level halo.
         do k=1,ke
@@ -483,8 +483,8 @@ contains
 ! compute the inviscid contribution to the time step.
               dtl(i, j, k) = ri + rj + rk
 !
-!           adapt the spectral radii if directional scaling must be    
-!           applied.                                                   
+!           adapt the spectral radii if directional scaling must be
+!           applied.
 !
               if (doscaling) then
                 if (ri .lt. eps) then
@@ -525,10 +525,10 @@ contains
             end do
           end do
         end do
-      case (turkel) 
+      case (turkel)
         call terminate('timestep', &
 &                'turkel preconditioner not implemented yet')
-      case (choimerkle) 
+      case (choimerkle)
         call terminate('timestep', &
 &                'choi merkle preconditioner not implemented yet')
       end select
@@ -536,14 +536,14 @@ contains
   end subroutine timestep_block
   subroutine gridvelocitiesfinelevel_block(useoldcoor, t, sps)
 !
-!       gridvelocitiesfinelevel computes the grid velocities for       
-!       the cell centers and the normal grid velocities for the faces  
-!       of moving blocks for the currently finest grid, i.e.           
-!       groundlevel. the velocities are computed at time t for         
-!       spectral mode sps. if useoldcoor is .true. the velocities      
-!       are determined using the unsteady time integrator in           
-!       combination with the old coordinates; otherwise the analytic   
-!       form is used.                                                  
+!       gridvelocitiesfinelevel computes the grid velocities for
+!       the cell centers and the normal grid velocities for the faces
+!       of moving blocks for the currently finest grid, i.e.
+!       groundlevel. the velocities are computed at time t for
+!       spectral mode sps. if useoldcoor is .true. the velocities
+!       are determined using the unsteady time integrator in
+!       combination with the old coordinates; otherwise the analytic
+!       form is used.
 !
     use blockpointers
     use cgnsgrid
@@ -590,7 +590,7 @@ contains
     real(kind=realtype) :: arg1
 ! compute the mesh velocity from the given mesh mach number.
 ! vel{x,y,z}grid0 is the actual velocity you want at the
-! geometry. 
+! geometry.
     arg1 = gammainf*pinf/rhoinf
     ainf = sqrt(arg1)
     velxgrid0 = ainf*machgrid*(-veldirfreestream(1))
@@ -676,9 +676,9 @@ contains
 ! determine the situation we are having here.
       if (useoldcoor) then
 !
-!             the velocities must be determined via a finite           
-!             difference formula using the coordinates of the old      
-!             levels.                                                  
+!             the velocities must be determined via a finite
+!             difference formula using the coordinates of the old
+!             levels.
 !
 ! set the coefficients for the time integrator and store
 ! the inverse of the physical nondimensional time step,
@@ -687,8 +687,8 @@ contains
         oneover4dt = fourth*timeref/deltat
         oneover8dt = half*oneover4dt
 !
-!             grid velocities of the cell centers, including the       
-!             1st level halo cells.                                    
+!             grid velocities of the cell centers, including the
+!             1st level halo cells.
 !
 ! loop over the cells, including the 1st level halo's.
         do k=1,ke
@@ -735,52 +735,52 @@ contains
           end do
         end do
 !
-!             normal grid velocities of the faces.                     
+!             normal grid velocities of the faces.
 !
 ! loop over the three directions.
 loopdir:do mm=1,3
 ! set the upper boundaries depending on the direction.
-          select case  (mm) 
-          case (1_inttype) 
+          select case  (mm)
+          case (1_inttype)
 ! normals in i-direction
             iie = ie
             jje = je
             kke = ke
-          case (2_inttype) 
+          case (2_inttype)
 ! normals in j-direction
             iie = je
             jje = ie
             kke = ke
-          case (3_inttype) 
+          case (3_inttype)
 ! normals in k-direction
             iie = ke
             jje = ie
             kke = je
           end select
 !
-!               normal grid velocities in generalized i-direction.     
-!               mm == 1: i-direction                                   
-!               mm == 2: j-direction                                   
-!               mm == 3: k-direction                                   
+!               normal grid velocities in generalized i-direction.
+!               mm == 1: i-direction
+!               mm == 2: j-direction
+!               mm == 3: k-direction
 !
           do i=0,iie
 ! set the pointers for the coordinates, normals and
 ! normal velocities for this generalized i-plane.
 ! this depends on the value of mm.
-            select case  (mm) 
-            case (1_inttype) 
+            select case  (mm)
+            case (1_inttype)
 ! normals in i-direction
               xx => x(i, :, :, :)
               xxold => xold(:, i, :, :, :)
               ss => si(i, :, :, :)
               sface => sfacei(i, :, :)
-            case (2_inttype) 
+            case (2_inttype)
 ! normals in j-direction
               xx => x(:, i, :, :)
               xxold => xold(:, :, i, :, :)
               ss => sj(:, i, :, :)
               sface => sfacej(:, i, :)
-            case (3_inttype) 
+            case (3_inttype)
 ! normals in k-direction
               xx => x(:, :, i, :)
               xxold => xold(:, :, :, i, :)
@@ -829,7 +829,7 @@ loopdir:do mm=1,3
         end do loopdir
       else
 !
-!             the velocities must be determined analytically.          
+!             the velocities must be determined analytically.
 !
 ! store the rotation center and determine the
 ! nondimensional rotation rate of this block. as the
@@ -842,8 +842,8 @@ loopdir:do mm=1,3
         velygrid = velygrid0
         velzgrid = velzgrid0
 !
-!             grid velocities of the cell centers, including the       
-!             1st level halo cells.                                    
+!             grid velocities of the cell centers, including the
+!             1st level halo cells.
 !
 ! loop over the cells, including the 1st level halo's.
         do k=1,ke
@@ -891,50 +891,50 @@ loopdir:do mm=1,3
           end do
         end do
 !
-!             normal grid velocities of the faces.                     
+!             normal grid velocities of the faces.
 !
 ! loop over the three directions.
 loopdirection:do mm=1,3
 ! set the upper boundaries depending on the direction.
-          select case  (mm) 
-          case (1_inttype) 
+          select case  (mm)
+          case (1_inttype)
 ! normals in i-direction
             iie = ie
             jje = je
             kke = ke
-          case (2_inttype) 
+          case (2_inttype)
 ! normals in j-direction
             iie = je
             jje = ie
             kke = ke
-          case (3_inttype) 
+          case (3_inttype)
 ! normals in k-direction
             iie = ke
             jje = ie
             kke = je
           end select
 !
-!               normal grid velocities in generalized i-direction.     
-!               mm == 1: i-direction                                   
-!               mm == 2: j-direction                                   
-!               mm == 3: k-direction                                   
+!               normal grid velocities in generalized i-direction.
+!               mm == 1: i-direction
+!               mm == 2: j-direction
+!               mm == 3: k-direction
 !
           do i=0,iie
 ! set the pointers for the coordinates, normals and
 ! normal velocities for this generalized i-plane.
 ! this depends on the value of mm.
-            select case  (mm) 
-            case (1_inttype) 
+            select case  (mm)
+            case (1_inttype)
 ! normals in i-direction
               xx => x(i, :, :, :)
               ss => si(i, :, :, :)
               sface => sfacei(i, :, :)
-            case (2_inttype) 
+            case (2_inttype)
 ! normals in j-direction
               xx => x(:, i, :, :)
               ss => sj(:, i, :, :)
               sface => sfacej(:, i, :)
-            case (3_inttype) 
+            case (3_inttype)
 ! normals in k-direction
               xx => x(:, :, i, :)
               ss => sk(:, :, i, :)
@@ -995,11 +995,11 @@ loopdirection:do mm=1,3
   end subroutine gridvelocitiesfinelevel_block
   subroutine slipvelocitiesfinelevel_block(useoldcoor, t, sps)
 !
-!       slipvelocitiesfinelevel computes the slip velocities for       
-!       viscous subfaces on all viscous boundaries on groundlevel for  
-!       the given spectral solution. if useoldcoor is .true. the       
-!       velocities are determined using the unsteady time integrator;  
-!       otherwise the analytic form is used.                           
+!       slipvelocitiesfinelevel computes the slip velocities for
+!       viscous subfaces on all viscous boundaries on groundlevel for
+!       the given spectral solution. if useoldcoor is .true. the
+!       velocities are determined using the unsteady time integrator;
+!       otherwise the analytic form is used.
 !
     use constants
     use inputtimespectral
@@ -1061,23 +1061,23 @@ bocoloop1:do mm=1,nviscbocos
         uslip => bcdata(mm)%uslip
 ! determine the grid face on which the subface is located
 ! and set some variables accordingly.
-        select case  (bcfaceid(mm)) 
-        case (imin) 
+        select case  (bcfaceid(mm))
+        case (imin)
           xface => x(1, :, :, :)
           xfaceold => xold(:, 1, :, :, :)
-        case (imax) 
+        case (imax)
           xface => x(il, :, :, :)
           xfaceold => xold(:, il, :, :, :)
-        case (jmin) 
+        case (jmin)
           xface => x(:, 1, :, :)
           xfaceold => xold(:, :, 1, :, :)
-        case (jmax) 
+        case (jmax)
           xface => x(:, jl, :, :)
           xfaceold => xold(:, :, jl, :, :)
-        case (kmin) 
+        case (kmin)
           xface => x(:, :, 1, :)
           xfaceold => xold(:, :, :, 1, :)
-        case (kmax) 
+        case (kmax)
           xface => x(:, :, kl, :)
           xfaceold => xold(:, :, :, kl, :)
         end select
@@ -1252,18 +1252,18 @@ bocoloop1:do mm=1,nviscbocos
 bocoloop2:do mm=1,nviscbocos
 ! determine the grid face on which the subface is located
 ! and set some variables accordingly.
-        select case  (bcfaceid(mm)) 
-        case (imin) 
+        select case  (bcfaceid(mm))
+        case (imin)
           xface => x(1, :, :, :)
-        case (imax) 
+        case (imax)
           xface => x(il, :, :, :)
-        case (jmin) 
+        case (jmin)
           xface => x(:, 1, :, :)
-        case (jmax) 
+        case (jmax)
           xface => x(:, jl, :, :)
-        case (kmin) 
+        case (kmin)
           xface => x(:, :, 1, :)
-        case (kmax) 
+        case (kmax)
           xface => x(:, :, kl, :)
         end select
 ! store the rotation center and the rotation rate
@@ -1330,10 +1330,10 @@ bocoloop2:do mm=1,nviscbocos
   end subroutine slipvelocitiesfinelevel_block
   subroutine normalvelocities_block(sps)
 !
-!       normalvelocitiesalllevels computes the normal grid             
-!       velocities of some boundary faces of the moving blocks for     
-!       spectral mode sps. all grid levels from ground level to the    
-!       coarsest level are considered.                                 
+!       normalvelocitiesalllevels computes the normal grid
+!       velocities of some boundary faces of the moving blocks for
+!       spectral mode sps. all grid levels from ground level to the
+!       coarsest level are considered.
 !
     use constants
     use blockpointers, only : il, jl, kl, addgridvelocities, nbocos, &
@@ -1360,13 +1360,13 @@ bocoloop2:do mm=1,nviscbocos
 ! and not on blockismoving.
     if (addgridvelocities) then
 !
-!             determine the normal grid velocities of the boundaries.  
-!             as these values are based on the unit normal. a division 
-!             by the length of the normal is needed.                   
-!             furthermore the boundary unit normals are per definition 
-!             outward pointing, while on the imin, jmin and kmin       
-!             boundaries the face normals are inward pointing. this    
-!             is taken into account by the factor mult.                
+!             determine the normal grid velocities of the boundaries.
+!             as these values are based on the unit normal. a division
+!             by the length of the normal is needed.
+!             furthermore the boundary unit normals are per definition
+!             outward pointing, while on the imin, jmin and kmin
+!             boundaries the face normals are inward pointing. this
+!             is taken into account by the factor mult.
 !
 ! loop over the boundary subfaces.
 bocoloop:do mm=1,nbocos
@@ -1374,28 +1374,28 @@ bocoloop:do mm=1,nbocos
         if (associated(bcdata(mm)%rface)) then
 ! determine the block face on which the subface is
 ! located and set some variables accordingly.
-          select case  (bcfaceid(mm)) 
-          case (imin) 
+          select case  (bcfaceid(mm))
+          case (imin)
             mult = -one
             ss => si(1, :, :, :)
             sface => sfacei(1, :, :)
-          case (imax) 
+          case (imax)
             mult = one
             ss => si(il, :, :, :)
             sface => sfacei(il, :, :)
-          case (jmin) 
+          case (jmin)
             mult = -one
             ss => sj(:, 1, :, :)
             sface => sfacej(:, 1, :)
-          case (jmax) 
+          case (jmax)
             mult = one
             ss => sj(:, jl, :, :)
             sface => sfacej(:, jl, :)
-          case (kmin) 
+          case (kmin)
             mult = -one
             ss => sk(:, :, 1, :)
             sface => sfacek(:, :, 1)
-          case (kmax) 
+          case (kmax)
             mult = one
             ss => sk(:, :, kl, :)
             sface => sfacek(:, :, kl)
